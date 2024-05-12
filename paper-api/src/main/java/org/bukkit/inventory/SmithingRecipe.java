@@ -45,12 +45,13 @@ public class SmithingRecipe implements Recipe, Keyed {
      */
     @Deprecated
     public SmithingRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @Nullable RecipeChoice base, @Nullable RecipeChoice addition, boolean copyDataComponents) {
+        com.google.common.base.Preconditions.checkArgument(!result.isEmpty() || this instanceof ComplexRecipe, "Recipe cannot have an empty result."); // Paper
         this.copyDataComponents = copyDataComponents;
         // Paper end
         this.key = key;
         this.result = result;
-        this.base = base;
-        this.addition = addition;
+        this.base = base == null ? RecipeChoice.empty() : base.validate(true).clone(); // Paper
+        this.addition = addition == null ? RecipeChoice.empty() : addition.validate(true).clone(); // Paper
     }
 
     /**
@@ -58,7 +59,7 @@ public class SmithingRecipe implements Recipe, Keyed {
      *
      * @return base choice
      */
-    @Nullable
+    @NotNull // Paper - fix issues with recipe api
     public RecipeChoice getBase() {
         return (base != null) ? base.clone() : null;
     }
@@ -68,7 +69,7 @@ public class SmithingRecipe implements Recipe, Keyed {
      *
      * @return addition choice
      */
-    @Nullable
+    @NotNull // Paper - fix issues with recipe api
     public RecipeChoice getAddition() {
         return (addition != null) ? addition.clone() : null;
     }

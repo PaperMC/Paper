@@ -35,10 +35,10 @@ public class StonecuttingRecipe implements Recipe, Keyed {
      * @param input The input choices.
      */
     public StonecuttingRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull RecipeChoice input) {
-        Preconditions.checkArgument(result.getType() != Material.AIR, "Recipe must have non-AIR result.");
+        Preconditions.checkArgument(!result.isEmpty(), "Recipe cannot have an empty result."); // Paper
         this.key = key;
         this.output = new ItemStack(result);
-        this.ingredient = input;
+        this.ingredient = input.validate(false).clone(); // Paper
     }
 
     /**
@@ -73,7 +73,7 @@ public class StonecuttingRecipe implements Recipe, Keyed {
      */
     @NotNull
     public StonecuttingRecipe setInputChoice(@NotNull RecipeChoice input) {
-        this.ingredient = input;
+        this.ingredient = input.validate(false).clone(); // Paper
         return (StonecuttingRecipe) this;
     }
 

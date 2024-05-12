@@ -99,7 +99,7 @@ public abstract class CraftingRecipe implements Recipe, Keyed {
     @ApiStatus.Internal
     @NotNull
     protected static ItemStack checkResult(@NotNull ItemStack result) {
-        Preconditions.checkArgument(result.getType() != Material.AIR, "Recipe must have non-AIR result.");
+        Preconditions.checkArgument(!result.isEmpty(), "Recipe cannot have an empty result."); // Paper
         return result;
     }
 }

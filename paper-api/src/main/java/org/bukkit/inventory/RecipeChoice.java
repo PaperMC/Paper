@@ -22,6 +22,19 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
 
+    // Paper start - add "empty" choice
+    /**
+     * An "empty" recipe choice. Only valid as a recipe choice in
+     * specific places. Check the javadocs of a method before using it
+     * to be sure it's valid for that recipe and ingredient type.
+     *
+     * @return the empty recipe choice
+     */
+    static @NotNull RecipeChoice empty() {
+        return EmptyRecipeChoice.INSTANCE;
+    }
+    // Paper end
+
     /**
      * Gets a single item stack representative of this stack choice.
      *
@@ -37,6 +50,13 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
 
     @Override
     boolean test(@NotNull ItemStack itemStack);
+
+    // Paper start - check valid ingredients
+    @org.jetbrains.annotations.ApiStatus.Internal
+    default @NotNull RecipeChoice validate(final boolean allowEmptyRecipes) {
+        return this;
+    }
+    // Paper end - check valid ingredients
 
     /**
      * Represents a choice of multiple matching Materials.
@@ -60,8 +80,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
          * @param choices the tag
          */
         public MaterialChoice(@NotNull Tag<Material> choices) {
-            Preconditions.checkArgument(choices != null, "choices");
-            this.choices = new ArrayList<>(choices.getValues());
+            this(new ArrayList<>(java.util.Objects.requireNonNull(choices, "Cannot create a material choice with null tag").getValues())); // Paper - delegate to list ctor to make sure all checks are called
         }
 
         public MaterialChoice(@NotNull List<Material> choices) {
@@ -78,6 +97,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
                 }
 
                 Preconditions.checkArgument(!choice.isAir(), "Cannot have empty/air choice");
+                Preconditions.checkArgument(choice.isItem(), "Cannot have non-item choice %s", choice); // Paper - validate material choice input to items
                 this.choices.add(choice);
             }
         }
@@ -152,6 +172,16 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
         public String toString() {
             return "MaterialChoice{" + "choices=" + choices + '}';
         }
+
+        // Paper start - check valid ingredients
+        @Override
+        public @NotNull RecipeChoice validate(final boolean allowEmptyRecipes) {
+            if (this.choices.stream().anyMatch(Material::isAir)) {
+                throw new IllegalArgumentException("RecipeChoice.MaterialChoice cannot contain air");
+            }
+            return this;
+        }
+        // Paper end - check valid ingredients
     }
 
     /**
@@ -197,7 +227,12 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
         public ExactChoice clone() {
             try {
                 ExactChoice clone = (ExactChoice) super.clone();
-                clone.choices = new ArrayList<>(choices);
+                // Paper start - properly clone
+                clone.choices = new ArrayList<>(this.choices.size());
+                for (ItemStack choice : this.choices) {
+                    clone.choices.add(choice.clone());
+                }
+                // Paper end - properly clone
                 return clone;
             } catch (CloneNotSupportedException ex) {
                 throw new AssertionError(ex);
@@ -244,5 +279,15 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
         public String toString() {
             return "ExactChoice{" + "choices=" + choices + '}';
         }
+
+        // Paper start - check valid ingredients
+        @Override
+        public @NotNull RecipeChoice validate(final boolean allowEmptyRecipes) {
+            if (this.choices.stream().anyMatch(s -> s.getType().isAir())) {
+                throw new IllegalArgumentException("RecipeChoice.ExactChoice cannot contain air");
+            }
+            return this;
+        }
+        // Paper end - check valid ingredients
     }
 }

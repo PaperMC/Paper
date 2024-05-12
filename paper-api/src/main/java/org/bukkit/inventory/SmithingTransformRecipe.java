@@ -16,13 +16,13 @@ public class SmithingTransformRecipe extends SmithingRecipe {
      *
      * @param key The unique recipe key
      * @param result The item you want the recipe to create.
-     * @param template The template item.
-     * @param base The base ingredient
-     * @param addition The addition ingredient
+     * @param template The template item ({@link RecipeChoice#empty()} can be used)
+     * @param base The base ingredient ({@link RecipeChoice#empty()} can be used)
+     * @param addition The addition ingredient ({@link RecipeChoice#empty()} can be used)
      */
-    public SmithingTransformRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @Nullable RecipeChoice template, @Nullable RecipeChoice base, @Nullable RecipeChoice addition) {
+    public SmithingTransformRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull RecipeChoice template, @NotNull RecipeChoice base, @NotNull RecipeChoice addition) { // Paper - fix issues with recipe api - prevent null choices
         super(key, result, base, addition);
-        this.template = template;
+        this.template = template == null ? RecipeChoice.empty() : template.validate(true).clone(); // Paper - fix issues with recipe api - prevent null choices
     }
     // Paper start
     /**
@@ -30,14 +30,14 @@ public class SmithingTransformRecipe extends SmithingRecipe {
      *
      * @param key The unique recipe key
      * @param result The item you want the recipe to create.
-     * @param template The template item.
-     * @param base The base ingredient
-     * @param addition The addition ingredient
+     * @param template The template item ({@link RecipeChoice#empty()} can be used)
+     * @param base The base ingredient ({@link RecipeChoice#empty()} can be used)
+     * @param addition The addition ingredient ({@link RecipeChoice#empty()} can be used)
      * @param copyDataComponents whether to copy the data components from the input base item to the output
      */
-    public SmithingTransformRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @Nullable RecipeChoice template, @Nullable RecipeChoice base, @Nullable RecipeChoice addition, boolean copyDataComponents) {
+    public SmithingTransformRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull RecipeChoice template, @NotNull RecipeChoice base, @NotNull RecipeChoice addition, boolean copyDataComponents) {
         super(key, result, base, addition, copyDataComponents);
-        this.template = template;
+        this.template = template == null ? RecipeChoice.empty() : template.validate(true).clone(); // Paper - fix issues with recipe api - prevent null choices
     }
     // Paper end
 
@@ -46,7 +46,7 @@ public class SmithingTransformRecipe extends SmithingRecipe {
      *
      * @return template choice
      */
-    @Nullable
+    @NotNull // Paper - fix issues with recipe api - prevent null choices
     public RecipeChoice getTemplate() {
         return (template != null) ? template.clone() : null;
     }

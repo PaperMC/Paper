@@ -178,14 +178,15 @@ public class ShapedRecipe extends CraftingRecipe {
         Preconditions.checkArgument(key != ' ', "Space in recipe shape must represent no ingredient");
         Preconditions.checkArgument(ingredients.containsKey(key), "Symbol does not appear in the shape:", key);
 
-        ingredients.put(key, ingredient);
+        ingredients.put(key, ingredient.validate(false).clone()); // Paper
         return this;
     }
 
     // Paper start
     @NotNull
     public ShapedRecipe setIngredient(char key, @NotNull ItemStack item) {
-        return setIngredient(key, new RecipeChoice.ExactChoice(item));
+        Preconditions.checkArgument(!item.getType().isAir(), "Item cannot be air"); // Paper
+        return setIngredient(key, new RecipeChoice.ExactChoice(item.clone())); // Paper
     }
     // Paper end
 

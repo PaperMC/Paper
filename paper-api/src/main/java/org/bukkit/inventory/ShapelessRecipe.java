@@ -132,7 +132,7 @@ public class ShapelessRecipe extends CraftingRecipe {
     public ShapelessRecipe addIngredient(@NotNull RecipeChoice ingredient) {
         Preconditions.checkArgument(ingredients.size() + 1 <= 9, "Shapeless recipes cannot have more than 9 ingredients");
 
-        ingredients.add(ingredient);
+        ingredients.add(ingredient.validate(false).clone()); // Paper
         return this;
     }
 
@@ -145,6 +145,8 @@ public class ShapelessRecipe extends CraftingRecipe {
     @NotNull
     public ShapelessRecipe addIngredient(int count, @NotNull ItemStack item) {
         Preconditions.checkArgument(ingredients.size() + count <= 9, "Shapeless recipes cannot have more than 9 ingredients");
+        Preconditions.checkArgument(!item.getType().isAir(), "Item cannot be air"); // Paper
+        item = item.clone(); // Paper
         while (count-- > 0) {
             ingredients.add(new RecipeChoice.ExactChoice(item));
         }
