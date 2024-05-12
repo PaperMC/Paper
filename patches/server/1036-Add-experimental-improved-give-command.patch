@@ -1,0 +1,255 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 26 Apr 2024 23:15:27 -0700
+Subject: [PATCH] Add experimental improved give command
+
+Supports removing data components from itemstacks
+
+diff --git a/src/main/java/net/minecraft/commands/arguments/item/ItemArgument.java b/src/main/java/net/minecraft/commands/arguments/item/ItemArgument.java
+index d76296c6d53065aecb010d8ea682c9acd7365f17..9314a94764786982eff0974411f8341bb0353ecf 100644
+--- a/src/main/java/net/minecraft/commands/arguments/item/ItemArgument.java
++++ b/src/main/java/net/minecraft/commands/arguments/item/ItemArgument.java
+@@ -16,7 +16,12 @@ public class ItemArgument implements ArgumentType<ItemInput> {
+     private final ItemParser parser;
+ 
+     public ItemArgument(CommandBuildContext commandRegistryAccess) {
+-        this.parser = new ItemParser(commandRegistryAccess);
++        // Paper start - support component removals
++        this(commandRegistryAccess, false);
++    }
++    public ItemArgument(CommandBuildContext commandRegistryAccess, boolean allowRemovals) {
++        this.parser = new ItemParser(commandRegistryAccess, allowRemovals);
++        // Paper end - support component removals
+     }
+ 
+     public static ItemArgument item(CommandBuildContext commandRegistryAccess) {
+@@ -25,7 +30,7 @@ public class ItemArgument implements ArgumentType<ItemInput> {
+ 
+     public ItemInput parse(StringReader stringReader) throws CommandSyntaxException {
+         ItemParser.ItemResult itemResult = this.parser.parse(stringReader);
+-        return new ItemInput(itemResult.item(), itemResult.components());
++        return new ItemInput(itemResult.item(), itemResult.components(), itemResult.patch()); // Paper - support component removals
+     }
+ 
+     public static <S> ItemInput getItem(CommandContext<S> context, String name) {
+diff --git a/src/main/java/net/minecraft/commands/arguments/item/ItemInput.java b/src/main/java/net/minecraft/commands/arguments/item/ItemInput.java
+index 3d24fbca90bc7d8bdbac1be2176555c15ae75039..94ea5f0b1913ffa03794d231a6768dd786dc9697 100644
+--- a/src/main/java/net/minecraft/commands/arguments/item/ItemInput.java
++++ b/src/main/java/net/minecraft/commands/arguments/item/ItemInput.java
+@@ -25,8 +25,15 @@ public class ItemInput {
+     );
+     private final Holder<Item> item;
+     private final DataComponentMap components;
++    @javax.annotation.Nullable private final net.minecraft.core.component.DataComponentPatch patch; // Paper
+ 
+     public ItemInput(Holder<Item> item, DataComponentMap components) {
++        // Paper start
++        this(item, components, null);
++    }
++    public ItemInput(Holder<Item> item, DataComponentMap components, @javax.annotation.Nullable final net.minecraft.core.component.DataComponentPatch patch) {
++        this.patch = patch;
++        // Paper end
+         this.item = item;
+         this.components = components;
+     }
+@@ -37,7 +44,13 @@ public class ItemInput {
+ 
+     public ItemStack createItemStack(int amount, boolean checkOverstack) throws CommandSyntaxException {
+         ItemStack itemStack = new ItemStack(this.item, amount);
+-        itemStack.applyComponents(this.components);
++        // Paper start - support component removals
++        if (this.patch != null) {
++            itemStack.applyComponents(this.patch);
++        } else {
++            itemStack.applyComponents(this.components);
++        }
++        // Paper end - support component removals
+         if (checkOverstack && amount > itemStack.getMaxStackSize()) {
+             throw ERROR_STACK_TOO_BIG.create(this.getItemName(), itemStack.getMaxStackSize());
+         } else {
+diff --git a/src/main/java/net/minecraft/commands/arguments/item/ItemParser.java b/src/main/java/net/minecraft/commands/arguments/item/ItemParser.java
+index 5347a96be3bfbbd2963747ba4b5f222215d80371..fa431de18de902c580855e9c4419125519b6176b 100644
+--- a/src/main/java/net/minecraft/commands/arguments/item/ItemParser.java
++++ b/src/main/java/net/minecraft/commands/arguments/item/ItemParser.java
+@@ -59,8 +59,15 @@ public class ItemParser {
+     static final Function<SuggestionsBuilder, CompletableFuture<Suggestions>> SUGGEST_NOTHING = SuggestionsBuilder::buildFuture;
+     final HolderLookup.RegistryLookup<Item> items;
+     final DynamicOps<Tag> registryOps;
++    final boolean allowRemoves; // Paper - support component removals
+ 
+     public ItemParser(HolderLookup.Provider registriesLookup) {
++        // Paper start - support component removals
++        this(registriesLookup, false);
++    }
++    public ItemParser(HolderLookup.Provider registriesLookup, boolean allowRemoves) {
++        this.allowRemoves = allowRemoves;
++        // Paper end - support component removals
+         this.items = registriesLookup.lookupOrThrow(Registries.ITEM);
+         this.registryOps = registriesLookup.createSerializationContext(NbtOps.INSTANCE);
+     }
+@@ -68,6 +75,7 @@ public class ItemParser {
+     public ItemParser.ItemResult parse(StringReader reader) throws CommandSyntaxException {
+         final MutableObject<Holder<Item>> mutableObject = new MutableObject<>();
+         final DataComponentMap.Builder builder = DataComponentMap.builder();
++        final net.minecraft.core.component.DataComponentPatch.Builder patchBuilder = net.minecraft.core.component.DataComponentPatch.builder(); // Paper - support component removals
+         this.parse(reader, new ItemParser.Visitor() {
+             @Override
+             public void visitItem(Holder<Item> item) {
+@@ -77,12 +85,19 @@ public class ItemParser {
+             @Override
+             public <T> void visitComponent(DataComponentType<T> type, T value) {
+                 builder.set(type, value);
++                // Paper start - support component removals
++                patchBuilder.set(type, value);
++            }
++            @Override
++            public <T> void visitComponentRemove(final DataComponentType<T> type) {
++                patchBuilder.remove(type);
++                // Paper end - support component removals
+             }
+         });
+         Holder<Item> holder = Objects.requireNonNull(mutableObject.getValue(), "Parser gave no item");
+         DataComponentMap dataComponentMap = builder.build();
+         validateComponents(reader, holder, dataComponentMap);
+-        return new ItemParser.ItemResult(holder, dataComponentMap);
++        return new ItemParser.ItemResult(holder, dataComponentMap, this.allowRemoves ? patchBuilder.build() : null); // Paper - support component removals
+     }
+ 
+     private static void validateComponents(StringReader reader, Holder<Item> item, DataComponentMap components) throws CommandSyntaxException {
+@@ -116,7 +131,7 @@ public class ItemParser {
+         return suggestionsVisitor.resolveSuggestions(builder, stringReader);
+     }
+ 
+-    public static record ItemResult(Holder<Item> item, DataComponentMap components) {
++    public static record ItemResult(Holder<Item> item, DataComponentMap components, @javax.annotation.Nullable net.minecraft.core.component.DataComponentPatch patch) { // Paper
+     }
+ 
+     class State {
+@@ -154,17 +169,28 @@ public class ItemParser {
+ 
+             while (this.reader.canRead() && this.reader.peek() != ']') {
+                 this.reader.skipWhitespace();
++                boolean removing = ItemParser.this.allowRemoves && this.reader.canRead() && this.reader.peek() == '!';
++                if (removing) {
++                    this.reader.skip();
++                    this.visitor.visitSuggestions(builder -> this.suggestComponentAssignment(builder, false));
++                }
+                 DataComponentType<?> dataComponentType = readComponentType(this.reader);
+                 if (!set.add(dataComponentType)) {
+                     throw ItemParser.ERROR_REPEATED_COMPONENT.create(dataComponentType);
+                 }
+ 
++                // Paper start - support component removals
++                if (removing) {
++                    this.visitor.visitComponentRemove(dataComponentType);
++                } else {
++                // Paper end - support component removals
+                 this.visitor.visitSuggestions(this::suggestAssignment);
+                 this.reader.skipWhitespace();
+                 this.reader.expect('=');
+                 this.visitor.visitSuggestions(ItemParser.SUGGEST_NOTHING);
+                 this.reader.skipWhitespace();
+                 this.readComponent(dataComponentType);
++                } // Paper - support component removals
+                 this.reader.skipWhitespace();
+                 this.visitor.visitSuggestions(this::suggestNextOrEndComponents);
+                 if (!this.reader.canRead() || this.reader.peek() != ',') {
+@@ -239,12 +265,18 @@ public class ItemParser {
+         }
+ 
+         private CompletableFuture<Suggestions> suggestComponentAssignment(SuggestionsBuilder builder) {
++            // Paper start - support component removals
++            return this.suggestComponentAssignment(builder, true);
++        }
++        private CompletableFuture<Suggestions> suggestComponentAssignment(SuggestionsBuilder builder, boolean suggestRemove) {
+             String string = builder.getRemaining().toLowerCase(Locale.ROOT);
++            if (suggestRemove && string.isBlank()) builder.suggest("!", Component.literal("Remove a data component"));
++            // Paper end - support component removals
+             SharedSuggestionProvider.filterResources(BuiltInRegistries.DATA_COMPONENT_TYPE.entrySet(), string, entry -> entry.getKey().location(), entry -> {
+                 DataComponentType<?> dataComponentType = entry.getValue();
+                 if (dataComponentType.codec() != null) {
+                     ResourceLocation resourceLocation = entry.getKey().location();
+-                    builder.suggest(resourceLocation.toString() + "=");
++                    builder.suggest(resourceLocation.toString() + (suggestRemove ? "=" : "")); // Paper - support component removals
+                 }
+             });
+             return builder.buildFuture();
+@@ -270,6 +302,7 @@ public class ItemParser {
+ 
+         default <T> void visitComponent(DataComponentType<T> type, T value) {
+         }
++        default <T> void visitComponentRemove(DataComponentType<T> type) {} // Paper
+ 
+         default void visitSuggestions(Function<SuggestionsBuilder, CompletableFuture<Suggestions>> suggestor) {
+         }
+diff --git a/src/main/java/net/minecraft/server/commands/GiveCommand.java b/src/main/java/net/minecraft/server/commands/GiveCommand.java
+index 0d9de4c61c7b26a6ff37c12fde629161fd0c3d5a..47355158e5e762540a10dc67b23092a0fc53bce3 100644
+--- a/src/main/java/net/minecraft/server/commands/GiveCommand.java
++++ b/src/main/java/net/minecraft/server/commands/GiveCommand.java
+@@ -34,6 +34,38 @@ public class GiveCommand {
+         })).then(net.minecraft.commands.Commands.argument("count", IntegerArgumentType.integer(1)).executes((commandcontext) -> {
+             return GiveCommand.giveItem((CommandSourceStack) commandcontext.getSource(), ItemArgument.getItem(commandcontext, "item"), EntityArgument.getPlayers(commandcontext, "targets"), IntegerArgumentType.getInteger(commandcontext, "count"));
+         })))));
++        // Paper start - support component removals with a custom pgive command
++        final com.mojang.brigadier.tree.CommandNode<net.minecraft.commands.CommandSourceStack> node = net.minecraft.commands.Commands
++            .literal("pgive").requires((css) ->  css.hasPermission(2))
++            .then(net.minecraft.commands.Commands.argument("targets", EntityArgument.players())
++                .then(net.minecraft.commands.Commands.argument("item", new ItemArgument(commandRegistryAccess, true)).executes((ctx) -> {
++                    return GiveCommand.giveItem(ctx.getSource(), ItemArgument.getItem(ctx, "item"), EntityArgument.getPlayers(ctx, "targets"), 1);
++                })
++                    .then(net.minecraft.commands.Commands.argument("count", IntegerArgumentType.integer(1)).executes((ctx) -> {
++                        return GiveCommand.giveItem(ctx.getSource(), ItemArgument.getItem(ctx, "item"), EntityArgument.getPlayers(ctx, "targets"), IntegerArgumentType.getInteger(ctx, "count"));
++                    }))
++                )
++            ).build();
++        setClientNodes(node);
++        dispatcher.getRoot().addChild(node);
++    }
++    static void setClientNodes(com.mojang.brigadier.tree.CommandNode<net.minecraft.commands.CommandSourceStack> node) {
++        if (node instanceof com.mojang.brigadier.tree.ArgumentCommandNode<net.minecraft.commands.CommandSourceStack,?> argumentNode) {
++            if (argumentNode.getType() instanceof ItemArgument) {
++                node.clientNode = new com.mojang.brigadier.tree.ArgumentCommandNode<>(
++                    argumentNode.getName(),
++                    com.mojang.brigadier.arguments.StringArgumentType.greedyString(),
++                    argumentNode.getCommand(),
++                    argumentNode.getRequirement(),
++                    argumentNode.getRedirect(),
++                    argumentNode.getRedirectModifier(),
++                    argumentNode.isFork(),
++                    (ctx, builder) -> builder.buildFuture()
++                );
++            }
++        }
++        node.getChildren().forEach(GiveCommand::setClientNodes);
++        // Paper end - support component removals with a custom pgive command
+     }
+ 
+     private static int giveItem(CommandSourceStack source, ItemInput item, Collection<ServerPlayer> targets, int count) throws CommandSyntaxException {
+diff --git a/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java b/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java
+index 2ee33c55890fa659f6d251e486264c85d9e89802..dd1507f65a7f1d84bc7f236f81a60ac1302a13b8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java
++++ b/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java
+@@ -96,6 +96,9 @@ public final class VanillaCommandWrapper extends BukkitCommand {
+             vanillaCommand = vanillaCommand.getRedirect();
+         }
+         final String commandName = vanillaCommand.getName();
++        if ("pgive".equals(stripDefaultNamespace(commandName))) {
++            return "bukkit.command.paper.pgive";
++        }
+         return "minecraft.command." + stripDefaultNamespace(commandName);
+     }
+ 
+diff --git a/src/test/java/io/papermc/paper/permissions/MinecraftCommandPermissionsTest.java b/src/test/java/io/papermc/paper/permissions/MinecraftCommandPermissionsTest.java
+index ca71c688b37ce2c8b712a4f9216cf872c8edf78e..2f3ff50bf3f70b6b404d02d5ffcc079162a63bc1 100644
+--- a/src/test/java/io/papermc/paper/permissions/MinecraftCommandPermissionsTest.java
++++ b/src/test/java/io/papermc/paper/permissions/MinecraftCommandPermissionsTest.java
+@@ -45,6 +45,9 @@ public class MinecraftCommandPermissionsTest extends AbstractTestingBase {
+         Set<String> foundPerms = new HashSet<>();
+         for (CommandNode<CommandSourceStack> child : root.getChildren()) {
+             final String vanillaPerm = VanillaCommandWrapper.getPermission(child);
++            if ("bukkit.command.paper.pgive".equals(vanillaPerm)) { // skip our custom give command
++                continue;
++            }
+             if (!perms.contains(vanillaPerm)) {
+                 missing.add("Missing permission for " + child.getName() + " (" + vanillaPerm + ") command");
+             } else {

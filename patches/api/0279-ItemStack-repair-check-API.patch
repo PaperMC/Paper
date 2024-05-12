@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 15 May 2021 22:10:50 -0700
+Subject: [PATCH] ItemStack repair check API
+
+
+diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
+index 8635846c9f672e39f0929eec7bf83b22536ed284..51f1a09164d501de6d2561ed90175f2c24a668c1 100644
+--- a/src/main/java/org/bukkit/UnsafeValues.java
++++ b/src/main/java/org/bukkit/UnsafeValues.java
+@@ -185,5 +185,15 @@ public interface UnsafeValues {
+      * @return the server's protocol version
+      */
+     int getProtocolVersion();
++
++    /**
++     * Checks if an itemstack can be repaired with another itemstack.
++     * Returns false if either argument's type is not an item ({@link Material#isItem()}).
++     *
++     * @param itemToBeRepaired the itemstack to be repaired
++     * @param repairMaterial the repair material
++     * @return true if valid repair, false if not
++     */
++    public boolean isValidRepairItemStack(@org.jetbrains.annotations.NotNull ItemStack itemToBeRepaired, @org.jetbrains.annotations.NotNull ItemStack repairMaterial);
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
+index f0221815cbd30f3ccaacc87a57403491b55de128..ca2dac7b377ea098158ff3c84fd47f405b636869 100644
+--- a/src/main/java/org/bukkit/inventory/ItemStack.java
++++ b/src/main/java/org/bukkit/inventory/ItemStack.java
+@@ -909,5 +909,27 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+     public io.papermc.paper.inventory.ItemRarity getRarity() {
+         return io.papermc.paper.inventory.ItemRarity.valueOf(this.getItemMeta().getRarity().name());
+     }
++
++    /**
++     * Checks if an itemstack can repair this itemstack.
++     * Returns false if {@code this} or {@code repairMaterial}'s type is not an item ({@link Material#isItem()}).
++     *
++     * @param repairMaterial the repair material
++     * @return true if it is repairable by, false if not
++     */
++    public boolean isRepairableBy(@NotNull ItemStack repairMaterial) {
++        return Bukkit.getUnsafe().isValidRepairItemStack(this, repairMaterial);
++    }
++
++    /**
++     * Checks if this itemstack can repair another.
++     * Returns false if {@code this} or {@code toBeRepaired}'s type is not an item ({@link Material#isItem()}).
++     *
++     * @param toBeRepaired the itemstack to be repaired
++     * @return true if it can repair, false if not
++     */
++    public boolean canRepair(@NotNull ItemStack toBeRepaired) {
++        return Bukkit.getUnsafe().isValidRepairItemStack(toBeRepaired, this);
++    }
+     // Paper end
+ }

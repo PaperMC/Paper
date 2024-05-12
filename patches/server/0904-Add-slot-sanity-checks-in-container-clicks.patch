@@ -1,0 +1,56 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Mon, 11 Sep 2023 12:01:57 +1000
+Subject: [PATCH] Add slot sanity checks in container clicks
+
+
+diff --git a/src/main/java/net/minecraft/core/component/DataComponentPatch.java b/src/main/java/net/minecraft/core/component/DataComponentPatch.java
+index 2a00a2c8102a4a88edcfc8c680c3711efeb75b4a..33340e8ebe23a1a9ce587be34551fb929c41d0fd 100644
+--- a/src/main/java/net/minecraft/core/component/DataComponentPatch.java
++++ b/src/main/java/net/minecraft/core/component/DataComponentPatch.java
+@@ -71,7 +71,7 @@ public final class DataComponentPatch {
+             if (i == 0 && j == 0) {
+                 return DataComponentPatch.EMPTY;
+             } else {
+-                Reference2ObjectMap<DataComponentType<?>, Optional<?>> reference2objectmap = new Reference2ObjectArrayMap(i + j);
++                Reference2ObjectMap<DataComponentType<?>, Optional<?>> reference2objectmap = new Reference2ObjectArrayMap(Math.min(i + j, 256)); // Paper - sensible initial size limit
+ 
+                 DataComponentType datacomponenttype;
+                 int k;
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 30e0563ba54021bf8f2896bee8060e723ad84d48..e13097ceba283fdf165d7e6327fe78590252fe94 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2970,6 +2970,12 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                             break;
+                         case SWAP:
+                             if ((packet.getButtonNum() >= 0 && packet.getButtonNum() < 9) || packet.getButtonNum() == 40) {
++                                // Paper start - Add slot sanity checks to container clicks
++                                if (packet.getSlotNum() < 0) {
++                                    action = InventoryAction.NOTHING;
++                                    break;
++                                }
++                                // Paper end - Add slot sanity checks to container clicks
+                                 click = (packet.getButtonNum() == 40) ? ClickType.SWAP_OFFHAND : ClickType.NUMBER_KEY;
+                                 Slot clickedSlot = this.player.containerMenu.getSlot(packet.getSlotNum());
+                                 if (clickedSlot.mayPickup(this.player)) {
+diff --git a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
+index 85fb19177690ea7235c10f64789066599db08b05..428e454116804c27496cfbf796edd44780890d33 100644
+--- a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
+@@ -423,6 +423,7 @@ public abstract class AbstractContainerMenu {
+                     this.resetQuickCraft();
+                 }
+             } else if (this.quickcraftStatus == 1) {
++                if (slotIndex < 0) return; // Paper - Add slot sanity checks to container clicks
+                 slot = (Slot) this.slots.get(slotIndex);
+                 itemstack = this.getCarried();
+                 if (AbstractContainerMenu.canItemQuickReplace(slot, itemstack, true) && slot.mayPlace(itemstack) && (this.quickcraftType == 2 || itemstack.getCount() > this.quickcraftSlots.size()) && this.canDragTo(slot)) {
+@@ -597,6 +598,7 @@ public abstract class AbstractContainerMenu {
+                 int j2;
+ 
+                 if (actionType == ClickType.SWAP && (button >= 0 && button < 9 || button == 40)) {
++                    if (slotIndex < 0) return; // Paper - Add slot sanity checks to container clicks
+                     ItemStack itemstack4 = playerinventory.getItem(button);
+ 
+                     slot = (Slot) this.slots.get(slotIndex);

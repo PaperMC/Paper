@@ -2682,7 +2682,7 @@ index 977275f767c374a1be9055e4aa9e124025d55828..953e28f0cf60412a4ec9e311daa98f9d
  
      public boolean logIPs() {
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 240d7831d7f05e245e4103ec22f4967657e1040b..8292f45aa100e2788584f568430d76560c2fa9a8 100644
+index a1d4d3a66c48abdddd2bcdd957417f81290c7a6e..08b2d5c6fb6d236b805ca6556270ad1891b411f5 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -170,6 +170,7 @@ import net.minecraft.world.damagesource.CombatTracker;
@@ -2721,8 +2721,8 @@ index 240d7831d7f05e245e4103ec22f4967657e1040b..8292f45aa100e2788584f568430d7656
  
          String deathmessage = defaultMessage.getString();
          this.keepLevel = keepInventory; // SPIGOT-2222: pre-set keepLevel
--        org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, deathmessage, keepInventory);
-+        org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, PaperAdventure.asAdventure(defaultMessage), keepInventory); // Paper - Adventure
+-        org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, damageSource, loot, deathmessage, keepInventory);
++        org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, damageSource, loot, PaperAdventure.asAdventure(defaultMessage), keepInventory); // Paper - Adventure
  
          // SPIGOT-943 - only call if they have an inventory open
          if (this.containerMenu != this.inventoryMenu) {
@@ -2872,7 +2872,7 @@ index bd7107279ca004f35c932e5d6e82f8302ec781ae..970d1ddf0a014b47b0ac974404897061
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index dfeb64d614e0da9f1bc0df9dcae71b509cf4178f..97b5e3cc18dbf712f5f60d92a4f9beabd90f2e0f 100644
+index 912fe77278ba085ef9cea7187e43a3ad3bb2e0d5..7788f703c47480b009b26c23fa5e075b581c3aca 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -44,6 +44,7 @@ import net.minecraft.core.registries.Registries;
@@ -2938,20 +2938,7 @@ index dfeb64d614e0da9f1bc0df9dcae71b509cf4178f..97b5e3cc18dbf712f5f60d92a4f9beab
              Player player = this.getCraftPlayer();
              AsyncPlayerChatEvent event = new AsyncPlayerChatEvent(async, player, s, new LazyPlayerSet(this.server));
              String originalFormat = event.getFormat(), originalMessage = event.getMessage();
-@@ -2300,7 +2313,11 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
- 
-     public void sendPlayerChatMessage(PlayerChatMessage message, ChatType.Bound params) {
-         // CraftBukkit start - SPIGOT-7262: if hidden we have to send as disguised message. Query whether we should send at all (but changing this may not be expected).
--        if (!this.getCraftPlayer().canSee(message.link().sender())) {
-+        // Paper start - Do not query the world for players, if they're not in the player list, then they're not in the world - don't query world state
-+        // Also, mirror the logic for canSee in terms of "missing" players
-+        final ServerPlayer sender = this.server.getPlayerList().getPlayer(message.link().sender());
-+        if (sender == null || !this.getCraftPlayer().canSee(sender.getBukkitEntity())) {
-+        // Paper end
-             this.sendDisguisedChatMessage(message.decoratedContent(), params);
-             return;
-         }
-@@ -2994,6 +3011,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2994,6 +3007,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
      public void handleClientInformation(ServerboundClientInformationPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
          this.player.updateOptions(packet.information());
@@ -3328,10 +3315,10 @@ index 3db3c6858d98d2eaf7c9bd8d395b83b22c447bb9..d42d39dff5aeb91c5b1e6a7fb967ce70
                  }
                  collection = icons;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 9b299f74336ad0efecd05a4b771ac58549d5fb6a..9e34d3f009184981e4f4cd34b0c0c75be9f541f3 100644
+index 4cc75d39dd1104805e96c1d442400f2c18a7af2a..a5c420721cd1905bb0d00f9e1e40e4fbdf98cce6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -610,8 +610,10 @@ public final class CraftServer implements Server {
+@@ -611,8 +611,10 @@ public final class CraftServer implements Server {
      }
  
      @Override
@@ -3342,7 +3329,7 @@ index 9b299f74336ad0efecd05a4b771ac58549d5fb6a..9e34d3f009184981e4f4cd34b0c0c75b
      }
  
      @Override
-@@ -1586,7 +1588,15 @@ public final class CraftServer implements Server {
+@@ -1587,7 +1589,15 @@ public final class CraftServer implements Server {
          return this.configuration.getInt("settings.spawn-radius", -1);
      }
  
@@ -3358,7 +3345,7 @@ index 9b299f74336ad0efecd05a4b771ac58549d5fb6a..9e34d3f009184981e4f4cd34b0c0c75b
      public String getShutdownMessage() {
          return this.configuration.getString("settings.shutdown-message");
      }
-@@ -1760,7 +1770,20 @@ public final class CraftServer implements Server {
+@@ -1761,7 +1771,20 @@ public final class CraftServer implements Server {
      }
  
      @Override
@@ -3379,7 +3366,7 @@ index 9b299f74336ad0efecd05a4b771ac58549d5fb6a..9e34d3f009184981e4f4cd34b0c0c75b
          Set<CommandSender> recipients = new HashSet<>();
          for (Permissible permissible : this.getPluginManager().getPermissionSubscriptions(permission)) {
              if (permissible instanceof CommandSender && permissible.hasPermission(permission)) {
-@@ -1768,14 +1791,14 @@ public final class CraftServer implements Server {
+@@ -1769,14 +1792,14 @@ public final class CraftServer implements Server {
              }
          }
  
@@ -3396,7 +3383,7 @@ index 9b299f74336ad0efecd05a4b771ac58549d5fb6a..9e34d3f009184981e4f4cd34b0c0c75b
  
          for (CommandSender recipient : recipients) {
              recipient.sendMessage(message);
-@@ -2037,6 +2060,14 @@ public final class CraftServer implements Server {
+@@ -2038,6 +2061,14 @@ public final class CraftServer implements Server {
          return CraftInventoryCreator.INSTANCE.createInventory(owner, type);
      }
  
@@ -3411,7 +3398,7 @@ index 9b299f74336ad0efecd05a4b771ac58549d5fb6a..9e34d3f009184981e4f4cd34b0c0c75b
      @Override
      public Inventory createInventory(InventoryHolder owner, InventoryType type, String title) {
          Preconditions.checkArgument(type != null, "InventoryType cannot be null");
-@@ -2051,13 +2082,28 @@ public final class CraftServer implements Server {
+@@ -2052,13 +2083,28 @@ public final class CraftServer implements Server {
          return CraftInventoryCreator.INSTANCE.createInventory(owner, size);
      }
  
@@ -3440,7 +3427,7 @@ index 9b299f74336ad0efecd05a4b771ac58549d5fb6a..9e34d3f009184981e4f4cd34b0c0c75b
      public Merchant createMerchant(String title) {
          return new CraftMerchantCustom(title == null ? InventoryType.MERCHANT.getDefaultTitle() : title);
      }
-@@ -2122,6 +2168,17 @@ public final class CraftServer implements Server {
+@@ -2123,6 +2169,17 @@ public final class CraftServer implements Server {
          return Thread.currentThread().equals(this.console.serverThread) || this.console.hasStopped() || !org.spigotmc.AsyncCatcher.enabled; // All bets are off if we have shut down (e.g. due to watchdog)
      }
  
@@ -3458,7 +3445,7 @@ index 9b299f74336ad0efecd05a4b771ac58549d5fb6a..9e34d3f009184981e4f4cd34b0c0c75b
      @Override
      public String getMotd() {
          return this.console.getMotd();
-@@ -2566,4 +2623,57 @@ public final class CraftServer implements Server {
+@@ -2567,4 +2624,57 @@ public final class CraftServer implements Server {
      public double[] getTPS() {
          return new double[]{0, 0, 0}; // TODO
      }
@@ -3979,10 +3966,10 @@ index 1e82312c24cb752d63b165926861fc178cd7849b..7f22950ae61436e91a59cd29a345809c
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java b/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
-index 276af7b86bf21843aaf7266baae37a8e7efabcbd..d839a0edf31f6803e5813b28a23fa17e20916b2c 100644
+index 85cef6c2ebe8f53c3a63c17055c48c2d46e6c680..5ed90ed0461165da02c7a1acae805c12466e38d6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
 +++ b/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
-@@ -140,6 +140,12 @@ public class CraftEnchantment extends Enchantment implements Handleable<net.mine
+@@ -163,6 +163,12 @@ public class CraftEnchantment extends Enchantment implements Handleable<net.mine
          CraftEnchantment ench = (CraftEnchantment) other;
          return !this.handle.isCompatibleWith(ench.getHandle());
      }
@@ -4111,7 +4098,7 @@ index 55945b83a5426b352bad9507cc9e94afb1278032..9ea1537408ff2d790747b6e5a681d917
      public boolean isOp() {
          return true;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 13c3ac65f26e6cfc55ee3538b6308ef93f9936aa..0b15c8a3906221ef09261f3d42c0aa93de8c5570 100644
+index 654d4994bb2e65c5ca6b7190c15d2113eede9e5b..1c1f1db8cb8beff850103d998561d333823fe611 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -386,14 +386,40 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -4277,7 +4264,7 @@ index 13c3ac65f26e6cfc55ee3538b6308ef93f9936aa..0b15c8a3906221ef09261f3d42c0aa93
          SignBlockEntity sign = new SignBlockEntity(CraftLocation.toBlockPosition(loc), Blocks.OAK_SIGN.defaultBlockState());
          SignText text = sign.getFrontText();
          text = text.setColor(net.minecraft.world.item.DyeColor.byId(dyeColor.getWoolData()));
-@@ -1805,7 +1873,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1802,7 +1870,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      @Override
      public void setResourcePack(String url) {
@@ -4286,7 +4273,7 @@ index 13c3ac65f26e6cfc55ee3538b6308ef93f9936aa..0b15c8a3906221ef09261f3d42c0aa93
      }
  
      @Override
-@@ -1820,7 +1888,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1817,7 +1885,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      @Override
      public void setResourcePack(String url, byte[] hash, boolean force) {
@@ -4295,7 +4282,7 @@ index 13c3ac65f26e6cfc55ee3538b6308ef93f9936aa..0b15c8a3906221ef09261f3d42c0aa93
      }
  
      @Override
-@@ -1857,6 +1925,59 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1854,6 +1922,59 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          this.handlePushResourcePack(new ClientboundResourcePackPushPacket(id, url, hashStr, force, CraftChatMessage.fromStringOrOptional(prompt, true)), false);
      }
  
@@ -4355,7 +4342,7 @@ index 13c3ac65f26e6cfc55ee3538b6308ef93f9936aa..0b15c8a3906221ef09261f3d42c0aa93
      @Override
      public void removeResourcePack(UUID id) {
          Preconditions.checkArgument(id != null, "Resource pack id cannot be null");
-@@ -2268,6 +2389,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -2265,6 +2386,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return (this.getHandle().requestedViewDistance() == 0) ? Bukkit.getViewDistance() : this.getHandle().requestedViewDistance();
      }
  
@@ -4368,7 +4355,7 @@ index 13c3ac65f26e6cfc55ee3538b6308ef93f9936aa..0b15c8a3906221ef09261f3d42c0aa93
      @Override
      public int getPing() {
          return this.getHandle().connection.latency();
-@@ -2318,6 +2445,248 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -2315,6 +2442,248 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return this.getHandle().allowsListing();
      }
  
@@ -4640,19 +4627,19 @@ index 5725b0281ac53a2354b233223259d6784353bc6e..9ef939b76d06874b856e0c850addb364
      @Override
      public int getLineWidth() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 8de924b91f74321896bbef8468cbd04b992f2f8a..387305bb835dca0cee7ab398d5630e3522c6162f 100644
+index d6b2352d5f64a85f7c7e817f395d5cd69275ff0c..4c59520355a21249d2a3132dbaae97fd4e17c86b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -905,7 +905,7 @@ public class CraftEventFactory {
+@@ -906,7 +906,7 @@ public class CraftEventFactory {
          return event;
      }
  
--    public static PlayerDeathEvent callPlayerDeathEvent(ServerPlayer victim, List<org.bukkit.inventory.ItemStack> drops, String deathMessage, boolean keepInventory) {
-+    public static PlayerDeathEvent callPlayerDeathEvent(ServerPlayer victim, List<org.bukkit.inventory.ItemStack> drops, net.kyori.adventure.text.Component deathMessage, boolean keepInventory) { // Paper - Adventure
+-    public static PlayerDeathEvent callPlayerDeathEvent(ServerPlayer victim, DamageSource damageSource, List<org.bukkit.inventory.ItemStack> drops, String deathMessage, boolean keepInventory) {
++    public static PlayerDeathEvent callPlayerDeathEvent(ServerPlayer victim, DamageSource damageSource, List<org.bukkit.inventory.ItemStack> drops, net.kyori.adventure.text.Component deathMessage, boolean keepInventory) { // Paper - Adventure
          CraftPlayer entity = victim.getBukkitEntity();
-         PlayerDeathEvent event = new PlayerDeathEvent(entity, drops, victim.getExpReward(), 0, deathMessage);
-         event.setKeepInventory(keepInventory);
-@@ -932,7 +932,7 @@ public class CraftEventFactory {
+         CraftDamageSource bukkitDamageSource = new CraftDamageSource(damageSource);
+         PlayerDeathEvent event = new PlayerDeathEvent(entity, bukkitDamageSource, drops, victim.getExpReward(), 0, deathMessage);
+@@ -934,7 +934,7 @@ public class CraftEventFactory {
       * Server methods
       */
      public static ServerListPingEvent callServerListPingEvent(SocketAddress address, String motd, int numPlayers, int maxPlayers) {
@@ -5005,7 +4992,7 @@ index 61ad00c38cfef8a1de61b4597ec1042428feccf4..4da38ebb7fdbdb0f8fa422ebcd2e3eec
  
          if (this.pages != null) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
-index 9c57b883783145ad4483481a2c2e7f0f188cd174..b653c2c80e8e8524ea6d7625c6a86f8204c50709 100644
+index 2e6f0a0f4bbe4ae3c7c85e679f6187e89d1298ff..c7360e2b2d6e50abc371c21b09cdadd63892f439 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
 @@ -2,7 +2,7 @@ package org.bukkit.craftbukkit.inventory;
@@ -5141,10 +5128,10 @@ index 9c57b883783145ad4483481a2c2e7f0f188cd174..b653c2c80e8e8524ea6d7625c6a86f82
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 64c039bd3b248bd508a2c298032fa9f984b37694..9a22459f15cff45a234c1d497aca27a5433570f7 100644
+index 78653e2b669bee1f46fc9e8c4485ae4936244db7..8be2184fc6d04a722fd9fb27549ec8df906a12ee 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-@@ -850,6 +850,18 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -862,6 +862,18 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          return !(this.hasDisplayName() || this.hasItemName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.build().isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isHideTooltip() || this.isUnbreakable() || this.hasEnchantmentGlintOverride() || this.isFireResistant() || this.hasMaxStackSize() || this.hasRarity() || this.hasFood() || this.hasDamage() || this.hasMaxDamage() || this.hasAttributeModifiers() || this.customTag != null);
      }
  
@@ -5163,7 +5150,7 @@ index 64c039bd3b248bd508a2c298032fa9f984b37694..9a22459f15cff45a234c1d497aca27a5
      @Override
      public String getDisplayName() {
          return CraftChatMessage.fromComponent(this.displayName);
-@@ -880,6 +892,18 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -892,6 +904,18 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          return this.itemName != null;
      }
  
@@ -5182,7 +5169,7 @@ index 64c039bd3b248bd508a2c298032fa9f984b37694..9a22459f15cff45a234c1d497aca27a5
      @Override
      public String getLocalizedName() {
          return this.getDisplayName();
-@@ -899,6 +923,18 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -911,6 +935,18 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          return this.lore != null && !this.lore.isEmpty();
      }
  
@@ -5553,10 +5540,10 @@ index 4d586e1375ed8782939c9d480479e0dd981f8cbc..7900adb0b158bc17dd792dd082c33854
 +
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java b/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java
-index b963d471b33cacaeec385dba6b2bf369e3d4426f..51094fe6e37d3c0fad2682353f8de3d1b9c9aef5 100644
+index 64191fb2f238c6dacf894d88a703ced6e75a6054..cb6cc3896e862291a058d21fa9704dd1519ff5e1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java
-@@ -299,6 +299,7 @@ public final class CraftChatMessage {
+@@ -307,6 +307,7 @@ public final class CraftChatMessage {
  
      public static String fromComponent(Component component) {
          if (component == null) return "";
@@ -5565,10 +5552,10 @@ index b963d471b33cacaeec385dba6b2bf369e3d4426f..51094fe6e37d3c0fad2682353f8de3d1
  
          boolean hadFormat = false;
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index 3f91fce6df9b87a6e84df21ed04f25be3729814b..e57ba8af99f0ac0151ec1d4c4279393ace6826e4 100644
+index 8a13d8ae4325854acb3be7083d022c08ba094df1..311b4472f955cba658afa763b2f0b31023b53236 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -76,6 +76,43 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -80,6 +80,43 @@ public final class CraftMagicNumbers implements UnsafeValues {
  
      private CraftMagicNumbers() {}
  

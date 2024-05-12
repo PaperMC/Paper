@@ -2,7 +2,6 @@ version = "1.0.0-SNAPSHOT"
 
 dependencies {
     compileOnly(project(":paper-api"))
-    compileOnly(project(":paper-mojangapi"))
 }
 
 tasks.processResources {

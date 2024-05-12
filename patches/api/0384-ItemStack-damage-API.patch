@@ -1,0 +1,91 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 8 May 2022 13:35:58 -0700
+Subject: [PATCH] ItemStack damage API
+
+Adds methods notify clients about item breaks and
+to simulate damage done to an itemstack and all
+the logic associated with damaging them
+
+diff --git a/src/main/java/org/bukkit/entity/LivingEntity.java b/src/main/java/org/bukkit/entity/LivingEntity.java
+index 6bfc8a2148f504370df938447f4f6b757f1a516b..208bab1f5a3200f54141c38ee4272629cfc66da5 100644
+--- a/src/main/java/org/bukkit/entity/LivingEntity.java
++++ b/src/main/java/org/bukkit/entity/LivingEntity.java
+@@ -1365,4 +1365,53 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
+      */
+     void knockback(double strength, double directionX, double directionZ);
+     // Paper end - knockback API
++
++    // Paper start - ItemStack damage API
++    /**
++     * Notifies all clients tracking this entity that the item in
++     * the slot of this entity broke.
++     * <p>
++     * NOTE: this does not mutate any entity state
++     *
++     * @param slot the slot
++     */
++    void broadcastSlotBreak(org.bukkit.inventory.@NotNull EquipmentSlot slot);
++
++    /**
++     * Notifies specified players that the item in the slot
++     * of this entity broke.
++     * <p>
++     * NOTE: this does not mutate any entity state
++     *
++     * @param slot the slot
++     * @param players the players to notify
++     */
++    void broadcastSlotBreak(org.bukkit.inventory.@NotNull EquipmentSlot slot, @NotNull Collection<Player> players);
++
++    /**
++     * Damages the itemstack in this slot by the specified amount.
++     * <p>
++     * This runs all logic associated with damaging an itemstack like
++     * gamemode and enchantment checks, events, stat changes, and advancement
++     * triggers.
++     *
++     * @param stack the itemstack to damage
++     * @param amount the amount of damage to do
++     * @return the damaged itemstack, or an empty stack if it broke. There are no
++     * guarantees the returned itemstack is the same instance
++     */
++    @NotNull ItemStack damageItemStack(@NotNull ItemStack stack, int amount);
++
++    /**
++     * Damages the itemstack in this slot by the specified amount.
++     * <p>
++     * This runs all logic associated with damaging an itemstack like
++     * gamemode and enchantment checks, events, stat changes, advancement
++     * triggers, and notifying clients to play break animations.
++     *
++     * @param slot the slot of the stack to damage
++     * @param amount the amount of damage to do
++     */
++    void damageItemStack(org.bukkit.inventory.@NotNull EquipmentSlot slot, int amount);
++    // Paper end - ItemStack damage API
+ }
+diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
+index 105cf1bf6e8b44846cdd3a8881fed36007daaa22..ee5d2a30f634ccbe6f2cc2f82f9e56783939f5dd 100644
+--- a/src/main/java/org/bukkit/inventory/ItemStack.java
++++ b/src/main/java/org/bukkit/inventory/ItemStack.java
+@@ -993,5 +993,19 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+     public boolean canRepair(@NotNull ItemStack toBeRepaired) {
+         return Bukkit.getUnsafe().isValidRepairItemStack(toBeRepaired, this);
+     }
++
++    /**
++     * Damages this itemstack by the specified amount. This
++     * runs all logic associated with damaging an itemstack like
++     * events and stat changes.
++     *
++     * @param amount the amount of damage to do
++     * @param livingEntity the entity related to the damage
++     * @return the damaged itemstack or an empty one if it broke. May return the same instance of ItemStack
++     * @see org.bukkit.entity.LivingEntity#damageItemStack(EquipmentSlot, int) to damage itemstacks in equipment slots
++     */
++    public @NotNull ItemStack damage(int amount, @NotNull org.bukkit.entity.LivingEntity livingEntity) {
++        return livingEntity.damageItemStack(this, amount);
++    }
+     // Paper end
+ }

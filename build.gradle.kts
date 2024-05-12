@@ -11,7 +11,7 @@ import kotlin.io.path.*
 plugins {
     java
     `maven-publish`
-    id("io.papermc.paperweight.core") version "1.6.3"
+    id("io.papermc.paperweight.core") version "1.7.1"
 }
 
 allprojects {
@@ -49,7 +49,6 @@ subprojects {
     repositories {
         mavenCentral()
         maven(paperMavenPublicUrl)
-        maven("https://s01.oss.sonatype.org/content/repositories/snapshots/") // TODO - Adventure snapshot
     }
 }
 
@@ -110,7 +109,6 @@ paperweight {
 
 tasks.generateDevelopmentBundle {
     apiCoordinates = "io.papermc.paper:paper-api"
-    mojangApiCoordinates = "io.papermc.paper:paper-mojangapi"
     libraryRepositories.addAll(
         "https://repo.maven.apache.org/maven2/",
         paperMavenPublicUrl,

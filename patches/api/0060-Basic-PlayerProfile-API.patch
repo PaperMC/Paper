@@ -7,10 +7,10 @@ Provides basic elements of a PlayerProfile to be used by future API/events
 
 diff --git a/src/main/java/com/destroystokyo/paper/profile/PlayerProfile.java b/src/main/java/com/destroystokyo/paper/profile/PlayerProfile.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b76f13a0266806544bde13952476d4867caaf25b
+index 0000000000000000000000000000000000000000..464de9dc0539d4cb0f37a2d9266638b5f5b90b73
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/profile/PlayerProfile.java
-@@ -0,0 +1,231 @@
+@@ -0,0 +1,234 @@
 +package com.destroystokyo.paper.profile;
 +
 +import java.util.Collection;
@@ -91,13 +91,16 @@ index 0000000000000000000000000000000000000000..b76f13a0266806544bde13952476d486
 +
 +    /**
 +     * Sets a property. If the property already exists, the previous one will be replaced
++     *
 +     * @param property Property to set.
++     * @throws IllegalArgumentException if setting the property results in more than 16 properties
 +     */
 +    void setProperty(@NotNull ProfileProperty property);
 +
 +    /**
 +     * Sets multiple properties. If any of the set properties already exist, it will be replaced
 +     * @param properties The properties to set
++     * @throws IllegalArgumentException if the number of properties exceeds 16
 +     */
 +    void setProperties(@NotNull Collection<ProfileProperty> properties);
 +
@@ -244,10 +247,10 @@ index 0000000000000000000000000000000000000000..b76f13a0266806544bde13952476d486
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/profile/ProfileProperty.java b/src/main/java/com/destroystokyo/paper/profile/ProfileProperty.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7b3b6ef533d32169fbeca389bd61cfc6b0e0faee
+index 0000000000000000000000000000000000000000..8f913a078dd692a9feafb98a6e6c9583f3253bd4
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/profile/ProfileProperty.java
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,75 @@
 +package com.destroystokyo.paper.profile;
 +
 +import com.google.common.base.Preconditions;
@@ -272,6 +275,9 @@ index 0000000000000000000000000000000000000000..7b3b6ef533d32169fbeca389bd61cfc6
 +        this.name = Preconditions.checkNotNull(name, "ProfileProperty name can not be null");
 +        this.value = Preconditions.checkNotNull(value, "ProfileProperty value can not be null");
 +        this.signature = signature;
++        Preconditions.checkArgument(name.length() <= 64, "ProfileProperty name can not be longer than 64 characters");
++        Preconditions.checkArgument(value.length() <= Short.MAX_VALUE, "ProfileProperty value can not be longer than 32767 characters");
++        Preconditions.checkArgument(signature == null || signature.length() <= 1024, "ProfileProperty signature can not be longer than 1024 characters");
 +    }
 +
 +    /**
@@ -409,10 +415,10 @@ index 3b7087d5c71a498f513f67514db9e118780363c7..b165a4f99802ced243f1fb56af2bcf2c
  
      @NotNull
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index 012b5954a2f9dc61fb8ad29c4b8bce2648ddc681..8e4bf531c0a2f7101c2a3733fe33733d31c611fd 100644
+index 012b5954a2f9dc61fb8ad29c4b8bce2648ddc681..f7a9756d3e3cd337b72b406ca862b81c27d4e44e 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
-@@ -2067,5 +2067,74 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+@@ -2067,5 +2067,76 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
       * @return true if player names should be suggested
       */
      boolean suggestPlayerNamesWhenNullTabCompletions();
@@ -464,6 +470,7 @@ index 012b5954a2f9dc61fb8ad29c4b8bce2648ddc681..8e4bf531c0a2f7101c2a3733fe33733d
 +     * @param uuid UUID to create profile for
 +     * @param name Name to create profile for
 +     * @return A PlayerProfile object
++     * @throws IllegalArgumentException if the name is longer than 16 characters
 +     */
 +    @NotNull
 +    com.destroystokyo.paper.profile.PlayerProfile createProfile(@Nullable UUID uuid, @Nullable String name);
@@ -482,6 +489,7 @@ index 012b5954a2f9dc61fb8ad29c4b8bce2648ddc681..8e4bf531c0a2f7101c2a3733fe33733d
 +     * @param uuid UUID to create profile for
 +     * @param name Name to create profile for
 +     * @return A PlayerProfile object
++     * @throws IllegalArgumentException if the name is longer than 16 characters
 +     */
 +    @NotNull
 +    com.destroystokyo.paper.profile.PlayerProfile createProfileExact(@Nullable UUID uuid, @Nullable String name);

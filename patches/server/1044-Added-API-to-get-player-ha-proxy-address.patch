@@ -1,0 +1,56 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: nostalfinals <yuu8583@proton.me>
+Date: Mon, 8 Apr 2024 23:24:38 +0800
+Subject: [PATCH] Added API to get player ha proxy address
+
+
+diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
+index 58d28b6c1cc7da7d786f78308db971f7502ad844..02833deaa2bb7e5abc655bc1bdbe15c4b3ac7119 100644
+--- a/src/main/java/net/minecraft/network/Connection.java
++++ b/src/main/java/net/minecraft/network/Connection.java
+@@ -157,6 +157,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+         this.stopReadingPackets = true;
+     }
+     // Paper end - packet limiter
++    @Nullable public SocketAddress haProxyAddress; // Paper - Add API to get player's proxy address
+ 
+     public Connection(PacketFlow side) {
+         this.receiving = side;
+diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
+index 52f537b7bfbdeaad9d17c0e88a1ed1c8925a833f..8aff5129f85ab5729b3da2e465871be62d15bdf2 100644
+--- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
++++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
+@@ -146,6 +146,13 @@ public class ServerConnectionListener {
+ 
+                                         Connection connection = (Connection) channel.pipeline().get("packet_handler");
+                                         connection.address = socketaddr;
++
++                                        // Paper start - Add API to get player's proxy address
++                                        final String proxyAddress = message.destinationAddress();
++                                        final int proxyPort = message.destinationPort();
++
++                                        connection.haProxyAddress = new java.net.InetSocketAddress(proxyAddress, proxyPort);
++                                        // Paper end - Add API to get player's proxy address
+                                     }
+                                 } else {
+                                     super.channelRead(ctx, msg);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index a9aa3dca65aca86cf535d6616f5d5db3e1e8fc8b..561a7a8e96e2d91bbb87fe6230e94b5f38073d27 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -273,6 +273,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         }
+     }
+ 
++    // Paper start - Add API to get player's proxy address
++    @Override
++    public @Nullable InetSocketAddress getHAProxyAddress() {
++        if (this.getHandle().connection == null) return null;
++
++        return this.getHandle().connection.connection.haProxyAddress instanceof final InetSocketAddress inetSocketAddress ? inetSocketAddress : null;
++    }
++    // Paper end - Add API to get player's proxy address
++
+     public interface TransferCookieConnection {
+ 
+         boolean isTransferred();

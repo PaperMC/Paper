@@ -25,11 +25,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistrySetBuilder;
 import net.minecraft.data.registries.UpdateOneTwentyOneRegistries;
 import net.minecraft.data.registries.VanillaRegistries;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.flag.FeatureElement;
+import net.minecraft.world.flag.FeatureFlags;
 import org.bukkit.MinecraftExperimental;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -151,8 +154,23 @@ public class GeneratedKeyType<T, A> extends SimpleGenerator {
         return typeBuilder.addMethod(createMethod.build()).build();
     }
 
-    @SuppressWarnings("unchecked")
     private Set<ResourceKey<T>> collectExperimentalKeys(final Registry<T> registry) {
+        if (FeatureElement.FILTERED_REGISTRIES.contains(registry.key())) {
+            return this.collectExperimentalKeysBuiltIn(registry);
+        } else {
+            return this.collectExperimentalKeysDataDriven(registry);
+        }
+    }
+
+    private Set<ResourceKey<T>> collectExperimentalKeysBuiltIn(final Registry<T> registry) {
+        final HolderLookup.RegistryLookup<T> filteredLookup = registry.asLookup().filterElements(v -> {
+            return ((FeatureElement) v).requiredFeatures().contains(FeatureFlags.UPDATE_1_21);
+        });
+        return filteredLookup.listElementIds().collect(Collectors.toUnmodifiableSet());
+    }
+
+    @SuppressWarnings("unchecked")
+    private Set<ResourceKey<T>> collectExperimentalKeysDataDriven(final Registry<T> registry) {
         final RegistrySetBuilder.@Nullable RegistryBootstrap<T> experimentalBootstrap = (RegistrySetBuilder.RegistryBootstrap<T>) EXPERIMENTAL_REGISTRY_ENTRIES.get(this.registryKey);
         if (experimentalBootstrap == null) {
             return Collections.emptySet();

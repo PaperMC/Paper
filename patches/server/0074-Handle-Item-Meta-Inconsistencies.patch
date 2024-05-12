@@ -150,7 +150,7 @@ index b6521462d193bff83ace1dc694c6d957a7173969..d302767e8f01fdfcba9c22e2e35677af
  
      static Map<Enchantment, Integer> getEnchantments(net.minecraft.world.item.ItemStack item) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 9c139f25eaef3c1b93fbf254cb08c6a449288ec8..0c385b713234a74ceba802f67f74e4ecab93e269 100644
+index 9e23cdef8bd166937093452009f50b86e683cc57..a052c2dab5af99355737a88f75cb0b2e42a60177 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList;
@@ -161,7 +161,7 @@ index 9c139f25eaef3c1b93fbf254cb08c6a449288ec8..0c385b713234a74ceba802f67f74e4ec
  import com.google.common.collect.Lists;
  import com.google.common.collect.Multimap;
  import com.google.common.collect.SetMultimap;
-@@ -22,6 +23,7 @@ import java.util.Arrays;
+@@ -23,6 +24,7 @@ import java.util.Arrays;
  import java.util.Base64;
  import java.util.Collection;
  import java.util.Collections;
@@ -169,15 +169,7 @@ index 9c139f25eaef3c1b93fbf254cb08c6a449288ec8..0c385b713234a74ceba802f67f74e4ec
  import java.util.EnumSet;
  import java.util.HashMap;
  import java.util.Iterator;
-@@ -32,6 +34,7 @@ import java.util.Map;
- import java.util.Objects;
- import java.util.Optional;
- import java.util.Set;
-+import java.util.TreeMap; // Paper
- import java.util.logging.Level;
- import java.util.logging.Logger;
- import javax.annotation.Nonnull;
-@@ -221,7 +224,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -236,7 +238,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
      private List<Component> lore; // null and empty are two different states internally
      private Integer customModelData;
      private Map<String, String> blockData;
@@ -186,7 +178,7 @@ index 9c139f25eaef3c1b93fbf254cb08c6a449288ec8..0c385b713234a74ceba802f67f74e4ec
      private Multimap<Attribute, AttributeModifier> attributeModifiers;
      private int repairCost;
      private int hideFlag;
-@@ -260,7 +263,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -275,7 +277,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          this.blockData = meta.blockData;
  
          if (meta.enchantments != null) {
@@ -195,7 +187,7 @@ index 9c139f25eaef3c1b93fbf254cb08c6a449288ec8..0c385b713234a74ceba802f67f74e4ec
          }
  
          if (meta.hasAttributeModifiers()) {
-@@ -391,8 +394,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -406,8 +408,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          }
      }
  
@@ -206,7 +198,7 @@ index 9c139f25eaef3c1b93fbf254cb08c6a449288ec8..0c385b713234a74ceba802f67f74e4ec
  
          tag.entrySet().forEach((entry) -> {
              Holder<net.minecraft.world.item.enchantment.Enchantment> id = entry.getKey();
-@@ -646,13 +649,13 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -661,13 +663,13 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          return modifiers;
      }
  
@@ -220,9 +212,9 @@ index 9c139f25eaef3c1b93fbf254cb08c6a449288ec8..0c385b713234a74ceba802f67f74e4ec
 -        Map<Enchantment, Integer> enchantments = new LinkedHashMap<Enchantment, Integer>(ench.size());
 +        EnchantmentMap enchantments = new EnchantmentMap(); // Paper
          for (Map.Entry<?, ?> entry : ench.entrySet()) {
-             // Doctor older enchants
-             String enchantKey = entry.getKey().toString();
-@@ -970,14 +973,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+             Enchantment enchantment = CraftEnchantment.stringToBukkit(entry.getKey().toString());
+             if ((enchantment != null) && (entry.getValue() instanceof Integer)) {
+@@ -982,14 +984,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      @Override
      public Map<Enchantment, Integer> getEnchants() {
@@ -239,7 +231,7 @@ index 9c139f25eaef3c1b93fbf254cb08c6a449288ec8..0c385b713234a74ceba802f67f74e4ec
          }
  
          if (ignoreRestrictions || level >= ench.getStartLevel() && level <= ench.getMaxLevel()) {
-@@ -1513,7 +1516,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1553,7 +1555,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
              clone.customModelData = this.customModelData;
              clone.blockData = this.blockData;
              if (this.enchantments != null) {
@@ -248,13 +240,13 @@ index 9c139f25eaef3c1b93fbf254cb08c6a449288ec8..0c385b713234a74ceba802f67f74e4ec
              }
              if (this.hasAttributeModifiers()) {
                  clone.attributeModifiers = LinkedHashMultimap.create(this.attributeModifiers);
-@@ -1833,4 +1836,22 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1875,4 +1877,22 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
          return (result != null) ? result : Optional.empty();
      }
 +
 +    // Paper start
-+    private static class EnchantmentMap extends TreeMap<Enchantment, Integer> {
++    private static class EnchantmentMap extends java.util.TreeMap<org.bukkit.enchantments.Enchantment, Integer> {
 +        private EnchantmentMap(Map<Enchantment, Integer> enchantments) {
 +            this();
 +            putAll(enchantments);
@@ -271,3 +263,40 @@ index 9c139f25eaef3c1b93fbf254cb08c6a449288ec8..0c385b713234a74ceba802f67f74e4ec
 +    // Paper end
 +
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java b/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
+index 358af0121ce3d87a9f51da2bae0699034c1560b4..44174c5a7b255af489c1e4bf589299e6bdbb90a3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
++++ b/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
+@@ -37,6 +37,16 @@ public final class CraftPlayerProfile implements PlayerProfile {
+         boolean isValidSkullProfile = (gameProfile.getName() != null)
+                 || gameProfile.getProperties().containsKey(CraftPlayerTextures.PROPERTY_NAME);
+         Preconditions.checkArgument(isValidSkullProfile, "The skull profile is missing a name or textures!");
++        // Paper start - Validate
++        Preconditions.checkArgument(gameProfile.getName().length() <= 16, "The name of the profile is longer than 16 characters");
++        final PropertyMap properties = gameProfile.getProperties();
++        Preconditions.checkArgument(properties.size() <= 16, "The profile contains more than 16 properties");
++        for (final Property property : properties.values()) {
++            Preconditions.checkArgument(property.name().length() <= 64, "The name of a property is longer than 64 characters");
++            Preconditions.checkArgument(property.value().length() <= Short.MAX_VALUE, "The value of a property is longer than 32767 characters");
++            Preconditions.checkArgument(property.signature() == null || property.signature().length() <= 1024, "The signature of a property is longer than 1024 characters");
++        }
++        // Paper end - Validate
+         return gameProfile;
+     }
+ 
+@@ -53,6 +63,7 @@ public final class CraftPlayerProfile implements PlayerProfile {
+ 
+     public CraftPlayerProfile(UUID uniqueId, String name) {
+         Preconditions.checkArgument((uniqueId != null) || !StringUtils.isBlank(name), "uniqueId is null or name is blank");
++        Preconditions.checkArgument(name == null || name.length() <= 16, "The name of the profile is longer than 16 characters"); // Paper - Validate
+         this.uniqueId = (uniqueId == null) ? Util.NIL_UUID : uniqueId;
+         this.name = (name == null) ? "" : name;
+     }
+@@ -89,6 +100,7 @@ public final class CraftPlayerProfile implements PlayerProfile {
+         // Assert: (property == null) || property.getName().equals(propertyName)
+         this.removeProperty(propertyName);
+         if (property != null) {
++            Preconditions.checkArgument(this.properties.size() < 16, "The profile contains more than 16 properties"); // Paper - Validate
+             this.properties.put(property.name(), property);
+         }
+     }
