@@ -111,7 +111,7 @@ tasks.generateDevelopmentBundle {
     apiCoordinates = "io.papermc.paper:paper-api"
     libraryRepositories.addAll(
         "https://repo.maven.apache.org/maven2/",
-        paperMavenPublicUrl
+        paperMavenPublicUrl,
     )
 }
 
