@@ -117,45 +117,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        return Pack.readMetaAndCreate(createBuiltInPackLocation(fileName, displayName), packFactory, PackType.SERVER_DATA, FEATURE_SELECTION_CONFIG);
 +        // Paper start - custom built-in pack
 +        final PackLocationInfo info;
++        final PackSelectionConfig packConfig;
 +        if ("paper".equals(fileName)) {
 +            info = new PackLocationInfo(fileName, displayName, PackSource.BUILT_IN, Optional.empty());
++            packConfig = new PackSelectionConfig(true, Pack.Position.TOP, true);
 +        } else {
 +            info = createBuiltInPackLocation(fileName, displayName);
++            packConfig = FEATURE_SELECTION_CONFIG;
 +        }
-+        return Pack.readMetaAndCreate(info, packFactory, PackType.SERVER_DATA, FEATURE_SELECTION_CONFIG);
++        return Pack.readMetaAndCreate(info, packFactory, PackType.SERVER_DATA, packConfig);
 +        // Paper end - custom built-in pack
      }
  
      public static PackRepository createPackRepository(Path dataPacksPath, DirectoryValidator symlinkFinder) {
-diff --git a/src/main/java/net/minecraft/world/level/DataPackConfig.java b/src/main/java/net/minecraft/world/level/DataPackConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/DataPackConfig.java
-+++ b/src/main/java/net/minecraft/world/level/DataPackConfig.java
-@@ -0,0 +0,0 @@ public class DataPackConfig {
-     public static final DataPackConfig DEFAULT = new DataPackConfig(ImmutableList.of("vanilla"), ImmutableList.of());
-     public static final Codec<DataPackConfig> CODEC = RecordCodecBuilder.create(
-         instance -> instance.group(
--                    Codec.STRING.listOf().fieldOf("Enabled").forGetter(settings -> settings.enabled),
--                    Codec.STRING.listOf().fieldOf("Disabled").forGetter(settings -> settings.disabled)
-+                    Codec.STRING.listOf().validate(DataPackConfig::ensureEnabled).fieldOf("Enabled").forGetter(settings -> settings.enabled), // Paper - ensure "paper" is always enabled
-+                    Codec.STRING.listOf().validate(DataPackConfig::ensureNotDisabled).fieldOf("Disabled").forGetter(settings -> settings.disabled) // Paper - ensure "paper" is always enabled
-                 )
-                 .apply(instance, DataPackConfig::new)
-     );
-@@ -0,0 +0,0 @@ public class DataPackConfig {
-     public List<String> getDisabled() {
-         return this.disabled;
-     }
-+    // Paper start - ensure "paper" datapack is always enabled
-+    private static com.mojang.serialization.DataResult<List<String>> ensureEnabled(final List<String> enabled) {
-+        return com.mojang.serialization.DataResult.success(enabled.contains("paper") ? enabled:  io.papermc.paper.util.MCUtil.copyListAndAdd(enabled, "paper"));
-+    }
-+
-+    private static com.mojang.serialization.DataResult<List<String>> ensureNotDisabled(final List<String> disabled) {
-+        return com.mojang.serialization.DataResult.success(io.papermc.paper.util.MCUtil.copyListAndRemoveIf(disabled, "paper"::equals));
-+    }
-+    // Paper end - ensure "paper" datapack is always enabled
- }
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
