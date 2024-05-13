@@ -1,0 +1,172 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jakub Zacek <dawon@dawon.eu>
+Date: Mon, 13 May 2024 10:51:38 +0200
+Subject: [PATCH] Allow empty ingredients for smithing recipes
+
+
+diff --git a/src/main/java/org/bukkit/inventory/SmithingRecipe.java b/src/main/java/org/bukkit/inventory/SmithingRecipe.java
+index 99e40588c10141391762f37b5a326f8df06e5276..c6ec5602853c3947b1d3c3ecd9d65b6c58051744 100644
+--- a/src/main/java/org/bukkit/inventory/SmithingRecipe.java
++++ b/src/main/java/org/bukkit/inventory/SmithingRecipe.java
+@@ -21,14 +21,14 @@ public class SmithingRecipe implements Recipe, Keyed {
+      * @param key The unique recipe key
+      * @param result The item you want the recipe to create.
+      * @param base The base ingredient
+-     * @param addition The addition ingredient
++     * @param addition The addition ingredient or null if not required
+      * @deprecated as of Minecraft 1.20, smithing recipes are now separated into two
+      * distinct recipe types, {@link SmithingTransformRecipe} and {@link SmithingTrimRecipe}.
+      * This class now acts as a base class to these two classes and will do nothing when
+      * added to the server.
+      */
+     @Deprecated
+-    public SmithingRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull RecipeChoice base, @NotNull RecipeChoice addition) {
++    public SmithingRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull RecipeChoice base, @org.jetbrains.annotations.Nullable RecipeChoice addition) { // Paper - Allow empty ingredients for smithing recipes
+         // Paper start
+         this(key, result, base, addition, true);
+     }
+@@ -38,19 +38,19 @@ public class SmithingRecipe implements Recipe, Keyed {
+      * @param key The unique recipe key
+      * @param result The item you want the recipe to create.
+      * @param base The base ingredient
+-     * @param addition The addition ingredient
++     * @param addition The addition ingredient or null if not required
+      * @param copyDataComponents whether to copy the data components from the input base item to the output
+      * @deprecated use {@link SmithingTrimRecipe} or {@link SmithingTransformRecipe}
+      */
+     @Deprecated
+-    public SmithingRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull RecipeChoice base, @NotNull RecipeChoice addition, boolean copyDataComponents) {
++    public SmithingRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull RecipeChoice base, @org.jetbrains.annotations.Nullable RecipeChoice addition, boolean copyDataComponents) { // Paper - Allow empty ingredients for smithing recipes
+         com.google.common.base.Preconditions.checkArgument(!result.isEmpty(), "Recipe cannot have an empty result."); // Paper
+         this.copyDataComponents = copyDataComponents;
+         // Paper end
+         this.key = key;
+         this.result = result;
+         this.base = base.validate().clone(); // Paper
+-        this.addition = addition.validate().clone(); // Paper
++        this.addition = addition != null ? addition.clone() : null; // Paper - Allow empty ingredients for smithing recipes
+     }
+ 
+     /**
+@@ -66,11 +66,11 @@ public class SmithingRecipe implements Recipe, Keyed {
+     /**
+      * Get the addition recipe item.
+      *
+-     * @return addition choice
++     * @return addition choice or null if not required
+      */
+-    @NotNull
++    @org.jetbrains.annotations.Nullable // Paper - Allow empty ingredients for smithing recipes
+     public RecipeChoice getAddition() {
+-        return addition.clone();
++        return addition != null ? addition.clone() : null; // Paper - Allow empty ingredients for smithing recipes
+     }
+ 
+     @NotNull
+diff --git a/src/main/java/org/bukkit/inventory/SmithingTransformRecipe.java b/src/main/java/org/bukkit/inventory/SmithingTransformRecipe.java
+index d3a7070a51d15531fb6f917ca87196dfa08f83aa..9287ec810a4f8e0eeebd58981158f3f913a22afc 100644
+--- a/src/main/java/org/bukkit/inventory/SmithingTransformRecipe.java
++++ b/src/main/java/org/bukkit/inventory/SmithingTransformRecipe.java
+@@ -15,13 +15,13 @@ public class SmithingTransformRecipe extends SmithingRecipe {
+      *
+      * @param key The unique recipe key
+      * @param result The item you want the recipe to create.
+-     * @param template The template item.
++     * @param template The template item or null if not required.
+      * @param base The base ingredient
+-     * @param addition The addition ingredient
++     * @param addition The addition ingredient or null if not required.
+      */
+-    public SmithingTransformRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull RecipeChoice template, @NotNull RecipeChoice base, @NotNull RecipeChoice addition) {
++    public SmithingTransformRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @org.jetbrains.annotations.Nullable RecipeChoice template, @NotNull RecipeChoice base, @org.jetbrains.annotations.Nullable RecipeChoice addition) { // Paper - Allow empty ingredients for smithing recipes
+         super(key, result, base, addition);
+-        this.template = template.validate().clone(); // Paper
++        this.template = template != null ? template.clone() : null; // Paper - Allow empty ingredients for smithing recipes
+     }
+     // Paper start
+     /**
+@@ -29,24 +29,24 @@ public class SmithingTransformRecipe extends SmithingRecipe {
+      *
+      * @param key The unique recipe key
+      * @param result The item you want the recipe to create.
+-     * @param template The template item.
++     * @param template The template item or null if not required.
+      * @param base The base ingredient
+-     * @param addition The addition ingredient
++     * @param addition The addition ingredient or null if not required.
+      * @param copyDataComponents whether to copy the data components from the input base item to the output
+      */
+-    public SmithingTransformRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull RecipeChoice template, @NotNull RecipeChoice base, @NotNull RecipeChoice addition, boolean copyDataComponents) {
++    public SmithingTransformRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @org.jetbrains.annotations.Nullable RecipeChoice template, @NotNull RecipeChoice base, @org.jetbrains.annotations.Nullable RecipeChoice addition, boolean copyDataComponents) { // Paper - Allow empty ingredients for smithing recipes
+         super(key, result, base, addition, copyDataComponents);
+-        this.template = template;
++        this.template = template != null ? template.clone() : null; // Paper - Allow empty ingredients for smithing recipes
+     }
+     // Paper end
+ 
+     /**
+      * Get the template recipe item.
+      *
+-     * @return template choice
++     * @return template choice or null if not required
+      */
+-    @NotNull
++    @org.jetbrains.annotations.Nullable // Paper - Allow empty ingredients for smithing recipes
+     public RecipeChoice getTemplate() {
+-        return template.clone();
++        return template != null ? template.clone() : null; // Paper - Allow empty ingredients for smithing recipes
+     }
+ }
+diff --git a/src/main/java/org/bukkit/inventory/SmithingTrimRecipe.java b/src/main/java/org/bukkit/inventory/SmithingTrimRecipe.java
+index 6316112074a0708734106ca9de5ef968df52ce0e..420abcce6d440f8e302cae2e3191df2c857488c7 100644
+--- a/src/main/java/org/bukkit/inventory/SmithingTrimRecipe.java
++++ b/src/main/java/org/bukkit/inventory/SmithingTrimRecipe.java
+@@ -15,37 +15,37 @@ public class SmithingTrimRecipe extends SmithingRecipe implements ComplexRecipe
+      * Create a smithing recipe to produce the specified result ItemStack.
+      *
+      * @param key The unique recipe key
+-     * @param template The template item.
++     * @param template The template item or null if not required.
+      * @param base The base ingredient
+-     * @param addition The addition ingredient
++     * @param addition The addition ingredient or null if not required.
+      */
+-    public SmithingTrimRecipe(@NotNull NamespacedKey key, @NotNull RecipeChoice template, @NotNull RecipeChoice base, @NotNull RecipeChoice addition) {
++    public SmithingTrimRecipe(@NotNull NamespacedKey key, @org.jetbrains.annotations.Nullable RecipeChoice template, @NotNull RecipeChoice base, @org.jetbrains.annotations.Nullable RecipeChoice addition) { // Paper - Allow empty ingredients for smithing recipes
+         super(key, new ItemStack(Material.AIR), base, addition);
+-        this.template = template.validate().clone(); // Paper
++        this.template = template != null ? template.clone() : null; // Paper - Allow empty ingredients for smithing recipes
+     }
+     // Paper start
+     /**
+      * Create a smithing recipe to produce the specified result ItemStack.
+      *
+      * @param key The unique recipe key
+-     * @param template The template item.
++     * @param template The template item or null if not required.
+      * @param base The base ingredient
+-     * @param addition The addition ingredient
++     * @param addition The addition ingredient or null if not required.
+      * @param copyDataComponents whether to copy the data components from the input base item to the output
+      */
+-    public SmithingTrimRecipe(@NotNull NamespacedKey key, @NotNull RecipeChoice template, @NotNull RecipeChoice base, @NotNull RecipeChoice addition, boolean copyDataComponents) {
++    public SmithingTrimRecipe(@NotNull NamespacedKey key, @org.jetbrains.annotations.Nullable RecipeChoice template, @NotNull RecipeChoice base, @org.jetbrains.annotations.Nullable RecipeChoice addition, boolean copyDataComponents) { // Paper - Allow empty ingredients for smithing recipes
+         super(key, new ItemStack(Material.AIR), base, addition, copyDataComponents);
+-        this.template = template.validate().clone(); // Paper
++        this.template = template != null ? template.clone() : null; // Paper - Allow empty ingredients for smithing recipes
+     }
+     // Paper end
+ 
+     /**
+      * Get the template recipe item.
+      *
+-     * @return template choice
++     * @return template choice or null if not required
+      */
+-    @NotNull
++    @org.jetbrains.annotations.Nullable // Paper - Allow empty ingredients for smithing recipes
+     public RecipeChoice getTemplate() {
+-        return template.clone();
++        return template != null ? template.clone() : null; // Paper - Allow empty ingredients for smithing recipes
+     }
+ }
