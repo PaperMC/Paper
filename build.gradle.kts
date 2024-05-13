@@ -112,7 +112,6 @@ tasks.generateDevelopmentBundle {
     libraryRepositories.addAll(
         "https://repo.maven.apache.org/maven2/",
         paperMavenPublicUrl,
-        "https://s01.oss.sonatype.org/content/repositories/snapshots/", // TODO - Adventure snapshot
     )
 }
 
