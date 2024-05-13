@@ -111,8 +111,7 @@ tasks.generateDevelopmentBundle {
     apiCoordinates = "io.papermc.paper:paper-api"
     libraryRepositories.addAll(
         "https://repo.maven.apache.org/maven2/",
-        paperMavenPublicUrl,
-        "https://s01.oss.sonatype.org/content/repositories/snapshots/", // TODO - Adventure snapshot
+        paperMavenPublicUrl
     )
 }
 
