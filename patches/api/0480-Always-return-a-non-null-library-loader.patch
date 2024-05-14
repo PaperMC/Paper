@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: fren_gor <goro@frengor.com>
+Date: Tue, 14 May 2024 17:57:54 +0200
+Subject: [PATCH] Always return a non-null library loader
+
+Always returning a non-null class loader makes it possible to use the library loader (via reflection) even when there are no libraries declared in the plugin.yml of a plugin.
+
+diff --git a/src/main/java/org/bukkit/plugin/java/LibraryLoader.java b/src/main/java/org/bukkit/plugin/java/LibraryLoader.java
+index 8e1b6be2462aaa692efa1f72986921a6dc357196..b026d66102c58a0a7d497f28f69dea13fe1b1ed0 100644
+--- a/src/main/java/org/bukkit/plugin/java/LibraryLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/LibraryLoader.java
+@@ -81,12 +81,20 @@ public class LibraryLoader
+         this.repositories = repository.newResolutionRepositories( session, Arrays.asList( new RemoteRepository.Builder( "central", "default", "https://repo.maven.apache.org/maven2" ).build() ) );
+     }
+ 
+-    @Nullable
++    @NotNull // Paper - always return a non-null library loader
+     public ClassLoader createLoader(@NotNull PluginDescriptionFile desc)
+     {
+         if ( desc.getLibraries().isEmpty() )
+         {
+-            return null;
++            // Paper start - always return a non-null library loader
++            URLClassLoader loader;
++            if (LIBRARY_LOADER_FACTORY == null) {
++                loader = new URLClassLoader( new URL[ 0 ], getClass().getClassLoader() );
++            } else {
++                loader = LIBRARY_LOADER_FACTORY.apply( new URL[ 0 ], getClass().getClassLoader() );
++            }
++            return loader;
++            // Paper end - always return a non-null library loader
+         }
+         logger.log( Level.INFO, "[{0}] Loading {1} libraries... please wait", new Object[]
+         {
