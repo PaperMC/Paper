@@ -1,0 +1,260 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: masmc05 <masmc05@gmail.com>
+Date: Tue, 14 May 2024 21:38:49 -0700
+Subject: [PATCH] Expose server build information
+
+Co-authored-by: Riley Park <rileysebastianpark@gmail.com>
+
+diff --git a/src/main/java/io/papermc/paper/ServerBuildInfo.java b/src/main/java/io/papermc/paper/ServerBuildInfo.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b15127bcda6e7ea892c9f07a9820b294e851a953
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/ServerBuildInfo.java
+@@ -0,0 +1,121 @@
++package io.papermc.paper;
++
++import java.time.Instant;
++import java.util.Optional;
++import java.util.OptionalInt;
++import net.kyori.adventure.key.Key;
++import net.kyori.adventure.util.Services;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Information about the current server build.
++ */
++@ApiStatus.NonExtendable
++public interface ServerBuildInfo {
++    /**
++     * The brand id for Paper.
++     */
++    Key BRAND_PAPER_ID = Key.key("papermc", "paper");
++
++    /**
++     * Gets the {@code ServerBuildInfo}.
++     *
++     * @return the {@code ServerBuildInfo}
++     */
++    static @NotNull ServerBuildInfo buildInfo() {
++        //<editor-fold defaultstate="collapsed" desc="Holder">
++        final class Holder {
++            static final Optional<ServerBuildInfo> INSTANCE = Services.service(ServerBuildInfo.class);
++        }
++        //</editor-fold>
++        return Holder.INSTANCE.orElseThrow();
++    }
++
++    /**
++     * Gets the brand id of the server.
++     *
++     * @return the brand id of the server (e.g. "papermc:paper")
++     */
++    @NotNull Key brandId();
++
++    /**
++     * Checks if the current server supports the specified brand.
++     *
++     * @param brandId the brand to check (e.g. "papermc:folia")
++     * @return {@code true} if the server supports the specified brand
++     */
++    @ApiStatus.Experimental
++    boolean isBrandCompatible(final @NotNull Key brandId);
++
++    /**
++     * Gets the brand name of the server.
++     *
++     * @return the brand name of the server (e.g. "Paper")
++     */
++    @NotNull String brandName();
++
++    /**
++     * Gets the Minecraft version id.
++     *
++     * @return the Minecraft version id (e.g. "1.20.4", "1.20.2-pre2", "23w31a")
++     */
++    @NotNull String minecraftVersionId();
++
++    /**
++     * Gets the Minecraft version name.
++     *
++     * @return the Minecraft version name (e.g. "1.20.4", "1.20.2 Pre-release 2", "23w31a")
++     */
++    @NotNull String minecraftVersionName();
++
++    /**
++     * Gets the build number.
++     *
++     * @return the build number
++     */
++    @NotNull OptionalInt buildNumber();
++
++    /**
++     * Gets the build time.
++     *
++     * @return the build time
++     */
++    @NotNull Instant buildTime();
++
++    /**
++     * Gets the git commit branch.
++     *
++     * @return the git commit branch
++     */
++    @NotNull Optional<String> gitBranch();
++
++    /**
++     * Gets the git commit hash.
++     *
++     * @return the git commit hash
++     */
++    @NotNull Optional<String> gitCommit();
++
++    /**
++     * Creates a string representation of the server build information.
++     *
++     * @param representation the type of representation
++     * @return a string
++     */
++    @NotNull String asString(final @NotNull StringRepresentation representation);
++
++    /**
++     * String representation types.
++     */
++    enum StringRepresentation {
++        /**
++         * A simple version string, in format {@code <minecraftVersionId>-<buildNumber>-<gitCommit>}.
++         */
++        VERSION_SIMPLE,
++        /**
++         * A simple version string, in format {@code <minecraftVersionId>-<buildNumber>-<gitBranch>@<gitCommit> (<buildTime>}.
++         */
++        VERSION_FULL,
++    }
++}
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 5d1b55fdbcbe63f6b42b694d05211a3cc691a09d..71f1c361ebccbe83193c37ec3a90faa4085001c3 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -60,7 +60,6 @@ import org.bukkit.util.CachedServerIcon;
+ import org.jetbrains.annotations.Contract;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+-import io.papermc.paper.util.JarManifests; // Paper
+ 
+ /**
+  * Represents the Bukkit core, for version and Server singleton handling
+@@ -120,14 +119,8 @@ public final class Bukkit {
+       */
+     @NotNull
+     public static String getVersionMessage() {
+-        final var manifest = JarManifests.manifest(Bukkit.getServer().getClass());
+-        final String gitBranch = manifest == null ? null : manifest.getMainAttributes().getValue("Git-Branch");
+-        final String gitCommit = manifest == null ? null : manifest.getMainAttributes().getValue("Git-Commit");
+-        String branchMsg = " on " + gitBranch;
+-        if ("master".equals(gitBranch) || "main".equals(gitBranch)) {
+-            branchMsg = "";  // Don't show branch on main/master
+-        }
+-        return "This server is running " + getName() + " version " + getVersion() + " (Implementing API version " + getBukkitVersion() + ") (Git: " + gitCommit + branchMsg + ")";
++        final io.papermc.paper.ServerBuildInfo version = io.papermc.paper.ServerBuildInfo.buildInfo();
++        return "This server is running " + getName() + " version " + version.asString(io.papermc.paper.ServerBuildInfo.StringRepresentation.VERSION_FULL) + " (Implementing API version " + getBukkitVersion() + ")";
+         // Paper end
+     }
+ 
+@@ -135,6 +128,7 @@ public final class Bukkit {
+      * Gets the name of this server implementation.
+      *
+      * @return name of this server implementation
++     * @see io.papermc.paper.ServerBuildInfo#brandName()
+      */
+     @NotNull
+     public static String getName() {
+@@ -145,6 +139,7 @@ public final class Bukkit {
+      * Gets the version string of this server implementation.
+      *
+      * @return version of this server implementation
++     * @see io.papermc.paper.ServerBuildInfo
+      */
+     @NotNull
+     public static String getVersion() {
+@@ -166,6 +161,8 @@ public final class Bukkit {
+      * Gets the version of game this server implements
+      *
+      * @return version of game
++     * @see io.papermc.paper.ServerBuildInfo#minecraftVersionId()
++     * @see io.papermc.paper.ServerBuildInfo#minecraftVersionName()
+      */
+     @NotNull
+     public static String getMinecraftVersion() {
+diff --git a/src/test/java/io/papermc/paper/TestServerBuildInfo.java b/src/test/java/io/papermc/paper/TestServerBuildInfo.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..17be27a869c1047a7a9440fb8f3717260d4abbd0
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/TestServerBuildInfo.java
+@@ -0,0 +1,59 @@
++package io.papermc.paper;
++
++import java.time.Instant;
++import java.util.Optional;
++import java.util.OptionalInt;
++import net.kyori.adventure.key.Key;
++import org.jetbrains.annotations.NotNull;
++
++public class TestServerBuildInfo implements ServerBuildInfo {
++    @Override
++    public @NotNull Key brandId() {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public boolean isBrandCompatible(final @NotNull Key brandId) {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public @NotNull String brandName() {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public @NotNull String minecraftVersionId() {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public @NotNull String minecraftVersionName() {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public @NotNull OptionalInt buildNumber() {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public @NotNull Instant buildTime() {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public @NotNull Optional<String> gitBranch() {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public @NotNull Optional<String> gitCommit() {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public @NotNull String asString(final @NotNull StringRepresentation representation) {
++        return "";
++    }
++}
+diff --git a/src/test/resources/META-INF/services/io.papermc.paper.ServerBuildInfo b/src/test/resources/META-INF/services/io.papermc.paper.ServerBuildInfo
+new file mode 100644
+index 0000000000000000000000000000000000000000..64e2f8559b9c5a52e0a3229d3d12f65e9af145b3
+--- /dev/null
++++ b/src/test/resources/META-INF/services/io.papermc.paper.ServerBuildInfo
+@@ -0,0 +1 @@
++io.papermc.paper.TestServerBuildInfo
