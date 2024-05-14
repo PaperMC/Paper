@@ -1,10 +1,13 @@
+import io.papermc.bibliothek.api.v2.model.Build
 import io.papermc.paperweight.PaperweightException
 import io.papermc.paperweight.tasks.BaseTask
 import io.papermc.paperweight.util.*
+import io.papermc.paperweight.util.data.MinecraftManifest
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import java.io.ByteArrayOutputStream
 import java.nio.file.Path
+import java.time.Instant
 import java.util.regex.Pattern
 import kotlin.io.path.*
 
@@ -12,6 +15,7 @@ plugins {
     java
     `maven-publish`
     id("io.papermc.paperweight.core") version "1.7.1"
+    id("io.papermc.bibliothek-gradle") version "1.0.0-SNAPSHOT" // TODO: change once bibliothek-gradle is published
 }
 
 allprojects {
@@ -104,6 +108,43 @@ paperweight {
             "org.bukkit.craftbukkit",
             "org.spigotmc",
         )
+    }
+}
+
+bibliothek {
+    val familyProvider = paperweight.minecraftVersion
+        .map { it.split(".", "-") }
+        .map { it -> it.takeWhile { it.toIntOrNull() != null } }
+        .map { it.take(2) }
+        .map { it.joinToString(".") }
+    val manifest = tasks.downloadMcManifest
+        .flatMap { it.outputFile }
+        .map { gson.fromJson<MinecraftManifest>(it) }
+    val familyTimeProvider = manifest
+        .map { it.versions.firstOrNull { v -> v.id == familyProvider.get() } ?: error("Couldn't find family version") }
+        .map { it.releaseTime }
+        .map { Instant.parse(it) }
+    val versionProvider = paperweight.minecraftVersion
+    val versionTimeProvider = manifest
+        .map { it.versions.firstOrNull { v -> v.id == versionProvider.get() } ?: error("Couldn't find version") }
+        .map { it.releaseTime }
+        .map { Instant.parse(it) }
+
+    apiUrl.set(providers.environmentVariable("BIBLIOTHEK_API_URL"))
+    apiToken.set(providers.environmentVariable("BIBLIOTHEK_API_TOKEN"))
+    project.set("paper")
+    family.set(familyProvider)
+    familyTime.set(familyTimeProvider)
+    version.set(versionProvider)
+    versionTime.set(versionTimeProvider)
+    build.set(providers.environmentVariable("BUILD_NUMBER"))
+    channel.set(Build.Channel.EXPERIMENTAL)
+
+    downloads {
+        register("application") {
+            file.set(tasks.createMojmapPaperclipJar.flatMap { it.outputZip })
+            nameResolver.set { project, _, version, build -> "$project-$version-$build.jar" }
+        }
     }
 }
 

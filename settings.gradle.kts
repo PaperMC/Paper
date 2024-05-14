@@ -4,6 +4,7 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
         maven("https://repo.papermc.io/repository/maven-public/")
+        mavenLocal() // TODO: remove once bibliothek-gradle is published
     }
 }
 
