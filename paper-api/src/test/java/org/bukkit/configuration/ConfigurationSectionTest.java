@@ -547,6 +547,7 @@ public abstract class ConfigurationSectionTest {
     }
 
     @Test
+    @org.junit.jupiter.api.Disabled("ItemStack can't exist without the Server, test moved to server")
     public void testGetItemStack_String() {
         ConfigurationSection section = getConfigurationSection();
         String key = "exists";
@@ -559,6 +560,7 @@ public abstract class ConfigurationSectionTest {
     }
 
     @Test
+    @org.junit.jupiter.api.Disabled("ItemStack can't exist without the Server, test moved to server")
     public void testGetItemStack_String_ItemStack() {
         ConfigurationSection section = getConfigurationSection();
         String key = "exists";
@@ -572,6 +574,7 @@ public abstract class ConfigurationSectionTest {
     }
 
     @Test
+    @org.junit.jupiter.api.Disabled("ItemStack can't exist without the Server, test moved to server")
     public void testIsItemStack() {
         ConfigurationSection section = getConfigurationSection();
         String key = "exists";
