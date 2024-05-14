@@ -1,0 +1,137 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dueris <122416109+Dueris@users.noreply.github.com>
+Date: Tue, 14 May 2024 17:33:19 +0000
+Subject: [PATCH] InteractionResult API
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index b9b3277c8ed94e0cd30b20b9c00a33eaad48e5ac..3556f28657bf498347489a16a28f02d45c5d7e68 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1989,9 +1989,15 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+             HitResult movingobjectposition = this.player.level().clip(new ClipContext(vec3d, vec3d1, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, this.player));
+ 
+             boolean cancelled;
++            InteractionResult result = null; // Paper - InteractionResult API
+             if (movingobjectposition == null || movingobjectposition.getType() != HitResult.Type.BLOCK) {
+                 org.bukkit.event.player.PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.RIGHT_CLICK_AIR, itemstack, enumhand);
+                 cancelled = event.useItemInHand() == Event.Result.DENY;
++                // Paper start - InteractionResult API
++                if (event.getInteractionResult() != null) {
++                    result = InteractionResult.toNMS(event.getInteractionResult());
++                }
++                // Paper end
+             } else {
+                 BlockHitResult movingobjectpositionblock = (BlockHitResult) movingobjectposition;
+                 if (this.player.gameMode.firedInteract && this.player.gameMode.interactPosition.equals(movingobjectpositionblock.getBlockPos()) && this.player.gameMode.interactHand == enumhand && ItemStack.isSameItemSameComponents(this.player.gameMode.interactItemStack, itemstack)) {
+@@ -1999,6 +2005,11 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                 } else {
+                     org.bukkit.event.player.PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.RIGHT_CLICK_BLOCK, movingobjectpositionblock.getBlockPos(), movingobjectpositionblock.getDirection(), itemstack, true, enumhand, movingobjectpositionblock.getLocation());
+                     cancelled = event.useItemInHand() == Event.Result.DENY;
++                    // Paper start - InteractionResult API
++                    if (event.getInteractionResult() != null) {
++                        result = InteractionResult.toNMS(event.getInteractionResult());
++                    }
++                    // Paper end
+                 }
+                 this.player.gameMode.firedInteract = false;
+             }
+@@ -2013,7 +2024,10 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                 return;
+             }
+             // CraftBukkit end
+-            InteractionResult enuminteractionresult = this.player.gameMode.useItem(this.player, worldserver, itemstack, enumhand);
++            // Paper start - InteractionResult API
++            InteractionResult originalResult = this.player.gameMode.useItem(this.player, worldserver, itemstack, enumhand);
++            InteractionResult enuminteractionresult = result == null ? originalResult : result;
++            // Paper end
+ 
+             if (enuminteractionresult.shouldSwing()) {
+                 this.player.swing(enumhand, true);
+@@ -2792,13 +2806,22 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                                     ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote();
+                                 }
+                             }
++                            // Paper start - InteractionResult API
++                            InteractionResult interactionResult = null;
++                            if (event.getInteractionResult() != null) {
++                                interactionResult = InteractionResult.toNMS(event.getInteractionResult());
++                            }
++                            // Paper end
+ 
+                             if (event.isCancelled()) {
+                                 ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote(); // Paper - Refresh player inventory
+                                 return;
+                             }
+                             // CraftBukkit end
+-                            InteractionResult enuminteractionresult = playerconnection_a.run(ServerGamePacketListenerImpl.this.player, entity, enumhand);
++                            // Paper start - InteractionResult API
++                            InteractionResult originalResult = playerconnection_a.run(ServerGamePacketListenerImpl.this.player, entity, enumhand);
++                            InteractionResult enuminteractionresult = interactionResult == null ? originalResult : interactionResult;
++                            // Paper end
+ 
+                             // CraftBukkit start
+                             if (!itemInHand.isEmpty() && itemInHand.getCount() <= -1) {
+diff --git a/src/main/java/net/minecraft/world/InteractionResult.java b/src/main/java/net/minecraft/world/InteractionResult.java
+index 8dba37369054ff725623146d12cd1b681f6cc3b5..1ed51a35b6a5b89962318578cab45e9dcbdb4e38 100644
+--- a/src/main/java/net/minecraft/world/InteractionResult.java
++++ b/src/main/java/net/minecraft/world/InteractionResult.java
+@@ -23,4 +23,14 @@ public enum InteractionResult {
+     public static InteractionResult sidedSuccess(boolean swingHand) {
+         return swingHand ? SUCCESS : CONSUME;
+     }
++    // Paper start - InteractionResult API
++
++    public static InteractionResult toNMS(io.papermc.paper.world.interaction.InteractionResult result) {
++        return InteractionResult.valueOf(result.toString());
++    }
++
++    public static io.papermc.paper.world.interaction.InteractionResult toPaper(InteractionResult result) {
++        return io.papermc.paper.world.interaction.InteractionResult.valueOf(result.toString());
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index e89f9c3e887601d8461eb967ae0bf582b672f631..3dba5fa67631f861034e7169c4db5572754a8522 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -1461,7 +1461,13 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Targeti
+             // CraftBukkit end
+             this.dropLeash(true, event.isDropLeash()); // Paper - Expand EntityUnleashEvent
+             this.gameEvent(GameEvent.ENTITY_INTERACT, player);
+-            return InteractionResult.sidedSuccess(this.level().isClientSide);
++            // Paper start - InteractionResult API
++            InteractionResult interactionResult = null;
++            if (event.getInteractionResult() != null) {
++                interactionResult = InteractionResult.toNMS(event.getInteractionResult());
++            }
++            // Paper end
++            return interactionResult == null ? InteractionResult.sidedSuccess(this.level().isClientSide) : interactionResult; // Paper - InteractionResult API
+         } else {
+             InteractionResult enuminteractionresult = this.checkAndHandleImportantInteractions(player, hand);
+ 
+@@ -1485,7 +1491,8 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Targeti
+ 
+         if (itemstack.is(Items.LEAD) && this.canBeLeashed(player)) {
+             // CraftBukkit start - fire PlayerLeashEntityEvent
+-            if (CraftEventFactory.callPlayerLeashEntityEvent(this, player, player, hand).isCancelled()) {
++            org.bukkit.event.entity.PlayerLeashEntityEvent event = CraftEventFactory.callPlayerLeashEntityEvent(this, player, player, hand);// Paper - InteractionResult API
++            if (event.isCancelled()) { // Paper
+                 ((ServerPlayer) player).resendItemInHands(); // SPIGOT-7615: Resend to fix client desync with used item
+                 ((ServerPlayer) player).connection.send(new ClientboundSetEntityLinkPacket(this, this.getLeashHolder()));
+                 player.containerMenu.sendAllDataToRemote(); // Paper - Fix inventory desync
+@@ -1494,7 +1501,13 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Targeti
+             // CraftBukkit end
+             this.setLeashedTo(player, true);
+             itemstack.shrink(1);
+-            return InteractionResult.sidedSuccess(this.level().isClientSide);
++            // Paper start - InteractionResult API
++            InteractionResult interactionResult = null;
++            if (event.getInteractionResult() != null) {
++                interactionResult = InteractionResult.toNMS(event.getInteractionResult());
++            }
++            // Paper end
++            return interactionResult == null ? InteractionResult.sidedSuccess(this.level().isClientSide) : interactionResult;
+         } else {
+             if (itemstack.is(Items.NAME_TAG)) {
+                 InteractionResult enuminteractionresult = itemstack.interactLivingEntity(player, this, hand);

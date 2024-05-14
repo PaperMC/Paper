@@ -1,0 +1,249 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Dueris <122416109+Dueris@users.noreply.github.com>
+Date: Tue, 14 May 2024 17:33:35 +0000
+Subject: [PATCH] InteractionResult API
+
+
+diff --git a/src/main/java/io/papermc/paper/world/interaction/InteractionResult.java b/src/main/java/io/papermc/paper/world/interaction/InteractionResult.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..12a52b83753395ca7f6496e32ca5cd8a5d464ca1
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/interaction/InteractionResult.java
+@@ -0,0 +1,26 @@
++package io.papermc.paper.world.interaction;
++
++public enum InteractionResult {
++    SUCCESS,
++    SUCCESS_NO_ITEM_USED,
++    CONSUME,
++    CONSUME_PARTIAL,
++    PASS,
++    FAIL;
++
++    public boolean consumesAction() {
++        return this == SUCCESS || this == CONSUME || this == CONSUME_PARTIAL || this == SUCCESS_NO_ITEM_USED;
++    }
++
++    public boolean shouldSwing() {
++        return this == SUCCESS || this == SUCCESS_NO_ITEM_USED;
++    }
++
++    public boolean indicateItemUse() {
++        return this == SUCCESS || this == CONSUME;
++    }
++
++    public static InteractionResult sidedSuccess(boolean swingHand) {
++        return swingHand ? SUCCESS : CONSUME;
++    }
++}
+diff --git a/src/main/java/org/bukkit/event/entity/PlayerLeashEntityEvent.java b/src/main/java/org/bukkit/event/entity/PlayerLeashEntityEvent.java
+index 883d54dc0cc32973df5d66f2991d1af8150add43..a0d23333e07e07b95e909b4d5453b69a00741cc4 100644
+--- a/src/main/java/org/bukkit/event/entity/PlayerLeashEntityEvent.java
++++ b/src/main/java/org/bukkit/event/entity/PlayerLeashEntityEvent.java
+@@ -18,13 +18,43 @@ public class PlayerLeashEntityEvent extends Event implements Cancellable {
+     private boolean cancelled = false;
+     private final Player player;
+     private final EquipmentSlot hand;
++    private io.papermc.paper.world.interaction.InteractionResult interactionResult;
+ 
+     public PlayerLeashEntityEvent(@NotNull Entity what, @NotNull Entity leashHolder, @NotNull Player leasher, @NotNull EquipmentSlot hand) {
+         this.leashHolder = leashHolder;
+         this.entity = what;
+         this.player = leasher;
+         this.hand = hand;
++        this.interactionResult = null; // Paper - InteractionResult API
+     }
++    // Paper start - InteractionResult API
++
++    public PlayerLeashEntityEvent(@NotNull Entity what, @NotNull Entity leashHolder, @NotNull Player leasher, @NotNull EquipmentSlot hand, io.papermc.paper.world.interaction.InteractionResult interactionResult) {
++        this(what, leashHolder, leasher, hand);
++        this.interactionResult = interactionResult;
++    }
++
++    /**
++     * Returns the InteractionResult.
++     * If returned NULL, there is no override for the InteractionResult
++     * 
++     * @return InteractionResult override for the event.
++     */
++    @org.jetbrains.annotations.Nullable
++    public io.papermc.paper.world.interaction.InteractionResult getInteractionResult() {
++        return this.interactionResult;
++    }
++
++    /**
++     * Sets the InteractionResult of the event. Can be null.
++     * If null, the event will use the original interaction result and remove any
++     * overrides for the result.
++     * @param interactionResult The result to be set
++     */
++    public void setInteractionResult(@org.jetbrains.annotations.Nullable io.papermc.paper.world.interaction.InteractionResult interactionResult) {
++        this.interactionResult = interactionResult;
++    }
++    // Paper end
+ 
+     @Deprecated
+     public PlayerLeashEntityEvent(@NotNull Entity what, @NotNull Entity leashHolder, @NotNull Player leasher) {
+diff --git a/src/main/java/org/bukkit/event/player/PlayerInteractEntityEvent.java b/src/main/java/org/bukkit/event/player/PlayerInteractEntityEvent.java
+index 1d3d62969c3b1a833b156c972586ac412589b4d4..fb01f3ac0926961f6a52ceeebe80d343083f5c0c 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerInteractEntityEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerInteractEntityEvent.java
+@@ -6,6 +6,7 @@ import org.bukkit.event.Cancellable;
+ import org.bukkit.event.HandlerList;
+ import org.bukkit.inventory.EquipmentSlot;
+ import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
+ 
+ /**
+  * Represents an event that is called when a player right clicks an entity.
+@@ -15,6 +16,7 @@ public class PlayerInteractEntityEvent extends PlayerEvent implements Cancellabl
+     protected Entity clickedEntity;
+     boolean cancelled = false;
+     private EquipmentSlot hand;
++    private io.papermc.paper.world.interaction.InteractionResult interactionResult;
+ 
+     public PlayerInteractEntityEvent(@NotNull final Player who, @NotNull final Entity clickedEntity) {
+         this(who, clickedEntity, EquipmentSlot.HAND);
+@@ -24,7 +26,36 @@ public class PlayerInteractEntityEvent extends PlayerEvent implements Cancellabl
+         super(who);
+         this.clickedEntity = clickedEntity;
+         this.hand = hand;
++        this.interactionResult = null; // Paper
+     }
++    // Paper start - InteractionResult API
++
++    public PlayerInteractEntityEvent(@NotNull final Player who, @NotNull final Entity clickedEntity, @NotNull final EquipmentSlot hand, io.papermc.paper.world.interaction.InteractionResult interactionResult) {
++        this(who, clickedEntity, hand);
++        this.interactionResult = interactionResult;
++    }
++
++    /**
++     * Returns the InteractionResult.
++     * If returned NULL, there is no override for the InteractionResult
++     * 
++     * @return InteractionResult override for the event.
++     */
++    @Nullable
++    public io.papermc.paper.world.interaction.InteractionResult getInteractionResult() {
++        return this.interactionResult;
++    }
++
++    /**
++     * Sets the InteractionResult of the event. Can be null.
++     * If null, the event will use the original interaction result and remove any
++     * overrides for the result.
++     * @param interactionResult The result to be set
++     */
++    public void setInteractionResult(@Nullable io.papermc.paper.world.interaction.InteractionResult interactionResult) {
++        this.interactionResult = interactionResult;
++    }
++    // Paper end
+ 
+     @Override
+     public boolean isCancelled() {
+diff --git a/src/main/java/org/bukkit/event/player/PlayerInteractEvent.java b/src/main/java/org/bukkit/event/player/PlayerInteractEvent.java
+index ddea08e4de2198a0a7565e2fd7a05571ed48f27b..c879a15b186f12c0c9cb2840860310872451111f 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerInteractEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerInteractEvent.java
+@@ -37,6 +37,7 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
+     private Result useItemInHand;
+     private EquipmentSlot hand;
+     private Vector clickedPosistion;
++    private io.papermc.paper.world.interaction.InteractionResult interactionResult; // Paper - InteractionResult API
+ 
+     public PlayerInteractEvent(@NotNull final Player who, @NotNull final Action action, @Nullable final ItemStack item, @Nullable final Block clickedBlock, @NotNull final BlockFace clickedFace) {
+         this(who, action, item, clickedBlock, clickedFace, EquipmentSlot.HAND);
+@@ -57,7 +58,36 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
+ 
+         useItemInHand = Result.DEFAULT;
+         useClickedBlock = clickedBlock == null ? Result.DENY : Result.ALLOW;
++        this.interactionResult = null; // Paper - InteractionResult API
+     }
++    // Paper start - InteractionResult API
++
++    public PlayerInteractEvent(@NotNull final Player who, @NotNull final Action action, @Nullable final ItemStack item, @Nullable final Block clickedBlock, @NotNull final BlockFace clickedFace, @Nullable final EquipmentSlot hand, @Nullable final Vector clickedPosition, io.papermc.paper.world.interaction.InteractionResult interactionResult) {
++        this(who, action, item, clickedBlock, clickedFace, hand, clickedPosition);
++        this.interactionResult = interactionResult;
++    }
++
++    /**
++     * Returns the InteractionResult.
++     * If returned NULL, there is no override for the InteractionResult
++     * 
++     * @return InteractionResult override for the event.
++     */
++    @Nullable
++    public io.papermc.paper.world.interaction.InteractionResult getInteractionResult() {
++        return this.interactionResult;
++    }
++
++    /**
++     * Sets the InteractionResult of the event. Can be null.
++     * If null, the event will use the original interaction result and remove any
++     * overrides for the result.
++     * @param interactionResult The result to be set
++     */
++    public void setInteractionResult(@Nullable io.papermc.paper.world.interaction.InteractionResult interactionResult) {
++        this.interactionResult = interactionResult;
++    }
++    // Paper end
+ 
+     /**
+      * Returns the action type
+diff --git a/src/main/java/org/bukkit/event/player/PlayerUnleashEntityEvent.java b/src/main/java/org/bukkit/event/player/PlayerUnleashEntityEvent.java
+index d63bd62606763d0902ea800f0c35a1cfd07fc8ec..0dd76bc6d4136b8dade238f26e3b7c17472099d0 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerUnleashEntityEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerUnleashEntityEvent.java
+@@ -6,6 +6,7 @@ import org.bukkit.event.Cancellable;
+ import org.bukkit.event.entity.EntityUnleashEvent;
+ import org.bukkit.inventory.EquipmentSlot;
+ import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
+ 
+ /**
+  * Called prior to an entity being unleashed due to a player's action.
+@@ -16,6 +17,7 @@ public class PlayerUnleashEntityEvent extends EntityUnleashEvent implements Canc
+ 
+     private final Player player;
+     private final EquipmentSlot hand;
++    private io.papermc.paper.world.interaction.InteractionResult interactionResult;
+ 
+     // Paper start - drop leash variable
+     @Deprecated
+@@ -28,7 +30,36 @@ public class PlayerUnleashEntityEvent extends EntityUnleashEvent implements Canc
+         // Paper end
+         this.player = player;
+         this.hand = hand;
++        this.interactionResult = null;
+     }
++    // Paper start - InteractionResult API
++
++    public PlayerUnleashEntityEvent(@NotNull Entity entity, @NotNull Player player, @NotNull EquipmentSlot hand, boolean dropLeash, io.papermc.paper.world.interaction.InteractionResult interactionResult) {
++        this(entity, player, hand, dropLeash);
++        this.interactionResult = interactionResult;
++    }
++
++    /**
++     * Returns the InteractionResult.
++     * If returned NULL, there is no override for the InteractionResult
++     * 
++     * @return InteractionResult override for the event.
++     */
++    @Nullable
++    public io.papermc.paper.world.interaction.InteractionResult getInteractionResult() {
++        return this.interactionResult;
++    }
++
++    /**
++     * Sets the InteractionResult of the event. Can be null.
++     * If null, the event will use the original interaction result and remove any
++     * overrides for the result.
++     * @param interactionResult The result to be set
++     */
++    public void setInteractionResult(@Nullable io.papermc.paper.world.interaction.InteractionResult interactionResult) {
++        this.interactionResult = interactionResult;
++    }
++    // Paper end
+ 
+     @Deprecated
+     public PlayerUnleashEntityEvent(@NotNull Entity entity, @NotNull Player player) {
