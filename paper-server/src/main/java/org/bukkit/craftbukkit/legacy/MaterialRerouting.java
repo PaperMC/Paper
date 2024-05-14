@@ -678,4 +678,16 @@ public class MaterialRerouting {
         return itemStack.withType(material);
     }
     // Paper end - register paper API specific material consumers in rerouting
+
+    // Paper start - methods added post 1.13, no-op
+    @RerouteStatic("org/bukkit/inventory/ItemStack")
+    public static ItemStack of(final Material material) {
+        return ItemStack.of(material);
+    }
+
+    @RerouteStatic("org/bukkit/inventory/ItemStack")
+    public static ItemStack of(final Material material, final int amount) {
+        return ItemStack.of(material, amount);
+    }
+    // Paper end
 }

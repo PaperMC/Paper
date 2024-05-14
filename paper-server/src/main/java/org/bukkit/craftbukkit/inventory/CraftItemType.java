@@ -100,13 +100,14 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
     @NotNull
     @Override
     public ItemStack createItemStack(final int amount, @Nullable final Consumer<? super M> metaConfigurator) {
-        final ItemStack itemStack = new ItemStack(this.asMaterial(), amount);
+        // Paper start - re-implement to return CraftItemStack
+        final net.minecraft.world.item.ItemStack stack = new net.minecraft.world.item.ItemStack(this.item, amount);
+        final CraftItemStack mirror = CraftItemStack.asCraftMirror(stack);
         if (metaConfigurator != null) {
-            final ItemMeta itemMeta = itemStack.getItemMeta();
-            metaConfigurator.accept((M) itemMeta);
-            itemStack.setItemMeta(itemMeta);
+            mirror.editMeta(this.getItemMetaClass(), metaConfigurator);
         }
-        return itemStack;
+        return mirror;
+        // Paper start - reimplement to return CraftItemStack
     }
 
     @Override
