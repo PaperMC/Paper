@@ -1,0 +1,121 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Tue, 1 Mar 2016 23:45:08 -0600
+Subject: [PATCH] Entity Origin API
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index a6e78b8a6ced8ec84273e2c5d18ffccacb005cb6..c476a49f69261868f74ad528a2ad746aed3094a3 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -2173,6 +2173,15 @@ public class ServerLevel extends Level implements WorldGenLevel {
+             entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
+             entity.inWorld = true; // CraftBukkit - Mark entity as in world
+             entity.valid = true; // CraftBukkit
++            // Paper start - Entity origin API
++            if (entity.getOriginVector() == null) {
++                entity.setOrigin(entity.getBukkitEntity().getLocation());
++            }
++            // Default to current world if unknown, gross assumption but entities rarely change world
++            if (entity.getOriginWorld() == null) {
++                entity.setOrigin(entity.getOriginVector().toLocation(getWorld()));
++            }
++            // Paper end - Entity origin API
+         }
+ 
+         public void onTrackingEnd(Entity entity) {
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 074292615a13cf1f42ee74d629109ec1be390da5..35ec3d6557a02a29df15c7302c1007f335c3db65 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -322,7 +322,27 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     public long activatedTick = Integer.MIN_VALUE;
+     public void inactiveTick() { }
+     // Spigot end
++    // Paper start - Entity origin API
++    @javax.annotation.Nullable
++    private org.bukkit.util.Vector origin;
++    @javax.annotation.Nullable
++    private UUID originWorld;
+ 
++    public void setOrigin(@javax.annotation.Nonnull Location location) {
++        this.origin = location.toVector();
++        this.originWorld = location.getWorld().getUID();
++    }
++
++    @javax.annotation.Nullable
++    public org.bukkit.util.Vector getOriginVector() {
++        return this.origin != null ? this.origin.clone() : null;
++    }
++
++    @javax.annotation.Nullable
++    public UUID getOriginWorld() {
++        return this.originWorld;
++    }
++    // Paper end - Entity origin API
+     public float getBukkitYaw() {
+         return this.yRot;
+     }
+@@ -2083,6 +2103,15 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+                 this.bukkitEntity.storeBukkitValues(nbttagcompound);
+             }
+             // CraftBukkit end
++            // Paper start
++            if (this.origin != null) {
++                UUID originWorld = this.originWorld != null ? this.originWorld : this.level != null ? this.level.getWorld().getUID() : null;
++                if (originWorld != null) {
++                    nbttagcompound.putUUID("Paper.OriginWorld", originWorld);
++                }
++                nbttagcompound.put("Paper.Origin", this.newDoubleList(origin.getX(), origin.getY(), origin.getZ()));
++            }
++            // Paper end
+             return nbttagcompound;
+         } catch (Throwable throwable) {
+             CrashReport crashreport = CrashReport.forThrowable(throwable, "Saving entity NBT");
+@@ -2210,6 +2239,20 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+             }
+             // CraftBukkit end
+ 
++            // Paper start
++            ListTag originTag = nbt.getList("Paper.Origin", net.minecraft.nbt.Tag.TAG_DOUBLE);
++            if (!originTag.isEmpty()) {
++                UUID originWorld = null;
++                if (nbt.contains("Paper.OriginWorld")) {
++                    originWorld = nbt.getUUID("Paper.OriginWorld");
++                } else if (this.level != null) {
++                    originWorld = this.level.getWorld().getUID();
++                }
++                this.originWorld = originWorld;
++                origin = new org.bukkit.util.Vector(originTag.getDouble(0), originTag.getDouble(1), originTag.getDouble(2));
++            }
++            // Paper end
++
+         } catch (Throwable throwable) {
+             CrashReport crashreport = CrashReport.forThrowable(throwable, "Loading entity NBT");
+             CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Entity being loaded");
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 0996bfe664e0085dcacdd2b6c08a2737d3b2fa6a..f117d32f3606917ad3526c9140ef5e40990ede8c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -946,4 +946,21 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         return this.spigot;
+     }
+     // Spigot end
++
++    // Paper start - entity origin API
++    @Override
++    public Location getOrigin() {
++        Vector originVector = this.getHandle().getOriginVector();
++        if (originVector == null) {
++            return null;
++        }
++        World world = this.getWorld();
++        if (this.getHandle().getOriginWorld() != null) {
++            world = org.bukkit.Bukkit.getWorld(this.getHandle().getOriginWorld());
++        }
++
++        //noinspection ConstantConditions
++        return originVector.toLocation(world);
++    }
++    // Paper end - entity origin API
+ }

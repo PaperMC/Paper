@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Hugo Manrique <hugmanrique@gmail.com>
+Date: Mon, 23 Jul 2018 12:57:39 +0200
+Subject: [PATCH] Option to prevent armor stands from doing entity lookups
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
+index dd7ecba4525d90e6b9509d1c3cab24c1615e37a9..521ad674b42e40df30916cf02ae6ace42c0368a2 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
+@@ -344,6 +344,7 @@ public class ArmorStand extends LivingEntity {
+ 
+     @Override
+     protected void pushEntities() {
++        if (!this.level().paperConfig().entities.armorStands.doCollisionEntityLookups) return; // Paper - Option to prevent armor stands from doing entity lookups
+         List<Entity> list = this.level().getEntities((Entity) this, this.getBoundingBox(), ArmorStand.RIDABLE_MINECARTS);
+         Iterator iterator = list.iterator();
+ 
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 26adc305c5d5ef16dda141f931973666ee163d01..6e23e4d0477f361f2eb5bb93bd9dd2bf5073833c 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -759,6 +759,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+             // Paper end - Prevent block entity and entity crashes
+         }
+     }
++    // Paper start - Option to prevent armor stands from doing entity lookups
++    @Override
++    public boolean noCollision(@Nullable Entity entity, AABB box) {
++        if (entity instanceof net.minecraft.world.entity.decoration.ArmorStand && !entity.level().paperConfig().entities.armorStands.doCollisionEntityLookups) return false;
++        return LevelAccessor.super.noCollision(entity, box);
++    }
++    // Paper end - Option to prevent armor stands from doing entity lookups
+ 
+     public boolean shouldTickDeath(Entity entity) {
+         return true;

@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 8 Mar 2016 23:25:45 -0500
+Subject: [PATCH] Disable Scoreboards for non players by default
+
+Entities collision is checking for scoreboards setting.
+This is very heavy to do map lookups for every collision to check
+this setting.
+
+So avoid looking up scoreboards and short circuit to the "not on a team"
+logic which is most likely to be true.
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index fb3f9082b16f5ec420ddc1f5a0e81b8130a71e4f..66ba606ccbff3a578a090d5170f3ff866ecf99af 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -2836,6 +2836,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+ 
+     @Nullable
+     public PlayerTeam getTeam() {
++        if (!this.level().paperConfig().scoreboards.allowNonPlayerEntitiesOnScoreboards && !(this instanceof Player)) { return null; } // Paper - Perf: Disable Scoreboards for non players by default
+         return this.level().getScoreboard().getPlayersTeam(this.getScoreboardName());
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 856fb1a15279efc1e24a93fa289ca1ca8effd43e..e0ad0e242181261adccdec9c006a9937ac4a24e6 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -873,6 +873,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+             String s = nbt.getString("Team");
+             Scoreboard scoreboard = this.level().getScoreboard();
+             PlayerTeam scoreboardteam = scoreboard.getPlayerTeam(s);
++            if (!this.level().paperConfig().scoreboards.allowNonPlayerEntitiesOnScoreboards && !(this instanceof net.minecraft.world.entity.player.Player)) { scoreboardteam = null; } // Paper - Perf: Disable Scoreboards for non players by default
+             boolean flag = scoreboardteam != null && scoreboard.addPlayerToTeam(this.getStringUUID(), scoreboardteam);
+ 
+             if (!flag) {

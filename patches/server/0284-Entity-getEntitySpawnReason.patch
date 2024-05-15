@@ -1,0 +1,150 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 24 Mar 2019 00:24:52 -0400
+Subject: [PATCH] Entity#getEntitySpawnReason
+
+Allows you to return the SpawnReason for why an Entity Spawned
+
+Pre existing entities will return NATURAL if it was a non
+persistenting Living Entity, SPAWNER for spawners,
+or DEFAULT since data was not stored.
+
+diff --git a/src/main/java/net/minecraft/server/commands/SummonCommand.java b/src/main/java/net/minecraft/server/commands/SummonCommand.java
+index bf72cf288ade52ee8cc41ca978f368b3ad575951..798999be50d26be357ef3c6d5b9383ce4d1048c1 100644
+--- a/src/main/java/net/minecraft/server/commands/SummonCommand.java
++++ b/src/main/java/net/minecraft/server/commands/SummonCommand.java
+@@ -57,6 +57,7 @@ public class SummonCommand {
+             ServerLevel worldserver = source.getLevel();
+             Entity entity = EntityType.loadEntityRecursive(nbttagcompound1, worldserver, (entity1) -> {
+                 entity1.moveTo(pos.x, pos.y, pos.z, entity1.getYRot(), entity1.getXRot());
++                entity1.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.COMMAND; // Paper - Entity#getEntitySpawnReason
+                 return entity1;
+             });
+ 
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 42dd9ab70c07e92258da70ad29b51c7780401a5d..2b524c41daa4fe1605a40c151a90de101d96e8af 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1209,6 +1209,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+             return true;
+         }
+         // Paper end - extra debug info
++        if (entity.spawnReason == null) entity.spawnReason = spawnReason; // Paper - Entity#getEntitySpawnReason
+         if (entity.isRemoved()) {
+             // WorldServer.LOGGER.warn("Tried to add entity {} but it was marked as removed already", EntityTypes.getKey(entity.getType())); // CraftBukkit
+             return false;
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index f91e145a748dc524e1e95ee3afe00aa74a1aee9a..e3ce13685499e2adea5b776ec4abbdd978b6af58 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -223,6 +223,11 @@ public abstract class PlayerList {
+             worldserver1 = worldserver;
+         }
+ 
++        // Paper start - Entity#getEntitySpawnReason
++        if (optional.isEmpty()) {
++            player.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT; // set Player SpawnReason to DEFAULT on first login
++        }
++        // Paper end - Entity#getEntitySpawnReason
+         player.setServerLevel(worldserver1);
+         String s1 = connection.getLoggableAddress(this.server.logIPs());
+ 
+@@ -355,7 +360,7 @@ public abstract class PlayerList {
+             CompoundTag nbttagcompound = ((CompoundTag) optional.get()).getCompound("RootVehicle");
+             ServerLevel finalWorldServer = worldserver1; // CraftBukkit - decompile error
+             Entity entity = EntityType.loadEntityRecursive(nbttagcompound.getCompound("Entity"), worldserver1, (entity1) -> {
+-                return !finalWorldServer.addWithUUID(entity1) ? null : entity1; // CraftBukkit - decompile error
++                return !finalWorldServer.addWithUUID(entity1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.MOUNT) ? null : entity1; // CraftBukkit - decompile error // Paper - Entity#getEntitySpawnReason
+             });
+ 
+             if (entity != null) {
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index d372e2793948f532f473cd6eca578ebd3ff3fbfb..5bb379251c5af88d4350bd2715147e6442d695fd 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -241,6 +241,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+         }
+     }
+     // Paper end - Share random for entities to make them more random
++    public org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason; // Paper - Entity#getEntitySpawnReason
+ 
+     public com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData; // Paper
+     private CraftEntity bukkitEntity;
+@@ -2206,6 +2207,9 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+                 }
+                 nbttagcompound.put("Paper.Origin", this.newDoubleList(origin.getX(), origin.getY(), origin.getZ()));
+             }
++            if (spawnReason != null) {
++                nbttagcompound.putString("Paper.SpawnReason", spawnReason.name());
++            }
+             // Save entity's from mob spawner status
+             if (spawnedViaMobSpawner) {
+                 nbttagcompound.putBoolean("Paper.FromMobSpawner", true);
+@@ -2352,6 +2356,26 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+             }
+ 
+             spawnedViaMobSpawner = nbt.getBoolean("Paper.FromMobSpawner"); // Restore entity's from mob spawner status
++            if (nbt.contains("Paper.SpawnReason")) {
++                String spawnReasonName = nbt.getString("Paper.SpawnReason");
++                try {
++                    spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.valueOf(spawnReasonName);
++                } catch (Exception ignored) {
++                    LOGGER.error("Unknown SpawnReason " + spawnReasonName + " for " + this);
++                }
++            }
++            if (spawnReason == null) {
++                if (spawnedViaMobSpawner) {
++                    spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER;
++                } else if (this instanceof Mob && (this instanceof net.minecraft.world.entity.animal.Animal || this instanceof net.minecraft.world.entity.animal.AbstractFish) && !((Mob) this).removeWhenFarAway(0.0)) {
++                    if (!nbt.getBoolean("PersistenceRequired")) {
++                        spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL;
++                    }
++                }
++            }
++            if (spawnReason == null) {
++                spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT;
++            }
+             // Paper end
+ 
+         } catch (Throwable throwable) {
+diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+index ee897b8c9462dbb3d7be9a2994753155065ce205..1d0964a7f544735a0213d5c7832c71f53db139a9 100644
+--- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
++++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+@@ -191,6 +191,7 @@ public abstract class BaseSpawner {
+                         }
+ 
+                         entity.spawnedViaMobSpawner = true; // Paper
++                        entity.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER; // Paper - Entity#getEntitySpawnReason
+                         flag = true; // Paper
+                         // CraftBukkit start
+                         if (org.bukkit.craftbukkit.event.CraftEventFactory.callSpawnerSpawnEvent(entity, pos).isCancelled()) {
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/SculkShriekerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SculkShriekerBlockEntity.java
+index 570957f00ad4817d5631c72060e85f85af634619..baa876db3a58a3c756a72ef1ad081964b358f58e 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/SculkShriekerBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/SculkShriekerBlockEntity.java
+@@ -183,7 +183,7 @@ public class SculkShriekerBlockEntity extends BlockEntity implements GameEventLi
+ 
+     private boolean trySummonWarden(ServerLevel world) {
+         return this.warningLevel >= 4
+-            && SpawnUtil.trySpawnMob(EntityType.WARDEN, MobSpawnType.TRIGGERED, world, this.getBlockPos(), 20, 5, 6, SpawnUtil.Strategy.ON_TOP_OF_COLLIDER)
++            && SpawnUtil.trySpawnMob(EntityType.WARDEN, MobSpawnType.TRIGGERED, world, this.getBlockPos(), 20, 5, 6, SpawnUtil.Strategy.ON_TOP_OF_COLLIDER, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL, null) // Paper - Entity#getEntitySpawnReason
+                 .isPresent();
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 621970006f21d219784dc58d7aa8d6062c4620f1..571b8352de4070622cdc47a50643beada0b16c36 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -1001,4 +1001,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         return this.getHandle().spawnedViaMobSpawner;
+     }
+     // Paper end - Entity#fromMobSpawner
++
++    // Paper start - entity spawn reason API
++    @Override
++    public org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason getEntitySpawnReason() {
++        return getHandle().spawnReason;
++    }
++    // Paper end - entity spawn reason API
+ }

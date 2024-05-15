@@ -1,0 +1,84 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Sun, 18 Nov 2018 19:44:54 +0000
+Subject: [PATCH] Make the default permission message configurable
+
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 7bf662bd0eafcec46bb12cae78628e5045cbc299..de678fa681fbd94efa8fd85568ee092ae26fca85 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -2406,6 +2406,28 @@ public final class Bukkit {
+         return server.suggestPlayerNamesWhenNullTabCompletions();
+     }
+ 
++    /**
++     * Gets the default no permission message used on the server
++     *
++     * @return the default message
++     * @deprecated use {@link #permissionMessage()}
++     */
++    @NotNull
++    @Deprecated
++    public static String getPermissionMessage() {
++        return server.getPermissionMessage();
++    }
++
++    /**
++     * Gets the default no permission message used on the server
++     *
++     * @return the default message
++     */
++    @NotNull
++    public static net.kyori.adventure.text.Component permissionMessage() {
++        return server.permissionMessage();
++    }
++
+     /**
+      * Creates a PlayerProfile for the specified uuid, with name as null.
+      *
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index f352b10ad81ee21ddbf9d09ccbc6e919cb670bf9..a7a04a4e9c94cc43ccf84abb3b7956b60c79e8fe 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -2096,6 +2096,23 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      */
+     boolean suggestPlayerNamesWhenNullTabCompletions();
+ 
++    /**
++     * Gets the default no permission message used on the server
++     *
++     * @return the default message
++     * @deprecated use {@link #permissionMessage()}
++     */
++    @NotNull
++    @Deprecated
++    String getPermissionMessage();
++
++    /**
++     * Gets the default no permission message used on the server
++     *
++     * @return the default message
++     */
++    @NotNull net.kyori.adventure.text.Component permissionMessage();
++
+     /**
+      * Creates a PlayerProfile for the specified uuid, with name as null.
+      *
+diff --git a/src/main/java/org/bukkit/command/Command.java b/src/main/java/org/bukkit/command/Command.java
+index f7b78198d9983610fc2185124c3080e6b1c0fa35..b3a2c274f05156fd603bcc7a68ab41265f2eaf44 100644
+--- a/src/main/java/org/bukkit/command/Command.java
++++ b/src/main/java/org/bukkit/command/Command.java
+@@ -184,10 +184,9 @@ public abstract class Command {
+             return true;
+         }
+ 
+-        if (permissionMessage == null) {
+-            target.sendMessage(ChatColor.RED + "I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is a mistake.");
+             // Paper start - use components for permissionMessage
+-        } else if (!permissionMessage.equals(net.kyori.adventure.text.Component.empty())) {
++        net.kyori.adventure.text.Component permissionMessage = this.permissionMessage != null ? this.permissionMessage : Bukkit.permissionMessage();
++        if (!permissionMessage.equals(net.kyori.adventure.text.Component.empty())) {
+             target.sendMessage(permissionMessage.replaceText(net.kyori.adventure.text.TextReplacementConfig.builder().matchLiteral("<permission>").replacement(permission).build()));
+             // Paper end
+         }

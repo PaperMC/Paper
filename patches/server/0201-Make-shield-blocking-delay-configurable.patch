@@ -1,0 +1,56 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 16 Jun 2018 01:18:16 -0500
+Subject: [PATCH] Make shield blocking delay configurable
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 72c5da58cc13ff7dc33159073b92c8e8fbb5bb28..b10d532d81efa8330f363f86d5a19e8847b90ba0 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3917,12 +3917,24 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         if (this.isUsingItem() && !this.useItem.isEmpty()) {
+             Item item = this.useItem.getItem();
+ 
+-            return item.getUseAnimation(this.useItem) != UseAnim.BLOCK ? false : item.getUseDuration(this.useItem) - this.useItemRemaining >= 5;
++            return item.getUseAnimation(this.useItem) != UseAnim.BLOCK ? false : item.getUseDuration(this.useItem) - this.useItemRemaining >= getShieldBlockingDelay(); // Paper - Make shield blocking delay configurable
+         } else {
+             return false;
+         }
+     }
+ 
++    // Paper start - Make shield blocking delay configurable
++    public int shieldBlockingDelay = this.level().paperConfig().misc.shieldBlockingDelay;
++
++    public int getShieldBlockingDelay() {
++        return shieldBlockingDelay;
++    }
++
++    public void setShieldBlockingDelay(int shieldBlockingDelay) {
++        this.shieldBlockingDelay = shieldBlockingDelay;
++    }
++    // Paper end - Make shield blocking delay configurable
++
+     public boolean isSuppressingSlidingDownLadder() {
+         return this.isShiftKeyDown();
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index d77c31a8b41df69d11c1ce4b77975e9a38e317b3..0e3b9c2d7ae5091f5c485ec679852476d816f083 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -840,5 +840,15 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+     public void setArrowsStuck(final int arrows) {
+         this.getHandle().setArrowCount(arrows);
+     }
++
++    @Override
++    public int getShieldBlockingDelay() {
++        return getHandle().getShieldBlockingDelay();
++    }
++
++    @Override
++    public void setShieldBlockingDelay(int delay) {
++        getHandle().setShieldBlockingDelay(delay);
++    }
+     // Paper end
+ }

@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Tue, 11 Feb 2020 21:56:48 -0600
+Subject: [PATCH] Add EntityMoveEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index d86f01599b02626c72ad0b8da0b6b9d741f8c894..a9851d2c6d89e30f40da35586ac3dddfa72ba421 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1580,6 +1580,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         while (iterator.hasNext()) {
+             ServerLevel worldserver = (ServerLevel) iterator.next();
+             worldserver.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
++            worldserver.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent
+ 
+             this.profiler.push(() -> {
+                 String s = String.valueOf(worldserver);
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index a9a39c99874001f1024f71bfc97130e8c9a507e7..19333b61bcb50f2171ac2c75d7f4ca4fdf4d4743 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -227,6 +227,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+     public final LevelStorageSource.LevelStorageAccess convertable;
+     public final UUID uuid;
+     public boolean hasPhysicsEvent = true; // Paper - BlockPhysicsEvent
++    public boolean hasEntityMoveEvent; // Paper - Add EntityMoveEvent
+ 
+     public LevelChunk getChunkIfLoaded(int x, int z) {
+         return this.chunkSource.getChunk(x, z, false);
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 48f772bcbc207c07aef9d28011ff935b58f8c381..f523514e65039b0683617653625c2c33559d9874 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3477,6 +3477,20 @@ public abstract class LivingEntity extends Entity implements Attackable {
+ 
+         this.pushEntities();
+         this.level().getProfiler().pop();
++        // Paper start - Add EntityMoveEvent
++        if (((ServerLevel) this.level()).hasEntityMoveEvent && !(this instanceof net.minecraft.world.entity.player.Player)) {
++            if (this.xo != this.getX() || this.yo != this.getY() || this.zo != this.getZ() || this.yRotO != this.getYRot() || this.xRotO != this.getXRot()) {
++                Location from = new Location(this.level().getWorld(), this.xo, this.yo, this.zo, this.yRotO, this.xRotO);
++                Location to = new Location(this.level().getWorld(), this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
++                io.papermc.paper.event.entity.EntityMoveEvent event = new io.papermc.paper.event.entity.EntityMoveEvent(this.getBukkitLivingEntity(), from, to.clone());
++                if (!event.callEvent()) {
++                    this.absMoveTo(from.getX(), from.getY(), from.getZ(), from.getYaw(), from.getPitch());
++                } else if (!to.equals(event.getTo())) {
++                    this.absMoveTo(event.getTo().getX(), event.getTo().getY(), event.getTo().getZ(), event.getTo().getYaw(), event.getTo().getPitch());
++                }
++            }
++        }
++        // Paper end - Add EntityMoveEvent
+         if (!this.level().isClientSide && this.isSensitiveToWater() && this.isInWaterRainOrBubble()) {
+             this.hurt(this.damageSources().drown(), 1.0F);
+         }

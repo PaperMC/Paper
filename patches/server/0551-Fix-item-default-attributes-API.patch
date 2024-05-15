@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 8 May 2021 15:01:54 -0700
+Subject: [PATCH] Fix item default attributes API
+
+(previously added this API but upstream also added it)
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 952a8147947fa0e2a960628fc760212d3d206ce6..27acc1965e16d697fa98f64cf64ecc6ecd775e86 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -399,9 +399,14 @@ public final class CraftMagicNumbers implements UnsafeValues {
+ 
+     @Override
+     public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(Material material, EquipmentSlot slot) {
+-        ImmutableMultimap.Builder<Attribute, AttributeModifier> defaultAttributes = ImmutableMultimap.builder();
+-
+-        ItemAttributeModifiers nmsDefaultAttributes = CraftMagicNumbers.getItem(material).getDefaultAttributeModifiers();
++        // Paper start - fix item default attribute API
++        final Item item = CraftMagicNumbers.getItem(material);
++        if (item == null) {
++            throw new IllegalArgumentException(material + " is not an item and therefore does not have attributes");
++        }
++        final ImmutableMultimap.Builder<Attribute, AttributeModifier> defaultAttributes = ImmutableMultimap.builder();
++        ItemAttributeModifiers nmsDefaultAttributes = item.components().getOrDefault(net.minecraft.core.component.DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
++        // Paper end - fix item default attribute API
+         nmsDefaultAttributes.forEach(CraftEquipmentSlot.getNMS(slot), (key, value) -> {
+             Attribute attribute = CraftAttribute.minecraftToBukkit(key.value());
+             defaultAttributes.put(attribute, CraftAttributeInstance.convert(value, slot));

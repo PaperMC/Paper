@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Sat, 14 Nov 2020 16:19:52 +0100
+Subject: [PATCH] Add API for quit reason
+
+
+diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
+index 68d5be903a0d13e59c9e4bd6d85baaf0773547a0..fe89e8f509f3972ceb71c9aa6277524baa39985b 100644
+--- a/src/main/java/net/minecraft/network/Connection.java
++++ b/src/main/java/net/minecraft/network/Connection.java
+@@ -167,12 +167,15 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+ 
+             this.handlingFault = true;
+             if (this.channel.isOpen()) {
++                net.minecraft.server.level.ServerPlayer player = this.getPlayer(); // Paper - Add API for quit reason
+                 if (throwable instanceof TimeoutException) {
+                     Connection.LOGGER.debug("Timeout", throwable);
++                    if (player != null) player.quitReason = org.bukkit.event.player.PlayerQuitEvent.QuitReason.TIMED_OUT; // Paper - Add API for quit reason
+                     this.disconnect(Component.translatable("disconnect.timeout"));
+                 } else {
+                     MutableComponent ichatmutablecomponent = Component.translatable("disconnect.genericReason", "Internal Exception: " + String.valueOf(throwable));
+ 
++                    if (player != null) player.quitReason = org.bukkit.event.player.PlayerQuitEvent.QuitReason.ERRONEOUS_STATE; // Paper - Add API for quit reason
+                     if (flag) {
+                         Connection.LOGGER.debug("Failed to sent packet", throwable);
+                         if (this.getSending() == PacketFlow.CLIENTBOUND) {
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 38e62a9251b0b0cceb0a350a649897f357293428..89aa23a4443311771775adc2e98cb78c4bb369a5 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -291,6 +291,7 @@ public class ServerPlayer extends Player {
+     public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleHashSet; // Paper
+     public com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
+     public @Nullable String clientBrandName = null; // Paper - Brand support
++    public org.bukkit.event.player.PlayerQuitEvent.QuitReason quitReason = null; // Paper - Add API for quit reason; there are a lot of changes to do if we change all methods leading to the event
+ 
+     public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile, ClientInformation clientOptions) {
+         super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile);
+diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+index a5dce1e83e63292054b21ec693ec3006e08d3ff2..661765a9fe1c2e49299262190501ee3b3294a2f1 100644
+--- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+@@ -371,6 +371,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+         final Component ichatbasecomponent = io.papermc.paper.adventure.PaperAdventure.asVanilla(event.reason()); // Paper - Adventure
+         // CraftBukkit end
+ 
++        this.player.quitReason = org.bukkit.event.player.PlayerQuitEvent.QuitReason.KICKED; // Paper - Add API for quit reason
+         this.connection.send(new ClientboundDisconnectPacket(ichatbasecomponent), PacketSendListener.thenRun(() -> {
+             this.connection.disconnect(ichatbasecomponent);
+         }));
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 97a3f29414cd9f11e6a790cb30f7ef25a836b06c..8b0b9ef372c595340c43c5882ad71587833d86bc 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -576,7 +576,7 @@ public abstract class PlayerList {
+             entityplayer.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.DISCONNECT); // Paper - Inventory close reason
+         }
+ 
+-        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(entityplayer.getBukkitEntity(), net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, io.papermc.paper.configuration.GlobalConfiguration.get().messages.useDisplayNameInQuitMessage ? entityplayer.getBukkitEntity().displayName() : io.papermc.paper.adventure.PaperAdventure.asAdventure(entityplayer.getDisplayName()))); // Paper - Adventure
++        PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(entityplayer.getBukkitEntity(), net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, io.papermc.paper.configuration.GlobalConfiguration.get().messages.useDisplayNameInQuitMessage ? entityplayer.getBukkitEntity().displayName() : io.papermc.paper.adventure.PaperAdventure.asAdventure(entityplayer.getDisplayName())), entityplayer.quitReason); // Paper - Adventure & Add API for quit reason
+         this.cserver.getPluginManager().callEvent(playerQuitEvent);
+         entityplayer.getBukkitEntity().disconnect(playerQuitEvent.getQuitMessage());
+ 
