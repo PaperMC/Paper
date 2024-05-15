@@ -363,10 +363,10 @@ index 0000000000000000000000000000000000000000..660b2ec6b63a4ceffee44ab11f54dfa7
 +}
 diff --git a/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java b/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f0279fe33bf41ce631190ad9de365dccdb9aa329
+index 0000000000000000000000000000000000000000..790bad0494454ca12ee152e3de6da3da634d9b20
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
-@@ -0,0 +1,103 @@
+@@ -0,0 +1,104 @@
 +package io.papermc.paper;
 +
 +import com.google.common.base.Strings;
@@ -379,6 +379,7 @@ index 0000000000000000000000000000000000000000..f0279fe33bf41ce631190ad9de365dcc
 +import net.kyori.adventure.key.Key;
 +import net.minecraft.SharedConstants;
 +import org.bukkit.craftbukkit.CraftServer;
++import org.bukkit.craftbukkit.Main;
 +import org.jetbrains.annotations.NotNull;
 +
 +public record ServerBuildInfoImpl(
@@ -421,7 +422,7 @@ index 0000000000000000000000000000000000000000..f0279fe33bf41ce631190ad9de365dcc
 +                .orElse(OptionalInt.empty()),
 +            getManifestAttribute(manifest, ATTRIBUTE_BUILD_TIME)
 +                .map(Instant::parse)
-+                .orElseGet(Instant::now),
++                .orElse(Main.BOOT_TIME),
 +            getManifestAttribute(manifest, ATTRIBUTE_GIT_BRANCH),
 +            getManifestAttribute(manifest, ATTRIBUTE_GIT_COMMIT)
 +        );
@@ -597,10 +598,18 @@ index b32ae5b9c232e5d9b3bd89303db3d2cc6258ea29..4d31fb8bc8bf285720a9d5828325d712
      public List<CraftPlayer> getOnlinePlayers() {
          return this.playerView;
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index bc664b090e16ed27ba795c204dc5639679e6eee8..3c4a593cfbc111084abc971bc7532898d094bd9a 100644
+index bc664b090e16ed27ba795c204dc5639679e6eee8..9dc72b01092783c436bc1fa8ce29ff7cdaa39b19 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
-@@ -252,13 +252,26 @@ public class Main {
+@@ -15,6 +15,7 @@ import joptsimple.OptionSet;
+ import joptsimple.util.PathConverter;
+ 
+ public class Main {
++    public static final java.time.Instant BOOT_TIME = java.time.Instant.now(); // Paper - track initial start time
+     public static boolean useJline = true;
+     public static boolean useConsole = true;
+ 
+@@ -252,13 +253,26 @@ public class Main {
                      deadline.add(Calendar.DAY_OF_YEAR, -3);
                      if (buildDate.before(deadline.getTime())) {
                          System.err.println("*** Error, this build is outdated ***");
