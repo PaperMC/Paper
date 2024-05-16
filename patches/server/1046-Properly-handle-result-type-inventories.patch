@@ -1,0 +1,552 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 15 May 2024 20:15:39 -0700
+Subject: [PATCH] Properly handle 'result' type inventories
+
+
+diff --git a/src/main/java/net/minecraft/world/SimpleContainer.java b/src/main/java/net/minecraft/world/SimpleContainer.java
+index d04bf7d06855022c973073fb84c5d3d65f2553e1..19770ddae1aca121f081ccab68334ba79a2ca8ba 100644
+--- a/src/main/java/net/minecraft/world/SimpleContainer.java
++++ b/src/main/java/net/minecraft/world/SimpleContainer.java
+@@ -98,6 +98,18 @@ public class SimpleContainer implements Container, StackedContentsCompatible {
+         this.bukkitOwnerCreator = bukkitOwnerCreator;
+     }
+     // Paper end - Add missing InventoryHolders
++    // Paper start
++    public SimpleContainer(@Nullable org.bukkit.craftbukkit.inventory.util.DelegatingContainer delegate, java.util.function.Supplier<? extends org.bukkit.inventory.InventoryHolder> bukkitOwnerCreator, int size) {
++        if (delegate == null) {
++            this.size = size;
++            this.items = NonNullList.withSize(size, ItemStack.EMPTY);
++        } else {
++            this.size = delegate.getContents().size();
++            this.items = new NonNullList<>(delegate.items, net.minecraft.world.item.ItemStack.EMPTY) {};
++        }
++        this.bukkitOwnerCreator = bukkitOwnerCreator;
++    }
++    // Paper end
+ 
+     public SimpleContainer(int i, org.bukkit.inventory.InventoryHolder owner) {
+         this.bukkitOwner = owner;
+diff --git a/src/main/java/net/minecraft/world/inventory/LoomMenu.java b/src/main/java/net/minecraft/world/inventory/LoomMenu.java
+index 4f3f6ea43030853bd9df067358a1f4d16c40e6d4..82cfd0fb81ce16d8477eb02c8b2093e36a3551a7 100644
+--- a/src/main/java/net/minecraft/world/inventory/LoomMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/LoomMenu.java
+@@ -60,20 +60,33 @@ public class LoomMenu extends AbstractContainerMenu {
+     private final Slot patternSlot;
+     private final Slot resultSlot;
+     long lastSoundTime;
+-    private final Container inputContainer;
+-    private final Container outputContainer;
++    // Paper start
++    public final Container inputContainer;
++    public final Container outputContainer;
++    public static Container createDummyMainContainer() {
++        return new SimpleContainer(3);
++    }
++    public static Container createDummyResultContainer() {
++        return new SimpleContainer(1);
++    }
++    // Paper end
+ 
+     public LoomMenu(int syncId, Inventory playerInventory) {
+         this(syncId, playerInventory, ContainerLevelAccess.NULL);
+     }
+ 
+     public LoomMenu(int syncId, Inventory playerInventory, final ContainerLevelAccess context) {
++        // Paper start
++        this(syncId, playerInventory, context, null, null);
++    }
++    public LoomMenu(int syncId, Inventory playerInventory, final ContainerLevelAccess context, org.bukkit.craftbukkit.inventory.util.DelegatingContainer input, org.bukkit.craftbukkit.inventory.util.DelegatingContainer output) {
++        // Paper end
+         super(MenuType.LOOM, syncId);
+         this.selectedBannerPatternIndex = DataSlot.standalone();
+         this.selectablePatterns = List.of();
+         this.slotUpdateListener = () -> {
+         };
+-        this.inputContainer = new SimpleContainer(this.createBlockHolder(context), 3) { // Paper - Add missing InventoryHolders
++        this.inputContainer = new SimpleContainer(input, this.createBlockHolder(context), 3) { // Paper - Add missing InventoryHolders
+             @Override
+             public void setChanged() {
+                 super.setChanged();
+@@ -88,7 +101,7 @@ public class LoomMenu extends AbstractContainerMenu {
+             }
+             // CraftBukkit end
+         };
+-        this.outputContainer = new SimpleContainer(this.createBlockHolder(context), 1) { // Paper - Add missing InventoryHolders
++        this.outputContainer = new SimpleContainer(output, this.createBlockHolder(context), 1) { // Paper - Add missing InventoryHolders
+             @Override
+             public void setChanged() {
+                 super.setChanged();
+diff --git a/src/main/java/net/minecraft/world/inventory/ResultContainer.java b/src/main/java/net/minecraft/world/inventory/ResultContainer.java
+index 4c4266a85c38e41e6c7e6144a68624f4daa50c54..8b5fdb076e5b7a6025ad6cd18913f4f880f9fd3e 100644
+--- a/src/main/java/net/minecraft/world/inventory/ResultContainer.java
++++ b/src/main/java/net/minecraft/world/inventory/ResultContainer.java
+@@ -66,6 +66,15 @@ public class ResultContainer implements Container, RecipeCraftingHolder {
+         this.holderCreator = holderCreator;
+     }
+     // Paper end - Add missing InventoryHolders
++    // Paper start
++    public ResultContainer(@Nullable org.bukkit.craftbukkit.inventory.util.DelegatingContainer delegate, java.util.function.Supplier<? extends org.bukkit.inventory.InventoryHolder> holderCreator) {
++        if (delegate == null) {
++            this.itemStacks = NonNullList.withSize(1, ItemStack.EMPTY);
++        } else {
++            this.itemStacks = new NonNullList<>(delegate.items, ItemStack.EMPTY){};
++        }
++    }
++    // Paper end
+ 
+     public ResultContainer() {
+         this.itemStacks = NonNullList.withSize(1, ItemStack.EMPTY);
+diff --git a/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java b/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
+index eade15820dd9db38b6af2a5c4314acfb14ca03e9..b2621c47b99a3ffff4f03fc219094be37e6030aa 100644
+--- a/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
+@@ -40,7 +40,15 @@ public class StonecutterMenu extends AbstractContainerMenu {
+     final Slot resultSlot;
+     Runnable slotUpdateListener;
+     public final Container container;
+-    final ResultContainer resultContainer;
++    // Paper start
++    public final ResultContainer resultContainer;
++    public static Container createDummyMainContainer() {
++        return new SimpleContainer(1);
++    }
++    public static Container createDummyResultContainer() {
++        return new ResultContainer();
++    }
++    // Paper end
+     // CraftBukkit start
+     private CraftInventoryView bukkitEntity = null;
+     private Player player;
+@@ -62,13 +70,18 @@ public class StonecutterMenu extends AbstractContainerMenu {
+     }
+ 
+     public StonecutterMenu(int syncId, Inventory playerInventory, final ContainerLevelAccess context) {
++        // Paper start
++        this(syncId, playerInventory, context, null, null);
++    }
++    public StonecutterMenu(int syncId, Inventory playerInventory, final ContainerLevelAccess context, org.bukkit.craftbukkit.inventory.util.DelegatingContainer input, org.bukkit.craftbukkit.inventory.util.DelegatingContainer output) {
++        // Paper end
+         super(MenuType.STONECUTTER, syncId);
+         this.selectedRecipeIndex = DataSlot.shared(new int[1], 0); // Paper - Add PlayerStonecutterRecipeSelectEvent
+         this.recipes = Lists.newArrayList();
+         this.input = ItemStack.EMPTY;
+         this.slotUpdateListener = () -> {
+         };
+-        this.container = new SimpleContainer(this.createBlockHolder(context), 1) { // Paper - Add missing InventoryHolders
++        this.container = new SimpleContainer(input, this.createBlockHolder(context), 1) { // Paper - Add missing InventoryHolders
+             @Override
+             public void setChanged() {
+                 super.setChanged();
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+index 41f3cdec7deabf34358b8087df77169f85a5b919..bce770d28fd191568cc750a29fa493ac0bd2e584 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+@@ -356,7 +356,12 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+     private static void openCustomInventory(Inventory inventory, ServerPlayer player, MenuType<?> windowType) {
+         if (player.connection == null) return;
+         Preconditions.checkArgument(windowType != null, "Unknown windowType");
+-        AbstractContainerMenu container = new CraftContainer(inventory, player, player.nextContainerCounter());
++        // Paper start - improve inventory handling
++        AbstractContainerMenu container = org.bukkit.craftbukkit.inventory.util.PaperResultCreators.tryCreate(((CraftInventory) inventory), player, windowType);
++        if (container == null) {
++            container = new CraftContainer(inventory, player, player.nextContainerCounter());
++        }
++        // Paper start - improve inventory handling
+ 
+         // Paper start - Add titleOverride to InventoryOpenEvent
+         final com.mojang.datafixers.util.Pair<net.kyori.adventure.text.Component, AbstractContainerMenu> result = CraftEventFactory.callInventoryOpenEventWithTitle(player, container);
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/util/CraftInventoryCreator.java b/src/main/java/org/bukkit/craftbukkit/inventory/util/CraftInventoryCreator.java
+index 53cbc743b1e722d029021f9d63ffbf7d0fddd04e..f1695d5791644f47c35019b9377b80e2257dfc08 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/util/CraftInventoryCreator.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/util/CraftInventoryCreator.java
+@@ -33,10 +33,10 @@ public final class CraftInventoryCreator {
+         this.converterMap.put(InventoryType.BLAST_FURNACE, new CraftTileInventoryConverter.BlastFurnace());
+         this.converterMap.put(InventoryType.LECTERN, new CraftTileInventoryConverter.Lectern());
+         this.converterMap.put(InventoryType.SMOKER, new CraftTileInventoryConverter.Smoker());
+-        this.converterMap.put(InventoryType.LOOM, this.DEFAULT_CONVERTER);
++        this.converterMap.put(InventoryType.LOOM, PaperResultCreators.LOOM); // Paper
+         this.converterMap.put(InventoryType.CARTOGRAPHY, this.DEFAULT_CONVERTER);
+         this.converterMap.put(InventoryType.GRINDSTONE, this.DEFAULT_CONVERTER);
+-        this.converterMap.put(InventoryType.STONECUTTER, this.DEFAULT_CONVERTER);
++        this.converterMap.put(InventoryType.STONECUTTER, PaperResultCreators.STONECUTTER); // Paper
+         this.converterMap.put(InventoryType.SMITHING_NEW, this.DEFAULT_CONVERTER);
+         this.converterMap.put(InventoryType.CRAFTER, new CraftTileInventoryConverter.Crafter());
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/util/DelegatingContainer.java b/src/main/java/org/bukkit/craftbukkit/inventory/util/DelegatingContainer.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2b55bf1765bddf47a8f0ef954f04bd4a3702161d
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/util/DelegatingContainer.java
+@@ -0,0 +1,185 @@
++package org.bukkit.craftbukkit.inventory.util;
++
++import java.util.List;
++import java.util.Set;
++import java.util.function.Predicate;
++import net.minecraft.world.Container;
++import net.minecraft.world.SimpleContainer;
++import net.minecraft.world.entity.player.Player;
++import net.minecraft.world.inventory.ResultContainer;
++import net.minecraft.world.item.Item;
++import net.minecraft.world.item.ItemStack;
++import net.minecraft.world.item.crafting.RecipeHolder;
++import org.bukkit.Location;
++import org.bukkit.craftbukkit.entity.CraftHumanEntity;
++import org.bukkit.entity.HumanEntity;
++import org.bukkit.inventory.InventoryHolder;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public class DelegatingContainer implements Container {
++
++    private final Container container;
++    public final List<ItemStack> items;
++
++    public DelegatingContainer(final SimpleContainer container) {
++        this.container = container;
++        this.items = container.getItems();
++    }
++
++    public DelegatingContainer(final ResultContainer resultContainer) {
++        this.container = resultContainer;
++        this.items = resultContainer.getContents();
++    }
++
++    public static DelegatingContainer create(final Container container) {
++        if (container instanceof final SimpleContainer simpleContainer) {
++            return new DelegatingContainer(simpleContainer);
++        } else if (container instanceof final ResultContainer resultContainer) {
++            return new DelegatingContainer(resultContainer);
++        } else {
++            throw new UnsupportedOperationException("Unsupported container type " + container);
++        }
++    }
++
++    @Override
++    public int getContainerSize() {
++        return this.getDelegate().getContainerSize();
++    }
++
++    @Override
++    public boolean isEmpty() {
++        return this.getDelegate().isEmpty();
++    }
++
++    @Override
++    public ItemStack getItem(final int slot) {
++        return this.getDelegate().getItem(slot);
++    }
++
++    @Override
++    public ItemStack removeItem(final int slot, final int amount) {
++        return this.getDelegate().removeItem(slot, amount);
++    }
++
++    @Override
++    public ItemStack removeItemNoUpdate(final int slot) {
++        return this.getDelegate().removeItemNoUpdate(slot);
++    }
++
++    @Override
++    public void setItem(final int slot, final ItemStack stack) {
++        this.getDelegate().setItem(slot, stack);
++    }
++
++    @Override
++    public int getMaxStackSize() {
++        return this.getDelegate().getMaxStackSize();
++    }
++
++    @Override
++    public void setMaxStackSize(final int size) {
++        this.getDelegate().setMaxStackSize(size);
++    }
++
++    @Override
++    public int getMaxStackSize(final ItemStack stack) {
++        return this.getDelegate().getMaxStackSize(stack);
++    }
++
++    @Override
++    public void setChanged() {
++        this.getDelegate().setChanged();
++    }
++
++    @Override
++    public boolean stillValid(final Player player) {
++        return this.getDelegate().stillValid(player);
++    }
++
++    @Override
++    public void startOpen(final Player player) {
++        this.getDelegate().startOpen(player);
++    }
++
++    @Override
++    public void stopOpen(final Player player) {
++        this.getDelegate().stopOpen(player);
++    }
++
++    @Override
++    public boolean canPlaceItem(final int slot, final ItemStack stack) {
++        return this.getDelegate().canPlaceItem(slot, stack);
++    }
++
++    @Override
++    public boolean canTakeItem(final Container hopperInventory, final int slot, final ItemStack stack) {
++        return this.getDelegate().canTakeItem(hopperInventory, slot, stack);
++    }
++
++    @Override
++    public int countItem(final Item item) {
++        return this.getDelegate().countItem(item);
++    }
++
++    @Override
++    public boolean hasAnyOf(final Set<Item> items) {
++        return this.getDelegate().hasAnyOf(items);
++    }
++
++    @Override
++    public boolean hasAnyMatching(final Predicate<ItemStack> predicate) {
++        return this.getDelegate().hasAnyMatching(predicate);
++    }
++
++    @Override
++    public List<ItemStack> getContents() {
++        return this.getDelegate().getContents();
++    }
++
++    @Override
++    public void onOpen(final CraftHumanEntity who) {
++        this.getDelegate().onOpen(who);
++    }
++
++    @Override
++    public void onClose(final CraftHumanEntity who) {
++        this.getDelegate().onClose(who);
++    }
++
++    @Override
++    public List<HumanEntity> getViewers() {
++        return this.getDelegate().getViewers();
++    }
++
++    @Override
++    public @Nullable InventoryHolder getOwner() {
++        return this.getDelegate().getOwner();
++    }
++
++    @Override
++    public Location getLocation() {
++        return this.getDelegate().getLocation();
++    }
++
++    @Override
++    public RecipeHolder<?> getCurrentRecipe() {
++        return this.getDelegate().getCurrentRecipe();
++    }
++
++    @Override
++    public void setCurrentRecipe(final RecipeHolder<?> recipe) {
++        this.getDelegate().setCurrentRecipe(recipe);
++    }
++
++    @Override
++    public void clearContent() {
++        this.getDelegate().clearContent();
++    }
++
++    public Container getDelegate() {
++        return this.container;
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/util/PaperResultCreators.java b/src/main/java/org/bukkit/craftbukkit/inventory/util/PaperResultCreators.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..bb6a6e4bc414bbd5f61358adeba22d58d87b7171
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/util/PaperResultCreators.java
+@@ -0,0 +1,101 @@
++package org.bukkit.craftbukkit.inventory.util;
++
++import io.papermc.paper.adventure.PaperAdventure;
++import java.util.Objects;
++import net.kyori.adventure.text.Component;
++import net.minecraft.server.level.ServerPlayer;
++import net.minecraft.world.inventory.AbstractContainerMenu;
++import net.minecraft.world.inventory.LoomMenu;
++import net.minecraft.world.inventory.MenuType;
++import net.minecraft.world.inventory.StonecutterMenu;
++import org.bukkit.craftbukkit.inventory.CraftInventory;
++import org.bukkit.craftbukkit.inventory.CraftInventoryLoom;
++import org.bukkit.craftbukkit.inventory.CraftInventoryStonecutter;
++import org.bukkit.craftbukkit.inventory.CraftResultInventory;
++import org.bukkit.inventory.InventoryHolder;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public final class PaperResultCreators {
++
++    private PaperResultCreators() {
++    }
++
++    public static @Nullable AbstractContainerMenu tryCreate(final CraftInventory inventory, final ServerPlayer player, final MenuType<?> menuType) {
++        if (!(inventory instanceof final CraftResultInventory craftResultInventory) || !(inventory instanceof final PaperResultInventoryCreator.CustomResultInventory customResultInventory)) {
++            return null;
++        }
++
++        if (!(craftResultInventory.getIngredientsInventory() instanceof final DelegatingContainer ingredients) || !(craftResultInventory.getResultInventory() instanceof final DelegatingContainer results)) {
++            return null;
++        }
++
++        final AbstractContainerMenu finalMenu;
++        if (menuType == MenuType.LOOM) {
++            finalMenu = LOOM.create(player, ingredients, results);
++        } else if (menuType == MenuType.STONECUTTER) {
++            finalMenu = STONECUTTER.create(player, ingredients, results);
++        } else {
++            return null;
++        }
++        finalMenu.setTitle(PaperAdventure.asVanilla(customResultInventory.title()));
++        return finalMenu;
++    }
++
++    public static final PaperResultInventoryCreator<LoomMenu> LOOM = new PaperResultInventoryCreator<>(
++        LoomMenu::new,
++        LoomMenu::createDummyMainContainer,
++        LoomMenu::createDummyResultContainer,
++        menu -> menu.inputContainer,
++        menu -> menu.outputContainer,
++        (main, result, holder, title) -> {
++            class Impl extends CraftInventoryLoom implements PaperResultInventoryCreator.CustomResultInventory {
++
++                public Impl() {
++                    super(main, result);
++                }
++
++                @Override
++                public InventoryHolder getHolder() {
++                    return holder;
++                }
++
++                @Override
++                public Component title() {
++                    return Objects.requireNonNullElseGet(title, () -> Component.translatable("container.loom"));
++                }
++            }
++
++            return new Impl();
++        }
++    );
++
++    public static final PaperResultInventoryCreator<StonecutterMenu> STONECUTTER = new PaperResultInventoryCreator<>(
++        StonecutterMenu::new,
++        StonecutterMenu::createDummyMainContainer,
++        StonecutterMenu::createDummyResultContainer,
++        menu -> menu.container,
++        menu -> menu.resultContainer,
++        (main, result, holder, title) -> {
++            class Impl extends CraftInventoryStonecutter implements PaperResultInventoryCreator.CustomResultInventory {
++
++                public Impl() {
++                    super(main, result);
++                }
++
++                @Override
++                public InventoryHolder getHolder() {
++                    return holder;
++                }
++
++                @Override
++                public Component title() {
++                    return Objects.requireNonNullElseGet(title, () -> Component.translatable("container.stonecutter"));
++                }
++            }
++            return new Impl();
++        }
++    );
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/util/PaperResultInventoryCreator.java b/src/main/java/org/bukkit/craftbukkit/inventory/util/PaperResultInventoryCreator.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..19fbf0881c664eb8071e057ac41ca483d2fa7f3d
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/util/PaperResultInventoryCreator.java
+@@ -0,0 +1,73 @@
++package org.bukkit.craftbukkit.inventory.util;
++
++import java.util.function.Function;
++import java.util.function.Supplier;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
++import net.minecraft.server.level.ServerPlayer;
++import net.minecraft.world.Container;
++import net.minecraft.world.inventory.AbstractContainerMenu;
++import net.minecraft.world.inventory.ContainerLevelAccess;
++import org.bukkit.craftbukkit.inventory.CraftInventory;
++import org.bukkit.event.inventory.InventoryType;
++import org.bukkit.inventory.Inventory;
++import org.bukkit.inventory.InventoryHolder;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public class PaperResultInventoryCreator<M extends AbstractContainerMenu> implements CraftInventoryCreator.InventoryConverter {
++
++    final MenuFactory<M> factory;
++    final Supplier<Container> mainContainerCreator;
++    final Supplier<Container> resultContainerCreator;
++    final Function<M, Container> mainContainerGetter;
++    final Function<M, Container> resultContainerGetter;
++    final ResultCreator<?> inventoryCreator;
++
++    public PaperResultInventoryCreator(final MenuFactory<M> factory, final Supplier<Container> mainContainerCreator, final Supplier<Container> resultContainerCreator, final Function<M, Container> mainContainerGetter, final Function<M, Container> resultContainerGetter, final ResultCreator<?> inventoryCreator) {
++        this.factory = factory;
++        this.mainContainerCreator = mainContainerCreator;
++        this.resultContainerCreator = resultContainerCreator;
++        this.mainContainerGetter = mainContainerGetter;
++        this.resultContainerGetter = resultContainerGetter;
++        this.inventoryCreator = inventoryCreator;
++    }
++
++    @Override
++    public Inventory createInventory(final @Nullable InventoryHolder holder, final InventoryType type) {
++        return this.createInventory(holder, type, (Component) null);
++    }
++
++    @Override
++    public Inventory createInventory(final @Nullable InventoryHolder holder, final InventoryType type, final @Nullable Component title) {
++        return this.inventoryCreator.create(DelegatingContainer.create(this.mainContainerCreator.get()), DelegatingContainer.create(this.resultContainerCreator.get()), holder, title);
++    }
++
++    @Override
++    public Inventory createInventory(final @Nullable InventoryHolder holder, final InventoryType type, final String title) {
++        return this.createInventory(holder, type, LegacyComponentSerializer.legacySection().deserialize(title));
++    }
++
++    public M create(final ServerPlayer player, final DelegatingContainer ingredients, final DelegatingContainer results) {
++        final ContainerLevelAccess access = ContainerLevelAccess.create(player.level(), player.blockPosition());
++        return this.factory.create(player.nextContainerCounter(), player.getInventory(), access, ingredients, results);
++    }
++
++    @FunctionalInterface
++    public interface ResultCreator<C extends CraftInventory & CustomResultInventory> {
++        C create(Container main, Container result, @Nullable InventoryHolder holder, @Nullable Component title);
++    }
++
++    @FunctionalInterface
++    public interface MenuFactory<M extends AbstractContainerMenu> {
++
++        M create(int syncId, net.minecraft.world.entity.player.Inventory playerInv, ContainerLevelAccess context, DelegatingContainer input, DelegatingContainer output);
++    }
++
++    public interface CustomResultInventory {
++
++        Component title();
++    }
++}
