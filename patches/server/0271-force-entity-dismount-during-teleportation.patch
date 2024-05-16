@@ -19,18 +19,39 @@ this is going to be the best soultion all around.
 
 Improvements/suggestions welcome!
 
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 665fcf8382fbcb214eda16dae9e40e33e257ec6f..2313c451dbcb28e79d8ff139696e2efb0c4ae756 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -2480,9 +2480,15 @@ public class ServerPlayer extends Player {
+ 
+     @Override
+     public void stopRiding() {
++        // Paper start - Force entity dismount during teleportation
++        this.stopRiding(false);
++    }
++    @Override
++    public void stopRiding(boolean suppressCancellation) {
++        // Paper end - Force entity dismount during teleportation
+         Entity entity = this.getVehicle();
+ 
+-        super.stopRiding();
++        super.stopRiding(suppressCancellation); // Paper - Force entity dismount during teleportation
+         if (entity instanceof LivingEntity entityliving) {
+             Iterator iterator = entityliving.getActiveEffects().iterator();
+ 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 50c5ad0eea45c1828b9a1c6c47727e4800940252..d372e2793948f532f473cd6eca578ebd3ff3fbfb 100644
+index 50c5ad0eea45c1828b9a1c6c47727e4800940252..932d9bb32c1473a31ea4da429c1f2dc3b3a73f60 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -2601,11 +2601,16 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -2601,17 +2601,28 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      }
  
      public void removeVehicle() {
 +        // Paper start - Force entity dismount during teleportation
-+        stopRiding(false);
++        this.removeVehicle(false);
 +    }
-+    public void stopRiding(boolean suppressCancellation) {
++    public void removeVehicle(boolean suppressCancellation) {
 +        // Paper end - Force entity dismount during teleportation
          if (this.vehicle != null) {
              Entity entity = this.vehicle;
@@ -41,7 +62,20 @@ index 50c5ad0eea45c1828b9a1c6c47727e4800940252..d372e2793948f532f473cd6eca578ebd
          }
  
      }
-@@ -2636,7 +2641,10 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+ 
+     public void stopRiding() {
+-        this.removeVehicle();
++        // Paper start - Force entity dismount during teleportation
++        this.stopRiding(false);
++    }
++
++    public void stopRiding(boolean suppressCancellation) {
++        this.removeVehicle(suppressCancellation);
++        // Paper end - Force entity dismount during teleportation
+     }
+ 
+     protected void addPassenger(Entity passenger) {
+@@ -2636,7 +2647,10 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          }
      }
  
@@ -53,7 +87,7 @@ index 50c5ad0eea45c1828b9a1c6c47727e4800940252..d372e2793948f532f473cd6eca578ebd
          if (entity.getVehicle() == this) {
              throw new IllegalStateException("Use x.stopRiding(y), not y.removePassenger(x)");
          } else {
-@@ -2646,7 +2654,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -2646,7 +2660,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
              if (this.getBukkitEntity() instanceof Vehicle && entity.getBukkitEntity() instanceof LivingEntity) {
                  VehicleExitEvent event = new VehicleExitEvent(
                          (Vehicle) this.getBukkitEntity(),
@@ -62,7 +96,7 @@ index 50c5ad0eea45c1828b9a1c6c47727e4800940252..d372e2793948f532f473cd6eca578ebd
                  );
                  // Suppress during worldgen
                  if (this.valid) {
-@@ -2659,7 +2667,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -2659,7 +2673,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
                  }
              }
  
@@ -72,7 +106,7 @@ index 50c5ad0eea45c1828b9a1c6c47727e4800940252..d372e2793948f532f473cd6eca578ebd
              if (this.valid) {
                  Bukkit.getPluginManager().callEvent(event);
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 9bb2b2baecfd4cfb9dbbf7cf5c8be939f1ecc4d6..47b1a4ec278cf9762c9eb9c1448cf78912b7d77a 100644
+index 9bb2b2baecfd4cfb9dbbf7cf5c8be939f1ecc4d6..27912ca1a9825db67e77886da01ab843bd0b005b 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -3585,9 +3585,15 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -80,7 +114,7 @@ index 9bb2b2baecfd4cfb9dbbf7cf5c8be939f1ecc4d6..47b1a4ec278cf9762c9eb9c1448cf789
      @Override
      public void stopRiding() {
 +        // Paper start - Force entity dismount during teleportation
-+        stopRiding(false);
++        this.stopRiding(false);
 +    }
 +    @Override
 +    public void stopRiding(boolean suppressCancellation) {
@@ -92,8 +126,27 @@ index 9bb2b2baecfd4cfb9dbbf7cf5c8be939f1ecc4d6..47b1a4ec278cf9762c9eb9c1448cf789
          if (entity != null && entity != this.getVehicle() && !this.level().isClientSide) {
              this.dismountVehicle(entity);
          }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Shulker.java b/src/main/java/net/minecraft/world/entity/monster/Shulker.java
+index 509c8fae366e6aeca324b4d8e39bd3182d6d9b9b..c2005b86ac9ff6aa03ef7937c2b7a228addc4f01 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Shulker.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Shulker.java
+@@ -288,7 +288,13 @@ public class Shulker extends AbstractGolem implements VariantHolder<Optional<Dye
+ 
+     @Override
+     public void stopRiding() {
+-        super.stopRiding();
++        // Paper start - Force entity dismount during teleportation
++        this.stopRiding(false);
++    }
++    @Override
++    public void stopRiding(boolean suppressCancellation) {
++        super.stopRiding(suppressCancellation);
++        // Paper end - Force entity dismount during teleportation
+         if (this.level().isClientSide) {
+             this.clientOldAttachPosition = this.blockPosition();
+         }
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index b27a6719edd47f7ecb3f8c5560a36fc201efea36..bbafbeff99a7c1bd2d9e27982671a017071f829c 100644
+index b27a6719edd47f7ecb3f8c5560a36fc201efea36..62a855594b5b87b92e18f47b84a18b99df1e33c7 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
 @@ -1150,7 +1150,13 @@ public abstract class Player extends LivingEntity {
@@ -102,11 +155,11 @@ index b27a6719edd47f7ecb3f8c5560a36fc201efea36..bbafbeff99a7c1bd2d9e27982671a017
      public void removeVehicle() {
 -        super.removeVehicle();
 +        // Paper start - Force entity dismount during teleportation
-+        stopRiding(false);
++        this.removeVehicle(false);
 +    }
 +    @Override
-+    public void stopRiding(boolean suppressCancellation) {
-+        super.stopRiding(suppressCancellation);
++    public void removeVehicle(boolean suppressCancellation) {
++        super.removeVehicle(suppressCancellation);
 +        // Paper end - Force entity dismount during teleportation
          this.boardingCooldown = 0;
      }
