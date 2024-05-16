@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Yannick Lamprecht <yannicklamprecht@live.de>
+Date: Mon, 22 Jan 2024 13:27:30 +0100
+Subject: [PATCH] ItemStack Tooltip API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 89e4f53598c14ea2ca2b6678edc97366649d0145..9bd51aeedf2556e714960b081029f48afbc0f3f5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -647,6 +647,20 @@ public final class CraftMagicNumbers implements UnsafeValues {
+         return org.bukkit.craftbukkit.CraftStatistic.getNMSStatistic(statistic).getName();
+     }
+     // Paper end
++    // Paper start - expose itemstack tooltip lines
++    @Override
++    public java.util.List<net.kyori.adventure.text.Component> computeTooltipLines(final ItemStack itemStack, final io.papermc.paper.inventory.tooltip.TooltipContext tooltipContext, final org.bukkit.entity.Player player) {
++        Preconditions.checkArgument(tooltipContext != null, "tooltipContext cannot be null");
++        net.minecraft.world.item.TooltipFlag.Default flag = tooltipContext.isAdvanced() ? net.minecraft.world.item.TooltipFlag.ADVANCED : net.minecraft.world.item.TooltipFlag.NORMAL;
++        if (tooltipContext.isCreative()) {
++            flag = flag.asCreative();
++        }
++        final java.util.List<net.minecraft.network.chat.Component> lines = CraftItemStack.asNMSCopy(itemStack).getTooltipLines(
++            net.minecraft.world.item.Item.TooltipContext.of(player == null ? net.minecraft.server.MinecraftServer.getServer().registryAccess() : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle().level().registryAccess()),
++            player == null ? null : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle(), flag);
++        return lines.stream().map(io.papermc.paper.adventure.PaperAdventure::asAdventure).toList();
++    }
++    // Paper end - expose itemstack tooltip lines
+ 
+     @Override
+     public String get(Class<?> aClass, String s) {

@@ -1,0 +1,702 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Tue, 1 Mar 2016 14:32:43 -0600
+Subject: [PATCH] Expose server build information
+
+Co-authored-by: Zach Brown <zach@zachbr.io>
+Co-authored-by: Kyle Wood <kyle@denwav.dev>
+Co-authored-by: Mark Vainomaa <mikroskeem@mikroskeem.eu>
+Co-authored-by: Riley Park <rileysebastianpark@gmail.com>
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+Co-authored-by: masmc05 <masmc05@gmail.com>
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 158779a3590f089c4224b2b128c2e653aef42a94..2caa4c8e250a7925e7d6f9ba00a95956b5328568 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -1,4 +1,5 @@
+ import io.papermc.paperweight.util.*
++import java.time.Instant
+ 
+ plugins {
+     java
+@@ -64,18 +65,24 @@ tasks.jar {
+ 
+     manifest {
+         val git = Git(rootProject.layout.projectDirectory.path)
++        val mcVersion = rootProject.providers.gradleProperty("mcVersion").get()
++        val build = System.getenv("BUILD_NUMBER") ?: null
+         val gitHash = git("rev-parse", "--short=7", "HEAD").getText().trim()
+-        val implementationVersion = System.getenv("BUILD_NUMBER") ?: "\"$gitHash\""
++        val implementationVersion = "$mcVersion-${build ?: "DEV"}-$gitHash"
+         val date = git("show", "-s", "--format=%ci", gitHash).getText().trim() // Paper
+         val gitBranch = git("rev-parse", "--abbrev-ref", "HEAD").getText().trim() // Paper
+         attributes(
+             "Main-Class" to "org.bukkit.craftbukkit.Main",
+-            "Implementation-Title" to "CraftBukkit",
+-            "Implementation-Version" to "git-Paper-$implementationVersion",
++            "Implementation-Title" to "Paper",
++            "Implementation-Version" to implementationVersion,
+             "Implementation-Vendor" to date, // Paper
+-            "Specification-Title" to "Bukkit",
++            "Specification-Title" to "Paper",
+             "Specification-Version" to project.version,
+-            "Specification-Vendor" to "Bukkit Team",
++            "Specification-Vendor" to "Paper Team",
++            "Brand-Id" to "papermc:paper",
++            "Brand-Name" to "Paper",
++            "Build-Number" to (build ?: ""),
++            "Build-Time" to Instant.now().toString(),
+             "Git-Branch" to gitBranch, // Paper
+             "Git-Commit" to gitHash, // Paper
+             "CraftBukkit-Package-Version" to paperweight.craftBukkitPackageVersion.get(), // Paper
+diff --git a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..532306cacd52579cdf37e4aca25887b1ed3ba6a1
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
+@@ -0,0 +1,146 @@
++package com.destroystokyo.paper;
++
++import com.destroystokyo.paper.util.VersionFetcher;
++import com.google.common.base.Charsets;
++import com.google.common.io.Resources;
++import com.google.gson.Gson;
++import com.google.gson.JsonArray;
++import com.google.gson.JsonElement;
++import com.google.gson.JsonObject;
++import com.google.gson.JsonSyntaxException;
++import com.mojang.logging.LogUtils;
++import io.papermc.paper.ServerBuildInfo;
++import java.io.BufferedReader;
++import java.io.IOException;
++import java.io.InputStreamReader;
++import java.net.HttpURLConnection;
++import java.net.URI;
++import java.util.Optional;
++import java.util.OptionalInt;
++import java.util.stream.StreamSupport;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.event.ClickEvent;
++import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.format.TextDecoration;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.slf4j.Logger;
++
++import static net.kyori.adventure.text.Component.text;
++import static net.kyori.adventure.text.format.TextColor.color;
++
++@DefaultQualifier(NonNull.class)
++public class PaperVersionFetcher implements VersionFetcher {
++    private static final Logger LOGGER = LogUtils.getClassLogger();
++    private static final int DISTANCE_ERROR = -1;
++    private static final int DISTANCE_UNKNOWN = -2;
++    private static final String DOWNLOAD_PAGE = "https://papermc.io/downloads/paper";
++
++    @Override
++    public long getCacheTime() {
++        return 720000;
++    }
++
++    @Override
++    public Component getVersionMessage(final String serverVersion) {
++        final Component updateMessage;
++        final ServerBuildInfo build = ServerBuildInfo.buildInfo();
++        if (build.buildNumber().isEmpty() && build.gitCommit().isEmpty()) {
++            updateMessage = text("You are running a development version without access to version information", color(0xFF5300));
++        } else {
++            updateMessage = getUpdateStatusMessage("PaperMC/Paper", build);
++        }
++        final @Nullable Component history = this.getHistory();
++
++        return history != null ? Component.textOfChildren(updateMessage, Component.newline(), history) : updateMessage;
++    }
++
++    private static Component getUpdateStatusMessage(final String repo, final ServerBuildInfo build) {
++        int distance = DISTANCE_ERROR;
++
++        final OptionalInt buildNumber = build.buildNumber();
++        if (buildNumber.isPresent()) {
++            distance = fetchDistanceFromSiteApi(build, buildNumber.getAsInt());
++        } else {
++            final Optional<String> gitBranch = build.gitBranch();
++            final Optional<String> gitCommit = build.gitCommit();
++            if (gitBranch.isPresent() && gitCommit.isPresent()) {
++                distance = fetchDistanceFromGitHub(repo, gitBranch.get(), gitCommit.get());
++            }
++        }
++
++        return switch (distance) {
++            case DISTANCE_ERROR -> text("Error obtaining version information", NamedTextColor.YELLOW);
++            case 0 -> text("You are running the latest version", NamedTextColor.GREEN);
++            case DISTANCE_UNKNOWN -> text("Unknown version", NamedTextColor.YELLOW);
++            default -> text("You are " + distance + " version(s) behind", NamedTextColor.YELLOW)
++                .append(Component.newline())
++                .append(text("Download the new version at: ")
++                    .append(text(DOWNLOAD_PAGE, NamedTextColor.GOLD)
++                        .hoverEvent(text("Click to open", NamedTextColor.WHITE))
++                        .clickEvent(ClickEvent.openUrl(DOWNLOAD_PAGE))));
++        };
++    }
++
++    private static int fetchDistanceFromSiteApi(final ServerBuildInfo build, final int jenkinsBuild) {
++        try {
++            try (final BufferedReader reader = Resources.asCharSource(
++                URI.create("https://api.papermc.io/v2/projects/paper/versions/" + build.minecraftVersionId()).toURL(),
++                Charsets.UTF_8
++            ).openBufferedStream()) {
++                final JsonObject json = new Gson().fromJson(reader, JsonObject.class);
++                final JsonArray builds = json.getAsJsonArray("builds");
++                final int latest = StreamSupport.stream(builds.spliterator(), false)
++                    .mapToInt(JsonElement::getAsInt)
++                    .max()
++                    .orElseThrow();
++                return latest - jenkinsBuild;
++            } catch (final JsonSyntaxException ex) {
++                LOGGER.error("Error parsing json from Paper's downloads API", ex);
++                return DISTANCE_ERROR;
++            }
++        } catch (final IOException e) {
++            LOGGER.error("Error while parsing version", e);
++            return DISTANCE_ERROR;
++        }
++    }
++
++    // Contributed by Techcable <Techcable@outlook.com> in GH-65
++    private static int fetchDistanceFromGitHub(final String repo, final String branch, final String hash) {
++        try {
++            final HttpURLConnection connection = (HttpURLConnection) URI.create("https://api.github.com/repos/%s/compare/%s...%s".formatted(repo, branch, hash)).toURL().openConnection();
++            connection.connect();
++            if (connection.getResponseCode() == HttpURLConnection.HTTP_NOT_FOUND) return DISTANCE_UNKNOWN; // Unknown commit
++            try (final BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), Charsets.UTF_8))) {
++                final JsonObject obj = new Gson().fromJson(reader, JsonObject.class);
++                final String status = obj.get("status").getAsString();
++                return switch (status) {
++                    case "identical" -> 0;
++                    case "behind" -> obj.get("behind_by").getAsInt();
++                    default -> DISTANCE_ERROR;
++                };
++            } catch (final JsonSyntaxException | NumberFormatException e) {
++                LOGGER.error("Error parsing json from GitHub's API", e);
++                return DISTANCE_ERROR;
++            }
++        } catch (final IOException e) {
++            LOGGER.error("Error while parsing version", e);
++            return DISTANCE_ERROR;
++        }
++    }
++
++    private @Nullable Component getHistory() {
++        final VersionHistoryManager.@Nullable VersionData data = VersionHistoryManager.INSTANCE.getVersionData();
++        if (data == null) {
++            return null;
++        }
++
++        final @Nullable String oldVersion = data.getOldVersion();
++        if (oldVersion == null) {
++            return null;
++        }
++
++        return text("Previous version: " + oldVersion, NamedTextColor.GRAY, TextDecoration.ITALIC);
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/VersionHistoryManager.java b/src/main/java/com/destroystokyo/paper/VersionHistoryManager.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..660b2ec6b63a4ceffee44ab11f54dfa7c0d0996f
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/VersionHistoryManager.java
+@@ -0,0 +1,153 @@
++package com.destroystokyo.paper;
++
++import com.google.common.base.MoreObjects;
++import com.google.gson.Gson;
++import com.google.gson.JsonSyntaxException;
++import java.io.BufferedReader;
++import java.io.BufferedWriter;
++import java.io.IOException;
++import java.nio.charset.StandardCharsets;
++import java.nio.file.Files;
++import java.nio.file.Path;
++import java.nio.file.Paths;
++import java.nio.file.StandardOpenOption;
++import java.util.Objects;
++import java.util.logging.Level;
++import java.util.logging.Logger;
++import org.bukkit.Bukkit;
++
++import javax.annotation.Nonnull;
++import javax.annotation.Nullable;
++
++public enum VersionHistoryManager {
++    INSTANCE;
++
++    private final Gson gson = new Gson();
++
++    private final Logger logger = Bukkit.getLogger();
++
++    private VersionData currentData = null;
++
++    VersionHistoryManager() {
++        final Path path = Paths.get("version_history.json");
++
++        if (Files.exists(path)) {
++            // Basic file santiy checks
++            if (!Files.isRegularFile(path)) {
++                if (Files.isDirectory(path)) {
++                    logger.severe(path + " is a directory, cannot be used for version history");
++                } else {
++                    logger.severe(path + " is not a regular file, cannot be used for version history");
++                }
++                // We can't continue
++                return;
++            }
++
++            try (final BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
++                currentData = gson.fromJson(reader, VersionData.class);
++            } catch (final IOException e) {
++                logger.log(Level.SEVERE, "Failed to read version history file '" + path + "'", e);
++                return;
++            } catch (final JsonSyntaxException e) {
++                logger.log(Level.SEVERE, "Invalid json syntax for file '" + path + "'", e);
++                return;
++            }
++
++            final String version = Bukkit.getVersion();
++            if (version == null) {
++                logger.severe("Failed to retrieve current version");
++                return;
++            }
++
++            if (currentData == null) {
++                // Empty file
++                currentData = new VersionData();
++                currentData.setCurrentVersion(version);
++                writeFile(path);
++                return;
++            }
++
++            if (!version.equals(currentData.getCurrentVersion())) {
++                // The version appears to have changed
++                currentData.setOldVersion(currentData.getCurrentVersion());
++                currentData.setCurrentVersion(version);
++                writeFile(path);
++            }
++        } else {
++            // File doesn't exist, start fresh
++            currentData = new VersionData();
++            // oldVersion is null
++            currentData.setCurrentVersion(Bukkit.getVersion());
++            writeFile(path);
++        }
++    }
++
++    private void writeFile(@Nonnull final Path path) {
++        try (final BufferedWriter writer = Files.newBufferedWriter(
++            path,
++            StandardCharsets.UTF_8,
++            StandardOpenOption.WRITE,
++            StandardOpenOption.CREATE,
++            StandardOpenOption.TRUNCATE_EXISTING
++        )) {
++            gson.toJson(currentData, writer);
++        } catch (final IOException e) {
++            logger.log(Level.SEVERE, "Failed to write to version history file", e);
++        }
++    }
++
++    @Nullable
++    public VersionData getVersionData() {
++        return currentData;
++    }
++
++    public static class VersionData {
++        private String oldVersion;
++
++        private String currentVersion;
++
++        @Nullable
++        public String getOldVersion() {
++            return oldVersion;
++        }
++
++        public void setOldVersion(@Nullable String oldVersion) {
++            this.oldVersion = oldVersion;
++        }
++
++        @Nullable
++        public String getCurrentVersion() {
++            return currentVersion;
++        }
++
++        public void setCurrentVersion(@Nullable String currentVersion) {
++            this.currentVersion = currentVersion;
++        }
++
++        @Override
++        public String toString() {
++            return MoreObjects.toStringHelper(this)
++                .add("oldVersion", oldVersion)
++                .add("currentVersion", currentVersion)
++                .toString();
++        }
++
++        @Override
++        public boolean equals(@Nullable Object o) {
++            if (this == o) {
++                return true;
++            }
++            if (o == null || getClass() != o.getClass()) {
++                return false;
++            }
++            final VersionData versionData = (VersionData) o;
++            return Objects.equals(oldVersion, versionData.oldVersion) &&
++                Objects.equals(currentVersion, versionData.currentVersion);
++        }
++
++        @Override
++        public int hashCode() {
++            return Objects.hash(oldVersion, currentVersion);
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java b/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..790bad0494454ca12ee152e3de6da3da634d9b20
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
+@@ -0,0 +1,104 @@
++package io.papermc.paper;
++
++import com.google.common.base.Strings;
++import io.papermc.paper.util.JarManifests;
++import java.time.Instant;
++import java.time.temporal.ChronoUnit;
++import java.util.Optional;
++import java.util.OptionalInt;
++import java.util.jar.Manifest;
++import net.kyori.adventure.key.Key;
++import net.minecraft.SharedConstants;
++import org.bukkit.craftbukkit.CraftServer;
++import org.bukkit.craftbukkit.Main;
++import org.jetbrains.annotations.NotNull;
++
++public record ServerBuildInfoImpl(
++    Key brandId,
++    String brandName,
++    String minecraftVersionId,
++    String minecraftVersionName,
++    OptionalInt buildNumber,
++    Instant buildTime,
++    Optional<String> gitBranch,
++    Optional<String> gitCommit
++) implements ServerBuildInfo {
++    private static final String ATTRIBUTE_BRAND_ID = "Brand-Id";
++    private static final String ATTRIBUTE_BRAND_NAME = "Brand-Name";
++    private static final String ATTRIBUTE_BUILD_TIME = "Build-Time";
++    private static final String ATTRIBUTE_BUILD_NUMBER = "Build-Number";
++    private static final String ATTRIBUTE_GIT_BRANCH = "Git-Branch";
++    private static final String ATTRIBUTE_GIT_COMMIT = "Git-Commit";
++
++    private static final String BRAND_PAPER_NAME = "Paper";
++
++    private static final String BUILD_DEV = "DEV";
++
++    public ServerBuildInfoImpl() {
++        this(JarManifests.manifest(CraftServer.class));
++    }
++
++    private ServerBuildInfoImpl(final Manifest manifest) {
++        this(
++            getManifestAttribute(manifest, ATTRIBUTE_BRAND_ID)
++                .map(Key::key)
++                .orElse(BRAND_PAPER_ID),
++            getManifestAttribute(manifest, ATTRIBUTE_BRAND_NAME)
++                .orElse(BRAND_PAPER_NAME),
++            SharedConstants.getCurrentVersion().getId(),
++            SharedConstants.getCurrentVersion().getName(),
++            getManifestAttribute(manifest, ATTRIBUTE_BUILD_NUMBER)
++                .map(Integer::parseInt)
++                .map(OptionalInt::of)
++                .orElse(OptionalInt.empty()),
++            getManifestAttribute(manifest, ATTRIBUTE_BUILD_TIME)
++                .map(Instant::parse)
++                .orElse(Main.BOOT_TIME),
++            getManifestAttribute(manifest, ATTRIBUTE_GIT_BRANCH),
++            getManifestAttribute(manifest, ATTRIBUTE_GIT_COMMIT)
++        );
++    }
++
++    @Override
++    public boolean isBrandCompatible(final @NotNull Key brandId) {
++        return brandId.equals(this.brandId);
++    }
++
++    @Override
++    public @NotNull String asString(final @NotNull StringRepresentation representation) {
++        final StringBuilder sb = new StringBuilder();
++        sb.append(this.minecraftVersionId);
++        sb.append('-');
++        if (this.buildNumber.isPresent()) {
++            sb.append(this.buildNumber.getAsInt());
++        } else {
++            sb.append(BUILD_DEV);
++        }
++        final boolean hasGitBranch = this.gitBranch.isPresent();
++        final boolean hasGitCommit = this.gitCommit.isPresent();
++        if (hasGitBranch || hasGitCommit) {
++            sb.append('-');
++        }
++        if (hasGitBranch && representation == StringRepresentation.VERSION_FULL) {
++            sb.append(this.gitBranch.get());
++            if (hasGitCommit) {
++                sb.append('@');
++            }
++        }
++        if (hasGitCommit) {
++            sb.append(this.gitCommit.get());
++        }
++        if (representation == StringRepresentation.VERSION_FULL) {
++            sb.append(' ');
++            sb.append('(');
++            sb.append(this.buildTime.truncatedTo(ChronoUnit.SECONDS));
++            sb.append(')');
++        }
++        return sb.toString();
++    }
++
++    private static Optional<String> getManifestAttribute(final Manifest manifest, final String name) {
++        final String value = manifest != null ? manifest.getMainAttributes().getValue(name) : null;
++        return Optional.ofNullable(Strings.emptyToNull(value));
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index dee319882d7d51a0e03e0f5f31ab6312048e189d..80a20dce63658842a0fa04004b8eaa8af7685fb4 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -43,7 +43,6 @@ import java.util.Set;
+ import java.util.UUID;
+ import java.util.concurrent.CompletableFuture;
+ import java.util.concurrent.Executor;
+-import java.util.concurrent.RejectedExecutionException;
+ import java.util.concurrent.atomic.AtomicReference;
+ import java.util.function.BooleanSupplier;
+ import java.util.function.Consumer;
+@@ -185,8 +184,6 @@ import net.minecraft.world.phys.Vec2;
+ import net.minecraft.world.phys.Vec3;
+ import org.bukkit.Bukkit;
+ import org.bukkit.craftbukkit.CraftRegistry;
+-import org.bukkit.craftbukkit.CraftServer;
+-import org.bukkit.craftbukkit.Main;
+ import org.bukkit.event.server.ServerLoadEvent;
+ // CraftBukkit end
+ 
+@@ -1680,7 +1677,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+     @DontObfuscate
+     public String getServerModName() {
+-        return "Spigot"; // Spigot - Spigot > // CraftBukkit - cb > vanilla!
++        return io.papermc.paper.ServerBuildInfo.buildInfo().brandName(); // Paper
+     }
+ 
+     public SystemReport fillSystemReport(SystemReport details) {
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index bbe2fabc9251838f232480a04f0a2cf2b49f2812..a6126515e497cb0769bdc96881389026196bbbae 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -214,6 +214,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         // Paper end - initialize global and world-defaults configuration
+         io.papermc.paper.command.PaperCommands.registerCommands(this); // Paper - setup /paper command
+         com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics(); // Paper - start metrics
++        com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // Paper - load version history now
+ 
+         this.setPvpAllowed(dedicatedserverproperties.pvp);
+         this.setFlightAllowed(dedicatedserverproperties.allowFlight);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftCrashReport.java b/src/main/java/org/bukkit/craftbukkit/CraftCrashReport.java
+index f077b8ff0bf0d96628db3569132696b68fd79921..5f11f5b16766f9d1d5640ae037e259bed9020384 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftCrashReport.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftCrashReport.java
+@@ -18,8 +18,10 @@ public class CraftCrashReport implements Supplier<String> {
+ 
+     @Override
+     public String get() {
++        final io.papermc.paper.ServerBuildInfo build = io.papermc.paper.ServerBuildInfo.buildInfo(); // Paper
+         StringWriter value = new StringWriter();
+         try {
++            value.append("\n   BrandInfo: ").append(String.format("%s (%s) version %s", build.brandName(), build.brandId(), build.asString(io.papermc.paper.ServerBuildInfo.StringRepresentation.VERSION_FULL))); // Paper
+             value.append("\n   Running: ").append(Bukkit.getName()).append(" version ").append(Bukkit.getVersion()).append(" (Implementing API version ").append(Bukkit.getBukkitVersion()).append(") ").append(String.valueOf(MinecraftServer.getServer().usesAuthentication()));
+             value.append("\n   Plugins: {");
+             for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index b32ae5b9c232e5d9b3bd89303db3d2cc6258ea29..4d31fb8bc8bf285720a9d5828325d7124cf41c6e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -10,8 +10,6 @@ import com.google.common.collect.MapMaker;
+ import com.mojang.authlib.GameProfile;
+ import com.mojang.brigadier.StringReader;
+ import com.mojang.brigadier.exceptions.CommandSyntaxException;
+-import com.mojang.brigadier.tree.CommandNode;
+-import com.mojang.brigadier.tree.LiteralCommandNode;
+ import com.mojang.serialization.Dynamic;
+ import com.mojang.serialization.Lifecycle;
+ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+@@ -26,7 +24,6 @@ import java.net.InetAddress;
+ import java.util.ArrayList;
+ import java.util.Collections;
+ import java.util.Date;
+-import java.util.HashMap;
+ import java.util.HashSet;
+ import java.util.Iterator;
+ import java.util.LinkedHashMap;
+@@ -153,7 +150,6 @@ import org.bukkit.craftbukkit.ban.CraftProfileBanList;
+ import org.bukkit.craftbukkit.block.data.CraftBlockData;
+ import org.bukkit.craftbukkit.boss.CraftBossBar;
+ import org.bukkit.craftbukkit.boss.CraftKeyedBossbar;
+-import org.bukkit.craftbukkit.command.BukkitCommandWrapper;
+ import org.bukkit.craftbukkit.command.CraftCommandMap;
+ import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
+ import org.bukkit.craftbukkit.entity.CraftEntityFactory;
+@@ -249,7 +245,6 @@ import org.bukkit.plugin.PluginManager;
+ import org.bukkit.plugin.ServicesManager;
+ import org.bukkit.plugin.SimplePluginManager;
+ import org.bukkit.plugin.SimpleServicesManager;
+-import org.bukkit.plugin.java.JavaPluginLoader;
+ import org.bukkit.plugin.messaging.Messenger;
+ import org.bukkit.plugin.messaging.StandardMessenger;
+ import org.bukkit.profile.PlayerProfile;
+@@ -266,7 +261,7 @@ import org.yaml.snakeyaml.error.MarkedYAMLException;
+ import net.md_5.bungee.api.chat.BaseComponent; // Spigot
+ 
+ public final class CraftServer implements Server {
+-    private final String serverName = "CraftBukkit";
++    private final String serverName = io.papermc.paper.ServerBuildInfo.buildInfo().brandName(); // Paper
+     private final String serverVersion;
+     private final String bukkitVersion = Versioning.getBukkitVersion();
+     private final Logger logger = Logger.getLogger("Minecraft");
+@@ -320,7 +315,7 @@ public final class CraftServer implements Server {
+                 return player.getBukkitEntity();
+             }
+         }));
+-        this.serverVersion = CraftServer.class.getPackage().getImplementationVersion();
++        this.serverVersion = io.papermc.paper.ServerBuildInfo.buildInfo().asString(io.papermc.paper.ServerBuildInfo.StringRepresentation.VERSION_SIMPLE); // Paper - improve version
+         this.structureManager = new CraftStructureManager(console.getStructureManager(), console.registryAccess());
+         this.dataPackManager = new CraftDataPackManager(this.getServer().getPackRepository());
+         this.serverTickManager = new CraftServerTickManager(console.tickRateManager());
+@@ -573,6 +568,13 @@ public final class CraftServer implements Server {
+         return this.bukkitVersion;
+     }
+ 
++    // Paper start - expose game version
++    @Override
++    public String getMinecraftVersion() {
++        return console.getServerVersion();
++    }
++    // Paper end
++
+     @Override
+     public List<CraftPlayer> getOnlinePlayers() {
+         return this.playerView;
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index bc664b090e16ed27ba795c204dc5639679e6eee8..9dc72b01092783c436bc1fa8ce29ff7cdaa39b19 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -15,6 +15,7 @@ import joptsimple.OptionSet;
+ import joptsimple.util.PathConverter;
+ 
+ public class Main {
++    public static final java.time.Instant BOOT_TIME = java.time.Instant.now(); // Paper - track initial start time
+     public static boolean useJline = true;
+     public static boolean useConsole = true;
+ 
+@@ -252,13 +253,26 @@ public class Main {
+                     deadline.add(Calendar.DAY_OF_YEAR, -3);
+                     if (buildDate.before(deadline.getTime())) {
+                         System.err.println("*** Error, this build is outdated ***");
+-                        System.err.println("*** Please download a new build as per instructions from https://www.spigotmc.org/go/outdated-spigot ***");
++                        System.err.println("*** Please download a new build as per instructions from https://papermc.io/downloads/paper ***"); // Paper
+                         System.err.println("*** Server will start in 20 seconds ***");
+                         Thread.sleep(TimeUnit.SECONDS.toMillis(20));
+                     }
+                 }
+ 
+                 System.setProperty("library.jansi.version", "Paper"); // Paper - set meaningless jansi version to prevent git builds from crashing on Windows
++                // Paper start - Log Java and OS versioning to help with debugging plugin issues
++                java.lang.management.RuntimeMXBean runtimeMX = java.lang.management.ManagementFactory.getRuntimeMXBean();
++                java.lang.management.OperatingSystemMXBean osMX = java.lang.management.ManagementFactory.getOperatingSystemMXBean();
++                if (runtimeMX != null && osMX != null) {
++                    String javaInfo = "Java " + runtimeMX.getSpecVersion() + " (" + runtimeMX.getVmName() + " " + runtimeMX.getVmVersion() + ")";
++                    String osInfo = "Host: " + osMX.getName() + " " + osMX.getVersion() + " (" + osMX.getArch() + ")";
++
++                    System.out.println("System Info: " + javaInfo + " " + osInfo);
++                } else {
++                    System.out.println("Unable to read system info");
++                }
++                // Paper end - Log Java and OS versioning to help with debugging plugin issues
++
+                 System.out.println("Loading libraries, please wait...");
+                 net.minecraft.server.Main.main(options);
+             } catch (Throwable t) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 983660c1cc4df5ec6f08ab7363a1bb5d47af9f19..f541ca7cb3328a9366e08a9933b24ed5c76059c0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -477,6 +477,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
+     public String getTimingsServerName() {
+         return io.papermc.paper.configuration.GlobalConfiguration.get().timings.serverName;
+     }
++
++    @Override
++    public com.destroystokyo.paper.util.VersionFetcher getVersionFetcher() {
++        return new com.destroystokyo.paper.PaperVersionFetcher();
++    }
+     // Paper end
+ 
+     @Override
+diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
+index f697d45e0ac4e9cdc8a46121510a04c0f294d91f..e086765dec32241bc5a77afcf072c77a40c6d785 100644
+--- a/src/main/java/org/spigotmc/WatchdogThread.java
++++ b/src/main/java/org/spigotmc/WatchdogThread.java
+@@ -19,7 +19,7 @@ public class WatchdogThread extends Thread
+ 
+     private WatchdogThread(long timeoutTime, boolean restart)
+     {
+-        super( "Spigot Watchdog Thread" );
++        super( "Paper Watchdog Thread" );
+         this.timeoutTime = timeoutTime;
+         this.restart = restart;
+     }
+@@ -65,14 +65,14 @@ public class WatchdogThread extends Thread
+             {
+                 Logger log = Bukkit.getServer().getLogger();
+                 log.log( Level.SEVERE, "------------------------------" );
+-                log.log( Level.SEVERE, "The server has stopped responding! This is (probably) not a Spigot bug." );
++                log.log( Level.SEVERE, "The server has stopped responding! This is (probably) not a Paper bug." ); // Paper
+                 log.log( Level.SEVERE, "If you see a plugin in the Server thread dump below, then please report it to that author" );
+                 log.log( Level.SEVERE, "\t *Especially* if it looks like HTTP or MySQL operations are occurring" );
+                 log.log( Level.SEVERE, "If you see a world save or edit, then it means you did far more than your server can handle at once" );
+                 log.log( Level.SEVERE, "\t If this is the case, consider increasing timeout-time in spigot.yml but note that this will replace the crash with LARGE lag spikes" );
+-                log.log( Level.SEVERE, "If you are unsure or still think this is a Spigot bug, please report to https://www.spigotmc.org/" );
++                log.log( Level.SEVERE, "If you are unsure or still think this is a Paper bug, please report this to https://github.com/PaperMC/Paper/issues" );
+                 log.log( Level.SEVERE, "Be sure to include ALL relevant console errors and Minecraft crash reports" );
+-                log.log( Level.SEVERE, "Spigot version: " + Bukkit.getServer().getVersion() );
++                log.log( Level.SEVERE, "Paper version: " + Bukkit.getServer().getVersion() );
+                 //
+                 if ( net.minecraft.world.level.Level.lastPhysicsProblem != null )
+                 {
+@@ -82,7 +82,7 @@ public class WatchdogThread extends Thread
+                 }
+                 //
+                 log.log( Level.SEVERE, "------------------------------" );
+-                log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Spigot!):" );
++                log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Paper!):" ); // Paper
+                 WatchdogThread.dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( MinecraftServer.getServer().serverThread.getId(), Integer.MAX_VALUE ), log );
+                 log.log( Level.SEVERE, "------------------------------" );
+                 //
+diff --git a/src/main/resources/META-INF/services/io.papermc.paper.ServerBuildInfo b/src/main/resources/META-INF/services/io.papermc.paper.ServerBuildInfo
+new file mode 100644
+index 0000000000000000000000000000000000000000..79b4b25784cfeabd5f619ed5454ef843f35041db
+--- /dev/null
++++ b/src/main/resources/META-INF/services/io.papermc.paper.ServerBuildInfo
+@@ -0,0 +1 @@
++io.papermc.paper.ServerBuildInfoImpl

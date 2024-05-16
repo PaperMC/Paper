@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: PanSzelescik <panszelescik@gmail.com>
+Date: Thu, 7 Apr 2022 16:13:39 +0200
+Subject: [PATCH] Add support for Proxy Protocol
+
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 69b5d39f57a63130c0b83f6238898bdf68fa1e9a..48b8db6d5fdf9b2f7155b9356418178f5594ddcb 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -28,6 +28,7 @@ dependencies {
+     log4jPlugins.annotationProcessorConfigurationName("org.apache.logging.log4j:log4j-core:2.19.0") // Paper - Needed to generate meta for our Log4j plugins
+     runtimeOnly(log4jPlugins.output)
+     alsoShade(log4jPlugins.output)
++    implementation("io.netty:netty-codec-haproxy:4.1.97.Final") // Paper - Add support for proxy protocol
+     // Paper end
+     implementation("org.apache.logging.log4j:log4j-iostreams:2.22.1") // Paper - remove exclusion
+     implementation("org.ow2.asm:asm-commons:9.7")
+diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
+index c63c194c44646e6bc1a59426552787011fc2ced5..96355e1da8feb6687ea0069dda4a82fcd7e25e8a 100644
+--- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
++++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
+@@ -123,6 +123,29 @@ public class ServerConnectionListener {
+                     Connection object = j > 0 ? new RateKickingConnection(j) : new Connection(PacketFlow.SERVERBOUND); // CraftBukkit - decompile error
+ 
+                     //ServerConnectionListener.this.connections.add(object); // Paper
++                    // Paper start - Add support for Proxy Protocol
++                    if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.proxyProtocol) {
++                        channel.pipeline().addAfter("timeout", "haproxy-decoder", new io.netty.handler.codec.haproxy.HAProxyMessageDecoder());
++                        channel.pipeline().addAfter("haproxy-decoder", "haproxy-handler", new ChannelInboundHandlerAdapter() {
++                            @Override
++                            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
++                                if (msg instanceof io.netty.handler.codec.haproxy.HAProxyMessage message) {
++                                    if (message.command() == io.netty.handler.codec.haproxy.HAProxyCommand.PROXY) {
++                                        String realaddress = message.sourceAddress();
++                                        int realport = message.sourcePort();
++
++                                        SocketAddress socketaddr = new java.net.InetSocketAddress(realaddress, realport);
++
++                                        Connection connection = (Connection) channel.pipeline().get("packet_handler");
++                                        connection.address = socketaddr;
++                                    }
++                                } else {
++                                    super.channelRead(ctx, msg);
++                                }
++                            }
++                        });
++                    }
++                    // Paper end - Add support for proxy protocol
+                     pending.add(object); // Paper - prevent blocking on adding a new connection while the server is ticking
+                     ((Connection) object).configurePacketHandler(channelpipeline);
+                     ((Connection) object).setListenerForServerboundHandshake(new ServerHandshakePacketListenerImpl(ServerConnectionListener.this.server, (Connection) object));

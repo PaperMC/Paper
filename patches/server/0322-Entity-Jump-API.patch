@@ -1,0 +1,76 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 8 Feb 2020 23:26:11 -0600
+Subject: [PATCH] Entity Jump API
+
+== AT ==
+public net.minecraft.world.entity.LivingEntity jumping
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index ebdc95a04400ab71a261a1a4fd6e4477ee9d3122..fa9da0e3b9fc579f16c3b05c8c45310940e68d62 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3401,8 +3401,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
+             } else if (this.isInLava() && (!this.onGround() || d3 > d4)) {
+                 this.jumpInLiquid(FluidTags.LAVA);
+             } else if ((this.onGround() || flag && d3 <= d4) && this.noJumpDelay == 0) {
++                if (new com.destroystokyo.paper.event.entity.EntityJumpEvent(getBukkitLivingEntity()).callEvent()) { // Paper - Entity Jump API
+                 this.jumpFromGround();
+                 this.noJumpDelay = 10;
++                } else { this.setJumping(false); } // Paper - Entity Jump API; setJumping(false) stops a potential loop
+             }
+         } else {
+             this.noJumpDelay = 0;
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Panda.java b/src/main/java/net/minecraft/world/entity/animal/Panda.java
+index 4a1b25bb8a3d342400cb657781e9eab68decd479..fb4c7220c4edad54813036d62db7e3eefeda92a3 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Panda.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Panda.java
+@@ -536,7 +536,9 @@ public class Panda extends Animal {
+             Panda entitypanda = (Panda) iterator.next();
+ 
+             if (!entitypanda.isBaby() && entitypanda.onGround() && !entitypanda.isInWater() && entitypanda.canPerformAction()) {
++                if (new com.destroystokyo.paper.event.entity.EntityJumpEvent(getBukkitLivingEntity()).callEvent()) { // Paper - Entity Jump API
+                 entitypanda.jumpFromGround();
++                } else { this.setJumping(false); } // Paper - Entity Jump API; setJumping(false) stops a potential loop
+             }
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Ravager.java b/src/main/java/net/minecraft/world/entity/monster/Ravager.java
+index 1264fb03d2dcab088fc4a7c2788c9f9df53cba5d..cec801ba14bed8b043b2375f1bf9e7811a63e995 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Ravager.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Ravager.java
+@@ -159,7 +159,9 @@ public class Ravager extends Raider {
+                 }
+ 
+                 if (!flag && this.onGround()) {
++                    if (new com.destroystokyo.paper.event.entity.EntityJumpEvent(getBukkitLivingEntity()).callEvent()) { // Paper - Entity Jump API
+                     this.jumpFromGround();
++                    } else { this.setJumping(false); } // Paper - Entity Jump API; setJumping(false) stops a potential loop
+                 }
+             }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index b2172a8c70ab77ba7c98b6b2b27595765d7eba11..539280a0265a4746ebc9ede6667df3699dfb8125 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -961,4 +961,20 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+         return org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(this.getHandle().getUsedItemHand());
+     }
+     // Paper end - active item API
++
++    // Paper start - entity jump API
++    @Override
++    public boolean isJumping() {
++        return getHandle().jumping;
++    }
++
++    @Override
++    public void setJumping(boolean jumping) {
++        getHandle().setJumping(jumping);
++        if (jumping && getHandle() instanceof Mob) {
++            // this is needed to actually make a mob jump
++            ((Mob) getHandle()).getJumpControl().jump();
++        }
++    }
++    // Paper end - entity jump API
+ }

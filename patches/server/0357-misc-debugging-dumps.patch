@@ -1,0 +1,118 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Thu, 18 Feb 2021 20:23:28 +0000
+Subject: [PATCH] misc debugging dumps
+
+
+diff --git a/src/main/java/io/papermc/paper/util/TraceUtil.java b/src/main/java/io/papermc/paper/util/TraceUtil.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..479bb92d159f33c54c2d9c39d8a63aa9e74d95b9
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/TraceUtil.java
+@@ -0,0 +1,25 @@
++package io.papermc.paper.util;
++
++import org.bukkit.Bukkit;
++
++public final class TraceUtil {
++
++    public static void dumpTraceForThread(Thread thread, String reason) {
++        Bukkit.getLogger().warning(thread.getName() + ": " + reason);
++        StackTraceElement[] trace = StacktraceDeobfuscator.INSTANCE.deobfuscateStacktrace(thread.getStackTrace());
++        for (StackTraceElement traceElement : trace) {
++            Bukkit.getLogger().warning("\tat " + traceElement);
++        }
++    }
++
++    public static void dumpTraceForThread(String reason) {
++        final Throwable thr = new Throwable(reason);
++        StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(thr);
++        thr.printStackTrace();
++    }
++
++    public static void printStackTrace(Throwable thr) {
++        StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(thr);
++        thr.printStackTrace();
++    }
++}
+diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
+index f15c388434a0a501f86868de35cc138756975027..5044a7dc120c8b040ee23365d2bf97e6180e3ee4 100644
+--- a/src/main/java/net/minecraft/commands/Commands.java
++++ b/src/main/java/net/minecraft/commands/Commands.java
+@@ -342,7 +342,7 @@ public class Commands {
+         } catch (Exception exception) {
+             MutableComponent ichatmutablecomponent = Component.literal(exception.getMessage() == null ? exception.getClass().getName() : exception.getMessage());
+ 
+-            if (Commands.LOGGER.isDebugEnabled()) {
++            if (commandlistenerwrapper.getServer().isDebugging() || Commands.LOGGER.isDebugEnabled()) { // Paper - Debugging
+                 Commands.LOGGER.error("Command exception: /{}", s, exception);
+                 StackTraceElement[] astacktraceelement = exception.getStackTrace();
+ 
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 3788057fa995d11c23f189c39d0554e9ccac0a68..386f8b825dac6dda253b0c55a3a0eeef5bdca271 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -909,6 +909,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+     // CraftBukkit start
+     private boolean hasStopped = false;
++    private boolean hasLoggedStop = false; // Paper - Debugging
+     private final Object stopLock = new Object();
+     public final boolean hasStopped() {
+         synchronized (this.stopLock) {
+@@ -923,6 +924,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             if (this.hasStopped) return;
+             this.hasStopped = true;
+         }
++        if (!hasLoggedStop && isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread("Server stopped"); // Paper - Debugging
+         // CraftBukkit end
+         if (this.metricsRecorder.isRecording()) {
+             this.cancelRecordingMetrics();
+@@ -1027,6 +1029,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     }
+     public void safeShutdown(boolean waitForShutdown, boolean isRestarting) {
+         this.isRestarting = isRestarting;
++        this.hasLoggedStop = true; // Paper - Debugging
++        if (isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread("Server stopped"); // Paper - Debugging
+         // Paper end
+         this.running = false;
+         if (waitForShutdown) {
+diff --git a/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
+index 970d1ddf0a014b47b0ac97440489706137324991..e4086bea596e5f5d71491e0b7ad650d76939b8f9 100644
+--- a/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
+@@ -62,6 +62,10 @@ public class ServerConfigurationPacketListenerImpl extends ServerCommonPacketLis
+ 
+     @Override
+     public void onDisconnect(Component reason) {
++        // Paper start - Debugging
++        if (net.minecraft.server.MinecraftServer.getServer().isDebugging()) {
++            ServerConfigurationPacketListenerImpl.LOGGER.info("{} lost connection: {}, while in configuration phase {}", this.gameProfile, reason.getString(), currentTask != null ? currentTask.type().id() : "null");
++        } else // Paper end
+         ServerConfigurationPacketListenerImpl.LOGGER.info("{} lost connection: {}", this.gameProfile, reason.getString());
+         super.onDisconnect(reason);
+     }
+@@ -149,6 +153,11 @@ public class ServerConfigurationPacketListenerImpl extends ServerCommonPacketLis
+             playerlist.placeNewPlayer(this.connection, entityplayer, this.createCookie(this.clientInformation));
+         } catch (Exception exception) {
+             ServerConfigurationPacketListenerImpl.LOGGER.error("Couldn't place player in world", exception);
++            // Paper start - Debugging
++            if (MinecraftServer.getServer().isDebugging()) {
++                exception.printStackTrace();
++            }
++            // Paper end - Debugging
+             this.connection.send(new ClientboundDisconnectPacket(ServerConfigurationPacketListenerImpl.DISCONNECT_REASON_INVALID_DATA));
+             this.connection.disconnect(ServerConfigurationPacketListenerImpl.DISCONNECT_REASON_INVALID_DATA);
+         }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 8e082ec92c437e27d71e70a91a0bf65153de29a3..26bebc3ddd15e963e818011556f216f275bd7415 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1013,6 +1013,7 @@ public final class CraftServer implements Server {
+                 plugin.getDescription().getFullName(),
+                 "This plugin is not properly shutting down its async tasks when it is being reloaded.  This may cause conflicts with the newly loaded version of the plugin"
+             ));
++            if (console.isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread(worker.getThread(), "still running"); // Paper - Debugging
+         }
+         io.papermc.paper.plugin.PluginInitializerManager.reload(this.console); // Paper
+         this.loadPlugins();

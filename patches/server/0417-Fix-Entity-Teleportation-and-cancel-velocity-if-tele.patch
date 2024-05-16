@@ -1,0 +1,83 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 25 Aug 2020 20:45:36 -0400
+Subject: [PATCH] Fix Entity Teleportation and cancel velocity if teleported
+
+Uses correct setPositionRotation for Entity teleporting instead of setLocation
+as this is how Vanilla teleports entities.
+
+Cancel any pending motion when teleported.
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index bc9c68c4df11ece9a9cba9b8cff1182c1d21551f..5d8b1fb9ee96ca397b8f3a0629bc4273ee21f41c 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -676,7 +676,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                 return;
+             }
+ 
+-            this.player.absMoveTo(this.awaitingPositionFromClient.x, this.awaitingPositionFromClient.y, this.awaitingPositionFromClient.z, this.player.getYRot(), this.player.getXRot());
++            this.player.moveTo(this.awaitingPositionFromClient.x, this.awaitingPositionFromClient.y, this.awaitingPositionFromClient.z, this.player.getYRot(), this.player.getXRot()); // Paper - Fix Entity Teleportation and cancel velocity if teleported
+             this.lastGoodX = this.awaitingPositionFromClient.x;
+             this.lastGoodY = this.awaitingPositionFromClient.y;
+             this.lastGoodZ = this.awaitingPositionFromClient.z;
+@@ -1583,7 +1583,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+         this.awaitingTeleportTime = this.tickCount;
+         this.player.resetCurrentImpulseContext();
+-        this.player.absMoveTo(d0, d1, d2, f, f1);
++        this.player.moveTo(d0, d1, d2, f, f1); // Paper - Fix Entity Teleportation and cancel velocity if teleported
+         this.player.connection.send(new ClientboundPlayerPositionPacket(d0 - d3, d1 - d4, d2 - d5, f - f2, f1 - f3, set, this.awaitingTeleport));
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 8576e7919dfaf6a17e6442a2047a7d6bef3b53cb..cde8925d0754c2428cf830ac58d83b9420947e30 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -165,6 +165,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+ 
+     // CraftBukkit start
+     private static final int CURRENT_LEVEL = 2;
++    public boolean preserveMotion = true; // Paper - Fix Entity Teleportation and cancel velocity if teleported; keep initial motion on first setPositionRotation
+     static boolean isLevelAtLeast(CompoundTag tag, int level) {
+         return tag.contains("Bukkit.updateLevel") && tag.getInt("Bukkit.updateLevel") >= level;
+     }
+@@ -1809,6 +1810,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     }
+ 
+     public void moveTo(double x, double y, double z, float yaw, float pitch) {
++        // Paper start - Fix Entity Teleportation and cancel velocity if teleported
++        if (!preserveMotion) {
++            this.deltaMovement = Vec3.ZERO;
++        } else {
++            this.preserveMotion = false;
++        }
++        // Paper end - Fix Entity Teleportation and cancel velocity if teleported
+         this.setPosRaw(x, y, z);
+         this.setYRot(yaw);
+         this.setXRot(pitch);
+diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+index b90127f9f805fdb5bb43a4b8ad2b10499b0b6b78..8efc06d29c62fa2be8515ed3359d52a6d4b807d2 100644
+--- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
++++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+@@ -164,6 +164,7 @@ public abstract class BaseSpawner {
+                             return;
+                         }
+ 
++                        entity.preserveMotion = true; // Paper - Fix Entity Teleportation and cancel velocity if teleported; preserve entity motion from tag
+                         entity.moveTo(entity.getX(), entity.getY(), entity.getZ(), randomsource.nextFloat() * 360.0F, 0.0F);
+                         if (entity instanceof Mob) {
+                             Mob entityinsentient = (Mob) entity;
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 40e4b8233e27b8ebd94a89bb43b5c14808edaa68..3da47cf8968c1917e2f216a410eece51a693dfb2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -238,7 +238,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         }
+ 
+         // entity.setLocation() throws no event, and so cannot be cancelled
+-        this.entity.absMoveTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
++        entity.moveTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch()); // Paper - use proper moveTo, as per vanilla teleporting
+         // SPIGOT-619: Force sync head rotation also
+         this.entity.setYHeadRot(location.getYaw());
+ 

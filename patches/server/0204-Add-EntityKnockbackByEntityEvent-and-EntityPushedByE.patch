@@ -1,0 +1,240 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Brokkonaut <hannos17@gmx.de>
+Date: Mon, 18 Jun 2018 15:46:23 +0200
+Subject: [PATCH] Add EntityKnockbackByEntityEvent and
+ EntityPushedByEntityAttackEvent
+
+Co-authored-by: aerulion <aerulion@gmail.com>
+
+This event is called when an entity receives knockback by another entity.
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 9a8d70c1f92ecc8da6444ba5581a8d4b24af0672..6ade79a291f0443fbb8cb3bf7ef622b12b391b72 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -1892,9 +1892,23 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+         }
+     }
+ 
+-    public void push(double deltaX, double deltaY, double deltaZ) {
+-        this.setDeltaMovement(this.getDeltaMovement().add(deltaX, deltaY, deltaZ));
++    public final void push(double deltaX, double deltaY, double deltaZ) { // Paper - override the added overload below
++        // Paper start - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
++        this.push(deltaX, deltaY, deltaZ, null);
++    }
++
++    public void push(double deltaX, double deltaY, double deltaZ, @org.jetbrains.annotations.Nullable Entity pushingEntity) {
++        org.bukkit.util.Vector delta = new org.bukkit.util.Vector(deltaX, deltaY, deltaZ);
++        if (pushingEntity != null) {
++            io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent event = new io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent(getBukkitEntity(), pushingEntity.getBukkitEntity(), delta);
++            if (!event.callEvent()) {
++                return;
++            }
++            delta = event.getAcceleration();
++        }
++        this.setDeltaMovement(this.getDeltaMovement().add(delta.getX(), delta.getY(), delta.getZ()));
+         this.hasImpulse = true;
++        // Paper end - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
+     }
+ 
+     protected void markHurt() {
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index b10d532d81efa8330f363f86d5a19e8847b90ba0..8baf8f715d68c96133085d625599ab2aa30bb83c 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -1593,7 +1593,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+     }
+ 
+     protected void blockedByShield(LivingEntity target) {
+-        target.knockback(0.5D, target.getX() - this.getX(), target.getZ() - this.getZ(), null, EntityKnockbackEvent.KnockbackCause.SHIELD_BLOCK); // CraftBukkit
++        target.knockback(0.5D, target.getX() - this.getX(), target.getZ() - this.getZ(), this, EntityKnockbackEvent.KnockbackCause.SHIELD_BLOCK); // CraftBukkit // Paper - fix attacker
+     }
+ 
+     private boolean checkTotemDeathProtection(DamageSource source) {
+@@ -1856,7 +1856,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         this.knockback(strength, x, z, null, EntityKnockbackEvent.KnockbackCause.UNKNOWN);
+     }
+ 
+-    public void knockback(double d0, double d1, double d2, Entity attacker, EntityKnockbackEvent.KnockbackCause cause) {
++    public void knockback(double d0, double d1, double d2, @Nullable Entity attacker, EntityKnockbackEvent.KnockbackCause cause) { // Paper - add nullable to attacker param
+         d0 *= 1.0D - this.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE);
+         if (true || d0 > 0.0D) { // CraftBukkit - Call event even when force is 0
+             //this.hasImpulse = true; // CraftBukkit - Move down
+@@ -1868,8 +1868,22 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                 return;
+             }
+ 
++            // Paper start - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
++            final org.bukkit.util.Vector currentMovement = this.getBukkitEntity().getVelocity();
++            org.bukkit.util.Vector resultingMovement = event.getFinalKnockback();
++            final org.bukkit.util.Vector deltaMovement = resultingMovement.clone().subtract(currentMovement);
++            if (attacker != null) {
++                final com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent knockbackEvent = new com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent(this.getBukkitLivingEntity(), attacker.getBukkitEntity(), (float) event.getForce(), deltaMovement);
++                if (!knockbackEvent.callEvent()) {
++                    return;
++                }
++
++                // Back from delta to the absolute vector
++                resultingMovement = currentMovement.add(knockbackEvent.getAcceleration());
++            }
+             this.hasImpulse = true;
+-            this.setDeltaMovement(event.getFinalKnockback().getX(), event.getFinalKnockback().getY(), event.getFinalKnockback().getZ());
++            this.setDeltaMovement(resultingMovement.getX(), resultingMovement.getY(), resultingMovement.getZ());
++            // Paper end - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
+             // CraftBukkit end
+         }
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/RamTarget.java b/src/main/java/net/minecraft/world/entity/ai/behavior/RamTarget.java
+index 312398b7f1281144a0529a743d2a09376d575ff5..0c63779af7e1c790160fb2ab86bf455219b3cc36 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/RamTarget.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/RamTarget.java
+@@ -83,7 +83,7 @@ public class RamTarget extends Behavior<Goat> {
+             float f = 0.25F * (float)(i - j);
+             float g = Mth.clamp(entity.getSpeed() * 1.65F, 0.2F, 3.0F) + f;
+             float h = livingEntity.isDamageSourceBlocked(world.damageSources().mobAttack(entity)) ? 0.5F : 1.0F;
+-            livingEntity.knockback((double)(h * g) * this.getKnockbackForce.applyAsDouble(entity), this.ramDirection.x(), this.ramDirection.z());
++            livingEntity.knockback(h * g * this.getKnockbackForce.applyAsDouble(entity), this.ramDirection.x(), this.ramDirection.z(), entity, org.bukkit.event.entity.EntityKnockbackEvent.KnockbackCause.ENTITY_ATTACK); // Paper - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
+             this.finishRam(world, entity);
+             world.playSound(null, entity, this.getImpactSound.apply(entity), SoundSource.NEUTRAL, 1.0F, 1.0F);
+         } else if (this.hasRammedHornBreakingBlock(world, entity)) {
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/warden/SonicBoom.java b/src/main/java/net/minecraft/world/entity/ai/behavior/warden/SonicBoom.java
+index aa8909498c26f095060a1df364b9e20d964a6cc3..30502849f79ce0f472e4289043c7d8ec460d3f20 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/warden/SonicBoom.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/warden/SonicBoom.java
+@@ -83,7 +83,7 @@ public class SonicBoom extends Behavior<Warden> {
+                     if (target.hurt(world.damageSources().sonicBoom(entity), 10.0F)) {
+                         double d = 0.5 * (1.0 - target.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
+                         double e = 2.5 * (1.0 - target.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
+-                        target.push(vec33.x() * e, vec33.y() * d, vec33.z() * e);
++                        target.push(vec33.x() * e, vec33.y() * d, vec33.z() * e, entity); // Paper - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
+                     }
+                 });
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+index 963fdb4132001aa781eda45b75cb4df97d782ddc..3e2f83e2c695b024bdec2c5e11ab38596730ed4a 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
++++ b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+@@ -457,7 +457,7 @@ public class EnderDragon extends Mob implements Enemy {
+                 double d3 = entity.getZ() - d1;
+                 double d4 = Math.max(d2 * d2 + d3 * d3, 0.1D);
+ 
+-                entity.push(d2 / d4 * 4.0D, 0.20000000298023224D, d3 / d4 * 4.0D);
++                entity.push(d2 / d4 * 4.0D, 0.20000000298023224D, d3 / d4 * 4.0D, this); // Paper - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
+                 if (!this.phaseManager.getCurrentPhase().isSitting() && ((LivingEntity) entity).getLastHurtByMobTimestamp() < entity.tickCount - 2) {
+                     entity.hurt(this.damageSources().mobAttack(this), 5.0F);
+                     this.doEnchantDamageEffects(this, entity);
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/HangingEntity.java b/src/main/java/net/minecraft/world/entity/decoration/HangingEntity.java
+index 237e5927beb28bfc09d8c587782bf52799a6b604..47a62680279f15ac93eb521f7ec93c3b8d52c602 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/HangingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/HangingEntity.java
+@@ -249,7 +249,7 @@ public abstract class HangingEntity extends Entity {
+     }
+ 
+     @Override
+-    public void push(double deltaX, double deltaY, double deltaZ) {
++    public void push(double deltaX, double deltaY, double deltaZ, @org.jetbrains.annotations.Nullable Entity pushingEntity) { // Paper - add push source entity param
+         if (false && !this.level().isClientSide && !this.isRemoved() && deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ > 0.0D) { // CraftBukkit - not needed
+             this.kill();
+             this.dropItem((Entity) null);
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
+index f36746cd077bca3145b6168a60f05050d3ba14c7..d4f498789ae1d93533f058b0ce4981eed1ce8ea2 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
+@@ -153,9 +153,9 @@ public class ItemFrame extends HangingEntity {
+     }
+ 
+     @Override
+-    public void push(double deltaX, double deltaY, double deltaZ) {
++    public void push(double deltaX, double deltaY, double deltaZ, @org.jetbrains.annotations.Nullable Entity pushingEntity) { // Paper - add push source entity param
+         if (!this.fixed) {
+-            super.push(deltaX, deltaY, deltaZ);
++            super.push(deltaX, deltaY, deltaZ, pushingEntity); // Paper - add push source entity param
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Ravager.java b/src/main/java/net/minecraft/world/entity/monster/Ravager.java
+index d02c7f6a2a2631a67fb6e078d6bc81971e712038..1264fb03d2dcab088fc4a7c2788c9f9df53cba5d 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Ravager.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Ravager.java
+@@ -257,7 +257,7 @@ public class Ravager extends Raider {
+         double d1 = entity.getZ() - this.getZ();
+         double d2 = Math.max(d0 * d0 + d1 * d1, 0.001D);
+ 
+-        entity.push(d0 / d2 * 4.0D, 0.2D, d1 / d2 * 4.0D);
++        entity.push(d0 / d2 * 4.0D, 0.2D, d1 / d2 * 4.0D, this); // Paper - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/hoglin/HoglinBase.java b/src/main/java/net/minecraft/world/entity/monster/hoglin/HoglinBase.java
+index 38c27b4aa37e8b046e3eccdde3f527eb555da6f8..05dee42941a842bf4bba9480a2c04a142541ac29 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/hoglin/HoglinBase.java
++++ b/src/main/java/net/minecraft/world/entity/monster/hoglin/HoglinBase.java
+@@ -40,7 +40,7 @@ public interface HoglinBase {
+             double j = f * (double)(attacker.level().random.nextFloat() * 0.5F + 0.2F);
+             Vec3 vec3 = new Vec3(g, 0.0, h).normalize().scale(j).yRot(i);
+             double k = f * (double)attacker.level().random.nextFloat() * 0.5;
+-            target.push(vec3.x, k, vec3.z);
++            target.push(vec3.x, k, vec3.z, attacker); // Paper - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
+             target.hurtMarked = true;
+         }
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index 338903091e43b71baa46157a95629c2e6b27b992..0efd7b3d748d90b3359560aa717a017092ae0e47 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -1295,7 +1295,7 @@ public abstract class Player extends LivingEntity {
+                                 if (target instanceof LivingEntity) {
+                                     ((LivingEntity) target).knockback((double) ((float) i * 0.5F), (double) Mth.sin(this.getYRot() * 0.017453292F), (double) (-Mth.cos(this.getYRot() * 0.017453292F)), this, EntityKnockbackEvent.KnockbackCause.ENTITY_ATTACK); // CraftBukkit
+                                 } else {
+-                                    target.push((double) (-Mth.sin(this.getYRot() * 0.017453292F) * (float) i * 0.5F), 0.1D, (double) (Mth.cos(this.getYRot() * 0.017453292F) * (float) i * 0.5F));
++                                    target.push((double) (-Mth.sin(this.getYRot() * 0.017453292F) * (float) i * 0.5F), 0.1D, (double) (Mth.cos(this.getYRot() * 0.017453292F) * (float) i * 0.5F), this); // Paper - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
+                                 }
+ 
+                                 this.setDeltaMovement(this.getDeltaMovement().multiply(0.6D, 1.0D, 0.6D));
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+index efcfbcb3dc352c9015cc9121dc8d98e8deed8bfd..464ba41fd284e29374dbc81c984cf9486e51393e 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+@@ -421,7 +421,7 @@ public abstract class AbstractArrow extends Projectile {
+                     Vec3 vec3d = this.getDeltaMovement().multiply(1.0D, 0.0D, 1.0D).normalize().scale((double) this.knockback * 0.6D * d0);
+ 
+                     if (vec3d.lengthSqr() > 0.0D) {
+-                        entityliving.push(vec3d.x, 0.1D, vec3d.z);
++                        entityliving.push(vec3d.x, 0.1D, vec3d.z, this); // Paper
+                     }
+                 }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/windcharge/AbstractWindCharge.java b/src/main/java/net/minecraft/world/entity/projectile/windcharge/AbstractWindCharge.java
+index 9f9b7373c9a714597858ddcd8932e31b902cf5a1..f7f26d595072372004143c4e26506ed505aff7d8 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/windcharge/AbstractWindCharge.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/windcharge/AbstractWindCharge.java
+@@ -89,7 +89,7 @@ public abstract class AbstractWindCharge extends AbstractHurtingProjectile imple
+     }
+ 
+     @Override
+-    public void push(double deltaX, double deltaY, double deltaZ) {}
++    public void push(double deltaX, double deltaY, double deltaZ, @org.jetbrains.annotations.Nullable Entity pushingEntity) {} // Paper - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
+ 
+     public abstract void explode();
+ 
+diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
+index da9a9b235d1c8bcab3762134d69dcb112470e55d..a24e9c9e80659b5508e3c5ef3fa3d1a26b96b483 100644
+--- a/src/main/java/net/minecraft/world/level/Explosion.java
++++ b/src/main/java/net/minecraft/world/level/Explosion.java
+@@ -303,6 +303,16 @@ public class Explosion {
+                             // since the code below (the setDeltaMovement call as well as the hitPlayers map)
+                             // want the vector to be the relative velocity will the event provides the absolute velocity
+                             vec3d1 = (event.isCancelled()) ? Vec3.ZERO : new Vec3(event.getFinalKnockback().getX(), event.getFinalKnockback().getY(), event.getFinalKnockback().getZ()).subtract(entity.getDeltaMovement());
++                            // Paper start - call EntityKnockbackByEntityEvent for explosions
++                            if (this.damageSource.getEntity() != null || this.source != null) {
++                                final org.bukkit.entity.Entity hitBy = this.damageSource.getEntity() != null ? this.damageSource.getEntity().getBukkitEntity() : this.source.getBukkitEntity();
++                                com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent paperEvent = new com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent(((LivingEntity) entity).getBukkitLivingEntity(), hitBy, (float) event.getForce(), org.bukkit.craftbukkit.util.CraftVector.toBukkit(vec3d1));
++                                if (!paperEvent.callEvent()) {
++                                    continue;
++                                }
++                                vec3d1 = org.bukkit.craftbukkit.util.CraftVector.toNMS(paperEvent.getAcceleration());
++                            }
++                            // Paper end - call EntityKnockbackByEntityEvent for explosions
+                         }
+                         // CraftBukkit end
+                         entity.setDeltaMovement(entity.getDeltaMovement().add(vec3d1));

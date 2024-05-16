@@ -1,0 +1,528 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach@zachbr.io>
+Date: Mon, 27 May 2019 01:10:06 -0500
+Subject: [PATCH] Expose server build information
+
+Co-authored-by: Professor Bloodstone <git@bloodstone.dev>
+Co-authored-by: Mark Vainomaa <mikroskeem@mikroskeem.eu>
+Co-authored-by: masmc05 <masmc05@gmail.com>
+Co-authored-by: Riley Park <rileysebastianpark@gmail.com>
+
+diff --git a/src/main/java/com/destroystokyo/paper/util/VersionFetcher.java b/src/main/java/com/destroystokyo/paper/util/VersionFetcher.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a736d7bcdc5861a01b66ba36158db1c716339346
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/util/VersionFetcher.java
+@@ -0,0 +1,45 @@
++package com.destroystokyo.paper.util;
++
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.format.NamedTextColor;
++import org.bukkit.Bukkit;
++import org.jetbrains.annotations.NotNull;
++
++public interface VersionFetcher {
++    /**
++     * Amount of time to cache results for in milliseconds
++     * <p>
++     * Negative values will never cache.
++     *
++     * @return cache time
++     */
++    long getCacheTime();
++
++    /**
++     * Gets the version message to cache and show to command senders.
++     *
++     * <p>NOTE: This is run in a new thread separate from that of the command processing thread</p>
++     *
++     * @param serverVersion the current version of the server (will match {@link Bukkit#getVersion()})
++     * @return the message to show when requesting a version
++     */
++    @NotNull
++    Component getVersionMessage(@NotNull String serverVersion);
++
++    class DummyVersionFetcher implements VersionFetcher {
++
++        @Override
++        public long getCacheTime() {
++            return -1;
++        }
++
++        @NotNull
++        @Override
++        public Component getVersionMessage(@NotNull String serverVersion) {
++            Bukkit.getLogger().warning("Version provider has not been set, cannot check for updates!");
++            Bukkit.getLogger().info("Override the default implementation of org.bukkit.UnsafeValues#getVersionFetcher()");
++            new Throwable().printStackTrace();
++            return Component.text("Unable to check for updates. No version provider set.", NamedTextColor.RED);
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/ServerBuildInfo.java b/src/main/java/io/papermc/paper/ServerBuildInfo.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9df9d09aa477d4cd3c496ba0933c816df1ef0964
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/ServerBuildInfo.java
+@@ -0,0 +1,121 @@
++package io.papermc.paper;
++
++import java.time.Instant;
++import java.util.Optional;
++import java.util.OptionalInt;
++import net.kyori.adventure.key.Key;
++import net.kyori.adventure.util.Services;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Information about the current server build.
++ */
++@ApiStatus.NonExtendable
++public interface ServerBuildInfo {
++    /**
++     * The brand id for Paper.
++     */
++    Key BRAND_PAPER_ID = Key.key("papermc", "paper");
++
++    /**
++     * Gets the {@code ServerBuildInfo}.
++     *
++     * @return the {@code ServerBuildInfo}
++     */
++    static @NotNull ServerBuildInfo buildInfo() {
++        //<editor-fold defaultstate="collapsed" desc="Holder">
++        final class Holder {
++            static final Optional<ServerBuildInfo> INSTANCE = Services.service(ServerBuildInfo.class);
++        }
++        //</editor-fold>
++        return Holder.INSTANCE.orElseThrow();
++    }
++
++    /**
++     * Gets the brand id of the server.
++     *
++     * @return the brand id of the server (e.g. "papermc:paper")
++     */
++    @NotNull Key brandId();
++
++    /**
++     * Checks if the current server supports the specified brand.
++     *
++     * @param brandId the brand to check (e.g. "papermc:folia")
++     * @return {@code true} if the server supports the specified brand
++     */
++    @ApiStatus.Experimental
++    boolean isBrandCompatible(final @NotNull Key brandId);
++
++    /**
++     * Gets the brand name of the server.
++     *
++     * @return the brand name of the server (e.g. "Paper")
++     */
++    @NotNull String brandName();
++
++    /**
++     * Gets the Minecraft version id.
++     *
++     * @return the Minecraft version id (e.g. "1.20.4", "1.20.2-pre2", "23w31a")
++     */
++    @NotNull String minecraftVersionId();
++
++    /**
++     * Gets the Minecraft version name.
++     *
++     * @return the Minecraft version name (e.g. "1.20.4", "1.20.2 Pre-release 2", "23w31a")
++     */
++    @NotNull String minecraftVersionName();
++
++    /**
++     * Gets the build number.
++     *
++     * @return the build number
++     */
++    @NotNull OptionalInt buildNumber();
++
++    /**
++     * Gets the build time.
++     *
++     * @return the build time
++     */
++    @NotNull Instant buildTime();
++
++    /**
++     * Gets the git commit branch.
++     *
++     * @return the git commit branch
++     */
++    @NotNull Optional<String> gitBranch();
++
++    /**
++     * Gets the git commit hash.
++     *
++     * @return the git commit hash
++     */
++    @NotNull Optional<String> gitCommit();
++
++    /**
++     * Creates a string representation of the server build information.
++     *
++     * @param representation the type of representation
++     * @return a string
++     */
++    @NotNull String asString(final @NotNull StringRepresentation representation);
++
++    /**
++     * String representation types.
++     */
++    enum StringRepresentation {
++        /**
++         * A simple version string, in format {@code <minecraftVersionId>-<buildNumber>-<gitCommit>}.
++         */
++        VERSION_SIMPLE,
++        /**
++         * A simple version string, in format {@code <minecraftVersionId>-<buildNumber>-<gitBranch>@<gitCommit> (<buildTime>)}.
++         */
++        VERSION_FULL,
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/util/JarManifests.java b/src/main/java/io/papermc/paper/util/JarManifests.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..909617079db61b675cc7b60b44ef96b306076343
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/JarManifests.java
+@@ -0,0 +1,37 @@
++package io.papermc.paper.util;
++
++import java.io.IOException;
++import java.io.InputStream;
++import java.net.URL;
++import java.util.Collections;
++import java.util.Map;
++import java.util.WeakHashMap;
++import java.util.jar.Manifest;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++@ApiStatus.Internal
++public final class JarManifests {
++    private JarManifests() {
++    }
++
++    private static final Map<ClassLoader, Manifest> MANIFESTS = Collections.synchronizedMap(new WeakHashMap<>());
++
++    public static @Nullable Manifest manifest(final @NotNull Class<?> clazz) {
++        return MANIFESTS.computeIfAbsent(clazz.getClassLoader(), classLoader -> {
++            final String classLocation = "/" + clazz.getName().replace(".", "/") + ".class";
++            final URL resource = clazz.getResource(classLocation);
++            if (resource == null) {
++                return null;
++            }
++            final String classFilePath = resource.toString().replace("\\", "/");
++            final String archivePath = classFilePath.substring(0, classFilePath.length() - classLocation.length());
++            try (final InputStream stream = new URL(archivePath + "/META-INF/MANIFEST.MF").openStream()) {
++                return new Manifest(stream);
++            } catch (final IOException ex) {
++                return null;
++            }
++        });
++    }
++}
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index ea5f1b4085fd2ec355c4c8036f3bc729e30fd1b7..f4bf442b065e93b49a7e17658f73d7569d644b25 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -109,13 +109,26 @@ public final class Bukkit {
+         }
+ 
+         Bukkit.server = server;
+-        server.getLogger().info("This server is running " + getName() + " version " + getVersion() + " (Implementing API version " + getBukkitVersion() + ")");
++        // Paper start - add git information
++        server.getLogger().info(getVersionMessage());
++    }
++    /**
++      * Gets message describing the version server is running.
++      *
++      * @return message describing the version server is running
++      */
++    @NotNull
++    public static String getVersionMessage() {
++        final io.papermc.paper.ServerBuildInfo version = io.papermc.paper.ServerBuildInfo.buildInfo();
++        return "This server is running " + getName() + " version " + version.asString(io.papermc.paper.ServerBuildInfo.StringRepresentation.VERSION_FULL) + " (Implementing API version " + getBukkitVersion() + ")";
++        // Paper end
+     }
+ 
+     /**
+      * Gets the name of this server implementation.
+      *
+      * @return name of this server implementation
++     * @see io.papermc.paper.ServerBuildInfo#brandName()
+      */
+     @NotNull
+     public static String getName() {
+@@ -126,6 +139,7 @@ public final class Bukkit {
+      * Gets the version string of this server implementation.
+      *
+      * @return version of this server implementation
++     * @see io.papermc.paper.ServerBuildInfo
+      */
+     @NotNull
+     public static String getVersion() {
+@@ -142,6 +156,20 @@ public final class Bukkit {
+         return server.getBukkitVersion();
+     }
+ 
++    // Paper start - expose game version
++    /**
++     * Gets the version of game this server implements
++     *
++     * @return version of game
++     * @see io.papermc.paper.ServerBuildInfo#minecraftVersionId()
++     * @see io.papermc.paper.ServerBuildInfo#minecraftVersionName()
++     */
++    @NotNull
++    public static String getMinecraftVersion() {
++        return server.getMinecraftVersion();
++    }
++    // Paper end
++
+     /**
+      * Gets a view of all currently logged in players. This {@linkplain
+      * Collections#unmodifiableCollection(Collection) view} is a reused
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index e37649ce4b3981f2cff96b64ed3bd4093c015346..7c646d1bb8b011c156b0688f9396bbcbba43d077 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -119,6 +119,16 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+     @NotNull
+     public String getBukkitVersion();
+ 
++    // Paper start - expose game version
++    /**
++     * Gets the version of game this server implements
++     *
++     * @return version of game
++     */
++    @NotNull
++    String getMinecraftVersion();
++    // Paper end
++
+     /**
+      * Gets a view of all currently logged in players. This {@linkplain
+      * Collections#unmodifiableCollection(Collection) view} is a reused
+diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
+index 9082e67324f810857db26bb89ecea7e9f866f80d..da997507b96908027c49dabc6daf7c787dcad95d 100644
+--- a/src/main/java/org/bukkit/UnsafeValues.java
++++ b/src/main/java/org/bukkit/UnsafeValues.java
+@@ -155,5 +155,12 @@ public interface UnsafeValues {
+      * @return name
+      */
+     String getTimingsServerName();
++
++    /**
++     * Called once by the version command on first use, then cached.
++     */
++    default com.destroystokyo.paper.util.VersionFetcher getVersionFetcher() {
++        return new com.destroystokyo.paper.util.VersionFetcher.DummyVersionFetcher();
++    }
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/command/defaults/VersionCommand.java b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
+index 04b4fb6859df0221f8f9f92c5a7ac2dda1073355..fd5d9881abfd930bb883120f018f76dc78b62b14 100644
+--- a/src/main/java/org/bukkit/command/defaults/VersionCommand.java
++++ b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
+@@ -24,8 +24,25 @@ import org.bukkit.plugin.Plugin;
+ import org.bukkit.plugin.PluginDescriptionFile;
+ import org.bukkit.util.StringUtil;
+ import org.jetbrains.annotations.NotNull;
++// Paper start - version command 2.0
++import com.destroystokyo.paper.util.VersionFetcher;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.event.ClickEvent;
++import net.kyori.adventure.text.format.TextDecoration;
++import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
++// Paper end - version command 2.0
+ 
+ public class VersionCommand extends BukkitCommand {
++    private VersionFetcher versionFetcher; // Paper - version command 2.0
++    private VersionFetcher getVersionFetcher() { // lazy load because unsafe isn't available at command registration
++        if (versionFetcher == null) {
++            versionFetcher = Bukkit.getUnsafe().getVersionFetcher();
++        }
++
++        return versionFetcher;
++    }
++
+     public VersionCommand(@NotNull String name) {
+         super(name);
+ 
+@@ -40,7 +57,7 @@ public class VersionCommand extends BukkitCommand {
+         if (!testPermission(sender)) return true;
+ 
+         if (args.length == 0) {
+-            sender.sendMessage("This server is running " + Bukkit.getName() + " version " + Bukkit.getVersion() + " (Implementing API version " + Bukkit.getBukkitVersion() + ")");
++            //sender.sendMessage("This server is running " + Bukkit.getName() + " version " + Bukkit.getVersion() + " (Implementing API version " + Bukkit.getBukkitVersion() + ")"); // Paper - moved to setVersionMessage
+             sendVersion(sender);
+         } else {
+             StringBuilder name = new StringBuilder();
+@@ -79,8 +96,17 @@ public class VersionCommand extends BukkitCommand {
+ 
+     private void describeToSender(@NotNull Plugin plugin, @NotNull CommandSender sender) {
+         PluginDescriptionFile desc = plugin.getDescription();
+-        sender.sendMessage(ChatColor.GREEN + desc.getName() + ChatColor.WHITE + " version " + ChatColor.GREEN + desc.getVersion());
+-
++        // Paper start - version command 2.0
++        sender.sendMessage(
++            Component.text()
++                .append(Component.text(desc.getName(), NamedTextColor.GREEN))
++                .append(Component.text(" version "))
++                .append(Component.text(desc.getVersion(), NamedTextColor.GREEN)
++                    .hoverEvent(Component.text("Click to copy to clipboard", NamedTextColor.WHITE))
++                    .clickEvent(ClickEvent.copyToClipboard(desc.getVersion()))
++                )
++        );
++        // Paper end - version command 2.0
+         if (desc.getDescription() != null) {
+             sender.sendMessage(desc.getDescription());
+         }
+@@ -146,14 +172,14 @@ public class VersionCommand extends BukkitCommand {
+ 
+     private final ReentrantLock versionLock = new ReentrantLock();
+     private boolean hasVersion = false;
+-    private String versionMessage = null;
++    private Component versionMessage = null; // Paper
+     private final Set<CommandSender> versionWaiters = new HashSet<CommandSender>();
+     private boolean versionTaskStarted = false;
+     private long lastCheck = 0;
+ 
+     private void sendVersion(@NotNull CommandSender sender) {
+         if (hasVersion) {
+-            if (System.currentTimeMillis() - lastCheck > 21600000) {
++            if (System.currentTimeMillis() - lastCheck > getVersionFetcher().getCacheTime()) { // Paper - use version supplier
+                 lastCheck = System.currentTimeMillis();
+                 hasVersion = false;
+             } else {
+@@ -168,7 +194,7 @@ public class VersionCommand extends BukkitCommand {
+                 return;
+             }
+             versionWaiters.add(sender);
+-            sender.sendMessage("Checking version, please wait...");
++            sender.sendMessage(Component.text("Checking version, please wait...", NamedTextColor.WHITE, TextDecoration.ITALIC)); // Paper
+             if (!versionTaskStarted) {
+                 versionTaskStarted = true;
+                 new Thread(new Runnable() {
+@@ -186,6 +212,13 @@ public class VersionCommand extends BukkitCommand {
+ 
+     private void obtainVersion() {
+         String version = Bukkit.getVersion();
++        // Paper start
++        if (version.startsWith("null")) { // running from ide?
++            setVersionMessage(Component.text("Unknown version, custom build?", NamedTextColor.YELLOW));
++            return;
++        }
++        setVersionMessage(getVersionFetcher().getVersionMessage(version));
++        /*
+         if (version == null) version = "Custom";
+         String[] parts = version.substring(0, version.indexOf(' ')).split("-");
+         if (parts.length == 4) {
+@@ -215,11 +248,24 @@ public class VersionCommand extends BukkitCommand {
+         } else {
+             setVersionMessage("Unknown version, custom build?");
+         }
++         */
++        // Paper end
+     }
+ 
+-    private void setVersionMessage(@NotNull String msg) {
++    // Paper start
++    private void setVersionMessage(final @NotNull Component msg) {
+         lastCheck = System.currentTimeMillis();
+-        versionMessage = msg;
++        final Component message = Component.textOfChildren(
++            Component.text(Bukkit.getVersionMessage(), NamedTextColor.WHITE),
++            Component.newline(),
++            msg
++        );
++        this.versionMessage = Component.text()
++            .append(message)
++            .hoverEvent(Component.text("Click to copy to clipboard", NamedTextColor.WHITE))
++            .clickEvent(ClickEvent.copyToClipboard(PlainTextComponentSerializer.plainText().serialize(message)))
++            .build();
++        // Paper end
+         versionLock.lock();
+         try {
+             hasVersion = true;
+diff --git a/src/test/java/io/papermc/paper/TestServerBuildInfo.java b/src/test/java/io/papermc/paper/TestServerBuildInfo.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..17be27a869c1047a7a9440fb8f3717260d4abbd0
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/TestServerBuildInfo.java
+@@ -0,0 +1,59 @@
++package io.papermc.paper;
++
++import java.time.Instant;
++import java.util.Optional;
++import java.util.OptionalInt;
++import net.kyori.adventure.key.Key;
++import org.jetbrains.annotations.NotNull;
++
++public class TestServerBuildInfo implements ServerBuildInfo {
++    @Override
++    public @NotNull Key brandId() {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public boolean isBrandCompatible(final @NotNull Key brandId) {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public @NotNull String brandName() {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public @NotNull String minecraftVersionId() {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public @NotNull String minecraftVersionName() {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public @NotNull OptionalInt buildNumber() {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public @NotNull Instant buildTime() {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public @NotNull Optional<String> gitBranch() {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public @NotNull Optional<String> gitCommit() {
++        throw new UnsupportedOperationException();
++    }
++
++    @Override
++    public @NotNull String asString(final @NotNull StringRepresentation representation) {
++        return "";
++    }
++}
+diff --git a/src/test/resources/META-INF/services/io.papermc.paper.ServerBuildInfo b/src/test/resources/META-INF/services/io.papermc.paper.ServerBuildInfo
+new file mode 100644
+index 0000000000000000000000000000000000000000..64e2f8559b9c5a52e0a3229d3d12f65e9af145b3
+--- /dev/null
++++ b/src/test/resources/META-INF/services/io.papermc.paper.ServerBuildInfo
+@@ -0,0 +1 @@
++io.papermc.paper.TestServerBuildInfo
