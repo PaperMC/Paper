@@ -16,6 +16,7 @@ public net.minecraft.world.entity.projectile.Projectile hasBeenShot
 public net.minecraft.world.entity.projectile.Projectile leftOwner
 public net.minecraft.world.entity.projectile.Projectile preOnHit(Lnet/minecraft/world/phys/HitResult;)V
 public net.minecraft.world.entity.projectile.Projectile canHitEntity(Lnet/minecraft/world/entity/Entity;)Z
+public net.minecraft.world.entity.projectile.FireworkRocketEntity getDefaultItem()Lnet/minecraft/world/item/ItemStack;
 
 Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
 
@@ -203,8 +204,21 @@ index 98f46fadd60ea688fefa8d83dbd6fe9b61b6a96f..d4e0170694409e674d488f913e61c205
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java
+index 7ba6302ecb72fa6e523054e7e3223d79eedf6589..907904da7f89e8e5e5cfab80977f04af3fdf17c7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java
+@@ -388,7 +388,7 @@ public final class CraftEntityTypes {
+             BlockPos pos = BlockPos.containing(spawnData.x(), spawnData.y(), spawnData.z());
+             return new FallingBlockEntity(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), spawnData.world().getBlockState(pos)); // Paper - create falling block entities correctly
+         }));
+-        register(new EntityTypeData<>(EntityType.FIREWORK_ROCKET, Firework.class, CraftFirework::new, spawnData -> new FireworkRocketEntity(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), net.minecraft.world.item.ItemStack.EMPTY)));
++        register(new EntityTypeData<>(EntityType.FIREWORK_ROCKET, Firework.class, CraftFirework::new, spawnData -> new FireworkRocketEntity(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), FireworkRocketEntity.getDefaultItem()))); // Paper - pass correct default to rocket for data storage
+         register(new EntityTypeData<>(EntityType.EVOKER_FANGS, EvokerFangs.class, CraftEvokerFangs::new, spawnData -> new net.minecraft.world.entity.projectile.EvokerFangs(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), (float) Math.toRadians(spawnData.yaw()), 0, null)));
+         register(new EntityTypeData<>(EntityType.COMMAND_BLOCK_MINECART, CommandMinecart.class, CraftMinecartCommand::new, spawnData -> new MinecartCommandBlock(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z())));
+         register(new EntityTypeData<>(EntityType.MINECART, RideableMinecart.class, CraftMinecartRideable::new, spawnData -> new Minecart(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z())));
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java
-index 3c22799d36f07e349df207ce8a39236bbf6c17bf..2124b31ca4d994ad159556d47a315004b7246265 100644
+index e4e23a7b6d308ee476b5b8c2ad80efe4608b8346..241914415f74e0559fef59aa3f87f3e303f6c2c4 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java
 @@ -32,20 +32,7 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
@@ -356,6 +370,19 @@ index 6e2f91423371ead9890095cf4b1e2299c4dcba28..ad1aeea80877f2cdb9e8ad9c5b46f95d
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index a4c6fd2f6066ecc4a36a423cb2980ec60d9c7ec1..382b4f0854284a561325dde141000434a9ddd885 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -640,7 +640,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+         } else if (Firework.class.isAssignableFrom(projectile)) {
+             Location location = this.getEyeLocation();
+ 
+-            launch = new FireworkRocketEntity(world, net.minecraft.world.item.ItemStack.EMPTY, this.getHandle());
++            launch = new FireworkRocketEntity(world, FireworkRocketEntity.getDefaultItem(), this.getHandle()); // Paper - pass correct default to rocket for data storage
+             launch.moveTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+         }
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLlamaSpit.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLlamaSpit.java
 index 70cbc6c668c60e9d608ca7013b72f9b916c05c2d..47633f05b4fab1dcabc2117e7645fe6d6949622a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLlamaSpit.java
@@ -577,10 +604,10 @@ index 5c31c652a3b956dd638137307d1a8b2ee4c3f675..90696beb3ca48fc28c9842589bc3ea39
          }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index 45a1f5123e5413cf8dd3db68bb47508567198403..76191fe677f3dd91ea55d53881f52952410a3a05 100644
+index 3d226c03dbecf876bb5a50d493aceeb0f8f69d28..6352e56fa3e69690846842d474a1ae51ad4059c6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-@@ -293,12 +293,22 @@ public final class CraftItemStack extends ItemStack {
+@@ -295,12 +295,22 @@ public final class CraftItemStack extends ItemStack {
      public ItemMeta getItemMeta() {
          return CraftItemStack.getItemMeta(this.handle);
      }

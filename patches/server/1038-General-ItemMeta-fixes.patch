@@ -5,6 +5,7 @@ Subject: [PATCH] General ItemMeta fixes
 
 == AT ==
 private-f net/minecraft/world/item/ItemStack components
+public net/minecraft/world/food/FoodProperties DEFAULT_EAT_SECONDS
 
 diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
 index 8e2b3dd109dca3089cbce82cd3788874613a3230..893efb2c4a07c33d41e934279dd914a9dbd4ef79 100644
@@ -68,10 +69,10 @@ index 397eb1a101bd60f49dbb2fa8eddf28f6f233167f..ce10aa64576716f530e69d2281c090cf
      protected void load(T tileEntity) {
          if (tileEntity != null && tileEntity != this.snapshot) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index aa23d417272bb160bba8358a8ab0792b56bc0a01..eba5a27e452c4063567fb02d6aabdfb0446d5daf 100644
+index 3e552a859846d206ba79c3ee740ae76a37ee7606..2626fee8cf8690dee8c6db9d503891b6fd882192 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-@@ -326,7 +326,14 @@ public final class CraftItemStack extends ItemStack {
+@@ -328,7 +328,14 @@ public final class CraftItemStack extends ItemStack {
      // Paper end - improve handled tags on type change
      // Paper start
      public static void applyMetaToItem(net.minecraft.world.item.ItemStack itemStack, ItemMeta itemMeta) {
@@ -87,7 +88,7 @@ index aa23d417272bb160bba8358a8ab0792b56bc0a01..eba5a27e452c4063567fb02d6aabdfb0
          ((CraftMetaItem) itemMeta).applyToItem(tag);
          itemStack.applyComponents(tag.build());
      }
-@@ -687,7 +694,14 @@ public final class CraftItemStack extends ItemStack {
+@@ -689,15 +696,19 @@ public final class CraftItemStack extends ItemStack {
          }
  
          if (!((CraftMetaItem) itemMeta).isEmpty()) {
@@ -103,8 +104,38 @@ index aa23d417272bb160bba8358a8ab0792b56bc0a01..eba5a27e452c4063567fb02d6aabdfb0
  
              ((CraftMetaItem) itemMeta).applyToItem(tag);
              item.restorePatch(tag.build());
+         }
+-        // SpigotCraft#463 this is required now by the Vanilla client, so mimic ItemStack constructor in ensuring it
+-        if (item.getItem() != null && item.getMaxDamage() > 0) {
+-            item.setDamageValue(item.getDamageValue());
+-        }
++        // Paper - this is no longer needed
+ 
+         return true;
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java
+index 44d8aa7123ac22cf9a22720ecadc8c5f63bafc0a..9665dc043b257bb0d6f7b40fd938ff549ab685c6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java
+@@ -124,14 +124,13 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
+ 
+     @Override
+     public Axolotl.Variant getVariant() {
++        com.google.common.base.Preconditions.checkState(this.hasVariant(), "Variant is absent, check hasVariant first!"); // Paper - fix NPE
+         return Axolotl.Variant.values()[this.variant];
+     }
+ 
+     @Override
+     public void setVariant(Axolotl.Variant variant) {
+-        if (variant == null) {
+-            variant = Axolotl.Variant.LUCY;
+-        }
++        com.google.common.base.Preconditions.checkArgument(variant != null, "Variant cannot be null!"); // Paper
+         this.variant = variant.ordinal();
+     }
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
-index 2d6abecc94683f92da6be26b72ea829663b16d76..6a3b0c7f0cc3ffb17a231383ad103fa792d7b7ba 100644
+index 1ac3bec02fce28d5ce698305a7482a9eccbb1867..b494568f833dc21d4e2447ac3e5c5002288b5533 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
 @@ -107,6 +107,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
@@ -155,6 +186,19 @@ index 12911233c01d0ac1af9adbd157d56d28361fc76f..99ee41e79891d6017f065492efab5af9
      }
  
      private static Material shieldToBannerHack() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
+index a395c7ce952f4a60a5edf80e8731afa6388d18ea..e213ac74f8f4a62b7b8b2b7889250f5cdeb348fe 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
+@@ -34,7 +34,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBo
+     @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
+     static final ItemMetaKeyType<WritableBookContent> BOOK_CONTENT = new ItemMetaKeyType<>(DataComponents.WRITABLE_BOOK_CONTENT);
+     static final ItemMetaKey BOOK_PAGES = new ItemMetaKey("pages");
+-    static final int MAX_PAGES = Integer.MAX_VALUE; // SPIGOT-6911: Use Minecraft limits
++    static final int MAX_PAGES = WritableBookContent.MAX_PAGES; // SPIGOT-6911: Use Minecraft limits // Paper
+     static final int MAX_PAGE_LENGTH = WritableBookContent.PAGE_EDIT_LENGTH; // SPIGOT-6911: Use Minecraft limits
+ 
+     // We store the pages in their raw original text representation. See SPIGOT-5063, SPIGOT-5350, SPIGOT-3206
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
 index 3f78a0935d738854182254b345064e3c225dcd5f..218df87c596d47b431dbbf2aa42822ef174f948f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
@@ -194,6 +238,108 @@ index 3f78a0935d738854182254b345064e3c225dcd5f..218df87c596d47b431dbbf2aa42822ef
          }
  
          if (this.resolved) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBundle.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBundle.java
+index f8c02fe01fd95aa5de8523c9ad452d91f5d3c16f..4447c754458e9fdead003b4044bf2bee6fcbaaa2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBundle.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBundle.java
+@@ -42,7 +42,7 @@ public class CraftMetaBundle extends CraftMetaItem implements BundleMeta {
+             bundle.items().forEach((item) -> {
+                 ItemStack itemStack = CraftItemStack.asCraftMirror(item);
+ 
+-                if (!itemStack.getType().isAir()) { // SPIGOT-7174 - Avoid adding air
++                if (!itemStack.isEmpty()) { // SPIGOT-7174 - Avoid adding air // Paper
+                     this.addItem(itemStack);
+                 }
+             });
+@@ -55,7 +55,7 @@ public class CraftMetaBundle extends CraftMetaItem implements BundleMeta {
+         Iterable<?> items = SerializableMeta.getObject(Iterable.class, map, CraftMetaBundle.ITEMS.BUKKIT, true);
+         if (items != null) {
+             for (Object stack : items) {
+-                if (stack instanceof ItemStack itemStack && !itemStack.getType().isAir()) { // SPIGOT-7174 - Avoid adding air
++                if (stack instanceof ItemStack itemStack && !itemStack.isEmpty()) { // SPIGOT-7174 - Avoid adding air // Paper
+                     this.addItem(itemStack);
+                 }
+             }
+@@ -116,7 +116,7 @@ public class CraftMetaBundle extends CraftMetaItem implements BundleMeta {
+ 
+     @Override
+     public void addItem(ItemStack item) {
+-        Preconditions.checkArgument(item != null && !item.getType().isAir(), "item is null or air");
++        Preconditions.checkArgument(item != null && !item.isEmpty(), "item is null or empty"); // Paper
+ 
+         if (this.items == null) {
+             this.items = new ArrayList<>();
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaColorableArmor.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaColorableArmor.java
+index 2c9ca54267579a210d4ea192517fc0fbce8e467a..3109df67e42838f3e69681326efb1caf237548a5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaColorableArmor.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaColorableArmor.java
+@@ -22,16 +22,30 @@ public class CraftMetaColorableArmor extends CraftMetaArmor implements Colorable
+             Material.WOLF_ARMOR
+     );
+ 
+-    private Color color = DEFAULT_LEATHER_COLOR;
++    private Integer color; // Paper - keep color component consistent with vanilla (top bytes are ignored)
+ 
+     CraftMetaColorableArmor(CraftMetaItem meta) {
+         super(meta);
+-        CraftMetaLeatherArmor.readColor(this, meta);
++        // Paper start
++        if (!(meta instanceof CraftMetaColorableArmor armorMeta)) {
++            return;
++        }
++
++        this.color = armorMeta.color;
++        // Paper end
+     }
+ 
+     CraftMetaColorableArmor(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
+         super(tag, extraHandledDcts); // Paper
+-        CraftMetaLeatherArmor.readColor(this, tag);
++        // Paper start
++        getOrEmpty(tag, CraftMetaLeatherArmor.COLOR).ifPresent((dyedItemColor) -> {
++            if (!dyedItemColor.showInTooltip()) {
++                this.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_DYE);
++            }
++
++            this.color = dyedItemColor.rgb();
++        });
++        // Paper end
+     }
+ 
+     CraftMetaColorableArmor(Map<String, Object> map) {
+@@ -42,7 +56,11 @@ public class CraftMetaColorableArmor extends CraftMetaArmor implements Colorable
+     @Override
+     void applyToItem(CraftMetaItem.Applicator itemTag) {
+         super.applyToItem(itemTag);
+-        CraftMetaLeatherArmor.applyColor(this, itemTag);
++        // Paper start
++        if (this.hasColor()) {
++            itemTag.put(CraftMetaLeatherArmor.COLOR, new net.minecraft.world.item.component.DyedItemColor(this.color, !this.hasItemFlag(org.bukkit.inventory.ItemFlag.HIDE_DYE)));
++        }
++        // Paper end
+     }
+ 
+     @Override
+@@ -68,16 +86,16 @@ public class CraftMetaColorableArmor extends CraftMetaArmor implements Colorable
+ 
+     @Override
+     public Color getColor() {
+-        return this.color;
++        return this.color == null ? DEFAULT_LEATHER_COLOR : Color.fromRGB(this.color & 0xFFFFFF); // Paper - this should really be nullable
+     }
+ 
+     @Override
+     public void setColor(Color color) {
+-        this.color = color == null ? DEFAULT_LEATHER_COLOR : color;
++        this.color = color == null ? null : color.asRGB(); // Paper
+     }
+ 
+     boolean hasColor() {
+-        return CraftMetaLeatherArmor.hasColor(this);
++        return this.color != null; // Paper
+     }
+ 
+     @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCompass.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCompass.java
 index bbca26f5debb263b04516e68f6e49f68a38fa5b1..aacc4d010f4dfa4d9d11332b802205a6f35b6de3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCompass.java
@@ -231,11 +377,69 @@ index bbca26f5debb263b04516e68f6e49f68a38fa5b1..aacc4d010f4dfa4d9d11332b802205a6
      }
  
      @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCrossbow.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCrossbow.java
+index a3fa95377e083e51ad7596d21eeb08172bdb18b2..0f5a64fc5eb619e18f5eeb97f377c9d593e4a38f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCrossbow.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCrossbow.java
+@@ -122,7 +122,7 @@ public class CraftMetaCrossbow extends CraftMetaItem implements CrossbowMeta {
+     @Override
+     public void addChargedProjectile(ItemStack item) {
+         Preconditions.checkArgument(item != null, "item");
+-        Preconditions.checkArgument(item.getType() == Material.FIREWORK_ROCKET || CraftItemType.bukkitToMinecraft(item.getType()) instanceof ArrowItem, "Item %s is not an arrow or firework rocket", item);
++        Preconditions.checkArgument(!item.isEmpty(), "Item cannot be empty"); // Paper
+ 
+         if (this.chargedProjectiles == null) {
+             this.chargedProjectiles = new ArrayList<>();
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
+index 3f6c5cbbf63631e4b72dc43558651ea94f31ca78..da474a5b963d8e6769d120e9091e60ed0a468a9f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
+@@ -98,7 +98,7 @@ public class CraftMetaEntityTag extends CraftMetaItem {
+         if (meta instanceof CraftMetaEntityTag) {
+             CraftMetaEntityTag that = (CraftMetaEntityTag) meta;
+ 
+-            return this.entityTag != null ? that.entityTag != null && this.entityTag.equals(that.entityTag) : this.entityTag == null;
++            return this.entityTag != null ? that.entityTag != null && this.entityTag.equals(that.entityTag) : that.entityTag == null; // Paper
+         }
+         return true;
+     }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java
-index 8e0dd4b7a7a25a8beb27b507047bc48d8227627c..cf5d27ccc2225bac3aa57912f444f95d2f37e32e 100644
+index 8e0dd4b7a7a25a8beb27b507047bc48d8227627c..4c09c57c263b18ee2e0156cc4a49ac02a025c651 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java
-@@ -154,7 +154,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+@@ -55,7 +55,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+ 
+         this.power = that.power;
+ 
+-        if (that.hasEffects()) {
++        if (that.effects != null) { // Paper
+             this.effects = new ArrayList<>(that.effects);
+         }
+     }
+@@ -86,19 +86,14 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+                 .with(CraftMetaFirework.getEffectType(explosion.shape()));
+ 
+         IntList colors = explosion.colors();
+-        // People using buggy command generators specify a list rather than an int here, so recover with dummy data.
+-        // Wrong: Colors: [1234]
+-        // Right: Colors: [I;1234]
+-        if (colors.isEmpty()) {
+-            effect.withColor(Color.WHITE);
+-        }
++        // Paper - this is no longer needed
+ 
+         for (int color : colors) {
+-            effect.withColor(Color.fromRGB(color));
++            effect.withColor(Color.fromRGB(color & 0xFFFFFF)); // Paper - try to keep color component consistent with vanilla (top bytes are ignored), this will however change the color component for out of bound color
+         }
+ 
+         for (int color : explosion.fadeColors()) {
+-            effect.withFade(Color.fromRGB(color));
++            effect.withFade(Color.fromRGB(color & 0xFFFFFF)); // Paper
+         }
+ 
+         return effect.build();
+@@ -154,7 +149,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
          }
  
          Iterable<?> effects = SerializableMeta.getObject(Iterable.class, map, CraftMetaFirework.EXPLOSIONS.BUKKIT, true);
@@ -244,7 +448,7 @@ index 8e0dd4b7a7a25a8beb27b507047bc48d8227627c..cf5d27ccc2225bac3aa57912f444f95d
      }
  
      @Override
-@@ -162,7 +162,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+@@ -162,7 +157,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
          return !(this.effects == null || this.effects.isEmpty());
      }
  
@@ -253,7 +457,7 @@ index 8e0dd4b7a7a25a8beb27b507047bc48d8227627c..cf5d27ccc2225bac3aa57912f444f95d
          if (collection == null || (collection instanceof Collection && ((Collection<?>) collection).isEmpty())) {
              return;
          }
-@@ -174,6 +174,15 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+@@ -174,6 +169,15 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
  
          for (Object obj : collection) {
              Preconditions.checkArgument(obj instanceof FireworkEffect, "%s in %s is not a FireworkEffect", obj, collection);
@@ -269,7 +473,7 @@ index 8e0dd4b7a7a25a8beb27b507047bc48d8227627c..cf5d27ccc2225bac3aa57912f444f95d
              effects.add((FireworkEffect) obj);
          }
      }
-@@ -186,9 +195,13 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+@@ -186,9 +190,13 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
          }
  
          List<FireworkExplosion> effects = new ArrayList<>();
@@ -285,7 +489,43 @@ index 8e0dd4b7a7a25a8beb27b507047bc48d8227627c..cf5d27ccc2225bac3aa57912f444f95d
  
          itemTag.put(CraftMetaFirework.FIREWORKS, new Fireworks(this.power, effects));
      }
-@@ -287,6 +300,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+@@ -218,7 +226,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+     }
+ 
+     boolean isFireworkEmpty() {
+-        return !(this.hasEffects() || this.hasPower());
++        return !(this.effects != null || this.hasPower()); // Paper - empty effects list should stay on the item
+     }
+ 
+     boolean hasPower() {
+@@ -234,7 +242,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+         if (meta instanceof CraftMetaFirework that) {
+ 
+             return (this.hasPower() ? that.hasPower() && this.power == that.power : !that.hasPower())
+-                    && (this.hasEffects() ? that.hasEffects() && this.effects.equals(that.effects) : !that.hasEffects());
++                    && (this.effects != null ? that.effects != null && this.effects.equals(that.effects) : that.effects == null); // Paper
+         }
+ 
+         return true;
+@@ -252,7 +260,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+         if (this.hasPower()) {
+             hash = 61 * hash + this.power;
+         }
+-        if (this.hasEffects()) {
++        if (this.effects != null) { // Paper
+             hash = 61 * hash + 13 * this.effects.hashCode();
+         }
+         return hash != original ? CraftMetaFirework.class.hashCode() ^ hash : hash;
+@@ -262,7 +270,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+     Builder<String, Object> serialize(Builder<String, Object> builder) {
+         super.serialize(builder);
+ 
+-        if (this.hasEffects()) {
++        if (this.effects != null) { // Paper
+             builder.put(CraftMetaFirework.EXPLOSIONS.BUKKIT, ImmutableList.copyOf(this.effects));
+         }
+ 
+@@ -287,6 +295,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
      @Override
      public void addEffect(FireworkEffect effect) {
          Preconditions.checkArgument(effect != null, "FireworkEffect cannot be null");
@@ -293,7 +533,7 @@ index 8e0dd4b7a7a25a8beb27b507047bc48d8227627c..cf5d27ccc2225bac3aa57912f444f95d
          if (this.effects == null) {
              this.effects = new ArrayList<FireworkEffect>();
          }
-@@ -296,6 +310,10 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+@@ -296,6 +305,10 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
      @Override
      public void addEffects(FireworkEffect... effects) {
          Preconditions.checkArgument(effects != null, "effects cannot be null");
@@ -304,7 +544,7 @@ index 8e0dd4b7a7a25a8beb27b507047bc48d8227627c..cf5d27ccc2225bac3aa57912f444f95d
          if (effects.length == 0) {
              return;
          }
-@@ -314,7 +332,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+@@ -314,7 +327,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
      @Override
      public void addEffects(Iterable<FireworkEffect> effects) {
          Preconditions.checkArgument(effects != null, "effects cannot be null");
@@ -313,8 +553,17 @@ index 8e0dd4b7a7a25a8beb27b507047bc48d8227627c..cf5d27ccc2225bac3aa57912f444f95d
      }
  
      @Override
+@@ -349,7 +362,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+     @Override
+     public void setPower(int power) {
+         Preconditions.checkArgument(power >= 0, "power cannot be less than zero: %s", power);
+-        Preconditions.checkArgument(power < 0x80, "power cannot be more than 127: %s", power);
++        Preconditions.checkArgument(power <= 0xFF, "power cannot be more than 255: %s", power); // Paper - set correct limit
+         this.power = power;
+     }
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 12a193db7475870e5107c86c7611bb4b92feacb8..87bb193acd39515c2d80cf1ab41d1e2538112fe9 100644
+index 12a193db7475870e5107c86c7611bb4b92feacb8..860bc5ec4baec5e09a456cc5559d0de2aa10797a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -172,9 +172,10 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
@@ -406,7 +655,94 @@ index 12a193db7475870e5107c86c7611bb4b92feacb8..87bb193acd39515c2d80cf1ab41d1e25
          if (lore == null) {
              this.lore = null;
          } else {
-@@ -1421,7 +1428,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1295,7 +1302,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+ 
+     @Override
+     public FoodComponent getFood() {
+-        return (this.hasFood()) ? new CraftFoodComponent(this.food) : new CraftFoodComponent(new FoodProperties(0, 0, false, 0, Collections.emptyList()));
++        return (this.hasFood()) ? new CraftFoodComponent(this.food) : new CraftFoodComponent(new FoodProperties(0, 0, false, FoodProperties.DEFAULT_EAT_SECONDS, Collections.emptyList())); // Paper - create a valid food properties
+     }
+ 
+     @Override
+@@ -1321,7 +1328,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+ 
+     @Override
+     public Multimap<Attribute, AttributeModifier> getAttributeModifiers(@Nullable EquipmentSlot slot) {
+-        this.checkAttributeList();
++        if (this.attributeModifiers == null) return LinkedHashMultimap.create(); // Paper - don't change the components
+         SetMultimap<Attribute, AttributeModifier> result = LinkedHashMultimap.create();
+         for (Map.Entry<Attribute, AttributeModifier> entry : this.attributeModifiers.entries()) {
+             if (entry.getValue().getSlot() == null || entry.getValue().getSlot() == slot) {
+@@ -1334,6 +1341,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+     @Override
+     public Collection<AttributeModifier> getAttributeModifiers(@Nonnull Attribute attribute) {
+         Preconditions.checkNotNull(attribute, "Attribute cannot be null");
++        if (this.attributeModifiers == null) return null; // Paper - fix NPE
+         return this.attributeModifiers.containsKey(attribute) ? ImmutableList.copyOf(this.attributeModifiers.get(attribute)) : null;
+     }
+ 
+@@ -1341,10 +1349,12 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+     public boolean addAttributeModifier(@Nonnull Attribute attribute, @Nonnull AttributeModifier modifier) {
+         Preconditions.checkNotNull(attribute, "Attribute cannot be null");
+         Preconditions.checkNotNull(modifier, "AttributeModifier cannot be null");
+-        this.checkAttributeList();
++        if (this.attributeModifiers != null) { // Paper
+         for (Map.Entry<Attribute, AttributeModifier> entry : this.attributeModifiers.entries()) {
+             Preconditions.checkArgument(!(entry.getValue().getUniqueId().equals(modifier.getUniqueId()) && entry.getKey() == attribute), "Cannot register AttributeModifier. Modifier is already applied! %s", modifier); // Paper
+         }
++        } // Paper
++        this.checkAttributeList(); // Paper - moved down
+         return this.attributeModifiers.put(attribute, modifier);
+     }
+ 
+@@ -1355,8 +1365,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+             return;
+         }
+ 
+-        this.checkAttributeList();
+-        this.attributeModifiers.clear();
++        // Paper start - fix modifiers meta
++        if (this.attributeModifiers != null) {
++            this.attributeModifiers.clear();
++        }
++        // Paper end
+ 
+         Iterator<Map.Entry<Attribute, AttributeModifier>> iterator = attributeModifiers.entries().iterator();
+         while (iterator.hasNext()) {
+@@ -1366,6 +1379,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+                 iterator.remove();
+                 continue;
+             }
++            this.checkAttributeList(); // Paper - moved down
+             this.attributeModifiers.put(next.getKey(), next.getValue());
+         }
+     }
+@@ -1373,13 +1387,13 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+     @Override
+     public boolean removeAttributeModifier(@Nonnull Attribute attribute) {
+         Preconditions.checkNotNull(attribute, "Attribute cannot be null");
+-        this.checkAttributeList();
++        if (this.attributeModifiers == null) return false; // Paper
+         return !this.attributeModifiers.removeAll(attribute).isEmpty();
+     }
+ 
+     @Override
+     public boolean removeAttributeModifier(@Nullable EquipmentSlot slot) {
+-        this.checkAttributeList();
++        if (this.attributeModifiers == null) return false; // Paper
+         int removed = 0;
+         Iterator<Map.Entry<Attribute, AttributeModifier>> iter = this.attributeModifiers.entries().iterator();
+ 
+@@ -1399,7 +1413,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+     public boolean removeAttributeModifier(@Nonnull Attribute attribute, @Nonnull AttributeModifier modifier) {
+         Preconditions.checkNotNull(attribute, "Attribute cannot be null");
+         Preconditions.checkNotNull(modifier, "AttributeModifier cannot be null");
+-        this.checkAttributeList();
++        if (this.attributeModifiers == null) return false; // Paper
+         int removed = 0;
+         Iterator<Map.Entry<Attribute, AttributeModifier>> iter = this.attributeModifiers.entries().iterator();
+ 
+@@ -1421,7 +1435,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      @Override
      public String getAsString() {
@@ -415,7 +751,7 @@ index 12a193db7475870e5107c86c7611bb4b92feacb8..87bb193acd39515c2d80cf1ab41d1e25
          this.applyToItem(tag);
          DataComponentPatch patch = tag.build();
          Tag nbt = DataComponentPatch.CODEC.encodeStart(MinecraftServer.getDefaultRegistryAccess().createSerializationContext(NbtOps.INSTANCE), patch).getOrThrow();
-@@ -1430,7 +1437,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1430,7 +1444,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      @Override
      public String getAsComponentString() {
@@ -424,7 +760,7 @@ index 12a193db7475870e5107c86c7611bb4b92feacb8..87bb193acd39515c2d80cf1ab41d1e25
          this.applyToItem(tag);
          DataComponentPatch patch = tag.build();
  
-@@ -1470,6 +1477,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1470,6 +1484,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          if (first == null || second == null) {
              return false;
          }
@@ -432,7 +768,24 @@ index 12a193db7475870e5107c86c7611bb4b92feacb8..87bb193acd39515c2d80cf1ab41d1e25
          for (Map.Entry<Attribute, AttributeModifier> entry : first.entries()) {
              if (!second.containsEntry(entry.getKey(), entry.getValue())) {
                  return false;
-@@ -1542,7 +1550,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1495,6 +1510,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+ 
+     @Override
+     public void setDamage(int damage) {
++        Preconditions.checkArgument(damage >= 0, "Damage cannot be negative"); // Paper
++        Preconditions.checkArgument(!this.hasMaxDamage() || damage <= this.maxDamage, "Damage cannot exceed max damage"); // Paper
+         this.damage = damage;
+     }
+ 
+@@ -1511,6 +1528,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+ 
+     @Override
+     public void setMaxDamage(Integer maxDamage) {
++        Preconditions.checkArgument(maxDamage == null || maxDamage > 0, "Max damage should be positive"); // Paper
+         this.maxDamage = maxDamage;
+     }
+ 
+@@ -1542,7 +1560,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                  && (this.hasCustomModelData() ? that.hasCustomModelData() && this.customModelData.equals(that.customModelData) : !that.hasCustomModelData())
                  && (this.hasBlockData() ? that.hasBlockData() && this.blockData.equals(that.blockData) : !that.hasBlockData())
                  && (this.hasRepairCost() ? that.hasRepairCost() && this.repairCost == that.repairCost : !that.hasRepairCost())
@@ -441,16 +794,18 @@ index 12a193db7475870e5107c86c7611bb4b92feacb8..87bb193acd39515c2d80cf1ab41d1e25
                  && (this.unhandledTags.equals(that.unhandledTags))
                  && (Objects.equals(this.customTag, that.customTag))
                  && (this.persistentDataContainer.equals(that.persistentDataContainer))
-@@ -1599,7 +1607,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1598,8 +1616,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         hash = 61 * hash + (this.hasRarity() ? this.rarity.hashCode() : 0);
          hash = 61 * hash + (this.hasFood() ? this.food.hashCode() : 0);
          hash = 61 * hash + (this.hasDamage() ? this.damage : 0);
-         hash = 61 * hash + (this.hasMaxDamage() ? 1231 : 1237);
+-        hash = 61 * hash + (this.hasMaxDamage() ? 1231 : 1237);
 -        hash = 61 * hash + (this.hasAttributeModifiers() ? this.attributeModifiers.hashCode() : 0);
++        hash = 61 * hash + (this.hasMaxDamage() ? this.maxDamage.hashCode() : 0); // Paper - max damage is not a boolean
 +        hash = 61 * hash + (this.attributeModifiers != null ? this.attributeModifiers.hashCode() : 0); // Paper - track only null attributes
          hash = 61 * hash + (this.canPlaceOnPredicates != null ? this.canPlaceOnPredicates.hashCode() : 0); // Paper
          hash = 61 * hash + (this.canBreakPredicates != null ? this.canBreakPredicates.hashCode() : 0); // Paper
          hash = 61 * hash + this.version;
-@@ -1619,7 +1627,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1619,7 +1637,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
              if (this.enchantments != null) {
                  clone.enchantments = new EnchantmentMap(this.enchantments); // Paper
              }
@@ -459,7 +814,7 @@ index 12a193db7475870e5107c86c7611bb4b92feacb8..87bb193acd39515c2d80cf1ab41d1e25
                  clone.attributeModifiers = LinkedHashMultimap.create(this.attributeModifiers);
              }
              if (this.customTag != null) {
-@@ -1823,7 +1831,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1823,7 +1841,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
      }
  
      static void serializeModifiers(Multimap<Attribute, AttributeModifier> modifiers, ImmutableMap.Builder<String, Object> builder, ItemMetaKey key) {
@@ -468,7 +823,7 @@ index 12a193db7475870e5107c86c7611bb4b92feacb8..87bb193acd39515c2d80cf1ab41d1e25
              return;
          }
  
-@@ -1905,7 +1913,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1905,7 +1923,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
      // Paper start - improve checking handled tags
      @org.jetbrains.annotations.VisibleForTesting
      public static final Map<Class<? extends CraftMetaItem>, Set<DataComponentType<?>>> HANDLED_DCTS_PER_TYPE = new HashMap<>();
@@ -477,6 +832,215 @@ index 12a193db7475870e5107c86c7611bb4b92feacb8..87bb193acd39515c2d80cf1ab41d1e25
          CraftMetaItem.NAME.TYPE,
          CraftMetaItem.ITEM_NAME.TYPE,
          CraftMetaItem.LORE.TYPE,
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaLeatherArmor.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaLeatherArmor.java
+index 157a7b7351f48e68d2923c72ed3bbe3dcae21383..051e3c4e5020fdf1392f888bfb4a633db69e5c5f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaLeatherArmor.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaLeatherArmor.java
+@@ -28,16 +28,30 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
+ 
+     static final ItemMetaKeyType<DyedItemColor> COLOR = new ItemMetaKeyType<>(DataComponents.DYED_COLOR, "color");
+ 
+-    private Color color = DEFAULT_LEATHER_COLOR;
++    private Integer color; // Paper - keep color component consistent with vanilla (top bytes are ignored)
+ 
+     CraftMetaLeatherArmor(CraftMetaItem meta) {
+         super(meta);
+-        CraftMetaLeatherArmor.readColor(this, meta);
++        // Paper start
++        if (!(meta instanceof CraftMetaLeatherArmor leatherMeta)) {
++            return;
++        }
++
++        this.color = leatherMeta.color;
++        // Paper end
+     }
+ 
+     CraftMetaLeatherArmor(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
+         super(tag, extraHandledDcts); // Paper
+-        CraftMetaLeatherArmor.readColor(this, tag);
++        // Paper start
++        getOrEmpty(tag, CraftMetaLeatherArmor.COLOR).ifPresent((dyedItemColor) -> {
++            if (!dyedItemColor.showInTooltip()) {
++                this.addItemFlags(ItemFlag.HIDE_DYE);
++            }
++
++            this.color = dyedItemColor.rgb();
++        });
++        // Paper end
+     }
+ 
+     CraftMetaLeatherArmor(Map<String, Object> map) {
+@@ -48,7 +62,11 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
+     @Override
+     void applyToItem(CraftMetaItem.Applicator itemTag) {
+         super.applyToItem(itemTag);
+-        CraftMetaLeatherArmor.applyColor(this, itemTag);
++        // Paper start
++        if (this.hasColor()) {
++            itemTag.put(CraftMetaLeatherArmor.COLOR, new DyedItemColor(this.color, !this.hasItemFlag(ItemFlag.HIDE_DYE)));
++        }
++        // Paper end
+     }
+ 
+     @Override
+@@ -72,16 +90,16 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
+ 
+     @Override
+     public Color getColor() {
+-        return this.color;
++        return this.color == null ? DEFAULT_LEATHER_COLOR : Color.fromRGB(this.color & 0xFFFFFF); // Paper
+     }
+ 
+     @Override
+     public void setColor(Color color) {
+-        this.color = color == null ? DEFAULT_LEATHER_COLOR : color;
++        this.color = color == null ? null : color.asRGB(); // Paper
+     }
+ 
+     boolean hasColor() {
+-        return CraftMetaLeatherArmor.hasColor(this);
++        return this.color != null; // Paper
+     }
+ 
+     @Override
+@@ -121,14 +139,16 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
+         return original != hash ? CraftMetaLeatherArmor.class.hashCode() ^ hash : hash;
+     }
+ 
++    @io.papermc.paper.annotation.DoNotUse // Paper
+     static void readColor(LeatherArmorMeta meta, CraftMetaItem other) {
+         if (!(other instanceof CraftMetaLeatherArmor armorMeta)) {
+             return;
+         }
+ 
+-        meta.setColor(armorMeta.color);
++        // meta.setColor(armorMeta.color); // Paper - commented out, color is now an integer and cannot be passed to setColor
+     }
+ 
++    @io.papermc.paper.annotation.DoNotUse // Paper
+     static void readColor(LeatherArmorMeta meta, DataComponentPatch tag) {
+         getOrEmpty(tag, CraftMetaLeatherArmor.COLOR).ifPresent((dyedItemColor) -> {
+             if (!dyedItemColor.showInTooltip()) {
+@@ -151,6 +171,7 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
+         return !DEFAULT_LEATHER_COLOR.equals(meta.getColor());
+     }
+ 
++    @io.papermc.paper.annotation.DoNotUse // Paper
+     static void applyColor(LeatherArmorMeta meta, CraftMetaItem.Applicator tag) {
+         if (CraftMetaLeatherArmor.hasColor(meta)) {
+             tag.put(CraftMetaLeatherArmor.COLOR, new DyedItemColor(meta.getColor().asRGB(), !meta.hasItemFlag(ItemFlag.HIDE_DYE)));
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMap.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMap.java
+index d829f4da371b44e7480896118547734be400a314..b6c18563de5b0d7a5a4253bdd01e98d843ce3797 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMap.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMap.java
+@@ -30,7 +30,7 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
+ 
+     private Integer mapId;
+     private byte scaling = CraftMetaMap.SCALING_EMPTY;
+-    private Color color;
++    private Integer color; // Paper - keep color component consistent with vanilla (top bytes are ignored)
+ 
+     CraftMetaMap(CraftMetaItem meta) {
+         super(meta);
+@@ -58,7 +58,7 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
+ 
+         getOrEmpty(tag, CraftMetaMap.MAP_COLOR).ifPresent((mapColor) -> {
+             try {
+-                this.color = Color.fromRGB(mapColor.rgb());
++                this.color = mapColor.rgb(); // Paper
+             } catch (IllegalArgumentException ex) {
+                 // Invalid colour
+             }
+@@ -102,7 +102,7 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
+         }
+ 
+         if (this.hasColor()) {
+-            tag.put(CraftMetaMap.MAP_COLOR, new MapItemColor(this.color.asRGB()));
++            tag.put(CraftMetaMap.MAP_COLOR, new MapItemColor(this.color)); // Paper
+         }
+     }
+ 
+@@ -127,6 +127,7 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
+ 
+     @Override
+     public int getMapId() {
++        Preconditions.checkState(this.hasMapId(), "Item does not have map associated - check hasMapId() first!"); // Paper - fix NPE
+         return this.mapId;
+     }
+ 
+@@ -187,12 +188,12 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
+ 
+     @Override
+     public Color getColor() {
+-        return this.color;
++        return this.color == null ? null : Color.fromRGB(this.color & 0xFFFFFF); // Paper
+     }
+ 
+     @Override
+     public void setColor(Color color) {
+-        this.color = color;
++        this.color = color == null ? null : color.asRGB(); // Paper
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaOminousBottle.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaOminousBottle.java
+index 7197c4f5698fd041c4db6d0f6a80c55f77661789..062ef890b42075adb5663453806dda3ad89a6aa0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaOminousBottle.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaOminousBottle.java
+@@ -75,6 +75,7 @@ public class CraftMetaOminousBottle extends CraftMetaItem implements OminousBott
+ 
+     @Override
+     public int getAmplifier() {
++        Preconditions.checkState(this.hasAmplifier(), "'ominous_bottle_amplifier' data component is absent. Check hasAmplifier first!"); // Paper - fix NPE
+         return this.ominousBottleAmplifier;
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPotion.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPotion.java
+index db7f71af22d904de08d4badaa7f66d1286d5bf16..b34d581682b81760e35b1748e21a01f5473edf33 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPotion.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPotion.java
+@@ -47,7 +47,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
+ 
+     private PotionType type;
+     private List<PotionEffect> customEffects;
+-    private Color color;
++    private Integer color; // Paper - keep color component consistent with vanilla (top bytes are ignored)
+ 
+     CraftMetaPotion(CraftMetaItem meta) {
+         super(meta);
+@@ -70,7 +70,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
+ 
+             potionContents.customColor().ifPresent((customColor) -> {
+                 try {
+-                    this.color = Color.fromRGB(customColor);
++                    this.color = customColor; // Paper
+                 } catch (IllegalArgumentException ex) {
+                     // Invalid colour
+                 }
+@@ -126,7 +126,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
+         super.applyToItem(tag);
+ 
+         Optional<Holder<Potion>> defaultPotion = (this.hasBasePotionType()) ? Optional.of(CraftPotionType.bukkitToMinecraftHolder(this.type)) : Optional.empty();
+-        Optional<Integer> potionColor = (this.hasColor()) ? Optional.of(this.color.asRGB()) : Optional.empty();
++        Optional<Integer> potionColor = (this.hasColor()) ? Optional.of(this.color) : Optional.empty(); // Paper
+ 
+         List<MobEffectInstance> effectList = new ArrayList<>();
+         if (this.customEffects != null) {
+@@ -295,12 +295,12 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
+ 
+     @Override
+     public Color getColor() {
+-        return this.color;
++        return this.color == null ? null : Color.fromRGB(this.color & 0xFFFFFF); // Paper
+     }
+ 
+     @Override
+     public void setColor(Color color) {
+-        this.color = color;
++        this.color = color == null ? null : color.asRGB(); // Paper
+     }
+ 
+     @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
 index c769d2a210060f6829a6cbe739d6d9ab2f602644..1feffe289a1e714084bd37b5c5ad23a37dd58325 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
@@ -494,6 +1058,57 @@ index c769d2a210060f6829a6cbe739d6d9ab2f602644..1feffe289a1e714084bd37b5c5ad23a3
 +                }, ((org.bukkit.craftbukkit.CraftServer) org.bukkit.Bukkit.getServer()).getServer()); // Paper - run on main thread
              }
          }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java
+index a3c1a8c469630464ac80b7786731462046134998..4bc0aa160e5ed90be622932ff735a9ed98830f33 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java
+@@ -251,6 +251,7 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
+ 
+     @Override
+     public EntitySnapshot getSpawnedEntity() {
++        if (this.entityTag == null) return null; // Paper - fix NPE
+         return CraftEntitySnapshot.create(this.entityTag);
+     }
+ 
+@@ -268,8 +269,8 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
+         if (meta instanceof CraftMetaSpawnEgg) {
+             CraftMetaSpawnEgg that = (CraftMetaSpawnEgg) meta;
+ 
+-            return this.hasSpawnedType() ? that.hasSpawnedType() && this.spawnedType.equals(that.spawnedType) : !that.hasSpawnedType()
+-                    && this.entityTag != null ? that.entityTag != null && this.entityTag.equals(that.entityTag) : this.entityTag == null;
++            return (this.hasSpawnedType() ? that.hasSpawnedType() && this.spawnedType.equals(that.spawnedType) : !that.hasSpawnedType()) // Paper
++                    && (this.entityTag != null ? that.entityTag != null && this.entityTag.equals(that.entityTag) : that.entityTag == null); // Paper
+         }
+         return true;
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java
+index b5392a3a6f6f3d0a54549e6bb93f28590ee048f0..7514aa6f206c4b82fecd112783f96bb9dd73c01f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java
+@@ -126,6 +126,7 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
+ 
+     @Override
+     public DyeColor getPatternColor() {
++        com.google.common.base.Preconditions.checkState(this.hasVariant(), "This bucket doesn't have variant, check hasVariant first!"); // Paper - fix NPE
+         return CraftTropicalFish.getPatternColor(this.variant);
+     }
+ 
+@@ -139,6 +140,7 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
+ 
+     @Override
+     public DyeColor getBodyColor() {
++        com.google.common.base.Preconditions.checkState(this.hasVariant(), "This bucket doesn't have variant, check hasVariant first!"); // Paper - fix NPE
+         return CraftTropicalFish.getBodyColor(this.variant);
+     }
+ 
+@@ -152,6 +154,7 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
+ 
+     @Override
+     public TropicalFish.Pattern getPattern() {
++        com.google.common.base.Preconditions.checkState(this.hasVariant(), "This bucket doesn't have variant, check hasVariant first!"); // Paper - fix NPE
+         return CraftTropicalFish.getPattern(this.variant);
+     }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/SerializableMeta.java b/src/main/java/org/bukkit/craftbukkit/inventory/SerializableMeta.java
 index 05a4a06c0def28fc97e61b4712c45c8730fec60c..a86eb660d8f523cb99a0b668ef1130535d50ce1c 100644
@@ -522,7 +1137,7 @@ index 05a4a06c0def28fc97e61b4712c45c8730fec60c..a86eb660d8f523cb99a0b668ef113053
 +    // Paper end - General ItemMeta Fixes
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftFoodComponent.java b/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftFoodComponent.java
-index c68e85cca0f532a94545c0b7f6ed54451ce5a47e..eb08b3453738bffd1a6350dc56c18b9740be5a01 100644
+index c68e85cca0f532a94545c0b7f6ed54451ce5a47e..b647b5205b9c54ccb83e09a9410c722e33e5378d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftFoodComponent.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftFoodComponent.java
 @@ -103,6 +103,7 @@ public final class CraftFoodComponent implements FoodComponent {
@@ -533,6 +1148,14 @@ index c68e85cca0f532a94545c0b7f6ed54451ce5a47e..eb08b3453738bffd1a6350dc56c18b97
          this.handle = new FoodProperties(this.handle.nutrition(), this.handle.saturation(), this.handle.canAlwaysEat(), eatSeconds, this.handle.effects());
      }
  
+@@ -118,6 +119,7 @@ public final class CraftFoodComponent implements FoodComponent {
+ 
+     @Override
+     public FoodEffect addEffect(PotionEffect effect, float probability) {
++        Preconditions.checkArgument(0 <= probability && probability <= 1, "Probability cannot be outside range [0,1]"); // Paper
+         List<FoodProperties.PossibleEffect> effects = new ArrayList<>(this.handle.effects());
+ 
+         FoodProperties.PossibleEffect newEffect = new net.minecraft.world.food.FoodProperties.PossibleEffect(CraftPotionUtil.fromBukkit(effect), probability);
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
 index 0b11d5ea89539decd2f6c60c5b581bbd78ff1fd6..74ebadacbbd11b5a0d8f8c6cd6409cce17cfa37d 100644
 --- a/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
@@ -546,6 +1169,19 @@ index 0b11d5ea89539decd2f6c60c5b581bbd78ff1fd6..74ebadacbbd11b5a0d8f8c6cd6409cce
          itemMeta.applyToItem(compound);
  
          assertEquals(itemMeta, new CraftMetaItem(compound.build(), null)); // Paper
+diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
+index d6018439015583fa0344c7c01b2e60a13de29795..aabe3730fa582f442ee0544dd1a9f3123f719c68 100644
+--- a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
++++ b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
+@@ -66,7 +66,7 @@ import org.junit.jupiter.api.Test;
+ 
+ public class ItemMetaTest extends AbstractTestingBase {
+ 
+-    static final int MAX_FIREWORK_POWER = 127; // Please update ItemStackFireworkTest if/when this gets changed.
++    static final int MAX_FIREWORK_POWER = 255; // Please update ItemStackFireworkTest if/when this gets changed. // Paper - it changed
+ 
+     @Test
+     public void testPowerLimitExact() {
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/PersistentDataContainerTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/PersistentDataContainerTest.java
 index f3939074a886b20f17b00dd3c39833725f47d3f0..1123cc60671c1a48bba9b2baa1f10c6d5a6855fe 100644
 --- a/src/test/java/org/bukkit/craftbukkit/inventory/PersistentDataContainerTest.java
