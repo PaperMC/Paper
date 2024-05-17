@@ -19,6 +19,27 @@ this is going to be the best soultion all around.
 
 Improvements/suggestions welcome!
 
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
+ 
+     @Override
+     public void stopRiding() {
++        // Paper start - Force entity dismount during teleportation
++        this.stopRiding(false);
++    }
++    @Override
++    public void stopRiding(boolean suppressCancellation) {
++        // Paper end - Force entity dismount during teleportation
+         Entity entity = this.getVehicle();
+ 
+-        super.stopRiding();
++        super.stopRiding(suppressCancellation); // Paper - Force entity dismount during teleportation
+         if (entity instanceof LivingEntity entityliving) {
+             Iterator iterator = entityliving.getActiveEffects().iterator();
+ 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
@@ -28,9 +49,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public void removeVehicle() {
 +        // Paper start - Force entity dismount during teleportation
-+        stopRiding(false);
++        this.removeVehicle(false);
 +    }
-+    public void stopRiding(boolean suppressCancellation) {
++    public void removeVehicle(boolean suppressCancellation) {
 +        // Paper end - Force entity dismount during teleportation
          if (this.vehicle != null) {
              Entity entity = this.vehicle;
@@ -41,6 +62,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
      }
+ 
+     public void stopRiding() {
+-        this.removeVehicle();
++        // Paper start - Force entity dismount during teleportation
++        this.stopRiding(false);
++    }
++
++    public void stopRiding(boolean suppressCancellation) {
++        this.removeVehicle(suppressCancellation);
++        // Paper end - Force entity dismount during teleportation
+     }
+ 
+     protected void addPassenger(Entity passenger) {
 @@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          }
      }
@@ -80,7 +114,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public void stopRiding() {
 +        // Paper start - Force entity dismount during teleportation
-+        stopRiding(false);
++        this.stopRiding(false);
 +    }
 +    @Override
 +    public void stopRiding(boolean suppressCancellation) {
@@ -92,6 +126,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (entity != null && entity != this.getVehicle() && !this.level().isClientSide) {
              this.dismountVehicle(entity);
          }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Shulker.java b/src/main/java/net/minecraft/world/entity/monster/Shulker.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Shulker.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Shulker.java
+@@ -0,0 +0,0 @@ public class Shulker extends AbstractGolem implements VariantHolder<Optional<Dye
+ 
+     @Override
+     public void stopRiding() {
+-        super.stopRiding();
++        // Paper start - Force entity dismount during teleportation
++        this.stopRiding(false);
++    }
++    @Override
++    public void stopRiding(boolean suppressCancellation) {
++        super.stopRiding(suppressCancellation);
++        // Paper end - Force entity dismount during teleportation
+         if (this.level().isClientSide) {
+             this.clientOldAttachPosition = this.blockPosition();
+         }
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
@@ -102,11 +155,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void removeVehicle() {
 -        super.removeVehicle();
 +        // Paper start - Force entity dismount during teleportation
-+        stopRiding(false);
++        this.removeVehicle(false);
 +    }
 +    @Override
-+    public void stopRiding(boolean suppressCancellation) {
-+        super.stopRiding(suppressCancellation);
++    public void removeVehicle(boolean suppressCancellation) {
++        super.removeVehicle(suppressCancellation);
 +        // Paper end - Force entity dismount during teleportation
          this.boardingCooldown = 0;
      }
