@@ -393,4 +393,9 @@ public class SpigotWorldConfig
     private void belowZeroGenerationInExistingChunks() {
         this.belowZeroGenerationInExistingChunks = this.getBoolean("below-zero-generation-in-existing-chunks", true);
     }
+
+    public boolean unloadFrozenChunks;
+    private void unloadFrozenChunks() {
+        this.unloadFrozenChunks = this.getBoolean("unload-frozen-chunks", false);
+    }
 }
