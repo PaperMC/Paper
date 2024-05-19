@@ -25,6 +25,8 @@ import org.bukkit.potion.PotionType;
 
 public class FieldRename {
 
+    public static final BiFunction<NamespacedKey, ApiVersion, NamespacedKey> NONE = (namespacedKey, apiVersion) -> namespacedKey;
+
     @DoNotReroute
     public static String rename(ApiVersion apiVersion, String owner, String from) {
         if (owner == null) {
