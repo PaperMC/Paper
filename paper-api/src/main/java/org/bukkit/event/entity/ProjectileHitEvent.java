@@ -60,7 +60,7 @@ public class ProjectileHitEvent extends EntityEvent implements Cancellable {
 
     /**
      * Gets the block face that was hit, if it was a block that was hit and the
-     * face was provided in the vent.
+     * face was provided in the event.
      *
      * @return hit face or else null
      */
