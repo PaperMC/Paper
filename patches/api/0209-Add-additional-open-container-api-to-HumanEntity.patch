@@ -3,16 +3,137 @@ From: JRoy <joshroy126@gmail.com>
 Date: Wed, 26 Aug 2020 02:11:58 -0400
 Subject: [PATCH] Add additional open container api to HumanEntity
 
+Expand existing methods to also allow for title overrides
+
+Co-authored-by: Lukas Planz <me@md5lukas.de>
 
 diff --git a/src/main/java/org/bukkit/entity/HumanEntity.java b/src/main/java/org/bukkit/entity/HumanEntity.java
-index 2557ddcc0528d4f9d811883b3ddc61148ebc3998..5ecfb98540c00da05b13bc5370debb89c52cc76f 100644
+index 2557ddcc0528d4f9d811883b3ddc61148ebc3998..48f5934f1e4e570606c7cd57e9fc349cc8763f68 100644
 --- a/src/main/java/org/bukkit/entity/HumanEntity.java
 +++ b/src/main/java/org/bukkit/entity/HumanEntity.java
-@@ -174,6 +174,92 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder
+@@ -123,7 +123,26 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder
+      *     opened.
+      */
      @Nullable
-     public InventoryView openMerchant(@NotNull Merchant merchant, boolean force);
+-    public InventoryView openWorkbench(@Nullable Location location, boolean force);
++    // Paper start - Add additional open container api
++    default InventoryView openWorkbench(@Nullable Location location, boolean force) {
++        return openWorkbench(location, force, null);
++    }
++
++    /**
++     * Opens an empty workbench inventory window with the player's inventory
++     * on the bottom.
++     *
++     * @param location The location to attach it to. If null, the player's
++     *     location is used.
++     * @param force If false, and there is no workbench block at the location,
++     *     no inventory will be opened and null will be returned.
++     * @param title The title to use instead of the default one
++     * @return The newly opened inventory view, or null if it could not be
++     *     opened.
++     */
++    @Nullable
++    InventoryView openWorkbench(@Nullable Location location, boolean force, @Nullable net.kyori.adventure.text.Component title);
++    // Paper end - Add additional open container api
  
-+    // Paper start - Add additional containers
+     /**
+      * Opens an empty enchanting inventory window with the player's inventory
+@@ -137,7 +156,26 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder
+      *     opened.
+      */
+     @Nullable
+-    public InventoryView openEnchanting(@Nullable Location location, boolean force);
++    // Paper start - Add additional open container api
++    default InventoryView openEnchanting(@Nullable Location location, boolean force) {
++        return openEnchanting(location, force, null);
++    }
++
++    /**
++     * Opens an empty enchanting inventory window with the player's inventory
++     * on the bottom.
++     *
++     * @param location The location to attach it to. If null, the player's
++     *     location is used.
++     * @param force If false, and there is no enchanting table at the
++     *     location, no inventory will be opened and null will be returned.
++     * @param title The title to use instead of the default one
++     * @return The newly opened inventory view, or null if it could not be
++     *     opened.
++     */
++    @Nullable
++    InventoryView openEnchanting(@Nullable Location location, boolean force, @Nullable net.kyori.adventure.text.Component title);
++    // Paper end - Add additional open container api
+ 
+     /**
+      * Opens an inventory window to the specified inventory view.
+@@ -158,7 +196,46 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder
+      * opened.
+      */
+     @Nullable
+-    public InventoryView openMerchant(@NotNull Villager trader, boolean force);
++    // Paper start - Add additional open container api
++    default InventoryView openMerchant(@NotNull Villager trader, boolean force) {
++        return openMerchant(trader, force, null);
++    }
++
++    /**
++     * Starts a trade between the player and the villager.
++     *
++     * Note that only one player may trade with a villager at once. You must use
++     * the force parameter for this.
++     *
++     * <p>Keep in mind when using this method, that after the overridden name of the villager a suffix
++     * is appended in the client depending on the level of it, for example " - Novice" for the lowest level.</p>
++     *
++     * @param trader The merchant to trade with. Cannot be null.
++     * @param force whether to force the trade even if another player is trading
++     * @param name The name to use instead of the default one.
++     * @return The newly opened inventory view, or null if it could not be
++     * opened.
++     */
++    @Nullable
++    InventoryView openMerchant(@NotNull Villager trader, boolean force, @Nullable net.kyori.adventure.text.Component name);
++    // Paper end - Add additional open container api
++
++    /**
++     * Starts a trade between the player and the merchant.
++     *
++     * Note that only one player may trade with a merchant at once. You must use
++     * the force parameter for this.
++     *
++     * @param merchant The merchant to trade with. Cannot be null.
++     * @param force whether to force the trade even if another player is trading
++     * @return The newly opened inventory view, or null if it could not be
++     * opened.
++     */
++    @Nullable
++    // Paper start - Add additional open container api
++    default InventoryView openMerchant(@NotNull Merchant merchant, boolean force) {
++        return openMerchant(merchant, force, null);
++    }
+ 
+     /**
+      * Starts a trade between the player and the merchant.
+@@ -166,13 +243,206 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder
+      * Note that only one player may trade with a merchant at once. You must use
+      * the force parameter for this.
+      *
++     * <p>Keep in mind when using this method, that after the overridden name of the villager a suffix
++     * is appended in the client depending on the level of it, for example " - Novice" for the lowest level.</p>
++     *
+      * @param merchant The merchant to trade with. Cannot be null.
+      * @param force whether to force the trade even if another player is trading
++     * @param name The name to use instead of the default one
+      * @return The newly opened inventory view, or null if it could not be
+      * opened.
+      */
+     @Nullable
+-    public InventoryView openMerchant(@NotNull Merchant merchant, boolean force);
++    InventoryView openMerchant(@NotNull Merchant merchant, boolean force, @Nullable net.kyori.adventure.text.Component name);
++    // Paper end - Add additional open container api
++
++    // Paper start - Add additional open container api
 +    /**
 +     * Opens an empty anvil inventory window with the player's inventory
 +     * on the bottom.
@@ -25,7 +146,24 @@ index 2557ddcc0528d4f9d811883b3ddc61148ebc3998..5ecfb98540c00da05b13bc5370debb89
 +     *     opened.
 +     */
 +    @Nullable
-+    public InventoryView openAnvil(@Nullable Location location, boolean force);
++    default InventoryView openAnvil(@Nullable Location location, boolean force) {
++        return openAnvil(location, force, null);
++    }
++
++    /**
++     * Opens an empty anvil inventory window with the player's inventory
++     * on the bottom.
++     *
++     * @param location The location to attach it to. If null, the player's
++     *     location is used.
++     * @param force If false, and there is no anvil block at the location,
++     *     no inventory will be opened and null will be returned.
++     * @param title The title to use instead of the default one
++     * @return The newly opened inventory view, or null if it could not be
++     *     opened.
++     */
++    @Nullable
++    InventoryView openAnvil(@Nullable Location location, boolean force, @Nullable net.kyori.adventure.text.Component title);
 +
 +    /**
 +     * Opens an empty cartography table inventory window with the player's inventory
@@ -39,7 +177,24 @@ index 2557ddcc0528d4f9d811883b3ddc61148ebc3998..5ecfb98540c00da05b13bc5370debb89
 +     *     opened.
 +     */
 +    @Nullable
-+    public InventoryView openCartographyTable(@Nullable Location location, boolean force);
++    default InventoryView openCartographyTable(@Nullable Location location, boolean force) {
++        return openCartographyTable(location, force, null);
++    }
++
++    /**
++     * Opens an empty cartography table inventory window with the player's inventory
++     * on the bottom.
++     *
++     * @param location The location to attach it to. If null, the player's
++     *     location is used.
++     * @param force If false, and there is no cartography table block at the location,
++     *     no inventory will be opened and null will be returned.
++     * @param title The title to use instead of the default one
++     * @return The newly opened inventory view, or null if it could not be
++     *     opened.
++     */
++    @Nullable
++    InventoryView openCartographyTable(@Nullable Location location, boolean force, @Nullable net.kyori.adventure.text.Component title);
 +
 +    /**
 +     * Opens an empty grindstone inventory window with the player's inventory
@@ -53,7 +208,24 @@ index 2557ddcc0528d4f9d811883b3ddc61148ebc3998..5ecfb98540c00da05b13bc5370debb89
 +     *     opened.
 +     */
 +    @Nullable
-+    public InventoryView openGrindstone(@Nullable Location location, boolean force);
++    default InventoryView openGrindstone(@Nullable Location location, boolean force) {
++        return openGrindstone(location, force, null);
++    }
++
++    /**
++     * Opens an empty grindstone inventory window with the player's inventory
++     * on the bottom.
++     *
++     * @param location The location to attach it to. If null, the player's
++     *     location is used.
++     * @param force If false, and there is no grindstone block at the location,
++     *     no inventory will be opened and null will be returned.
++     * @param title The title to use instead of the default one
++     * @return The newly opened inventory view, or null if it could not be
++     *     opened.
++     */
++    @Nullable
++    InventoryView openGrindstone(@Nullable Location location, boolean force, @Nullable net.kyori.adventure.text.Component title);
 +
 +    /**
 +     * Opens an empty loom inventory window with the player's inventory
@@ -67,7 +239,24 @@ index 2557ddcc0528d4f9d811883b3ddc61148ebc3998..5ecfb98540c00da05b13bc5370debb89
 +     *     opened.
 +     */
 +    @Nullable
-+    public InventoryView openLoom(@Nullable Location location, boolean force);
++    default InventoryView openLoom(@Nullable Location location, boolean force) {
++        return openLoom(location, force, null);
++    }
++
++    /**
++     * Opens an empty loom inventory window with the player's inventory
++     * on the bottom.
++     *
++     * @param location The location to attach it to. If null, the player's
++     *     location is used.
++     * @param force If false, and there is no loom block at the location,
++     *     no inventory will be opened and null will be returned.
++     * @param title The title to use instead of the default one
++     * @return The newly opened inventory view, or null if it could not be
++     *     opened.
++     */
++    @Nullable
++    InventoryView openLoom(@Nullable Location location, boolean force, @Nullable net.kyori.adventure.text.Component title);
 +
 +    /**
 +     * Opens an empty smithing table inventory window with the player's inventory
@@ -81,7 +270,24 @@ index 2557ddcc0528d4f9d811883b3ddc61148ebc3998..5ecfb98540c00da05b13bc5370debb89
 +     *     opened.
 +     */
 +    @Nullable
-+    public InventoryView openSmithingTable(@Nullable Location location, boolean force);
++    default InventoryView openSmithingTable(@Nullable Location location, boolean force) {
++        return openSmithingTable(location, force, null);
++    }
++
++    /**
++     * Opens an empty smithing table inventory window with the player's inventory
++     * on the bottom.
++     *
++     * @param location The location to attach it to. If null, the player's
++     *     location is used.
++     * @param force If false, and there is no smithing table block at the location,
++     *     no inventory will be opened and null will be returned.
++     * @param title The title to use instead of the default one
++     * @return The newly opened inventory view, or null if it could not be
++     *     opened.
++     */
++    @Nullable
++    InventoryView openSmithingTable(@Nullable Location location, boolean force, @Nullable net.kyori.adventure.text.Component title);
 +
 +    /**
 +     * Opens an empty stonecutter inventory window with the player's inventory
@@ -95,9 +301,25 @@ index 2557ddcc0528d4f9d811883b3ddc61148ebc3998..5ecfb98540c00da05b13bc5370debb89
 +     *     opened.
 +     */
 +    @Nullable
-+    public InventoryView openStonecutter(@Nullable Location location, boolean force);
-+    // Paper end
++    default InventoryView openStonecutter(@Nullable Location location, boolean force) {
++        return openStonecutter(location, force, null);
++    }
 +
++    /**
++     * Opens an empty stonecutter inventory window with the player's inventory
++     * on the bottom.
++     *
++     * @param location The location to attach it to. If null, the player's
++     *     location is used.
++     * @param force If false, and there is no stonecutter block at the location,
++     *     no inventory will be opened and null will be returned.
++     * @param title The title to use instead of the default one
++     * @return The newly opened inventory view, or null if it could not be
++     *     opened.
++     */
++    @Nullable
++    InventoryView openStonecutter(@Nullable Location location, boolean force, @Nullable net.kyori.adventure.text.Component title);
++    // Paper end - Add additional open container api
+ 
      /**
       * Force-closes the currently open inventory view for this player, if any.
-      */

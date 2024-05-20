@@ -5,15 +5,15 @@ Subject: [PATCH] Fix force-opening enchantment tables
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
-index 79faf3c64891899bf5d6d119154aba02d4665b3b..e1150d36de56466ad9fdd5f2cdb4c30855d4af70 100644
+index 8097edefeb9c7f28043ba96c0284c52ef6fb22da..9fa8bbb599a133a9eec07b2c52dd75e76b38e138 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
 @@ -403,7 +403,18 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
  
          // If there isn't an enchant table we can force create one, won't be very useful though.
          BlockPos pos = CraftLocation.toBlockPosition(location);
--        this.getHandle().openMenu(Blocks.ENCHANTING_TABLE.defaultBlockState().getMenuProvider(this.getHandle().level(), pos));
-+        // Paper start
+-        this.getHandle().openMenu(overrideTitle(Blocks.ENCHANTING_TABLE.defaultBlockState().getMenuProvider(this.getHandle().level(), pos), title)); // Paper - Add additional open container api
++        // Paper start - Fix force-opening enchantment tables
 +        MenuProvider menuProvider = Blocks.ENCHANTING_TABLE.defaultBlockState().getMenuProvider(this.getHandle().level(), pos);
 +        if (menuProvider == null) {
 +            if (!force) {
@@ -23,8 +23,8 @@ index 79faf3c64891899bf5d6d119154aba02d4665b3b..e1150d36de56466ad9fdd5f2cdb4c308
 +                return new net.minecraft.world.inventory.EnchantmentMenu(syncId, inventory, net.minecraft.world.inventory.ContainerLevelAccess.create(this.getHandle().level(), pos));
 +            }, Component.translatable("container.enchant"));
 +        }
-+        this.getHandle().openMenu(menuProvider);
-+        // Paper end
++        this.getHandle().openMenu(overrideTitle(menuProvider, title)); // Paper - Add additional open container api
++        // Paper end - Fix force-opening enchantment tables
  
          if (force) {
              this.getHandle().containerMenu.checkReachable = false;
