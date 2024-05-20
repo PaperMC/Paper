@@ -1,8 +1,17 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Jake Potrebic <jake.m.potrebic@gmail.com>
 Date: Sun, 12 May 2024 10:42:42 -0700
-Subject: [PATCH] Improve Recipe validation
+Subject: [PATCH] Fix issues with recipe API
 
+Improves the validation when creating recipes
+and RecipeChoices to closer match what is
+allowed by the Codecs and StreamCodecs internally.
+
+Adds RecipeChoice#empty which is allowed in specific
+recipes and ingredient slots.
+
+Also fixes some issues regarding mutability of both ItemStack
+and implementations of RecipeChoice.
 
 diff --git a/src/main/java/org/bukkit/inventory/CookingRecipe.java b/src/main/java/org/bukkit/inventory/CookingRecipe.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -17,7 +26,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.key = key;
          this.output = new ItemStack(result);
 -        this.ingredient = input;
-+        this.ingredient = input.validate().clone(); // Paper
++        this.ingredient = input.validate(false).clone(); // Paper
          this.experience = experience;
          this.cookingTime = cookingTime;
      }
@@ -26,7 +35,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @NotNull
      public T setInputChoice(@NotNull RecipeChoice input) {
 -        this.ingredient = input;
-+        this.ingredient = input.validate().clone(); // Paper
++        this.ingredient = input.validate(false).clone(); // Paper
          return (T) this;
      }
  
@@ -43,6 +52,45 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.key = key;
          this.output = new ItemStack(result);
      }
+diff --git a/src/main/java/org/bukkit/inventory/EmptyRecipeChoice.java b/src/main/java/org/bukkit/inventory/EmptyRecipeChoice.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/org/bukkit/inventory/EmptyRecipeChoice.java
+@@ -0,0 +0,0 @@
++package org.bukkit.inventory;
++
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jetbrains.annotations.ApiStatus;
++
++@ApiStatus.Internal
++@DefaultQualifier(NonNull.class)
++record EmptyRecipeChoice() implements RecipeChoice {
++
++    static final RecipeChoice INSTANCE = new EmptyRecipeChoice();
++    @Override
++    public ItemStack getItemStack() {
++        throw new UnsupportedOperationException("This is an empty RecipeChoice");
++    }
++
++    @SuppressWarnings("MethodDoesntCallSuperMethod")
++    @Override
++    public RecipeChoice clone() {
++        return this;
++    }
++
++    @Override
++    public boolean test(final ItemStack itemStack) {
++        return false;
++    }
++
++    @Override
++    public RecipeChoice validate(final boolean allowEmptyRecipes) {
++        if (allowEmptyRecipes) return this;
++        throw new IllegalArgumentException("empty RecipeChoice isn't allowed here");
++    }
++}
 diff --git a/src/main/java/org/bukkit/inventory/MerchantRecipe.java b/src/main/java/org/bukkit/inventory/MerchantRecipe.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/inventory/MerchantRecipe.java
@@ -81,13 +129,33 @@ diff --git a/src/main/java/org/bukkit/inventory/RecipeChoice.java b/src/main/jav
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/inventory/RecipeChoice.java
 +++ b/src/main/java/org/bukkit/inventory/RecipeChoice.java
+@@ -0,0 +0,0 @@ import org.jetbrains.annotations.NotNull;
+  */
+ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
+ 
++    // Paper start - add "empty" choice
++    /**
++     * An "empty" recipe choice. Only valid as a recipe choice in
++     * specific places. Check the javadocs of a method before using it
++     * to be sure it's valid for that recipe and ingredient type.
++     *
++     * @return the empty recipe choice
++     */
++    static @NotNull RecipeChoice empty() {
++        return EmptyRecipeChoice.INSTANCE;
++    }
++    // Paper end
++
+     /**
+      * Gets a single item stack representative of this stack choice.
+      *
 @@ -0,0 +0,0 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      @Override
      boolean test(@NotNull ItemStack itemStack);
  
 +    // Paper start - check valid ingredients
 +    @org.jetbrains.annotations.ApiStatus.Internal
-+    default @NotNull RecipeChoice validate() {
++    default @NotNull RecipeChoice validate(final boolean allowEmptyRecipes) {
 +        return this;
 +    }
 +    // Paper end - check valid ingredients
@@ -95,6 +163,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      /**
       * Represents a choice of multiple matching Materials.
       */
+@@ -0,0 +0,0 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
+         public String toString() {
+             return "MaterialChoice{" + "choices=" + choices + '}';
+         }
++
++        // Paper start - check valid ingredients
++        @Override
++        public @NotNull RecipeChoice validate(final boolean allowEmptyRecipes) {
++            if (this.choices.stream().anyMatch(Material::isAir)) {
++                throw new IllegalArgumentException("RecipeChoice.MaterialChoice cannot contain air");
++            }
++            return this;
++        }
++        // Paper end - check valid ingredients
+     }
+ 
+     /**
 @@ -0,0 +0,0 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
          public ExactChoice clone() {
              try {
@@ -116,7 +201,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        // Paper start - check valid ingredients
 +        @Override
-+        public @NotNull RecipeChoice validate() {
++        public @NotNull RecipeChoice validate(final boolean allowEmptyRecipes) {
 +            if (this.choices.stream().anyMatch(s -> s.getType().isAir())) {
 +                throw new IllegalArgumentException("RecipeChoice.ExactChoice cannot contain air");
 +            }
@@ -134,7 +219,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          Preconditions.checkArgument(ingredients.containsKey(key), "Symbol does not appear in the shape:", key);
  
 -        ingredients.put(key, ingredient);
-+        ingredients.put(key, ingredient.validate().clone()); // Paper
++        ingredients.put(key, ingredient.validate(false).clone()); // Paper
          return this;
      }
  
@@ -156,7 +241,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          Preconditions.checkArgument(ingredients.size() + 1 <= 9, "Shapeless recipes cannot have more than 9 ingredients");
  
 -        ingredients.add(ingredient);
-+        ingredients.add(ingredient.validate().clone()); // Paper
++        ingredients.add(ingredient.validate(false).clone()); // Paper
          return this;
      }
  
@@ -184,8 +269,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.result = result;
 -        this.base = base;
 -        this.addition = addition;
-+        this.base = base.validate().clone(); // Paper
-+        this.addition = addition.validate().clone(); // Paper
++        this.base = base.validate(true).clone(); // Paper
++        this.addition = addition.validate(true).clone(); // Paper
      }
  
      /**
@@ -194,33 +279,79 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/inventory/SmithingTransformRecipe.java
 +++ b/src/main/java/org/bukkit/inventory/SmithingTransformRecipe.java
 @@ -0,0 +0,0 @@ public class SmithingTransformRecipe extends SmithingRecipe {
+      *
+      * @param key The unique recipe key
+      * @param result The item you want the recipe to create.
+-     * @param template The template item.
+-     * @param base The base ingredient
+-     * @param addition The addition ingredient
++     * @param template The template item ({@link RecipeChoice#empty()} can be used)
++     * @param base The base ingredient ({@link RecipeChoice#empty()} can be used)
++     * @param addition The addition ingredient ({@link RecipeChoice#empty()} can be used)
       */
      public SmithingTransformRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull RecipeChoice template, @NotNull RecipeChoice base, @NotNull RecipeChoice addition) {
          super(key, result, base, addition);
 -        this.template = template;
-+        this.template = template.validate().clone(); // Paper
++        this.template = template.validate(true).clone(); // Paper
      }
      // Paper start
      /**
+@@ -0,0 +0,0 @@ public class SmithingTransformRecipe extends SmithingRecipe {
+      *
+      * @param key The unique recipe key
+      * @param result The item you want the recipe to create.
+-     * @param template The template item.
+-     * @param base The base ingredient
+-     * @param addition The addition ingredient
++     * @param template The template item ({@link RecipeChoice#empty()} can be used)
++     * @param base The base ingredient ({@link RecipeChoice#empty()} can be used)
++     * @param addition The addition ingredient ({@link RecipeChoice#empty()} can be used)
+      * @param copyDataComponents whether to copy the data components from the input base item to the output
+      */
+     public SmithingTransformRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull RecipeChoice template, @NotNull RecipeChoice base, @NotNull RecipeChoice addition, boolean copyDataComponents) {
+         super(key, result, base, addition, copyDataComponents);
+-        this.template = template;
++        this.template = template.validate(true).clone();
+     }
+     // Paper end
+ 
 diff --git a/src/main/java/org/bukkit/inventory/SmithingTrimRecipe.java b/src/main/java/org/bukkit/inventory/SmithingTrimRecipe.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/inventory/SmithingTrimRecipe.java
 +++ b/src/main/java/org/bukkit/inventory/SmithingTrimRecipe.java
 @@ -0,0 +0,0 @@ public class SmithingTrimRecipe extends SmithingRecipe implements ComplexRecipe
+      * Create a smithing recipe to produce the specified result ItemStack.
+      *
+      * @param key The unique recipe key
+-     * @param template The template item.
+-     * @param base The base ingredient
+-     * @param addition The addition ingredient
++     * @param template The template item ({@link RecipeChoice#empty()} can be used)
++     * @param base The base ingredient ({@link RecipeChoice#empty()} can be used)
++     * @param addition The addition ingredient ({@link RecipeChoice#empty()} can be used)
       */
      public SmithingTrimRecipe(@NotNull NamespacedKey key, @NotNull RecipeChoice template, @NotNull RecipeChoice base, @NotNull RecipeChoice addition) {
          super(key, new ItemStack(Material.AIR), base, addition);
 -        this.template = template;
-+        this.template = template.validate().clone(); // Paper
++        this.template = template.validate(true).clone(); // Paper
      }
      // Paper start
      /**
-@@ -0,0 +0,0 @@ public class SmithingTrimRecipe extends SmithingRecipe implements ComplexRecipe
+      * Create a smithing recipe to produce the specified result ItemStack.
+      *
+      * @param key The unique recipe key
+-     * @param template The template item.
+-     * @param base The base ingredient
+-     * @param addition The addition ingredient
++     * @param template The template item. ({@link RecipeChoice#empty()} can be used)
++     * @param base The base ingredient ({@link RecipeChoice#empty()} can be used)
++     * @param addition The addition ingredient ({@link RecipeChoice#empty()} can be used)
+      * @param copyDataComponents whether to copy the data components from the input base item to the output
       */
      public SmithingTrimRecipe(@NotNull NamespacedKey key, @NotNull RecipeChoice template, @NotNull RecipeChoice base, @NotNull RecipeChoice addition, boolean copyDataComponents) {
          super(key, new ItemStack(Material.AIR), base, addition, copyDataComponents);
 -        this.template = template;
-+        this.template = template.validate().clone(); // Paper
++        this.template = template.validate(true).clone(); // Paper
      }
      // Paper end
  
@@ -237,7 +368,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.key = key;
          this.output = new ItemStack(result);
 -        this.ingredient = input;
-+        this.ingredient = input.validate().clone(); // Paper
++        this.ingredient = input.validate(false).clone(); // Paper
      }
  
      /**
@@ -246,7 +377,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @NotNull
      public StonecuttingRecipe setInputChoice(@NotNull RecipeChoice input) {
 -        this.ingredient = input;
-+        this.ingredient = input.validate().clone(); // Paper
++        this.ingredient = input.validate(false).clone(); // Paper
          return (StonecuttingRecipe) this;
      }
  
