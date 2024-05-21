@@ -5,26 +5,6 @@ Subject: [PATCH] Write SavedData IO async
 
 Co-Authored-By: Shane Freeder <theboyetronic@gmail.com>
 
-diff --git a/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java b/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
-index e049fbe4038aaea896f45b11ce9ce8f05922c898..7f6d1ccd147e5593412567bb2934ce5662da7ef0 100644
---- a/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
-+++ b/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
-@@ -110,6 +110,15 @@ public class ThreadedWorldUpgrader {
-             }
- 
-             this.threadPool.execute(new ConvertTask(info, regionPos.x >> 5, regionPos.z >> 5));
-+            // Paper start - Write SavedData IO async
-+            this.threadPool.execute(() -> {
-+                try {
-+                    worldPersistentData.close();
-+                } catch (IOException exception) {
-+                    LOGGER.error("Failed to close persistent world data", exception);
-+                }
-+            });
-+            // Paper end - Write SavedData IO async
-         }
-         this.threadPool.shutdown();
- 
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 index 36caf354634d6675a3f1ec6829f4778e1d0623bc..b99f50604bafecbc68835974c9ed0caa91911a40 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
@@ -81,7 +61,7 @@ index aab652174a8175765cad548f7c61ce353ca74803..ca56a0b596976448da6bb2a0e82b3d5c
  
      public <T extends Entity> List<? extends T> getEntities(EntityTypeTest<Entity, T> filter, Predicate<? super T> predicate) {
 diff --git a/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java b/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java
-index 639f72618a7c22fa94effa9d0406b97fffc64cb5..3e582c49069f2a820ba3baac03917493877d9875 100644
+index ffbb3bf9ff3fc968ef69d4f889b0baf7e8ab691b..954d468459fe167ede0e7fca5b9f99da565d59e1 100644
 --- a/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java
 +++ b/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java
 @@ -116,7 +116,13 @@ public class WorldUpgrader {
