@@ -260,6 +260,13 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
     private Set<PluginAwareness> awareness = ImmutableSet.of();
     private String apiVersion = null;
     private List<String> libraries = ImmutableList.of();
+    // Paper start - plugin loader api
+    private String paperPluginLoader;
+    @org.jetbrains.annotations.ApiStatus.Internal @org.jetbrains.annotations.Nullable
+    public String getPaperPluginLoader() {
+        return this.paperPluginLoader;
+    }
+    // Paper end - plugin loader api
     // Paper start - oh my goddddd
     /**
      * Don't use this.
@@ -1233,6 +1240,23 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
         } else {
             libraries = ImmutableList.<String>of();
         }
+        // Paper start - plugin loader api
+        if (map.containsKey("paper-plugin-loader")) {
+            this.paperPluginLoader = map.get("paper-plugin-loader").toString();
+        }
+
+        /*
+        Allow skipping the Bukkit/Spigot 'libraries' list. By default, both the 'libraries'
+        list and the 'paper-plugin-loader' will contribute libraries. It may be desired to only
+        use one or the other. (i.e. 'libraries' on Spigot and 'paper-plugin-loader' on Paper)
+        */
+        if (map.containsKey("paper-skip-libraries")) {
+            String skip = map.get("paper-skip-libraries").toString();
+            if (skip.equalsIgnoreCase("true")) {
+                this.libraries = ImmutableList.of();
+            }
+        }
+        // Paper end - plugin loader api
 
         try {
             lazyPermissions = (Map<?, ?>) map.get("permissions");

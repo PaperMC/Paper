@@ -84,7 +84,13 @@ public class LibraryLoader
     @Nullable
     public ClassLoader createLoader(@NotNull PluginDescriptionFile desc)
     {
-        if ( desc.getLibraries().isEmpty() )
+        // Paper start - plugin loader api
+        return this.createLoader(desc, null);
+    }
+    @Nullable
+    public ClassLoader createLoader(@NotNull PluginDescriptionFile desc, java.util.@Nullable List<java.nio.file.Path> paperLibraryPaths) {
+        if ( desc.getLibraries().isEmpty() && paperLibraryPaths == null )
+        // Paper end - plugin loader api
         {
             return null;
         }
@@ -103,17 +109,20 @@ public class LibraryLoader
         }
 
         DependencyResult result;
-        try
+        if (!dependencies.isEmpty()) try // Paper - plugin loader api
         {
             result = repository.resolveDependencies( session, new DependencyRequest( new CollectRequest( (Dependency) null, dependencies, repositories ), null ) );
         } catch ( DependencyResolutionException ex )
         {
             throw new RuntimeException( "Error resolving libraries", ex );
-        }
+        } else result = null; // Paper - plugin loader api
 
         List<URL> jarFiles = new ArrayList<>();
         List<java.nio.file.Path> jarPaths = new ArrayList<>(); // Paper - remap libraries
-        for ( ArtifactResult artifact : result.getArtifactResults() )
+        // Paper start - plugin loader api
+        if (paperLibraryPaths != null) jarPaths.addAll(paperLibraryPaths);
+        if (result != null) for ( ArtifactResult artifact : result.getArtifactResults() )
+        // Paper end - plugin loader api
         {
             // Paper start - remap libraries
             jarPaths.add(artifact.getArtifact().getFile().toPath());
