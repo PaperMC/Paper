@@ -1,0 +1,186 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Tue, 21 May 2024 13:18:15 -0700
+Subject: [PATCH] Allow Bukkit plugin to use Paper PluginLoader API
+
+
+diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java
+index 5a00e5c41274ded6b837fb81fa8f54616f2b7bc8..9374a53dd1c161ee383044b965966e1083de8edf 100644
+--- a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java
++++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java
+@@ -48,18 +48,22 @@ public class PaperPluginClassLoader extends PaperSimplePluginClassLoader impleme
+     @Nullable
+     private PluginClassLoaderGroup group;
+ 
++    private PaperPluginMeta configuration() {
++        return (PaperPluginMeta) this.configuration;
++    }
++
+     public PaperPluginClassLoader(Logger logger, Path source, JarFile file, PaperPluginMeta configuration, ClassLoader parentLoader, URLClassLoader libraryLoader) throws IOException {
+         super(source, file, configuration, parentLoader);
+         this.libraryLoader = libraryLoader;
+ 
+         this.logger = logger;
+-        if (this.configuration.hasOpenClassloader()) {
++        if (this.configuration().hasOpenClassloader()) {
+             this.group = PaperClassLoaderStorage.instance().registerOpenGroup(this);
+         }
+     }
+ 
+     public void refreshClassloaderDependencyTree(DependencyContext dependencyContext) {
+-         if (this.configuration.hasOpenClassloader()) {
++         if (this.configuration().hasOpenClassloader()) {
+              return;
+          }
+          if (this.group != null) {
+diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperSimplePluginClassLoader.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperSimplePluginClassLoader.java
+index a4c18063854e050bd0c54d488ceeda43c768b6df..967465e542483e93a736129b5f5c6622cefd33fa 100644
+--- a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperSimplePluginClassLoader.java
++++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperSimplePluginClassLoader.java
+@@ -1,6 +1,6 @@
+ package io.papermc.paper.plugin.entrypoint.classloader;
+ 
+-import io.papermc.paper.plugin.provider.configuration.PaperPluginMeta;
++import io.papermc.paper.plugin.configuration.PluginMeta;
+ import io.papermc.paper.plugin.util.NamespaceChecker;
+ import org.jetbrains.annotations.ApiStatus;
+ 
+@@ -26,13 +26,13 @@ public class PaperSimplePluginClassLoader extends URLClassLoader {
+         ClassLoader.registerAsParallelCapable();
+     }
+ 
+-    protected final PaperPluginMeta configuration;
++    protected final PluginMeta configuration;
+     protected final Path source;
+     protected final Manifest jarManifest;
+     protected final URL jarUrl;
+     protected final JarFile jar;
+ 
+-    public PaperSimplePluginClassLoader(Path source, JarFile file, PaperPluginMeta configuration, ClassLoader parentLoader) throws IOException {
++    public PaperSimplePluginClassLoader(Path source, JarFile file, PluginMeta configuration, ClassLoader parentLoader) throws IOException {
+         super(source.getFileName().toString(), new URL[]{source.toUri().toURL()}, parentLoader);
+ 
+         this.source = source;
+diff --git a/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java b/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java
+index f9d4b33050a6fe8c2dabe8e5eec075d95dc513e0..dc106685ecb483c33c06e4f83eda27be58251aad 100644
+--- a/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java
++++ b/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java
+@@ -41,15 +41,7 @@ public class PaperClasspathBuilder implements PluginClasspathBuilder {
+     }
+ 
+     public PaperPluginClassLoader buildClassLoader(Logger logger, Path source, JarFile jarFile, PaperPluginMeta configuration) {
+-        PaperLibraryStore paperLibraryStore = new PaperLibraryStore();
+-        for (ClassPathLibrary library : this.libraries) {
+-            library.register(paperLibraryStore);
+-        }
+-
+-        List<Path> paths = paperLibraryStore.getPaths();
+-        if (PluginInitializerManager.instance().pluginRemapper != null) {
+-            paths = PluginInitializerManager.instance().pluginRemapper.remapLibraries(paths);
+-        }
++        List<Path> paths = this.buildLibraryPaths(true);
+         URL[] urls = new URL[paths.size()];
+         for (int i = 0; i < paths.size(); i++) {
+             Path path = paths.get(i);
+@@ -69,4 +61,17 @@ public class PaperClasspathBuilder implements PluginClasspathBuilder {
+             throw new RuntimeException(exception);
+         }
+     }
++
++    public List<Path> buildLibraryPaths(final boolean remap) {
++        PaperLibraryStore paperLibraryStore = new PaperLibraryStore();
++        for (ClassPathLibrary library : this.libraries) {
++            library.register(paperLibraryStore);
++        }
++
++        List<Path> paths = paperLibraryStore.getPaths();
++        if (remap && PluginInitializerManager.instance().pluginRemapper != null) {
++            paths = PluginInitializerManager.instance().pluginRemapper.remapLibraries(paths);
++        }
++        return paths;
++    }
+ }
+diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java
+index 75a2b687d58d76b94f8bec111df8613f120ff74b..8c44c091233aa6335791ed9b9aca62e1f98eccd9 100644
+--- a/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java
++++ b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java
+@@ -40,15 +40,17 @@ public class SpigotPluginProvider implements PluginProvider<JavaPlugin>, Provide
+     private final PluginDescriptionFile description;
+     private final JarFile jarFile;
+     private final Logger logger;
++    private final Path[] paperLibraryPaths;
+     private final ComponentLogger componentLogger;
+     private ProviderStatus status;
+     private DependencyContext dependencyContext;
+ 
+-    SpigotPluginProvider(Path path, JarFile file, PluginDescriptionFile description) {
++    SpigotPluginProvider(Path path, JarFile file, PluginDescriptionFile description, Path[] paperLibraryPaths) {
+         this.path = path;
+         this.jarFile = file;
+         this.description = description;
+         this.logger = PaperPluginLogger.getLogger(description);
++        this.paperLibraryPaths = paperLibraryPaths;
+         this.componentLogger = ComponentLogger.logger(this.logger.getName());
+     }
+ 
+@@ -120,7 +122,7 @@ public class SpigotPluginProvider implements PluginProvider<JavaPlugin>, Provide
+ 
+             final PluginClassLoader loader;
+             try {
+-                loader = new PluginClassLoader(this.getClass().getClassLoader(), this.description, dataFolder, this.path.toFile(), LIBRARY_LOADER.createLoader(this.description), this.jarFile, this.dependencyContext); // Paper
++                loader = new PluginClassLoader(this.getClass().getClassLoader(), this.description, dataFolder, this.path.toFile(), LIBRARY_LOADER.createLoader(this.description, this.paperLibraryPaths), this.jarFile, this.dependencyContext); // Paper
+             } catch (InvalidPluginException ex) {
+                 throw ex;
+             } catch (Throwable ex) {
+diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProviderFactory.java b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProviderFactory.java
+index fdb52ad85cfaa1d53aadcad72cec3d3c8c12c058..a79e38499388f3baecc9896d38a3c64c5923b426 100644
+--- a/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProviderFactory.java
++++ b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProviderFactory.java
+@@ -1,9 +1,17 @@
+ package io.papermc.paper.plugin.provider.type.spigot;
+ 
++import com.destroystokyo.paper.utils.PaperPluginLogger;
++import io.papermc.paper.plugin.bootstrap.PluginProviderContextImpl;
+ import io.papermc.paper.plugin.entrypoint.classloader.BytecodeModifyingURLClassLoader;
++import io.papermc.paper.plugin.entrypoint.classloader.PaperSimplePluginClassLoader;
++import io.papermc.paper.plugin.loader.PaperClasspathBuilder;
++import io.papermc.paper.plugin.loader.PluginLoader;
+ import io.papermc.paper.plugin.provider.configuration.serializer.constraints.PluginConfigConstraints;
+ import io.papermc.paper.plugin.provider.type.PluginTypeFactory;
++import io.papermc.paper.plugin.provider.util.ProviderUtil;
+ import io.papermc.paper.util.MappingEnvironment;
++import java.util.logging.Logger;
++import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
+ import org.bukkit.plugin.InvalidDescriptionException;
+ import org.bukkit.plugin.PluginDescriptionFile;
+ import org.bukkit.plugin.java.LibraryLoader;
+@@ -36,7 +44,28 @@ class SpigotPluginProviderFactory implements PluginTypeFactory<SpigotPluginProvi
+             throw new InvalidDescriptionException("Restricted name, cannot use 0x20 (space character) in a plugin name.");
+         }
+ 
+-        return new SpigotPluginProvider(source, file, configuration);
++        final Path[] paperLibraryPaths;
++        if (configuration.getPaperPluginLoader() != null) {
++            final Logger logger = PaperPluginLogger.getLogger(configuration);
++            PaperClasspathBuilder builder = new PaperClasspathBuilder(PluginProviderContextImpl.create(
++                configuration, ComponentLogger.logger(logger.getName()), source
++            ));
++
++            try (
++                PaperSimplePluginClassLoader simplePluginClassLoader = new PaperSimplePluginClassLoader(source, file, configuration, this.getClass().getClassLoader())
++            ) {
++                PluginLoader loader = ProviderUtil.loadClass(configuration.getPaperPluginLoader(), PluginLoader.class, simplePluginClassLoader);
++                loader.classloader(builder);
++            } catch (IOException e) {
++                throw new RuntimeException(e);
++            }
++
++            paperLibraryPaths = builder.buildLibraryPaths(false).toArray(Path[]::new);
++        } else {
++            paperLibraryPaths = null;
++        }
++
++        return new SpigotPluginProvider(source, file, configuration, paperLibraryPaths);
+     }
+ 
+     @Override
