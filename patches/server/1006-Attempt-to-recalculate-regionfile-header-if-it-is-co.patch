@@ -685,7 +685,7 @@ index cf43daa019b239464401784938d01af83f9da47c..1362a47943cf1a51a185a15094b1f74c
          return bytebuffer;
      }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index c33640859aab837c85f3e860fe2241a0e78bb09a..249705ec1b8b692ef1d7fec34a04918afe6486bc 100644
+index c33640859aab837c85f3e860fe2241a0e78bb09a..1090b7e36e3c1c105bc36135b82751c651f237d4 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 @@ -25,6 +25,7 @@ public class RegionFileStorage implements AutoCloseable {
@@ -696,7 +696,7 @@ index c33640859aab837c85f3e860fe2241a0e78bb09a..249705ec1b8b692ef1d7fec34a04918a
  
      // Paper start - cache regionfile does not exist state
      static final int MAX_NON_EXISTING_CACHE = 1024 * 64;
-@@ -56,6 +57,12 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -56,11 +57,42 @@ public class RegionFileStorage implements AutoCloseable {
      // Paper end - cache regionfile does not exist state
  
      protected RegionFileStorage(RegionStorageInfo storageKey, Path directory, boolean dsync) { // Paper - protected constructor
@@ -709,7 +709,37 @@ index c33640859aab837c85f3e860fe2241a0e78bb09a..249705ec1b8b692ef1d7fec34a04918a
          this.folder = directory;
          this.sync = dsync;
          this.info = storageKey;
-@@ -101,7 +108,7 @@ public class RegionFileStorage implements AutoCloseable {
+     }
+ 
++    // Paper start
++    @Nullable
++    public static ChunkPos getRegionFileCoordinates(Path file) {
++        String fileName = file.getFileName().toString();
++        if (!fileName.startsWith("r.") || !fileName.endsWith(".mca")) {
++            return null;
++        }
++
++        String[] split = fileName.split("\\.");
++
++        if (split.length != 4) {
++            return null;
++        }
++
++        try {
++            int x = Integer.parseInt(split[1]);
++            int z = Integer.parseInt(split[2]);
++
++            return new ChunkPos(x << 5, z << 5);
++        } catch (NumberFormatException ex) {
++            return null;
++        }
++    }
++    // Paper end
++
+     // Paper start
+     public synchronized RegionFile getRegionFileIfLoaded(ChunkPos chunkcoordintpair) {
+         return this.regionCache.getAndMoveToFirst(ChunkPos.asLong(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ()));
+@@ -101,7 +133,7 @@ public class RegionFileStorage implements AutoCloseable {
              // Paper - only create directory if not existing only - moved down
              Path path = this.folder;
              int j = chunkcoordintpair.getRegionX();
@@ -718,7 +748,7 @@ index c33640859aab837c85f3e860fe2241a0e78bb09a..249705ec1b8b692ef1d7fec34a04918a
              if (existingOnly && !java.nio.file.Files.exists(path1)) { // Paper start - cache regionfile does not exist state
                  this.markNonExisting(regionPos);
                  return null; // CraftBukkit
-@@ -110,7 +117,7 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -110,7 +142,7 @@ public class RegionFileStorage implements AutoCloseable {
              }
              // Paper end - cache regionfile does not exist state
              FileUtil.createDirectoriesSafe(this.folder); // Paper - only create directory if not existing only - moved from above
@@ -727,7 +757,7 @@ index c33640859aab837c85f3e860fe2241a0e78bb09a..249705ec1b8b692ef1d7fec34a04918a
  
              this.regionCache.putAndMoveToFirst(i, regionfile1);
              // Paper start
-@@ -167,6 +174,13 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -167,6 +199,13 @@ public class RegionFileStorage implements AutoCloseable {
          if (regionfile == null) {
              return null;
          }
@@ -741,7 +771,7 @@ index c33640859aab837c85f3e860fe2241a0e78bb09a..249705ec1b8b692ef1d7fec34a04918a
          // CraftBukkit end
          try { // Paper
          DataInputStream datainputstream = regionfile.getChunkDataInputStream(pos);
-@@ -183,6 +197,20 @@ public class RegionFileStorage implements AutoCloseable {
+@@ -183,6 +222,20 @@ public class RegionFileStorage implements AutoCloseable {
              try {
                  if (datainputstream != null) {
                      nbttagcompound = NbtIo.read((DataInput) datainputstream);
