@@ -1,9 +1,18 @@
 package io.papermc.paper.plugin.provider.type.spigot;
 
+import com.destroystokyo.paper.utils.PaperPluginLogger;
+import io.papermc.paper.plugin.bootstrap.PluginProviderContextImpl;
 import io.papermc.paper.plugin.entrypoint.classloader.BytecodeModifyingURLClassLoader;
+import io.papermc.paper.plugin.entrypoint.classloader.PaperSimplePluginClassLoader;
+import io.papermc.paper.plugin.loader.PaperClasspathBuilder;
+import io.papermc.paper.plugin.loader.PluginLoader;
 import io.papermc.paper.plugin.provider.configuration.serializer.constraints.PluginConfigConstraints;
 import io.papermc.paper.plugin.provider.type.PluginTypeFactory;
+import io.papermc.paper.plugin.provider.util.ProviderUtil;
 import io.papermc.paper.util.MappingEnvironment;
+import java.util.List;
+import java.util.logging.Logger;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.bukkit.plugin.InvalidDescriptionException;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.LibraryLoader;
@@ -36,7 +45,28 @@ class SpigotPluginProviderFactory implements PluginTypeFactory<SpigotPluginProvi
             throw new InvalidDescriptionException("Restricted name, cannot use 0x20 (space character) in a plugin name.");
         }
 
-        return new SpigotPluginProvider(source, file, configuration);
+        final List<Path> paperLibraryPaths;
+        if (configuration.getPaperPluginLoader() != null) {
+            final Logger logger = PaperPluginLogger.getLogger(configuration);
+            PaperClasspathBuilder builder = new PaperClasspathBuilder(PluginProviderContextImpl.create(
+                configuration, ComponentLogger.logger(logger.getName()), source
+            ));
+
+            try (
+                PaperSimplePluginClassLoader simplePluginClassLoader = new PaperSimplePluginClassLoader(source, file, configuration, this.getClass().getClassLoader())
+            ) {
+                PluginLoader loader = ProviderUtil.loadClass(configuration.getPaperPluginLoader(), PluginLoader.class, simplePluginClassLoader);
+                loader.classloader(builder);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            paperLibraryPaths = builder.buildLibraryPaths(false);
+        } else {
+            paperLibraryPaths = null;
+        }
+
+        return new SpigotPluginProvider(source, file, configuration, paperLibraryPaths);
     }
 
     @Override

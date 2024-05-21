@@ -40,15 +40,17 @@ public class SpigotPluginProvider implements PluginProvider<JavaPlugin>, Provide
     private final PluginDescriptionFile description;
     private final JarFile jarFile;
     private final Logger logger;
+    private final List<Path> paperLibraryPaths;
     private final ComponentLogger componentLogger;
     private ProviderStatus status;
     private DependencyContext dependencyContext;
 
-    SpigotPluginProvider(Path path, JarFile file, PluginDescriptionFile description) {
+    SpigotPluginProvider(Path path, JarFile file, PluginDescriptionFile description, List<Path> paperLibraryPaths) {
         this.path = path;
         this.jarFile = file;
         this.description = description;
         this.logger = PaperPluginLogger.getLogger(description);
+        this.paperLibraryPaths = paperLibraryPaths;
         this.componentLogger = ComponentLogger.logger(this.logger.getName());
     }
 
@@ -120,7 +122,7 @@ public class SpigotPluginProvider implements PluginProvider<JavaPlugin>, Provide
 
             final PluginClassLoader loader;
             try {
-                loader = new PluginClassLoader(this.getClass().getClassLoader(), this.description, dataFolder, this.path.toFile(), LIBRARY_LOADER.createLoader(this.description), this.jarFile, this.dependencyContext); // Paper
+                loader = new PluginClassLoader(this.getClass().getClassLoader(), this.description, dataFolder, this.path.toFile(), LIBRARY_LOADER.createLoader(this.description, this.paperLibraryPaths), this.jarFile, this.dependencyContext); // Paper
             } catch (InvalidPluginException ex) {
                 throw ex;
             } catch (Throwable ex) {

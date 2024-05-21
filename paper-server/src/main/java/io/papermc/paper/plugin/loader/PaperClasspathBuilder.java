@@ -41,15 +41,7 @@ public class PaperClasspathBuilder implements PluginClasspathBuilder {
     }
 
     public PaperPluginClassLoader buildClassLoader(Logger logger, Path source, JarFile jarFile, PaperPluginMeta configuration) {
-        PaperLibraryStore paperLibraryStore = new PaperLibraryStore();
-        for (ClassPathLibrary library : this.libraries) {
-            library.register(paperLibraryStore);
-        }
-
-        List<Path> paths = paperLibraryStore.getPaths();
-        if (PluginInitializerManager.instance().pluginRemapper != null) {
-            paths = PluginInitializerManager.instance().pluginRemapper.remapLibraries(paths);
-        }
+        List<Path> paths = this.buildLibraryPaths(true);
         URL[] urls = new URL[paths.size()];
         for (int i = 0; i < paths.size(); i++) {
             Path path = paths.get(i);
@@ -68,5 +60,18 @@ public class PaperClasspathBuilder implements PluginClasspathBuilder {
         } catch (IOException exception) {
             throw new RuntimeException(exception);
         }
+    }
+
+    public List<Path> buildLibraryPaths(final boolean remap) {
+        PaperLibraryStore paperLibraryStore = new PaperLibraryStore();
+        for (ClassPathLibrary library : this.libraries) {
+            library.register(paperLibraryStore);
+        }
+
+        List<Path> paths = paperLibraryStore.getPaths();
+        if (remap && PluginInitializerManager.instance().pluginRemapper != null) {
+            paths = PluginInitializerManager.instance().pluginRemapper.remapLibraries(paths);
+        }
+        return paths;
     }
 }
