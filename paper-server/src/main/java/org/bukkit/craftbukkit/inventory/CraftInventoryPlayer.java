@@ -135,6 +135,10 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
             case HEAD:
                 this.setHelmet(item);
                 break;
+                // Paper start
+            case BODY:
+                throw new IllegalArgumentException("BODY is not valid for players!");
+                // Paper end
             default:
                 throw new IllegalArgumentException("Could not set slot " + slot + " - not a valid slot for PlayerInventory");
         }
@@ -162,6 +166,10 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
                 return java.util.Objects.requireNonNullElseGet(this.getChestplate(), () -> new ItemStack(org.bukkit.Material.AIR)); // Paper - make nonnull
             case HEAD:
                 return java.util.Objects.requireNonNullElseGet(this.getHelmet(), () -> new ItemStack(org.bukkit.Material.AIR)); // Paper - make nonnull
+                // Paper start
+            case BODY:
+                throw new IllegalArgumentException("BODY is not valid for players!");
+                // Paper end
             default:
                 throw new IllegalArgumentException("Could not get slot " + slot + " - not a valid slot for PlayerInventory");
         }

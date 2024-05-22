@@ -1723,7 +1723,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         if (this.attributeModifiers == null) return LinkedHashMultimap.create(); // Paper - don't change the components
         SetMultimap<Attribute, AttributeModifier> result = LinkedHashMultimap.create();
         for (Map.Entry<Attribute, AttributeModifier> entry : this.attributeModifiers.entries()) {
-            if (entry.getValue().getSlot() == null || entry.getValue().getSlot() == slot) {
+            if (entry.getValue().getSlotGroup().test(slot)) { // Paper - correctly test slot against group
                 result.put(entry.getKey(), entry.getValue());
             }
         }
@@ -1797,9 +1797,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
         while (iter.hasNext()) {
             Map.Entry<Attribute, AttributeModifier> entry = iter.next();
-            // Explicitly match against null because (as of MC 1.13) AttributeModifiers without a -
-            // set slot are active in any slot.
-            if (entry.getValue().getSlot() == null || entry.getValue().getSlot() == slot) {
+            if (entry.getValue().getSlotGroup().test(slot)) { // Paper - correctly test slot against group
                 iter.remove();
                 ++removed;
             }

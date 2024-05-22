@@ -1230,4 +1230,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         this.getHandle().setYBodyRot(bodyYaw);
     }
     // Paper end - body yaw API
+
+    // Paper start - Expose canUseSlot
+    @Override
+    public boolean canUseEquipmentSlot(org.bukkit.inventory.EquipmentSlot slot) {
+        return this.getHandle().canUseSlot(org.bukkit.craftbukkit.CraftEquipmentSlot.getNMS(slot));
+    }
+    // Paper end - Expose canUseSlot
 }
