@@ -5,10 +5,10 @@ Subject: [PATCH] Allow Bukkit plugin to use Paper PluginLoader API
 
 
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java
-index 5a00e5c41274ded6b837fb81fa8f54616f2b7bc8..9374a53dd1c161ee383044b965966e1083de8edf 100644
+index 18401ede9cd1fc7094c6b74859929938e01795ca..cc14e569d282ca53ce4237d3a57c764815502ddf 100644
 --- a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperPluginClassLoader.java
-@@ -48,18 +48,22 @@ public class PaperPluginClassLoader extends PaperSimplePluginClassLoader impleme
+@@ -48,6 +48,10 @@ public class PaperPluginClassLoader extends PaperSimplePluginClassLoader impleme
      @Nullable
      private PluginClassLoaderGroup group;
  
@@ -19,48 +19,6 @@ index 5a00e5c41274ded6b837fb81fa8f54616f2b7bc8..9374a53dd1c161ee383044b965966e10
      public PaperPluginClassLoader(Logger logger, Path source, JarFile file, PaperPluginMeta configuration, ClassLoader parentLoader, URLClassLoader libraryLoader) throws IOException {
          super(source, file, configuration, parentLoader);
          this.libraryLoader = libraryLoader;
- 
-         this.logger = logger;
--        if (this.configuration.hasOpenClassloader()) {
-+        if (this.configuration().hasOpenClassloader()) {
-             this.group = PaperClassLoaderStorage.instance().registerOpenGroup(this);
-         }
-     }
- 
-     public void refreshClassloaderDependencyTree(DependencyContext dependencyContext) {
--         if (this.configuration.hasOpenClassloader()) {
-+         if (this.configuration().hasOpenClassloader()) {
-              return;
-          }
-          if (this.group != null) {
-diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperSimplePluginClassLoader.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperSimplePluginClassLoader.java
-index a4c18063854e050bd0c54d488ceeda43c768b6df..967465e542483e93a736129b5f5c6622cefd33fa 100644
---- a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperSimplePluginClassLoader.java
-+++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperSimplePluginClassLoader.java
-@@ -1,6 +1,6 @@
- package io.papermc.paper.plugin.entrypoint.classloader;
- 
--import io.papermc.paper.plugin.provider.configuration.PaperPluginMeta;
-+import io.papermc.paper.plugin.configuration.PluginMeta;
- import io.papermc.paper.plugin.util.NamespaceChecker;
- import org.jetbrains.annotations.ApiStatus;
- 
-@@ -26,13 +26,13 @@ public class PaperSimplePluginClassLoader extends URLClassLoader {
-         ClassLoader.registerAsParallelCapable();
-     }
- 
--    protected final PaperPluginMeta configuration;
-+    protected final PluginMeta configuration;
-     protected final Path source;
-     protected final Manifest jarManifest;
-     protected final URL jarUrl;
-     protected final JarFile jar;
- 
--    public PaperSimplePluginClassLoader(Path source, JarFile file, PaperPluginMeta configuration, ClassLoader parentLoader) throws IOException {
-+    public PaperSimplePluginClassLoader(Path source, JarFile file, PluginMeta configuration, ClassLoader parentLoader) throws IOException {
-         super(source.getFileName().toString(), new URL[]{source.toUri().toURL()}, parentLoader);
- 
-         this.source = source;
 diff --git a/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java b/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java
 index f9d4b33050a6fe8c2dabe8e5eec075d95dc513e0..dc106685ecb483c33c06e4f83eda27be58251aad 100644
 --- a/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java
