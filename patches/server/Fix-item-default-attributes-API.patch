@@ -5,6 +5,24 @@ Subject: [PATCH] Fix item default attributes API
 
 (previously added this API but upstream also added it)
 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java
+@@ -0,0 +0,0 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
+ 
+     @Override
+     public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(EquipmentSlot slot) {
+-        ImmutableMultimap.Builder<Attribute, AttributeModifier> defaultAttributes = ImmutableMultimap.builder();
+-
+-        ItemAttributeModifiers nmsDefaultAttributes = this.item.getDefaultAttributeModifiers();
++        // Paper start - fix item default attribute API
++        final ImmutableMultimap.Builder<Attribute, AttributeModifier> defaultAttributes = ImmutableMultimap.builder();
++        ItemAttributeModifiers nmsDefaultAttributes = this.item.components().getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
++        // Paper end - fix item default attribute API
+         nmsDefaultAttributes.forEach(CraftEquipmentSlot.getNMS(slot), (key, value) -> {
+             Attribute attribute = CraftAttribute.minecraftToBukkit(key.value());
+             defaultAttributes.put(attribute, CraftAttributeInstance.convert(value, slot));
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
