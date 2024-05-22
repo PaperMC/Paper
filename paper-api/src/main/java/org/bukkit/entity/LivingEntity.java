@@ -1457,4 +1457,15 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      */
     void setBodyYaw(float bodyYaw);
     // Paper end - body yaw API
+
+    // Paper start - Expose canUseSlot
+    /**
+     * Checks whether this entity can use the equipment slot.
+     * <br>For example, not all entities may have {@link org.bukkit.inventory.EquipmentSlot#BODY}.
+     *
+     * @param slot equipment slot
+     * @return whether this entity can use the equipment slot
+     */
+    boolean canUseEquipmentSlot(org.bukkit.inventory.@NotNull EquipmentSlot slot);
+    // Paper end - Expose canUseSlot
 }

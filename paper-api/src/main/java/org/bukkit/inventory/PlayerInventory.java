@@ -95,6 +95,8 @@ public interface PlayerInventory extends Inventory {
      * @param slot the slot to put the ItemStack
      * @param item the ItemStack to set
      *
+     * @throws IllegalArgumentException if the slot is invalid for the player
+     * @see org.bukkit.entity.LivingEntity#canUseEquipmentSlot(EquipmentSlot)
      * @see #setItem(int, ItemStack)
      */
     public void setItem(@NotNull EquipmentSlot slot, @Nullable ItemStack item);
@@ -105,6 +107,8 @@ public interface PlayerInventory extends Inventory {
      * @param slot the slot to get the ItemStack
      *
      * @return the ItemStack in the given slot
+     * @throws IllegalArgumentException if the slot is invalid for the player
+     * @see org.bukkit.entity.LivingEntity#canUseEquipmentSlot(EquipmentSlot)
      */
     @NotNull // Paper
     public ItemStack getItem(@NotNull EquipmentSlot slot);

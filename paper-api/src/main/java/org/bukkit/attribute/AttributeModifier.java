@@ -130,6 +130,7 @@ public class AttributeModifier implements ConfigurationSerializable, Keyed {
      */
     @Nullable
     @Deprecated(since = "1.20.5")
+    @io.papermc.paper.annotation.DoNotUse // Paper
     public EquipmentSlot getSlot() {
         return slot == EquipmentSlotGroup.ANY ? null : slot.getExample();
     }

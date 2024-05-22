@@ -15,6 +15,8 @@ public interface EntityEquipment {
      *
      * @param slot the slot to put the ItemStack
      * @param item the ItemStack to set
+     * @throws IllegalArgumentException if the slot is invalid for the entity
+     * @see org.bukkit.entity.LivingEntity#canUseEquipmentSlot(EquipmentSlot)
      */
     public void setItem(@NotNull EquipmentSlot slot, @Nullable ItemStack item);
 
@@ -23,7 +25,9 @@ public interface EntityEquipment {
      *
      * @param slot the slot to put the ItemStack
      * @param item the ItemStack to set
-     * @param silent whether or not the equip sound should be silenced
+     * @param silent whether the equip sound should be silenced
+     * @throws IllegalArgumentException if the slot is invalid for the entity
+     * @see org.bukkit.entity.LivingEntity#canUseEquipmentSlot(EquipmentSlot)
      */
     public void setItem(@NotNull EquipmentSlot slot, @Nullable ItemStack item, boolean silent);
 
@@ -32,6 +36,8 @@ public interface EntityEquipment {
      *
      * @param slot the slot to get the ItemStack
      * @return the ItemStack in the given slot
+     * @throws IllegalArgumentException if the slot is invalid for the entity
+     * @see org.bukkit.entity.LivingEntity#canUseEquipmentSlot(EquipmentSlot)
      */
     @NotNull
     public ItemStack getItem(@NotNull EquipmentSlot slot);
