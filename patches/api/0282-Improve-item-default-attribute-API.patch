@@ -1,0 +1,99 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 8 May 2021 15:02:00 -0700
+Subject: [PATCH] Improve item default attribute API
+
+
+diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
+index 04cb8279f2296cc42405355c7c1f120e761202c4..18862cce7e252e69153f0a5380aa07de26d9d2e7 100644
+--- a/src/main/java/org/bukkit/Material.java
++++ b/src/main/java/org/bukkit/Material.java
+@@ -4771,6 +4771,23 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
+     }
+     // Paper end - item rarity API
+ 
++    // Paper start - item default attributes API
++    /**
++     * Returns an immutable multimap of attributes for the slot.
++     * {@link #isItem()} must be true for this material.
++     *
++     * @param equipmentSlot the slot to get the attributes for
++     * @throws IllegalArgumentException if {@link #isItem()} is false
++     * @return an immutable multimap of attributes
++     * @deprecated use {@link #getDefaultAttributeModifiers(EquipmentSlot)}
++     */
++    @NotNull
++    @Deprecated(forRemoval = true, since = "1.20.5")
++    public Multimap<Attribute, AttributeModifier> getItemAttributes(@NotNull EquipmentSlot equipmentSlot) {
++        return this.getDefaultAttributeModifiers(equipmentSlot);
++    }
++    // Paper end - item default attributes API
++
+     /**
+      * Do not use for any reason.
+      *
+@@ -5478,13 +5495,34 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
+         }
+     }
+ 
++    // Paper start - improve default item attribute API
++    /**
++     * Return an immutable copy of all default {@link Attribute}s and their {@link AttributeModifier}s.
++     * <p>
++     * Default attributes are those that are always preset on some items, unless
++     * they are specifically overridden on that {@link ItemStack}. Examples include
++     * the attack damage on weapons or the armor value on armor.
++     * <p>
++     * Only available when {@link #isItem()} is true.
++     *
++     * @return the immutable {@link Multimap} with the respective default
++     * Attributes and modifiers, or an empty map if no attributes are set.
++     */
++    public @NotNull @org.jetbrains.annotations.Unmodifiable Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers() {
++        final ItemType type = this.asItemType();
++        Preconditions.checkArgument(type != null, "The Material is not an item!");
++        return type.getDefaultAttributeModifiers();
++    }
++    // Paper end - improve default item attribute API
++
+     /**
+      * Return an immutable copy of all default {@link Attribute}s and their
+      * {@link AttributeModifier}s for a given {@link EquipmentSlot}.
+-     *
+-     * Default attributes are those that are always preset on some items, such
+-     * as the attack damage on weapons or the armor value on armor.
+-     *
++     * <p>
++     * Default attributes are those that are always preset on some items, unless
++     * they are specifically overridden on that {@link ItemStack}. Examples include
++     * the attack damage on weapons or the armor value on armor.
++     * <p>
+      * Only available when {@link #isItem()} is true.
+      *
+      * @param slot the {@link EquipmentSlot} to check
+diff --git a/src/main/java/org/bukkit/inventory/ItemType.java b/src/main/java/org/bukkit/inventory/ItemType.java
+index 3d30c4957a2950ac8d4635ed7bb9bf39ca8cd158..077bd4d4e50169780f27e8502104e9e4b2ecdae6 100644
+--- a/src/main/java/org/bukkit/inventory/ItemType.java
++++ b/src/main/java/org/bukkit/inventory/ItemType.java
+@@ -2378,6 +2378,21 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
+ //    @NotNull
+ //    EquipmentSlot getEquipmentSlot();
+ 
++    // Paper start - improve default item attribute API
++    /**
++     * Return an immutable copy of all default {@link Attribute}s and their
++     * {@link AttributeModifier}s.
++     * <p>
++     * Default attributes are those that are always preset on some items, unless
++     * they are specifically overridden on that {@link ItemStack}. Examples include
++     * the attack damage on weapons or the armor value on armor.
++     *
++     * @return the immutable {@link Multimap} with the respective default
++     * Attributes and modifiers, or an empty map if no attributes are set.
++     */
++    @NotNull @org.jetbrains.annotations.Unmodifiable Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers();
++    // Paper end - improve default item attribute API
++
+     /**
+      * Return an immutable copy of all default {@link Attribute}s and their
+      * {@link AttributeModifier}s for a given {@link EquipmentSlot}.
