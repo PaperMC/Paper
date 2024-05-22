@@ -1,0 +1,274 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 30 Mar 2024 21:06:10 +0100
+Subject: [PATCH] Fix invalid block entities being created by api block
+ transformers
+
+
+diff --git a/src/main/java/net/minecraft/server/level/WorldGenRegion.java b/src/main/java/net/minecraft/server/level/WorldGenRegion.java
+index a59eece9c7a8c33cb8ce963906e993c3462684fb..dd302ebc0ffdc7a95185e643d46be126c30e80d2 100644
+--- a/src/main/java/net/minecraft/server/level/WorldGenRegion.java
++++ b/src/main/java/net/minecraft/server/level/WorldGenRegion.java
+@@ -247,6 +247,48 @@ public class WorldGenRegion implements WorldGenLevel {
+         }
+     }
+ 
++    // Paper start
++    @Nullable
++    @Override
++    public WorldGenLevel.BlockEntityCallback getBlockEntityWithCallback(BlockPos pos) {
++        ChunkAccess chunk = this.getChunk(pos);
++        BlockEntity blockEntity = chunk.getBlockEntity(pos);
++
++        if (blockEntity != null) {
++            return new BlockEntityCallback(blockEntity, ignored -> {});
++        } else {
++            CompoundTag tag = chunk.getBlockEntityNbt(pos);
++            BlockState blockState = chunk.getBlockState(pos);
++
++            if (tag != null) {
++                final java.util.function.Consumer<BlockEntity> saver;
++                if ("DUMMY".equals(tag.getString("id"))) {
++                    if (!blockState.hasBlockEntity()) {
++                        return null;
++                    }
++
++                    blockEntity = ((EntityBlock) blockState.getBlock()).newBlockEntity(pos, blockState);
++                    saver = be -> {
++                        final net.minecraft.nbt.CompoundTag newSaveData = be.saveWithFullMetadata(this.level.registryAccess());
++                        newSaveData.putString("id", "DUMMY"); // preserve dummy type
++                        chunk.setBlockEntityNbt(newSaveData);
++                    };
++                } else {
++                    blockEntity = BlockEntity.loadStatic(pos, blockState, tag, this.level.registryAccess());
++                    saver = be -> {
++                        chunk.setBlockEntityNbt(be.saveWithFullMetadata(this.level.registryAccess()));
++                    };
++                }
++
++                if (blockEntity != null) {
++                    return new WorldGenLevel.BlockEntityCallback(blockEntity, saver);
++                }
++            }
++            return null;
++        }
++    }
++    // Paper end
++
+     @Nullable
+     @Override
+     public BlockEntity getBlockEntity(BlockPos pos) {
+diff --git a/src/main/java/net/minecraft/world/level/LevelAccessor.java b/src/main/java/net/minecraft/world/level/LevelAccessor.java
+index 54d13eebc9b01e9d77f51011b7de95b80bc21669..e2aec8cd5c45e893d7d601759523b6c0af382bc0 100644
+--- a/src/main/java/net/minecraft/world/level/LevelAccessor.java
++++ b/src/main/java/net/minecraft/world/level/LevelAccessor.java
+@@ -123,4 +123,14 @@ public interface LevelAccessor extends CommonLevelAccessor, LevelTimeAccess {
+     }
+ 
+     net.minecraft.server.level.ServerLevel getMinecraftWorld(); // CraftBukkit
++    // Paper start - add way to get block entities without mutating world
++    @Nullable
++    default BlockEntityCallback getBlockEntityWithCallback(BlockPos pos) {
++        final net.minecraft.world.level.block.entity.BlockEntity blockEntity = this.getBlockEntity(pos);
++        if (blockEntity == null) return null;
++        return new net.minecraft.world.level.WorldGenLevel.BlockEntityCallback(blockEntity, ignored -> {});
++    }
++    record BlockEntityCallback(net.minecraft.world.level.block.entity.BlockEntity blockEntity, java.util.function.Consumer<net.minecraft.world.level.block.entity.BlockEntity> save) {
++    }
++    // Paper end - add way to get block entities without mutating world
+ }
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+index 744db9eec4f7bdeb32f83300960a7fce63b393d8..8de6ad8b131061b2dae440dff71e2e6e7af2de39 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -1071,9 +1071,14 @@ public class LevelChunk extends ChunkAccess {
+                         if (this.blockEntity.getType().isValid(iblockdata)) {
+                             this.ticker.tick(LevelChunk.this.level, this.blockEntity.getBlockPos(), iblockdata, this.blockEntity);
+                             this.loggedInvalidBlockState = false;
+-                        } else if (!this.loggedInvalidBlockState) {
+-                            this.loggedInvalidBlockState = true;
+-                            LevelChunk.LOGGER.warn("Block entity {} @ {} state {} invalid for ticking:", new Object[]{LogUtils.defer(this::getType), LogUtils.defer(this::getPos), iblockdata});
++                        // Paper start - Remove the Block Entity if it's invalid
++                        } else {
++                            LevelChunk.this.removeBlockEntity(this.getPos());
++                            if (!this.loggedInvalidBlockState) {
++                                this.loggedInvalidBlockState = true;
++                                LevelChunk.LOGGER.warn("Block entity {} @ {} state {} invalid for ticking:", new Object[]{LogUtils.defer(this::getType), LogUtils.defer(this::getPos), iblockdata});
++                            }
++                            // Paper end - Remove the Block Entity if it's invalid
+                         }
+ 
+                         gameprofilerfiller.pop();
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBell.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBell.java
+index a816667b6536f89816b6535c7bb45e1a4b49699f..f373f15108445c91abc2b62d72c1819007c72aac 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBell.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBell.java
+@@ -25,6 +25,7 @@ public class CraftBell extends CraftBlockEntityState<BellBlockEntity> implements
+ 
+     @Override
+     public boolean ring(Entity entity, BlockFace direction) {
++        this.ensureNoWorldGeneration(); // Paper
+         Preconditions.checkArgument(direction == null || direction.isCartesian(), "direction must be cartesian, given %s", direction);
+ 
+         BlockEntity tileEntity = this.getTileEntityFromWorld();
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
+index 397eb1a101bd60f49dbb2fa8eddf28f6f233167f..3a54bfef2ecade935c3978970cd0d18435ef3522 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
+@@ -158,11 +158,15 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
+         boolean result = super.update(force, applyPhysics);
+ 
+         if (result && this.isPlaced()) {
+-            BlockEntity tile = this.getTileEntityFromWorld();
++            // Paper start - fix updating tile entities in WorldGenRegion
++            net.minecraft.world.level.WorldGenLevel.BlockEntityCallback callback = this.getWorldHandle().getBlockEntityWithCallback(this.getPosition());
++            BlockEntity tile = callback != null ? callback.blockEntity() : null;
++            // Paper end
+ 
+             if (this.isApplicable(tile)) {
+                 this.applyTo((T) tile);
+                 tile.setChanged();
++                callback.save().accept(tile); // Paper - write back to WorldGenLevel
+             }
+         }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
+index 411c2de93c71e480f95229c882cdf43b8801edc8..fc32463559718363e3aa4012006093f4d21115c7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
+@@ -245,13 +245,13 @@ public final class CraftBlockStates {
+         CraftWorld world = (CraftWorld) block.getWorld();
+         BlockPos blockPosition = craftBlock.getPosition();
+         net.minecraft.world.level.block.state.BlockState blockData = craftBlock.getNMS();
+-        BlockEntity tileEntity = craftBlock.getHandle().getBlockEntity(blockPosition);
++        LevelAccessor.BlockEntityCallback tileEntity = craftBlock.getHandle().getBlockEntityWithCallback(blockPosition); // Paper - don't mutate WorldGenLevel state
+         // Paper start - block state snapshots
+         boolean prev = CraftBlockEntityState.DISABLE_SNAPSHOT;
+         CraftBlockEntityState.DISABLE_SNAPSHOT = !useSnapshot;
+         try {
+         // Paper end
+-        CraftBlockState blockState = CraftBlockStates.getBlockState(world, blockPosition, blockData, tileEntity);
++        CraftBlockState blockState = CraftBlockStates.getBlockState(world, blockPosition, blockData, tileEntity != null ? tileEntity.blockEntity() : null); // Paper - don't mutate WorldGenLevel state
+         blockState.setWorldHandle(craftBlock.getHandle()); // Inject the block's generator access
+         return blockState;
+         // Paper start
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftConduit.java b/src/main/java/org/bukkit/craftbukkit/block/CraftConduit.java
+index c1759aeb3e6ad0e4eb66cba3da1b120dd1dce812..1fad66b2b1274f97c0f141d3b07f1ce17ebd7a52 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftConduit.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftConduit.java
+@@ -78,6 +78,7 @@ public class CraftConduit extends CraftBlockEntityState<ConduitBlockEntity> impl
+ 
+     @Override
+     public boolean setTarget(LivingEntity target) {
++        this.ensureNoWorldGeneration(); // Paper
+         ConduitBlockEntity conduit = (ConduitBlockEntity) this.getTileEntityFromWorld();
+         if (conduit == null) {
+             return false;
+@@ -107,6 +108,7 @@ public class CraftConduit extends CraftBlockEntityState<ConduitBlockEntity> impl
+ 
+     @Override
+     public LivingEntity getTarget() {
++        this.ensureNoWorldGeneration(); // Paper
+         ConduitBlockEntity conduit = (ConduitBlockEntity) this.getTileEntityFromWorld();
+         if (conduit == null) {
+             return null;
+@@ -118,6 +120,7 @@ public class CraftConduit extends CraftBlockEntityState<ConduitBlockEntity> impl
+ 
+     @Override
+     public boolean hasTarget() {
++        this.ensureNoWorldGeneration(); // Paper
+         ConduitBlockEntity conduit = (ConduitBlockEntity) this.getTileEntityFromWorld();
+         return conduit != null && conduit.destroyTarget != null && conduit.destroyTarget.isAlive();
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftDispenser.java b/src/main/java/org/bukkit/craftbukkit/block/CraftDispenser.java
+index ab9f0ee31cd782d8a1301a3f95afbe8525299b05..a09c56bab6de4dd636f3d72f7b85edeca1247586 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftDispenser.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftDispenser.java
+@@ -40,6 +40,7 @@ public class CraftDispenser extends CraftLootable<DispenserBlockEntity> implemen
+ 
+     @Override
+     public BlockProjectileSource getBlockProjectileSource() {
++        this.ensureNoWorldGeneration(); // Paper
+         Block block = this.getBlock();
+ 
+         if (block.getType() != Material.DISPENSER) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftJukebox.java b/src/main/java/org/bukkit/craftbukkit/block/CraftJukebox.java
+index 9f087c6fce34504a08696492f47a1ded5232427c..02b9626583ee5b3da4d4e66c678c0c7196b1daa0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftJukebox.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftJukebox.java
+@@ -47,7 +47,10 @@ public class CraftJukebox extends CraftBlockEntityState<JukeboxBlockEntity> impl
+             Material record = this.getPlaying();
+             this.getWorldHandle().setBlock(this.getPosition(), this.data, 3);
+ 
+-            BlockEntity tileEntity = this.getTileEntityFromWorld();
++            // Paper start - fix updating tile entities in WorldGenRegion
++            net.minecraft.world.level.WorldGenLevel.BlockEntityCallback callback = this.getWorldHandle().getBlockEntityWithCallback(this.getPosition());
++            BlockEntity tileEntity = callback != null ? callback.blockEntity() : null;
++            // Paper end
+             if (tileEntity instanceof JukeboxBlockEntity jukebox) {
+                 CraftWorld world = (CraftWorld) this.getWorld();
+                 if (record.isAir()) {
+@@ -56,6 +59,7 @@ public class CraftJukebox extends CraftBlockEntityState<JukeboxBlockEntity> impl
+                 } else {
+                     world.playEffect(this.getLocation(), Effect.RECORD_PLAY, record);
+                 }
++                callback.save().accept(jukebox); // Paper
+             }
+         }
+ 
+@@ -102,6 +106,7 @@ public class CraftJukebox extends CraftBlockEntityState<JukeboxBlockEntity> impl
+     @Override
+     public boolean isPlaying() {
+         this.requirePlaced();
++        this.ensureNoWorldGeneration(); // Paper
+ 
+         BlockEntity tileEntity = this.getTileEntityFromWorld();
+         return tileEntity instanceof JukeboxBlockEntity jukebox && jukebox.isRecordPlaying();
+@@ -110,6 +115,7 @@ public class CraftJukebox extends CraftBlockEntityState<JukeboxBlockEntity> impl
+     @Override
+     public boolean startPlaying() {
+         this.requirePlaced();
++        this.ensureNoWorldGeneration(); // Paper
+ 
+         BlockEntity tileEntity = this.getTileEntityFromWorld();
+         if (!(tileEntity instanceof JukeboxBlockEntity jukebox)) {
+@@ -130,6 +136,7 @@ public class CraftJukebox extends CraftBlockEntityState<JukeboxBlockEntity> impl
+     @Override
+     public void stopPlaying() {
+         this.requirePlaced();
++        this.ensureNoWorldGeneration(); // Paper
+ 
+         BlockEntity tileEntity = this.getTileEntityFromWorld();
+         if (!(tileEntity instanceof JukeboxBlockEntity jukebox)) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/DelegatedGeneratorAccess.java b/src/main/java/org/bukkit/craftbukkit/util/DelegatedGeneratorAccess.java
+index cd7f1309cf01a5f01a28aded03a36fe15adb1756..5ce4b9dad4da18fee772df348e146959f58e8605 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/DelegatedGeneratorAccess.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/DelegatedGeneratorAccess.java
+@@ -830,4 +830,10 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
+         return null;
+     }
+     // Paper end
++
++    @Nullable
++    @Override
++    public WorldGenLevel.BlockEntityCallback getBlockEntityWithCallback(final BlockPos pos) {
++        return this.handle.getBlockEntityWithCallback(pos);
++    }
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/TransformerGeneratorAccess.java b/src/main/java/org/bukkit/craftbukkit/util/TransformerGeneratorAccess.java
+index 1d1fdcf10498c421f106158254e052da6d68d8a5..205992e31c51da14c0dc3a01b533ea1ee3b67200 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/TransformerGeneratorAccess.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/TransformerGeneratorAccess.java
+@@ -72,9 +72,10 @@ public class TransformerGeneratorAccess extends DelegatedGeneratorAccess {
+         if (StructurePiece.SHAPE_CHECK_BLOCKS.contains(iblockdata.getBlock())) {
+             this.getChunk(position).markPosForPostprocessing(position);
+         }
+-        BlockEntity tileEntity = this.getBlockEntity(position);
++        final BlockEntityCallback tileEntity = this.getBlockEntityWithCallback(position); // Paper - don't use getBlockEntity which mutates WorldGenRegion state
+         if (tileEntity != null && craftBlockState instanceof CraftBlockEntityState<?> craftEntityState) {
+-            tileEntity.loadWithComponents(craftEntityState.getSnapshotNBT(), this.registryAccess());
++            tileEntity.blockEntity().loadWithComponents(craftEntityState.getSnapshotNBT(), this.registryAccess()); // Paper - don't use getBlockEntity which mutates WorldGenRegion state
++            tileEntity.save().accept(tileEntity.blockEntity()); // Paper - don't use getBlockEntity which mutates WorldGenRegion state
+         }
+         return result;
+     }
