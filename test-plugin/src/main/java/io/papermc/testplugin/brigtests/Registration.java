@@ -5,10 +5,13 @@ import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import io.papermc.paper.command.brigadier.argument.RegistryArgumentExtractor;
 import io.papermc.paper.command.brigadier.argument.range.DoubleRangeProvider;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.TypedKey;
 import io.papermc.testplugin.brigtests.example.ExampleAdminCommand;
 import io.papermc.testplugin.brigtests.example.MaterialArgumentType;
 import java.util.Arrays;
@@ -18,6 +21,7 @@ import java.util.List;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.defaults.BukkitCommand;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
@@ -36,6 +40,25 @@ public final class Registration {
         final LifecycleEventManager<Plugin> lifecycleManager = plugin.getLifecycleManager();
         lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
             final Commands commands = event.registrar();
+            commands.register(Commands.literal("ench")
+                .then(
+                    Commands.argument("name", ArgumentTypes.resource(RegistryKey.ENCHANTMENT))
+                        .executes(ctx -> {
+                            ctx.getSource().getSender().sendPlainMessage(ctx.getArgument("name", Enchantment.class).toString());
+                            return Command.SINGLE_SUCCESS;
+                        })
+                ).build()
+            );
+            commands.register(Commands.literal("ench-key")
+                .then(
+                    Commands.argument("key", ArgumentTypes.resourceKey(RegistryKey.ENCHANTMENT))
+                        .executes(ctx -> {
+                            final TypedKey<Enchantment> key = RegistryArgumentExtractor.getTypedKey(ctx, RegistryKey.ENCHANTMENT, "key");
+                            ctx.getSource().getSender().sendPlainMessage(key.toString());
+                            return Command.SINGLE_SUCCESS;
+                        })
+                ).build()
+            );
             // ensure plugin commands override
             commands.register(Commands.literal("tag")
                     .executes(ctx -> {
