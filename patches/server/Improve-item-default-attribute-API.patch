@@ -1,0 +1,92 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 8 May 2021 15:01:54 -0700
+Subject: [PATCH] Improve item default attribute API
+
+Also fixes an issue where upstream isn't
+actually getting the correct default attributes
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttributeInstance.java b/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttributeInstance.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttributeInstance.java
++++ b/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttributeInstance.java
+@@ -0,0 +0,0 @@ public class CraftAttributeInstance implements AttributeInstance {
+         return new AttributeModifier(nms.id(), nms.name, nms.amount(), AttributeModifier.Operation.values()[nms.operation().ordinal()]);
+     }
+ 
+-    public static AttributeModifier convert(net.minecraft.world.entity.ai.attributes.AttributeModifier nms, EquipmentSlot slot) {
+-        return new AttributeModifier(nms.id(), nms.name, nms.amount(), AttributeModifier.Operation.values()[nms.operation().ordinal()], slot);
++    public static AttributeModifier convert(net.minecraft.world.entity.ai.attributes.AttributeModifier nms, net.minecraft.world.entity.EquipmentSlotGroup slot) { // Paper
++        return new AttributeModifier(nms.id(), nms.name, nms.amount(), AttributeModifier.Operation.values()[nms.operation().ordinal()], org.bukkit.craftbukkit.CraftEquipmentSlot.getSlot(slot)); // Paper
+     }
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java
+@@ -0,0 +0,0 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
+ //        return CraftEquipmentSlot.getSlot(EntityInsentient.getEquipmentSlotForItem(CraftItemStack.asNMSCopy(ItemStack.of(this))));
+ //    }
+ 
++    // Paper start - improve default attribute API
++    @Override
++    public @NotNull Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers() {
++        return this.getDefaultAttributeModifiers(sg -> true);
++    }
++    // Paper end - improve default attribute API
++
+     @Override
+     public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(EquipmentSlot slot) {
+-        ImmutableMultimap.Builder<Attribute, AttributeModifier> defaultAttributes = ImmutableMultimap.builder();
++        // Paper start - improve/fix item default attribute API
++        final net.minecraft.world.entity.EquipmentSlot nmsSlot = CraftEquipmentSlot.getNMS(slot);
++        return this.getDefaultAttributeModifiers(sg -> sg.test(nmsSlot));
++    }
+ 
+-        ItemAttributeModifiers nmsDefaultAttributes = this.item.getDefaultAttributeModifiers();
+-        nmsDefaultAttributes.forEach(CraftEquipmentSlot.getNMS(slot), (key, value) -> {
+-            Attribute attribute = CraftAttribute.minecraftToBukkit(key.value());
+-            defaultAttributes.put(attribute, CraftAttributeInstance.convert(value, slot));
+-        });
++    private Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(final java.util.function.Predicate<net.minecraft.world.entity.EquipmentSlotGroup> slotPredicate) {
++        final ImmutableMultimap.Builder<Attribute, AttributeModifier> defaultAttributes = ImmutableMultimap.builder();
++        ItemAttributeModifiers nmsDefaultAttributes = this.item.components().getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
++        if (nmsDefaultAttributes.modifiers().isEmpty()) {
++            // we have to check both places cause for some reason vanilla puts default modifiers for armor in a different place
++            nmsDefaultAttributes = this.item.getDefaultAttributeModifiers();
++        }
++        for (final net.minecraft.world.item.component.ItemAttributeModifiers.Entry entry : nmsDefaultAttributes.modifiers()) {
++            if (!slotPredicate.test(entry.slot())) continue;
++            final Attribute attribute = CraftAttribute.minecraftHolderToBukkit(entry.attribute());
++            final AttributeModifier modifier = CraftAttributeInstance.convert(entry.modifier(), entry.slot());
++            defaultAttributes.put(attribute, modifier);
++        }
++        // Paper end - improve/fix item default attribute API
+ 
+         return defaultAttributes.build();
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -0,0 +0,0 @@ public final class CraftMagicNumbers implements UnsafeValues {
+ 
+     @Override
+     public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(Material material, EquipmentSlot slot) {
+-        ImmutableMultimap.Builder<Attribute, AttributeModifier> defaultAttributes = ImmutableMultimap.builder();
+-
+-        ItemAttributeModifiers nmsDefaultAttributes = CraftMagicNumbers.getItem(material).getDefaultAttributeModifiers();
+-        nmsDefaultAttributes.forEach(CraftEquipmentSlot.getNMS(slot), (key, value) -> {
+-            Attribute attribute = CraftAttribute.minecraftToBukkit(key.value());
+-            defaultAttributes.put(attribute, CraftAttributeInstance.convert(value, slot));
+-        });
+-
+-        return defaultAttributes.build();
++        // Paper start - delegate to method on ItemType
++        final org.bukkit.inventory.ItemType item = material.asItemType();
++        Preconditions.checkArgument(item != null, material + " is not an item and does not have default attributes");
++        return item.getDefaultAttributeModifiers(slot);
++        // Paper end - delegate to method on ItemType
+     }
+ 
+     @Override
