@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Jake Potrebic <jake.m.potrebic@gmail.com>
 Date: Thu, 4 Nov 2021 11:50:35 -0700
-Subject: [PATCH] Add isCollidable methods to various places
+Subject: [PATCH] Add hasCollision methods to various places
 
 
 diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
@@ -9,10 +9,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/Material.java
 +++ b/src/main/java/org/bukkit/Material.java
 @@ -0,0 +0,0 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
-     public Multimap<Attribute, AttributeModifier> getItemAttributes(@NotNull EquipmentSlot equipmentSlot) {
-         return this.getDefaultAttributeModifiers(equipmentSlot);
      }
-+
+     // Paper end - item default attributes API
+ 
++    // Paper start - isCollidable API
 +    /**
 +     * Checks if this material is collidable.
 +     *
@@ -20,30 +20,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @throws IllegalArgumentException if {@link #isBlock()} is false
 +     */
 +    public boolean isCollidable() {
-+        return Bukkit.getUnsafe().isCollidable(this);
++        if (this.isBlock()) {
++            return this.asBlockType().hasCollision();
++        }
++        throw new IllegalArgumentException(this + " isn't a block type");
 +    }
-     // Paper end
- 
-     /**
-diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/UnsafeValues.java
-+++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -0,0 +0,0 @@ public interface UnsafeValues {
-      * @throws IllegalArgumentException if the entity does not exist of have default attributes (use {@link #hasDefaultEntityAttributes(NamespacedKey)} first)
-      */
-     @org.jetbrains.annotations.NotNull org.bukkit.attribute.Attributable getDefaultEntityAttributes(@org.jetbrains.annotations.NotNull NamespacedKey entityKey);
++    // Paper end - isCollidable API
 +
-+    /**
-+     * Checks if this material is collidable.
-+     *
-+     * @param material the material to check
-+     * @return true if collidable
-+     * @throws IllegalArgumentException if {@link Material#isBlock()} is false
-+     */
-+    boolean isCollidable(@org.jetbrains.annotations.NotNull Material material);
-     // Paper end
- }
+     /**
+      * Do not use for any reason.
+      *
 diff --git a/src/main/java/org/bukkit/block/Block.java b/src/main/java/org/bukkit/block/Block.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/block/Block.java
@@ -79,4 +65,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     */
 +    boolean isCollidable();
 +    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/block/BlockType.java b/src/main/java/org/bukkit/block/BlockType.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/block/BlockType.java
++++ b/src/main/java/org/bukkit/block/BlockType.java
+@@ -0,0 +0,0 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
+     @Override
+     @NotNull String getTranslationKey();
+     // Paper end - add Translatable
++
++    // Paper start - hasCollision API
++    /**
++     * Checks if this block type has collision.
++     * <p>
++     * @return false if this block never has collision, true if it <b>might</b> have collision
++     */
++    boolean hasCollision();
++    // Paper end - hasCollision API
  }
