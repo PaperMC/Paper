@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tamion <70228790+notTamion@users.noreply.github.com>
+Date: Thu, 23 May 2024 11:02:20 +0200
+Subject: [PATCH] Fix cancelling BlockPlaceEvent calling onRemove
+
+
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index 893efb2c4a07c33d41e934279dd914a9dbd4ef79..15efebe5f8164908304cce2f28eb37bbbf58bbf3 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -474,7 +474,9 @@ public final class ItemStack implements DataComponentHolder {
+                     // revert back all captured blocks
+                     world.preventPoiUpdated = true; // CraftBukkit - SPIGOT-5710
+                     for (BlockState blockstate : blocks) {
++                        ((CraftBlockState) blockstate).getHandle().isPlaceCancelled = true; // Paper - Fix cancelling BlockPlaceEvent calling onRemove
+                         blockstate.update(true, false);
++                        ((CraftBlockState) blockstate).getHandle().isPlaceCancelled = false; // Paper - Fix cancelling BlockPlaceEvent calling onRemove
+                     }
+                     world.preventPoiUpdated = false;
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockState.java b/src/main/java/net/minecraft/world/level/block/state/BlockState.java
+index 601135f3368272bf1ca3a43ec9c199e3ee838462..ab69763aeffcce213e1237ccbdc67d339c4b88fb 100644
+--- a/src/main/java/net/minecraft/world/level/block/state/BlockState.java
++++ b/src/main/java/net/minecraft/world/level/block/state/BlockState.java
+@@ -12,6 +12,7 @@ public class BlockState extends BlockBehaviour.BlockStateBase {
+ 
+     // Paper start - optimise getType calls
+     org.bukkit.Material cachedMaterial;
++    public boolean isPlaceCancelled; // Paper - Fix cancelling BlockPlaceEvent calling onRemove
+ 
+     public final org.bukkit.Material getBukkitMaterial() {
+         if (this.cachedMaterial == null) {
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+index 2a8609e33716949ff1877b6d10f64a9d7a7c81e9..9c0e6de48210d5b1be8e470c38f10b3416cfab02 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -452,7 +452,7 @@ public class LevelChunk extends ChunkAccess {
+ 
+                 boolean flag3 = iblockdata1.hasBlockEntity();
+ 
+-                if (!this.level.isClientSide) {
++                if (!this.level.isClientSide && !iblockdata.isPlaceCancelled) { // Paper - Fix cancelling BlockPlaceEvent calling onRemove
+                     iblockdata1.onRemove(this.level, blockposition, iblockdata, flag);
+                 } else if (!iblockdata1.is(block) && flag3) {
+                     this.removeBlockEntity(blockposition);
