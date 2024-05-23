@@ -317,6 +317,7 @@ public class CraftChunk implements Chunk {
 
             data.put("block_states", ChunkRegionLoader.BLOCK_STATE_CODEC.encodeStart(DynamicOpsNBT.INSTANCE, cs[i].getStates()).getOrThrow());
             sectionBlockIDs[i] = ChunkRegionLoader.BLOCK_STATE_CODEC.parse(DynamicOpsNBT.INSTANCE, data.getCompound("block_states")).getOrThrow(ChunkRegionLoader.a::new);
+            sectionEmpty[i] = cs[i].hasOnlyAir();
 
             LevelLightEngine lightengine = worldServer.getLightEngine();
             NibbleArray skyLightArray = lightengine.getLayerListener(EnumSkyBlock.SKY).getDataLayerData(SectionPosition.of(x, chunk.getSectionYFromSectionIndex(i), z)); // SPIGOT-7498: Convert section index
