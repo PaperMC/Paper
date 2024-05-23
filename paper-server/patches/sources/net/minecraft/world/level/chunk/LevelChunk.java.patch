@@ -202,8 +202,9 @@
  
                  boolean flag3 = iblockdata1.hasBlockEntity();
  
-                 if (!this.level.isClientSide) {
+-                if (!this.level.isClientSide) {
 -                    iblockdata1.onRemove(this.level, pos, state, moved);
++                if (!this.level.isClientSide && !this.level.isBlockPlaceCancelled) { // Paper - prevent calling cleanup logic when undoing a block place upon a cancelled BlockPlaceEvent
 +                    iblockdata1.onRemove(this.level, blockposition, iblockdata, flag);
                  } else if (!iblockdata1.is(block) && flag3) {
 -                    this.removeBlockEntity(pos);
@@ -288,14 +289,10 @@
              if (tileentity != null) {
                  Level world = this.level;
  
-@@ -549,10 +626,69 @@
-         if (this.postLoad != null) {
-             this.postLoad.run(this);
-             this.postLoad = null;
-+        }
-+
-+    }
-+
+@@ -553,6 +630,65 @@
+ 
+     }
+ 
 +    // CraftBukkit start
 +    public void loadCallback() {
 +        // Paper start
@@ -333,9 +330,9 @@
 +                }
 +                server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkPopulateEvent(bukkitChunk));
 +            }
-         }
++        }
 +    }
- 
++
 +    public void unloadCallback() {
 +        org.bukkit.Server server = this.level.getCraftServer();
 +        org.bukkit.Chunk bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
@@ -347,8 +344,8 @@
 +        // Paper start
 +        this.loadedTicketLevel = false;
 +        // Paper end
-     }
- 
++    }
++
 +    @Override
 +    public boolean isUnsaved() {
 +        return super.isUnsaved() && !this.mustNotSave;
