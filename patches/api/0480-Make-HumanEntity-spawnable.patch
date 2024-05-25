@@ -1,0 +1,88 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: PlayerSchark <smidl115@gmail.com>
+Date: Sat, 25 May 2024 22:13:22 +0200
+Subject: [PATCH] Make HumanEntity spawnable
+
+
+diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
+index 88bb3b9ae99fae97ec21972b75ec43cb6b7b22b5..8450972947157013a918112fa14d613c8d985197 100644
+--- a/src/main/java/org/bukkit/Registry.java
++++ b/src/main/java/org/bukkit/Registry.java
+@@ -145,7 +145,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+      *
+      * @see EntityType
+      */
+-    Registry<EntityType> ENTITY_TYPE = new SimpleRegistry<>(EntityType.class, (entity) -> entity != EntityType.UNKNOWN);
++    Registry<EntityType> ENTITY_TYPE = new SimpleRegistry<>(EntityType.class, EntityType::isVanilla); // Paper - Make HumanEntity spawnable
+     /**
+      * Server instruments.
+      *
+diff --git a/src/main/java/org/bukkit/entity/EntityType.java b/src/main/java/org/bukkit/entity/EntityType.java
+index 1d1315262737d99bf9f5aabc0ae66eee4645cc65..f77c516f75220eadb5af5d93c82fc8a8515e2c66 100644
+--- a/src/main/java/org/bukkit/entity/EntityType.java
++++ b/src/main/java/org/bukkit/entity/EntityType.java
+@@ -317,12 +317,13 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
+     /**
+      * An unknown entity without an Entity Class
+      */
+-    UNKNOWN(null, null, -1, false);
++    UNKNOWN(null, null, -1, false, false),
++    HUMAN(null, HumanEntity.class, -1, true, false, NamespacedKey.minecraft("player")); // Paper - Make HumanEntity spawnable
+ 
+     private final String name;
+     private final Class<? extends Entity> clazz;
+     private final short typeId;
+-    private final boolean independent, living;
++    private final boolean independent, living, vanilla; // Paper - Make HumanEntity spawnable
+     private final NamespacedKey key;
+ 
+     private static final Map<String, EntityType> NAME_MAP = new HashMap<String, EntityType>();
+@@ -343,14 +344,25 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
+         this(name, clazz, typeId, true);
+     }
+ 
++    // Paper start - Make HumanEntity spawnable
+     private EntityType(/*@Nullable*/ String name, /*@Nullable*/ Class<? extends Entity> clazz, int typeId, boolean independent) {
++        this(name, clazz, typeId, independent, true);
++    }
++
++    private EntityType(/*@Nullable*/ String name, /*@Nullable*/ Class<? extends Entity> clazz, int typeId, boolean independent, boolean vanilla) {
++        this(name, clazz, typeId, independent, vanilla, (name == null) ? null : NamespacedKey.minecraft(name));
++    }
++
++    private EntityType(/*@Nullable*/ String name, /*@Nullable*/ Class<? extends Entity> clazz, int typeId, boolean independent, boolean vanilla, NamespacedKey key) {
+         this.name = name;
+         this.clazz = clazz;
+         this.typeId = (short) typeId;
+         this.independent = independent;
+         this.living = clazz != null && LivingEntity.class.isAssignableFrom(clazz);
+-        this.key = (name == null) ? null : NamespacedKey.minecraft(name);
++        this.key = key;
++        this.vanilla = vanilla;
+     }
++    // Paper end - Make HumanEntity spawnable
+ 
+     /**
+      * Gets the entity type name.
+@@ -421,6 +433,12 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
+         return ID_MAP.get((short) id);
+     }
+ 
++    // Paper start - Make HumanEntity spawnable
++    public boolean isVanilla() {
++        return this.vanilla;
++    }
++    // Paper end - Make HumanEntity spawnable
++
+     /**
+      * Some entities cannot be spawned using {@link
+      * World#spawnEntity(Location, EntityType)} or {@link
+@@ -450,7 +468,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
+      */
+     @Override
+     public @NotNull String translationKey() {
+-        Preconditions.checkArgument(this != UNKNOWN, "UNKNOWN entities do not have translation keys");
++        Preconditions.checkArgument(this.isVanilla(), "Non-vanilla entities do not have translation keys"); // Paper - Make HumanEntity spawnable
+         return org.bukkit.Bukkit.getUnsafe().getTranslationKey(this);
+     }
+ 

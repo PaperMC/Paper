@@ -1,0 +1,252 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: PlayerSchark <smidl115@gmail.com>
+Date: Sat, 25 May 2024 22:13:20 +0200
+Subject: [PATCH] Make HumanEntity spawnable
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
+index f16a69775332a08ed0e87d27acd0fc959359694c..82c6f60135ec3d652ae16c7d392507e5a09580b4 100644
+--- a/src/main/java/net/minecraft/server/level/ServerEntity.java
++++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
+@@ -305,7 +305,7 @@ public class ServerEntity {
+         this.entity.startSeenByPlayer(player);
+     }
+ 
+-    public void sendPairingData(ServerPlayer player, Consumer<Packet<ClientGamePacketListener>> sender) {
++    public void sendPairingData(ServerPlayer player, Consumer<Packet<? super ClientGamePacketListener>> sender) { // Paper - Make HumanEntity spawnable
+         if (this.entity.isRemoved()) {
+             // CraftBukkit start - Remove useless error spam, just return
+             // EntityTrackerEntry.LOGGER.warn("Fetching packet for removed entity {}", this.entity);
+@@ -316,7 +316,17 @@ public class ServerEntity {
+         Packet<ClientGamePacketListener> packet = this.entity.getAddEntityPacket();
+ 
+         this.yHeadRotp = Mth.floor(this.entity.getYHeadRot() * 256.0F / 360.0F);
+-        sender.accept(packet);
++
++        // Paper start - Make HumanEntity spawnable
++        if (packet instanceof ClientboundBundlePacket bundlePacket) {
++            for (final Packet<? super ClientGamePacketListener> subPacket : bundlePacket.subPackets()) {
++                sender.accept(subPacket);
++            }
++        } else {
++            sender.accept(packet);
++        }
++        // Paper end - Make HumanEntity spawnable
++
+         if (this.trackedDataValues != null) {
+             sender.accept(new ClientboundSetEntityDataPacket(this.entity.getId(), this.trackedDataValues));
+         }
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
+index 4659f11c3aadda2617951f9d98b4858efe1400d7..902551ae1e5630511d0fd39cf349632dad1ff89c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
+@@ -56,7 +56,7 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<SpawnerBlockEnti
+             this.getSnapshot().getSpawner().nextSpawnData = new SpawnData();
+             return;
+         }
+-        Preconditions.checkArgument(entityType != EntityType.UNKNOWN, "Can't spawn EntityType %s from mob spawners!", entityType);
++        Preconditions.checkArgument(entityType.isVanilla(), "Can't spawn EntityType %s from mob spawners!", entityType); // Paper - Make HumanEntity spawnable
+ 
+         RandomSource rand = (this.isPlaced()) ? this.getWorldHandle().getRandom() : RandomSource.create();
+         this.getSnapshot().setEntityId(CraftEntityType.bukkitToMinecraft(entityType), rand);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index a2d336ceb52b63db5c03432ee7bc94dc6a742b82..937b51b2edf7cfb14bf6f0d5abfe9112a33cbe68 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -81,9 +81,15 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+     public CraftEntity(final CraftServer server, final Entity entity) {
+         this.server = server;
+         this.entity = entity;
+-        this.entityType = CraftEntityType.minecraftToBukkit(entity.getType());
++    // Paper start - Make HumanEntity spawnable
++        this.entityType = this.getBukkitEntityType(entity);
+     }
+ 
++    protected EntityType getBukkitEntityType(Entity entity) {
++        return CraftEntityType.minecraftToBukkit(entity.getType());
++    }
++    // Paper end - Make HumanEntity spawnable
++
+     public static <T extends Entity> CraftEntity getEntity(CraftServer server, T entity) {
+         Preconditions.checkArgument(entity != null, "Unknown entity");
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java
+index 405caaff1459d8928f91be0fc85213b80ee8b8af..d714165620829dc88ed2e32b36f4b65e6881c773 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java
+@@ -1,15 +1,24 @@
+ package org.bukkit.craftbukkit.entity;
+ 
++import com.destroystokyo.paper.profile.CraftPlayerProfile;
+ import com.google.common.base.Preconditions;
++import java.util.EnumSet;
+ import java.util.HashMap;
+ import java.util.Iterator;
+ import java.util.List;
+ import java.util.Map;
++import java.util.UUID;
+ import java.util.function.BiConsumer;
+ import java.util.function.BiFunction;
+ import java.util.function.Function;
++import com.mojang.authlib.GameProfile;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
++import net.minecraft.network.protocol.Packet;
++import net.minecraft.network.protocol.game.ClientGamePacketListener;
++import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
++import net.minecraft.network.protocol.game.ClientboundBundlePacket;
++import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
+ import net.minecraft.world.entity.decoration.HangingEntity;
+ import net.minecraft.world.entity.decoration.LeashFenceKnotEntity;
+ import net.minecraft.world.entity.item.FallingBlockEntity;
+@@ -26,19 +35,23 @@ import net.minecraft.world.entity.vehicle.MinecartFurnace;
+ import net.minecraft.world.entity.vehicle.MinecartHopper;
+ import net.minecraft.world.entity.vehicle.MinecartSpawner;
+ import net.minecraft.world.entity.vehicle.MinecartTNT;
++import net.minecraft.world.food.FoodData;
+ import net.minecraft.world.item.Items;
++import net.minecraft.world.level.GameType;
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.WorldGenLevel;
+ import net.minecraft.world.level.block.DiodeBlock;
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.phys.AABB;
+ import org.bukkit.Bukkit;
++import org.bukkit.GameMode;
+ import org.bukkit.Location;
+ import org.bukkit.Material;
+ import org.bukkit.block.BlockFace;
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.craftbukkit.block.CraftBlock;
+ import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.util.CraftLocation;
+ import org.bukkit.entity.Allay;
+ import org.bukkit.entity.AreaEffectCloud;
+ import org.bukkit.entity.Armadillo;
+@@ -92,6 +105,7 @@ import org.bukkit.entity.Guardian;
+ import org.bukkit.entity.Hanging;
+ import org.bukkit.entity.Hoglin;
+ import org.bukkit.entity.Horse;
++import org.bukkit.entity.HumanEntity;
+ import org.bukkit.entity.Husk;
+ import org.bukkit.entity.Illusioner;
+ import org.bukkit.entity.Interaction;
+@@ -174,6 +188,7 @@ import org.bukkit.entity.minecart.SpawnerMinecart;
+ import org.bukkit.entity.minecart.StorageMinecart;
+ import org.bukkit.inventory.ItemStack;
+ import org.bukkit.util.Vector;
++import org.jetbrains.annotations.NotNull;
+ 
+ public final class CraftEntityTypes {
+ 
+@@ -426,6 +441,8 @@ public final class CraftEntityTypes {
+         // None spawn able
+         register(new EntityTypeData<>(EntityType.FISHING_BOBBER, FishHook.class, CraftFishHook::new, null)); // Cannot spawn a fish hook
+         register(new EntityTypeData<>(EntityType.PLAYER, Player.class, CraftPlayer::new, null)); // Cannot spawn a player
++
++        register(new EntityTypeData<>(EntityType.HUMAN, HumanEntity.class, CraftHumanEntity::new, CraftEntityTypes::createHuman)); // Paper - Make HumanEntity spawnable
+     }
+ 
+     private static void register(EntityTypeData<?, ?> typeData) {
+@@ -464,6 +481,41 @@ public final class CraftEntityTypes {
+         return CraftEntityTypes.combine(CraftEntityTypes.fromEntityType(entityTypes), CraftEntityTypes.POS);
+     }
+ 
++    // Paper start - Make HumanEntity spawnable
++    private static net.minecraft.world.entity.player.Player createHuman(SpawnData spawnData) {
++        GameProfile gameProfile = ((CraftPlayerProfile) Bukkit.createProfile(UUID.randomUUID())).buildGameProfile();
++        return new net.minecraft.world.entity.player.Player(spawnData.world().getMinecraftWorld(), CraftLocation.toBlockPosition(spawnData.location()), spawnData.yaw(), gameProfile) {
++
++            {
++                this.foodData = new FoodData(this) { //Disable player food tick
++                    @Override
++                    public void tick(net.minecraft.world.entity.player.Player player) {
++
++                    }
++                };
++            }
++
++            @Override public boolean isSpectator() {
++                return this.getBukkitEntity().getGameMode() == GameMode.SPECTATOR;
++            }
++
++            @Override public boolean isCreative() {
++                return this.getBukkitEntity().getGameMode() == GameMode.CREATIVE;
++            }
++
++            @Override
++            public @NotNull Packet<ClientGamePacketListener> getAddEntityPacket() { //sending multiple packets because Human requires ClientboundPlayerInfoUpdatePacket
++                EnumSet<ClientboundPlayerInfoUpdatePacket.Action> enumSet = EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER);
++                ClientboundPlayerInfoUpdatePacket infoPacket = new ClientboundPlayerInfoUpdatePacket(enumSet, new ClientboundPlayerInfoUpdatePacket.Entry(this.getUUID(), this.getGameProfile(), false, 0, GameType.DEFAULT_MODE, this.getDisplayName(), null));
++                return new ClientboundBundlePacket(List.of(
++                    infoPacket,
++                    new ClientboundAddEntityPacket(this)
++                ));
++            }
++        };
++    }
++    // Paper end - Make HumanEntity spawnable
++
+     private record HangingData(boolean randomize, BlockPos position, Direction direction) {
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
+index 6e2a6ce5cf456bd9f6c8c18a58f08e2285dc77ed..63f88803a71ae8514722720fdb67f1e3c92e71a1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
+@@ -463,7 +463,7 @@ public final class CraftItemFactory implements ItemFactory {
+ 
+     @Override
+     public Material getSpawnEgg(EntityType type) {
+-        if (type == EntityType.UNKNOWN) {
++        if (!type.isVanilla()) { // Paper - Make HumanEntity spawnable
+             return null;
+         }
+         net.minecraft.world.entity.EntityType<?> nmsType = CraftEntityType.bukkitToMinecraft(type);
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index e46714f38df931350d81c30907560c381c8d2725..7d2315d083665543b9d4d7e014a10656c2628c70 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -152,7 +152,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
+ 
+     static {
+         for (org.bukkit.entity.EntityType type : org.bukkit.entity.EntityType.values()) {
+-            if (type == org.bukkit.entity.EntityType.UNKNOWN) continue;
++            if (!type.isVanilla()) continue; // Paper - Make HumanEntity spawnable
+             ENTITY_TYPE_ENTITY_TYPES.put(type, BuiltInRegistries.ENTITY_TYPE.get(CraftNamespacedKey.toMinecraft(type.getKey())));
+             ENTITY_TYPES_ENTITY_TYPE.put(BuiltInRegistries.ENTITY_TYPE.get(CraftNamespacedKey.toMinecraft(type.getKey())), type);
+         }
+diff --git a/src/test/java/org/bukkit/craftbukkit/entity/EntityTypesTest.java b/src/test/java/org/bukkit/craftbukkit/entity/EntityTypesTest.java
+index 2b4c482e5162b22ffbe67de8b138144b760436d8..370c8e8622fa232575bae536b3aae967617df76b 100644
+--- a/src/test/java/org/bukkit/craftbukkit/entity/EntityTypesTest.java
++++ b/src/test/java/org/bukkit/craftbukkit/entity/EntityTypesTest.java
+@@ -59,6 +59,7 @@ import org.bukkit.entity.WaterMob;
+ import org.bukkit.support.AbstractTestingBase;
+ import org.junit.jupiter.api.AfterAll;
+ import org.junit.jupiter.api.BeforeAll;
++import org.junit.jupiter.api.Test;
+ import org.junit.jupiter.params.ParameterizedTest;
+ import org.junit.jupiter.params.provider.Arguments;
+ import org.junit.jupiter.params.provider.EnumSource;
+@@ -176,6 +177,21 @@ public class EntityTypesTest extends AbstractTestingBase {
+         assertNotNull(entityTypeData, String.format("Entity type %s does not have an entity type data, please add on to CraftEntityTypes.", entityType));
+     }
+ 
++    @Test
++    public void testHumanEntityConversion() {
++        net.minecraft.world.entity.EntityType<?> humanEntityType = CraftEntityType.bukkitToMinecraft(EntityType.HUMAN);
++        assertEquals(humanEntityType, net.minecraft.world.entity.EntityType.PLAYER);
++
++        EntityType playerEntityType = CraftEntityType.minecraftToBukkit(net.minecraft.world.entity.EntityType.PLAYER);
++        assertEquals(playerEntityType, EntityType.PLAYER);
++    }
++
++    @Test
++    public void testPlayerEntityConversion() {
++        net.minecraft.world.entity.EntityType<?> playerEntityType = CraftEntityType.bukkitToMinecraft(EntityType.PLAYER);
++        assertEquals(playerEntityType, net.minecraft.world.entity.EntityType.PLAYER);
++    }
++
+     @AfterAll
+     public static void clear() throws IOException {
+         if (EntityTypesTest.jarFile != null) {
