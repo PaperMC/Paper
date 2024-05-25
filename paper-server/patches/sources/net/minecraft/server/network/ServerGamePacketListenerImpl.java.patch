@@ -1558,10 +1558,12 @@
              }
  
              return optional;
-@@ -1566,6 +2396,117 @@
-         return false;
-     }
+@@ -1564,8 +2394,119 @@
+         }
  
+         return false;
++    }
++
 +    // CraftBukkit start - add method
 +    public void chat(String s, PlayerChatMessage original, boolean async) {
 +        if (s.isEmpty() || this.player.getChatVisibility() == ChatVisiblity.HIDDEN) {
@@ -1654,8 +1656,8 @@
 +                this.server.console.sendMessage(s);
 +            }
 +        }
-+    }
-+
+     }
+ 
 +    @Deprecated // Paper
 +    public void handleCommand(String s) { // Paper - private -> public
 +        // Paper start - Remove all this old duplicated logic
@@ -1840,12 +1842,10 @@
          this.send(new ClientboundPlayerChatPacket(message.link().sender(), message.link().index(), message.signature(), message.signedBody().pack(this.messageSignatureCache), message.unsignedContent(), message.filterMask(), params));
          this.addPendingMessage(message);
      }
-@@ -1701,7 +2738,19 @@
- 
-     public SocketAddress getRemoteAddress() {
+@@ -1703,6 +2740,18 @@
          return this.connection.getRemoteAddress();
-+    }
-+
+     }
+ 
 +    // Spigot Start
 +    public SocketAddress getRawAddress()
 +    {
@@ -1855,11 +1855,12 @@
 +        }
 +        // Paper end - Unix domain socket support
 +        return this.connection.channel.remoteAddress();
-     }
++    }
 +    // Spigot End
- 
++
      public void switchToConfig() {
          this.waitingForSwitchToConfig = true;
+         this.removePlayerFromWorld();
 @@ -1718,9 +2767,17 @@
      @Override
      public void handleInteract(ServerboundInteractPacket packet) {
@@ -2063,7 +2064,7 @@
                  this.player.containerMenu.sendAllDataToRemote();
              } else if (!this.player.containerMenu.stillValid(this.player)) {
                  ServerGamePacketListenerImpl.LOGGER.debug("Player {} interacted with invalid menu {}", this.player, this.player.containerMenu);
-@@ -1855,7 +2987,303 @@
+@@ -1855,7 +2987,296 @@
                      boolean flag = packet.getStateId() != this.player.containerMenu.getStateId();
  
                      this.player.containerMenu.suppressRemoteUpdates();
@@ -2171,14 +2172,7 @@
 +                                Slot clickedSlot = this.player.containerMenu.getSlot(packet.getSlotNum());
 +                                if (clickedSlot.mayPickup(this.player)) {
 +                                    ItemStack hotbar = this.player.getInventory().getItem(packet.getButtonNum());
-+                                    boolean canCleanSwap = hotbar.isEmpty() || (clickedSlot.container == this.player.getInventory() && clickedSlot.mayPlace(hotbar)); // the slot will accept the hotbar item
-+                                    if (clickedSlot.hasItem()) {
-+                                        if (canCleanSwap) {
-+                                            action = InventoryAction.HOTBAR_SWAP;
-+                                        } else {
-+                                            action = InventoryAction.HOTBAR_MOVE_AND_READD;
-+                                        }
-+                                    } else if (!clickedSlot.hasItem() && !hotbar.isEmpty() && clickedSlot.mayPlace(hotbar)) {
++                                    if ((!hotbar.isEmpty() && clickedSlot.mayPlace(hotbar)) || (hotbar.isEmpty() && clickedSlot.hasItem())) { // Paper - modernify this logic (no such thing as a "hotbar move and readd"
 +                                        action = InventoryAction.HOTBAR_SWAP;
 +                                    } else {
 +                                        action = InventoryAction.NOTHING;
@@ -2368,7 +2362,7 @@
                      ObjectIterator objectiterator = Int2ObjectMaps.fastIterable(packet.getChangedSlots()).iterator();
  
                      while (objectiterator.hasNext()) {
-@@ -1879,6 +3307,14 @@
+@@ -1879,6 +3300,14 @@
  
      @Override
      public void handlePlaceRecipe(ServerboundPlaceRecipePacket packet) {
@@ -2383,7 +2377,7 @@
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
          this.player.resetLastActionTime();
          if (!this.player.isSpectator() && this.player.containerMenu.containerId == packet.containerId()) {
-@@ -1900,8 +3336,42 @@
+@@ -1900,9 +3329,43 @@
                                  ServerGamePacketListenerImpl.LOGGER.debug("Player {} tried to place impossible recipe {}", this.player, recipeholder.id().location());
                                  return;
                              }
@@ -2416,7 +2410,7 @@
 +                                return;
 +                            }
 +                            // Paper end - Add PlayerRecipeBookClickEvent - forward to legacy event
-+
+ 
 +                            // Cast to keyed should be safe as the recipe will never be a MerchantRecipe.
 +                            recipeholder = this.server.getRecipeManager().byKey(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.RECIPE, org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(recipeName))).orElse(null); // Paper - Add PlayerRecipeBookClickEvent - forward to legacy event
 +                            if (recipeholder == null) {
@@ -2424,10 +2418,11 @@
 +                            }
 +                            RecipeBookMenu.PostPlaceAction containerrecipebook_a = containerrecipebook.handlePlacement(makeAll, this.player.isCreative(), recipeholder, this.player.serverLevel(), this.player.getInventory());
 +                            // CraftBukkit end
- 
++
                              if (containerrecipebook_a == RecipeBookMenu.PostPlaceAction.PLACE_GHOST_RECIPE) {
                                  this.player.connection.send(new ClientboundPlaceGhostRecipePacket(this.player.containerMenu.containerId, craftingmanager_d.display().display()));
-@@ -1917,6 +3387,7 @@
+                             }
+@@ -1917,6 +3380,7 @@
      @Override
      public void handleContainerButtonClick(ServerboundContainerButtonClickPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
@@ -2435,7 +2430,7 @@
          this.player.resetLastActionTime();
          if (this.player.containerMenu.containerId == packet.containerId() && !this.player.isSpectator()) {
              if (!this.player.containerMenu.stillValid(this.player)) {
-@@ -1945,7 +3416,44 @@
+@@ -1945,7 +3409,44 @@
  
              boolean flag1 = packet.slotNum() >= 1 && packet.slotNum() <= 45;
              boolean flag2 = itemstack.isEmpty() || itemstack.getCount() <= itemstack.getMaxStackSize();
@@ -2480,7 +2475,7 @@
              if (flag1 && flag2) {
                  this.player.inventoryMenu.getSlot(packet.slotNum()).setByPlayer(itemstack);
                  this.player.inventoryMenu.setRemoteSlot(packet.slotNum(), itemstack);
-@@ -1964,7 +3472,19 @@
+@@ -1964,7 +3465,19 @@
  
      @Override
      public void handleSignUpdate(ServerboundSignUpdatePacket packet) {
@@ -2501,7 +2496,7 @@
  
          this.filterTextPacket(list).thenAcceptAsync((list1) -> {
              this.updateSignText(packet, list1);
-@@ -1972,6 +3492,7 @@
+@@ -1972,6 +3485,7 @@
      }
  
      private void updateSignText(ServerboundSignUpdatePacket packet, List<FilteredText> signText) {
@@ -2509,7 +2504,7 @@
          this.player.resetLastActionTime();
          ServerLevel worldserver = this.player.serverLevel();
          BlockPos blockposition = packet.getPos();
-@@ -1993,15 +3514,33 @@
+@@ -1993,15 +3507,33 @@
      @Override
      public void handlePlayerAbilities(ServerboundPlayerAbilitiesPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
@@ -2544,7 +2539,7 @@
          if (this.player.isModelPartShown(PlayerModelPart.HAT) != flag) {
              this.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_HAT, this.player));
          }
-@@ -2012,7 +3551,7 @@
+@@ -2012,7 +3544,7 @@
      public void handleChangeDifficulty(ServerboundChangeDifficultyPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
          if (this.player.hasPermissions(2) || this.isSingleplayerOwner()) {
@@ -2553,7 +2548,7 @@
          }
      }
  
-@@ -2033,7 +3572,7 @@
+@@ -2033,7 +3565,7 @@
  
          if (!Objects.equals(profilepublickey_a, profilepublickey_a1)) {
              if (profilepublickey_a != null && profilepublickey_a1.expiresAt().isBefore(profilepublickey_a.expiresAt())) {
@@ -2562,7 +2557,7 @@
              } else {
                  try {
                      SignatureValidator signaturevalidator = this.server.getProfileKeySignatureValidator();
-@@ -2045,8 +3584,8 @@
+@@ -2045,8 +3577,8 @@
  
                      this.resetPlayerChatState(remotechatsession_a.validate(this.player.getGameProfile(), signaturevalidator));
                  } catch (ProfilePublicKey.ValidationException profilepublickey_b) {
@@ -2573,7 +2568,7 @@
                  }
  
              }
-@@ -2058,7 +3597,7 @@
+@@ -2058,7 +3590,7 @@
          if (!this.waitingForSwitchToConfig) {
              throw new IllegalStateException("Client acknowledged config, but none was requested");
          } else {
@@ -2582,7 +2577,7 @@
          }
      }
  
-@@ -2076,15 +3615,18 @@
+@@ -2076,15 +3608,18 @@
  
      private void resetPlayerChatState(RemoteChatSession session) {
          this.chatSession = session;
@@ -2604,7 +2599,7 @@
  
      @Override
      public void handleClientTickEnd(ServerboundClientTickEndPacket packet) {
-@@ -2115,4 +3657,17 @@
+@@ -2115,4 +3650,17 @@
  
          InteractionResult run(ServerPlayer player, Entity entity, InteractionHand hand);
      }
