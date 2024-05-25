@@ -68,6 +68,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import net.minecraft.world.level.block.entity.BrushableBlockEntity;
  import net.minecraft.world.level.block.entity.CalibratedSculkSensorBlockEntity;
 @@ -0,0 +0,0 @@ public final class CraftBlockStates {
+     private static class BlockEntityStateFactory<T extends BlockEntity, B extends CraftBlockEntityState<T>> extends BlockStateFactory<B> {
+ 
+         private final BiFunction<World, T, B> blockStateConstructor;
+-        private final BiFunction<BlockPos, net.minecraft.world.level.block.state.BlockState, T> tileEntityConstructor;
++        private final BlockEntityType<? extends T> tileEntityConstructor; // Paper
+ 
+-        protected BlockEntityStateFactory(Class<B> blockStateType, BiFunction<World, T, B> blockStateConstructor, BiFunction<BlockPos, net.minecraft.world.level.block.state.BlockState, T> tileEntityConstructor) {
++        protected BlockEntityStateFactory(Class<B> blockStateType, BiFunction<World, T, B> blockStateConstructor, BlockEntityType<? extends T> tileEntityConstructor) { // Paper
+             super(blockStateType);
+             this.blockStateConstructor = blockStateConstructor;
+             this.tileEntityConstructor = tileEntityConstructor;
+@@ -0,0 +0,0 @@ public final class CraftBlockStates {
+         }
+ 
+         private T createTileEntity(BlockPos blockPosition, net.minecraft.world.level.block.state.BlockState blockData) {
+-            return this.tileEntityConstructor.apply(blockPosition, blockData);
++            return this.tileEntityConstructor.create(blockPosition, blockData); // Paper
+         }
+ 
+         private B createBlockState(World world, T tileEntity) {
+@@ -0,0 +0,0 @@ public final class CraftBlockStates {
      private static final BlockStateFactory<?> DEFAULT_FACTORY = new BlockStateFactory<CraftBlockState>(CraftBlockState.class) {
          @Override
          public CraftBlockState createBlockState(World world, BlockPos blockPosition, net.minecraft.world.level.block.state.BlockState blockData, BlockEntity tileEntity) {
@@ -354,26 +375,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      private static <T extends BlockEntity, B extends CraftBlockEntityState<T>> void register(
 -            Material blockType,
--            Class<B> blockStateType,
--            BiFunction<World, T, B> blockStateConstructor,
--            BiFunction<BlockPos, net.minecraft.world.level.block.state.BlockState, T> tileEntityConstructor
--    ) {
--        CraftBlockStates.register(Collections.singletonList(blockType), blockStateType, blockStateConstructor, tileEntityConstructor);
--    }
--
--    private static <T extends BlockEntity, B extends CraftBlockEntityState<T>> void register(
--            List<Material> blockTypes,
 +            net.minecraft.world.level.block.entity.BlockEntityType<? extends T> blockEntityType, // Paper
              Class<B> blockStateType,
 -            BiFunction<World, T, B> blockStateConstructor,
 -            BiFunction<BlockPos, net.minecraft.world.level.block.state.BlockState, T> tileEntityConstructor
 +            BiFunction<World, T, B> blockStateConstructor // Paper
      ) {
+-        CraftBlockStates.register(Collections.singletonList(blockType), blockStateType, blockStateConstructor, tileEntityConstructor);
+-    }
+-
+-    private static <T extends BlockEntity, B extends CraftBlockEntityState<T>> void register(
+-            List<Material> blockTypes,
+-            Class<B> blockStateType,
+-            BiFunction<World, T, B> blockStateConstructor,
+-            BiFunction<BlockPos, net.minecraft.world.level.block.state.BlockState, T> tileEntityConstructor
+-    ) {
 -        BlockStateFactory<B> factory = new BlockEntityStateFactory<>(blockStateType, blockStateConstructor, tileEntityConstructor);
 -        for (Material blockType : blockTypes) {
 -            CraftBlockStates.register(blockType, factory);
 +        // Paper start
-+        BlockStateFactory<B> factory = new BlockEntityStateFactory<>(blockStateType, blockStateConstructor, blockEntityType::create);
++        BlockStateFactory<B> factory = new BlockEntityStateFactory<>(blockStateType, blockStateConstructor, blockEntityType); // Paper
 +        for (net.minecraft.world.level.block.Block block : blockEntityType.validBlocks) {
 +            CraftBlockStates.register(CraftBlockType.minecraftToBukkit(block), factory);
          }
@@ -421,6 +442,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
          return factory.createBlockState(world, blockPosition, blockData, tileEntity);
      }
+@@ -0,0 +0,0 @@ public final class CraftBlockStates {
+         return new CraftBlockState(CraftBlock.at(world, pos), flag);
+     }
+ 
++    // Paper start
++    @Nullable
++    public static BlockEntityType<?> getBlockEntityType(final Material material) {
++        final BlockStateFactory<?> factory = org.bukkit.craftbukkit.block.CraftBlockStates.FACTORIES.get(material);
++        return factory instanceof final BlockEntityStateFactory<?,?> blockEntityStateFactory ? blockEntityStateFactory.tileEntityConstructor : null;
++    }
++    // Paper end
++
+     private CraftBlockStates() {
+     }
+ }
 diff --git a/src/test/java/org/bukkit/craftbukkit/block/BlockStateTest.java b/src/test/java/org/bukkit/craftbukkit/block/BlockStateTest.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/test/java/org/bukkit/craftbukkit/block/BlockStateTest.java
