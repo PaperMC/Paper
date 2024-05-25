@@ -1498,6 +1498,45 @@ index e7d905b1146b2bdd2da5bdeb6bf3541fb181d59e..c7d3041221742f6655155f19ef2addca
       */
      void setBlockState(@NotNull BlockState blockState);
  }
+diff --git a/src/main/java/org/bukkit/inventory/meta/CrossbowMeta.java b/src/main/java/org/bukkit/inventory/meta/CrossbowMeta.java
+index 35c6594fd1040a1af1029e7260e5e3a9307b107d..d58719ee75bef8bc265bfc81bc5d88a426e01dd9 100644
+--- a/src/main/java/org/bukkit/inventory/meta/CrossbowMeta.java
++++ b/src/main/java/org/bukkit/inventory/meta/CrossbowMeta.java
+@@ -28,8 +28,7 @@ public interface CrossbowMeta extends ItemMeta {
+      * Removes all projectiles when given null.
+      *
+      * @param projectiles the projectiles to set
+-     * @throws IllegalArgumentException if one of the projectiles is not an
+-     * arrow or firework rocket
++     * @throws IllegalArgumentException if one of the projectiles is empty
+      */
+     void setChargedProjectiles(@Nullable List<ItemStack> projectiles);
+ 
+@@ -37,8 +36,7 @@ public interface CrossbowMeta extends ItemMeta {
+      * Adds a charged projectile to this item.
+      *
+      * @param item projectile
+-     * @throws IllegalArgumentException if the projectile is not an arrow or
+-     * firework rocket
++     * @throws IllegalArgumentException if the projectile is empty
+      */
+     void addChargedProjectile(@NotNull ItemStack item);
+ }
+diff --git a/src/main/java/org/bukkit/inventory/meta/FireworkMeta.java b/src/main/java/org/bukkit/inventory/meta/FireworkMeta.java
+index cdbcc8dbab2456cc2bc1f3084cbb1ced1698b7f5..d528b066c2aaa3fb097931914ff2181f8f64e520 100644
+--- a/src/main/java/org/bukkit/inventory/meta/FireworkMeta.java
++++ b/src/main/java/org/bukkit/inventory/meta/FireworkMeta.java
+@@ -86,8 +86,8 @@ public interface FireworkMeta extends ItemMeta {
+      * Sets the approximate power of the firework. Each level of power is half
+      * a second of flight time.
+      *
+-     * @param power the power of the firework, from 0-127
+-     * @throws IllegalArgumentException if {@literal height<0 or height>127}
++     * @param power the power of the firework, from 0-255
++     * @throws IllegalArgumentException if {@literal power < 0 or power > 255}
+      */
+     void setPower(int power) throws IllegalArgumentException;
+ 
 diff --git a/src/main/java/org/bukkit/inventory/meta/ItemMeta.java b/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
 index a23d030d2204098be17d8b18021fd0bb79b4431b..f427334c6e875a13aa53052ac1b5a746186b4ffe 100644
 --- a/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
@@ -1512,19 +1551,53 @@ index a23d030d2204098be17d8b18021fd0bb79b4431b..f427334c6e875a13aa53052ac1b5a746
       * AttributeModifiers without a slot are active in any slot.<br>
       * If there are no attributes set for the given slot, an empty map
 diff --git a/src/main/java/org/bukkit/inventory/meta/LeatherArmorMeta.java b/src/main/java/org/bukkit/inventory/meta/LeatherArmorMeta.java
-index c1676991c3cc5f8d6e3f97d8cb356d6e2aa52809..7f9eabcaa4d803ee524a9cc8717379fe6a93a5af 100644
+index c1676991c3cc5f8d6e3f97d8cb356d6e2aa52809..1d61cc4ab36413fe3c1ecdf9824a5e18cb4bc148 100644
 --- a/src/main/java/org/bukkit/inventory/meta/LeatherArmorMeta.java
 +++ b/src/main/java/org/bukkit/inventory/meta/LeatherArmorMeta.java
-@@ -8,8 +8,8 @@ import org.jetbrains.annotations.Nullable;
+@@ -8,8 +8,9 @@ import org.jetbrains.annotations.Nullable;
  
  /**
   * Represents leather armor ({@link Material#LEATHER_BOOTS}, {@link
 - * Material#LEATHER_CHESTPLATE}, {@link Material#LEATHER_HELMET}, or {@link
 - * Material#LEATHER_LEGGINGS}) that can be colored.
 + * Material#LEATHER_LEGGINGS}, {@link Material#LEATHER_CHESTPLATE}, {@link
-+ * Material#LEATHER_HELMET}, or {@link Material#LEATHER_HORSE_ARMOR}) that can be colored.
++ * Material#LEATHER_HELMET}, {@link Material#LEATHER_HORSE_ARMOR}, {@link
++ * Material#WOLF_ARMOR}) that can be colored.
   */
  public interface LeatherArmorMeta extends ItemMeta {
+ 
+@@ -18,6 +19,9 @@ public interface LeatherArmorMeta extends ItemMeta {
+      * be {@link ItemFactory#getDefaultLeatherColor()}.
+      *
+      * @return the color of the armor, never null
++     * @apiNote The method yielding {@link ItemFactory#getDefaultLeatherColor()} is incorrect
++     * for {@link Material#WOLF_ARMOR} as its default color differs. Generally, it is recommended to check
++     * {@link #isDyed()} to determined if this leather armor is dyed than to compare this colour to the default.
+      */
+     @NotNull
+     Color getColor();
+@@ -25,8 +29,7 @@ public interface LeatherArmorMeta extends ItemMeta {
+     /**
+      * Sets the color of the armor.
+      *
+-     * @param color the color to set. Setting it to null is equivalent to
+-     *     setting it to {@link ItemFactory#getDefaultLeatherColor()}.
++     * @param color the color to set.
+      */
+     void setColor(@Nullable Color color);
+ 
+diff --git a/src/main/java/org/bukkit/inventory/meta/OminousBottleMeta.java b/src/main/java/org/bukkit/inventory/meta/OminousBottleMeta.java
+index 43f0df04f3cdff7d7db73321a2886f3a737e3c9f..5c741228b2338a7c4de2fe736eb789511abf4880 100644
+--- a/src/main/java/org/bukkit/inventory/meta/OminousBottleMeta.java
++++ b/src/main/java/org/bukkit/inventory/meta/OminousBottleMeta.java
+@@ -3,7 +3,7 @@ package org.bukkit.inventory.meta;
+ import org.jetbrains.annotations.NotNull;
+ 
+ /**
+- * Represents a map that can be scalable.
++ * Represents an ominous bottle with an amplifier of the bad omen effect.
+  */
+ public interface OminousBottleMeta extends ItemMeta {
  
 diff --git a/src/main/java/org/bukkit/plugin/messaging/PluginMessageRecipient.java b/src/main/java/org/bukkit/plugin/messaging/PluginMessageRecipient.java
 index b84b37fe27d84574dc5897285f1d9a1437bd322c..281ae60a6be7e39aab4f27b4c7de3d49ada9a557 100644

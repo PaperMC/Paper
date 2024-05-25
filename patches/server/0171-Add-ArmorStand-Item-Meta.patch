@@ -26,7 +26,7 @@ index 662cf08d1cb2b41da5b17dae3585333cdf605c0b..f5bb5802aae64773252c9399df0fbe9d
              }
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java
-index c4f12f96e39cb6189799a796b4cb2cb4f0b92392..84e09a934600df116206df1c3922a11ee969901a 100644
+index c4f12f96e39cb6189799a796b4cb2cb4f0b92392..59bdac414e8205ed608f79ef0d1502acd826d216 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java
 @@ -11,9 +11,22 @@ import org.bukkit.Material;
@@ -148,13 +148,14 @@ index c4f12f96e39cb6189799a796b4cb2cb4f0b92392..84e09a934600df116206df1c3922a11e
      }
  
      @Override
-@@ -86,7 +159,13 @@ public class CraftMetaArmorStand extends CraftMetaItem {
+@@ -86,7 +159,14 @@ public class CraftMetaArmorStand extends CraftMetaItem {
          if (meta instanceof CraftMetaArmorStand) {
              CraftMetaArmorStand that = (CraftMetaArmorStand) meta;
  
 -            return this.entityTag != null ? that.entityTag != null && this.entityTag.equals(that.entityTag) : this.entityTag == null;
 +            // Paper start
-+            return this.invisible == that.invisible &&
++            return java.util.Objects.equals(this.entityTag, that.entityTag) &&
++                this.invisible == that.invisible &&
 +                this.noBasePlate == that.noBasePlate &&
 +                this.showArms == that.showArms &&
 +                this.small == that.small &&
@@ -163,25 +164,21 @@ index c4f12f96e39cb6189799a796b4cb2cb4f0b92392..84e09a934600df116206df1c3922a11e
          }
          return true;
      }
-@@ -101,9 +180,14 @@ public class CraftMetaArmorStand extends CraftMetaItem {
-         final int original;
-         int hash = original = super.applyHash();
- 
--        if (this.entityTag != null) {
--            hash = 73 * hash + this.entityTag.hashCode();
--        }
+@@ -104,6 +184,13 @@ public class CraftMetaArmorStand extends CraftMetaItem {
+         if (this.entityTag != null) {
+             hash = 73 * hash + this.entityTag.hashCode();
+         }
 +        // Paper start
-+        hash += this.entityTag != null ? 73 * hash + this.entityTag.hashCode() : 0;
-+        hash += this.isInvisible() ? 61 * hash + 1231 : 0;
-+        hash += this.hasNoBasePlate() ? 61 * hash + 1231 : 0;
-+        hash += this.shouldShowArms() ? 61 * hash + 1231 : 0;
-+        hash += this.isSmall() ? 61 * hash + 1231 : 0;
-+        hash += this.isMarker() ? 61 * hash + 1231 : 0;
++        hash = 61 * hash + (this.invisible != null ? Boolean.hashCode(this.isInvisible()) : 0);
++        hash = 61 * hash + (this.noBasePlate != null ? Boolean.hashCode(this.hasNoBasePlate()) : 0);
++        hash = 61 * hash + (this.showArms != null ? Boolean.hashCode(this.shouldShowArms()) : 0);
++        hash = 61 * hash + (this.small != null ? Boolean.hashCode(this.isSmall()) : 0);
++        hash = 61 * hash + (this.marker != null ? Boolean.hashCode(this.isMarker()) : 0);
 +        // Paper end
  
          return original != hash ? CraftMetaArmorStand.class.hashCode() ^ hash : hash;
      }
-@@ -112,6 +196,28 @@ public class CraftMetaArmorStand extends CraftMetaItem {
+@@ -112,6 +199,28 @@ public class CraftMetaArmorStand extends CraftMetaItem {
      Builder<String, Object> serialize(Builder<String, Object> builder) {
          super.serialize(builder);
  
@@ -210,7 +207,7 @@ index c4f12f96e39cb6189799a796b4cb2cb4f0b92392..84e09a934600df116206df1c3922a11e
          return builder;
      }
  
-@@ -125,4 +231,56 @@ public class CraftMetaArmorStand extends CraftMetaItem {
+@@ -125,4 +234,56 @@ public class CraftMetaArmorStand extends CraftMetaItem {
  
          return clone;
      }
