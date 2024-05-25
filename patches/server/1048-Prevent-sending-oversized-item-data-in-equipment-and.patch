@@ -7,14 +7,15 @@ Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/src/main/java/io/papermc/paper/util/DataSanitizationUtil.java b/src/main/java/io/papermc/paper/util/DataSanitizationUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1b6d18813ad331b478e3f4b70e052bf4b65b0795
+index 0000000000000000000000000000000000000000..e9436f8a73ee0a02096d66e14d73edaae28d5a41
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/DataSanitizationUtil.java
-@@ -0,0 +1,75 @@
+@@ -0,0 +1,100 @@
 +package io.papermc.paper.util;
 +
 +import java.util.ArrayList;
 +import java.util.List;
++import java.util.concurrent.atomic.AtomicBoolean;
 +import java.util.function.UnaryOperator;
 +import net.minecraft.network.RegistryFriendlyByteBuf;
 +import net.minecraft.network.codec.StreamCodec;
@@ -29,7 +30,15 @@ index 0000000000000000000000000000000000000000..1b6d18813ad331b478e3f4b70e052bf4
 +@DefaultQualifier(NonNull.class)
 +public final class DataSanitizationUtil {
 +
-+    public static final ThreadLocal<Boolean> DATA_SANITIZATION = ThreadLocal.withInitial(() -> false);
++    private static final ThreadLocal<DataSanitizer> DATA_SANITIZER = ThreadLocal.withInitial(DataSanitizer::new);
++
++    public static DataSanitizer start(final boolean sanitize) {
++        final DataSanitizer sanitizer = DATA_SANITIZER.get();
++        if (sanitize) {
++            sanitizer.start();
++        }
++        return sanitizer;
++    }
 +
 +    public static final StreamCodec<RegistryFriendlyByteBuf, ChargedProjectiles> CHARGED_PROJECTILES = codec(ChargedProjectiles.STREAM_CODEC, DataSanitizationUtil::sanitizeChargedProjectiles);
 +    public static final StreamCodec<RegistryFriendlyByteBuf, BundleContents> BUNDLE_CONTENTS = codec(BundleContents.STREAM_CODEC, DataSanitizationUtil::sanitizeBundleContents);
@@ -74,11 +83,27 @@ index 0000000000000000000000000000000000000000..1b6d18813ad331b478e3f4b70e052bf4
 +
 +        @Override
 +        public void encode(final @NonNull B buf, final @NonNull A value) {
-+            if (!DATA_SANITIZATION.get()) {
++            if (!DATA_SANITIZER.get().value().get()) {
 +                this.delegate.encode(buf, value);
 +            } else {
 +                this.delegate.encode(buf, this.sanitizer.apply(value));
 +            }
++        }
++    }
++
++    public record DataSanitizer(AtomicBoolean value) implements AutoCloseable {
++
++        public DataSanitizer() {
++            this(new AtomicBoolean(false));
++        }
++
++        public void start() {
++            this.value.compareAndSet(false, true);
++        }
++
++        @Override
++        public void close() {
++            this.value.compareAndSet(true, false);
 +        }
 +    }
 +
@@ -113,23 +138,23 @@ index 5632974af9c603d333ffc30a5a1b1e851821a3bb..9b2a209cda955ef3e5d8ff3ed1b22498
      public static final DataComponentType<BlockItemStateProperties> BLOCK_STATE = register(
          "block_state", builder -> builder.persistent(BlockItemStateProperties.CODEC).networkSynchronized(BlockItemStateProperties.STREAM_CODEC).cacheEncoding()
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetEntityDataPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetEntityDataPacket.java
-index 59c1c103545f04fd35e6932df64a9910a1d74cd7..a5736685c1caddbc39085b5a13c2c720c41c835b 100644
+index 59c1c103545f04fd35e6932df64a9910a1d74cd7..56bde49e6b7790155b032d0be40961d566ab89e9 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetEntityDataPacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetEntityDataPacket.java
 @@ -19,9 +19,11 @@ public record ClientboundSetEntityDataPacket(int id, List<SynchedEntityData.Data
      }
  
      private static void pack(List<SynchedEntityData.DataValue<?>> trackedValues, RegistryFriendlyByteBuf buf) {
-+        try { io.papermc.paper.util.DataSanitizationUtil.DATA_SANITIZATION.set(true); // Paper - data sanitization
++        try (var ignored = io.papermc.paper.util.DataSanitizationUtil.start(true)) { // Paper - data sanitization
          for (SynchedEntityData.DataValue<?> dataValue : trackedValues) {
              dataValue.write(buf);
          }
-+        } finally { io.papermc.paper.util.DataSanitizationUtil.DATA_SANITIZATION.set(false); } // Paper - data sanitization
++        } // Paper - data sanitization
  
          buf.writeByte(255);
      }
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetEquipmentPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetEquipmentPacket.java
-index e092a486c4041ab1cfe9e29c88d0d94528a6e9a6..a167d0a2c0de9e6a43b8044b81b1b22fc27813c1 100644
+index e092a486c4041ab1cfe9e29c88d0d94528a6e9a6..3945ca04ede578121b370592482ac917f2d4cf96 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetEquipmentPacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetEquipmentPacket.java
 @@ -19,6 +19,13 @@ public class ClientboundSetEquipmentPacket implements Packet<ClientGamePacketLis
@@ -150,7 +175,7 @@ index e092a486c4041ab1cfe9e29c88d0d94528a6e9a6..a167d0a2c0de9e6a43b8044b81b1b22f
          buf.writeVarInt(this.entity);
          int i = this.slots.size();
  
-+        try { if (this.sanitize) io.papermc.paper.util.DataSanitizationUtil.DATA_SANITIZATION.set(true); // Paper - data sanitization
++        try (var ignored = io.papermc.paper.util.DataSanitizationUtil.start(this.sanitize)) {  // Paper - data sanitization
          for (int j = 0; j < i; j++) {
              Pair<EquipmentSlot, ItemStack> pair = this.slots.get(j);
              EquipmentSlot equipmentSlot = pair.getFirst();
@@ -158,7 +183,7 @@ index e092a486c4041ab1cfe9e29c88d0d94528a6e9a6..a167d0a2c0de9e6a43b8044b81b1b22f
              buf.writeByte(bl ? k | -128 : k);
              ItemStack.OPTIONAL_STREAM_CODEC.encode(buf, pair.getSecond());
          }
-+        } finally { if (this.sanitize) io.papermc.paper.util.DataSanitizationUtil.DATA_SANITIZATION.set(false); } // Paper - data sanitization
++        } // Paper - data sanitization
      }
  
      @Override
@@ -175,6 +200,19 @@ index f16a69775332a08ed0e87d27acd0fc959359694c..a2279262c93408c11f5d2290b48fd794
              }
              ((LivingEntity) this.entity).detectEquipmentUpdatesPublic(); // CraftBukkit - SPIGOT-3789: sync again immediately after sending
          }
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index b9b3277c8ed94e0cd30b20b9c00a33eaad48e5ac..c450447585af4c8cdc87abe871c229ff895c3e53 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2788,7 +2788,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                                 entity.refreshEntityData(ServerGamePacketListenerImpl.this.player);
+                                 // SPIGOT-7136 - Allays
+                                 if (entity instanceof Allay) {
+-                                    ServerGamePacketListenerImpl.this.send(new ClientboundSetEquipmentPacket(entity.getId(), Arrays.stream(net.minecraft.world.entity.EquipmentSlot.values()).map((slot) -> Pair.of(slot, ((LivingEntity) entity).getItemBySlot(slot).copy())).collect(Collectors.toList())));
++                                    ServerGamePacketListenerImpl.this.send(new ClientboundSetEquipmentPacket(entity.getId(), Arrays.stream(net.minecraft.world.entity.EquipmentSlot.values()).map((slot) -> Pair.of(slot, ((LivingEntity) entity).getItemBySlot(slot).copy())).collect(Collectors.toList()), true)); // Paper - sanitize
+                                     ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote();
+                                 }
+                             }
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 index ef0f118aecf0893e45cb9423a677d7e42496324b..2c2aefa1d57a939c3ac6c3d6f3a22de848cabf14 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
