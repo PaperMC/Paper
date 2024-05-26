@@ -4,32 +4,6 @@ Date: Sat, 6 Jan 2024 14:31:00 +0100
 Subject: [PATCH] Fixup NamespacedKey handling
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/loottable/PaperContainerEntityLootableInventory.java b/src/main/java/com/destroystokyo/paper/loottable/PaperContainerEntityLootableInventory.java
-index 7f5283a8ee74253e326fe994f20ae00cf3c75e1b..183f31c81d9c0a966e6b20c2cff3d279dfc7e622 100644
---- a/src/main/java/com/destroystokyo/paper/loottable/PaperContainerEntityLootableInventory.java
-+++ b/src/main/java/com/destroystokyo/paper/loottable/PaperContainerEntityLootableInventory.java
-@@ -20,7 +20,7 @@ public class PaperContainerEntityLootableInventory implements PaperLootableEntit
- 
-     @Override
-     public org.bukkit.loot.LootTable getLootTable() {
--        return entity.getLootTable() != null ? Optionull.map(entity.getLootTable(), rk -> Bukkit.getLootTable(CraftNamespacedKey.fromMinecraft(rk.location()))) : null;
-+        return entity.getLootTable() != null && !entity.getLootTable().location().getPath().isEmpty() ? Optionull.map(entity.getLootTable(), rk -> Bukkit.getLootTable(CraftNamespacedKey.fromMinecraft(rk.location()))) : null;
-     }
- 
-     @Override
-diff --git a/src/main/java/com/destroystokyo/paper/loottable/PaperTileEntityLootableInventory.java b/src/main/java/com/destroystokyo/paper/loottable/PaperTileEntityLootableInventory.java
-index fb72bdea520ccc0928cfbda0569e02a1917a7e86..6f6e19b7b57cb3070ef5b6810d8449344705af8c 100644
---- a/src/main/java/com/destroystokyo/paper/loottable/PaperTileEntityLootableInventory.java
-+++ b/src/main/java/com/destroystokyo/paper/loottable/PaperTileEntityLootableInventory.java
-@@ -17,7 +17,7 @@ public class PaperTileEntityLootableInventory implements PaperLootableBlockInven
- 
-     @Override
-     public org.bukkit.loot.LootTable getLootTable() {
--        return tileEntityLootable.lootTable != null ? Bukkit.getLootTable(CraftNamespacedKey.fromMinecraft(tileEntityLootable.lootTable.location())) : null;
-+        return tileEntityLootable.lootTable != null && !tileEntityLootable.lootTable.location().getPath().isEmpty() ? Bukkit.getLootTable(CraftNamespacedKey.fromMinecraft(tileEntityLootable.lootTable.location())) : null;
-     }
- 
-     @Override
 diff --git a/src/main/java/net/minecraft/world/inventory/LoomMenu.java b/src/main/java/net/minecraft/world/inventory/LoomMenu.java
 index 4f3f6ea43030853bd9df067358a1f4d16c40e6d4..531336c44c46555fef8c001fe8ca00c93624ad42 100644
 --- a/src/main/java/net/minecraft/world/inventory/LoomMenu.java
@@ -64,6 +38,19 @@ index 4f3f6ea43030853bd9df067358a1f4d16c40e6d4..531336c44c46555fef8c001fe8ca00c9
              if (!event.callEvent()) {
                  player.containerMenu.sendAllDataToRemote();
                  return false;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java b/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
+index 209c6b64e79c29ea3bb84ddbe89a8bff66f81d0f..1f90f4b3f310b8cf5750c3a581be178f19b979d2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
+@@ -38,7 +38,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
+     }
+ 
+     public static org.bukkit.loot.LootTable minecraftToBukkit(ResourceKey<LootTable> minecraft) {
+-        return (minecraft == null) ? null : Bukkit.getLootTable(CraftLootTable.minecraftToBukkitKey(minecraft));
++        return (minecraft == null || minecraft.location().getPath().isEmpty()) ? null : Bukkit.getLootTable(CraftLootTable.minecraftToBukkitKey(minecraft)); // Paper - fix some NamespacedKey parsing
+     }
+ 
+     public static NamespacedKey minecraftToBukkitKey(ResourceKey<LootTable> minecraft) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
 index 5c725faae98a126ee0e34eea53cfa484d2315709..d41b502eb451ec11dade2b987aee621511312ac6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
