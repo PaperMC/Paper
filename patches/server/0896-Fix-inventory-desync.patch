@@ -4,18 +4,69 @@ Date: Wed, 23 Aug 2023 13:22:09 -0700
 Subject: [PATCH] Fix inventory desync
 
 
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 992032821110fc658fecc09530097a526f20d74d..b2c7b0d21a386bd0e87f22e1a1dc5b2d314395ed 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -397,6 +397,7 @@ public class ServerPlayer extends Player {
+ 
+     // Use method to resend items in hands in case of client desync, because the item use got cancelled.
+     // For example, when cancelling the leash event
++    @Deprecated // Paper - this shouldn't be used, use the regular sendAllDataToRemote call to resync all
+     public void resendItemInHands() {
+         this.containerMenu.findSlot(this.getInventory(), this.getInventory().selected).ifPresent(s -> {
+             this.containerSynchronizer.sendSlotChange(this.containerMenu, s, this.getMainHandItem());
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 7b10bb9cbf6f2b4a70ddaa0ba4bc7409a17f3f09..66814adfb2cf92067702fc2695b083661cf859c0 100644
+index 7b10bb9cbf6f2b4a70ddaa0ba4bc7409a17f3f09..e671aa59dc60e6d836cbe5b3947a4ca66d914809 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -1468,6 +1468,7 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Targeti
+@@ -1466,8 +1466,9 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Targeti
+         if (itemstack.is(Items.LEAD) && this.canBeLeashed(player)) {
+             // CraftBukkit start - fire PlayerLeashEntityEvent
              if (CraftEventFactory.callPlayerLeashEntityEvent(this, player, player, hand).isCancelled()) {
-                 ((ServerPlayer) player).resendItemInHands(); // SPIGOT-7615: Resend to fix client desync with used item
+-                ((ServerPlayer) player).resendItemInHands(); // SPIGOT-7615: Resend to fix client desync with used item
++                // ((ServerPlayer) player).resendItemInHands(); // SPIGOT-7615: Resend to fix client desync with used item // Paper - handled below
                  ((ServerPlayer) player).connection.send(new ClientboundSetEntityLinkPacket(this, this.getLeashHolder()));
 +                player.containerMenu.sendAllDataToRemote(); // Paper - Fix inventory desync
                  return InteractionResult.PASS;
              }
              // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Cow.java b/src/main/java/net/minecraft/world/entity/animal/Cow.java
+index 5a7b1be351834a6b8889b1380cede1be025cb302..e336934f37075a827843e4b1bb2b6b660d2c60c9 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Cow.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Cow.java
+@@ -101,6 +101,7 @@ public class Cow extends Animal {
+             PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent((ServerLevel) player.level(), player, this.blockPosition(), this.blockPosition(), null, itemstack, Items.MILK_BUCKET, hand);
+ 
+             if (event.isCancelled()) {
++                player.containerMenu.sendAllDataToRemote(); // Paper - Fix inventory desync
+                 return InteractionResult.PASS;
+             }
+             // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java b/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
+index 02e49c7ae5e120302b6479cf3e3934b9217eebf0..376bcbc189008464f4d518c1e07643431ba96306 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
++++ b/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
+@@ -234,6 +234,7 @@ public class Goat extends Animal {
+             PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent((ServerLevel) player.level(), player, this.blockPosition(), this.blockPosition(), null, itemstack, Items.MILK_BUCKET, hand);
+ 
+             if (event.isCancelled()) {
++                player.containerMenu.sendAllDataToRemote(); // Paper - Fix inventory desync
+                 return InteractionResult.PASS;
+             }
+             // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/item/ArmorStandItem.java b/src/main/java/net/minecraft/world/item/ArmorStandItem.java
+index 1634a7d5ff06583408cf2f02f2b5f90931b1e02a..066a6e5ed2632a55324ec0d10f2f8a6bf3f30a0f 100644
+--- a/src/main/java/net/minecraft/world/item/ArmorStandItem.java
++++ b/src/main/java/net/minecraft/world/item/ArmorStandItem.java
+@@ -55,6 +55,7 @@ public class ArmorStandItem extends Item {
+                     entityarmorstand.moveTo(entityarmorstand.getX(), entityarmorstand.getY(), entityarmorstand.getZ(), f, 0.0F);
+                     // CraftBukkit start
+                     if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPlaceEvent(context, entityarmorstand).isCancelled()) {
++                        if (context.getPlayer() != null) context.getPlayer().containerMenu.sendAllDataToRemote(); // Paper - Fix inventory desync
+                         return InteractionResult.FAIL;
+                     }
+                     // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/world/item/BlockItem.java b/src/main/java/net/minecraft/world/item/BlockItem.java
 index fc7d978f9e57814a933b9cb725c3af1e7d403795..96fb69ec6db2e7c8c728435f0c537b076259b2fb 100644
 --- a/src/main/java/net/minecraft/world/item/BlockItem.java
@@ -29,3 +80,27 @@ index fc7d978f9e57814a933b9cb725c3af1e7d403795..96fb69ec6db2e7c8c728435f0c537b07
                                      ((ServerPlayer) entityhuman).getBukkitEntity().updateInventory(); // SPIGOT-4541
                                  }
                                  return InteractionResult.FAIL;
+diff --git a/src/main/java/net/minecraft/world/item/EndCrystalItem.java b/src/main/java/net/minecraft/world/item/EndCrystalItem.java
+index f9a940cdff3983d9d4de46bd5ddc1905f9254dcf..273bb38f14b8af08d123e02742d365fb5d91cdf5 100644
+--- a/src/main/java/net/minecraft/world/item/EndCrystalItem.java
++++ b/src/main/java/net/minecraft/world/item/EndCrystalItem.java
+@@ -49,6 +49,7 @@ public class EndCrystalItem extends Item {
+                         entityendercrystal.setShowBottom(false);
+                         // CraftBukkit start
+                         if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPlaceEvent(context, entityendercrystal).isCancelled()) {
++                            if (context.getPlayer() != null) context.getPlayer().containerMenu.sendAllDataToRemote(); // Paper - Fix inventory desync
+                             return InteractionResult.FAIL;
+                         }
+                         // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/item/MinecartItem.java b/src/main/java/net/minecraft/world/item/MinecartItem.java
+index 66074445d3908b9bb1c8d70e1e27d057720ec8e5..d524fcc191cb95d6ec7f12ae7fceeb8077bb08fc 100644
+--- a/src/main/java/net/minecraft/world/item/MinecartItem.java
++++ b/src/main/java/net/minecraft/world/item/MinecartItem.java
+@@ -137,6 +137,7 @@ public class MinecartItem extends Item {
+ 
+                 // CraftBukkit start
+                 if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPlaceEvent(context, entityminecartabstract).isCancelled()) {
++                    if (context.getPlayer() != null) context.getPlayer().containerMenu.sendAllDataToRemote(); // Paper - Fix inventory desync
+                     return InteractionResult.FAIL;
+                 }
+                 // CraftBukkit end
