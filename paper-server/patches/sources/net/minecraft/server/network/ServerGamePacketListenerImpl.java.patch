@@ -1184,10 +1184,13 @@
                      return;
                  default:
                      throw new IllegalArgumentException("Invalid player action");
-@@ -1218,9 +1885,31 @@
-         }
-     }
+@@ -1215,12 +1882,34 @@
+             Item item = stack.getItem();
  
+             return (item instanceof BlockItem || item instanceof BucketItem) && !player.getCooldowns().isOnCooldown(stack);
++        }
++    }
++
 +    // Spigot start - limit place/interactions
 +    private int limitedPackets;
 +    private long lastLimitedPacket = -1;
@@ -1196,7 +1199,7 @@
 +    private boolean checkLimit(long timestamp) {
 +        if (this.lastLimitedPacket != -1 && timestamp - this.lastLimitedPacket < getSpamThreshold() && this.limitedPackets++ >= 8) { // Paper - Configurable threshold; raise packet limit to 8
 +            return false;
-+        }
+         }
 +
 +        if (this.lastLimitedPacket == -1 || timestamp - this.lastLimitedPacket >= getSpamThreshold()) { // Paper - Configurable threshold
 +            this.lastLimitedPacket = timestamp;
@@ -1205,9 +1208,9 @@
 +        }
 +
 +        return true;
-+    }
+     }
 +    // Spigot end
-+
+ 
      @Override
      public void handleUseItemOn(ServerboundUseItemOnPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
@@ -1840,12 +1843,10 @@
          this.send(new ClientboundPlayerChatPacket(message.link().sender(), message.link().index(), message.signature(), message.signedBody().pack(this.messageSignatureCache), message.unsignedContent(), message.filterMask(), params));
          this.addPendingMessage(message);
      }
-@@ -1701,7 +2738,19 @@
- 
-     public SocketAddress getRemoteAddress() {
+@@ -1703,6 +2740,18 @@
          return this.connection.getRemoteAddress();
-+    }
-+
+     }
+ 
 +    // Spigot Start
 +    public SocketAddress getRawAddress()
 +    {
@@ -1855,11 +1856,12 @@
 +        }
 +        // Paper end - Unix domain socket support
 +        return this.connection.channel.remoteAddress();
-     }
++    }
 +    // Spigot End
- 
++
      public void switchToConfig() {
          this.waitingForSwitchToConfig = true;
+         this.removePlayerFromWorld();
 @@ -1718,9 +2767,17 @@
      @Override
      public void handleInteract(ServerboundInteractPacket packet) {
@@ -2066,7 +2068,7 @@
                  this.player.containerMenu.sendAllDataToRemote();
              } else if (!this.player.containerMenu.stillValid(this.player)) {
                  ServerGamePacketListenerImpl.LOGGER.debug("Player {} interacted with invalid menu {}", this.player, this.player.containerMenu);
-@@ -1855,7 +2987,296 @@
+@@ -1855,7 +2987,315 @@
                      boolean flag = packet.getStateId() != this.player.containerMenu.getStateId();
  
                      this.player.containerMenu.suppressRemoteUpdates();
@@ -2231,6 +2233,25 @@
 +                            }
 +                            break;
 +                        case QUICK_CRAFT:
++                            // Paper start - Fix CraftBukkit drag system
++                            AbstractContainerMenu containerMenu = this.player.containerMenu;
++                            int currentStatus = this.player.containerMenu.quickcraftStatus;
++                            int newStatus = AbstractContainerMenu.getQuickcraftHeader(packet.getButtonNum());
++                            if ((currentStatus != 1 || newStatus != 2 && currentStatus != newStatus)) {
++                            } else if (containerMenu.getCarried().isEmpty()) {
++                            } else if (newStatus == 0) {
++                            } else if (newStatus == 1) {
++                            } else if (newStatus == 2) {
++                                if (!this.player.containerMenu.quickcraftSlots.isEmpty()) {
++                                    if (this.player.containerMenu.quickcraftSlots.size() == 1) {
++                                        int index = containerMenu.quickcraftSlots.iterator().next().index;
++                                        containerMenu.resetQuickCraft();
++                                        this.handleContainerClick(new ServerboundContainerClickPacket(packet.getContainerId(), packet.getStateId(), index, containerMenu.quickcraftType, net.minecraft.world.inventory.ClickType.PICKUP, packet.getCarriedItem(), packet.getChangedSlots()));
++                                        return;
++                                    }
++                                }
++                            }
++                            // Paper end - Fix CraftBukkit drag system
 +                            this.player.containerMenu.clicked(packet.getSlotNum(), packet.getButtonNum(), packet.getClickType(), this.player);
 +                            break;
 +                        case PICKUP_ALL:
@@ -2364,7 +2385,7 @@
                      ObjectIterator objectiterator = Int2ObjectMaps.fastIterable(packet.getChangedSlots()).iterator();
  
                      while (objectiterator.hasNext()) {
-@@ -1879,6 +3300,14 @@
+@@ -1879,6 +3319,14 @@
  
      @Override
      public void handlePlaceRecipe(ServerboundPlaceRecipePacket packet) {
@@ -2379,7 +2400,7 @@
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
          this.player.resetLastActionTime();
          if (!this.player.isSpectator() && this.player.containerMenu.containerId == packet.containerId()) {
-@@ -1900,9 +3329,43 @@
+@@ -1900,8 +3348,42 @@
                                  ServerGamePacketListenerImpl.LOGGER.debug("Player {} tried to place impossible recipe {}", this.player, recipeholder.id().location());
                                  return;
                              }
@@ -2412,7 +2433,7 @@
 +                                return;
 +                            }
 +                            // Paper end - Add PlayerRecipeBookClickEvent - forward to legacy event
- 
++
 +                            // Cast to keyed should be safe as the recipe will never be a MerchantRecipe.
 +                            recipeholder = this.server.getRecipeManager().byKey(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.RECIPE, org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(recipeName))).orElse(null); // Paper - Add PlayerRecipeBookClickEvent - forward to legacy event
 +                            if (recipeholder == null) {
@@ -2420,11 +2441,10 @@
 +                            }
 +                            RecipeBookMenu.PostPlaceAction containerrecipebook_a = containerrecipebook.handlePlacement(makeAll, this.player.isCreative(), recipeholder, this.player.serverLevel(), this.player.getInventory());
 +                            // CraftBukkit end
-+
+ 
                              if (containerrecipebook_a == RecipeBookMenu.PostPlaceAction.PLACE_GHOST_RECIPE) {
                                  this.player.connection.send(new ClientboundPlaceGhostRecipePacket(this.player.containerMenu.containerId, craftingmanager_d.display().display()));
-                             }
-@@ -1917,6 +3380,7 @@
+@@ -1917,6 +3399,7 @@
      @Override
      public void handleContainerButtonClick(ServerboundContainerButtonClickPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
@@ -2432,7 +2452,7 @@
          this.player.resetLastActionTime();
          if (this.player.containerMenu.containerId == packet.containerId() && !this.player.isSpectator()) {
              if (!this.player.containerMenu.stillValid(this.player)) {
-@@ -1945,7 +3409,44 @@
+@@ -1945,7 +3428,44 @@
  
              boolean flag1 = packet.slotNum() >= 1 && packet.slotNum() <= 45;
              boolean flag2 = itemstack.isEmpty() || itemstack.getCount() <= itemstack.getMaxStackSize();
@@ -2477,7 +2497,7 @@
              if (flag1 && flag2) {
                  this.player.inventoryMenu.getSlot(packet.slotNum()).setByPlayer(itemstack);
                  this.player.inventoryMenu.setRemoteSlot(packet.slotNum(), itemstack);
-@@ -1964,7 +3465,19 @@
+@@ -1964,7 +3484,19 @@
  
      @Override
      public void handleSignUpdate(ServerboundSignUpdatePacket packet) {
@@ -2498,7 +2518,7 @@
  
          this.filterTextPacket(list).thenAcceptAsync((list1) -> {
              this.updateSignText(packet, list1);
-@@ -1972,6 +3485,7 @@
+@@ -1972,6 +3504,7 @@
      }
  
      private void updateSignText(ServerboundSignUpdatePacket packet, List<FilteredText> signText) {
@@ -2506,7 +2526,7 @@
          this.player.resetLastActionTime();
          ServerLevel worldserver = this.player.serverLevel();
          BlockPos blockposition = packet.getPos();
-@@ -1993,15 +3507,33 @@
+@@ -1993,15 +3526,33 @@
      @Override
      public void handlePlayerAbilities(ServerboundPlayerAbilitiesPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
@@ -2541,7 +2561,7 @@
          if (this.player.isModelPartShown(PlayerModelPart.HAT) != flag) {
              this.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_HAT, this.player));
          }
-@@ -2012,7 +3544,7 @@
+@@ -2012,7 +3563,7 @@
      public void handleChangeDifficulty(ServerboundChangeDifficultyPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
          if (this.player.hasPermissions(2) || this.isSingleplayerOwner()) {
@@ -2550,7 +2570,7 @@
          }
      }
  
-@@ -2033,7 +3565,7 @@
+@@ -2033,7 +3584,7 @@
  
          if (!Objects.equals(profilepublickey_a, profilepublickey_a1)) {
              if (profilepublickey_a != null && profilepublickey_a1.expiresAt().isBefore(profilepublickey_a.expiresAt())) {
@@ -2559,7 +2579,7 @@
              } else {
                  try {
                      SignatureValidator signaturevalidator = this.server.getProfileKeySignatureValidator();
-@@ -2045,8 +3577,8 @@
+@@ -2045,8 +3596,8 @@
  
                      this.resetPlayerChatState(remotechatsession_a.validate(this.player.getGameProfile(), signaturevalidator));
                  } catch (ProfilePublicKey.ValidationException profilepublickey_b) {
@@ -2570,7 +2590,7 @@
                  }
  
              }
-@@ -2058,7 +3590,7 @@
+@@ -2058,7 +3609,7 @@
          if (!this.waitingForSwitchToConfig) {
              throw new IllegalStateException("Client acknowledged config, but none was requested");
          } else {
@@ -2579,7 +2599,7 @@
          }
      }
  
-@@ -2076,15 +3608,18 @@
+@@ -2076,15 +3627,18 @@
  
      private void resetPlayerChatState(RemoteChatSession session) {
          this.chatSession = session;
@@ -2601,7 +2621,7 @@
  
      @Override
      public void handleClientTickEnd(ServerboundClientTickEndPacket packet) {
-@@ -2115,4 +3650,17 @@
+@@ -2115,4 +3669,17 @@
  
          InteractionResult run(ServerPlayer player, Entity entity, InteractionHand hand);
      }
