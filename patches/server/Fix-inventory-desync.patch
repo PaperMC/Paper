@@ -4,18 +4,69 @@ Date: Wed, 23 Aug 2023 13:22:09 -0700
 Subject: [PATCH] Fix inventory desync
 
 
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
+ 
+     // Use method to resend items in hands in case of client desync, because the item use got cancelled.
+     // For example, when cancelling the leash event
++    @Deprecated // Paper - this shouldn't be used, use the regular sendAllDataToRemote call to resync all
+     public void resendItemInHands() {
+         this.containerMenu.findSlot(this.getInventory(), this.getInventory().selected).ifPresent(s -> {
+             this.containerSynchronizer.sendSlotChange(this.containerMenu, s, this.getMainHandItem());
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
 @@ -0,0 +0,0 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Targeti
+         if (itemstack.is(Items.LEAD) && this.canBeLeashed(player)) {
+             // CraftBukkit start - fire PlayerLeashEntityEvent
              if (CraftEventFactory.callPlayerLeashEntityEvent(this, player, player, hand).isCancelled()) {
-                 ((ServerPlayer) player).resendItemInHands(); // SPIGOT-7615: Resend to fix client desync with used item
+-                ((ServerPlayer) player).resendItemInHands(); // SPIGOT-7615: Resend to fix client desync with used item
++                // ((ServerPlayer) player).resendItemInHands(); // SPIGOT-7615: Resend to fix client desync with used item // Paper - handled below
                  ((ServerPlayer) player).connection.send(new ClientboundSetEntityLinkPacket(this, this.getLeashHolder()));
 +                player.containerMenu.sendAllDataToRemote(); // Paper - Fix inventory desync
                  return InteractionResult.PASS;
              }
              // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Cow.java b/src/main/java/net/minecraft/world/entity/animal/Cow.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Cow.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Cow.java
+@@ -0,0 +0,0 @@ public class Cow extends Animal {
+             PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent((ServerLevel) player.level(), player, this.blockPosition(), this.blockPosition(), null, itemstack, Items.MILK_BUCKET, hand);
+ 
+             if (event.isCancelled()) {
++                player.containerMenu.sendAllDataToRemote(); // Paper - Fix inventory desync
+                 return InteractionResult.PASS;
+             }
+             // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java b/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
++++ b/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
+@@ -0,0 +0,0 @@ public class Goat extends Animal {
+             PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent((ServerLevel) player.level(), player, this.blockPosition(), this.blockPosition(), null, itemstack, Items.MILK_BUCKET, hand);
+ 
+             if (event.isCancelled()) {
++                player.containerMenu.sendAllDataToRemote(); // Paper - Fix inventory desync
+                 return InteractionResult.PASS;
+             }
+             // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/item/ArmorStandItem.java b/src/main/java/net/minecraft/world/item/ArmorStandItem.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/item/ArmorStandItem.java
++++ b/src/main/java/net/minecraft/world/item/ArmorStandItem.java
+@@ -0,0 +0,0 @@ public class ArmorStandItem extends Item {
+                     entityarmorstand.moveTo(entityarmorstand.getX(), entityarmorstand.getY(), entityarmorstand.getZ(), f, 0.0F);
+                     // CraftBukkit start
+                     if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPlaceEvent(context, entityarmorstand).isCancelled()) {
++                        if (context.getPlayer() != null) context.getPlayer().containerMenu.sendAllDataToRemote(); // Paper - Fix inventory desync
+                         return InteractionResult.FAIL;
+                     }
+                     // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/world/item/BlockItem.java b/src/main/java/net/minecraft/world/item/BlockItem.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/item/BlockItem.java
@@ -29,3 +80,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                                      ((ServerPlayer) entityhuman).getBukkitEntity().updateInventory(); // SPIGOT-4541
                                  }
                                  return InteractionResult.FAIL;
+diff --git a/src/main/java/net/minecraft/world/item/EndCrystalItem.java b/src/main/java/net/minecraft/world/item/EndCrystalItem.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/item/EndCrystalItem.java
++++ b/src/main/java/net/minecraft/world/item/EndCrystalItem.java
+@@ -0,0 +0,0 @@ public class EndCrystalItem extends Item {
+                         entityendercrystal.setShowBottom(false);
+                         // CraftBukkit start
+                         if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPlaceEvent(context, entityendercrystal).isCancelled()) {
++                            if (context.getPlayer() != null) context.getPlayer().containerMenu.sendAllDataToRemote(); // Paper - Fix inventory desync
+                             return InteractionResult.FAIL;
+                         }
+                         // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/item/MinecartItem.java b/src/main/java/net/minecraft/world/item/MinecartItem.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/item/MinecartItem.java
++++ b/src/main/java/net/minecraft/world/item/MinecartItem.java
+@@ -0,0 +0,0 @@ public class MinecartItem extends Item {
+ 
+                 // CraftBukkit start
+                 if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPlaceEvent(context, entityminecartabstract).isCancelled()) {
++                    if (context.getPlayer() != null) context.getPlayer().containerMenu.sendAllDataToRemote(); // Paper - Fix inventory desync
+                     return InteractionResult.FAIL;
+                 }
+                 // CraftBukkit end
