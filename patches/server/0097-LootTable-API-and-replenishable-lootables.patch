@@ -77,16 +77,16 @@ index 0000000000000000000000000000000000000000..9e9ea13234703d3e4a39eed2b007e8be
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/PaperLootableBlockInventory.java b/src/main/java/com/destroystokyo/paper/loottable/PaperLootableBlockInventory.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..50a10772f0ba4435dc165385f207866acd4e0e5f
+index 0000000000000000000000000000000000000000..0699c60920333ea1fec04e3c94d952244d2abeae
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/loottable/PaperLootableBlockInventory.java
-@@ -0,0 +1,27 @@
+@@ -0,0 +1,26 @@
 +package com.destroystokyo.paper.loottable;
 +
 +import java.util.Objects;
 +import net.minecraft.core.BlockPos;
-+import org.bukkit.Chunk;
 +import org.bukkit.block.Block;
++import org.bukkit.craftbukkit.block.CraftBlock;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
@@ -103,8 +103,7 @@ index 0000000000000000000000000000000000000000..50a10772f0ba4435dc165385f207866a
 +    @Override
 +    default Block getBlock() {
 +        final BlockPos position = this.getRandomizableContainer().getBlockPos();
-+        final Chunk bukkitChunk = this.getBukkitWorld().getChunkAt(org.bukkit.craftbukkit.block.CraftBlock.at(this.getNMSWorld(), position));
-+        return bukkitChunk.getBlock(position.getX(), position.getY(), position.getZ());
++        return CraftBlock.at(this.getNMSWorld(), position);
 +    }
 +
 +}
@@ -262,10 +261,10 @@ index 0000000000000000000000000000000000000000..9e7c22ef49f1699df298f7121d50d27b
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/PaperLootableInventoryData.java b/src/main/java/com/destroystokyo/paper/loottable/PaperLootableInventoryData.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fc6806aa3ca1537c6bd778d42e30dea330e72bbe
+index 0000000000000000000000000000000000000000..fea92d280c6817cee1f18379d5ed51a3a22ee344
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/loottable/PaperLootableInventoryData.java
-@@ -0,0 +1,262 @@
+@@ -0,0 +1,249 @@
 +package com.destroystokyo.paper.loottable;
 +
 +import io.papermc.paper.configuration.WorldConfiguration;
@@ -282,7 +281,6 @@ index 0000000000000000000000000000000000000000..fc6806aa3ca1537c6bd778d42e30dea3
 +import net.minecraft.world.RandomizableContainer;
 +import net.minecraft.world.entity.vehicle.ContainerEntity;
 +import org.bukkit.entity.Player;
-+import org.bukkit.loot.LootTable;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
@@ -360,8 +358,6 @@ index 0000000000000000000000000000000000000000..fc6806aa3ca1537c6bd778d42e30dea3
 +
 +        boolean hasLootTable(T holder);
 +
-+        void clearLootTable(T holder);
-+
 +        LootableInventory getInventoryForEvent(T holder);
 +    }
 +
@@ -379,11 +375,6 @@ index 0000000000000000000000000000000000000000..fc6806aa3ca1537c6bd778d42e30dea3
 +        @Override
 +        public boolean hasLootTable(final RandomizableContainer holder) {
 +            return holder.getLootTable() != null;
-+        }
-+
-+        @Override
-+        public void clearLootTable(final RandomizableContainer holder) {
-+            holder.setLootTable(null);
 +        }
 +
 +        @Override
@@ -409,17 +400,12 @@ index 0000000000000000000000000000000000000000..fc6806aa3ca1537c6bd778d42e30dea3
 +        }
 +
 +        @Override
-+        public void clearLootTable(final ContainerEntity holder) {
-+            holder.setLootTable(null);
-+        }
-+
-+        @Override
 +        public LootableInventory getInventoryForEvent(final ContainerEntity holder) {
 +            return holder.getLootableInventory();
 +        }
 +    };
 +
-+    public <T> void processRefill(final T lootTableHolder, final LootTableInterface<T> holderInterface, final net.minecraft.world.entity.player.@Nullable Player player) {
++    public <T> boolean shouldClearLootTable(final T lootTableHolder, final LootTableInterface<T> holderInterface, final net.minecraft.world.entity.player.@Nullable Player player) {
 +        this.lastFill = System.currentTimeMillis();
 +        final WorldConfiguration paperConfig = holderInterface.paperConfig(lootTableHolder);
 +        if (paperConfig.lootables.autoReplenish) {
@@ -433,9 +419,9 @@ index 0000000000000000000000000000000000000000..fc6806aa3ca1537c6bd778d42e30dea3
 +            if (player != null) { // This means that numRefills can be incremented without a player being in the lootedPlayers list - Seems to be EntityMinecartChest specific
 +                this.setPlayerLootedState(player.getUUID(), true);
 +            }
-+        } else {
-+            holderInterface.clearLootTable(lootTableHolder);
++            return false;
 +        }
++        return true;
 +    }
 +
 +    private static final String ROOT = "Paper.LootableData";
@@ -529,7 +515,7 @@ index 0000000000000000000000000000000000000000..fc6806aa3ca1537c6bd778d42e30dea3
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/RandomizableContainer.java b/src/main/java/net/minecraft/world/RandomizableContainer.java
-index 155902bc2b99ba36003bceb37ba34958952900d3..00e732ccf5b03a2feb0a4af1c7bb5b735cb7e247 100644
+index 155902bc2b99ba36003bceb37ba34958952900d3..68fadc351464dde459eb4cc86660cf9add40d04e 100644
 --- a/src/main/java/net/minecraft/world/RandomizableContainer.java
 +++ b/src/main/java/net/minecraft/world/RandomizableContainer.java
 @@ -28,7 +28,7 @@ public interface RandomizableContainer extends Container {
@@ -541,15 +527,14 @@ index 155902bc2b99ba36003bceb37ba34958952900d3..00e732ccf5b03a2feb0a4af1c7bb5b73
          this.setLootTable(lootTableId);
          this.setLootTableSeed(lootTableSeed);
      }
-@@ -49,6 +49,7 @@ public interface RandomizableContainer extends Container {
-     }
- 
+@@ -51,13 +51,14 @@ public interface RandomizableContainer extends Container {
      default boolean tryLoadLootTable(CompoundTag nbt) {
-+        if (this.lootableData() != null) this.lootableData().loadNbt(nbt); // Paper - LootTable API
          if (nbt.contains("LootTable", 8)) {
              this.setLootTable(ResourceKey.create(Registries.LOOT_TABLE, new ResourceLocation(nbt.getString("LootTable"))));
++            if (this.lootableData() != null && this.getLootTable() != null) this.lootableData().loadNbt(nbt); // Paper - LootTable API
              if (nbt.contains("LootTableSeed", 4)) {
-@@ -57,13 +58,14 @@ public interface RandomizableContainer extends Container {
+                 this.setLootTableSeed(nbt.getLong("LootTableSeed"));
+             } else {
                  this.setLootTableSeed(0L);
              }
  
@@ -558,14 +543,13 @@ index 155902bc2b99ba36003bceb37ba34958952900d3..00e732ccf5b03a2feb0a4af1c7bb5b73
          } else {
              return false;
          }
-     }
- 
-     default boolean trySaveLootTable(CompoundTag nbt) {
-+        if (this.lootableData() != null) this.lootableData().saveNbt(nbt); // Paper - LootTable API
-         ResourceKey<LootTable> resourceKey = this.getLootTable();
-         if (resourceKey == null) {
+@@ -69,12 +70,13 @@ public interface RandomizableContainer extends Container {
              return false;
-@@ -74,7 +76,7 @@ public interface RandomizableContainer extends Container {
+         } else {
+             nbt.putString("LootTable", resourceKey.location().toString());
++            if (this.lootableData() != null) this.lootableData().saveNbt(nbt); // Paper - LootTable API
+             long l = this.getLootTableSeed();
+             if (l != 0L) {
                  nbt.putLong("LootTableSeed", l);
              }
  
@@ -574,7 +558,7 @@ index 155902bc2b99ba36003bceb37ba34958952900d3..00e732ccf5b03a2feb0a4af1c7bb5b73
          }
      }
  
-@@ -82,13 +84,19 @@ public interface RandomizableContainer extends Container {
+@@ -82,13 +84,17 @@ public interface RandomizableContainer extends Container {
          Level level = this.getLevel();
          BlockPos blockPos = this.getBlockPos();
          ResourceKey<LootTable> resourceKey = this.getLootTable();
@@ -587,16 +571,14 @@ index 155902bc2b99ba36003bceb37ba34958952900d3..00e732ccf5b03a2feb0a4af1c7bb5b73
  
 -            this.setLootTable(null);
 +            // Paper start - LootTable API
-+            if (this.lootableData() == null) {
++            if (this.lootableData() == null || this.lootableData().shouldClearLootTable(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.CONTAINER, player)) {
 +                this.setLootTable(null);
-+            } else {
-+                this.lootableData().processRefill(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.CONTAINER, player);
 +            }
 +            // Paper end - LootTable API
              LootParams.Builder builder = new LootParams.Builder((ServerLevel)level).withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(blockPos));
              if (player != null) {
                  builder.withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player);
-@@ -97,4 +105,16 @@ public interface RandomizableContainer extends Container {
+@@ -97,4 +103,16 @@ public interface RandomizableContainer extends Container {
              lootTable.fill(this, builder.create(LootContextParamSets.CHEST), this.getLootTableSeed());
          }
      }
@@ -661,16 +643,14 @@ index 025e57993b85402c48db29d65ea3ceaf277ff27a..e0aec3b3e04d603dc208029554f981c6
      public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
      private int maxStack = MAX_STACK;
 diff --git a/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java b/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
-index dbde2402fd46b0d06e8efeb90be6fb98d7ae7798..3a7d266d34740405681852b748a2ad9fd56d7f95 100644
+index dbde2402fd46b0d06e8efeb90be6fb98d7ae7798..d976a6e3a79a01392a5033b05864d82782a30916 100644
 --- a/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
-@@ -60,24 +60,24 @@ public interface ContainerEntity extends Container, MenuProvider {
-     }
- 
+@@ -62,22 +62,26 @@ public interface ContainerEntity extends Container, MenuProvider {
      default void addChestVehicleSaveData(CompoundTag nbt, HolderLookup.Provider registriesLookup) {
-+        this.lootableData().saveNbt(nbt); // Paper
          if (this.getLootTable() != null) {
              nbt.putString("LootTable", this.getLootTable().location().toString());
++            this.lootableData().saveNbt(nbt); // Paper
              if (this.getLootTableSeed() != 0L) {
                  nbt.putLong("LootTableSeed", this.getLootTableSeed());
              }
@@ -681,10 +661,14 @@ index dbde2402fd46b0d06e8efeb90be6fb98d7ae7798..3a7d266d34740405681852b748a2ad9f
      }
  
      default void readChestVehicleSaveData(CompoundTag nbt, HolderLookup.Provider registriesLookup) {
-+        this.lootableData().loadNbt(nbt); // Paper
          this.clearItemStacks();
          if (nbt.contains("LootTable", 8)) {
              this.setLootTable(ResourceKey.create(Registries.LOOT_TABLE, new ResourceLocation(nbt.getString("LootTable"))));
++            // Paper start - LootTable API
++            if (this.getLootTable() != null) {
++                this.lootableData().loadNbt(nbt);
++            }
++            // Paper end - LootTable API
              this.setLootTableSeed(nbt.getLong("LootTableSeed"));
 -        } else {
 -            ContainerHelper.loadAllItems(nbt, this.getItemStacks(), registriesLookup);
@@ -693,7 +677,7 @@ index dbde2402fd46b0d06e8efeb90be6fb98d7ae7798..3a7d266d34740405681852b748a2ad9f
      }
  
      default void chestVehicleDestroyed(DamageSource source, Level world, Entity vehicle) {
-@@ -99,13 +99,13 @@ public interface ContainerEntity extends Container, MenuProvider {
+@@ -99,13 +103,17 @@ public interface ContainerEntity extends Container, MenuProvider {
  
      default void unpackChestVehicleLootTable(@Nullable Player player) {
          MinecraftServer minecraftServer = this.level().getServer();
@@ -705,11 +689,15 @@ index dbde2402fd46b0d06e8efeb90be6fb98d7ae7798..3a7d266d34740405681852b748a2ad9f
              }
  
 -            this.setLootTable(null);
-+            this.lootableData().processRefill(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.ENTITY, player); // Paper - LootTable API
++            // Paper start - LootTable API
++            if (this.lootableData().shouldClearLootTable(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.ENTITY, player)) {
++                this.setLootTable(null);
++            }
++            // Paper end - LootTable API
              LootParams.Builder builder = new LootParams.Builder((ServerLevel)this.level()).withParameter(LootContextParams.ORIGIN, this.position());
              if (player != null) {
                  builder.withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player);
-@@ -175,4 +175,14 @@ public interface ContainerEntity extends Container, MenuProvider {
+@@ -175,4 +183,14 @@ public interface ContainerEntity extends Container, MenuProvider {
      default boolean isChestVehicleStillValid(Player player) {
          return !this.isRemoved() && player.canInteractWithEntity(this.getBoundingBox(), 4.0);
      }
