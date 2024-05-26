@@ -1,0 +1,120 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: PlayerSchark <simon@schark.io>
+Date: Sun, 26 May 2024 17:00:14 +0200
+Subject: [PATCH] Improve Riptide API
+
+
+diff --git a/src/main/java/org/bukkit/entity/LivingEntity.java b/src/main/java/org/bukkit/entity/LivingEntity.java
+index b777e530122549455dcce6fac8d4a151c1c0af42..a9cd2712274cf4d4b35bff9f76632873bf99dc74 100644
+--- a/src/main/java/org/bukkit/entity/LivingEntity.java
++++ b/src/main/java/org/bukkit/entity/LivingEntity.java
+@@ -802,6 +802,29 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
+      */
+     public boolean isRiptiding();
+ 
++    // Paper start - Improve Riptide API
++    /**
++     * Starts/Sets the entities riptiding effect for
++     * the specified amount of ticks.<br>
++     * <b>Note: </b> This doesn't currently affect
++     * all entities that extend {@link LivingEntity}.
++     * Some examples include:
++     * <ul>
++     *     <li>{@link EnderDragon}</li>
++     *     <li>{@link ArmorStand}</li>
++     *     <li>and maybe more</li>
++     * </ul>
++     *
++     * @param ticks amount of ticks to be riptiding
++     */
++    public void setRiptiding(int ticks);
++
++    /**
++     * Stops any riptiding currently happening.
++     */
++    public void stopRiptiding();
++    // Paper end - Improve Riptide API
++
+     /**
+      * Returns whether this entity is slumbering.
+      *
+diff --git a/src/main/java/org/bukkit/event/player/PlayerRiptideEvent.java b/src/main/java/org/bukkit/event/player/PlayerRiptideEvent.java
+index b16fd4433d52951cdd36922678cd4deafc91d789..eb4b293fa1869a6c2728f49b2d6451267c4b90e7 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerRiptideEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerRiptideEvent.java
+@@ -18,16 +18,24 @@ public class PlayerRiptideEvent extends PlayerEvent {
+     private static final HandlerList handlers = new HandlerList();
+     private final ItemStack item;
+     private final Vector velocity;
++    // Paper start - Improve Riptide API
++    private int animationTicks;
++    private net.kyori.adventure.sound.Sound sound;
++    // Paper end - Improve Riptide API
+ 
+-    public PlayerRiptideEvent(@NotNull final Player who, @NotNull final ItemStack item, @NotNull Vector velocity) {
++    public PlayerRiptideEvent(@NotNull final Player who, @NotNull final ItemStack item, @NotNull Vector velocity, int animationTicks, net.kyori.adventure.sound.Sound sound) { // Paper - Improve Riptide API
+         super(who);
+         this.item = item;
+         this.velocity = velocity;
++        // Paper start - Improve Riptide API
++        this.animationTicks = animationTicks;
++        this.sound = sound;
++        // Paper end - Improve Riptide API
+     }
+ 
+     @Deprecated
+     public PlayerRiptideEvent(@NotNull final Player who, @NotNull final ItemStack item) {
+-        this(who, item, new Vector());
++        this(who, item, new Vector(), 20, net.kyori.adventure.sound.Sound.sound(org.bukkit.Sound.ITEM_TRIDENT_RIPTIDE_1, net.kyori.adventure.sound.Sound.Source.PLAYER,1F, 1F)); // Paper - Improve Riptide API
+     }
+ 
+     /**
+@@ -60,4 +68,48 @@ public class PlayerRiptideEvent extends PlayerEvent {
+     public static HandlerList getHandlerList() {
+         return handlers;
+     }
++
++    // Paper start - Improve Riptide API
++    /**
++     * Gets the number of ticks the riptide animation
++     * will be shown for.
++     *
++     * @return the animation tick count
++     */
++    public int getAnimationTicks() {
++        return animationTicks;
++    }
++
++    /**
++     * Sets the number of ticks the riptide animation
++     * will be shown for.<br>
++     * Any number less than 1 will prevent the animation
++     * from showing at all.
++     *
++     * @param animationTicks the animation tick count
++     */
++    public void setAnimationTicks(int animationTicks) {
++        this.animationTicks = animationTicks;
++    }
++
++    /**
++     * Gets the Sound that will be played when a player riptides.<br>
++     * Can be null if no sound should be played
++     *
++     * @return played sound
++     */
++    public @org.jetbrains.annotations.Nullable net.kyori.adventure.sound.Sound getSound() {
++        return this.sound;
++    }
++
++    /**
++     * Sets the Sound that will be played when a player riptides.<br>
++     * Can be set to null if no sound should be played
++     *
++     * @param sound played sound
++     */
++    public void setSound(@org.jetbrains.annotations.Nullable net.kyori.adventure.sound.Sound sound) {
++        this.sound = sound;
++    }
++    // Paper end - Improve Riptide API
+ }
