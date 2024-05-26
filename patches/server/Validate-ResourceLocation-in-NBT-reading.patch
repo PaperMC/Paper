@@ -39,6 +39,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.namespace = namespace;
          this.path = path;
      }
+diff --git a/src/main/java/net/minecraft/world/RandomizableContainer.java b/src/main/java/net/minecraft/world/RandomizableContainer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/RandomizableContainer.java
++++ b/src/main/java/net/minecraft/world/RandomizableContainer.java
+@@ -0,0 +0,0 @@ public interface RandomizableContainer extends Container {
+ 
+     default boolean tryLoadLootTable(CompoundTag nbt) {
+         if (nbt.contains("LootTable", 8)) {
+-            this.setLootTable(ResourceKey.create(Registries.LOOT_TABLE, new ResourceLocation(nbt.getString("LootTable"))));
++            this.setLootTable(net.minecraft.Optionull.map(ResourceLocation.tryParse(nbt.getString("LootTable")), rl -> ResourceKey.create(Registries.LOOT_TABLE, rl))); // Paper - Validate ResourceLocation);
+             if (this.lootableData() != null && this.getLootTable() != null) this.lootableData().loadNbt(nbt); // Paper - LootTable API
+             if (nbt.contains("LootTableSeed", 4)) {
+                 this.setLootTableSeed(nbt.getLong("LootTableSeed"));
 diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/EntityType.java
@@ -107,9 +120,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (nbt.contains("LootTable", 8)) {
 -            this.setLootTable(ResourceKey.create(Registries.LOOT_TABLE, new ResourceLocation(nbt.getString("LootTable"))));
 +            this.setLootTable(net.minecraft.Optionull.map(ResourceLocation.tryParse(nbt.getString("LootTable")), rl -> ResourceKey.create(Registries.LOOT_TABLE, rl))); // Paper - Validate ResourceLocation
-             this.setLootTableSeed(nbt.getLong("LootTableSeed"));
-         }
-         ContainerHelper.loadAllItems(nbt, this.getItemStacks(), registriesLookup); // Paper - always save the items, table may still remain
+             // Paper start - LootTable API
+             if (this.getLootTable() != null) {
+                 this.lootableData().loadNbt(nbt);
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
