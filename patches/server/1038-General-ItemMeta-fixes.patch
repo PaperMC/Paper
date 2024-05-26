@@ -150,7 +150,7 @@ index 1ac3bec02fce28d5ce698305a7482a9eccbb1867..b494568f833dc21d4e2447ac3e5c5002
  
          for (Pattern p : this.patterns) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
-index 12911233c01d0ac1af9adbd157d56d28361fc76f..322d5f19d0c156bf6e46202d2e185d8aec455492 100644
+index 12911233c01d0ac1af9adbd157d56d28361fc76f..7c0e4dd99d1b6ce04ddf97e81eff4692878dfb48 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
 @@ -142,9 +142,17 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
@@ -172,7 +172,7 @@ index 12911233c01d0ac1af9adbd157d56d28361fc76f..322d5f19d0c156bf6e46202d2e185d8a
      private CompoundTag internalTag;
  
      CraftMetaBlockState(CraftMetaItem meta, Material material) {
-@@ -153,41 +161,60 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+@@ -153,41 +161,61 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
  
          if (!(meta instanceof CraftMetaBlockState)
                  || ((CraftMetaBlockState) meta).material != material) {
@@ -236,6 +236,7 @@ index 12911233c01d0ac1af9adbd157d56d28361fc76f..322d5f19d0c156bf6e46202d2e185d8a
 -                this.blockEntityTag = blockEntityTag;
 +                // Paper start
 +                for (final DataComponentType type : applied) {
++                    if (CraftMetaItem.DEFAULT_HANDLED_DCTS.contains(type)) continue;
 +                    getOrEmpty(tag, type).ifPresent(value -> {
 +                        map.set(type, value);
 +                    });
@@ -246,7 +247,7 @@ index 12911233c01d0ac1af9adbd157d56d28361fc76f..322d5f19d0c156bf6e46202d2e185d8a
          }
      }
  
-@@ -200,7 +227,10 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+@@ -200,7 +228,10 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
          } else {
              this.material = Material.AIR;
          }
@@ -258,7 +259,7 @@ index 12911233c01d0ac1af9adbd157d56d28361fc76f..322d5f19d0c156bf6e46202d2e185d8a
          this.internalTag = null;
      }
  
-@@ -208,13 +238,20 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+@@ -208,13 +239,20 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
      void applyToItem(CraftMetaItem.Applicator tag) {
          super.applyToItem(tag);
  
@@ -284,7 +285,7 @@ index 12911233c01d0ac1af9adbd157d56d28361fc76f..322d5f19d0c156bf6e46202d2e185d8a
      }
  
      @Override
-@@ -223,14 +260,29 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+@@ -223,14 +261,29 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
  
          if (tag.contains(CraftMetaBlockState.BLOCK_ENTITY_TAG.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
              this.internalTag = tag.getCompound(CraftMetaBlockState.BLOCK_ENTITY_TAG.NBT);
@@ -316,7 +317,7 @@ index 12911233c01d0ac1af9adbd157d56d28361fc76f..322d5f19d0c156bf6e46202d2e185d8a
      }
  
      @Override
-@@ -244,9 +296,10 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+@@ -244,9 +297,10 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
      int applyHash() {
          final int original;
          int hash = original = super.applyHash();
@@ -330,7 +331,7 @@ index 12911233c01d0ac1af9adbd157d56d28361fc76f..322d5f19d0c156bf6e46202d2e185d8a
          return original != hash ? CraftMetaBlockState.class.hashCode() ^ hash : hash;
      }
  
-@@ -258,19 +311,19 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+@@ -258,19 +312,19 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
          if (meta instanceof CraftMetaBlockState) {
              CraftMetaBlockState that = (CraftMetaBlockState) meta;
  
@@ -353,7 +354,7 @@ index 12911233c01d0ac1af9adbd157d56d28361fc76f..322d5f19d0c156bf6e46202d2e185d8a
      }
  
      @Override
-@@ -281,27 +334,50 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+@@ -281,27 +335,53 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
      @Override
      public CraftMetaBlockState clone() {
          CraftMetaBlockState meta = (CraftMetaBlockState) super.clone();
@@ -403,6 +404,9 @@ index 12911233c01d0ac1af9adbd157d56d28361fc76f..322d5f19d0c156bf6e46202d2e185d8a
 +        }
 +        final PatchedDataComponentMap patchedMap = new PatchedDataComponentMap(nmsBlockState.getBlock().asItem().components());
 +        patchedMap.setAll(this.components);
++        final Applicator applicator = new Applicator() {};
++        super.applyToItem(applicator);
++        patchedMap.applyPatch(applicator.build());
 +        blockEntity.applyComponents(nmsBlockState.getBlock().asItem().components(), patchedMap.asPatch());
 +
 +        // This is expected to always return a CraftBlockEntityState for the passed material:
@@ -411,7 +415,7 @@ index 12911233c01d0ac1af9adbd157d56d28361fc76f..322d5f19d0c156bf6e46202d2e185d8a
      }
  
      private static CraftBlockEntityState<?> getBlockState(Material material, CompoundTag blockEntityTag) {
-@@ -331,7 +407,22 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+@@ -331,7 +411,22 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
          Class<?> blockStateType = CraftBlockStates.getBlockStateType(stateMaterial);
          Preconditions.checkArgument(blockStateType == blockState.getClass() && blockState instanceof CraftBlockEntityState, "Invalid blockState for " + this.material);
  
@@ -519,7 +523,7 @@ index f8c02fe01fd95aa5de8523c9ad452d91f5d3c16f..4447c754458e9fdead003b4044bf2bee
          if (this.items == null) {
              this.items = new ArrayList<>();
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaColorableArmor.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaColorableArmor.java
-index 2c9ca54267579a210d4ea192517fc0fbce8e467a..20fdd48779237d1d91d5a8f2325cd9dc824e08b5 100644
+index 2c9ca54267579a210d4ea192517fc0fbce8e467a..4e423c4790d7b03c283c9a5fa94bce4a1153445e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaColorableArmor.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaColorableArmor.java
 @@ -22,16 +22,30 @@ public class CraftMetaColorableArmor extends CraftMetaArmor implements Colorable
@@ -527,7 +531,7 @@ index 2c9ca54267579a210d4ea192517fc0fbce8e467a..20fdd48779237d1d91d5a8f2325cd9dc
      );
  
 -    private Color color = DEFAULT_LEATHER_COLOR;
-+    private Integer color; // Paper - keep color component consistent with vanilla (top bytes are ignored)
++    private Integer color; // Paper - keep color component consistent with vanilla (top byte is ignored)
  
      CraftMetaColorableArmor(CraftMetaItem meta) {
          super(meta);
@@ -662,7 +666,7 @@ index 3f6c5cbbf63631e4b72dc43558651ea94f31ca78..da474a5b963d8e6769d120e9091e60ed
          return true;
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java
-index 8e0dd4b7a7a25a8beb27b507047bc48d8227627c..4c09c57c263b18ee2e0156cc4a49ac02a025c651 100644
+index 8e0dd4b7a7a25a8beb27b507047bc48d8227627c..77489c3ffaa3a72d4cf105499a77150fca6d8526 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java
 @@ -55,7 +55,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
@@ -688,7 +692,7 @@ index 8e0dd4b7a7a25a8beb27b507047bc48d8227627c..4c09c57c263b18ee2e0156cc4a49ac02
  
          for (int color : colors) {
 -            effect.withColor(Color.fromRGB(color));
-+            effect.withColor(Color.fromRGB(color & 0xFFFFFF)); // Paper - try to keep color component consistent with vanilla (top bytes are ignored), this will however change the color component for out of bound color
++            effect.withColor(Color.fromRGB(color & 0xFFFFFF)); // Paper - try to keep color component consistent with vanilla (top byte is ignored), this will however change the color component for out of bound color
          }
  
          for (int color : explosion.fadeColors()) {
@@ -1105,7 +1109,7 @@ index 12a193db7475870e5107c86c7611bb4b92feacb8..c235b80b94fdb6c77766016114713cd5
          return (result != null) ? result : Optional.empty();
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaLeatherArmor.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaLeatherArmor.java
-index 157a7b7351f48e68d2923c72ed3bbe3dcae21383..ce8cd736ababe3e6153efe27f943c027fb920fb2 100644
+index 157a7b7351f48e68d2923c72ed3bbe3dcae21383..70c0d4cc85c045d040a35cd406f3f7ce9b6a58fa 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaLeatherArmor.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaLeatherArmor.java
 @@ -28,16 +28,30 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
@@ -1113,7 +1117,7 @@ index 157a7b7351f48e68d2923c72ed3bbe3dcae21383..ce8cd736ababe3e6153efe27f943c027
      static final ItemMetaKeyType<DyedItemColor> COLOR = new ItemMetaKeyType<>(DataComponents.DYED_COLOR, "color");
  
 -    private Color color = DEFAULT_LEATHER_COLOR;
-+    private Integer color; // Paper - keep color component consistent with vanilla (top bytes are ignored)
++    private Integer color; // Paper - keep color component consistent with vanilla (top byte is ignored)
  
      CraftMetaLeatherArmor(CraftMetaItem meta) {
          super(meta);
@@ -1211,7 +1215,7 @@ index 157a7b7351f48e68d2923c72ed3bbe3dcae21383..ce8cd736ababe3e6153efe27f943c027
          if (CraftMetaLeatherArmor.hasColor(meta)) {
              tag.put(CraftMetaLeatherArmor.COLOR, new DyedItemColor(meta.getColor().asRGB(), !meta.hasItemFlag(ItemFlag.HIDE_DYE)));
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMap.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMap.java
-index d829f4da371b44e7480896118547734be400a314..b6c18563de5b0d7a5a4253bdd01e98d843ce3797 100644
+index d829f4da371b44e7480896118547734be400a314..0ff40e10ce8bab8010222ef7697d585430aeda03 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMap.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMap.java
 @@ -30,7 +30,7 @@ class CraftMetaMap extends CraftMetaItem implements MapMeta {
@@ -1219,7 +1223,7 @@ index d829f4da371b44e7480896118547734be400a314..b6c18563de5b0d7a5a4253bdd01e98d8
      private Integer mapId;
      private byte scaling = CraftMetaMap.SCALING_EMPTY;
 -    private Color color;
-+    private Integer color; // Paper - keep color component consistent with vanilla (top bytes are ignored)
++    private Integer color; // Paper - keep color component consistent with vanilla (top byte is ignored)
  
      CraftMetaMap(CraftMetaItem meta) {
          super(meta);
@@ -1277,7 +1281,7 @@ index 7197c4f5698fd041c4db6d0f6a80c55f77661789..062ef890b42075adb5663453806dda3a
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPotion.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPotion.java
-index db7f71af22d904de08d4badaa7f66d1286d5bf16..b34d581682b81760e35b1748e21a01f5473edf33 100644
+index db7f71af22d904de08d4badaa7f66d1286d5bf16..e32143e140db50a11cf602cf622d68b787c0d647 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPotion.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPotion.java
 @@ -47,7 +47,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
@@ -1285,7 +1289,7 @@ index db7f71af22d904de08d4badaa7f66d1286d5bf16..b34d581682b81760e35b1748e21a01f5
      private PotionType type;
      private List<PotionEffect> customEffects;
 -    private Color color;
-+    private Integer color; // Paper - keep color component consistent with vanilla (top bytes are ignored)
++    private Integer color; // Paper - keep color component consistent with vanilla (top byte is ignored)
  
      CraftMetaPotion(CraftMetaItem meta) {
          super(meta);

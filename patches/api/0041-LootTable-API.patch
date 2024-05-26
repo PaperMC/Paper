@@ -58,10 +58,10 @@ index 0000000000000000000000000000000000000000..b387894fe8001edb41ad2ad2b70ebabe
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/LootableInventory.java b/src/main/java/com/destroystokyo/paper/loottable/LootableInventory.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2b01a50b6e18856f4c9e28340a7a111cae646a0a
+index 0000000000000000000000000000000000000000..b18a0b50c12fe8d8c954e5c070f2ecd1854a2583
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/loottable/LootableInventory.java
-@@ -0,0 +1,125 @@
+@@ -0,0 +1,124 @@
 +package com.destroystokyo.paper.loottable;
 +
 +import org.bukkit.entity.Player;
@@ -101,8 +101,8 @@ index 0000000000000000000000000000000000000000..2b01a50b6e18856f4c9e28340a7a111c
 +     * @param player The player to check
 +     * @return Whether or not this player has looted this block
 +     */
-+    default boolean hasPlayerLooted(@NotNull Player player) {
-+        return hasPlayerLooted(player.getUniqueId());
++    default boolean hasPlayerLooted(final @NotNull Player player) {
++        return this.hasPlayerLooted(player.getUniqueId());
 +    }
 +
 +    /**
@@ -127,9 +127,8 @@ index 0000000000000000000000000000000000000000..2b01a50b6e18856f4c9e28340a7a111c
 +     * @param player The player to check
 +     * @return Timestamp last looted, or null if player has not looted this object
 +     */
-+    @Nullable
-+    default Long getLastLooted(@NotNull Player player) {
-+        return getLastLooted(player.getUniqueId());
++    default @Nullable Long getLastLooted(final @NotNull Player player) {
++        return this.getLastLooted(player.getUniqueId());
 +    }
 +
 +    /**
@@ -147,8 +146,8 @@ index 0000000000000000000000000000000000000000..2b01a50b6e18856f4c9e28340a7a111c
 +     * @param looted true to add player to looted list, false to remove
 +     * @return The previous state of whether the player had looted this or not
 +     */
-+    default boolean setHasPlayerLooted(@NotNull Player player, boolean looted) {
-+        return setHasPlayerLooted(player.getUniqueId(), looted);
++    default boolean setHasPlayerLooted(final @NotNull Player player, final boolean looted) {
++        return this.setHasPlayerLooted(player.getUniqueId(), looted);
 +    }
 +
 +    /**
@@ -271,6 +270,19 @@ index b451191312e4fb19f2131c2d0a0c0337953f6c7c..db6affbc78106b2d93b41953b624a0bc
  
      /**
       * Gets the inventory of the chest block represented by this block state.
+diff --git a/src/main/java/org/bukkit/block/Crafter.java b/src/main/java/org/bukkit/block/Crafter.java
+index 05d6af1681351844a6673a6d0dfca2038dafa7b6..8b2a315ed5dd1c57ce60fc41fd5e83a6495028e6 100644
+--- a/src/main/java/org/bukkit/block/Crafter.java
++++ b/src/main/java/org/bukkit/block/Crafter.java
+@@ -10,7 +10,7 @@ import org.jetbrains.annotations.ApiStatus;
+  */
+ @ApiStatus.Experimental
+ @MinecraftExperimental(Requires.UPDATE_1_21)
+-public interface Crafter extends Container, Lootable {
++public interface Crafter extends Container, com.destroystokyo.paper.loottable.LootableBlockInventory { // Paper - LootTable API
+ 
+     /**
+      * Gets the number of ticks which this block will remain in the crafting
 diff --git a/src/main/java/org/bukkit/block/Dispenser.java b/src/main/java/org/bukkit/block/Dispenser.java
 index 74cd194c9a98245dc52e7e352d7d6c046e1e5cf3..07af1a3f011d4b96275f919d302ac367198e923e 100644
 --- a/src/main/java/org/bukkit/block/Dispenser.java
@@ -355,6 +367,23 @@ index 5b5c3be107fdaa6c55ceb1bca2c223ebc6ab7f43..4ebe1033c55dbd58d0794809435c9352
 -public interface ChestBoat extends Boat, InventoryHolder, Lootable {
 +public interface ChestBoat extends Boat, InventoryHolder, com.destroystokyo.paper.loottable.LootableEntityInventory { // Paper
  }
+diff --git a/src/main/java/org/bukkit/entity/Mob.java b/src/main/java/org/bukkit/entity/Mob.java
+index 2926fa6071bc7640cc10280b5c3962b0ce7686f1..f3f62e13cc1b6172808c52f2d5f520f1f584e6db 100644
+--- a/src/main/java/org/bukkit/entity/Mob.java
++++ b/src/main/java/org/bukkit/entity/Mob.java
+@@ -61,4 +61,12 @@ public interface Mob extends LivingEntity, Lootable {
+      */
+     @Nullable
+     public Sound getAmbientSound();
++
++    // Paper start - LootTable API
++    @Override
++    default void setLootTable(final @Nullable org.bukkit.loot.LootTable table, final long seed) {
++        this.setLootTable(table);
++        this.setSeed(seed);
++    }
++    // Paper end - LootTable API
+ }
 diff --git a/src/main/java/org/bukkit/entity/minecart/HopperMinecart.java b/src/main/java/org/bukkit/entity/minecart/HopperMinecart.java
 index 937b99f8734d71b2ad33af142afbc251b81d9745..db69687a7ad4b18d17ab1677cae5d8dd4dcd3678 100644
 --- a/src/main/java/org/bukkit/entity/minecart/HopperMinecart.java
@@ -394,10 +423,10 @@ index 9ea403e6fd8e960d017660e0aec118abeda2c42b..238d118f7788b13cd86b7e9ea3a0fc38
 +public interface StorageMinecart extends Minecart, InventoryHolder, LootableEntityInventory { // Paper
  }
 diff --git a/src/main/java/org/bukkit/loot/Lootable.java b/src/main/java/org/bukkit/loot/Lootable.java
-index 24a3d989db3bc67e7afe8459a3d4bb132f448ea7..901db852498e0658c79a57582508dab29bf0a798 100644
+index 24a3d989db3bc67e7afe8459a3d4bb132f448ea7..ad4b0fb7f55ed44dc74fb5a4bd36be6004231116 100644
 --- a/src/main/java/org/bukkit/loot/Lootable.java
 +++ b/src/main/java/org/bukkit/loot/Lootable.java
-@@ -36,6 +36,34 @@ public interface Lootable {
+@@ -36,6 +36,31 @@ public interface Lootable {
      @Nullable
      LootTable getLootTable();
  
@@ -408,24 +437,21 @@ index 24a3d989db3bc67e7afe8459a3d4bb132f448ea7..901db852498e0658c79a57582508dab2
 +     * @param table the Loot Table this {@link org.bukkit.block.Container} or {@link org.bukkit.entity.Mob} will have.
 +     * @param seed the seed to used to generate loot. Default is 0.
 +     */
-+    default void setLootTable(@Nullable LootTable table, long seed) {
-+        setLootTable(table);
-+        setSeed(seed);
-+    }
++    void setLootTable(final @Nullable LootTable table, final long seed);
 +
 +    /**
 +     * Returns whether or not this object has a Loot Table
 +     * @return Has a loot table
 +     */
 +    default boolean hasLootTable() {
-+        return getLootTable() != null;
++        return this.getLootTable() != null;
 +    }
 +
 +    /**
 +     * Clears the associated Loot Table to this object
 +     */
 +    default void clearLootTable() {
-+        setLootTable(null);
++        this.setLootTable(null);
 +    }
 +    // Paper end
 +
