@@ -1,198 +1,77 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Tamion <70228790+notTamion@users.noreply.github.com>
-Date: Sun, 12 May 2024 12:08:07 +0200
+Date: Sun, 26 May 2024 22:20:21 +0200
 Subject: [PATCH] Fix CraftBukkit drag system
 
 == AT ==
-public net.minecraft.world.inventory.AbstractContainerMenu quickcraftType
 public net.minecraft.world.inventory.AbstractContainerMenu quickcraftSlots
 
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index c450447585af4c8cdc87abe871c229ff895c3e53..49a3012064ee3d73cf4d5fa1a9e1713f955d8404 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -3118,6 +3118,51 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                             }
+                             break;
+                         case QUICK_CRAFT:
++                            // Paper start - Fix CraftBukkit drag system
++                            if (AbstractContainerMenu.getQuickcraftHeader(packet.getButtonNum()) == 2 && this.player.containerMenu.quickcraftSlots.size() == 1) {
++                                if (packet.getButtonNum() == 6) {
++                                    click = ClickType.RIGHT;
++                                    action = InventoryAction.PLACE_ONE;
++                                } else {
++                                    click = ClickType.LEFT;
++                                    Slot slot = this.player.containerMenu.quickcraftSlots.iterator().next();
++                                    ItemStack clickedItem = slot.getItem();
++                                    ItemStack cursor = this.player.containerMenu.getCarried();
++                                    if (clickedItem.isEmpty()) {
++                                        if (!cursor.isEmpty()) {
++                                            action = InventoryAction.PLACE_ALL;
++                                        }
++                                    } else if (slot.mayPickup(this.player)) {
++                                        if (cursor.isEmpty()) {
++                                            action = InventoryAction.PICKUP_ALL;
++                                        } else if (slot.mayPlace(cursor)) {
++                                            if (ItemStack.isSameItemSameComponents(clickedItem, cursor)) {
++                                                int toPlace = cursor.getCount();
++                                                toPlace = Math.min(toPlace, clickedItem.getMaxStackSize() - clickedItem.getCount());
++                                                toPlace = Math.min(toPlace, slot.container.getMaxStackSize() - clickedItem.getCount());
++                                                if (toPlace == 1) {
++                                                    action = InventoryAction.PLACE_ONE;
++                                                } else if (toPlace == cursor.getCount()) {
++                                                    action = InventoryAction.PLACE_ALL;
++                                                } else if (toPlace != 0) {
++                                                    action = InventoryAction.PLACE_SOME;
++                                                }
++                                            } else if (cursor.getCount() <= slot.getMaxStackSize()) {
++                                                action = InventoryAction.SWAP_WITH_CURSOR;
++                                            }
++                                        } else if (ItemStack.isSameItemSameComponents(cursor, clickedItem)) {
++                                            if (clickedItem.getCount() >= 0) {
++                                                if (clickedItem.getCount() + cursor.getCount() <= cursor.getMaxStackSize()) {
++                                                    action = InventoryAction.PICKUP_ALL;
++                                                }
++                                            }
++                                        }
++                                    }
++                                }
++                                if (!new InventoryClickEvent(inventory, type, this.player.containerMenu.quickcraftSlots.iterator().next().index, click, action).callEvent())
++                                    break;
++                            }
++                            // Paper end - Fix CraftBukkit drag system
+                             this.player.containerMenu.clicked(packet.getSlotNum(), packet.getButtonNum(), packet.getClickType(), this.player);
+                             break;
+                         case PICKUP_ALL:
 diff --git a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
-index 8aa03a367419a749c1d363b4b1ba74ca80973e2f..c4bf03f1197efc22b59632cdf0bbfe01c9815cec 100644
+index a9fe20636cd577bfebe1a0aaa574f58b577f6361..7cec5d109ee14ada38129f3001b49b13b0a1eed8 100644
 --- a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
 +++ b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
-@@ -431,9 +431,9 @@ public abstract class AbstractContainerMenu {
+@@ -431,7 +431,7 @@ public abstract class AbstractContainerMenu {
                  }
              } else if (this.quickcraftStatus == 2) {
                  if (!this.quickcraftSlots.isEmpty()) {
 -                    if (false && this.quickcraftSlots.size() == 1) { // CraftBukkit - treat everything as a drag since we are unable to easily call InventoryClickEvent instead
 +                    if (this.quickcraftSlots.size() == 1) { // Paper - Fix CraftBukkit drag system
                          k = ((Slot) this.quickcraftSlots.iterator().next()).index;
--                        this.resetQuickCraft();
-+                        this.quickcraftStatus = 0; // Paper - Fix CraftBukkit drag system
+                         this.resetQuickCraft();
                          this.doClick(k, this.quickcraftType, ClickType.PICKUP, player);
-                         return;
-                     }
-@@ -553,7 +553,7 @@ public abstract class AbstractContainerMenu {
-                         if (itemstack.isEmpty()) {
-                             if (!itemstack3.isEmpty()) {
-                                 i2 = clickaction == ClickAction.PRIMARY ? itemstack3.getCount() : 1;
--                                this.setCarried(slot.safeInsert(itemstack3, i2));
-+                                this.setCarried(slot.safeInsert(this, itemstack3, i2)); // Paper - Fix CraftBukkit drag system
-                             }
-                         } else if (slot.mayPickup(player)) {
-                             if (itemstack3.isEmpty()) {
-@@ -567,7 +567,7 @@ public abstract class AbstractContainerMenu {
-                             } else if (slot.mayPlace(itemstack3)) {
-                                 if (ItemStack.isSameItemSameComponents(itemstack, itemstack3)) {
-                                     i2 = clickaction == ClickAction.PRIMARY ? itemstack3.getCount() : 1;
--                                    this.setCarried(slot.safeInsert(itemstack3, i2));
-+                                    this.setCarried(slot.safeInsert(this, itemstack3, i2)); // Paper - Fix CraftBukkit drag system
-                                 } else if (itemstack3.getCount() <= slot.getMaxStackSize(itemstack3)) {
-                                     this.setCarried(itemstack);
-                                     slot.setByPlayer(itemstack3);
-@@ -582,6 +582,7 @@ public abstract class AbstractContainerMenu {
-                             }
-                         }
-                     }
-+                    this.quickcraftSlots.clear(); // Paper - Fix CraftBukkit drag system
- 
-                     slot.setChanged();
-                     // CraftBukkit start - Make sure the client has the right slot contents
-diff --git a/src/main/java/net/minecraft/world/inventory/Slot.java b/src/main/java/net/minecraft/world/inventory/Slot.java
-index c39c773112fb8b534b926f2f2b47fe6fbb69fcb2..a2040a2d2fc8afe58e8c5a43744f1df373ac5149 100644
---- a/src/main/java/net/minecraft/world/inventory/Slot.java
-+++ b/src/main/java/net/minecraft/world/inventory/Slot.java
-@@ -7,6 +7,7 @@ import net.minecraft.resources.ResourceLocation;
- import net.minecraft.world.Container;
- import net.minecraft.world.entity.player.Player;
- import net.minecraft.world.item.ItemStack;
-+import org.bukkit.craftbukkit.inventory.CraftItemStack; // Paper - Fix CraftBukkit drag system
- 
- public class Slot {
-     public final int slot;
-@@ -127,21 +128,39 @@ public class Slot {
-     }
- 
-     public ItemStack safeInsert(ItemStack stack, int count) {
-+        // Paper start - Fix CraftBukkit drag system
-+        return this.safeInsert(null, stack, count);
-+    }
-+
-+    public ItemStack safeInsert(AbstractContainerMenu container, ItemStack stack, int count) {
-         if (!stack.isEmpty() && this.mayPlace(stack)) {
-             ItemStack itemStack = this.getItem();
-             int i = Math.min(Math.min(count, stack.getCount()), this.getMaxStackSize(stack) - itemStack.getCount());
--            if (itemStack.isEmpty()) {
--                this.setByPlayer(stack.split(i));
--            } else if (ItemStack.isSameItemSameComponents(itemStack, stack)) {
--                stack.shrink(i);
--                itemStack.grow(i);
--                this.setByPlayer(itemStack);
-+            ItemStack newCursor = stack.copy();
-+            newCursor.shrink(i);
-+            if (container.quickcraftSlots.size() == 1) {
-+                container.setCarried(newCursor);
-+
-+                org.bukkit.event.inventory.InventoryDragEvent event = new org.bukkit.event.inventory.InventoryDragEvent(
-+                    container.getBukkitView(),
-+                    CraftItemStack.asCraftMirror(newCursor),
-+                    CraftItemStack.asBukkitCopy(stack),
-+                    container.quickcraftType != 0,
-+                    java.util.Map.of(this.index, CraftItemStack.asBukkitCopy(stack.copyWithCount(this.getItem().getCount() + i)))
-+                    );
-+
-+                if (event.callEvent()) {
-+                    this.setByPlayer(stack.copyWithCount(this.getItem().getCount() + i));
-+                    return CraftItemStack.asNMSCopy(event.getCursor());
-+                } else {
-+                    return stack;
-+                }
-             }
--
--            return stack;
--        } else {
--            return stack;
-+            this.setByPlayer(stack.copyWithCount(this.getItem().getCount() + i));
-+            return newCursor;
-         }
-+        return stack;
-+        // Paper end - Fix CraftBukkit drag system
-     }
- 
-     public boolean allowModification(Player player) {
-diff --git a/src/main/java/net/minecraft/world/item/BundleItem.java b/src/main/java/net/minecraft/world/item/BundleItem.java
-index 233c50af05085c1ecb069dd2e90d17c85f27e5ab..369fcb09cb1162fb0b1a18bf1aafbf83bc14b47b 100644
---- a/src/main/java/net/minecraft/world/item/BundleItem.java
-+++ b/src/main/java/net/minecraft/world/item/BundleItem.java
-@@ -22,6 +22,7 @@ import net.minecraft.world.inventory.tooltip.TooltipComponent;
- import net.minecraft.world.item.component.BundleContents;
- import net.minecraft.world.level.Level;
- import org.apache.commons.lang3.math.Fraction;
-+import org.bukkit.craftbukkit.inventory.CraftItemStack; // Paper - Fix CraftBukkit drag system
- 
- public class BundleItem extends Item {
-     private static final int BAR_COLOR = Mth.color(0.4F, 0.4F, 1.0F);
-@@ -46,26 +47,64 @@ public class BundleItem extends Item {
-                 return false;
-             } else {
-                 ItemStack itemStack = slot.getItem();
--                BundleContents.Mutable mutable = new BundleContents.Mutable(bundleContents);
-+                // Paper start - Fix CraftBukkit drag system
-                 if (itemStack.isEmpty()) {
-                     this.playRemoveOneSound(player);
--                    ItemStack itemStack2 = mutable.removeOne();
--                    if (itemStack2 != null) {
--                        ItemStack itemStack3 = slot.safeInsert(itemStack2);
--                        mutable.tryInsert(itemStack3);
--                    }
-+                    ItemStack itemStack3 = this.safeInsert(player.containerMenu, stack, slot);
-+                    player.containerMenu.setCarried(itemStack3);
-                 } else if (itemStack.getItem().canFitInsideContainerItems()) {
-+                    BundleContents.Mutable mutable = new BundleContents.Mutable(bundleContents);
-                     int i = mutable.tryTransfer(slot, player);
-                     if (i > 0) {
-                         this.playInsertSound(player);
-                     }
-+                    stack.set(DataComponents.BUNDLE_CONTENTS, mutable.toImmutable());
-                 }
--
--                stack.set(DataComponents.BUNDLE_CONTENTS, mutable.toImmutable());
-+                // Paper end - Fix CraftBukkit drag system
-                 return true;
-             }
-         }
-     }
-+    // Paper start - Fix CraftBukkit drag system
-+    public ItemStack safeInsert(net.minecraft.world.inventory.AbstractContainerMenu container, ItemStack bundle, Slot slot) {
-+        ItemStack newCursor = bundle.copy();
-+        BundleContents bundleContents = newCursor.get(DataComponents.BUNDLE_CONTENTS);
-+        if (bundleContents == null)
-+            return bundle;
-+        BundleContents.Mutable mutable = new BundleContents.Mutable(bundleContents);
-+        ItemStack stack = mutable.removeOne();
-+        if (!(stack == null) && !stack.isEmpty() && slot.mayPlace(stack)) {
-+            int count = stack.getCount();
-+            ItemStack newContent = stack.copy();
-+            ItemStack itemStack = slot.getItem();
-+            int i = Math.min(Math.min(count, stack.getCount()), slot.getMaxStackSize(stack) - itemStack.getCount());
-+            newContent.shrink(i);
-+            mutable.tryInsert(newContent);
-+            newCursor.set(DataComponents.BUNDLE_CONTENTS, mutable.toImmutable());
-+            if (container.quickcraftSlots.size() == 1) {
-+                container.setCarried(newCursor);
-+
-+                org.bukkit.event.inventory.InventoryDragEvent event = new org.bukkit.event.inventory.InventoryDragEvent(
-+                    container.getBukkitView(),
-+                    CraftItemStack.asCraftMirror(newCursor),
-+                    CraftItemStack.asBukkitCopy(bundle),
-+                    container.quickcraftType != 0,
-+                    java.util.Map.of(slot.index, CraftItemStack.asBukkitCopy(stack.copyWithCount(slot.getItem().getCount() + i)))
-+                    );
-+
-+                if (event.callEvent()) {
-+                    slot.setByPlayer(stack.copyWithCount(slot.getItem().getCount() + i));
-+                    return CraftItemStack.asNMSCopy(event.getCursor());
-+                } else {
-+                    return bundle;
-+                }
-+            }
-+            slot.setByPlayer(stack.copyWithCount(slot.getItem().getCount() + i));
-+            return newCursor;
-+        }
-+        return bundle;
-+    }
-+    // Paper end - Fix CraftBukkit drag system
- 
-     @Override
-     public boolean overrideOtherStackedOnMe(
