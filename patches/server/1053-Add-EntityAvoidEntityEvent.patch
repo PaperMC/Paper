@@ -1,0 +1,76 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Joshua Prince <joshua@jtprince.com>
+Date: Sun, 26 May 2024 19:23:43 -0700
+Subject: [PATCH] Add EntityAvoidEntityEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/AvoidEntityGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/AvoidEntityGoal.java
+index ac1287a93bfe32035302f0d3121dc1834c60c6d8..0ee1a942568307392365e716a335ab4975feeef0 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/AvoidEntityGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/AvoidEntityGoal.java
+@@ -89,7 +89,14 @@ public class AvoidEntityGoal<T extends LivingEntity> extends Goal {
+                 return false;
+             } else {
+                 this.path = this.pathNav.createPath(vec3.x, vec3.y, vec3.z, 0);
+-                return this.path != null;
++                // Paper start - Add EntityAvoidEntityEvent
++                if (this.path != null) {
++                    io.papermc.paper.event.entity.EntityAvoidEntityEvent event = new io.papermc.paper.event.entity.EntityAvoidEntityEvent(this.mob.getBukkitEntity(), this.toAvoid.getBukkitLivingEntity());
++                    return event.callEvent();
++                } else {
++                    return false;
++                }
++                // Paper end - Add EntityAvoidEntityEvent
+             }
+         }
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/VillagerHostilesSensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/VillagerHostilesSensor.java
+index 5a4c603e889dc03d006639ec06bc7f70a7ce7474..f7f289c66280e2a6fc6e206d2ead44e4179b76b8 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/sensing/VillagerHostilesSensor.java
++++ b/src/main/java/net/minecraft/world/entity/ai/sensing/VillagerHostilesSensor.java
+@@ -22,7 +22,7 @@ public class VillagerHostilesSensor extends NearestVisibleLivingEntitySensor {
+ 
+     @Override
+     protected boolean isMatchingEntity(LivingEntity entity, LivingEntity target) {
+-        return this.isHostile(target) && this.isClose(entity, target);
++        return this.isHostile(target) && this.isClose(entity, target) && new io.papermc.paper.event.entity.EntityAvoidEntityEvent(entity.getBukkitEntity(), target.getBukkitLivingEntity()).callEvent(); // Paper - Add EntityAvoidEntityEvent
+     }
+ 
+     private boolean isClose(LivingEntity villager, LivingEntity target) {
+diff --git a/src/main/java/net/minecraft/world/entity/animal/armadillo/Armadillo.java b/src/main/java/net/minecraft/world/entity/animal/armadillo/Armadillo.java
+index b38281f963377cc82b360e8457da7cad033b8c36..541bea739fa1e0a2c3342746ac4354a8ed879c9f 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/armadillo/Armadillo.java
++++ b/src/main/java/net/minecraft/world/entity/animal/armadillo/Armadillo.java
+@@ -229,17 +229,28 @@ public class Armadillo extends Animal {
+     public boolean isScaredBy(LivingEntity entity) {
+         if (!this.getBoundingBox().inflate(7.0D, 2.0D, 7.0D).intersects(entity.getBoundingBox())) {
+             return false;
+-        } else if (entity.getType().is(EntityTypeTags.UNDEAD)) {
+-            return true;
++        // Paper start - Add EntityAvoidEntityEvent
++        }
++        boolean isScared;
++        if (entity.getType().is(EntityTypeTags.UNDEAD)) {
++            isScared = true;
+         } else if (this.getLastHurtByMob() == entity) {
+-            return true;
++            isScared = true;
+         } else if (entity instanceof Player) {
+             Player entityhuman = (Player) entity;
+ 
+-            return entityhuman.isSpectator() ? false : entityhuman.isSprinting() || entityhuman.isPassenger();
++            isScared = entityhuman.isSpectator() ? false : entityhuman.isSprinting() || entityhuman.isPassenger();
++        } else {
++            isScared = false;
++        }
++
++        if (isScared) {
++            io.papermc.paper.event.entity.EntityAvoidEntityEvent event = new io.papermc.paper.event.entity.EntityAvoidEntityEvent(this.getBukkitEntity(), entity.getBukkitLivingEntity());
++            return event.callEvent();
+         } else {
+             return false;
+         }
++        // Paper end - Add EntityAvoidEntityEvent
+     }
+ 
+     @Override
