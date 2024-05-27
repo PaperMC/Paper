@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Joshua Prince <joshua@jtprince.com>
+Date: Sun, 26 May 2024 19:23:43 -0700
+Subject: [PATCH] Add EntityScareByEntityEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/animal/armadillo/Armadillo.java b/src/main/java/net/minecraft/world/entity/animal/armadillo/Armadillo.java
+index b38281f963377cc82b360e8457da7cad033b8c36..c9dbf3444c73f2c983d511db33dbf74807e3b82c 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/armadillo/Armadillo.java
++++ b/src/main/java/net/minecraft/world/entity/animal/armadillo/Armadillo.java
+@@ -229,17 +229,24 @@ public class Armadillo extends Animal {
+     public boolean isScaredBy(LivingEntity entity) {
+         if (!this.getBoundingBox().inflate(7.0D, 2.0D, 7.0D).intersects(entity.getBoundingBox())) {
+             return false;
+-        } else if (entity.getType().is(EntityTypeTags.UNDEAD)) {
+-            return true;
++        // Paper start - Add EntityScareByEntityEvent
++        }
++        boolean isScared;
++        if (entity.getType().is(EntityTypeTags.UNDEAD)) {
++            isScared = true;
+         } else if (this.getLastHurtByMob() == entity) {
+-            return true;
++            isScared = true;
+         } else if (entity instanceof Player) {
+             Player entityhuman = (Player) entity;
+ 
+-            return entityhuman.isSpectator() ? false : entityhuman.isSprinting() || entityhuman.isPassenger();
++            isScared = entityhuman.isSpectator() ? false : entityhuman.isSprinting() || entityhuman.isPassenger();
+         } else {
+-            return false;
++            isScared = false;
+         }
++        io.papermc.paper.event.entity.EntityScareByEntityEvent event = new io.papermc.paper.event.entity.EntityScareByEntityEvent(this.getBukkitEntity(), entity.getBukkitLivingEntity());
++        event.setCancelled(!isScared);
++        return event.callEvent();
++        // Paper end - Add EntityScareByEntityEvent
+     }
+ 
+     @Override
