@@ -250,6 +250,14 @@ public abstract class PotionEffectType implements Keyed, Translatable {
     public abstract boolean isInstant();
 
     /**
+     * Returns the {@link PotionEffectTypeCategory category} of this effect type.
+     *
+     * @return the category
+     */
+    @NotNull
+    public abstract PotionEffectTypeCategory getCategory();
+
+    /**
      * Returns the color of this effect type.
      *
      * @return the color
