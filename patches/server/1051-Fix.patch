@@ -5,42 +5,48 @@ Subject: [PATCH] Fix
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
-index 31b8a8bf78d52b5f11b68e780ec09bf78e7bda84..c9d7d3ab2863383ddbf01b6f784c566fca821e44 100644
+index 31b8a8bf78d52b5f11b68e780ec09bf78e7bda84..0b5f504299d7e6ff2a3bc4f49d25f4f5c05529c0 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
-@@ -226,36 +226,46 @@ public abstract class AbstractArrow extends Projectile {
+@@ -225,37 +225,47 @@ public abstract class AbstractArrow extends Projectile {
+                 vec3d1 = ((HitResult) object).getLocation();
              }
  
-             while (!this.isRemoved()) {
+-            while (!this.isRemoved()) {
 -                EntityHitResult movingobjectpositionentity = this.findHitEntity(vec3d2, vec3d1);
+-
+-                if (movingobjectpositionentity != null) {
+-                    object = movingobjectpositionentity;
+-                }
++            EntityHitResult[] hitResults = ProjectileUtil.getEntityHitResults(this.level(), this, vec3d2, vec3d1, this.getBoundingBox().expandTowards(this.getDeltaMovement()).inflate(1.0D), this::canHitEntity, 0.3f);
++            if (hitResults.length == 0)
++                hitResults = new EntityHitResult[]{null};
++            for (EntityHitResult movingobjectpositionentity : hitResults) {
 +                boolean shouldBreak = false;
-+                EntityHitResult[] hitResults = ProjectileUtil.getEntityHitResults(this.level(), this, vec3d2, vec3d1, this.getBoundingBox().expandTowards(this.getDeltaMovement()).inflate(1.0D), this::canHitEntity, 0.3f);
-+                if (hitResults.length == 0)
-+                    hitResults = new EntityHitResult[]{null};
-+                for (EntityHitResult movingobjectpositionentity : hitResults) {
++                while (!this.isRemoved()) {
 +                    if (movingobjectpositionentity != null) {
 +                        object = movingobjectpositionentity;
 +                    }
  
--                if (movingobjectpositionentity != null) {
--                    object = movingobjectpositionentity;
--                }
+-                if (object != null && ((HitResult) object).getType() == HitResult.Type.ENTITY) {
+-                    Entity entity = ((EntityHitResult) object).getEntity();
+-                    Entity entity1 = this.getOwner();
 +                    if (object != null && ((HitResult) object).getType() == HitResult.Type.ENTITY) {
 +                        Entity entity = ((EntityHitResult) object).getEntity();
 +                        Entity entity1 = this.getOwner();
  
--                if (object != null && ((HitResult) object).getType() == HitResult.Type.ENTITY) {
--                    Entity entity = ((EntityHitResult) object).getEntity();
--                    Entity entity1 = this.getOwner();
+-                    if (entity instanceof Player && entity1 instanceof Player && !((Player) entity1).canHarmPlayer((Player) entity)) {
+-                        object = null;
+-                        movingobjectpositionentity = null;
 +                        if (entity instanceof Player && entity1 instanceof Player && !((Player) entity1).canHarmPlayer((Player) entity)) {
 +                            object = null;
 +                            movingobjectpositionentity = null;
 +                        }
-+                    }
+                     }
+-                }
  
--                    if (entity instanceof Player && entity1 instanceof Player && !((Player) entity1).canHarmPlayer((Player) entity)) {
--                        object = null;
--                        movingobjectpositionentity = null;
+-                if (object != null && !flag) {
+-                    ProjectileDeflection projectiledeflection = this.preHitTargetOrDeflectSelf((HitResult) object); // CraftBukkit - projectile hit event
 +                    org.bukkit.event.entity.ProjectileHitEvent event = null;
 +                    if (object != null && !flag) {
 +                        com.mojang.datafixers.util.Pair<ProjectileDeflection, org.bukkit.event.entity.ProjectileHitEvent> projectiledeflection = this.preHitTargetOrDeflectSelf((HitResult) object); // CraftBukkit - projectile hit event
@@ -48,31 +54,27 @@ index 31b8a8bf78d52b5f11b68e780ec09bf78e7bda84..c9d7d3ab2863383ddbf01b6f784c566f
 +                        event = projectiledeflection.getSecond();
 +                        this.hasImpulse = true;
 +                        if (projectiledeflection.getFirst() != ProjectileDeflection.NONE) {
-+                            shouldBreak = true;
++                            break;
 +                        }
-                     }
--                }
- 
--                if (object != null && !flag) {
--                    ProjectileDeflection projectiledeflection = this.preHitTargetOrDeflectSelf((HitResult) object); // CraftBukkit - projectile hit event
-+                    if (movingobjectpositionentity == null || this.getPierceLevel() <= 0) {
-+                        shouldBreak = true;
 +                    }
  
 -                    this.hasImpulse = true;
 -                    if (projectiledeflection != ProjectileDeflection.NONE) {
++                    if (movingobjectpositionentity == null || this.getPierceLevel() <= 0) {
+                         break;
+                     }
+-                }
+ 
+-                if (movingobjectpositionentity == null || this.getPierceLevel() <= 0) {
+-                    break;
 +                    object = null;
 +                    if (event != null & !event.isCancelled())
-                         break;
--                    }
++                        shouldBreak = true;
                  }
 -
--                if (movingobjectpositionentity == null || this.getPierceLevel() <= 0) {
-+                if (shouldBreak)
-                     break;
--                }
--
 -                object = null;
++                if (shouldBreak)
++                    break;
              }
  
              vec3d = this.getDeltaMovement();
@@ -203,15 +205,14 @@ index 74c596264d4da551437bd2a23e1c70022cfc73fc..73247671f2ff99d3d038ad9ef2f88d2a
      // CraftBukkit end
  
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/ProjectileUtil.java b/src/main/java/net/minecraft/world/entity/projectile/ProjectileUtil.java
-index 877365a953a0debd14ca8d33073754452ea2f026..3b2ded1089515f3684233c45913b5c0fd907cfdc 100644
+index 877365a953a0debd14ca8d33073754452ea2f026..9ed981a479b52623d995fce9f426bba6ff728a9c 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/ProjectileUtil.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/ProjectileUtil.java
-@@ -159,4 +159,59 @@ public final class ProjectileUtil {
+@@ -159,4 +159,58 @@ public final class ProjectileUtil {
          abstractArrow.setEnchantmentEffectsFromEntity(entity, damageModifier);
          return abstractArrow;
      }
 +
-+    @org.jetbrains.annotations.NotNull
 +    public static EntityHitResult[] getEntityHitResults(Level world, Entity entity, Vec3 min, Vec3 max, AABB box, Predicate<Entity> predicate, float margin) {
 +        java.util.TreeMap<Double, Entity> entities = new java.util.TreeMap<>();
 +
