@@ -21,7 +21,7 @@ public abstract class CraftTag<N, B extends Keyed> implements Tag<B> {
         this.handle = registry.getTag(this.tag).orElseThrow();
     }
 
-    protected HolderSet.Named<N> getHandle() {
+    public HolderSet.Named<N> getHandle() {
         return handle;
     }
 

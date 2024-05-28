@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.legacy;
 
+import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -60,6 +61,7 @@ import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.inventory.StonecuttingRecipe;
 import org.bukkit.inventory.meta.BlockDataMeta;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.components.ToolComponent;
 import org.bukkit.material.MaterialData;
 import org.bukkit.packs.DataPackManager;
 import org.bukkit.scoreboard.Criteria;
@@ -577,5 +579,25 @@ public class MaterialRerouting {
     @Deprecated
     public static FallingBlock spawnFallingBlock(World world, Location location, Material material, byte data) {
         return world.spawnFallingBlock(location, CraftBlockData.fromData(CraftMagicNumbers.getBlock(material, data)));
+    }
+
+    public static ToolComponent.ToolRule addRule(ToolComponent toolComponent, Material block, Float speed, Boolean correctForDrops) {
+        return toolComponent.addRule(transformToBlockType(block), speed, correctForDrops);
+    }
+
+    public static ToolComponent.ToolRule addRule(ToolComponent toolComponent, Collection<Material> blocks, Float speed, Boolean correctForDrops) {
+        return toolComponent.addRule(blocks.stream().map(MaterialRerouting::transformToBlockType).collect(Collectors.toList()), speed, correctForDrops);
+    }
+
+    public static Collection<Material> getBlocks(ToolComponent.ToolRule toolRule, @InjectPluginVersion ApiVersion version) {
+        return toolRule.getBlocks().stream().map(val -> transformFromBlockType(val, version)).toList();
+    }
+
+    public static void setBlocks(ToolComponent.ToolRule toolRule, Material block) {
+        toolRule.setBlocks(transformToBlockType(block));
+    }
+
+    public static void setBlocks(ToolComponent.ToolRule toolRule, Collection<Material> blocks) {
+        toolRule.setBlocks(blocks.stream().map(MaterialRerouting::transformToBlockType).toList());
     }
 }

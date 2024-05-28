@@ -19,6 +19,7 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftEntityType;
 import org.bukkit.craftbukkit.inventory.components.CraftFoodComponent;
+import org.bukkit.craftbukkit.inventory.components.CraftToolComponent;
 import org.bukkit.craftbukkit.util.CraftLegacy;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -36,6 +37,8 @@ public final class CraftItemFactory implements ItemFactory {
         ConfigurationSerialization.registerClass(SerializableMeta.class);
         ConfigurationSerialization.registerClass(CraftFoodComponent.class);
         ConfigurationSerialization.registerClass(CraftFoodComponent.CraftFoodEffect.class);
+        ConfigurationSerialization.registerClass(CraftToolComponent.class);
+        ConfigurationSerialization.registerClass(CraftToolComponent.CraftToolRule.class);
     }
 
     private CraftItemFactory() {
