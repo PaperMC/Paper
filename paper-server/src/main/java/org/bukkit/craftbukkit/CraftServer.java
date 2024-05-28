@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
+import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
@@ -302,6 +303,7 @@ public final class CraftServer implements Server {
     public boolean ignoreVanillaPermissions = false;
     private final List<CraftPlayer> playerView;
     public int reloadCount;
+    public Set<String> activeCompatibilities = Collections.emptySet();
 
     static {
         ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
@@ -377,6 +379,7 @@ public final class CraftServer implements Server {
         TicketType.PLUGIN.timeout = configuration.getInt("chunk-gc.period-in-ticks");
         minimumAPI = ApiVersion.getOrCreateVersion(configuration.getString("settings.minimum-api"));
         loadIcon();
+        loadCompatibilities();
 
         // Set map color cache
         if (configuration.getBoolean("settings.use-map-color-cache")) {
@@ -417,6 +420,25 @@ public final class CraftServer implements Server {
             commandsConfiguration.save(getCommandsConfigFile());
         } catch (IOException ex) {
             Logger.getLogger(CraftServer.class.getName()).log(Level.SEVERE, "Could not save " + getCommandsConfigFile(), ex);
+        }
+    }
+
+    private void loadCompatibilities() {
+        ConfigurationSection compatibilities = configuration.getConfigurationSection("settings.compatibility");
+        if (compatibilities == null) {
+            activeCompatibilities = Collections.emptySet();
+            return;
+        }
+
+        activeCompatibilities = compatibilities
+                .getKeys(false)
+                .stream()
+                .filter(compatibilities::getBoolean)
+                .collect(Collectors.toSet());
+
+        if (!activeCompatibilities.isEmpty()) {
+            logger.info("Using following compatibilities: `" + Joiner.on("`, `").join(activeCompatibilities) + "`, this will affect performance and other plugins behavior.");
+            logger.info("Only use when necessary and prefer updating plugins if possible.");
         }
     }
 
@@ -896,6 +918,7 @@ public final class CraftServer implements Server {
         printSaveWarning = false;
         console.autosavePeriod = configuration.getInt("ticks-per.autosave");
         loadIcon();
+        loadCompatibilities();
 
         try {
             playerList.getIpBans().load();

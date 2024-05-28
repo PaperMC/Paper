@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
@@ -117,7 +118,7 @@ public class Commodore {
                             byte[] b = ByteStreams.toByteArray(is);
 
                             if (entry.getName().endsWith(".class")) {
-                                b = convert(b, "dummy", ApiVersion.NONE);
+                                b = convert(b, "dummy", ApiVersion.NONE, Collections.emptySet());
                                 entry = new JarEntry(entry.getName());
                             }
 
@@ -135,7 +136,7 @@ public class Commodore {
         }
     }
 
-    public static byte[] convert(byte[] b, final String pluginName, final ApiVersion pluginVersion) {
+    public static byte[] convert(byte[] b, final String pluginName, final ApiVersion pluginVersion, final Set<String> activeCompatibilities) {
         final boolean modern = pluginVersion.isNewerThanOrSameAs(ApiVersion.FLATTENING);
         ClassReader cr = new ClassReader(b);
         ClassWriter cw = new ClassWriter(cr, 0);
@@ -385,7 +386,7 @@ public class Commodore {
                     }
 
                     private boolean checkReroute(MethodPrinter visitor, Map<String, RerouteMethodData> rerouteMethodDataMap, int opcode, String owner, String name, String desc, Type samMethodType, Type instantiatedMethodType) {
-                        return rerouteMethods(rerouteMethodDataMap, opcode == Opcodes.INVOKESTATIC || opcode == Opcodes.H_INVOKESTATIC, owner, name, desc, data -> {
+                        return rerouteMethods(activeCompatibilities, rerouteMethodDataMap, opcode == Opcodes.INVOKESTATIC || opcode == Opcodes.H_INVOKESTATIC, owner, name, desc, data -> {
                             visitor.visit(Opcodes.INVOKESTATIC, className, buildMethodName(data), buildMethodDesc(data), isInterface, samMethodType, instantiatedMethodType);
                             rerouteMethodData.add(data);
                         });
@@ -555,7 +556,7 @@ public class Commodore {
     But since it is only applied for each class and method call once when they get first loaded, it should not be that bad.
     (Although some load time testing could be done)
      */
-    public static boolean rerouteMethods(Map<String, RerouteMethodData> rerouteMethodDataMap, boolean staticCall, String owner, String name, String desc, Consumer<RerouteMethodData> consumer) {
+    public static boolean rerouteMethods(Set<String> activeCompatibilities, Map<String, RerouteMethodData> rerouteMethodDataMap, boolean staticCall, String owner, String name, String desc, Consumer<RerouteMethodData> consumer) {
         Type ownerType = Type.getObjectType(owner);
         Class<?> ownerClass;
         try {
@@ -576,6 +577,10 @@ public class Commodore {
                     return false;
                 }
                 continue;
+            }
+
+            if (data.requiredCompatibility() != null && !activeCompatibilities.contains(data.requiredCompatibility())) {
+                return false;
             }
 
             consumer.accept(data);

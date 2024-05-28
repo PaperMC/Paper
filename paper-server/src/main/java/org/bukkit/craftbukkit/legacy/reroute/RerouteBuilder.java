@@ -112,6 +112,11 @@ public class RerouteBuilder {
 
         boolean inBukkit = !method.isAnnotationPresent(NotInBukkit.class);
 
-        return new RerouteMethodData(methodKey, sourceDesc, sourceOwner, methodName, rerouteStatic != null, targetType, Type.getInternalName(method.getDeclaringClass()), method.getName(), arguments, rerouteReturn, inBukkit);
+        String requiredCompatibility = null;
+        if (method.isAnnotationPresent(RequireCompatibility.class)) {
+            requiredCompatibility = method.getAnnotation(RequireCompatibility.class).value();
+        }
+
+        return new RerouteMethodData(methodKey, sourceDesc, sourceOwner, methodName, rerouteStatic != null, targetType, Type.getInternalName(method.getDeclaringClass()), method.getName(), arguments, rerouteReturn, inBukkit, requiredCompatibility);
     }
 }
