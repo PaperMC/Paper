@@ -18,6 +18,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v7
+        env:
+          BRANCH_NAME: "${{ github.event.workflow_run.head_branch }}"
+          PR_OWNER: "${{ github.event.workflow_run.head_repository.owner.login }}"
+          PR_SHA: "${{ github.event.workflow_run.head_sha }}"
+          RUN_ID: "${{ github.event.workflow_run.id }}"
+          REPO_ID: "${{ github.event.repository.id }}"
+          EVENT_TYPE: "${{ github.event.workflow_run.event}}"
+          PULL_REQUESTS: "${{ toJSON(github.event.workflow_run.pull_requests) }}"
         with:
           # This snippet is public-domain, taken from
           # https://github.com/oprypin/nightly.link/blob/master/.github/workflows/pr-comment.yml
@@ -37,17 +45,17 @@ jobs:
             }
 
             const { owner, repo } = context.repo;
-            const run_id = ${{ github.event.workflow_run.id }};
-            const repo_id = ${{ github.event.repository.id }};
+            const run_id = `${process.env.RUN_ID}`;
+            const repo_id = `${process.env.REPO_ID}`;
 
             let pulls = [];
-            const event_type = "${{ github.event.workflow_run.event}}";
+            const event_type = `${process.env.EVENT_TYPE}`;
             if (event_type === "push") { // if push, it's from the same repo which means `pull_requests` is populated
-              pulls = ${{ toJSON(github.event.workflow_run.pull_requests) }};
+              pulls = JSON.parse(`${process.env.PULL_REQUESTS}`);
             } else {
-              const pr_branch = "${{ github.event.workflow_run.head_branch }}";
-              const pr_sha = "${{ github.event.workflow_run.head_sha }}";
-              const pr_owner = "${{ github.event.workflow_run.head_repository.owner.login }}";
+              const pr_branch = `${process.env.BRANCH_NAME}`;
+              const pr_sha = `${process.env.PR_SHA}`;
+              const pr_owner = `${process.env.PR_OWNER}`;
               const { data } = await github.rest.pulls.list({ owner, repo, head: `${pr_owner}:${pr_branch}`, state: "open" });
               core.debug(JSON.stringify(data, null, 2));
               pulls = data.filter((pr) => pr.head.sha === pr_sha && pr.labels.find((l) => l.name === "build-pr-jar"));
