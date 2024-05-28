@@ -10,6 +10,7 @@ import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionEffectTypeCategory;
 import org.jetbrains.annotations.NotNull;
 
 public class CraftPotionEffectType extends PotionEffectType implements Handleable<MobEffectList> {
@@ -110,6 +111,11 @@ public class CraftPotionEffectType extends PotionEffectType implements Handleabl
     @Override
     public boolean isInstant() {
         return handle.isInstantenous();
+    }
+
+    @Override
+    public PotionEffectTypeCategory getCategory() {
+        return CraftPotionEffectTypeCategory.minecraftToBukkit(handle.getCategory());
     }
 
     @Override

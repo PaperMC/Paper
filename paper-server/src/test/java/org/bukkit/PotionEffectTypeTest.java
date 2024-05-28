@@ -8,8 +8,11 @@ import java.util.Collections;
 import java.util.List;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.MinecraftKey;
+import net.minecraft.world.effect.MobEffectInfo;
+import org.bukkit.craftbukkit.potion.CraftPotionEffectTypeCategory;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionEffectTypeCategory;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.jupiter.api.Test;
 
@@ -30,5 +33,17 @@ public class PotionEffectTypeTest extends AbstractTestingBase {
         }
 
         assertThat(effects, is(Collections.EMPTY_LIST), "org.bukkit.PotionEffectType has too many effects");
+    }
+
+    @Test
+    public void verifyCategories() {
+        for (PotionEffectTypeCategory category : PotionEffectTypeCategory.values()) {
+            String categoryName = category.name();
+            assertDoesNotThrow(() -> CraftPotionEffectTypeCategory.bukkitToMinecraft(category), "PotionEffectTypeCategory." + categoryName + " exists but MobEffectInfo." + categoryName + " does not!");
+        }
+
+        for (MobEffectInfo info : MobEffectInfo.values()) {
+            assertDoesNotThrow(() -> CraftPotionEffectTypeCategory.minecraftToBukkit(info), "Missing PotionEffectTypeCategory for MobEffectInfo." + info.name());
+        }
     }
 }
