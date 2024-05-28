@@ -5,10 +5,10 @@ Subject: [PATCH] Fix ProjectileHitEvent not calling for multiple entities
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
-index 31b8a8bf78d52b5f11b68e780ec09bf78e7bda84..3a4a54c3a5e73675605bd49267f87c4af39f823c 100644
+index 31b8a8bf78d52b5f11b68e780ec09bf78e7bda84..7458ada0ec5ade2b8b1273a83cc2d8337018b37b 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
-@@ -225,37 +225,47 @@ public abstract class AbstractArrow extends Projectile {
+@@ -225,37 +225,48 @@ public abstract class AbstractArrow extends Projectile {
                  vec3d1 = ((HitResult) object).getLocation();
              }
  
@@ -18,6 +18,7 @@ index 31b8a8bf78d52b5f11b68e780ec09bf78e7bda84..3a4a54c3a5e73675605bd49267f87c4a
 -                if (movingobjectpositionentity != null) {
 -                    object = movingobjectpositionentity;
 -                }
++            // Paper start - Fix ProjectileHitEvent not calling for multiple entities
 +            EntityHitResult[] hitResults = ProjectileUtil.getEntityHitResults(this.level(), this, vec3d2, vec3d1, this.getBoundingBox().expandTowards(this.getDeltaMovement()).inflate(1.0D), this::canHitEntity, 0.3f);
 +            if (hitResults.length == 0)
 +                hitResults = new EntityHitResult[]{null};
@@ -47,7 +48,6 @@ index 31b8a8bf78d52b5f11b68e780ec09bf78e7bda84..3a4a54c3a5e73675605bd49267f87c4a
  
 -                if (object != null && !flag) {
 -                    ProjectileDeflection projectiledeflection = this.preHitTargetOrDeflectSelf((HitResult) object); // CraftBukkit - projectile hit event
-+                    org.bukkit.event.entity.ProjectileHitEvent event = null;
 +                    if (object != null && !flag) {
 +                        com.mojang.datafixers.util.Pair<ProjectileDeflection, org.bukkit.event.entity.ProjectileHitEvent> projectiledeflection = this.preHitTargetOrDeflectSelf((HitResult) object); // CraftBukkit - projectile hit event
 +
@@ -75,23 +75,24 @@ index 31b8a8bf78d52b5f11b68e780ec09bf78e7bda84..3a4a54c3a5e73675605bd49267f87c4a
 -                object = null;
 +                if (shouldBreak)
 +                    break;
++                // Paper end - Fix ProjectileHitEvent not calling for multiple entities
              }
  
              vec3d = this.getDeltaMovement();
-@@ -307,7 +317,7 @@ public abstract class AbstractArrow extends Projectile {
+@@ -307,7 +318,7 @@ public abstract class AbstractArrow extends Projectile {
  
      // Paper start - Fix cancelling ProjectileHitEvent for piercing arrows
      @Override
 -    public ProjectileDeflection preHitTargetOrDeflectSelf(HitResult hitResult) {
-+    public com.mojang.datafixers.util.Pair<ProjectileDeflection, org.bukkit.event.entity.ProjectileHitEvent> preHitTargetOrDeflectSelf(HitResult hitResult) {
++    public com.mojang.datafixers.util.Pair<ProjectileDeflection, org.bukkit.event.entity.ProjectileHitEvent> preHitTargetOrDeflectSelf(HitResult hitResult) { // Paper - Fix ProjectileHitEvent not calling for multiple entities
          if (hitResult instanceof EntityHitResult entityHitResult && this.hitCancelled && this.getPierceLevel() > 0) {
              if (this.piercingIgnoreEntityIds == null) {
                  this.piercingIgnoreEntityIds = new IntOpenHashSet(5);
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractHurtingProjectile.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractHurtingProjectile.java
-index a81d6a52674ddf7f818a7665cccd21dd8ea86cbe..e6fa2a26a09ac51863ac787cf84dd4873acdea0b 100644
+index a81d6a52674ddf7f818a7665cccd21dd8ea86cbe..7dacaa1de07a80ea00db5279fae98b8a3612ccd3 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/AbstractHurtingProjectile.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractHurtingProjectile.java
-@@ -85,16 +85,18 @@ public abstract class AbstractHurtingProjectile extends Projectile {
+@@ -85,16 +85,20 @@ public abstract class AbstractHurtingProjectile extends Projectile {
                  this.igniteForSeconds(1);
              }
  
@@ -103,10 +104,11 @@ index a81d6a52674ddf7f818a7665cccd21dd8ea86cbe..e6fa2a26a09ac51863ac787cf84dd487
 -                // CraftBukkit start - Fire ProjectileHitEvent
 -                if (this.isRemoved()) {
 -                    // CraftEventFactory.callProjectileHitEvent(this, movingobjectposition); // Paper - this is an undesired duplicate event
++            // Paper start - Fix ProjectileHitEvent not calling for multiple entities
 +            for (HitResult movingobjectposition : ProjectileUtil.getHitResultsOnMoveVector(this, this::canHitEntity, this.getClipType())) {
 +                if (movingobjectposition.getType() != HitResult.Type.MISS) {
-+                    org.bukkit.event.entity.ProjectileHitEvent event = this.preHitTargetOrDeflectSelf(movingobjectposition).getSecond();
-+                    if (event == null || !event.isCancelled()) // CraftBukkit - projectile hit event
++                    org.bukkit.event.entity.ProjectileHitEvent event = this.preHitTargetOrDeflectSelf(movingobjectposition).getSecond(); // CraftBukkit - projectile hit event
++                    if (event == null || !event.isCancelled())
 +                        break;
 +
 +                    // CraftBukkit start - Fire ProjectileHitEvent
@@ -114,16 +116,17 @@ index a81d6a52674ddf7f818a7665cccd21dd8ea86cbe..e6fa2a26a09ac51863ac787cf84dd487
 +                        // CraftEventFactory.callProjectileHitEvent(this, movingobjectposition); // Paper - this is an undesired duplicate event
 +                    }
 +                    // CraftBukkit end
++                    // Paper end - Fix ProjectileHitEvent not calling for multiple entities
                  }
 -                // CraftBukkit end
              }
  
              this.checkInsideBlocks();
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/FireworkRocketEntity.java b/src/main/java/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
-index 6671796d292fbc922a94271136f5a7a4bbdedaca..45da523a35c34b5f880d029951273f3dd4acf92b 100644
+index 6671796d292fbc922a94271136f5a7a4bbdedaca..3fd7475b6ee88c980f5f0308ff4d273e5c0ea4e6 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
-@@ -163,13 +163,16 @@ public class FireworkRocketEntity extends Projectile implements ItemSupplier {
+@@ -163,11 +163,15 @@ public class FireworkRocketEntity extends Projectile implements ItemSupplier {
              this.setDeltaMovement(vec3d);
          }
  
@@ -132,59 +135,62 @@ index 6671796d292fbc922a94271136f5a7a4bbdedaca..45da523a35c34b5f880d029951273f3d
 -        if (!this.noPhysics) {
 -            this.preHitTargetOrDeflectSelf(movingobjectposition); // CraftBukkit - projectile hit event
 -            this.hasImpulse = true;
++        // Paper start - Fix ProjectileHitEvent not calling for multiple entities
 +        for (HitResult movingobjectposition : ProjectileUtil.getHitResultsOnMoveVector(this, this::canHitEntity)) {
 +            if (!this.noPhysics) {
-+                org.bukkit.event.entity.ProjectileHitEvent event = this.preHitTargetOrDeflectSelf(movingobjectposition).getSecond();
++                org.bukkit.event.entity.ProjectileHitEvent event = this.preHitTargetOrDeflectSelf(movingobjectposition).getSecond(); // CraftBukkit - projectile hit event
 +                this.hasImpulse = true;
 +                if (event == null || !event.isCancelled())
 +                    break;
 +            }
++            // Paper end - Fix ProjectileHitEvent not calling for multiple entities
          }
  
-+
          this.updateRotation();
-         if (this.life == 0 && !this.isSilent()) {
-             this.level().playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.FIREWORK_ROCKET_LAUNCH, SoundSource.AMBIENT, 3.0F, 1.0F);
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java b/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
-index 882de08963c72614a3d26cd917916e42b7136042..1f6d926de147885927b369a228e94122d47efdd1 100644
+index 882de08963c72614a3d26cd917916e42b7136042..ed58c5bb683abe559726503b6aa0ffacbc8183b1 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
-@@ -281,9 +281,11 @@ public class FishingHook extends Projectile {
+@@ -281,9 +281,13 @@ public class FishingHook extends Projectile {
      }
  
      private void checkCollision() {
 -        HitResult movingobjectposition = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
 -
 -        this.preHitTargetOrDeflectSelf(movingobjectposition); // CraftBukkit - projectile hit event
++        // Paper start - Fix ProjectileHitEvent not calling for multiple entities
 +        for (HitResult movingobjectposition : ProjectileUtil.getHitResultsOnMoveVector(this, this::canHitEntity)) {
-+            org.bukkit.event.entity.ProjectileHitEvent event = this.preHitTargetOrDeflectSelf(movingobjectposition).getSecond();
-+            if (event == null || !event.isCancelled()) // CraftBukkit - projectile hit event
++            org.bukkit.event.entity.ProjectileHitEvent event = this.preHitTargetOrDeflectSelf(movingobjectposition).getSecond(); // CraftBukkit - projectile hit event
++            if (event == null || !event.isCancelled())
 +                break;
 +        }
++        // Paper end - Fix ProjectileHitEvent not calling for multiple entities
      }
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/LlamaSpit.java b/src/main/java/net/minecraft/world/entity/projectile/LlamaSpit.java
-index ffd01d24cbfc90e2a8807757e61b2cf20a944354..ed961ac7c519414d88a356e4385402a6aeee3480 100644
+index ffd01d24cbfc90e2a8807757e61b2cf20a944354..db8171d1f74cb8a3b7560186d4ad27bd9565769f 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/LlamaSpit.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/LlamaSpit.java
-@@ -39,9 +39,12 @@ public class LlamaSpit extends Projectile {
+@@ -39,9 +39,14 @@ public class LlamaSpit extends Projectile {
      public void tick() {
          super.tick();
          Vec3 vec3d = this.getDeltaMovement();
 -        HitResult movingobjectposition = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
++        // Paper start - Fix ProjectileHitEvent not calling for multiple entities
 +        for (HitResult movingobjectposition : ProjectileUtil.getHitResultsOnMoveVector(this, this::canHitEntity)) {
-+            org.bukkit.event.entity.ProjectileHitEvent event = this.preHitTargetOrDeflectSelf(movingobjectposition).getSecond();
-+            if (event == null || !event.isCancelled()) // CraftBukkit - projectile hit event
++            org.bukkit.event.entity.ProjectileHitEvent event = this.preHitTargetOrDeflectSelf(movingobjectposition).getSecond(); // CraftBukkit - projectile hit event
++            if (event == null || !event.isCancelled())
 +                break;
 +        }
++        // Paper end - Fix ProjectileHitEvent not calling for multiple entities
  
 -        this.preHitTargetOrDeflectSelf(movingobjectposition); // CraftBukkit - projectile hit event
          double d0 = this.getX() + vec3d.x;
          double d1 = this.getY() + vec3d.y;
          double d2 = this.getZ() + vec3d.z;
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
-index 74c596264d4da551437bd2a23e1c70022cfc73fc..73247671f2ff99d3d038ad9ef2f88d2a06040b66 100644
+index 74c596264d4da551437bd2a23e1c70022cfc73fc..84cfb0ffdd850fbbb5b03f54bb2bb58c97a12090 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
 @@ -198,13 +198,13 @@ public abstract class Projectile extends Entity implements TraceableEntity {
@@ -192,27 +198,28 @@ index 74c596264d4da551437bd2a23e1c70022cfc73fc..73247671f2ff99d3d038ad9ef2f88d2a
  
      // CraftBukkit start - call projectile hit event
 -    public ProjectileDeflection preHitTargetOrDeflectSelf(HitResult movingobjectposition) { // Paper - protected -> public
-+    public com.mojang.datafixers.util.Pair<ProjectileDeflection, org.bukkit.event.entity.ProjectileHitEvent> preHitTargetOrDeflectSelf(HitResult movingobjectposition) { // Paper - protected -> public
++    public com.mojang.datafixers.util.Pair<ProjectileDeflection, org.bukkit.event.entity.ProjectileHitEvent> preHitTargetOrDeflectSelf(HitResult movingobjectposition) { // Paper - protected -> public // Paper - Fix ProjectileHitEvent not calling for multiple entities
          org.bukkit.event.entity.ProjectileHitEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this, movingobjectposition);
          this.hitCancelled = event != null && event.isCancelled();
          if (movingobjectposition.getType() == HitResult.Type.BLOCK || !this.hitCancelled) {
 -            return this.hitTargetOrDeflectSelf(movingobjectposition);
-+            return new com.mojang.datafixers.util.Pair<>(this.hitTargetOrDeflectSelf(movingobjectposition), event);
++            return new com.mojang.datafixers.util.Pair<>(this.hitTargetOrDeflectSelf(movingobjectposition), event); // Paper - Fix ProjectileHitEvent not calling for multiple entities
          }
 -        return ProjectileDeflection.NONE;
-+        return new com.mojang.datafixers.util.Pair<>(ProjectileDeflection.NONE, event);
++        return new com.mojang.datafixers.util.Pair<>(ProjectileDeflection.NONE, event); // Paper - Fix ProjectileHitEvent not calling for multiple entities
      }
      // CraftBukkit end
  
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/ProjectileUtil.java b/src/main/java/net/minecraft/world/entity/projectile/ProjectileUtil.java
-index 877365a953a0debd14ca8d33073754452ea2f026..9ed981a479b52623d995fce9f426bba6ff728a9c 100644
+index 877365a953a0debd14ca8d33073754452ea2f026..52aa0dd41b856d3b0a4cd1781d47aa3309fb3416 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/ProjectileUtil.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/ProjectileUtil.java
-@@ -159,4 +159,58 @@ public final class ProjectileUtil {
+@@ -159,4 +159,60 @@ public final class ProjectileUtil {
          abstractArrow.setEnchantmentEffectsFromEntity(entity, damageModifier);
          return abstractArrow;
      }
 +
++    // Paper start - Fix ProjectileHitEvent not calling for multiple entities
 +    public static EntityHitResult[] getEntityHitResults(Level world, Entity entity, Vec3 min, Vec3 max, AABB box, Predicate<Entity> predicate, float margin) {
 +        java.util.TreeMap<Double, Entity> entities = new java.util.TreeMap<>();
 +
@@ -266,12 +273,13 @@ index 877365a953a0debd14ca8d33073754452ea2f026..9ed981a479b52623d995fce9f426bba6
 +
 +        return new HitResult[]{hitResult};
 +    }
++    // Paper end - Fix ProjectileHitEvent not calling for multiple entities
  }
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/ShulkerBullet.java b/src/main/java/net/minecraft/world/entity/projectile/ShulkerBullet.java
-index 8242d0f292120be6cf3d6dcec2820a35809d83dd..bc9a07c190d3552a0a53ebb40070b85bd2f6caa4 100644
+index 8242d0f292120be6cf3d6dcec2820a35809d83dd..b984c68e6326240457e6f13dae6ae68b12cb792b 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/ShulkerBullet.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/ShulkerBullet.java
-@@ -242,10 +242,12 @@ public class ShulkerBullet extends Projectile {
+@@ -242,10 +242,14 @@ public class ShulkerBullet extends Projectile {
                  this.applyGravity();
              }
  
@@ -279,17 +287,19 @@ index 8242d0f292120be6cf3d6dcec2820a35809d83dd..bc9a07c190d3552a0a53ebb40070b85b
 -
 -            if (movingobjectposition.getType() != HitResult.Type.MISS) {
 -                this.preHitTargetOrDeflectSelf(movingobjectposition); // CraftBukkit - projectile hit event
++            // Paper start - Fix ProjectileHitEvent not calling for multiple entities
 +            for (HitResult movingobjectposition : ProjectileUtil.getHitResultsOnMoveVector(this, this::canHitEntity)) {
 +                if (movingobjectposition.getType() != HitResult.Type.MISS) {
-+                    org.bukkit.event.entity.ProjectileHitEvent event = this.preHitTargetOrDeflectSelf(movingobjectposition).getSecond();
-+                    if (event == null || !event.isCancelled()) // CraftBukkit - projectile hit event
++                    org.bukkit.event.entity.ProjectileHitEvent event = this.preHitTargetOrDeflectSelf(movingobjectposition).getSecond(); // CraftBukkit - projectile hit event
++                    if (event == null || !event.isCancelled())
 +                        break;
 +                }
++                // Paper end - Fix ProjectileHitEvent not calling for multiple entities
              }
          }
  
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrowableProjectile.java b/src/main/java/net/minecraft/world/entity/projectile/ThrowableProjectile.java
-index 5b32364f1452e1b395b91921d045060fd94881b8..62eda76d05ee9562892eba7f97aa42ed97f56090 100644
+index 5b32364f1452e1b395b91921d045060fd94881b8..0e3a6007e3bfeab333fa2e92b819157cbaffc86a 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/ThrowableProjectile.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/ThrowableProjectile.java
 @@ -44,9 +44,10 @@ public abstract class ThrowableProjectile extends Projectile {
@@ -297,25 +307,27 @@ index 5b32364f1452e1b395b91921d045060fd94881b8..62eda76d05ee9562892eba7f97aa42ed
      public void tick() {
          super.tick();
 -        HitResult movingobjectposition = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
-+        HitResult[] movingobjectpositions = ProjectileUtil.getHitResultsOnMoveVector(this, this::canHitEntity);
++        HitResult[] movingobjectpositions = ProjectileUtil.getHitResultsOnMoveVector(this, this::canHitEntity); // Paper - Fix ProjectileHitEvent not calling for multiple entities
          boolean flag = false;
  
-+        HitResult movingobjectposition = movingobjectpositions[0];
++        HitResult movingobjectposition = movingobjectpositions[0]; // Paper - Fix ProjectileHitEvent not calling for multiple entities
          if (movingobjectposition.getType() == HitResult.Type.BLOCK) {
              BlockPos blockposition = ((BlockHitResult) movingobjectposition).getBlockPos();
              BlockState iblockdata = this.level().getBlockState(blockposition);
-@@ -65,8 +66,12 @@ public abstract class ThrowableProjectile extends Projectile {
+@@ -65,8 +66,14 @@ public abstract class ThrowableProjectile extends Projectile {
              }
          }
  
 -        if (movingobjectposition.getType() != HitResult.Type.MISS && !flag) {
 -            this.preHitTargetOrDeflectSelf(movingobjectposition); // CraftBukkit - projectile hit event
++        // Paper start - Fix ProjectileHitEvent not calling for multiple entities
 +        for (HitResult hitResult : movingobjectpositions) {
 +            if (movingobjectposition.getType() != HitResult.Type.MISS && !flag) {
-+                org.bukkit.event.entity.ProjectileHitEvent event = this.preHitTargetOrDeflectSelf(movingobjectposition).getSecond();
-+                if (event == null || !event.isCancelled()) // CraftBukkit - projectile hit event
++                org.bukkit.event.entity.ProjectileHitEvent event = this.preHitTargetOrDeflectSelf(movingobjectposition).getSecond(); // CraftBukkit - projectile hit event
++                if (event == null || !event.isCancelled())
 +                    break;
 +            }
++            // Paper end - Fix ProjectileHitEvent not calling for multiple entities
          }
  
          this.checkInsideBlocks();
