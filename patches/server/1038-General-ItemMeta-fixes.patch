@@ -7,6 +7,7 @@ Subject: [PATCH] General ItemMeta fixes
 private-f net/minecraft/world/item/ItemStack components
 public net/minecraft/world/food/FoodProperties DEFAULT_EAT_SECONDS
 public org/bukkit/craftbukkit/block/CraftBlockStates getBlockState(Lorg/bukkit/World;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/block/entity/BlockEntity;)Lorg/bukkit/craftbukkit/block/CraftBlockState;
+public net/minecraft/world/level/block/entity/BlockEntity saveId(Lnet/minecraft/nbt/CompoundTag;)V
 
 diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
 index 8e2b3dd109dca3089cbce82cd3788874613a3230..893efb2c4a07c33d41e934279dd914a9dbd4ef79 100644
@@ -50,10 +51,10 @@ index 65170cbb50d8d5030fc5e33b6389c554aec6ae31..6349f2e0a5ba30d250f5ffe43771f325
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
-index 397eb1a101bd60f49dbb2fa8eddf28f6f233167f..ce10aa64576716f530e69d2281c090cfdba5e18f 100644
+index 397eb1a101bd60f49dbb2fa8eddf28f6f233167f..2c61e8d5bbab59c691f4cb003041e7e50e406b85 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
-@@ -135,6 +135,15 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
+@@ -135,6 +135,19 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
          return nbt;
      }
  
@@ -62,6 +63,10 @@ index 397eb1a101bd60f49dbb2fa8eddf28f6f233167f..ce10aa64576716f530e69d2281c090cf
 +        this.applyTo(this.snapshot);
 +        final CompoundTag nbt = this.snapshot.saveCustomOnly(this.getRegistryAccess());
 +        this.snapshot.removeComponentsFromTag(nbt);
++        if (!nbt.isEmpty()) {
++            // have to include the "id" if it's going to have block entity data
++            this.snapshot.saveId(nbt);
++        }
 +        return nbt;
 +    }
 +    // Paper end
@@ -150,7 +155,7 @@ index 1ac3bec02fce28d5ce698305a7482a9eccbb1867..b494568f833dc21d4e2447ac3e5c5002
  
          for (Pattern p : this.patterns) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
-index 12911233c01d0ac1af9adbd157d56d28361fc76f..7c0e4dd99d1b6ce04ddf97e81eff4692878dfb48 100644
+index 12911233c01d0ac1af9adbd157d56d28361fc76f..f7b3ce6056b2d2c3b1c4d08ddce4553afedecdf7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
 @@ -142,9 +142,17 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
@@ -259,7 +264,7 @@ index 12911233c01d0ac1af9adbd157d56d28361fc76f..7c0e4dd99d1b6ce04ddf97e81eff4692
          this.internalTag = null;
      }
  
-@@ -208,13 +239,20 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+@@ -208,13 +239,21 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
      void applyToItem(CraftMetaItem.Applicator tag) {
          super.applyToItem(tag);
  
@@ -268,8 +273,9 @@ index 12911233c01d0ac1af9adbd157d56d28361fc76f..7c0e4dd99d1b6ce04ddf97e81eff4692
 +        // Paper start - accurately replicate logic for creating ItemStack from BlockEntity
 +        // taken from BlockEntity#saveToItem and BlockItem#setBlockEntityData
 +        final CompoundTag nbt = this.blockEntityTag.copyTag();
-+        nbt.remove("id");
-+        if (!nbt.isEmpty()) {
++        if (nbt.contains("id", CraftMagicNumbers.NBT.TAG_STRING)) {
++            tag.put(CraftMetaBlockState.BLOCK_ENTITY_TAG, CustomData.of(nbt));
++        } else if (!nbt.isEmpty()) {
 +            BlockEntity.addEntityType(nbt, java.util.Objects.requireNonNull(CraftBlockStates.getBlockEntityType(this.materialForBlockEntityType())));
 +            tag.put(CraftMetaBlockState.BLOCK_ENTITY_TAG, CustomData.of(nbt));
 +        }
@@ -285,7 +291,7 @@ index 12911233c01d0ac1af9adbd157d56d28361fc76f..7c0e4dd99d1b6ce04ddf97e81eff4692
      }
  
      @Override
-@@ -223,14 +261,29 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+@@ -223,14 +262,29 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
  
          if (tag.contains(CraftMetaBlockState.BLOCK_ENTITY_TAG.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
              this.internalTag = tag.getCompound(CraftMetaBlockState.BLOCK_ENTITY_TAG.NBT);
@@ -294,10 +300,10 @@ index 12911233c01d0ac1af9adbd157d56d28361fc76f..7c0e4dd99d1b6ce04ddf97e81eff4692
 +        // Paper start - new serialization format
 +        if (tag.contains(CraftMetaBlockState.BLOCK_ENTITY_TAG_CUSTOM_DATA.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
 +            this.blockEntityTag = CustomData.of(tag.getCompound(CraftMetaBlockState.BLOCK_ENTITY_TAG_CUSTOM_DATA.NBT));
-         }
++        }
 +        if (tag.contains(CraftMetaBlockState.BLOCK_ENTITY_COMPONENTS.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
 +            this.components = DataComponentMap.CODEC.parse(org.bukkit.craftbukkit.CraftRegistry.getMinecraftRegistry().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), tag.getCompound(CraftMetaBlockState.BLOCK_ENTITY_COMPONENTS.NBT)).getOrThrow();
-+        }
+         }
 +        // Paper end - new serialization format
      }
  
@@ -308,16 +314,16 @@ index 12911233c01d0ac1af9adbd157d56d28361fc76f..7c0e4dd99d1b6ce04ddf97e81eff4692
 +        // Paper start - new serialization format
 +        if (!this.blockEntityTag.isEmpty()) {
 +            internalTags.put(CraftMetaBlockState.BLOCK_ENTITY_TAG_CUSTOM_DATA.NBT, this.blockEntityTag.getUnsafe()); // unsafe because it's serialized right away
-+        }
+         }
 +        if (!this.components.isEmpty()) {
 +            final Tag componentsTag = DataComponentMap.CODEC.encodeStart(org.bukkit.craftbukkit.CraftRegistry.getMinecraftRegistry().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), this.components).getOrThrow();
 +            internalTags.put(CraftMetaBlockState.BLOCK_ENTITY_COMPONENTS.NBT, componentsTag);
-         }
++        }
 +        // Paper end - new serialization format
      }
  
      @Override
-@@ -244,9 +297,10 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+@@ -244,9 +298,10 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
      int applyHash() {
          final int original;
          int hash = original = super.applyHash();
@@ -331,7 +337,7 @@ index 12911233c01d0ac1af9adbd157d56d28361fc76f..7c0e4dd99d1b6ce04ddf97e81eff4692
          return original != hash ? CraftMetaBlockState.class.hashCode() ^ hash : hash;
      }
  
-@@ -258,19 +312,19 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+@@ -258,19 +313,19 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
          if (meta instanceof CraftMetaBlockState) {
              CraftMetaBlockState that = (CraftMetaBlockState) meta;
  
@@ -354,7 +360,7 @@ index 12911233c01d0ac1af9adbd157d56d28361fc76f..7c0e4dd99d1b6ce04ddf97e81eff4692
      }
  
      @Override
-@@ -281,27 +335,53 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+@@ -281,27 +336,53 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
      @Override
      public CraftMetaBlockState clone() {
          CraftMetaBlockState meta = (CraftMetaBlockState) super.clone();
@@ -415,7 +421,7 @@ index 12911233c01d0ac1af9adbd157d56d28361fc76f..7c0e4dd99d1b6ce04ddf97e81eff4692
      }
  
      private static CraftBlockEntityState<?> getBlockState(Material material, CompoundTag blockEntityTag) {
-@@ -331,7 +411,22 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+@@ -331,7 +412,23 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
          Class<?> blockStateType = CraftBlockStates.getBlockStateType(stateMaterial);
          Preconditions.checkArgument(blockStateType == blockState.getClass() && blockState instanceof CraftBlockEntityState, "Invalid blockState for " + this.material);
  
@@ -424,11 +430,12 @@ index 12911233c01d0ac1af9adbd157d56d28361fc76f..7c0e4dd99d1b6ce04ddf97e81eff4692
 +        // have to be used to update the fields on CraftMetaItem
 +        final CraftBlockEntityState<?> craftBlockState = (CraftBlockEntityState<?>) blockState;
 +        final CompoundTag data = craftBlockState.getSnapshotCustomNbtOnly();
-+        BlockEntity.addEntityType(data, craftBlockState.getTileEntity().getType());
-+        this.blockEntityTag = CustomData.of(data);
 +        final PatchedDataComponentMap patchedMap = new net.minecraft.core.component.PatchedDataComponentMap(craftBlockState.getHandle().getBlock().asItem().components());
 +        final net.minecraft.core.component.DataComponentMap map = craftBlockState.collectComponents();
 +        patchedMap.setAll(map);
++        if (!data.isEmpty()) {
++            patchedMap.set(BLOCK_ENTITY_TAG.TYPE, CustomData.of(data));
++        }
 +        final DataComponentPatch patch = patchedMap.asPatch();
 +        this.updateFromPatch(patch, null);
 +        // we have to reset the fields because this should be like a "new" block entity is being used
