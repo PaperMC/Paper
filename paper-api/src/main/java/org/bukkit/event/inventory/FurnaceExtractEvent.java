@@ -1,9 +1,11 @@
 package org.bukkit.event.inventory;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockExpEvent;
+import org.bukkit.material.MaterialData;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -17,6 +19,9 @@ public class FurnaceExtractEvent extends BlockExpEvent {
     public FurnaceExtractEvent(@NotNull Player player, @NotNull Block block, @NotNull Material itemType, int itemAmount, int exp) {
         super(block, exp);
         this.player = player;
+        if (itemType != null && itemType.isLegacy()) {
+            itemType = Bukkit.getUnsafe().fromLegacy(new MaterialData(itemType), true);
+        }
         this.itemType = itemType;
         this.itemAmount = itemAmount;
     }

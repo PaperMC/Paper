@@ -7,8 +7,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Tag;
+import org.bukkit.material.MaterialData;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -65,12 +67,19 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
         public MaterialChoice(@NotNull List<Material> choices) {
             Preconditions.checkArgument(choices != null, "choices");
             Preconditions.checkArgument(!choices.isEmpty(), "Must have at least one choice");
+
+            this.choices = new ArrayList<>(choices.size());
+
             for (Material choice : choices) {
                 Preconditions.checkArgument(choice != null, "Cannot have null choice");
-                Preconditions.checkArgument(!choice.isAir(), "Cannot have empty/air choice");
-            }
 
-            this.choices = new ArrayList<>(choices);
+                if (choice.isLegacy()) {
+                    choice = Bukkit.getUnsafe().fromLegacy(new MaterialData(choice, (byte) 0), true);
+                }
+
+                Preconditions.checkArgument(!choice.isAir(), "Cannot have empty/air choice");
+                this.choices.add(choice);
+            }
         }
 
         @Override

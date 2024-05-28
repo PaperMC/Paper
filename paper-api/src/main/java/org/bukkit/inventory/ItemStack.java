@@ -83,8 +83,15 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @deprecated this method uses an ambiguous data byte object
      */
     @Deprecated
-    public ItemStack(@NotNull final Material type, final int amount, final short damage, @Nullable final Byte data) {
+    public ItemStack(@NotNull Material type, final int amount, final short damage, @Nullable final Byte data) {
         Preconditions.checkArgument(type != null, "Material cannot be null");
+        if (type.isLegacy()) {
+            if (type.getMaxDurability() > 0) {
+                type = Bukkit.getUnsafe().fromLegacy(new MaterialData(type, data == null ? 0 : data), true);
+            } else {
+                type = Bukkit.getUnsafe().fromLegacy(new MaterialData(type, data == null ? (byte) damage : data), true);
+            }
+        }
         this.type = type;
         this.amount = amount;
         if (damage != 0) {

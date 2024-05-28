@@ -1,11 +1,13 @@
 package org.bukkit.event.player;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Statistic;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.material.MaterialData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -49,6 +51,16 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
         this.initialValue = initialValue;
         this.newValue = newValue;
         this.entityType = null;
+        if (material != null && material.isLegacy()) {
+            if (statistic.getType() == Statistic.Type.BLOCK) {
+                material = Bukkit.getUnsafe().fromLegacy(new MaterialData(material), false);
+            } else if (statistic.getType() == Statistic.Type.ITEM) {
+                material = Bukkit.getUnsafe().fromLegacy(new MaterialData(material), true);
+            } else {
+                // Theoretically, this should not happen, can probably print a warning, but for now it should be fine.
+                material = Bukkit.getUnsafe().fromLegacy(new MaterialData(material), false);
+            }
+        }
         this.material = material;
     }
 
