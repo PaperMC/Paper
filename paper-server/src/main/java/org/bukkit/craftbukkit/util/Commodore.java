@@ -22,6 +22,7 @@ import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.legacy.FieldRename;
+import org.bukkit.craftbukkit.legacy.MaterialRerouting;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteArgument;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteBuilder;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteMethodData;
@@ -55,7 +56,8 @@ public class Commodore {
             "org/bukkit/block/Block (B)V setData",
             "org/bukkit/block/Block (BZ)V setData",
             "org/bukkit/inventory/ItemStack ()I getTypeId",
-            "org/bukkit/inventory/ItemStack (I)V setTypeId"
+            "org/bukkit/inventory/ItemStack (I)V setTypeId",
+            "org/bukkit/inventory/ItemStack (S)V setDurability"
     ));
 
     private static final Map<String, String> RENAMES = Map.of(
@@ -73,6 +75,7 @@ public class Commodore {
     @VisibleForTesting
     public static final List<Map<String, RerouteMethodData>> REROUTES = new ArrayList<>(); // Only used for testing
     private static final Map<String, RerouteMethodData> FIELD_RENAME_METHOD_REROUTE = createReroutes(FieldRename.class);
+    private static final Map<String, RerouteMethodData> MATERIAL_METHOD_REROUTE = createReroutes(MaterialRerouting.class);
 
     public static void main(String[] args) {
         OptionParser parser = new OptionParser();
@@ -327,10 +330,10 @@ public class Commodore {
 
                         Type retType = Type.getReturnType(desc);
 
+                        // TODO 2024-05-22: This can be moved over to use the reroute api
                         if (EVIL.contains(owner + " " + desc + " " + name)
                                 || (owner.startsWith("org/bukkit/block/") && (desc + " " + name).equals("()I getTypeId"))
-                                || (owner.startsWith("org/bukkit/block/") && (desc + " " + name).equals("(I)Z setTypeId"))
-                                || (owner.startsWith("org/bukkit/block/") && (desc + " " + name).equals("()Lorg/bukkit/Material; getType"))) {
+                                || (owner.startsWith("org/bukkit/block/") && (desc + " " + name).equals("(I)Z setTypeId"))) {
                             Type[] args = Type.getArgumentTypes(desc);
                             Type[] newArgs = new Type[args.length + 1];
                             newArgs[0] = Type.getObjectType(owner);
@@ -370,15 +373,8 @@ public class Commodore {
                             }
                         }
 
-                        // TODO: 4/23/23 Handle for InvokeDynamicInsn, does not directly work, since it adds a new method call which InvokeDynamicInsn does not like
-                        // The time required to fixe this is probably higher than the return,
-                        // One possible way could be to write a custom method and delegate the dynamic call to it,
-                        // the method would be needed to be written with asm, to account for different amount of arguments and which normally should be visited
-                        // Or a custom factory is created, this would be a very fancy (but probably overkill) solution
-                        // Anyway, I encourage everyone who is reading this to to give it a shot
-                        if (instantiatedMethodType == null && retType.getSort() == Type.OBJECT && retType.getInternalName().equals("org/bukkit/Material") && owner.startsWith("org/bukkit")) {
-                            visitor.visit(opcode, owner, name, desc, itf, samMethodType, instantiatedMethodType);
-                            visitor.visit(Opcodes.INVOKESTATIC, "org/bukkit/craftbukkit/legacy/CraftLegacy", "toLegacy", "(Lorg/bukkit/Material;)Lorg/bukkit/Material;", false, samMethodType, instantiatedMethodType);
+                        // TODO 2024-05-21: Move this up, when material gets fully replaced with ItemType and BlockType
+                        if (owner.startsWith("org/bukkit") && checkReroute(visitor, MATERIAL_METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
                             return;
                         }
 

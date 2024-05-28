@@ -11,7 +11,6 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
 
@@ -38,20 +37,21 @@ public final class CraftEvil {
         //
     }
 
+    public static void setDurability(ItemStack itemStack, short durability) {
+        itemStack.setDurability(durability);
+        MaterialData materialData = CraftLegacy.toLegacyData(itemStack.getType(), true);
+
+        if (materialData.getItemType().getMaxDurability() <= 0) {
+            itemStack.setType(CraftLegacy.fromLegacy(new MaterialData(materialData.getItemType(), (byte) itemStack.getDurability()), true));
+        }
+    }
+
     public static int getBlockTypeIdAt(World world, int x, int y, int z) {
         return getId(world.getBlockAt(x, y, z).getType());
     }
 
     public static int getBlockTypeIdAt(World world, Location location) {
         return getId(world.getBlockAt(location).getType());
-    }
-
-    public static Material getType(Block block) {
-        return CraftLegacy.toLegacyMaterial(((CraftBlock) block).getNMS());
-    }
-
-    public static Material getType(BlockState block) {
-        return CraftLegacy.toLegacyMaterial(((CraftBlockState) block).getHandle());
     }
 
     public static int getTypeId(Block block) {

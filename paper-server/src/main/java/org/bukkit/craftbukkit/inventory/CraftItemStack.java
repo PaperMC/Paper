@@ -31,7 +31,7 @@ public final class CraftItemStack extends ItemStack {
             return net.minecraft.world.item.ItemStack.EMPTY;
         }
 
-        Item item = CraftMagicNumbers.getItem(original.getType(), original.getDurability());
+        Item item = CraftItemType.bukkitToMinecraft(original.getType());
 
         if (item == null) {
             return net.minecraft.world.item.ItemStack.EMPTY;

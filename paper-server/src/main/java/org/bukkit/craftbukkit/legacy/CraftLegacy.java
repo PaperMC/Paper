@@ -67,10 +67,19 @@ public final class CraftLegacy {
     }
 
     public static MaterialData toLegacyData(Material material) {
-        Preconditions.checkArgument(!material.isLegacy(), "toLegacy on legacy Material");
-        MaterialData mappedData;
+        return toLegacyData(material, false);
+    }
 
-        if (material.isBlock()) {
+    public static MaterialData toLegacyData(Material material, boolean itemPriority) {
+        Preconditions.checkArgument(!material.isLegacy(), "toLegacy on legacy Material");
+        MaterialData mappedData = null;
+
+        if (itemPriority) {
+            Item item = CraftMagicNumbers.getItem(material);
+            mappedData = itemToMaterial.get(item);
+        }
+
+        if (mappedData == null && material.isBlock()) {
             Block block = CraftMagicNumbers.getBlock(material);
             IBlockData blockData = block.defaultBlockState();
 
@@ -84,7 +93,7 @@ public final class CraftLegacy {
                     mappedData = itemToMaterial.get(block.asItem());
                 }
             }
-        } else {
+        } else if (!itemPriority) {
             Item item = CraftMagicNumbers.getItem(material);
             mappedData = itemToMaterial.get(item);
         }

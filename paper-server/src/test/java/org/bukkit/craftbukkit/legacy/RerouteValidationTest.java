@@ -93,6 +93,7 @@ public class RerouteValidationTest {
             return Class.forName(type.getDescriptor().replace('/', '.'), false, getClass().getClassLoader());
         } else {
             return switch (type.getSort()) {
+                case Type.VOID -> void.class;
                 case Type.BOOLEAN -> boolean.class;
                 case Type.CHAR -> char.class;
                 case Type.BYTE -> byte.class;
