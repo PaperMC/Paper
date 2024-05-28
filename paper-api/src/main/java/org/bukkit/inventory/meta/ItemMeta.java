@@ -14,6 +14,7 @@ import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemRarity;
 import org.bukkit.inventory.meta.components.FoodComponent;
+import org.bukkit.inventory.meta.components.ToolComponent;
 import org.bukkit.inventory.meta.tags.CustomItemTagContainer;
 import org.bukkit.persistence.PersistentDataHolder;
 import org.jetbrains.annotations.ApiStatus;
@@ -406,6 +407,11 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
 
     /**
      * Gets the food set on this item, or creates an empty food instance.
+     * <p>
+     * The returned component is a snapshot of its current state and does not
+     * reflect a live view of what is on an item. After changing any value on
+     * this component, it must be set with {@link #setFood(FoodComponent)} to
+     * apply the changes.
      *
      * @return food
      */
@@ -418,6 +424,33 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * @param food new food
      */
     void setFood(@Nullable FoodComponent food);
+
+    /**
+     * Checks if the tool is set.
+     *
+     * @return if a tool is set
+     */
+    boolean hasTool();
+
+    /**
+     * Gets the tool set on this item, or creates an empty tool instance.
+     * <p>
+     * The returned component is a snapshot of its current state and does not
+     * reflect a live view of what is on an item. After changing any value on
+     * this component, it must be set with {@link #setTool(ToolComponent)} to
+     * apply the changes.
+     *
+     * @return tool
+     */
+    @NotNull
+    ToolComponent getTool();
+
+    /**
+     * Sets the item tool.
+     *
+     * @param tool new tool
+     */
+    void setTool(@Nullable ToolComponent tool);
 
     /**
      * Checks for the existence of any AttributeModifiers.
