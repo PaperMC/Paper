@@ -1,11 +1,11 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Tamion <70228790+notTamion@users.noreply.github.com>
 Date: Tue, 28 May 2024 11:15:19 +0200
-Subject: [PATCH] Fix
+Subject: [PATCH] Fix ProjectileHitEvent not calling for multiple entities
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
-index 31b8a8bf78d52b5f11b68e780ec09bf78e7bda84..0b5f504299d7e6ff2a3bc4f49d25f4f5c05529c0 100644
+index 31b8a8bf78d52b5f11b68e780ec09bf78e7bda84..3a4a54c3a5e73675605bd49267f87c4af39f823c 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
 @@ -225,37 +225,47 @@ public abstract class AbstractArrow extends Projectile {
@@ -51,15 +51,17 @@ index 31b8a8bf78d52b5f11b68e780ec09bf78e7bda84..0b5f504299d7e6ff2a3bc4f49d25f4f5
 +                    if (object != null && !flag) {
 +                        com.mojang.datafixers.util.Pair<ProjectileDeflection, org.bukkit.event.entity.ProjectileHitEvent> projectiledeflection = this.preHitTargetOrDeflectSelf((HitResult) object); // CraftBukkit - projectile hit event
 +
-+                        event = projectiledeflection.getSecond();
++                        if (projectiledeflection.getSecond() == null || !projectiledeflection.getSecond().isCancelled())
++                            shouldBreak = true;
+ 
+-                    this.hasImpulse = true;
+-                    if (projectiledeflection != ProjectileDeflection.NONE) {
 +                        this.hasImpulse = true;
 +                        if (projectiledeflection.getFirst() != ProjectileDeflection.NONE) {
 +                            break;
 +                        }
 +                    }
- 
--                    this.hasImpulse = true;
--                    if (projectiledeflection != ProjectileDeflection.NONE) {
++
 +                    if (movingobjectpositionentity == null || this.getPierceLevel() <= 0) {
                          break;
                      }
@@ -68,8 +70,6 @@ index 31b8a8bf78d52b5f11b68e780ec09bf78e7bda84..0b5f504299d7e6ff2a3bc4f49d25f4f5
 -                if (movingobjectpositionentity == null || this.getPierceLevel() <= 0) {
 -                    break;
 +                    object = null;
-+                    if (event != null & !event.isCancelled())
-+                        shouldBreak = true;
                  }
 -
 -                object = null;
@@ -88,7 +88,7 @@ index 31b8a8bf78d52b5f11b68e780ec09bf78e7bda84..0b5f504299d7e6ff2a3bc4f49d25f4f5
              if (this.piercingIgnoreEntityIds == null) {
                  this.piercingIgnoreEntityIds = new IntOpenHashSet(5);
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractHurtingProjectile.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractHurtingProjectile.java
-index a81d6a52674ddf7f818a7665cccd21dd8ea86cbe..4f48bdaf519d2186214f3b38840050b5ef3b1937 100644
+index a81d6a52674ddf7f818a7665cccd21dd8ea86cbe..e6fa2a26a09ac51863ac787cf84dd4873acdea0b 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/AbstractHurtingProjectile.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractHurtingProjectile.java
 @@ -85,16 +85,18 @@ public abstract class AbstractHurtingProjectile extends Projectile {
@@ -106,7 +106,7 @@ index a81d6a52674ddf7f818a7665cccd21dd8ea86cbe..4f48bdaf519d2186214f3b38840050b5
 +            for (HitResult movingobjectposition : ProjectileUtil.getHitResultsOnMoveVector(this, this::canHitEntity, this.getClipType())) {
 +                if (movingobjectposition.getType() != HitResult.Type.MISS) {
 +                    org.bukkit.event.entity.ProjectileHitEvent event = this.preHitTargetOrDeflectSelf(movingobjectposition).getSecond();
-+                    if (event != null && !event.isCancelled()) // CraftBukkit - projectile hit event
++                    if (event == null || !event.isCancelled()) // CraftBukkit - projectile hit event
 +                        break;
 +
 +                    // CraftBukkit start - Fire ProjectileHitEvent
@@ -120,7 +120,7 @@ index a81d6a52674ddf7f818a7665cccd21dd8ea86cbe..4f48bdaf519d2186214f3b38840050b5
  
              this.checkInsideBlocks();
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/FireworkRocketEntity.java b/src/main/java/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
-index 6671796d292fbc922a94271136f5a7a4bbdedaca..06621fa01c6199d3a3dc88f8742dba77501bd906 100644
+index 6671796d292fbc922a94271136f5a7a4bbdedaca..45da523a35c34b5f880d029951273f3dd4acf92b 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
 @@ -163,13 +163,16 @@ public class FireworkRocketEntity extends Projectile implements ItemSupplier {
@@ -136,7 +136,7 @@ index 6671796d292fbc922a94271136f5a7a4bbdedaca..06621fa01c6199d3a3dc88f8742dba77
 +            if (!this.noPhysics) {
 +                org.bukkit.event.entity.ProjectileHitEvent event = this.preHitTargetOrDeflectSelf(movingobjectposition).getSecond();
 +                this.hasImpulse = true;
-+                if (event != null && !event.isCancelled())
++                if (event == null || !event.isCancelled())
 +                    break;
 +            }
          }
@@ -146,7 +146,7 @@ index 6671796d292fbc922a94271136f5a7a4bbdedaca..06621fa01c6199d3a3dc88f8742dba77
          if (this.life == 0 && !this.isSilent()) {
              this.level().playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.FIREWORK_ROCKET_LAUNCH, SoundSource.AMBIENT, 3.0F, 1.0F);
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java b/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
-index 882de08963c72614a3d26cd917916e42b7136042..3e46db3b813cbb99f7db6236ebba5a10ffd76644 100644
+index 882de08963c72614a3d26cd917916e42b7136042..1f6d926de147885927b369a228e94122d47efdd1 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
 @@ -281,9 +281,11 @@ public class FishingHook extends Projectile {
@@ -158,14 +158,14 @@ index 882de08963c72614a3d26cd917916e42b7136042..3e46db3b813cbb99f7db6236ebba5a10
 -        this.preHitTargetOrDeflectSelf(movingobjectposition); // CraftBukkit - projectile hit event
 +        for (HitResult movingobjectposition : ProjectileUtil.getHitResultsOnMoveVector(this, this::canHitEntity)) {
 +            org.bukkit.event.entity.ProjectileHitEvent event = this.preHitTargetOrDeflectSelf(movingobjectposition).getSecond();
-+            if (event != null && !event.isCancelled()) // CraftBukkit - projectile hit event
++            if (event == null || !event.isCancelled()) // CraftBukkit - projectile hit event
 +                break;
 +        }
      }
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/LlamaSpit.java b/src/main/java/net/minecraft/world/entity/projectile/LlamaSpit.java
-index ffd01d24cbfc90e2a8807757e61b2cf20a944354..73a0ae9739506de2d6ea71c67d58b84fae072771 100644
+index ffd01d24cbfc90e2a8807757e61b2cf20a944354..ed961ac7c519414d88a356e4385402a6aeee3480 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/LlamaSpit.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/LlamaSpit.java
 @@ -39,9 +39,12 @@ public class LlamaSpit extends Projectile {
@@ -175,7 +175,7 @@ index ffd01d24cbfc90e2a8807757e61b2cf20a944354..73a0ae9739506de2d6ea71c67d58b84f
 -        HitResult movingobjectposition = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
 +        for (HitResult movingobjectposition : ProjectileUtil.getHitResultsOnMoveVector(this, this::canHitEntity)) {
 +            org.bukkit.event.entity.ProjectileHitEvent event = this.preHitTargetOrDeflectSelf(movingobjectposition).getSecond();
-+            if (event != null && !event.isCancelled()) // CraftBukkit - projectile hit event
++            if (event == null || !event.isCancelled()) // CraftBukkit - projectile hit event
 +                break;
 +        }
  
@@ -268,7 +268,7 @@ index 877365a953a0debd14ca8d33073754452ea2f026..9ed981a479b52623d995fce9f426bba6
 +    }
  }
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/ShulkerBullet.java b/src/main/java/net/minecraft/world/entity/projectile/ShulkerBullet.java
-index 8242d0f292120be6cf3d6dcec2820a35809d83dd..7237847222fc3a0905b5f37c8e41e2fec7972f66 100644
+index 8242d0f292120be6cf3d6dcec2820a35809d83dd..bc9a07c190d3552a0a53ebb40070b85bd2f6caa4 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/ShulkerBullet.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/ShulkerBullet.java
 @@ -242,10 +242,12 @@ public class ShulkerBullet extends Projectile {
@@ -282,14 +282,14 @@ index 8242d0f292120be6cf3d6dcec2820a35809d83dd..7237847222fc3a0905b5f37c8e41e2fe
 +            for (HitResult movingobjectposition : ProjectileUtil.getHitResultsOnMoveVector(this, this::canHitEntity)) {
 +                if (movingobjectposition.getType() != HitResult.Type.MISS) {
 +                    org.bukkit.event.entity.ProjectileHitEvent event = this.preHitTargetOrDeflectSelf(movingobjectposition).getSecond();
-+                    if (event != null && !event.isCancelled()) // CraftBukkit - projectile hit event
++                    if (event == null || !event.isCancelled()) // CraftBukkit - projectile hit event
 +                        break;
 +                }
              }
          }
  
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrowableProjectile.java b/src/main/java/net/minecraft/world/entity/projectile/ThrowableProjectile.java
-index 5b32364f1452e1b395b91921d045060fd94881b8..d4edb5f847d4bf6e6aa9ac36654782a1c510b5f2 100644
+index 5b32364f1452e1b395b91921d045060fd94881b8..62eda76d05ee9562892eba7f97aa42ed97f56090 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/ThrowableProjectile.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/ThrowableProjectile.java
 @@ -44,9 +44,10 @@ public abstract class ThrowableProjectile extends Projectile {
@@ -313,7 +313,7 @@ index 5b32364f1452e1b395b91921d045060fd94881b8..d4edb5f847d4bf6e6aa9ac36654782a1
 +        for (HitResult hitResult : movingobjectpositions) {
 +            if (movingobjectposition.getType() != HitResult.Type.MISS && !flag) {
 +                org.bukkit.event.entity.ProjectileHitEvent event = this.preHitTargetOrDeflectSelf(movingobjectposition).getSecond();
-+                if (event != null && !event.isCancelled()) // CraftBukkit - projectile hit event
++                if (event == null || !event.isCancelled()) // CraftBukkit - projectile hit event
 +                    break;
 +            }
          }
