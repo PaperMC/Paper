@@ -2045,11 +2045,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start - Brigadier Command API
 +        // Create legacy minecraft namespace commands
 +        for (final CommandNode<CommandSourceStack> node : new java.util.ArrayList<>(this.dispatcher.getRoot().getChildren())) {
++            // The brigadier dispatcher is not able to resolve nested redirects.
++            // E.g. registering the alias minecraft:tp cannot redirect to tp, as tp itself redirects to teleport.
++            // Instead, target the first none redirecting node.
++            CommandNode<CommandSourceStack> flattenedAliasTarget = node;
++            while (flattenedAliasTarget.getRedirect() != null) flattenedAliasTarget = flattenedAliasTarget.getRedirect();
++
 +            this.dispatcher.register(
 +                com.mojang.brigadier.builder.LiteralArgumentBuilder.<CommandSourceStack>literal("minecraft:" + node.getName())
-+                    .executes(node.getCommand())
-+                    .requires(node.getRequirement())
-+                    .redirect(node)
++                    .executes(flattenedAliasTarget.getCommand())
++                    .requires(flattenedAliasTarget.getRequirement())
++                    .redirect(flattenedAliasTarget)
 +            );
 +        }
 +        // Paper end - Brigadier Command API
