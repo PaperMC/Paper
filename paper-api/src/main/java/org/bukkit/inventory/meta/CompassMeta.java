@@ -28,7 +28,8 @@ public interface CompassMeta extends ItemMeta {
     /**
      * Sets the location this lodestone compass will point to.
      *
-     * @param lodestone new location or null to clear
+     * @param lodestone new location or null to clear the targeted location
+     * @see #clearLodestone() to reset the compass to a normal compass
      */
     void setLodestone(@Nullable Location lodestone);
 
@@ -49,8 +50,24 @@ public interface CompassMeta extends ItemMeta {
      * location.
      *
      * @param tracked new tracked status
+     * @see #clearLodestone() to reset the compass to a normal compass
      */
     void setLodestoneTracked(boolean tracked);
+
+    // Paper start - Add more lodestone compass methods
+    /**
+     * Checks if this compass is considered a lodestone compass.
+     * @see #hasLodestone() to check if a position is being tracked
+     * @see #isLodestoneTracked() to check if it verifies the position is a lodestone
+     */
+    boolean isLodestoneCompass();
+
+    /**
+     * Reset this compass to a normal compass, removing any tracked
+     * location.
+     */
+    void clearLodestone();
+    // Paper end - Add more lodestone compass methods
 
     @Override
     CompassMeta clone();

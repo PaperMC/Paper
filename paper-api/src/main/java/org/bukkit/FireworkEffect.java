@@ -322,9 +322,7 @@ public final class FireworkEffect implements ConfigurationSerializable {
     private String string = null;
 
     FireworkEffect(boolean flicker, boolean trail, @NotNull ImmutableList<Color> colors, @NotNull ImmutableList<Color> fadeColors, @NotNull Type type) {
-        if (colors.isEmpty()) {
-            throw new IllegalStateException("Cannot make FireworkEffect without any color");
-        }
+        // Paper - can have empty colors
         this.flicker = flicker;
         this.trail = trail;
         this.colors = colors;

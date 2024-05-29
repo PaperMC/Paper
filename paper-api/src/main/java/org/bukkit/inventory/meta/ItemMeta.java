@@ -386,7 +386,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
     /**
      * Sets the enchantable. Higher values allow higher enchantments.
      *
-     * @param enchantable enchantable value
+     * @param enchantable enchantable value, must be positive
      */
     void setEnchantable(@Nullable Integer enchantable);
 
@@ -930,8 +930,9 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
 
     /**
      * Set all {@link Attribute}s and their {@link AttributeModifier}s.
-     * To clear all currently set Attributes and AttributeModifiers use
-     * null or an empty Multimap.
+     * To clear all custom attribute modifiers, use {@code null}. To set
+     * no modifiers (which will override the default modifiers), use an
+     * empty map.
      * If not null nor empty, this will filter all entries that are not-null
      * and add them to the ItemStack.
      *
