@@ -5,6 +5,7 @@ Subject: [PATCH] More Projectile API
 
 == AT ==
 public net.minecraft.world.entity.projectile.FishingHook timeUntilLured
+public net.minecraft.world.entity.projectile.FishingHook fishAngle
 public net.minecraft.world.entity.projectile.ShulkerBullet targetDeltaX
 public net.minecraft.world.entity.projectile.ShulkerBullet targetDeltaY
 public net.minecraft.world.entity.projectile.ShulkerBullet targetDeltaZ
@@ -19,7 +20,33 @@ public net.minecraft.world.entity.projectile.Projectile canHitEntity(Lnet/minecr
 public net.minecraft.world.entity.projectile.FireworkRocketEntity getDefaultItem()Lnet/minecraft/world/item/ItemStack;
 
 Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
+Co-authored-by: SoSeDiK <mrsosedik@gmail.com>
 
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java b/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
+@@ -0,0 +0,0 @@ public class FishingHook extends Projectile {
+                 }
+             } else {
+                 // CraftBukkit start - logic to modify fishing wait time
+-                this.timeUntilLured = Mth.nextInt(this.random, this.minWaitTime, this.maxWaitTime);
+-                this.timeUntilLured -= (this.applyLure) ? (this.lureSpeed * 20 * 5 >= this.maxWaitTime ? this.timeUntilLured - 1 : this.lureSpeed * 20 * 5) : 0; // Paper - Fix Lure infinite loop
++                resetTimeUntilLured(); // Paper - more projectile api - extract time until lured reset logic
+                 // CraftBukkit end
+             }
+         }
+ 
+     }
++    // Paper start - more projectile api - extract time until lured reset logic
++    public void resetTimeUntilLured() {
++        this.timeUntilLured = Mth.nextInt(this.random, this.minWaitTime, this.maxWaitTime);
++        this.timeUntilLured -= (this.applyLure) ? (this.lureSpeed * 20 * 5 >= this.maxWaitTime ? this.timeUntilLured - 1 : this.lureSpeed * 20 * 5) : 0; // Paper - Fix Lure infinite loop
++    }
++    // Paper end - more projectile api - extract time until lured reset logic
+ 
+     public boolean calculateOpenWater(BlockPos pos) {
+         FishingHook.OpenWaterType entityfishinghook_waterposition = FishingHook.OpenWaterType.INVALID;
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
@@ -367,6 +394,33 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public void setWaitTime(int ticks) {
 +        this.getHandle().timeUntilLured = ticks;
++    }
++
++    @Override
++    public int getTimeUntilBite() {
++        return this.getHandle().timeUntilHooked;
++    }
++
++    @Override
++    public void setTimeUntilBite(final int ticks) {
++        com.google.common.base.Preconditions.checkArgument(ticks >= 1, "Cannot set time until bite to less than 1 (%s<1)", ticks);
++        final FishingHook hook = this.getHandle();
++
++        // Reset the fish angle hook only when this call "enters" the fish into the lure stage.
++        final boolean alreadyInLuringPhase = hook.timeUntilHooked > 0 && hook.timeUntilLured <= 0;
++        if (!alreadyInLuringPhase) {
++            hook.fishAngle = net.minecraft.util.Mth.nextFloat(hook.random, hook.minLureAngle, hook.maxLureAngle);
++            hook.timeUntilLured = 0;
++        }
++
++        hook.timeUntilHooked = ticks;
++    }
++
++    @Override
++    public void resetFishingState() {
++        final FishingHook hook = this.getHandle();
++        hook.resetTimeUntilLured();
++        hook.timeUntilHooked = 0; // Reset time until hooked, will be repopulated once lured time is ticked down.
 +    }
 +    // Paper end
  }
