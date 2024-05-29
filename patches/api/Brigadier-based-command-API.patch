@@ -3,6 +3,7 @@ From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
 Date: Mon, 1 Aug 2022 22:50:29 -0400
 Subject: [PATCH] Brigadier based command API
 
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -953,6 +954,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
 +import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 +import io.papermc.paper.entity.LookAnchor;
++import io.papermc.paper.registry.RegistryKey;
++import io.papermc.paper.registry.TypedKey;
 +import java.util.UUID;
 +import net.kyori.adventure.key.Key;
 +import net.kyori.adventure.text.Component;
@@ -1263,6 +1266,29 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return provider().templateRotation();
 +    }
 +
++    /**
++     * An argument for a resource in a {@link org.bukkit.Registry}.
++     *
++     * @param registryKey the registry's key
++     * @return argument
++     * @param <T> the registry value type
++     */
++    public static <T> @NotNull ArgumentType<T> resource(final @NotNull RegistryKey<T> registryKey) {
++        return provider().resource(registryKey);
++    }
++
++    /**
++     * An argument for a typed key for a {@link org.bukkit.Registry}.
++     *
++     * @param registryKey the registry's key
++     * @return argument
++     * @param <T> the registry value type
++     * @see RegistryArgumentExtractor#getTypedKey(com.mojang.brigadier.context.CommandContext, RegistryKey, String)
++     */
++    public static <T> @NotNull ArgumentType<TypedKey<T>> resourceKey(final @NotNull RegistryKey<T> registryKey) {
++        return provider().resourceKey(registryKey);
++    }
++
 +    private ArgumentTypes() {
 +    }
 +}
@@ -1378,6 +1404,47 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        @NotNull T convert(@NotNull N nativeType) throws CommandSyntaxException;
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/RegistryArgumentExtractor.java b/src/main/java/io/papermc/paper/command/brigadier/argument/RegistryArgumentExtractor.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/brigadier/argument/RegistryArgumentExtractor.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.command.brigadier.argument;
++
++import com.mojang.brigadier.context.CommandContext;
++import io.papermc.paper.registry.RegistryKey;
++import io.papermc.paper.registry.TypedKey;
++import org.checkerframework.checker.nullness.qual.NonNull;
++
++/**
++ * Utilities for extracting registry-related arguments from a {@link CommandContext}.
++ */
++public final class RegistryArgumentExtractor {
++
++    /**
++     * Gets a typed key argument from a command context.
++     *
++     * @param context the command context
++     * @param registryKey the registry key for the typed key
++     * @param name the argument name
++     * @return the typed key argument
++     * @param <T> the value type
++     * @param <S> the sender type
++     * @throws IllegalArgumentException if the registry key doesn't match the typed key
++     */
++    @SuppressWarnings("unchecked")
++    public static <T, S> @NonNull TypedKey<T> getTypedKey(final @NonNull CommandContext<S> context, final @NonNull RegistryKey<T> registryKey, final @NonNull String name) {
++        final TypedKey<T> typedKey = context.getArgument(name, TypedKey.class);
++        if (typedKey.registryKey().equals(registryKey)) {
++            return typedKey;
++        }
++        throw new IllegalArgumentException(registryKey + " is not the correct registry for " + typedKey);
++    }
++
++    private RegistryArgumentExtractor() {
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/SignedMessageResolver.java b/src/main/java/io/papermc/paper/command/brigadier/argument/SignedMessageResolver.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -1442,6 +1509,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
 +import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 +import io.papermc.paper.entity.LookAnchor;
++import io.papermc.paper.registry.RegistryKey;
++import io.papermc.paper.registry.TypedKey;
 +import java.util.Optional;
 +import java.util.ServiceLoader;
 +import java.util.UUID;
@@ -1528,6 +1597,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    ArgumentType<Mirror> templateMirror();
 +
 +    ArgumentType<StructureRotation> templateRotation();
++
++    <T> ArgumentType<TypedKey<T>> resourceKey(RegistryKey<T> registryKey);
++
++    <T> ArgumentType<T> resource(RegistryKey<T> registryKey);
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/predicate/ItemStackPredicate.java b/src/main/java/io/papermc/paper/command/brigadier/argument/predicate/ItemStackPredicate.java
 new file mode 100644

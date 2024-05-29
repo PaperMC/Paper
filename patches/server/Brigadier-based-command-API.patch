@@ -9,6 +9,8 @@ public net.minecraft.commands.arguments.DimensionArgument ERROR_INVALID_VALUE
 public net.minecraft.server.ReloadableServerResources registryLookup
 public net.minecraft.server.ReloadableServerResources
 
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+
 diff --git a/src/main/java/com/mojang/brigadier/CommandDispatcher.java b/src/main/java/com/mojang/brigadier/CommandDispatcher.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/com/mojang/brigadier/CommandDispatcher.java
@@ -1096,6 +1098,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 +import io.papermc.paper.entity.LookAnchor;
 +import io.papermc.paper.math.Position;
++import io.papermc.paper.registry.PaperRegistries;
++import io.papermc.paper.registry.RegistryAccess;
++import io.papermc.paper.registry.RegistryKey;
++import io.papermc.paper.registry.TypedKey;
 +import java.util.Collection;
 +import java.util.Collections;
 +import java.util.List;
@@ -1119,6 +1125,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.commands.arguments.MessageArgument;
 +import net.minecraft.commands.arguments.ObjectiveCriteriaArgument;
 +import net.minecraft.commands.arguments.RangeArgument;
++import net.minecraft.commands.arguments.ResourceArgument;
++import net.minecraft.commands.arguments.ResourceKeyArgument;
 +import net.minecraft.commands.arguments.ResourceLocationArgument;
 +import net.minecraft.commands.arguments.ScoreboardSlotArgument;
 +import net.minecraft.commands.arguments.StyleArgument;
@@ -1139,6 +1147,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.world.level.Level;
 +import org.bukkit.GameMode;
 +import org.bukkit.HeightMap;
++import org.bukkit.Keyed;
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.World;
 +import org.bukkit.block.BlockState;
@@ -1347,6 +1356,32 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public ArgumentType<StructureRotation> templateRotation() {
 +        return this.wrap(TemplateRotationArgument.templateRotation(), mirror -> StructureRotation.valueOf(mirror.name()));
++    }
++
++    @Override
++    public <T> ArgumentType<TypedKey<T>> resourceKey(final RegistryKey<T> registryKey) {
++        return this.wrap(
++            ResourceKeyArgument.key(PaperRegistries.toNms(registryKey)),
++            nmsRegistryKey -> TypedKey.create(registryKey, CraftNamespacedKey.fromMinecraft(nmsRegistryKey.location()))
++        );
++    }
++
++    @Override
++    public <T> ArgumentType<T> resource(final RegistryKey<T> registryKey) {
++        return this.resourceRaw(registryKey);
++    }
++
++    @SuppressWarnings({"unchecked", "rawtypes", "UnnecessaryLocalVariable"})
++    private <T, K extends Keyed> ArgumentType<T> resourceRaw(final RegistryKey registryKeyRaw) { // TODO remove Keyed
++        final RegistryKey<K> registryKey = registryKeyRaw;
++        return (ArgumentType<T>) this.wrap(
++            ResourceArgument.resource(PaperCommands.INSTANCE.getBuildContext(), PaperRegistries.toNms(registryKey)),
++            resource -> requireNonNull(
++                RegistryAccess.registryAccess()
++                    .getRegistry(registryKey)
++                    .get(CraftNamespacedKey.fromMinecraft(resource.key().location()))
++            )
++        );
 +    }
 +
 +    private <T> ArgumentType<T> wrap(final ArgumentType<T> base) {
