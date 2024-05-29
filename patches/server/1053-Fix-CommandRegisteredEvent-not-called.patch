@@ -108,7 +108,7 @@ index f0cc27640bb3db275295a298d608c9d9f88df617..566bf6729e4e0a768b8ec3a2e574ae68
      }
  
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitCommandNode.java b/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitCommandNode.java
-index 10a113b057b0a4d27cce3bae975e1108aaa7b517..5d2d2bf7e170a4546d687f10305d28ebc7c02037 100644
+index 10a113b057b0a4d27cce3bae975e1108aaa7b517..dd9a586789995cde207e3b4c79ff3dfeba944135 100644
 --- a/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitCommandNode.java
 +++ b/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitCommandNode.java
 @@ -1,6 +1,7 @@
@@ -144,7 +144,7 @@ index 10a113b057b0a4d27cce3bae975e1108aaa7b517..5d2d2bf7e170a4546d687f10305d28eb
  
  public class BukkitCommandNode extends LiteralCommandNode<CommandSourceStack> {
  
-@@ -43,16 +53,51 @@ public class BukkitCommandNode extends LiteralCommandNode<CommandSourceStack> {
+@@ -43,16 +53,58 @@ public class BukkitCommandNode extends LiteralCommandNode<CommandSourceStack> {
          this.command = command;
      }
  
@@ -182,10 +182,17 @@ index 10a113b057b0a4d27cce3bae975e1108aaa7b517..5d2d2bf7e170a4546d687f10305d28eb
 +            return (BukkitCommandNode) commandNode;
 +        }
 +        LiteralCommandNode<CommandSourceStack> defaultNode = commandNode;
++        final CraftServer craftServer;
++        if (Bukkit.getServer() instanceof CraftServer cs) {
++            craftServer = cs;
++        } else {
++            // Testing
++            craftServer = null;
++        }
 +        com.destroystokyo.paper.event.brigadier.CommandRegisteredEvent<net.minecraft.commands.CommandSourceStack> event =
 +            new com.destroystokyo.paper.event.brigadier.CommandRegisteredEvent<>(
 +                name,
-+                new BukkitCommandWrapper(((CraftServer) Bukkit.getServer()), command),
++                new BukkitCommandWrapper(craftServer, command),
 +                command,
 +                (RootCommandNode) dispatcher.getRoot(),
 +                (LiteralCommandNode) commandNode,
@@ -223,3 +230,25 @@ index 94a31c8f903eb61eb6d203e8e6fe8fb0beca28b1..b50a8b7000b707a5ff48cc670300f60d
          this.loadPlugins();
          this.enablePlugins(PluginLoadOrder.STARTUP);
          this.enablePlugins(PluginLoadOrder.POSTWORLD);
+diff --git a/src/test/java/io/papermc/paper/command/brigadier/BukkitCommandConversionTest.java b/src/test/java/io/papermc/paper/command/brigadier/BukkitCommandConversionTest.java
+index 6475510ea1084a003fb2c8645cb4538b3f48e1c7..0c43cb683cc3928a1225013d7fee64c6721be2d4 100644
+--- a/src/test/java/io/papermc/paper/command/brigadier/BukkitCommandConversionTest.java
++++ b/src/test/java/io/papermc/paper/command/brigadier/BukkitCommandConversionTest.java
+@@ -46,7 +46,8 @@ public class BukkitCommandConversionTest extends AbstractTestingBase {
+ 
+         CommandDispatcher dispatcher = DATA_PACK.commands.getDispatcher();
+         dispatcher.setConsumer((context, success, result) -> {});
+-        CommandMap commandMap = new SimpleCommandMap(Bukkit.getServer(), new BukkitBrigForwardingMap());
++        final BukkitBrigForwardingMap map = new BukkitBrigForwardingMap();
++        CommandMap commandMap = new SimpleCommandMap(Bukkit.getServer(), map);
+         Map<String, Command> stringCommandMap = commandMap.getKnownCommands();
+         // All commands should be mirrored -- or equal
+         int commandMapSize = stringCommandMap.values().size();
+@@ -56,6 +57,7 @@ public class BukkitCommandConversionTest extends AbstractTestingBase {
+ 
+         // Register a new command
+         commandMap.register("test", exampleCommand);
++        map.onSync();
+         Assertions.assertEquals(commandMapSize + (3 * 2), stringCommandMap.values().size()); // Make sure commands are accounted for, including those with namespaced keys
+ 
+         // Test Registration
