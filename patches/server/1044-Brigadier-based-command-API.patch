@@ -2021,7 +2021,7 @@ index e6c7f62ed379a78645933670299e4fcda8540ed1..59d7e8a3d83d3ab7aa28606401bb129c
      public org.bukkit.command.CommandSender getBukkitSender() {
          return this.source.getBukkitSender(this);
 diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
-index aa2fca6917fb67fe0e9ba067d11487c3a274f675..86af3494f3d86c7b9fb90ce5a877ec23f5a79e7f 100644
+index aa2fca6917fb67fe0e9ba067d11487c3a274f675..e120b37933016b21abbf8201de7a781075ab9341 100644
 --- a/src/main/java/net/minecraft/commands/Commands.java
 +++ b/src/main/java/net/minecraft/commands/Commands.java
 @@ -156,7 +156,7 @@ public class Commands {
@@ -2033,7 +2033,7 @@ index aa2fca6917fb67fe0e9ba067d11487c3a274f675..86af3494f3d86c7b9fb90ce5a877ec23
          AdvancementCommands.register(this.dispatcher);
          AttributeCommand.register(this.dispatcher, commandRegistryAccess);
          ExecuteCommand.register(this.dispatcher, commandRegistryAccess);
-@@ -265,11 +265,18 @@ public class Commands {
+@@ -265,11 +265,24 @@ public class Commands {
              }
          }
          // Paper end - Vanilla command permission fixes
@@ -2045,11 +2045,17 @@ index aa2fca6917fb67fe0e9ba067d11487c3a274f675..86af3494f3d86c7b9fb90ce5a877ec23
 +        // Paper start - Brigadier Command API
 +        // Create legacy minecraft namespace commands
 +        for (final CommandNode<CommandSourceStack> node : new java.util.ArrayList<>(this.dispatcher.getRoot().getChildren())) {
++            // The brigadier dispatcher is not able to resolve nested redirects.
++            // E.g. registering the alias minecraft:tp cannot redirect to tp, as tp itself redirects to teleport.
++            // Instead, target  the first none
++            CommandNode<CommandSourceStack> flattenedAliasTarget = node;
++            while (flattenedAliasTarget.getRedirect() != null) flattenedAliasTarget = flattenedAliasTarget.getRedirect();
++
 +            this.dispatcher.register(
 +                com.mojang.brigadier.builder.LiteralArgumentBuilder.<CommandSourceStack>literal("minecraft:" + node.getName())
-+                    .executes(node.getCommand())
-+                    .requires(node.getRequirement())
-+                    .redirect(node)
++                    .executes(flattenedAliasTarget.getCommand())
++                    .requires(flattenedAliasTarget.getRequirement())
++                    .redirect(flattenedAliasTarget)
 +            );
 +        }
 +        // Paper end - Brigadier Command API
@@ -2057,7 +2063,7 @@ index aa2fca6917fb67fe0e9ba067d11487c3a274f675..86af3494f3d86c7b9fb90ce5a877ec23
          this.dispatcher.setConsumer(ExecutionCommandSource.resultConsumer());
      }
  
-@@ -325,6 +332,11 @@ public class Commands {
+@@ -325,6 +338,11 @@ public class Commands {
      }
  
      public void performCommand(ParseResults<CommandSourceStack> parseresults, String s, String label) { // CraftBukkit
@@ -2069,7 +2075,7 @@ index aa2fca6917fb67fe0e9ba067d11487c3a274f675..86af3494f3d86c7b9fb90ce5a877ec23
          CommandSourceStack commandlistenerwrapper = (CommandSourceStack) parseresults.getContext().getSource();
  
          commandlistenerwrapper.getServer().getProfiler().push(() -> {
-@@ -339,10 +351,11 @@ public class Commands {
+@@ -339,10 +357,11 @@ public class Commands {
                  });
              }
          } catch (Exception exception) {
@@ -2082,7 +2088,7 @@ index aa2fca6917fb67fe0e9ba067d11487c3a274f675..86af3494f3d86c7b9fb90ce5a877ec23
                  StackTraceElement[] astacktraceelement = exception.getStackTrace();
  
                  for (int i = 0; i < Math.min(astacktraceelement.length, 3); ++i) {
-@@ -477,7 +490,7 @@ public class Commands {
+@@ -477,7 +496,7 @@ public class Commands {
          Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = Maps.newIdentityHashMap(); // Use identity to prevent aliasing issues
          RootCommandNode vanillaRoot = new RootCommandNode();
  
@@ -2091,7 +2097,7 @@ index aa2fca6917fb67fe0e9ba067d11487c3a274f675..86af3494f3d86c7b9fb90ce5a877ec23
          map.put(vanilla, vanillaRoot);
          this.fillUsableCommands(vanilla, vanillaRoot, player.createCommandSourceStack(), (Map) map);
  
-@@ -515,6 +528,7 @@ public class Commands {
+@@ -515,6 +534,7 @@ public class Commands {
      }
  
      private void fillUsableCommands(CommandNode<CommandSourceStack> tree, CommandNode<SharedSuggestionProvider> result, CommandSourceStack source, Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> resultNodes) {
@@ -2099,7 +2105,7 @@ index aa2fca6917fb67fe0e9ba067d11487c3a274f675..86af3494f3d86c7b9fb90ce5a877ec23
          Iterator iterator = tree.getChildren().iterator();
  
          boolean registeredAskServerSuggestionsForTree = false; // Paper - tell clients to ask server for suggestions for EntityArguments
-@@ -529,6 +543,42 @@ public class Commands {
+@@ -529,6 +549,42 @@ public class Commands {
  
              if (commandnode2.canUse(source)) {
                  ArgumentBuilder argumentbuilder = commandnode2.createBuilder(); // CraftBukkit - decompile error
@@ -2323,7 +2329,7 @@ index 3faf80fca51d66480265eaf3cc89149e53ceb215..b9b3277c8ed94e0cd30b20b9c00a33ea
      // CraftBukkit end
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index ac57c3a63bbf234e83f538e4a06ab794c7a0965a..af015237214cebc4d1c4bb9e9c5f939d433e365c 100644
+index 10c22c67e8469c736d48a8729ce7765b41b331d8..94a31c8f903eb61eb6d203e8e6fe8fb0beca28b1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -270,11 +270,11 @@ public final class CraftServer implements Server {
