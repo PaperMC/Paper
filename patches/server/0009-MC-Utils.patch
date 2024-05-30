@@ -3482,12 +3482,13 @@ index 0000000000000000000000000000000000000000..cea9c098ade00ee87b8efc8164ab72f5
 +}
 diff --git a/src/main/java/io/papermc/paper/util/MCUtil.java b/src/main/java/io/papermc/paper/util/MCUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6d306470ae0e40d26e27d4df7c644a66d3913043
+index 0000000000000000000000000000000000000000..38f979c0afbe9f7506086ab64aafeda084dcc18f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/MCUtil.java
-@@ -0,0 +1,573 @@
+@@ -0,0 +1,575 @@
 +package io.papermc.paper.util;
 +
++import com.google.common.base.Suppliers;
 +import com.google.common.collect.ForwardingList;
 +import com.google.common.collect.ImmutableList;
 +import com.google.common.collect.Lists;
@@ -4044,14 +4045,15 @@ index 0000000000000000000000000000000000000000..6d306470ae0e40d26e27d4df7c644a66
 +        return builder.build();
 +    }
 +
-+    public static <F, T> List<T> lazyForwardingList(final @NotNull Supplier<List<F>> backingListSupplier,
-+                                                    final @NotNull Function<F, T> toFunction,
-+                                                    final @NotNull Function<T, F> fromFunction) {
++    public static <F, T> List<T> lazyMemoizingForwardingList(final @NotNull Supplier<List<F>> backingListSupplier,
++                                                             final @NotNull Function<F, T> toFunction,
++                                                             final @NotNull Function<T, F> fromFunction) {
++        final Supplier<List<F>> memoizedSupplier = Suppliers.memoize(backingListSupplier::get);
 +        return new TransformingRandomAccessList<>(
-+            new ForwardingList<F>() {
++            new ForwardingList<>() {
 +                @Override
 +                protected @NotNull List<F> delegate() {
-+                    return backingListSupplier.get();
++                    return memoizedSupplier.get();
 +                }
 +            },
 +            toFunction,
