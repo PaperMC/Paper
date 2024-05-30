@@ -4,42 +4,75 @@ Date: Wed, 29 May 2024 13:15:43 -0700
 Subject: [PATCH] Fix CommandRegisteredEvent not called
 
 
-diff --git a/src/main/java/io/papermc/paper/command/brigadier/LazyCommandNode.java b/src/main/java/io/papermc/paper/command/brigadier/LazyCommandNode.java
+diff --git a/src/main/java/io/papermc/paper/command/brigadier/LazyBukkitCommandNode.java b/src/main/java/io/papermc/paper/command/brigadier/LazyBukkitCommandNode.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2ca3ca97874c7a8184ee0ef951c15bacf4d4eadb
+index 0000000000000000000000000000000000000000..72d7b46fdcfdfc8a9bac4b7f7ef7eb2a5b0a08ef
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/command/brigadier/LazyCommandNode.java
-@@ -0,0 +1,21 @@
++++ b/src/main/java/io/papermc/paper/command/brigadier/LazyBukkitCommandNode.java
+@@ -0,0 +1,33 @@
 +package io.papermc.paper.command.brigadier;
 +
 +import com.mojang.brigadier.tree.LiteralCommandNode;
++import io.papermc.paper.command.brigadier.bukkit.BukkitCommandNode;
 +import java.util.function.Supplier;
++import org.bukkit.command.Command;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
 +@DefaultQualifier(NonNull.class)
-+public class LazyCommandNode<S> extends LiteralCommandNode<S> {
-+    private final Supplier<@Nullable LiteralCommandNode<S>> nodeSupplier;
++public class LazyBukkitCommandNode<S> extends LiteralCommandNode<S> {
++    private final Command command;
++    private final Supplier<@Nullable BukkitCommandNode> nodeSupplier;
 +
-+    public LazyCommandNode(final String literal, final Supplier<@Nullable LiteralCommandNode<S>> nodeSupplier) {
++    public LazyBukkitCommandNode(
++        final String literal,
++        final Command command,
++        final Supplier<@Nullable BukkitCommandNode> nodeSupplier
++    ) {
 +        super(literal, null, null, null, null, false);
++        this.command = command;
 +        this.nodeSupplier = nodeSupplier;
 +    }
 +
-+    public @Nullable LiteralCommandNode<S> create() {
++    public @Nullable BukkitCommandNode create() {
 +        return this.nodeSupplier.get();
 +    }
++
++    public Command bukkitCommand() {
++        return this.command;
++    }
 +}
+diff --git a/src/main/java/io/papermc/paper/command/brigadier/PaperBrigadier.java b/src/main/java/io/papermc/paper/command/brigadier/PaperBrigadier.java
+index 4acf7c3bcfbe61431bfbfa3c8addb33f671eb498..ab9a71faa6696cfe8cc88cd9513cda8b9fad1b6a 100644
+--- a/src/main/java/io/papermc/paper/command/brigadier/PaperBrigadier.java
++++ b/src/main/java/io/papermc/paper/command/brigadier/PaperBrigadier.java
+@@ -64,9 +64,15 @@ public final class PaperBrigadier {
+         CommandDispatcher erasedDispatcher = before.getDispatcher();
+ 
+         for (Object node : erasedDispatcher.getRoot().getChildren()) {
+-            if (node instanceof CommandNode<?> commandNode && commandNode.getCommand() instanceof BukkitCommandNode.BukkitBrigCommand) {
++            if (node instanceof BukkitCommandNode) {
+                 after.getDispatcher().getRoot().removeCommand(((CommandNode<?>) node).getName()); // Remove already existing commands
+                 after.getDispatcher().getRoot().addChild((CommandNode<net.minecraft.commands.CommandSourceStack>) node);
++            } else if (node instanceof LazyBukkitCommandNode<?> lazy) {
++                after.getDispatcher().getRoot().removeCommand(lazy.getName()); // Remove already existing commands
++                final BukkitCommandNode newNode = lazy.create();
++                if (newNode != null) {
++                    after.getDispatcher().getRoot().addChild((CommandNode) newNode);
++                }
+             }
+         }
+     }
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitBrigForwardingMap.java b/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitBrigForwardingMap.java
-index f0cc27640bb3db275295a298d608c9d9f88df617..566bf6729e4e0a768b8ec3a2e574ae681f8eaf7b 100644
+index f0cc27640bb3db275295a298d608c9d9f88df617..6e2911a31f6ba06c47b7e22912447912501de602 100644
 --- a/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitBrigForwardingMap.java
 +++ b/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitBrigForwardingMap.java
 @@ -5,6 +5,7 @@ import com.mojang.brigadier.CommandDispatcher;
  import com.mojang.brigadier.tree.CommandNode;
  import com.mojang.brigadier.tree.LiteralCommandNode;
  import io.papermc.paper.command.brigadier.CommandSourceStack;
-+import io.papermc.paper.command.brigadier.LazyCommandNode;
++import io.papermc.paper.command.brigadier.LazyBukkitCommandNode;
  import io.papermc.paper.command.brigadier.PaperBrigadier;
  import io.papermc.paper.command.brigadier.PaperCommands;
  import java.util.AbstractCollection;
@@ -68,7 +101,7 @@ index f0cc27640bb3db275295a298d608c9d9f88df617..566bf6729e4e0a768b8ec3a2e574ae68
 +        final List<String> remove = new ArrayList<>();
 +        final List<LiteralCommandNode<CommandSourceStack>> list = new ArrayList<>();
 +        for (final CommandNode<CommandSourceStack> child : this.getDispatcher().getRoot().getChildren()) {
-+            if (child instanceof LazyCommandNode<CommandSourceStack> lazy) {
++            if (child instanceof LazyBukkitCommandNode<CommandSourceStack> lazy) {
 +                remove.add(child.getName());
 +                final LiteralCommandNode<CommandSourceStack> newNode = lazy.create();
 +                if (newNode != null) {
@@ -87,14 +120,33 @@ index f0cc27640bb3db275295a298d608c9d9f88df617..566bf6729e4e0a768b8ec3a2e574ae68
      @Override
      public int size() {
          return this.getDispatcher().getRoot().getChildren().size();
-@@ -95,7 +119,18 @@ public class BukkitBrigForwardingMap extends HashMap<String, Command> {
+@@ -70,6 +94,8 @@ public class BukkitBrigForwardingMap extends HashMap<String, Command> {
+             // If child is a bukkit command node, we can convert it!
+             if (child instanceof BukkitCommandNode bukkitCommandNode) {
+                 return bukkitCommandNode.getBukkitCommand().equals(value);
++            } else if (child instanceof LazyBukkitCommandNode<CommandSourceStack> lazy) {
++                return lazy.bukkitCommand().equals(value);
+             }
+         }
+ 
+@@ -85,6 +111,8 @@ public class BukkitBrigForwardingMap extends HashMap<String, Command> {
+ 
+         if (node instanceof BukkitCommandNode bukkitCommandNode) {
+             return bukkitCommandNode.getBukkitCommand();
++        } else if (node instanceof LazyBukkitCommandNode<?> lazyBukkitCommandNode) {
++            return lazyBukkitCommandNode.bukkitCommand();
+         }
+ 
+         return PaperBrigadier.wrapNode(node);
+@@ -95,7 +123,19 @@ public class BukkitBrigForwardingMap extends HashMap<String, Command> {
      public Command put(String key, Command value) {
          Command old = this.get(key);
          this.getDispatcher().getRoot().removeCommand(key); // Override previous command
 -        this.getDispatcher().getRoot().addChild(BukkitCommandNode.of(key, value));
 +        if (!this.synced) {
-+            final LazyCommandNode<CommandSourceStack> node = new LazyCommandNode<>(
++            final LazyBukkitCommandNode<CommandSourceStack> node = new LazyBukkitCommandNode<>(
 +                key,
++                value,
 +                () -> BukkitCommandNode.create(key, value, this.getDispatcher())
 +            );
 +            this.getDispatcher().getRoot().addChild(node);
@@ -107,6 +159,24 @@ index f0cc27640bb3db275295a298d608c9d9f88df617..566bf6729e4e0a768b8ec3a2e574ae68
          return old;
      }
  
+@@ -187,6 +227,8 @@ public class BukkitBrigForwardingMap extends HashMap<String, Command> {
+                     this.lastFetched = next;
+                     if (next instanceof BukkitCommandNode bukkitCommandNode) {
+                         return bukkitCommandNode.getBukkitCommand();
++                    } else if (next instanceof LazyBukkitCommandNode<CommandSourceStack> lazyBukkitCommandNode) {
++                        return lazyBukkitCommandNode.bukkitCommand();
+                     } else {
+                         return PaperBrigadier.wrapNode(next);
+                     }
+@@ -304,6 +346,8 @@ public class BukkitBrigForwardingMap extends HashMap<String, Command> {
+     private Map.Entry<String, Command> nodeToEntry(CommandNode<?> node) {
+         if (node instanceof BukkitCommandNode bukkitCommandNode) {
+             return this.mutableEntry(bukkitCommandNode.getName(), bukkitCommandNode.getBukkitCommand());
++        } else if (node instanceof LazyBukkitCommandNode<?> lazyBukkitCommandNode) {
++            return this.mutableEntry(lazyBukkitCommandNode.getName(), lazyBukkitCommandNode.bukkitCommand());
+         } else {
+             Command wrapped = PaperBrigadier.wrapNode(node);
+             return this.mutableEntry(node.getName(), wrapped);
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitCommandNode.java b/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitCommandNode.java
 index 10a113b057b0a4d27cce3bae975e1108aaa7b517..dd9a586789995cde207e3b4c79ff3dfeba944135 100644
 --- a/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitCommandNode.java
