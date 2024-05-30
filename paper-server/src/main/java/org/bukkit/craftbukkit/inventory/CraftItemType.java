@@ -36,7 +36,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Handleable<Item> {
+public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Handleable<Item>, io.papermc.paper.world.flag.PaperFeatureDependent { // Paper - feature flag API
 
     private final NamespacedKey key;
     private final Item item;

@@ -564,4 +564,11 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         return !this.getHandle().noCollision(aabb);
     }
     // Paper end
+
+    // Paper start - feature flag API
+    @Override
+    public java.util.Set<org.bukkit.FeatureFlag> getFeatureFlags() {
+        return io.papermc.paper.world.flag.PaperFeatureFlagProviderImpl.fromNms(this.getHandle().enabledFeatures());
+    }
+    // Paper end - feature flag API
 }

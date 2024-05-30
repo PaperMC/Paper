@@ -33,7 +33,7 @@ import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.inventory.ItemType;
 import org.jetbrains.annotations.NotNull;
 
-public class CraftBlockType<B extends BlockData> implements BlockType.Typed<B>, Handleable<Block> {
+public class CraftBlockType<B extends BlockData> implements BlockType.Typed<B>, Handleable<Block>, io.papermc.paper.world.flag.PaperFeatureDependent { // Paper - feature flag API
 
     private final NamespacedKey key;
     private final Block block;

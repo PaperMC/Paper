@@ -2359,10 +2359,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         return this.persistentDataContainer;
     }
 
-    @Override
-    public Set<FeatureFlag> getFeatureFlags() {
-        return CraftFeatureFlag.getFromNMS(this.getHandle().enabledFeatures()).stream().map(FeatureFlag.class::cast).collect(Collectors.toUnmodifiableSet());
-    }
+    // Paper - replace feature flag API
 
     public void storeBukkitValues(CompoundTag c) {
         if (!this.persistentDataContainer.isEmpty()) {

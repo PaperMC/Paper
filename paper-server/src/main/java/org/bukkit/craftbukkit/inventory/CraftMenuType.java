@@ -18,7 +18,7 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.MenuType;
 
-public class CraftMenuType<V extends InventoryView> implements MenuType.Typed<V>, Handleable<net.minecraft.world.inventory.MenuType<?>> {
+public class CraftMenuType<V extends InventoryView> implements MenuType.Typed<V>, Handleable<net.minecraft.world.inventory.MenuType<?>>, io.papermc.paper.world.flag.PaperFeatureDependent { // Paper - make FeatureDependant
 
     private final NamespacedKey key;
     private final net.minecraft.world.inventory.MenuType<?> handle;

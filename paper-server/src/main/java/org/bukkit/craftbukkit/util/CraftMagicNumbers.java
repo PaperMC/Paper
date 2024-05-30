@@ -48,7 +48,7 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.Biome;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.craftbukkit.CraftFeatureFlag;
+// import org.bukkit.craftbukkit.CraftFeatureFlag; // Paper
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.block.CraftBiome;
@@ -456,11 +456,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         return attribute.getTranslationKey();
     }
 
-    @Override
-    public FeatureFlag getFeatureFlag(NamespacedKey namespacedKey) {
-        Preconditions.checkArgument(namespacedKey != null, "NamespaceKey cannot be null");
-        return CraftFeatureFlag.getFromNMS(namespacedKey);
-    }
+    // Paper - replace feature flag API
 
     @Override
     public PotionType.InternalPotionData getInternalPotionData(NamespacedKey namespacedKey) {

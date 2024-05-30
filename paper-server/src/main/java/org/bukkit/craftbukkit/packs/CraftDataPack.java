@@ -11,7 +11,7 @@ import net.minecraft.util.InclusiveRange;
 import org.bukkit.Bukkit;
 import org.bukkit.FeatureFlag;
 import org.bukkit.NamespacedKey;
-import org.bukkit.craftbukkit.CraftFeatureFlag;
+// import org.bukkit.craftbukkit.CraftFeatureFlag; // Paper - replace feature flag API
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.packs.DataPack;
@@ -98,7 +98,7 @@ public class CraftDataPack implements DataPack {
 
     @Override
     public Set<FeatureFlag> getRequestedFeatures() {
-        return CraftFeatureFlag.getFromNMS(this.getHandle().getRequestedFeatures()).stream().map(FeatureFlag.class::cast).collect(Collectors.toUnmodifiableSet());
+        return io.papermc.paper.world.flag.PaperFeatureFlagProviderImpl.fromNms(this.getHandle().getRequestedFeatures()); // Paper - replace feature flag API
     }
 
     @Override

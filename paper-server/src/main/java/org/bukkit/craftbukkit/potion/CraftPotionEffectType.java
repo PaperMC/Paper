@@ -13,7 +13,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionEffectTypeCategory;
 import org.jetbrains.annotations.NotNull;
 
-public class CraftPotionEffectType extends PotionEffectType implements Handleable<MobEffect> {
+public class CraftPotionEffectType extends PotionEffectType implements Handleable<MobEffect>, io.papermc.paper.world.flag.PaperFeatureDependent { // Paper - feature flag API
 
     public static PotionEffectType minecraftHolderToBukkit(Holder<MobEffect> minecraft) {
         return CraftPotionEffectType.minecraftToBukkit(minecraft.value());

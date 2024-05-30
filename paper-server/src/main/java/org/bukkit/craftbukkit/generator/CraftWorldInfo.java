@@ -17,6 +17,7 @@ public class CraftWorldInfo implements WorldInfo {
     private final long seed;
     private final int minHeight;
     private final int maxHeight;
+    private final net.minecraft.world.flag.FeatureFlagSet enabledFeatures; // Paper - feature flag API
     // Paper start
     private final net.minecraft.world.level.chunk.ChunkGenerator vanillaChunkGenerator;
     private final net.minecraft.core.RegistryAccess.Frozen registryAccess;
@@ -31,6 +32,7 @@ public class CraftWorldInfo implements WorldInfo {
         this.seed = ((PrimaryLevelData) worldDataServer).worldGenOptions().seed();
         this.minHeight = dimensionManager.minY();
         this.maxHeight = dimensionManager.minY() + dimensionManager.height();
+        this.enabledFeatures = worldDataServer.enabledFeatures(); // Paper - feature flag API
     }
 
     @Override
@@ -92,4 +94,11 @@ public class CraftWorldInfo implements WorldInfo {
         };
     }
     // Paper end
+
+    // Paper start - feature flag API
+    @Override
+    public java.util.Set<org.bukkit.FeatureFlag> getFeatureFlags() {
+        return io.papermc.paper.world.flag.PaperFeatureFlagProviderImpl.fromNms(this.enabledFeatures);
+    }
+    // Paper end - feature flag API
 }
