@@ -102,6 +102,19 @@ public final class SerializableMeta implements ConfigurationSerializable {
         if (clazz.isInstance(object)) {
             return clazz.cast(object);
         }
+
+        // SPIGOT-7675 - More lenient conversion of floating point numbers from other number types:
+        if (clazz == Float.class || clazz == Double.class) {
+            if (Number.class.isInstance(object)) {
+                Number number = Number.class.cast(object);
+                if (clazz == Float.class) {
+                    return clazz.cast(number.floatValue());
+                } else {
+                    return clazz.cast(number.doubleValue());
+                }
+            }
+        }
+
         if (object == null) {
             if (!nullable) {
                 throw new NoSuchElementException(map + " does not contain " + field);
