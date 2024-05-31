@@ -10,8 +10,39 @@ the logic associated with damaging them
 == AT ==
 public net.minecraft.world.entity.LivingEntity entityEventForEquipmentBreak(Lnet/minecraft/world/entity/EquipmentSlot;)B
 
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index acce1b72185d4687ef5a72dd4014d87149f4b092..b9b06bdabedbbe539eadbf04350e0ba946a4f995 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -705,11 +705,16 @@ public final class ItemStack implements DataComponentHolder {
+     }
+ 
+     public void hurtAndBreak(int amount, LivingEntity entity, EquipmentSlot slot) {
++    // Paper start - itemstack damage API
++        this.hurtAndBreak(amount, entity, slot, false);
++    }
++    public void hurtAndBreak(int amount, LivingEntity entity, @org.checkerframework.checker.nullness.qual.Nullable EquipmentSlot slot, boolean force) {
++    // Paper end - itemstack damage API
+         if (!entity.level().isClientSide) {
+             if (entity instanceof net.minecraft.world.entity.player.Player) {
+                 net.minecraft.world.entity.player.Player entityhuman = (net.minecraft.world.entity.player.Player) entity;
+ 
+-                if (entityhuman.hasInfiniteMaterials()) {
++                if (!force && entityhuman.hasInfiniteMaterials()) { // Paper end - itemstack damage API - damage items in creative mode too if called via API
+                     return;
+                 }
+             }
+@@ -726,7 +731,7 @@ public final class ItemStack implements DataComponentHolder {
+             }
+ 
+             this.hurtAndBreak(amount, randomsource, entity, () -> { // Paper - Add EntityDamageItemEvent
+-                entity.broadcastBreakEvent(slot);
++                if (slot != null) entity.broadcastBreakEvent(slot); // Paper - ItemStack damage API - slot is nullable
+                 Item item = this.getItem();
+                 // CraftBukkit start - Check for item breaking
+                 if (this.count == 1 && entity instanceof net.minecraft.world.entity.player.Player) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-index 2537d4d4ec1243f3b80ec13a6b863ec6de619919..f866a3c2f5ec5954bab9de5f8d3e2a8c55824805 100644
+index 2537d4d4ec1243f3b80ec13a6b863ec6de619919..15dc6176f41eac75e93117d450dfe1dca99bc26f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 @@ -1103,4 +1103,48 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
@@ -59,7 +90,7 @@ index 2537d4d4ec1243f3b80ec13a6b863ec6de619919..f866a3c2f5ec5954bab9de5f8d3e2a8c
 +    }
 +
 +    private void damageItemStack0(final net.minecraft.world.item.ItemStack nmsStack, final int amount, final net.minecraft.world.entity.EquipmentSlot slot) {
-+        nmsStack.hurtAndBreak(amount, this.getHandle(), slot);
++        nmsStack.hurtAndBreak(amount, this.getHandle(), slot, true);
 +    }
 +    // Paper end - ItemStack damage API
  }
