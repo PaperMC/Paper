@@ -1845,6 +1845,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 +import com.mojang.brigadier.tree.LiteralCommandNode;
 +import io.papermc.paper.command.brigadier.CommandSourceStack;
++import java.util.ArrayList;
++import java.util.Collections;
 +import net.minecraft.commands.CommandSource;
 +import org.bukkit.Bukkit;
 +import org.bukkit.ChatColor;
@@ -1857,6 +1859,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.List;
 +import java.util.concurrent.CompletableFuture;
 +import java.util.logging.Level;
++import org.bukkit.entity.Entity;
++import org.bukkit.entity.Player;
++import org.bukkit.event.server.TabCompleteEvent;
 +
 +public class BukkitCommandNode extends LiteralCommandNode<CommandSourceStack> {
 +
@@ -1951,6 +1956,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                Bukkit.getServer().getLogger().log(Level.SEVERE, "Exception when " + sender.getName() + " attempted to tab complete " + builder.getRemaining(), ex);
 +            }
 +
++            if (sender instanceof final Player player) {
++                TabCompleteEvent tabEvent = new org.bukkit.event.server.TabCompleteEvent(player, builder.getInput(), results != null ? results : new ArrayList<>(), true, pos); // Paper - AsyncTabCompleteEvent
++                if (!tabEvent.callEvent()) {
++                    results = null;
++                } else {
++                    results = tabEvent.getCompletions();
++                }
++            }
 +            // Paper end
 +            if (results == null) {
 +                return builder.buildFuture();
