@@ -11,28 +11,24 @@ the logic associated with damaging them
 public net.minecraft.world.entity.LivingEntity entityEventForEquipmentBreak(Lnet/minecraft/world/entity/EquipmentSlot;)B
 
 diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
-index acce1b72185d4687ef5a72dd4014d87149f4b092..b9b06bdabedbbe539eadbf04350e0ba946a4f995 100644
+index acce1b72185d4687ef5a72dd4014d87149f4b092..3883145d37af7bdf5c8d7f81c93a4acf4bd2b3cb 100644
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
 +++ b/src/main/java/net/minecraft/world/item/ItemStack.java
-@@ -705,11 +705,16 @@ public final class ItemStack implements DataComponentHolder {
-     }
- 
-     public void hurtAndBreak(int amount, LivingEntity entity, EquipmentSlot slot) {
-+    // Paper start - itemstack damage API
-+        this.hurtAndBreak(amount, entity, slot, false);
-+    }
-+    public void hurtAndBreak(int amount, LivingEntity entity, @org.checkerframework.checker.nullness.qual.Nullable EquipmentSlot slot, boolean force) {
-+    // Paper end - itemstack damage API
-         if (!entity.level().isClientSide) {
-             if (entity instanceof net.minecraft.world.entity.player.Player) {
-                 net.minecraft.world.entity.player.Player entityhuman = (net.minecraft.world.entity.player.Player) entity;
- 
--                if (entityhuman.hasInfiniteMaterials()) {
-+                if (!force && entityhuman.hasInfiniteMaterials()) { // Paper end - itemstack damage API - damage items in creative mode too if called via API
+@@ -713,7 +713,13 @@ public final class ItemStack implements DataComponentHolder {
                      return;
                  }
              }
-@@ -726,7 +731,7 @@ public final class ItemStack implements DataComponentHolder {
++    // Paper start - ItemStack damage API - split hurtAndBreak to skip pre-checks like creative mode
++        }
+ 
++    }
++    public void hurtAndBreakWithoutChecks(int amount, LivingEntity entity, @org.checkerframework.checker.nullness.qual.Nullable EquipmentSlot slot) {
++        {
++    // Paper end - ItemStack damage API - split hurtAndBreak to skip pre-checks like creative mode
+             RandomSource randomsource = entity.getRandom();
+             ServerPlayer entityplayer;
+ 
+@@ -726,7 +732,7 @@ public final class ItemStack implements DataComponentHolder {
              }
  
              this.hurtAndBreak(amount, randomsource, entity, () -> { // Paper - Add EntityDamageItemEvent
