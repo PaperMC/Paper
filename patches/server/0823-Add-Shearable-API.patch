@@ -31,6 +31,19 @@ index 0000000000000000000000000000000000000000..bcf254e3c81cf1e401bddc850fb24ad2
 +        this.getHandle().shear(PaperAdventure.asVanilla(source));
 +    }
 +}
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftBogged.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftBogged.java
+index b252236369315502278e9b7c93709a347ec16636..93481e2828f945b11ae9a20a8e5286232b449fa9 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftBogged.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftBogged.java
+@@ -4,7 +4,7 @@ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.Bogged;
+ import org.bukkit.entity.Skeleton;
+ 
+-public class CraftBogged extends CraftAbstractSkeleton implements Bogged {
++public class CraftBogged extends CraftAbstractSkeleton implements Bogged, io.papermc.paper.entity.PaperShearable { // Paper - Shear API
+ 
+     public CraftBogged(CraftServer server, net.minecraft.world.entity.monster.Bogged entity) {
+         super(server, entity);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMushroomCow.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMushroomCow.java
 index 986f7b18112ef183de3bbff269a92bf6ac945477..9cc81bcccbf1141f66fedada1359b7c0dfa8e22a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMushroomCow.java
@@ -70,3 +83,37 @@ index 1e9807b8f468742d208f817e22d7625106fc1b58..4ce2373ff71c3c1b8951646e057587a3
      public CraftSnowman(CraftServer server, SnowGolem entity) {
          super(server, entity);
      }
+diff --git a/src/test/java/io/papermc/paper/entity/ShearableTest.java b/src/test/java/io/papermc/paper/entity/ShearableTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fc8010c5fa0027d45d3c10d67e20631951714c40
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/entity/ShearableTest.java
+@@ -0,0 +1,28 @@
++package io.papermc.paper.entity;
++
++import com.destroystokyo.paper.entity.ai.MobGoalHelper;
++import io.github.classgraph.ClassGraph;
++import io.github.classgraph.ScanResult;
++import java.util.List;
++import net.minecraft.world.entity.Mob;
++import net.minecraft.world.entity.Shearable;
++import org.junit.jupiter.api.Assertions;
++import org.junit.jupiter.params.ParameterizedTest;
++import org.junit.jupiter.params.provider.MethodSource;
++
++class ShearableTest {
++
++    static List<Class<Shearable>> nmsShearables() {
++        try (final ScanResult result = new ClassGraph().enableClassInfo().whitelistPackages("net.minecraft.world.entity").scan()) {
++            return result.getClassesImplementing(Shearable.class.getName()).loadClasses(Shearable.class);
++        }
++    }
++
++    @SuppressWarnings("unchecked")
++    @ParameterizedTest
++    @MethodSource("nmsShearables")
++    void ensureImplementsShearable(final Class<? extends Shearable> shearableNmsClass) {
++        final Class<? extends org.bukkit.entity.Mob> bukkitClass = MobGoalHelper.toBukkitClass((Class<? extends Mob>) shearableNmsClass);
++        Assertions.assertTrue(io.papermc.paper.entity.Shearable.class.isAssignableFrom(bukkitClass), bukkitClass.getName() + " does not implement Shearable");
++    }
++}
