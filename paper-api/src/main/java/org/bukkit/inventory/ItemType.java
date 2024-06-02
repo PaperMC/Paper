@@ -2257,11 +2257,12 @@ public interface ItemType extends Keyed, Translatable {
     //</editor-fold>
 
     @NotNull
-    private static <M extends ItemMeta> Typed<M> getItemType(@NotNull String key) {
+    private static <M extends ItemType> M getItemType(@NotNull String key) {
         NamespacedKey namespacedKey = NamespacedKey.minecraft(key);
-        Typed<?> itemType = Registry.ITEM.get(namespacedKey).typed();
+        ItemType itemType = Registry.ITEM.get(namespacedKey);
         Preconditions.checkNotNull(itemType, "No ItemType found for %s. This is a bug.", namespacedKey);
-        return (Typed<M>) itemType;
+        // Cast instead of using ItemType#typed, since item type can be a mock during testing and would return null
+        return (M) itemType;
     }
 
     /**

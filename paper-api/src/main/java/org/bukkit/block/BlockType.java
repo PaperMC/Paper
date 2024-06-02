@@ -3409,11 +3409,12 @@ public interface BlockType extends Keyed, Translatable {
     //</editor-fold>
 
     @NotNull
-    private static <B extends BlockData> BlockType.Typed<B> getBlockType(@NotNull String key) {
+    private static <B extends BlockType> B getBlockType(@NotNull String key) {
         NamespacedKey namespacedKey = NamespacedKey.minecraft(key);
-        BlockType.Typed<?> blockType = Registry.BLOCK.get(namespacedKey).typed();
+        BlockType blockType = Registry.BLOCK.get(namespacedKey);
         Preconditions.checkNotNull(blockType, "No BlockType found for %s. This is a bug.", namespacedKey);
-        return (BlockType.Typed<B>) blockType;
+        // Cast instead of using BlockType#typed, since block type can be a mock during testing and would return null
+        return (B) blockType;
     }
 
     /**

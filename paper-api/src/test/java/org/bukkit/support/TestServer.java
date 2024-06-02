@@ -3,6 +3,7 @@ package org.bukkit.support;
 import static org.mockito.Mockito.*;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -38,12 +39,22 @@ public final class TestServer {
         when(instance.getBukkitVersion()).thenReturn("BukkitVersion_" + TestServer.class.getPackage().getImplementationVersion());
 
         Map<Class<? extends Keyed>, Registry<?>> registers = new HashMap<>();
-        when(instance.getRegistry(any())).then(invocationOnMock -> registers.computeIfAbsent(invocationOnMock.getArgument(0), aClass -> new Registry<Keyed>() {
+        when(instance.getRegistry(any())).then(invocationOnMock -> registers.computeIfAbsent(invocationOnMock.getArgument(0), aClass -> new Registry<>() {
             private final Map<NamespacedKey, Keyed> cache = new HashMap<>();
 
             @Override
             public Keyed get(NamespacedKey key) {
-                return cache.computeIfAbsent(key, key2 -> mock(aClass, withSettings().stubOnly()));
+                Class<? extends Keyed> theClass;
+                // Some registries have extra Typed classes such as BlockType and ItemType.
+                // To avoid class cast exceptions during init mock the Typed class.
+                // To get the correct class, we just use the field type.
+                try {
+                    theClass = (Class<? extends Keyed>) aClass.getField(key.getKey().toUpperCase(Locale.ROOT).replace('.', '_')).getType();
+                } catch (ClassCastException | NoSuchFieldException e) {
+                    throw new RuntimeException(e);
+                }
+
+                return cache.computeIfAbsent(key, key2 -> mock(theClass, withSettings().stubOnly()));
             }
 
             @NotNull
