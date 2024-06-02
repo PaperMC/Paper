@@ -1,0 +1,66 @@
+From 07a00d527e871eadaf4a96af5ad367ddcbfa9cc3 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 29 Sep 2018 01:18:16 -0400
+Subject: [PATCH] Fix Sending Chunks to Client
+
+Vanilla has some screwy logic that doesn't send a chunk until
+it has been post processed. This is an issue as post processing
+doesn't occur until all neighbor chunks have been loaded.
+
+This can reduce view distance while generating terrain, but also
+cause bugs where chunks are never sent to the client.
+
+This fix always sends chunks to the client, and simply updates
+the client anytime post processing is triggered with the new chunk data.
+
+diff --git a/src/main/java/net/minecraft/server/Chunk.java b/src/main/java/net/minecraft/server/Chunk.java
+index 0d51c1baeb..46804203fe 100644
+--- a/src/main/java/net/minecraft/server/Chunk.java
++++ b/src/main/java/net/minecraft/server/Chunk.java
+@@ -1190,7 +1190,7 @@ public class Chunk implements IChunkAccess {
+     }
+ 
+     public boolean isReady() {
+-        return this.C.a(ChunkStatus.POSTPROCESSED);
++        return true; // Paper - Always send chunks
+     }
+ 
+     public boolean v() {
+@@ -1428,6 +1428,13 @@ public class Chunk implements IChunkAccess {
+             this.h.clear();
+             this.a(ChunkStatus.POSTPROCESSED);
+             this.m.a(this);
++            // Paper start - resend chunk after post process
++            PlayerChunk playerChunk = ((WorldServer) world).getPlayerChunkMap().getChunk(locX, locZ);
++            if (playerChunk != null) {
++                playerChunk.done = false;
++                playerChunk.sendAll();
++            }
++            // Paper end
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/PlayerChunk.java b/src/main/java/net/minecraft/server/PlayerChunk.java
+index e4cf8548d3..ac5d158093 100644
+--- a/src/main/java/net/minecraft/server/PlayerChunk.java
++++ b/src/main/java/net/minecraft/server/PlayerChunk.java
+@@ -20,7 +20,7 @@ public class PlayerChunk {
+     private int dirtyCount;
+     private int h;
+     private long i;
+-    private boolean done;
++    boolean done; // Paper - package-private
+     boolean chunkExists; // Paper
+     // Paper start
+     PaperAsyncChunkProvider.CancellableChunkRequest chunkRequest;
+@@ -147,6 +147,7 @@ public class PlayerChunk {
+         }
+     }
+ 
++    public boolean sendAll() { return b(); } // Paper - OBFHELPER
+     public boolean b() {
+         if (this.done) {
+             return true;
+-- 
+2.21.0
+

@@ -1,0 +1,111 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 26 Sep 2021 12:57:35 -0700
+Subject: [PATCH] Option to prevent NBT copy in smithing recipes
+
+
+diff --git a/src/main/java/org/bukkit/inventory/SmithingRecipe.java b/src/main/java/org/bukkit/inventory/SmithingRecipe.java
+index 0235f4aa50eb69f87068005c669bd486899025d6..92f6285d87cabde3c1f1690ee4747217c4d098b2 100644
+--- a/src/main/java/org/bukkit/inventory/SmithingRecipe.java
++++ b/src/main/java/org/bukkit/inventory/SmithingRecipe.java
+@@ -13,6 +13,7 @@ public class SmithingRecipe implements Recipe, Keyed {
+     private final ItemStack result;
+     private final RecipeChoice base;
+     private final RecipeChoice addition;
++    private final boolean copyNbt; // Paper
+ 
+     /**
+      * Create a smithing recipe to produce the specified result ItemStack.
+@@ -28,6 +29,23 @@ public class SmithingRecipe implements Recipe, Keyed {
+      */
+     @Deprecated
+     public SmithingRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull RecipeChoice base, @NotNull RecipeChoice addition) {
++        // Paper start
++        this(key, result, base, addition, true);
++    }
++    /**
++     * Create a smithing recipe to produce the specified result ItemStack.
++     *
++     * @param key The unique recipe key
++     * @param result The item you want the recipe to create.
++     * @param base The base ingredient
++     * @param addition The addition ingredient
++     * @param copyNbt whether to copy the nbt from the input base item to the output
++     * @deprecated use {@link SmithingTrimRecipe} or {@link SmithingTransformRecipe}
++     */
++    @Deprecated
++    public SmithingRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull RecipeChoice base, @NotNull RecipeChoice addition, boolean copyNbt) {
++        this.copyNbt = copyNbt;
++        // Paper end
+         this.key = key;
+         this.result = result;
+         this.base = base;
+@@ -65,4 +83,15 @@ public class SmithingRecipe implements Recipe, Keyed {
+     public NamespacedKey getKey() {
+         return this.key;
+     }
++
++    // Paper start
++    /**
++     * Whether or not to copy the NBT of the input base item to the output.
++     *
++     * @return true to copy the NBT (default for vanilla smithing recipes)
++     */
++    public boolean willCopyNbt() {
++        return copyNbt;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/inventory/SmithingTransformRecipe.java b/src/main/java/org/bukkit/inventory/SmithingTransformRecipe.java
+index 08fd3eca8383cdc2d06c3ce973e8c402d279077e..ad2fc850819c9784d477b59adcc5f5ab32ed4fac 100644
+--- a/src/main/java/org/bukkit/inventory/SmithingTransformRecipe.java
++++ b/src/main/java/org/bukkit/inventory/SmithingTransformRecipe.java
+@@ -23,6 +23,22 @@ public class SmithingTransformRecipe extends SmithingRecipe {
+         super(key, result, base, addition);
+         this.template = template;
+     }
++    // Paper start
++    /**
++     * Create a smithing recipe to produce the specified result ItemStack.
++     *
++     * @param key The unique recipe key
++     * @param result The item you want the recipe to create.
++     * @param template The template item.
++     * @param base The base ingredient
++     * @param addition The addition ingredient
++     * @param copyNbt whether to copy the nbt from the input base item to the output
++     */
++    public SmithingTransformRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull RecipeChoice template, @NotNull RecipeChoice base, @NotNull RecipeChoice addition, boolean copyNbt) {
++        super(key, result, base, addition, copyNbt);
++        this.template = template;
++    }
++    // Paper end
+ 
+     /**
+      * Get the template recipe item.
+diff --git a/src/main/java/org/bukkit/inventory/SmithingTrimRecipe.java b/src/main/java/org/bukkit/inventory/SmithingTrimRecipe.java
+index 32cbdc342615e76ff7a896e67cb0736b0bdf1978..9e84114528507848a4c1947d677ba02d06f9dc14 100644
+--- a/src/main/java/org/bukkit/inventory/SmithingTrimRecipe.java
++++ b/src/main/java/org/bukkit/inventory/SmithingTrimRecipe.java
+@@ -23,6 +23,21 @@ public class SmithingTrimRecipe extends SmithingRecipe implements ComplexRecipe
+         super(key, new ItemStack(Material.AIR), base, addition);
+         this.template = template;
+     }
++    // Paper start
++    /**
++     * Create a smithing recipe to produce the specified result ItemStack.
++     *
++     * @param key The unique recipe key
++     * @param template The template item.
++     * @param base The base ingredient
++     * @param addition The addition ingredient
++     * @param copyNbt whether to copy the nbt from the input base item to the output
++     */
++    public SmithingTrimRecipe(@NotNull NamespacedKey key, @NotNull RecipeChoice template, @NotNull RecipeChoice base, @NotNull RecipeChoice addition, boolean copyNbt) {
++        super(key, new ItemStack(Material.AIR), base, addition, copyNbt);
++        this.template = template;
++    }
++    // Paper end
+ 
+     /**
+      * Get the template recipe item.

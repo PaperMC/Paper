@@ -12,33 +12,31 @@ just as it does in Vanilla, but entity pushing logic will be capped.
 You can set this to 0 to disable collisions.
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 2fcdd61e9669904756aa33b1ff8ab7160ea5e371..660a210c363fcb42145b273ea6b977ce4844505d 100644
+index 069fe5df02806103c9bbef396c2e39ca3be90101..ca46bea3799e1bc962debe742ea75f4d7f4ab771 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -395,6 +395,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
-     public long activatedTick = Integer.MIN_VALUE;
+@@ -387,6 +387,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
      public void inactiveTick() { }
      // Spigot end
-+    protected int numCollisions = 0; // Paper - Cap entity collisions
-     // Paper start - Entity origin API
+     // Paper start
++    protected int numCollisions = 0; // Paper
      @javax.annotation.Nullable
      private org.bukkit.util.Vector origin;
+     @javax.annotation.Nullable
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 1379f0ba7cf99e7829aaaca62ac4c56c359f6bf0..894772009bd3ca2615297b6ca856a9ffe23f3c42 100644
+index 01b9635e71a55f29e565fc095cc53f102945423d..0470329b43afd4e8c5e033666d1c5f8f0a03fe6a 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -3460,10 +3460,12 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3317,8 +3317,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                     }
                  }
  
-                 Iterator iterator1 = list.iterator();
-+                this.numCollisions = Math.max(0, this.numCollisions - this.level().paperConfig().collisions.maxEntityCollisions); // Paper - Cap entity collisions
+-                for (j = 0; j < list.size(); ++j) {
++            this.numCollisions = Math.max(0, this.numCollisions - this.level().paperConfig().collisions.maxEntityCollisions); // Paper
++            for (j = 0; j < list.size() && this.numCollisions < this.level().paperConfig().collisions.maxEntityCollisions; ++j) { // Paper
+                     Entity entity = (Entity) list.get(j);
++                entity.numCollisions++; // Paper
++                this.numCollisions++; // Paper
  
--                while (iterator1.hasNext()) {
-+                while (iterator1.hasNext() && this.numCollisions < this.level().paperConfig().collisions.maxEntityCollisions) { // Paper - Cap entity collisions
-                     Entity entity1 = (Entity) iterator1.next();
--
-+                    entity1.numCollisions++; // Paper - Cap entity collisions
-+                    this.numCollisions++; // Paper - Cap entity collisions
-                     this.doPush(entity1);
+                     this.doPush(entity);
                  }
-             }

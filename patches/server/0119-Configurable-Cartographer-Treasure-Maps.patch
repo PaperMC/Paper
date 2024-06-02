@@ -9,28 +9,29 @@ Also allow turning off treasure maps all together as they can eat up Map ID's
 which are limited in quantity.
 
 diff --git a/src/main/java/net/minecraft/world/entity/npc/VillagerTrades.java b/src/main/java/net/minecraft/world/entity/npc/VillagerTrades.java
-index 672301d47037f96f32c52fa400ed28694f3b138b..96240f8ed0675ebfd403fcef144657885c4bb9a9 100644
+index c29d488d223d817f46bf777656a0c737916c4416..518ef9867421ed9c489fbf5f15e9cbdcaceef6a5 100644
 --- a/src/main/java/net/minecraft/world/entity/npc/VillagerTrades.java
 +++ b/src/main/java/net/minecraft/world/entity/npc/VillagerTrades.java
-@@ -1667,7 +1667,8 @@ public class VillagerTrades {
+@@ -386,7 +386,8 @@ public class VillagerTrades {
                  return null;
              } else {
                  ServerLevel serverLevel = (ServerLevel)entity.level();
 -                BlockPos blockPos = serverLevel.findNearestMapStructure(this.destination, entity.blockPosition(), 100, true);
-+                if (!serverLevel.paperConfig().environment.treasureMaps.enabled) return null; // Paper - Configurable cartographer treasure maps
-+                BlockPos blockPos = serverLevel.findNearestMapStructure(this.destination, entity.blockPosition(), 100, !serverLevel.paperConfig().environment.treasureMaps.findAlreadyDiscoveredVillager); // Paper - Configurable cartographer treasure maps
++                if (!serverLevel.paperConfig().environment.treasureMaps.enabled) return null; // Paper
++                BlockPos blockPos = serverLevel.findNearestMapStructure(this.destination, entity.blockPosition(), 100, !serverLevel.paperConfig().environment.treasureMaps.findAlreadyDiscoveredVillager); // Paper
                  if (blockPos != null) {
                      ItemStack itemStack = MapItem.create(serverLevel, blockPos.getX(), blockPos.getZ(), (byte)2, true, true);
                      MapItem.renderBiomePreviewMap(serverLevel, itemStack);
 diff --git a/src/main/java/net/minecraft/world/level/storage/loot/functions/ExplorationMapFunction.java b/src/main/java/net/minecraft/world/level/storage/loot/functions/ExplorationMapFunction.java
-index e7f2cc799e7c50a9525845347a3f235f7bfefe41..709bc6838d20c420c5a4b3a994a041e594bd6210 100644
+index a8a1e71cfa1cc956d81e5c0d118c57658d272a2d..481456fd69d773e8f3b4eaede3849ce4e599c80f 100644
 --- a/src/main/java/net/minecraft/world/level/storage/loot/functions/ExplorationMapFunction.java
 +++ b/src/main/java/net/minecraft/world/level/storage/loot/functions/ExplorationMapFunction.java
-@@ -84,8 +84,17 @@ public class ExplorationMapFunction extends LootItemConditionalFunction {
+@@ -68,7 +68,16 @@ public class ExplorationMapFunction extends LootItemConditionalFunction {
              Vec3 vec3 = context.getParamOrNull(LootContextParams.ORIGIN);
              if (vec3 != null) {
                  ServerLevel serverLevel = context.getLevel();
-+                // Paper start - Configurable cartographer treasure maps
+-                BlockPos blockPos = serverLevel.findNearestMapStructure(this.destination, BlockPos.containing(vec3), this.searchRadius, this.skipKnownStructures);
++                // Paper start
 +                if (!serverLevel.paperConfig().environment.treasureMaps.enabled) {
 +                    /*
 +                     * NOTE: I fear users will just get a plain map as their "treasure"
@@ -38,10 +39,8 @@ index e7f2cc799e7c50a9525845347a3f235f7bfefe41..709bc6838d20c420c5a4b3a994a041e5
 +                     */
 +                    return stack;
 +                }
-+                // Paper end - Configurable cartographer treasure maps
-                 BlockPos blockPos = serverLevel.findNearestMapStructure(
--                    this.destination, BlockPos.containing(vec3), this.searchRadius, this.skipKnownStructures
-+                    this.destination, BlockPos.containing(vec3), this.searchRadius, !serverLevel.paperConfig().environment.treasureMaps.findAlreadyDiscoveredLootTable.or(!this.skipKnownStructures) // Paper - Configurable cartographer treasure maps
-                 );
++                // Paper end
++                BlockPos blockPos = serverLevel.findNearestMapStructure(this.destination, BlockPos.containing(vec3), this.searchRadius, !serverLevel.paperConfig().environment.treasureMaps.findAlreadyDiscoveredLootTable.or(!this.skipKnownStructures)); // Paper
                  if (blockPos != null) {
                      ItemStack itemStack = MapItem.create(serverLevel, blockPos.getX(), blockPos.getZ(), this.zoom, true, true);
+                     MapItem.renderBiomePreviewMap(serverLevel, itemStack);

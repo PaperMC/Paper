@@ -1,0 +1,90 @@
+From 62de9801d97be7f583f88f20b374660bb4349cc8 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 18 Mar 2016 21:22:56 -0400
+Subject: [PATCH] Optimized Light Level Comparisons
+
+Use an optimized method to test if a block position meets a desired light level.
+
+This method benefits from returning as soon as the desired light level matches.
+
+diff --git a/src/main/java/net/minecraft/server/BlockCrops.java b/src/main/java/net/minecraft/server/BlockCrops.java
+index fe0dde1461..9d53f1118c 100644
+--- a/src/main/java/net/minecraft/server/BlockCrops.java
++++ b/src/main/java/net/minecraft/server/BlockCrops.java
+@@ -44,7 +44,7 @@ public class BlockCrops extends BlockPlant implements IBlockFragilePlantElement
+ 
+     public void a(IBlockData iblockdata, World world, BlockPosition blockposition, Random random) {
+         super.a(iblockdata, world, blockposition, random);
+-        if (world.getLightLevel(blockposition.up(), 0) >= 9) {
++        if (world.isLightLevel(blockposition.up(), 9)) { // Paper
+             int i = this.k(iblockdata);
+ 
+             if (i < this.e()) {
+diff --git a/src/main/java/net/minecraft/server/BlockSapling.java b/src/main/java/net/minecraft/server/BlockSapling.java
+index 81ea9bcb4f..291cc9a398 100644
+--- a/src/main/java/net/minecraft/server/BlockSapling.java
++++ b/src/main/java/net/minecraft/server/BlockSapling.java
+@@ -30,7 +30,7 @@ public class BlockSapling extends BlockPlant implements IBlockFragilePlantElemen
+ 
+     public void a(IBlockData iblockdata, World world, BlockPosition blockposition, Random random) {
+         super.a(iblockdata, world, blockposition, random);
+-        if (world.getLightLevel(blockposition.up()) >= 9 && random.nextInt(Math.max(2, (int) (((100.0F / world.spigotConfig.saplingModifier) * 7) + 0.5F))) == 0) { // Spigot
++        if (world.isLightLevel(blockposition.up(), 9) && random.nextInt(Math.max(2, (int) (((100.0F / world.spigotConfig.saplingModifier) * 7) + 0.5F))) == 0) { // Spigot // Paper
+             // CraftBukkit start
+             world.captureTreeGeneration = true;
+             // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/server/BlockStem.java b/src/main/java/net/minecraft/server/BlockStem.java
+index 53f091835c..f8dda1b7a1 100644
+--- a/src/main/java/net/minecraft/server/BlockStem.java
++++ b/src/main/java/net/minecraft/server/BlockStem.java
+@@ -27,7 +27,7 @@ public class BlockStem extends BlockPlant implements IBlockFragilePlantElement {
+ 
+     public void a(IBlockData iblockdata, World world, BlockPosition blockposition, Random random) {
+         super.a(iblockdata, world, blockposition, random);
+-        if (world.getLightLevel(blockposition.up(), 0) >= 9) {
++        if (world.isLightLevel(blockposition.up(), 9)) { // Paper
+             float f = BlockCrops.a((Block) this, (IBlockAccess) world, blockposition);
+ 
+             if (random.nextInt((int) ((100.0F / (this == Blocks.PUMPKIN_STEM ? world.spigotConfig.pumpkinModifier : world.spigotConfig.melonModifier)) * (25.0F / f)) + 1) == 0) { // Spigot
+diff --git a/src/main/java/net/minecraft/server/EntityMonster.java b/src/main/java/net/minecraft/server/EntityMonster.java
+index 5ea5170436..dc61263a3f 100644
+--- a/src/main/java/net/minecraft/server/EntityMonster.java
++++ b/src/main/java/net/minecraft/server/EntityMonster.java
+@@ -66,9 +66,18 @@ public abstract class EntityMonster extends EntityCreature implements IMonster {
+         if (this.world.getBrightness(EnumSkyBlock.SKY, blockposition) > this.random.nextInt(32)) {
+             return false;
+         } else {
+-            int i = this.world.Y() ? this.world.d(blockposition, 10) : this.world.getLightLevel(blockposition);
+-
+-            return i <= this.random.nextInt(8);
++            // Paper start - optimized light check, returns faster
++            boolean passes;
++            if (this.world.Y()) {
++                final int orig = world.getSkylightSubtracted();
++                world.setSkylightSubtracted(10);
++                passes = !this.world.isLightLevel(blockposition, this.random.nextInt(8));
++                world.setSkylightSubtracted(orig);
++            } else {
++                passes = !this.world.isLightLevel(blockposition, this.random.nextInt(8));
++            }
++            return passes;
++            // Paper end
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/EntityZombie.java b/src/main/java/net/minecraft/server/EntityZombie.java
+index 002be7f7be..7a943a6c27 100644
+--- a/src/main/java/net/minecraft/server/EntityZombie.java
++++ b/src/main/java/net/minecraft/server/EntityZombie.java
+@@ -267,7 +267,7 @@ public class EntityZombie extends EntityMonster {
+                     int j1 = j + MathHelper.nextInt(this.random, 7, 40) * MathHelper.nextInt(this.random, -1, 1);
+                     int k1 = k + MathHelper.nextInt(this.random, 7, 40) * MathHelper.nextInt(this.random, -1, 1);
+ 
+-                    if (this.world.getType(new BlockPosition(i1, j1 - 1, k1)).q() && this.world.getLightLevel(new BlockPosition(i1, j1, k1)) < 10) {
++                    if (this.world.getType(new BlockPosition(i1, j1 - 1, k1)).q() && !this.world.isLightLevel(new BlockPosition(i1, j1, k1), 10)) { // Paper
+                         entityzombie.setPosition((double) i1, (double) j1, (double) k1);
+                         if (!this.world.isPlayerNearby((double) i1, (double) j1, (double) k1, 7.0D) && this.world.a_(entityzombie, entityzombie.getBoundingBox()) && this.world.getCubes(entityzombie, entityzombie.getBoundingBox()) && !this.world.containsLiquid(entityzombie.getBoundingBox())) {
+                             this.world.addEntity(entityzombie, CreatureSpawnEvent.SpawnReason.REINFORCEMENTS); // CraftBukkit
+-- 
+2.21.0
+

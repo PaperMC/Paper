@@ -1,0 +1,128 @@
+From 1648e767bbdfe53802b2c3a864c74cdaaca6909e Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 5 Jun 2018 00:32:22 -0400
+Subject: [PATCH] Configurable Villages loading chunks for door checks
+
+This avoids villages spam loading chunks sync.
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 0a270b899d..4727ac6eb5 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -434,4 +434,12 @@ public class PaperWorldConfig {
+         disableEnderpearlExploit = getBoolean("game-mechanics.disable-unloaded-chunk-enderpearl-exploit", disableEnderpearlExploit);
+         log("Disable Unloaded Chunk Enderpearl Exploit: " + (disableEnderpearlExploit ? "enabled" : "disabled"));
+     }
++
++    public boolean villagesLoadChunks = false;
++    private void villagesLoadChunks() {
++        villagesLoadChunks = getBoolean("game-mechanics.villages-load-chunks", false);
++        if (villagesLoadChunks) {
++            log("Villages can load chunks - Warning this can cause intense TPS loss. Strongly consider disabling this.");
++        }
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/PersistentVillage.java b/src/main/java/net/minecraft/server/PersistentVillage.java
+index 7a9fb97530..e40cd41869 100644
+--- a/src/main/java/net/minecraft/server/PersistentVillage.java
++++ b/src/main/java/net/minecraft/server/PersistentVillage.java
+@@ -136,7 +136,7 @@ public class PersistentVillage extends PersistentBase {
+             for (int j = -4; j < 4; ++j) {
+                 for (int k = -16; k < 16; ++k) {
+                     blockposition_mutableblockposition.g(blockposition).d(i, j, k);
+-                    IBlockData iblockdata = this.world.getType(blockposition_mutableblockposition);
++                    IBlockData iblockdata = this.world.paperConfig.villagesLoadChunks ? this.world.getType(blockposition_mutableblockposition) : this.world.getTypeIfLoaded(blockposition_mutableblockposition); // Paper
+ 
+                     if (this.a(iblockdata)) {
+                         VillageDoor villagedoor = this.c(blockposition_mutableblockposition);
+@@ -228,7 +228,7 @@ public class PersistentVillage extends PersistentBase {
+     }
+ 
+     private boolean a(IBlockData iblockdata) {
+-        return iblockdata.getBlock() instanceof BlockDoor && iblockdata.getMaterial() == Material.WOOD;
++        return iblockdata != null && iblockdata.getBlock() instanceof BlockDoor && iblockdata.getMaterial() == Material.WOOD; // Paper
+     }
+ 
+     public void a(NBTTagCompound nbttagcompound) {
+diff --git a/src/main/java/net/minecraft/server/Village.java b/src/main/java/net/minecraft/server/Village.java
+index b794572915..1363c53ff0 100644
+--- a/src/main/java/net/minecraft/server/Village.java
++++ b/src/main/java/net/minecraft/server/Village.java
+@@ -11,10 +11,10 @@ import javax.annotation.Nullable;
+ 
+ public class Village {
+ 
+-    private World a;
++    private World a; private World getWorld() { return a; } // Paper - OBFHELPER
+     private final List<VillageDoor> b = Lists.newArrayList();
+     private BlockPosition c;
+-    private BlockPosition d;
++    private BlockPosition d;private BlockPosition getCenter() { return d; } // Paper - OBFHELPER
+     private int e;
+     private int f;
+     private int g;
+@@ -44,6 +44,12 @@ public class Village {
+     }
+ 
+     public void a(int i) {
++        // Paper - don't tick village if chunk isn't loaded
++        Chunk chunk = getWorld().getChunkIfLoaded(getCenter());
++        if (chunk == null || !chunk.areNeighborsLoaded(1)) {
++            return;
++        }
++        // Paper end
+         this.g = i;
+         this.m();
+         this.l();
+@@ -292,6 +298,12 @@ public class Village {
+ 
+         while (iterator.hasNext()) {
+             VillageDoor villagedoor = (VillageDoor) iterator.next();
++            // Paper start - don't remove doors from unloaded chunks
++            if (!getWorld().isLoaded(villagedoor.getPosition())) {
++                villagedoor.setLastSeen(villagedoor.getLastSeen() + 1);
++                continue;
++            }
++            // Paper end
+ 
+             if (flag1) {
+                 villagedoor.a();
+@@ -312,7 +324,9 @@ public class Village {
+     }
+ 
+     private boolean g(BlockPosition blockposition) {
+-        IBlockData iblockdata = this.a.getType(blockposition);
++        IBlockData iblockdata = this.a.paperConfig.villagesLoadChunks ? this.a.getType(blockposition) : this.a.getTypeIfLoaded(blockposition); // Paper
++        if (iblockdata == null) return false; // Paper
++
+         Block block = iblockdata.getBlock();
+ 
+         return block instanceof BlockDoor ? iblockdata.getMaterial() == Material.WOOD : false;
+diff --git a/src/main/java/net/minecraft/server/VillageDoor.java b/src/main/java/net/minecraft/server/VillageDoor.java
+index 33ad5faa3e..1edffc4629 100644
+--- a/src/main/java/net/minecraft/server/VillageDoor.java
++++ b/src/main/java/net/minecraft/server/VillageDoor.java
+@@ -55,6 +55,7 @@ public class VillageDoor {
+         return this.f;
+     }
+ 
++    public BlockPosition getPosition() { return d(); } // Paper - OBFHELPER
+     public BlockPosition d() {
+         return this.a;
+     }
+@@ -71,10 +72,12 @@ public class VillageDoor {
+         return this.c.getAdjacentZ() * 2;
+     }
+ 
++    public int getLastSeen() { return h(); } // Paper - OBFHELPER
+     public int h() {
+         return this.d;
+     }
+ 
++    public void setLastSeen(int i) { a(i); } // Paper - OBFHELPER
+     public void a(int i) {
+         this.d = i;
+     }
+-- 
+2.21.0
+

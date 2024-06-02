@@ -1,0 +1,101 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: JellySquid <jellysquid+atwork@protonmail.com>
+Date: Sat, 9 May 2020 16:25:21 -0400
+Subject: [PATCH] Implement JellySquid's Entity Collision optimisations patch
+
+Optimizes Full Block voxel collisions, and removes streams from Entity collisions
+
+Original code by JellySquid, licensed under GNU Lesser General Public License v3.0
+you can find the original code on https://github.com/jellysquid3/lithium-fabric/tree/1.15.x/fabric (Yarn mappings)
+
+diff --git a/src/main/java/net/minecraft/server/ICollisionAccess.java b/src/main/java/net/minecraft/server/ICollisionAccess.java
+index 3eefbf4d5f10b53f930759a0afa5661253b92c60..5e20dba0d011d20b714d784cb4a545a05bbf6f9c 100644
+--- a/src/main/java/net/minecraft/server/ICollisionAccess.java
++++ b/src/main/java/net/minecraft/server/ICollisionAccess.java
+@@ -115,11 +115,24 @@ public interface ICollisionAccess extends IBlockAccess {
+ 
+                             if ((j2 != 1 || iblockdata.f()) && (j2 != 2 || iblockdata.getBlock() == Blocks.MOVING_PISTON)) {
+                                 VoxelShape voxelshape2 = iblockdata.b((IBlockAccess) ICollisionAccess.this, blockposition_mutableblockposition, voxelshapecollision);
+-                                VoxelShape voxelshape3 = voxelshape2.a((double) k1, (double) l1, (double) i2);
+ 
+-                                if (VoxelShapes.c(voxelshape, voxelshape3, OperatorBoolean.AND)) {
+-                                    consumer.accept(voxelshape3);
+-                                    return true;
++                                // Paper start - Lithium Collision Optimizations
++                                if (voxelshape2 == VoxelShapes.empty()) {
++                                    continue;
++                                }
++
++                                if (voxelshape2 == VoxelShapes.fullCube()) {
++                                    if (axisalignedbb.intersects(x, y, z, x + 1.0D, y + 1.0D, z + 1.0D)) {
++                                        consumer.accept(voxelshape2.offset(x, y, z));
++                                        return true;
++                                    }
++                                } else {
++                                    VoxelShape shape = voxelshape2.offset(x, y, z);
++                                    if (VoxelShapes.applyOperation(shape, voxelshape, OperatorBoolean.AND)) {
++                                        consumer.accept(shape);
++                                        return true;
++                                    }
++                                    // Paper end
+                                 }
+                             }
+                         }
+diff --git a/src/main/java/net/minecraft/server/IEntityAccess.java b/src/main/java/net/minecraft/server/IEntityAccess.java
+index 5135308fb6137a34ed6fd061f0a210de6de4e81c..d434aaaaf0ab6a18ab0fe5ad0bf8ed4662f49120 100644
+--- a/src/main/java/net/minecraft/server/IEntityAccess.java
++++ b/src/main/java/net/minecraft/server/IEntityAccess.java
+@@ -52,20 +52,41 @@ public interface IEntityAccess {
+     // Paper end - optimise hard collision
+ 
+     default Stream<VoxelShape> b(@Nullable Entity entity, AxisAlignedBB axisalignedbb, Set<Entity> set) {
+-        if (axisalignedbb.a() < 1.0E-7D) {
++        // Paper start - remove streams from entity collision
++        if (axisalignedbb.getAverageSideLength() < 1.0E-7D) {
+             return Stream.empty();
+-        } else {
+-            AxisAlignedBB axisalignedbb1 = axisalignedbb.g(1.0E-7D);
+-            Stream<AxisAlignedBB> stream = ((entity != null && entity.hardCollides()) ? this.getEntities(entity, axisalignedbb) : this.getHardCollidingEntities(entity, axisalignedbb1)).stream().filter((entity1) -> { // Paper - decompile fix // Paper - optimise hard collision
+-                return !set.contains(entity1);
+-            }).filter((entity1) -> {
+-                return entity == null || !entity.isSameVehicle(entity1);
+-            }).flatMap((entity1) -> {
+-                return Stream.of(entity1.au(), entity == null ? null : entity.j(entity1)); // Paper - optimise hard collision - diff on change, these are the methods that only hard colliding entities override
+-            }).filter(Objects::nonNull);
+-
+-            return stream.filter(axisalignedbb1::c).map(VoxelShapes::a);
++
+         }
++        AxisAlignedBB selection = axisalignedbb.grow(1.0E-7D);
++        List<Entity> entities = entity != null && entity.hardCollides() ? getEntities(entity, selection) : getHardCollidingEntities(entity, selection);
++        List<VoxelShape> shapes = new java.util.ArrayList<>();
++
++        for (Entity otherEntity : entities) {
++            if (!set.isEmpty() && set.contains(otherEntity)) {
++                continue;
++            }
++
++            if (entity != null && entity.isSameVehicle(otherEntity)) {
++                continue;
++            }
++
++            AxisAlignedBB otherEntityBox = otherEntity.getCollisionBox();
++
++            if (otherEntityBox != null && selection.intersects(otherEntityBox)) {
++                shapes.add(VoxelShapes.of(otherEntityBox));
++            }
++
++            if (entity != null) {
++                AxisAlignedBB otherEntityHardBox = entity.getHardCollisionBox(otherEntity);
++
++                if (otherEntityHardBox != null && selection.intersects(otherEntityHardBox)) {
++                    shapes.add(VoxelShapes.of(otherEntityHardBox));
++                }
++            }
++        }
++
++        return shapes.stream();
++        // Paper end
+     }
+ 
+     @Nullable

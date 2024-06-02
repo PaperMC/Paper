@@ -1,0 +1,89 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sat, 19 Jun 2021 22:47:17 -0700
+Subject: [PATCH] Allow removal/addition of entities to entity ticklist during
+ tick
+
+It really doesn't make any sense that we would iterate over removed
+entities during tick. Sure - tick entity checks removed, but
+does it check if the entity is in an entity ticking chunk?
+No it doesn't. So, allowing removal while iteration
+ENSURES only entities MARKED TO TICK are ticked.
+
+diff --git a/src/main/java/net/minecraft/world/level/entity/EntityTickList.java b/src/main/java/net/minecraft/world/level/entity/EntityTickList.java
+index a176a886235494fdc722030a93658d361bf50f03..4cdfc433df67afcd455422e9baf56f167dd712ae 100644
+--- a/src/main/java/net/minecraft/world/level/entity/EntityTickList.java
++++ b/src/main/java/net/minecraft/world/level/entity/EntityTickList.java
+@@ -8,57 +8,42 @@ import javax.annotation.Nullable;
+ import net.minecraft.world.entity.Entity;
+ 
+ public class EntityTickList {
+-    private Int2ObjectMap<Entity> active = new Int2ObjectLinkedOpenHashMap<>();
+-    private Int2ObjectMap<Entity> passive = new Int2ObjectLinkedOpenHashMap<>();
+-    @Nullable
+-    private Int2ObjectMap<Entity> iterated;
++    private final io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<Entity> entities = new io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<>(true); // Paper - rewrite this, always keep this updated - why would we EVER tick an entity that's not ticking?
+ 
+     private void ensureActiveIsNotIterated() {
+-        if (this.iterated == this.active) {
+-            this.passive.clear();
+-
+-            for(Int2ObjectMap.Entry<Entity> entry : Int2ObjectMaps.fastIterable(this.active)) {
+-                this.passive.put(entry.getIntKey(), entry.getValue());
+-            }
+-
+-            Int2ObjectMap<Entity> int2ObjectMap = this.active;
+-            this.active = this.passive;
+-            this.passive = int2ObjectMap;
+-        }
++        // Paper - replace with better logic, do not delay removals
+ 
+     }
+ 
+     public void add(Entity entity) {
+         io.papermc.paper.util.TickThread.ensureTickThread("Asynchronous entity ticklist addition"); // Paper
+         this.ensureActiveIsNotIterated();
+-        this.active.put(entity.getId(), entity);
++        this.entities.add(entity); // Paper - replace with better logic, do not delay removals/additions
+     }
+ 
+     public void remove(Entity entity) {
+         io.papermc.paper.util.TickThread.ensureTickThread("Asynchronous entity ticklist removal"); // Paper
+         this.ensureActiveIsNotIterated();
+-        this.active.remove(entity.getId());
++        this.entities.remove(entity); // Paper - replace with better logic, do not delay removals/additions
+     }
+ 
+     public boolean contains(Entity entity) {
+-        return this.active.containsKey(entity.getId());
++        return this.entities.contains(entity); // Paper - replace with better logic, do not delay removals/additions
+     }
+ 
+     public void forEach(Consumer<Entity> action) {
+         io.papermc.paper.util.TickThread.ensureTickThread("Asynchronous entity ticklist iteration"); // Paper
+-        if (this.iterated != null) {
+-            throw new UnsupportedOperationException("Only one concurrent iteration supported");
+-        } else {
+-            this.iterated = this.active;
+-
+-            try {
+-                for(Entity entity : this.active.values()) {
+-                    action.accept(entity);
+-                }
+-            } finally {
+-                this.iterated = null;
++        // Paper start - replace with better logic, do not delay removals/additions
++        // To ensure nothing weird happens with dimension travelling, do not iterate over new entries...
++        // (by dfl iterator() is configured to not iterate over new entries)
++        io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet.Iterator<Entity> iterator = this.entities.iterator();
++        try {
++            while (iterator.hasNext()) {
++                action.accept(iterator.next());
+             }
+-
++        } finally {
++            iterator.finishedIterating();
+         }
++        // Paper end - replace with better logic, do not delay removals/additions
+     }
+ }

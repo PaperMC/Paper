@@ -1,0 +1,116 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 1 May 2018 20:17:44 -0400
+Subject: [PATCH] EndermanAttackPlayerEvent
+
+Allow control over whether or not an enderman aggros a player.
+
+This allows you to override/extend the pumpkin/stare logic.
+
+diff --git a/src/main/java/com/destroystokyo/paper/event/entity/EndermanAttackPlayerEvent.java b/src/main/java/com/destroystokyo/paper/event/entity/EndermanAttackPlayerEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f530a3d9314e17d1da896cac633f6a422258d9a9
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/entity/EndermanAttackPlayerEvent.java
+@@ -0,0 +1,101 @@
++/*
++ * Copyright (c) 2018 Daniel Ennis (Aikar) MIT License
++ *
++ *  Permission is hereby granted, free of charge, to any person obtaining
++ *  a copy of this software and associated documentation files (the
++ *  "Software"), to deal in the Software without restriction, including
++ *  without limitation the rights to use, copy, modify, merge, publish,
++ *  distribute, sublicense, and/or sell copies of the Software, and to
++ *  permit persons to whom the Software is furnished to do so, subject to
++ *  the following conditions:
++ *
++ *  The above copyright notice and this permission notice shall be
++ *  included in all copies or substantial portions of the Software.
++ *
++ *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
++ *  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
++ *  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
++ *  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
++ *  LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
++ *  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
++ *  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
++ */
++
++package com.destroystokyo.paper.event.entity;
++
++import org.bukkit.entity.Enderman;
++import org.bukkit.entity.Entity;
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.Event;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.entity.EntityEvent;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Fired when an Enderman determines if it should attack a player or not.
++ * Starts off cancelled if the player is wearing a pumpkin head or is not looking
++ * at the Enderman, according to Vanilla rules.
++ *
++ */
++public class EndermanAttackPlayerEvent extends EntityEvent implements Cancellable {
++    @NotNull private final Player player;
++
++    public EndermanAttackPlayerEvent(@NotNull Enderman entity, @NotNull Player player) {
++        super(entity);
++        this.player = player;
++    }
++
++    /**
++     * The enderman considering attacking
++     *
++     * @return The enderman considering attacking
++     */
++    @NotNull
++    @Override
++    public Enderman getEntity() {
++        return (Enderman) super.getEntity();
++    }
++
++    /**
++     * The player the Enderman is considering attacking
++     *
++     * @return The player the Enderman is considering attacking
++     */
++    @NotNull
++    public Player getPlayer() {
++        return player;
++    }
++
++    private static final HandlerList handlers = new HandlerList();
++
++    @NotNull
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++
++    private boolean cancelled = false;
++
++    /**
++     *
++     * @return If cancelled, the enderman will not attack
++     */
++    @Override
++    public boolean isCancelled() {
++        return cancelled;
++    }
++
++    /**
++     * Cancels if the Enderman will attack this player
++     * @param cancel true if you wish to cancel this event
++     */
++    @Override
++    public void setCancelled(boolean cancel) {
++        cancelled = cancel;
++    }
++}

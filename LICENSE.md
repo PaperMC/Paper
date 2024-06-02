@@ -63,5 +63,4 @@ Ollie <69084614+olijeffers0n@users.noreply.github.com>
 Oliwier Miodun <naczs@blueflow.pl>
 aerulion <aerulion@gmail.com>
 Lukas Planz <lukas.planz@web.de>
-granny <contact@granny.dev>
 ```

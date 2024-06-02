@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: kashike <kashike@vq.lc>
+Date: Tue, 8 Mar 2016 18:28:43 -0800
+Subject: [PATCH] Don't nest if we don't need to when cerealising text
+ components
+
+
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java
+index 55e21c7b13826f60e3c656f76e1507e0242e0af3..1387e3597c43fd652f2fc82ca6fc2e83039604e2 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundSystemChatPacket.java
+@@ -14,7 +14,7 @@ public record ClientboundSystemChatPacket(@javax.annotation.Nullable net.kyori.a
+     }
+ 
+     public ClientboundSystemChatPacket(net.md_5.bungee.api.chat.BaseComponent[] content, boolean overlay) {
+-        this(null, net.md_5.bungee.chat.ComponentSerializer.toString(content), overlay); // Paper - Adventure
++        this(null, improveBungeeComponentSerialization(content), overlay); // Paper - Adventure
+     }
+     // Spigot end
+     // Paper start
+@@ -25,6 +25,14 @@ public record ClientboundSystemChatPacket(@javax.annotation.Nullable net.kyori.a
+     public ClientboundSystemChatPacket(net.kyori.adventure.text.Component content, boolean overlay) {
+         this(content, null, overlay);
+     }
++
++    private static String improveBungeeComponentSerialization(net.md_5.bungee.api.chat.BaseComponent[] content) {
++        if (content.length == 1) {
++            return net.md_5.bungee.chat.ComponentSerializer.toString(content[0]);
++        } else {
++            return net.md_5.bungee.chat.ComponentSerializer.toString(content);
++        }
++    }
+     // Paper end
+ 
+     public ClientboundSystemChatPacket(FriendlyByteBuf buf) {

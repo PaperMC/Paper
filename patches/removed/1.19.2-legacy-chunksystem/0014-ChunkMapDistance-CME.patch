@@ -1,0 +1,84 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Wed, 29 May 2019 04:01:22 +0100
+Subject: [PATCH] ChunkMapDistance CME
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
+index 0873134f1f6de0c372ba28b89a20302c9a0115d8..e30893d6cbe3b42338d04453d0f452babeb61d8a 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
++++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
+@@ -73,6 +73,7 @@ public class ChunkHolder {
+     private boolean resendLight;
+     private CompletableFuture<Void> pendingFullStateConfirmation;
+ 
++    boolean isUpdateQueued = false; // Paper
+     private final ChunkMap chunkMap; // Paper
+ 
+     // Paper start
+diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
+index f08089b8672454acf8c2309e850466b335248692..6181f675d7addde30f7018b4cd46fe061a14da51 100644
+--- a/src/main/java/net/minecraft/server/level/DistanceManager.java
++++ b/src/main/java/net/minecraft/server/level/DistanceManager.java
+@@ -52,7 +52,16 @@ public abstract class DistanceManager {
+     private final DistanceManager.FixedPlayerDistanceChunkTracker naturalSpawnChunkCounter = new DistanceManager.FixedPlayerDistanceChunkTracker(8);
+     private final TickingTracker tickingTicketsTracker = new TickingTracker();
+     private final DistanceManager.PlayerTicketTracker playerTicketManager = new DistanceManager.PlayerTicketTracker(33);
+-    final Set<ChunkHolder> chunksToUpdateFutures = Sets.newHashSet();
++    // Paper start use a queue, but still keep unique requirement
++    public final java.util.Queue<ChunkHolder> pendingChunkUpdates = new java.util.ArrayDeque<ChunkHolder>() {
++        @Override
++        public boolean add(ChunkHolder o) {
++            if (o.isUpdateQueued) return true;
++            o.isUpdateQueued = true;
++            return super.add(o);
++        }
++    };
++    // Paper end
+     final ChunkTaskPriorityQueueSorter ticketThrottler;
+     final ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> ticketThrottlerInput;
+     final ProcessorHandle<ChunkTaskPriorityQueueSorter.Release> ticketThrottlerReleaser;
+@@ -127,26 +136,14 @@ public abstract class DistanceManager {
+             ;
+         }
+ 
+-        if (!this.chunksToUpdateFutures.isEmpty()) {
+-            // CraftBukkit start
+-            // Iterate pending chunk updates with protection against concurrent modification exceptions
+-            java.util.Iterator<ChunkHolder> iter = this.chunksToUpdateFutures.iterator();
+-            int expectedSize = this.chunksToUpdateFutures.size();
+-            do {
+-                ChunkHolder playerchunk = iter.next();
+-                iter.remove();
+-                expectedSize--;
+-
+-                playerchunk.updateFutures(chunkStorage, this.mainThreadExecutor);
+-
+-                // Reset iterator if set was modified using add()
+-                if (this.chunksToUpdateFutures.size() != expectedSize) {
+-                    expectedSize = this.chunksToUpdateFutures.size();
+-                    iter = this.chunksToUpdateFutures.iterator();
+-                }
+-            } while (iter.hasNext());
+-            // CraftBukkit end
+-
++        // Paper start
++        if (!this.pendingChunkUpdates.isEmpty()) {
++            while(!this.pendingChunkUpdates.isEmpty()) {
++                ChunkHolder remove = this.pendingChunkUpdates.remove();
++                remove.isUpdateQueued = false;
++                remove.updateFutures(chunkStorage, this.mainThreadExecutor);
++            }
++            // Paper end
+             return true;
+         } else {
+             if (!this.ticketsToRelease.isEmpty()) {
+@@ -471,7 +468,7 @@ public abstract class DistanceManager {
+             if (k != level) {
+                 playerchunk = DistanceManager.this.updateChunkScheduling(id, level, playerchunk, k);
+                 if (playerchunk != null) {
+-                    DistanceManager.this.chunksToUpdateFutures.add(playerchunk);
++                    DistanceManager.this.pendingChunkUpdates.add(playerchunk);
+                 }
+ 
+             }

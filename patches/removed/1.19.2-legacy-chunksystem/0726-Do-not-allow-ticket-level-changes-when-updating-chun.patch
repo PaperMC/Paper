@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sun, 20 Jun 2021 00:08:13 -0700
+Subject: [PATCH] Do not allow ticket level changes when updating chunk ticking
+ state
+
+This WILL cause state corruption if it happens. So, don't
+allow it.
+
+diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
+index 9c0bf31c3c362632241c95338a3f8d67bbd4fdc5..a2b5f6457b08e4e02544dc71fbf383b5a67a2d69 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
++++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
+@@ -452,7 +452,13 @@ public class ChunkHolder {
+         CompletableFuture<Void> completablefuture1 = new CompletableFuture();
+ 
+         completablefuture1.thenRunAsync(() -> {
++            // Paper start - do not allow ticket level changes
++            boolean unloadingBefore = this.chunkMap.unloadingPlayerChunk;
++            this.chunkMap.unloadingPlayerChunk = true;
++            try {
++            // Paper end  - do not allow ticket level changes
+             playerchunkmap.onFullChunkStatusChange(this.pos, playerchunk_state);
++            } finally { this.chunkMap.unloadingPlayerChunk = unloadingBefore; } // Paper - do not allow ticket level changes
+         }, executor);
+         this.pendingFullStateConfirmation = completablefuture1;
+         completablefuture.thenAccept((either) -> {
+@@ -469,7 +475,12 @@ public class ChunkHolder {
+ 
+     private void demoteFullChunk(ChunkMap playerchunkmap, ChunkHolder.FullChunkStatus playerchunk_state) {
+         this.pendingFullStateConfirmation.cancel(false);
++        // Paper start - do not allow ticket level changes
++        boolean unloadingBefore = this.chunkMap.unloadingPlayerChunk;
++        this.chunkMap.unloadingPlayerChunk = true;
++        try { // Paper end  - do not allow ticket level changes
+         playerchunkmap.onFullChunkStatusChange(this.pos, playerchunk_state);
++        } finally { this.chunkMap.unloadingPlayerChunk = unloadingBefore; } // Paper - do not allow ticket level changes
+     }
+ 
+     protected long updateCount; // Paper - correctly handle recursion

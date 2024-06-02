@@ -1,0 +1,52 @@
+From 299ea42df7d2ad51015e65dbbf5bb77a3d4f4e09 Mon Sep 17 00:00:00 2001
+From: Antony Riley <antony@cyberiantiger.org>
+Date: Tue, 29 Mar 2016 06:56:23 +0300
+Subject: [PATCH] Reduce IO ops opening a new region file.
+
+
+diff --git a/src/main/java/net/minecraft/server/RegionFile.java b/src/main/java/net/minecraft/server/RegionFile.java
+index fb529eac9..faf425588 100644
+--- a/src/main/java/net/minecraft/server/RegionFile.java
++++ b/src/main/java/net/minecraft/server/RegionFile.java
+@@ -26,7 +26,7 @@ public class RegionFile implements AutoCloseable {
+     private final File file;
+     // Spigot end
+     private static final byte[] a = new byte[4096];
+-    private final RandomAccessFile b; // PAIL dataFile
++    private final RandomAccessFile b; private RandomAccessFile getDataFile() { return this.b; } // Paper - OBFHELPER // PAIL dataFile
+     private final int[] c = new int[1024];
+     private final int[] d = new int[1024];
+     private final List<Boolean> e; // PAIL freeSectors
+@@ -59,10 +59,19 @@ public class RegionFile implements AutoCloseable {
+         this.e.set(1, false);
+         this.b.seek(0L);
+ 
++        // Paper Start
++        java.nio.ByteBuffer header = java.nio.ByteBuffer.allocate(8192);
++        while (header.hasRemaining())  {
++            if (this.getDataFile().getChannel().read(header) == -1) throw new java.io.EOFException();
++        }
++        ((java.nio.Buffer) header).clear();
++        java.nio.IntBuffer headerAsInts = header.asIntBuffer();
++        // Paper End
++
+         int k;
+ 
+         for (j = 0; j < 1024; ++j) {
+-            k = this.b.readInt();
++            k = headerAsInts.get(); // Paper
+             this.c[j] = k;
+             // Spigot start
+             int length = k & 255;
+@@ -88,7 +97,7 @@ public class RegionFile implements AutoCloseable {
+         }
+ 
+         for (j = 0; j < 1024; ++j) {
+-            k = this.b.readInt();
++            k = headerAsInts.get(); // Paper
+             this.d[j] = k;
+         }
+ 
+-- 
+2.22.0
+

@@ -1,0 +1,258 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sun, 21 Mar 2021 16:25:42 -0700
+Subject: [PATCH] Replace ticket level propagator
+
+Mojang's propagator is slow, and this isn't surprising
+given it's built on the same utilities the vanilla light engine
+is built on. The simple propagator I wrote is approximately 4x
+faster when simulating player movement. For a long time timing
+reports have shown this function take up significant tick, (
+approx 10% or more), and async sampling data shows the level
+propagation alone takes up a significant amount. So this
+should help with that. A big side effect is that mid-tick
+will be more effective, since more time will be allocated
+to actually processing chunk tasks vs the ticket level updates.
+
+diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
+index 06e4d3a02e0d1326b7029157856476db4ef3575e..f581a9f79b2357118d912a15344ff94df3b0c50e 100644
+--- a/src/main/java/net/minecraft/server/level/DistanceManager.java
++++ b/src/main/java/net/minecraft/server/level/DistanceManager.java
+@@ -38,6 +38,7 @@ import net.minecraft.world.level.chunk.ChunkStatus;
+ import net.minecraft.world.level.chunk.LevelChunk;
+ import org.slf4j.Logger;
+ 
++import it.unimi.dsi.fastutil.longs.Long2IntLinkedOpenHashMap; // Paper
+ public abstract class DistanceManager {
+ 
+     static final Logger LOGGER = LogUtils.getLogger();
+@@ -48,7 +49,7 @@ public abstract class DistanceManager {
+     private static final int BLOCK_TICKING_LEVEL_THRESHOLD = 33;
+     final Long2ObjectMap<ObjectSet<ServerPlayer>> playersPerChunk = new Long2ObjectOpenHashMap();
+     public final Long2ObjectOpenHashMap<SortedArraySet<Ticket<?>>> tickets = new Long2ObjectOpenHashMap();
+-    private final DistanceManager.ChunkTicketTracker ticketTracker = new DistanceManager.ChunkTicketTracker();
++    //private final DistanceManager.ChunkTicketTracker ticketTracker = new DistanceManager.ChunkTicketTracker(); // Paper - replace ticket level propagator
+     public static final int MOB_SPAWN_RANGE = 8; // private final ChunkMapDistance.b f = new ChunkMapDistance.b(8); // Paper - no longer used
+     private final TickingTracker tickingTicketsTracker = new TickingTracker();
+     private final DistanceManager.PlayerTicketTracker playerTicketManager = new DistanceManager.PlayerTicketTracker(33);
+@@ -83,6 +84,46 @@ public abstract class DistanceManager {
+         this.chunkMap = chunkMap; // Paper
+     }
+ 
++    // Paper start - replace ticket level propagator
++    protected final Long2IntLinkedOpenHashMap ticketLevelUpdates = new Long2IntLinkedOpenHashMap() {
++        @Override
++        protected void rehash(int newN) {
++            // no downsizing allowed
++            if (newN < this.n) {
++                return;
++            }
++            super.rehash(newN);
++        }
++    };
++    protected final io.papermc.paper.util.misc.Delayed8WayDistancePropagator2D ticketLevelPropagator = new io.papermc.paper.util.misc.Delayed8WayDistancePropagator2D(
++            (long coordinate, byte oldLevel, byte newLevel) -> {
++                DistanceManager.this.ticketLevelUpdates.putAndMoveToLast(coordinate, convertBetweenTicketLevels(newLevel));
++            }
++    );
++    // function for converting between ticket levels and propagator levels and vice versa
++    // the problem is the ticket level propagator will propagate from a set source down to zero, whereas mojang expects
++    // levels to propagate from a set value up to a maximum value. so we need to convert the levels we put into the propagator
++    // and the levels we get out of the propagator
++
++    // this maps so that GOLDEN_TICKET + 1 will be 0 in the propagator, GOLDEN_TICKET will be 1, and so on
++    // we need GOLDEN_TICKET+1 as 0 because anything >= GOLDEN_TICKET+1 should be unloaded
++    public static int convertBetweenTicketLevels(final int level) {
++        return ChunkMap.MAX_CHUNK_DISTANCE - level + 1;
++    }
++
++    protected final int getPropagatedTicketLevel(final long coordinate) {
++        return convertBetweenTicketLevels(this.ticketLevelPropagator.getLevel(coordinate));
++    }
++
++    protected final void updateTicketLevel(final long coordinate, final int ticketLevel) {
++        if (ticketLevel > ChunkMap.MAX_CHUNK_DISTANCE) {
++            this.ticketLevelPropagator.removeSource(coordinate);
++        } else {
++            this.ticketLevelPropagator.setSource(coordinate, convertBetweenTicketLevels(ticketLevel));
++        }
++    }
++    // Paper end - replace ticket level propagator
++
+     protected void purgeStaleTickets() {
+         ++this.ticketTickCounter;
+         ObjectIterator objectiterator = this.tickets.long2ObjectEntrySet().fastIterator();
+@@ -117,7 +158,7 @@ public abstract class DistanceManager {
+             }
+ 
+             if (flag) {
+-                this.ticketTracker.update(entry.getLongKey(), DistanceManager.getTicketLevelAt((SortedArraySet) entry.getValue()), false);
++                this.updateTicketLevel(entry.getLongKey(), getTicketLevelAt(entry.getValue())); // Paper - replace ticket level propagator
+             }
+ 
+             if (((SortedArraySet) entry.getValue()).isEmpty()) {
+@@ -140,61 +181,94 @@ public abstract class DistanceManager {
+     @Nullable
+     protected abstract ChunkHolder updateChunkScheduling(long pos, int level, @Nullable ChunkHolder holder, int k);
+ 
++    protected long ticketLevelUpdateCount; // Paper - replace ticket level propagator
+     public boolean runAllUpdates(ChunkMap chunkStorage) {
+         //this.f.a(); // Paper - no longer used
+         this.tickingTicketsTracker.runAllUpdates();
+         org.spigotmc.AsyncCatcher.catchOp("DistanceManagerTick"); // Paper
+         this.playerTicketManager.runAllUpdates();
+-        int i = Integer.MAX_VALUE - this.ticketTracker.runDistanceUpdates(Integer.MAX_VALUE);
+-        boolean flag = i != 0;
++        boolean flag = this.ticketLevelPropagator.propagateUpdates(); // Paper - replace ticket level propagator
+ 
+         if (flag) {
+             ;
+         }
+ 
+-        // Paper start
+-        if (!this.pendingChunkUpdates.isEmpty()) {
+-            this.pollingPendingChunkUpdates = true; try { // Paper - Chunk priority
+-            while(!this.pendingChunkUpdates.isEmpty()) {
+-                ChunkHolder remove = this.pendingChunkUpdates.remove();
+-                remove.isUpdateQueued = false;
+-                remove.updateFutures(chunkStorage, this.mainThreadExecutor);
+-            }
+-            } finally { this.pollingPendingChunkUpdates = false; } // Paper - Chunk priority
+-            // Paper end
+-            return true;
+-        } else {
+-            if (!this.ticketsToRelease.isEmpty()) {
+-                LongIterator longiterator = this.ticketsToRelease.iterator();
++        // Paper start - replace level propagator
++        ticket_update_loop:
++        while (!this.ticketLevelUpdates.isEmpty()) {
++            flag = true;
+ 
+-                while (longiterator.hasNext()) {
+-                    long j = longiterator.nextLong();
++            boolean oldPolling = this.pollingPendingChunkUpdates;
++            this.pollingPendingChunkUpdates = true;
++            try {
++                for (java.util.Iterator<Long2IntMap.Entry> iterator = this.ticketLevelUpdates.long2IntEntrySet().fastIterator(); iterator.hasNext();) {
++                    Long2IntMap.Entry entry = iterator.next();
++                    long key = entry.getLongKey();
++                    int newLevel = entry.getIntValue();
++                    ChunkHolder chunk = this.getChunk(key);
++
++                    if (chunk == null && newLevel > ChunkMap.MAX_CHUNK_DISTANCE) {
++                        // not loaded and it shouldn't be loaded!
++                        continue;
++                    }
+ 
+-                    if (this.getTickets(j).stream().anyMatch((ticket) -> {
+-                        return ticket.getType() == TicketType.PLAYER;
+-                    })) {
+-                        ChunkHolder playerchunk = chunkStorage.getUpdatingChunkIfPresent(j);
++                    int currentLevel = chunk == null ? ChunkMap.MAX_CHUNK_DISTANCE + 1 : chunk.getTicketLevel();
+ 
+-                        if (playerchunk == null) {
+-                            throw new IllegalStateException();
++                    if (currentLevel == newLevel) {
++                        // nothing to do
++                        continue;
++                    }
++
++                    this.updateChunkScheduling(key, newLevel, chunk, currentLevel);
++                }
++
++                long recursiveCheck = ++this.ticketLevelUpdateCount;
++                while (!this.ticketLevelUpdates.isEmpty()) {
++                    long key = this.ticketLevelUpdates.firstLongKey();
++                    int newLevel = this.ticketLevelUpdates.removeFirstInt();
++                    ChunkHolder chunk = this.getChunk(key);
++
++                    if (chunk == null) {
++                        if (newLevel <= ChunkMap.MAX_CHUNK_DISTANCE) {
++                            throw new IllegalStateException("Expected chunk holder to be created");
+                         }
++                        // not loaded and it shouldn't be loaded!
++                        continue;
++                    }
+ 
+-                        CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> completablefuture = playerchunk.getEntityTickingChunkFuture();
++                    int currentLevel = chunk.oldTicketLevel;
+ 
+-                        completablefuture.thenAccept((either) -> {
+-                            this.mainThreadExecutor.execute(() -> {
+-                                this.ticketThrottlerReleaser.tell(ChunkTaskPriorityQueueSorter.release(() -> {
+-                                }, j, false));
+-                            });
+-                        });
++                    if (currentLevel == newLevel) {
++                        // nothing to do
++                        continue;
++                    }
++
++                    chunk.updateFutures(chunkStorage, this.mainThreadExecutor);
++                    if (recursiveCheck != this.ticketLevelUpdateCount) {
++                        // back to the start, we must create player chunks and update the ticket level fields before
++                        // processing the actual level updates
++                        continue ticket_update_loop;
+                     }
+                 }
+ 
+-                this.ticketsToRelease.clear();
+-            }
++                for (;;) {
++                    if (recursiveCheck != this.ticketLevelUpdateCount) {
++                        continue ticket_update_loop;
++                    }
++                    ChunkHolder pendingUpdate = this.pendingChunkUpdates.poll();
++                    if (pendingUpdate == null) {
++                        break;
++                    }
+ 
+-            return flag;
++                    pendingUpdate.updateFutures(chunkStorage, this.mainThreadExecutor);
++                }
++            } finally {
++                this.pollingPendingChunkUpdates = oldPolling;
++            }
+         }
++
++        return flag;
++        // Paper end - replace level propagator
+     }
+     boolean pollingPendingChunkUpdates = false; // Paper - Chunk priority
+ 
+@@ -206,7 +280,7 @@ public abstract class DistanceManager {
+ 
+         ticket1.setCreatedTick(this.ticketTickCounter);
+         if (ticket.getTicketLevel() < j) {
+-            this.ticketTracker.update(i, ticket.getTicketLevel(), true);
++            this.updateTicketLevel(i, ticket.getTicketLevel()); // Paper - replace ticket level propagator
+         }
+ 
+         return ticket == ticket1; // CraftBukkit
+@@ -250,7 +324,7 @@ public abstract class DistanceManager {
+         // Paper start - Chunk priority
+         int newLevel = getTicketLevelAt(arraysetsorted);
+         if (newLevel > oldLevel) {
+-            this.ticketTracker.update(i, newLevel, false);
++            this.updateTicketLevel(i, newLevel); // Paper // Paper - replace ticket level propagator
+         }
+         // Paper end
+         return removed; // CraftBukkit
+@@ -564,7 +638,7 @@ public abstract class DistanceManager {
+             }
+ 
+             if (flag) {
+-                this.ticketTracker.update(entry.getLongKey(), DistanceManager.getTicketLevelAt((SortedArraySet) entry.getValue()), false);
++                this.updateTicketLevel(entry.getLongKey(), DistanceManager.getTicketLevelAt((SortedArraySet) entry.getValue())); // Paper - replace ticket level propagator
+             }
+ 
+             if (((SortedArraySet) entry.getValue()).isEmpty()) {
+@@ -587,7 +661,7 @@ public abstract class DistanceManager {
+             SortedArraySet<Ticket<?>> tickets = entry.getValue();
+             if (tickets.remove(target)) {
+                 // copied from removeTicket
+-                this.ticketTracker.update(entry.getLongKey(), DistanceManager.getTicketLevelAt(tickets), false);
++                this.updateTicketLevel(entry.getLongKey(), getTicketLevelAt(tickets)); // Paper - replace ticket level propagator
+ 
+                 // can't use entry after it's removed
+                 if (tickets.isEmpty()) {

@@ -8,7 +8,6 @@ public class TestPluginBootstrap implements PluginBootstrap {
 
     @Override
     public void bootstrap(@NotNull BootstrapContext context) {
-        // io.papermc.testplugin.brigtests.Registration.registerViaBootstrap(context);
     }
 
 }

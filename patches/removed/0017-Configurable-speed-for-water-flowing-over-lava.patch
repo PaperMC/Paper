@@ -1,0 +1,61 @@
+From 656824f3d0c0f73417897c1ce3391a91849ec476 Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Tue, 1 Mar 2016 14:27:13 -0600
+Subject: [PATCH] Configurable speed for water flowing over lava
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+index 4da846719..d3484489b 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
++++ b/src/main/java/com/destroystokyo/paper/PaperWorldConfig.java
+@@ -123,4 +123,10 @@ public class PaperWorldConfig {
+         if (fallingBlockHeightNerf != 0) log("Falling Block Height Limit set to Y: " + fallingBlockHeightNerf);
+         if (entityTNTHeightNerf != 0) log("TNT Entity Height Limit set to Y: " + entityTNTHeightNerf);
+     }
++
++    public int waterOverLavaFlowSpeed;
++    private void waterOverLawFlowSpeed() {
++        waterOverLavaFlowSpeed = getInt("water-over-lava-flow-speed", 5);
++        log("Water over lava flow speed: " + waterOverLavaFlowSpeed);
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/BlockFlowing.java b/src/main/java/net/minecraft/server/BlockFlowing.java
+index 7b74df5b9..62234a7c9 100644
+--- a/src/main/java/net/minecraft/server/BlockFlowing.java
++++ b/src/main/java/net/minecraft/server/BlockFlowing.java
+@@ -30,7 +30,7 @@ public class BlockFlowing extends BlockFluids {
+             b0 = 2;
+         }
+ 
+-        int j = this.a(world);
++        int j = this.getFlowSpeed(world, blockposition); // Paper
+         int k;
+ 
+         if (i > 0) {
+@@ -261,8 +261,22 @@ public class BlockFlowing extends BlockFluids {
+ 
+     public void onPlace(World world, BlockPosition blockposition, IBlockData iblockdata) {
+         if (!this.e(world, blockposition, iblockdata)) {
+-            world.a(blockposition, (Block) this, this.a(world));
++            world.a(blockposition, (Block) this, this.getFlowSpeed(world, blockposition)); // Paper
+         }
+ 
+     }
++
++    /**
++     * Paper - Get flow speed. Throttle if its water and flowing adjacent to lava
++     */
++    public int getFlowSpeed(World world, BlockPosition blockposition) {
++        if (this.material == Material.WATER && (
++                world.getType(blockposition.north(1)).getBlock().material == Material.LAVA ||
++                        world.getType(blockposition.south(1)).getBlock().material == Material.LAVA ||
++                        world.getType(blockposition.west(1)).getBlock().material == Material.LAVA ||
++                        world.getType(blockposition.east(1)).getBlock().material == Material.LAVA)) {
++            return world.paperConfig.waterOverLavaFlowSpeed;
++        }
++        return super.a(world);
++    }
+ }
+-- 
+2.18.0
+

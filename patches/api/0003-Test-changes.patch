@@ -3,6 +3,7 @@ From: Shane Freeder <theboyetronic@gmail.com>
 Date: Sun, 17 Mar 2019 23:04:30 +0000
 Subject: [PATCH] Test changes
 
+- convert to mockito for mocking of types
 - Allow use of TYPE_USE annotations
 - Ignore package-private methods for nullability annotations
 - Add excludes for classes which don't pass
@@ -11,23 +12,6 @@ Subject: [PATCH] Test changes
 Co-authored-by: Riley Park <rileysebastianpark@gmail.com>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
-diff --git a/build.gradle.kts b/build.gradle.kts
-index a918fd14c95e714e935758d60bccd72755e00b11..768024b2b4584fd7dd86f068c0e79c89ffc5faa1 100644
---- a/build.gradle.kts
-+++ b/build.gradle.kts
-@@ -105,6 +105,12 @@ tasks.test {
-     useJUnitPlatform()
- }
- 
-+// Paper start - compile tests with -parameters for better junit parameterized test names
-+tasks.compileTestJava {
-+    options.compilerArgs.add("-parameters")
-+}
-+// Paper end
-+
- // Paper start
- val scanJar = tasks.register("scanJarForBadCalls", io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
-     badAnnotations.add("Lio/papermc/paper/annotation/DoNotUse;")
 diff --git a/src/test/java/io/papermc/paper/testing/EmptyTag.java b/src/test/java/io/papermc/paper/testing/EmptyTag.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..77154095cfb8b259bdb318e8ff40cb6f559ebc18
@@ -66,7 +50,7 @@ index 0000000000000000000000000000000000000000..77154095cfb8b259bdb318e8ff40cb6f
 +    }
 +}
 diff --git a/src/test/java/org/bukkit/AnnotationTest.java b/src/test/java/org/bukkit/AnnotationTest.java
-index 64e7aef6220097edefdff3b98a771b988365930d..a899f63eb2ce58b3cf708e91819cbbdeffda5d9f 100644
+index 4ac3dd977e75cd8464163351d306e037ee32cb48..c26ea217927ba77611e6ae93f8df50a83bceb3dd 100644
 --- a/src/test/java/org/bukkit/AnnotationTest.java
 +++ b/src/test/java/org/bukkit/AnnotationTest.java
 @@ -29,7 +29,13 @@ public class AnnotationTest {
@@ -132,8 +116,8 @@ index 64e7aef6220097edefdff3b98a771b988365930d..a899f63eb2ce58b3cf708e91819cbbde
                  for (int i = 0; i < paramTypes.length; i++) {
                      if (mustBeAnnotated(paramTypes[i]) ^ isWellAnnotated(method.invisibleParameterAnnotations == null ? null : method.invisibleParameterAnnotations[i])) {
 +                        // Paper start
-+                        if (method.invisibleTypeAnnotations != null || method.visibleTypeAnnotations != null) {
-+                            for (final org.objectweb.asm.tree.TypeAnnotationNode invisibleTypeAnnotation : java.util.Objects.requireNonNullElse(method.invisibleTypeAnnotations, method.visibleTypeAnnotations)) {
++                        if (method.invisibleTypeAnnotations != null) {
++                            for (final org.objectweb.asm.tree.TypeAnnotationNode invisibleTypeAnnotation : method.invisibleTypeAnnotations) {
 +                                final org.objectweb.asm.TypeReference ref = new org.objectweb.asm.TypeReference(invisibleTypeAnnotation.typeRef);
 +                                if (ref.getSort() == org.objectweb.asm.TypeReference.METHOD_FORMAL_PARAMETER && ref.getTypeParameterIndex() == i && java.util.Arrays.asList(ACCEPTED_ANNOTATIONS).contains(invisibleTypeAnnotation.desc)) {
 +                                    continue dancing;
@@ -162,8 +146,8 @@ index 64e7aef6220097edefdff3b98a771b988365930d..a899f63eb2ce58b3cf708e91819cbbde
 +            builder.append("\t").append(message).append("\n");
          }
  
--        fail("There " + errors.size() + " are missing annotation(s)");
-+        fail(builder.toString());
+-        Assert.fail("There " + errors.size() + " are missing annotation(s)");
++        Assert.fail(builder.toString());
      }
  
      private static void collectClasses(@NotNull File from, @NotNull Map<String, ClassNode> to) throws IOException {
@@ -221,17 +205,17 @@ index 64e7aef6220097edefdff3b98a771b988365930d..a899f63eb2ce58b3cf708e91819cbbde
              return false;
          }
 diff --git a/src/test/java/org/bukkit/BukkitMirrorTest.java b/src/test/java/org/bukkit/BukkitMirrorTest.java
-index 89ca06ebecdaadd5dfc7bc74473ca15ad36f6eff..5974ceea58940e1799f3589eac0e39b925a42c3b 100644
+index 2dfada66067d79b84cd490eadbe0178e8cd8c260..06d66512c91c680130132b79e34fbf32245ff9ee 100644
 --- a/src/test/java/org/bukkit/BukkitMirrorTest.java
 +++ b/src/test/java/org/bukkit/BukkitMirrorTest.java
-@@ -9,6 +9,7 @@ import org.junit.jupiter.params.ParameterizedTest;
- import org.junit.jupiter.params.provider.Arguments;
- import org.junit.jupiter.params.provider.MethodSource;
+@@ -20,6 +20,7 @@ public class BukkitMirrorTest {
  
-+@org.junit.jupiter.api.Disabled // Paper
- public class BukkitMirrorTest {
- 
-     public static Stream<Arguments> data() {
+     @Parameters(name = "{index}: {1}")
+     public static List<Object[]> data() {
++        if (true) return List.of(); // Paper
+         return Lists.transform(Arrays.asList(Server.class.getDeclaredMethods()), new Function<Method, Object[]>() {
+             @Override
+             public Object[] apply(Method input) {
 diff --git a/src/test/java/org/bukkit/support/TestServer.java b/src/test/java/org/bukkit/support/TestServer.java
 index 79173d6ed844f1e640e3aa745a9b560ec5e6a2bc..73ec679ac0d1f398b417bd174b47f9af93351e27 100644
 --- a/src/test/java/org/bukkit/support/TestServer.java

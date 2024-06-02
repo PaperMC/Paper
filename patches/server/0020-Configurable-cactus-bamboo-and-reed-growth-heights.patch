@@ -1,0 +1,92 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Tue, 1 Mar 2016 13:02:51 -0600
+Subject: [PATCH] Configurable cactus bamboo and reed growth heights
+
+Bamboo - Both the minimum fully-grown heights and the maximum are configurable
+- Machine_Maker
+
+diff --git a/src/main/java/net/minecraft/world/level/block/BambooStalkBlock.java b/src/main/java/net/minecraft/world/level/block/BambooStalkBlock.java
+index 0d05ad9c0b5043e58d639041cfe3fb7a27f373a3..a5d391af2c6b733d653188f4aeeec2afffd96adf 100644
+--- a/src/main/java/net/minecraft/world/level/block/BambooStalkBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BambooStalkBlock.java
+@@ -130,7 +130,7 @@ public class BambooStalkBlock extends Block implements BonemealableBlock {
+             if (random.nextFloat() < (world.spigotConfig.bambooModifier / (100.0f * 3)) && world.isEmptyBlock(pos.above()) && world.getRawBrightness(pos.above(), 0) >= 9) { // Spigot - SPIGOT-7159: Better modifier resolution
+                 int i = this.getHeightBelowUpToMax(world, pos) + 1;
+ 
+-                if (i < 16) {
++                if (i < world.paperConfig().maxGrowthHeight.bamboo.max) { // Paper
+                     this.growBamboo(state, world, pos, random, i);
+                 }
+             }
+@@ -161,7 +161,7 @@ public class BambooStalkBlock extends Block implements BonemealableBlock {
+         int i = this.getHeightAboveUpToMax(world, pos);
+         int j = this.getHeightBelowUpToMax(world, pos);
+ 
+-        return i + j + 1 < 16 && (Integer) world.getBlockState(pos.above(i)).getValue(BambooStalkBlock.STAGE) != 1;
++        return i + j + 1 < ((Level) world).paperConfig().maxGrowthHeight.bamboo.max && (Integer) world.getBlockState(pos.above(i)).getValue(BambooStalkBlock.STAGE) != 1; // Paper
+     }
+ 
+     @Override
+@@ -180,7 +180,7 @@ public class BambooStalkBlock extends Block implements BonemealableBlock {
+             BlockPos blockposition1 = pos.above(i);
+             BlockState iblockdata1 = world.getBlockState(blockposition1);
+ 
+-            if (k >= 16 || !iblockdata1.is(Blocks.BAMBOO) || (Integer) iblockdata1.getValue(BambooStalkBlock.STAGE) == 1 || !world.isEmptyBlock(blockposition1.above())) { // CraftBukkit - If the BlockSpreadEvent was cancelled, we have no bamboo here
++            if (k >= world.paperConfig().maxGrowthHeight.bamboo.max || !iblockdata1.is(Blocks.BAMBOO) || (Integer) iblockdata1.getValue(BambooStalkBlock.STAGE) == 1 || !world.isEmptyBlock(blockposition1.above())) { // CraftBukkit - If the BlockSpreadEvent was cancelled, we have no bamboo here // Paper - Configurable cactus bamboo and reed growth heights
+                 return;
+             }
+ 
+@@ -221,7 +221,7 @@ public class BambooStalkBlock extends Block implements BonemealableBlock {
+         }
+ 
+         int j = (Integer) state.getValue(BambooStalkBlock.AGE) != 1 && !iblockdata2.is(Blocks.BAMBOO) ? 0 : 1;
+-        int k = (height < 11 || random.nextFloat() >= 0.25F) && height != 15 ? 0 : 1;
++        int k = (height < world.paperConfig().maxGrowthHeight.bamboo.min || random.nextFloat() >= 0.25F) && height != (world.paperConfig().maxGrowthHeight.bamboo.max - 1) ? 0 : 1; // Paper
+ 
+         // CraftBukkit start
+         if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, pos.above(), (BlockState) ((BlockState) ((BlockState) this.defaultBlockState().setValue(BambooStalkBlock.AGE, j)).setValue(BambooStalkBlock.LEAVES, blockpropertybamboosize)).setValue(BambooStalkBlock.STAGE, k), 3)) {
+@@ -236,7 +236,7 @@ public class BambooStalkBlock extends Block implements BonemealableBlock {
+     protected int getHeightAboveUpToMax(BlockGetter world, BlockPos pos) {
+         int i;
+ 
+-        for (i = 0; i < 16 && world.getBlockState(pos.above(i + 1)).is(Blocks.BAMBOO); ++i) {
++        for (i = 0; i < ((Level) world).paperConfig().maxGrowthHeight.bamboo.max && world.getBlockState(pos.above(i + 1)).is(Blocks.BAMBOO); ++i) { // Paper
+             ;
+         }
+ 
+@@ -246,7 +246,7 @@ public class BambooStalkBlock extends Block implements BonemealableBlock {
+     protected int getHeightBelowUpToMax(BlockGetter world, BlockPos pos) {
+         int i;
+ 
+-        for (i = 0; i < 16 && world.getBlockState(pos.below(i + 1)).is(Blocks.BAMBOO); ++i) {
++        for (i = 0; i < ((Level) world).paperConfig().maxGrowthHeight.bamboo.max && world.getBlockState(pos.below(i + 1)).is(Blocks.BAMBOO); ++i) { // Paper
+             ;
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/CactusBlock.java b/src/main/java/net/minecraft/world/level/block/CactusBlock.java
+index a7e8be5545ef6c2ff9a056d297d11850d07bdd1c..2c3bbe4f295be9782c11af13c2cf9c05f27313d9 100644
+--- a/src/main/java/net/minecraft/world/level/block/CactusBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/CactusBlock.java
+@@ -54,7 +54,7 @@ public class CactusBlock extends Block {
+                 ;
+             }
+ 
+-            if (i < 3) {
++            if (i < world.paperConfig().maxGrowthHeight.cactus) { // Paper - Configurable growth height
+                 int j = (Integer) state.getValue(CactusBlock.AGE);
+ 
+                 int modifier = world.spigotConfig.cactusModifier; // Spigot - SPIGOT-7159: Better modifier resolution
+diff --git a/src/main/java/net/minecraft/world/level/block/SugarCaneBlock.java b/src/main/java/net/minecraft/world/level/block/SugarCaneBlock.java
+index 7fbc511eb1cbfedc3bbf5bff7a61e8f74c294140..c3f500580d257e1397f2eb7c47b063a6fe6bb405 100644
+--- a/src/main/java/net/minecraft/world/level/block/SugarCaneBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/SugarCaneBlock.java
+@@ -52,7 +52,7 @@ public class SugarCaneBlock extends Block {
+                 ;
+             }
+ 
+-            if (i < 3) {
++            if (i < world.paperConfig().maxGrowthHeight.reeds) { // Paper - Configurable growth height
+                 int j = (Integer) state.getValue(SugarCaneBlock.AGE);
+ 
+                 int modifier = world.spigotConfig.caneModifier; // Spigot - SPIGOT-7159: Better modifier resolution

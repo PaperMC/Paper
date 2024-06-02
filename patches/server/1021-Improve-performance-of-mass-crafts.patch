@@ -1,0 +1,83 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 13 Aug 2023 15:41:52 -0700
+Subject: [PATCH] Improve performance of mass crafts
+
+When the server crafts all available items in CraftingMenu or InventoryMenu the game
+checks either 4 or 9 times for each individual craft for a matching recipe for that container.
+This check can be expensive if 64 total crafts are being performed with the recipe matching logic
+being run 64 * 9 + 64 times. A breakdown of those times is below. This patch caches the last matching
+recipe so that it is checked first and only if it doesn't match does the rest of the matching logic run.
+
+Shift-click crafts are processed one at a time, so shift clicking on an item in the result of a iron block craft
+where all the 9 inputs are full stacks of iron will run 64 iron block crafts. For each of those crafts, the
+'remaining' blocks are calculated. This is due to recipes that have leftover items like buckets. This is done
+for each craft, and done once to get the full 9 leftover items which are usually air. Then 1 item is removed
+from each of the 9 inputs and each time that happens, logic is triggered to update the result itemstack. So
+for each craft, that logic is run 9 times (hence the 64 * 9). The + 64 is from the 64 checks for remaining items.
+
+After this patch, the full iteration over all recipes checking for a match should run once for a full craft to find the
+initial recipe match. Then that recipe will be checked first for all future recipe match checks.
+
+diff --git a/src/main/java/net/minecraft/world/inventory/CraftingMenu.java b/src/main/java/net/minecraft/world/inventory/CraftingMenu.java
+index 389b8cf74066f9cec90b54d86f5ff7661964b585..948afb5b10d3b515f21810524bd72da2d963f808 100644
+--- a/src/main/java/net/minecraft/world/inventory/CraftingMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/CraftingMenu.java
+@@ -75,7 +75,8 @@ public class CraftingMenu extends RecipeBookMenu<CraftingContainer> {
+         if (!world.isClientSide) {
+             ServerPlayer entityplayer = (ServerPlayer) player;
+             ItemStack itemstack = ItemStack.EMPTY;
+-            Optional<CraftingRecipe> optional = world.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftingInventory, world);
++            final Recipe<?> currentRecipe = craftingInventory.getCurrentRecipe(); // Paper - check last recipe used first
++            Optional<CraftingRecipe> optional = currentRecipe == null ? world.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftingInventory, world) : world.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftingInventory, world, currentRecipe.getId()).map(com.mojang.datafixers.util.Pair::getSecond); // Paper - check last recipe used first
+ 
+             if (optional.isPresent()) {
+                 CraftingRecipe recipecrafting = (CraftingRecipe) optional.get();
+diff --git a/src/main/java/net/minecraft/world/inventory/ResultSlot.java b/src/main/java/net/minecraft/world/inventory/ResultSlot.java
+index ddf87ef1979c4ae4f14cd6aa220f9146d5e20909..46d1f768e4dcc2942ee7af81ee2713df10251731 100644
+--- a/src/main/java/net/minecraft/world/inventory/ResultSlot.java
++++ b/src/main/java/net/minecraft/world/inventory/ResultSlot.java
+@@ -59,7 +59,7 @@ public class ResultSlot extends Slot {
+     @Override
+     public void onTake(Player player, ItemStack stack) {
+         this.checkTakeAchievements(stack);
+-        NonNullList<ItemStack> nonNullList = player.level().getRecipeManager().getRemainingItemsFor(RecipeType.CRAFTING, this.craftSlots, player.level());
++        NonNullList<ItemStack> nonNullList = player.level().getRecipeManager().getRemainingItemsFor(RecipeType.CRAFTING, this.craftSlots, player.level(), this.craftSlots.getCurrentRecipe() != null ? this.craftSlots.getCurrentRecipe().getId() : null); // Paper - check last recipe used first
+ 
+         for(int i = 0; i < nonNullList.size(); ++i) {
+             ItemStack itemStack = this.craftSlots.getItem(i);
+diff --git a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
+index ab6dc3449a1d3b7acf1d7bf5ac1c24224cc252c7..9ffb6999171f602f0b113dac40e0130410cad870 100644
+--- a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
++++ b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
+@@ -119,13 +119,16 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
+             T t0 = map.get(id); // CraftBukkit - decompile error
+ 
+             if (t0 != null && t0.matches(inventory, world)) {
++                inventory.setCurrentRecipe(t0); // Paper
+                 return Optional.of(Pair.of(id, t0));
+             }
+         }
+ 
++        inventory.setCurrentRecipe(null); // Paper - clear before it might be set again
+         return map.entrySet().stream().filter((entry) -> {
+             return ((Recipe) entry.getValue()).matches(inventory, world);
+         }).findFirst().map((entry) -> {
++            inventory.setCurrentRecipe(entry.getValue()); // Paper
+             return Pair.of((ResourceLocation) entry.getKey(), entry.getValue()); // CraftBukkit - decompile error
+         });
+     }
+@@ -147,7 +150,12 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
+     }
+ 
+     public <C extends Container, T extends Recipe<C>> NonNullList<ItemStack> getRemainingItemsFor(RecipeType<T> type, C inventory, Level world) {
+-        Optional<T> optional = this.getRecipeFor(type, inventory, world);
++        // Paper start - check last recipe used first
++        return this.getRemainingItemsFor(type, inventory, world, null);
++    }
++    public <C extends Container, T extends Recipe<C>> NonNullList<ItemStack> getRemainingItemsFor(RecipeType<T> type, C inventory, Level world, @Nullable ResourceLocation firstToCheck) {
++        Optional<T> optional = firstToCheck == null ? this.getRecipeFor(type, inventory, world) : this.getRecipeFor(type, inventory, world, firstToCheck).map(Pair::getSecond);
++        // Paper end
+ 
+         if (optional.isPresent()) {
+             return ((Recipe) optional.get()).getRemainingItems(inventory);

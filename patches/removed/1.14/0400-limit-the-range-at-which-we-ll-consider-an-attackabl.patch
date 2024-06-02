@@ -1,0 +1,35 @@
+From a55362012ae6439bd007bf980dc0e094b7e9257a Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Tue, 13 Nov 2018 14:01:00 +0000
+Subject: [PATCH] limit the range at which we'll consider an attackable target
+
+This patch aims to ensure that MCP World#getNearestAttackablePlayer
+will not trigger chunk loads due to PathfinderGoalNearestAttackableTarget
+performing a ray trace operation by pre-checking the maximum limit;
+
+Given that the implementation shows that the limit should only ever
+decrease when set, allowing us to skip further checks earlier on
+when looking for an attackable entity
+
+diff --git a/src/main/java/net/minecraft/server/World.java b/src/main/java/net/minecraft/server/World.java
+index 645af17a58..7721dfee65 100644
+--- a/src/main/java/net/minecraft/server/World.java
++++ b/src/main/java/net/minecraft/server/World.java
+@@ -2721,8 +2721,13 @@ public abstract class World implements IEntityAccess, GeneratorAccess, IIBlockAc
+         for (int i = 0; i < this.players.size(); ++i) {
+             EntityHuman entityhuman1 = (EntityHuman) this.players.get(i);
+ 
++            // Paper start
++            // move distance check up, if set, check distance^2 is less than XZlimit^2, continue
++            // 4th method param is XZlimit (at least at the time of commit)
++            double d6 = entityhuman1.d(d0, entityhuman1.locY, d2);
++            if (d3 < 0.0D || d6 < d3 * d3)
+             if (!entityhuman1.abilities.isInvulnerable && entityhuman1.isAlive() && !entityhuman1.isSpectator() && (predicate == null || predicate.test(entityhuman1))) {
+-                double d6 = entityhuman1.d(d0, entityhuman1.locY, d2);
++                // Paper end
+                 double d7 = d3;
+ 
+                 if (entityhuman1.isSneaking()) {
+-- 
+2.21.0
+

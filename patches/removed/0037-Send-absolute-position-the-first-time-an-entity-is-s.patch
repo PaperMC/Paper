@@ -1,0 +1,87 @@
+From fe8bd60fe7b27283c696a5b746414187695174b0 Mon Sep 17 00:00:00 2001
+From: Jedediah Smith <jedediah@silencegreys.com>
+Date: Wed, 2 Mar 2016 23:13:07 -0600
+Subject: [PATCH] Send absolute position the first time an entity is seen
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityTrackerEntry.java b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+index dd6c84b4a2..de0cf6b735 100644
+--- a/src/main/java/net/minecraft/server/EntityTrackerEntry.java
++++ b/src/main/java/net/minecraft/server/EntityTrackerEntry.java
+@@ -41,7 +41,19 @@ public class EntityTrackerEntry {
+     private boolean x;
+     private boolean y;
+     public boolean b;
+-    public final Set<EntityPlayer> trackedPlayers = Sets.newHashSet();
++    // Paper start
++    // Replace trackedPlayers Set with a Map. The value is true until the player receives
++    // their first update (which is forced to have absolute coordinates), false afterward.
++    public java.util.Map<EntityPlayer, Boolean> trackedPlayerMap = new java.util.HashMap<EntityPlayer, Boolean>();
++    public Set<EntityPlayer> trackedPlayers = trackedPlayerMap.keySet();
++
++    /**
++     * Requested in https://github.com/PaperMC/Paper/issues/1537 to allow intercepting packets
++     */
++    public void sendPlayerPacket(EntityPlayer player, Packet packet) {
++        player.playerConnection.sendPacket(packet);
++    }
++    // Paper end
+ 
+     public EntityTrackerEntry(Entity entity, int i, int j, int k, boolean flag) {
+         this.tracker = entity;
+@@ -142,6 +154,7 @@ public class EntityTrackerEntry {
+                 boolean flag1 = l1 * l1 + i2 * i2 + j2 * j2 >= 128L || this.a % 60 == 0;
+                 boolean flag2 = Math.abs(j1 - this.yRot) >= 1 || Math.abs(k1 - this.xRot) >= 1;
+ 
++                if (this.a > 0 || this.tracker instanceof EntityArrow) { // Paper - Moved up
+                 // CraftBukkit start - Code moved from below
+                 if (flag1) {
+                     this.xLoc = k;
+@@ -155,7 +168,6 @@ public class EntityTrackerEntry {
+                 }
+                 // CraftBukkit end
+ 
+-                if (this.a > 0 || this.tracker instanceof EntityArrow) {
+                     if (l1 >= -32768L && l1 < 32768L && i2 >= -32768L && i2 < 32768L && j2 >= -32768L && j2 < 32768L && this.v <= 400 && !this.x && this.y == this.tracker.onGround) {
+                         if ((!flag1 || !flag2) && !(this.tracker instanceof EntityArrow)) {
+                             if (flag1) {
+@@ -201,7 +213,26 @@ public class EntityTrackerEntry {
+                 }
+ 
+                 if (packet1 != null) {
+-                    this.broadcast((Packet) packet1);
++                    // Paper start - ensure fresh viewers get an absolute position on their first update,
++                    // since we can't be certain what position they received in the spawn packet.
++                    if (packet1 instanceof PacketPlayOutEntityTeleport) {
++                        this.broadcast((Packet) packet1);
++                    } else {
++                        PacketPlayOutEntityTeleport teleportPacket = null;
++
++                        for (java.util.Map.Entry<EntityPlayer, Boolean> viewer : trackedPlayerMap.entrySet()) {
++                            if (viewer.getValue()) {
++                                viewer.setValue(false);
++                                if (teleportPacket == null) {
++                                    teleportPacket = new PacketPlayOutEntityTeleport(this.tracker);
++                                }
++                                sendPlayerPacket(viewer.getKey(), teleportPacket);
++                            } else {
++                                sendPlayerPacket(viewer.getKey(), (Packet) packet1);
++                            }
++                        }
++                    }
++                    // Paper end
+                 }
+ 
+                 this.d();
+@@ -338,7 +369,7 @@ public class EntityTrackerEntry {
+ 
+                     entityplayer.removeQueue.remove(Integer.valueOf(this.tracker.getId()));
+                     // CraftBukkit end
+-                    this.trackedPlayers.add(entityplayer);
++                    this.trackedPlayerMap.put(entityplayer, true); // Paper
+                     Packet<?> packet = this.e();
+ 
+                     entityplayer.playerConnection.sendPacket(packet);
+-- 
+2.21.0
+
