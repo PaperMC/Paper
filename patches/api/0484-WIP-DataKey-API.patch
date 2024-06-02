@@ -536,11 +536,28 @@ index 0000000000000000000000000000000000000000..b58a49d8431240cdfd38453819c45c09
 +
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/registry/RegistryKey.java b/src/main/java/io/papermc/paper/registry/RegistryKey.java
+index 7b79bf33074355020e0b3b5ef40c7f2e6ba644b4..76c9b6fe88b8cb0dd1d1ca1f9d8134c0def608a7 100644
+--- a/src/main/java/io/papermc/paper/registry/RegistryKey.java
++++ b/src/main/java/io/papermc/paper/registry/RegistryKey.java
+@@ -1,5 +1,6 @@
+ package io.papermc.paper.registry;
+ 
++import io.papermc.paper.datakey.DataComponentType;
+ import net.kyori.adventure.key.Keyed;
+ import org.bukkit.Art;
+ import org.bukkit.Fluid;
+@@ -138,4 +139,5 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
+     RegistryKey<Fluid> FLUID = create("fluid");
+     RegistryKey<Frog.Variant> FROG_VARIANT = create("frog_variant");
+     RegistryKey<MapCursor.Type> MAP_DECORATION_TYPE = create("map_decoration_type");
++    RegistryKey<DataComponentType> DATA_COMPONENT_TYPE = create("data_component_type");
+ }
 diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
-index 82d009c0bbe4b3026a535e02d6e0ed20c7bd525d..2e829272171761da93c8d44d3c04e23e3c25516a 100644
+index 7509b61dfdc0a6675256970cb850b08f9e814580..35127ef25494f70a0d57ff8b8d0c3be5e14286cd 100644
 --- a/src/main/java/org/bukkit/Material.java
 +++ b/src/main/java/org/bukkit/Material.java
-@@ -128,7 +128,7 @@ import org.jetbrains.annotations.Nullable;
+@@ -131,7 +131,7 @@ import org.jetbrains.annotations.Nullable;
  @SuppressWarnings({"DeprecatedIsStillUsed", "deprecation"}) // Paper
  public enum Material implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper
      //<editor-fold desc="Materials" defaultstate="collapsed">
@@ -550,20 +567,20 @@ index 82d009c0bbe4b3026a535e02d6e0ed20c7bd525d..2e829272171761da93c8d44d3c04e23e
      GRANITE(21091),
      POLISHED_GRANITE(5477),
 diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
-index 542c0516e19b6177ff8007ca6f8955dc9082da95..982342c10bc4e9e228d5281ffd0828707fcd6534 100644
+index 88bb3b9ae99fae97ec21972b75ec43cb6b7b22b5..628257e4609fc39895ac4cff974cc92be1ac33af 100644
 --- a/src/main/java/org/bukkit/Registry.java
 +++ b/src/main/java/org/bukkit/Registry.java
-@@ -317,6 +317,8 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+@@ -343,6 +343,8 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
              return StreamSupport.stream(this.spliterator(), false);
          }
      };
 +
-+    Registry<io.papermc.paper.datakey.DataComponentType> DATA_COMPONENT_TYPE = Objects.requireNonNull(Bukkit.getRegistry(io.papermc.paper.datakey.DataComponentType.class), "No registry present for DataComponentType<?>. This is a bug.");
++    Registry<io.papermc.paper.datakey.DataComponentType> DATA_COMPONENT_TYPE = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.DATA_COMPONENT_TYPE); // Paper
      // Paper end
- 
      /**
+      * Get the object by its key.
 diff --git a/src/main/java/org/bukkit/inventory/ItemFactory.java b/src/main/java/org/bukkit/inventory/ItemFactory.java
-index 98a970a6582dca22e719a31559c7becea4725cb2..84708afee2316108babbd64c9c66714646cc7546 100644
+index e20f64828548c647a29dad5a475f4596cad88cd8..80c10ab30ca6ea6e2a80a916d8a5831a01c3d5ae 100644
 --- a/src/main/java/org/bukkit/inventory/ItemFactory.java
 +++ b/src/main/java/org/bukkit/inventory/ItemFactory.java
 @@ -162,6 +162,7 @@ public interface ItemFactory {
@@ -575,7 +592,7 @@ index 98a970a6582dca22e719a31559c7becea4725cb2..84708afee2316108babbd64c9c667146
  
      /**
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index 84a7bf0936d35bf42b5ed038d295d5c31740f472..6ff3c5150d04b15552286a5f86a54efca4c2fcb6 100644
+index c64413a6740b604282984dea2a8430a6e7478d68..9866395f97f3c2c17b9fda40a70447f093a7206e 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
 @@ -1,7 +1,6 @@
@@ -584,9 +601,9 @@ index 84a7bf0936d35bf42b5ed038d295d5c31740f472..6ff3c5150d04b15552286a5f86a54efc
  import com.google.common.base.Preconditions;
 -import com.google.common.collect.ImmutableMap;
  import java.util.LinkedHashMap;
- import java.util.List; // Paper
+ import java.util.Locale;
  import java.util.Map;
-@@ -25,11 +24,11 @@ import org.jetbrains.annotations.Nullable;
+@@ -27,11 +26,11 @@ import org.jetbrains.annotations.Nullable;
   * use this class to encapsulate Materials for which {@link Material#isItem()}
   * returns false.</b>
   */
@@ -600,7 +617,7 @@ index 84a7bf0936d35bf42b5ed038d295d5c31740f472..6ff3c5150d04b15552286a5f86a54efc
  
      @Utility
      protected ItemStack() {}
-@@ -86,6 +85,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -88,6 +87,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
          Preconditions.checkArgument(type != null, "Material cannot be null");
          this.type = type;
          this.amount = amount;
@@ -608,7 +625,7 @@ index 84a7bf0936d35bf42b5ed038d295d5c31740f472..6ff3c5150d04b15552286a5f86a54efc
          if (damage != 0) {
              setDurability(damage);
          }
-@@ -148,10 +148,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -150,10 +150,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      @Deprecated // Paper
      public void setType(@NotNull Material type) {
          Preconditions.checkArgument(type != null, "Material cannot be null");
@@ -620,7 +637,7 @@ index 84a7bf0936d35bf42b5ed038d295d5c31740f472..6ff3c5150d04b15552286a5f86a54efc
          if (type.isLegacy()) {
              createData((byte) 0);
          } else {
-@@ -275,6 +273,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -277,6 +275,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       */
      @Utility
      public int getMaxStackSize() {
@@ -628,7 +645,7 @@ index 84a7bf0936d35bf42b5ed038d295d5c31740f472..6ff3c5150d04b15552286a5f86a54efc
          if (meta != null && meta.hasMaxStackSize()) {
              return meta.getMaxStackSize();
          }
-@@ -335,9 +334,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -337,9 +336,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
          try {
              ItemStack itemStack = (ItemStack) super.clone();
  
@@ -639,7 +656,7 @@ index 84a7bf0936d35bf42b5ed038d295d5c31740f472..6ff3c5150d04b15552286a5f86a54efc
  
              if (this.data != null) {
                  itemStack.data = this.data.clone();
-@@ -357,7 +354,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -359,7 +356,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
          hash = hash * 31 + getType().hashCode();
          hash = hash * 31 + getAmount();
          hash = hash * 31 + (getDurability() & 0xffff);
@@ -648,7 +665,7 @@ index 84a7bf0936d35bf42b5ed038d295d5c31740f472..6ff3c5150d04b15552286a5f86a54efc
  
          return hash;
      }
-@@ -369,7 +366,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -371,7 +368,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       * @return True if this has the given enchantment
       */
      public boolean containsEnchantment(@NotNull Enchantment ench) {
@@ -657,7 +674,7 @@ index 84a7bf0936d35bf42b5ed038d295d5c31740f472..6ff3c5150d04b15552286a5f86a54efc
      }
  
      /**
-@@ -379,7 +376,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -381,7 +378,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       * @return Level of the enchantment, or 0
       */
      public int getEnchantmentLevel(@NotNull Enchantment ench) {
@@ -666,7 +683,7 @@ index 84a7bf0936d35bf42b5ed038d295d5c31740f472..6ff3c5150d04b15552286a5f86a54efc
      }
  
      /**
-@@ -389,7 +386,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -391,7 +388,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       */
      @NotNull
      public Map<Enchantment, Integer> getEnchantments() {
@@ -675,7 +692,7 @@ index 84a7bf0936d35bf42b5ed038d295d5c31740f472..6ff3c5150d04b15552286a5f86a54efc
      }
  
      /**
-@@ -465,10 +462,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -467,10 +464,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       * @param level Level of the enchantment
       */
      public void addUnsafeEnchantment(@NotNull Enchantment ench, int level) {
@@ -688,7 +705,7 @@ index 84a7bf0936d35bf42b5ed038d295d5c31740f472..6ff3c5150d04b15552286a5f86a54efc
      }
  
      /**
-@@ -480,10 +478,10 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -482,10 +480,10 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       */
      public int removeEnchantment(@NotNull Enchantment ench) {
          int level = getEnchantmentLevel(ench);
@@ -701,7 +718,7 @@ index 84a7bf0936d35bf42b5ed038d295d5c31740f472..6ff3c5150d04b15552286a5f86a54efc
          return level;
      }
  
-@@ -491,11 +489,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -493,11 +491,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       * Removes all enchantments on this ItemStack.
       */
      public void removeEnchantments() {
@@ -714,7 +731,7 @@ index 84a7bf0936d35bf42b5ed038d295d5c31740f472..6ff3c5150d04b15552286a5f86a54efc
      }
  
      @Override
-@@ -647,7 +641,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -653,7 +647,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       */
      @UndefinedNullability // Paper
      public ItemMeta getItemMeta() {
@@ -723,7 +740,7 @@ index 84a7bf0936d35bf42b5ed038d295d5c31740f472..6ff3c5150d04b15552286a5f86a54efc
      }
  
      /**
-@@ -656,7 +650,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -662,7 +656,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       * @return Returns true if some meta data has been set for this item
       */
      public boolean hasItemMeta() {
@@ -732,7 +749,7 @@ index 84a7bf0936d35bf42b5ed038d295d5c31740f472..6ff3c5150d04b15552286a5f86a54efc
      }
  
      /**
-@@ -677,22 +671,13 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -683,22 +677,13 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       */
      private boolean setItemMeta0(@Nullable ItemMeta itemMeta, @NotNull Material material) {
          if (itemMeta == null) {
@@ -757,7 +774,7 @@ index 84a7bf0936d35bf42b5ed038d295d5c31740f472..6ff3c5150d04b15552286a5f86a54efc
  
          return true;
      }
-@@ -1073,4 +1058,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -1079,4 +1064,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
          return Bukkit.getUnsafe().computeTooltipLines(this, tooltipContext, player);
      }
      // Paper end - expose itemstack tooltip lines

@@ -731,24 +731,28 @@ index 0000000000000000000000000000000000000000..8af596088fe4dd7d81f6d4d4ebf4c371
 +        }
 +    }
 + }
-diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
-index 73472890e30180dc3cb6aa1bd9c5815087334682..9b75991344fa6c63fb8414aef062cde45d40d0cf 100644
---- a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
-+++ b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
-@@ -144,6 +144,11 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
-             return new io.papermc.paper.world.structure.PaperConfiguredStructure.LegacyRegistry(registryHolder.registryOrThrow(Registries.STRUCTURE));
-         }
-         // Paper end
-+        // Paper start - remove this after a while along with all ConfiguredStructure stuff
-+        if (bukkitClass == io.papermc.paper.datakey.DataComponentType.class) {
-+            return new CraftRegistry<>(io.papermc.paper.datakey.DataComponentType.class, registryHolder.registryOrThrow(Registries.DATA_COMPONENT_TYPE), io.papermc.paper.datakey.PaperComponentType::of);
-+        }
-+        // Paper end
+diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistries.java b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
+index 51979b3c3f1f3a3c63e0559c70bed9193fd35dbb..d4ff5ba6afab0d19db277e4323aaa7bbb2d786b0 100644
+--- a/src/main/java/io/papermc/paper/registry/PaperRegistries.java
++++ b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
+@@ -1,5 +1,7 @@
+ package io.papermc.paper.registry;
  
-         return null;
-     }
++import io.papermc.paper.datakey.DataComponentType;
++import io.papermc.paper.datakey.PaperComponentType;
+ import io.papermc.paper.registry.entry.RegistryEntry;
+ import java.util.Collections;
+ import java.util.IdentityHashMap;
+@@ -65,6 +67,7 @@ public final class PaperRegistries {
+             entry(Registries.STRUCTURE_TYPE, RegistryKey.STRUCTURE_TYPE, StructureType.class, CraftStructureType::new),
+             entry(Registries.BLOCK, RegistryKey.BLOCK, BlockType.class, CraftBlockType::new),
+             entry(Registries.ITEM, RegistryKey.ITEM, ItemType.class, CraftItemType::new),
++            entry(Registries.DATA_COMPONENT_TYPE, RegistryKey.DATA_COMPONENT_TYPE, DataComponentType.class, PaperComponentType::of),
+ 
+             // data-drivens
+             entry(Registries.STRUCTURE, RegistryKey.STRUCTURE, Structure.class, CraftStructure::new).delayed(),
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index eba5a27e452c4063567fb02d6aabdfb0446d5daf..6852453213bd4f62611ad685952871427862d97f 100644
+index f1e1953f2dc65dc615b7b7b648c37b195d3b4c25..ea196520d1f990736a7e6e42860e14f7412ec220 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 @@ -163,7 +163,7 @@ public final class CraftItemStack extends ItemStack {
@@ -769,7 +773,7 @@ index eba5a27e452c4063567fb02d6aabdfb0446d5daf..6852453213bd4f62611ad68595287142
      }
  
      // Paper start
-@@ -329,7 +329,7 @@ public final class CraftItemStack extends ItemStack {
+@@ -331,7 +331,7 @@ public final class CraftItemStack extends ItemStack {
          // Paper start - support updating profile after resolving it
          final CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator() {
              @Override
@@ -778,7 +782,7 @@ index eba5a27e452c4063567fb02d6aabdfb0446d5daf..6852453213bd4f62611ad68595287142
                  itemStack.set(DataComponents.PROFILE, new net.minecraft.world.item.component.ResolvableProfile(gameProfile));
              }
          };
-@@ -697,7 +697,7 @@ public final class CraftItemStack extends ItemStack {
+@@ -699,7 +699,7 @@ public final class CraftItemStack extends ItemStack {
              // Paper start - support updating profile after resolving it
              CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator() {
                  @Override
@@ -812,10 +816,10 @@ index eba5a27e452c4063567fb02d6aabdfb0446d5daf..6852453213bd4f62611ad68595287142
      // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 38454fdc978a24a35e685e65e9b41323781c3ead..6d0a7dc5ac0862c6c4090d877b764ab9a7e977f7 100644
+index d5789326d70bb8b029c5448270bbaa6faf52e6e1..02cdd38a55741a56ed9de428d9145e6103b71f65 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-@@ -119,7 +119,7 @@ import org.bukkit.persistence.PersistentDataContainer;
+@@ -126,7 +126,7 @@ import org.bukkit.persistence.PersistentDataContainer;
   * <li> SerializableMeta.Deserializers deserializer()
   */
  @DelegateDeserialization(SerializableMeta.class)
@@ -824,21 +828,21 @@ index 38454fdc978a24a35e685e65e9b41323781c3ead..6d0a7dc5ac0862c6c4090d877b764ab9
  
      static class ItemMetaKey {
  
-@@ -165,10 +165,10 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -172,10 +172,10 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          }
      }
  
 -    static abstract class Applicator { // Paper - support updating profile after resolving it
 +    public static abstract class Applicator { // Paper - support updating profile after resolving it
  
--        final DataComponentPatch.Builder builder = DataComponentPatch.builder();
+-        final DataComponentPatch.Builder builder = DataComponentPatch.builder(); // Paper - private -> package-private
 -        void skullCallback(com.mojang.authlib.GameProfile gameProfile) {} // Paper - support updating profile after resolving it
 +        public final DataComponentPatch.Builder builder = DataComponentPatch.builder(); // Paper
 +        public void skullCallback(com.mojang.authlib.GameProfile gameProfile) {} // Paper - support updating profile after resolving it
  
          <T> Applicator put(ItemMetaKeyType<T> key, T value) {
              this.builder.set(key.TYPE, value);
-@@ -758,8 +758,13 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -771,8 +771,13 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          return result;
      }
  
@@ -1317,10 +1321,10 @@ index 702a0c29dc2a7fc435fa590c5c66347aea0e014b..419a7dbbe9c50099a4d35c564f7e9c2b
  
      @ParameterizedTest
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
-index 9338743f1e2197f82d610490a22235ee6728e0da..4be79b41bf244c2ca8aab8b0d92750747da51cc9 100644
+index aabe3730fa582f442ee0544dd1a9f3123f719c68..a75fb4f856728610bec5ebd24eb9c28331ab16f5 100644
 --- a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
 +++ b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
-@@ -442,7 +442,7 @@ public class ItemMetaTest extends AbstractTestingBase {
+@@ -444,7 +444,7 @@ public class ItemMetaTest extends AbstractTestingBase {
          assertThat(providers, hasSize(ItemStackTest.COMPOUND_MATERIALS.length - 4/* Normal item meta, skulls, eggs and tile entities */), "Forgotten test?");
  
          for (final StackProvider provider : providers) {
@@ -1329,7 +1333,7 @@ index 9338743f1e2197f82d610490a22235ee6728e0da..4be79b41bf244c2ca8aab8b0d9275074
              this.downCastTest(new CraftWrapper(provider));
          }
      }
-@@ -479,13 +479,6 @@ public class ItemMetaTest extends AbstractTestingBase {
+@@ -504,13 +504,6 @@ public class ItemMetaTest extends AbstractTestingBase {
          final ItemStack blank = new ItemStack(Material.STONE);
          final ItemStack craftBlank = CraftItemStack.asCraftCopy(blank);
  
@@ -1344,23 +1348,28 @@ index 9338743f1e2197f82d610490a22235ee6728e0da..4be79b41bf244c2ca8aab8b0d9275074
          this.downCastTest(name, provider.stack(), craftBlank);
          craftBlank.setItemMeta(craftBlank.getItemMeta());
 diff --git a/src/test/java/org/bukkit/support/provider/RegistriesArgumentProvider.java b/src/test/java/org/bukkit/support/provider/RegistriesArgumentProvider.java
-index 342ea2914b361f39708bf0d8a39385c62d340c30..f10314058c36509494f2f092e20e0253804d6361 100644
+index 24f01242513d6c815f60599d7118fe12bc577804..d523dd9a5ceea95df1c49310e14d12ffbe5625bd 100644
 --- a/src/test/java/org/bukkit/support/provider/RegistriesArgumentProvider.java
 +++ b/src/test/java/org/bukkit/support/provider/RegistriesArgumentProvider.java
-@@ -3,6 +3,8 @@ package org.bukkit.support.provider;
+@@ -1,9 +1,12 @@
+ package org.bukkit.support.provider;
+ 
  import com.google.common.collect.Lists;
++import io.papermc.paper.datakey.PaperComponentType;
+ import io.papermc.paper.registry.RegistryKey;
  import java.util.List;
  import java.util.stream.Stream;
 +import io.papermc.paper.datakey.DataComponentType;
 +import io.papermc.paper.datakey.PaperComponentType;
  import net.minecraft.core.registries.Registries;
+ import net.minecraft.resources.ResourceKey;
  import net.minecraft.world.effect.MobEffect;
- import net.minecraft.world.entity.animal.WolfVariant;
-@@ -47,6 +49,7 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
-         DATA.add(Arguments.of(TrimPattern.class, Registries.TRIM_PATTERN, CraftTrimPattern.class, net.minecraft.world.item.armortrim.TrimPattern.class));
-         DATA.add(Arguments.of(DamageType.class, Registries.DAMAGE_TYPE, CraftDamageType.class, net.minecraft.world.damagesource.DamageType.class));
-         DATA.add(Arguments.of(Wolf.Variant.class, Registries.WOLF_VARIANT, CraftWolf.CraftVariant.class, WolfVariant.class));
-+        DATA.add(Arguments.of(DataComponentType.class, Registries.DATA_COMPONENT_TYPE, PaperComponentType.class, net.minecraft.core.component.DataComponentType.class));
+@@ -55,7 +58,7 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
+         register(RegistryKey.WOLF_VARIANT, Wolf.Variant.class, Registries.WOLF_VARIANT, CraftWolf.CraftVariant.class, WolfVariant.class);
+         register(RegistryKey.ITEM, ItemType.class, Registries.ITEM, CraftItemType.class, net.minecraft.world.item.Item.class, true);
+         register(RegistryKey.BLOCK, BlockType.class, Registries.BLOCK, CraftBlockType.class, net.minecraft.world.level.block.Block.class, true);
+-
++        register(RegistryKey.DATA_COMPONENT_TYPE, BlockType.class, Registries.DATA_COMPONENT_TYPE, PaperComponentType.class, net.minecraft.core.component.DataComponentType.class, true);
      }
  
-     @Override
+     private static void register(RegistryKey registryKey, Class bukkit, ResourceKey registry, Class craft, Class minecraft) { // Paper
