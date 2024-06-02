@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Lists;
+import java.util.Locale;
 import org.bukkit.Color;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
@@ -348,7 +349,7 @@ public abstract class PotionEffectType implements Keyed, Translatable {
     @Deprecated
     public static PotionEffectType getByName(@NotNull String name) {
         Preconditions.checkArgument(name != null, "name cannot be null");
-        return Registry.EFFECT.get(NamespacedKey.fromString(name.toLowerCase(java.util.Locale.ENGLISH)));
+        return Registry.EFFECT.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
     }
 
     /**

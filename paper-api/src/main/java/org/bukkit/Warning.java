@@ -5,6 +5,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.Locale;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -86,7 +87,7 @@ public @interface Warning {
             if (value == null) {
                 return DEFAULT;
             }
-            WarningState state = values.get(value.toLowerCase());
+            WarningState state = values.get(value.toLowerCase(Locale.ROOT));
             if (state == null) {
                 return DEFAULT;
             }

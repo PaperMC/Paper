@@ -3,6 +3,7 @@ package org.bukkit;
 import static org.bukkit.support.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.Locale;
 import org.bukkit.material.MaterialData;
 import org.junit.jupiter.api.Test;
 
@@ -66,7 +67,7 @@ public class MaterialTest {
     @Test
     public void matchMaterialByLowerCaseAndSpaces() {
         for (Material material : Material.values()) {
-            String name = material.toString().replaceAll("_", " ").toLowerCase(java.util.Locale.ENGLISH);
+            String name = material.toString().replaceAll("_", " ").toLowerCase(Locale.ROOT);
             assertThat(Material.matchMaterial(name), is(material));
         }
     }

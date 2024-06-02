@@ -2,6 +2,7 @@ package org.bukkit.enchantments;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import java.util.Locale;
 import org.bukkit.Keyed;
 import org.bukkit.MinecraftExperimental;
 import org.bukkit.MinecraftExperimental.Requires;
@@ -351,7 +352,7 @@ public abstract class Enchantment implements Keyed, Translatable {
             return null;
         }
 
-        return getByKey(NamespacedKey.fromString(name.toLowerCase()));
+        return getByKey(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
     }
 
     /**

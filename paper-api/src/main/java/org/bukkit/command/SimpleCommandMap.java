@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.bukkit.Location;
 import org.bukkit.Server;
@@ -67,8 +68,8 @@ public class SimpleCommandMap implements CommandMap {
      */
     @Override
     public boolean register(@NotNull String label, @NotNull String fallbackPrefix, @NotNull Command command) {
-        label = label.toLowerCase(java.util.Locale.ENGLISH).trim();
-        fallbackPrefix = fallbackPrefix.toLowerCase(java.util.Locale.ENGLISH).trim();
+        label = label.toLowerCase(Locale.ROOT).trim();
+        fallbackPrefix = fallbackPrefix.toLowerCase(Locale.ROOT).trim();
         boolean registered = register(label, command, false, fallbackPrefix);
 
         Iterator<String> iterator = command.getAliases().iterator();
@@ -136,7 +137,7 @@ public class SimpleCommandMap implements CommandMap {
             return false;
         }
 
-        String sentCommandLabel = args[0].toLowerCase(java.util.Locale.ENGLISH);
+        String sentCommandLabel = args[0].toLowerCase(Locale.ROOT);
         Command target = getCommand(sentCommandLabel);
 
         if (target == null) {
@@ -168,7 +169,7 @@ public class SimpleCommandMap implements CommandMap {
     @Override
     @Nullable
     public Command getCommand(@NotNull String name) {
-        Command target = knownCommands.get(name.toLowerCase(java.util.Locale.ENGLISH));
+        Command target = knownCommands.get(name.toLowerCase(Locale.ROOT));
         return target;
     }
 
@@ -272,9 +273,9 @@ public class SimpleCommandMap implements CommandMap {
 
             // We register these as commands so they have absolute priority.
             if (targets.size() > 0) {
-                knownCommands.put(alias.toLowerCase(java.util.Locale.ENGLISH), new FormattedCommandAlias(alias.toLowerCase(java.util.Locale.ENGLISH), targets.toArray(new String[targets.size()])));
+                knownCommands.put(alias.toLowerCase(Locale.ROOT), new FormattedCommandAlias(alias.toLowerCase(Locale.ROOT), targets.toArray(new String[targets.size()])));
             } else {
-                knownCommands.remove(alias.toLowerCase(java.util.Locale.ENGLISH));
+                knownCommands.remove(alias.toLowerCase(Locale.ROOT));
             }
         }
     }

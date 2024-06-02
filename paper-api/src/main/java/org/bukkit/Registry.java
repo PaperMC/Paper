@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableMap;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -333,7 +334,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
     default T match(@NotNull String input) {
         Preconditions.checkArgument(input != null, "input must not be null");
 
-        String filtered = input.toLowerCase().replaceAll("\\s+", "_");
+        String filtered = input.toLowerCase(Locale.ROOT).replaceAll("\\s+", "_");
         NamespacedKey namespacedKey = NamespacedKey.fromString(filtered);
         return (namespacedKey != null) ? get(namespacedKey) : null;
     }

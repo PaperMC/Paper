@@ -2,6 +2,7 @@ package org.bukkit.entity;
 
 import com.google.common.base.Preconditions;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
@@ -331,7 +332,7 @@ public enum EntityType implements Keyed, Translatable {
     static {
         for (EntityType type : values()) {
             if (type.name != null) {
-                NAME_MAP.put(type.name.toLowerCase(java.util.Locale.ENGLISH), type);
+                NAME_MAP.put(type.name.toLowerCase(Locale.ROOT), type);
             }
             if (type.typeId > 0) {
                 ID_MAP.put(type.typeId, type);
@@ -402,7 +403,7 @@ public enum EntityType implements Keyed, Translatable {
         if (name == null) {
             return null;
         }
-        return NAME_MAP.get(name.toLowerCase(java.util.Locale.ENGLISH));
+        return NAME_MAP.get(name.toLowerCase(Locale.ROOT));
     }
 
     /**

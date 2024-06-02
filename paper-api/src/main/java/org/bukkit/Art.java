@@ -3,6 +3,7 @@ package org.bukkit;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import java.util.HashMap;
+import java.util.Locale;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -50,7 +51,7 @@ public enum Art implements Keyed {
         this.id = id;
         this.width = width;
         this.height = height;
-        this.key = NamespacedKey.minecraft(name().toLowerCase(java.util.Locale.ENGLISH));
+        this.key = NamespacedKey.minecraft(name().toLowerCase(Locale.ROOT));
     }
 
     /**
@@ -113,13 +114,13 @@ public enum Art implements Keyed {
     public static Art getByName(@NotNull String name) {
         Preconditions.checkArgument(name != null, "Name cannot be null");
 
-        return BY_NAME.get(name.toLowerCase(java.util.Locale.ENGLISH));
+        return BY_NAME.get(name.toLowerCase(Locale.ROOT));
     }
 
     static {
         for (Art art : values()) {
             BY_ID.put(art.id, art);
-            BY_NAME.put(art.toString().toLowerCase(java.util.Locale.ENGLISH), art);
+            BY_NAME.put(art.toString().toLowerCase(Locale.ROOT), art);
         }
     }
 }

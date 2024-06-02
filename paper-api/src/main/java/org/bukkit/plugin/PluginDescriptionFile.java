@@ -9,6 +9,7 @@ import java.io.Writer;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -1086,7 +1087,7 @@ public final class PluginDescriptionFile {
 
         if (map.get("load") != null) {
             try {
-                order = PluginLoadOrder.valueOf(((String) map.get("load")).toUpperCase(java.util.Locale.ENGLISH).replaceAll("\\W", ""));
+                order = PluginLoadOrder.valueOf(((String) map.get("load")).toUpperCase(Locale.ROOT).replaceAll("\\W", ""));
             } catch (ClassCastException ex) {
                 throw new InvalidDescriptionException(ex, "load is of wrong type");
             } catch (IllegalArgumentException ex) {

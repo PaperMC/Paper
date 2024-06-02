@@ -2,6 +2,7 @@ package org.bukkit.inventory;
 
 import com.google.common.base.Preconditions;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Predicate;
 import org.jetbrains.annotations.ApiStatus;
@@ -73,7 +74,7 @@ public final class EquipmentSlotGroup implements Predicate<EquipmentSlot> {
     public static EquipmentSlotGroup getByName(@NotNull String name) {
         Preconditions.checkArgument(name != null, "Name cannot be null");
 
-        return BY_NAME.get(name.toLowerCase(java.util.Locale.ENGLISH));
+        return BY_NAME.get(name.toLowerCase(Locale.ROOT));
     }
 
     private static EquipmentSlotGroup get(@NotNull String key, @NotNull EquipmentSlot slot) {

@@ -3,6 +3,7 @@ package org.bukkit;
 import static org.bukkit.support.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.Locale;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +32,7 @@ public class ColorTest {
             this.r = r;
             this.g = g;
             this.b = b;
-            this.name = id + ":" + Integer.toHexString(argb).toUpperCase() + "_" + Integer.toHexString(rgb).toUpperCase() + "_" + Integer.toHexString(bgr).toUpperCase() + "-a" + Integer.toHexString(a).toUpperCase() + "-r" + Integer.toHexString(r).toUpperCase() + "-g" + Integer.toHexString(g).toUpperCase() + "-b" + Integer.toHexString(b).toUpperCase();
+            this.name = id + ":" + Integer.toHexString(argb).toUpperCase(Locale.ROOT) + "_" + Integer.toHexString(rgb).toUpperCase(Locale.ROOT) + "_" + Integer.toHexString(bgr).toUpperCase(Locale.ROOT) + "-a" + Integer.toHexString(a).toUpperCase(Locale.ROOT) + "-r" + Integer.toHexString(r).toUpperCase(Locale.ROOT) + "-g" + Integer.toHexString(g).toUpperCase(Locale.ROOT) + "-b" + Integer.toHexString(b).toUpperCase(Locale.ROOT);
         }
     }
 

@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 import org.bukkit.Bukkit;
@@ -61,9 +62,9 @@ public class VersionCommand extends BukkitCommand {
             }
 
             boolean found = false;
-            pluginName = pluginName.toLowerCase(java.util.Locale.ENGLISH);
+            pluginName = pluginName.toLowerCase(Locale.ROOT);
             for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
-                if (plugin.getName().toLowerCase(java.util.Locale.ENGLISH).contains(pluginName)) {
+                if (plugin.getName().toLowerCase(Locale.ROOT).contains(pluginName)) {
                     describeToSender(plugin, sender);
                     found = true;
                 }
@@ -133,7 +134,7 @@ public class VersionCommand extends BukkitCommand {
 
         if (args.length == 1) {
             List<String> completions = new ArrayList<String>();
-            String toComplete = args[0].toLowerCase(java.util.Locale.ENGLISH);
+            String toComplete = args[0].toLowerCase(Locale.ROOT);
             for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
                 if (StringUtil.startsWithIgnoreCase(plugin.getName(), toComplete)) {
                     completions.add(plugin.getName());

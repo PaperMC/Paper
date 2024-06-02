@@ -1,6 +1,7 @@
 package org.bukkit;
 
 import com.google.common.collect.Maps;
+import java.util.Locale;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -39,7 +40,7 @@ public enum WorldType {
      */
     @Nullable
     public static WorldType getByName(@NotNull String name) {
-        return BY_NAME.get(name.toUpperCase(java.util.Locale.ENGLISH));
+        return BY_NAME.get(name.toUpperCase(Locale.ROOT));
     }
 
     static {

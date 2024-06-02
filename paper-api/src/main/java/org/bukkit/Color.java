@@ -3,6 +3,7 @@ package org.bukkit;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
@@ -428,6 +429,6 @@ public final class Color implements ConfigurationSerializable {
 
     @Override
     public String toString() {
-        return "Color:[argb0x" + Integer.toHexString(asARGB()).toUpperCase() + "]";
+        return "Color:[argb0x" + Integer.toHexString(asARGB()).toUpperCase(Locale.ROOT) + "]";
     }
 }

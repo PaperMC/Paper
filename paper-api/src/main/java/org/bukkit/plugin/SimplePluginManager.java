@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
@@ -698,7 +699,7 @@ public final class SimplePluginManager implements PluginManager {
     @Override
     @Nullable
     public Permission getPermission(@NotNull String name) {
-        return permissions.get(name.toLowerCase(java.util.Locale.ENGLISH));
+        return permissions.get(name.toLowerCase(Locale.ROOT));
     }
 
     @Override
@@ -708,7 +709,7 @@ public final class SimplePluginManager implements PluginManager {
 
     @Deprecated
     public void addPermission(@NotNull Permission perm, boolean dirty) {
-        String name = perm.getName().toLowerCase(java.util.Locale.ENGLISH);
+        String name = perm.getName().toLowerCase(Locale.ROOT);
 
         if (permissions.containsKey(name)) {
             throw new IllegalArgumentException("The permission " + name + " is already defined!");
@@ -731,12 +732,12 @@ public final class SimplePluginManager implements PluginManager {
 
     @Override
     public void removePermission(@NotNull String name) {
-        permissions.remove(name.toLowerCase(java.util.Locale.ENGLISH));
+        permissions.remove(name.toLowerCase(Locale.ROOT));
     }
 
     @Override
     public void recalculatePermissionDefaults(@NotNull Permission perm) {
-        if (perm != null && permissions.containsKey(perm.getName().toLowerCase(java.util.Locale.ENGLISH))) {
+        if (perm != null && permissions.containsKey(perm.getName().toLowerCase(Locale.ROOT))) {
             defaultPerms.get(true).remove(perm);
             defaultPerms.get(false).remove(perm);
 
@@ -775,7 +776,7 @@ public final class SimplePluginManager implements PluginManager {
 
     @Override
     public void subscribeToPermission(@NotNull String permission, @NotNull Permissible permissible) {
-        String name = permission.toLowerCase(java.util.Locale.ENGLISH);
+        String name = permission.toLowerCase(Locale.ROOT);
         Map<Permissible, Boolean> map = permSubs.get(name);
 
         if (map == null) {
@@ -788,7 +789,7 @@ public final class SimplePluginManager implements PluginManager {
 
     @Override
     public void unsubscribeFromPermission(@NotNull String permission, @NotNull Permissible permissible) {
-        String name = permission.toLowerCase(java.util.Locale.ENGLISH);
+        String name = permission.toLowerCase(Locale.ROOT);
         Map<Permissible, Boolean> map = permSubs.get(name);
 
         if (map != null) {
@@ -803,7 +804,7 @@ public final class SimplePluginManager implements PluginManager {
     @Override
     @NotNull
     public Set<Permissible> getPermissionSubscriptions(@NotNull String permission) {
-        String name = permission.toLowerCase(java.util.Locale.ENGLISH);
+        String name = permission.toLowerCase(Locale.ROOT);
         Map<Permissible, Boolean> map = permSubs.get(name);
 
         if (map == null) {

@@ -2,6 +2,7 @@ package org.bukkit.attribute;
 
 import com.google.common.base.Preconditions;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -159,11 +160,11 @@ public class AttributeModifier implements ConfigurationSerializable {
     @NotNull
     public static AttributeModifier deserialize(@NotNull Map<String, Object> args) {
         if (args.containsKey("slot")) {
-            EquipmentSlotGroup slotGroup = EquipmentSlotGroup.getByName(args.get("slot").toString().toLowerCase());
+            EquipmentSlotGroup slotGroup = EquipmentSlotGroup.getByName(args.get("slot").toString().toLowerCase(Locale.ROOT));
             if (slotGroup == null) {
                 slotGroup = EquipmentSlotGroup.ANY;
 
-                EquipmentSlot slot = EquipmentSlot.valueOf((args.get("slot").toString().toUpperCase()));
+                EquipmentSlot slot = EquipmentSlot.valueOf((args.get("slot").toString().toUpperCase(Locale.ROOT)));
                 if (slot != null) {
                     slotGroup = slot.getGroup();
                 }

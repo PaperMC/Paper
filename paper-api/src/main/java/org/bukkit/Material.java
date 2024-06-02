@@ -4954,7 +4954,7 @@ public enum Material implements Keyed, Translatable {
             filtered = filtered.substring((NamespacedKey.MINECRAFT + ":").length());
         }
 
-        filtered = filtered.toUpperCase(java.util.Locale.ENGLISH);
+        filtered = filtered.toUpperCase(Locale.ROOT);
 
         filtered = filtered.replaceAll("\\s+", "_").replaceAll("\\W", "");
         return getMaterial(filtered, legacyName);
