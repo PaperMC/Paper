@@ -1157,7 +1157,7 @@ index 0000000000000000000000000000000000000000..2fd6c3e65354071af71c7d8ebb97b559
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fc6e13e4f2408ccbfa645eae2d7ebf4dcfc21908
+index 0000000000000000000000000000000000000000..7397918cf747bc2352bf5bb112a71e7f6844e0e0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
 @@ -0,0 +1,478 @@
@@ -1594,7 +1594,7 @@ index 0000000000000000000000000000000000000000..fc6e13e4f2408ccbfa645eae2d7ebf4d
 +
 +        @Override
 +        public @NotNull BinaryTagHolder asBinaryTag() {
-+            return BinaryTagHolder.encode(this.codec.encodeStart(NbtOps.INSTANCE, this.value).getOrThrow(IllegalArgumentException::new), NBT_CODEC);
++            return BinaryTagHolder.encode(this.codec.encodeStart(CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE), this.value).getOrThrow(IllegalArgumentException::new), NBT_CODEC);
 +        }
 +    }
 +
@@ -1622,7 +1622,7 @@ index 0000000000000000000000000000000000000000..fc6e13e4f2408ccbfa645eae2d7ebf4d
 +    // Style
 +
 +    public static net.minecraft.network.chat.Style asVanilla(final Style style) {
-+        final RegistryOps<Object> ops = RegistryOps.create(JavaOps.INSTANCE, CraftRegistry.getMinecraftRegistry());
++        final RegistryOps<Object> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JavaOps.INSTANCE);
 +        final Object encoded = AdventureCodecs.STYLE_MAP_CODEC.codec()
 +            .encodeStart(ops, style).getOrThrow(IllegalStateException::new);
 +
@@ -1631,7 +1631,7 @@ index 0000000000000000000000000000000000000000..fc6e13e4f2408ccbfa645eae2d7ebf4d
 +    }
 +
 +    public static Style asAdventure(final net.minecraft.network.chat.Style style) {
-+        final RegistryOps<Object> ops = RegistryOps.create(JavaOps.INSTANCE, CraftRegistry.getMinecraftRegistry());
++        final RegistryOps<Object> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JavaOps.INSTANCE);
 +        final Object encoded = net.minecraft.network.chat.Style.Serializer.CODEC
 +            .encodeStart(ops, style).getOrThrow(IllegalStateException::new);
 +
@@ -1641,7 +1641,7 @@ index 0000000000000000000000000000000000000000..fc6e13e4f2408ccbfa645eae2d7ebf4d
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java b/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e58e8ac574eb60205b17e31589f5a7610c60a4e2
+index 0000000000000000000000000000000000000000..c786ddf0ef19757011452204fd11d24541c39d9e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/WrapperAwareSerializer.java
 @@ -0,0 +1,34 @@
@@ -1661,7 +1661,7 @@ index 0000000000000000000000000000000000000000..e58e8ac574eb60205b17e31589f5a761
 +        if (input instanceof AdventureComponent) {
 +            return ((AdventureComponent) input).adventure;
 +        }
-+        final RegistryOps<Object> ops = RegistryOps.create(JavaOps.INSTANCE, CraftRegistry.getMinecraftRegistry());
++        final RegistryOps<Object> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JavaOps.INSTANCE);
 +        final Object obj = ComponentSerialization.CODEC.encodeStart(ops, input)
 +            .getOrThrow(s -> new RuntimeException("Failed to encode Minecraft Component: " + input + "; " + s));
 +        final Pair<Component, Object> converted = AdventureCodecs.COMPONENT_CODEC.decode(ops, obj)
@@ -1671,7 +1671,7 @@ index 0000000000000000000000000000000000000000..e58e8ac574eb60205b17e31589f5a761
 +
 +    @Override
 +    public net.minecraft.network.chat.Component serialize(final Component component) {
-+        final RegistryOps<Object> ops = RegistryOps.create(JavaOps.INSTANCE, CraftRegistry.getMinecraftRegistry());
++        final RegistryOps<Object> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JavaOps.INSTANCE);
 +        final Object obj = AdventureCodecs.COMPONENT_CODEC.encodeStart(ops, component)
 +            .getOrThrow(s -> new RuntimeException("Failed to encode adventure Component: " + component + "; " + s));
 +        final Pair<net.minecraft.network.chat.Component, Object> converted = ComponentSerialization.CODEC.decode(ops, obj)
@@ -1829,14 +1829,15 @@ index 0000000000000000000000000000000000000000..8323f135d6bf2e1f12525e05094ffa3f
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/providers/DataComponentValueConverterProviderImpl.java b/src/main/java/io/papermc/paper/adventure/providers/DataComponentValueConverterProviderImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ef19891a895e699cac638bd9b9f2fa0eaf1371ba
+index 0000000000000000000000000000000000000000..6b37c0ebda4a0cfcf9c3b2c3483ffababe622555
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/providers/DataComponentValueConverterProviderImpl.java
-@@ -0,0 +1,75 @@
+@@ -0,0 +1,82 @@
 +package io.papermc.paper.adventure.providers;
 +
 +import com.google.gson.JsonElement;
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
++import com.mojang.serialization.DynamicOps;
 +import com.mojang.serialization.JsonOps;
 +import io.papermc.paper.adventure.PaperAdventure;
 +import java.util.List;
@@ -1849,6 +1850,8 @@ index 0000000000000000000000000000000000000000..ef19891a895e699cac638bd9b9f2fa0e
 +import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.nbt.NbtOps;
 +import net.minecraft.nbt.Tag;
++import net.minecraft.resources.RegistryOps;
++import org.bukkit.craftbukkit.CraftRegistry;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
@@ -1865,6 +1868,10 @@ index 0000000000000000000000000000000000000000..ef19891a895e699cac638bd9b9f2fa0e
 +        return ID;
 +    }
 +
++    private static <T> RegistryOps<T> createOps(final DynamicOps<T> delegate) {
++        return CraftRegistry.getMinecraftRegistry().createSerializationContext(delegate);
++    }
++
 +    @SuppressWarnings({"unchecked", "rawtypes"})
 +    @Override
 +    public Iterable<DataComponentValueConverterRegistry.Conversion<?, ?>> conversions() {
@@ -1872,7 +1879,7 @@ index 0000000000000000000000000000000000000000..ef19891a895e699cac638bd9b9f2fa0e
 +            DataComponentValueConverterRegistry.Conversion.convert(
 +                PaperAdventure.DataComponentValueImpl.class,
 +                GsonDataComponentValue.class,
-+                (key, dataComponentValue) -> gsonDataComponentValue((JsonElement) dataComponentValue.codec().encodeStart(JsonOps.INSTANCE, dataComponentValue.value()).getOrThrow())
++                (key, dataComponentValue) -> gsonDataComponentValue((JsonElement) dataComponentValue.codec().encodeStart(createOps(JsonOps.INSTANCE), dataComponentValue.value()).getOrThrow())
 +            ),
 +            DataComponentValueConverterRegistry.Conversion.convert(
 +                GsonDataComponentValue.class,
@@ -1882,13 +1889,13 @@ index 0000000000000000000000000000000000000000..ef19891a895e699cac638bd9b9f2fa0e
 +                    if (type == null) {
 +                        throw new IllegalArgumentException("Unknown data component type: " + key);
 +                    }
-+                    return new PaperAdventure.DataComponentValueImpl(type.codecOrThrow(), type.codecOrThrow().parse(JsonOps.INSTANCE, dataComponentValue.element()).getOrThrow(IllegalArgumentException::new));
++                    return new PaperAdventure.DataComponentValueImpl(type.codecOrThrow(), type.codecOrThrow().parse(createOps(JsonOps.INSTANCE), dataComponentValue.element()).getOrThrow(IllegalArgumentException::new));
 +                }
 +            ),
 +            DataComponentValueConverterRegistry.Conversion.convert(
 +                PaperAdventure.DataComponentValueImpl.class,
 +                DataComponentValue.TagSerializable.class,
-+                (key, dataComponentValue) -> BinaryTagHolder.encode((Tag) dataComponentValue.codec().encodeStart(NbtOps.INSTANCE, dataComponentValue.value()).getOrThrow(), PaperAdventure.NBT_CODEC)
++                (key, dataComponentValue) -> BinaryTagHolder.encode((Tag) dataComponentValue.codec().encodeStart(createOps(NbtOps.INSTANCE), dataComponentValue.value()).getOrThrow(), PaperAdventure.NBT_CODEC)
 +            ),
 +            DataComponentValueConverterRegistry.Conversion.convert(
 +                DataComponentValue.TagSerializable.class,
@@ -1899,7 +1906,7 @@ index 0000000000000000000000000000000000000000..ef19891a895e699cac638bd9b9f2fa0e
 +                        throw new IllegalArgumentException("Unknown data component type: " + key);
 +                    }
 +                    try {
-+                        return new PaperAdventure.DataComponentValueImpl(type.codecOrThrow(), type.codecOrThrow().parse(NbtOps.INSTANCE, tagSerializable.asBinaryTag().get(PaperAdventure.NBT_CODEC)).getOrThrow(IllegalArgumentException::new));
++                        return new PaperAdventure.DataComponentValueImpl(type.codecOrThrow(), type.codecOrThrow().parse(createOps(NbtOps.INSTANCE), tagSerializable.asBinaryTag().get(PaperAdventure.NBT_CODEC)).getOrThrow(IllegalArgumentException::new));
 +                    } catch (final CommandSyntaxException e) {
 +                        throw new IllegalArgumentException(e);
 +                    }
@@ -5711,7 +5718,7 @@ index 0000000000000000000000000000000000000000..3aedd0bbc97edacc1ebf71264b310e55
 +}
 diff --git a/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java b/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0b23e6aab901d359845573e12e939a231ee30ada
+index 0000000000000000000000000000000000000000..69b3aa957161e75d6344e437a8b4a4533ef00523
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/adventure/AdventureCodecsTest.java
 @@ -0,0 +1,403 @@
@@ -5923,7 +5930,7 @@ index 0000000000000000000000000000000000000000..0b23e6aab901d359845573e12e939a23
 +            JavaOps.INSTANCE,
 +            JsonOps.INSTANCE
 +        )
-+            .map(ops -> RegistryOps.create(ops, AbstractTestingBase.REGISTRY_CUSTOM))
++            .map(ops -> AbstractTestingBase.REGISTRY_CUSTOM.createSerializationContext(ops))
 +            .toList();
 +    }
 +
