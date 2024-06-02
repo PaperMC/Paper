@@ -5,10 +5,50 @@ Subject: [PATCH] fixup! Test changes
 
 
 diff --git a/src/main/java/io/papermc/paper/datakey/ComponentAdapters.java b/src/main/java/io/papermc/paper/datakey/ComponentAdapters.java
-index 4f3534f76cf6722c8a13076f26b11b1ff2a5aa28..922084742c0f1021e2e77b5230ec39086e2d6131 100644
+index 4f3534f76cf6722c8a13076f26b11b1ff2a5aa28..b3bbd86e9aa7fa30ec5bfc25c195522fc7caf060 100644
 --- a/src/main/java/io/papermc/paper/datakey/ComponentAdapters.java
 +++ b/src/main/java/io/papermc/paper/datakey/ComponentAdapters.java
-@@ -24,7 +24,7 @@ import org.checkerframework.framework.qual.DefaultQualifier;
+@@ -1,21 +1,39 @@
+ package io.papermc.paper.datakey;
+ 
+ import io.papermc.paper.adventure.PaperAdventure;
++import io.papermc.paper.datakey.types.PaperBundleContents;
+ import io.papermc.paper.datakey.types.PaperChargedProjectiles;
++import io.papermc.paper.datakey.types.PaperCustomModelData;
++import io.papermc.paper.datakey.types.PaperDyedItemColor;
++import io.papermc.paper.datakey.types.PaperFoodProperties;
+ import io.papermc.paper.datakey.types.PaperItemAttributeModifiers;
+ import io.papermc.paper.datakey.types.PaperItemEnchantments;
+ import io.papermc.paper.datakey.types.PaperItemLore;
++import io.papermc.paper.datakey.types.PaperMapDecorations;
++import io.papermc.paper.datakey.types.PaperMapID;
++import io.papermc.paper.datakey.types.PaperMapItemColor;
+ import io.papermc.paper.datakey.types.PaperPotDecorations;
++import io.papermc.paper.datakey.types.PaperPotionContents;
++import io.papermc.paper.datakey.types.PaperSeededContainerLoot;
++import io.papermc.paper.datakey.types.PaperSuspiciousStewEffects;
+ import io.papermc.paper.datakey.types.PaperUnbreakable;
++import java.util.ArrayList;
++import java.util.Collections;
+ import java.util.HashMap;
++import java.util.List;
+ import java.util.Map;
+ import java.util.function.Function;
++import net.kyori.adventure.key.Key;
+ import net.minecraft.core.component.DataComponentType;
+ import net.minecraft.core.component.DataComponents;
+ import net.minecraft.core.registries.BuiltInRegistries;
+ import net.minecraft.resources.ResourceKey;
++import net.minecraft.resources.ResourceLocation;
+ import net.minecraft.util.Unit;
+ import net.minecraft.world.item.Rarity;
++import net.minecraft.world.item.component.MapPostProcessing;
++import org.bukkit.DyeColor;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+ import org.bukkit.craftbukkit.util.Handleable;
+ import org.bukkit.inventory.ItemRarity;
+ import org.checkerframework.checker.nullness.qual.NonNull;
+@@ -24,7 +42,7 @@ import org.checkerframework.framework.qual.DefaultQualifier;
  @DefaultQualifier(NonNull.class)
  public final class ComponentAdapters {
  
@@ -17,6 +57,46 @@ index 4f3534f76cf6722c8a13076f26b11b1ff2a5aa28..922084742c0f1021e2e77b5230ec3908
          throw new UnsupportedOperationException("Cannot convert the Unit type to an API value");
      };
  
+@@ -52,6 +70,39 @@ public final class ComponentAdapters {
+         register(DataComponents.ENCHANTMENTS, PaperItemEnchantments::new);
+         register(DataComponents.STORED_ENCHANTMENTS, PaperItemEnchantments::new);
+         register(DataComponents.ATTRIBUTE_MODIFIERS, PaperItemAttributeModifiers::new);
++        register(DataComponents.FOOD, PaperFoodProperties::new);
++        register(DataComponents.MAP_POST_PROCESSING, nms -> MapPostProcessing.valueOf(nms.name()), api -> MapPostProcessing.valueOf(api.name()));
++        register(DataComponents.DYED_COLOR, PaperDyedItemColor::new);
++        register(DataComponents.BUNDLE_CONTENTS, PaperBundleContents::new);
++        register(DataComponents.MAP_COLOR, PaperMapItemColor::new);
++        register(DataComponents.CUSTOM_MODEL_DATA, PaperCustomModelData::new);
++        register(DataComponents.SUSPICIOUS_STEW_EFFECTS, PaperSuspiciousStewEffects::new);
++        register(DataComponents.POTION_CONTENTS, PaperPotionContents::new);
++        register(DataComponents.MAP_ID, PaperMapID::new);
++        register(DataComponents.MAP_DECORATIONS, PaperMapDecorations::new);
++        register(DataComponents.CONTAINER_LOOT, PaperSeededContainerLoot::new);
++        register(DataComponents.RECIPES, nms -> {
++            List<Key> api = new ArrayList<>(nms.size());
++            for (ResourceLocation location : nms) {
++                api.add(CraftNamespacedKey.fromMinecraft(location));
++            }
++
++            return Collections.unmodifiableList(api);
++        }, api -> {
++            List<ResourceLocation> nms = new ArrayList<>(api.size());
++            for (Key key : api) {
++                nms.add(new ResourceLocation(key.namespace(), key.value()));
++            }
++
++            return Collections.unmodifiableList(nms);
++        });
++        register(DataComponents.BASE_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
++        // TODO: REMOVE THIS... we want to build the PR... so lets just make things UNTYPED!
++        for (Map.Entry<ResourceKey<DataComponentType<?>>, DataComponentType<?>> componentType : BuiltInRegistries.DATA_COMPONENT_TYPE.entrySet()) {
++            if (!ADAPTERS.containsKey(componentType.getKey())) {
++                registerUntyped((DataComponentType<Unit>) componentType.getValue());
++            }
++        }
+     }
+ 
+     public static void registerUntyped(final DataComponentType<Unit> type) {
 diff --git a/src/test/java/io/papermc/paper/configuration/ConfigurationSectionTest.java b/src/test/java/io/papermc/paper/configuration/ConfigurationSectionTest.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0aad5d896a6adb691a7efaee3baebed4da7c607e
