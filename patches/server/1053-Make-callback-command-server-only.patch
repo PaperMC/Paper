@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 2 Jun 2024 15:43:52 -0700
+Subject: [PATCH] Make callback command server-only
+
+
+diff --git a/src/main/java/io/papermc/paper/command/CallbackCommand.java b/src/main/java/io/papermc/paper/command/CallbackCommand.java
+index fa4202abd13c1c286bd398938103d1103d5443e7..a6a2364c7a50967f5a97a76fc2487bee624e2ac3 100644
+--- a/src/main/java/io/papermc/paper/command/CallbackCommand.java
++++ b/src/main/java/io/papermc/paper/command/CallbackCommand.java
+@@ -8,7 +8,7 @@ import org.checkerframework.framework.qual.DefaultQualifier;
+ import java.util.UUID;
+ 
+ @DefaultQualifier(NonNull.class)
+-public class CallbackCommand extends Command {
++public class CallbackCommand extends Command implements ServerOnlyCommand {
+ 
+     protected CallbackCommand(final String name) {
+         super(name);
+diff --git a/src/main/java/io/papermc/paper/command/ServerOnlyCommand.java b/src/main/java/io/papermc/paper/command/ServerOnlyCommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..237651612b477e4a8796ac8679a8dfd76876bd1e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/ServerOnlyCommand.java
+@@ -0,0 +1,8 @@
++package io.papermc.paper.command;
++
++/**
++ * Marker interface for commands that should never
++ * be sent to the client.
++ */
++public interface ServerOnlyCommand {
++}
+diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
+index 0126906e2afc8dd525f27a0c5e82116075c9d352..a84156af93df053e54181cc13a9613ecf47f419b 100644
+--- a/src/main/java/net/minecraft/commands/Commands.java
++++ b/src/main/java/net/minecraft/commands/Commands.java
+@@ -547,7 +547,8 @@ public class Commands {
+             // Paper end - Brigadier API
+             if ( !org.spigotmc.SpigotConfig.sendNamespaced && commandnode2.getName().contains( ":" ) ) continue; // Spigot
+ 
+-            if (commandnode2.canUse(source)) {
++            boolean serverOnly = commandnode2.wrappedCached instanceof io.papermc.paper.command.brigadier.bukkit.BukkitCommandNode bukkitNode && bukkitNode.getBukkitCommand() instanceof io.papermc.paper.command.ServerOnlyCommand; // Paper
++            if (!serverOnly && commandnode2.canUse(source)) { // Paper
+                 ArgumentBuilder argumentbuilder = commandnode2.createBuilder(); // CraftBukkit - decompile error
+                 // Paper start
+                 /*
