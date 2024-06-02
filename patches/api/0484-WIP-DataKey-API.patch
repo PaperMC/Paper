@@ -6,39 +6,45 @@ Subject: [PATCH] WIP DataKey API
 
 diff --git a/src/main/java/io/papermc/paper/datakey/DataComponentType.java b/src/main/java/io/papermc/paper/datakey/DataComponentType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fcabc30aaf05c3bc0cc4ef38b5df9978d085fbaf
+index 0000000000000000000000000000000000000000..089047983db1e72f7144fd549c592ae8fdeeab38
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/DataComponentType.java
-@@ -0,0 +1,20 @@
+@@ -0,0 +1,24 @@
 +package io.papermc.paper.datakey;
 +
 +import net.kyori.adventure.key.Key;
 +import org.bukkit.Keyed;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
++@ApiStatus.NonExtendable
 +public interface DataComponentType extends Keyed {
 +
-+    @NotNull
 +    @Override
-+    Key key();
++    @NotNull Key key();
 +
++    @SuppressWarnings("unused")
++    @ApiStatus.NonExtendable
 +    interface Valued<T> extends DataComponentType {
 +
 +    }
 +
++    @ApiStatus.NonExtendable
 +    interface NonValued extends DataComponentType {
 +
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/DataComponentTypes.java b/src/main/java/io/papermc/paper/datakey/DataComponentTypes.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cbb8413356b0991e844ea443607b9561fcf298c6
+index 0000000000000000000000000000000000000000..cfd23f6b3559354c1b3e875649b86dd260111ddf
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/DataComponentTypes.java
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,80 @@
 +package io.papermc.paper.datakey;
 +
 +import io.papermc.paper.datakey.types.ChargedProjectiles;
++import io.papermc.paper.datakey.types.ItemAttributeModifiers;
++import io.papermc.paper.datakey.types.ItemEnchantments;
 +import io.papermc.paper.datakey.types.ItemLore;
 +import io.papermc.paper.datakey.types.PotDecorations;
 +import io.papermc.paper.datakey.types.Unbreakable;
@@ -57,10 +63,10 @@ index 0000000000000000000000000000000000000000..cbb8413356b0991e844ea443607b9561
 +    public static final DataComponentType.Valued<Component> ITEM_NAME = valued("item_name");
 +    public static final DataComponentType.Valued<ItemLore> LORE = valued("lore");
 +    public static final DataComponentType.Valued<ItemRarity> RARITY = valued("rarity");
-+    // enchantments
++    public static final DataComponentType.Valued<ItemEnchantments> ENCHANTMENTS = valued("enchantments");
 +    // can_place_on
 +    // can_break
-+    // attribute_modifiers
++    public static final DataComponentType.Valued<ItemAttributeModifiers> ATTRIBUTE_MODIFIERS = valued("attribute_modifiers");
 +    // custom_model_data
 +    public static final DataComponentType.NonValued HIDE_ADDITIONAL_TOOLTIP = unvalued("hide_additional_tooltip");
 +    public static final DataComponentType.NonValued  HIDE_TOOLTIP = unvalued("hide_tooltip");
@@ -71,7 +77,7 @@ index 0000000000000000000000000000000000000000..cbb8413356b0991e844ea443607b9561
 +    // food
 +    public static final DataComponentType.NonValued FIRE_RESISTANT = unvalued("fire_resistant");
 +    // tool
-+    // stored_enchantments
++    public static final DataComponentType.Valued<ItemEnchantments> STORED_ENCHANTMENTS = valued("stored_enchantments");
 +    // dyed_color
 +    // map_color
 +    // map_id
@@ -116,7 +122,7 @@ index 0000000000000000000000000000000000000000..cbb8413356b0991e844ea443607b9561
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/map/DataComponentMap.java b/src/main/java/io/papermc/paper/datakey/map/DataComponentMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cfe995362afd1245cd72571dadd2f940409490b7
+index 0000000000000000000000000000000000000000..c3f2d8371dc5fb5bd22f7f5866cec2fbe4345dc1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/map/DataComponentMap.java
 @@ -0,0 +1,31 @@
@@ -126,6 +132,7 @@ index 0000000000000000000000000000000000000000..cfe995362afd1245cd72571dadd2f940
 +import org.jetbrains.annotations.Contract;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
++import org.jetbrains.annotations.Unmodifiable;
 +import java.util.Set;
 +
 +public interface DataComponentMap {
@@ -139,7 +146,7 @@ index 0000000000000000000000000000000000000000..cfe995362afd1245cd72571dadd2f940
 +    <T> @Nullable T get(DataComponentType.@NotNull Valued<T> type);
 +
 +    @Contract(value = "_, !null -> !null", pure = true)
-+    default <T> @Nullable T getOrDefault(final DataComponentType.@Nullable Valued<? extends T> type, final @Nullable T fallback) {
++    default <T> @Nullable T getOrDefault(final DataComponentType.@NotNull Valued<? extends T> type, final @Nullable T fallback) {
 +        final T object = this.get(type);
 +        return object != null ? object : fallback;
 +    }
@@ -147,8 +154,7 @@ index 0000000000000000000000000000000000000000..cfe995362afd1245cd72571dadd2f940
 +    @Contract(pure = true)
 +    boolean has(@NotNull DataComponentType type);
 +
-+    @Contract(pure = true)
-+    Set<DataComponentType> keySet();
++    @NotNull @Unmodifiable Set<DataComponentType> keySet();
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/map/DataComponentPatchMapBridge.java b/src/main/java/io/papermc/paper/datakey/map/DataComponentPatchMapBridge.java
@@ -189,10 +195,10 @@ index 0000000000000000000000000000000000000000..5d60b4c1a7f2588838145001865236ce
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/map/PatchedDataComponentMap.java b/src/main/java/io/papermc/paper/datakey/map/PatchedDataComponentMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a4d2bbb2395cd6bc5a73064d8ae656a103670a29
+index 0000000000000000000000000000000000000000..8d5614f9760f0b553ac3c8f3eb477a6a23a561b8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/map/PatchedDataComponentMap.java
-@@ -0,0 +1,59 @@
+@@ -0,0 +1,57 @@
 +package io.papermc.paper.datakey.map;
 +
 +import io.papermc.paper.datakey.DataComponentType;
@@ -202,13 +208,11 @@ index 0000000000000000000000000000000000000000..a4d2bbb2395cd6bc5a73064d8ae656a1
 +
 +public interface PatchedDataComponentMap extends DataComponentMap {
 +
-+    @NotNull
-+    static PatchedDataComponentMap empty() {
++    static @NotNull PatchedDataComponentMap empty() {
 +        return DataComponentPatchMapBridge.Holder.bridge().of(DataComponentPatchMapBridge.Holder.bridge().empty());
 +    }
 +
-+    @NotNull
-+    static PatchedDataComponentMap of(@NotNull final DataComponentMap map) {
++    static @NotNull PatchedDataComponentMap of(@NotNull final DataComponentMap map) {
 +        return DataComponentPatchMapBridge.Holder.bridge().of(map);
 +    }
 +
@@ -293,6 +297,17 @@ index 0000000000000000000000000000000000000000..daf706d7312670348c5030cb25dec89e
 +    }
 +
 +}
+diff --git a/src/main/java/io/papermc/paper/datakey/package-info.java b/src/main/java/io/papermc/paper/datakey/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c0e4e57a278a107c013f15acbc7a149bcc6ed932
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datakey/package-info.java
+@@ -0,0 +1,5 @@
++@DefaultQualifier(NonNull.class)
++package io.papermc.paper.datakey;
++
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
 diff --git a/src/main/java/io/papermc/paper/datakey/patch/DataKeyMapPatch.java b/src/main/java/io/papermc/paper/datakey/patch/DataKeyMapPatch.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..325a597b8d3e0c574b7bc80b7c9d0deeb3b28037
@@ -306,10 +321,10 @@ index 0000000000000000000000000000000000000000..325a597b8d3e0c574b7bc80b7c9d0dee
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/ChargedProjectiles.java b/src/main/java/io/papermc/paper/datakey/types/ChargedProjectiles.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6023de387df8075e355b16ce4978998e6c885fb5
+index 0000000000000000000000000000000000000000..71c08d84678638ce57348631e9d950d9f2acb1d6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/ChargedProjectiles.java
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,37 @@
 +package io.papermc.paper.datakey.types;
 +
 +import org.bukkit.Material;
@@ -318,6 +333,7 @@ index 0000000000000000000000000000000000000000..6023de387df8075e355b16ce4978998e
 +import org.jetbrains.annotations.Contract;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
++import org.jetbrains.annotations.Unmodifiable;
 +import org.jetbrains.annotations.UnmodifiableView;
 +import java.util.List;
 +
@@ -329,33 +345,29 @@ index 0000000000000000000000000000000000000000..6023de387df8075e355b16ce4978998e
 +        return ComponentTypesBridge.Holder.bridge().chargedProjectiles();
 +    }
 +
-+    @NotNull
-+    @UnmodifiableView
-+    List<ItemStack> getItems();
++    @Contract(value = "-> new", pure = true)
++    @NotNull @Unmodifiable List<ItemStack> getItems();
 +
 +    @ApiStatus.NonExtendable
 +    interface Builder {
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NotNull
-+        Builder add(@NotNull ItemStack itemStack);
++        @NotNull Builder add(@NotNull ItemStack itemStack);
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NotNull
-+        Builder addAll(@NotNull List<ItemStack> itemStack);
++        @NotNull Builder addAll(@NotNull List<ItemStack> itemStack);
 +
 +        @Contract(value = "-> new", pure = true)
-+        @NotNull
-+        ChargedProjectiles build();
++        @NotNull ChargedProjectiles build();
 +
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridge.java b/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridge.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a45e7e6060ebb4b32122badf56935bd484efaba1
+index 0000000000000000000000000000000000000000..03023338725b3de04f940f83845ccf42e9c3b3a4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridge.java
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,30 @@
 +package io.papermc.paper.datakey.types;
 +
 +import java.util.Optional;
@@ -373,6 +385,10 @@ index 0000000000000000000000000000000000000000..a45e7e6060ebb4b32122badf56935bd4
 +
 +    ItemLore.Builder lore();
 +
++    ItemEnchantments.Builder enchantments();
++
++    ItemAttributeModifiers.Builder modifiers();
++
 +    @ApiStatus.Internal
 +    final class Holder {
 +        private static final Optional<ComponentTypesBridge> BRIDGE = Services.service(ComponentTypesBridge.class);
@@ -382,9 +398,97 @@ index 0000000000000000000000000000000000000000..a45e7e6060ebb4b32122badf56935bd4
 +        }
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/datakey/types/ItemAttributeModifiers.java b/src/main/java/io/papermc/paper/datakey/types/ItemAttributeModifiers.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..818d2abb16d35fdb2830f3cbde4a63a6ea317bbe
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datakey/types/ItemAttributeModifiers.java
+@@ -0,0 +1,36 @@
++package io.papermc.paper.datakey.types;
++
++import java.util.List;
++import org.bukkit.attribute.Attribute;
++import org.bukkit.attribute.AttributeModifier;
++import org.bukkit.inventory.EquipmentSlotGroup;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Unmodifiable;
++
++@ApiStatus.NonExtendable
++public interface ItemAttributeModifiers extends ShownInTooltip<ItemAttributeModifiers> {
++
++    @Contract(pure = true)
++    @NotNull @Unmodifiable List<Entry> modifiers();
++
++    interface Entry {
++
++        @Contract(pure = true)
++        @NotNull Attribute attribute();
++
++        @Contract(pure = true)
++        @NotNull AttributeModifier modifier();
++    }
++
++    @ApiStatus.NonExtendable
++    interface Builder extends ShownInTooltip.Builder<Builder> {
++
++        @Contract(value = "_, _, _ -> this", mutates = "this")
++        @NotNull Builder addModifier(@NotNull Attribute attribute, @NotNull AttributeModifier attributeModifier, @NotNull EquipmentSlotGroup slot);
++
++        @Contract(value = "-> new", pure = true)
++        @NotNull ItemAttributeModifiers build();
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/datakey/types/ItemEnchantments.java b/src/main/java/io/papermc/paper/datakey/types/ItemEnchantments.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f75355ae488dd3b04e8398e2454efff07502570a
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datakey/types/ItemEnchantments.java
+@@ -0,0 +1,40 @@
++package io.papermc.paper.datakey.types;
++
++import java.util.Map;
++import org.bukkit.enchantments.Enchantment;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Unmodifiable;
++
++@ApiStatus.NonExtendable
++public interface ItemEnchantments extends ShownInTooltip<ItemEnchantments> {
++
++    @Contract(value = "-> new", pure = true)
++    static ItemEnchantments.@NotNull Builder itemEnchantments() { // can't name it just "enchantments"
++        return ComponentTypesBridge.Holder.bridge().enchantments();
++    }
++
++    @Contract(value = "_ -> new", pure = true)
++    static @NotNull ItemEnchantments itemEnchantments(@NotNull final Map<Enchantment, Integer> enchantments) {
++        return itemEnchantments().addAll(enchantments).build();
++    }
++
++    @NotNull @Unmodifiable Map<Enchantment, Integer> enchantments();
++
++    @ApiStatus.NonExtendable
++    interface Builder extends ShownInTooltip.Builder<Builder> {
++
++        @Contract(value = "_, _ -> this", mutates = "this")
++        @NotNull Builder add(@NotNull Enchantment enchantment, int level);
++
++        @Contract(value = "_, -> this", mutates = "this")
++        @NotNull Builder addAll(@NotNull Map<Enchantment, Integer> enchantments);
++
++        @Contract(value = "_, -> this", mutates = "this")
++        @NotNull Builder remove(@NotNull Enchantment enchantment);
++
++        @Contract(value="-> new", pure = true)
++        @NotNull ItemEnchantments build();
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/ItemLore.java b/src/main/java/io/papermc/paper/datakey/types/ItemLore.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0caeec1f2d3609a07e1c4ab47f82e9c737324c73
+index 0000000000000000000000000000000000000000..9b2ffe96abfe7312be86736c306dc98bbee278a5
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/ItemLore.java
 @@ -0,0 +1,40 @@
@@ -423,20 +527,21 @@ index 0000000000000000000000000000000000000000..0caeec1f2d3609a07e1c4ab47f82e9c7
 +        @Contract(value = "_ -> this", mutates = "this")
 +        Builder lines(@NotNull List<? extends ComponentLike> lines);
 +
-+        @Contract(pure = true, value = "-> new")
++        @Contract(value = "-> new", pure = true)
 +        @NotNull ItemLore build();
 +
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/PotDecorations.java b/src/main/java/io/papermc/paper/datakey/types/PotDecorations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f2cfdafca42fa39eca38f5fac76e70cce23b195c
+index 0000000000000000000000000000000000000000..07be7fbab96d000c7a4f73ee00561b0a720cd09b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/PotDecorations.java
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,50 @@
 +package io.papermc.paper.datakey.types;
 +
 +import org.bukkit.Material;
++import org.bukkit.inventory.ItemType;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
 +import org.jetbrains.annotations.NotNull;
@@ -451,31 +556,31 @@ index 0000000000000000000000000000000000000000..f2cfdafca42fa39eca38f5fac76e70cc
 +    }
 +
 +    @Nullable
-+    Material back();
++    ItemType back();
 +
 +    @Nullable
-+    Material left();
++    ItemType left();
 +
 +    @Nullable
-+    Material right();
++    ItemType right();
 +
 +    @Nullable
-+    Material front();
++    ItemType front();
 +
 +    @ApiStatus.NonExtendable
 +    interface Builder {
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        Builder back(@Nullable Material item);
++        Builder back(@Nullable ItemType back);
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        Builder left(@Nullable Material item);
++        Builder left(@Nullable ItemType left);
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        Builder right(@Nullable Material item);
++        Builder right(@Nullable ItemType right);
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        Builder front(@Nullable Material item);
++        Builder front(@Nullable ItemType font);
 +
 +        @Contract(value = "-> new", pure = true)
 +        @NotNull
@@ -485,10 +590,10 @@ index 0000000000000000000000000000000000000000..f2cfdafca42fa39eca38f5fac76e70cc
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/ShownInTooltip.java b/src/main/java/io/papermc/paper/datakey/types/ShownInTooltip.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f20952bdb5be029ca1cd6e4db561fcbb1d219939
+index 0000000000000000000000000000000000000000..ac3fe6bee4423341ac7fa56b88c38b8c2e7cc3f6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/ShownInTooltip.java
-@@ -0,0 +1,11 @@
+@@ -0,0 +1,16 @@
 +package io.papermc.paper.datakey.types;
 +
 +import org.jetbrains.annotations.Contract;
@@ -499,13 +604,18 @@ index 0000000000000000000000000000000000000000..f20952bdb5be029ca1cd6e4db561fcbb
 +
 +    @Contract(value = "_ -> new", pure = true)
 +    T showInTooltip(boolean showInTooltip);
++
++    interface Builder<B> {
++        @Contract(value = "_ -> this", mutates = "this")
++        B showInTooltip(boolean showInTooltip);
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/Unbreakable.java b/src/main/java/io/papermc/paper/datakey/types/Unbreakable.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b58a49d8431240cdfd38453819c45c09ab5e2744
+index 0000000000000000000000000000000000000000..1fe6d7a9a552f9150e8519d8707a4149b0036e4d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/Unbreakable.java
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,27 @@
 +package io.papermc.paper.datakey.types;
 +
 +import org.jetbrains.annotations.ApiStatus;
@@ -526,10 +636,7 @@ index 0000000000000000000000000000000000000000..b58a49d8431240cdfd38453819c45c09
 +    }
 +
 +    @ApiStatus.NonExtendable
-+    interface Builder {
-+
-+        @Contract(value = "_ -> this", mutates = "this")
-+        Builder showInTooltip(boolean showInTooltip);
++    interface Builder extends ShownInTooltip.Builder<Builder> {
 +
 +        @Contract(value = "-> new", pure = true)
 +        @NotNull Unbreakable build();
@@ -592,7 +699,7 @@ index e20f64828548c647a29dad5a475f4596cad88cd8..80c10ab30ca6ea6e2a80a916d8a5831a
  
      /**
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index c64413a6740b604282984dea2a8430a6e7478d68..9866395f97f3c2c17b9fda40a70447f093a7206e 100644
+index c64413a6740b604282984dea2a8430a6e7478d68..d9531cbe6005561bc802420405d5b2af51af002b 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
 @@ -1,7 +1,6 @@
@@ -625,7 +732,15 @@ index c64413a6740b604282984dea2a8430a6e7478d68..9866395f97f3c2c17b9fda40a70447f0
          if (damage != 0) {
              setDurability(damage);
          }
-@@ -150,10 +150,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -107,6 +107,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+         Preconditions.checkArgument(stack != null, "Cannot copy null stack");
+         this.type = stack.getType();
+         this.amount = stack.getAmount();
++        this.dataKeyMap = io.papermc.paper.datakey.map.DataComponentPatchMapBridge.Holder.bridge().of(io.papermc.paper.datakey.map.DataComponentPatchMapBridge.Holder.bridge().fromItem(type)); // Paper
+         if (this.type.isLegacy()) {
+             this.data = stack.getData();
+         }
+@@ -150,10 +151,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      @Deprecated // Paper
      public void setType(@NotNull Material type) {
          Preconditions.checkArgument(type != null, "Material cannot be null");
@@ -637,7 +752,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..9866395f97f3c2c17b9fda40a70447f0
          if (type.isLegacy()) {
              createData((byte) 0);
          } else {
-@@ -277,6 +275,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -277,6 +276,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       */
      @Utility
      public int getMaxStackSize() {
@@ -645,7 +760,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..9866395f97f3c2c17b9fda40a70447f0
          if (meta != null && meta.hasMaxStackSize()) {
              return meta.getMaxStackSize();
          }
-@@ -337,9 +336,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -337,9 +337,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
          try {
              ItemStack itemStack = (ItemStack) super.clone();
  
@@ -656,7 +771,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..9866395f97f3c2c17b9fda40a70447f0
  
              if (this.data != null) {
                  itemStack.data = this.data.clone();
-@@ -359,7 +356,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -359,7 +357,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
          hash = hash * 31 + getType().hashCode();
          hash = hash * 31 + getAmount();
          hash = hash * 31 + (getDurability() & 0xffff);
@@ -665,7 +780,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..9866395f97f3c2c17b9fda40a70447f0
  
          return hash;
      }
-@@ -371,7 +368,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -371,7 +369,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       * @return True if this has the given enchantment
       */
      public boolean containsEnchantment(@NotNull Enchantment ench) {
@@ -674,7 +789,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..9866395f97f3c2c17b9fda40a70447f0
      }
  
      /**
-@@ -381,7 +378,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -381,7 +379,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       * @return Level of the enchantment, or 0
       */
      public int getEnchantmentLevel(@NotNull Enchantment ench) {
@@ -683,7 +798,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..9866395f97f3c2c17b9fda40a70447f0
      }
  
      /**
-@@ -391,7 +388,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -391,7 +389,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       */
      @NotNull
      public Map<Enchantment, Integer> getEnchantments() {
@@ -692,7 +807,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..9866395f97f3c2c17b9fda40a70447f0
      }
  
      /**
-@@ -467,10 +464,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -467,10 +465,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       * @param level Level of the enchantment
       */
      public void addUnsafeEnchantment(@NotNull Enchantment ench, int level) {
@@ -705,7 +820,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..9866395f97f3c2c17b9fda40a70447f0
      }
  
      /**
-@@ -482,10 +480,10 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -482,10 +481,10 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       */
      public int removeEnchantment(@NotNull Enchantment ench) {
          int level = getEnchantmentLevel(ench);
@@ -718,7 +833,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..9866395f97f3c2c17b9fda40a70447f0
          return level;
      }
  
-@@ -493,11 +491,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -493,11 +492,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       * Removes all enchantments on this ItemStack.
       */
      public void removeEnchantments() {
@@ -731,7 +846,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..9866395f97f3c2c17b9fda40a70447f0
      }
  
      @Override
-@@ -653,7 +647,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -653,7 +648,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       */
      @UndefinedNullability // Paper
      public ItemMeta getItemMeta() {
@@ -740,16 +855,16 @@ index c64413a6740b604282984dea2a8430a6e7478d68..9866395f97f3c2c17b9fda40a70447f0
      }
  
      /**
-@@ -662,7 +656,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -662,7 +657,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       * @return Returns true if some meta data has been set for this item
       */
      public boolean hasItemMeta() {
 -        return !Bukkit.getItemFactory().equals(meta, null);
-+        return true; // Paper - every item now has meta!
++        return !Bukkit.getItemFactory().equals(this.getItemMeta(), null); // Paper
      }
  
      /**
-@@ -683,22 +677,13 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -683,22 +678,13 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       */
      private boolean setItemMeta0(@Nullable ItemMeta itemMeta, @NotNull Material material) {
          if (itemMeta == null) {
@@ -774,7 +889,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..9866395f97f3c2c17b9fda40a70447f0
  
          return true;
      }
-@@ -1079,4 +1064,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -1079,4 +1065,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
          return Bukkit.getUnsafe().computeTooltipLines(this, tooltipContext, player);
      }
      // Paper end - expose itemstack tooltip lines
