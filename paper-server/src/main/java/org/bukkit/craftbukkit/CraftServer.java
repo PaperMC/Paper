@@ -584,10 +584,10 @@ public final class CraftServer implements Server {
             return found;
         }
 
-        String lowerName = name.toLowerCase(java.util.Locale.ENGLISH);
+        String lowerName = name.toLowerCase(Locale.ROOT);
         int delta = Integer.MAX_VALUE;
         for (Player player : getOnlinePlayers()) {
-            if (player.getName().toLowerCase(java.util.Locale.ENGLISH).startsWith(lowerName)) {
+            if (player.getName().toLowerCase(Locale.ROOT).startsWith(lowerName)) {
                 int curDelta = Math.abs(player.getName().length() - lowerName.length());
                 if (curDelta < delta) {
                     found = player;
@@ -641,7 +641,7 @@ public final class CraftServer implements Server {
                 matchedPlayers.add(iterPlayer);
                 break;
             }
-            if (iterPlayerName.toLowerCase(java.util.Locale.ENGLISH).contains(partialName.toLowerCase(java.util.Locale.ENGLISH))) {
+            if (iterPlayerName.toLowerCase(Locale.ROOT).contains(partialName.toLowerCase(Locale.ROOT))) {
                 // Partial match
                 matchedPlayers.add(iterPlayer);
             }
@@ -1203,7 +1203,7 @@ public final class CraftServer implements Server {
         } else if (name.equals(levelName + "_the_end")) {
             worldKey = net.minecraft.world.level.World.END;
         } else {
-            worldKey = ResourceKey.create(Registries.DIMENSION, new MinecraftKey(name.toLowerCase(java.util.Locale.ENGLISH)));
+            worldKey = ResourceKey.create(Registries.DIMENSION, new MinecraftKey(name.toLowerCase(Locale.ROOT)));
         }
 
         // If set to not keep spawn in memory (changed from default) then adjust rule accordingly
@@ -1213,7 +1213,7 @@ public final class CraftServer implements Server {
         WorldServer internal = (WorldServer) new WorldServer(console, console.executor, worldSession, worlddata, worldKey, worlddimension, getServer().progressListenerFactory.create(worlddata.getGameRules().getInt(GameRules.RULE_SPAWN_CHUNK_RADIUS)),
                 worlddata.isDebugWorld(), j, creator.environment() == Environment.NORMAL ? list : ImmutableList.of(), true, console.overworld().getRandomSequences(), creator.environment(), generator, biomeProvider);
 
-        if (!(worlds.containsKey(name.toLowerCase(java.util.Locale.ENGLISH)))) {
+        if (!(worlds.containsKey(name.toLowerCase(Locale.ROOT)))) {
             return null;
         }
 
@@ -1273,7 +1273,7 @@ public final class CraftServer implements Server {
             getLogger().log(Level.SEVERE, null, ex);
         }
 
-        worlds.remove(world.getName().toLowerCase(java.util.Locale.ENGLISH));
+        worlds.remove(world.getName().toLowerCase(Locale.ROOT));
         console.removeLevel(handle);
         return true;
     }
@@ -1286,7 +1286,7 @@ public final class CraftServer implements Server {
     public World getWorld(String name) {
         Preconditions.checkArgument(name != null, "name cannot be null");
 
-        return worlds.get(name.toLowerCase(java.util.Locale.ENGLISH));
+        return worlds.get(name.toLowerCase(Locale.ROOT));
     }
 
     @Override
@@ -1305,7 +1305,7 @@ public final class CraftServer implements Server {
             System.out.println("World " + world.getName() + " is a duplicate of another world and has been prevented from loading. Please delete the uid.dat file from " + world.getName() + "'s world directory if you want to be able to load the duplicate world.");
             return;
         }
-        worlds.put(world.getName().toLowerCase(java.util.Locale.ENGLISH), world);
+        worlds.put(world.getName().toLowerCase(Locale.ROOT), world);
     }
 
     @Override

@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap.Builder;
 import com.google.gson.JsonParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -80,7 +81,7 @@ public final class CraftChatMessage {
                 }
                 switch (groupId) {
                 case 1:
-                    char c = match.toLowerCase(java.util.Locale.ENGLISH).charAt(1);
+                    char c = match.toLowerCase(Locale.ROOT).charAt(1);
                     EnumChatFormat format = formatMap.get(c);
 
                     if (c == 'x') {

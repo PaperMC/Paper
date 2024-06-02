@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.io.StringReader;
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import org.bukkit.Bukkit;
@@ -82,7 +83,7 @@ public class DeprecatedItemMetaCustomValueTest extends AbstractTestingBase {
     }
 
     private NamespacedKey requestKey(String keyName) {
-        return new NamespacedKey("test-plugin", keyName.toLowerCase());
+        return new NamespacedKey("test-plugin", keyName.toLowerCase(Locale.ROOT));
     }
 
     /*

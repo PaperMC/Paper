@@ -7,6 +7,7 @@ import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.BiConsumer;
@@ -96,7 +97,7 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
     }
 
     private static NamespacedKey requestKey(String keyName) {
-        return new NamespacedKey("test-plugin", keyName.toLowerCase());
+        return new NamespacedKey("test-plugin", keyName.toLowerCase(Locale.ROOT));
     }
 
     @Test

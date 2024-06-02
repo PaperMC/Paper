@@ -5,6 +5,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.MinecraftKey;
@@ -48,7 +49,7 @@ public class RegistryConstantsTest extends AbstractTestingBase {
             }
 
             String name = field.getName();
-            NamespacedKey key = NamespacedKey.fromString(name.toLowerCase());
+            NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
             if (registry.get(key) == null) {
                 excessKeys.add(key);
             }
@@ -67,7 +68,7 @@ public class RegistryConstantsTest extends AbstractTestingBase {
 
             try {
                 @SuppressWarnings("unchecked")
-                T bukkitObject = (T) clazz.getField(minecraftKey.getPath().toUpperCase()).get(null);
+                T bukkitObject = (T) clazz.getField(minecraftKey.getPath().toUpperCase(Locale.ROOT)).get(null);
 
                 assertEquals(minecraftKey, CraftNamespacedKey.toMinecraft(bukkitObject.getKey()), "Keys are not the same for " + minecraftKey);
             } catch (NoSuchFieldException e) {

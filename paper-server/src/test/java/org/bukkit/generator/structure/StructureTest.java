@@ -3,6 +3,7 @@ package org.bukkit.generator.structure;
 import static org.junit.jupiter.api.Assertions.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.Locale;
 import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.MinecraftKey;
@@ -25,7 +26,7 @@ public class StructureTest extends AbstractTestingBase {
             }
 
             String name = field.getName();
-            assertNotNull(Registry.STRUCTURE.get(NamespacedKey.fromString(name.toLowerCase())), "No structure for field name " + name);
+            assertNotNull(Registry.STRUCTURE.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT))), "No structure for field name " + name);
         }
     }
 
@@ -36,7 +37,7 @@ public class StructureTest extends AbstractTestingBase {
             MinecraftKey minecraftKey = structureBuiltInRegistries.getKey(structure);
 
             try {
-                Structure bukkit = (Structure) Structure.class.getField(minecraftKey.getPath().toUpperCase()).get(null);
+                Structure bukkit = (Structure) Structure.class.getField(minecraftKey.getPath().toUpperCase(Locale.ROOT)).get(null);
 
                 assertEquals(minecraftKey, CraftNamespacedKey.toMinecraft(bukkit.getKey()), "Keys are not the same for " + minecraftKey);
             } catch (NoSuchFieldException e) {

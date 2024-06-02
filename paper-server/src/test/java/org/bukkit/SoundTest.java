@@ -3,6 +3,7 @@ package org.bukkit;
 import static org.bukkit.support.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.Locale;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.MinecraftKey;
 import org.bukkit.craftbukkit.CraftSound;
@@ -21,7 +22,7 @@ public class SoundTest extends AbstractTestingBase {
     @Test
     public void testReverse() {
         for (MinecraftKey effect : BuiltInRegistries.SOUND_EVENT.keySet()) {
-            assertNotNull(Sound.valueOf(effect.getPath().replace('.', '_').toUpperCase(java.util.Locale.ENGLISH)), effect + "");
+            assertNotNull(Sound.valueOf(effect.getPath().replace('.', '_').toUpperCase(Locale.ROOT)), effect + "");
         }
     }
 
