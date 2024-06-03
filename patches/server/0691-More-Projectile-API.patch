@@ -12,6 +12,7 @@ public net.minecraft.world.entity.projectile.ShulkerBullet targetDeltaZ
 public net.minecraft.world.entity.projectile.ShulkerBullet currentMoveDirection
 public net.minecraft.world.entity.projectile.ShulkerBullet flightSteps
 public net.minecraft.world.entity.projectile.AbstractArrow soundEvent
+public net/minecraft/world/entity/projectile/AbstractArrow setPickupItemStack(Lnet/minecraft/world/item/ItemStack;)V
 public net.minecraft.world.entity.projectile.ThrownTrident dealtDamage
 public net.minecraft.world.entity.projectile.Projectile hasBeenShot
 public net.minecraft.world.entity.projectile.Projectile leftOwner
@@ -174,7 +175,7 @@ index 91c2d0b40d3fca86938cd454e1415a4eea3df7c7..de4fb2654c7895cfd83ad694455ee56c
 +    // Paper end - More projectile API
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractArrow.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractArrow.java
-index 98f46fadd60ea688fefa8d83dbd6fe9b61b6a96f..0cc1cdf91deb07ebb437ef5e61d149b2c109877f 100644
+index 98f46fadd60ea688fefa8d83dbd6fe9b61b6a96f..656e1fc4321a804aa79a08bca8974637d4ffdb1b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractArrow.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractArrow.java
 @@ -60,20 +60,7 @@ public class CraftAbstractArrow extends AbstractProjectile implements AbstractAr
@@ -199,15 +200,21 @@ index 98f46fadd60ea688fefa8d83dbd6fe9b61b6a96f..0cc1cdf91deb07ebb437ef5e61d149b2
  
      @Override
      public boolean isInBlock() {
-@@ -140,4 +127,31 @@ public class CraftAbstractArrow extends AbstractProjectile implements AbstractAr
+@@ -140,4 +127,37 @@ public class CraftAbstractArrow extends AbstractProjectile implements AbstractAr
      public String toString() {
          return "CraftArrow";
      }
 +
 +    // Paper start
 +    @Override
-+    public org.bukkit.craftbukkit.inventory.CraftItemStack getItemStack() {
-+        return org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this.getHandle().getPickupItem());
++    public CraftItemStack getItemStack() {
++        return CraftItemStack.asCraftMirror(this.getHandle().getPickupItem());
++    }
++
++    @Override
++    public void setItemStack(final ItemStack stack) {
++        Preconditions.checkArgument(stack != null, "ItemStack cannot be null");
++        this.getHandle().setPickupItemStack(CraftItemStack.asNMSCopy(stack));
 +    }
 +
 +    @Override
@@ -607,7 +614,7 @@ index e374b9f40eddca13b30855d25a2030f8df98138f..4fc893378fb0568ddcffc7593d66df6b
      // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 59d444a79b5852dabc082b56bafe71d79e42541f..fa50860c8bb34c914096a2af17be62277b698c1a 100644
+index efc3808dde268f8325304f4bce8fb3bf399adafd..9588c191ccb5665be2ff90ae2ded5bbff12faacb 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 @@ -832,19 +832,19 @@ public class CraftEventFactory {
