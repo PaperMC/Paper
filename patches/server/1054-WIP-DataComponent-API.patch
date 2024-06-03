@@ -37,10 +37,10 @@ index 0000000000000000000000000000000000000000..e538819c873a324c58bcd8e73f89510e
 +}
 diff --git a/src/main/java/io/papermc/paper/component/ComponentAdapters.java b/src/main/java/io/papermc/paper/component/ComponentAdapters.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ca621dd53bee70a2f383517a4f1f4c15d46ef485
+index 0000000000000000000000000000000000000000..e6a57e276cfa8be5943302edafbbdeb3f5aff404
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/ComponentAdapters.java
-@@ -0,0 +1,131 @@
+@@ -0,0 +1,151 @@
 +package io.papermc.paper.component;
 +
 +import io.papermc.paper.adventure.PaperAdventure;
@@ -92,41 +92,50 @@ index 0000000000000000000000000000000000000000..ca621dd53bee70a2f383517a4f1f4c15
 +    static final Map<ResourceKey<DataComponentType<?>>, ComponentAdapter<?, ?>> ADAPTERS = new HashMap<>();
 +
 +    public static void bootstrap() {
++        // custom data
 +        registerIdentity(DataComponents.MAX_STACK_SIZE);
 +        registerIdentity(DataComponents.MAX_DAMAGE);
 +        registerIdentity(DataComponents.DAMAGE);
-+        registerIdentity(DataComponents.REPAIR_COST);
-+        registerIdentity(DataComponents.OMINOUS_BOTTLE_AMPLIFIER);
-+        registerIdentity(DataComponents.ENCHANTMENT_GLINT_OVERRIDE);
 +        register(DataComponents.UNBREAKABLE, PaperUnbreakable::new);
 +        register(DataComponents.CUSTOM_NAME, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
 +        register(DataComponents.ITEM_NAME, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
 +        register(DataComponents.LORE, PaperItemLore::new);
 +        register(DataComponents.RARITY, nms -> ItemRarity.valueOf(nms.name()), api -> Rarity.valueOf(api.name()));
++        register(DataComponents.ENCHANTMENTS, PaperItemEnchantments::new);
++        // can place on
++        // can break
++        register(DataComponents.ATTRIBUTE_MODIFIERS, PaperItemAttributeModifiers::new);
++        register(DataComponents.CUSTOM_MODEL_DATA, PaperCustomModelData::new);
 +        registerUntyped(DataComponents.HIDE_ADDITIONAL_TOOLTIP);
 +        registerUntyped(DataComponents.HIDE_TOOLTIP);
++        registerIdentity(DataComponents.REPAIR_COST);
 +        registerUntyped(DataComponents.CREATIVE_SLOT_LOCK);
++        registerIdentity(DataComponents.ENCHANTMENT_GLINT_OVERRIDE);
 +        registerUntyped(DataComponents.INTANGIBLE_PROJECTILE);
-+        registerUntyped(DataComponents.FIRE_RESISTANT);
-+        register(DataComponents.POT_DECORATIONS, PaperPotDecorations::new);
-+        register(DataComponents.CHARGED_PROJECTILES, PaperChargedProjectiles::new);
-+        register(DataComponents.ENCHANTMENTS, PaperItemEnchantments::new);
-+        register(DataComponents.STORED_ENCHANTMENTS, PaperItemEnchantments::new);
-+        register(DataComponents.ATTRIBUTE_MODIFIERS, PaperItemAttributeModifiers::new);
 +        register(DataComponents.FOOD, PaperFoodProperties::new);
-+        register(DataComponents.MAP_POST_PROCESSING, nms -> MapPostProcessing.valueOf(nms.name()), api -> MapPostProcessing.valueOf(api.name()));
++        registerUntyped(DataComponents.FIRE_RESISTANT);
++        // tool
++        register(DataComponents.STORED_ENCHANTMENTS, PaperItemEnchantments::new);
 +        register(DataComponents.DYED_COLOR, PaperDyedItemColor::new);
-+        register(DataComponents.BUNDLE_CONTENTS, PaperBundleContents::new);
 +        register(DataComponents.MAP_COLOR, PaperMapItemColor::new);
-+        register(DataComponents.CUSTOM_MODEL_DATA, PaperCustomModelData::new);
-+        register(DataComponents.SUSPICIOUS_STEW_EFFECTS, PaperSuspiciousStewEffects::new);
-+        register(DataComponents.POTION_CONTENTS, PaperPotionContents::new);
 +        register(DataComponents.MAP_ID, PaperMapID::new);
 +        register(DataComponents.MAP_DECORATIONS, PaperMapDecorations::new);
-+        register(DataComponents.CONTAINER_LOOT, PaperSeededContainerLoot::new);
++        register(DataComponents.MAP_POST_PROCESSING, nms -> MapPostProcessing.valueOf(nms.name()), api -> MapPostProcessing.valueOf(api.name()));
++        register(DataComponents.CHARGED_PROJECTILES, PaperChargedProjectiles::new);
++        register(DataComponents.BUNDLE_CONTENTS, PaperBundleContents::new);
++        register(DataComponents.POTION_CONTENTS, PaperPotionContents::new);
++        register(DataComponents.SUSPICIOUS_STEW_EFFECTS, PaperSuspiciousStewEffects::new);
++        // writable book content
++        // written book content
++        // trim
++        // debug stick state
++        // entity data
++        // bucket entity data
++        // instrument
++        registerIdentity(DataComponents.OMINOUS_BOTTLE_AMPLIFIER);
 +        register(DataComponents.RECIPES, nms -> {
-+            List<Key> api = new ArrayList<>(nms.size());
-+            for (ResourceLocation location : nms) {
++            final List<Key> api = new ArrayList<>(nms.size());
++            for (final ResourceLocation location : nms) {
 +                api.add(CraftNamespacedKey.fromMinecraft(location));
 +            }
 +
@@ -139,9 +148,20 @@ index 0000000000000000000000000000000000000000..ca621dd53bee70a2f383517a4f1f4c15
 +
 +            return Collections.unmodifiableList(nms);
 +        });
++        // lodestone tracker
++        // firework explosion
++        // fireworks
++        // profile
++        // note block sound
 +        register(DataComponents.BASE_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
++        register(DataComponents.POT_DECORATIONS, PaperPotDecorations::new);
++        // block state (block data)
++        // bees
++        // lock
++        register(DataComponents.CONTAINER_LOOT, PaperSeededContainerLoot::new);
++
 +        // TODO: REMOVE THIS... we want to build the PR... so lets just make things UNTYPED!
-+        for (Map.Entry<ResourceKey<DataComponentType<?>>, DataComponentType<?>> componentType : BuiltInRegistries.DATA_COMPONENT_TYPE.entrySet()) {
++        for (final Map.Entry<ResourceKey<DataComponentType<?>>, DataComponentType<?>> componentType : BuiltInRegistries.DATA_COMPONENT_TYPE.entrySet()) {
 +            if (!ADAPTERS.containsKey(componentType.getKey())) {
 +                registerUntyped((DataComponentType<Unit>) componentType.getValue());
 +            }
