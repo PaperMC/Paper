@@ -168,8 +168,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      final Material material;
 -    private CraftBlockEntityState<?> blockEntityTag;
 +    // Paper start - store data separately
-+    DataComponentMap components = DataComponentMap.EMPTY;
-+    CustomData blockEntityTag = CustomData.EMPTY;
++    DataComponentMap components;
++    CustomData blockEntityTag;
++    {
++        // this is because the fields are possibly assigned in the super constructor (via deserializeInternal)
++        // and a direct field initialization happens **after** the super constructor. So we only want to
++        // set them to empty if they weren't assigned by the super constructor (via deserializeInternal)
++        this.components = this.components != null ? this.components : DataComponentMap.EMPTY;
++        this.blockEntityTag = this.blockEntityTag != null ? this.blockEntityTag : CustomData.EMPTY;
++    }
 +    private Material materialForBlockEntityType() {
 +        return (this.material != Material.SHIELD) ? this.material : CraftMetaBlockState.shieldToBannerHack();
 +    }
@@ -300,10 +307,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start - new serialization format
 +        if (tag.contains(CraftMetaBlockState.BLOCK_ENTITY_TAG_CUSTOM_DATA.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
 +            this.blockEntityTag = CustomData.of(tag.getCompound(CraftMetaBlockState.BLOCK_ENTITY_TAG_CUSTOM_DATA.NBT));
-+        }
+         }
 +        if (tag.contains(CraftMetaBlockState.BLOCK_ENTITY_COMPONENTS.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
 +            this.components = DataComponentMap.CODEC.parse(org.bukkit.craftbukkit.CraftRegistry.getMinecraftRegistry().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), tag.getCompound(CraftMetaBlockState.BLOCK_ENTITY_COMPONENTS.NBT)).getOrThrow();
-         }
++        }
 +        // Paper end - new serialization format
      }
  
@@ -314,11 +321,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start - new serialization format
 +        if (!this.blockEntityTag.isEmpty()) {
 +            internalTags.put(CraftMetaBlockState.BLOCK_ENTITY_TAG_CUSTOM_DATA.NBT, this.blockEntityTag.getUnsafe()); // unsafe because it's serialized right away
-         }
++        }
 +        if (!this.components.isEmpty()) {
 +            final Tag componentsTag = DataComponentMap.CODEC.encodeStart(org.bukkit.craftbukkit.CraftRegistry.getMinecraftRegistry().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), this.components).getOrThrow();
 +            internalTags.put(CraftMetaBlockState.BLOCK_ENTITY_COMPONENTS.NBT, componentsTag);
-+        }
+         }
 +        // Paper end - new serialization format
      }
  
