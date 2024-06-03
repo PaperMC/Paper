@@ -1573,7 +1573,7 @@ index af18de11dd55938b6091f5ab183bd3fe4e8df152..dad6cb4bbb52f4ce7e8f40131ee0bd37
  
      ItemEnchantments(Object2IntAVLTreeMap<Holder<Enchantment>> enchantments, boolean showInTooltip) { // Paper
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index 3496b98ff0b984dbfec4f0983459a273dc0e3471..d14d0b4a0edbff19d6b5ce0674aa70ba7af902d6 100644
+index 3496b98ff0b984dbfec4f0983459a273dc0e3471..c640f5f36fb0d3935ac4decd61a458b7c74a6f54 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 @@ -167,7 +167,7 @@ public final class CraftItemStack extends ItemStack {
@@ -1612,7 +1612,7 @@ index 3496b98ff0b984dbfec4f0983459a273dc0e3471..d14d0b4a0edbff19d6b5ce0674aa70ba
                      item.set(DataComponents.PROFILE, new net.minecraft.world.item.component.ResolvableProfile(gameProfile));
                  }
              };
-@@ -768,4 +768,79 @@ public final class CraftItemStack extends ItemStack {
+@@ -768,4 +768,89 @@ public final class CraftItemStack extends ItemStack {
          return mirrored;
      }
      // Paper end
@@ -1635,7 +1635,7 @@ index 3496b98ff0b984dbfec4f0983459a273dc0e3471..d14d0b4a0edbff19d6b5ce0674aa70ba
 +    }
 +
 +    @Override
-+    public java.util.Set<io.papermc.paper.component.DataComponentType> getDataComponents() {
++    public java.util.Set<io.papermc.paper.component.DataComponentType> getDataTypes() {
 +        if (this.isEmpty()) {
 +            return java.util.Collections.emptySet();
 +        }
@@ -1690,10 +1690,20 @@ index 3496b98ff0b984dbfec4f0983459a273dc0e3471..d14d0b4a0edbff19d6b5ce0674aa70ba
 +        // if nmsValue is not null, it will still clear any set patch because it will equal the default value
 +        this.handle.set(nms, nmsValue);
 +    }
++
++    @Override
++    public boolean isOverridden(final io.papermc.paper.component.DataComponentType type) {
++        if (this.isEmpty()) {
++            return false;
++        }
++        final net.minecraft.core.component.DataComponentType<?> nms = io.papermc.paper.component.PaperComponentType.bukkitToMinecraft(type);
++        // maybe a more efficient way is to expose the "patch" map in PatchedDataComponentMap and just check if the type exists as a key
++        return java.util.Objects.equals(this.handle.get(nms), this.handle.getPrototype().get(nms));
++    }
 +    // Paper end - data component API
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java
-index b54be1122af2b303c0f063ff6b61bf8e2478b0df..f0c394741c56b23df47c1b3e6790d4d41b9d851b 100644
+index b54be1122af2b303c0f063ff6b61bf8e2478b0df..a66775b21e829f76de9cf234b702f5f03857bac8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java
 @@ -253,4 +253,21 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
@@ -1703,17 +1713,17 @@ index b54be1122af2b303c0f063ff6b61bf8e2478b0df..f0c394741c56b23df47c1b3e6790d4d4
 +
 +    // Paper start - data component API
 +    @Override
-+    public <T> T getDefaultDataComponent(final io.papermc.paper.component.DataComponentType.Valued<T> dataComponentType) {
++    public <T> T getDefaultData(final io.papermc.paper.component.DataComponentType.Valued<T> dataComponentType) {
 +        return io.papermc.paper.component.PaperComponentType.convertDataComponentValue(this.item.components(), ((io.papermc.paper.component.PaperComponentType.ValuedImpl<T, ?>) dataComponentType));
 +    }
 +
 +    @Override
-+    public boolean hasDefaultDataComponent(final io.papermc.paper.component.DataComponentType dataComponentType) {
++    public boolean hasDefaultData(final io.papermc.paper.component.DataComponentType dataComponentType) {
 +        return this.item.components().has(io.papermc.paper.component.PaperComponentType.bukkitToMinecraft(dataComponentType));
 +    }
 +
 +    @Override
-+    public java.util.Set<io.papermc.paper.component.DataComponentType> getDefaultDataComponentTypes() {
++    public java.util.Set<io.papermc.paper.component.DataComponentType> getDefaultDataTypes() {
 +        return io.papermc.paper.component.PaperComponentType.minecraftToBukkit(this.item.components().keySet());
 +    }
 +    // Paper end - data component API
