@@ -943,7 +943,7 @@ index 7b79bf33074355020e0b3b5ef40c7f2e6ba644b4..5cf3aa4641822c91adfbd70a847ca529
 +    RegistryKey<DataComponentType> DATA_COMPONENT_TYPE = create("data_component_type");
  }
 diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
-index 7509b61dfdc0a6675256970cb850b08f9e814580..35127ef25494f70a0d57ff8b8d0c3be5e14286cd 100644
+index 7509b61dfdc0a6675256970cb850b08f9e814580..28e2628d8d0a6af742b2fa89e5581e6b0d1a38a4 100644
 --- a/src/main/java/org/bukkit/Material.java
 +++ b/src/main/java/org/bukkit/Material.java
 @@ -131,7 +131,7 @@ import org.jetbrains.annotations.Nullable;
@@ -955,6 +955,66 @@ index 7509b61dfdc0a6675256970cb850b08f9e814580..35127ef25494f70a0d57ff8b8d0c3be5
      STONE(22948),
      GRANITE(21091),
      POLISHED_GRANITE(5477),
+@@ -5710,6 +5710,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
+      */
+     @ApiStatus.Internal
+     @Nullable
++    @org.jetbrains.annotations.Contract(pure = true) // Paper
+     public ItemType asItemType() {
+         Material material = this;
+         if (isLegacy()) {
+@@ -5726,6 +5727,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
+      */
+     @ApiStatus.Internal
+     @Nullable
++    @org.jetbrains.annotations.Contract(pure = true) // Paper
+     public BlockType asBlockType() {
+         Material material = this;
+         if (isLegacy()) {
+@@ -5733,4 +5735,43 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
+         }
+         return Registry.BLOCK.get(material.key);
+     }
++
++    // Paper start - data component API
++    /**
++     * Gets the default data component value for the data type for this ItemType.
++     *
++     * @param dataComponentType the data component type
++     * @return the default value or null if there is none
++     * @param <T> the value type
++     * @see #hasDefaultData(io.papermc.paper.component.DataComponentType) for DataComponentType.NonValued
++     * @throws IllegalArgumentException if {@link #isItem()} is false
++     */
++    public @Nullable <T> T getDefaultData(final io.papermc.paper.component.DataComponentType.@NotNull Valued<T> dataComponentType) {
++        Preconditions.checkArgument(this.asItemType() != null);
++        return this.asItemType().getDefaultData(dataComponentType);
++    }
++
++    /**
++     * Checks if the data component type has a default value for this ItemType.
++     *
++     * @param dataComponentType the data component type
++     * @return true if there is a default value
++     * @throws IllegalArgumentException if {@link #isItem()} is false
++     */
++    public boolean hasDefaultData(final io.papermc.paper.component.@NotNull DataComponentType dataComponentType) {
++        Preconditions.checkArgument(this.asItemType() != null);
++        return this.asItemType().hasDefaultData(dataComponentType);
++    }
++
++    /**
++     * Gets the default data component types for this ItemType.
++     *
++     * @return an immutable set of data component types
++     * @throws IllegalArgumentException if {@link #isItem()} is false
++     */
++    public java.util.@org.jetbrains.annotations.Unmodifiable @NotNull Set<io.papermc.paper.component.DataComponentType> getDefaultDataTypes() {
++        Preconditions.checkArgument(this.asItemType() != null);
++        return this.asItemType().getDefaultDataTypes();
++    }
++    // Paper end - data component API
+ }
 diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
 index 88bb3b9ae99fae97ec21972b75ec43cb6b7b22b5..ca3a0a268a80ea3d342ec1c2c9d8ae105d271c88 100644
 --- a/src/main/java/org/bukkit/Registry.java
@@ -981,10 +1041,10 @@ index e20f64828548c647a29dad5a475f4596cad88cd8..80c10ab30ca6ea6e2a80a916d8a5831a
  
      /**
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index 15a59a27f0854ff6f4038349d3a0d00347130140..44951ecb5ae4713cce515e2952c8c7e8c8d4eac4 100644
+index 15a59a27f0854ff6f4038349d3a0d00347130140..82574d096ac8f35ee69b0e9c248ec498c0655332 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
-@@ -1029,4 +1029,96 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -1029,4 +1029,107 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
          return Bukkit.getUnsafe().computeTooltipLines(this, tooltipContext, player);
      }
      // Paper end - expose itemstack tooltip lines
@@ -996,7 +1056,7 @@ index 15a59a27f0854ff6f4038349d3a0d00347130140..44951ecb5ae4713cce515e2952c8c7e8
 +     * @param type the data component type
 +     * @return the value for the data component type, or null if not set or marked as removed
 +     * @param <T> the value type
-+     * @see #hasData(io.papermc.paper.component.DataComponentType) for non-valued data component types
++     * @see #hasData(io.papermc.paper.component.DataComponentType) for DataComponentType.NonValued
 +     */
 +    @org.jetbrains.annotations.Contract(pure = true)
 +    public <T> @Nullable T getData(final io.papermc.paper.component.DataComponentType.@NotNull Valued<T> type) {
@@ -1036,8 +1096,8 @@ index 15a59a27f0854ff6f4038349d3a0d00347130140..44951ecb5ae4713cce515e2952c8c7e8
 +     * @return an immutable set of data component types
 +     */
 +    @org.jetbrains.annotations.Contract("-> new")
-+    public java.util.@org.jetbrains.annotations.Unmodifiable Set<io.papermc.paper.component.@NotNull DataComponentType> getDataComponents() {
-+        return this.craftDelegate.getDataComponents();
++    public java.util.@org.jetbrains.annotations.Unmodifiable Set<io.papermc.paper.component.@NotNull DataComponentType> getDataTypes() {
++        return this.craftDelegate.getDataTypes();
 +    }
 +
 +    /**
@@ -1073,28 +1133,58 @@ index 15a59a27f0854ff6f4038349d3a0d00347130140..44951ecb5ae4713cce515e2952c8c7e8
 +
 +    /**
 +     * Resets the value of this component to be the default
-+     * value for the item type from {@link ItemType#getDefaultDataComponent(io.papermc.paper.component.DataComponentType.Valued)}
++     * value for the item type from {@link Material#getDefaultData(io.papermc.paper.component.DataComponentType.Valued)}
 +     * @param type data component type to reset
 +     */
 +    public void resetData(final io.papermc.paper.component.@NotNull DataComponentType type) {
 +        this.craftDelegate.resetData(type);
 +    }
++
++    /**
++     * Checks if the data component type is overridden from the default for the
++     * item type.
++     *
++     * @param type the data component type
++     * @return true if the data type is overridden
++     */
++    public boolean isOverridden(final io.papermc.paper.component.@NotNull DataComponentType type) {
++        return this.craftDelegate.isOverridden(type);
++    }
 +    // Paper end - data component API
  }
 diff --git a/src/main/java/org/bukkit/inventory/ItemType.java b/src/main/java/org/bukkit/inventory/ItemType.java
-index 077bd4d4e50169780f27e8502104e9e4b2ecdae6..173fdeac69729e3a4bc75d2dae1b1db588bb6c5b 100644
+index 077bd4d4e50169780f27e8502104e9e4b2ecdae6..a202cede658cb6fb5c12c80dceac7a514a31d46c 100644
 --- a/src/main/java/org/bukkit/inventory/ItemType.java
 +++ b/src/main/java/org/bukkit/inventory/ItemType.java
-@@ -2443,4 +2443,12 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
+@@ -2443,4 +2443,31 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      @Override
      @NotNull String getTranslationKey();
      // Paper end - add Translatable
 +
 +    // Paper start - data component API
-+    @Nullable <T> T getDefaultDataComponent(io.papermc.paper.component.DataComponentType.@NotNull Valued<T> dataComponentType);
++    /**
++     * Gets the default data component value for the data type for this ItemType.
++     *
++     * @param dataComponentType the data component type
++     * @return the default value or null if there is none
++     * @param <T> the value type
++     * @see #hasDefaultData(io.papermc.paper.component.DataComponentType) for DataComponentType.NonValued
++     */
++    @Nullable <T> T getDefaultData(io.papermc.paper.component.DataComponentType.@NotNull Valued<T> dataComponentType);
 +
-+    boolean hasDefaultDataComponent(io.papermc.paper.component.@NotNull DataComponentType dataComponentType);
++    /**
++     * Checks if the data component type has a default value for this ItemType.
++     *
++     * @param dataComponentType the data component type
++     * @return true if there is a default value
++     */
++    boolean hasDefaultData(io.papermc.paper.component.@NotNull DataComponentType dataComponentType);
 +
-+    java.util.@org.jetbrains.annotations.Unmodifiable @NotNull Set<io.papermc.paper.component.DataComponentType> getDefaultDataComponentTypes();
++    /**
++     * Gets the default data component types for this ItemType.
++     *
++     * @return an immutable set of data component types
++     */
++    java.util.@org.jetbrains.annotations.Unmodifiable @NotNull Set<io.papermc.paper.component.DataComponentType> getDefaultDataTypes();
 +    // Paper end - data component API
  }
