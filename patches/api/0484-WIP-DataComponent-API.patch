@@ -4,13 +4,13 @@ Date: Sun, 28 Apr 2024 19:53:06 -0400
 Subject: [PATCH] WIP DataComponent API
 
 
-diff --git a/src/main/java/io/papermc/paper/datakey/DataComponentType.java b/src/main/java/io/papermc/paper/datakey/DataComponentType.java
+diff --git a/src/main/java/io/papermc/paper/component/DataComponentType.java b/src/main/java/io/papermc/paper/component/DataComponentType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6ded5a082226abc61f3af625383149a1bb1dca9c
+index 0000000000000000000000000000000000000000..d58cda809e551cb273b5ef6b449220b40cc443dc
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/DataComponentType.java
++++ b/src/main/java/io/papermc/paper/component/DataComponentType.java
 @@ -0,0 +1,24 @@
-+package io.papermc.paper.datakey;
++package io.papermc.paper.component;
 +
 +import net.kyori.adventure.key.Key;
 +import org.bukkit.Keyed;
@@ -34,31 +34,31 @@ index 0000000000000000000000000000000000000000..6ded5a082226abc61f3af625383149a1
 +
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/datakey/DataComponentTypes.java b/src/main/java/io/papermc/paper/datakey/DataComponentTypes.java
+diff --git a/src/main/java/io/papermc/paper/component/DataComponentTypes.java b/src/main/java/io/papermc/paper/component/DataComponentTypes.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f9c2401a74f4b827478aae9043033ca137545137
+index 0000000000000000000000000000000000000000..ea1a789086ba3f853cc0ac91cbe603fc3c416592
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/DataComponentTypes.java
++++ b/src/main/java/io/papermc/paper/component/DataComponentTypes.java
 @@ -0,0 +1,99 @@
-+package io.papermc.paper.datakey;
++package io.papermc.paper.component;
 +
-+import io.papermc.paper.datakey.types.BundleContents;
-+import io.papermc.paper.datakey.types.ChargedProjectiles;
-+import io.papermc.paper.datakey.types.CustomModelData;
-+import io.papermc.paper.datakey.types.DyedItemColor;
-+import io.papermc.paper.datakey.types.FoodProperties;
-+import io.papermc.paper.datakey.types.ItemAttributeModifiers;
-+import io.papermc.paper.datakey.types.ItemEnchantments;
-+import io.papermc.paper.datakey.types.ItemLore;
-+import io.papermc.paper.datakey.types.MapDecorations;
-+import io.papermc.paper.datakey.types.MapID;
-+import io.papermc.paper.datakey.types.MapItemColor;
-+import io.papermc.paper.datakey.types.MapPostProcessing;
-+import io.papermc.paper.datakey.types.PotDecorations;
-+import io.papermc.paper.datakey.types.PotionContents;
-+import io.papermc.paper.datakey.types.SeededContainerLoot;
-+import io.papermc.paper.datakey.types.SuspiciousStewEffects;
-+import io.papermc.paper.datakey.types.Unbreakable;
++import io.papermc.paper.component.item.BundleContents;
++import io.papermc.paper.component.item.ChargedProjectiles;
++import io.papermc.paper.component.item.CustomModelData;
++import io.papermc.paper.component.item.DyedItemColor;
++import io.papermc.paper.component.item.FoodProperties;
++import io.papermc.paper.component.item.ItemAttributeModifiers;
++import io.papermc.paper.component.item.ItemEnchantments;
++import io.papermc.paper.component.item.ItemLore;
++import io.papermc.paper.component.item.MapDecorations;
++import io.papermc.paper.component.item.MapID;
++import io.papermc.paper.component.item.MapItemColor;
++import io.papermc.paper.component.item.MapPostProcessing;
++import io.papermc.paper.component.item.PotDecorations;
++import io.papermc.paper.component.item.PotionContents;
++import io.papermc.paper.component.item.SeededContainerLoot;
++import io.papermc.paper.component.item.SuspiciousStewEffects;
++import io.papermc.paper.component.item.Unbreakable;
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.DyeColor;
 +import org.bukkit.NamespacedKey;
@@ -139,212 +139,13 @@ index 0000000000000000000000000000000000000000..f9c2401a74f4b827478aae9043033ca1
 +    private DataComponentTypes() {
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/datakey/map/DataComponentMap.java b/src/main/java/io/papermc/paper/datakey/map/DataComponentMap.java
+diff --git a/src/main/java/io/papermc/paper/component/item/BundleContents.java b/src/main/java/io/papermc/paper/component/item/BundleContents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c3f2d8371dc5fb5bd22f7f5866cec2fbe4345dc1
+index 0000000000000000000000000000000000000000..8686f4022395d3cd64a077b388e6f48595dac6f7
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/map/DataComponentMap.java
-@@ -0,0 +1,31 @@
-+package io.papermc.paper.datakey.map;
-+
-+import io.papermc.paper.datakey.DataComponentType;
-+import org.jetbrains.annotations.Contract;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
-+import org.jetbrains.annotations.Unmodifiable;
-+import java.util.Set;
-+
-+public interface DataComponentMap {
-+
-+    @Contract(value = "-> new", pure = true)
-+    static @NotNull DataComponentMap empty() {
-+        return DataComponentPatchMapBridge.Holder.bridge().empty();
-+    }
-+
-+    @Contract(pure = true)
-+    <T> @Nullable T get(DataComponentType.@NotNull Valued<T> type);
-+
-+    @Contract(value = "_, !null -> !null", pure = true)
-+    default <T> @Nullable T getOrDefault(final DataComponentType.@NotNull Valued<? extends T> type, final @Nullable T fallback) {
-+        final T object = this.get(type);
-+        return object != null ? object : fallback;
-+    }
-+
-+    @Contract(pure = true)
-+    boolean has(@NotNull DataComponentType type);
-+
-+    @NotNull @Unmodifiable Set<DataComponentType> keySet();
-+
-+}
-diff --git a/src/main/java/io/papermc/paper/datakey/map/DataComponentPatchMapBridge.java b/src/main/java/io/papermc/paper/datakey/map/DataComponentPatchMapBridge.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..5d60b4c1a7f2588838145001865236ce0d283c46
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/map/DataComponentPatchMapBridge.java
-@@ -0,0 +1,30 @@
-+package io.papermc.paper.datakey.map;
-+
-+import java.util.Optional;
-+import net.kyori.adventure.util.Services;
-+import org.bukkit.Material;
-+import org.bukkit.inventory.meta.ItemMeta;
-+import org.jetbrains.annotations.ApiStatus;
-+
-+@ApiStatus.Internal
-+public interface DataComponentPatchMapBridge {
-+
-+    PatchedDataComponentMap of(DataComponentMap map);
-+
-+    DataComponentMap empty();
-+
-+    DataComponentMap fromItem(Material material);
-+
-+    PatchedDataComponentMap fromItemAndMeta(Material material, ItemMeta meta);
-+
-+    ItemMeta toItemMeta(Material material, PatchedDataComponentMap map);
-+
-+    @ApiStatus.Internal
-+    final class Holder {
-+        private static final Optional<DataComponentPatchMapBridge> BRIDGE = Services.service(DataComponentPatchMapBridge.class);
-+
-+        public static DataComponentPatchMapBridge bridge() {
-+            return BRIDGE.orElseThrow();
-+        }
-+    }
-+}
-diff --git a/src/main/java/io/papermc/paper/datakey/map/PatchedDataComponentMap.java b/src/main/java/io/papermc/paper/datakey/map/PatchedDataComponentMap.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..8d5614f9760f0b553ac3c8f3eb477a6a23a561b8
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/map/PatchedDataComponentMap.java
-@@ -0,0 +1,57 @@
-+package io.papermc.paper.datakey.map;
-+
-+import io.papermc.paper.datakey.DataComponentType;
-+import io.papermc.paper.datakey.patch.DataKeyMapPatch;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
-+
-+public interface PatchedDataComponentMap extends DataComponentMap {
-+
-+    static @NotNull PatchedDataComponentMap empty() {
-+        return DataComponentPatchMapBridge.Holder.bridge().of(DataComponentPatchMapBridge.Holder.bridge().empty());
-+    }
-+
-+    static @NotNull PatchedDataComponentMap of(@NotNull final DataComponentMap map) {
-+        return DataComponentPatchMapBridge.Holder.bridge().of(map);
-+    }
-+
-+    /**
-+     * Sets this data component type to be present with a value in this map.
-+     * <p>
-+     * Note: supplying null will act similarly to {@link PatchedDataComponentMap#unset(DataComponentType)}
-+     *
-+     * @param type component type
-+     * @param value set value
-+     * @param <T> type
-+     */
-+    <T> void set(@NotNull DataComponentType.Valued<T> type, @Nullable T value);
-+
-+    /**
-+     * Sets this data component type to be present in this map.
-+     *
-+     * @param type type
-+     */
-+    void set(@NotNull DataComponentType.NonValued type);
-+
-+    /**
-+     * Unsets the value from this map.
-+     *
-+     * @param type data component type
-+     */
-+    void unset(@NotNull DataComponentType type);
-+
-+    /**
-+     * Resets the value of this component to be the default value as
-+     * supplied in the base map of this patched map.
-+     *
-+     * @param type data component type to reset
-+     */
-+    void reset(@NotNull DataComponentType type);
-+
-+    @NotNull DataKeyMapPatch asPatch();
-+
-+    void applyPatch(@NotNull DataKeyMapPatch patch);
-+
-+    @NotNull
-+    PatchedDataComponentMap copy();
-+}
-diff --git a/src/main/java/io/papermc/paper/datakey/map/PatchedDataComponentMapHolder.java b/src/main/java/io/papermc/paper/datakey/map/PatchedDataComponentMapHolder.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..daf706d7312670348c5030cb25dec89e4df59839
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/map/PatchedDataComponentMapHolder.java
-@@ -0,0 +1,35 @@
-+package io.papermc.paper.datakey.map;
-+
-+import io.papermc.paper.datakey.DataComponentType;
-+import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
-+
-+@ApiStatus.NonExtendable
-+@ApiStatus.Experimental
-+public interface PatchedDataComponentMapHolder {
-+
-+    @NotNull PatchedDataComponentMap components();
-+
-+    default boolean hasData(@NotNull final DataComponentType type) {
-+        return this.components().has(type);
-+    }
-+
-+    @Nullable
-+    default <T> T getData(@NotNull final DataComponentType.@NotNull Valued<T> type) {
-+        return this.components().get(type);
-+    }
-+
-+    default <T> void setData(final DataComponentType.@NotNull Valued<T> type, final @Nullable T value) {
-+        this.components().set(type, value);
-+    }
-+
-+    default void setData(final DataComponentType.@NotNull NonValued type) {
-+        this.components().set(type);
-+    }
-+
-+    default <T> void removeData(final @NotNull DataComponentType type) {
-+        this.components().unset(type);
-+    }
-+
-+}
-diff --git a/src/main/java/io/papermc/paper/datakey/package-info.java b/src/main/java/io/papermc/paper/datakey/package-info.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..c0e4e57a278a107c013f15acbc7a149bcc6ed932
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/package-info.java
-@@ -0,0 +1,5 @@
-+@DefaultQualifier(NonNull.class)
-+package io.papermc.paper.datakey;
-+
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.framework.qual.DefaultQualifier;
-diff --git a/src/main/java/io/papermc/paper/datakey/patch/DataKeyMapPatch.java b/src/main/java/io/papermc/paper/datakey/patch/DataKeyMapPatch.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..325a597b8d3e0c574b7bc80b7c9d0deeb3b28037
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/patch/DataKeyMapPatch.java
-@@ -0,0 +1,5 @@
-+package io.papermc.paper.datakey.patch;
-+
-+// TODO: Do we want this?
-+public interface DataKeyMapPatch {
-+}
-diff --git a/src/main/java/io/papermc/paper/datakey/types/BundleContents.java b/src/main/java/io/papermc/paper/datakey/types/BundleContents.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..99076b20d5b8c4a44bf5ba19c0b1b0497ddc551b
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/types/BundleContents.java
++++ b/src/main/java/io/papermc/paper/component/item/BundleContents.java
 @@ -0,0 +1,33 @@
-+package io.papermc.paper.datakey.types;
++package io.papermc.paper.component.item;
 +
 +import java.util.List;
 +import org.bukkit.inventory.ItemStack;
@@ -377,13 +178,13 @@ index 0000000000000000000000000000000000000000..99076b20d5b8c4a44bf5ba19c0b1b049
 +        @NonNull BundleContents build();
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/datakey/types/ChargedProjectiles.java b/src/main/java/io/papermc/paper/datakey/types/ChargedProjectiles.java
+diff --git a/src/main/java/io/papermc/paper/component/item/ChargedProjectiles.java b/src/main/java/io/papermc/paper/component/item/ChargedProjectiles.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d6a9fdf1660027d2090c14c676415733af6abf50
+index 0000000000000000000000000000000000000000..dcf759607fd49aefd2abce280e0f3f434e6d7993
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/types/ChargedProjectiles.java
++++ b/src/main/java/io/papermc/paper/component/item/ChargedProjectiles.java
 @@ -0,0 +1,33 @@
-+package io.papermc.paper.datakey.types;
++package io.papermc.paper.component.item;
 +
 +import java.util.List;
 +import org.bukkit.inventory.ItemStack;
@@ -416,13 +217,13 @@ index 0000000000000000000000000000000000000000..d6a9fdf1660027d2090c14c676415733
 +        @NonNull ChargedProjectiles build();
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridge.java b/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridge.java
+diff --git a/src/main/java/io/papermc/paper/component/item/ComponentTypesBridge.java b/src/main/java/io/papermc/paper/component/item/ComponentTypesBridge.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3877ff611ef9f6d5d979a45d2677ebbd1124fc79
+index 0000000000000000000000000000000000000000..0173820bd80354e4af215398db9308d38c6e59ab
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridge.java
++++ b/src/main/java/io/papermc/paper/component/item/ComponentTypesBridge.java
 @@ -0,0 +1,58 @@
-+package io.papermc.paper.datakey.types;
++package io.papermc.paper.component.item;
 +
 +import java.util.Optional;
 +import net.kyori.adventure.key.Key;
@@ -480,13 +281,13 @@ index 0000000000000000000000000000000000000000..3877ff611ef9f6d5d979a45d2677ebbd
 +        }
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/datakey/types/CustomModelData.java b/src/main/java/io/papermc/paper/datakey/types/CustomModelData.java
+diff --git a/src/main/java/io/papermc/paper/component/item/CustomModelData.java b/src/main/java/io/papermc/paper/component/item/CustomModelData.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c9afd9da363708dc0ca1e1746b3eb12f69a9844f
+index 0000000000000000000000000000000000000000..889b860be17a9690c0e9a7f383d55a8216a37000
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/types/CustomModelData.java
++++ b/src/main/java/io/papermc/paper/component/item/CustomModelData.java
 @@ -0,0 +1,26 @@
-+package io.papermc.paper.datakey.types;
++package io.papermc.paper.component.item;
 +
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
@@ -512,13 +313,13 @@ index 0000000000000000000000000000000000000000..c9afd9da363708dc0ca1e1746b3eb12f
 +        @NonNull CustomModelData build();
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/datakey/types/DyedItemColor.java b/src/main/java/io/papermc/paper/datakey/types/DyedItemColor.java
+diff --git a/src/main/java/io/papermc/paper/component/item/DyedItemColor.java b/src/main/java/io/papermc/paper/component/item/DyedItemColor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..37c7e5884303f38a04c63936b9512b99fe793555
+index 0000000000000000000000000000000000000000..825ec454ad412ecacce8da8c2a8dcc3590a0bb88
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/types/DyedItemColor.java
++++ b/src/main/java/io/papermc/paper/component/item/DyedItemColor.java
 @@ -0,0 +1,28 @@
-+package io.papermc.paper.datakey.types;
++package io.papermc.paper.component.item;
 +
 +import org.bukkit.Color;
 +import org.checkerframework.checker.nullness.qual.NonNull;
@@ -546,13 +347,13 @@ index 0000000000000000000000000000000000000000..37c7e5884303f38a04c63936b9512b99
 +        @NonNull DyedItemColor build();
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/datakey/types/FoodProperties.java b/src/main/java/io/papermc/paper/datakey/types/FoodProperties.java
+diff --git a/src/main/java/io/papermc/paper/component/item/FoodProperties.java b/src/main/java/io/papermc/paper/component/item/FoodProperties.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..560f18ee9ffe473101f9df56abda34a10fd42149
+index 0000000000000000000000000000000000000000..fd8a2c011c214fe667938c22fdbe0c54db676e6f
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/types/FoodProperties.java
++++ b/src/main/java/io/papermc/paper/component/item/FoodProperties.java
 @@ -0,0 +1,61 @@
-+package io.papermc.paper.datakey.types;
++package io.papermc.paper.component.item;
 +
 +import java.util.List;
 +import org.bukkit.potion.PotionEffect;
@@ -565,7 +366,7 @@ index 0000000000000000000000000000000000000000..560f18ee9ffe473101f9df56abda34a1
 +public interface FoodProperties {
 +
 +    @Contract(value = "-> new", pure = true)
-+    static FoodProperties.@NonNull Builder food() { // can't name it just "enchantments"
++    static FoodProperties.@NonNull Builder food() {
 +        return ComponentTypesBridge.Holder.bridge().food();
 +    }
 +
@@ -613,13 +414,13 @@ index 0000000000000000000000000000000000000000..560f18ee9ffe473101f9df56abda34a1
 +        @NonNull FoodProperties build();
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/datakey/types/ItemAttributeModifiers.java b/src/main/java/io/papermc/paper/datakey/types/ItemAttributeModifiers.java
+diff --git a/src/main/java/io/papermc/paper/component/item/ItemAttributeModifiers.java b/src/main/java/io/papermc/paper/component/item/ItemAttributeModifiers.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d13cfbe8002dbc8c09bf28f1a3ed5952696449df
+index 0000000000000000000000000000000000000000..ab1ed5e705256855dc35300161bc922f02e8227a
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/types/ItemAttributeModifiers.java
++++ b/src/main/java/io/papermc/paper/component/item/ItemAttributeModifiers.java
 @@ -0,0 +1,36 @@
-+package io.papermc.paper.datakey.types;
++package io.papermc.paper.component.item;
 +
 +import java.util.List;
 +import org.bukkit.attribute.Attribute;
@@ -655,13 +456,13 @@ index 0000000000000000000000000000000000000000..d13cfbe8002dbc8c09bf28f1a3ed5952
 +        @NonNull ItemAttributeModifiers build();
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/datakey/types/ItemEnchantments.java b/src/main/java/io/papermc/paper/datakey/types/ItemEnchantments.java
+diff --git a/src/main/java/io/papermc/paper/component/item/ItemEnchantments.java b/src/main/java/io/papermc/paper/component/item/ItemEnchantments.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..196fbd62c586a1f401e07e4ae66cccd90b354ae2
+index 0000000000000000000000000000000000000000..ee1b18269cbc1b71f753d9eea2dfe59ffbc69e2c
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/types/ItemEnchantments.java
++++ b/src/main/java/io/papermc/paper/component/item/ItemEnchantments.java
 @@ -0,0 +1,40 @@
-+package io.papermc.paper.datakey.types;
++package io.papermc.paper.component.item;
 +
 +import java.util.Map;
 +import org.bukkit.enchantments.Enchantment;
@@ -701,13 +502,13 @@ index 0000000000000000000000000000000000000000..196fbd62c586a1f401e07e4ae66cccd9
 +        @NonNull ItemEnchantments build();
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/datakey/types/ItemLore.java b/src/main/java/io/papermc/paper/datakey/types/ItemLore.java
+diff --git a/src/main/java/io/papermc/paper/component/item/ItemLore.java b/src/main/java/io/papermc/paper/component/item/ItemLore.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dadeae6d1424123604a09ffa6972209a400f09f0
+index 0000000000000000000000000000000000000000..0f9f645ad2fbffb26636dfb702295fb358ecb58a
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/types/ItemLore.java
++++ b/src/main/java/io/papermc/paper/component/item/ItemLore.java
 @@ -0,0 +1,40 @@
-+package io.papermc.paper.datakey.types;
++package io.papermc.paper.component.item;
 +
 +import java.util.List;
 +import net.kyori.adventure.text.Component;
@@ -747,13 +548,13 @@ index 0000000000000000000000000000000000000000..dadeae6d1424123604a09ffa6972209a
 +
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/datakey/types/MapDecorations.java b/src/main/java/io/papermc/paper/datakey/types/MapDecorations.java
+diff --git a/src/main/java/io/papermc/paper/component/item/MapDecorations.java b/src/main/java/io/papermc/paper/component/item/MapDecorations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fd0b29b48e99fc97cce5fd647786ee1cd8112444
+index 0000000000000000000000000000000000000000..d22f08c08c209facd31c14c44c52221f0105b35b
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/types/MapDecorations.java
++++ b/src/main/java/io/papermc/paper/component/item/MapDecorations.java
 @@ -0,0 +1,47 @@
-+package io.papermc.paper.datakey.types;
++package io.papermc.paper.component.item;
 +
 +import org.bukkit.map.MapCursor;
 +import org.checkerframework.checker.nullness.qual.NonNull;
@@ -800,13 +601,13 @@ index 0000000000000000000000000000000000000000..fd0b29b48e99fc97cce5fd647786ee1c
 +        @NonNull MapDecorations build();
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/datakey/types/MapID.java b/src/main/java/io/papermc/paper/datakey/types/MapID.java
+diff --git a/src/main/java/io/papermc/paper/component/item/MapID.java b/src/main/java/io/papermc/paper/component/item/MapID.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b1efd4e440e4b0294e2fb31af3db2b962a46df95
+index 0000000000000000000000000000000000000000..c5d7c7e23a60336869e4df0641e3915ed64eca17
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/types/MapID.java
++++ b/src/main/java/io/papermc/paper/component/item/MapID.java
 @@ -0,0 +1,27 @@
-+package io.papermc.paper.datakey.types;
++package io.papermc.paper.component.item;
 +
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
@@ -833,13 +634,13 @@ index 0000000000000000000000000000000000000000..b1efd4e440e4b0294e2fb31af3db2b96
 +
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/datakey/types/MapItemColor.java b/src/main/java/io/papermc/paper/datakey/types/MapItemColor.java
+diff --git a/src/main/java/io/papermc/paper/component/item/MapItemColor.java b/src/main/java/io/papermc/paper/component/item/MapItemColor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1f850d9554282e8676b360a3a5a673164f9975b0
+index 0000000000000000000000000000000000000000..09a16f4d9178b25012ee82ed4adba9c78682f0a9
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/types/MapItemColor.java
++++ b/src/main/java/io/papermc/paper/component/item/MapItemColor.java
 @@ -0,0 +1,28 @@
-+package io.papermc.paper.datakey.types;
++package io.papermc.paper.component.item;
 +
 +import org.bukkit.Color;
 +import org.checkerframework.checker.nullness.qual.NonNull;
@@ -867,25 +668,25 @@ index 0000000000000000000000000000000000000000..1f850d9554282e8676b360a3a5a67316
 +
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/datakey/types/MapPostProcessing.java b/src/main/java/io/papermc/paper/datakey/types/MapPostProcessing.java
+diff --git a/src/main/java/io/papermc/paper/component/item/MapPostProcessing.java b/src/main/java/io/papermc/paper/component/item/MapPostProcessing.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e803c5eadf8bd2db645c3bf0a7d8935ec9e5b53e
+index 0000000000000000000000000000000000000000..0b26ee6870600557b82a6ea37e2789dcb5e267c8
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/types/MapPostProcessing.java
++++ b/src/main/java/io/papermc/paper/component/item/MapPostProcessing.java
 @@ -0,0 +1,6 @@
-+package io.papermc.paper.datakey.types;
++package io.papermc.paper.component.item;
 +
 +public enum MapPostProcessing {
 +    LOCK,
 +    SCALE
 +}
-diff --git a/src/main/java/io/papermc/paper/datakey/types/PotDecorations.java b/src/main/java/io/papermc/paper/datakey/types/PotDecorations.java
+diff --git a/src/main/java/io/papermc/paper/component/item/PotDecorations.java b/src/main/java/io/papermc/paper/component/item/PotDecorations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..99e6b393f3ad076b7646e07ec03dfa97c7421277
+index 0000000000000000000000000000000000000000..e4e62f40d375a5933b35f64537291d13fb0c9533
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/types/PotDecorations.java
++++ b/src/main/java/io/papermc/paper/component/item/PotDecorations.java
 @@ -0,0 +1,43 @@
-+package io.papermc.paper.datakey.types;
++package io.papermc.paper.component.item;
 +
 +import org.bukkit.inventory.ItemType;
 +import org.checkerframework.checker.nullness.qual.NonNull;
@@ -928,13 +729,13 @@ index 0000000000000000000000000000000000000000..99e6b393f3ad076b7646e07ec03dfa97
 +        @NonNull PotDecorations build();
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/datakey/types/PotionContents.java b/src/main/java/io/papermc/paper/datakey/types/PotionContents.java
+diff --git a/src/main/java/io/papermc/paper/component/item/PotionContents.java b/src/main/java/io/papermc/paper/component/item/PotionContents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d2e149715b1f402f34213ba4427149bf9dff5505
+index 0000000000000000000000000000000000000000..2fea9c373b4a86f98510bcf85979e35e053e2423
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/types/PotionContents.java
++++ b/src/main/java/io/papermc/paper/component/item/PotionContents.java
 @@ -0,0 +1,45 @@
-+package io.papermc.paper.datakey.types;
++package io.papermc.paper.component.item;
 +
 +import java.util.List;
 +import org.bukkit.Color;
@@ -979,13 +780,13 @@ index 0000000000000000000000000000000000000000..d2e149715b1f402f34213ba4427149bf
 +        @NonNull PotionContents build();
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/datakey/types/SeededContainerLoot.java b/src/main/java/io/papermc/paper/datakey/types/SeededContainerLoot.java
+diff --git a/src/main/java/io/papermc/paper/component/item/SeededContainerLoot.java b/src/main/java/io/papermc/paper/component/item/SeededContainerLoot.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..90e8932dfb96650d3b30241a21aa6b15019449f9
+index 0000000000000000000000000000000000000000..eb89ff28b773f3fe24b0073513d5fc2abf4c370e
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/types/SeededContainerLoot.java
++++ b/src/main/java/io/papermc/paper/component/item/SeededContainerLoot.java
 @@ -0,0 +1,32 @@
-+package io.papermc.paper.datakey.types;
++package io.papermc.paper.component.item;
 +
 +import net.kyori.adventure.key.Key;
 +import org.checkerframework.checker.nullness.qual.NonNull;
@@ -1017,13 +818,13 @@ index 0000000000000000000000000000000000000000..90e8932dfb96650d3b30241a21aa6b15
 +        @NonNull SeededContainerLoot build();
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/datakey/types/ShownInTooltip.java b/src/main/java/io/papermc/paper/datakey/types/ShownInTooltip.java
+diff --git a/src/main/java/io/papermc/paper/component/item/ShownInTooltip.java b/src/main/java/io/papermc/paper/component/item/ShownInTooltip.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..90694aecb783918cfabfd3857fb5a2598a00b66c
+index 0000000000000000000000000000000000000000..79b17d6b4b76059abed8c86428a49252723d8657
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/types/ShownInTooltip.java
++++ b/src/main/java/io/papermc/paper/component/item/ShownInTooltip.java
 @@ -0,0 +1,21 @@
-+package io.papermc.paper.datakey.types;
++package io.papermc.paper.component.item;
 +
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.Contract;
@@ -1044,13 +845,13 @@ index 0000000000000000000000000000000000000000..90694aecb783918cfabfd3857fb5a259
 +        B showInTooltip(boolean showInTooltip);
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/datakey/types/SuspiciousStewEffects.java b/src/main/java/io/papermc/paper/datakey/types/SuspiciousStewEffects.java
+diff --git a/src/main/java/io/papermc/paper/component/item/SuspiciousStewEffects.java b/src/main/java/io/papermc/paper/component/item/SuspiciousStewEffects.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1f939e9ee90e03b72601002a9826e649390b14c3
+index 0000000000000000000000000000000000000000..c34a430f608e8b50da907831eede570373c568f0
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/types/SuspiciousStewEffects.java
++++ b/src/main/java/io/papermc/paper/component/item/SuspiciousStewEffects.java
 @@ -0,0 +1,35 @@
-+package io.papermc.paper.datakey.types;
++package io.papermc.paper.component.item;
 +
 +import io.papermc.paper.potion.SuspiciousEffectEntry;
 +import java.util.List;
@@ -1085,13 +886,13 @@ index 0000000000000000000000000000000000000000..1f939e9ee90e03b72601002a9826e649
 +
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/datakey/types/Unbreakable.java b/src/main/java/io/papermc/paper/datakey/types/Unbreakable.java
+diff --git a/src/main/java/io/papermc/paper/component/item/Unbreakable.java b/src/main/java/io/papermc/paper/component/item/Unbreakable.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..44691c89fc42ed3f148f42ade08567fb3f617fce
+index 0000000000000000000000000000000000000000..36e48ef697c001fff1697542eae6f79bd968d44a
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/datakey/types/Unbreakable.java
++++ b/src/main/java/io/papermc/paper/component/item/Unbreakable.java
 @@ -0,0 +1,27 @@
-+package io.papermc.paper.datakey.types;
++package io.papermc.paper.component.item;
 +
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
@@ -1118,14 +919,197 @@ index 0000000000000000000000000000000000000000..44691c89fc42ed3f148f42ade08567fb
 +
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/component/map/DataComponentMap.java b/src/main/java/io/papermc/paper/component/map/DataComponentMap.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9378fca2d5122328f3b985fcdb4e1ea67d38ed2c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/component/map/DataComponentMap.java
+@@ -0,0 +1,31 @@
++package io.papermc.paper.component.map;
++
++import io.papermc.paper.component.DataComponentType;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++import org.jetbrains.annotations.Unmodifiable;
++import java.util.Set;
++
++public interface DataComponentMap {
++
++    @Contract(value = "-> new", pure = true)
++    static @NotNull DataComponentMap empty() {
++        return DataComponentPatchMapBridge.Holder.bridge().empty();
++    }
++
++    @Contract(pure = true)
++    <T> @Nullable T get(DataComponentType.@NotNull Valued<T> type);
++
++    @Contract(value = "_, !null -> !null", pure = true)
++    default <T> @Nullable T getOrDefault(final DataComponentType.@NotNull Valued<? extends T> type, final @Nullable T fallback) {
++        final T object = this.get(type);
++        return object != null ? object : fallback;
++    }
++
++    @Contract(pure = true)
++    boolean has(@NotNull DataComponentType type);
++
++    @NotNull @Unmodifiable Set<DataComponentType> keySet();
++
++}
+diff --git a/src/main/java/io/papermc/paper/component/map/DataComponentPatchMapBridge.java b/src/main/java/io/papermc/paper/component/map/DataComponentPatchMapBridge.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c4b4f7d5d3c02d94733f78b3d15a7d8703db4d88
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/component/map/DataComponentPatchMapBridge.java
+@@ -0,0 +1,30 @@
++package io.papermc.paper.component.map;
++
++import java.util.Optional;
++import net.kyori.adventure.util.Services;
++import org.bukkit.Material;
++import org.bukkit.inventory.meta.ItemMeta;
++import org.jetbrains.annotations.ApiStatus;
++
++@ApiStatus.Internal
++public interface DataComponentPatchMapBridge {
++
++    PatchedDataComponentMap of(DataComponentMap map);
++
++    DataComponentMap empty();
++
++    DataComponentMap fromItem(Material material);
++
++    PatchedDataComponentMap fromItemAndMeta(Material material, ItemMeta meta);
++
++    ItemMeta toItemMeta(Material material, PatchedDataComponentMap map);
++
++    @ApiStatus.Internal
++    final class Holder {
++        private static final Optional<DataComponentPatchMapBridge> BRIDGE = Services.service(DataComponentPatchMapBridge.class);
++
++        public static DataComponentPatchMapBridge bridge() {
++            return BRIDGE.orElseThrow();
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/component/map/PatchedDataComponentMap.java b/src/main/java/io/papermc/paper/component/map/PatchedDataComponentMap.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..63db7226900ab69d87f49124ffa1f9695ca35e26
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/component/map/PatchedDataComponentMap.java
+@@ -0,0 +1,52 @@
++package io.papermc.paper.component.map;
++
++import io.papermc.paper.component.DataComponentType;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++public interface PatchedDataComponentMap extends DataComponentMap {
++
++    static @NotNull PatchedDataComponentMap empty() {
++        return DataComponentPatchMapBridge.Holder.bridge().of(DataComponentPatchMapBridge.Holder.bridge().empty());
++    }
++
++    static @NotNull PatchedDataComponentMap of(@NotNull final DataComponentMap map) {
++        return DataComponentPatchMapBridge.Holder.bridge().of(map);
++    }
++
++    /**
++     * Sets this data component type to be present with a value in this map.
++     * <p>
++     * Note: supplying null will act similarly to {@link PatchedDataComponentMap#unset(DataComponentType)}
++     *
++     * @param type component type
++     * @param value set value
++     * @param <T> type
++     */
++    <T> void set(@NotNull DataComponentType.Valued<T> type, @Nullable T value);
++
++    /**
++     * Sets this data component type to be present in this map.
++     *
++     * @param type type
++     */
++    void set(@NotNull DataComponentType.NonValued type);
++
++    /**
++     * Unsets the value from this map.
++     *
++     * @param type data component type
++     */
++    void unset(@NotNull DataComponentType type);
++
++    /**
++     * Resets the value of this component to be the default value as
++     * supplied in the base map of this patched map.
++     *
++     * @param type data component type to reset
++     */
++    void reset(@NotNull DataComponentType type);
++
++    @NotNull
++    PatchedDataComponentMap copy();
++}
+diff --git a/src/main/java/io/papermc/paper/component/map/PatchedDataComponentMapHolder.java b/src/main/java/io/papermc/paper/component/map/PatchedDataComponentMapHolder.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e7b2dae4d569089c43e0ce70b7b7c82bfff994f1
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/component/map/PatchedDataComponentMapHolder.java
+@@ -0,0 +1,35 @@
++package io.papermc.paper.component.map;
++
++import io.papermc.paper.component.DataComponentType;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++@ApiStatus.NonExtendable
++@ApiStatus.Experimental
++public interface PatchedDataComponentMapHolder {
++
++    @NotNull PatchedDataComponentMap components();
++
++    default boolean hasData(@NotNull final DataComponentType type) {
++        return this.components().has(type);
++    }
++
++    @Nullable
++    default <T> T getData(@NotNull final DataComponentType.@NotNull Valued<T> type) {
++        return this.components().get(type);
++    }
++
++    default <T> void setData(final DataComponentType.@NotNull Valued<T> type, final @Nullable T value) {
++        this.components().set(type, value);
++    }
++
++    default void setData(final DataComponentType.@NotNull NonValued type) {
++        this.components().set(type);
++    }
++
++    default <T> void removeData(final @NotNull DataComponentType type) {
++        this.components().unset(type);
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/component/package-info.java b/src/main/java/io/papermc/paper/component/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..37c9e2b084fe4c82242ae64569bb76beb6a88c09
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/component/package-info.java
+@@ -0,0 +1,5 @@
++@DefaultQualifier(NonNull.class)
++package io.papermc.paper.component;
++
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
 diff --git a/src/main/java/io/papermc/paper/registry/RegistryKey.java b/src/main/java/io/papermc/paper/registry/RegistryKey.java
-index 7b79bf33074355020e0b3b5ef40c7f2e6ba644b4..76c9b6fe88b8cb0dd1d1ca1f9d8134c0def608a7 100644
+index 7b79bf33074355020e0b3b5ef40c7f2e6ba644b4..5cf3aa4641822c91adfbd70a847ca529fb2752a5 100644
 --- a/src/main/java/io/papermc/paper/registry/RegistryKey.java
 +++ b/src/main/java/io/papermc/paper/registry/RegistryKey.java
 @@ -1,5 +1,6 @@
  package io.papermc.paper.registry;
  
-+import io.papermc.paper.datakey.DataComponentType;
++import io.papermc.paper.component.DataComponentType;
  import net.kyori.adventure.key.Keyed;
  import org.bukkit.Art;
  import org.bukkit.Fluid;
@@ -1149,7 +1133,7 @@ index 7509b61dfdc0a6675256970cb850b08f9e814580..35127ef25494f70a0d57ff8b8d0c3be5
      GRANITE(21091),
      POLISHED_GRANITE(5477),
 diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
-index 88bb3b9ae99fae97ec21972b75ec43cb6b7b22b5..628257e4609fc39895ac4cff974cc92be1ac33af 100644
+index 88bb3b9ae99fae97ec21972b75ec43cb6b7b22b5..ca3a0a268a80ea3d342ec1c2c9d8ae105d271c88 100644
 --- a/src/main/java/org/bukkit/Registry.java
 +++ b/src/main/java/org/bukkit/Registry.java
 @@ -343,6 +343,8 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
@@ -1157,7 +1141,7 @@ index 88bb3b9ae99fae97ec21972b75ec43cb6b7b22b5..628257e4609fc39895ac4cff974cc92b
          }
      };
 +
-+    Registry<io.papermc.paper.datakey.DataComponentType> DATA_COMPONENT_TYPE = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.DATA_COMPONENT_TYPE); // Paper
++    Registry<io.papermc.paper.component.DataComponentType> DATA_COMPONENT_TYPE = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.DATA_COMPONENT_TYPE); // Paper
      // Paper end
      /**
       * Get the object by its key.
@@ -1174,7 +1158,7 @@ index e20f64828548c647a29dad5a475f4596cad88cd8..80c10ab30ca6ea6e2a80a916d8a5831a
  
      /**
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index c64413a6740b604282984dea2a8430a6e7478d68..d9531cbe6005561bc802420405d5b2af51af002b 100644
+index c64413a6740b604282984dea2a8430a6e7478d68..8cc949629995c9093437a07671a02f131da0319b 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
 @@ -1,7 +1,6 @@
@@ -1190,12 +1174,12 @@ index c64413a6740b604282984dea2a8430a6e7478d68..d9531cbe6005561bc802420405d5b2af
   * returns false.</b>
   */
 -public class ItemStack implements Cloneable, ConfigurationSerializable, Translatable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem>, net.kyori.adventure.translation.Translatable { // Paper
-+public class ItemStack implements Cloneable, ConfigurationSerializable, Translatable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem>, net.kyori.adventure.translation.Translatable, io.papermc.paper.datakey.map.PatchedDataComponentMapHolder { // Paper
++public class ItemStack implements Cloneable, ConfigurationSerializable, Translatable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem>, net.kyori.adventure.translation.Translatable, io.papermc.paper.component.map.PatchedDataComponentMapHolder { // Paper
      private Material type = Material.AIR;
      private int amount = 0;
      private MaterialData data = null;
 -    private ItemMeta meta;
-+    private io.papermc.paper.datakey.map.PatchedDataComponentMap dataKeyMap; // Paper
++    private io.papermc.paper.component.map.PatchedDataComponentMap dataKeyMap; // Paper
  
      @Utility
      protected ItemStack() {}
@@ -1203,7 +1187,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..d9531cbe6005561bc802420405d5b2af
          Preconditions.checkArgument(type != null, "Material cannot be null");
          this.type = type;
          this.amount = amount;
-+        this.dataKeyMap = io.papermc.paper.datakey.map.DataComponentPatchMapBridge.Holder.bridge().of(io.papermc.paper.datakey.map.DataComponentPatchMapBridge.Holder.bridge().fromItem(type)); // Paper
++        this.dataKeyMap = io.papermc.paper.component.map.DataComponentPatchMapBridge.Holder.bridge().of(io.papermc.paper.component.map.DataComponentPatchMapBridge.Holder.bridge().fromItem(type)); // Paper
          if (damage != 0) {
              setDurability(damage);
          }
@@ -1211,7 +1195,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..d9531cbe6005561bc802420405d5b2af
          Preconditions.checkArgument(stack != null, "Cannot copy null stack");
          this.type = stack.getType();
          this.amount = stack.getAmount();
-+        this.dataKeyMap = io.papermc.paper.datakey.map.DataComponentPatchMapBridge.Holder.bridge().of(io.papermc.paper.datakey.map.DataComponentPatchMapBridge.Holder.bridge().fromItem(type)); // Paper
++        this.dataKeyMap = io.papermc.paper.component.map.DataComponentPatchMapBridge.Holder.bridge().of(io.papermc.paper.component.map.DataComponentPatchMapBridge.Holder.bridge().fromItem(type)); // Paper
          if (this.type.isLegacy()) {
              this.data = stack.getData();
          }
@@ -1219,7 +1203,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..d9531cbe6005561bc802420405d5b2af
      @Deprecated // Paper
      public void setType(@NotNull Material type) {
          Preconditions.checkArgument(type != null, "Material cannot be null");
-+        this.dataKeyMap = io.papermc.paper.datakey.map.DataComponentPatchMapBridge.Holder.bridge().fromItemAndMeta(type, Bukkit.getItemFactory().asMetaFor(this.getItemMeta(), type)); // Paper - update type first too, we need the old context to resolve the meta from the type
++        this.dataKeyMap = io.papermc.paper.component.map.DataComponentPatchMapBridge.Holder.bridge().fromItemAndMeta(type, Bukkit.getItemFactory().asMetaFor(this.getItemMeta(), type)); // Paper - update type first too, we need the old context to resolve the meta from the type
          this.type = type;
 -        if (this.meta != null) {
 -            this.meta = Bukkit.getItemFactory().asMetaFor(meta, type);
@@ -1326,7 +1310,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..d9531cbe6005561bc802420405d5b2af
      @UndefinedNullability // Paper
      public ItemMeta getItemMeta() {
 -        return this.meta == null ? Bukkit.getItemFactory().getItemMeta(this.type) : this.meta.clone();
-+        return io.papermc.paper.datakey.map.DataComponentPatchMapBridge.Holder.bridge().toItemMeta(this.type, this.components());
++        return io.papermc.paper.component.map.DataComponentPatchMapBridge.Holder.bridge().toItemMeta(this.type, this.components());
      }
  
      /**
@@ -1344,7 +1328,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..d9531cbe6005561bc802420405d5b2af
      private boolean setItemMeta0(@Nullable ItemMeta itemMeta, @NotNull Material material) {
          if (itemMeta == null) {
 -            this.meta = null;
-+            this.dataKeyMap = io.papermc.paper.datakey.map.PatchedDataComponentMap.of(io.papermc.paper.datakey.map.DataComponentPatchMapBridge.Holder.bridge().fromItem(material));
++            this.dataKeyMap = io.papermc.paper.component.map.PatchedDataComponentMap.of(io.papermc.paper.component.map.DataComponentPatchMapBridge.Holder.bridge().fromItem(material));
              return true;
          }
          if (!Bukkit.getItemFactory().isApplicable(itemMeta, material)) {
@@ -1360,7 +1344,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..d9531cbe6005561bc802420405d5b2af
 -        if (this.meta == itemMeta) {
 -            this.meta = itemMeta.clone();
 -        }
-+        this.dataKeyMap = io.papermc.paper.datakey.map.DataComponentPatchMapBridge.Holder.bridge().fromItemAndMeta(material, itemMeta);
++        this.dataKeyMap = io.papermc.paper.component.map.DataComponentPatchMapBridge.Holder.bridge().fromItemAndMeta(material, itemMeta);
  
          return true;
      }
@@ -1371,7 +1355,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..d9531cbe6005561bc802420405d5b2af
 +    // Paper start
 +    @NotNull
 +    @Override
-+    public io.papermc.paper.datakey.map.PatchedDataComponentMap components() {
++    public io.papermc.paper.component.map.PatchedDataComponentMap components() {
 +        return this.dataKeyMap;
 +    }
 +    // Paper end
