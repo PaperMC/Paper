@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
 Date: Sun, 28 Apr 2024 19:53:01 -0400
-Subject: [PATCH] WIP DataKey API
+Subject: [PATCH] WIP DataComponent API
 
 
 diff --git a/src/main/java/io/papermc/paper/datakey/ComponentAdapter.java b/src/main/java/io/papermc/paper/datakey/ComponentAdapter.java
@@ -37,28 +37,46 @@ index 0000000000000000000000000000000000000000..264a8a14d2a778ef4eaa5937342b5978
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/ComponentAdapters.java b/src/main/java/io/papermc/paper/datakey/ComponentAdapters.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4f3534f76cf6722c8a13076f26b11b1ff2a5aa28
+index 0000000000000000000000000000000000000000..b3bbd86e9aa7fa30ec5bfc25c195522fc7caf060
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/ComponentAdapters.java
-@@ -0,0 +1,80 @@
+@@ -0,0 +1,131 @@
 +package io.papermc.paper.datakey;
 +
 +import io.papermc.paper.adventure.PaperAdventure;
++import io.papermc.paper.datakey.types.PaperBundleContents;
 +import io.papermc.paper.datakey.types.PaperChargedProjectiles;
++import io.papermc.paper.datakey.types.PaperCustomModelData;
++import io.papermc.paper.datakey.types.PaperDyedItemColor;
++import io.papermc.paper.datakey.types.PaperFoodProperties;
 +import io.papermc.paper.datakey.types.PaperItemAttributeModifiers;
 +import io.papermc.paper.datakey.types.PaperItemEnchantments;
 +import io.papermc.paper.datakey.types.PaperItemLore;
++import io.papermc.paper.datakey.types.PaperMapDecorations;
++import io.papermc.paper.datakey.types.PaperMapID;
++import io.papermc.paper.datakey.types.PaperMapItemColor;
 +import io.papermc.paper.datakey.types.PaperPotDecorations;
++import io.papermc.paper.datakey.types.PaperPotionContents;
++import io.papermc.paper.datakey.types.PaperSeededContainerLoot;
++import io.papermc.paper.datakey.types.PaperSuspiciousStewEffects;
 +import io.papermc.paper.datakey.types.PaperUnbreakable;
++import java.util.ArrayList;
++import java.util.Collections;
 +import java.util.HashMap;
++import java.util.List;
 +import java.util.Map;
 +import java.util.function.Function;
++import net.kyori.adventure.key.Key;
 +import net.minecraft.core.component.DataComponentType;
 +import net.minecraft.core.component.DataComponents;
 +import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.resources.ResourceKey;
++import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.util.Unit;
 +import net.minecraft.world.item.Rarity;
++import net.minecraft.world.item.component.MapPostProcessing;
++import org.bukkit.DyeColor;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.bukkit.inventory.ItemRarity;
 +import org.checkerframework.checker.nullness.qual.NonNull;
@@ -67,7 +85,7 @@ index 0000000000000000000000000000000000000000..4f3534f76cf6722c8a13076f26b11b1f
 +@DefaultQualifier(NonNull.class)
 +public final class ComponentAdapters {
 +
-+    private static final Function<Unit, Void> UNIT_TO_API_CONVERTER = $ -> {
++    static final Function<Unit, Void> UNIT_TO_API_CONVERTER = $ -> {
 +        throw new UnsupportedOperationException("Cannot convert the Unit type to an API value");
 +    };
 +
@@ -95,6 +113,39 @@ index 0000000000000000000000000000000000000000..4f3534f76cf6722c8a13076f26b11b1f
 +        register(DataComponents.ENCHANTMENTS, PaperItemEnchantments::new);
 +        register(DataComponents.STORED_ENCHANTMENTS, PaperItemEnchantments::new);
 +        register(DataComponents.ATTRIBUTE_MODIFIERS, PaperItemAttributeModifiers::new);
++        register(DataComponents.FOOD, PaperFoodProperties::new);
++        register(DataComponents.MAP_POST_PROCESSING, nms -> MapPostProcessing.valueOf(nms.name()), api -> MapPostProcessing.valueOf(api.name()));
++        register(DataComponents.DYED_COLOR, PaperDyedItemColor::new);
++        register(DataComponents.BUNDLE_CONTENTS, PaperBundleContents::new);
++        register(DataComponents.MAP_COLOR, PaperMapItemColor::new);
++        register(DataComponents.CUSTOM_MODEL_DATA, PaperCustomModelData::new);
++        register(DataComponents.SUSPICIOUS_STEW_EFFECTS, PaperSuspiciousStewEffects::new);
++        register(DataComponents.POTION_CONTENTS, PaperPotionContents::new);
++        register(DataComponents.MAP_ID, PaperMapID::new);
++        register(DataComponents.MAP_DECORATIONS, PaperMapDecorations::new);
++        register(DataComponents.CONTAINER_LOOT, PaperSeededContainerLoot::new);
++        register(DataComponents.RECIPES, nms -> {
++            List<Key> api = new ArrayList<>(nms.size());
++            for (ResourceLocation location : nms) {
++                api.add(CraftNamespacedKey.fromMinecraft(location));
++            }
++
++            return Collections.unmodifiableList(api);
++        }, api -> {
++            List<ResourceLocation> nms = new ArrayList<>(api.size());
++            for (Key key : api) {
++                nms.add(new ResourceLocation(key.namespace(), key.value()));
++            }
++
++            return Collections.unmodifiableList(nms);
++        });
++        register(DataComponents.BASE_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
++        // TODO: REMOVE THIS... we want to build the PR... so lets just make things UNTYPED!
++        for (Map.Entry<ResourceKey<DataComponentType<?>>, DataComponentType<?>> componentType : BuiltInRegistries.DATA_COMPONENT_TYPE.entrySet()) {
++            if (!ADAPTERS.containsKey(componentType.getKey())) {
++                registerUntyped((DataComponentType<Unit>) componentType.getValue());
++            }
++        }
 +    }
 +
 +    public static void registerUntyped(final DataComponentType<Unit> type) {
@@ -436,12 +487,13 @@ index 0000000000000000000000000000000000000000..e6ebc39e96c9eb6f9869cfff258d4e25
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridgesImpl.java b/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridgesImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c32cd7bf77028a612dce8ab7d372374fa9f8eb78
+index 0000000000000000000000000000000000000000..1f80dcaefb2934819e9f1230dbbc239be2fe24d6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/ComponentTypesBridgesImpl.java
-@@ -0,0 +1,97 @@
+@@ -0,0 +1,98 @@
 +package io.papermc.paper.datakey.types;
 +
++import net.kyori.adventure.key.Key;
 +import org.bukkit.map.MapCursor;
 +import org.bukkit.potion.PotionEffect;
 +
@@ -469,7 +521,7 @@ index 0000000000000000000000000000000000000000..c32cd7bf77028a612dce8ab7d372374f
 +
 +    @Override
 +    public ItemEnchantments.Builder enchantments() {
-+           return new PaperItemEnchantments.BuilderImpl();
++        return new PaperItemEnchantments.BuilderImpl();
 +    }
 +
 +    @Override
@@ -533,30 +585,31 @@ index 0000000000000000000000000000000000000000..c32cd7bf77028a612dce8ab7d372374f
 +    }
 +
 +    @Override
-+    public SeededContainerLoot.Builder seededContainerLoot() {
++    public SeededContainerLoot.Builder seededContainerLoot(final Key lootTableKey) {
 +        return new PaperSeededContainerLoot.BuilderImpl();
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/PaperBundleContents.java b/src/main/java/io/papermc/paper/datakey/types/PaperBundleContents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c0e9f1df6c9cb28796fe794988b06b01e4ea335a
+index 0000000000000000000000000000000000000000..bf28f31d6c8a7ee3ca009ce7e521967f61208bc4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/PaperBundleContents.java
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,57 @@
 +package io.papermc.paper.datakey.types;
 +
++import java.util.ArrayList;
++import java.util.Collections;
++import java.util.List;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.bukkit.inventory.ItemStack;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.jetbrains.annotations.NotNull;
-+import java.util.ArrayList;
-+import java.util.Collections;
-+import java.util.List;
 +
 +@DefaultQualifier(NonNull.class)
-+public record PaperBundleContents(net.minecraft.world.item.component.BundleContents impl) implements BundleContents, Handleable<net.minecraft.world.item.component.BundleContents> {
++public record PaperBundleContents(
++    net.minecraft.world.item.component.BundleContents impl
++) implements BundleContents, Handleable<net.minecraft.world.item.component.BundleContents> {
 +
 +    @Override
 +    public net.minecraft.world.item.component.BundleContents getHandle() {
@@ -564,11 +617,12 @@ index 0000000000000000000000000000000000000000..c0e9f1df6c9cb28796fe794988b06b01
 +    }
 +
 +    @Override
-+    public @NotNull List<ItemStack> getItems() {
++    public List<ItemStack> getItems() {
++        // TODO anyway to make this lazy? the nms itemsCopy returns an Iterable not a list so its a tad annoying. Can just change the nms impl maybe?
 +        final Iterable<net.minecraft.world.item.ItemStack> nmsItemStacks = this.impl.itemsCopy(); // gets copies of the stacks
 +        final List<ItemStack> apiItemStacks = new ArrayList<>(this.impl.size());
 +        for (final net.minecraft.world.item.ItemStack nmsItemStack : nmsItemStacks) {
-+            apiItemStacks.add(CraftItemStack.asCraftMirror(nmsItemStack.copy()));
++            apiItemStacks.add(CraftItemStack.asCraftMirror(nmsItemStack)); // already copied above
 +        }
 +
 +        return Collections.unmodifiableList(apiItemStacks);
@@ -586,7 +640,7 @@ index 0000000000000000000000000000000000000000..c0e9f1df6c9cb28796fe794988b06b01
 +
 +        @Override
 +        public Builder addAll(final List<ItemStack> itemStack) {
-+            for (ItemStack item : itemStack) {
++            for (final ItemStack item : itemStack) {
 +                this.items.add(CraftItemStack.asNMSCopy(item));
 +            }
 +            return this;
@@ -597,33 +651,29 @@ index 0000000000000000000000000000000000000000..c0e9f1df6c9cb28796fe794988b06b01
 +            return new PaperBundleContents(new net.minecraft.world.item.component.BundleContents(this.items));
 +        }
 +    }
-+ }
++}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/PaperChargedProjectiles.java b/src/main/java/io/papermc/paper/datakey/types/PaperChargedProjectiles.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c099da3817c20fd7b355c77e8fdbf9aa4f261518
+index 0000000000000000000000000000000000000000..791cfb71a6ee82d31f8bd2b3284bed2a94a0769b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/PaperChargedProjectiles.java
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,56 @@
 +package io.papermc.paper.datakey.types;
 +
++import com.google.common.collect.Lists;
 +import java.util.ArrayList;
 +import java.util.Collections;
 +import java.util.List;
-+import java.util.Optional;
-+import net.minecraft.world.item.Item;
-+import org.bukkit.Material;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
-+import org.bukkit.craftbukkit.inventory.CraftItemType;
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.bukkit.inventory.ItemStack;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
-+import org.jetbrains.annotations.UnmodifiableView;
 +
 +@DefaultQualifier(NonNull.class)
-+public record PaperChargedProjectiles(net.minecraft.world.item.component.ChargedProjectiles impl) implements ChargedProjectiles, Handleable<net.minecraft.world.item.component.ChargedProjectiles> {
++public record PaperChargedProjectiles(
++    net.minecraft.world.item.component.ChargedProjectiles impl
++) implements ChargedProjectiles, Handleable<net.minecraft.world.item.component.ChargedProjectiles> {
 +
 +    @Override
 +    public net.minecraft.world.item.component.ChargedProjectiles getHandle() {
@@ -631,14 +681,13 @@ index 0000000000000000000000000000000000000000..c099da3817c20fd7b355c77e8fdbf9aa
 +    }
 +
 +    @Override
-+    public @NotNull List<ItemStack> getItems() {
-+        final List<net.minecraft.world.item.ItemStack> nmsItemStacks = this.impl.getItems(); // gets copies of the stacks
-+        final List<ItemStack> apiItemStacks = new ArrayList<>(nmsItemStacks.size());
-+        for (final net.minecraft.world.item.ItemStack nmsItemStack : nmsItemStacks) {
-+            apiItemStacks.add(CraftItemStack.asCraftMirror(nmsItemStack.copy()));
-+        }
-+
-+        return Collections.unmodifiableList(apiItemStacks);
++    public List<ItemStack> getItems() {
++        return Collections.unmodifiableList(
++            Lists.transform(
++                this.impl.getItems(), // this already copies the itemstacks to maintain immutability
++                CraftItemStack::asCraftMirror
++            )
++        );
 +    }
 +
 +    static final class BuilderImpl implements Builder {
@@ -653,30 +702,29 @@ index 0000000000000000000000000000000000000000..c099da3817c20fd7b355c77e8fdbf9aa
 +
 +        @Override
 +        public Builder addAll(final List<ItemStack> itemStack) {
-+            for (ItemStack item : itemStack) {
++            for (final ItemStack item : itemStack) {
 +                this.items.add(CraftItemStack.asNMSCopy(item));
 +            }
 +            return this;
 +        }
 +
 +        @Override
-+        public @NotNull ChargedProjectiles build() {
++        public ChargedProjectiles build() {
 +            return new PaperChargedProjectiles(net.minecraft.world.item.component.ChargedProjectiles.of(this.items));
 +        }
 +    }
-+ }
++}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/PaperCustomModelData.java b/src/main/java/io/papermc/paper/datakey/types/PaperCustomModelData.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b6fcce7469a78f1e3be1c7a63195ac6a960b82e0
+index 0000000000000000000000000000000000000000..7fa092ea11be29631ef96a21c5840cdf74b36228
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/PaperCustomModelData.java
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,37 @@
 +package io.papermc.paper.datakey.types;
 +
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.jetbrains.annotations.NotNull;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperCustomModelData(
@@ -698,30 +746,29 @@ index 0000000000000000000000000000000000000000..b6fcce7469a78f1e3be1c7a63195ac6a
 +        private int data;
 +
 +        @Override
-+        public @NotNull Builder customModelData(final int data) {
++        public Builder customModelData(final int data) {
 +            this.data = data;
 +            return this;
 +        }
 +
 +        @Override
-+        public @NotNull CustomModelData build() {
++        public CustomModelData build() {
 +            return new PaperCustomModelData(new net.minecraft.world.item.component.CustomModelData(this.data));
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/PaperDyedItemColor.java b/src/main/java/io/papermc/paper/datakey/types/PaperDyedItemColor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c846fbca52f8465d2658618b27ede1521e2749e9
+index 0000000000000000000000000000000000000000..ac8a572978f00187ad08b4d9f16ab707692db1a8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/PaperDyedItemColor.java
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,55 @@
 +package io.papermc.paper.datakey.types;
 +
 +import org.bukkit.Color;
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.jetbrains.annotations.NotNull;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperDyedItemColor(
@@ -734,7 +781,7 @@ index 0000000000000000000000000000000000000000..c846fbca52f8465d2658618b27ede152
 +    }
 +
 +    @Override
-+    public @NotNull Color color() {
++    public Color color() {
 +        return Color.fromRGB(this.impl.rgb());
 +    }
 +
@@ -754,7 +801,7 @@ index 0000000000000000000000000000000000000000..c846fbca52f8465d2658618b27ede152
 +        private boolean showInToolTip = true;
 +
 +        @Override
-+        public @NotNull Builder color(@NotNull final Color color) {
++        public Builder color(final Color color) {
 +            this.color = color;
 +            return this;
 +        }
@@ -766,37 +813,33 @@ index 0000000000000000000000000000000000000000..c846fbca52f8465d2658618b27ede152
 +        }
 +
 +        @Override
-+        public @NotNull DyedItemColor build() {
++        public DyedItemColor build() {
 +            return new PaperDyedItemColor(new net.minecraft.world.item.component.DyedItemColor(this.color.asRGB(), this.showInToolTip));
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/PaperFoodProperties.java b/src/main/java/io/papermc/paper/datakey/types/PaperFoodProperties.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b695b80c81eb57369713a2b17c6ed0bd95564f1f
+index 0000000000000000000000000000000000000000..33234042550eb3746f24fba45f5979529a38330e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/PaperFoodProperties.java
-@@ -0,0 +1,123 @@
+@@ -0,0 +1,121 @@
 +package io.papermc.paper.datakey.types;
 +
 +import java.util.ArrayList;
 +import java.util.Collections;
 +import java.util.List;
-+import java.util.Map;
-+import org.bukkit.craftbukkit.CraftEffect;
-+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 +import org.bukkit.craftbukkit.util.Handleable;
-+import org.bukkit.enchantments.Enchantment;
-+import org.bukkit.inventory.ItemStack;
 +import org.bukkit.potion.PotionEffect;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Unmodifiable;
 +
 +@DefaultQualifier(NonNull.class)
-+public record PaperFoodProperties(net.minecraft.world.food.FoodProperties impl) implements FoodProperties, Handleable<net.minecraft.world.food.FoodProperties> {
++public record PaperFoodProperties(
++    net.minecraft.world.food.FoodProperties impl
++) implements FoodProperties, Handleable<net.minecraft.world.food.FoodProperties> {
 +
 +    @Override
 +    public int nutrition() {
@@ -819,7 +862,7 @@ index 0000000000000000000000000000000000000000..b695b80c81eb57369713a2b17c6ed0bd
 +    }
 +
 +    @Override
-+    public @Unmodifiable @NotNull List<PossibleEffect> effects() {
++    public @Unmodifiable List<PossibleEffect> effects() {
 +        final List<net.minecraft.world.food.FoodProperties.PossibleEffect> nms = this.impl.effects();
 +        final List<PossibleEffect> api = new ArrayList<>(nms.size());
 +        for (final net.minecraft.world.food.FoodProperties.PossibleEffect effect : nms) {
@@ -834,19 +877,21 @@ index 0000000000000000000000000000000000000000..b695b80c81eb57369713a2b17c6ed0bd
 +        return this.impl;
 +    }
 +
-+    record PossibleEffectImpl(net.minecraft.world.food.FoodProperties.PossibleEffect possibleEffect) implements PossibleEffect, Handleable<net.minecraft.world.food.FoodProperties.PossibleEffect> {
++    record PossibleEffectImpl(
++        net.minecraft.world.food.FoodProperties.PossibleEffect possibleEffect
++    ) implements PossibleEffect, Handleable<net.minecraft.world.food.FoodProperties.PossibleEffect> {
 +
-+        public static PossibleEffect toApi(PotionEffect effect, float probability) {
++        public static PossibleEffect toApi(final PotionEffect effect, final float probability) {
 +            return new PossibleEffectImpl(new net.minecraft.world.food.FoodProperties.PossibleEffect(CraftPotionUtil.fromBukkit(effect), probability));
 +        }
 +
 +        @Override
-+        public @NotNull PotionEffect effect() {
++        public PotionEffect effect() {
 +            return CraftPotionUtil.toBukkit(this.possibleEffect.effect());
 +        }
 +
 +        @Override
-+        public @NotNull float probability() {
++        public float probability() {
 +            return this.possibleEffect.probability();
 +        }
 +
@@ -865,44 +910,44 @@ index 0000000000000000000000000000000000000000..b695b80c81eb57369713a2b17c6ed0bd
 +        private int nutrition = 0;
 +
 +        @Override
-+        public @NotNull Builder canAlwaysEat(final boolean canAlwaysEat) {
++        public Builder canAlwaysEat(final boolean canAlwaysEat) {
 +            this.canAlwaysEat = canAlwaysEat;
 +            return this;
 +        }
 +
 +        @Override
-+        public @NotNull Builder eatSeconds(final float eatSeconds) {
++        public Builder eatSeconds(final float eatSeconds) {
 +            this.eatSeconds = eatSeconds;
 +            return this;
 +        }
 +
 +        @Override
-+        public @NotNull Builder saturation(final float saturation) {
++        public Builder saturation(final float saturation) {
 +            this.saturation = saturation;
 +            return this;
 +        }
 +
 +        @Override
-+        public @NotNull Builder nutrition(final int nutrition) {
++        public Builder nutrition(final int nutrition) {
 +            this.nutrition = nutrition;
 +            return this;
 +        }
 +
 +        @Override
-+        public @NotNull Builder addEffect(@NotNull final PossibleEffect effect) {
++        public Builder addEffect(final PossibleEffect effect) {
 +            this.possibleEffects.add(((PossibleEffectImpl) effect).possibleEffect());
 +            return this;
 +        }
 +
 +        @Override
-+        public @NotNull FoodProperties build() {
++        public FoodProperties build() {
 +            return new PaperFoodProperties(new net.minecraft.world.food.FoodProperties(this.nutrition, this.saturation, this.canAlwaysEat, this.eatSeconds, this.possibleEffects));
 +        }
 +    }
-+ }
++}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/PaperItemAttributeModifiers.java b/src/main/java/io/papermc/paper/datakey/types/PaperItemAttributeModifiers.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cea05ee86cfc8e833226983cf458c19751f47385
+index 0000000000000000000000000000000000000000..80fecbc1c612f9df2746e0015022fa5669f5f349
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/PaperItemAttributeModifiers.java
 @@ -0,0 +1,89 @@
@@ -932,7 +977,7 @@ index 0000000000000000000000000000000000000000..cea05ee86cfc8e833226983cf458c197
 +        this(itemModifiers, convert(itemModifiers));
 +    }
 +
-+    private static List<Entry> convert(net.minecraft.world.item.component.ItemAttributeModifiers nmsModifiers) {
++    private static List<Entry> convert(final net.minecraft.world.item.component.ItemAttributeModifiers nmsModifiers) {
 +        return Collections.unmodifiableList(Lists.transform(nmsModifiers.modifiers(), nms -> {
 +            return new PaperEntry(
 +                CraftAttribute.minecraftHolderToBukkit(nms.attribute()),
@@ -962,8 +1007,8 @@ index 0000000000000000000000000000000000000000..cea05ee86cfc8e833226983cf458c197
 +
 +    static final class BuilderImpl implements ItemAttributeModifiers.Builder {
 +
-+        private boolean showInTooltip = net.minecraft.world.item.component.ItemAttributeModifiers.EMPTY.showInTooltip();
 +        private final List<net.minecraft.world.item.component.ItemAttributeModifiers.Entry> entries = new ArrayList<>();
++        private boolean showInTooltip = net.minecraft.world.item.component.ItemAttributeModifiers.EMPTY.showInTooltip();
 +
 +        @Override
 +        public Builder addModifier(final Attribute attribute, final AttributeModifier attributeModifier, final EquipmentSlotGroup slot) {
@@ -997,10 +1042,10 @@ index 0000000000000000000000000000000000000000..cea05ee86cfc8e833226983cf458c197
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/PaperItemEnchantments.java b/src/main/java/io/papermc/paper/datakey/types/PaperItemEnchantments.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..85b4d15588bd50950048edd3d03f2afbaf0e63a2
+index 0000000000000000000000000000000000000000..e14b02cf9e81a260d79c52f1f154e708f2cad374
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/PaperItemEnchantments.java
-@@ -0,0 +1,91 @@
+@@ -0,0 +1,90 @@
 +package io.papermc.paper.datakey.types;
 +
 +import java.util.Collections;
@@ -1012,7 +1057,6 @@ index 0000000000000000000000000000000000000000..85b4d15588bd50950048edd3d03f2afb
 +import org.bukkit.enchantments.Enchantment;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.jetbrains.annotations.NotNull;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperItemEnchantments(
@@ -1156,22 +1200,20 @@ index 0000000000000000000000000000000000000000..7f4af0bbe6c2921d943234a910831d7e
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/PaperMapDecorations.java b/src/main/java/io/papermc/paper/datakey/types/PaperMapDecorations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..518b2b4acda353de40aea683d5ad8352d8e0ce8b
+index 0000000000000000000000000000000000000000..05d83abd563e58f4f4a19283de566bc605abb300
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/PaperMapDecorations.java
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,74 @@
 +package io.papermc.paper.datakey.types;
 +
 +import java.util.HashMap;
-+import java.util.Locale;
 +import java.util.Map;
 +import org.bukkit.craftbukkit.map.CraftMapCursor;
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.bukkit.map.MapCursor;
 +import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperMapDecorations(
@@ -1184,8 +1226,8 @@ index 0000000000000000000000000000000000000000..518b2b4acda353de40aea683d5ad8352
 +    }
 +
 +    @Override
-+    public @Nullable DecorationEntry getDecoration(@NotNull final String id) {
-+        net.minecraft.world.item.component.MapDecorations.Entry decoration = this.impl.decorations().get(id);
++    public @Nullable DecorationEntry getDecoration(final String id) {
++        final net.minecraft.world.item.component.MapDecorations.Entry decoration = this.impl.decorations().get(id);
 +        if (decoration == null) {
 +            return null;
 +        }
@@ -1195,12 +1237,12 @@ index 0000000000000000000000000000000000000000..518b2b4acda353de40aea683d5ad8352
 +
 +    public record PaperDecorationEntry(net.minecraft.world.item.component.MapDecorations.Entry entry) implements DecorationEntry {
 +
-+        public static DecorationEntry toApi(MapCursor.Type type, double x, double z, float rotation) {
++        public static DecorationEntry toApi(final MapCursor.Type type, final double x, final double z, final float rotation) {
 +            return new PaperDecorationEntry(new net.minecraft.world.item.component.MapDecorations.Entry(CraftMapCursor.CraftType.bukkitToMinecraftHolder(type), x, z, rotation));
 +        }
 +
 +        @Override
-+        public @NotNull MapCursor.Type type() {
++        public MapCursor.Type type() {
 +            return CraftMapCursor.CraftType.minecraftHolderToBukkit(this.entry.type());
 +        }
 +
@@ -1225,7 +1267,7 @@ index 0000000000000000000000000000000000000000..518b2b4acda353de40aea683d5ad8352
 +        private final Map<String, net.minecraft.world.item.component.MapDecorations.Entry> effects = new HashMap<>();
 +
 +        @Override
-+        public @NotNull MapDecorations.Builder register(final String id, @NotNull final DecorationEntry entry) {
++        public MapDecorations.Builder register(final String id, final DecorationEntry entry) {
 +            this.effects.put(id, new net.minecraft.world.item.component.MapDecorations.Entry(CraftMapCursor.CraftType.bukkitToMinecraftHolder(entry.type()), entry.x(), entry.z(), entry.rotation()));
 +            return this;
 +        }
@@ -1235,7 +1277,7 @@ index 0000000000000000000000000000000000000000..518b2b4acda353de40aea683d5ad8352
 +            return new PaperMapDecorations(new net.minecraft.world.item.component.MapDecorations(this.effects));
 +        }
 +    }
-+ }
++}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/PaperMapID.java b/src/main/java/io/papermc/paper/datakey/types/PaperMapID.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..ab6b36f01fc0efe15be0468bd198c8faef208ee7
@@ -1283,17 +1325,16 @@ index 0000000000000000000000000000000000000000..ab6b36f01fc0efe15be0468bd198c8fa
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/PaperMapItemColor.java b/src/main/java/io/papermc/paper/datakey/types/PaperMapItemColor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..53559f54971997d4ea72d12884796aadb9308794
+index 0000000000000000000000000000000000000000..be4dd3b5dddf59a02adbf4f7c2e6b9f05dc03bdb
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/PaperMapItemColor.java
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,38 @@
 +package io.papermc.paper.datakey.types;
 +
 +import org.bukkit.Color;
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.jetbrains.annotations.NotNull;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperMapItemColor(
@@ -1306,7 +1347,7 @@ index 0000000000000000000000000000000000000000..53559f54971997d4ea72d12884796aad
 +    }
 +
 +    @Override
-+    public @NotNull Color mapColor() {
++    public Color mapColor() {
 +        return Color.fromRGB(this.impl.rgb());
 +    }
 +
@@ -1315,33 +1356,32 @@ index 0000000000000000000000000000000000000000..53559f54971997d4ea72d12884796aad
 +        private Color color = Color.WHITE;
 +
 +        @Override
-+        public @NotNull Builder mapColor(@NotNull final Color color) {
++        public Builder mapColor(final Color color) {
 +            this.color = color;
 +            return this;
 +        }
 +
 +        @Override
-+        public @NotNull MapItemColor build() {
++        public MapItemColor build() {
 +            return new PaperMapItemColor(new net.minecraft.world.item.component.MapItemColor(this.color.asRGB()));
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/PaperPotDecorations.java b/src/main/java/io/papermc/paper/datakey/types/PaperPotDecorations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7b00677f61d6815505b4542d5979471f0b4e57f8
+index 0000000000000000000000000000000000000000..e65e5565bbcb5fe8a2b1cc41e5dc5c6d1e0c55af
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/PaperPotDecorations.java
 @@ -0,0 +1,82 @@
 +package io.papermc.paper.datakey.types;
 +
++import java.util.Optional;
 +import org.bukkit.craftbukkit.inventory.CraftItemType;
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.bukkit.inventory.ItemType;
 +import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
-+import java.util.Optional;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperPotDecorations(
@@ -1374,6 +1414,7 @@ index 0000000000000000000000000000000000000000..7b00677f61d6815505b4542d5979471f
 +    }
 +
 +    static final class BuilderImpl implements Builder {
++
 +        private @Nullable ItemType back;
 +        private @Nullable ItemType left;
 +        private @Nullable ItemType right;
@@ -1413,24 +1454,20 @@ index 0000000000000000000000000000000000000000..7b00677f61d6815505b4542d5979471f
 +            );
 +        }
 +    }
-+ }
++}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/PaperPotionContents.java b/src/main/java/io/papermc/paper/datakey/types/PaperPotionContents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0d3e6a97f56dee5d702bcf1536b2276506cc30f7
+index 0000000000000000000000000000000000000000..320832d0ab7b3d4a1a397b98859f8367275e984b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/PaperPotionContents.java
-@@ -0,0 +1,96 @@
+@@ -0,0 +1,92 @@
 +package io.papermc.paper.datakey.types;
 +
 +import java.util.ArrayList;
 +import java.util.Collections;
 +import java.util.List;
-+import java.util.Objects;
 +import java.util.Optional;
-+import java.util.function.Function;
-+import net.minecraft.core.Holder;
 +import net.minecraft.world.effect.MobEffectInstance;
-+import net.minecraft.world.item.alchemy.Potion;
 +import org.bukkit.Color;
 +import org.bukkit.craftbukkit.potion.CraftPotionType;
 +import org.bukkit.craftbukkit.potion.CraftPotionUtil;
@@ -1438,13 +1475,13 @@ index 0000000000000000000000000000000000000000..0d3e6a97f56dee5d702bcf1536b22765
 +import org.bukkit.potion.PotionEffect;
 +import org.bukkit.potion.PotionType;
 +import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
-+import org.jetbrains.annotations.Unmodifiable;
 +
 +@DefaultQualifier(NonNull.class)
-+public record PaperPotionContents(net.minecraft.world.item.alchemy.PotionContents impl) implements PotionContents, Handleable<net.minecraft.world.item.alchemy.PotionContents> {
++public record PaperPotionContents(
++    net.minecraft.world.item.alchemy.PotionContents impl
++) implements PotionContents, Handleable<net.minecraft.world.item.alchemy.PotionContents> {
 +
 +    @Override
 +    public net.minecraft.world.item.alchemy.PotionContents getHandle() {
@@ -1452,21 +1489,21 @@ index 0000000000000000000000000000000000000000..0d3e6a97f56dee5d702bcf1536b22765
 +    }
 +
 +    @Override
-+    public @Nullable PotionType potion() {
++    public PotionType potion() {
 +        return this.impl.potion()
 +            .map(CraftPotionType::minecraftHolderToBukkit)
 +            .orElse(null);
 +    }
 +
 +    @Override
-+    public @Nullable Color customColor() {
++    public Color customColor() {
 +        return this.impl.customColor()
 +            .map(Color::fromRGB)
 +            .orElse(null);
 +    }
 +
 +    @Override
-+    public @Unmodifiable @NotNull List<PotionEffect> customEffects() {
++    public List<PotionEffect> customEffects() {
 +        final List<MobEffectInstance> nms = this.impl.customEffects();
 +        final List<PotionEffect> api = new ArrayList<>(nms.size());
 +        for (final MobEffectInstance effect : nms) {
@@ -1478,36 +1515,36 @@ index 0000000000000000000000000000000000000000..0d3e6a97f56dee5d702bcf1536b22765
 +
 +    static final class BuilderImpl implements Builder {
 +
++        private final List<MobEffectInstance> potionEffects = new ArrayList<>();
 +        private @Nullable PotionType type;
 +        private @Nullable Color color;
-+        private @NotNull List<MobEffectInstance> potionEffects = new ArrayList<>();
 +
 +        @Override
-+        public @NotNull Builder potion(@Nullable final PotionType potionType) {
++        public Builder potion(final @Nullable PotionType potionType) {
 +            this.type = potionType;
 +            return this;
 +        }
 +
 +        @Override
-+        public @NotNull Builder customColor(@Nullable final Color color) {
++        public Builder customColor(final @Nullable Color color) {
 +            this.color = color;
 +            return this;
 +        }
 +
 +        @Override
-+        public @NotNull Builder addAll(@NotNull final List<PotionEffect> potionEffects) {
++        public Builder addAll(final List<PotionEffect> potionEffects) {
 +            potionEffects.forEach(this::add);
 +            return this;
 +        }
 +
 +        @Override
-+        public @NotNull Builder add(@NotNull final PotionEffect potionEffect) {
++        public Builder add(final PotionEffect potionEffect) {
 +            this.potionEffects.add(CraftPotionUtil.fromBukkit(potionEffect));
 +            return this;
 +        }
 +
 +        @Override
-+        public @NotNull PotionContents build() {
++        public PotionContents build() {
 +            return new PaperPotionContents(new net.minecraft.world.item.alchemy.PotionContents(
 +                Optional.ofNullable(this.type).map(CraftPotionType::bukkitToMinecraftHolder),
 +                Optional.ofNullable(this.color).map(Color::asARGB),
@@ -1515,43 +1552,28 @@ index 0000000000000000000000000000000000000000..0d3e6a97f56dee5d702bcf1536b22765
 +            ));
 +        }
 +    }
-+ }
++}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/PaperSeededContainerLoot.java b/src/main/java/io/papermc/paper/datakey/types/PaperSeededContainerLoot.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..24ee501b802ceb5beea23168077cfaa2589ec4dd
+index 0000000000000000000000000000000000000000..948f760f0171b9663e9c71b6d580d293e3cefc77
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/PaperSeededContainerLoot.java
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,61 @@
 +package io.papermc.paper.datakey.types;
 +
-+import java.util.ArrayList;
-+import java.util.Collections;
-+import java.util.List;
-+import java.util.Optional;
-+import io.papermc.paper.registry.PaperRegistries;
-+import io.papermc.paper.registry.RegistryKey;
-+import io.papermc.paper.registry.TypedKey;
 +import net.kyori.adventure.key.Key;
 +import net.minecraft.core.registries.Registries;
 +import net.minecraft.resources.ResourceKey;
-+import net.minecraft.world.effect.MobEffectInstance;
-+import org.bukkit.Color;
 +import org.bukkit.NamespacedKey;
-+import org.bukkit.craftbukkit.potion.CraftPotionType;
-+import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 +import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 +import org.bukkit.craftbukkit.util.Handleable;
-+import org.bukkit.loot.LootTable;
-+import org.bukkit.potion.PotionEffect;
-+import org.bukkit.potion.PotionType;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
-+import org.jetbrains.annotations.Unmodifiable;
 +
 +@DefaultQualifier(NonNull.class)
-+public record PaperSeededContainerLoot(net.minecraft.world.item.component.SeededContainerLoot impl) implements SeededContainerLoot, Handleable<net.minecraft.world.item.component.SeededContainerLoot> {
++public record PaperSeededContainerLoot(
++    net.minecraft.world.item.component.SeededContainerLoot impl
++) implements SeededContainerLoot, Handleable<net.minecraft.world.item.component.SeededContainerLoot> {
 +
 +    @Override
 +    public net.minecraft.world.item.component.SeededContainerLoot getHandle() {
@@ -1559,7 +1581,7 @@ index 0000000000000000000000000000000000000000..24ee501b802ceb5beea23168077cfaa2
 +    }
 +
 +    @Override
-+    public @NotNull Key lootTable() {
++    public Key lootTable() {
 +        return CraftNamespacedKey.fromMinecraft(this.impl.lootTable().location());
 +    }
 +
@@ -1573,39 +1595,43 @@ index 0000000000000000000000000000000000000000..24ee501b802ceb5beea23168077cfaa2
 +        private long seed = 0;
 +        private NamespacedKey lootTableRegistryKey;
 +
++        BuilderImpl(final NamespacedKey lootTableRegistryKey) {
++            this.lootTableRegistryKey = lootTableRegistryKey;
++        }
++
 +        @Override
-+        public @NotNull Builder lootTable(@NotNull final Key key) {
++        public Builder lootTable(final Key key) {
 +            this.lootTableRegistryKey = new NamespacedKey(key.namespace(), key.value());
 +            return this;
 +        }
 +
 +        @Override
-+        public @NotNull Builder seed(@NotNull final long seed) {
++        public Builder seed(final long seed) {
 +            this.seed = seed;
 +            return this;
 +        }
 +
 +        @Override
-+        public @NotNull SeededContainerLoot build() {
++        public SeededContainerLoot build() {
 +            return new PaperSeededContainerLoot(new net.minecraft.world.item.component.SeededContainerLoot(
 +                ResourceKey.create(Registries.LOOT_TABLE, CraftNamespacedKey.toMinecraft(this.lootTableRegistryKey)),
 +                this.seed
 +            ));
 +        }
 +    }
-+ }
++}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/PaperSuspiciousStewEffects.java b/src/main/java/io/papermc/paper/datakey/types/PaperSuspiciousStewEffects.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a462ea7ec881f07684b3ed13aa6fb6fd36e96555
+index 0000000000000000000000000000000000000000..0a878a20dce69a401ba1b3b5e68e2bfa567cad6e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/PaperSuspiciousStewEffects.java
 @@ -0,0 +1,58 @@
 +package io.papermc.paper.datakey.types;
 +
++import io.papermc.paper.potion.SuspiciousEffectEntry;
 +import java.util.ArrayList;
 +import java.util.Collections;
 +import java.util.List;
-+import io.papermc.paper.potion.SuspiciousEffectEntry;
 +import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.checkerframework.checker.nullness.qual.NonNull;
@@ -1657,13 +1683,13 @@ index 0000000000000000000000000000000000000000..a462ea7ec881f07684b3ed13aa6fb6fd
 +            return new PaperSuspiciousStewEffects(new net.minecraft.world.item.component.SuspiciousStewEffects(this.effects));
 +        }
 +    }
-+ }
++}
 diff --git a/src/main/java/io/papermc/paper/datakey/types/PaperUnbreakable.java b/src/main/java/io/papermc/paper/datakey/types/PaperUnbreakable.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8af596088fe4dd7d81f6d4d4ebf4c37121b442cb
+index 0000000000000000000000000000000000000000..284bd1f81bc24645b6da6d5ff229eff3d13f28ca
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datakey/types/PaperUnbreakable.java
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,42 @@
 +package io.papermc.paper.datakey.types;
 +
 +import org.bukkit.craftbukkit.util.Handleable;
@@ -1671,7 +1697,9 @@ index 0000000000000000000000000000000000000000..8af596088fe4dd7d81f6d4d4ebf4c371
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
 +@DefaultQualifier(NonNull.class)
-+public record PaperUnbreakable(net.minecraft.world.item.component.Unbreakable impl) implements Unbreakable, Handleable<net.minecraft.world.item.component.Unbreakable> {
++public record PaperUnbreakable(
++    net.minecraft.world.item.component.Unbreakable impl
++) implements Unbreakable, Handleable<net.minecraft.world.item.component.Unbreakable> {
 +
 +    @Override
 +    public boolean showInTooltip() {
@@ -1703,7 +1731,7 @@ index 0000000000000000000000000000000000000000..8af596088fe4dd7d81f6d4d4ebf4c371
 +            return new PaperUnbreakable(new net.minecraft.world.item.component.Unbreakable(this.showInTooltip));
 +        }
 +    }
-+ }
++}
 diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistries.java b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
 index 51979b3c3f1f3a3c63e0559c70bed9193fd35dbb..d4ff5ba6afab0d19db277e4323aaa7bbb2d786b0 100644
 --- a/src/main/java/io/papermc/paper/registry/PaperRegistries.java
@@ -1849,6 +1877,85 @@ index 0000000000000000000000000000000000000000..d43e2b2d0e86ed585ba7bfd4e26d6259
 @@ -0,0 +1 @@
 +io.papermc.paper.datakey.types.ComponentTypesBridgesImpl
 \ No newline at end of file
+diff --git a/src/test/java/io/papermc/paper/configuration/ConfigurationSectionTest.java b/src/test/java/io/papermc/paper/configuration/ConfigurationSectionTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0aad5d896a6adb691a7efaee3baebed4da7c607e
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/configuration/ConfigurationSectionTest.java
+@@ -0,0 +1,56 @@
++package io.papermc.paper.configuration;
++
++import static org.junit.jupiter.api.Assertions.*;
++import java.util.Arrays;
++import java.util.Collections;
++import java.util.HashMap;
++import java.util.LinkedHashMap;
++import java.util.List;
++import java.util.Map;
++import org.bukkit.Material;
++import org.bukkit.configuration.ConfigurationSection;
++import org.bukkit.configuration.serialization.ConfigurationSerializable;
++import org.bukkit.inventory.ItemStack;
++import org.bukkit.util.Vector;
++import org.junit.jupiter.api.Test;
++
++public abstract class ConfigurationSectionTest {
++    public abstract ConfigurationSection getConfigurationSection();
++
++    @Test
++    public void testGetItemStack_String() {
++        ConfigurationSection section = getConfigurationSection();
++        String key = "exists";
++        ItemStack value = new ItemStack(Material.ACACIA_WOOD, 50);
++
++        section.set(key, value);
++
++        assertEquals(value, section.getItemStack(key));
++        assertNull(section.getString("doesntExist"));
++    }
++
++    @Test
++    public void testGetItemStack_String_ItemStack() {
++        ConfigurationSection section = getConfigurationSection();
++        String key = "exists";
++        ItemStack value = new ItemStack(Material.ACACIA_WOOD, 50);
++        ItemStack def = new ItemStack(Material.STONE, 1);
++
++        section.set(key, value);
++
++        assertEquals(value, section.getItemStack(key, def));
++        assertEquals(def, section.getItemStack("doesntExist", def));
++    }
++
++    @Test
++    public void testIsItemStack() {
++        ConfigurationSection section = getConfigurationSection();
++        String key = "exists";
++        ItemStack value = new ItemStack(Material.ACACIA_WOOD, 50);
++
++        section.set(key, value);
++
++        assertTrue(section.isItemStack(key));
++        assertFalse(section.isItemStack("doesntExist"));
++    }
++}
+diff --git a/src/test/java/io/papermc/paper/configuration/MemorySectionTest.java b/src/test/java/io/papermc/paper/configuration/MemorySectionTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..def33c36f207a4c5306b5a895336aa70335c1678
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/configuration/MemorySectionTest.java
+@@ -0,0 +1,11 @@
++package io.papermc.paper.configuration;
++
++import org.bukkit.configuration.ConfigurationSection;
++import org.bukkit.configuration.MemoryConfiguration;
++
++public class MemorySectionTest extends ConfigurationSectionTest {
++    @Override
++    public ConfigurationSection getConfigurationSection() {
++        return new MemoryConfiguration().createSection("section");
++    }
++}
 diff --git a/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java b/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..23de6a166fd48e231912d80f897eee6e006abca9
