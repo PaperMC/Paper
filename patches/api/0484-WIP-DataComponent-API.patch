@@ -6,22 +6,17 @@ Subject: [PATCH] WIP DataComponent API
 
 diff --git a/src/main/java/io/papermc/paper/component/DataComponentType.java b/src/main/java/io/papermc/paper/component/DataComponentType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d58cda809e551cb273b5ef6b449220b40cc443dc
+index 0000000000000000000000000000000000000000..8185d943d95153bdff00629af8ace46f4ffb65fe
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/DataComponentType.java
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,19 @@
 +package io.papermc.paper.component;
 +
-+import net.kyori.adventure.key.Key;
 +import org.bukkit.Keyed;
-+import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
 +
 +@ApiStatus.NonExtendable
 +public interface DataComponentType extends Keyed {
-+
-+    @Override
-+    @NonNull Key key();
 +
 +    @SuppressWarnings("unused")
 +    @ApiStatus.NonExtendable
@@ -921,39 +916,39 @@ index 0000000000000000000000000000000000000000..36e48ef697c001fff1697542eae6f79b
 +}
 diff --git a/src/main/java/io/papermc/paper/component/map/DataComponentMap.java b/src/main/java/io/papermc/paper/component/map/DataComponentMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9378fca2d5122328f3b985fcdb4e1ea67d38ed2c
+index 0000000000000000000000000000000000000000..98d3c3b32557b54c1836a8649fa4312a93f49fc0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/map/DataComponentMap.java
 @@ -0,0 +1,31 @@
 +package io.papermc.paper.component.map;
 +
 +import io.papermc.paper.component.DataComponentType;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.jetbrains.annotations.Contract;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
 +import org.jetbrains.annotations.Unmodifiable;
 +import java.util.Set;
 +
 +public interface DataComponentMap {
 +
 +    @Contract(value = "-> new", pure = true)
-+    static @NotNull DataComponentMap empty() {
++    static @NonNull DataComponentMap empty() {
 +        return DataComponentPatchMapBridge.Holder.bridge().empty();
 +    }
 +
 +    @Contract(pure = true)
-+    <T> @Nullable T get(DataComponentType.@NotNull Valued<T> type);
++    <T> @Nullable T get(DataComponentType.@NonNull Valued<T> type);
 +
 +    @Contract(value = "_, !null -> !null", pure = true)
-+    default <T> @Nullable T getOrDefault(final DataComponentType.@NotNull Valued<? extends T> type, final @Nullable T fallback) {
++    default <T> @Nullable T getOrDefault(final DataComponentType.@NonNull Valued<? extends T> type, final @Nullable T fallback) {
 +        final T object = this.get(type);
 +        return object != null ? object : fallback;
 +    }
 +
 +    @Contract(pure = true)
-+    boolean has(@NotNull DataComponentType type);
++    boolean has(@NonNull DataComponentType type);
 +
-+    @NotNull @Unmodifiable Set<DataComponentType> keySet();
++    @NonNull @Unmodifiable Set<DataComponentType> keySet();
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/component/map/DataComponentPatchMapBridge.java b/src/main/java/io/papermc/paper/component/map/DataComponentPatchMapBridge.java
@@ -994,23 +989,23 @@ index 0000000000000000000000000000000000000000..c4b4f7d5d3c02d94733f78b3d15a7d87
 +}
 diff --git a/src/main/java/io/papermc/paper/component/map/PatchedDataComponentMap.java b/src/main/java/io/papermc/paper/component/map/PatchedDataComponentMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..63db7226900ab69d87f49124ffa1f9695ca35e26
+index 0000000000000000000000000000000000000000..d284fbb11beea9d18e297605b01e30796e60e3b1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/map/PatchedDataComponentMap.java
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,51 @@
 +package io.papermc.paper.component.map;
 +
 +import io.papermc.paper.component.DataComponentType;
-+import org.jetbrains.annotations.NotNull;
++import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.Nullable;
 +
 +public interface PatchedDataComponentMap extends DataComponentMap {
 +
-+    static @NotNull PatchedDataComponentMap empty() {
++    static @NonNull PatchedDataComponentMap empty() {
 +        return DataComponentPatchMapBridge.Holder.bridge().of(DataComponentPatchMapBridge.Holder.bridge().empty());
 +    }
 +
-+    static @NotNull PatchedDataComponentMap of(@NotNull final DataComponentMap map) {
++    static @NonNull PatchedDataComponentMap of(final @NonNull DataComponentMap map) {
 +        return DataComponentPatchMapBridge.Holder.bridge().of(map);
 +    }
 +
@@ -1019,25 +1014,25 @@ index 0000000000000000000000000000000000000000..63db7226900ab69d87f49124ffa1f969
 +     * <p>
 +     * Note: supplying null will act similarly to {@link PatchedDataComponentMap#unset(DataComponentType)}
 +     *
-+     * @param type component type
++     * @param type  component type
 +     * @param value set value
-+     * @param <T> type
++     * @param <T>   type
 +     */
-+    <T> void set(@NotNull DataComponentType.Valued<T> type, @Nullable T value);
++    <T> void set(DataComponentType.@NonNull Valued<T> type, @Nullable T value);
 +
 +    /**
 +     * Sets this data component type to be present in this map.
 +     *
 +     * @param type type
 +     */
-+    void set(@NotNull DataComponentType.NonValued type);
++    void set(DataComponentType.@NonNull NonValued type);
 +
 +    /**
 +     * Unsets the value from this map.
 +     *
 +     * @param type data component type
 +     */
-+    void unset(@NotNull DataComponentType type);
++    void unset(@NonNull DataComponentType type);
 +
 +    /**
 +     * Resets the value of this component to be the default value as
@@ -1045,48 +1040,46 @@ index 0000000000000000000000000000000000000000..63db7226900ab69d87f49124ffa1f969
 +     *
 +     * @param type data component type to reset
 +     */
-+    void reset(@NotNull DataComponentType type);
++    void reset(@NonNull DataComponentType type);
 +
-+    @NotNull
-+    PatchedDataComponentMap copy();
++    @NonNull PatchedDataComponentMap copy();
 +}
 diff --git a/src/main/java/io/papermc/paper/component/map/PatchedDataComponentMapHolder.java b/src/main/java/io/papermc/paper/component/map/PatchedDataComponentMapHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e7b2dae4d569089c43e0ce70b7b7c82bfff994f1
+index 0000000000000000000000000000000000000000..956825207da17b8dc6c1216ff37cb9861c7481bc
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/map/PatchedDataComponentMapHolder.java
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,34 @@
 +package io.papermc.paper.component.map;
 +
 +import io.papermc.paper.component.DataComponentType;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
 +
 +@ApiStatus.NonExtendable
 +@ApiStatus.Experimental
 +public interface PatchedDataComponentMapHolder {
 +
-+    @NotNull PatchedDataComponentMap components();
++    @NonNull PatchedDataComponentMap components();
 +
-+    default boolean hasData(@NotNull final DataComponentType type) {
++    default boolean hasData(final @NonNull DataComponentType type) {
 +        return this.components().has(type);
 +    }
 +
-+    @Nullable
-+    default <T> T getData(@NotNull final DataComponentType.@NotNull Valued<T> type) {
++    default @Nullable <T> T getData(final DataComponentType.@NonNull Valued<T> type) {
 +        return this.components().get(type);
 +    }
 +
-+    default <T> void setData(final DataComponentType.@NotNull Valued<T> type, final @Nullable T value) {
++    default <T> void setData(final DataComponentType.@NonNull Valued<T> type, final @Nullable T value) {
 +        this.components().set(type, value);
 +    }
 +
-+    default void setData(final DataComponentType.@NotNull NonValued type) {
++    default void setData(final DataComponentType.@NonNull NonValued type) {
 +        this.components().set(type);
 +    }
 +
-+    default <T> void removeData(final @NotNull DataComponentType type) {
++    default <T> void removeData(final @NonNull DataComponentType type) {
 +        this.components().unset(type);
 +    }
 +
@@ -1158,7 +1151,7 @@ index e20f64828548c647a29dad5a475f4596cad88cd8..80c10ab30ca6ea6e2a80a916d8a5831a
  
      /**
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index c64413a6740b604282984dea2a8430a6e7478d68..8cc949629995c9093437a07671a02f131da0319b 100644
+index c64413a6740b604282984dea2a8430a6e7478d68..628aabd52c9686e00918adb8aee5bd9d97baa900 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
 @@ -1,7 +1,6 @@
@@ -1348,14 +1341,13 @@ index c64413a6740b604282984dea2a8430a6e7478d68..8cc949629995c9093437a07671a02f13
  
          return true;
      }
-@@ -1079,4 +1065,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -1079,4 +1065,10 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
          return Bukkit.getUnsafe().computeTooltipLines(this, tooltipContext, player);
      }
      // Paper end - expose itemstack tooltip lines
 +    // Paper start
-+    @NotNull
 +    @Override
-+    public io.papermc.paper.component.map.PatchedDataComponentMap components() {
++    public io.papermc.paper.component.map.@NotNull PatchedDataComponentMap components() {
 +        return this.dataKeyMap;
 +    }
 +    // Paper end
