@@ -174,13 +174,16 @@ index 0000000000000000000000000000000000000000..ca621dd53bee70a2f383517a4f1f4c15
 +}
 diff --git a/src/main/java/io/papermc/paper/component/PaperComponentType.java b/src/main/java/io/papermc/paper/component/PaperComponentType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..93d18f6fc171b777e81a2546c47dadf6c2e30e9c
+index 0000000000000000000000000000000000000000..4f2dc5add01a3998b4d46af0a663a6fe539f6b0c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/PaperComponentType.java
-@@ -0,0 +1,93 @@
+@@ -0,0 +1,113 @@
 +package io.papermc.paper.component;
 +
++import java.util.Collections;
++import java.util.Set;
 +import net.kyori.adventure.key.Key;
++import net.minecraft.core.component.DataComponentMap;
 +import net.minecraft.core.registries.Registries;
 +import net.minecraft.resources.ResourceKey;
 +import org.bukkit.NamespacedKey;
@@ -189,8 +192,8 @@ index 0000000000000000000000000000000000000000..93d18f6fc171b777e81a2546c47dadf6
 +import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.jetbrains.annotations.NotNull;
 +
 +@DefaultQualifier(NonNull.class)
 +public abstract class PaperComponentType<T, NMS> implements DataComponentType, Handleable<net.minecraft.core.component.DataComponentType<NMS>> {
@@ -207,6 +210,23 @@ index 0000000000000000000000000000000000000000..93d18f6fc171b777e81a2546c47dadf6
 +        return CraftRegistry.minecraftToBukkit(type, Registries.DATA_COMPONENT_TYPE, Registry.DATA_COMPONENT_TYPE);
 +    }
 +
++    public static Set<DataComponentType> minecraftToBukkit(final Set<net.minecraft.core.component.DataComponentType<?>> nmsTypes) {
++        final Set<DataComponentType> types = new java.util.HashSet<>();
++        for (final net.minecraft.core.component.DataComponentType<?> nmsType : nmsTypes) {
++            types.add(PaperComponentType.minecraftToBukkit(nmsType));
++        }
++        return Collections.unmodifiableSet(types);
++    }
++
++    public static <B, M> @Nullable B convertDataComponentValue(final DataComponentMap map, final PaperComponentType.ValuedImpl<B, M> type) {
++        final net.minecraft.core.component.DataComponentType<M> nms = bukkitToMinecraft(type);
++        final M nmsValue = map.get(nms);
++        if (nmsValue == null) {
++            return null;
++        }
++        return type.getAdapter().fromVanilla(nmsValue);
++    }
++
 +    private final NamespacedKey key;
 +    private final net.minecraft.core.component.DataComponentType<NMS> type;
 +    private final ComponentAdapter<NMS, T> adapter;
@@ -218,7 +238,7 @@ index 0000000000000000000000000000000000000000..93d18f6fc171b777e81a2546c47dadf6
 +    }
 +
 +    @Override
-+    public @NotNull NamespacedKey getKey() {
++    public NamespacedKey getKey() {
 +        return this.key;
 +    }
 +
@@ -249,7 +269,7 @@ index 0000000000000000000000000000000000000000..93d18f6fc171b777e81a2546c47dadf6
 +        }
 +    }
 +
-+    static final class NonValuedImpl<T, NMS> extends PaperComponentType<T, NMS> implements NonValued {
++    public static final class NonValuedImpl<T, NMS> extends PaperComponentType<T, NMS> implements NonValued {
 +
 +        NonValuedImpl(
 +            final NamespacedKey key,
@@ -260,7 +280,7 @@ index 0000000000000000000000000000000000000000..93d18f6fc171b777e81a2546c47dadf6
 +        }
 +    }
 +
-+    static final class ValuedImpl<T, NMS> extends PaperComponentType<T, NMS> implements Valued<T> {
++    public static final class ValuedImpl<T, NMS> extends PaperComponentType<T, NMS> implements Valued<T> {
 +
 +        ValuedImpl(
 +            final NamespacedKey key,
@@ -1519,191 +1539,6 @@ index 0000000000000000000000000000000000000000..8be3187a6c624d4ba74d2a58bc64b1b0
 +        }
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/component/map/DataComponentPatchBridgeImpl.java b/src/main/java/io/papermc/paper/component/map/DataComponentPatchBridgeImpl.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..39d941a9b910676735c38dd7eae1b3fe7a30d0ea
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/component/map/DataComponentPatchBridgeImpl.java
-@@ -0,0 +1,59 @@
-+package io.papermc.paper.component.map;
-+
-+import com.mojang.authlib.GameProfile;
-+import net.minecraft.core.component.DataComponents;
-+import net.minecraft.world.item.Item;
-+import net.minecraft.world.item.ItemStack;
-+import net.minecraft.world.item.Items;
-+import org.bukkit.Material;
-+import org.bukkit.craftbukkit.inventory.CraftItemStack;
-+import org.bukkit.craftbukkit.inventory.CraftItemType;
-+import org.bukkit.craftbukkit.inventory.CraftMetaItem;
-+import org.bukkit.inventory.meta.ItemMeta;
-+import org.jetbrains.annotations.Nullable;
-+
-+public class DataComponentPatchBridgeImpl implements io.papermc.paper.component.map.DataComponentPatchMapBridge {
-+    @Override
-+    public PatchedDataComponentMap of(final DataComponentMap map) {
-+        return new PaperPatchedDataComponentMap(new net.minecraft.core.component.PatchedDataComponentMap(((PaperDataComponentMap) map).map));
-+    }
-+
-+    @Override
-+    public DataComponentMap empty() {
-+        return new PaperDataComponentMap(net.minecraft.core.component.DataComponentMap.EMPTY);
-+    }
-+
-+    @Override
-+    public DataComponentMap fromItem(final Material material) {
-+        final @Nullable Item item = CraftItemType.bukkitToMinecraft(material);
-+        if (item == null || item == Items.AIR) {
-+            // Because people can make non-item itemstacks still..
-+            return this.empty();
-+        }
-+        return new PaperDataComponentMap(item.components());
-+    }
-+
-+    @Override
-+    public PatchedDataComponentMap fromItemAndMeta(final Material material, final ItemMeta meta) {
-+        final CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator() {
-+            @Override
-+            public void skullCallback(final GameProfile gameProfile) {
-+                // TODO this isn't correct, this is called after resolving the profile, the builder is usually built when this is called
-+                // I'm not even sure if we can do anything about this.
-+                this.builder.set(DataComponents.PROFILE, new net.minecraft.world.item.component.ResolvableProfile(gameProfile));
-+            }
-+        };
-+        ((CraftMetaItem) meta).applyToItemPublic(tag);
-+
-+        final net.minecraft.core.component.PatchedDataComponentMap map = new net.minecraft.core.component.PatchedDataComponentMap(CraftItemType.bukkitToMinecraft(material).components());
-+        map.applyPatch(tag.builder.build());
-+        return new PaperPatchedDataComponentMap(map);
-+    }
-+
-+    @Override
-+    public ItemMeta toItemMeta(final Material material, final PatchedDataComponentMap map) {
-+        final ItemStack stack = new ItemStack(CraftItemType.bukkitToMinecraft(material));
-+        stack.restorePatch(((PaperPatchedDataComponentMap) map).getHandle().asPatch());
-+        return CraftItemStack.getItemMeta(stack, material);
-+    }
-+}
-diff --git a/src/main/java/io/papermc/paper/component/map/PaperDataComponentMap.java b/src/main/java/io/papermc/paper/component/map/PaperDataComponentMap.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..4432c3e5cd6d3da8fd9d657e09e6833f3e9ddde2
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/component/map/PaperDataComponentMap.java
-@@ -0,0 +1,46 @@
-+package io.papermc.paper.component.map;
-+
-+import io.papermc.paper.component.ComponentAdapter;
-+import io.papermc.paper.component.DataComponentType;
-+import io.papermc.paper.component.PaperComponentType;
-+import java.util.Collections;
-+import java.util.HashSet;
-+import java.util.Set;
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+
-+public class PaperDataComponentMap implements DataComponentMap {
-+
-+    protected final net.minecraft.core.component.DataComponentMap map;
-+
-+    public PaperDataComponentMap(final net.minecraft.core.component.DataComponentMap map) {
-+        this.map = map;
-+    }
-+
-+    @Override
-+    public <T> @Nullable T get(final DataComponentType.Valued<T> type) {
-+        @SuppressWarnings("unchecked")
-+        final PaperComponentType<T, Object> typeAsImpl = (PaperComponentType<T, Object>) type;
-+        final ComponentAdapter<Object, T> adapter = typeAsImpl.getAdapter();
-+        final @Nullable Object value = this.map.get(typeAsImpl.getHandle());
-+
-+        return value == null ? null : adapter.fromVanilla(value);
-+    }
-+
-+    @Override
-+    public Set<DataComponentType> keySet() {
-+        final Set<net.minecraft.core.component.DataComponentType<?>> nmsKeys = this.map.keySet();
-+        final Set<DataComponentType> keys = new HashSet<>(nmsKeys.size());
-+        for (final net.minecraft.core.component.DataComponentType<?> nmsKey : nmsKeys) {
-+            keys.add(PaperComponentType.minecraftToBukkit(nmsKey));
-+        }
-+
-+        return Collections.unmodifiableSet(keys);
-+    }
-+
-+    @Override
-+    public boolean has(final DataComponentType type) {
-+        @SuppressWarnings("unchecked")
-+        final PaperComponentType<?, Object> typeAsImpl = (PaperComponentType<?, Object>) type;
-+        return this.map.has(typeAsImpl.getHandle());
-+    }
-+}
-diff --git a/src/main/java/io/papermc/paper/component/map/PaperPatchedDataComponentMap.java b/src/main/java/io/papermc/paper/component/map/PaperPatchedDataComponentMap.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..3d9559a326d0aabcdeabac5d862b7b6244d7e973
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/component/map/PaperPatchedDataComponentMap.java
-@@ -0,0 +1,62 @@
-+package io.papermc.paper.component.map;
-+
-+import io.papermc.paper.component.ComponentAdapter;
-+import io.papermc.paper.component.DataComponentType;
-+import io.papermc.paper.component.PaperComponentType;
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+
-+public class PaperPatchedDataComponentMap extends PaperDataComponentMap implements PatchedDataComponentMap {
-+
-+    public PaperPatchedDataComponentMap(final net.minecraft.core.component.PatchedDataComponentMap map) {
-+        super(map);
-+    }
-+
-+    @Override
-+    public <T> void set(final DataComponentType.Valued<T> type, final @Nullable T value) {
-+        @SuppressWarnings("unchecked")
-+        final PaperComponentType<T, Object> typeAsImpl = ((PaperComponentType<T, Object>) type);
-+        this.setInternal(typeAsImpl, value);
-+    }
-+
-+    @Override
-+    public void set(final DataComponentType.NonValued type) {
-+        @SuppressWarnings("unchecked")
-+        final PaperComponentType<?, Object> typeAsImpl = ((PaperComponentType<?, Object>) type);
-+        this.setInternal(typeAsImpl, null);
-+    }
-+
-+    private <A, V> void setInternal(final PaperComponentType<A, V> type, final @Nullable A value) {
-+        final ComponentAdapter<V, A> adapter = type.getAdapter();
-+
-+        if (adapter.isValued()) {
-+            this.getHandle().set(type.getHandle(), value == null ? null : adapter.toVanilla(value));
-+        } else {
-+            this.getHandle().set(type.getHandle(), adapter.toVanilla(value));
-+        }
-+    }
-+
-+    @Override
-+    public void unset(final DataComponentType type) {
-+        @SuppressWarnings("unchecked")
-+        final PaperComponentType<?, Object> typeAsImpl = ((PaperComponentType<?, Object>) type);
-+        this.getHandle().remove(typeAsImpl.getHandle());
-+    }
-+
-+    @Override
-+    public void reset(final DataComponentType type) {
-+        @SuppressWarnings("unchecked")
-+        final PaperComponentType<?, Object> typeAsImpl = (PaperComponentType<?, Object>) type;
-+
-+        final net.minecraft.core.component.PatchedDataComponentMap map = this.getHandle();
-+        map.applyPatch(map.asPatch().forget((forgetType) -> forgetType == typeAsImpl.getHandle())); // Apply patch with type removed
-+    }
-+
-+    @Override
-+    public PatchedDataComponentMap copy() {
-+        return new PaperPatchedDataComponentMap(this.getHandle().copy());
-+    }
-+
-+    public net.minecraft.core.component.PatchedDataComponentMap getHandle() {
-+        return ((net.minecraft.core.component.PatchedDataComponentMap) this.map);
-+    }
-+}
 diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistries.java b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
 index 51979b3c3f1f3a3c63e0559c70bed9193fd35dbb..df2af45f32af3a1ddef25c5e7cca3973481806e2 100644
 --- a/src/main/java/io/papermc/paper/registry/PaperRegistries.java
@@ -1738,10 +1573,10 @@ index af18de11dd55938b6091f5ab183bd3fe4e8df152..dad6cb4bbb52f4ce7e8f40131ee0bd37
  
      ItemEnchantments(Object2IntAVLTreeMap<Holder<Enchantment>> enchantments, boolean showInTooltip) { // Paper
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index f1e1953f2dc65dc615b7b7b648c37b195d3b4c25..5941ea2cdb9ef6cd54505239d6e7b3d382db2420 100644
+index 3496b98ff0b984dbfec4f0983459a273dc0e3471..d14d0b4a0edbff19d6b5ce0674aa70ba7af902d6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-@@ -163,7 +163,7 @@ public final class CraftItemStack extends ItemStack {
+@@ -167,7 +167,7 @@ public final class CraftItemStack extends ItemStack {
                  this.adjustTagForItemMeta(oldType); // Paper
              }
          }
@@ -1750,7 +1585,7 @@ index f1e1953f2dc65dc615b7b7b648c37b195d3b4c25..5941ea2cdb9ef6cd54505239d6e7b3d3
      }
  
      @Override
-@@ -202,7 +202,7 @@ public final class CraftItemStack extends ItemStack {
+@@ -206,7 +206,7 @@ public final class CraftItemStack extends ItemStack {
  
      @Override
      public int getMaxStackSize() {
@@ -1777,20 +1612,111 @@ index f1e1953f2dc65dc615b7b7b648c37b195d3b4c25..5941ea2cdb9ef6cd54505239d6e7b3d3
                      item.set(DataComponents.PROFILE, new net.minecraft.world.item.component.ResolvableProfile(gameProfile));
                  }
              };
-@@ -767,5 +767,14 @@ public final class CraftItemStack extends ItemStack {
-         mirrored.setItemMeta(mirrored.getItemMeta());
+@@ -768,4 +768,79 @@ public final class CraftItemStack extends ItemStack {
          return mirrored;
      }
+     // Paper end
++
++    // Paper start - data component API
++    @Override
++    public <T> T getData(final io.papermc.paper.component.DataComponentType.Valued<T> type) {
++        if (this.isEmpty()) {
++            return null;
++        }
++        return io.papermc.paper.component.PaperComponentType.convertDataComponentValue(this.handle.getComponents(), (io.papermc.paper.component.PaperComponentType.ValuedImpl<T, ?>) type);
++    }
 +
 +    @Override
-+    public io.papermc.paper.component.map.@org.checkerframework.checker.nullness.qual.NonNull PaperPatchedDataComponentMap components() {
-+        if (this.handle == null) {
-+            return new io.papermc.paper.component.map.PaperPatchedDataComponentMap(new net.minecraft.core.component.PatchedDataComponentMap(net.minecraft.core.component.DataComponentMap.EMPTY)); // Paper
++    public boolean hasData(final io.papermc.paper.component.DataComponentType type) {
++        if (this.isEmpty()) {
++            return false;
 +        }
-+
-+        return new io.papermc.paper.component.map.PaperPatchedDataComponentMap((net.minecraft.core.component.PatchedDataComponentMap) this.handle.getComponents()); // Paper
++        return this.handle.has(io.papermc.paper.component.PaperComponentType.bukkitToMinecraft(type));
 +    }
-     // Paper end
++
++    @Override
++    public java.util.Set<io.papermc.paper.component.DataComponentType> getDataComponents() {
++        if (this.isEmpty()) {
++            return java.util.Collections.emptySet();
++        }
++        return io.papermc.paper.component.PaperComponentType.minecraftToBukkit(this.handle.getComponents().keySet());
++    }
++
++    @Override
++    public <T> void setData(final io.papermc.paper.component.DataComponentType.Valued<T> type, final T value) {
++        if (this.isEmpty()) {
++            return;
++        }
++        this.setDataInternal((io.papermc.paper.component.PaperComponentType.ValuedImpl<T, ?>) type, value);
++    }
++
++    @Override
++    public void setData(final io.papermc.paper.component.DataComponentType.NonValued type) {
++        if (this.isEmpty()) {
++            return;
++        }
++        this.setDataInternal((io.papermc.paper.component.PaperComponentType.NonValuedImpl<?, ?>) type, null);
++    }
++
++    private <A, V> void setDataInternal(final io.papermc.paper.component.PaperComponentType<A, V> type, final A value) {
++        final io.papermc.paper.component.ComponentAdapter<V, A> adapter = type.getAdapter();
++        if (adapter.isValued()) {
++            this.handle.set(type.getHandle(), value == null ? null : adapter.toVanilla(value));
++        } else {
++            this.handle.set(type.getHandle(), adapter.toVanilla(value));
++        }
++    }
++
++    @Override
++    public void unsetData(final io.papermc.paper.component.DataComponentType type) {
++        if (this.isEmpty()) {
++            return;
++        }
++        this.handle.remove(io.papermc.paper.component.PaperComponentType.bukkitToMinecraft(type));
++    }
++
++    @Override
++    public void resetData(final io.papermc.paper.component.DataComponentType type) {
++        if (this.isEmpty()) {
++            return;
++        }
++        this.resetData((io.papermc.paper.component.PaperComponentType<?, ?>) type);
++    }
++
++    private <M> void resetData(final io.papermc.paper.component.PaperComponentType<?, M> type) {
++        final net.minecraft.core.component.DataComponentType<M> nms = io.papermc.paper.component.PaperComponentType.bukkitToMinecraft(type);
++        final M nmsValue = this.handle.getItem().components().get(nms);
++        // if nmsValue is null, it will clear any set patch
++        // if nmsValue is not null, it will still clear any set patch because it will equal the default value
++        this.handle.set(nms, nmsValue);
++    }
++    // Paper end - data component API
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java
+index b54be1122af2b303c0f063ff6b61bf8e2478b0df..f0c394741c56b23df47c1b3e6790d4d41b9d851b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java
+@@ -253,4 +253,21 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
+         return this.item.getDescriptionId();
+     }
+     // Paper end - add Translatable
++
++    // Paper start - data component API
++    @Override
++    public <T> T getDefaultDataComponent(final io.papermc.paper.component.DataComponentType.Valued<T> dataComponentType) {
++        return io.papermc.paper.component.PaperComponentType.convertDataComponentValue(this.item.components(), ((io.papermc.paper.component.PaperComponentType.ValuedImpl<T, ?>) dataComponentType));
++    }
++
++    @Override
++    public boolean hasDefaultDataComponent(final io.papermc.paper.component.DataComponentType dataComponentType) {
++        return this.item.components().has(io.papermc.paper.component.PaperComponentType.bukkitToMinecraft(dataComponentType));
++    }
++
++    @Override
++    public java.util.Set<io.papermc.paper.component.DataComponentType> getDefaultDataComponentTypes() {
++        return io.papermc.paper.component.PaperComponentType.minecraftToBukkit(this.item.components().keySet());
++    }
++    // Paper end - data component API
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 index d5789326d70bb8b029c5448270bbaa6faf52e6e1..02cdd38a55741a56ed9de428d9145e6103b71f65 100644
@@ -1841,92 +1767,6 @@ index 0000000000000000000000000000000000000000..a2c02206254a18e089cb2b40eab5c59e
 +++ b/src/main/resources/META-INF/services/io.papermc.paper.component.item.ComponentTypesBridge
 @@ -0,0 +1 @@
 +io.papermc.paper.component.item.ComponentTypesBridgesImpl
-diff --git a/src/main/resources/META-INF/services/io.papermc.paper.component.map.DataComponentPatchMapBridge b/src/main/resources/META-INF/services/io.papermc.paper.component.map.DataComponentPatchMapBridge
-new file mode 100644
-index 0000000000000000000000000000000000000000..4630bf3ffa719c218791d4a4f2aea8f872b25baa
---- /dev/null
-+++ b/src/main/resources/META-INF/services/io.papermc.paper.component.map.DataComponentPatchMapBridge
-@@ -0,0 +1 @@
-+io.papermc.paper.component.map.DataComponentPatchBridgeImpl
-diff --git a/src/test/java/io/papermc/paper/configuration/ConfigurationSectionTest.java b/src/test/java/io/papermc/paper/configuration/ConfigurationSectionTest.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0aad5d896a6adb691a7efaee3baebed4da7c607e
---- /dev/null
-+++ b/src/test/java/io/papermc/paper/configuration/ConfigurationSectionTest.java
-@@ -0,0 +1,56 @@
-+package io.papermc.paper.configuration;
-+
-+import static org.junit.jupiter.api.Assertions.*;
-+import java.util.Arrays;
-+import java.util.Collections;
-+import java.util.HashMap;
-+import java.util.LinkedHashMap;
-+import java.util.List;
-+import java.util.Map;
-+import org.bukkit.Material;
-+import org.bukkit.configuration.ConfigurationSection;
-+import org.bukkit.configuration.serialization.ConfigurationSerializable;
-+import org.bukkit.inventory.ItemStack;
-+import org.bukkit.util.Vector;
-+import org.junit.jupiter.api.Test;
-+
-+public abstract class ConfigurationSectionTest {
-+    public abstract ConfigurationSection getConfigurationSection();
-+
-+    @Test
-+    public void testGetItemStack_String() {
-+        ConfigurationSection section = getConfigurationSection();
-+        String key = "exists";
-+        ItemStack value = new ItemStack(Material.ACACIA_WOOD, 50);
-+
-+        section.set(key, value);
-+
-+        assertEquals(value, section.getItemStack(key));
-+        assertNull(section.getString("doesntExist"));
-+    }
-+
-+    @Test
-+    public void testGetItemStack_String_ItemStack() {
-+        ConfigurationSection section = getConfigurationSection();
-+        String key = "exists";
-+        ItemStack value = new ItemStack(Material.ACACIA_WOOD, 50);
-+        ItemStack def = new ItemStack(Material.STONE, 1);
-+
-+        section.set(key, value);
-+
-+        assertEquals(value, section.getItemStack(key, def));
-+        assertEquals(def, section.getItemStack("doesntExist", def));
-+    }
-+
-+    @Test
-+    public void testIsItemStack() {
-+        ConfigurationSection section = getConfigurationSection();
-+        String key = "exists";
-+        ItemStack value = new ItemStack(Material.ACACIA_WOOD, 50);
-+
-+        section.set(key, value);
-+
-+        assertTrue(section.isItemStack(key));
-+        assertFalse(section.isItemStack("doesntExist"));
-+    }
-+}
-diff --git a/src/test/java/io/papermc/paper/configuration/MemorySectionTest.java b/src/test/java/io/papermc/paper/configuration/MemorySectionTest.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..def33c36f207a4c5306b5a895336aa70335c1678
---- /dev/null
-+++ b/src/test/java/io/papermc/paper/configuration/MemorySectionTest.java
-@@ -0,0 +1,11 @@
-+package io.papermc.paper.configuration;
-+
-+import org.bukkit.configuration.ConfigurationSection;
-+import org.bukkit.configuration.MemoryConfiguration;
-+
-+public class MemorySectionTest extends ConfigurationSectionTest {
-+    @Override
-+    public ConfigurationSection getConfigurationSection() {
-+        return new MemoryConfiguration().createSection("section");
-+    }
-+}
 diff --git a/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java b/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..40c77423134931083913e871b80dae8e6e5f2194
