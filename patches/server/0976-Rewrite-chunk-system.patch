@@ -3519,10 +3519,10 @@ index 0000000000000000000000000000000000000000..15ee41452992714108efe53b708b5a4e
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/io/RegionFileIOThread.java b/src/main/java/io/papermc/paper/chunk/system/io/RegionFileIOThread.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2934f0cf0ef09c84739312b00186c2ef0019a165
+index 0000000000000000000000000000000000000000..2096e57c025858519e7c46788993b9aac1ec60e8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/io/RegionFileIOThread.java
-@@ -0,0 +1,1343 @@
+@@ -0,0 +1,1289 @@
 +package io.papermc.paper.chunk.system.io;
 +
 +import ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue;
@@ -4337,34 +4337,6 @@ index 0000000000000000000000000000000000000000..2934f0cf0ef09c84739312b00186c2ef
 +        return thread.loadDataAsyncInternal(world, chunkX, chunkZ, type, onComplete, intendingToBlock, priority);
 +    }
 +
-+    private static Boolean doesRegionFileExist(final int chunkX, final int chunkZ, final boolean intendingToBlock,
-+                                               final ChunkDataController taskController) {
-+        final ChunkPos chunkPos = new ChunkPos(chunkX, chunkZ);
-+        if (intendingToBlock) {
-+            return taskController.computeForRegionFile(chunkX, chunkZ, true, (final RegionFile file) -> {
-+                if (file == null) { // null if no regionfile exists
-+                    return Boolean.FALSE;
-+                }
-+
-+                return file.hasChunk(chunkPos) ? Boolean.TRUE : Boolean.FALSE;
-+            });
-+        } else {
-+            // first check if the region file for sure does not exist
-+            if (taskController.doesRegionFileNotExist(chunkX, chunkZ)) {
-+                return Boolean.FALSE;
-+            } // else: it either exists or is not known, fall back to checking the loaded region file
-+
-+            return taskController.computeForRegionFileIfLoaded(chunkX, chunkZ, (final RegionFile file) -> {
-+                if (file == null) { // null if not loaded
-+                    // not sure at this point, let the I/O thread figure it out
-+                    return Boolean.TRUE;
-+                }
-+
-+                return file.hasChunk(chunkPos) ? Boolean.TRUE : Boolean.FALSE;
-+            });
-+        }
-+    }
-+
 +    Cancellable loadDataAsyncInternal(final ServerLevel world, final int chunkX, final int chunkZ,
 +                                      final RegionFileType type, final BiConsumer<CompoundTag, Throwable> onComplete,
 +                                      final boolean intendingToBlock, final PrioritisedExecutor.Priority priority) {
@@ -4376,20 +4348,6 @@ index 0000000000000000000000000000000000000000..2934f0cf0ef09c84739312b00186c2ef
 +        final BiFunction<ChunkCoordinate, ChunkDataTask, ChunkDataTask> compute = (final ChunkCoordinate keyInMap, final ChunkDataTask running) -> {
 +            if (running == null) {
 +                // not scheduled
-+
-+                if (callbackInfo.regionFileCalculation == null) {
-+                    // caller will compute this outside of compute(), to avoid holding the bin lock
-+                    callbackInfo.needsRegionFileTest = true;
-+                    return null;
-+                }
-+
-+                if (callbackInfo.regionFileCalculation == Boolean.FALSE) {
-+                    // not on disk
-+                    callbackInfo.data = null;
-+                    callbackInfo.throwable = null;
-+                    callbackInfo.completeNow = true;
-+                    return null;
-+                }
 +
 +                // set up task
 +                final ChunkDataTask newTask = new ChunkDataTask(
@@ -4422,17 +4380,7 @@ index 0000000000000000000000000000000000000000..2934f0cf0ef09c84739312b00186c2ef
 +            return running;
 +        };
 +
-+        ChunkDataTask curr = taskController.tasks.get(key);
-+        if (curr == null) {
-+            callbackInfo.regionFileCalculation = doesRegionFileExist(chunkX, chunkZ, intendingToBlock, taskController);
-+        }
-+        ChunkDataTask ret = taskController.tasks.compute(key, compute);
-+        if (callbackInfo.needsRegionFileTest) {
-+            // curr isn't null but when we went into compute() it was
-+            callbackInfo.regionFileCalculation = doesRegionFileExist(chunkX, chunkZ, intendingToBlock, taskController);
-+            // now it should be fine
-+            ret = taskController.tasks.compute(key, compute);
-+        }
++        final ChunkDataTask ret = taskController.tasks.compute(key, compute);
 +
 +        // needs to be scheduled
 +        if (callbackInfo.tasksNeedsScheduling) {
@@ -4491,8 +4439,6 @@ index 0000000000000000000000000000000000000000..2934f0cf0ef09c84739312b00186c2ef
 +        public Throwable throwable;
 +        public boolean completeNow;
 +        public boolean tasksNeedsScheduling;
-+        public boolean needsRegionFileTest;
-+        public Boolean regionFileCalculation;
 +
 +    }
 +
@@ -19500,7 +19446,7 @@ index 0382b6597a130d746f8954a93a756a9d1ac81d50..ffbb3bf9ff3fc968ef69d4f889b0baf7
                  }
              }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 370d00afe8384556ee92e28d253c44ed6989efab..6324b875472fc2dbc581157306ff255ef1bf5db2 100644
+index 62363c09111aaa31220fb260940744c097af7b3c..ff497f0e80889508dd8c183b48cd33bc7831ba6c 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -481,6 +481,58 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
