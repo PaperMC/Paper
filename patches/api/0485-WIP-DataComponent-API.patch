@@ -914,176 +914,6 @@ index 0000000000000000000000000000000000000000..36e48ef697c001fff1697542eae6f79b
 +
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/component/map/DataComponentMap.java b/src/main/java/io/papermc/paper/component/map/DataComponentMap.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..98d3c3b32557b54c1836a8649fa4312a93f49fc0
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/component/map/DataComponentMap.java
-@@ -0,0 +1,31 @@
-+package io.papermc.paper.component.map;
-+
-+import io.papermc.paper.component.DataComponentType;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.jetbrains.annotations.Contract;
-+import org.jetbrains.annotations.Unmodifiable;
-+import java.util.Set;
-+
-+public interface DataComponentMap {
-+
-+    @Contract(value = "-> new", pure = true)
-+    static @NonNull DataComponentMap empty() {
-+        return DataComponentPatchMapBridge.Holder.bridge().empty();
-+    }
-+
-+    @Contract(pure = true)
-+    <T> @Nullable T get(DataComponentType.@NonNull Valued<T> type);
-+
-+    @Contract(value = "_, !null -> !null", pure = true)
-+    default <T> @Nullable T getOrDefault(final DataComponentType.@NonNull Valued<? extends T> type, final @Nullable T fallback) {
-+        final T object = this.get(type);
-+        return object != null ? object : fallback;
-+    }
-+
-+    @Contract(pure = true)
-+    boolean has(@NonNull DataComponentType type);
-+
-+    @NonNull @Unmodifiable Set<DataComponentType> keySet();
-+
-+}
-diff --git a/src/main/java/io/papermc/paper/component/map/DataComponentPatchMapBridge.java b/src/main/java/io/papermc/paper/component/map/DataComponentPatchMapBridge.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..c4b4f7d5d3c02d94733f78b3d15a7d8703db4d88
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/component/map/DataComponentPatchMapBridge.java
-@@ -0,0 +1,30 @@
-+package io.papermc.paper.component.map;
-+
-+import java.util.Optional;
-+import net.kyori.adventure.util.Services;
-+import org.bukkit.Material;
-+import org.bukkit.inventory.meta.ItemMeta;
-+import org.jetbrains.annotations.ApiStatus;
-+
-+@ApiStatus.Internal
-+public interface DataComponentPatchMapBridge {
-+
-+    PatchedDataComponentMap of(DataComponentMap map);
-+
-+    DataComponentMap empty();
-+
-+    DataComponentMap fromItem(Material material);
-+
-+    PatchedDataComponentMap fromItemAndMeta(Material material, ItemMeta meta);
-+
-+    ItemMeta toItemMeta(Material material, PatchedDataComponentMap map);
-+
-+    @ApiStatus.Internal
-+    final class Holder {
-+        private static final Optional<DataComponentPatchMapBridge> BRIDGE = Services.service(DataComponentPatchMapBridge.class);
-+
-+        public static DataComponentPatchMapBridge bridge() {
-+            return BRIDGE.orElseThrow();
-+        }
-+    }
-+}
-diff --git a/src/main/java/io/papermc/paper/component/map/PatchedDataComponentMap.java b/src/main/java/io/papermc/paper/component/map/PatchedDataComponentMap.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..d284fbb11beea9d18e297605b01e30796e60e3b1
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/component/map/PatchedDataComponentMap.java
-@@ -0,0 +1,51 @@
-+package io.papermc.paper.component.map;
-+
-+import io.papermc.paper.component.DataComponentType;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.jetbrains.annotations.Nullable;
-+
-+public interface PatchedDataComponentMap extends DataComponentMap {
-+
-+    static @NonNull PatchedDataComponentMap empty() {
-+        return DataComponentPatchMapBridge.Holder.bridge().of(DataComponentPatchMapBridge.Holder.bridge().empty());
-+    }
-+
-+    static @NonNull PatchedDataComponentMap of(final @NonNull DataComponentMap map) {
-+        return DataComponentPatchMapBridge.Holder.bridge().of(map);
-+    }
-+
-+    /**
-+     * Sets this data component type to be present with a value in this map.
-+     * <p>
-+     * Note: supplying null will act similarly to {@link PatchedDataComponentMap#unset(DataComponentType)}
-+     *
-+     * @param type  component type
-+     * @param value set value
-+     * @param <T>   type
-+     */
-+    <T> void set(DataComponentType.@NonNull Valued<T> type, @Nullable T value);
-+
-+    /**
-+     * Sets this data component type to be present in this map.
-+     *
-+     * @param type type
-+     */
-+    void set(DataComponentType.@NonNull NonValued type);
-+
-+    /**
-+     * Unsets the value from this map.
-+     *
-+     * @param type data component type
-+     */
-+    void unset(@NonNull DataComponentType type);
-+
-+    /**
-+     * Resets the value of this component to be the default value as
-+     * supplied in the base map of this patched map.
-+     *
-+     * @param type data component type to reset
-+     */
-+    void reset(@NonNull DataComponentType type);
-+
-+    @NonNull PatchedDataComponentMap copy();
-+}
-diff --git a/src/main/java/io/papermc/paper/component/map/PatchedDataComponentMapHolder.java b/src/main/java/io/papermc/paper/component/map/PatchedDataComponentMapHolder.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..956825207da17b8dc6c1216ff37cb9861c7481bc
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/component/map/PatchedDataComponentMapHolder.java
-@@ -0,0 +1,34 @@
-+package io.papermc.paper.component.map;
-+
-+import io.papermc.paper.component.DataComponentType;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.jetbrains.annotations.ApiStatus;
-+
-+@ApiStatus.NonExtendable
-+@ApiStatus.Experimental
-+public interface PatchedDataComponentMapHolder {
-+
-+    @NonNull PatchedDataComponentMap components();
-+
-+    default boolean hasData(final @NonNull DataComponentType type) {
-+        return this.components().has(type);
-+    }
-+
-+    default @Nullable <T> T getData(final DataComponentType.@NonNull Valued<T> type) {
-+        return this.components().get(type);
-+    }
-+
-+    default <T> void setData(final DataComponentType.@NonNull Valued<T> type, final @Nullable T value) {
-+        this.components().set(type, value);
-+    }
-+
-+    default void setData(final DataComponentType.@NonNull NonValued type) {
-+        this.components().set(type);
-+    }
-+
-+    default <T> void removeData(final @NonNull DataComponentType type) {
-+        this.components().unset(type);
-+    }
-+
-+}
 diff --git a/src/main/java/io/papermc/paper/component/package-info.java b/src/main/java/io/papermc/paper/component/package-info.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..37c9e2b084fe4c82242ae64569bb76beb6a88c09
@@ -1151,235 +981,120 @@ index e20f64828548c647a29dad5a475f4596cad88cd8..80c10ab30ca6ea6e2a80a916d8a5831a
  
      /**
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index c64413a6740b604282984dea2a8430a6e7478d68..628aabd52c9686e00918adb8aee5bd9d97baa900 100644
+index 15a59a27f0854ff6f4038349d3a0d00347130140..44951ecb5ae4713cce515e2952c8c7e8c8d4eac4 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
-@@ -1,7 +1,6 @@
- package org.bukkit.inventory;
- 
- import com.google.common.base.Preconditions;
--import com.google.common.collect.ImmutableMap;
- import java.util.LinkedHashMap;
- import java.util.Locale;
- import java.util.Map;
-@@ -27,11 +26,11 @@ import org.jetbrains.annotations.Nullable;
-  * use this class to encapsulate Materials for which {@link Material#isItem()}
-  * returns false.</b>
-  */
--public class ItemStack implements Cloneable, ConfigurationSerializable, Translatable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem>, net.kyori.adventure.translation.Translatable { // Paper
-+public class ItemStack implements Cloneable, ConfigurationSerializable, Translatable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem>, net.kyori.adventure.translation.Translatable, io.papermc.paper.component.map.PatchedDataComponentMapHolder { // Paper
-     private Material type = Material.AIR;
-     private int amount = 0;
-     private MaterialData data = null;
--    private ItemMeta meta;
-+    private io.papermc.paper.component.map.PatchedDataComponentMap dataKeyMap; // Paper
- 
-     @Utility
-     protected ItemStack() {}
-@@ -88,6 +87,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
-         Preconditions.checkArgument(type != null, "Material cannot be null");
-         this.type = type;
-         this.amount = amount;
-+        this.dataKeyMap = io.papermc.paper.component.map.DataComponentPatchMapBridge.Holder.bridge().of(io.papermc.paper.component.map.DataComponentPatchMapBridge.Holder.bridge().fromItem(type)); // Paper
-         if (damage != 0) {
-             setDurability(damage);
-         }
-@@ -107,6 +107,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
-         Preconditions.checkArgument(stack != null, "Cannot copy null stack");
-         this.type = stack.getType();
-         this.amount = stack.getAmount();
-+        this.dataKeyMap = io.papermc.paper.component.map.DataComponentPatchMapBridge.Holder.bridge().of(io.papermc.paper.component.map.DataComponentPatchMapBridge.Holder.bridge().fromItem(type)); // Paper
-         if (this.type.isLegacy()) {
-             this.data = stack.getData();
-         }
-@@ -150,10 +151,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
-     @Deprecated // Paper
-     public void setType(@NotNull Material type) {
-         Preconditions.checkArgument(type != null, "Material cannot be null");
-+        this.dataKeyMap = io.papermc.paper.component.map.DataComponentPatchMapBridge.Holder.bridge().fromItemAndMeta(type, Bukkit.getItemFactory().asMetaFor(this.getItemMeta(), type)); // Paper - update type first too, we need the old context to resolve the meta from the type
-         this.type = type;
--        if (this.meta != null) {
--            this.meta = Bukkit.getItemFactory().asMetaFor(meta, type);
--        }
-         if (type.isLegacy()) {
-             createData((byte) 0);
-         } else {
-@@ -277,6 +276,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
-      */
-     @Utility
-     public int getMaxStackSize() {
-+        ItemMeta meta = getItemMeta();
-         if (meta != null && meta.hasMaxStackSize()) {
-             return meta.getMaxStackSize();
-         }
-@@ -337,9 +337,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
-         try {
-             ItemStack itemStack = (ItemStack) super.clone();
- 
--            if (this.meta != null) {
--                itemStack.meta = this.meta.clone();
--            }
-+            itemStack.dataKeyMap =  this.components().copy(); // Paper
- 
-             if (this.data != null) {
-                 itemStack.data = this.data.clone();
-@@ -359,7 +357,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
-         hash = hash * 31 + getType().hashCode();
-         hash = hash * 31 + getAmount();
-         hash = hash * 31 + (getDurability() & 0xffff);
--        hash = hash * 31 + (hasItemMeta() ? (meta == null ? getItemMeta().hashCode() : meta.hashCode()) : 0);
-+        hash = hash * 31 + dataKeyMap.hashCode(); // Paper
- 
-         return hash;
-     }
-@@ -371,7 +369,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
-      * @return True if this has the given enchantment
-      */
-     public boolean containsEnchantment(@NotNull Enchantment ench) {
--        return meta == null ? false : meta.hasEnchant(ench);
-+        return this.getItemMeta().hasEnchant(ench); // Paper
-     }
- 
-     /**
-@@ -381,7 +379,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
-      * @return Level of the enchantment, or 0
-      */
-     public int getEnchantmentLevel(@NotNull Enchantment ench) {
--        return meta == null ? 0 : meta.getEnchantLevel(ench);
-+        return this.getItemMeta().getEnchantLevel(ench); // Paper
-     }
- 
-     /**
-@@ -391,7 +389,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
-      */
-     @NotNull
-     public Map<Enchantment, Integer> getEnchantments() {
--        return meta == null ? ImmutableMap.<Enchantment, Integer>of() : meta.getEnchants();
-+        return this.getItemMeta().getEnchants(); // Paper
-     }
- 
-     /**
-@@ -467,10 +465,11 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
-      * @param level Level of the enchantment
-      */
-     public void addUnsafeEnchantment(@NotNull Enchantment ench, int level) {
--        ItemMeta itemMeta = (meta == null ? meta = Bukkit.getItemFactory().getItemMeta(type) : meta);
-+        editMeta((itemMeta) -> { // Paper
-         if (itemMeta != null) {
-             itemMeta.addEnchant(ench, level, true);
-         }
-+        }); // Paper
-     }
- 
-     /**
-@@ -482,10 +481,10 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
-      */
-     public int removeEnchantment(@NotNull Enchantment ench) {
-         int level = getEnchantmentLevel(ench);
--        if (level == 0 || meta == null) {
-+        if (level == 0) { // Paper
-             return level;
-         }
--        meta.removeEnchant(ench);
-+        editMeta((itemMeta) -> itemMeta.removeEnchant(ench)); // Paper
-         return level;
-     }
- 
-@@ -493,11 +492,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
-      * Removes all enchantments on this ItemStack.
-      */
-     public void removeEnchantments() {
--        if (meta == null) {
--            return;
--        }
--
--        meta.removeEnchantments();
-+        editMeta(ItemMeta::removeEnchantments); // Paper
-     }
- 
-     @Override
-@@ -653,7 +648,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
-      */
-     @UndefinedNullability // Paper
-     public ItemMeta getItemMeta() {
--        return this.meta == null ? Bukkit.getItemFactory().getItemMeta(this.type) : this.meta.clone();
-+        return io.papermc.paper.component.map.DataComponentPatchMapBridge.Holder.bridge().toItemMeta(this.type, this.components());
-     }
- 
-     /**
-@@ -662,7 +657,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
-      * @return Returns true if some meta data has been set for this item
-      */
-     public boolean hasItemMeta() {
--        return !Bukkit.getItemFactory().equals(meta, null);
-+        return !Bukkit.getItemFactory().equals(this.getItemMeta(), null); // Paper
-     }
- 
-     /**
-@@ -683,22 +678,13 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
-      */
-     private boolean setItemMeta0(@Nullable ItemMeta itemMeta, @NotNull Material material) {
-         if (itemMeta == null) {
--            this.meta = null;
-+            this.dataKeyMap = io.papermc.paper.component.map.PatchedDataComponentMap.of(io.papermc.paper.component.map.DataComponentPatchMapBridge.Holder.bridge().fromItem(material));
-             return true;
-         }
-         if (!Bukkit.getItemFactory().isApplicable(itemMeta, material)) {
-             return false;
-         }
--        this.meta = Bukkit.getItemFactory().asMetaFor(itemMeta, material);
--
--        Material newType = Bukkit.getItemFactory().updateMaterial(meta, material);
--        if (this.type != newType) {
--            this.type = newType;
--        }
--
--        if (this.meta == itemMeta) {
--            this.meta = itemMeta.clone();
--        }
-+        this.dataKeyMap = io.papermc.paper.component.map.DataComponentPatchMapBridge.Holder.bridge().fromItemAndMeta(material, itemMeta);
- 
-         return true;
-     }
-@@ -1079,4 +1065,10 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -1029,4 +1029,96 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
          return Bukkit.getUnsafe().computeTooltipLines(this, tooltipContext, player);
      }
      // Paper end - expose itemstack tooltip lines
-+    // Paper start
-+    @Override
-+    public io.papermc.paper.component.map.@NotNull PatchedDataComponentMap components() {
-+        return this.dataKeyMap;
++
++    // Paper start - data component API
++    /**
++     * Gets the value for the data component type on this stack.
++     *
++     * @param type the data component type
++     * @return the value for the data component type, or null if not set or marked as removed
++     * @param <T> the value type
++     * @see #hasData(io.papermc.paper.component.DataComponentType) for non-valued data component types
++     */
++    @org.jetbrains.annotations.Contract(pure = true)
++    public <T> @Nullable T getData(final io.papermc.paper.component.DataComponentType.@NotNull Valued<T> type) {
++        return this.craftDelegate.getData(type);
 +    }
-+    // Paper end
++
++    /**
++     * Gets the value for the data component type on this stack with
++     * a fallback value.
++     *
++     * @param type the data component type
++     * @param fallback the fallback value if the value isn't present
++     * @return the value for the data component type or the fallback value
++     * @param <T> the value type
++     */
++    @Utility
++    @org.jetbrains.annotations.Contract(value = "_, !null -> !null", pure = true)
++    public <T> @Nullable T getDataOrDefault(final io.papermc.paper.component.DataComponentType.@NotNull Valued<? extends T> type, final @Nullable T fallback) {
++        final T object = this.getData(type);
++        return object != null ? object : fallback;
++    }
++
++    /**
++     * Checks if the data component type is set on the itemstack.
++     *
++     * @param type the data component type
++     * @return true if set, false otherwise
++     */
++    @org.jetbrains.annotations.Contract(pure = true)
++    public boolean hasData(final io.papermc.paper.component.@NotNull DataComponentType type) {
++        return this.craftDelegate.hasData(type);
++    }
++
++    /**
++     * Gets all the data component types set on this stack.
++     *
++     * @return an immutable set of data component types
++     */
++    @org.jetbrains.annotations.Contract("-> new")
++    public java.util.@org.jetbrains.annotations.Unmodifiable Set<io.papermc.paper.component.@NotNull DataComponentType> getDataComponents() {
++        return this.craftDelegate.getDataComponents();
++    }
++
++    /**
++     * Sets the value of this data component type for this itemstack.
++     * <p>
++     * Note: supplying null will act similarly to {@link ItemStack#unsetData(io.papermc.paper.component.DataComponentType)}.
++     *
++     * @param type  component type
++     * @param value set value
++     * @param <T>   type
++     */
++    public <T> void setData(final io.papermc.paper.component.DataComponentType.@NotNull Valued<T> type, final @Nullable T value) {
++        this.craftDelegate.setData(type, value);
++    }
++
++    /**
++     * Marks this non-valued data component type as present in this itemstack.
++     *
++     * @param type type
++     */
++    public void setData(final io.papermc.paper.component.DataComponentType.@NotNull NonValued type) {
++        this.craftDelegate.setData(type);
++    }
++
++    /**
++     * Marks this data component as removed for this itemstack.
++     *
++     * @param type data component type
++     */
++    public void unsetData(final io.papermc.paper.component.@NotNull DataComponentType type) {
++        this.craftDelegate.unsetData(type);
++    }
++
++    /**
++     * Resets the value of this component to be the default
++     * value for the item type from {@link ItemType#getDefaultDataComponent(io.papermc.paper.component.DataComponentType.Valued)}
++     * @param type data component type to reset
++     */
++    public void resetData(final io.papermc.paper.component.@NotNull DataComponentType type) {
++        this.craftDelegate.resetData(type);
++    }
++    // Paper end - data component API
  }
-diff --git a/src/test/java/org/bukkit/configuration/ConfigurationSectionTest.java b/src/test/java/org/bukkit/configuration/ConfigurationSectionTest.java
-index ee5bc86f47cf5599e4c5c34e3a9084f86d74bdb7..d892f3b82f8e85143497d7dfd6790526fd455b90 100644
---- a/src/test/java/org/bukkit/configuration/ConfigurationSectionTest.java
-+++ b/src/test/java/org/bukkit/configuration/ConfigurationSectionTest.java
-@@ -546,7 +546,7 @@ public abstract class ConfigurationSectionTest {
-         assertFalse(section.isVector("doesntExist"));
-     }
- 
--    @Test
-+    @org.junit.jupiter.api.Disabled // Paper
-     public void testGetItemStack_String() {
-         ConfigurationSection section = getConfigurationSection();
-         String key = "exists";
-@@ -558,7 +558,7 @@ public abstract class ConfigurationSectionTest {
-         assertNull(section.getString("doesntExist"));
-     }
- 
--    @Test
-+    @org.junit.jupiter.api.Disabled // Paper
-     public void testGetItemStack_String_ItemStack() {
-         ConfigurationSection section = getConfigurationSection();
-         String key = "exists";
-@@ -571,7 +571,7 @@ public abstract class ConfigurationSectionTest {
-         assertEquals(def, section.getItemStack("doesntExist", def));
-     }
- 
--    @Test
-+    @org.junit.jupiter.api.Disabled // Paper
-     public void testIsItemStack() {
-         ConfigurationSection section = getConfigurationSection();
-         String key = "exists";
+diff --git a/src/main/java/org/bukkit/inventory/ItemType.java b/src/main/java/org/bukkit/inventory/ItemType.java
+index 077bd4d4e50169780f27e8502104e9e4b2ecdae6..173fdeac69729e3a4bc75d2dae1b1db588bb6c5b 100644
+--- a/src/main/java/org/bukkit/inventory/ItemType.java
++++ b/src/main/java/org/bukkit/inventory/ItemType.java
+@@ -2443,4 +2443,12 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
+     @Override
+     @NotNull String getTranslationKey();
+     // Paper end - add Translatable
++
++    // Paper start - data component API
++    @Nullable <T> T getDefaultDataComponent(io.papermc.paper.component.DataComponentType.@NotNull Valued<T> dataComponentType);
++
++    boolean hasDefaultDataComponent(io.papermc.paper.component.@NotNull DataComponentType dataComponentType);
++
++    java.util.@org.jetbrains.annotations.Unmodifiable @NotNull Set<io.papermc.paper.component.DataComponentType> getDefaultDataComponentTypes();
++    // Paper end - data component API
+ }
