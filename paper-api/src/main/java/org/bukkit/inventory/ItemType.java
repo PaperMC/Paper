@@ -2361,6 +2361,31 @@ public interface ItemType extends Keyed, Translatable {
     boolean isFuel();
 
     /**
+     * Checks whether this item type is compostable (can be inserted into a
+     * composter).
+     *
+     * @return true if this item type is compostable
+     * @see #getCompostChance()
+     */
+    boolean isCompostable();
+
+    /**
+     * Get the chance that this item type will successfully compost. The
+     * returned value is between 0 and 1 (inclusive).
+     *
+     * Items with a compost chance of 1 will always raise the composter's level,
+     * while items with a compost chance of 0 will never raise it.
+     *
+     * Plugins should check that {@link #isCompostable} returns true before
+     * calling this method.
+     *
+     * @return the chance that this item type will successfully compost
+     * @throws IllegalArgumentException if this item type is not compostable
+     * @see #isCompostable()
+     */
+    float getCompostChance();
+
+    /**
      * Determines the remaining item in a crafting grid after crafting with this
      * ingredient.
      *

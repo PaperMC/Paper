@@ -5523,6 +5523,37 @@ public enum Material implements Keyed, Translatable {
     }
 
     /**
+     * Checks whether this material is compostable (can be inserted into a
+     * composter).
+     *
+     * @return true if this material is compostable
+     * @see #getCompostChance()
+     */
+    public boolean isCompostable() {
+        return isItem() && asItemType().isCompostable();
+    }
+
+    /**
+     * Get the chance that this material will successfully compost. The returned
+     * value is between 0 and 1 (inclusive).
+     *
+     * Materials with a compost chance of 1 will always raise the composter's
+     * level, while materials with a compost chance of 0 will never raise it.
+     *
+     * Plugins should check that {@link #isCompostable} returns true before
+     * calling this method.
+     *
+     * @return the chance that this material will successfully compost
+     * @throws IllegalArgumentException if the material is not compostable
+     * @see #isCompostable()
+     */
+    public float getCompostChance() {
+        ItemType type = asItemType();
+        Preconditions.checkArgument(type != null, "The Material is not an item!");
+        return type.getCompostChance();
+    }
+
+    /**
      * Tries to convert this Material to an item type
      *
      * @return the converted item type or null
