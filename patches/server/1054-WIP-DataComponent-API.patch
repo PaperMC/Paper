@@ -3,6 +3,9 @@ From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
 Date: Sun, 28 Apr 2024 19:53:01 -0400
 Subject: [PATCH] WIP DataComponent API
 
+== AT ==
+public net/minecraft/world/item/component/ItemContainerContents MAX_SIZE
+public net/minecraft/world/item/component/ItemContainerContents items
 
 diff --git a/src/main/java/io/papermc/paper/component/ComponentAdapter.java b/src/main/java/io/papermc/paper/component/ComponentAdapter.java
 new file mode 100644
@@ -37,10 +40,10 @@ index 0000000000000000000000000000000000000000..e538819c873a324c58bcd8e73f89510e
 +}
 diff --git a/src/main/java/io/papermc/paper/component/ComponentAdapters.java b/src/main/java/io/papermc/paper/component/ComponentAdapters.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..08e04fb9ecd9be1c3b13d114d07040bb36fec4c1
+index 0000000000000000000000000000000000000000..ad40c6e7b96471e21a43fddd73e55031e39a64a8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/ComponentAdapters.java
-@@ -0,0 +1,162 @@
+@@ -0,0 +1,165 @@
 +package io.papermc.paper.component;
 +
 +import io.papermc.paper.adventure.PaperAdventure;
@@ -142,7 +145,8 @@ index 0000000000000000000000000000000000000000..08e04fb9ecd9be1c3b13d114d07040bb
 +        // debug stick state
 +        // entity data
 +        // bucket entity data
-+        // instrument
++        // block entity data
++        register(DataComponents.INSTRUMENT, CraftMusicInstrument::minecraftHolderToBukkit, CraftMusicInstrument::bukkitToMinecraftHolder);
 +        registerIdentity(DataComponents.OMINOUS_BOTTLE_AMPLIFIER);
 +        register(DataComponents.RECIPES, nms -> {
 +            final List<Key> api = new ArrayList<>(nms.size());
@@ -164,8 +168,10 @@ index 0000000000000000000000000000000000000000..08e04fb9ecd9be1c3b13d114d07040bb
 +        register(DataComponents.FIREWORKS, PaperFireworks::new);
 +        register(DataComponents.PROFILE, PaperResolvableProfile::new);
 +        register(DataComponents.NOTE_BLOCK_SOUND, CraftNamespacedKey::fromMinecraft, CraftNamespacedKey::toMinecraft);
++        register(DataComponents.BANNER_PATTERNS, PaperBannerPatternLayers::new);
 +        register(DataComponents.BASE_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
 +        register(DataComponents.POT_DECORATIONS, PaperPotDecorations::new);
++        register(DataComponents.CONTAINER, PaperItemContainerContents::new);
 +        // block state (block data)
 +        // bees
 +        register(DataComponents.LOCK, PaperLockCode::new);
@@ -329,14 +335,15 @@ index 0000000000000000000000000000000000000000..5639559368e6866e9b0afa6688f3b12c
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/ComponentTypesBridgesImpl.java b/src/main/java/io/papermc/paper/component/item/ComponentTypesBridgesImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..548c392e045fd8ca6ebdbb3e6ee871cabceab707
+index 0000000000000000000000000000000000000000..649070a5b6c249b7810d0eeae5afbc3fcb490384
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/ComponentTypesBridgesImpl.java
-@@ -0,0 +1,139 @@
+@@ -0,0 +1,145 @@
 +package io.papermc.paper.component.item;
 +
++import io.papermc.paper.util.Filtered;
 +import net.kyori.adventure.key.Key;
-+import org.bukkit.NamespacedKey;
++import org.bukkit.inventory.meta.trim.ArmorTrim;
 +import org.bukkit.map.MapCursor;
 +import org.bukkit.potion.PotionEffect;
 +
@@ -429,12 +436,17 @@ index 0000000000000000000000000000000000000000..548c392e045fd8ca6ebdbb3e6ee871ca
 +
 +    @Override
 +    public SeededContainerLoot.Builder seededContainerLoot(final Key lootTableKey) {
-+        return new PaperSeededContainerLoot.BuilderImpl(new NamespacedKey(lootTableKey.namespace(), lootTableKey.value()));
++        return new PaperSeededContainerLoot.BuilderImpl(lootTableKey);
 +    }
 +
 +    @Override
-+    public WrittenBookContent.Builder writtenBookContent() {
-+        return new PaperWrittenBookContent.BuilderImpl();
++    public ItemContainerContents.Builder itemContainerContents() {
++        return new PaperItemContainerContents.BuilderImpl();
++    }
++
++    @Override
++    public WrittenBookContent.Builder writtenBookContent(final Filtered<String> title, final String author) {
++        return new PaperWrittenBookContent.BuilderImpl(title, author);
 +    }
 +
 +    @Override
@@ -443,8 +455,8 @@ index 0000000000000000000000000000000000000000..548c392e045fd8ca6ebdbb3e6ee871ca
 +    }
 +
 +    @Override
-+    public ItemArmorTrim.Builder itemArmorTrim() {
-+        return new PaperItemArmorTrim.BuilderImpl();
++    public ItemArmorTrim.Builder itemArmorTrim(final ArmorTrim armorTrim) {
++        return new PaperItemArmorTrim.BuilderImpl(armorTrim);
 +    }
 +
 +    @Override
@@ -472,18 +484,58 @@ index 0000000000000000000000000000000000000000..548c392e045fd8ca6ebdbb3e6ee871ca
 +        return new PaperLockCode.BuilderImpl();
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/component/item/PaperBannerPatternLayers.java b/src/main/java/io/papermc/paper/component/item/PaperBannerPatternLayers.java
+diff --git a/src/main/java/io/papermc/paper/component/item/ComponentUtils.java b/src/main/java/io/papermc/paper/component/item/ComponentUtils.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fa1d453538d9fa1e0efa6bfffdf0ae9dd1c616e5
+index 0000000000000000000000000000000000000000..fdb9b248ae51419ac98a1321e9c96e0de3337d58
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/component/item/PaperBannerPatternLayers.java
-@@ -0,0 +1,68 @@
++++ b/src/main/java/io/papermc/paper/component/item/ComponentUtils.java
+@@ -0,0 +1,38 @@
 +package io.papermc.paper.component.item;
 +
-+import com.google.common.base.Function;
++import com.google.common.collect.Collections2;
++import com.google.common.collect.ImmutableList;
++import com.google.common.collect.Iterables;
 +import com.google.common.collect.Lists;
-+import java.util.ArrayList;
++import java.util.Collection;
 +import java.util.Collections;
++import java.util.List;
++import java.util.function.Function;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++final class ComponentUtils {
++
++    private ComponentUtils() {
++    }
++
++    static <A, M> List<A> transform(final List<? extends M> nms, final Function<? super M, ? extends A> converter) {
++        return Collections.unmodifiableList(Lists.transform(nms, converter::apply));
++    }
++
++    static <A, M> Collection<A> transform(final Collection<? extends M> nms, final Function<? super M, ? extends A> converter) {
++        return Collections.unmodifiableCollection(Collections2.transform(nms, converter::apply));
++    }
++
++    @Deprecated
++    static <A, M> List<A> transform(final Iterable<? extends M> nms, final Function<? super M, ? extends A> converter) {
++        return ImmutableList.copyOf(Iterables.transform(nms, converter::apply));
++    }
++
++    static <A, M, C extends Collection<M>> void addAndConvert(final C target, final Collection<A> toAdd, final Function<? super A, ? extends M> converter) {
++        for (final A value : toAdd) {
++            target.add(converter.apply(value));
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/component/item/PaperBannerPatternLayers.java b/src/main/java/io/papermc/paper/component/item/PaperBannerPatternLayers.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3077a38a5b33b155ea23ebf163c5c4c425d6c8b8
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/component/item/PaperBannerPatternLayers.java
+@@ -0,0 +1,62 @@
++package io.papermc.paper.component.item;
++
 +import java.util.List;
 +import java.util.Optional;
 +import org.bukkit.DyeColor;
@@ -491,42 +543,40 @@ index 0000000000000000000000000000000000000000..fa1d453538d9fa1e0efa6bfffdf0ae9d
 +import org.bukkit.block.banner.PatternType;
 +import org.bukkit.craftbukkit.CraftRegistry;
 +import org.bukkit.craftbukkit.block.banner.CraftPatternType;
-+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.craftbukkit.util.Handleable;
-+import org.bukkit.inventory.ItemStack;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.jetbrains.annotations.Unmodifiable;
++
++import static io.papermc.paper.component.item.ComponentUtils.transform;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperBannerPatternLayers(
-+    net.minecraft.world.level.block.entity.BannerPatternLayers impl
++    net.minecraft.world.level.block.entity.BannerPatternLayers impl,
++    List<Pattern> patterns
 +) implements BannerPatternLayers, Handleable<net.minecraft.world.level.block.entity.BannerPatternLayers> {
++
++    public PaperBannerPatternLayers(final net.minecraft.world.level.block.entity.BannerPatternLayers impl) {
++        this(impl, convert(impl));
++    }
++
++    private static List<Pattern> convert(final net.minecraft.world.level.block.entity.BannerPatternLayers nmsPatterns) {
++        return transform(nmsPatterns.layers(), input -> {
++            final Optional<PatternType> type = CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.BANNER_PATTERN, input.pattern());
++            return new Pattern(DyeColor.getByWoolData((byte) input.color().getId()), type.orElseThrow());
++        });
++    }
 +
 +    @Override
 +    public net.minecraft.world.level.block.entity.BannerPatternLayers getHandle() {
 +        return this.impl;
 +    }
 +
-+    @Override
-+    public @NonNull @Unmodifiable List<Pattern> getPatterns() {
-+        return Collections.unmodifiableList(
-+            Lists.transform(
-+                this.impl.layers(), // this already copies the itemstacks to maintain immutability
-+                input -> {
-+                    Optional<PatternType> type = CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.BANNER_PATTERN, input.pattern());
-+                    return new Pattern(DyeColor.getByWoolData((byte) input.color().getId()), type.orElseThrow());
-+                }
-+            )
-+        );
-+    }
-+
-+    static final class BuilderImpl implements Builder {
++    static final class BuilderImpl implements BannerPatternLayers.Builder {
 +
 +        private final net.minecraft.world.level.block.entity.BannerPatternLayers.Builder builder = new net.minecraft.world.level.block.entity.BannerPatternLayers.Builder();
 +
 +        @Override
-+        public @NonNull Builder add(@NonNull final Pattern pattern) {
++        public BannerPatternLayers.Builder add(final Pattern pattern) {
 +            this.builder.add(
 +                CraftPatternType.bukkitToMinecraftHolder(pattern.getPattern()),
 +                net.minecraft.world.item.DyeColor.byId(pattern.getColor().getWoolData())
@@ -535,33 +585,34 @@ index 0000000000000000000000000000000000000000..fa1d453538d9fa1e0efa6bfffdf0ae9d
 +        }
 +
 +        @Override
-+        public @NonNull Builder addAll(@NonNull final List<Pattern> patterns) {
++        public BannerPatternLayers.Builder addAll(final List<Pattern> patterns) {
 +            patterns.forEach(this::add);
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull BannerPatternLayers build() {
++        public BannerPatternLayers build() {
 +            return new PaperBannerPatternLayers(this.builder.build());
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperBundleContents.java b/src/main/java/io/papermc/paper/component/item/PaperBundleContents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..daf6de52e86870babaa5fe0e1bb5e04781363f21
+index 0000000000000000000000000000000000000000..db7b9104469e53a4eeefb4dde59167996898d011
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperBundleContents.java
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,52 @@
 +package io.papermc.paper.component.item;
 +
 +import java.util.ArrayList;
-+import java.util.Collections;
 +import java.util.List;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.bukkit.inventory.ItemStack;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
++
++import static io.papermc.paper.component.item.ComponentUtils.transform;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperBundleContents(
@@ -574,29 +625,23 @@ index 0000000000000000000000000000000000000000..daf6de52e86870babaa5fe0e1bb5e047
 +    }
 +
 +    @Override
-+    public List<ItemStack> getItems() {
++    public List<ItemStack> contents() {
 +        // TODO anyway to make this lazy? the nms itemsCopy returns an Iterable not a list so its a tad annoying. Can just change the nms impl maybe?
-+        final Iterable<net.minecraft.world.item.ItemStack> nmsItemStacks = this.impl.itemsCopy(); // gets copies of the stacks
-+        final List<ItemStack> apiItemStacks = new ArrayList<>(this.impl.size());
-+        for (final net.minecraft.world.item.ItemStack nmsItemStack : nmsItemStacks) {
-+            apiItemStacks.add(CraftItemStack.asCraftMirror(nmsItemStack)); // already copied above
-+        }
-+
-+        return Collections.unmodifiableList(apiItemStacks);
++        return transform(this.impl.itemsCopy() /*makes copies internally*/, CraftItemStack::asCraftMirror);
 +    }
 +
-+    static final class BuilderImpl implements Builder {
++    static final class BuilderImpl implements BundleContents.Builder {
 +
 +        private final List<net.minecraft.world.item.ItemStack> items = new ArrayList<>();
 +
 +        @Override
-+        public Builder add(final ItemStack itemStack) {
++        public BundleContents.Builder add(final ItemStack itemStack) {
 +            this.items.add(CraftItemStack.asNMSCopy(itemStack));
 +            return this;
 +        }
 +
 +        @Override
-+        public Builder addAll(final List<ItemStack> itemStack) {
++        public BundleContents.Builder addAll(final List<ItemStack> itemStack) {
 +            for (final ItemStack item : itemStack) {
 +                this.items.add(CraftItemStack.asNMSCopy(item));
 +            }
@@ -611,21 +656,21 @@ index 0000000000000000000000000000000000000000..daf6de52e86870babaa5fe0e1bb5e047
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperChargedProjectiles.java b/src/main/java/io/papermc/paper/component/item/PaperChargedProjectiles.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9a86fc62758e61f6e006159f542733a2ebfd4f98
+index 0000000000000000000000000000000000000000..6a3d6541d1d009a882f717f3d10920f49b627519
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperChargedProjectiles.java
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,51 @@
 +package io.papermc.paper.component.item;
 +
-+import com.google.common.collect.Lists;
 +import java.util.ArrayList;
-+import java.util.Collections;
 +import java.util.List;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.bukkit.inventory.ItemStack;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
++
++import static io.papermc.paper.component.item.ComponentUtils.transform;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperChargedProjectiles(
@@ -638,27 +683,22 @@ index 0000000000000000000000000000000000000000..9a86fc62758e61f6e006159f542733a2
 +    }
 +
 +    @Override
-+    public List<ItemStack> getItems() {
-+        return Collections.unmodifiableList(
-+            Lists.transform(
-+                this.impl.getItems(), // this already copies the itemstacks to maintain immutability
-+                CraftItemStack::asCraftMirror
-+            )
-+        );
++    public List<ItemStack> projectiles() {
++        return transform(this.impl.getItems() /*makes copies internally*/, CraftItemStack::asCraftMirror);
 +    }
 +
-+    static final class BuilderImpl implements Builder {
++    static final class BuilderImpl implements ChargedProjectiles.Builder {
 +
 +        private final List<net.minecraft.world.item.ItemStack> items = new ArrayList<>();
 +
 +        @Override
-+        public Builder add(final ItemStack itemStack) {
++        public ChargedProjectiles.Builder add(final ItemStack itemStack) {
 +            this.items.add(CraftItemStack.asNMSCopy(itemStack));
 +            return this;
 +        }
 +
 +        @Override
-+        public Builder addAll(final List<ItemStack> itemStack) {
++        public ChargedProjectiles.Builder addAll(final List<ItemStack> itemStack) {
 +            for (final ItemStack item : itemStack) {
 +                this.items.add(CraftItemStack.asNMSCopy(item));
 +            }
@@ -673,7 +713,7 @@ index 0000000000000000000000000000000000000000..9a86fc62758e61f6e006159f542733a2
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperCustomModelData.java b/src/main/java/io/papermc/paper/component/item/PaperCustomModelData.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..72e1c55b1d4bc4304bf179f2ff98708c2220e531
+index 0000000000000000000000000000000000000000..b7a1233997d7192c5fd5a8c2e43fe235e1f1fa96
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperCustomModelData.java
 @@ -0,0 +1,37 @@
@@ -698,12 +738,12 @@ index 0000000000000000000000000000000000000000..72e1c55b1d4bc4304bf179f2ff98708c
 +        return this.impl.value();
 +    }
 +
-+    static final class BuilderImpl implements Builder {
++    static final class BuilderImpl implements CustomModelData.Builder {
 +
 +        private int data;
 +
 +        @Override
-+        public Builder customModelData(final int data) {
++        public CustomModelData.Builder customModelData(final int data) {
 +            this.data = data;
 +            return this;
 +        }
@@ -716,7 +756,7 @@ index 0000000000000000000000000000000000000000..72e1c55b1d4bc4304bf179f2ff98708c
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperDyedItemColor.java b/src/main/java/io/papermc/paper/component/item/PaperDyedItemColor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1e2b03f7de79a2b2559bb896f2ea82862a6ec987
+index 0000000000000000000000000000000000000000..c5b60a6c93baed9f132e1ab9d5b3c7d7da386819
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperDyedItemColor.java
 @@ -0,0 +1,55 @@
@@ -749,22 +789,22 @@ index 0000000000000000000000000000000000000000..1e2b03f7de79a2b2559bb896f2ea8286
 +
 +    @Override
 +    public DyedItemColor showInTooltip(final boolean showInTooltip) {
-+        return new PaperDyedItemColor(new net.minecraft.world.item.component.DyedItemColor(this.impl.rgb(), showInTooltip));
++        return new PaperDyedItemColor(this.impl.withTooltip(showInTooltip));
 +    }
 +
-+    static final class BuilderImpl implements Builder {
++    static final class BuilderImpl implements DyedItemColor.Builder {
 +
 +        private Color color = Color.WHITE;
 +        private boolean showInToolTip = true;
 +
 +        @Override
-+        public Builder color(final Color color) {
++        public DyedItemColor.Builder color(final Color color) {
 +            this.color = color;
 +            return this;
 +        }
 +
 +        @Override
-+        public Builder showInTooltip(final boolean showInTooltip) {
++        public DyedItemColor.Builder showInTooltip(final boolean showInTooltip) {
 +            this.showInToolTip = showInTooltip;
 +            return this;
 +        }
@@ -777,30 +817,37 @@ index 0000000000000000000000000000000000000000..1e2b03f7de79a2b2559bb896f2ea8286
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperFireworks.java b/src/main/java/io/papermc/paper/component/item/PaperFireworks.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3c32b35ed56eb238ff6562a6512aa1d7d007fb2f
+index 0000000000000000000000000000000000000000..0b3e574f9b5c05d97fbbbe66579844ec14ed2798
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperFireworks.java
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,79 @@
 +package io.papermc.paper.component.item;
 +
-+import com.google.common.collect.Lists;
++import com.google.common.base.Preconditions;
 +import java.util.ArrayList;
-+import java.util.Collections;
 +import java.util.List;
 +import net.minecraft.world.item.component.FireworkExplosion;
 +import org.bukkit.FireworkEffect;
-+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.craftbukkit.inventory.CraftMetaFirework;
 +import org.bukkit.craftbukkit.util.Handleable;
-+import org.bukkit.inventory.ItemStack;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.jetbrains.annotations.Unmodifiable;
++
++import static io.papermc.paper.component.item.ComponentUtils.addAndConvert;
++import static io.papermc.paper.component.item.ComponentUtils.transform;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperFireworks(
-+    net.minecraft.world.item.component.Fireworks impl
++    net.minecraft.world.item.component.Fireworks impl,
++    List<FireworkEffect> effects
 +) implements Fireworks, Handleable<net.minecraft.world.item.component.Fireworks> {
++
++    public PaperFireworks(final net.minecraft.world.item.component.Fireworks impl) {
++        this(
++            impl,
++            transform(impl.explosions(), CraftMetaFirework::getEffect)
++        );
++    }
 +
 +    @Override
 +    public net.minecraft.world.item.component.Fireworks getHandle() {
@@ -808,71 +855,83 @@ index 0000000000000000000000000000000000000000..3c32b35ed56eb238ff6562a6512aa1d7
 +    }
 +
 +    @Override
-+    public @NonNull @Unmodifiable List<FireworkEffect> effects() {
-+        return Collections.unmodifiableList(
-+            Lists.transform(
-+                this.impl.explosions(),
-+                CraftMetaFirework::getEffect
-+            )
-+        );
-+    }
-+
-+    @Override
 +    public int flightDuration() {
 +        return this.impl.flightDuration();
 +    }
 +
-+    static final class BuilderImpl implements Builder {
++    static final class BuilderImpl implements Fireworks.Builder {
 +
 +        private final List<FireworkExplosion> effects = new ArrayList<>();
 +        private int duration;
 +
 +        @Override
-+        public @NonNull Builder flightDuration(@NonNull final int duration) {
++        public Fireworks.Builder flightDuration(final int duration) {
 +            this.duration = duration;
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull Builder add(@NonNull final FireworkEffect effect) {
++        public Fireworks.Builder add(final FireworkEffect effect) {
++            Preconditions.checkArgument(
++                this.effects.size() + 1 <= net.minecraft.world.item.component.Fireworks.MAX_EXPLOSIONS,
++                "Cannot have more than %s effects, had %s",
++                net.minecraft.world.item.component.Fireworks.MAX_EXPLOSIONS,
++                this.effects.size() + 1
++            );
 +            this.effects.add(CraftMetaFirework.getExplosion(effect));
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull Builder addAll(@NonNull final List<FireworkEffect> effects) {
-+            effects.forEach(this::add);
++        public Fireworks.Builder addAll(final List<FireworkEffect> effects) {
++            Preconditions.checkArgument(
++                this.effects.size() + effects.size() <= net.minecraft.world.item.component.Fireworks.MAX_EXPLOSIONS,
++                "Cannot have more than %s effects, had %s",
++                net.minecraft.world.item.component.Fireworks.MAX_EXPLOSIONS,
++                this.effects.size() + effects.size()
++            );
++            addAndConvert(this.effects, effects, CraftMetaFirework::getExplosion);
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull Fireworks build() {
++        public Fireworks build() {
 +            return new PaperFireworks(new net.minecraft.world.item.component.Fireworks(this.duration, this.effects));
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperFoodProperties.java b/src/main/java/io/papermc/paper/component/item/PaperFoodProperties.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cb19f766943ac3aabddf03b958d151c25f8a9a16
+index 0000000000000000000000000000000000000000..b36ba646ee250be73a2de785daa9c01eeb448e1d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperFoodProperties.java
-@@ -0,0 +1,121 @@
+@@ -0,0 +1,129 @@
 +package io.papermc.paper.component.item;
 +
++import com.google.common.base.Preconditions;
 +import java.util.ArrayList;
-+import java.util.Collections;
 +import java.util.List;
 +import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.bukkit.potion.PotionEffect;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.jetbrains.annotations.Unmodifiable;
++
++import static io.papermc.paper.component.item.ComponentUtils.addAndConvert;
++import static io.papermc.paper.component.item.ComponentUtils.transform;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperFoodProperties(
-+    net.minecraft.world.food.FoodProperties impl
++    net.minecraft.world.food.FoodProperties impl,
++    List<PossibleEffect> effects
 +) implements FoodProperties, Handleable<net.minecraft.world.food.FoodProperties> {
++
++    public PaperFoodProperties(final net.minecraft.world.food.FoodProperties impl) {
++        this(
++            impl,
++            transform(impl.effects(), PossibleEffectImpl::new)
++        );
++    }
 +
 +    @Override
 +    public int nutrition() {
@@ -895,17 +954,6 @@ index 0000000000000000000000000000000000000000..cb19f766943ac3aabddf03b958d151c2
 +    }
 +
 +    @Override
-+    public @Unmodifiable List<PossibleEffect> effects() {
-+        final List<net.minecraft.world.food.FoodProperties.PossibleEffect> nms = this.impl.effects();
-+        final List<PossibleEffect> api = new ArrayList<>(nms.size());
-+        for (final net.minecraft.world.food.FoodProperties.PossibleEffect effect : nms) {
-+            api.add(new PossibleEffectImpl(effect));
-+        }
-+
-+        return Collections.unmodifiableList(api);
-+    }
-+
-+    @Override
 +    public net.minecraft.world.food.FoodProperties getHandle() {
 +        return this.impl;
 +    }
@@ -915,6 +963,7 @@ index 0000000000000000000000000000000000000000..cb19f766943ac3aabddf03b958d151c2
 +    ) implements PossibleEffect, Handleable<net.minecraft.world.food.FoodProperties.PossibleEffect> {
 +
 +        public static PossibleEffect toApi(final PotionEffect effect, final float probability) {
++            Preconditions.checkArgument(probability >= 0.0F && probability <= 1.0F, "probability must be [0.0f, 1.0f], was %s", probability);
 +            return new PossibleEffectImpl(new net.minecraft.world.food.FoodProperties.PossibleEffect(CraftPotionUtil.fromBukkit(effect), probability));
 +        }
 +
@@ -934,7 +983,7 @@ index 0000000000000000000000000000000000000000..cb19f766943ac3aabddf03b958d151c2
 +        }
 +    }
 +
-+    static final class BuilderImpl implements Builder {
++    static final class BuilderImpl implements FoodProperties.Builder {
 +
 +        private final List<net.minecraft.world.food.FoodProperties.PossibleEffect> possibleEffects = new ArrayList<>();
 +        private boolean canAlwaysEat = false;
@@ -943,32 +992,40 @@ index 0000000000000000000000000000000000000000..cb19f766943ac3aabddf03b958d151c2
 +        private int nutrition = 0;
 +
 +        @Override
-+        public Builder canAlwaysEat(final boolean canAlwaysEat) {
++        public FoodProperties.Builder canAlwaysEat(final boolean canAlwaysEat) {
 +            this.canAlwaysEat = canAlwaysEat;
 +            return this;
 +        }
 +
 +        @Override
-+        public Builder eatSeconds(final float eatSeconds) {
++        public FoodProperties.Builder eatSeconds(final float eatSeconds) {
++            Preconditions.checkArgument(eatSeconds > 0, "eatSeconds must be positive, was %s", eatSeconds);
 +            this.eatSeconds = eatSeconds;
 +            return this;
 +        }
 +
 +        @Override
-+        public Builder saturation(final float saturation) {
++        public FoodProperties.Builder saturation(final float saturation) {
 +            this.saturation = saturation;
 +            return this;
 +        }
 +
 +        @Override
-+        public Builder nutrition(final int nutrition) {
++        public FoodProperties.Builder nutrition(final int nutrition) {
++            Preconditions.checkArgument(nutrition >= 0, "nutrition must be non-negative, was %s", nutrition);
 +            this.nutrition = nutrition;
 +            return this;
 +        }
 +
 +        @Override
-+        public Builder addEffect(final PossibleEffect effect) {
++        public FoodProperties.Builder addEffect(final PossibleEffect effect) {
 +            this.possibleEffects.add(((PossibleEffectImpl) effect).possibleEffect());
++            return this;
++        }
++
++        @Override
++        public Builder addAllEffects(final List<PossibleEffect> effects) {
++            addAndConvert(this.possibleEffects, effects, ef -> ((PossibleEffectImpl) ef).possibleEffect());
 +            return this;
 +        }
 +
@@ -980,29 +1037,18 @@ index 0000000000000000000000000000000000000000..cb19f766943ac3aabddf03b958d151c2
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperItemArmorTrim.java b/src/main/java/io/papermc/paper/component/item/PaperItemArmorTrim.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3f1c41aa799e02fff1af787d63c9e5efa8f851e8
+index 0000000000000000000000000000000000000000..8d2f20225101a1134b9d89a03f2f1a704bd4d51f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperItemArmorTrim.java
-@@ -0,0 +1,71 @@
+@@ -0,0 +1,68 @@
 +package io.papermc.paper.component.item;
 +
-+import com.google.common.collect.Lists;
-+import java.util.ArrayList;
-+import java.util.Collections;
-+import java.util.List;
-+import org.bukkit.attribute.Attribute;
-+import org.bukkit.attribute.AttributeModifier;
-+import org.bukkit.craftbukkit.CraftEquipmentSlot;
-+import org.bukkit.craftbukkit.attribute.CraftAttribute;
-+import org.bukkit.craftbukkit.attribute.CraftAttributeInstance;
 +import org.bukkit.craftbukkit.inventory.trim.CraftTrimMaterial;
 +import org.bukkit.craftbukkit.inventory.trim.CraftTrimPattern;
 +import org.bukkit.craftbukkit.util.Handleable;
-+import org.bukkit.inventory.EquipmentSlotGroup;
 +import org.bukkit.inventory.meta.trim.ArmorTrim;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.jetbrains.annotations.NotNull;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperItemArmorTrim(
@@ -1025,47 +1071,53 @@ index 0000000000000000000000000000000000000000..3f1c41aa799e02fff1af787d63c9e5ef
 +    }
 +
 +    @Override
-+    public @NotNull ArmorTrim armorTrim() {
++    public ArmorTrim armorTrim() {
 +        return new ArmorTrim(CraftTrimMaterial.minecraftHolderToBukkit(this.impl.material()), CraftTrimPattern.minecraftHolderToBukkit(this.impl.pattern()));
 +    }
 +
-+    static final class BuilderImpl implements Builder {
++    static final class BuilderImpl implements ItemArmorTrim.Builder {
 +
 +        private net.minecraft.world.item.armortrim.ArmorTrim armorTrim;
 +        private boolean showInTooltip = true;
 +
++        BuilderImpl(final ArmorTrim armorTrim) {
++            this.armorTrim = convert(armorTrim);
++        }
++
++        private static net.minecraft.world.item.armortrim.ArmorTrim convert(final ArmorTrim armorTrim) {
++            return new net.minecraft.world.item.armortrim.ArmorTrim(
++                CraftTrimMaterial.bukkitToMinecraftHolder(armorTrim.getMaterial()),
++                CraftTrimPattern.bukkitToMinecraftHolder(armorTrim.getPattern())
++            );
++        }
++
 +        @Override
-+        public Builder showInTooltip(final boolean showInTooltip) {
++        public ItemArmorTrim.Builder showInTooltip(final boolean showInTooltip) {
 +            this.showInTooltip = showInTooltip;
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull Builder armorTrim(@NonNull final ArmorTrim armorTrim) {
-+            this.armorTrim = new net.minecraft.world.item.armortrim.ArmorTrim(
-+                CraftTrimMaterial.bukkitToMinecraftHolder(armorTrim.getMaterial()),
-+                CraftTrimPattern.bukkitToMinecraftHolder(armorTrim.getPattern())
-+            );
++        public ItemArmorTrim.Builder armorTrim(final ArmorTrim armorTrim) {
++            this.armorTrim = convert(armorTrim);
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull ItemArmorTrim build() {
++        public ItemArmorTrim build() {
 +            return new PaperItemArmorTrim(this.armorTrim.withTooltip(this.showInTooltip));
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperItemAttributeModifiers.java b/src/main/java/io/papermc/paper/component/item/PaperItemAttributeModifiers.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..26b195f590025406232fde513f602fd3ff536405
+index 0000000000000000000000000000000000000000..c58ffb2b94e020021bfc8c444438821b4fe2f4b4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperItemAttributeModifiers.java
-@@ -0,0 +1,89 @@
+@@ -0,0 +1,87 @@
 +package io.papermc.paper.component.item;
 +
-+import com.google.common.collect.Lists;
 +import java.util.ArrayList;
-+import java.util.Collections;
 +import java.util.List;
 +import org.bukkit.attribute.Attribute;
 +import org.bukkit.attribute.AttributeModifier;
@@ -1076,6 +1128,8 @@ index 0000000000000000000000000000000000000000..26b195f590025406232fde513f602fd3
 +import org.bukkit.inventory.EquipmentSlotGroup;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
++
++import static io.papermc.paper.component.item.ComponentUtils.transform;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperItemAttributeModifiers(
@@ -1088,12 +1142,10 @@ index 0000000000000000000000000000000000000000..26b195f590025406232fde513f602fd3
 +    }
 +
 +    private static List<Entry> convert(final net.minecraft.world.item.component.ItemAttributeModifiers nmsModifiers) {
-+        return Collections.unmodifiableList(Lists.transform(nmsModifiers.modifiers(), nms -> {
-+            return new PaperEntry(
-+                CraftAttribute.minecraftHolderToBukkit(nms.attribute()),
-+                CraftAttributeInstance.convert(nms.modifier(), nms.slot())
-+            );
-+        }));
++        return transform(nmsModifiers.modifiers(), nms -> new PaperEntry(
++            CraftAttribute.minecraftHolderToBukkit(nms.attribute()),
++            CraftAttributeInstance.convert(nms.modifier(), nms.slot())
++        ));
 +    }
 +
 +    @Override
@@ -1121,7 +1173,7 @@ index 0000000000000000000000000000000000000000..26b195f590025406232fde513f602fd3
 +        private boolean showInTooltip = net.minecraft.world.item.component.ItemAttributeModifiers.EMPTY.showInTooltip();
 +
 +        @Override
-+        public Builder addModifier(final Attribute attribute, final AttributeModifier attributeModifier, final EquipmentSlotGroup slot) {
++        public ItemAttributeModifiers.Builder addModifier(final Attribute attribute, final AttributeModifier attributeModifier, final EquipmentSlotGroup slot) {
 +            this.entries.add(new net.minecraft.world.item.component.ItemAttributeModifiers.Entry(
 +                CraftAttribute.bukkitToMinecraftHolder(attribute),
 +                CraftAttributeInstance.convert(attributeModifier),
@@ -1131,7 +1183,7 @@ index 0000000000000000000000000000000000000000..26b195f590025406232fde513f602fd3
 +        }
 +
 +        @Override
-+        public Builder showInTooltip(final boolean showInTooltip) {
++        public ItemAttributeModifiers.Builder showInTooltip(final boolean showInTooltip) {
 +            this.showInTooltip = showInTooltip;
 +            return this;
 +        }
@@ -1152,22 +1204,23 @@ index 0000000000000000000000000000000000000000..26b195f590025406232fde513f602fd3
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperItemContainerContents.java b/src/main/java/io/papermc/paper/component/item/PaperItemContainerContents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4227aa0b63ac4041b0ddc9821e4573ca791158b1
+index 0000000000000000000000000000000000000000..cb198c1d7194562ffc4e74047250b53f6e41b034
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperItemContainerContents.java
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,63 @@
 +package io.papermc.paper.component.item;
 +
-+import com.google.common.collect.Lists;
++import com.google.common.base.Preconditions;
 +import java.util.ArrayList;
-+import java.util.Collections;
 +import java.util.List;
-+import java.util.stream.Collectors;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.bukkit.inventory.ItemStack;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
++
++import static io.papermc.paper.component.item.ComponentUtils.addAndConvert;
++import static io.papermc.paper.component.item.ComponentUtils.transform;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperItemContainerContents(
@@ -1180,25 +1233,35 @@ index 0000000000000000000000000000000000000000..4227aa0b63ac4041b0ddc9821e4573ca
 +    }
 +
 +    @Override
-+    public List<ItemStack> getItems() {
-+        return this.impl.stream().map(CraftItemStack::asCraftMirror).collect(Collectors.toUnmodifiableList());
++    public List<ItemStack> contents() {
++        return transform(this.impl.items, CraftItemStack::asCraftMirror);
 +    }
 +
-+    static final class BuilderImpl implements Builder {
++    static final class BuilderImpl implements ItemContainerContents.Builder {
 +
 +        private final List<net.minecraft.world.item.ItemStack> items = new ArrayList<>();
 +
 +        @Override
-+        public Builder add(final ItemStack itemStack) {
++        public ItemContainerContents.Builder add(final ItemStack itemStack) {
++            Preconditions.checkArgument(
++                this.items.size() + 1 <= net.minecraft.world.item.component.ItemContainerContents.MAX_SIZE,
++                "Cannot have more than %s items, had %s",
++                net.minecraft.world.item.component.ItemContainerContents.MAX_SIZE,
++                this.items.size() + 1
++            );
 +            this.items.add(CraftItemStack.asNMSCopy(itemStack));
 +            return this;
 +        }
 +
 +        @Override
-+        public Builder addAll(final List<ItemStack> itemStack) {
-+            for (final ItemStack item : itemStack) {
-+                this.items.add(CraftItemStack.asNMSCopy(item));
-+            }
++        public ItemContainerContents.Builder addAll(final List<ItemStack> itemStacks) {
++            Preconditions.checkArgument(
++                this.items.size() + itemStacks.size() <= net.minecraft.world.item.component.ItemContainerContents.MAX_SIZE,
++                "Cannot have more than %s items, had %s",
++                net.minecraft.world.item.component.ItemContainerContents.MAX_SIZE,
++                this.items.size() + itemStacks.size()
++            );
++            addAndConvert(this.items, itemStacks, CraftItemStack::asNMSCopy);
 +            return this;
 +        }
 +
@@ -1210,12 +1273,13 @@ index 0000000000000000000000000000000000000000..4227aa0b63ac4041b0ddc9821e4573ca
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperItemEnchantments.java b/src/main/java/io/papermc/paper/component/item/PaperItemEnchantments.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ed99ed52fe47b231dae2b78bd1bc363389f9c11f
+index 0000000000000000000000000000000000000000..8511b5ae04d6ac338ca57f3feff51ddba5a7ede0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperItemEnchantments.java
-@@ -0,0 +1,90 @@
+@@ -0,0 +1,97 @@
 +package io.papermc.paper.component.item;
 +
++import com.google.common.base.Preconditions;
 +import java.util.Collections;
 +import java.util.HashMap;
 +import java.util.Map;
@@ -1268,25 +1332,31 @@ index 0000000000000000000000000000000000000000..ed99ed52fe47b231dae2b78bd1bc3633
 +        private boolean showInTooltip = net.minecraft.world.item.enchantment.ItemEnchantments.EMPTY.showInTooltip; // default
 +
 +        @Override
-+        public Builder add(final Enchantment enchantment, final int level) {
++        public ItemEnchantments.Builder add(final Enchantment enchantment, final int level) {
++            Preconditions.checkArgument(
++                level <= net.minecraft.world.item.enchantment.ItemEnchantments.MAX_LEVEL,
++                "level must be not be greater than %s, was %s",
++                net.minecraft.world.item.enchantment.ItemEnchantments.MAX_LEVEL,
++                level
++            );
 +            this.enchantments.put(enchantment, level);
 +            return this;
 +        }
 +
 +        @Override
-+        public Builder addAll(final Map<Enchantment, Integer> enchantments) {
-+            this.enchantments.putAll(enchantments);
++        public ItemEnchantments.Builder addAll(final Map<Enchantment, Integer> enchantments) {
++            enchantments.forEach(this::add);
 +            return this;
 +        }
 +
 +        @Override
-+        public Builder remove(final Enchantment enchantment) {
++        public ItemEnchantments.Builder remove(final Enchantment enchantment) {
 +            this.enchantments.remove(enchantment);
 +            return this;
 +        }
 +
 +        @Override
-+        public Builder showInTooltip(final boolean showInTooltip) {
++        public ItemEnchantments.Builder showInTooltip(final boolean showInTooltip) {
 +            this.showInTooltip = showInTooltip;
 +            return this;
 +        }
@@ -1306,13 +1376,13 @@ index 0000000000000000000000000000000000000000..ed99ed52fe47b231dae2b78bd1bc3633
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperItemLore.java b/src/main/java/io/papermc/paper/component/item/PaperItemLore.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b972ceebd3d5965d4926262b752c33a0ddb063d4
+index 0000000000000000000000000000000000000000..66c18c734d25fa4184f62146cdb849536137f16b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperItemLore.java
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,85 @@
 +package io.papermc.paper.component.item;
 +
-+import com.google.common.collect.Lists;
++import com.google.common.base.Preconditions;
 +import io.papermc.paper.adventure.PaperAdventure;
 +import java.util.ArrayList;
 +import java.util.Collections;
@@ -1322,6 +1392,8 @@ index 0000000000000000000000000000000000000000..b972ceebd3d5965d4926262b752c33a0
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
++
++import static io.papermc.paper.component.item.ComponentUtils.transform;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperItemLore(
@@ -1333,8 +1405,8 @@ index 0000000000000000000000000000000000000000..b972ceebd3d5965d4926262b752c33a0
 +    public PaperItemLore(final net.minecraft.world.item.component.ItemLore impl) {
 +        this(
 +            impl,
-+            Collections.unmodifiableList(Lists.transform(impl.lines(), PaperAdventure::asAdventure)),
-+            Collections.unmodifiableList(Lists.transform(impl.styledLines(), PaperAdventure::asAdventure))
++            transform(impl.lines(), PaperAdventure::asAdventure),
++            transform(impl.styledLines(), PaperAdventure::asAdventure)
 +        );
 +    }
 +
@@ -1345,11 +1417,41 @@ index 0000000000000000000000000000000000000000..b972ceebd3d5965d4926262b752c33a0
 +
 +    static final class BuilderImpl implements ItemLore.Builder {
 +
-+        private List<? extends ComponentLike> lines = Collections.emptyList();
++        private List<Component> lines = new ArrayList<>();
 +
 +        @Override
 +        public ItemLore.Builder lines(final List<? extends ComponentLike> lines) {
-+            this.lines = List.copyOf(lines);
++            Preconditions.checkArgument(
++                lines.size() <= net.minecraft.world.item.component.ItemLore.MAX_LINES,
++                "Cannot have more than %s lines, had %s",
++                net.minecraft.world.item.component.ItemLore.MAX_LINES,
++                lines.size()
++            );
++            this.lines = new ArrayList<>(ComponentLike.asComponents(lines));
++            return this;
++        }
++
++        @Override
++        public ItemLore.Builder addLine(final ComponentLike line) {
++            Preconditions.checkArgument(
++                this.lines.size() + 1 <= net.minecraft.world.item.component.ItemLore.MAX_LINES,
++                "Cannot have more than %s lines, had %s",
++                net.minecraft.world.item.component.ItemLore.MAX_LINES,
++                this.lines.size() + 1
++            );
++            this.lines.add(line.asComponent());
++            return this;
++        }
++
++        @Override
++        public ItemLore.Builder addAllLines(final @NonNull List<? extends ComponentLike> lines) {
++            Preconditions.checkArgument(
++                this.lines.size() + lines.size() <= net.minecraft.world.item.component.ItemLore.MAX_LINES,
++                "Cannot have more than %s lines, had %s",
++                net.minecraft.world.item.component.ItemLore.MAX_LINES,
++                this.lines.size() + lines.size()
++            );
++            this.lines.addAll(ComponentLike.asComponents(lines));
 +            return this;
 +        }
 +
@@ -1358,26 +1460,22 @@ index 0000000000000000000000000000000000000000..b972ceebd3d5965d4926262b752c33a0
 +            if (this.lines.isEmpty()) {
 +                return new PaperItemLore(net.minecraft.world.item.component.ItemLore.EMPTY);
 +            }
-+            final List<net.minecraft.network.chat.Component> lines = new ArrayList<>(this.lines.size());
-+            for (final ComponentLike line : this.lines) {
-+                lines.add(PaperAdventure.asVanilla(line.asComponent()));
-+            }
++            final List<net.minecraft.network.chat.Component> lines = PaperAdventure.asVanilla(this.lines);
 +            return new PaperItemLore(new net.minecraft.world.item.component.ItemLore(Collections.unmodifiableList(lines)));
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperLockCode.java b/src/main/java/io/papermc/paper/component/item/PaperLockCode.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2b544947f9fac0f4945f428b43071498b48b69c3
+index 0000000000000000000000000000000000000000..0e6320385a3eaea265bd3ffd2a9ee8310b18599d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperLockCode.java
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,37 @@
 +package io.papermc.paper.component.item;
 +
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.jetbrains.annotations.NotNull;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperLockCode(
@@ -1394,13 +1492,13 @@ index 0000000000000000000000000000000000000000..2b544947f9fac0f4945f428b43071498
 +        return this.impl.key();
 +    }
 +
-+    static final class BuilderImpl implements Builder {
++    static final class BuilderImpl implements LockCode.Builder {
 +
 +        private String lock = "";
 +
 +        @Override
-+        public @NonNull Builder lock(@NotNull final String code) {
-+            this.lock = lock;
++        public LockCode.Builder lock(final String code) {
++            this.lock = code;
 +            return this;
 +        }
 +
@@ -1412,31 +1510,20 @@ index 0000000000000000000000000000000000000000..2b544947f9fac0f4945f428b43071498
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperLodestoneTracker.java b/src/main/java/io/papermc/paper/component/item/PaperLodestoneTracker.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..547561acf87d34244a44548432521c82f0af7684
+index 0000000000000000000000000000000000000000..eb9bf45b5599d72be4f54452437cce565a1140ec
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperLodestoneTracker.java
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,56 @@
 +package io.papermc.paper.component.item;
 +
-+import com.google.common.base.Preconditions;
-+import com.google.common.collect.Lists;
-+import io.papermc.paper.util.Filtered;
-+import java.util.ArrayList;
-+import java.util.Collection;
-+import java.util.Collections;
-+import java.util.List;
 +import java.util.Optional;
-+import java.util.function.Function;
 +import net.minecraft.core.GlobalPos;
-+import net.minecraft.server.network.Filterable;
 +import org.bukkit.Location;
 +import org.bukkit.craftbukkit.entity.memory.CraftMemoryMapper;
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
-+import org.jetbrains.annotations.Unmodifiable;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperLodestoneTracker(
@@ -1458,25 +1545,25 @@ index 0000000000000000000000000000000000000000..547561acf87d34244a44548432521c82
 +        return this.impl.tracked();
 +    }
 +
-+    static final class BuilderImpl implements Builder {
++    static final class BuilderImpl implements LodestoneTracker.Builder {
 +
 +        private Optional<GlobalPos> pos = Optional.empty();
 +        private boolean tracked = true;
 +
 +        @Override
-+        public @NonNull Builder location(@Nullable final Location page) {
++        public LodestoneTracker.Builder location(final @Nullable Location page) {
 +            this.pos = Optional.ofNullable(page).map(CraftMemoryMapper::toNms);
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull Builder tracked(final boolean tracked) {
++        public LodestoneTracker.Builder tracked(final boolean tracked) {
 +            this.tracked = tracked;
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull LodestoneTracker build() {
++        public LodestoneTracker build() {
 +            return new PaperLodestoneTracker(
 +                new net.minecraft.world.item.component.LodestoneTracker(this.pos, this.tracked)
 +            );
@@ -1485,7 +1572,7 @@ index 0000000000000000000000000000000000000000..547561acf87d34244a44548432521c82
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperMapDecorations.java b/src/main/java/io/papermc/paper/component/item/PaperMapDecorations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2d97d20e0b16558a61ef21d2595b920e528d9879
+index 0000000000000000000000000000000000000000..35d4318e5eb9c1dcb1c74addaaed86e20c3b3730
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperMapDecorations.java
 @@ -0,0 +1,74 @@
@@ -1552,7 +1639,7 @@ index 0000000000000000000000000000000000000000..2d97d20e0b16558a61ef21d2595b920e
 +        private final Map<String, net.minecraft.world.item.component.MapDecorations.Entry> effects = new HashMap<>();
 +
 +        @Override
-+        public MapDecorations.Builder register(final String id, final DecorationEntry entry) {
++        public MapDecorations.Builder put(final String id, final DecorationEntry entry) {
 +            this.effects.put(id, new net.minecraft.world.item.component.MapDecorations.Entry(CraftMapCursor.CraftType.bukkitToMinecraftHolder(entry.type()), entry.x(), entry.z(), entry.rotation()));
 +            return this;
 +        }
@@ -1565,17 +1652,16 @@ index 0000000000000000000000000000000000000000..2d97d20e0b16558a61ef21d2595b920e
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperMapID.java b/src/main/java/io/papermc/paper/component/item/PaperMapID.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..805a86b4da99e82b3fa4254b62c0e26593f9f480
+index 0000000000000000000000000000000000000000..451e08627a041509e959396e9ce84acd944c17bf
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperMapID.java
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,38 @@
 +package io.papermc.paper.component.item;
 +
 +import net.minecraft.world.level.saveddata.maps.MapId;
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.jetbrains.annotations.NotNull;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperMapID(
@@ -1592,25 +1678,25 @@ index 0000000000000000000000000000000000000000..805a86b4da99e82b3fa4254b62c0e265
 +        return this.impl.id();
 +    }
 +
-+    static final class BuilderImpl implements Builder {
++    static final class BuilderImpl implements MapID.Builder {
 +
 +        private int id = 0;
 +
 +        @Override
-+        public @NotNull Builder mapId(final int id) {
++        public MapID.Builder mapId(final int id) {
 +            this.id = id;
 +            return this;
 +        }
 +
 +        @Override
-+        public @NotNull MapID build() {
++        public MapID build() {
 +            return new PaperMapID(new MapId(this.id));
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperMapItemColor.java b/src/main/java/io/papermc/paper/component/item/PaperMapItemColor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5f4833a78aff61e6ae1a1568cf58f4c5e66823d5
+index 0000000000000000000000000000000000000000..c4087ef46d8ec600a88d3c7c64e740c2721ab0d6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperMapItemColor.java
 @@ -0,0 +1,38 @@
@@ -1633,7 +1719,7 @@ index 0000000000000000000000000000000000000000..5f4833a78aff61e6ae1a1568cf58f4c5
 +
 +    @Override
 +    public Color mapColor() {
-+        return Color.fromRGB(this.impl.rgb());
++        return Color.fromRGB(this.impl.rgb() & 0xFFFFFF); // only track the rgb values of the integer
 +    }
 +
 +    static final class BuilderImpl implements Builder {
@@ -1654,16 +1740,17 @@ index 0000000000000000000000000000000000000000..5f4833a78aff61e6ae1a1568cf58f4c5
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperPotDecorations.java b/src/main/java/io/papermc/paper/component/item/PaperPotDecorations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1ee8467c2156d1876cd84db2cfdda2884e75f33d
+index 0000000000000000000000000000000000000000..8b468cc4e15ac1e3e379ba67dbeb681accdc7665
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperPotDecorations.java
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,87 @@
 +package io.papermc.paper.component.item;
 +
++import com.google.common.base.Preconditions;
 +import java.util.Optional;
++import org.bukkit.Material;
 +import org.bukkit.craftbukkit.inventory.CraftItemType;
 +import org.bukkit.craftbukkit.util.Handleable;
-+import org.bukkit.inventory.ItemType;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
@@ -1674,23 +1761,23 @@ index 0000000000000000000000000000000000000000..1ee8467c2156d1876cd84db2cfdda288
 +) implements PotDecorations, Handleable<net.minecraft.world.level.block.entity.PotDecorations> {
 +
 +    @Override
-+    public @Nullable ItemType back() {
-+        return this.impl.back().map(CraftItemType::minecraftToBukkitNew).orElse(null);
++    public @Nullable Material back() {
++        return this.impl.back().map(CraftItemType::minecraftToBukkit).orElse(null);
 +    }
 +
 +    @Override
-+    public @Nullable ItemType left() {
-+        return this.impl.left().map(CraftItemType::minecraftToBukkitNew).orElse(null);
++    public @Nullable Material left() {
++        return this.impl.left().map(CraftItemType::minecraftToBukkit).orElse(null);
 +    }
 +
 +    @Override
-+    public @Nullable ItemType right() {
-+        return this.impl.right().map(CraftItemType::minecraftToBukkitNew).orElse(null);
++    public @Nullable Material right() {
++        return this.impl.right().map(CraftItemType::minecraftToBukkit).orElse(null);
 +    }
 +
 +    @Override
-+    public @Nullable ItemType front() {
-+        return this.impl.front().map(CraftItemType::minecraftToBukkitNew).orElse(null);
++    public @Nullable Material front() {
++        return this.impl.front().map(CraftItemType::minecraftToBukkit).orElse(null);
 +    }
 +
 +    @Override
@@ -1698,33 +1785,37 @@ index 0000000000000000000000000000000000000000..1ee8467c2156d1876cd84db2cfdda288
 +        return this.impl;
 +    }
 +
-+    static final class BuilderImpl implements Builder {
++    static final class BuilderImpl implements PotDecorations.Builder {
 +
-+        private @Nullable ItemType back;
-+        private @Nullable ItemType left;
-+        private @Nullable ItemType right;
-+        private @Nullable ItemType front;
++        private @Nullable Material back;
++        private @Nullable Material left;
++        private @Nullable Material right;
++        private @Nullable Material front;
 +
 +        @Override
-+        public Builder back(final @Nullable ItemType item) {
++        public PotDecorations.Builder back(final @Nullable Material item) {
++            Preconditions.checkArgument(item == null || item.isItem(), "%s is not an item", item);
 +            this.back = item;
 +            return this;
 +        }
 +
 +        @Override
-+        public Builder left(final @Nullable ItemType item) {
++        public PotDecorations.Builder left(final @Nullable Material item) {
++            Preconditions.checkArgument(item == null || item.isItem(), "%s is not an item", item);
 +            this.left = item;
 +            return this;
 +        }
 +
 +        @Override
-+        public Builder right(final @Nullable ItemType item) {
++        public PotDecorations.Builder right(final @Nullable Material item) {
++            Preconditions.checkArgument(item == null || item.isItem(), "%s is not an item", item);
 +            this.right = item;
 +            return this;
 +        }
 +
 +        @Override
-+        public Builder front(final @Nullable ItemType item) {
++        public PotDecorations.Builder front(final @Nullable Material item) {
++            Preconditions.checkArgument(item == null || item.isItem(), "%s is not an item", item);
 +            this.front = item;
 +            return this;
 +        }
@@ -1732,24 +1823,23 @@ index 0000000000000000000000000000000000000000..1ee8467c2156d1876cd84db2cfdda288
 +        @Override
 +        public PotDecorations build() {
 +            return new PaperPotDecorations(new net.minecraft.world.level.block.entity.PotDecorations(
-+                Optional.ofNullable(this.back).map(CraftItemType::bukkitToMinecraftNew),
-+                Optional.ofNullable(this.left).map(CraftItemType::bukkitToMinecraftNew),
-+                Optional.ofNullable(this.right).map(CraftItemType::bukkitToMinecraftNew),
-+                Optional.ofNullable(this.front).map(CraftItemType::bukkitToMinecraftNew))
-+            );
++                Optional.ofNullable(this.back).map(CraftItemType::bukkitToMinecraft),
++                Optional.ofNullable(this.left).map(CraftItemType::bukkitToMinecraft),
++                Optional.ofNullable(this.right).map(CraftItemType::bukkitToMinecraft),
++                Optional.ofNullable(this.front).map(CraftItemType::bukkitToMinecraft)
++            ));
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperPotionContents.java b/src/main/java/io/papermc/paper/component/item/PaperPotionContents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b98bd15e9d0d32102a6213b4107f85bfd27fb9dd
+index 0000000000000000000000000000000000000000..fedf38cf476f3c95beb2a1f59cffcac66a81ff75
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperPotionContents.java
-@@ -0,0 +1,92 @@
+@@ -0,0 +1,90 @@
 +package io.papermc.paper.component.item;
 +
 +import java.util.ArrayList;
-+import java.util.Collections;
 +import java.util.List;
 +import java.util.Optional;
 +import net.minecraft.world.effect.MobEffectInstance;
@@ -1763,10 +1853,20 @@ index 0000000000000000000000000000000000000000..b98bd15e9d0d32102a6213b4107f85bf
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
++import static io.papermc.paper.component.item.ComponentUtils.transform;
++
 +@DefaultQualifier(NonNull.class)
 +public record PaperPotionContents(
-+    net.minecraft.world.item.alchemy.PotionContents impl
++    net.minecraft.world.item.alchemy.PotionContents impl,
++    List<PotionEffect> customEffects
 +) implements PotionContents, Handleable<net.minecraft.world.item.alchemy.PotionContents> {
++
++    public PaperPotionContents(final net.minecraft.world.item.alchemy.PotionContents impl) {
++        this(
++            impl,
++            transform(impl.customEffects(), CraftPotionUtil::toBukkit)
++        );
++    }
 +
 +    @Override
 +    public net.minecraft.world.item.alchemy.PotionContents getHandle() {
@@ -1783,48 +1883,37 @@ index 0000000000000000000000000000000000000000..b98bd15e9d0d32102a6213b4107f85bf
 +    @Override
 +    public Color customColor() {
 +        return this.impl.customColor()
-+            .map(Color::fromRGB)
++            .map(Color::fromARGB) // alpha channel is supported for tipped arrows, so let's just leave it in
 +            .orElse(null);
 +    }
 +
-+    @Override
-+    public List<PotionEffect> customEffects() {
-+        final List<MobEffectInstance> nms = this.impl.customEffects();
-+        final List<PotionEffect> api = new ArrayList<>(nms.size());
-+        for (final MobEffectInstance effect : nms) {
-+            api.add(CraftPotionUtil.toBukkit(effect));
-+        }
-+
-+        return Collections.unmodifiableList(api);
-+    }
-+
-+    static final class BuilderImpl implements Builder {
++    static final class BuilderImpl implements PotionContents.Builder {
 +
 +        private final List<MobEffectInstance> potionEffects = new ArrayList<>();
 +        private @Nullable PotionType type;
 +        private @Nullable Color color;
 +
 +        @Override
-+        public Builder potion(final @Nullable PotionType potionType) {
++        public PotionContents.Builder potion(final @Nullable PotionType potionType) {
 +            this.type = potionType;
 +            return this;
 +        }
 +
 +        @Override
-+        public Builder customColor(final @Nullable Color color) {
++        public PotionContents.Builder customColor(final @Nullable Color color) {
 +            this.color = color;
 +            return this;
 +        }
 +
 +        @Override
-+        public Builder addAll(final List<PotionEffect> potionEffects) {
-+            potionEffects.forEach(this::add);
++        public PotionContents.Builder add(final PotionEffect potionEffect) {
++            this.potionEffects.add(CraftPotionUtil.fromBukkit(potionEffect));
 +            return this;
 +        }
 +
 +        @Override
-+        public Builder add(final PotionEffect potionEffect) {
-+            this.potionEffects.add(CraftPotionUtil.fromBukkit(potionEffect));
++        public PotionContents.Builder addAll(final List<PotionEffect> potionEffects) {
++            potionEffects.forEach(this::add);
 +            return this;
 +        }
 +
@@ -1840,7 +1929,7 @@ index 0000000000000000000000000000000000000000..b98bd15e9d0d32102a6213b4107f85bf
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperResolvableProfile.java b/src/main/java/io/papermc/paper/component/item/PaperResolvableProfile.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b1e189c52b494670cf138ca67d1418620a00e3eb
+index 0000000000000000000000000000000000000000..aafad5e0e57cc782be8afcbf8b5d399c6f937867
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperResolvableProfile.java
 @@ -0,0 +1,105 @@
@@ -1850,33 +1939,33 @@ index 0000000000000000000000000000000000000000..b1e189c52b494670cf138ca67d141862
 +import com.destroystokyo.paper.profile.PlayerProfile;
 +import com.destroystokyo.paper.profile.ProfileProperty;
 +import com.google.common.base.Preconditions;
-+import com.google.common.collect.Collections2;
-+import com.google.common.collect.Lists;
 +import com.mojang.authlib.properties.Property;
 +import com.mojang.authlib.properties.PropertyMap;
-+import io.papermc.paper.adventure.PaperAdventure;
-+import io.papermc.paper.util.Filtered;
-+import java.util.ArrayList;
 +import java.util.Collection;
-+import java.util.Collections;
 +import java.util.List;
 +import java.util.Optional;
 +import java.util.UUID;
 +import java.util.concurrent.CompletableFuture;
-+import java.util.function.Function;
-+import net.kyori.adventure.text.Component;
-+import net.minecraft.server.network.Filterable;
++import net.minecraft.util.StringUtil;
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
-+import org.jetbrains.annotations.Unmodifiable;
++
++import static io.papermc.paper.component.item.ComponentUtils.transform;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperResolvableProfile(
-+    net.minecraft.world.item.component.ResolvableProfile impl
++    net.minecraft.world.item.component.ResolvableProfile impl,
++    Collection<ProfileProperty> properties
 +) implements ResolvableProfile, Handleable<net.minecraft.world.item.component.ResolvableProfile> {
++
++    public PaperResolvableProfile(final net.minecraft.world.item.component.ResolvableProfile impl) {
++        this(
++            impl,
++            transform(impl.properties().values(), input -> new ProfileProperty(input.name(), input.value(), input.signature()))
++        );
++    }
 +
 +    @Override
 +    public net.minecraft.world.item.component.ResolvableProfile getHandle() {
@@ -1894,53 +1983,53 @@ index 0000000000000000000000000000000000000000..b1e189c52b494670cf138ca67d141862
 +    }
 +
 +    @Override
-+    public @Unmodifiable @NonNull Collection<ProfileProperty> properties() {
-+        return Collections.unmodifiableCollection(
-+            Collections2.transform(
-+                this.impl.properties().values(),
-+                input -> new ProfileProperty(input.name(), input.value(), input.signature())
-+            )
-+        );
-+    }
-+
-+    @Override
-+    public @NotNull CompletableFuture<PlayerProfile> resolve() {
++    public CompletableFuture<PlayerProfile> resolve() {
 +        return this.impl.resolve().thenApply(resolvableProfile -> CraftPlayerProfile.asBukkitCopy(resolvableProfile.gameProfile()));
 +    }
 +
-+    static final class BuilderImpl implements Builder {
++    static final class BuilderImpl implements ResolvableProfile.Builder {
 +
++        private final PropertyMap propertyMap = new PropertyMap();
 +        private Optional<String> name = Optional.empty();
 +        private Optional<UUID> uuid = Optional.empty();
-+        private PropertyMap propertyMap = new PropertyMap();
 +
 +        @Override
-+        public @NonNull Builder name(@Nullable final String name) {
++        public ResolvableProfile.Builder name(final @Nullable String name) {
++            final int length = name == null ? 0 : name.length();
++            Preconditions.checkArgument(name == null || length <= 16, "name cannot be more than 16 characters, was %s", length);
++            Preconditions.checkArgument(name == null || StringUtil.isValidPlayerName(name), "name cannot include invalid characters, was %s", name);
 +            this.name = Optional.ofNullable(name);
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull Builder uuid(@Nullable final UUID uuid) {
++        public ResolvableProfile.Builder uuid(final @Nullable UUID uuid) {
 +            this.uuid = Optional.ofNullable(uuid);
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull Builder addProperty(@NonNull final ProfileProperty property) {
++        public ResolvableProfile.Builder addProperty(final ProfileProperty property) {
++            // ProfileProperty constructor already has specific validations
++            final int newSize = this.propertyMap.size() + 1;
++            Preconditions.checkArgument(newSize <= 16, "Cannot have more than 16 properties, was %s", newSize);
 +            this.propertyMap.put(property.getName(), new Property(property.getName(), property.getValue(), property.getSignature()));
 +            return this;
 +        }
 +
-+
 +        @Override
-+        public @NonNull Builder addAllProperties(@NonNull final List<ProfileProperty> properties) {
-+            properties.forEach(this::addProperty);
++        public ResolvableProfile.Builder addAllProperties(final List<ProfileProperty> properties) {
++            final int newSize = this.propertyMap.size() + properties.size();
++            Preconditions.checkArgument(newSize <= 16, "Cannot have more than 16 properties, was %s", newSize);
++            for (final ProfileProperty property : properties) {
++                this.propertyMap.put(property.getName(), new Property(property.getName(), property.getValue(), property.getSignature()));
++            }
 +            return this;
 +        }
 +
 +        @Override
 +        public ResolvableProfile build() {
++            Preconditions.checkState(this.name.isPresent() || this.uuid.isPresent(), "Must specify at least a name or uuid");
 +            return new PaperResolvableProfile(new net.minecraft.world.item.component.ResolvableProfile(
 +                this.name,
 +                this.uuid,
@@ -1951,16 +2040,16 @@ index 0000000000000000000000000000000000000000..b1e189c52b494670cf138ca67d141862
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperSeededContainerLoot.java b/src/main/java/io/papermc/paper/component/item/PaperSeededContainerLoot.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fc6169ea30df1d91363adcb48556afba30ac34a5
+index 0000000000000000000000000000000000000000..0fab7c755799ba1af558c72758100577014fe146
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperSeededContainerLoot.java
 @@ -0,0 +1,61 @@
 +package io.papermc.paper.component.item;
 +
++import io.papermc.paper.adventure.PaperAdventure;
 +import net.kyori.adventure.key.Key;
 +import net.minecraft.core.registries.Registries;
 +import net.minecraft.resources.ResourceKey;
-+import org.bukkit.NamespacedKey;
 +import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.checkerframework.checker.nullness.qual.NonNull;
@@ -1986,23 +2075,23 @@ index 0000000000000000000000000000000000000000..fc6169ea30df1d91363adcb48556afba
 +        return this.impl.seed();
 +    }
 +
-+    static final class BuilderImpl implements Builder {
++    static final class BuilderImpl implements SeededContainerLoot.Builder {
 +
 +        private long seed = 0;
-+        private NamespacedKey lootTableRegistryKey;
++        private Key lootTableRegistryKey;
 +
-+        BuilderImpl(final NamespacedKey lootTableRegistryKey) {
++        BuilderImpl(final Key lootTableRegistryKey) {
 +            this.lootTableRegistryKey = lootTableRegistryKey;
 +        }
 +
 +        @Override
-+        public Builder lootTable(final Key key) {
-+            this.lootTableRegistryKey = new NamespacedKey(key.namespace(), key.value());
++        public SeededContainerLoot.Builder lootTable(final Key key) {
++            this.lootTableRegistryKey = key;
 +            return this;
 +        }
 +
 +        @Override
-+        public Builder seed(final long seed) {
++        public SeededContainerLoot.Builder seed(final long seed) {
 +            this.seed = seed;
 +            return this;
 +        }
@@ -2010,7 +2099,7 @@ index 0000000000000000000000000000000000000000..fc6169ea30df1d91363adcb48556afba
 +        @Override
 +        public SeededContainerLoot build() {
 +            return new PaperSeededContainerLoot(new net.minecraft.world.item.component.SeededContainerLoot(
-+                ResourceKey.create(Registries.LOOT_TABLE, CraftNamespacedKey.toMinecraft(this.lootTableRegistryKey)),
++                ResourceKey.create(Registries.LOOT_TABLE, PaperAdventure.asVanilla(this.lootTableRegistryKey)),
 +                this.seed
 +            ));
 +        }
@@ -2018,41 +2107,39 @@ index 0000000000000000000000000000000000000000..fc6169ea30df1d91363adcb48556afba
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperSuspiciousStewEffects.java b/src/main/java/io/papermc/paper/component/item/PaperSuspiciousStewEffects.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..77780290067b7df301c0ca2634b61651506b7cda
+index 0000000000000000000000000000000000000000..a608014a15c1efea9b010314e013eb3c9a77c956
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperSuspiciousStewEffects.java
-@@ -0,0 +1,58 @@
+@@ -0,0 +1,59 @@
 +package io.papermc.paper.component.item;
 +
 +import io.papermc.paper.potion.SuspiciousEffectEntry;
 +import java.util.ArrayList;
-+import java.util.Collections;
 +import java.util.List;
 +import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.jetbrains.annotations.NotNull;
++
++import static io.papermc.paper.component.item.ComponentUtils.transform;
++import static io.papermc.paper.potion.SuspiciousEffectEntry.create;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperSuspiciousStewEffects(
-+    net.minecraft.world.item.component.SuspiciousStewEffects impl
++    net.minecraft.world.item.component.SuspiciousStewEffects impl,
++    List<SuspiciousEffectEntry> effects
 +) implements SuspiciousStewEffects, Handleable<net.minecraft.world.item.component.SuspiciousStewEffects> {
++
++    public PaperSuspiciousStewEffects(final net.minecraft.world.item.component.SuspiciousStewEffects impl) {
++        this(
++            impl,
++            transform(impl.effects(), entry -> create(CraftPotionEffectType.minecraftHolderToBukkit(entry.effect()), entry.duration()))
++        );
++    }
 +
 +    @Override
 +    public net.minecraft.world.item.component.SuspiciousStewEffects getHandle() {
 +        return this.impl;
-+    }
-+
-+    @Override
-+    public @NotNull List<SuspiciousEffectEntry> getEntries() {
-+        final List<net.minecraft.world.item.component.SuspiciousStewEffects.Entry> nms = this.impl.effects(); // gets copies of the stacks
-+        final List<SuspiciousEffectEntry> api = new ArrayList<>(nms.size());
-+        for (final net.minecraft.world.item.component.SuspiciousStewEffects.Entry entry : nms) {
-+            api.add(SuspiciousEffectEntry.create(CraftPotionEffectType.minecraftHolderToBukkit(entry.effect()), entry.duration()));
-+        }
-+
-+        return Collections.unmodifiableList(api);
 +    }
 +
 +    static final class BuilderImpl implements Builder {
@@ -2076,6 +2163,9 @@ index 0000000000000000000000000000000000000000..77780290067b7df301c0ca2634b61651
 +
 +        @Override
 +        public SuspiciousStewEffects build() {
++            if (this.effects.isEmpty()) {
++                return new PaperSuspiciousStewEffects(net.minecraft.world.item.component.SuspiciousStewEffects.EMPTY);
++            }
 +            return new PaperSuspiciousStewEffects(new net.minecraft.world.item.component.SuspiciousStewEffects(this.effects));
 +        }
 +    }
@@ -2130,83 +2220,111 @@ index 0000000000000000000000000000000000000000..8be3187a6c624d4ba74d2a58bc64b1b0
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperWritableBookContent.java b/src/main/java/io/papermc/paper/component/item/PaperWritableBookContent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6b4ccc782352290aa3647032e07955b8c96d4467
+index 0000000000000000000000000000000000000000..a71d7cf78182926d0a3d66e93e9a36b191ff11df
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperWritableBookContent.java
-@@ -0,0 +1,79 @@
+@@ -0,0 +1,107 @@
 +package io.papermc.paper.component.item;
 +
 +import com.google.common.base.Preconditions;
-+import com.google.common.collect.Lists;
-+import io.papermc.paper.adventure.PaperAdventure;
 +import io.papermc.paper.util.Filtered;
-+import net.kyori.adventure.text.Component;
++import java.util.ArrayList;
++import java.util.Collection;
++import java.util.List;
++import java.util.Optional;
 +import net.minecraft.server.network.Filterable;
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Unmodifiable;
-+import java.util.*;
++
++import static io.papermc.paper.component.item.ComponentUtils.transform;
++import static io.papermc.paper.util.Filtered.create;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperWritableBookContent(
-+    net.minecraft.world.item.component.WritableBookContent impl
++    net.minecraft.world.item.component.WritableBookContent impl,
++    List<Filtered<String>> pages
 +) implements WritableBookContent, Handleable<net.minecraft.world.item.component.WritableBookContent> {
++
++    public PaperWritableBookContent(final net.minecraft.world.item.component.WritableBookContent impl) {
++        this(
++            impl,
++            transform(impl.pages(), input -> create(input.raw(), input.filtered().orElse(null)))
++        );
++    }
 +
 +    @Override
 +    public net.minecraft.world.item.component.WritableBookContent getHandle() {
 +        return this.impl;
 +    }
 +
-+    @Override
-+    public @NotNull @Unmodifiable List<Filtered<String>> pages() {
-+        return Collections.unmodifiableList(
-+            Lists.transform(
-+                this.impl.pages(),
-+                input -> Filtered.of(input.raw(), input.filtered().orElse(null))
-+            )
-+        );
-+    }
-+
-+    static final class BuilderImpl implements Builder {
++    static final class BuilderImpl implements WritableBookContent.Builder {
 +
 +        private final List<Filterable<String>> pages = new ArrayList<>();
 +
++        private static void validatePageLength(final String page) {
++            Preconditions.checkArgument(
++                page.length() <= net.minecraft.world.item.component.WritableBookContent.PAGE_EDIT_LENGTH,
++                "Cannot have page length more than %s, had %s",
++                net.minecraft.world.item.component.WritableBookContent.PAGE_EDIT_LENGTH,
++                page.length()
++            );
++        }
++
++        private static void validatePageCount(final int current, final int add) {
++            final int newSize = current + add;
++            Preconditions.checkArgument(
++                newSize <= net.minecraft.world.item.component.WritableBookContent.MAX_PAGES,
++                "Cannot have more than %s pages, had %s",
++                net.minecraft.world.item.component.WritableBookContent.MAX_PAGES,
++                newSize
++            );
++        }
++
 +        @Override
-+        public @NonNull Builder addPage(@NonNull final String page) {
-+            Preconditions.checkArgument(page.length() <= net.minecraft.world.item.component.WritableBookContent.PAGE_EDIT_LENGTH, "String is too big!");
-+            Preconditions.checkArgument(this.pages.size() < net.minecraft.world.item.component.WritableBookContent.MAX_PAGES, "Too many pages!");
++        public WritableBookContent.Builder addPage(final String page) {
++            validatePageLength(page);
++            validatePageCount(this.pages.size(), 1);
 +            this.pages.add(Filterable.passThrough(page));
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull Builder addPages(@NonNull final Collection<String> pages) {
-+            pages.forEach(this::addPage);
++        public WritableBookContent.Builder addPages(final Collection<String> pages) {
++            validatePageCount(this.pages.size(), pages.size());
++            for (final String page : pages) {
++                validatePageLength(page);
++                this.pages.add(Filterable.passThrough(page));
++            }
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull Builder addPageFiltered(@NonNull final Filtered<String> page) {
-+            Preconditions.checkArgument(page.raw().length() <= net.minecraft.world.item.component.WritableBookContent.PAGE_EDIT_LENGTH, "Page is too big!");
++        public WritableBookContent.Builder addPageFiltered(final Filtered<String> page) {
++            validatePageLength(page.raw());
 +            if (page.filtered() != null) {
-+                Preconditions.checkArgument(page.filtered().length() <= net.minecraft.world.item.component.WritableBookContent.PAGE_EDIT_LENGTH, "Filtered page is too big!");
++                validatePageLength(page.filtered());
 +            }
-+            Preconditions.checkArgument(this.pages.size() < net.minecraft.world.item.component.WritableBookContent.MAX_PAGES, "Too many pages!");
-+
++            validatePageCount(this.pages.size(), 1);
 +            this.pages.add(new Filterable<>(page.raw(), Optional.ofNullable(page.filtered())));
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull Builder addPagesFiltered(@NonNull final Collection<Filtered<String>> pages) {
-+            pages.forEach(this::addPageFiltered);
++        public WritableBookContent.Builder addPagesFiltered(final Collection<Filtered<String>> pages) {
++            validatePageCount(this.pages.size(), pages.size());
++            for (final Filtered<String> page : pages) {
++                validatePageLength(page.raw());
++                if (page.filtered() != null) {
++                    validatePageLength(page.filtered());
++                }
++                this.pages.add(new Filterable<>(page.raw(), Optional.ofNullable(page.filtered())));
++            }
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull WritableBookContent build() {
++        public WritableBookContent build() {
 +            return new PaperWritableBookContent(
 +                new net.minecraft.world.item.component.WritableBookContent(this.pages)
 +            );
@@ -2215,49 +2333,61 @@ index 0000000000000000000000000000000000000000..6b4ccc782352290aa3647032e07955b8
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperWrittenBookContent.java b/src/main/java/io/papermc/paper/component/item/PaperWrittenBookContent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a87bb09c06c5d3558114f76c97fe347b4b4bf0d6
+index 0000000000000000000000000000000000000000..42b3d2d576dba7c5d403061d2e102a32d3b177f4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperWrittenBookContent.java
-@@ -0,0 +1,144 @@
+@@ -0,0 +1,190 @@
 +package io.papermc.paper.component.item;
 +
-+import com.google.common.base.Function;
 +import com.google.common.base.Preconditions;
-+import com.google.common.collect.Lists;
-+import java.util.ArrayList;
-+import java.util.Collection;
-+import java.util.Collections;
-+import java.util.List;
-+import java.util.Optional;
 +import io.papermc.paper.adventure.PaperAdventure;
 +import io.papermc.paper.util.Filtered;
++import java.util.ArrayList;
++import java.util.Collection;
++import java.util.List;
++import java.util.Optional;
 +import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.ComponentLike;
++import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 +import net.minecraft.server.network.Filterable;
-+import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import net.minecraft.util.GsonHelper;
 +import org.bukkit.craftbukkit.util.Handleable;
-+import org.bukkit.inventory.ItemStack;
 +import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Unmodifiable;
++
++import static io.papermc.paper.adventure.PaperAdventure.asAdventure;
++import static io.papermc.paper.adventure.PaperAdventure.asVanilla;
++import static io.papermc.paper.component.item.ComponentUtils.transform;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperWrittenBookContent(
-+    net.minecraft.world.item.component.WrittenBookContent impl
++    net.minecraft.world.item.component.WrittenBookContent impl,
++    List<Filtered<Component>> pages
 +) implements WrittenBookContent, Handleable<net.minecraft.world.item.component.WrittenBookContent> {
++
++    public PaperWrittenBookContent(final net.minecraft.world.item.component.WrittenBookContent impl) {
++        this(
++            impl,
++            transform(
++                impl.pages(),
++                page -> Filtered.create(asAdventure(page.raw()), page.filtered().map(PaperAdventure::asAdventure).orElse(null))
++            )
++        );
++    }
 +
 +    @Override
 +    public net.minecraft.world.item.component.WrittenBookContent getHandle() {
 +        return this.impl;
 +    }
-+    
++
 +    @Override
-+    public @NotNull Filtered<String> title() {
-+        return Filtered.of(this.impl.title().raw(), this.impl.title().filtered().orElse(null));
++    public Filtered<String> title() {
++        return Filtered.create(this.impl.title().raw(), this.impl.title().filtered().orElse(null));
 +    }
 +
 +    @Override
-+    public @NotNull String author() {
++    public String author() {
 +        return this.impl.author();
 +    }
 +
@@ -2267,86 +2397,120 @@ index 0000000000000000000000000000000000000000..a87bb09c06c5d3558114f76c97fe347b
 +    }
 +
 +    @Override
-+    public @NotNull @Unmodifiable List<Filtered<Component>> pages() {
-+        return Collections.unmodifiableList(
-+            Lists.transform(
-+                this.impl.pages(),
-+                input -> Filtered.of(PaperAdventure.asAdventure(input.raw()), input.filtered().map(PaperAdventure::asAdventure).orElse(null))
-+            )
-+        );
-+    }
-+
-+    @Override
 +    public boolean resolved() {
 +        return this.impl.resolved();
 +    }
 +
-+    static final class BuilderImpl implements Builder {
-+
-+        private static final net.minecraft.world.item.component.WrittenBookContent EMPTY = net.minecraft.world.item.component.WrittenBookContent.EMPTY;
++    static final class BuilderImpl implements WrittenBookContent.Builder {
 +
 +        private final List<Filterable<net.minecraft.network.chat.Component>> pages = new ArrayList<>();
-+        private Filterable<String> title = EMPTY.title();
-+        private String author = EMPTY.author();
-+        private int generation = EMPTY.generation();
-+        private boolean resolved = EMPTY.resolved();
++        private Filterable<String> title;
++        private String author;
++        private int generation = 0;
++        private boolean resolved = false;
++
++        BuilderImpl(final Filtered<String> title, final String author) {
++            validateTitle(title.raw());
++            if (title.filtered() != null) {
++                validateTitle(title.filtered());
++            }
++            this.title = new Filterable<>(title.raw(), Optional.ofNullable(title.filtered()));
++            this.author = author;
++        }
++
++        private static void validateTitle(final String title) {
++            Preconditions.checkArgument(
++                title.length() <= net.minecraft.world.item.component.WrittenBookContent.TITLE_MAX_LENGTH,
++                "Title cannot be longer than %s, was %s",
++                net.minecraft.world.item.component.WrittenBookContent.TITLE_MAX_LENGTH,
++                title.length()
++            );
++        }
++
++        private static void validatePageLength(final Component page) {
++            final String flagPage = GsonHelper.toStableString(GsonComponentSerializer.gson().serializeToTree(page));
++            Preconditions.checkArgument(
++                flagPage.length() <= net.minecraft.world.item.component.WrittenBookContent.PAGE_LENGTH,
++                "Cannot have page length more than %s, had %s",
++                net.minecraft.world.item.component.WrittenBookContent.PAGE_LENGTH,
++                flagPage.length()
++            );
++        }
 +
 +        @Override
-+        public @NonNull Builder title(@NonNull final String title) {
-+            Preconditions.checkArgument(title.length() <= net.minecraft.world.item.component.WrittenBookContent.TITLE_MAX_LENGTH, "Title is too big!");
++        public WrittenBookContent.Builder title(final String title) {
++            validateTitle(title);
 +            this.title = Filterable.passThrough(title);
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull Builder titleFiltered(@NonNull final Filtered<String> title) {
-+            Preconditions.checkArgument(title.raw().length() <= net.minecraft.world.item.component.WrittenBookContent.TITLE_MAX_LENGTH, "Title is too big!");
++        public WrittenBookContent.Builder titleFiltered(final Filtered<String> title) {
++            validateTitle(title.raw());
 +            if (title.filtered() != null) {
-+                Preconditions.checkArgument(title.filtered().length() <= net.minecraft.world.item.component.WrittenBookContent.TITLE_MAX_LENGTH, "Filtered title is too big!");
++                validateTitle(title.filtered());
 +            }
 +            this.title = new Filterable<>(title.raw(), Optional.ofNullable(title.filtered()));
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull Builder author(@NonNull final String author) {
++        public WrittenBookContent.Builder author(final String author) {
 +            this.author = author;
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull Builder generation(final int generation) {
-+            Preconditions.checkArgument(generation <= net.minecraft.world.item.component.WrittenBookContent.MAX_GENERATION, "Generation is too big!");
++        public WrittenBookContent.Builder generation(final int generation) {
++            Preconditions.checkArgument(
++                generation <= net.minecraft.world.item.component.WrittenBookContent.MAX_GENERATION,
++                "Maximum generation is %s, was %s",
++                net.minecraft.world.item.component.WrittenBookContent.MAX_GENERATION,
++                generation
++            );
 +            this.generation = generation;
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull Builder resolved(final boolean resolved) {
++        public WrittenBookContent.Builder resolved(final boolean resolved) {
 +            this.resolved = resolved;
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull Builder addPage(@NonNull final Component page) {
-+            this.pages.add(Filterable.passThrough(PaperAdventure.asVanilla(page)));
++        public WrittenBookContent.Builder addPage(final ComponentLike page) {
++            final Component component = page.asComponent();
++            validatePageLength(component);
++            this.pages.add(Filterable.passThrough(asVanilla(component)));
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull Builder addPages(@NonNull final Collection<Component> pages) {
-+            pages.forEach(this::addPage);
++        public WrittenBookContent.Builder addPages(final @NonNull Collection<? extends ComponentLike> pages) {
++            for (final ComponentLike page : pages) {
++                final Component component = page.asComponent();
++                validatePageLength(component);
++                this.pages.add(Filterable.passThrough(asVanilla(component)));
++            }
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull Builder addPageFiltered(@NonNull final Filtered<Component> page) {
-+            this.pages.add(new Filterable<>(PaperAdventure.asVanilla(page.raw()), Optional.ofNullable(page.filtered()).map(PaperAdventure::asVanilla)));
++        public WrittenBookContent.Builder addPageFiltered(final Filtered<? extends ComponentLike> page) {
++            final Component raw = page.raw().asComponent();
++            validatePageLength(raw);
++            @Nullable Component filtered = null;
++            if (page.filtered() != null) {
++                filtered = page.filtered().asComponent();
++                validatePageLength(filtered);
++            }
++            this.pages.add(new Filterable<>(asVanilla(raw), Optional.ofNullable(filtered).map(PaperAdventure::asVanilla)));
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull Builder addPagesFiltered(@NonNull final Collection<Filtered<Component>> pages) {
++        public WrittenBookContent.Builder addPagesFiltered(final Collection<Filtered<? extends ComponentLike>> pages) {
 +            pages.forEach(this::addPageFiltered);
 +            return this;
 +        }
@@ -2625,7 +2789,7 @@ index 0000000000000000000000000000000000000000..a2c02206254a18e089cb2b40eab5c59e
 +io.papermc.paper.component.item.ComponentTypesBridgesImpl
 diff --git a/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java b/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f5c652d47bfa539bd5ecb8b8f7107e1675d3ec3b
+index 0000000000000000000000000000000000000000..3ee8696686d4e91de57e2dbb2772c9313dc4c21b
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java
 @@ -0,0 +1,127 @@
@@ -2733,7 +2897,7 @@ index 0000000000000000000000000000000000000000..f5c652d47bfa539bd5ecb8b8f7107e16
 +    @Test
 +    void testPot() {
 +        final ItemStack stack = new ItemStack(Material.DECORATED_POT);
-+        stack.setData(DataComponentTypes.POT_DECORATIONS, PotDecorations.potDecorations().back(ItemType.DANGER_POTTERY_SHERD).build());
++        stack.setData(DataComponentTypes.POT_DECORATIONS, PotDecorations.potDecorations().back(Material.DANGER_POTTERY_SHERD).build());
 +
 +        BlockState state = ((BlockStateMeta) stack.getItemMeta()).getBlockState();
 +        DecoratedPot decoratedPot = (DecoratedPot) state;
