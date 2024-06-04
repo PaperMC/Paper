@@ -13,6 +13,7 @@ public net.minecraft.world.entity.projectile.ShulkerBullet currentMoveDirection
 public net.minecraft.world.entity.projectile.ShulkerBullet flightSteps
 public net.minecraft.world.entity.projectile.AbstractArrow soundEvent
 public net.minecraft.world.entity.projectile.ThrownTrident dealtDamage
+public net.minecraft.world.entity.projectile.Arrow NO_EFFECT_COLOR
 public net.minecraft.world.entity.projectile.Projectile hasBeenShot
 public net.minecraft.world.entity.projectile.Projectile leftOwner
 public net.minecraft.world.entity.projectile.Projectile preOnHit(Lnet/minecraft/world/phys/HitResult;)V
@@ -230,6 +231,80 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.getHandle().setSoundEvent(org.bukkit.craftbukkit.CraftSound.bukkitToMinecraft(sound));
 +    }
 +    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftAreaEffectCloud.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftAreaEffectCloud.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftAreaEffectCloud.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftAreaEffectCloud.java
+@@ -0,0 +0,0 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
+ 
+     @Override
+     public Color getColor() {
+-        return Color.fromRGB(this.getHandle().potionContents.getColor());
++        return Color.fromRGB(this.getHandle().potionContents.getColor() & 0x00FFFFFF); // Paper - skip alpha channel
+     }
+ 
+     @Override
+@@ -0,0 +0,0 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
+             this.removeCustomEffect(effect.getType());
+         }
+         this.getHandle().addEffect(CraftPotionUtil.fromBukkit(effect));
+-        this.getHandle().updateColor();
++        // this.getHandle().updateColor(); // Paper - already done above
+         return true;
+     }
+ 
+@@ -0,0 +0,0 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
+     public void clearCustomEffects() {
+         PotionContents old = this.getHandle().potionContents;
+         this.getHandle().setPotionContents(new PotionContents(old.potion(), old.customColor(), List.of()));
+-        this.getHandle().updateColor();
++        // this.getHandle().updateColor(); // Paper - already done above
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftArrow.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftArrow.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftArrow.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftArrow.java
+@@ -0,0 +0,0 @@ public class CraftArrow extends CraftAbstractArrow implements Arrow {
+             this.removeCustomEffect(effect.getType());
+         }
+         this.getHandle().addEffect(CraftPotionUtil.fromBukkit(effect));
+-        this.getHandle().updateColor();
++        // this.getHandle().updateColor(); // Paper - already done above
+         return true;
+     }
+ 
+@@ -0,0 +0,0 @@ public class CraftArrow extends CraftAbstractArrow implements Arrow {
+     public void clearCustomEffects() {
+         PotionContents old = this.getHandle().getPotionContents();
+         this.getHandle().setPotionContents(new PotionContents(old.potion(), old.customColor(), List.of()));
+-        this.getHandle().updateColor();
++        // this.getHandle().updateColor(); // Paper - already done above
+     }
+ 
+     @Override
+@@ -0,0 +0,0 @@ public class CraftArrow extends CraftAbstractArrow implements Arrow {
+ 
+     @Override
+     public void setColor(Color color) {
+-        int colorRGB = (color == null) ? -1 : color.asRGB();
++        int colorRGB = (color == null) ? net.minecraft.world.entity.projectile.Arrow.NO_EFFECT_COLOR : color.asARGB(); // Paper
+         PotionContents old = this.getHandle().getPotionContents();
+         this.getHandle().setPotionContents(new PotionContents(old.potion(), Optional.of(colorRGB), old.customEffects()));
+     }
+ 
+     @Override
+     public Color getColor() {
+-        if (this.getHandle().getColor() <= -1) {
++        int color = this.getHandle().getColor(); // Paper
++        if (color == net.minecraft.world.entity.projectile.Arrow.NO_EFFECT_COLOR) { // Paper
+             return null;
+         }
+-        return Color.fromRGB(this.getHandle().getColor());
++        return Color.fromARGB(color); // Paper
+     }
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
