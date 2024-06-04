@@ -156,29 +156,29 @@ index 0000000000000000000000000000000000000000..e094dbc6919ee7fe08270e8865f80375
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/BannerPatternLayers.java b/src/main/java/io/papermc/paper/component/item/BannerPatternLayers.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a6afa95840ba6dce2f7cd08451c385e04e629520
+index 0000000000000000000000000000000000000000..76331ddfbd6e8b70b101c1152235d62412fcf15f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/BannerPatternLayers.java
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,33 @@
 +package io.papermc.paper.component.item;
 +
++import java.util.List;
 +import org.bukkit.block.banner.Pattern;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
 +import org.jetbrains.annotations.Unmodifiable;
-+import java.util.List;
 +
 +@ApiStatus.NonExtendable
 +public interface BannerPatternLayers {
 +
 +    @Contract(value = "-> new", pure = true)
 +    static BannerPatternLayers.@NonNull Builder bannerPatternLayers() {
-+        return ComponentTypesBridge.Holder.bridge().bannerPatternLayers();
++        return ComponentTypesBridge.bridge().bannerPatternLayers();
 +    }
 +
-+    @Contract(value = "-> new", pure = true)
-+    @NonNull @Unmodifiable List<Pattern> getPatterns();
++    @Contract(pure = true)
++    @NonNull @Unmodifiable List<Pattern> patterns();
 +
 +    @ApiStatus.NonExtendable
 +    interface Builder {
@@ -190,13 +190,12 @@ index 0000000000000000000000000000000000000000..a6afa95840ba6dce2f7cd08451c385e0
 +        @NonNull Builder addAll(@NonNull List<Pattern> patterns);
 +
 +        @Contract(value = "-> new", pure = true)
-+        @NonNull
-+        BannerPatternLayers build();
++        @NonNull BannerPatternLayers build();
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/BundleContents.java b/src/main/java/io/papermc/paper/component/item/BundleContents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8686f4022395d3cd64a077b388e6f48595dac6f7
+index 0000000000000000000000000000000000000000..8ce39bac83316a7315eae4c99cb6666ba5876b7c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/BundleContents.java
 @@ -0,0 +1,33 @@
@@ -214,11 +213,11 @@ index 0000000000000000000000000000000000000000..8686f4022395d3cd64a077b388e6f485
 +
 +    @Contract(value = "-> new", pure = true)
 +    static BundleContents.@NonNull Builder bundleContents() {
-+        return ComponentTypesBridge.Holder.bridge().bundleContents();
++        return ComponentTypesBridge.bridge().bundleContents();
 +    }
 +
 +    @Contract(value = "-> new", pure = true)
-+    @NonNull @Unmodifiable List<ItemStack> getItems();
++    @NonNull @Unmodifiable List<ItemStack> contents();
 +
 +    @ApiStatus.NonExtendable
 +    interface Builder {
@@ -235,7 +234,7 @@ index 0000000000000000000000000000000000000000..8686f4022395d3cd64a077b388e6f485
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/ChargedProjectiles.java b/src/main/java/io/papermc/paper/component/item/ChargedProjectiles.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dcf759607fd49aefd2abce280e0f3f434e6d7993
+index 0000000000000000000000000000000000000000..7b8195dfa17226f1bf5bf33341c222e3961ac7e2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/ChargedProjectiles.java
 @@ -0,0 +1,33 @@
@@ -253,11 +252,11 @@ index 0000000000000000000000000000000000000000..dcf759607fd49aefd2abce280e0f3f43
 +
 +    @Contract(value = "-> new", pure = true)
 +    static ChargedProjectiles.@NonNull Builder chargedProjectiles() {
-+        return ComponentTypesBridge.Holder.bridge().chargedProjectiles();
++        return ComponentTypesBridge.bridge().chargedProjectiles();
 +    }
 +
 +    @Contract(value = "-> new", pure = true)
-+    @NonNull @Unmodifiable List<ItemStack> getItems();
++    @NonNull @Unmodifiable List<ItemStack> projectiles();
 +
 +    @ApiStatus.NonExtendable
 +    interface Builder {
@@ -274,21 +273,29 @@ index 0000000000000000000000000000000000000000..dcf759607fd49aefd2abce280e0f3f43
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/ComponentTypesBridge.java b/src/main/java/io/papermc/paper/component/item/ComponentTypesBridge.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..62395ea2f1f63ecb64e712840b561f099eee877e
+index 0000000000000000000000000000000000000000..5bef3cfbd232483d09e62c8744e4f21cf186ce0c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/ComponentTypesBridge.java
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,74 @@
 +package io.papermc.paper.component.item;
 +
++import io.papermc.paper.util.Filtered;
 +import java.util.Optional;
++import java.util.ServiceLoader;
 +import net.kyori.adventure.key.Key;
-+import net.kyori.adventure.util.Services;
++import org.bukkit.inventory.meta.trim.ArmorTrim;
 +import org.bukkit.map.MapCursor;
 +import org.bukkit.potion.PotionEffect;
 +import org.jetbrains.annotations.ApiStatus;
 +
 +@ApiStatus.Internal
-+public interface ComponentTypesBridge {
++interface ComponentTypesBridge {
++
++    Optional<ComponentTypesBridge> BRIDGE = ServiceLoader.load(ComponentTypesBridge.class).findFirst();
++
++    static ComponentTypesBridge bridge() {
++        return BRIDGE.orElseThrow();
++    }
 +
 +    ChargedProjectiles.Builder chargedProjectiles();
 +
@@ -324,13 +331,13 @@ index 0000000000000000000000000000000000000000..62395ea2f1f63ecb64e712840b561f09
 +
 +    MapDecorations.DecorationEntry decorationEntry(MapCursor.Type type, double x, double z, float rotation);
 +
-+    SeededContainerLoot.Builder seededContainerLoot(final Key lootTableKey);
++    SeededContainerLoot.Builder seededContainerLoot(Key lootTableKey);
 +
-+    WrittenBookContent.Builder writtenBookContent();
++    WrittenBookContent.Builder writtenBookContent(Filtered<String> title, String author);
 +
 +    WritableBookContent.Builder writeableBookContent();
 +
-+    ItemArmorTrim.Builder itemArmorTrim();
++    ItemArmorTrim.Builder itemArmorTrim(ArmorTrim armorTrim);
 +
 +    LodestoneTracker.Builder lodestoneTracker();
 +
@@ -343,23 +350,13 @@ index 0000000000000000000000000000000000000000..62395ea2f1f63ecb64e712840b561f09
 +    LockCode.Builder lockCode();
 +
 +    ItemContainerContents.Builder itemContainerContents();
-+
-+    @ApiStatus.Internal
-+    final class Holder {
-+
-+        private static final Optional<ComponentTypesBridge> BRIDGE = Services.service(ComponentTypesBridge.class);
-+
-+        public static ComponentTypesBridge bridge() {
-+            return BRIDGE.orElseThrow();
-+        }
-+    }
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/CustomModelData.java b/src/main/java/io/papermc/paper/component/item/CustomModelData.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..889b860be17a9690c0e9a7f383d55a8216a37000
+index 0000000000000000000000000000000000000000..d8919127e181573ef5afe857cbc777a6a45b140a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/CustomModelData.java
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,27 @@
 +package io.papermc.paper.component.item;
 +
 +import org.checkerframework.checker.nullness.qual.NonNull;
@@ -371,9 +368,10 @@ index 0000000000000000000000000000000000000000..889b860be17a9690c0e9a7f383d55a82
 +
 +    @Contract(value = "-> new", pure = true)
 +    static CustomModelData.@NonNull Builder customModelData() {
-+        return ComponentTypesBridge.Holder.bridge().customModelData();
++        return ComponentTypesBridge.bridge().customModelData();
 +    }
 +
++    @Contract(pure = true)
 +    int data();
 +
 +    @ApiStatus.NonExtendable
@@ -388,7 +386,7 @@ index 0000000000000000000000000000000000000000..889b860be17a9690c0e9a7f383d55a82
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/DyedItemColor.java b/src/main/java/io/papermc/paper/component/item/DyedItemColor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..825ec454ad412ecacce8da8c2a8dcc3590a0bb88
+index 0000000000000000000000000000000000000000..4c99f5d9080bae8885f8d9ea213e8a3e36da89b4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/DyedItemColor.java
 @@ -0,0 +1,28 @@
@@ -404,7 +402,7 @@ index 0000000000000000000000000000000000000000..825ec454ad412ecacce8da8c2a8dcc35
 +
 +    @Contract(value = "-> new", pure = true)
 +    static DyedItemColor.@NonNull Builder dyedItemColor() {
-+        return ComponentTypesBridge.Holder.bridge().dyedItemColor();
++        return ComponentTypesBridge.bridge().dyedItemColor();
 +    }
 +
 +    @Contract(value = "-> new", pure = true)
@@ -422,15 +420,14 @@ index 0000000000000000000000000000000000000000..825ec454ad412ecacce8da8c2a8dcc35
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/Fireworks.java b/src/main/java/io/papermc/paper/component/item/Fireworks.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1e698ab0ce40d4cf1b9f8386f3a06115db531415
+index 0000000000000000000000000000000000000000..b5b1660bb85da9b6755dcd3e69511308ae635c47
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/Fireworks.java
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,39 @@
 +package io.papermc.paper.component.item;
 +
 +import java.util.List;
 +import org.bukkit.FireworkEffect;
-+import org.bukkit.inventory.ItemStack;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
@@ -441,19 +438,20 @@ index 0000000000000000000000000000000000000000..1e698ab0ce40d4cf1b9f8386f3a06115
 +
 +    @Contract(value = "-> new", pure = true)
 +    static Fireworks.@NonNull Builder fireworks() {
-+        return ComponentTypesBridge.Holder.bridge().fireworks();
++        return ComponentTypesBridge.bridge().fireworks();
 +    }
 +
-+    @Contract(value = "-> new", pure = true)
++    @Contract(pure = true)
 +    @NonNull @Unmodifiable List<FireworkEffect> effects();
 +
++    @Contract(pure = true)
 +    int flightDuration();
 +
 +    @ApiStatus.NonExtendable
 +    interface Builder {
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder flightDuration(@NonNull int duration);
++        @NonNull Builder flightDuration(int duration);
 +
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder add(@NonNull FireworkEffect effect);
@@ -462,16 +460,15 @@ index 0000000000000000000000000000000000000000..1e698ab0ce40d4cf1b9f8386f3a06115
 +        @NonNull Builder addAll(@NonNull List<FireworkEffect> effects);
 +
 +        @Contract(value = "-> new", pure = true)
-+        @NonNull
-+        Fireworks build();
++        @NonNull Fireworks build();
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/FoodProperties.java b/src/main/java/io/papermc/paper/component/item/FoodProperties.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fd8a2c011c214fe667938c22fdbe0c54db676e6f
+index 0000000000000000000000000000000000000000..489d544e3ca5b2322b856c6f36f4f8f39366c615
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/FoodProperties.java
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,68 @@
 +package io.papermc.paper.component.item;
 +
 +import java.util.List;
@@ -486,15 +483,19 @@ index 0000000000000000000000000000000000000000..fd8a2c011c214fe667938c22fdbe0c54
 +
 +    @Contract(value = "-> new", pure = true)
 +    static FoodProperties.@NonNull Builder food() {
-+        return ComponentTypesBridge.Holder.bridge().food();
++        return ComponentTypesBridge.bridge().food();
 +    }
 +
++    @Contract(pure = true)
 +    int nutrition();
 +
++    @Contract(pure = true)
 +    float saturation();
 +
++    @Contract(pure = true)
 +    boolean canAlwaysEat();
 +
++    @Contract(pure = true)
 +    float eatSeconds();
 +
 +    @Unmodifiable @NonNull List<PossibleEffect> effects();
@@ -503,7 +504,7 @@ index 0000000000000000000000000000000000000000..fd8a2c011c214fe667938c22fdbe0c54
 +    interface PossibleEffect {
 +
 +        static @NonNull PossibleEffect of(final @NonNull PotionEffect effect, final float probability) {
-+            return ComponentTypesBridge.Holder.bridge().foodEffect(effect, probability);
++            return ComponentTypesBridge.bridge().foodEffect(effect, probability);
 +        }
 +
 +        @NonNull PotionEffect effect();
@@ -529,52 +530,53 @@ index 0000000000000000000000000000000000000000..fd8a2c011c214fe667938c22fdbe0c54
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder addEffect(@NonNull PossibleEffect effect);
 +
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull Builder addAllEffects(@NonNull List<PossibleEffect> effects);
++
 +        @Contract(value = "-> new", pure = true)
 +        @NonNull FoodProperties build();
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/ItemArmorTrim.java b/src/main/java/io/papermc/paper/component/item/ItemArmorTrim.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..98c916092a30550308a03a0030d7b08693374b28
+index 0000000000000000000000000000000000000000..300ad11bd0f719482827823765eefeef6624ed80
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/ItemArmorTrim.java
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,28 @@
 +package io.papermc.paper.component.item;
 +
 +import org.bukkit.inventory.meta.trim.ArmorTrim;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
-+import org.jetbrains.annotations.NotNull;
 +
 +@ApiStatus.NonExtendable
 +public interface ItemArmorTrim extends ShownInTooltip<ItemArmorTrim> {
 +
-+    @Contract(value = "-> new", pure = true)
-+    static ItemArmorTrim.@NonNull Builder itemArmorTrim() {
-+        return ComponentTypesBridge.Holder.bridge().itemArmorTrim();
++    @Contract(value = "_, -> new", pure = true)
++    static ItemArmorTrim.@NonNull Builder itemArmorTrim(final @NonNull ArmorTrim armorTrim) {
++        return ComponentTypesBridge.bridge().itemArmorTrim(armorTrim);
 +    }
 +
-+    @NotNull
-+    ArmorTrim armorTrim();
++    @Contract(pure = true)
++    @NonNull ArmorTrim armorTrim();
 +
 +    @ApiStatus.NonExtendable
 +    interface Builder extends ShownInTooltip.Builder<Builder> {
 +
-+        @Contract(value = "_, _, _ -> this", mutates = "this")
++        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder armorTrim(@NonNull ArmorTrim armorTrim);
 +
 +        @Contract(value = "-> new", pure = true)
-+        @NonNull
-+        ItemArmorTrim build();
++        @NonNull ItemArmorTrim build();
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/ItemAttributeModifiers.java b/src/main/java/io/papermc/paper/component/item/ItemAttributeModifiers.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ab1ed5e705256855dc35300161bc922f02e8227a
+index 0000000000000000000000000000000000000000..662aee0ea41ca3e15e2597fe679890bbcaa59b2d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/ItemAttributeModifiers.java
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,41 @@
 +package io.papermc.paper.component.item;
 +
 +import java.util.List;
@@ -588,6 +590,11 @@ index 0000000000000000000000000000000000000000..ab1ed5e705256855dc35300161bc922f
 +
 +@ApiStatus.NonExtendable
 +public interface ItemAttributeModifiers extends ShownInTooltip<ItemAttributeModifiers> {
++
++    @Contract(value = "-> new", pure = true)
++    static ItemAttributeModifiers.@NonNull Builder itemAttributes() {
++        return ComponentTypesBridge.bridge().modifiers();
++    }
 +
 +    @Contract(pure = true)
 +    @NonNull @Unmodifiable List<Entry> modifiers();
@@ -613,10 +620,10 @@ index 0000000000000000000000000000000000000000..ab1ed5e705256855dc35300161bc922f
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/ItemContainerContents.java b/src/main/java/io/papermc/paper/component/item/ItemContainerContents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fd297e9ec49a78adc34e39eb6ee446a8b2840513
+index 0000000000000000000000000000000000000000..88331bac1b3d0afe707091b68bfae9e14182db5c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/ItemContainerContents.java
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,33 @@
 +package io.papermc.paper.component.item;
 +
 +import java.util.List;
@@ -631,11 +638,11 @@ index 0000000000000000000000000000000000000000..fd297e9ec49a78adc34e39eb6ee446a8
 +
 +    @Contract(value = "-> new", pure = true)
 +    static ItemContainerContents.@NonNull Builder bundleContents() {
-+        return ComponentTypesBridge.Holder.bridge().itemContainerContents();
++        return ComponentTypesBridge.bridge().itemContainerContents();
 +    }
 +
 +    @Contract(value = "-> new", pure = true)
-+    @NonNull @Unmodifiable List<ItemStack> getItems();
++    @NonNull @Unmodifiable List<ItemStack> contents();
 +
 +    @ApiStatus.NonExtendable
 +    interface Builder {
@@ -644,19 +651,18 @@ index 0000000000000000000000000000000000000000..fd297e9ec49a78adc34e39eb6ee446a8
 +        @NonNull Builder add(@NonNull ItemStack itemStack);
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder addAll(@NonNull List<ItemStack> itemStack);
++        @NonNull Builder addAll(@NonNull List<ItemStack> itemStacks);
 +
 +        @Contract(value = "-> new", pure = true)
-+        @NonNull
-+        ItemContainerContents build();
++        @NonNull ItemContainerContents build();
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/ItemEnchantments.java b/src/main/java/io/papermc/paper/component/item/ItemEnchantments.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ee1b18269cbc1b71f753d9eea2dfe59ffbc69e2c
+index 0000000000000000000000000000000000000000..a0fe8822fd60327168f6d0402ad841d636819eea
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/ItemEnchantments.java
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,41 @@
 +package io.papermc.paper.component.item;
 +
 +import java.util.Map;
@@ -671,7 +677,7 @@ index 0000000000000000000000000000000000000000..ee1b18269cbc1b71f753d9eea2dfe59f
 +
 +    @Contract(value = "-> new", pure = true)
 +    static ItemEnchantments.@NonNull Builder itemEnchantments() { // can't name it just "enchantments"
-+        return ComponentTypesBridge.Holder.bridge().enchantments();
++        return ComponentTypesBridge.bridge().enchantments();
 +    }
 +
 +    @Contract(value = "_ -> new", pure = true)
@@ -679,6 +685,7 @@ index 0000000000000000000000000000000000000000..ee1b18269cbc1b71f753d9eea2dfe59f
 +        return itemEnchantments().addAll(enchantments).build();
 +    }
 +
++    @Contract(pure = true)
 +    @NonNull @Unmodifiable Map<Enchantment, Integer> enchantments();
 +
 +    @ApiStatus.NonExtendable
@@ -699,10 +706,10 @@ index 0000000000000000000000000000000000000000..ee1b18269cbc1b71f753d9eea2dfe59f
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/ItemLore.java b/src/main/java/io/papermc/paper/component/item/ItemLore.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0f9f645ad2fbffb26636dfb702295fb358ecb58a
+index 0000000000000000000000000000000000000000..0c06e988c4a6ee8486e579a34a657e9860e4d9b1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/ItemLore.java
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,45 @@
 +package io.papermc.paper.component.item;
 +
 +import java.util.List;
@@ -718,7 +725,7 @@ index 0000000000000000000000000000000000000000..0f9f645ad2fbffb26636dfb702295fb3
 +
 +    @Contract(value = "-> new", pure = true)
 +    static ItemLore.@NonNull Builder lore() {
-+        return ComponentTypesBridge.Holder.bridge().lore();
++        return ComponentTypesBridge.bridge().lore();
 +    }
 +
 +    @Contract(value = "_ -> new", pure = true)
@@ -738,74 +745,75 @@ index 0000000000000000000000000000000000000000..0f9f645ad2fbffb26636dfb702295fb3
 +        @Contract(value = "_ -> this", mutates = "this")
 +        Builder lines(@NonNull List<? extends ComponentLike> lines);
 +
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull Builder addLine(@NonNull ComponentLike line);
++
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull Builder addAllLines(@NonNull List<? extends ComponentLike> lines);
++
 +        @Contract(value = "-> new", pure = true)
 +        @NonNull ItemLore build();
-+
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/LockCode.java b/src/main/java/io/papermc/paper/component/item/LockCode.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..08e4b46ec6c0be076eeeb91153365b1f0c815e52
+index 0000000000000000000000000000000000000000..dfcd12fe3fed01ff93bce6eca732bd6f1f4cf5fd
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/LockCode.java
-@@ -0,0 +1,28 @@
+@@ -0,0 +1,27 @@
 +package io.papermc.paper.component.item;
 +
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
-+import org.jetbrains.annotations.NotNull;
 +
 +@ApiStatus.NonExtendable
 +public interface LockCode {
 +
 +    @Contract(value = "-> new", pure = true)
 +    static LockCode.@NonNull Builder lockCode() {
-+        return ComponentTypesBridge.Holder.bridge().lockCode();
++        return ComponentTypesBridge.bridge().lockCode();
 +    }
 +
-+    String lock();
++    @Contract(pure = true)
++    @NonNull String lock();
 +
 +    @ApiStatus.NonExtendable
 +    interface Builder {
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder lock(@NotNull String code);
++        @NonNull Builder lock(@NonNull String code);
 +
 +        @Contract(value = "-> new", pure = true)
-+        @NonNull
-+        LockCode build();
++        @NonNull LockCode build();
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/LodestoneTracker.java b/src/main/java/io/papermc/paper/component/item/LodestoneTracker.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c931a9aed26334888ac982e6373c0fe6047d54b0
+index 0000000000000000000000000000000000000000..a67b0bd578ba804cac704e28b94bad929bbddaba
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/LodestoneTracker.java
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,35 @@
 +package io.papermc.paper.component.item;
 +
-+import io.papermc.paper.util.Filtered;
-+import java.util.Collection;
-+import java.util.List;
 +import org.bukkit.Location;
 +import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
-+import org.jetbrains.annotations.Unmodifiable;
 +
 +@ApiStatus.NonExtendable
 +public interface LodestoneTracker {
 +
 +    @Contract(value = "-> new", pure = true)
 +    static LodestoneTracker.@NonNull Builder lodestoneTracker() {
-+        return ComponentTypesBridge.Holder.bridge().lodestoneTracker();
++        return ComponentTypesBridge.bridge().lodestoneTracker();
 +    }
 +
++    @Contract(value = "-> new", pure = true)
 +    @Nullable Location location();
 +
++    @Contract(pure = true)
 +    boolean tracked();
 +
 +    @ApiStatus.NonExtendable
@@ -818,16 +826,15 @@ index 0000000000000000000000000000000000000000..c931a9aed26334888ac982e6373c0fe6
 +        @NonNull Builder tracked(boolean tracked);
 +
 +        @Contract(value = "-> new", pure = true)
-+        @NonNull
-+        LodestoneTracker build();
++        @NonNull LodestoneTracker build();
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/MapDecorations.java b/src/main/java/io/papermc/paper/component/item/MapDecorations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d22f08c08c209facd31c14c44c52221f0105b35b
+index 0000000000000000000000000000000000000000..8f48b4fb608538eda44dec7b62b6fcaa66fcf898
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/MapDecorations.java
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,51 @@
 +package io.papermc.paper.component.item;
 +
 +import org.bukkit.map.MapCursor;
@@ -841,7 +848,7 @@ index 0000000000000000000000000000000000000000..d22f08c08c209facd31c14c44c52221f
 +
 +    @Contract(value = "-> new", pure = true)
 +    static MapDecorations.@NonNull Builder mapDecorations() {
-+        return ComponentTypesBridge.Holder.bridge().mapDecorations();
++        return ComponentTypesBridge.bridge().mapDecorations();
 +    }
 +
 +    @Contract(pure = true)
@@ -850,18 +857,22 @@ index 0000000000000000000000000000000000000000..d22f08c08c209facd31c14c44c52221f
 +    @ApiStatus.NonExtendable
 +    interface DecorationEntry {
 +
++        @Contract(value = "_, _, _, _ -> new", pure = true)
 +        static @NonNull DecorationEntry of(final MapCursor.@NonNull Type type, final double x, final double z, final float rotation) {
-+            return ComponentTypesBridge.Holder.bridge().decorationEntry(type, x, z, rotation);
++            return ComponentTypesBridge.bridge().decorationEntry(type, x, z, rotation);
 +        }
 +
++        @Contract(pure = true)
 +        MapCursor.@NonNull Type type();
 +
++        @Contract(pure = true)
 +        double x();
 +
++        @Contract(pure = true)
 +        double z();
 +
++        @Contract(pure = true)
 +        float rotation();
-+
 +    }
 +
 +
@@ -869,7 +880,7 @@ index 0000000000000000000000000000000000000000..d22f08c08c209facd31c14c44c52221f
 +    interface Builder {
 +
 +        @Contract(value = "_, _ -> this", mutates = "this")
-+        MapDecorations.@NonNull Builder register(@NonNull String id, @NonNull DecorationEntry entry);
++        MapDecorations.@NonNull Builder put(@NonNull String id, @NonNull DecorationEntry entry);
 +
 +        @Contract(value = "-> new", pure = true)
 +        @NonNull MapDecorations build();
@@ -877,7 +888,7 @@ index 0000000000000000000000000000000000000000..d22f08c08c209facd31c14c44c52221f
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/MapID.java b/src/main/java/io/papermc/paper/component/item/MapID.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c5d7c7e23a60336869e4df0641e3915ed64eca17
+index 0000000000000000000000000000000000000000..fb895caa1c5acc8116b9c52021835e186fdbacd5
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/MapID.java
 @@ -0,0 +1,27 @@
@@ -892,9 +903,10 @@ index 0000000000000000000000000000000000000000..c5d7c7e23a60336869e4df0641e3915e
 +
 +    @Contract(value = "-> new", pure = true)
 +    static MapID.@NonNull Builder mapId() {
-+        return ComponentTypesBridge.Holder.bridge().mapId();
++        return ComponentTypesBridge.bridge().mapId();
 +    }
 +
++    @Contract(pure = true)
 +    int id();
 +
 +    @ApiStatus.NonExtendable
@@ -905,15 +917,14 @@ index 0000000000000000000000000000000000000000..c5d7c7e23a60336869e4df0641e3915e
 +
 +        @Contract(value = "-> new", pure = true)
 +        @NonNull MapID build();
-+
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/MapItemColor.java b/src/main/java/io/papermc/paper/component/item/MapItemColor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..09a16f4d9178b25012ee82ed4adba9c78682f0a9
+index 0000000000000000000000000000000000000000..4c606e1d4856a912dc407b6047cb9e024e822cb3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/MapItemColor.java
-@@ -0,0 +1,28 @@
+@@ -0,0 +1,27 @@
 +package io.papermc.paper.component.item;
 +
 +import org.bukkit.Color;
@@ -926,7 +937,7 @@ index 0000000000000000000000000000000000000000..09a16f4d9178b25012ee82ed4adba9c7
 +
 +    @Contract(value = "-> new", pure = true)
 +    static BundleContents.@NonNull Builder mapItemColor() {
-+        return ComponentTypesBridge.Holder.bridge().mapItemColor();
++        return ComponentTypesBridge.bridge().mapItemColor();
 +    }
 +
 +    @NonNull Color mapColor();
@@ -939,7 +950,6 @@ index 0000000000000000000000000000000000000000..09a16f4d9178b25012ee82ed4adba9c7
 +
 +        @Contract(value = "-> new", pure = true)
 +        @NonNull MapItemColor build();
-+
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/MapPostProcessing.java b/src/main/java/io/papermc/paper/component/item/MapPostProcessing.java
@@ -956,13 +966,13 @@ index 0000000000000000000000000000000000000000..0b26ee6870600557b82a6ea37e2789dc
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PotDecorations.java b/src/main/java/io/papermc/paper/component/item/PotDecorations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e4e62f40d375a5933b35f64537291d13fb0c9533
+index 0000000000000000000000000000000000000000..4d798c80b99319b6545b52a77034779d48741f91
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PotDecorations.java
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,47 @@
 +package io.papermc.paper.component.item;
 +
-+import org.bukkit.inventory.ItemType;
++import org.bukkit.Material;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.jetbrains.annotations.ApiStatus;
@@ -973,31 +983,35 @@ index 0000000000000000000000000000000000000000..e4e62f40d375a5933b35f64537291d13
 +
 +    @Contract(value = "-> new", pure = true)
 +    static PotDecorations.@NonNull Builder potDecorations() {
-+        return ComponentTypesBridge.Holder.bridge().potDecorations();
++        return ComponentTypesBridge.bridge().potDecorations();
 +    }
 +
-+    @Nullable ItemType back();
++    @Contract(pure = true)
++    @Nullable Material back();
 +
-+    @Nullable ItemType left();
++    @Contract(pure = true)
++    @Nullable Material left();
 +
-+    @Nullable ItemType right();
++    @Contract(pure = true)
++    @Nullable Material right();
 +
-+    @Nullable ItemType front();
++    @Contract(pure = true)
++    @Nullable Material front();
 +
 +    @ApiStatus.NonExtendable
 +    interface Builder {
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        Builder back(@Nullable ItemType back);
++        Builder back(@Nullable Material back);
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        Builder left(@Nullable ItemType left);
++        Builder left(@Nullable Material left);
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        Builder right(@Nullable ItemType right);
++        Builder right(@Nullable Material right);
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        Builder front(@Nullable ItemType font);
++        Builder front(@Nullable Material font);
 +
 +        @Contract(value = "-> new", pure = true)
 +        @NonNull PotDecorations build();
@@ -1005,10 +1019,10 @@ index 0000000000000000000000000000000000000000..e4e62f40d375a5933b35f64537291d13
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PotionContents.java b/src/main/java/io/papermc/paper/component/item/PotionContents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2fea9c373b4a86f98510bcf85979e35e053e2423
+index 0000000000000000000000000000000000000000..85d153ec121948b2446c31f9888946666eb571f0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PotionContents.java
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,48 @@
 +package io.papermc.paper.component.item;
 +
 +import java.util.List;
@@ -1016,9 +1030,9 @@ index 0000000000000000000000000000000000000000..2fea9c373b4a86f98510bcf85979e35e
 +import org.bukkit.potion.PotionEffect;
 +import org.bukkit.potion.PotionType;
 +import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
-+import org.jetbrains.annotations.Nullable;
 +import org.jetbrains.annotations.Unmodifiable;
 +
 +@ApiStatus.NonExtendable
@@ -1026,13 +1040,16 @@ index 0000000000000000000000000000000000000000..2fea9c373b4a86f98510bcf85979e35e
 +
 +    @Contract(value = "-> new", pure = true)
 +    static PotionContents.@NonNull Builder potionContents() { // can't name it just "enchantments"
-+        return ComponentTypesBridge.Holder.bridge().potionContents();
++        return ComponentTypesBridge.bridge().potionContents();
 +    }
 +
++    @Contract(pure = true)
 +    @Nullable PotionType potion();
 +
++    @Contract(pure = true)
 +    @Nullable Color customColor();
 +
++    @Contract(pure = true)
 +    @Unmodifiable @NonNull List<PotionEffect> customEffects();
 +
 +    @ApiStatus.NonExtendable
@@ -1045,10 +1062,10 @@ index 0000000000000000000000000000000000000000..2fea9c373b4a86f98510bcf85979e35e
 +        @NonNull Builder customColor(@Nullable Color color);
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder addAll(@NonNull List<PotionEffect> potionEffects);
++        @NonNull Builder add(@NonNull PotionEffect potionEffect);
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder add(@NonNull PotionEffect potionEffect);
++        @NonNull Builder addAll(@NonNull List<PotionEffect> potionEffects);
 +
 +        @Contract(value = "-> new", pure = true)
 +        @NonNull PotionContents build();
@@ -1056,23 +1073,22 @@ index 0000000000000000000000000000000000000000..2fea9c373b4a86f98510bcf85979e35e
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/ResolvableProfile.java b/src/main/java/io/papermc/paper/component/item/ResolvableProfile.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..56489fc38cfa180463799e902a3d3fbaf67ed84d
+index 0000000000000000000000000000000000000000..55305b22d854eed3e26ad043498ba84477f1ca0b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/ResolvableProfile.java
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,53 @@
 +package io.papermc.paper.component.item;
 +
++import com.destroystokyo.paper.profile.PlayerProfile;
++import com.destroystokyo.paper.profile.ProfileProperty;
 +import java.util.Collection;
 +import java.util.List;
 +import java.util.UUID;
 +import java.util.concurrent.CompletableFuture;
-+import com.destroystokyo.paper.profile.PlayerProfile;
-+import com.destroystokyo.paper.profile.ProfileProperty;
 +import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
 +import org.jetbrains.annotations.Unmodifiable;
 +
 +@ApiStatus.NonExtendable
@@ -1080,16 +1096,20 @@ index 0000000000000000000000000000000000000000..56489fc38cfa180463799e902a3d3fba
 +
 +    @Contract(value = "-> new", pure = true)
 +    static ResolvableProfile.@NonNull Builder resolvableProfile() {
-+        return ComponentTypesBridge.Holder.bridge().resolvableProfile();
++        return ComponentTypesBridge.bridge().resolvableProfile();
 +    }
 +
++    @Contract(pure = true)
 +    @Nullable UUID uuid();
 +
++    @Contract(pure = true)
 +    @Nullable String name();
 +
++    @Contract(pure = true)
 +    @Unmodifiable @NonNull Collection<ProfileProperty> properties();
 +
-+    @NotNull CompletableFuture<PlayerProfile> resolve();
++    @Contract(pure = true)
++    @NonNull CompletableFuture<PlayerProfile> resolve();
 +
 +    @ApiStatus.NonExtendable
 +    interface Builder {
@@ -1101,22 +1121,21 @@ index 0000000000000000000000000000000000000000..56489fc38cfa180463799e902a3d3fba
 +        @NonNull Builder uuid(@Nullable UUID uuid);
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder addAllProperties(@NonNull List<ProfileProperty> properties);
-+
-+        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder addProperty(@NonNull ProfileProperty property);
 +
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull Builder addAllProperties(@NonNull List<ProfileProperty> properties);
++
 +        @Contract(value = "-> new", pure = true)
-+        @NonNull
-+        ResolvableProfile build();
++        @NonNull ResolvableProfile build();
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/SeededContainerLoot.java b/src/main/java/io/papermc/paper/component/item/SeededContainerLoot.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..eb89ff28b773f3fe24b0073513d5fc2abf4c370e
+index 0000000000000000000000000000000000000000..9f2239977cafe39f0975b3d2cd20a3d23d12ae8d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/SeededContainerLoot.java
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,34 @@
 +package io.papermc.paper.component.item;
 +
 +import net.kyori.adventure.key.Key;
@@ -1129,20 +1148,22 @@ index 0000000000000000000000000000000000000000..eb89ff28b773f3fe24b0073513d5fc2a
 +
 +    @Contract(value = "_, -> new", pure = true)
 +    static SeededContainerLoot.@NonNull Builder seededContainerLoot(final @NonNull Key lootTableKey) {
-+        return ComponentTypesBridge.Holder.bridge().seededContainerLoot(lootTableKey);
++        return ComponentTypesBridge.bridge().seededContainerLoot(lootTableKey);
 +    }
 +
++    @Contract(pure = true)
 +    @NonNull Key lootTable();
 +
++    @Contract(pure = true)
 +    long seed();
 +
 +    @ApiStatus.NonExtendable
 +    interface Builder {
 +
-+        @Contract(value = "_, -> this", mutates = "this")
++        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder lootTable(@NonNull Key key);
 +
-+        @Contract(value = "_, -> this", mutates = "this")
++        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder seed(long seed);
 +
 +        @Contract(value = "-> new", pure = true)
@@ -1151,37 +1172,37 @@ index 0000000000000000000000000000000000000000..eb89ff28b773f3fe24b0073513d5fc2a
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/ShownInTooltip.java b/src/main/java/io/papermc/paper/component/item/ShownInTooltip.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..79b17d6b4b76059abed8c86428a49252723d8657
+index 0000000000000000000000000000000000000000..75c4ede2e9a2913a2bd542935b0bcaba454ad749
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/ShownInTooltip.java
 @@ -0,0 +1,21 @@
 +package io.papermc.paper.component.item;
 +
 +import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
 +
++@ApiStatus.NonExtendable
 +public interface ShownInTooltip<T> {
 +
 +    @Contract(pure = true)
 +    boolean showInTooltip();
 +
 +    @Contract(value = "_ -> new", pure = true)
-+    @NonNull
-+    T showInTooltip(boolean showInTooltip);
++    @NonNull T showInTooltip(boolean showInTooltip);
 +
 +    interface Builder<B> {
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull
-+        B showInTooltip(boolean showInTooltip);
++        @NonNull B showInTooltip(boolean showInTooltip);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/SuspiciousStewEffects.java b/src/main/java/io/papermc/paper/component/item/SuspiciousStewEffects.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c34a430f608e8b50da907831eede570373c568f0
+index 0000000000000000000000000000000000000000..91193e1bbda48aeb1848df27ac69ee49f740fe6a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/SuspiciousStewEffects.java
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,33 @@
 +package io.papermc.paper.component.item;
 +
 +import io.papermc.paper.potion.SuspiciousEffectEntry;
@@ -1196,12 +1217,11 @@ index 0000000000000000000000000000000000000000..c34a430f608e8b50da907831eede5703
 +
 +    @Contract(value = "-> new", pure = true)
 +    static SuspiciousStewEffects.@NonNull Builder suspiciousStewEffects() {
-+        return ComponentTypesBridge.Holder.bridge().suspiciousStewEffects();
++        return ComponentTypesBridge.bridge().suspiciousStewEffects();
 +    }
 +
-+    @Contract(value = "-> new", pure = true)
-+    @NonNull @Unmodifiable
-+    List<SuspiciousEffectEntry> getEntries();
++    @Contract(pure = true)
++    @NonNull @Unmodifiable List<SuspiciousEffectEntry> effects();
 +
 +    @ApiStatus.NonExtendable
 +    interface Builder {
@@ -1214,15 +1234,14 @@ index 0000000000000000000000000000000000000000..c34a430f608e8b50da907831eede5703
 +
 +        @Contract(value = "-> new", pure = true)
 +        @NonNull SuspiciousStewEffects build();
-+
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/Unbreakable.java b/src/main/java/io/papermc/paper/component/item/Unbreakable.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..36e48ef697c001fff1697542eae6f79bd968d44a
+index 0000000000000000000000000000000000000000..acf29e9edafa1df894a32cbe0f3642bdafa03d0d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/Unbreakable.java
-@@ -0,0 +1,27 @@
+@@ -0,0 +1,26 @@
 +package io.papermc.paper.component.item;
 +
 +import org.checkerframework.checker.nullness.qual.NonNull;
@@ -1234,7 +1253,7 @@ index 0000000000000000000000000000000000000000..36e48ef697c001fff1697542eae6f79b
 +
 +    @Contract(value = "-> new", pure = true)
 +    static Unbreakable.@NonNull Builder unbreakable() {
-+        return ComponentTypesBridge.Holder.bridge().unbreakable();
++        return ComponentTypesBridge.bridge().unbreakable();
 +    }
 +
 +    @Contract(value = "_ -> new", pure = true)
@@ -1247,25 +1266,22 @@ index 0000000000000000000000000000000000000000..36e48ef697c001fff1697542eae6f79b
 +
 +        @Contract(value = "-> new", pure = true)
 +        @NonNull Unbreakable build();
-+
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/WritableBookContent.java b/src/main/java/io/papermc/paper/component/item/WritableBookContent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..919b81435247986177c17f1c6e4424b2c61dbdd9
+index 0000000000000000000000000000000000000000..d100c71ac4cc4fa805e98b567ee31d097e225eaa
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/WritableBookContent.java
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,40 @@
 +package io.papermc.paper.component.item;
 +
 +import io.papermc.paper.util.Filtered;
 +import java.util.Collection;
 +import java.util.List;
-+import net.kyori.adventure.text.Component;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
-+import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Unmodifiable;
 +
 +@ApiStatus.NonExtendable
@@ -1273,10 +1289,11 @@ index 0000000000000000000000000000000000000000..919b81435247986177c17f1c6e4424b2
 +
 +    @Contract(value = "-> new", pure = true)
 +    static WritableBookContent.@NonNull Builder writeableBookContent() {
-+        return ComponentTypesBridge.Holder.bridge().writeableBookContent();
++        return ComponentTypesBridge.bridge().writeableBookContent();
 +    }
 +
-+    @NotNull @Unmodifiable List<Filtered<String>> pages();
++    @Contract(pure = true)
++    @NonNull @Unmodifiable List<Filtered<String>> pages();
 +
 +    @ApiStatus.NonExtendable
 +    interface Builder {
@@ -1294,47 +1311,53 @@ index 0000000000000000000000000000000000000000..919b81435247986177c17f1c6e4424b2
 +        @NonNull Builder addPagesFiltered(@NonNull Collection<Filtered<String>> pages);
 +
 +        @Contract(value = "-> new", pure = true)
-+        @NonNull
-+        WritableBookContent build();
++        @NonNull WritableBookContent build();
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/WrittenBookContent.java b/src/main/java/io/papermc/paper/component/item/WrittenBookContent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ed3969d9bd0332d845c655da3c271aff08f1b752
+index 0000000000000000000000000000000000000000..625327483c92a2e37031ae415bafde3337fe788c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/WrittenBookContent.java
-@@ -0,0 +1,68 @@
+@@ -0,0 +1,74 @@
 +package io.papermc.paper.component.item;
 +
++import io.papermc.paper.util.Filtered;
 +import java.util.Collection;
 +import java.util.List;
-+import java.util.logging.Filter;
-+import io.papermc.paper.util.Filtered;
 +import net.kyori.adventure.text.Component;
-+import org.bukkit.potion.PotionEffect;
++import net.kyori.adventure.text.ComponentLike;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
 +import org.jetbrains.annotations.Unmodifiable;
 +
 +@ApiStatus.NonExtendable
 +public interface WrittenBookContent {
 +
-+    @Contract(value = "-> new", pure = true)
-+    static WrittenBookContent.@NonNull Builder writtenBookContent() {
-+        return ComponentTypesBridge.Holder.bridge().writtenBookContent();
++    @Contract(value = "_, _ -> new", pure = true)
++    static WrittenBookContent.@NonNull Builder writtenBookContent(final @NonNull String title, final @NonNull String author) {
++        return writtenBookContent(Filtered.create(title, null), author);
 +    }
 +
-+    @NotNull Filtered<String> title();
++    @Contract(value = "_, _ -> new", pure = true)
++    static WrittenBookContent.@NonNull Builder writtenBookContent(final @NonNull Filtered<String> title, final @NonNull String author) {
++        return ComponentTypesBridge.bridge().writtenBookContent(title, author);
++    }
 +
-+    @NotNull String author();
++    @Contract(pure = true)
++    @NonNull Filtered<String> title();
 +
++    @Contract(pure = true)
++    @NonNull String author();
++
++    @Contract(pure = true)
 +    int generation();
 +
-+    @NotNull @Unmodifiable List<Filtered<Component>> pages();
++    @Contract(pure = true)
++    @NonNull @Unmodifiable List<Filtered<Component>> pages();
 +
++    @Contract(pure = true)
 +    boolean resolved();
 +
 +    @ApiStatus.NonExtendable
@@ -1356,20 +1379,19 @@ index 0000000000000000000000000000000000000000..ed3969d9bd0332d845c655da3c271aff
 +        @NonNull Builder resolved(boolean resolved);
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder addPage(@NonNull Component page);
++        @NonNull Builder addPage(@NonNull ComponentLike page);
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder addPages(@NonNull Collection<Component> page);
++        @NonNull Builder addPages(@NonNull Collection<? extends ComponentLike> page);
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder addPageFiltered(@NonNull Filtered<Component> page);
++        @NonNull Builder addPageFiltered(@NonNull Filtered<? extends ComponentLike> page);
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder addPagesFiltered(@NonNull Collection<Filtered<Component>> pages);
++        @NonNull Builder addPagesFiltered(@NonNull Collection<Filtered<? extends ComponentLike>> pages);
 +
 +        @Contract(value = "-> new", pure = true)
-+        @NonNull
-+        WrittenBookContent build();
++        @NonNull WrittenBookContent build();
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/component/package-info.java b/src/main/java/io/papermc/paper/component/package-info.java
@@ -1402,35 +1424,39 @@ index 7b79bf33074355020e0b3b5ef40c7f2e6ba644b4..5cf3aa4641822c91adfbd70a847ca529
  }
 diff --git a/src/main/java/io/papermc/paper/util/Filtered.java b/src/main/java/io/papermc/paper/util/Filtered.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c3355a59d008920ab4afb910925f433548e2f956
+index 0000000000000000000000000000000000000000..5c8cdf46bc12501e1f284b4760c48e79233d05ff
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/Filtered.java
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,30 @@
 +package io.papermc.paper.util;
 +
 +import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
++import org.jetbrains.annotations.Contract;
 +
 +/**
 + * Denotes that this type is filterable by the client, and may be shown differently
 + * depending on the player's set configuration.
++ *
 + * @param <T> type of value
 + */
 +@ApiStatus.Experimental
 +public interface Filtered<T> {
 +
-+    static <T> Filtered<T> of(@NonNull T raw, @Nullable T filtered) {
-+        record Instance<T>(T raw, T filtered) implements Filtered<T> { }
++    @Contract(value = "_, _ -> new", pure = true)
++    static <T> @NonNull Filtered<T> create(final @NonNull T raw, final @Nullable T filtered) {
++        @ApiStatus.Internal
++        record Instance<T>(T raw, T filtered) implements Filtered<T> {}
 +
 +        return new Instance<>(raw, filtered);
 +    }
 +
-+    T raw();
++    @Contract(pure = true)
++    @NonNull T raw();
 +
-+    @Nullable
-+    T filtered();
++    @Contract(pure = true)
++    @Nullable T filtered();
 +}
 diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
 index 7509b61dfdc0a6675256970cb850b08f9e814580..28e2628d8d0a6af742b2fa89e5581e6b0d1a38a4 100644
