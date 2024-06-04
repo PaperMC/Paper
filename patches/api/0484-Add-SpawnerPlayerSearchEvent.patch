@@ -1,0 +1,135 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TreemanKing <67459602+TreemanKing@users.noreply.github.com>
+Date: Wed, 16 Aug 2023 11:59:08 +1000
+Subject: [PATCH] Add SpawnerPlayerSearchEvent
+
+This patch introduces a new event, SpawnerPlayerSearchEvent. This event is designed to be fired when a mob spawner searches for nearby players to activate. It provides the ability to control and customize the activation logic of mob spawners, preventing them from searching and spawning mobs if desired
+
+diff --git a/src/main/java/io/papermc/paper/event/block/SpawnerPlayerSearchEvent.java b/src/main/java/io/papermc/paper/event/block/SpawnerPlayerSearchEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3ab3ebdfc560aafd043bef23006ee19d8cd67ed3
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/block/SpawnerPlayerSearchEvent.java
+@@ -0,0 +1,122 @@
++package io.papermc.paper.event.block;
++
++import com.google.common.base.Preconditions;
++import org.bukkit.Location;
++import org.bukkit.entity.Player;
++import org.bukkit.event.Event;
++import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Range;
++import org.jetbrains.annotations.Unmodifiable;
++import java.util.Collection;
++import java.util.Collections;
++
++/**
++ * Represents an event that is fired when a mob spawner searches for nearby players to activate.
++ * This event occurs before any of the spawner logic, allowing cancellation to prevent the spawner 
++ * from searching and spawning any mobs. It can also bypass the nearby player check if required.
++ */
++public class SpawnerPlayerSearchEvent extends Event {
++    @NotNull private final Location spawnerLocation;
++    @NotNull private final Collection<Player> activatingPlayers;
++    private int backoffTicks;
++    @NotNull private Result searchResult = Result.DEFAULT;
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    @ApiStatus.Internal
++    public SpawnerPlayerSearchEvent(@NotNull Location spawnerLocation, @NotNull Collection<Player> activatingPlayers, int backoffTicks) {
++        this.spawnerLocation = Preconditions.checkNotNull(spawnerLocation, "Spawner Location can not be null");
++        this.activatingPlayers = Preconditions.checkNotNull(activatingPlayers, "Activating players list cannot be null");
++        this.backoffTicks = backoffTicks;
++    }
++
++    /**
++     * Retrieves the location of the mob spawner associated with the event
++     *
++     * @return The location of the spawner
++     */
++    @NotNull
++    public Location getSpawnerLocation() {
++        return spawnerLocation.clone();
++    }
++
++    /**
++     * Retrieves an immutable collection of players who are close enough to activate the spawner
++     *
++     * @return A collection of activating players
++     */
++    @NotNull @Unmodifiable
++    public Collection<Player> getActivatingPlayers() {
++        return Collections.unmodifiableCollection(activatingPlayers);
++    }
++
++    /**
++     * Retrieves the number of backoff ticks before the mob spawner proceeds with spawner logic
++     *
++     * <p>Backoff ticks determine the duration the spawner pauses for before it proceeds with the spawner logic
++     * and searches for players. A higher value means a longer delay before the spawner attempts to search for
++     * activating players again. It's important to note that negative backoff ticks do not make sense and will be
++     * corrected to 0 automatically.</p>
++     *
++     * <p>While backoff ticks are active, the spawner suspends the spawner logic and hence the search for players.
++     * This means it will not trigger the spawning of monsters. This effectively postpones the activation of the spawner until
++     * the backoff ticks expire.</p>
++     *
++     * @return The amount of backoff ticks before the spawner proceeds with spawner logic
++     */
++    @Range(from = 0, to = Integer.MAX_VALUE)
++    public int getBackoffTicks() {
++        return backoffTicks;
++    }
++
++    /**
++     * Sets the number of backoff ticks before the mob spawner proceeds with the spawner's logic again.
++     * <p>{@link SpawnerPlayerSearchEvent#getBackoffTicks} on an explanation of how backoff ticks function<p>
++     *
++     * @param ticks sets the amount of ticks before the spawner proceeds with the spawner's logic
++     * @throws IllegalArgumentException If the provided backoff ticks value is negative.
++     * @see SpawnerPlayerSearchEvent#getBackoffTicks
++     */
++    public void setBackoffTicks(@Range(from = 0, to = Integer.MAX_VALUE) int ticks) {
++        Preconditions.checkArgument(ticks >= 0, "Backoff Ticks cannot be less than 0");
++        this.backoffTicks = ticks;
++    }
++
++    /**
++     * Gets the result of the spawner event.
++     * <p>See {@link SpawnerPlayerSearchEvent#setSearchResult(Result)} for a description of each result</p>
++     *
++     * @return The result of the event
++     * @see SpawnerPlayerSearchEvent#setSearchResult(Result)
++     */
++    public @NotNull Result getSearchResult() {
++        return this.searchResult;
++    }
++
++    /**
++     * Sets the result of the spawner search event
++     * <ul>
++     *          <li>{@link org.bukkit.event.Event.Result#ALLOW}: Proceed with spawner logic, regardless of activating players </li>
++     *          <li>{@link org.bukkit.event.Event.Result#DENY}: Skip spawner logic, even with activating players</li>
++     *          <li>{@link org.bukkit.event.Event.Result#DEFAULT}: Use default behaviour based on activating players </li>
++     * </ul>
++     *
++     * @param result The result to set for the event
++     */
++    public void setSearchResult(@NotNull org.bukkit.event.Event.Result result) {
++        Preconditions.checkArgument(result != null, "Result cannot be null");
++        this.searchResult = result;
++    }
++
++    @NotNull
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}
++

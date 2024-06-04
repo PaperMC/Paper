@@ -8,10 +8,10 @@ we can instead use the nearby player tracking system to reduce
 the number of tests per search.
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index d4376ed215d97066a21e462fae2a0e25ad8a16a1..aab652174a8175765cad548f7c61ce353ca74803 100644
+index d4376ed215d97066a21e462fae2a0e25ad8a16a1..9755ad4b7ab94e94b7765fcb88bb21273ae64eb4 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -581,6 +581,115 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -581,6 +581,157 @@ public class ServerLevel extends Level implements WorldGenLevel {
          this.lagCompensationTick = (System.nanoTime() - net.minecraft.server.MinecraftServer.SERVER_INIT) / (java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(50L));
      }
      // Paper end - lag compensation
@@ -21,6 +21,48 @@ index d4376ed215d97066a21e462fae2a0e25ad8a16a1..aab652174a8175765cad548f7c61ce35
 +                                                                                     net.minecraft.world.entity.LivingEntity entity,
 +                                                                                     net.minecraft.world.phys.AABB box) {
 +        return this.getNearbyEntities(Player.class, targetPredicate, entity, box);
++    }
++
++    public List<ServerPlayer> getNearbyPlayers(double sourceX, double sourceY, double sourceZ, double maxDistance, @Nullable Predicate<Entity> targetPredicate) {
++
++        List<ServerPlayer> nearbyPlayers = new ArrayList<>();
++
++        if (maxDistance > 0) {
++
++            io.papermc.paper.util.player.NearbyPlayers players = this.chunkSource.chunkMap.getNearbyPlayers();
++
++            com.destroystokyo.paper.util.maplist.ReferenceList<ServerPlayer> nearby = players.getPlayersByBlock(
++                io.papermc.paper.util.CoordinateUtils.getBlockCoordinate(sourceX),
++                io.papermc.paper.util.CoordinateUtils.getBlockCoordinate(sourceZ),
++                io.papermc.paper.util.player.NearbyPlayers.NearbyMapType.GENERAL
++            );
++
++            if (nearby == null) return nearbyPlayers;
++
++            double maxDistanceSqr = maxDistance * maxDistance;
++            Object[] rawData = nearby.getRawData();
++            for (int i = 0, len = nearby.size(); i < len; ++i) {
++                ServerPlayer player = (ServerPlayer) rawData[i];
++                double distanceSquared = player.distanceToSqr(sourceX, sourceY, sourceZ);
++                if (distanceSquared > maxDistanceSqr) {
++                    continue;
++                }
++
++                if (targetPredicate == null || targetPredicate.test(player)) {
++                    nearbyPlayers.add(player);
++                }
++            }
++
++            return nearbyPlayers;
++        } else {
++            for (ServerPlayer player : this.players()) {
++                if (targetPredicate == null || targetPredicate.test(player)) {
++                    nearbyPlayers.add(player);
++                }
++            }
++
++            return nearbyPlayers;
++        }
 +    }
 +
 +    @Override

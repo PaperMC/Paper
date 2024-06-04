@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TreemanK <tristankrst@gmail.com>
+Date: Tue, 4 Jun 2024 14:17:55 +1000
+Subject: [PATCH] feat: Add SpawnerPlayerSearchEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+index f57e1b78204dff661ad5d3ee93a88a00330af2dc..cdf261955d69220ec9f1b12c297030b0f7b0940f 100644
+--- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
++++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+@@ -59,7 +59,7 @@ public abstract class BaseSpawner {
+     }
+ 
+     public boolean isNearPlayer(Level world, BlockPos pos) {
+-        return world.hasNearbyAlivePlayerThatAffectsSpawning((double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, (double) this.requiredPlayerRange); // Paper - Affects Spawning API
++        return world.hasNearbyAlivePlayerThatAffectsSpawning((double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, (double) this.requiredPlayerRange); // Paper - Affects Spawning API // diff on change (activatingPlayers)
+     }
+ 
+     public void clientTick(Level world, BlockPos pos) {
+@@ -87,10 +87,41 @@ public abstract class BaseSpawner {
+         if (spawnCount <= 0 || maxNearbyEntities <= 0) return; // Paper - Ignore impossible spawn tick
+         // Paper start - Configurable mob spawner tick rate
+         if (spawnDelay > 0 && --tickDelay > 0) return;
++
+         tickDelay = world.paperConfig().tickRates.mobSpawner;
+         if (tickDelay == -1) { return; } // If disabled
+         // Paper end - Configurable mob spawner tick rate
+-        if (this.isNearPlayer(world, pos)) {
++
++        // Paper start - SpawnerSearchPlayerEvent
++        java.util.function.Supplier<java.util.Collection<org.bukkit.entity.Player>> lazyActivatingPlayersSup = com.google.common.base.Suppliers.memoize(() ->
++            com.google.common.collect.Collections2.transform(
++                world.getNearbyPlayers(
++                    (double) pos.getX() + 0.5D,
++                    (double) pos.getY() + 0.5D,
++                    (double) pos.getZ() + 0.5D,
++                    (double) this.requiredPlayerRange,
++                    net.minecraft.world.entity.EntitySelector.PLAYER_AFFECTS_SPAWNING),
++                net.minecraft.server.level.ServerPlayer::getBukkitEntity)
++        );
++
++        java.util.Collection<org.bukkit.entity.Player> activatingPlayers = new com.google.common.collect.ForwardingCollection<>() {
++            @Override
++            protected java.util.Collection<org.bukkit.entity.Player> delegate() {
++                return lazyActivatingPlayersSup.get();
++            }
++        };
++
++        io.papermc.paper.event.block.SpawnerPlayerSearchEvent spawnerPlayerSearchEvent =
++            new io.papermc.paper.event.block.SpawnerPlayerSearchEvent(io.papermc.paper.util.MCUtil.toLocation(world, pos), activatingPlayers, Math.max(0, tickDelay));
++
++        spawnerPlayerSearchEvent.callEvent();
++        org.bukkit.event.Event.Result result = spawnerPlayerSearchEvent.getSearchResult();
++        tickDelay = Math.max(tickDelay, spawnerPlayerSearchEvent.getBackoffTicks());
++
++        if (result == org.bukkit.event.Event.Result.DENY) return;
++
++        if (result == org.bukkit.event.Event.Result.ALLOW || !activatingPlayers.isEmpty()) {
++        // Paper end - SpawnerSearchPlayerEvent
+             if (this.spawnDelay < -tickDelay) { // Paper - Configurable mob spawner tick rate
+                 this.delay(world, pos);
+             }
