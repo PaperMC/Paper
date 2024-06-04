@@ -40,14 +40,16 @@ index 0000000000000000000000000000000000000000..e538819c873a324c58bcd8e73f89510e
 +}
 diff --git a/src/main/java/io/papermc/paper/component/ComponentAdapters.java b/src/main/java/io/papermc/paper/component/ComponentAdapters.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ad40c6e7b96471e21a43fddd73e55031e39a64a8
+index 0000000000000000000000000000000000000000..067930a2f5d3655f74a52c75a10d1d2958c1adfa
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/ComponentAdapters.java
-@@ -0,0 +1,165 @@
+@@ -0,0 +1,181 @@
 +package io.papermc.paper.component;
 +
++import com.mojang.brigadier.exceptions.CommandSyntaxException;
 +import io.papermc.paper.adventure.PaperAdventure;
 +import io.papermc.paper.component.item.PaperBannerPatternLayers;
++import io.papermc.paper.component.item.PaperBlockItemDataProperties;
 +import io.papermc.paper.component.item.PaperBundleContents;
 +import io.papermc.paper.component.item.PaperChargedProjectiles;
 +import io.papermc.paper.component.item.PaperCustomModelData;
@@ -70,22 +72,25 @@ index 0000000000000000000000000000000000000000..ad40c6e7b96471e21a43fddd73e55031
 +import io.papermc.paper.component.item.PaperSeededContainerLoot;
 +import io.papermc.paper.component.item.PaperSuspiciousStewEffects;
 +import io.papermc.paper.component.item.PaperUnbreakable;
++import io.papermc.paper.component.item.PaperWritableBookContent;
++import io.papermc.paper.component.item.PaperWrittenBookContent;
 +import java.util.ArrayList;
 +import java.util.Collections;
 +import java.util.HashMap;
 +import java.util.List;
 +import java.util.Map;
 +import java.util.function.Function;
-+import io.papermc.paper.component.item.PaperWritableBookContent;
-+import io.papermc.paper.component.item.PaperWrittenBookContent;
 +import net.kyori.adventure.key.Key;
 +import net.minecraft.core.component.DataComponentType;
 +import net.minecraft.core.component.DataComponents;
 +import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.Tag;
 +import net.minecraft.resources.ResourceKey;
 +import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.util.Unit;
 +import net.minecraft.world.item.Rarity;
++import net.minecraft.world.item.component.CustomData;
 +import net.minecraft.world.item.component.MapPostProcessing;
 +import org.bukkit.DyeColor;
 +import org.bukkit.craftbukkit.CraftMusicInstrument;
@@ -106,7 +111,18 @@ index 0000000000000000000000000000000000000000..ad40c6e7b96471e21a43fddd73e55031
 +    static final Map<ResourceKey<DataComponentType<?>>, ComponentAdapter<?, ?>> ADAPTERS = new HashMap<>();
 +
 +    public static void bootstrap() {
-+        // custom data
++        //noinspection deprecation
++        register(DataComponents.CUSTOM_DATA, data -> PaperAdventure.asBinaryTagHolder(data.getUnsafe()), holder -> { // unsafe is fine because it serializes right away
++            try {
++                final Tag tag = holder.get(PaperAdventure.NBT_CODEC);
++                if (!(tag instanceof final CompoundTag compoundTag)) {
++                    throw new IllegalArgumentException(holder + " doesn't represent a compound tag");
++                }
++                return CustomData.of(compoundTag);
++            } catch (final CommandSyntaxException e) {
++                throw new RuntimeException(e);
++            }
++        });
 +        registerIdentity(DataComponents.MAX_STACK_SIZE);
 +        registerIdentity(DataComponents.MAX_DAMAGE);
 +        registerIdentity(DataComponents.DAMAGE);
@@ -156,9 +172,9 @@ index 0000000000000000000000000000000000000000..ad40c6e7b96471e21a43fddd73e55031
 +
 +            return Collections.unmodifiableList(api);
 +        }, api -> {
-+            List<ResourceLocation> nms = new ArrayList<>(api.size());
-+            for (Key key : api) {
-+                nms.add(new ResourceLocation(key.namespace(), key.value()));
++            final List<ResourceLocation> nms = new ArrayList<>(api.size());
++            for (final Key key : api) {
++                nms.add(PaperAdventure.asVanilla(key));
 +            }
 +
 +            return Collections.unmodifiableList(nms);
@@ -172,7 +188,7 @@ index 0000000000000000000000000000000000000000..ad40c6e7b96471e21a43fddd73e55031
 +        register(DataComponents.BASE_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
 +        register(DataComponents.POT_DECORATIONS, PaperPotDecorations::new);
 +        register(DataComponents.CONTAINER, PaperItemContainerContents::new);
-+        // block state (block data)
++        register(DataComponents.BLOCK_STATE, PaperBlockItemDataProperties::new);
 +        // bees
 +        register(DataComponents.LOCK, PaperLockCode::new);
 +        register(DataComponents.CONTAINER_LOOT, PaperSeededContainerLoot::new);
@@ -335,10 +351,10 @@ index 0000000000000000000000000000000000000000..5639559368e6866e9b0afa6688f3b12c
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/ComponentTypesBridgesImpl.java b/src/main/java/io/papermc/paper/component/item/ComponentTypesBridgesImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..649070a5b6c249b7810d0eeae5afbc3fcb490384
+index 0000000000000000000000000000000000000000..5c26aec36c4e2ad2cc683735485f139cb32c05be
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/ComponentTypesBridgesImpl.java
-@@ -0,0 +1,145 @@
+@@ -0,0 +1,150 @@
 +package io.papermc.paper.component.item;
 +
 +import io.papermc.paper.util.Filtered;
@@ -480,6 +496,11 @@ index 0000000000000000000000000000000000000000..649070a5b6c249b7810d0eeae5afbc3f
 +    }
 +
 +    @Override
++    public BlockItemDataProperties.Builder blockItemStateProperties() {
++        return new PaperBlockItemDataProperties.BuilderImpl();
++    }
++
++    @Override
 +    public LockCode.Builder lockCode() {
 +        return new PaperLockCode.BuilderImpl();
 +    }
@@ -593,6 +614,67 @@ index 0000000000000000000000000000000000000000..3077a38a5b33b155ea23ebf163c5c4c4
 +        @Override
 +        public BannerPatternLayers build() {
 +            return new PaperBannerPatternLayers(this.builder.build());
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/component/item/PaperBlockItemDataProperties.java b/src/main/java/io/papermc/paper/component/item/PaperBlockItemDataProperties.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ec156e305c4aebf2972082f6bde2390be8544269
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/component/item/PaperBlockItemDataProperties.java
+@@ -0,0 +1,55 @@
++package io.papermc.paper.component.item;
++
++import com.google.common.base.Preconditions;
++import java.util.HashMap;
++import java.util.Map;
++import net.minecraft.world.item.component.BlockItemStateProperties;
++import net.minecraft.world.level.block.Block;
++import net.minecraft.world.level.block.state.BlockState;
++import org.bukkit.Material;
++import org.bukkit.block.data.BlockData;
++import org.bukkit.craftbukkit.block.CraftBlockType;
++import org.bukkit.craftbukkit.block.data.CraftBlockData;
++import org.bukkit.craftbukkit.util.Handleable;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public record PaperBlockItemDataProperties(
++    BlockItemStateProperties impl
++) implements BlockItemDataProperties, Handleable<BlockItemStateProperties> {
++
++    @Override
++    public BlockData createBlockData(final Material blockType) {
++        Preconditions.checkArgument(blockType.isBlock(), "%s is not a block", blockType);
++        final Block block = CraftBlockType.bukkitToMinecraft(blockType);
++        final BlockState defaultState = block.defaultBlockState();
++        return this.impl.apply(defaultState).createCraftBlockData();
++    }
++
++    @Override
++    public BlockData applyToBlockData(final BlockData blockData) {
++        final BlockState state = ((CraftBlockData) blockData).getState();
++        return this.impl.apply(state).createCraftBlockData();
++    }
++
++    @Override
++    public BlockItemStateProperties getHandle() {
++        return this.impl;
++    }
++
++    static final class BuilderImpl implements BlockItemDataProperties.Builder {
++
++        private final Map<String, String> properties = new HashMap<>();
++
++        // TODO when BlockProperty API is merged
++
++        @Override
++        public BlockItemDataProperties build() {
++            if (this.properties.isEmpty()) {
++                return new PaperBlockItemDataProperties(BlockItemStateProperties.EMPTY);
++            }
++            return new PaperBlockItemDataProperties(new BlockItemStateProperties(Map.copyOf(this.properties)));
 +        }
 +    }
 +}

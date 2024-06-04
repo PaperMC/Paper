@@ -39,13 +39,14 @@ index 0000000000000000000000000000000000000000..50d15b4e0ed5cd17fdc95476ee4650ef
 +}
 diff --git a/src/main/java/io/papermc/paper/component/DataComponentTypes.java b/src/main/java/io/papermc/paper/component/DataComponentTypes.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e094dbc6919ee7fe08270e8865f80375b4dc7f8a
+index 0000000000000000000000000000000000000000..dfb4bfa4183818d7aa6a714979b5f7b8808867f0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/DataComponentTypes.java
-@@ -0,0 +1,111 @@
+@@ -0,0 +1,112 @@
 +package io.papermc.paper.component;
 +
 +import io.papermc.paper.component.item.BannerPatternLayers;
++import io.papermc.paper.component.item.BlockItemDataProperties;
 +import io.papermc.paper.component.item.BundleContents;
 +import io.papermc.paper.component.item.ChargedProjectiles;
 +import io.papermc.paper.component.item.CustomModelData;
@@ -78,7 +79,6 @@ index 0000000000000000000000000000000000000000..e094dbc6919ee7fe08270e8865f80375
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.Registry;
 +import org.bukkit.inventory.ItemRarity;
-+import org.bukkit.inventory.meta.WritableBookMeta;
 +import java.security.Key;
 +import java.util.List;
 +
@@ -86,6 +86,7 @@ index 0000000000000000000000000000000000000000..e094dbc6919ee7fe08270e8865f80375
 +
 +public final class DataComponentTypes {
 +
++    // public static final DataComponentType.Valued<BinaryTagHolder> CUSTOM_DATA = valued("custom_data");
 +    public static final DataComponentType.Valued<Integer> MAX_STACK_SIZE = valued("max_stack_size");
 +    public static final DataComponentType.Valued<Integer> MAX_DAMAGE = valued("max_damage");
 +    public static final DataComponentType.Valued<Integer> DAMAGE = valued("damage");
@@ -137,7 +138,7 @@ index 0000000000000000000000000000000000000000..e094dbc6919ee7fe08270e8865f80375
 +    public static final DataComponentType.Valued<DyeColor> BASE_COLOR = valued("base_color");
 +    public static final DataComponentType.Valued<PotDecorations> POT_DECORATIONS = valued("pot_decorations");
 +    public static final DataComponentType.Valued<ItemContainerContents> CONTAINER = valued("container");
-+    // block_state
++    public static final DataComponentType.Valued<BlockItemDataProperties> BLOCK_DATA = valued("block_state");
 +    // bees
 +    public static final DataComponentType.Valued<LockCode> LOCK = valued("lock");
 +    public static final DataComponentType.Valued<SeededContainerLoot> CONTAINER_LOOT = valued("container_loot");
@@ -191,6 +192,43 @@ index 0000000000000000000000000000000000000000..76331ddfbd6e8b70b101c1152235d624
 +
 +        @Contract(value = "-> new", pure = true)
 +        @NonNull BannerPatternLayers build();
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/component/item/BlockItemDataProperties.java b/src/main/java/io/papermc/paper/component/item/BlockItemDataProperties.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1bbea041d6424ba0ccb1b23024566deb919a7c55
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/component/item/BlockItemDataProperties.java
+@@ -0,0 +1,31 @@
++package io.papermc.paper.component.item;
++
++import org.bukkit.Material;
++import org.bukkit.block.data.BlockData;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++
++@ApiStatus.NonExtendable
++public interface BlockItemDataProperties {
++
++    @Contract(value = "-> new", pure = true)
++    static BlockItemDataProperties.@NonNull Builder blockItemStateProperties() {
++        return ComponentTypesBridge.bridge().blockItemStateProperties();
++    }
++
++    @Contract(pure = true)
++    @NonNull BlockData createBlockData(@NonNull Material blockType);
++
++    @Contract(pure = true)
++    @NonNull BlockData applyToBlockData(@NonNull BlockData blockData);
++
++    @ApiStatus.NonExtendable
++    interface Builder {
++        // building this requires BlockProperty API, so an empty builder for now (essentially read-only)
++
++        @Contract(value = "-> new", pure = true)
++        @NonNull
++        BlockItemDataProperties build();
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/BundleContents.java b/src/main/java/io/papermc/paper/component/item/BundleContents.java
@@ -273,10 +311,10 @@ index 0000000000000000000000000000000000000000..7b8195dfa17226f1bf5bf33341c222e3
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/ComponentTypesBridge.java b/src/main/java/io/papermc/paper/component/item/ComponentTypesBridge.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5bef3cfbd232483d09e62c8744e4f21cf186ce0c
+index 0000000000000000000000000000000000000000..6b00f5383bb3c957da62d2abe675f0d3059bad33
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/ComponentTypesBridge.java
-@@ -0,0 +1,74 @@
+@@ -0,0 +1,76 @@
 +package io.papermc.paper.component.item;
 +
 +import io.papermc.paper.util.Filtered;
@@ -346,6 +384,8 @@ index 0000000000000000000000000000000000000000..5bef3cfbd232483d09e62c8744e4f21c
 +    ResolvableProfile.Builder resolvableProfile();
 +
 +    BannerPatternLayers.Builder bannerPatternLayers();
++
++    BlockItemDataProperties.Builder blockItemStateProperties();
 +
 +    LockCode.Builder lockCode();
 +
