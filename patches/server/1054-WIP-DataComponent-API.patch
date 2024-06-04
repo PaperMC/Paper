@@ -680,7 +680,7 @@ index 0000000000000000000000000000000000000000..ec156e305c4aebf2972082f6bde2390b
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperBundleContents.java b/src/main/java/io/papermc/paper/component/item/PaperBundleContents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..db7b9104469e53a4eeefb4dde59167996898d011
+index 0000000000000000000000000000000000000000..fbd9a0a1eb447d1a5ab0e898d9dc80b61acde6be
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperBundleContents.java
 @@ -0,0 +1,52 @@
@@ -717,14 +717,14 @@ index 0000000000000000000000000000000000000000..db7b9104469e53a4eeefb4dde5916799
 +        private final List<net.minecraft.world.item.ItemStack> items = new ArrayList<>();
 +
 +        @Override
-+        public BundleContents.Builder add(final ItemStack itemStack) {
-+            this.items.add(CraftItemStack.asNMSCopy(itemStack));
++        public BundleContents.Builder add(final ItemStack stack) {
++            this.items.add(CraftItemStack.asNMSCopy(stack));
 +            return this;
 +        }
 +
 +        @Override
-+        public BundleContents.Builder addAll(final List<ItemStack> itemStack) {
-+            for (final ItemStack item : itemStack) {
++        public BundleContents.Builder addAll(final List<ItemStack> stacks) {
++            for (final ItemStack item : stacks) {
 +                this.items.add(CraftItemStack.asNMSCopy(item));
 +            }
 +            return this;
@@ -1193,12 +1193,13 @@ index 0000000000000000000000000000000000000000..8d2f20225101a1134b9d89a03f2f1a70
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperItemAttributeModifiers.java b/src/main/java/io/papermc/paper/component/item/PaperItemAttributeModifiers.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c58ffb2b94e020021bfc8c444438821b4fe2f4b4
+index 0000000000000000000000000000000000000000..e5cf4c3d6dbfc70feebb328aa006e18c33e09418
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperItemAttributeModifiers.java
-@@ -0,0 +1,87 @@
+@@ -0,0 +1,91 @@
 +package io.papermc.paper.component.item;
 +
++import com.google.common.base.Preconditions;
 +import java.util.ArrayList;
 +import java.util.List;
 +import org.bukkit.attribute.Attribute;
@@ -1207,7 +1208,6 @@ index 0000000000000000000000000000000000000000..c58ffb2b94e020021bfc8c444438821b
 +import org.bukkit.craftbukkit.attribute.CraftAttribute;
 +import org.bukkit.craftbukkit.attribute.CraftAttributeInstance;
 +import org.bukkit.craftbukkit.util.Handleable;
-+import org.bukkit.inventory.EquipmentSlotGroup;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
@@ -1255,7 +1255,11 @@ index 0000000000000000000000000000000000000000..c58ffb2b94e020021bfc8c444438821b
 +        private boolean showInTooltip = net.minecraft.world.item.component.ItemAttributeModifiers.EMPTY.showInTooltip();
 +
 +        @Override
-+        public ItemAttributeModifiers.Builder addModifier(final Attribute attribute, final AttributeModifier attributeModifier, final EquipmentSlotGroup slot) {
++        public ItemAttributeModifiers.Builder addModifier(final Attribute attribute, final AttributeModifier attributeModifier) {
++            Preconditions.checkArgument(
++                this.entries.stream().noneMatch(e -> e.modifier().id().equals(attributeModifier.getUniqueId())),
++                "Cannot add 2 modifiers with identical UUIDs"
++            );
 +            this.entries.add(new net.minecraft.world.item.component.ItemAttributeModifiers.Entry(
 +                CraftAttribute.bukkitToMinecraftHolder(attribute),
 +                CraftAttributeInstance.convert(attributeModifier),
@@ -1355,10 +1359,10 @@ index 0000000000000000000000000000000000000000..cb198c1d7194562ffc4e74047250b53f
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperItemEnchantments.java b/src/main/java/io/papermc/paper/component/item/PaperItemEnchantments.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8511b5ae04d6ac338ca57f3feff51ddba5a7ede0
+index 0000000000000000000000000000000000000000..b9b551f31691090313f524f2275c6f48285207b7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperItemEnchantments.java
-@@ -0,0 +1,97 @@
+@@ -0,0 +1,92 @@
 +package io.papermc.paper.component.item;
 +
 +import com.google.common.base.Preconditions;
@@ -1411,7 +1415,7 @@ index 0000000000000000000000000000000000000000..8511b5ae04d6ac338ca57f3feff51ddb
 +    static final class BuilderImpl implements ItemEnchantments.Builder {
 +
 +        private final Map<Enchantment, Integer> enchantments = new HashMap<>();
-+        private boolean showInTooltip = net.minecraft.world.item.enchantment.ItemEnchantments.EMPTY.showInTooltip; // default
++        private boolean showInTooltip = true; // use default from codec
 +
 +        @Override
 +        public ItemEnchantments.Builder add(final Enchantment enchantment, final int level) {
@@ -1432,12 +1436,6 @@ index 0000000000000000000000000000000000000000..8511b5ae04d6ac338ca57f3feff51ddb
 +        }
 +
 +        @Override
-+        public ItemEnchantments.Builder remove(final Enchantment enchantment) {
-+            this.enchantments.remove(enchantment);
-+            return this;
-+        }
-+
-+        @Override
 +        public ItemEnchantments.Builder showInTooltip(final boolean showInTooltip) {
 +            this.showInTooltip = showInTooltip;
 +            return this;
@@ -1449,6 +1447,7 @@ index 0000000000000000000000000000000000000000..8511b5ae04d6ac338ca57f3feff51ddb
 +                return new PaperItemEnchantments(net.minecraft.world.item.enchantment.ItemEnchantments.EMPTY.withTooltip(this.showInTooltip));
 +            }
 +            final net.minecraft.world.item.enchantment.ItemEnchantments.Mutable mutable = new net.minecraft.world.item.enchantment.ItemEnchantments.Mutable(net.minecraft.world.item.enchantment.ItemEnchantments.EMPTY);
++            mutable.showInTooltip = this.showInTooltip;
 +            this.enchantments.forEach((enchantment, level) -> {
 +                mutable.set(CraftEnchantment.bukkitToMinecraft(enchantment), level);
 +            });
@@ -1654,10 +1653,10 @@ index 0000000000000000000000000000000000000000..eb9bf45b5599d72be4f54452437cce56
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperMapDecorations.java b/src/main/java/io/papermc/paper/component/item/PaperMapDecorations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..35d4318e5eb9c1dcb1c74addaaed86e20c3b3730
+index 0000000000000000000000000000000000000000..308a7c77522f501f750754c5228a98c088c37f19
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperMapDecorations.java
-@@ -0,0 +1,74 @@
+@@ -0,0 +1,80 @@
 +package io.papermc.paper.component.item;
 +
 +import java.util.HashMap;
@@ -1723,6 +1722,12 @@ index 0000000000000000000000000000000000000000..35d4318e5eb9c1dcb1c74addaaed86e2
 +        @Override
 +        public MapDecorations.Builder put(final String id, final DecorationEntry entry) {
 +            this.effects.put(id, new net.minecraft.world.item.component.MapDecorations.Entry(CraftMapCursor.CraftType.bukkitToMinecraftHolder(entry.type()), entry.x(), entry.z(), entry.rotation()));
++            return this;
++        }
++
++        @Override
++        public Builder putAll(final Map<String, DecorationEntry> entries) {
++            entries.forEach(this::put);
 +            return this;
 +        }
 +
@@ -1915,7 +1920,7 @@ index 0000000000000000000000000000000000000000..8b468cc4e15ac1e3e379ba67dbeb681a
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperPotionContents.java b/src/main/java/io/papermc/paper/component/item/PaperPotionContents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fedf38cf476f3c95beb2a1f59cffcac66a81ff75
+index 0000000000000000000000000000000000000000..6c2769f8ba95598c19b87d6b1f8e2f35e4dce813
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperPotionContents.java
 @@ -0,0 +1,90 @@
@@ -1956,14 +1961,14 @@ index 0000000000000000000000000000000000000000..fedf38cf476f3c95beb2a1f59cffcac6
 +    }
 +
 +    @Override
-+    public PotionType potion() {
++    public @Nullable PotionType potion() {
 +        return this.impl.potion()
 +            .map(CraftPotionType::minecraftHolderToBukkit)
 +            .orElse(null);
 +    }
 +
 +    @Override
-+    public Color customColor() {
++    public @Nullable Color customColor() {
 +        return this.impl.customColor()
 +            .map(Color::fromARGB) // alpha channel is supported for tipped arrows, so let's just leave it in
 +            .orElse(null);
@@ -2643,7 +2648,7 @@ index af18de11dd55938b6091f5ab183bd3fe4e8df152..dad6cb4bbb52f4ce7e8f40131ee0bd37
  
      ItemEnchantments(Object2IntAVLTreeMap<Holder<Enchantment>> enchantments, boolean showInTooltip) { // Paper
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index 3496b98ff0b984dbfec4f0983459a273dc0e3471..c640f5f36fb0d3935ac4decd61a458b7c74a6f54 100644
+index 3496b98ff0b984dbfec4f0983459a273dc0e3471..adf4679894e5446bd49c00472a6c1d7cd4d5c0ed 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 @@ -167,7 +167,7 @@ public final class CraftItemStack extends ItemStack {
@@ -2682,7 +2687,7 @@ index 3496b98ff0b984dbfec4f0983459a273dc0e3471..c640f5f36fb0d3935ac4decd61a458b7
                      item.set(DataComponents.PROFILE, new net.minecraft.world.item.component.ResolvableProfile(gameProfile));
                  }
              };
-@@ -768,4 +768,89 @@ public final class CraftItemStack extends ItemStack {
+@@ -768,4 +768,91 @@ public final class CraftItemStack extends ItemStack {
          return mirrored;
      }
      // Paper end
@@ -2714,6 +2719,7 @@ index 3496b98ff0b984dbfec4f0983459a273dc0e3471..c640f5f36fb0d3935ac4decd61a458b7
 +
 +    @Override
 +    public <T> void setData(final io.papermc.paper.component.DataComponentType.Valued<T> type, final T value) {
++        Preconditions.checkArgument(value != null, "value cannot be null");
 +        if (this.isEmpty()) {
 +            return;
 +        }
@@ -2731,7 +2737,8 @@ index 3496b98ff0b984dbfec4f0983459a273dc0e3471..c640f5f36fb0d3935ac4decd61a458b7
 +    private <A, V> void setDataInternal(final io.papermc.paper.component.PaperComponentType<A, V> type, final A value) {
 +        final io.papermc.paper.component.ComponentAdapter<V, A> adapter = type.getAdapter();
 +        if (adapter.isValued()) {
-+            this.handle.set(type.getHandle(), value == null ? null : adapter.toVanilla(value));
++            Preconditions.checkArgument(value != null, "value cannot be null");
++            this.handle.set(type.getHandle(), adapter.toVanilla(value));
 +        } else {
 +            this.handle.set(type.getHandle(), adapter.toVanilla(value));
 +        }
