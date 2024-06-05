@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 4 Jun 2024 19:48:03 -0700
+Subject: [PATCH] Fix Player#setBlockUpdate
+
+BlockEntity needs its Level set
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
+index 2c61e8d5bbab59c691f4cb003041e7e50e406b85..cee3fe00cc662f095e7d726b5f1a913cd8199210 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
+@@ -190,6 +190,7 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
+     @Nullable
+     public Packet<ClientGamePacketListener> getUpdatePacket(@NotNull Location location) {
+         T vanillaTileEntitiy = (T) BlockEntity.loadStatic(CraftLocation.toBlockPosition(location), this.getHandle(), this.getSnapshotNBT(), this.getRegistryAccess());
++        vanillaTileEntitiy.setLevel(((org.bukkit.craftbukkit.CraftWorld) location.getWorld()).getHandle()); // Paper - set level. Required for accessing RegistryAccess
+         return ClientboundBlockEntityDataPacket.create(vanillaTileEntitiy);
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 40155cc70ba959eea8011626a30e26f44298c99d..32c3c2c6b2eaa90b149d9b425341e75b85bd9764 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1125,6 +1125,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     public void sendBlockUpdate(@NotNull Location location, @NotNull TileState tileState) throws IllegalArgumentException {
+         Preconditions.checkArgument(location != null, "Location can not be null");
+         Preconditions.checkArgument(tileState != null, "TileState can not be null");
++        Preconditions.checkArgument(location.getWorld() != null, "Location must have a world"); // Paper
+ 
+         if (this.getHandle().connection == null) return;
+ 
