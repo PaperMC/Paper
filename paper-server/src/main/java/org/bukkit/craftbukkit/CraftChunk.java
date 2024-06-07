@@ -48,6 +48,7 @@ import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.bukkit.generator.structure.GeneratedStructure;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -374,6 +375,11 @@ public class CraftChunk implements Chunk {
     @Override
     public Collection<GeneratedStructure> getStructures(Structure structure) {
         return getCraftWorld().getStructures(getX(), getZ(), structure);
+    }
+
+    @Override
+    public Collection<Player> getPlayersSeeingChunk() {
+        return getWorld().getPlayersSeeingChunk(this);
     }
 
     @Override
