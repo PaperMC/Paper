@@ -6,6 +6,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.bukkit.generator.structure.GeneratedStructure;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.persistence.PersistentDataHolder;
@@ -284,6 +285,17 @@ public interface Chunk extends PersistentDataHolder {
      */
     @NotNull
     Collection<GeneratedStructure> getStructures(@NotNull Structure structure);
+
+    /**
+     * Get a list of all players who are can view the chunk from their client
+     * <p>
+     * This list will be empty if no players are viewing the chunk, or the chunk
+     * is unloaded.
+     *
+     * @return collection of players who can see the chunk
+     */
+    @NotNull
+    public Collection<Player> getPlayersSeeingChunk();
 
     /**
      * An enum to specify the load level of a chunk.

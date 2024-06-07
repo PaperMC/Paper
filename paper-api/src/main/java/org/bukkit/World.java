@@ -315,6 +315,33 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     public boolean refreshChunk(int x, int z);
 
     /**
+     * Get a list of all players who are can view the specified chunk from their
+     * client
+     * <p>
+     * This list will be empty if no players are viewing the chunk, or the chunk
+     * is unloaded.
+     *
+     * @param chunk the chunk to check
+     * @return collection of players who can see the chunk
+     */
+    @NotNull
+    public Collection<Player> getPlayersSeeingChunk(@NotNull Chunk chunk);
+
+    /**
+     * Get a list of all players who are can view the specified chunk from their
+     * client
+     * <p>
+     * This list will be empty if no players are viewing the chunk, or the chunk
+     * is unloaded.
+     *
+     * @param x X-coordinate of the chunk
+     * @param z Z-coordinate of the chunk
+     * @return collection of players who can see the chunk
+     */
+    @NotNull
+    public Collection<Player> getPlayersSeeingChunk(int x, int z);
+
+    /**
      * Gets whether the chunk at the specified chunk coordinates is force
      * loaded.
      * <p>
