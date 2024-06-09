@@ -288,13 +288,16 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     @Override
     Builder<String, Object> serialize(Builder<String, Object> builder) {
         super.serialize(builder);
+
         if (this.profile != null) {
-            return builder.put(SKULL_OWNER.BUKKIT, new CraftPlayerProfile(this.profile));
+            builder.put(SKULL_OWNER.BUKKIT, new CraftPlayerProfile(this.profile));
         }
+
         NamespacedKey namespacedKeyNB = this.getNoteBlockSound();
         if (namespacedKeyNB != null) {
-            return builder.put(NOTE_BLOCK_SOUND.BUKKIT, namespacedKeyNB.toString());
+            builder.put(NOTE_BLOCK_SOUND.BUKKIT, namespacedKeyNB.toString());
         }
+
         return builder;
     }
 }
