@@ -397,7 +397,7 @@ index 0000000000000000000000000000000000000000..4cf32102a134ebef67d3893cfd24bf0a
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistryListenerManager.java b/src/main/java/io/papermc/paper/registry/PaperRegistryListenerManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d4c4ca9297ae3e481a5aba516e7d2c1729618d4b
+index 0000000000000000000000000000000000000000..3713ac6517e09924dfd3a9b7b6b9efe5cb8a71d1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/PaperRegistryListenerManager.java
 @@ -0,0 +1,167 @@
@@ -554,14 +554,14 @@ index 0000000000000000000000000000000000000000..d4c4ca9297ae3e481a5aba516e7d2c17
 +        LifecycleEventRunner.INSTANCE.callEvent(this.freezeHooks.getHook(entry.apiKey()), event);
 +    }
 +
-+    public <T, B extends RegistryBuilder<T>> RegistryEntryAddEventType<T, B> getRegistryAdditionEventType(final RegistryEventProvider<T, B> type) {
++    public <T, B extends RegistryBuilder<T>> RegistryEntryAddEventType<T, B> getRegistryValueAddEventType(final RegistryEventProvider<T, B> type) {
 +        if (!(PaperRegistries.getEntry(type.registryKey()) instanceof RegistryEntry.Modifiable)) {
 +            throw new IllegalArgumentException(type.registryKey() + " does not support RegistryAdditionEvent");
 +        }
 +        return this.valueAddHooks.getOrCreate(type, RegistryEntryAddEventTypeImpl::new);
 +    }
 +
-+    public <T, B extends RegistryBuilder<T>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryFreezeEvent<T, B>> getRegistryPreFreezeEventType(final RegistryEventProvider<T, B> type) {
++    public <T, B extends RegistryBuilder<T>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryFreezeEvent<T, B>> getRegistryFreezeEventType(final RegistryEventProvider<T, B> type) {
 +        if (!(PaperRegistries.getEntry(type.registryKey()) instanceof RegistryEntry.Writable)) {
 +            throw new IllegalArgumentException(type.registryKey() + " does not support RegistryPreFreezeEvent");
 +        }
@@ -963,7 +963,7 @@ index 0000000000000000000000000000000000000000..f5ea23173dcbe491742c3dd051c147ef
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEventTypeProviderImpl.java b/src/main/java/io/papermc/paper/registry/event/RegistryEventTypeProviderImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a4c3f981673c4202d06149996db7997f6670a07c
+index 0000000000000000000000000000000000000000..34c842ffa355e3c8001dd7b8551bcb49229a6391
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/event/RegistryEventTypeProviderImpl.java
 @@ -0,0 +1,24 @@
@@ -982,13 +982,13 @@ index 0000000000000000000000000000000000000000..a4c3f981673c4202d06149996db7997f
 +    }
 +
 +    @Override
-+    public <T, B extends RegistryBuilder<T>> RegistryEntryAddEventType<T, B> registryAddition(final RegistryEventProvider<T, B> type) {
-+        return PaperRegistryListenerManager.INSTANCE.getRegistryAdditionEventType(type);
++    public <T, B extends RegistryBuilder<T>> RegistryEntryAddEventType<T, B> registryEntryAdd(final RegistryEventProvider<T, B> type) {
++        return PaperRegistryListenerManager.INSTANCE.getRegistryValueAddEventType(type);
 +    }
 +
 +    @Override
-+    public <T, B extends RegistryBuilder<T>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryFreezeEvent<T, B>> registryPreFreeze(final RegistryEventProvider<T, B> type) {
-+        return PaperRegistryListenerManager.INSTANCE.getRegistryPreFreezeEventType(type);
++    public <T, B extends RegistryBuilder<T>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryFreezeEvent<T, B>> registryFreeze(final RegistryEventProvider<T, B> type) {
++        return PaperRegistryListenerManager.INSTANCE.getRegistryFreezeEventType(type);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEventImpl.java b/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEventImpl.java

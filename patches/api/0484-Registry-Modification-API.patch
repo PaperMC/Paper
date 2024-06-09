@@ -93,7 +93,7 @@ index 0000000000000000000000000000000000000000..498c5920926158e86c2aec2bd2129d5e
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEventProvider.java b/src/main/java/io/papermc/paper/registry/event/RegistryEventProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..72e8de9c0049147b83096f0655d9ed615f08287a
+index 0000000000000000000000000000000000000000..477ed0fd5acc923d429980529876f0dd7dd3a52a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/event/RegistryEventProvider.java
 @@ -0,0 +1,58 @@
@@ -133,7 +133,7 @@ index 0000000000000000000000000000000000000000..72e8de9c0049147b83096f0655d9ed61
 +     * Can be used in {@link io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager#registerEventHandler(LifecycleEventType, LifecycleEventHandler)}
 +     * to register a handler for {@link RegistryEntryAddEvent}.
 +     *
-+     * @return the addition event type
++     * @return the registry entry add event type
 +     */
 +    @NonNull RegistryEntryAddEventType<T, B> entryAdd();
 +
@@ -144,7 +144,7 @@ index 0000000000000000000000000000000000000000..72e8de9c0049147b83096f0655d9ed61
 +     * Can be used in {@link io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager#registerEventHandler(LifecycleEventType, LifecycleEventHandler)}
 +     * to register a handler for {@link RegistryFreezeEvent}.
 +     *
-+     * @return the pre-freeze event type
++     * @return the registry freeze event type
 +     */
 +    LifecycleEventType.@NonNull Prioritizable<BootstrapContext, RegistryFreezeEvent<T, B>> freeze();
 +
@@ -157,7 +157,7 @@ index 0000000000000000000000000000000000000000..72e8de9c0049147b83096f0655d9ed61
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEventProviderImpl.java b/src/main/java/io/papermc/paper/registry/event/RegistryEventProviderImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..36080923ff13ff097807c45f0c454492e0d22a61
+index 0000000000000000000000000000000000000000..cfe47c8bd0888db6d00867acfefc8db42ef314aa
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/event/RegistryEventProviderImpl.java
 @@ -0,0 +1,30 @@
@@ -182,18 +182,18 @@ index 0000000000000000000000000000000000000000..36080923ff13ff097807c45f0c454492
 +
 +    @Override
 +    public RegistryEntryAddEventType<T, B> entryAdd() {
-+        return RegistryEventTypeProvider.provider().registryAddition(this);
++        return RegistryEventTypeProvider.provider().registryEntryAdd(this);
 +    }
 +
 +    @Override
 +    public LifecycleEventType.Prioritizable<BootstrapContext, RegistryFreezeEvent<T, B>> freeze() {
-+        return RegistryEventTypeProvider.provider().registryPreFreeze(this);
++        return RegistryEventTypeProvider.provider().registryFreeze(this);
 +    }
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEventTypeProvider.java b/src/main/java/io/papermc/paper/registry/event/RegistryEventTypeProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f1ef25f0ce441e2e7f02e63aa06d33acbe7f50b9
+index 0000000000000000000000000000000000000000..d807bd2f42c98e37a96cf110ad77820dfffc8398
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/event/RegistryEventTypeProvider.java
 @@ -0,0 +1,24 @@
@@ -217,9 +217,9 @@ index 0000000000000000000000000000000000000000..f1ef25f0ce441e2e7f02e63aa06d33ac
 +        return PROVIDER.orElseThrow(() -> new IllegalStateException("Could not find a %s service implementation".formatted(RegistryEventTypeProvider.class.getSimpleName())));
 +    }
 +
-+    <T, B extends RegistryBuilder<T>> RegistryEntryAddEventType<T, B> registryAddition(RegistryEventProvider<T, B> type);
++    <T, B extends RegistryBuilder<T>> RegistryEntryAddEventType<T, B> registryEntryAdd(RegistryEventProvider<T, B> type);
 +
-+    <T, B extends RegistryBuilder<T>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryFreezeEvent<T, B>> registryPreFreeze(RegistryEventProvider<T, B> type);
++    <T, B extends RegistryBuilder<T>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryFreezeEvent<T, B>> registryFreeze(RegistryEventProvider<T, B> type);
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEvents.java b/src/main/java/io/papermc/paper/registry/event/RegistryEvents.java
 new file mode 100644
@@ -243,10 +243,10 @@ index 0000000000000000000000000000000000000000..1f89945be2ed68f52a544f41f7a151b8
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEvent.java b/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2cf9dbdb031b733ee1f39a93cbe0610a33674dea
+index 0000000000000000000000000000000000000000..3a127b534dc37452b15c5fc5f922f8b6310b3ec0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEvent.java
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,25 @@
 +package io.papermc.paper.registry.event;
 +
 +import io.papermc.paper.registry.RegistryBuilder;
@@ -266,16 +266,15 @@ index 0000000000000000000000000000000000000000..2cf9dbdb031b733ee1f39a93cbe0610a
 +public interface RegistryFreezeEvent<T, B extends RegistryBuilder<T>> extends RegistryEvent<T> {
 +
 +    /**
-+     * Get a view of the registry which supports
-+     * the registering of new values.
++     * Get the writable registry.
 +     *
-+     * @return a writable registry view
++     * @return a writable registry
 +     */
 +    @NonNull WritableRegistry<T, B> registry();
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/WritableRegistry.java b/src/main/java/io/papermc/paper/registry/event/WritableRegistry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..580fbdc631c9087560d24833fb8004de6f795778
+index 0000000000000000000000000000000000000000..6de377275097f065c38dd59c6db9704018ac81fc
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/event/WritableRegistry.java
 @@ -0,0 +1,27 @@
@@ -288,7 +287,7 @@ index 0000000000000000000000000000000000000000..580fbdc631c9087560d24833fb8004de
 +import org.jetbrains.annotations.ApiStatus;
 +
 +/**
-+ * A registry view which supports registering new objects.
++ * A registry which supports registering new objects.
 + *
 + * @param <T> registry entry type
 + * @param <B> registry entry builder type
