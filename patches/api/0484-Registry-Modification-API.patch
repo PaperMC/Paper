@@ -25,10 +25,10 @@ index 0000000000000000000000000000000000000000..6edf300c1d81c1001756141c9efd022b
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/RegistryView.java b/src/main/java/io/papermc/paper/registry/RegistryView.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bc25a03b5c06473300cc1b6d505780e68e5e82fc
+index 0000000000000000000000000000000000000000..bcdb1a21f1af49b86764d78bd1d774a7fb06fb51
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/RegistryView.java
-@@ -0,0 +1,20 @@
+@@ -0,0 +1,50 @@
 +package io.papermc.paper.registry;
 +
 +import net.kyori.adventure.key.Key;
@@ -45,9 +45,39 @@ index 0000000000000000000000000000000000000000..bc25a03b5c06473300cc1b6d505780e6
 +@ApiStatus.NonExtendable
 +public interface RegistryView<T> extends Iterable<T> {
 +
-+    @Nullable T get(final @NonNull Key key);
++    /**
++     * Get a registry entry by its key.
++     *
++     * @param key the key
++     * @return the registry entry or null
++     */
++    @Nullable T get(@NonNull Key key);
 +
-+    @NonNull T getOrThrow(final @NonNull Key key);
++    /**
++     * Get a registry entry by its key.
++     *
++     * @param key the key
++     * @return the registry entry or null
++     */
++    @Nullable T get(@NonNull TypedKey<T> key);
++
++    /**
++     * Get a registry entry by its key.
++     *
++     * @param key the key
++     * @return the registry entry
++     * @throws java.util.NoSuchElementException if the entry does not exist
++     */
++    @NonNull T getOrThrow(@NonNull Key key);
++
++    /**
++     * Get a registry entry by its key.
++     *
++     * @param key the key
++     * @return the registry entry
++     * @throws java.util.NoSuchElementException if the entry does not exist
++     */
++    @NonNull T getOrThrow(@NonNull TypedKey<T> key);
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEvent.java b/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEvent.java
 new file mode 100644
@@ -90,15 +120,14 @@ index 0000000000000000000000000000000000000000..d6722f7b55e260bab4bab5c361f9c0e9
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEvent.java b/src/main/java/io/papermc/paper/registry/event/RegistryEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c83dc6ef3cbe5ec40d464ad96387d7c3d04f1458
+index 0000000000000000000000000000000000000000..498c5920926158e86c2aec2bd2129d5e8b8613a3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/event/RegistryEvent.java
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,23 @@
 +package io.papermc.paper.registry.event;
 +
 +import io.papermc.paper.plugin.lifecycle.event.LifecycleEvent;
 +import io.papermc.paper.registry.RegistryKey;
-+import io.papermc.paper.registry.RegistryView;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
 +
@@ -117,21 +146,13 @@ index 0000000000000000000000000000000000000000..c83dc6ef3cbe5ec40d464ad96387d7c3
 +     * @return the registry key
 +     */
 +    @NonNull RegistryKey<T> registryKey();
-+
-+    /**
-+     * Get a view of the registry which may or may not
-+     * be complete based on the event.
-+     *
-+     * @return a registry view
-+     */
-+    @NonNull RegistryView<T> registry();
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEventProvider.java b/src/main/java/io/papermc/paper/registry/event/RegistryEventProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..793208a46680d7b9e164c14012d2b7c9af55499f
+index 0000000000000000000000000000000000000000..72e8de9c0049147b83096f0655d9ed615f08287a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/event/RegistryEventProvider.java
-@@ -0,0 +1,83 @@
+@@ -0,0 +1,58 @@
 +package io.papermc.paper.registry.event;
 +
 +import io.papermc.paper.plugin.bootstrap.BootstrapContext;
@@ -141,6 +162,7 @@ index 0000000000000000000000000000000000000000..793208a46680d7b9e164c14012d2b7c9
 +import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEventType;
 +import io.papermc.paper.registry.RegistryBuilder;
 +import io.papermc.paper.registry.RegistryKey;
++import io.papermc.paper.registry.event.type.RegistryEntryAddEventType;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
 +
@@ -169,20 +191,7 @@ index 0000000000000000000000000000000000000000..793208a46680d7b9e164c14012d2b7c9
 +     *
 +     * @return the addition event type
 +     */
-+    LifecycleEventType.@NonNull Prioritizable<BootstrapContext, RegistryEntryAddEvent<T, B>> entryAdd();
-+
-+    /**
-+     * Shortcut for calling {@link #entryAdd()} followed by {@link LifecycleEventType#newHandler(LifecycleEventHandler)}.
-+     * <p>
-+     * Can be used in {@link io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager#registerEventHandler(LifecycleEventHandlerConfiguration)}
-+     * to register a handler for {@link RegistryEntryAddEvent}
-+     *
-+     * @param handler the event handler for {@link RegistryEntryAddEvent}
-+     * @return the configuration for further use
-+     */
-+    default @NonNull PrioritizedLifecycleEventHandlerConfiguration<BootstrapContext> newEntryAddHandler(final @NonNull LifecycleEventHandler<? super RegistryEntryAddEvent<T, B>> handler) {
-+        return this.entryAdd().newHandler(handler);
-+    }
++    @NonNull RegistryEntryAddEventType<T, B> entryAdd();
 +
 +    /**
 +     * Gets the event type for {@link RegistryFreezeEvent} which is fired just before
@@ -196,19 +205,6 @@ index 0000000000000000000000000000000000000000..793208a46680d7b9e164c14012d2b7c9
 +    LifecycleEventType.@NonNull Prioritizable<BootstrapContext, RegistryFreezeEvent<T, B>> freeze();
 +
 +    /**
-+     * Shortcut for calling {@link #freeze()} followed by {@link LifecycleEventType#newHandler(LifecycleEventHandler)}.
-+     * <p>
-+     * Can be used in {@link io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager#registerEventHandler(LifecycleEventHandlerConfiguration)}
-+     * to register a handler for {@link RegistryFreezeEvent}
-+     *
-+     * @param handler the event handler for {@link RegistryFreezeEvent}
-+     * @return the configuration for further use
-+     */
-+    default @NonNull PrioritizedLifecycleEventHandlerConfiguration<BootstrapContext> newFreezeHandler(final @NonNull LifecycleEventHandler<? super RegistryFreezeEvent<T, B>> handler) {
-+        return this.freeze().newHandler(handler);
-+    }
-+
-+    /**
 +     * Gets the registry key associated with this event type provider.
 +     *
 +     * @return the registry key
@@ -217,16 +213,17 @@ index 0000000000000000000000000000000000000000..793208a46680d7b9e164c14012d2b7c9
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEventProviderImpl.java b/src/main/java/io/papermc/paper/registry/event/RegistryEventProviderImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..85a9fbc6aa59e95aac57aa6e626a7366222cf80e
+index 0000000000000000000000000000000000000000..36080923ff13ff097807c45f0c454492e0d22a61
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/event/RegistryEventProviderImpl.java
-@@ -0,0 +1,29 @@
+@@ -0,0 +1,30 @@
 +package io.papermc.paper.registry.event;
 +
 +import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 +import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEventType;
 +import io.papermc.paper.registry.RegistryBuilder;
 +import io.papermc.paper.registry.RegistryKey;
++import io.papermc.paper.registry.event.type.RegistryEntryAddEventType;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +import org.jetbrains.annotations.ApiStatus;
@@ -240,7 +237,7 @@ index 0000000000000000000000000000000000000000..85a9fbc6aa59e95aac57aa6e626a7366
 +    }
 +
 +    @Override
-+    public LifecycleEventType.Prioritizable<BootstrapContext, RegistryEntryAddEvent<T, B>> entryAdd() {
++    public RegistryEntryAddEventType<T, B> entryAdd() {
 +        return RegistryEventTypeProvider.provider().registryAddition(this);
 +    }
 +
@@ -252,15 +249,16 @@ index 0000000000000000000000000000000000000000..85a9fbc6aa59e95aac57aa6e626a7366
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEventTypeProvider.java b/src/main/java/io/papermc/paper/registry/event/RegistryEventTypeProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4e3f041f2c4ee09d806c0528af2f67912525d94c
+index 0000000000000000000000000000000000000000..f1ef25f0ce441e2e7f02e63aa06d33acbe7f50b9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/event/RegistryEventTypeProvider.java
-@@ -0,0 +1,23 @@
+@@ -0,0 +1,24 @@
 +package io.papermc.paper.registry.event;
 +
 +import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 +import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEventType;
 +import io.papermc.paper.registry.RegistryBuilder;
++import io.papermc.paper.registry.event.type.RegistryEntryAddEventType;
 +import java.util.Optional;
 +import java.util.ServiceLoader;
 +import org.jetbrains.annotations.ApiStatus;
@@ -275,7 +273,7 @@ index 0000000000000000000000000000000000000000..4e3f041f2c4ee09d806c0528af2f6791
 +        return PROVIDER.orElseThrow(() -> new IllegalStateException("Could not find a %s service implementation".formatted(RegistryEventTypeProvider.class.getSimpleName())));
 +    }
 +
-+    <T, B extends RegistryBuilder<T>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryEntryAddEvent<T, B>> registryAddition(RegistryEventProvider<T, B> type);
++    <T, B extends RegistryBuilder<T>> RegistryEntryAddEventType<T, B> registryAddition(RegistryEventProvider<T, B> type);
 +
 +    <T, B extends RegistryBuilder<T>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryFreezeEvent<T, B>> registryPreFreeze(RegistryEventProvider<T, B> type);
 +}
@@ -301,10 +299,10 @@ index 0000000000000000000000000000000000000000..1f89945be2ed68f52a544f41f7a151b8
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEvent.java b/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6d34ab36303337551e6318228fd2b28ec7da75d3
+index 0000000000000000000000000000000000000000..2cf9dbdb031b733ee1f39a93cbe0610a33674dea
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEvent.java
-@@ -0,0 +1,27 @@
+@@ -0,0 +1,26 @@
 +package io.papermc.paper.registry.event;
 +
 +import io.papermc.paper.registry.RegistryBuilder;
@@ -329,7 +327,6 @@ index 0000000000000000000000000000000000000000..6d34ab36303337551e6318228fd2b28e
 +     *
 +     * @return a writable registry view
 +     */
-+    @Override
 +    @NonNull WritableRegistry<T, B> registry();
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/WritableRegistry.java b/src/main/java/io/papermc/paper/registry/event/WritableRegistry.java
@@ -365,6 +362,66 @@ index 0000000000000000000000000000000000000000..7a0356b7da3844e7ec9121656dc059f5
 +     * @param value a consumer for the entry's builder
 +     */
 +    void register(@NonNull TypedKey<T> key, @NonNull Consumer<? super B> value);
++}
+diff --git a/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddConfiguration.java b/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddConfiguration.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ca570ae59d661e229abf72e3f2455017cbd96fbc
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddConfiguration.java
+@@ -0,0 +1,30 @@
++package io.papermc.paper.registry.event.type;
++
++import io.papermc.paper.plugin.bootstrap.BootstrapContext;
++import io.papermc.paper.plugin.lifecycle.event.handler.configuration.PrioritizedLifecycleEventHandlerConfiguration;
++import io.papermc.paper.registry.TypedKey;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.Contract;
++
++/**
++ * Specific configuration for {@link io.papermc.paper.registry.event.RegistryEntryAddEvent}s.
++ *
++ * @param <T> registry entry type
++ */
++public interface RegistryEntryAddConfiguration<T> extends PrioritizedLifecycleEventHandlerConfiguration<BootstrapContext> {
++
++    /**
++     * Only call the handler if the value being added matches the specified key.
++     *
++     * @param key the key to match
++     * @return this configuration
++     */
++    @Contract(value = "_ -> this", mutates = "this")
++    @NonNull RegistryEntryAddConfiguration<T> onlyFor(TypedKey<T> key);
++
++    @Override
++    RegistryEntryAddConfiguration<T> priority(int priority);
++
++    @Override
++    RegistryEntryAddConfiguration<T> monitor();
++}
+diff --git a/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddEventType.java b/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddEventType.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f4d4ebf6cbed1b4a9955ceb2d0586782181d97e5
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddEventType.java
+@@ -0,0 +1,18 @@
++package io.papermc.paper.registry.event.type;
++
++import io.papermc.paper.plugin.bootstrap.BootstrapContext;
++import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEventType;
++import io.papermc.paper.registry.RegistryBuilder;
++import io.papermc.paper.registry.event.RegistryEntryAddEvent;
++import org.jetbrains.annotations.ApiStatus;
++
++/**
++ * Lifecycle event type for {@link RegistryEntryAddEvent}s.
++ *
++ * @param <T> registry entry type
++ * @param <B> registry entry builder type
++ */
++@ApiStatus.Experimental
++@ApiStatus.NonExtendable
++public interface RegistryEntryAddEventType<T, B extends RegistryBuilder<T>> extends LifecycleEventType<BootstrapContext, RegistryEntryAddEvent<T, B>, RegistryEntryAddConfiguration<T>> {
 +}
 diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
 index 88bb3b9ae99fae97ec21972b75ec43cb6b7b22b5..661af93e3f73aaf1eca0be08b73fae62c534ecbe 100644

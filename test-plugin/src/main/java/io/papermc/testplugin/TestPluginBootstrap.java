@@ -23,11 +23,9 @@ public class TestPluginBootstrap implements PluginBootstrap {
         // io.papermc.testplugin.brigtests.Registration.registerViaBootstrap(context);
 
         final LifecycleEventManager<BootstrapContext> lifecycleManager = context.getLifecycleManager();
-        lifecycleManager.registerEventHandler(RegistryEvents.GAME_EVENT.newEntryAddHandler(event -> {
-            if (event.key().equals(GameEventKeys.BLOCK_OPEN)) {
-                event.builder().range(event.builder().range() * 2);
-            }
-        }).priority(10));
+        lifecycleManager.registerEventHandler(RegistryEvents.GAME_EVENT.entryAdd().newHandler(event -> {
+            event.builder().range(event.builder().range() * 40);
+        }).priority(10).onlyFor(GameEventKeys.BLOCK_OPEN));
         lifecycleManager.registerEventHandler(RegistryEvents.GAME_EVENT.freeze(), event -> {
             event.registry().register(NEW_EVENT, builder -> {
                 builder.range(2);
