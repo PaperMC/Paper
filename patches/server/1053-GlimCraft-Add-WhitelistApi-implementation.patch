@@ -1,0 +1,148 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Vitaly Rudenko <maurice.dederick@gmail.com>
+Date: Mon, 10 Jun 2024 23:13:23 +0300
+Subject: [PATCH] [GlimCraft] Add WhitelistApi implementation
+
+
+diff --git a/src/main/java/online/glimcraft/whitelist/WhitelistApi.java b/src/main/java/online/glimcraft/whitelist/WhitelistApi.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7c0bd95930102f2335bfed096a109c26b44e7d4e
+--- /dev/null
++++ b/src/main/java/online/glimcraft/whitelist/WhitelistApi.java
+@@ -0,0 +1,136 @@
++package online.glimcraft.whitelist;
++
++import org.jetbrains.annotations.NotNull;
++import org.json.simple.JSONArray;
++import org.json.simple.JSONObject;
++import org.json.simple.parser.JSONParser;
++
++import java.net.URI;
++import java.net.http.HttpClient;
++import java.net.http.HttpRequest;
++import java.net.http.HttpResponse;
++import java.time.Duration;
++import java.util.ArrayList;
++import java.util.HashMap;
++import java.util.List;
++import java.util.Map;
++import java.util.logging.Level;
++import java.util.logging.Logger;
++
++public class WhitelistApi {
++    public record WhitelistEntry(String name, String uuid, boolean isPremium) {}
++
++    private final String apiUrl;
++    private final String apiKey;
++    private final Logger logger;
++
++    private final HttpClient client = HttpClient.newHttpClient();
++    private final Map<String, WhitelistEntry> whitelistEntryCache = new HashMap<>();
++
++    private boolean isInitialized = false;
++
++    public WhitelistApi(String apiUrl, String apiKey, Logger logger) {
++        this.apiUrl = apiUrl;
++        this.apiKey = apiKey;
++        this.logger = logger;
++    }
++
++    public boolean isPremium(String name) {
++        return getWhitelistEntry(name).isPremium();
++    }
++
++    synchronized WhitelistEntry getWhitelistEntry(String name) {
++        initializeWhitelistEntriesIfNecessary();
++
++        if (whitelistEntryCache.containsKey(name)) {
++            logger.info(name + "'s whitelist entry is already loaded, using cached version: " + whitelistEntryCache.get(name));
++        }
++
++        if (!whitelistEntryCache.containsKey(name)) {
++            logger.info( name + " is not in the cache, loading their whitelist entry...");
++
++            try {
++                whitelistEntryCache.put(name, fetchWhitelistEntry(name));
++            } catch (Exception exception) {
++                logger.log(Level.SEVERE, "Could not fetch whitelist entry for " + name, exception);
++                throw new RuntimeException(exception);
++            }
++
++            logger.info(name + "'s whitelist entry: " + whitelistEntryCache.get(name));
++        }
++
++        return whitelistEntryCache.get(name);
++    }
++
++    void initializeWhitelistEntriesIfNecessary() {
++        System.out.println("Initializing whitelist entries...");
++
++        if (isInitialized) {
++            System.out.println("Whitelist entries are already initialized, ignored");
++            return;
++        }
++
++        try {
++            System.out.println("Fetching whitelist entries...");
++            List<WhitelistEntry> entries = fetchWhitelistEntries();
++            for (WhitelistEntry entry : entries) {
++                whitelistEntryCache.put(entry.name(), entry);
++                System.out.println("Loaded whitelist entry: " + entry);
++            }
++            isInitialized = true;
++        } catch (Exception exception) {
++            logger.log(Level.SEVERE, "Could not fetch whitelist entries", exception);
++            throw new RuntimeException(exception);
++        }
++    }
++
++    public @NotNull WhitelistEntry fetchWhitelistEntry(@NotNull String name) throws Exception {
++        HttpRequest request = HttpRequest.newBuilder()
++            .uri(new URI(apiUrl + "/whitelist/" + name))
++            .header("x-api-key", apiKey)
++            .timeout(Duration.ofSeconds(30))
++            .GET()
++            .build();
++
++        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
++
++        if (response.statusCode() != 200) {
++            throw new Exception("Whitelist entry for " + name
++                + " does not exist or could not be loaded (response: " + response.statusCode() + ")");
++        }
++
++        return parseWhitelistEntry(new JSONParser().parse(response.body()));
++    }
++
++    @NotNull List<WhitelistEntry> fetchWhitelistEntries() throws Exception {
++        HttpRequest request = HttpRequest.newBuilder()
++            .uri(new URI(apiUrl + "/whitelist"))
++            .header("x-api-key", apiKey)
++            .timeout(Duration.ofSeconds(30))
++            .GET()
++            .build();
++
++        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
++
++        if (response.statusCode() != 200) {
++            throw new Exception("Could not successfully load whitelist entries (response: " + response.statusCode() + ")");
++        }
++
++        JSONArray rawEntries = (JSONArray) new JSONParser().parse(response.body());
++
++        List<WhitelistEntry> entries = new ArrayList<>();
++        for (Object rawEntry : rawEntries) {
++            entries.add(parseWhitelistEntry(rawEntry));
++        }
++
++        return entries;
++    }
++
++    WhitelistEntry parseWhitelistEntry(Object entry) {
++        String name = (String) ((JSONObject) entry).get("name");
++        String uuid = (String) ((JSONObject) entry).get("uuid");
++        boolean isPremium = (Boolean) ((JSONObject) entry).get("isPremium");
++
++        return new WhitelistEntry(name, uuid, isPremium);
++    }
++}
