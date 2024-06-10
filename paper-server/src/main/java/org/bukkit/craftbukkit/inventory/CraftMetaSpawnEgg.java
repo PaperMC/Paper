@@ -111,6 +111,12 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
 
     CraftMetaSpawnEgg(CraftMetaItem meta) {
         super(meta);
+
+        if (!(meta instanceof CraftMetaSpawnEgg egg)) {
+            return;
+        }
+
+        this.entityTag = egg.entityTag;
     }
 
     CraftMetaSpawnEgg(DataComponentPatch tag) {
@@ -167,7 +173,7 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
     }
 
     boolean isSpawnEggEmpty() {
-        return entityTag != null;
+        return !(entityTag != null);
     }
 
     @Override
