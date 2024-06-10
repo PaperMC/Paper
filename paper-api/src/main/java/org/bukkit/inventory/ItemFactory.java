@@ -10,7 +10,6 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -149,20 +148,6 @@ public interface ItemFactory {
      */
     @NotNull
     ItemStack createItemStack(@NotNull String input) throws IllegalArgumentException;
-
-    /**
-     * Apply a material change for an item meta. Do not use under any
-     * circumstances.
-     *
-     * @param meta meta
-     * @param material material
-     * @return updated material
-     * @throws IllegalArgumentException if bad material or data
-     * @apiNote for internal use only
-     */
-    @ApiStatus.Internal
-    @NotNull
-    Material updateMaterial(@NotNull final ItemMeta meta, @NotNull final Material material) throws IllegalArgumentException;
 
     /**
      * Gets a {@link Material} representing the spawn egg for the provided

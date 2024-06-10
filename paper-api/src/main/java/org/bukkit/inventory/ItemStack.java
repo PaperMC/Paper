@@ -614,11 +614,6 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
         }
         this.meta = Bukkit.getItemFactory().asMetaFor(itemMeta, material);
 
-        Material newType = Bukkit.getItemFactory().updateMaterial(meta, material);
-        if (this.type != newType) {
-            this.type = newType;
-        }
-
         if (this.meta == itemMeta) {
             this.meta = itemMeta.clone();
         }
