@@ -88,7 +88,7 @@ public class MaterialReroutingTest extends AbstractTestingBase {
                 if (methodNode.desc.contains("Lorg/bukkit/Material;") || signature.contains("Lorg/bukkit/Material;")) {
                     // Add method exceptions here
                     switch (methodNode.name) {
-                        case "<init>", "updateMaterial", "setItemMeta0" -> {
+                        case "<init>", "setItemMeta0" -> {
                             continue;
                         }
                     }

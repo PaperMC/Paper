@@ -1691,10 +1691,6 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     void serializeInternal(final Map<String, NBTBase> unhandledTags) {
     }
 
-    Material updateMaterial(Material material) {
-        return material;
-    }
-
     static void serializeEnchantments(Map<Enchantment, Integer> enchantments, ImmutableMap.Builder<String, Object> builder, ItemMetaKey key) {
         if (enchantments == null || enchantments.isEmpty()) {
             return;

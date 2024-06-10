@@ -460,11 +460,6 @@ public final class CraftItemFactory implements ItemFactory {
     }
 
     @Override
-    public Material updateMaterial(ItemMeta meta, Material material) throws IllegalArgumentException {
-        return ((CraftMetaItem) meta).updateMaterial(material);
-    }
-
-    @Override
     public Material getSpawnEgg(EntityType type) {
         if (type == EntityType.UNKNOWN) {
             return null;

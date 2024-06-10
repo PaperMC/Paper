@@ -269,7 +269,7 @@ public final class CraftLegacy {
             new Exception().printStackTrace();
         }
 
-        SPAWN_EGGS.put((byte) 0, Material.PIG_SPAWN_EGG); // Will be fixed by updateMaterial if possible
+        SPAWN_EGGS.put((byte) 0, Material.PIG_SPAWN_EGG);
 
         SPAWN_EGGS.put((byte) EntityType.BAT.getTypeId(), Material.BAT_SPAWN_EGG);
         SPAWN_EGGS.put((byte) EntityType.BLAZE.getTypeId(), Material.BLAZE_SPAWN_EGG);

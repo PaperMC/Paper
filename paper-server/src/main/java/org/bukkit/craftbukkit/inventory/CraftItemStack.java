@@ -626,12 +626,6 @@ public final class CraftItemStack extends ItemStack {
         itemMeta = CraftItemFactory.instance().asMetaFor(itemMeta, getType(item));
         if (itemMeta == null) return true;
 
-        Item oldItem = item.getItem();
-        Item newItem = CraftItemType.bukkitToMinecraft(CraftItemFactory.instance().updateMaterial(itemMeta, CraftItemType.minecraftToBukkit(oldItem)));
-        if (oldItem != newItem) {
-            item.setItem(newItem);
-        }
-
         if (!((CraftMetaItem) itemMeta).isEmpty()) {
             CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator();
 
