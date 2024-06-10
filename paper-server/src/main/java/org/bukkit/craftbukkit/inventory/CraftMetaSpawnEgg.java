@@ -151,10 +151,6 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
     void applyToItem(CraftMetaItem.Applicator tag) {
         super.applyToItem(tag);
 
-        if (!isSpawnEggEmpty() && entityTag == null) {
-            entityTag = new NBTTagCompound();
-        }
-
         if (entityTag != null) {
             tag.put(ENTITY_TAG, CustomData.of(entityTag));
         }
