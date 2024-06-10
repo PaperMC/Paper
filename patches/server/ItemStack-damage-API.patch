@@ -10,6 +10,34 @@ the logic associated with damaging them
 == AT ==
 public net.minecraft.world.entity.LivingEntity entityEventForEquipmentBreak(Lnet/minecraft/world/entity/EquipmentSlot;)B
 
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -0,0 +0,0 @@ public final class ItemStack implements DataComponentHolder {
+                     return;
+                 }
+             }
++    // Paper start - ItemStack damage API - split hurtAndBreak to skip pre-checks like creative mode
++            this.hurtAndBreakWithoutChecks(amount, entity, slot);
++        }
++    }
+ 
++    public void hurtAndBreakWithoutChecks(int amount, LivingEntity entity, @org.checkerframework.checker.nullness.qual.Nullable EquipmentSlot slot) {
++        {
++    // Paper end - ItemStack damage API - split hurtAndBreak to skip pre-checks like creative mode
+             RandomSource randomsource = entity.getRandom();
+             ServerPlayer entityplayer;
+ 
+@@ -0,0 +0,0 @@ public final class ItemStack implements DataComponentHolder {
+             }
+ 
+             this.hurtAndBreak(amount, randomsource, entity, () -> { // Paper - Add EntityDamageItemEvent
+-                entity.broadcastBreakEvent(slot);
++                if (slot != null) entity.broadcastBreakEvent(slot); // Paper - ItemStack damage API - slot is nullable
+                 Item item = this.getItem();
+                 // CraftBukkit start - Check for item breaking
+                 if (this.count == 1 && entity instanceof net.minecraft.world.entity.player.Player) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
@@ -59,7 +87,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    private void damageItemStack0(final net.minecraft.world.item.ItemStack nmsStack, final int amount, final net.minecraft.world.entity.EquipmentSlot slot) {
-+        nmsStack.hurtAndBreak(amount, this.getHandle(), slot);
++        nmsStack.hurtAndBreakWithoutChecks(amount, this.getHandle(), slot);
 +    }
 +    // Paper end - ItemStack damage API
  }
