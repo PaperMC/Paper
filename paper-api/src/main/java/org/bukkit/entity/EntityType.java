@@ -35,7 +35,7 @@ public enum EntityType implements Keyed, Translatable {
      * Spawn with {@link World#dropItem(Location, ItemStack)} or {@link
      * World#dropItemNaturally(Location, ItemStack)}
      */
-    ITEM("item", Item.class, 1, false),
+    ITEM("item", Item.class, 1),
     /**
      * An experience orb.
      */
@@ -95,7 +95,7 @@ public enum EntityType implements Keyed, Translatable {
     /**
      * A flying splash potion.
      */
-    POTION("potion", ThrownPotion.class, 16, false),
+    POTION("potion", ThrownPotion.class, 16),
     /**
      * A flying experience bottle.
      */
@@ -115,11 +115,11 @@ public enum EntityType implements Keyed, Translatable {
     /**
      * A block that is going to or is about to fall.
      */
-    FALLING_BLOCK("falling_block", FallingBlock.class, 21, false),
+    FALLING_BLOCK("falling_block", FallingBlock.class, 21),
     /**
      * Internal representation of a Firework once it has been launched.
      */
-    FIREWORK_ROCKET("firework_rocket", Firework.class, 22, false),
+    FIREWORK_ROCKET("firework_rocket", Firework.class, 22),
     /**
      * @see Husk
      */
@@ -313,7 +313,7 @@ public enum EntityType implements Keyed, Translatable {
      * <p>
      * Spawn with {@link World#strikeLightning(Location)}.
      */
-    LIGHTNING_BOLT("lightning_bolt", LightningStrike.class, -1, false),
+    LIGHTNING_BOLT("lightning_bolt", LightningStrike.class, -1),
     PLAYER("player", Player.class, -1, false),
     /**
      * An unknown entity without an Entity Class
