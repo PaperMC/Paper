@@ -244,6 +244,9 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
                 gen = TreeFeatures.DARK_OAK;
                 break;
             case MEGA_REDWOOD:
+                gen = TreeFeatures.MEGA_SPRUCE;
+                break;
+            case MEGA_PINE:
                 gen = TreeFeatures.MEGA_PINE;
                 break;
             case TALL_BIRCH:
