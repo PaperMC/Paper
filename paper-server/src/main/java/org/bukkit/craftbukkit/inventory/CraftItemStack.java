@@ -496,4 +496,34 @@ public final class CraftItemStack extends ItemStack {
         return mirrored;
     }
     // Paper end
+
+    // Paper start - pdc
+    private net.minecraft.nbt.CompoundTag getPdcTag() {
+        if (this.handle == null) {
+            return new net.minecraft.nbt.CompoundTag();
+        }
+        final net.minecraft.world.item.component.CustomData customData = this.handle.getOrDefault(DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.EMPTY);
+        // getUnsafe is OK here because we are only ever *reading* the data so immutability is preserved
+        //noinspection deprecation
+        return customData.getUnsafe().getCompound("PublicBukkitValues");
+    }
+
+    private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
+    private final io.papermc.paper.persistence.PaperPersistentDataContainerView pdcView = new io.papermc.paper.persistence.PaperPersistentDataContainerView(REGISTRY) {
+
+        @Override
+        public net.minecraft.nbt.CompoundTag toTagCompound() {
+            return CraftItemStack.this.getPdcTag();
+        }
+
+        @Override
+        public net.minecraft.nbt.Tag getTag(final String key) {
+            return CraftItemStack.this.getPdcTag().get(key);
+        }
+    };
+    @Override
+    public io.papermc.paper.persistence.PersistentDataContainerView getPersistentDataContainer() {
+        return this.pdcView;
+    }
+    // Paper end - pdc
 }
