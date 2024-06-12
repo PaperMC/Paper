@@ -27,7 +27,7 @@ import org.jetbrains.annotations.Nullable;
  * use this class to encapsulate Materials for which {@link Material#isItem()}
  * returns false.</b>
  */
-public class ItemStack implements Cloneable, ConfigurationSerializable, Translatable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem>, net.kyori.adventure.translation.Translatable { // Paper
+public class ItemStack implements Cloneable, ConfigurationSerializable, Translatable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem>, net.kyori.adventure.translation.Translatable, io.papermc.paper.persistence.PersistentDataViewHolder { // Paper
     private ItemStack craftDelegate; // Paper - always delegate to server-backed stack
     private MaterialData data = null;
 
@@ -60,6 +60,13 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
         return java.util.Objects.requireNonNull(type.asItemType(), type + " is not an item").createItemStack(amount); // Paper - delegate
     }
     // Paper end
+
+    // Paper start - pdc
+    @Override
+    public io.papermc.paper.persistence.@NotNull PersistentDataContainerView getPersistentDataContainer() {
+        return this.craftDelegate.getPersistentDataContainer();
+    }
+    // Paper end - pdc
 
     @Utility
     protected ItemStack() {}
