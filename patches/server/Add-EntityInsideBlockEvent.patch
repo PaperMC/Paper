@@ -85,8 +85,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      protected void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
-         if ((Boolean) state.getValue(CampfireBlock.LIT) && entity instanceof LivingEntity && !EnchantmentHelper.hasFrostWalker((LivingEntity) entity)) {
-             entity.hurt(world.damageSources().inFire().directBlock(world, pos), (float) this.fireDamage); // CraftBukkit
+         if ((Boolean) state.getValue(CampfireBlock.LIT) && entity instanceof LivingEntity) {
+             entity.hurt(world.damageSources().campfire().directBlock(world, pos), (float) this.fireDamage); // CraftBukkit
          }
 diff --git a/src/main/java/net/minecraft/world/level/block/CropBlock.java b/src/main/java/net/minecraft/world/level/block/CropBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -112,18 +112,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (!world.isClientSide) {
              if (!(Boolean) state.getValue(DetectorRailBlock.POWERED)) {
                  this.checkPressed(world, pos, state);
-diff --git a/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java b/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java
+diff --git a/src/main/java/net/minecraft/world/level/block/EndGatewayBlock.java b/src/main/java/net/minecraft/world/level/block/EndGatewayBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java
-+++ b/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java
-@@ -0,0 +0,0 @@ public class EndPortalBlock extends BaseEntityBlock {
+--- a/src/main/java/net/minecraft/world/level/block/EndGatewayBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/EndGatewayBlock.java
+@@ -0,0 +0,0 @@ public class EndGatewayBlock extends BaseEntityBlock implements Portal {
  
      @Override
      protected void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
-         if (world instanceof ServerLevel && entity.canChangeDimensions() && Shapes.joinIsNotEmpty(Shapes.create(entity.getBoundingBox().move((double) (-pos.getX()), (double) (-pos.getY()), (double) (-pos.getZ()))), state.getShape(world, pos), BooleanOp.AND)) {
-             ResourceKey<Level> resourcekey = world.getTypeKey() == LevelStem.END ? Level.OVERWORLD : Level.END; // CraftBukkit - SPIGOT-6152: send back to main overworld in custom ends
-             ServerLevel worldserver = ((ServerLevel) world).getServer().getLevel(resourcekey);
+         if (entity.canUsePortal(false)) {
+             BlockEntity tileentity = world.getBlockEntity(pos);
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java b/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java
+@@ -0,0 +0,0 @@ public class EndPortalBlock extends BaseEntityBlock implements Portal {
+ 
+     @Override
+     protected void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
++        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
+         if (entity.canUsePortal(false) && Shapes.joinIsNotEmpty(Shapes.create(entity.getBoundingBox().move((double) (-pos.getX()), (double) (-pos.getY()), (double) (-pos.getZ()))), state.getShape(world, pos), BooleanOp.AND)) {
+             // CraftBukkit start - Entity in portal
+             EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ()));
 diff --git a/src/main/java/net/minecraft/world/level/block/FrogspawnBlock.java b/src/main/java/net/minecraft/world/level/block/FrogspawnBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/FrogspawnBlock.java
@@ -188,12 +200,12 @@ diff --git a/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.jav
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java
-@@ -0,0 +0,0 @@ public class NetherPortalBlock extends Block {
+@@ -0,0 +0,0 @@ public class NetherPortalBlock extends Block implements Portal {
  
      @Override
      protected void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
-         if (entity.canChangeDimensions()) {
+         if (entity.canUsePortal(false)) {
              // CraftBukkit start - Entity in portal
              EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ()));
 diff --git a/src/main/java/net/minecraft/world/level/block/PitcherCropBlock.java b/src/main/java/net/minecraft/world/level/block/PitcherCropBlock.java
