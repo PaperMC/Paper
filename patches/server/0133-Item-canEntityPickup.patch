@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 5 May 2017 03:57:17 -0500
+Subject: [PATCH] Item#canEntityPickup
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index e81a25462239dbb3993f31ff927bd809aef0a124..25fd665f3b02edfcc9fc7092b93296a7c6e43338 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -675,6 +675,11 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+                 ItemEntity entityitem = (ItemEntity) iterator.next();
+ 
+                 if (!entityitem.isRemoved() && !entityitem.getItem().isEmpty() && !entityitem.hasPickUpDelay() && this.wantsToPickUp(entityitem.getItem())) {
++                    // Paper start - Item#canEntityPickup
++                    if (!entityitem.canMobPickup) {
++                        continue;
++                    }
++                    // Paper end - Item#canEntityPickup
+                     this.pickUpItem(entityitem);
+                 }
+             }
+diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+index c4cd7cf1567cdf57bfe9f2d80cd4a613efe10dc7..759c246540bbd5cb99c78a722c39b72fbc1951d4 100644
+--- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
++++ b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+@@ -60,6 +60,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+     public UUID target;
+     public final float bobOffs;
+     private int lastTick = MinecraftServer.currentTick - 1; // CraftBukkit
++    public boolean canMobPickup = true; // Paper - Item#canEntityPickup
+ 
+     public ItemEntity(EntityType<? extends ItemEntity> type, Level world) {
+         super(type, world);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftItem.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftItem.java
+index fb3738f4c558796f41e3327dd41b8aec68007a8a..5620a0849fda49313c68edfd747fedd09641a3d5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftItem.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftItem.java
+@@ -63,6 +63,18 @@ public class CraftItem extends CraftEntity implements Item {
+         }
+     }
+ 
++    // Paper start
++    @Override
++    public boolean canMobPickup() {
++        return this.getHandle().canMobPickup;
++    }
++
++    @Override
++    public void setCanMobPickup(boolean canMobPickup) {
++        this.getHandle().canMobPickup = canMobPickup;
++    }
++    // Paper end
++
+     @Override
+     public void setOwner(UUID uuid) {
+         this.getHandle().setTarget(uuid);

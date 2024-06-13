@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 31 Dec 2016 21:44:50 -0500
+Subject: [PATCH] PlayerTeleportEndGatewayEvent
+
+Allows you to access the Gateway being used in a teleport event
+Fix the offset used for player teleportation
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 813c3bc9943e2700d2e4ad2335b7d235d21610fa..a2d35f7066d89f861c1b75ec8a62f03ed6f65dd8 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -1195,11 +1195,22 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+             ResourceKey<LevelStem> resourcekey = worldserver1.getTypeKey();
+ 
+             if (worldserver != null && worldserver.dimension() == worldserver1.dimension()) { // CraftBukkit
++                // Paper start - gateway-specific teleport event
++                if (this.portalProcess != null && this.portalProcess.isSamePortal(((net.minecraft.world.level.block.EndGatewayBlock) net.minecraft.world.level.block.Blocks.END_GATEWAY)) && this.serverLevel().getBlockEntity(this.portalProcess.getEntryPosition()) instanceof net.minecraft.world.level.block.entity.TheEndGatewayBlockEntity theEndGatewayBlockEntity) {
++                    Location to = CraftLocation.toBukkit(teleportTarget.pos(), this.serverLevel().getWorld(), teleportTarget.yRot(), teleportTarget.xRot());
++                    final com.destroystokyo.paper.event.player.PlayerTeleportEndGatewayEvent event = new com.destroystokyo.paper.event.player.PlayerTeleportEndGatewayEvent(this.getBukkitEntity(), this.getBukkitEntity().getLocation(), to, new org.bukkit.craftbukkit.block.CraftEndGateway(to.getWorld(), theEndGatewayBlockEntity));
++                    if (!event.callEvent() || event.getTo() == null) {
++                        return null;
++                    }
++                    this.connection.teleport(event.getTo());
++                } else {
++                    // Paper end - gateway-specific teleport event
+                 boolean result = this.connection.teleport(teleportTarget.pos().x, teleportTarget.pos().y, teleportTarget.pos().z, teleportTarget.yRot(), teleportTarget.xRot(), teleportTarget.cause());
+                 if (!result) {
+                     return null;
+                 }
+                 // CraftBukkit end
++                } // Paper
+                 this.connection.resetPosition();
+                 teleportTarget.postDimensionTransition().onTransition(this);
+                 return this;
