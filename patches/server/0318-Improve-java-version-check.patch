@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Wed, 16 Mar 2022 13:58:16 +0100
+Subject: [PATCH] Improve java version check
+
+Co-Authored-By: MiniDigger <admin@benndorf.dev>
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index faa228698c7dd60bde0f3767cc27957ece04b8be..f3bce016e729d553aaa6185470bbf4317f94352b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -203,23 +203,27 @@ public class Main {
+                 return;
+             }
+ 
++            // Paper start - Improve java version check
++            boolean skip = Boolean.getBoolean("Paper.IgnoreJavaVersion");
+             float javaVersion = Float.parseFloat(System.getProperty("java.class.version"));
+-            if (javaVersion < 61.0) {
+-                System.err.println("Unsupported Java detected (" + javaVersion + "). This version of Minecraft requires at least Java 17. Check your Java version with the command 'java -version'.");
+-                return;
+-            }
+-            if (javaVersion > 66.0) {
+-                System.err.println("Unsupported Java detected (" + javaVersion + "). Only up to Java 22 is supported.");
++            boolean isOldVersion = javaVersion < 61.0;
++            if (!skip && isOldVersion) {
++                System.err.println("Unsupported Java detected (" + javaVersion + "). This version of Minecraft requires at least Java 21. Check your Java version with the command 'java -version'. For more info see https://docs.papermc.io/misc/java-install");
+                 return;
+             }
+             String javaVersionName = System.getProperty("java.version");
+             // J2SE SDK/JRE Version String Naming Convention
+             boolean isPreRelease = javaVersionName.contains("-");
+-            if (isPreRelease && javaVersion == 61.0) {
+-                System.err.println("Unsupported Java detected (" + javaVersionName + "). You are running an outdated, pre-release version. Only general availability versions of Java are supported. Please update your Java version.");
++            if (!skip && isPreRelease) {
++                System.err.println("Unsupported Java detected (" + javaVersionName + "). You are running an unsupported, non official, version. Only general availability versions of Java are supported. Please update your Java version. See https://docs.papermc.io/paper/faq#unsupported-java-detected-what-do-i-do for more information.");
+                 return;
+             }
+ 
++            if (skip && (isOldVersion || isPreRelease)) {
++                System.err.println("Unsupported Java detected ("+ javaVersionName + "), but the check was skipped. Proceed with caution! ");
++            }
++            // Paper end - Improve java version check
++
+             try {
+                 // Paper start - Handled by TerminalConsoleAppender
+                 /*

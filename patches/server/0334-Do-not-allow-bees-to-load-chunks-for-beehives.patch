@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: chickeneer <emcchickeneer@gmail.com>
+Date: Tue, 17 Mar 2020 14:18:50 -0500
+Subject: [PATCH] Do not allow bees to load chunks for beehives
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Bee.java b/src/main/java/net/minecraft/world/entity/animal/Bee.java
+index 4134ee48909110f8c338f5d553d4cc1e9e31aaba..615b57fac9def18d9dcaefcfe397c74c11cac627 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Bee.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Bee.java
+@@ -421,6 +421,7 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
+         if (this.hivePos == null) {
+             return false;
+         } else {
++            if (!this.level().isLoadedAndInBounds(this.hivePos)) return false; // Paper - Do not allow bees to load chunks for beehives
+             BlockEntity tileentity = this.level().getBlockEntity(this.hivePos);
+ 
+             return tileentity instanceof BeehiveBlockEntity && ((BeehiveBlockEntity) tileentity).isFireNearby();
+@@ -454,6 +455,7 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
+     }
+ 
+     private boolean doesHiveHaveSpace(BlockPos pos) {
++        if (!this.level().isLoadedAndInBounds(pos)) return false; // Paper - Do not allow bees to load chunks for beehives
+         BlockEntity tileentity = this.level().getBlockEntity(pos);
+ 
+         return tileentity instanceof BeehiveBlockEntity ? !((BeehiveBlockEntity) tileentity).isFull() : false;
+@@ -924,6 +926,7 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
+         @Override
+         public boolean canBeeUse() {
+             if (Bee.this.hasHive() && Bee.this.wantsToEnterHive() && Bee.this.hivePos.closerToCenterThan(Bee.this.position(), 2.0D)) {
++                if (!Bee.this.level().isLoadedAndInBounds(Bee.this.hivePos)) return false; // Paper - Do not allow bees to load chunks for beehives
+                 BlockEntity tileentity = Bee.this.level().getBlockEntity(Bee.this.hivePos);
+ 
+                 if (tileentity instanceof BeehiveBlockEntity) {
+@@ -947,6 +950,7 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
+ 
+         @Override
+         public void start() {
++            if (!Bee.this.level().isLoadedAndInBounds(Bee.this.hivePos)) return; // Paper - Do not allow bees to load chunks for beehives
+             BlockEntity tileentity = Bee.this.level().getBlockEntity(Bee.this.hivePos);
+ 
+             if (tileentity instanceof BeehiveBlockEntity tileentitybeehive) {
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Vex.java b/src/main/java/net/minecraft/world/entity/monster/Vex.java
+index d6f73c719d58970c6d13340f78c3303916b46546..2985296a9a034e535157f55e322fc8c107827752 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Vex.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Vex.java
+@@ -356,7 +356,10 @@ public class Vex extends Monster implements TraceableEntity {
+             for (int i = 0; i < 3; ++i) {
+                 BlockPos blockposition1 = blockposition.offset(Vex.this.random.nextInt(15) - 7, Vex.this.random.nextInt(11) - 5, Vex.this.random.nextInt(15) - 7);
+ 
+-                if (Vex.this.level().isEmptyBlock(blockposition1)) {
++                // Paper start - Don't load chunks
++                final net.minecraft.world.level.block.state.BlockState blockState = Vex.this.level().getBlockStateIfLoaded(blockposition1);
++                if (blockState != null && blockState.isAir()) {
++                    // Paper end - Don't load chunks
+                     Vex.this.moveControl.setWantedPosition((double) blockposition1.getX() + 0.5D, (double) blockposition1.getY() + 0.5D, (double) blockposition1.getZ() + 0.5D, 0.25D);
+                     if (Vex.this.getTarget() == null) {
+                         Vex.this.getLookControl().setLookAt((double) blockposition1.getX() + 0.5D, (double) blockposition1.getY() + 0.5D, (double) blockposition1.getZ() + 0.5D, 180.0F, 20.0F);
