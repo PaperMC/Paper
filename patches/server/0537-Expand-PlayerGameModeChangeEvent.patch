@@ -45,21 +45,23 @@ index 7f09119bc7d661e08a960dd2bd46006efe752d3e..d1da3600dc07107309b20ebe6e7c0c4d
          }
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index d7a8664e9ccccdb4b4618399c72fa38c24354e46..2ff11c9aff04f404d45e0b267285e2b4a2a23b6f 100644
+index 1cc771bfecc8d86d103879fbef28dbf993a7903e..ff6a8a3977ec489a372c72323e6285c16f00bd7f 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -2034,8 +2034,16 @@ public class ServerPlayer extends Player {
+@@ -2087,10 +2087,18 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
      }
  
      public boolean setGameMode(GameType gameMode) {
--        if (!this.gameMode.changeGameModeForPlayer(gameMode)) {
--            return false;
 +        // Paper start - Expand PlayerGameModeChangeEvent
 +        org.bukkit.event.player.PlayerGameModeChangeEvent event = this.setGameMode(gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.UNKNOWN, null);
 +        return event == null ? false : event.isCancelled();
 +    }
 +    @Nullable
 +    public org.bukkit.event.player.PlayerGameModeChangeEvent setGameMode(GameType gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause cause, @Nullable net.kyori.adventure.text.Component message) {
+         boolean flag = this.isSpectator();
+ 
+-        if (!this.gameMode.changeGameModeForPlayer(gameMode)) {
+-            return false;
 +        org.bukkit.event.player.PlayerGameModeChangeEvent event = this.gameMode.changeGameModeForPlayer(gameMode, cause, message);
 +        if (event == null || event.isCancelled()) {
 +            return null;
@@ -67,7 +69,7 @@ index d7a8664e9ccccdb4b4618399c72fa38c24354e46..2ff11c9aff04f404d45e0b267285e2b4
          } else {
              this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, (float) gameMode.getId()));
              if (gameMode == GameType.SPECTATOR) {
-@@ -2047,7 +2055,7 @@ public class ServerPlayer extends Player {
+@@ -2106,7 +2114,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
  
              this.onUpdateAbilities();
              this.updateEffectVisibility();
@@ -76,7 +78,7 @@ index d7a8664e9ccccdb4b4618399c72fa38c24354e46..2ff11c9aff04f404d45e0b267285e2b4
          }
      }
  
-@@ -2457,6 +2465,16 @@ public class ServerPlayer extends Player {
+@@ -2506,6 +2514,16 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
      }
  
      public void loadGameTypes(@Nullable CompoundTag nbt) {
@@ -94,10 +96,10 @@ index d7a8664e9ccccdb4b4618399c72fa38c24354e46..2ff11c9aff04f404d45e0b267285e2b4
      }
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-index de3ec353ea32d5d71e2f1b4b369b79b85d7ce5e8..c55d944a70300bf77dbde918c91815cabe68496d 100644
+index 5de472df78940d1b8320f73d18b2edf3a796227e..073cf184a0e7af41048ae67a9b17b4cdfcc43c35 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-@@ -72,14 +72,21 @@ public class ServerPlayerGameMode {
+@@ -74,14 +74,21 @@ public class ServerPlayerGameMode {
      }
  
      public boolean changeGameModeForPlayer(GameType gameMode) {
@@ -122,7 +124,7 @@ index de3ec353ea32d5d71e2f1b4b369b79b85d7ce5e8..c55d944a70300bf77dbde918c91815ca
              }
              // CraftBukkit end
              this.setGameModeForPlayer(gameMode, this.previousGameModeForPlayer);
-@@ -90,7 +97,7 @@ public class ServerPlayerGameMode {
+@@ -92,7 +99,7 @@ public class ServerPlayerGameMode {
                  this.player.resetCurrentImpulseContext();
              }
  
@@ -132,12 +134,12 @@ index de3ec353ea32d5d71e2f1b4b369b79b85d7ce5e8..c55d944a70300bf77dbde918c91815ca
      }
  
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index c8124bf451f5d03374f32a04b9b28fc9d97897ae..4a5553335cd6bbad8d3a05694710d95c96f62b9d 100644
+index b1b833383c5196c2aee07fb7118cfef069abc3cd..498104eb1509e0f8389c07d1573a6b496b0bcd41 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -2715,7 +2715,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2732,7 +2732,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
-                     this.player = this.server.getPlayerList().respawn(this.player, false, RespawnReason.DEATH);
+                     this.player = this.server.getPlayerList().respawn(this.player, false, Entity.RemovalReason.KILLED, RespawnReason.DEATH); // CraftBukkit
                      if (this.server.isHardcore()) {
 -                        this.player.setGameMode(GameType.SPECTATOR);
 +                        this.player.setGameMode(GameType.SPECTATOR, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.HARDCORE_DEATH, null); // Paper - Expand PlayerGameModeChangeEvent
@@ -145,10 +147,10 @@ index c8124bf451f5d03374f32a04b9b28fc9d97897ae..4a5553335cd6bbad8d3a05694710d95c
                      }
                  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 2d6de1734cb715554ca732d850b8df9591a3efb7..9a3ba0011f306a3cd1e3c60fcc329ab93011ebd8 100644
+index 0c224de84b797856814f5378c87e6d048205e8d9..ed08f30d7163d01b5c280d20ea721da8d7f4b41e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1640,7 +1640,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1653,7 +1653,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          Preconditions.checkArgument(mode != null, "GameMode cannot be null");
          if (this.getHandle().connection == null) return;
  

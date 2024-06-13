@@ -41,7 +41,7 @@ index 0000000000000000000000000000000000000000..aec3b41d7c3388e26fa203e3c062f1e6
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/enchantments/Enchantment.java b/src/main/java/org/bukkit/enchantments/Enchantment.java
-index c481b8ffb694519010f2bc3bc6447376ed802467..b35f0702c0b5a63515f5d0188c7ef61550f8410e 100644
+index daae9bb234d2e10530b2bed35fada98652514e0e..fc30fbffd83285d4ec102a18454ed95289329667 100644
 --- a/src/main/java/org/bukkit/enchantments/Enchantment.java
 +++ b/src/main/java/org/bukkit/enchantments/Enchantment.java
 @@ -290,11 +290,7 @@ public abstract class Enchantment implements Keyed, Translatable, net.kyori.adve
@@ -56,7 +56,7 @@ index c481b8ffb694519010f2bc3bc6447376ed802467..b35f0702c0b5a63515f5d0188c7ef615
      public abstract boolean isCursed();
  
      /**
-@@ -328,6 +324,97 @@ public abstract class Enchantment implements Keyed, Translatable, net.kyori.adve
+@@ -328,6 +324,116 @@ public abstract class Enchantment implements Keyed, Translatable, net.kyori.adve
       * @return the name of the enchantment with {@code level} applied
       */
      public abstract net.kyori.adventure.text.@NotNull Component displayName(int level);
@@ -127,11 +127,9 @@ index c481b8ffb694519010f2bc3bc6447376ed802467..b35f0702c0b5a63515f5d0188c7ef615
 +     * @param level the level of enchantment
 +     * @param entityCategory the category of entity
 +     * @return the damage increase
-+     * @deprecated Use {@link #getDamageIncrease(int, org.bukkit.entity.EntityType)} instead.
-+     * Enchantment damage increase is no longer handled via {@link org.bukkit.entity.EntityCategory}s, but
-+     * is instead controlled by tags, e.g. {@link org.bukkit.Tag#ENTITY_TYPES_SENSITIVE_TO_BANE_OF_ARTHROPODS}.
-+     * As such, a category cannot properly represent all entities defined by the tags.
++     * @deprecated Enchantments now have a complex effect systems that cannot be reduced to a simple damage increase.
 +     */
++    @Contract("-> fail")
 +    @Deprecated(forRemoval = true, since = "1.20.5")
 +    public abstract float getDamageIncrease(int level, @NotNull org.bukkit.entity.EntityCategory entityCategory);
 +
@@ -141,8 +139,29 @@ index c481b8ffb694519010f2bc3bc6447376ed802467..b35f0702c0b5a63515f5d0188c7ef615
 +     * @param level the level of enchantment
 +     * @param entityType the type of entity.
 +     * @return the damage increase
++     * @deprecated Enchantments now have a complex effect systems that cannot be reduced to a simple damage increase.
 +     */
++    @Contract("-> fail")
++    @Deprecated(forRemoval = true, since = "1.21")
 +    public abstract float getDamageIncrease(int level, @NotNull org.bukkit.entity.EntityType entityType);
++
++    /**
++     * Gets the equipment slots where this enchantment is considered "active".
++     *
++     * @return the equipment slots
++     * @deprecated Use {@link #getActiveSlotGroups()} instead as enchantments are now applicable to a group of equipment slots.
++     */
++    @NotNull
++    @Deprecated(forRemoval = true, since = "1.21")
++    public java.util.Set<org.bukkit.inventory.EquipmentSlot> getActiveSlots() {
++        final java.util.Set<org.bukkit.inventory.EquipmentSlotGroup> slots = this.getActiveSlotGroups();
++        return java.util.Arrays.stream(org.bukkit.inventory.EquipmentSlot.values()).filter(e -> {
++            for (final org.bukkit.inventory.EquipmentSlotGroup group : slots) {
++                if (group.test(e)) return true;
++            }
++            return false;
++        }).collect(java.util.stream.Collectors.toSet());
++    }
 +
 +    /**
 +     * Gets the equipment slots where this enchantment is considered "active".
@@ -150,10 +169,10 @@ index c481b8ffb694519010f2bc3bc6447376ed802467..b35f0702c0b5a63515f5d0188c7ef615
 +     * @return the equipment slots
 +     */
 +    @NotNull
-+    public abstract java.util.Set<org.bukkit.inventory.EquipmentSlot> getActiveSlots();
++    public abstract java.util.Set<org.bukkit.inventory.EquipmentSlotGroup> getActiveSlotGroups();
      // Paper end
  
-     /**
+     // Paper start - mark translation key as deprecated
 diff --git a/src/main/java/org/bukkit/enchantments/EnchantmentWrapper.java b/src/main/java/org/bukkit/enchantments/EnchantmentWrapper.java
 index ac0371285370594d4de1554871b19bbcd2311730..da5d153a3e55a38b767359564001ad8663f9730b 100644
 --- a/src/main/java/org/bukkit/enchantments/EnchantmentWrapper.java
