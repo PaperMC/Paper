@@ -74,9 +74,10 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
     @ApiStatus.Internal
     RegistryKey<BlockType> BLOCK = create("block");
     /**
-     * @apiNote DO NOT USE
+     * @apiNote use preferably only in the context of registry entries.
+     * @see io.papermc.paper.registry.data
      */
-    @ApiStatus.Internal
+    @ApiStatus.Experimental // Paper - already required for registry builders
     RegistryKey<ItemType> ITEM = create("item");
     /**
      * Built-in registry for cat variants.

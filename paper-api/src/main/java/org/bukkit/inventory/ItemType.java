@@ -46,7 +46,7 @@ import org.jetbrains.annotations.Nullable;
  * official replacement for the aforementioned enum. Entirely incompatible
  * changes may occur. Do not use this API in plugins.
  */
-@ApiStatus.Internal
+@ApiStatus.Experimental // Paper - already required for registry builders
 public interface ItemType extends Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper - add Translatable
 
     /**

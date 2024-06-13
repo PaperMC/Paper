@@ -141,4 +141,22 @@ public abstract class GameEvent implements Keyed {
     private static GameEvent getEvent(@NotNull String key) {
         return Registry.GAME_EVENT.getOrThrow(NamespacedKey.minecraft(key));
     }
+    // Paper start
+    /**
+     * Gets the range of the event which is used to
+     * notify listeners of the event.
+     *
+     * @return the range
+     */
+    public abstract int getRange();
+
+    /**
+     * Gets the vibration level of the game event for vibration listeners.
+     * Not all events have vibration levels, and a level of 0 means
+     * it won't cause any vibrations.
+     *
+     * @return the vibration level
+     */
+    public abstract int getVibrationLevel();
+    // Paper end
 }
