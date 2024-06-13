@@ -737,48 +737,28 @@ index d30e1dd1b4525674c8a52da9b677c09a251b2467..9edcdc71b28cf08e42fbe44723ba540e
 +    // Paper end - missing entity api
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java
-index 114e84b485a6f05eac66083d8fd71028018d57ea..e4e23a7b6d308ee476b5b8c2ad80efe4608b8346 100644
+index 763cfa6cfc8447c5a963e79f128e734efe542f89..b0a02c9ca4349ab56ceceae8b78559e20a9b0af5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java
-@@ -56,23 +56,29 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
-     public void setDirection(Vector direction) {
-         Preconditions.checkArgument(direction != null, "Vector direction cannot be null");
-         if (direction.isZero()) {
--            this.setVelocity(direction);
-+            this.setPower(direction); // Paper
-             return;
-         }
-         this.getHandle().assignPower(direction.getX(), direction.getY(), direction.getZ());
-         this.update(); // SPIGOT-6579
+@@ -84,6 +84,18 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
+         return new Vector(this.getHandle().xPower, this.getHandle().yPower, this.getHandle().zPower);
      }
  
-+    // Paper - fix upstream bug where they thought x/y/zPower was velocity
-+
 +    // Paper start - Expose power on fireball projectiles
-     @Override
--    public void setVelocity(Vector velocity) {
--        Preconditions.checkArgument(velocity != null, "Vector velocity cannot be null");
--        // SPIGOT-6993: Allow power to be higher / lower than the normalized direction enforced by #setDirection(Vector)
--        // Note: Because of MC-80142 the fireball will stutter on the client when setting the velocity to something other than 0 or the normalized vector * 0.1
--        this.getHandle().xPower = velocity.getX();
--        this.getHandle().yPower = velocity.getY();
--        this.getHandle().zPower = velocity.getZ();
--        this.update(); // SPIGOT-6579
++    @Override
 +    public void setPower(final Vector power) {
-+        this.getHandle().xPower = power.getX();
-+        this.getHandle().yPower = power.getY();
-+        this.getHandle().zPower = power.getZ();
-+        this.update();
++        this.setAcceleration(power);
 +    }
 +
 +    @Override
 +    public Vector getPower() {
-+        return new Vector(this.getHandle().xPower, this.getHandle().yPower, this.getHandle().zPower);
-     }
++        return this.getAcceleration();
++    }
 +    // Paper end - Expose power on fireball projectiles
- 
++
      @Override
      public AbstractHurtingProjectile getHandle() {
+         return (AbstractHurtingProjectile) this.entity;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFox.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFox.java
 index 17164811bbcf983bef62c47bc99330074762267b..c455deb4fd2a7684bcc01a8212c362a2375c190b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFox.java

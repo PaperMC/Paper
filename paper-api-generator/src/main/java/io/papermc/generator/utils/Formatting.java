@@ -12,7 +12,7 @@ public final class Formatting {
     private static final Pattern ILLEGAL_FIELD_CHARACTERS = Pattern.compile("[.-/]");
 
     public static String formatKeyAsField(String path) {
-        return ILLEGAL_FIELD_CHARACTERS.matcher(path.toUpperCase(Locale.ENGLISH)).replaceAll("_");
+        return ILLEGAL_FIELD_CHARACTERS.matcher(path.toUpperCase(Locale.ROOT)).replaceAll("_");
     }
 
     public static Comparator<String> ALPHABETIC_KEY_ORDER = alphabeticKeyOrder(path -> path);

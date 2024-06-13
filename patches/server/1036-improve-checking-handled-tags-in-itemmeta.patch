@@ -5,7 +5,7 @@ Subject: [PATCH] improve checking handled tags in itemmeta
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index ce224087345f49aca84ee94c76dac96dcf9a630f..3e552a859846d206ba79c3ee740ae76a37ee7606 100644
+index 7249ff939dfa786395595f687338315b779e0931..c0bf7efac56e558052992d2ce2455fccff4d9897 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 @@ -156,10 +156,11 @@ public final class CraftItemStack extends ItemStack {
@@ -404,10 +404,10 @@ index b444bd26d6c3def3494d3cc0520e462408272be3..8e0dd4b7a7a25a8beb27b507047bc48d
          getOrEmpty(tag, CraftMetaFirework.FIREWORKS).ifPresent((fireworks) -> {
              this.power = fireworks.flightDuration();
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 2caa968b3fea322d1cb3210d2dfa7bc844961189..12a193db7475870e5107c86c7611bb4b92feacb8 100644
+index 43a4a76d3829fb2ed7b5635d804fd826484c16db..5d86861a0df7308ae9b8440e5d9136fa7c8f1835 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-@@ -322,7 +322,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -331,7 +331,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          // Paper end
      }
  
@@ -416,7 +416,7 @@ index 2caa968b3fea322d1cb3210d2dfa7bc844961189..12a193db7475870e5107c86c7611bb4b
          CraftMetaItem.getOrEmpty(tag, CraftMetaItem.NAME).ifPresent((component) -> {
              this.displayName = component;
          });
-@@ -427,11 +427,18 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -439,11 +439,18 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          });
          // Paper end - fix ItemFlags
  
@@ -436,7 +436,7 @@ index 2caa968b3fea322d1cb3210d2dfa7bc844961189..12a193db7475870e5107c86c7611bb4b
                  key.getValue().ifPresentOrElse((value) -> {
                      this.unhandledTags.set((DataComponentType) key.getKey(), value);
                  }, () -> {
-@@ -1895,65 +1902,73 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1936,67 +1943,74 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          this.version = version;
      }
  
@@ -459,6 +459,7 @@ index 2caa968b3fea322d1cb3210d2dfa7bc844961189..12a193db7475870e5107c86c7611bb4b
 -                        CraftMetaItem.MAX_STACK_SIZE.TYPE,
 -                        CraftMetaItem.RARITY.TYPE,
 -                        CraftMetaItem.FOOD.TYPE,
+-                        CraftMetaItem.TOOL.TYPE,
 -                        CraftMetaItem.DAMAGE.TYPE,
 -                        CraftMetaItem.MAX_DAMAGE.TYPE,
 -                        CraftMetaItem.CUSTOM_DATA.TYPE,
@@ -475,6 +476,7 @@ index 2caa968b3fea322d1cb3210d2dfa7bc844961189..12a193db7475870e5107c86c7611bb4b
 -                        CraftMetaMap.MAP_ID.TYPE,
 -                        CraftMetaPotion.POTION_CONTENTS.TYPE,
 -                        CraftMetaSkull.SKULL_PROFILE.TYPE,
+-                        CraftMetaSkull.NOTE_BLOCK_SOUND.TYPE,
 -                        CraftMetaSpawnEgg.ENTITY_TAG.TYPE,
 -                        CraftMetaBlockState.BLOCK_ENTITY_TAG.TYPE,
 -                        CraftMetaBook.BOOK_CONTENT.TYPE,
@@ -516,6 +518,7 @@ index 2caa968b3fea322d1cb3210d2dfa7bc844961189..12a193db7475870e5107c86c7611bb4b
 +        CraftMetaItem.MAX_STACK_SIZE.TYPE,
 +        CraftMetaItem.RARITY.TYPE,
 +        CraftMetaItem.FOOD.TYPE,
++        CraftMetaItem.TOOL.TYPE,
 +        CraftMetaItem.DAMAGE.TYPE,
 +        CraftMetaItem.MAX_DAMAGE.TYPE,
 +        CraftMetaItem.CUSTOM_DATA.TYPE,
@@ -658,7 +661,7 @@ index e2aa305dcaf94d76fa3b74fc33b4d8bbc6d92b2b..db7f71af22d904de08d4badaa7f66d12
              potionContents.potion().ifPresent((potion) -> {
                  this.type = CraftPotionType.minecraftHolderToBukkit(potion);
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
-index 0f725408691384800abb2cc7a43d9e1c75c9a17e..c769d2a210060f6829a6cbe739d6d9ab2f602644 100644
+index a08c57770c658bb289c96b69b966d98af72eef67..7bdc94c3ba7d8a0d74c2d88edbb32112a90c5980 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
 @@ -69,8 +69,8 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
@@ -673,11 +676,11 @@ index 0f725408691384800abb2cc7a43d9e1c75c9a17e..c769d2a210060f6829a6cbe739d6d9ab
          getOrEmpty(tag, CraftMetaSkull.SKULL_PROFILE).ifPresent((resolvableProfile) -> {
              this.setProfile(resolvableProfile.gameProfile());
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java
-index 726438237093abc85d9239f9c84be3df6d8318c4..a3c1a8c469630464ac80b7786731462046134998 100644
+index 1c2b0407b51906a255e6d240fab969578743938e..b98e656c0bb382667bd186a500c5505f1ed3f7cd 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java
-@@ -125,8 +125,8 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
-         this.updateMaterial(null); // Trigger type population
+@@ -119,8 +119,8 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
+         this.entityTag = egg.entityTag;
      }
  
 -    CraftMetaSpawnEgg(DataComponentPatch tag) {
@@ -718,10 +721,10 @@ index 911bdce0795a6b11cd1d5ad5211202456e5225d4..b5392a3a6f6f3d0a54549e6bb93f2859
          getOrEmpty(tag, CraftMetaTropicalFishBucket.ENTITY_TAG).ifPresent((nbt) -> {
              this.entityTag = nbt.copyTag();
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
-index 100e9b72b1dac2deb956753b9a8097ba917236fa..0b11d5ea89539decd2f6c60c5b581bbd78ff1fd6 100644
+index 51e2acf125bdff2ba6d8fd8af9f22e233d7c74a7..6bed0a5c8d9f1ca72678cdf4699128e441a24541 100644
 --- a/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
 +++ b/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
-@@ -95,7 +95,7 @@ public class DeprecatedItemMetaCustomValueTest extends AbstractTestingBase {
+@@ -96,7 +96,7 @@ public class DeprecatedItemMetaCustomValueTest extends AbstractTestingBase {
          CraftMetaItem.Applicator compound = new CraftMetaItem.Applicator();
          itemMeta.applyToItem(compound);
  
@@ -769,10 +772,10 @@ index 0000000000000000000000000000000000000000..d9692972e3ad089885d43711b6a7fb3e
 +    }
 +}
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/PersistentDataContainerTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/PersistentDataContainerTest.java
-index 217331448adfa11c1724fe2b54c318547aa30255..f3939074a886b20f17b00dd3c39833725f47d3f0 100644
+index 30da18cbc878fb1ac2a134f3bcbfcb8d7bec3938..6f94c7a19f2f598a836ec7db30332dd95f8675a6 100644
 --- a/src/test/java/org/bukkit/craftbukkit/inventory/PersistentDataContainerTest.java
 +++ b/src/test/java/org/bukkit/craftbukkit/inventory/PersistentDataContainerTest.java
-@@ -129,7 +129,7 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
+@@ -130,7 +130,7 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
          CraftMetaItem.Applicator compound = new CraftMetaItem.Applicator();
          itemMeta.applyToItem(compound);
  
@@ -781,7 +784,7 @@ index 217331448adfa11c1724fe2b54c318547aa30255..f3939074a886b20f17b00dd3c3983372
      }
  
      @Test
-@@ -462,7 +462,7 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
+@@ -463,7 +463,7 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
  
      @Test
      public void testEmptyListApplicationToAnyType() throws IOException {
@@ -790,7 +793,7 @@ index 217331448adfa11c1724fe2b54c318547aa30255..f3939074a886b20f17b00dd3c3983372
          final PersistentDataContainer container = craftItem.getPersistentDataContainer();
  
          container.set(PersistentDataContainerTest.requestKey("list"), PersistentDataType.LIST.strings(), List.of());
-@@ -475,7 +475,7 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
+@@ -476,7 +476,7 @@ public class PersistentDataContainerTest extends AbstractTestingBase {
          final CraftMetaItem.Applicator storage = new CraftMetaItem.Applicator();
          craftItem.applyToItem(storage);
  

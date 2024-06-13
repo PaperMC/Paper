@@ -717,10 +717,10 @@ index 0000000000000000000000000000000000000000..199789d56d22fcb1b77ebd56805cc28a
 +}
 diff --git a/src/main/java/co/aikar/timings/TimingHistory.java b/src/main/java/co/aikar/timings/TimingHistory.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..eb9d58f8852e732a1284beeaf542989301d21b1c
+index 0000000000000000000000000000000000000000..065991e7a7f6119797ea315a56836ba17dd17d05
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingHistory.java
-@@ -0,0 +1,355 @@
+@@ -0,0 +1,352 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -874,17 +874,14 @@ index 0000000000000000000000000000000000000000..eb9d58f8852e732a1284beeaf5429893
 +                                        }
 +                                    }
 +                                ),
-+                                toObjectMapper(input.tileEntityCounts.entrySet(),
-+                                    new Function<Map.Entry<Material, Counter>, JSONPair>() {
-+                                        @NotNull
-+                                        @Override
-+                                        public JSONPair apply(Map.Entry<Material, Counter> entry) {
-+                                            tileEntityTypeSet.add(entry.getKey());
-+                                            return pair(
-+                                                    String.valueOf(entry.getKey().ordinal()),
-+                                                    entry.getValue().count()
-+                                            );
-+                                        }
++                                toObjectMapper(
++                                    input.tileEntityCounts.entrySet(),
++                                    entry -> {
++                                        tileEntityTypeSet.add(entry.getKey());
++                                        return pair(
++                                            String.valueOf(entry.getKey().ordinal()),
++                                            entry.getValue().count()
++                                        );
 +                                    }
 +                                )
 +                            );
@@ -3143,10 +3140,10 @@ index 0000000000000000000000000000000000000000..9d263ab3afb938c215c0b64d9171345f
 +
 +}
 diff --git a/src/main/java/org/bukkit/command/SimpleCommandMap.java b/src/main/java/org/bukkit/command/SimpleCommandMap.java
-index 53f28c9e6843991486a576d41b6641c170589807..4205649948a9e2a72f64c3f007112245abac6d50 100644
+index 9207ae900cb4cc8ce41dd4e63d7ad8b35b0ac048..36fc2c35395c72f8b81a2a2f3265fd205384ce26 100644
 --- a/src/main/java/org/bukkit/command/SimpleCommandMap.java
 +++ b/src/main/java/org/bukkit/command/SimpleCommandMap.java
-@@ -15,7 +15,6 @@ import org.bukkit.command.defaults.BukkitCommand;
+@@ -16,7 +16,6 @@ import org.bukkit.command.defaults.BukkitCommand;
  import org.bukkit.command.defaults.HelpCommand;
  import org.bukkit.command.defaults.PluginsCommand;
  import org.bukkit.command.defaults.ReloadCommand;
@@ -3154,7 +3151,7 @@ index 53f28c9e6843991486a576d41b6641c170589807..4205649948a9e2a72f64c3f007112245
  import org.bukkit.command.defaults.VersionCommand;
  import org.bukkit.entity.Player;
  import org.bukkit.util.StringUtil;
-@@ -35,7 +34,7 @@ public class SimpleCommandMap implements CommandMap {
+@@ -36,7 +35,7 @@ public class SimpleCommandMap implements CommandMap {
          register("bukkit", new VersionCommand("version"));
          register("bukkit", new ReloadCommand("reload"));
          //register("bukkit", new PluginsCommand("plugins")); // Paper
@@ -3163,15 +3160,15 @@ index 53f28c9e6843991486a576d41b6641c170589807..4205649948a9e2a72f64c3f007112245
      }
  
      public void setFallbackCommands() {
-@@ -67,6 +66,7 @@ public class SimpleCommandMap implements CommandMap {
+@@ -68,6 +67,7 @@ public class SimpleCommandMap implements CommandMap {
       */
      @Override
      public boolean register(@NotNull String label, @NotNull String fallbackPrefix, @NotNull Command command) {
 +        command.timings = co.aikar.timings.TimingsManager.getCommandTiming(fallbackPrefix, command); // Paper
-         label = label.toLowerCase(java.util.Locale.ENGLISH).trim();
-         fallbackPrefix = fallbackPrefix.toLowerCase(java.util.Locale.ENGLISH).trim();
+         label = label.toLowerCase(Locale.ROOT).trim();
+         fallbackPrefix = fallbackPrefix.toLowerCase(Locale.ROOT).trim();
          boolean registered = register(label, command, false, fallbackPrefix);
-@@ -143,16 +143,22 @@ public class SimpleCommandMap implements CommandMap {
+@@ -144,16 +144,22 @@ public class SimpleCommandMap implements CommandMap {
              return false;
          }
  
@@ -3455,10 +3452,10 @@ index 516d7fc7812aac343782861d0d567f54aa578c2a..00000000000000000000000000000000
 -    // Spigot end
 -}
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index 4e9ba039669c7059180f5776ee2f7188f2dd01b5..5b526d602057ab70b4a058142e01a0195694c28f 100644
+index c7d3d938534ac11fe420418655dae689c58fbe12..776a3ce9a6c106fbe96cc6399b9ee2cd81b10c76 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -2678,7 +2678,19 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -2726,7 +2726,19 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
          @Deprecated // Paper
          public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @Nullable java.util.UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
              throw new UnsupportedOperationException("Not supported yet.");
@@ -3479,10 +3476,10 @@ index 4e9ba039669c7059180f5776ee2f7188f2dd01b5..5b526d602057ab70b4a058142e01a019
  
      @NotNull
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index fb4cb36391e69fd997300b952b64fbd73ae9d675..3465bd660999caa53582e9d56a4e93ec7701a1de 100644
+index 46c7be5fa69f13900860b9944523beea16f2409b..6018574cd15b802833613beefa88da15dc2730cb 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-@@ -380,7 +380,6 @@ public final class SimplePluginManager implements PluginManager {
+@@ -381,7 +381,6 @@ public final class SimplePluginManager implements PluginManager {
              }
          }
  
@@ -3490,7 +3487,7 @@ index fb4cb36391e69fd997300b952b64fbd73ae9d675..3465bd660999caa53582e9d56a4e93ec
          return result.toArray(new Plugin[result.size()]);
      }
  
-@@ -428,9 +427,9 @@ public final class SimplePluginManager implements PluginManager {
+@@ -429,9 +428,9 @@ public final class SimplePluginManager implements PluginManager {
  
          if (result != null) {
              plugins.add(result);
@@ -3502,7 +3499,7 @@ index fb4cb36391e69fd997300b952b64fbd73ae9d675..3465bd660999caa53582e9d56a4e93ec
              }
          }
  
-@@ -460,7 +459,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -461,7 +460,7 @@ public final class SimplePluginManager implements PluginManager {
      @Nullable
      public synchronized Plugin getPlugin(@NotNull String name) {
          if (true) {return this.paperPluginManager.getPlugin(name);} // Paper
@@ -3511,7 +3508,7 @@ index fb4cb36391e69fd997300b952b64fbd73ae9d675..3465bd660999caa53582e9d56a4e93ec
      }
  
      @Override
-@@ -688,7 +687,8 @@ public final class SimplePluginManager implements PluginManager {
+@@ -689,7 +688,8 @@ public final class SimplePluginManager implements PluginManager {
              throw new IllegalPluginAccessException("Plugin attempted to register " + event + " while not enabled");
          }
  
@@ -3521,7 +3518,7 @@ index fb4cb36391e69fd997300b952b64fbd73ae9d675..3465bd660999caa53582e9d56a4e93ec
              getEventListeners(event).register(new TimedRegisteredListener(listener, executor, priority, plugin, ignoreCancelled));
          } else {
              getEventListeners(event).register(new RegisteredListener(listener, executor, priority, plugin, ignoreCancelled));
-@@ -923,7 +923,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -924,7 +924,7 @@ public final class SimplePluginManager implements PluginManager {
      @Override
      public boolean useTimings() {
          if (true) {return this.paperPluginManager.useTimings();} // Paper
@@ -3530,7 +3527,7 @@ index fb4cb36391e69fd997300b952b64fbd73ae9d675..3465bd660999caa53582e9d56a4e93ec
      }
  
      /**
-@@ -932,7 +932,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -933,7 +933,7 @@ public final class SimplePluginManager implements PluginManager {
       * @param use True if per event timing code should be used
       */
      public void useTimings(boolean use) {

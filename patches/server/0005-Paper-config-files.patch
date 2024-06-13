@@ -3641,7 +3641,7 @@ index 0000000000000000000000000000000000000000..6cdc40cb4a5f94654c874f9dbdb106fa
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/transformation/world/LegacyPaperWorldConfig.java b/src/main/java/io/papermc/paper/configuration/transformation/world/LegacyPaperWorldConfig.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..edaa6ef28c1f9a2239439698708897008fea2f7e
+index 0000000000000000000000000000000000000000..f7520ba86c1a650d3bd9b902d2a59ec8eb6cde5d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/transformation/world/LegacyPaperWorldConfig.java
 @@ -0,0 +1,322 @@
@@ -3752,7 +3752,7 @@ index 0000000000000000000000000000000000000000..edaa6ef28c1f9a223943969870889700
 +            )
 +            .addVersion(26, ConfigurationTransformation.builder().addAction(path("alt-item-despawn-rate", "items", ConfigurationTransformation.WILDCARD_OBJECT), (path, value) -> {
 +                String itemName = path.get(path.size() - 1).toString();
-+                final Optional<Holder.Reference<Item>> item = BuiltInRegistries.ITEM.getHolder(ResourceKey.create(Registries.ITEM, new ResourceLocation(itemName.toLowerCase(Locale.ENGLISH))));
++                final Optional<Holder.Reference<Item>> item = BuiltInRegistries.ITEM.getHolder(ResourceKey.create(Registries.ITEM, new ResourceLocation(itemName.toLowerCase(Locale.ROOT))));
 +                if (item.isEmpty()) {
 +                    itemName = Material.valueOf(itemName).getKey().getKey();
 +                }
@@ -3784,7 +3784,7 @@ index 0000000000000000000000000000000000000000..edaa6ef28c1f9a223943969870889700
 +                    Map<String, Integer> rebuild = new HashMap<>();
 +                    value.childrenMap().forEach((key, node) -> {
 +                        String itemName = key.toString();
-+                        final Optional<Holder.Reference<Item>> itemHolder = BuiltInRegistries.ITEM.getHolder(ResourceKey.create(Registries.ITEM, new ResourceLocation(itemName.toLowerCase(Locale.ENGLISH))));
++                        final Optional<Holder.Reference<Item>> itemHolder = BuiltInRegistries.ITEM.getHolder(ResourceKey.create(Registries.ITEM, new ResourceLocation(itemName.toLowerCase(Locale.ROOT))));
 +                        final @Nullable String item;
 +                        if (itemHolder.isEmpty()) {
 +                            final @Nullable Material bukkitMat = Material.matchMaterial(itemName);
@@ -4116,7 +4116,7 @@ index 0000000000000000000000000000000000000000..d872b1948df52759fed9c3d892aed6ab
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/type/BooleanOrDefault.java b/src/main/java/io/papermc/paper/configuration/type/BooleanOrDefault.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5f03dcdff99bcd33bf789b0dd5521e39afbe09bf
+index 0000000000000000000000000000000000000000..a3eaa47cfcfc4fd2a607f9b375230fada35620d3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/type/BooleanOrDefault.java
 @@ -0,0 +1,53 @@
@@ -4152,7 +4152,7 @@ index 0000000000000000000000000000000000000000..5f03dcdff99bcd33bf789b0dd5521e39
 +                    return USE_DEFAULT;
 +                }
 +                try {
-+                    return new BooleanOrDefault(BooleanUtils.toBoolean(string.toLowerCase(Locale.ENGLISH), "true", "false"));
++                    return new BooleanOrDefault(BooleanUtils.toBoolean(string.toLowerCase(Locale.ROOT), "true", "false"));
 +                } catch (IllegalArgumentException ex) {
 +                    throw new SerializationException(BooleanOrDefault.class, obj + "(" + type + ") is not a boolean or '" + DEFAULT_VALUE + "'", ex);
 +                }
@@ -4911,7 +4911,7 @@ index b334265d4015fec13d7fedbffba2b6c22f4c8bc8..5b4ac7b4fd0077e900e9f788963f1613
              String s = (String) Optional.ofNullable((String) optionset.valueOf("world")).orElse(dedicatedserversettings.getProperties().levelName);
              LevelStorageSource convertable = LevelStorageSource.createDefault(file.toPath());
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index a6d495371a35195d6f841124329188107af1736f..1d241972e6f93a88c31f1276e15bae0912db5c9e 100644
+index 4506669b1e970daa78974d22349e5dc38cf31c5e..c2c20eb7fedbadc56b1f8ee8bf4b03092e62a26b 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -302,6 +302,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -5039,10 +5039,10 @@ index ecbb926986bbc0ad6fe108b782cdc17ee8a9f035..b06ffa8d5953c8f0a47daf056495cd42
          this.world = new CraftWorld((ServerLevel) this, gen, biomeProvider, env);
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 3d80f58524861ad808caa35964676f0561b25547..e51e40910c51ab5cdc599e614d2b3fa813691f10 100644
+index 5b40c1198f4bbe84c5e1b45b32cce5c451fc28aa..4a4f7af9c7377e79a20398310ef7cf719d3cc0b5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -928,6 +928,7 @@ public final class CraftServer implements Server {
+@@ -951,6 +951,7 @@ public final class CraftServer implements Server {
          }
  
          org.spigotmc.SpigotConfig.init((File) this.console.options.valueOf("spigot-settings")); // Spigot
@@ -5051,7 +5051,7 @@ index 3d80f58524861ad808caa35964676f0561b25547..e51e40910c51ab5cdc599e614d2b3fa8
              world.serverLevelData.setDifficulty(config.difficulty);
              world.setSpawnSettings(config.spawnMonsters, config.spawnAnimals);
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 4b8602b168f9dd386aa72b4e5d189c441c93542e..1e3ca7ca98abfd5be233a7eeb6dad201776d2d6a 100644
+index bebc3bcffa6dc12d4caf613f05b1e2a28a26f316..bbc880e136c8fba9634fd4fee9e3e6838ef3f377 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -142,6 +142,19 @@ public class Main {
@@ -5088,7 +5088,7 @@ index 9658f2961d9b5632ad1abdba26a2443642624f69..38219af7d0ba2d871711102b6a29139a
          for ( Method method : clazz.getDeclaredMethods() )
          {
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index 974e679ff20193f85fccb6e779a7ba791d0c5db4..8491ff48051224204b58d273c4971d16ab8867c1 100644
+index a6d2ce801b236b046b94913bccf7eccfc561f35a..b244b65799d9c082b8b1639bad15727442e63168 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 @@ -58,8 +58,14 @@ public class SpigotWorldConfig
