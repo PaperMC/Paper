@@ -464,6 +464,12 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          */
         HOT_FLOOR,
         /**
+         * Damage caused when an entity steps on {@link Material#CAMPFIRE} or {@link Material#SOUL_CAMPFIRE}.
+         * <p>
+         * Damage: 1
+         */
+        CAMPFIRE,
+        /**
          * Damage caused when an entity is colliding with too many entities due
          * to the maxEntityCramming game rule.
          * <p>
