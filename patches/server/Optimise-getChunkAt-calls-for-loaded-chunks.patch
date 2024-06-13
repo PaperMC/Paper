@@ -30,10 +30,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            this.level.getProfiler().incrementCounter("getChunkNow");
 -            long k = ChunkPos.asLong(chunkX, chunkZ);
 -
+-            ChunkAccess ichunkaccess;
+-
 -            for (int l = 0; l < 4; ++l) {
 -                if (k == this.lastChunkPos[l] && this.lastChunkStatus[l] == ChunkStatus.FULL) {
--                    ChunkAccess ichunkaccess = this.lastChunk[l];
--
+-                    ichunkaccess = this.lastChunk[l];
 -                    return ichunkaccess instanceof LevelChunk ? (LevelChunk) ichunkaccess : null;
 -                }
 -            }
@@ -43,22 +44,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            if (playerchunk == null) {
 -                return null;
 -            } else {
--                ChunkResult<ChunkAccess> chunkresult = (ChunkResult) playerchunk.getFutureIfPresent(ChunkStatus.FULL).getNow(null); // CraftBukkit - decompile error
--
--                if (chunkresult == null) {
--                    return null;
--                } else {
--                    ChunkAccess ichunkaccess1 = (ChunkAccess) chunkresult.orElse(null); // CraftBukkit - decompile error
--
--                    if (ichunkaccess1 != null) {
--                        this.storeInCache(k, ichunkaccess1, ChunkStatus.FULL);
--                        if (ichunkaccess1 instanceof LevelChunk) {
--                            return (LevelChunk) ichunkaccess1;
--                        }
+-                ichunkaccess = playerchunk.getChunkIfPresent(ChunkStatus.FULL);
+-                if (ichunkaccess != null) {
+-                    this.storeInCache(k, ichunkaccess, ChunkStatus.FULL);
+-                    if (ichunkaccess instanceof LevelChunk) {
+-                        return (LevelChunk) ichunkaccess;
 -                    }
--
--                    return null;
 -                }
+-
+-                return null;
 -            }
 +            return this.getChunkAtIfLoadedMainThread(chunkX, chunkZ); // Paper - Perf: Optimise getChunkAt calls for loaded chunks
          }
