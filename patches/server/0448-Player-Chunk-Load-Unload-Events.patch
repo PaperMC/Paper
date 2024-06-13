@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ysl3000 <yannicklamprecht@live.de>
+Date: Mon, 5 Oct 2020 21:25:16 +0200
+Subject: [PATCH] Player Chunk Load/Unload Events
+
+
+diff --git a/src/main/java/net/minecraft/server/network/PlayerChunkSender.java b/src/main/java/net/minecraft/server/network/PlayerChunkSender.java
+index 7c4b795b8a0f58dd07bc5acb1e309476bf4cbe90..cdd66e6ce96e2613afe7f06ca8da3cfaa6704b2d 100644
+--- a/src/main/java/net/minecraft/server/network/PlayerChunkSender.java
++++ b/src/main/java/net/minecraft/server/network/PlayerChunkSender.java
+@@ -44,6 +44,11 @@ public class PlayerChunkSender {
+     public void dropChunk(ServerPlayer player, ChunkPos pos) {
+         if (!this.pendingChunks.remove(pos.toLong()) && player.isAlive()) {
+             player.connection.send(new ClientboundForgetLevelChunkPacket(pos));
++            // Paper start - PlayerChunkUnloadEvent
++            if (io.papermc.paper.event.packet.PlayerChunkUnloadEvent.getHandlerList().getRegisteredListeners().length > 0) {
++                new io.papermc.paper.event.packet.PlayerChunkUnloadEvent(player.getBukkitEntity().getWorld().getChunkAt(pos.longKey), player.getBukkitEntity()).callEvent();
++            }
++            // Paper end - PlayerChunkUnloadEvent
+         }
+     }
+ 
+@@ -75,6 +80,11 @@ public class PlayerChunkSender {
+ 
+     private static void sendChunk(ServerGamePacketListenerImpl handler, ServerLevel world, LevelChunk chunk) {
+         handler.send(new ClientboundLevelChunkWithLightPacket(chunk, world.getLightEngine(), null, null));
++        // Paper start - PlayerChunkLoadEvent
++        if (io.papermc.paper.event.packet.PlayerChunkLoadEvent.getHandlerList().getRegisteredListeners().length > 0) {
++            new io.papermc.paper.event.packet.PlayerChunkLoadEvent(new org.bukkit.craftbukkit.CraftChunk(chunk), handler.getPlayer().getBukkitEntity()).callEvent();
++        }
++        // Paper end - PlayerChunkLoadEvent
+         ChunkPos chunkPos = chunk.getPos();
+         DebugPackets.sendPoiPacketsForChunk(world, chunkPos);
+     }
