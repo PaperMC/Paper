@@ -14,15 +14,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
 +++ b/src/main/java/net/minecraft/world/item/ItemStack.java
 @@ -0,0 +0,0 @@ public final class ItemStack implements DataComponentHolder {
-             } finally {
-                 world.captureBlockStates = false;
-             }
--            DataComponentPatch newData = this.getComponentsPatch();
-+            DataComponentPatch newData = this.components.asPatch(); // Paper - Directly access components as patch instead of getComponentsPatch as said method yields EMPTY on items with count 0
-             int newCount = this.getCount();
-             this.setCount(oldCount);
-             this.restorePatch(oldData);
-@@ -0,0 +0,0 @@ public final class ItemStack implements DataComponentHolder {
      public void setItem(Item item) {
          this.bukkitStack = null; // Paper
          this.item = item;
@@ -95,7 +86,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          itemStack.applyComponents(tag.build());
      }
 @@ -0,0 +0,0 @@ public final class CraftItemStack extends ItemStack {
-         }
+         if (itemMeta == null) return true;
  
          if (!((CraftMetaItem) itemMeta).isEmpty()) {
 -            CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator();
@@ -902,8 +893,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Overridden
      boolean isEmpty() {
--        return !(this.hasDisplayName() || this.hasItemName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.build().isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isHideTooltip() || this.isUnbreakable() || this.hasEnchantmentGlintOverride() || this.isFireResistant() || this.hasMaxStackSize() || this.hasRarity() || this.hasFood() || this.hasDamage() || this.hasMaxDamage() || this.hasAttributeModifiers() || this.customTag != null || this.canPlaceOnPredicates != null || this.canBreakPredicates != null); // Paper
-+        return !(this.hasDisplayName() || this.hasItemName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.build().isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isHideTooltip() || this.isUnbreakable() || this.hasEnchantmentGlintOverride() || this.isFireResistant() || this.hasMaxStackSize() || this.hasRarity() || this.hasFood() || this.hasDamage() || this.hasMaxDamage() || this.attributeModifiers != null || this.customTag != null || this.canPlaceOnPredicates != null || this.canBreakPredicates != null); // Paper
+-        return !(this.hasDisplayName() || this.hasItemName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.build().isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isHideTooltip() || this.isUnbreakable() || this.hasEnchantmentGlintOverride() || this.isFireResistant() || this.hasMaxStackSize() || this.hasRarity() || this.hasFood() || this.hasTool() || this.hasDamage() || this.hasMaxDamage() || this.hasAttributeModifiers() || this.customTag != null || this.canPlaceOnPredicates != null || this.canBreakPredicates != null); // Paper
++        return !(this.hasDisplayName() || this.hasItemName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.build().isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isHideTooltip() || this.isUnbreakable() || this.hasEnchantmentGlintOverride() || this.isFireResistant() || this.hasMaxStackSize() || this.hasRarity() || this.hasFood() || this.hasTool() || this.hasDamage() || this.hasMaxDamage() || this.attributeModifiers != null || this.customTag != null || this.canPlaceOnPredicates != null || this.canBreakPredicates != null); // Paper
      }
  
      // Paper start
@@ -1071,8 +1062,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  && (Objects.equals(this.customTag, that.customTag))
                  && (this.persistentDataContainer.equals(that.persistentDataContainer))
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
-         hash = 61 * hash + (this.hasRarity() ? this.rarity.hashCode() : 0);
          hash = 61 * hash + (this.hasFood() ? this.food.hashCode() : 0);
+         hash = 61 * hash + (this.hasTool() ? this.tool.hashCode() : 0);
          hash = 61 * hash + (this.hasDamage() ? this.damage : 0);
 -        hash = 61 * hash + (this.hasMaxDamage() ? 1231 : 1237);
 -        hash = 61 * hash + (this.hasAttributeModifiers() ? this.attributeModifiers.hashCode() : 0);
@@ -1374,10 +1365,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (meta instanceof CraftMetaSpawnEgg) {
              CraftMetaSpawnEgg that = (CraftMetaSpawnEgg) meta;
  
--            return this.hasSpawnedType() ? that.hasSpawnedType() && this.spawnedType.equals(that.spawnedType) : !that.hasSpawnedType()
--                    && this.entityTag != null ? that.entityTag != null && this.entityTag.equals(that.entityTag) : this.entityTag == null;
-+            return (this.hasSpawnedType() ? that.hasSpawnedType() && this.spawnedType.equals(that.spawnedType) : !that.hasSpawnedType()) // Paper
-+                    && (this.entityTag != null ? that.entityTag != null && this.entityTag.equals(that.entityTag) : that.entityTag == null); // Paper
+-            return this.entityTag != null ? that.entityTag != null && this.entityTag.equals(that.entityTag) : this.entityTag == null;
++            return this.entityTag != null ? that.entityTag != null && this.entityTag.equals(that.entityTag) : that.entityTag == null; // Paper
          }
          return true;
      }
