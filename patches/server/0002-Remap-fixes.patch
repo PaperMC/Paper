@@ -1,0 +1,211 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Kyle Wood <kyle@denwav.dev>
+Date: Fri, 11 Jun 2021 05:25:03 -0500
+Subject: [PATCH] Remap fixes
+
+
+diff --git a/src/main/java/net/minecraft/core/BlockPos.java b/src/main/java/net/minecraft/core/BlockPos.java
+index 766006fe7ff965d6ca17df1df457ecc629b3be18..0ef1a7b2a17e81144d594f29f7b5e54d5038dcf4 100644
+--- a/src/main/java/net/minecraft/core/BlockPos.java
++++ b/src/main/java/net/minecraft/core/BlockPos.java
+@@ -323,9 +323,11 @@ public class BlockPos extends Vec3i {
+ 
+     public static Iterable<BlockPos> withinManhattan(BlockPos center, int rangeX, int rangeY, int rangeZ) {
+         int i = rangeX + rangeY + rangeZ;
+-        int j = center.getX();
+-        int k = center.getY();
+-        int l = center.getZ();
++        // Paper start - rename variables to fix conflict with anonymous class (remap fix)
++        int centerX = center.getX();
++        int centerY = center.getY();
++        int centerZ = center.getZ();
++        // Paper end
+         return () -> new AbstractIterator<BlockPos>() {
+                 private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+                 private int currentDepth;
+@@ -339,7 +341,7 @@ public class BlockPos extends Vec3i {
+                 protected BlockPos computeNext() {
+                     if (this.zMirror) {
+                         this.zMirror = false;
+-                        this.cursor.setZ(l - (this.cursor.getZ() - l));
++                        this.cursor.setZ(centerZ - (this.cursor.getZ() - centerZ)); // Paper - remap fix
+                         return this.cursor;
+                     } else {
+                         BlockPos blockPos;
+@@ -365,7 +367,7 @@ public class BlockPos extends Vec3i {
+                             int k = this.currentDepth - Math.abs(i) - Math.abs(j);
+                             if (k <= rangeZ) {
+                                 this.zMirror = k != 0;
+-                                blockPos = this.cursor.set(j + i, k + j, l + k);
++                                blockPos = this.cursor.set(centerX + i, centerY + j, centerZ + k); // Paper - remap fix
+                             }
+                         }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/BehaviorUtils.java b/src/main/java/net/minecraft/world/entity/ai/behavior/BehaviorUtils.java
+index 7344cff32fa6fe3dedb74ed98126072c55b0abd2..d98b28e9488a5a7736719cf656736bb026ec8c7e 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/BehaviorUtils.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/BehaviorUtils.java
+@@ -169,10 +169,10 @@ public class BehaviorUtils {
+ 
+         return optional.map((uuid) -> {
+             return ((ServerLevel) entity.level()).getEntity(uuid);
+-        }).map((entity) -> {
++        }).map((entity1) -> { // Paper - remap fix
+             LivingEntity entityliving1;
+ 
+-            if (entity instanceof LivingEntity entityliving2) {
++            if (entity1 instanceof LivingEntity entityliving2) { // Paper - remap fix
+                 entityliving1 = entityliving2;
+             } else {
+                 entityliving1 = null;
+diff --git a/src/main/java/net/minecraft/world/level/storage/loot/LootTable.java b/src/main/java/net/minecraft/world/level/storage/loot/LootTable.java
+index 9051f0186c09eeb8ecccf62b0116f6da1800a1df..b231f90317fe7df9133674b12d47873520b481cb 100644
+--- a/src/main/java/net/minecraft/world/level/storage/loot/LootTable.java
++++ b/src/main/java/net/minecraft/world/level/storage/loot/LootTable.java
+@@ -259,8 +259,8 @@ public class LootTable {
+ 
+     public static class Builder implements FunctionUserBuilder<LootTable.Builder> {
+ 
+-        private final Builder<LootPool> pools = ImmutableList.builder();
+-        private final Builder<LootItemFunction> functions = ImmutableList.builder();
++        private final ImmutableList.Builder<LootPool> pools = ImmutableList.builder();
++        private final ImmutableList.Builder<LootItemFunction> functions = ImmutableList.builder();
+         private LootContextParamSet paramSet;
+         private Optional<ResourceLocation> randomSequence;
+ 
+diff --git a/src/test/java/org/bukkit/DyeColorsTest.java b/src/test/java/org/bukkit/DyeColorsTest.java
+index dfc3e4f5a5cfee0456097a44d579587719a231a7..4e1b6c009fe82e970a32dbdb564763c3f9081b2c 100644
+--- a/src/test/java/org/bukkit/DyeColorsTest.java
++++ b/src/test/java/org/bukkit/DyeColorsTest.java
+@@ -3,7 +3,6 @@ package org.bukkit;
+ import static org.bukkit.support.MatcherAssert.*;
+ import static org.hamcrest.Matchers.*;
+ 
+-import net.minecraft.world.item.DyeColor;
+ import org.bukkit.support.AbstractTestingBase;
+ import org.junit.jupiter.params.ParameterizedTest;
+ import org.junit.jupiter.params.provider.EnumSource;
+@@ -14,7 +13,7 @@ public class DyeColorsTest extends AbstractTestingBase {
+     @EnumSource(DyeColor.class)
+     public void checkColor(DyeColor dye) {
+         Color color = dye.getColor();
+-        int nmsColorArray = DyeColor.byId(dye.getWoolData()).getTextureDiffuseColor();
++        int nmsColorArray = net.minecraft.world.item.DyeColor.byId(dye.getWoolData()).getTextureDiffuseColors(); // Paper - remap fix
+         Color nmsColor = Color.fromARGB(nmsColorArray);
+         assertThat(color, is(nmsColor));
+     }
+@@ -23,7 +22,7 @@ public class DyeColorsTest extends AbstractTestingBase {
+     @EnumSource(org.bukkit.DyeColor.class)
+     public void checkFireworkColor(org.bukkit.DyeColor dye) {
+         Color color = dye.getFireworkColor();
+-        int nmsColor = DyeColor.byId(dye.getWoolData()).getFireworkColor();
++        int nmsColor = net.minecraft.world.item.DyeColor.byId(dye.getWoolData()).getFireworkColor(); // Paper - remap fix
+         assertThat(color, is(Color.fromRGB(nmsColor)));
+     }
+ }
+diff --git a/src/test/java/org/bukkit/ParticleTest.java b/src/test/java/org/bukkit/ParticleTest.java
+index 9c9f5dd2351b3067b54d6cc5bdb572c46b12aaa8..307e8a3694c6f0b48d2df9792c3e5fdbaae1fd8e 100644
+--- a/src/test/java/org/bukkit/ParticleTest.java
++++ b/src/test/java/org/bukkit/ParticleTest.java
+@@ -250,7 +250,7 @@ public class ParticleTest extends AbstractTestingBase {
+                 Check in CraftParticle if the conversion is still correct.
+                 """, bukkit.getKey()));
+ 
+-        DataResult<Tag> encoded = assertDoesNotThrow(() -> minecraft.codec().codec().encodeStart(DynamicOpsNBT.INSTANCE, particleParam),
++        DataResult<Tag> encoded = assertDoesNotThrow(() -> minecraft.codec().codec().encodeStart(NbtOps.INSTANCE, particleParam), // Paper - remap fix
+                 String.format("""
+                         Could not encoded particle param for particle %s.
+                         This can indicated, that the wrong particle param is created in CraftParticle.
+diff --git a/src/test/java/org/bukkit/entity/EntityTypesTest.java b/src/test/java/org/bukkit/entity/EntityTypesTest.java
+index 32df0090aab65b551b524603cce0b96e461cc358..952924abae79cc504342bbdb6f6953ab8a6cc295 100644
+--- a/src/test/java/org/bukkit/entity/EntityTypesTest.java
++++ b/src/test/java/org/bukkit/entity/EntityTypesTest.java
+@@ -6,7 +6,6 @@ import java.util.Set;
+ import java.util.stream.Collectors;
+ import net.minecraft.core.registries.BuiltInRegistries;
+ import net.minecraft.resources.ResourceLocation;
+-import net.minecraft.world.entity.EntityType;
+ import org.bukkit.support.AbstractTestingBase;
+ import org.junit.jupiter.api.Test;
+ 
+@@ -16,8 +15,8 @@ public class EntityTypesTest extends AbstractTestingBase {
+     public void testMaps() {
+         Set<EntityType> allBukkit = Arrays.stream(EntityType.values()).filter((b) -> b.getName() != null).collect(Collectors.toSet());
+ 
+-        for (EntityType<?> nms : BuiltInRegistries.ENTITY_TYPE) {
+-            ResourceLocation key = EntityType.getKey(nms);
++        for (net.minecraft.world.entity.EntityType<?> nms : BuiltInRegistries.ENTITY_TYPE) { // Paper - remap fix
++            ResourceLocation key = net.minecraft.world.entity.EntityType.getKey(nms); // Paper - remap fix
+ 
+             org.bukkit.entity.EntityType bukkit = org.bukkit.entity.EntityType.fromName(key.getPath());
+             assertNotNull(bukkit, "Missing nms->bukkit " + key);
+diff --git a/src/test/java/org/bukkit/entity/PandaGeneTest.java b/src/test/java/org/bukkit/entity/PandaGeneTest.java
+index 5818bfa69a8573a2a8f350066f829d587cbc546b..8e421a1bee0c526e3024eab9ba4cc0b320842de2 100644
+--- a/src/test/java/org/bukkit/entity/PandaGeneTest.java
++++ b/src/test/java/org/bukkit/entity/PandaGeneTest.java
+@@ -2,7 +2,6 @@ package org.bukkit.entity;
+ 
+ import static org.junit.jupiter.api.Assertions.*;
+ 
+-import net.minecraft.world.entity.animal.Panda;
+ import org.bukkit.craftbukkit.entity.CraftPanda;
+ import org.junit.jupiter.api.Test;
+ 
+@@ -10,8 +9,8 @@ public class PandaGeneTest {
+ 
+     @Test
+     public void testBukkit() {
+-        for (Panda.Gene gene : Panda.Gene.values()) {
+-            Panda.Gene nms = CraftPanda.toNms(gene);
++        for (Panda.Gene gene : Panda.Gene.values()) { // Paper - remap fix
++            net.minecraft.world.entity.animal.Panda.Gene nms = CraftPanda.toNms(gene); // Paper - remap fix
+ 
+             assertNotNull(nms, "NMS gene null for " + gene);
+             assertEquals(gene.isRecessive(), nms.isRecessive(), "Recessive status did not match " + gene);
+@@ -21,7 +20,7 @@ public class PandaGeneTest {
+ 
+     @Test
+     public void testNMS() {
+-        for (Panda.Gene gene : Panda.Gene.values()) {
++        for (net.minecraft.world.entity.animal.Panda.Gene gene : net.minecraft.world.entity.animal.Panda.Gene.values()) { // Paper - remap fix
+             org.bukkit.entity.Panda.Gene bukkit = CraftPanda.fromNms(gene);
+ 
+             assertNotNull(bukkit, "Bukkit gene null for " + gene);
+diff --git a/src/test/java/org/bukkit/registry/RegistryConstantsTest.java b/src/test/java/org/bukkit/registry/RegistryConstantsTest.java
+index 6c84f1289c84d0aca1935c473ffa63dae1b52598..ebcb65cb74acdb9d1bcf2b4b3551a2dc6d809bc9 100644
+--- a/src/test/java/org/bukkit/registry/RegistryConstantsTest.java
++++ b/src/test/java/org/bukkit/registry/RegistryConstantsTest.java
+@@ -29,17 +29,17 @@ public class RegistryConstantsTest extends AbstractTestingBase {
+ 
+     @Test
+     public void testTrimMaterial() {
+-        this.testExcessConstants(TrimMaterial.class, Registry.TRIM_MATERIAL);
++        this.testExcessConstants(TrimMaterial.class, org.bukkit.Registry.TRIM_MATERIAL); // Paper - remap fix
+         this.testMissingConstants(TrimMaterial.class, Registries.TRIM_MATERIAL);
+     }
+ 
+     @Test
+     public void testTrimPattern() {
+-        this.testExcessConstants(TrimPattern.class, Registry.TRIM_PATTERN);
++        this.testExcessConstants(TrimPattern.class, org.bukkit.Registry.TRIM_PATTERN); // Paper - remap fix
+         this.testMissingConstants(TrimPattern.class, Registries.TRIM_PATTERN);
+     }
+ 
+-    private <T extends Keyed> void testExcessConstants(Class<T> clazz, Registry<T> registry) {
++    private <T extends Keyed> void testExcessConstants(Class<T> clazz, org.bukkit.Registry<T> registry) { // Paper - remap fix
+         List<NamespacedKey> excessKeys = new ArrayList<>();
+ 
+         for (Field field : clazz.getFields()) {
+diff --git a/src/test/java/org/bukkit/registry/RegistryLoadOrderTest.java b/src/test/java/org/bukkit/registry/RegistryLoadOrderTest.java
+index 31062b6d9ad685ea3750c6b5ddc6b295bb263e0a..5842cb5a6f3da42b8c40e6cbd5c5366572bf7684 100644
+--- a/src/test/java/org/bukkit/registry/RegistryLoadOrderTest.java
++++ b/src/test/java/org/bukkit/registry/RegistryLoadOrderTest.java
+@@ -24,7 +24,7 @@ public class RegistryLoadOrderTest extends AbstractTestingBase {
+ 
+     private static boolean initInterface = false;
+     private static boolean initAbstract = false;
+-    private static Registry<Keyed> registry;
++    private static org.bukkit.Registry<Keyed> registry; // Paper - remap fix
+ 
+     public static Stream<Arguments> data() {
+         return Stream.of(

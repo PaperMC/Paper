@@ -1,0 +1,111 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 30 Mar 2016 19:36:20 -0400
+Subject: [PATCH] MC Dev fixes
+
+
+diff --git a/src/main/java/net/minecraft/commands/arguments/item/ItemInput.java b/src/main/java/net/minecraft/commands/arguments/item/ItemInput.java
+index 643bb8860962ad691b11073f6dbf406bf7ec5fb1..9b8ec1fd158f6e51779be263fd56b9119d0d9bbb 100644
+--- a/src/main/java/net/minecraft/commands/arguments/item/ItemInput.java
++++ b/src/main/java/net/minecraft/commands/arguments/item/ItemInput.java
+@@ -78,6 +78,6 @@ public class ItemInput {
+     }
+ 
+     private String getItemName() {
+-        return this.item.unwrapKey().map(ResourceKey::location).orElseGet(() -> "unknown[" + this.item + "]").toString();
++        return this.item.unwrapKey().<Object>map(ResourceKey::location).orElseGet(() -> "unknown[" + this.item + "]").toString(); // Paper - decompile fix
+     }
+ }
+diff --git a/src/main/java/net/minecraft/core/BlockPos.java b/src/main/java/net/minecraft/core/BlockPos.java
+index 0ef1a7b2a17e81144d594f29f7b5e54d5038dcf4..8994a381b05dcdd1163d2e7a0b63a8875b6063ed 100644
+--- a/src/main/java/net/minecraft/core/BlockPos.java
++++ b/src/main/java/net/minecraft/core/BlockPos.java
+@@ -439,12 +439,12 @@ public class BlockPos extends Vec3i {
+                     if (this.index == l) {
+                         return this.endOfData();
+                     } else {
+-                        int i = this.index % i;
+-                        int j = this.index / i;
+-                        int k = j % j;
+-                        int l = j / j;
++                        int offsetX = this.index % i; // Paper - decomp fix
++                        int u = this.index / i; // Paper - decomp fix
++                        int offsetY = u % j; // Paper - decomp fix
++                        int offsetZ = u / j; // Paper - decomp fix
+                         this.index++;
+-                        return this.cursor.set(startX + i, startY + k, startZ + l);
++                        return this.cursor.set(startX + offsetX, startY + offsetY, startZ + offsetZ); // Paper - decomp fix
+                     }
+                 }
+             };
+diff --git a/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java b/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
+index a467eb6b3b74cdb5378ff5f3043efbe6f4a6f06e..34b3b3251da21bce616870d312fd42fd58ba7881 100644
+--- a/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
++++ b/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
+@@ -317,7 +317,7 @@ public class BuiltInRegistries {
+         Bootstrap.checkBootstrapCalled(() -> "registry " + key);
+         ResourceLocation resourceLocation = key.location();
+         LOADERS.put(resourceLocation, () -> initializer.run(registry));
+-        WRITABLE_REGISTRY.register((ResourceKey<WritableRegistry<?>>)key, registry, RegistrationInfo.BUILT_IN);
++        WRITABLE_REGISTRY.register((ResourceKey)key, registry, RegistrationInfo.BUILT_IN); // Paper - decompile fix
+         return registry;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/nbt/TagParser.java b/src/main/java/net/minecraft/nbt/TagParser.java
+index a614e960fcd5958ad17b679eee8a8e6926f58e62..da101bca71f4710812621b98f0a0d8cab180346a 100644
+--- a/src/main/java/net/minecraft/nbt/TagParser.java
++++ b/src/main/java/net/minecraft/nbt/TagParser.java
+@@ -253,11 +253,11 @@ public class TagParser {
+             }
+ 
+             if (typeReader == ByteTag.TYPE) {
+-                list.add((T)((NumericTag)tag).getAsByte());
++                list.add((T)(Byte)((NumericTag)tag).getAsByte()); // Paper - decompile fix
+             } else if (typeReader == LongTag.TYPE) {
+-                list.add((T)((NumericTag)tag).getAsLong());
++                list.add((T)(Long)((NumericTag)tag).getAsLong()); // Paper - decompile fix
+             } else {
+-                list.add((T)((NumericTag)tag).getAsInt());
++                list.add((T)(Integer)((NumericTag)tag).getAsInt()); // Paper - decompile fix
+             }
+ 
+             if (!this.hasElementSeparator()) {
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 299afe72a2fc2affca196f2fdfbf27e5533c51a6..40adb6117b9e0d5f70103113202a07715e403e2a 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1952,7 +1952,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             PackRepository resourcepackrepository = this.packRepository;
+ 
+             Objects.requireNonNull(this.packRepository);
+-            return stream.map(resourcepackrepository::getPack).filter(Objects::nonNull).map(Pack::open).collect(ImmutableList.toImmutableList()); // CraftBukkit - decompile error
++            return stream.<Pack>map(resourcepackrepository::getPack).filter(Objects::nonNull).map(Pack::open).collect(ImmutableList.toImmutableList()); // CraftBukkit - decompile error // Paper - decompile error // todo: is this needed anymore?
+         }, this).thenCompose((immutablelist) -> {
+             MultiPackResourceManager resourcemanager = new MultiPackResourceManager(PackType.SERVER_DATA, immutablelist);
+ 
+diff --git a/src/main/java/net/minecraft/util/SortedArraySet.java b/src/main/java/net/minecraft/util/SortedArraySet.java
+index 661a6274a800ca9b91bdb809d026972d23c3b263..ea72dcb064a35bc6245bc5c94d592efedd8faf41 100644
+--- a/src/main/java/net/minecraft/util/SortedArraySet.java
++++ b/src/main/java/net/minecraft/util/SortedArraySet.java
+@@ -28,7 +28,7 @@ public class SortedArraySet<T> extends AbstractSet<T> {
+     }
+ 
+     public static <T extends Comparable<T>> SortedArraySet<T> create(int initialCapacity) {
+-        return new SortedArraySet<>(initialCapacity, Comparator.naturalOrder());
++        return new SortedArraySet<>(initialCapacity, Comparator.<T>naturalOrder()); // Paper - decompile fix
+     }
+ 
+     public static <T> SortedArraySet<T> create(Comparator<T> comparator) {
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Pillager.java b/src/main/java/net/minecraft/world/entity/monster/Pillager.java
+index 8eb1aca72df0bca292473e90ecb74159db4fe034..4b4dcee6abe7a6db43638d04665125eec560496e 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Pillager.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Pillager.java
+@@ -66,7 +66,7 @@ public class Pillager extends AbstractIllager implements CrossbowAttackMob, Inve
+     protected void registerGoals() {
+         super.registerGoals();
+         this.goalSelector.addGoal(0, new FloatGoal(this));
+-        this.goalSelector.addGoal(2, new Raider.HoldGroundAttackGoal(this, this, 10.0F));
++        this.goalSelector.addGoal(2, new Raider.HoldGroundAttackGoal(this, 10.0F)); // Paper - decomp fix
+         this.goalSelector.addGoal(3, new RangedCrossbowAttackGoal<>(this, 1.0D, 8.0F));
+         this.goalSelector.addGoal(8, new RandomStrollGoal(this, 0.6D));
+         this.goalSelector.addGoal(9, new LookAtPlayerGoal(this, Player.class, 15.0F, 1.0F));

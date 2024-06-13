@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Tue, 1 Mar 2016 14:14:15 -0600
+Subject: [PATCH] Drop falling block and tnt entities at the specified height
+
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+
+diff --git a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
+index a4e8fa5267b8853603e4683bf9d002db7465e4b6..c3a16691e8a843c02e0aea6469822cd8869ad593 100644
+--- a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
++++ b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
+@@ -149,6 +149,16 @@ public class FallingBlockEntity extends Entity {
+             ++this.time;
+             this.applyGravity();
+             this.move(MoverType.SELF, this.getDeltaMovement());
++            // Paper start - Configurable falling blocks height nerf
++            if (this.level().paperConfig().fixes.fallingBlockHeightNerf.test(v -> this.getY() > v)) {
++                if (this.dropItem && this.level().getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
++                    this.spawnAtLocation(block);
++                }
++
++                this.discard(EntityRemoveEvent.Cause.OUT_OF_WORLD);
++                return;
++            }
++            // Paper end - Configurable falling blocks height nerf
+             this.handlePortal();
+             if (!this.level().isClientSide && (this.isAlive() || this.forceTickAfterTeleportToDuplicate)) {
+                 BlockPos blockposition = this.blockPosition();
+diff --git a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
+index 8f693bb45099124bca62849528c81d717131a48c..15432b512fc0d0d38bf28499e2afa5e48fec7aaa 100644
+--- a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
++++ b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
+@@ -99,6 +99,12 @@ public class PrimedTnt extends Entity implements TraceableEntity {
+         this.handlePortal();
+         this.applyGravity();
+         this.move(MoverType.SELF, this.getDeltaMovement());
++        // Paper start - Configurable TNT height nerf
++        if (this.level().paperConfig().fixes.tntEntityHeightNerf.test(v -> this.getY() > v)) {
++            this.discard(EntityRemoveEvent.Cause.OUT_OF_WORLD);
++            return;
++        }
++        // Paper end - Configurable TNT height nerf
+         this.setDeltaMovement(this.getDeltaMovement().scale(0.98D));
+         if (this.onGround()) {
+             this.setDeltaMovement(this.getDeltaMovement().multiply(0.7D, -0.5D, 0.7D));
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/MinecartTNT.java b/src/main/java/net/minecraft/world/entity/vehicle/MinecartTNT.java
+index c112c4b103c34e05f4de973eec94a969f60b085e..b7036f8399e2500ba01736c6006b972f7ca4838e 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/MinecartTNT.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/MinecartTNT.java
+@@ -54,6 +54,12 @@ public class MinecartTNT extends AbstractMinecart {
+     public void tick() {
+         super.tick();
+         if (this.fuse > 0) {
++            // Paper start - Configurable TNT height nerf
++            if (this.level().paperConfig().fixes.tntEntityHeightNerf.test(v -> this.getY() > v)) {
++                this.discard(EntityRemoveEvent.Cause.OUT_OF_WORLD);
++                return;
++            }
++            // Paper end - Configurable TNT height nerf
+             --this.fuse;
+             this.level().addParticle(ParticleTypes.SMOKE, this.getX(), this.getY() + 0.5D, this.getZ(), 0.0D, 0.0D, 0.0D);
+         } else if (this.fuse == 0) {
