@@ -48,18 +48,20 @@ diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/ma
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
+@@ -0,0 +0,0 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
      }
  
      public boolean setGameMode(GameType gameMode) {
--        if (!this.gameMode.changeGameModeForPlayer(gameMode)) {
--            return false;
 +        // Paper start - Expand PlayerGameModeChangeEvent
 +        org.bukkit.event.player.PlayerGameModeChangeEvent event = this.setGameMode(gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.UNKNOWN, null);
 +        return event == null ? false : event.isCancelled();
 +    }
 +    @Nullable
 +    public org.bukkit.event.player.PlayerGameModeChangeEvent setGameMode(GameType gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause cause, @Nullable net.kyori.adventure.text.Component message) {
+         boolean flag = this.isSpectator();
+ 
+-        if (!this.gameMode.changeGameModeForPlayer(gameMode)) {
+-            return false;
 +        org.bukkit.event.player.PlayerGameModeChangeEvent event = this.gameMode.changeGameModeForPlayer(gameMode, cause, message);
 +        if (event == null || event.isCancelled()) {
 +            return null;
@@ -67,7 +69,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          } else {
              this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, (float) gameMode.getId()));
              if (gameMode == GameType.SPECTATOR) {
-@@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
+@@ -0,0 +0,0 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
  
              this.onUpdateAbilities();
              this.updateEffectVisibility();
@@ -76,7 +78,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
      }
  
-@@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
+@@ -0,0 +0,0 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
      }
  
      public void loadGameTypes(@Nullable CompoundTag nbt) {
@@ -137,7 +139,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
-                     this.player = this.server.getPlayerList().respawn(this.player, false, RespawnReason.DEATH);
+                     this.player = this.server.getPlayerList().respawn(this.player, false, Entity.RemovalReason.KILLED, RespawnReason.DEATH); // CraftBukkit
                      if (this.server.isHardcore()) {
 -                        this.player.setGameMode(GameType.SPECTATOR);
 +                        this.player.setGameMode(GameType.SPECTATOR, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.HARDCORE_DEATH, null); // Paper - Expand PlayerGameModeChangeEvent

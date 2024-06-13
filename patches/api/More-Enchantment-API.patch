@@ -127,11 +127,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param level the level of enchantment
 +     * @param entityCategory the category of entity
 +     * @return the damage increase
-+     * @deprecated Use {@link #getDamageIncrease(int, org.bukkit.entity.EntityType)} instead.
-+     * Enchantment damage increase is no longer handled via {@link org.bukkit.entity.EntityCategory}s, but
-+     * is instead controlled by tags, e.g. {@link org.bukkit.Tag#ENTITY_TYPES_SENSITIVE_TO_BANE_OF_ARTHROPODS}.
-+     * As such, a category cannot properly represent all entities defined by the tags.
++     * @deprecated Enchantments now have a complex effect systems that cannot be reduced to a simple damage increase.
 +     */
++    @Contract("-> fail")
 +    @Deprecated(forRemoval = true, since = "1.20.5")
 +    public abstract float getDamageIncrease(int level, @NotNull org.bukkit.entity.EntityCategory entityCategory);
 +
@@ -141,8 +139,29 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param level the level of enchantment
 +     * @param entityType the type of entity.
 +     * @return the damage increase
++     * @deprecated Enchantments now have a complex effect systems that cannot be reduced to a simple damage increase.
 +     */
++    @Contract("-> fail")
++    @Deprecated(forRemoval = true, since = "1.21")
 +    public abstract float getDamageIncrease(int level, @NotNull org.bukkit.entity.EntityType entityType);
++
++    /**
++     * Gets the equipment slots where this enchantment is considered "active".
++     *
++     * @return the equipment slots
++     * @deprecated Use {@link #getActiveSlotGroups()} instead as enchantments are now applicable to a group of equipment slots.
++     */
++    @NotNull
++    @Deprecated(forRemoval = true, since = "1.21")
++    public java.util.Set<org.bukkit.inventory.EquipmentSlot> getActiveSlots() {
++        final java.util.Set<org.bukkit.inventory.EquipmentSlotGroup> slots = this.getActiveSlotGroups();
++        return java.util.Arrays.stream(org.bukkit.inventory.EquipmentSlot.values()).filter(e -> {
++            for (final org.bukkit.inventory.EquipmentSlotGroup group : slots) {
++                if (group.test(e)) return true;
++            }
++            return false;
++        }).collect(java.util.stream.Collectors.toSet());
++    }
 +
 +    /**
 +     * Gets the equipment slots where this enchantment is considered "active".
@@ -150,10 +169,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @return the equipment slots
 +     */
 +    @NotNull
-+    public abstract java.util.Set<org.bukkit.inventory.EquipmentSlot> getActiveSlots();
++    public abstract java.util.Set<org.bukkit.inventory.EquipmentSlotGroup> getActiveSlotGroups();
      // Paper end
  
-     /**
+     // Paper start - mark translation key as deprecated
 diff --git a/src/main/java/org/bukkit/enchantments/EnchantmentWrapper.java b/src/main/java/org/bukkit/enchantments/EnchantmentWrapper.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/enchantments/EnchantmentWrapper.java
