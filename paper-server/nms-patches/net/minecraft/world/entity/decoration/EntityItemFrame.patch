@@ -1,54 +1,19 @@
 --- a/net/minecraft/world/entity/decoration/EntityItemFrame.java
 +++ b/net/minecraft/world/entity/decoration/EntityItemFrame.java
-@@ -90,16 +90,27 @@
+@@ -90,6 +90,12 @@
+ 
      @Override
-     protected void recalculateBoundingBox() {
-         if (this.direction != null) {
-+            // CraftBukkit start code moved in to calculateBoundingBox
-+            this.setBoundingBox(calculateBoundingBox(this, this.pos, this.direction, this.getWidth(), this.getHeight()));
-+            // CraftBukkit end
-+        }
+     protected AxisAlignedBB calculateBoundingBox(BlockPosition blockposition, EnumDirection enumdirection) {
++        // CraftBukkit start - break out BB calc into own method
++        return calculateBoundingBoxStatic(blockposition, enumdirection);
 +    }
 +
-+    // CraftBukkit start - break out BB calc into own method
-+    public static AxisAlignedBB calculateBoundingBox(@Nullable Entity entity, BlockPosition blockPosition, EnumDirection direction, int width, int height) {
-+        {
-             double d0 = 0.46875D;
--            double d1 = (double) this.pos.getX() + 0.5D - (double) this.direction.getStepX() * 0.46875D;
--            double d2 = (double) this.pos.getY() + 0.5D - (double) this.direction.getStepY() * 0.46875D;
--            double d3 = (double) this.pos.getZ() + 0.5D - (double) this.direction.getStepZ() * 0.46875D;
-+            double d1 = (double) blockPosition.getX() + 0.5D - (double) direction.getStepX() * 0.46875D;
-+            double d2 = (double) blockPosition.getY() + 0.5D - (double) direction.getStepY() * 0.46875D;
-+            double d3 = (double) blockPosition.getZ() + 0.5D - (double) direction.getStepZ() * 0.46875D;
- 
--            this.setPosRaw(d1, d2, d3);
--            double d4 = (double) this.getWidth();
--            double d5 = (double) this.getHeight();
--            double d6 = (double) this.getWidth();
--            EnumDirection.EnumAxis enumdirection_enumaxis = this.direction.getAxis();
-+            if (entity != null) {
-+                entity.setPosRaw(d1, d2, d3);
-+            }
-+            double d4 = (double) width;
-+            double d5 = (double) height;
-+            double d6 = (double) width;
-+            EnumDirection.EnumAxis enumdirection_enumaxis = direction.getAxis();
- 
-             switch (enumdirection_enumaxis) {
-                 case X:
-@@ -115,9 +126,10 @@
-             d4 /= 32.0D;
-             d5 /= 32.0D;
-             d6 /= 32.0D;
--            this.setBoundingBox(new AxisAlignedBB(d1 - d4, d2 - d5, d3 - d6, d1 + d4, d2 + d5, d3 + d6));
-+            return new AxisAlignedBB(d1 - d4, d2 - d5, d3 - d6, d1 + d4, d2 + d5, d3 + d6);
-         }
-     }
-+    // CraftBukkit end
- 
-     @Override
-     public boolean survives() {
-@@ -162,6 +174,11 @@
++    public static AxisAlignedBB calculateBoundingBoxStatic(BlockPosition blockposition, EnumDirection enumdirection) {
++        // CraftBukkit end
+         float f = 0.46875F;
+         Vec3D vec3d = Vec3D.atCenterOf(blockposition).relative(enumdirection, -0.46875D);
+         EnumDirection.EnumAxis enumdirection_enumaxis = enumdirection.getAxis();
+@@ -143,6 +149,11 @@
              return false;
          } else if (!damagesource.is(DamageTypeTags.IS_EXPLOSION) && !this.getItem().isEmpty()) {
              if (!this.level().isClientSide) {
@@ -60,7 +25,7 @@
                  this.dropItem(damagesource.getEntity(), false);
                  this.gameEvent(GameEvent.BLOCK_CHANGE, damagesource.getEntity());
                  this.playSound(this.getRemoveItemSound(), 1.0F, 1.0F);
-@@ -284,13 +301,19 @@
+@@ -255,13 +266,19 @@
      }
  
      public void setItem(ItemStack itemstack, boolean flag) {

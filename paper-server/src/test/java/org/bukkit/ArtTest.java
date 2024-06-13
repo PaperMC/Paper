@@ -10,25 +10,25 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.core.Holder;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.decoration.PaintingVariant;
 import org.bukkit.craftbukkit.CraftArt;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.jupiter.api.Test;
 
 public class ArtTest extends AbstractTestingBase {
-    private static final int UNIT_MULTIPLIER = 16;
 
     @Test
     public void verifyMapping() {
         List<Art> arts = Lists.newArrayList(Art.values());
 
-        for (ResourceKey<PaintingVariant> key : BuiltInRegistries.PAINTING_VARIANT.registryKeySet()) {
-            Holder<PaintingVariant> enumArt = BuiltInRegistries.PAINTING_VARIANT.getHolderOrThrow(key);
+        for (ResourceKey<PaintingVariant> key : CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT).registryKeySet()) {
+            Holder<PaintingVariant> enumArt = CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT).getHolderOrThrow(key);
             String name = key.location().getPath();
-            int width = enumArt.value().getWidth() / UNIT_MULTIPLIER;
-            int height = enumArt.value().getHeight() / UNIT_MULTIPLIER;
+            int width = enumArt.value().width();
+            int height = enumArt.value().height();
 
             Art subject = CraftArt.minecraftHolderToBukkit(enumArt);
 
@@ -58,7 +58,7 @@ public class ArtTest extends AbstractTestingBase {
     @Test
     public void testCraftArtToBukkit() {
         Map<Art, Holder<PaintingVariant>> cache = new EnumMap(Art.class);
-        for (Holder<PaintingVariant> enumArt : BuiltInRegistries.PAINTING_VARIANT.asHolderIdMap()) {
+        for (Holder<PaintingVariant> enumArt : CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT).asHolderIdMap()) {
             Art art = CraftArt.minecraftHolderToBukkit(enumArt);
             assertNotNull(art, "Could not CraftArt.NotchToBukkit " + enumArt);
             assertThat(cache.put(art, enumArt), is(nullValue()), "Duplicate artwork " + enumArt);

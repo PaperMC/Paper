@@ -66,7 +66,14 @@ public class ApiVersionTest extends AbstractTestingBase {
 
     @Test
     public void testCurrentVersionUpdated() {
-        ApiVersion apiVersionOne = ApiVersion.getOrCreateVersion(SharedConstants.getCurrentVersion().getName());
+        ApiVersion apiVersionOne = null;
+        try {
+            apiVersionOne = ApiVersion.getOrCreateVersion(SharedConstants.getCurrentVersion().getName());
+        } catch (IllegalArgumentException ex) {
+            if (!SharedConstants.getCurrentVersion().isStable()) {
+                return;
+            }
+        }
         ApiVersion apiVersionTwo = ApiVersion.CURRENT;
 
         assertEquals(apiVersionOne, apiVersionTwo, "The current version in ApiVersion not match current minecraft version");

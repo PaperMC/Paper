@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/entity/projectile/EntitySmallFireball.java
 +++ b/net/minecraft/world/entity/projectile/EntitySmallFireball.java
-@@ -13,6 +13,11 @@
- import net.minecraft.world.phys.MovingObjectPositionBlock;
+@@ -16,6 +16,11 @@
  import net.minecraft.world.phys.MovingObjectPositionEntity;
+ import net.minecraft.world.phys.Vec3D;
  
 +// CraftBukkit start
 +import org.bukkit.event.entity.EntityCombustByEntityEvent;
@@ -12,10 +12,10 @@
  public class EntitySmallFireball extends EntityFireballFireball {
  
      public EntitySmallFireball(EntityTypes<? extends EntitySmallFireball> entitytypes, World world) {
-@@ -21,6 +26,11 @@
+@@ -24,6 +29,11 @@
  
-     public EntitySmallFireball(World world, EntityLiving entityliving, double d0, double d1, double d2) {
-         super(EntityTypes.SMALL_FIREBALL, entityliving, d0, d1, d2, world);
+     public EntitySmallFireball(World world, EntityLiving entityliving, Vec3D vec3d) {
+         super(EntityTypes.SMALL_FIREBALL, entityliving, vec3d, world);
 +        // CraftBukkit start
 +        if (this.getOwner() != null && this.getOwner() instanceof EntityInsentient) {
 +            isIncendiary = this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING);
@@ -23,24 +23,24 @@
 +        // CraftBukkit end
      }
  
-     public EntitySmallFireball(World world, double d0, double d1, double d2, double d3, double d4, double d5) {
-@@ -35,7 +45,14 @@
+     public EntitySmallFireball(World world, double d0, double d1, double d2, Vec3D vec3d) {
+@@ -40,7 +50,14 @@
              Entity entity1 = this.getOwner();
              int i = entity.getRemainingFireTicks();
  
--            entity.igniteForSeconds(5);
+-            entity.igniteForSeconds(5.0F);
 +            // CraftBukkit start - Entity damage by entity event + combust event
-+            EntityCombustByEntityEvent event = new EntityCombustByEntityEvent((org.bukkit.entity.Projectile) this.getBukkitEntity(), entity.getBukkitEntity(), 5);
++            EntityCombustByEntityEvent event = new EntityCombustByEntityEvent((org.bukkit.entity.Projectile) this.getBukkitEntity(), entity.getBukkitEntity(), 5.0F);
 +            entity.level().getCraftServer().getPluginManager().callEvent(event);
 +
 +            if (!event.isCancelled()) {
 +                entity.igniteForSeconds(event.getDuration(), false);
 +            }
 +            // CraftBukkit end
-             if (!entity.hurt(this.damageSources().fireball(this, entity1), 5.0F)) {
-                 entity.setRemainingFireTicks(i);
-             } else if (entity1 instanceof EntityLiving) {
-@@ -51,10 +68,10 @@
+             DamageSource damagesource = this.damageSources().fireball(this, entity1);
+ 
+             if (!entity.hurt(damagesource, 5.0F)) {
+@@ -58,10 +75,10 @@
          if (!this.level().isClientSide) {
              Entity entity = this.getOwner();
  
@@ -53,7 +53,7 @@
                      this.level().setBlockAndUpdate(blockposition, BlockFireAbstract.getState(this.level(), blockposition));
                  }
              }
-@@ -66,7 +83,7 @@
+@@ -73,7 +90,7 @@
      protected void onHit(MovingObjectPosition movingobjectposition) {
          super.onHit(movingobjectposition);
          if (!this.level().isClientSide) {

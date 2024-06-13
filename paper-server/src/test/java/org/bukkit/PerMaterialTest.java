@@ -7,10 +7,10 @@ import java.util.Map;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.EnumHand;
-import net.minecraft.world.entity.EntityInsentient;
+import net.minecraft.world.entity.EnumItemSlot;
 import net.minecraft.world.entity.player.EntityHuman;
+import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemRecord;
 import net.minecraft.world.level.BlockAccessAir;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BlockFalling;
@@ -74,7 +74,11 @@ public class PerMaterialTest extends AbstractTestingBase {
     @ParameterizedTest
     @EnumSource(value = Material.class, names = "LEGACY_.*", mode = EnumSource.Mode.MATCH_NONE)
     public void isRecord(Material material) {
-        assertThat(material.isRecord(), is(CraftMagicNumbers.getItem(material) instanceof ItemRecord));
+        if (material.isBlock()) {
+            assertFalse(material.isRecord());
+        } else {
+            assertThat(material.isRecord(), is(CraftMagicNumbers.getItem(material).components().has(DataComponents.JUKEBOX_PLAYABLE)));
+        }
     }
 
     @ParameterizedTest
@@ -304,7 +308,8 @@ public class PerMaterialTest extends AbstractTestingBase {
     @EnumSource(value = Material.class, names = "LEGACY_.*", mode = EnumSource.Mode.MATCH_NONE)
     public void testEquipmentSlot(Material material) {
         if (material.isItem()) {
-            EquipmentSlot expected = CraftEquipmentSlot.getSlot(EntityInsentient.getEquipmentSlotForItem(CraftItemStack.asNMSCopy(new ItemStack(material))));
+            Equipable equipable = Equipable.get(CraftItemStack.asNMSCopy(new ItemStack(material)));
+            EquipmentSlot expected = CraftEquipmentSlot.getSlot(equipable != null ? equipable.getEquipmentSlot() : EnumItemSlot.MAINHAND);
             assertThat(material.getEquipmentSlot(), is(expected));
         }
     }

@@ -13,8 +13,8 @@ public class DyeColorsTest extends AbstractTestingBase {
     @EnumSource(DyeColor.class)
     public void checkColor(DyeColor dye) {
         Color color = dye.getColor();
-        float[] nmsColorArray = EnumColor.byId(dye.getWoolData()).getTextureDiffuseColors();
-        Color nmsColor = Color.fromRGB((int) (nmsColorArray[0] * 255), (int) (nmsColorArray[1] * 255), (int) (nmsColorArray[2] * 255));
+        int nmsColorArray = EnumColor.byId(dye.getWoolData()).getTextureDiffuseColor();
+        Color nmsColor = Color.fromARGB(nmsColorArray);
         assertThat(color, is(nmsColor));
     }
 

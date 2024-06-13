@@ -1,0 +1,51 @@
+--- a/net/minecraft/world/entity/decoration/EntityPainting.java
++++ b/net/minecraft/world/entity/decoration/EntityPainting.java
+@@ -71,7 +71,7 @@
+     public static Optional<EntityPainting> create(World world, BlockPosition blockposition, EnumDirection enumdirection) {
+         EntityPainting entitypainting = new EntityPainting(world, blockposition);
+         List<Holder<PaintingVariant>> list = new ArrayList();
+-        Iterable iterable = world.registryAccess().registryOrThrow(Registries.PAINTING_VARIANT).getTagOrEmpty(PaintingVariantTags.PLACEABLE);
++        Iterable<Holder<PaintingVariant>> iterable = world.registryAccess().registryOrThrow(Registries.PAINTING_VARIANT).getTagOrEmpty(PaintingVariantTags.PLACEABLE); // CraftBukkit - decompile error
+ 
+         Objects.requireNonNull(list);
+         iterable.forEach(list::add);
+@@ -137,22 +137,32 @@
+ 
+     @Override
+     protected AxisAlignedBB calculateBoundingBox(BlockPosition blockposition, EnumDirection enumdirection) {
++        // CraftBukkit start
++        PaintingVariant paintingvariant = (PaintingVariant) this.getVariant().value();
++        return calculateBoundingBoxStatic(blockposition, enumdirection, paintingvariant.width(), paintingvariant.height());
++    }
++
++    public static AxisAlignedBB calculateBoundingBoxStatic(BlockPosition blockposition, EnumDirection enumdirection, int width, int height) {
++        // CraftBukkit end
+         float f = 0.46875F;
+         Vec3D vec3d = Vec3D.atCenterOf(blockposition).relative(enumdirection, -0.46875D);
+-        PaintingVariant paintingvariant = (PaintingVariant) this.getVariant().value();
+-        double d0 = this.offsetForPaintingSize(paintingvariant.width());
+-        double d1 = this.offsetForPaintingSize(paintingvariant.height());
++        // CraftBukkit start
++        double d0 = offsetForPaintingSize(width);
++        double d1 = offsetForPaintingSize(height);
++        // CraftBukkit end
+         EnumDirection enumdirection1 = enumdirection.getCounterClockWise();
+         Vec3D vec3d1 = vec3d.relative(enumdirection1, d0).relative(EnumDirection.UP, d1);
+         EnumDirection.EnumAxis enumdirection_enumaxis = enumdirection.getAxis();
+-        double d2 = enumdirection_enumaxis == EnumDirection.EnumAxis.X ? 0.0625D : (double) paintingvariant.width();
+-        double d3 = (double) paintingvariant.height();
+-        double d4 = enumdirection_enumaxis == EnumDirection.EnumAxis.Z ? 0.0625D : (double) paintingvariant.width();
++        // CraftBukkit start
++        double d2 = enumdirection_enumaxis == EnumDirection.EnumAxis.X ? 0.0625D : (double) width;
++        double d3 = (double) height;
++        double d4 = enumdirection_enumaxis == EnumDirection.EnumAxis.Z ? 0.0625D : (double) width;
++        // CraftBukkit end
+ 
+         return AxisAlignedBB.ofSize(vec3d1, d2, d3, d4);
+     }
+ 
+-    private double offsetForPaintingSize(int i) {
++    private static double offsetForPaintingSize(int i) { // CraftBukkit - static
+         return i % 2 == 0 ? 0.5D : 0.0D;
+     }
+ 

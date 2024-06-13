@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/monster/EntityZombie.java
 +++ b/net/minecraft/world/entity/monster/EntityZombie.java
-@@ -64,6 +64,15 @@
+@@ -65,6 +65,15 @@
  import net.minecraft.world.level.block.Blocks;
  import net.minecraft.world.level.block.state.IBlockData;
  
@@ -15,8 +15,8 @@
 +
  public class EntityZombie extends EntityMonster {
  
-     private static final UUID SPEED_MODIFIER_BABY_UUID = UUID.fromString("B9766B59-9566-4402-BC1F-2EE2A276D836");
-@@ -84,6 +93,7 @@
+     private static final MinecraftKey SPEED_MODIFIER_BABY_ID = MinecraftKey.withDefaultNamespace("baby");
+@@ -89,6 +98,7 @@
      private boolean canBreakDoors;
      private int inWaterTime;
      public int conversionTime;
@@ -24,7 +24,7 @@
  
      public EntityZombie(EntityTypes<? extends EntityZombie> entitytypes, World world) {
          super(entitytypes, world);
-@@ -200,7 +210,10 @@
+@@ -205,7 +215,10 @@
      public void tick() {
          if (!this.level().isClientSide && this.isAlive() && !this.isNoAi()) {
              if (this.isUnderWaterConverting()) {
@@ -36,7 +36,7 @@
                  if (this.conversionTime < 0) {
                      this.doUnderWaterConversion();
                  }
-@@ -217,6 +230,7 @@
+@@ -222,6 +235,7 @@
          }
  
          super.tick();
@@ -44,7 +44,7 @@
      }
  
      @Override
-@@ -249,6 +263,7 @@
+@@ -256,6 +270,7 @@
      }
  
      public void startUnderWaterConversion(int i) {
@@ -52,7 +52,7 @@
          this.conversionTime = i;
          this.getEntityData().set(EntityZombie.DATA_DROWNED_CONVERSION_ID, true);
      }
-@@ -262,11 +277,15 @@
+@@ -269,11 +284,15 @@
      }
  
      protected void convertToZombieType(EntityTypes<? extends EntityZombie> entitytypes) {
@@ -69,7 +69,7 @@
          }
  
      }
-@@ -305,9 +324,9 @@
+@@ -312,9 +331,9 @@
                      if (EntityPositionTypes.isSpawnPositionOk(entitytypes, this.level(), blockposition) && EntityPositionTypes.checkSpawnRules(entitytypes, worldserver, EnumMobSpawn.REINFORCEMENT, blockposition, this.level().random)) {
                          entityzombie.setPos((double) i1, (double) j1, (double) k1);
                          if (!this.level().hasNearbyAlivePlayer((double) i1, (double) j1, (double) k1, 7.0D) && this.level().isUnobstructed(entityzombie) && this.level().noCollision((Entity) entityzombie) && !this.level().containsAnyLiquid(entityzombie.getBoundingBox())) {
@@ -78,16 +78,16 @@
                              entityzombie.finalizeSpawn(worldserver, this.level().getCurrentDifficultyAt(entityzombie.blockPosition()), EnumMobSpawn.REINFORCEMENT, (GroupDataEntity) null);
 -                            worldserver.addFreshEntityWithPassengers(entityzombie);
 +                            worldserver.addFreshEntityWithPassengers(entityzombie, CreatureSpawnEvent.SpawnReason.REINFORCEMENTS); // CraftBukkit
-                             this.getAttribute(GenericAttributes.SPAWN_REINFORCEMENTS_CHANCE).addPermanentModifier(new AttributeModifier("Zombie reinforcement caller charge", -0.05000000074505806D, AttributeModifier.Operation.ADD_VALUE));
-                             entityzombie.getAttribute(GenericAttributes.SPAWN_REINFORCEMENTS_CHANCE).addPermanentModifier(new AttributeModifier("Zombie reinforcement callee charge", -0.05000000074505806D, AttributeModifier.Operation.ADD_VALUE));
-                             break;
-@@ -328,7 +347,14 @@
+                             AttributeModifiable attributemodifiable = this.getAttribute(GenericAttributes.SPAWN_REINFORCEMENTS_CHANCE);
+                             AttributeModifier attributemodifier = attributemodifiable.getModifier(EntityZombie.REINFORCEMENT_CALLER_CHARGE_ID);
+                             double d0 = attributemodifier != null ? attributemodifier.amount() : 0.0D;
+@@ -340,7 +359,14 @@
              float f = this.level().getCurrentDifficultyAt(this.blockPosition()).getEffectiveDifficulty();
  
              if (this.getMainHandItem().isEmpty() && this.isOnFire() && this.random.nextFloat() < f * 0.3F) {
--                entity.igniteForSeconds(2 * (int) f);
+-                entity.igniteForSeconds((float) (2 * (int) f));
 +                // CraftBukkit start
-+                EntityCombustByEntityEvent event = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 2 * (int) f); // PAIL: fixme
++                EntityCombustByEntityEvent event = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), (float) (2 * (int) f)); // PAIL: fixme
 +                this.level().getCraftServer().getPluginManager().callEvent(event);
 +
 +                if (!event.isCancelled()) {
@@ -97,7 +97,7 @@
              }
          }
  
-@@ -403,8 +429,17 @@
+@@ -415,8 +441,17 @@
              if (worldserver.getDifficulty() != EnumDifficulty.HARD && this.random.nextBoolean()) {
                  return flag;
              }
@@ -116,7 +116,7 @@
  
              if (entityzombievillager != null) {
                  entityzombievillager.finalizeSpawn(worldserver, worldserver.getCurrentDifficultyAt(entityzombievillager.blockPosition()), EnumMobSpawn.CONVERSION, new EntityZombie.GroupDataZombie(false, true));
-@@ -412,15 +447,17 @@
+@@ -424,15 +459,17 @@
                  entityzombievillager.setGossips((NBTBase) entityvillager.getGossips().store(DynamicOpsNBT.INSTANCE));
                  entityzombievillager.setTradeOffers(entityvillager.getOffers().copy());
                  entityzombievillager.setVillagerXp(entityvillager.getVillagerXp());
@@ -139,7 +139,7 @@
      }
  
      @Override
-@@ -471,7 +508,7 @@
+@@ -483,7 +520,7 @@
                              entitychicken1.finalizeSpawn(worldaccess, difficultydamagescaler, EnumMobSpawn.JOCKEY, (GroupDataEntity) null);
                              entitychicken1.setChickenJockey(true);
                              this.startRiding(entitychicken1);

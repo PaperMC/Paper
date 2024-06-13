@@ -6,7 +6,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.LeashHitch;
 
-public class CraftLeash extends CraftHanging implements LeashHitch {
+public class CraftLeash extends CraftBlockAttachedEntity implements LeashHitch {
     public CraftLeash(CraftServer server, EntityLeash entity) {
         super(server, entity);
     }
@@ -22,6 +22,17 @@ public class CraftLeash extends CraftHanging implements LeashHitch {
     public BlockFace getFacing() {
         // Leash hitch has no facing direction, so we return self
         return BlockFace.SELF;
+    }
+
+    @Override
+    public BlockFace getAttachedFace() {
+        // Leash hitch has no facing direction, so we return self
+        return BlockFace.SELF;
+    }
+
+    @Override
+    public void setFacingDirection(BlockFace face) {
+        // Leash hitch has no facing direction
     }
 
     @Override

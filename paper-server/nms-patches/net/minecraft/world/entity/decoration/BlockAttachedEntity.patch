@@ -1,87 +1,22 @@
---- a/net/minecraft/world/entity/decoration/EntityHanging.java
-+++ b/net/minecraft/world/entity/decoration/EntityHanging.java
-@@ -27,6 +27,14 @@
- import org.apache.commons.lang3.Validate;
+--- a/net/minecraft/world/entity/decoration/BlockAttachedEntity.java
++++ b/net/minecraft/world/entity/decoration/BlockAttachedEntity.java
+@@ -15,6 +15,15 @@
+ import net.minecraft.world.phys.Vec3D;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
 +import net.minecraft.tags.DamageTypeTags;
++import net.minecraft.world.level.block.state.IBlockData;
 +import org.bukkit.entity.Hanging;
 +import org.bukkit.event.entity.EntityRemoveEvent;
 +import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 +import org.bukkit.event.hanging.HangingBreakEvent;
 +// CraftBukkit end
 +
- public abstract class EntityHanging extends Entity {
+ public abstract class BlockAttachedEntity extends Entity {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -61,26 +69,37 @@
- 
-     protected void recalculateBoundingBox() {
-         if (this.direction != null) {
--            double d0 = (double) this.pos.getX() + 0.5D;
--            double d1 = (double) this.pos.getY() + 0.5D;
--            double d2 = (double) this.pos.getZ() + 0.5D;
-+            // CraftBukkit start code moved in to calculateBoundingBox
-+            this.setBoundingBox(calculateBoundingBox(this, this.pos, this.direction, this.getWidth(), this.getHeight()));
-+            // CraftBukkit end
-+        }
-+    }
-+
-+    // CraftBukkit start - break out BB calc into own method
-+    public static AxisAlignedBB calculateBoundingBox(@Nullable Entity entity, BlockPosition blockPosition, EnumDirection direction, int width, int height) {
-+        {
-+            double d0 = (double) blockPosition.getX() + 0.5D;
-+            double d1 = (double) blockPosition.getY() + 0.5D;
-+            double d2 = (double) blockPosition.getZ() + 0.5D;
-             double d3 = 0.46875D;
--            double d4 = this.offs(this.getWidth());
--            double d5 = this.offs(this.getHeight());
-+            double d4 = offs(width);
-+            double d5 = offs(height);
- 
--            d0 -= (double) this.direction.getStepX() * 0.46875D;
--            d2 -= (double) this.direction.getStepZ() * 0.46875D;
-+            d0 -= (double) direction.getStepX() * 0.46875D;
-+            d2 -= (double) direction.getStepZ() * 0.46875D;
-             d1 += d5;
--            EnumDirection enumdirection = this.direction.getCounterClockWise();
-+            EnumDirection enumdirection = direction.getCounterClockWise();
- 
-             d0 += d4 * (double) enumdirection.getStepX();
-             d2 += d4 * (double) enumdirection.getStepZ();
--            this.setPosRaw(d0, d1, d2);
--            double d6 = (double) this.getWidth();
--            double d7 = (double) this.getHeight();
--            double d8 = (double) this.getWidth();
-+            if (entity != null) {
-+                entity.setPosRaw(d0, d1, d2);
-+            }
-+            double d6 = (double) width;
-+            double d7 = (double) height;
-+            double d8 = (double) width;
- 
--            if (this.direction.getAxis() == EnumDirection.EnumAxis.Z) {
-+            if (direction.getAxis() == EnumDirection.EnumAxis.Z) {
-                 d8 = 1.0D;
-             } else {
-                 d6 = 1.0D;
-@@ -89,11 +108,12 @@
-             d6 /= 32.0D;
-             d7 /= 32.0D;
-             d8 /= 32.0D;
--            this.setBoundingBox(new AxisAlignedBB(d0 - d6, d1 - d7, d2 - d8, d0 + d6, d1 + d7, d2 + d8));
-+            return new AxisAlignedBB(d0 - d6, d1 - d7, d2 - d8, d0 + d6, d1 + d7, d2 + d8);
-         }
-     }
-+    // CraftBukkit end
- 
--    private double offs(int i) {
-+    private static double offs(int i) { // CraftBukkit - static
-         return i % 32 == 0 ? 0.5D : 0.0D;
-     }
- 
-@@ -104,7 +124,25 @@
+@@ -39,7 +48,25 @@
              if (this.checkInterval++ == 100) {
                  this.checkInterval = 0;
                  if (!this.isRemoved() && !this.survives()) {
@@ -108,12 +43,12 @@
                      this.dropItem((Entity) null);
                  }
              }
-@@ -165,6 +203,22 @@
+@@ -69,6 +96,22 @@
              return false;
          } else {
              if (!this.isRemoved() && !this.level().isClientSide) {
 +                // CraftBukkit start - fire break events
-+                Entity damager = (damagesource.isIndirect()) ? damagesource.getEntity() : damagesource.getDirectEntity();
++                Entity damager = (damagesource.isDirect()) ? damagesource.getDirectEntity() : damagesource.getEntity();
 +                HangingBreakEvent event;
 +                if (damager != null) {
 +                    event = new HangingBreakByEntityEvent((Hanging) this.getBukkitEntity(), damager.getBukkitEntity(), damagesource.is(DamageTypeTags.IS_EXPLOSION) ? HangingBreakEvent.RemoveCause.EXPLOSION : HangingBreakEvent.RemoveCause.ENTITY);
@@ -131,7 +66,7 @@
                  this.kill();
                  this.markHurt();
                  this.dropItem(damagesource.getEntity());
-@@ -177,6 +231,18 @@
+@@ -81,6 +124,18 @@
      @Override
      public void move(EnumMoveType enummovetype, Vec3D vec3d) {
          if (!this.level().isClientSide && !this.isRemoved() && vec3d.lengthSqr() > 0.0D) {
@@ -150,7 +85,7 @@
              this.kill();
              this.dropItem((Entity) null);
          }
-@@ -185,13 +251,22 @@
+@@ -89,13 +144,22 @@
  
      @Override
      public void push(double d0, double d1, double d2) {

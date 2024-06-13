@@ -1,35 +1,6 @@
 --- a/net/minecraft/server/level/ChunkMapDistance.java
 +++ b/net/minecraft/server/level/ChunkMapDistance.java
-@@ -121,10 +121,25 @@
-         }
- 
-         if (!this.chunksToUpdateFutures.isEmpty()) {
--            this.chunksToUpdateFutures.forEach((playerchunk) -> {
-+            // CraftBukkit start
-+            // Iterate pending chunk updates with protection against concurrent modification exceptions
-+            java.util.Iterator<PlayerChunk> iter = this.chunksToUpdateFutures.iterator();
-+            int expectedSize = this.chunksToUpdateFutures.size();
-+            do {
-+                PlayerChunk playerchunk = iter.next();
-+                iter.remove();
-+                expectedSize--;
-+
-                 playerchunk.updateFutures(playerchunkmap, this.mainThreadExecutor);
--            });
--            this.chunksToUpdateFutures.clear();
-+
-+                // Reset iterator if set was modified using add()
-+                if (this.chunksToUpdateFutures.size() != expectedSize) {
-+                    expectedSize = this.chunksToUpdateFutures.size();
-+                    iter = this.chunksToUpdateFutures.iterator();
-+                }
-+            } while (iter.hasNext());
-+            // CraftBukkit end
-+
-             return true;
-         } else {
-             if (!this.ticketsToRelease.isEmpty()) {
-@@ -160,7 +175,7 @@
+@@ -163,7 +163,7 @@
          }
      }
  
@@ -38,7 +9,7 @@
          ArraySetSorted<Ticket<?>> arraysetsorted = this.getTickets(i);
          int j = getTicketLevelAt(arraysetsorted);
          Ticket<?> ticket1 = (Ticket) arraysetsorted.addOrGet(ticket);
-@@ -170,13 +185,15 @@
+@@ -173,13 +173,15 @@
              this.ticketTracker.update(i, ticket.getTicketLevel(), true);
          }
  
@@ -56,7 +27,7 @@
          }
  
          if (arraysetsorted.isEmpty()) {
-@@ -184,6 +201,7 @@
+@@ -187,6 +189,7 @@
          }
  
          this.ticketTracker.update(i, getTicketLevelAt(arraysetsorted), false);
@@ -64,7 +35,7 @@
      }
  
      public <T> void addTicket(TicketType<T> tickettype, ChunkCoordIntPair chunkcoordintpair, int i, T t0) {
-@@ -197,19 +215,33 @@
+@@ -200,19 +203,33 @@
      }
  
      public <T> void addRegionTicket(TicketType<T> tickettype, ChunkCoordIntPair chunkcoordintpair, int i, T t0) {
@@ -100,7 +71,7 @@
      }
  
      private ArraySetSorted<Ticket<?>> getTickets(long i) {
-@@ -248,6 +280,7 @@
+@@ -251,6 +268,7 @@
          ChunkCoordIntPair chunkcoordintpair = sectionposition.chunk();
          long i = chunkcoordintpair.toLong();
          ObjectSet<EntityPlayer> objectset = (ObjectSet) this.playersPerChunk.get(i);
@@ -108,7 +79,7 @@
  
          objectset.remove(entityplayer);
          if (objectset.isEmpty()) {
-@@ -377,6 +410,26 @@
+@@ -380,6 +398,26 @@
          return !this.tickets.isEmpty();
      }
  

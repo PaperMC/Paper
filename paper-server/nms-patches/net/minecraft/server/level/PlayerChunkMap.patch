@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/PlayerChunkMap.java
 +++ b/net/minecraft/server/level/PlayerChunkMap.java
-@@ -104,6 +104,10 @@
+@@ -102,6 +102,10 @@
  import org.apache.commons.lang3.mutable.MutableBoolean;
  import org.slf4j.Logger;
  
@@ -8,12 +8,12 @@
 +import org.bukkit.craftbukkit.generator.CustomChunkGenerator;
 +// CraftBukkit end
 +
- public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.c {
+ public class PlayerChunkMap extends IChunkLoader implements PlayerChunk.b, GeneratingChunkMap {
  
-     private static final byte CHUNK_TYPE_REPLACEABLE = -1;
-@@ -146,6 +150,27 @@
+     private static final ChunkResult<List<IChunkAccess>> UNLOADED_CHUNK_LIST_RESULT = ChunkResult.error("Unloaded chunks found in range");
+@@ -145,6 +149,27 @@
      public int serverViewDistance;
-     private WorldGenContext worldGenContext;
+     private final WorldGenContext worldGenContext;
  
 +    // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
 +    public final CallbackExecutor callbackExecutor = new CallbackExecutor();
@@ -39,7 +39,7 @@
      public PlayerChunkMap(WorldServer worldserver, Convertable.ConversionSession convertable_conversionsession, DataFixer datafixer, StructureTemplateManager structuretemplatemanager, Executor executor, IAsyncTaskHandler<Runnable> iasynctaskhandler, ILightAccess ilightaccess, ChunkGenerator chunkgenerator, WorldLoadListener worldloadlistener, ChunkStatusUpdateListener chunkstatusupdatelistener, Supplier<WorldPersistentData> supplier, int i, boolean flag) {
          super(new RegionStorageInfo(convertable_conversionsession.getLevelId(), worldserver.dimension(), "chunk"), convertable_conversionsession.getDimensionPath(worldserver.dimension()).resolve("region"), datafixer, flag);
          this.visibleChunkMap = this.updatingChunkMap.clone();
-@@ -166,7 +191,13 @@
+@@ -164,7 +189,13 @@
          IRegistryCustom iregistrycustom = worldserver.registryAccess();
          long j = worldserver.getSeed();
  
@@ -54,21 +54,7 @@
              this.randomState = RandomState.create((GeneratorSettingBase) chunkgeneratorabstract.generatorSettings().value(), (HolderGetter) iregistrycustom.lookupOrThrow(Registries.NOISE), j);
          } else {
              this.randomState = RandomState.create(GeneratorSettingBase.dummy(), (HolderGetter) iregistrycustom.lookupOrThrow(Registries.NOISE), j);
-@@ -332,16 +363,19 @@
-             CompletableFuture<List<ChunkResult<IChunkAccess>>> completablefuture1 = SystemUtils.sequence(list);
-             CompletableFuture<ChunkResult<List<IChunkAccess>>> completablefuture2 = completablefuture1.thenApply((list2) -> {
-                 List<IChunkAccess> list3 = Lists.newArrayList();
--                int l1 = 0;
-+                // CraftBukkit start - decompile error
-+                int cnt = 0;
- 
--                for (Iterator iterator = list2.iterator(); iterator.hasNext(); ++l1) {
-+                for (Iterator iterator = list2.iterator(); iterator.hasNext(); ++cnt) {
-+                    final int l1 = cnt;
-+                    // CraftBukkit end
-                     ChunkResult<IChunkAccess> chunkresult = (ChunkResult) iterator.next();
- 
-                     if (chunkresult == null) {
+@@ -318,7 +349,7 @@
                          throw this.debugFuturesAndCreateReportedException(new IllegalStateException("At least one of the chunk futures were null"), "n/a");
                      }
  
@@ -76,68 +62,18 @@
 +                    IChunkAccess ichunkaccess = (IChunkAccess) chunkresult.orElse(null); // CraftBukkit - decompile error
  
                      if (ichunkaccess == null) {
-                         return ChunkResult.error(() -> {
-@@ -538,7 +572,7 @@
- 
-     private void scheduleUnload(long i, PlayerChunk playerchunk) {
-         CompletableFuture<IChunkAccess> completablefuture = playerchunk.getChunkToSave();
--        Consumer consumer = (ichunkaccess) -> {
-+        Consumer<IChunkAccess> consumer = (ichunkaccess) -> { // CraftBukkit - decompile error
-             CompletableFuture<IChunkAccess> completablefuture1 = playerchunk.getChunkToSave();
- 
-             if (completablefuture1 != completablefuture) {
-@@ -708,7 +742,7 @@
-         };
- 
-         return completablefuture.thenComposeAsync((chunkresult) -> {
--            List<IChunkAccess> list = (List) chunkresult.orElse((Object) null);
-+            List<IChunkAccess> list = (List) chunkresult.orElse(null); // CraftBukkit - decompile error
- 
-             if (list == null) {
-                 this.releaseLightTicket(chunkcoordintpair);
-@@ -773,7 +807,21 @@
- 
-     private static void postLoadProtoChunk(WorldServer worldserver, List<NBTTagCompound> list) {
-         if (!list.isEmpty()) {
--            worldserver.addWorldGenChunkEntities(EntityTypes.loadEntitiesRecursive(list, worldserver));
-+            // CraftBukkit start - these are spawned serialized (DefinedStructure) and we don't call an add event below at the moment due to ordering complexities
-+            worldserver.addWorldGenChunkEntities(EntityTypes.loadEntitiesRecursive(list, worldserver).filter((entity) -> {
-+                boolean needsRemoval = false;
-+                net.minecraft.server.dedicated.DedicatedServer server = worldserver.getCraftServer().getServer();
-+                if (!server.areNpcsEnabled() && entity instanceof net.minecraft.world.entity.npc.NPC) {
-+                    entity.discard(null); // CraftBukkit - add Bukkit remove cause
-+                    needsRemoval = true;
-+                }
-+                if (!server.isSpawningAnimals() && (entity instanceof net.minecraft.world.entity.animal.EntityAnimal || entity instanceof net.minecraft.world.entity.animal.EntityWaterAnimal)) {
-+                    entity.discard(null); // CraftBukkit - add Bukkit remove cause
-+                    needsRemoval = true;
-+                }
-+                return !needsRemoval;
-+            }));
-+            // CraftBukkit end
-         }
- 
-     }
-@@ -879,7 +927,7 @@
-         if (!playerchunk.wasAccessibleSinceLastSave()) {
-             return false;
-         } else {
--            IChunkAccess ichunkaccess = (IChunkAccess) playerchunk.getChunkToSave().getNow((Object) null);
-+            IChunkAccess ichunkaccess = (IChunkAccess) playerchunk.getChunkToSave().getNow(null); // CraftBukkit - decompile error
- 
-             if (!(ichunkaccess instanceof ProtoChunkExtension) && !(ichunkaccess instanceof Chunk)) {
-                 return false;
-@@ -1040,7 +1088,8 @@
+                         return PlayerChunkMap.UNLOADED_CHUNK_LIST_RESULT;
+@@ -937,7 +968,8 @@
                  return ichunkaccess instanceof Chunk ? Optional.of((Chunk) ichunkaccess) : Optional.empty();
              });
  
--            csvwriter.writeRow(chunkcoordintpair.x, chunkcoordintpair.z, playerchunk.getTicketLevel(), optional.isPresent(), optional.map(IChunkAccess::getStatus).orElse((Object) null), optional1.map(Chunk::getFullStatus).orElse((Object) null), printFuture(playerchunk.getFullChunkFuture()), printFuture(playerchunk.getTickingChunkFuture()), printFuture(playerchunk.getEntityTickingChunkFuture()), this.distanceManager.getTicketDebugString(i), this.anyPlayerCloseEnoughForSpawning(chunkcoordintpair), optional1.map((chunk) -> {
+-            csvwriter.writeRow(chunkcoordintpair.x, chunkcoordintpair.z, playerchunk.getTicketLevel(), optional.isPresent(), optional.map(IChunkAccess::getPersistedStatus).orElse((Object) null), optional1.map(Chunk::getFullStatus).orElse((Object) null), printFuture(playerchunk.getFullChunkFuture()), printFuture(playerchunk.getTickingChunkFuture()), printFuture(playerchunk.getEntityTickingChunkFuture()), this.distanceManager.getTicketDebugString(i), this.anyPlayerCloseEnoughForSpawning(chunkcoordintpair), optional1.map((chunk) -> {
 +            // CraftBukkit - decompile error
-+            csvwriter.writeRow(chunkcoordintpair.x, chunkcoordintpair.z, playerchunk.getTicketLevel(), optional.isPresent(), optional.map(IChunkAccess::getStatus).orElse(null), optional1.map(Chunk::getFullStatus).orElse(null), printFuture(playerchunk.getFullChunkFuture()), printFuture(playerchunk.getTickingChunkFuture()), printFuture(playerchunk.getEntityTickingChunkFuture()), this.distanceManager.getTicketDebugString(i), this.anyPlayerCloseEnoughForSpawning(chunkcoordintpair), optional1.map((chunk) -> {
++            csvwriter.writeRow(chunkcoordintpair.x, chunkcoordintpair.z, playerchunk.getTicketLevel(), optional.isPresent(), optional.map(IChunkAccess::getPersistedStatus).orElse(null), optional1.map(Chunk::getFullStatus).orElse(null), printFuture(playerchunk.getFullChunkFuture()), printFuture(playerchunk.getTickingChunkFuture()), printFuture(playerchunk.getEntityTickingChunkFuture()), this.distanceManager.getTicketDebugString(i), this.anyPlayerCloseEnoughForSpawning(chunkcoordintpair), optional1.map((chunk) -> {
                  return chunk.getBlockEntities().size();
              }).orElse(0), tickingtracker.getTicketDebugString(i), tickingtracker.getLevel(i), optional1.map((chunk) -> {
                  return chunk.getBlockTicks().count();
-@@ -1053,7 +1102,7 @@
+@@ -950,7 +982,7 @@
  
      private static String printFuture(CompletableFuture<ChunkResult<Chunk>> completablefuture) {
          try {
@@ -146,7 +82,7 @@
  
              return chunkresult != null ? (chunkresult.isSuccess() ? "done" : "unloaded") : "not completed";
          } catch (CompletionException completionexception) {
-@@ -1065,12 +1114,14 @@
+@@ -962,12 +994,14 @@
  
      private CompletableFuture<Optional<NBTTagCompound>> readChunk(ChunkCoordIntPair chunkcoordintpair) {
          return this.read(chunkcoordintpair).thenApplyAsync((optional) -> {
@@ -156,15 +92,15 @@
      }
  
 -    private NBTTagCompound upgradeChunkTag(NBTTagCompound nbttagcompound) {
--        return this.upgradeChunkTag(this.level.dimension(), this.overworldDataStorage, nbttagcompound, this.generator.getTypeNameForDataFixer());
+-        return this.upgradeChunkTag(this.level.dimension(), this.overworldDataStorage, nbttagcompound, this.generator().getTypeNameForDataFixer());
 +    // CraftBukkit start
 +    private NBTTagCompound upgradeChunkTag(NBTTagCompound nbttagcompound, ChunkCoordIntPair chunkcoordintpair) {
-+        return this.upgradeChunkTag(this.level.getTypeKey(), this.overworldDataStorage, nbttagcompound, this.generator.getTypeNameForDataFixer(), chunkcoordintpair, level);
++        return this.upgradeChunkTag(this.level.getTypeKey(), this.overworldDataStorage, nbttagcompound, this.generator().getTypeNameForDataFixer(), chunkcoordintpair, level);
 +        // CraftBukkit end
      }
  
      boolean anyPlayerCloseEnoughForSpawning(ChunkCoordIntPair chunkcoordintpair) {
-@@ -1473,7 +1524,7 @@
+@@ -1370,7 +1404,7 @@
          public final Set<ServerPlayerConnection> seenBy = Sets.newIdentityHashSet();
  
          public EntityTracker(final Entity entity, final int i, final int j, final boolean flag) {
@@ -173,7 +109,7 @@
              this.entity = entity;
              this.range = i;
              this.lastSectionPos = SectionPosition.of((EntityAccess) entity);
-@@ -1533,6 +1584,11 @@
+@@ -1430,6 +1464,11 @@
                  double d2 = d0 * d0;
                  boolean flag = d1 <= d2 && this.entity.broadcastToPlayer(entityplayer) && PlayerChunkMap.this.isChunkTracked(entityplayer, this.entity.chunkPosition().x, this.entity.chunkPosition().z);
  

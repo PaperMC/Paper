@@ -1,6 +1,18 @@
 --- a/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
-@@ -47,8 +47,10 @@
+@@ -38,6 +38,11 @@
+ import net.minecraft.world.flag.FeatureFlags;
+ import org.slf4j.Logger;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.CraftServerLinks;
++import org.bukkit.event.player.PlayerLinksSendEvent;
++// CraftBukkit end
++
+ public class ServerConfigurationPacketListenerImpl extends ServerCommonPacketListenerImpl implements ServerConfigurationPacketListener, TickablePacketListener {
+ 
+     private static final Logger LOGGER = LogUtils.getLogger();
+@@ -50,8 +55,10 @@
      @Nullable
      private SynchronizeRegistriesTask synchronizeRegistriesTask;
  
@@ -13,7 +25,20 @@
          this.gameProfile = commonlistenercookie.gameProfile();
          this.clientInformation = commonlistenercookie.clientInformation();
      }
-@@ -134,14 +136,14 @@
+@@ -75,6 +82,12 @@
+     public void startConfiguration() {
+         this.send(new ClientboundCustomPayloadPacket(new BrandPayload(this.server.getServerModName())));
+         ServerLinks serverlinks = this.server.serverLinks();
++        // CraftBukkit start
++        CraftServerLinks wrapper = new CraftServerLinks(serverlinks);
++        PlayerLinksSendEvent event = new PlayerLinksSendEvent(player.getBukkitEntity(), wrapper);
++        player.getBukkitEntity().getServer().getPluginManager().callEvent(event);
++        serverlinks = wrapper.getServerLinks();
++        // CraftBukkit end
+ 
+         if (!serverlinks.isEmpty()) {
+             this.send(new ClientboundServerLinksPacket(serverlinks.untrust()));
+@@ -143,14 +156,14 @@
                  return;
              }
  

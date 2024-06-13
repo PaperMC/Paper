@@ -1,7 +1,7 @@
 --- a/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
 +++ b/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
-@@ -33,7 +33,7 @@
-     static CompletableFuture<IChunkAccess> generateStructureStarts(WorldGenContext worldgencontext, ChunkStatus chunkstatus, Executor executor, ToFullChunk tofullchunk, List<IChunkAccess> list, IChunkAccess ichunkaccess) {
+@@ -38,7 +38,7 @@
+     static CompletableFuture<IChunkAccess> generateStructureStarts(WorldGenContext worldgencontext, ChunkStep chunkstep, StaticCache2D<GenerationChunkHolder> staticcache2d, IChunkAccess ichunkaccess) {
          WorldServer worldserver = worldgencontext.level();
  
 -        if (worldserver.getServer().getWorldData().worldGenOptions().generateStructures()) {
@@ -9,3 +9,26 @@
              worldgencontext.generator().createStructures(worldserver.registryAccess(), worldserver.getChunkSource().getGeneratorState(), worldserver.structureManager(), ichunkaccess, worldgencontext.structureManager());
          }
  
+@@ -177,7 +177,21 @@
+ 
+     private static void postLoadProtoChunk(WorldServer worldserver, List<NBTTagCompound> list) {
+         if (!list.isEmpty()) {
+-            worldserver.addWorldGenChunkEntities(EntityTypes.loadEntitiesRecursive(list, worldserver));
++            // CraftBukkit start - these are spawned serialized (DefinedStructure) and we don't call an add event below at the moment due to ordering complexities
++            worldserver.addWorldGenChunkEntities(EntityTypes.loadEntitiesRecursive(list, worldserver).filter((entity) -> {
++                boolean needsRemoval = false;
++                net.minecraft.server.dedicated.DedicatedServer server = worldserver.getCraftServer().getServer();
++                if (!server.areNpcsEnabled() && entity instanceof net.minecraft.world.entity.npc.NPC) {
++                    entity.discard(null); // CraftBukkit - add Bukkit remove cause
++                    needsRemoval = true;
++                }
++                if (!server.isSpawningAnimals() && (entity instanceof net.minecraft.world.entity.animal.EntityAnimal || entity instanceof net.minecraft.world.entity.animal.EntityWaterAnimal)) {
++                    entity.discard(null); // CraftBukkit - add Bukkit remove cause
++                    needsRemoval = true;
++                }
++                return !needsRemoval;
++            }));
++            // CraftBukkit end
+         }
+ 
+     }

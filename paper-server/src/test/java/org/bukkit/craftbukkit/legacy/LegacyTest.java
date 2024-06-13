@@ -123,6 +123,8 @@ public class LegacyTest extends AbstractTestingBase {
             // 1.20.5
             Material.ARMADILLO_SCUTE, Material.ARMADILLO_SPAWN_EGG, Material.BOGGED_SPAWN_EGG, Material.WIND_CHARGE, Material.WOLF_ARMOR, Material.VAULT, Material.HEAVY_CORE, Material.MACE, Material.FLOW_BANNER_PATTERN, Material.GUSTER_BANNER_PATTERN,
             Material.FLOW_ARMOR_TRIM_SMITHING_TEMPLATE, Material.BOLT_ARMOR_TRIM_SMITHING_TEMPLATE, Material.FLOW_POTTERY_SHERD, Material.GUSTER_POTTERY_SHERD, Material.SCRAPE_POTTERY_SHERD, Material.BREEZE_ROD, Material.OMINOUS_TRIAL_KEY, Material.OMINOUS_BOTTLE,
+            // 1.21
+            Material.MUSIC_DISC_CREATOR, Material.MUSIC_DISC_CREATOR_MUSIC_BOX, Material.MUSIC_DISC_PRECIPICE,
             //
             Material.LEGACY_AIR, Material.LEGACY_DEAD_BUSH, Material.LEGACY_BURNING_FURNACE, Material.LEGACY_WALL_SIGN, Material.LEGACY_REDSTONE_TORCH_OFF, Material.LEGACY_SKULL, Material.LEGACY_REDSTONE_COMPARATOR_ON, Material.LEGACY_WALL_BANNER, Material.LEGACY_MONSTER_EGG));
 

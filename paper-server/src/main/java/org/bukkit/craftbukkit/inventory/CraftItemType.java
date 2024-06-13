@@ -8,7 +8,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemBlock;
-import net.minecraft.world.item.ItemRecord;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.level.block.BlockComposter;
 import net.minecraft.world.level.block.entity.TileEntityFurnace;
@@ -169,7 +168,7 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
 
     @Override
     public boolean isRecord() {
-        return item instanceof ItemRecord;
+        return item.components().has(DataComponents.JUKEBOX_PLAYABLE);
     }
 
     @Override

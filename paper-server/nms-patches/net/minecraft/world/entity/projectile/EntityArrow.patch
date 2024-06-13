@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/projectile/EntityArrow.java
 +++ b/net/minecraft/world/entity/projectile/EntityArrow.java
-@@ -49,6 +49,13 @@
+@@ -52,6 +52,13 @@
  import net.minecraft.world.phys.Vec3D;
  import net.minecraft.world.phys.shapes.VoxelShape;
  
@@ -14,7 +14,7 @@
  public abstract class EntityArrow extends IProjectile {
  
      private static final double ARROW_BASE_DAMAGE = 2.0D;
-@@ -225,7 +232,7 @@
+@@ -242,7 +249,7 @@
                  }
  
                  if (object != null && !flag) {
@@ -23,7 +23,7 @@
  
                      this.hasImpulse = true;
                      if (projectiledeflection != ProjectileDeflection.NONE) {
-@@ -316,7 +323,7 @@
+@@ -333,7 +340,7 @@
      protected void tickDespawn() {
          ++this.life;
          if (this.life >= 1200) {
@@ -32,7 +32,7 @@
          }
  
      }
-@@ -349,7 +356,7 @@
+@@ -380,7 +387,7 @@
              }
  
              if (this.piercingIgnoreEntityIds.size() >= this.getPierceLevel() + 1) {
@@ -41,13 +41,13 @@
                  return;
              }
  
-@@ -378,7 +385,13 @@
+@@ -401,7 +408,13 @@
          int k = entity.getRemainingFireTicks();
  
          if (this.isOnFire() && !flag) {
--            entity.igniteForSeconds(5);
+-            entity.igniteForSeconds(5.0F);
 +            // CraftBukkit start
-+            EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 5);
++            EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 5.0F);
 +            org.bukkit.Bukkit.getPluginManager().callEvent(combustEvent);
 +            if (!combustEvent.isCancelled()) {
 +                entity.igniteForSeconds(combustEvent.getDuration(), false);
@@ -56,7 +56,7 @@
          }
  
          if (entity.hurt(damagesource, (float) i)) {
-@@ -429,7 +442,7 @@
+@@ -447,7 +460,7 @@
  
              this.playSound(this.soundEvent, 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
              if (this.getPierceLevel() <= 0) {
@@ -65,7 +65,7 @@
              }
          } else {
              entity.setRemainingFireTicks(k);
-@@ -440,7 +453,7 @@
+@@ -458,7 +471,7 @@
                      this.spawnAtLocation(this.getPickupItem(), 0.1F);
                  }
  
@@ -74,7 +74,56 @@
              }
          }
  
-@@ -547,9 +560,24 @@
+@@ -614,7 +627,7 @@
+         }
+ 
+         if (nbttagcompound.contains("weapon", 10)) {
+-            this.firedFromWeapon = (ItemStack) ItemStack.parse(this.registryAccess(), nbttagcompound.getCompound("weapon")).orElse((Object) null);
++            this.firedFromWeapon = (ItemStack) ItemStack.parse(this.registryAccess(), nbttagcompound.getCompound("weapon")).orElse(null); // CraftBukkit - decompile error
+         } else {
+             this.firedFromWeapon = null;
+         }
+@@ -630,17 +643,10 @@
+         EntityArrow.PickupStatus entityarrow_pickupstatus;
+ 
+         label16:
+-        while(true) {
+-            //$FF: b0->value
+-            //0->net/minecraft/world/entity/player/EntityHuman
+-            //1->net/minecraft/world/entity/OminousItemSpawner
+-            switch (entity1.typeSwitch<invokedynamic>(entity1, b0)) {
+-                case -1:
+-                default:
+-                    entityarrow_pickupstatus = this.pickup;
+-                    break label16;
+-                case 0:
+-                    EntityHuman entityhuman = (EntityHuman)entity1;
++        // CraftBukkit start - decompile error
++        while (true) {
++            switch (entity1) {
++                case EntityHuman entityhuman:
+ 
+                     if (this.pickup != EntityArrow.PickupStatus.DISALLOWED) {
+                         b0 = 1;
+@@ -649,12 +655,15 @@
+ 
+                     entityarrow_pickupstatus = EntityArrow.PickupStatus.ALLOWED;
+                     break label16;
+-                case 1:
+-                    OminousItemSpawner ominousitemspawner = (OminousItemSpawner)entity1;
++                case OminousItemSpawner ominousitemspawner:
+ 
+                     entityarrow_pickupstatus = EntityArrow.PickupStatus.DISALLOWED;
+                     break label16;
++                default:
++                    entityarrow_pickupstatus = this.pickup;
++                    break label16;
+             }
++            // CraftBukkit end
+         }
+ 
+         this.pickup = entityarrow_pickupstatus;
+@@ -663,9 +672,24 @@
      @Override
      public void playerTouch(EntityHuman entityhuman) {
          if (!this.level().isClientSide && (this.inGround || this.isNoPhysics()) && this.shakeTime <= 0) {

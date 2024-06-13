@@ -185,7 +185,7 @@ public final class CraftItemStack extends ItemStack {
             list = ItemEnchantments.EMPTY;
         }
         ItemEnchantments.a listCopy = new ItemEnchantments.a(list);
-        listCopy.set(CraftEnchantment.bukkitToMinecraft(ench), level);
+        listCopy.set(CraftEnchantment.bukkitToMinecraftHolder(ench), level);
         handle.set(DataComponents.ENCHANTMENTS, listCopy.toImmutable());
     }
 
@@ -208,7 +208,7 @@ public final class CraftItemStack extends ItemStack {
         if (handle == null) {
             return 0;
         }
-        return EnchantmentManager.getItemEnchantmentLevel(CraftEnchantment.bukkitToMinecraft(ench), handle);
+        return EnchantmentManager.getItemEnchantmentLevel(CraftEnchantment.bukkitToMinecraftHolder(ench), handle);
     }
 
     @Override
@@ -231,7 +231,7 @@ public final class CraftItemStack extends ItemStack {
         }
 
         ItemEnchantments.a listCopy = new ItemEnchantments.a(list);
-        listCopy.set(CraftEnchantment.bukkitToMinecraft(ench), -1); // Negative to remove
+        listCopy.set(CraftEnchantment.bukkitToMinecraftHolder(ench), -1); // Negative to remove
         handle.set(DataComponents.ENCHANTMENTS, listCopy.toImmutable());
 
         return level;

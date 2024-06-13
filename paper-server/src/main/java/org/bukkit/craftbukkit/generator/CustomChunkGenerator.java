@@ -5,7 +5,6 @@ import com.mojang.serialization.MapCodec;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistryCustom;
@@ -245,7 +244,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
     }
 
     @Override
-    public CompletableFuture<IChunkAccess> fillFromNoise(Executor executor, Blender blender, RandomState randomstate, StructureManager structuremanager, IChunkAccess ichunkaccess) {
+    public CompletableFuture<IChunkAccess> fillFromNoise(Blender blender, RandomState randomstate, StructureManager structuremanager, IChunkAccess ichunkaccess) {
         CompletableFuture<IChunkAccess> future = null;
         SeededRandom random = getSeededRandom();
         int x = ichunkaccess.getPos().x;
@@ -253,7 +252,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
 
         random.setSeed(MathHelper.getSeed(x, "should-noise".hashCode(), z) ^ this.world.getSeed());
         if (generator.shouldGenerateNoise(this.world.getWorld(), new RandomSourceWrapper.RandomWrapper(random), x, z)) {
-            future = delegate.fillFromNoise(executor, blender, randomstate, structuremanager, ichunkaccess);
+            future = delegate.fillFromNoise(blender, randomstate, structuremanager, ichunkaccess);
         }
 
         java.util.function.Function<IChunkAccess, IChunkAccess> function = (ichunkaccess1) -> {

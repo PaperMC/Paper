@@ -1,47 +1,47 @@
 --- a/net/minecraft/world/item/ItemTrident.java
 +++ b/net/minecraft/world/item/ItemTrident.java
-@@ -72,7 +72,7 @@
+@@ -77,7 +77,7 @@
+                         Holder<SoundEffect> holder = (Holder) EnchantmentManager.pickHighestLevel(itemstack, EnchantmentEffectComponents.TRIDENT_SOUND).orElse(SoundEffects.TRIDENT_THROW);
  
-                 if (k <= 0 || entityhuman.isInWaterOrRain()) {
-                     if (!world.isClientSide) {
--                        itemstack.hurtAndBreak(1, entityhuman, EntityLiving.getSlotForHand(entityliving.getUsedItemHand()));
-+                        // itemstack.hurtAndBreak(1, entityhuman, EntityLiving.getSlotForHand(entityliving.getUsedItemHand())); // CraftBukkit - moved down
-                         if (k == 0) {
-                             EntityThrownTrident entitythrowntrident = new EntityThrownTrident(world, entityhuman, itemstack);
+                         if (!world.isClientSide) {
+-                            itemstack.hurtAndBreak(1, entityhuman, EntityLiving.getSlotForHand(entityliving.getUsedItemHand()));
++                            // itemstack.hurtAndBreak(1, entityhuman, EntityLiving.getSlotForHand(entityliving.getUsedItemHand())); // CraftBukkit - moved down
+                             if (f == 0.0F) {
+                                 EntityThrownTrident entitythrowntrident = new EntityThrownTrident(world, entityhuman, itemstack);
  
-@@ -81,11 +81,26 @@
-                                 entitythrowntrident.pickup = EntityArrow.PickupStatus.CREATIVE_ONLY;
-                             }
+@@ -86,11 +86,26 @@
+                                     entitythrowntrident.pickup = EntityArrow.PickupStatus.CREATIVE_ONLY;
+                                 }
  
--                            world.addFreshEntity(entitythrowntrident);
-+                            // CraftBukkit start
-+                            if (!world.addFreshEntity(entitythrowntrident)) {
-+                                if (entityhuman instanceof net.minecraft.server.level.EntityPlayer) {
-+                                    ((net.minecraft.server.level.EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
+-                                world.addFreshEntity(entitythrowntrident);
++                                // CraftBukkit start
++                                if (!world.addFreshEntity(entitythrowntrident)) {
++                                    if (entityhuman instanceof net.minecraft.server.level.EntityPlayer) {
++                                        ((net.minecraft.server.level.EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
++                                    }
++                                    return;
 +                                }
-+                                return;
-+                            }
 +
-+                            itemstack.hurtAndBreak(1, entityhuman, EntityLiving.getSlotForHand(entityliving.getUsedItemHand()));
-+                            entitythrowntrident.pickupItemStack = itemstack.copy(); // SPIGOT-4511 update since damage call moved
-+                            // CraftBukkit end
++                                itemstack.hurtAndBreak(1, entityhuman, EntityLiving.getSlotForHand(entityliving.getUsedItemHand()));
++                                entitythrowntrident.pickupItemStack = itemstack.copy(); // SPIGOT-4511 update since damage call moved
++                                // CraftBukkit end
 +
-                             world.playSound((EntityHuman) null, (Entity) entitythrowntrident, SoundEffects.TRIDENT_THROW, SoundCategory.PLAYERS, 1.0F, 1.0F);
-                             if (!entityhuman.hasInfiniteMaterials()) {
-                                 entityhuman.getInventory().removeItem(itemstack);
+                                 world.playSound((EntityHuman) null, (Entity) entitythrowntrident, (SoundEffect) holder.value(), SoundCategory.PLAYERS, 1.0F, 1.0F);
+                                 if (!entityhuman.hasInfiniteMaterials()) {
+                                     entityhuman.getInventory().removeItem(itemstack);
+                                 }
++                                // CraftBukkit start - SPIGOT-5458 also need in this branch :(
++                            } else {
++                                itemstack.hurtAndBreak(1, entityhuman, EntityLiving.getSlotForHand(entityliving.getUsedItemHand()));
++                                // CraftBukkkit end
                              }
-+                            // CraftBukkit start - SPIGOT-5458 also need in this branch :(
-+                        } else {
-+                            itemstack.hurtAndBreak(1, entityhuman, EntityLiving.getSlotForHand(entityliving.getUsedItemHand()));
-+                            // CraftBukkkit end
                          }
-                     }
  
-@@ -102,6 +117,7 @@
-                         f2 *= f6 / f5;
-                         f3 *= f6 / f5;
-                         f4 *= f6 / f5;
-+                        org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerRiptideEvent(entityhuman, itemstack, f2, f3, f4); // CraftBukkit
-                         entityhuman.push((double) f2, (double) f3, (double) f4);
-                         entityhuman.startAutoSpinAttack(20);
-                         if (entityhuman.onGround()) {
+@@ -106,6 +121,7 @@
+                             f3 *= f / f6;
+                             f4 *= f / f6;
+                             f5 *= f / f6;
++                            org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerRiptideEvent(entityhuman, itemstack, f3, f4, f5); // CraftBukkit
+                             entityhuman.push((double) f3, (double) f4, (double) f5);
+                             entityhuman.startAutoSpinAttack(20, 8.0F, itemstack);
+                             if (entityhuman.onGround()) {

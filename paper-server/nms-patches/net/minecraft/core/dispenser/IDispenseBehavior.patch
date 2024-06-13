@@ -1,6 +1,6 @@
 --- a/net/minecraft/core/dispenser/IDispenseBehavior.java
 +++ b/net/minecraft/core/dispenser/IDispenseBehavior.java
-@@ -66,6 +66,22 @@
+@@ -67,6 +67,22 @@
  import net.minecraft.world.phys.MovingObjectPositionBlock;
  import org.slf4j.Logger;
  
@@ -23,7 +23,7 @@
  public interface IDispenseBehavior {
  
      Logger LOGGER = LogUtils.getLogger();
-@@ -93,14 +109,42 @@
+@@ -94,14 +110,42 @@
                  EnumDirection enumdirection = (EnumDirection) sourceblock.state().getValue(BlockDispenser.FACING);
                  EntityTypes<?> entitytypes = ((ItemMonsterEgg) itemstack.getItem()).getType(itemstack);
  
@@ -68,7 +68,7 @@
                  sourceblock.level().gameEvent((Entity) null, (Holder) GameEvent.ENTITY_PLACE, sourceblock.pos());
                  return itemstack;
              }
-@@ -119,13 +163,41 @@
+@@ -120,13 +164,41 @@
                  EnumDirection enumdirection = (EnumDirection) sourceblock.state().getValue(BlockDispenser.FACING);
                  BlockPosition blockposition = sourceblock.pos().relative(enumdirection);
                  WorldServer worldserver = sourceblock.level();
@@ -111,10 +111,11 @@
                  }
  
                  return itemstack;
-@@ -144,8 +216,35 @@
+@@ -145,7 +217,34 @@
                  });
  
                  if (!list.isEmpty()) {
+-                    ((ISaddleable) list.get(0)).equipSaddle(itemstack.split(1), SoundCategory.BLOCKS);
 +                    // CraftBukkit start
 +                    ItemStack itemstack1 = itemstack.split(1);
 +                    WorldServer world = sourceblock.level();
@@ -141,10 +142,8 @@
 +                            return itemstack;
 +                        }
 +                    }
++                    ((ISaddleable) list.get(0)).equipSaddle(itemstack1, SoundCategory.BLOCKS);
 +                    // CraftBukkit end
-                     ((ISaddleable) list.get(0)).equipSaddle(SoundCategory.BLOCKS);
--                    itemstack.shrink(1);
-+                    // itemstack.shrink(1); // CraftBukkit - handled above
                      this.setSuccess(true);
                      return itemstack;
                  } else {
@@ -223,7 +222,7 @@
                  this.setSuccess(true);
                  return itemstack;
              }
-@@ -249,9 +402,51 @@
+@@ -249,6 +402,38 @@
                  BlockPosition blockposition = sourceblock.pos().relative((EnumDirection) sourceblock.state().getValue(BlockDispenser.FACING));
                  WorldServer worldserver = sourceblock.level();
  
@@ -261,22 +260,8 @@
 +
                  if (dispensiblecontaineritem.emptyContents((EntityHuman) null, worldserver, blockposition, (MovingObjectPositionBlock) null)) {
                      dispensiblecontaineritem.checkExtraContent((EntityHuman) null, worldserver, itemstack, blockposition);
--                    return new ItemStack(Items.BUCKET);
-+                    // CraftBukkit start - Handle stacked buckets
-+                    Item item = Items.BUCKET;
-+                    itemstack.shrink(1);
-+                    if (itemstack.isEmpty()) {
-+                        itemstack.setItem(Items.BUCKET);
-+                        itemstack.setCount(1);
-+                    } else if (sourceblock.blockEntity().addItem(new ItemStack(item)) < 0) {
-+                        this.defaultDispenseItemBehavior.dispense(sourceblock, new ItemStack(item));
-+                    }
-+                    return itemstack;
-+                    // CraftBukkit end
-                 } else {
-                     return this.defaultDispenseItemBehavior.dispense(sourceblock, itemstack);
-                 }
-@@ -278,7 +473,7 @@
+                     return this.consumeWithRemainder(sourceblock, itemstack, new ItemStack(Items.BUCKET));
+@@ -276,7 +461,7 @@
                  Block block = iblockdata.getBlock();
  
                  if (block instanceof IFluidSource ifluidsource) {
@@ -285,7 +270,7 @@
  
                      if (itemstack1.isEmpty()) {
                          return super.execute(sourceblock, itemstack);
-@@ -286,6 +481,32 @@
+@@ -284,6 +469,32 @@
                          worldserver.gameEvent((Entity) null, (Holder) GameEvent.FLUID_PICKUP, blockposition);
                          Item item = itemstack1.getItem();
  
@@ -315,10 +300,10 @@
 +                        itemstack1 = ifluidsource.pickupBlock((EntityHuman) null, worldserver, blockposition, iblockdata); // From above
 +                        // CraftBukkit end
 +
-                         itemstack.shrink(1);
-                         if (itemstack.isEmpty()) {
-                             return new ItemStack(item);
-@@ -307,16 +528,44 @@
+                         return this.consumeWithRemainder(sourceblock, itemstack, new ItemStack(item));
+                     }
+                 } else {
+@@ -296,16 +507,44 @@
              protected ItemStack execute(SourceBlock sourceblock, ItemStack itemstack) {
                  WorldServer worldserver = sourceblock.level();
  
@@ -366,7 +351,7 @@
                          BlockTNT.explode(worldserver, blockposition);
                          worldserver.removeBlock(blockposition, false);
                      } else {
-@@ -342,12 +591,62 @@
+@@ -330,12 +569,62 @@
                  this.setSuccess(true);
                  WorldServer worldserver = sourceblock.level();
                  BlockPosition blockposition = sourceblock.pos().relative((EnumDirection) sourceblock.state().getValue(BlockDispenser.FACING));
@@ -429,7 +414,7 @@
  
                  return itemstack;
              }
-@@ -357,12 +656,41 @@
+@@ -345,12 +634,41 @@
              protected ItemStack execute(SourceBlock sourceblock, ItemStack itemstack) {
                  WorldServer worldserver = sourceblock.level();
                  BlockPosition blockposition = sourceblock.pos().relative((EnumDirection) sourceblock.state().getValue(BlockDispenser.FACING));
@@ -473,7 +458,7 @@
                  return itemstack;
              }
          });
-@@ -387,6 +715,30 @@
+@@ -375,6 +693,30 @@
                  EnumDirection enumdirection = (EnumDirection) sourceblock.state().getValue(BlockDispenser.FACING);
                  BlockPosition blockposition = sourceblock.pos().relative(enumdirection);
  
@@ -504,7 +489,7 @@
                  if (worldserver.isEmptyBlock(blockposition) && BlockWitherSkull.canSpawnMob(worldserver, blockposition, itemstack)) {
                      worldserver.setBlock(blockposition, (IBlockData) Blocks.WITHER_SKELETON_SKULL.defaultBlockState().setValue(BlockSkull.ROTATION, RotationSegment.convertToSegment(enumdirection)), 3);
                      worldserver.gameEvent((Entity) null, (Holder) GameEvent.BLOCK_PLACE, blockposition);
-@@ -412,6 +764,30 @@
+@@ -400,6 +742,30 @@
                  BlockPosition blockposition = sourceblock.pos().relative((EnumDirection) sourceblock.state().getValue(BlockDispenser.FACING));
                  BlockPumpkinCarved blockpumpkincarved = (BlockPumpkinCarved) Blocks.CARVED_PUMPKIN;
  
@@ -535,7 +520,7 @@
                  if (worldserver.isEmptyBlock(blockposition) && blockpumpkincarved.canSpawnGolem(worldserver, blockposition)) {
                      if (!worldserver.isClientSide) {
                          worldserver.setBlock(blockposition, blockpumpkincarved.defaultBlockState(), 3);
-@@ -461,6 +837,30 @@
+@@ -438,6 +804,30 @@
                  BlockPosition blockposition = sourceblock.pos().relative((EnumDirection) sourceblock.state().getValue(BlockDispenser.FACING));
                  IBlockData iblockdata = worldserver.getBlockState(blockposition);
  
@@ -566,7 +551,7 @@
                  if (iblockdata.is(TagsBlock.BEEHIVES, (blockbase_blockdata) -> {
                      return blockbase_blockdata.hasProperty(BlockBeehive.HONEY_LEVEL) && blockbase_blockdata.getBlock() instanceof BlockBeehive;
                  }) && (Integer) iblockdata.getValue(BlockBeehive.HONEY_LEVEL) >= 5) {
-@@ -510,6 +910,31 @@
+@@ -487,6 +877,31 @@
                      this.setSuccess(false);
                      return itemstack;
                  } else {

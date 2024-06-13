@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/decoration/EntityLeash.java
 +++ b/net/minecraft/world/entity/decoration/EntityLeash.java
-@@ -24,6 +24,13 @@
+@@ -26,6 +26,13 @@
  import net.minecraft.world.phys.AxisAlignedBB;
  import net.minecraft.world.phys.Vec3D;
  
@@ -11,24 +11,26 @@
 +import org.bukkit.event.entity.EntityRemoveEvent;
 +// CraftBukkit end
 +
- public class EntityLeash extends EntityHanging {
+ public class EntityLeash extends BlockAttachedEntity {
  
      public static final double OFFSET_Y = 0.375D;
-@@ -89,6 +96,13 @@
-                 EntityInsentient entityinsentient = (EntityInsentient) iterator.next();
+@@ -84,6 +91,15 @@
+                 Leashable leashable = (Leashable) iterator.next();
  
-                 if (entityinsentient.getLeashHolder() == entityhuman) {
+                 if (leashable.getLeashHolder() == entityhuman) {
 +                    // CraftBukkit start
-+                    if (CraftEventFactory.callPlayerLeashEntityEvent(entityinsentient, this, entityhuman, enumhand).isCancelled()) {
-+                        ((EntityPlayer) entityhuman).connection.send(new PacketPlayOutAttachEntity(entityinsentient, entityinsentient.getLeashHolder()));
-+                        flag = true; // Also set true when the event is cancelled otherwise it tries to unleash the entities
-+                        continue;
++                    if (leashable instanceof Entity leashed) {
++                        if (CraftEventFactory.callPlayerLeashEntityEvent(leashed, this, entityhuman, enumhand).isCancelled()) {
++                            ((EntityPlayer) entityhuman).connection.send(new PacketPlayOutAttachEntity(leashed, leashable.getLeashHolder()));
++                            flag = true; // Also set true when the event is cancelled otherwise it tries to unleash the entities
++                            continue;
++                        }
 +                    }
 +                    // CraftBukkit end
-                     entityinsentient.setLeashedTo(this, true);
+                     leashable.setLeashedTo(this, true);
                      flag = true;
                  }
-@@ -97,18 +111,32 @@
+@@ -92,18 +108,34 @@
              boolean flag1 = false;
  
              if (!flag) {
@@ -42,16 +44,18 @@
                      Iterator iterator1 = list.iterator();
  
                      while (iterator1.hasNext()) {
-                         EntityInsentient entityinsentient1 = (EntityInsentient) iterator1.next();
+                         Leashable leashable1 = (Leashable) iterator1.next();
  
-                         if (entityinsentient1.isLeashed() && entityinsentient1.getLeashHolder() == this) {
--                            entityinsentient1.dropLeash(true, false);
+                         if (leashable1.isLeashed() && leashable1.getLeashHolder() == this) {
+-                            leashable1.dropLeash(true, false);
 +                            // CraftBukkit start
-+                            if (CraftEventFactory.callPlayerUnleashEntityEvent(entityinsentient1, entityhuman, enumhand).isCancelled()) {
-+                                die = false;
-+                                continue;
++                            if (leashable1 instanceof Entity leashed) {
++                                if (CraftEventFactory.callPlayerUnleashEntityEvent(leashed, entityhuman, enumhand).isCancelled()) {
++                                    die = false;
++                                    continue;
++                                }
 +                            }
-+                            entityinsentient1.dropLeash(true, !entityhuman.getAbilities().instabuild); // false -> survival mode boolean
++                            leashable1.dropLeash(true, !entityhuman.getAbilities().instabuild); // false -> survival mode boolean
 +                            // CraftBukkit end
                              flag1 = true;
                          }

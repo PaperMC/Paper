@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/PlayerChunk.java
 +++ b/net/minecraft/server/level/PlayerChunk.java
-@@ -34,6 +34,10 @@
+@@ -28,6 +28,10 @@
  import net.minecraft.world.level.chunk.status.ChunkStatus;
  import net.minecraft.world.level.lighting.LevelLightEngine;
  
@@ -8,47 +8,40 @@
 +import net.minecraft.server.MinecraftServer;
 +// CraftBukkit end
 +
- public class PlayerChunk {
+ public class PlayerChunk extends GenerationChunkHolder {
  
-     public static final ChunkResult<IChunkAccess> UNLOADED_CHUNK = ChunkResult.error("Unloaded chunk");
-@@ -70,12 +74,12 @@
-         this.fullChunkFuture = PlayerChunk.UNLOADED_LEVEL_CHUNK_FUTURE;
-         this.tickingChunkFuture = PlayerChunk.UNLOADED_LEVEL_CHUNK_FUTURE;
+     public static final ChunkResult<Chunk> UNLOADED_LEVEL_CHUNK = ChunkResult.error("Unloaded level chunk");
+@@ -58,9 +62,9 @@
          this.entityTickingChunkFuture = PlayerChunk.UNLOADED_LEVEL_CHUNK_FUTURE;
--        this.chunkToSave = CompletableFuture.completedFuture((Object) null);
-+        this.chunkToSave = CompletableFuture.completedFuture(null); // CraftBukkit - decompile error
-         this.chunkToSaveHistory = null;
          this.blockChangedLightSectionFilter = new BitSet();
          this.skyChangedLightSectionFilter = new BitSet();
 -        this.pendingFullStateConfirmation = CompletableFuture.completedFuture((Object) null);
 -        this.sendSync = CompletableFuture.completedFuture((Object) null);
+-        this.saveSync = CompletableFuture.completedFuture((Object) null);
 +        this.pendingFullStateConfirmation = CompletableFuture.completedFuture(null); // CraftBukkit - decompile error
 +        this.sendSync = CompletableFuture.completedFuture(null); // CraftBukkit - decompile error
-         this.pos = chunkcoordintpair;
++        this.saveSync = CompletableFuture.completedFuture(null); // CraftBukkit - decompile error
          this.levelHeightAccessor = levelheightaccessor;
          this.lightEngine = levellightengine;
-@@ -88,6 +92,20 @@
+         this.onLevelChange = playerchunk_a;
+@@ -72,6 +76,16 @@
          this.changedBlocksPerSection = new ShortSet[levelheightaccessor.getSectionsCount()];
      }
  
 +    // CraftBukkit start
 +    public Chunk getFullChunkNow() {
-+        // Note: We use the oldTicketLevel for isLoaded checks.
-+        if (!ChunkLevel.fullStatus(this.oldTicketLevel).isOrAfter(FullChunkStatus.FULL)) return null;
-+        return this.getFullChunkNowUnchecked();
++        return (Chunk) this.getChunkIfPresent(ChunkStatus.FULL);
 +    }
 +
 +    public Chunk getFullChunkNowUnchecked() {
-+        CompletableFuture<ChunkResult<IChunkAccess>> statusFuture = this.getFutureIfPresentUnchecked(ChunkStatus.FULL);
-+        ChunkResult<IChunkAccess> either = statusFuture.getNow(null);
-+        return (either == null) ? null : (Chunk) either.orElse(null);
++        return (Chunk) this.getChunkIfPresentUnchecked(ChunkStatus.FULL);
 +    }
 +    // CraftBukkit end
 +
-     public CompletableFuture<ChunkResult<IChunkAccess>> getFutureIfPresentUnchecked(ChunkStatus chunkstatus) {
-         CompletableFuture<ChunkResult<IChunkAccess>> completablefuture = (CompletableFuture) this.futures.get(chunkstatus.getIndex());
- 
-@@ -112,7 +130,7 @@
+     public CompletableFuture<ChunkResult<Chunk>> getTickingChunkFuture() {
+         return this.tickingChunkFuture;
+     }
+@@ -86,7 +100,7 @@
  
      @Nullable
      public Chunk getTickingChunk() {
@@ -56,8 +49,8 @@
 +        return (Chunk) ((ChunkResult) this.getTickingChunkFuture().getNow(PlayerChunk.UNLOADED_LEVEL_CHUNK)).orElse(null); // CraftBukkit - decompile error
      }
  
-     public CompletableFuture<?> getChunkSendSyncFuture() {
-@@ -166,6 +184,7 @@
+     @Nullable
+@@ -134,6 +148,7 @@
          if (chunk != null) {
              int i = this.levelHeightAccessor.getSectionIndex(blockposition.getY());
  
@@ -65,16 +58,7 @@
              if (this.changedBlocksPerSection[i] == null) {
                  this.hasChangedSections = true;
                  this.changedBlocksPerSection[i] = new ShortOpenHashSet();
-@@ -176,7 +195,7 @@
-     }
- 
-     public void sectionLightChanged(EnumSkyBlock enumskyblock, int i) {
--        IChunkAccess ichunkaccess = (IChunkAccess) ((ChunkResult) this.getFutureIfPresent(ChunkStatus.INITIALIZE_LIGHT).getNow(PlayerChunk.UNLOADED_CHUNK)).orElse((Object) null);
-+        IChunkAccess ichunkaccess = (IChunkAccess) ((ChunkResult) this.getFutureIfPresent(ChunkStatus.INITIALIZE_LIGHT).getNow(PlayerChunk.UNLOADED_CHUNK)).orElse(null); // CraftBukkit - decompile error
- 
-         if (ichunkaccess != null) {
-             ichunkaccess.setUnsaved(true);
-@@ -240,8 +259,11 @@
+@@ -208,8 +223,11 @@
                                  PacketPlayOutMultiBlockChange packetplayoutmultiblockchange = new PacketPlayOutMultiBlockChange(sectionposition, shortset, chunksection);
  
                                  this.broadcast(list, packetplayoutmultiblockchange);
@@ -87,7 +71,7 @@
                                  });
                              }
                          }
-@@ -374,7 +396,7 @@
+@@ -275,7 +293,7 @@
          this.pendingFullStateConfirmation = completablefuture1;
          completablefuture.thenAccept((chunkresult) -> {
              chunkresult.ifSuccess((chunk) -> {
@@ -96,14 +80,14 @@
              });
          });
      }
-@@ -391,6 +413,30 @@
-         boolean flag1 = ChunkLevel.isLoaded(this.ticketLevel);
-         FullChunkStatus fullchunkstatus = ChunkLevel.fullStatus(this.oldTicketLevel);
+@@ -290,6 +308,30 @@
          FullChunkStatus fullchunkstatus1 = ChunkLevel.fullStatus(this.ticketLevel);
+         boolean flag = fullchunkstatus.isOrAfter(FullChunkStatus.FULL);
+         boolean flag1 = fullchunkstatus1.isOrAfter(FullChunkStatus.FULL);
 +        // CraftBukkit start
 +        // ChunkUnloadEvent: Called before the chunk is unloaded: isChunkLoaded is still true and chunk can still be modified by plugins.
-+        if (fullchunkstatus.isOrAfter(FullChunkStatus.FULL) && !fullchunkstatus1.isOrAfter(FullChunkStatus.FULL)) {
-+            this.getFutureIfPresentUnchecked(ChunkStatus.FULL).thenAccept((either) -> {
++        if (flag && !flag1) {
++            this.getFullChunkFuture().thenAccept((either) -> {
 +                Chunk chunk = (Chunk) either.orElse(null);
 +                if (chunk != null) {
 +                    playerchunkmap.callbackExecutor.execute(() -> {
@@ -125,16 +109,16 @@
 +        }
 +        // CraftBukkit end
  
-         if (flag) {
-             ChunkResult<IChunkAccess> chunkresult = ChunkResult.error(() -> {
-@@ -459,6 +505,26 @@
+         this.wasAccessibleSinceLastSave |= flag1;
+         if (!flag && flag1) {
+@@ -341,6 +383,26 @@
  
          this.onLevelChange.onLevelChange(this.pos, this::getQueueLevel, this.ticketLevel, this::setQueueLevel);
          this.oldTicketLevel = this.ticketLevel;
 +        // CraftBukkit start
 +        // ChunkLoadEvent: Called after the chunk is loaded: isChunkLoaded returns true and chunk is ready to be modified by plugins.
 +        if (!fullchunkstatus.isOrAfter(FullChunkStatus.FULL) && fullchunkstatus1.isOrAfter(FullChunkStatus.FULL)) {
-+            this.getFutureIfPresentUnchecked(ChunkStatus.FULL).thenAccept((either) -> {
++            this.getFullChunkFuture().thenAccept((either) -> {
 +                Chunk chunk = (Chunk) either.orElse(null);
 +                if (chunk != null) {
 +                    playerchunkmap.callbackExecutor.execute(() -> {

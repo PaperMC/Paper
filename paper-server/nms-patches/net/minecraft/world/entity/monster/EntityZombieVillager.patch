@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/monster/EntityZombieVillager.java
 +++ b/net/minecraft/world/entity/monster/EntityZombieVillager.java
-@@ -48,6 +48,13 @@
+@@ -51,6 +51,13 @@
  import net.minecraft.world.level.block.state.IBlockData;
  import org.slf4j.Logger;
  
@@ -14,7 +14,7 @@
  public class EntityZombieVillager extends EntityZombie implements VillagerDataHolder {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -65,6 +72,7 @@
+@@ -68,6 +75,7 @@
      @Nullable
      private MerchantRecipeList tradeOffers;
      private int villagerXp;
@@ -22,7 +22,7 @@
  
      public EntityZombieVillager(EntityTypes<? extends EntityZombieVillager> entitytypes, World world) {
          super(entitytypes, world);
-@@ -83,7 +91,7 @@
+@@ -86,7 +94,7 @@
      @Override
      public void addAdditionalSaveData(NBTTagCompound nbttagcompound) {
          super.addAdditionalSaveData(nbttagcompound);
@@ -31,7 +31,7 @@
          Logger logger = EntityZombieVillager.LOGGER;
  
          Objects.requireNonNull(logger);
-@@ -118,7 +126,7 @@
+@@ -121,7 +129,7 @@
          }
  
          if (nbttagcompound.contains("Offers")) {
@@ -40,7 +40,7 @@
              Logger logger1 = EntityZombieVillager.LOGGER;
  
              Objects.requireNonNull(logger1);
-@@ -145,6 +153,10 @@
+@@ -148,6 +156,10 @@
      public void tick() {
          if (!this.level().isClientSide && this.isAlive() && this.isConverting()) {
              int i = this.getConversionProgress();
@@ -51,7 +51,7 @@
  
              this.villagerConversionTime -= i;
              if (this.villagerConversionTime <= 0) {
-@@ -153,6 +165,7 @@
+@@ -156,6 +168,7 @@
          }
  
          super.tick();
@@ -59,7 +59,7 @@
      }
  
      @Override
-@@ -193,8 +206,10 @@
+@@ -196,8 +209,10 @@
          this.conversionStarter = uuid;
          this.villagerConversionTime = i;
          this.getEntityData().set(EntityZombieVillager.DATA_CONVERTING_ID, true);
@@ -72,7 +72,7 @@
          this.level().broadcastEntityEvent(this, (byte) 16);
      }
  
-@@ -211,7 +226,13 @@
+@@ -214,12 +229,20 @@
      }
  
      private void finishConversion(WorldServer worldserver) {
@@ -84,25 +84,22 @@
 +            return;
 +        }
 +        // CraftBukkit end
-         EnumItemSlot[] aenumitemslot = EnumItemSlot.values();
-         int i = aenumitemslot.length;
  
-@@ -226,7 +247,9 @@
-                     double d0 = (double) this.getEquipmentDropChance(enumitemslot);
+         if (entityvillager != null) {
++            this.forceDrops = true; // CraftBukkit
+             Iterator iterator = this.dropPreservedEquipment((itemstack) -> {
+                 return !EnchantmentManager.has(itemstack, EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE);
+             }).iterator();
++            this.forceDrops = false; // CraftBukkit
  
-                     if (d0 > 1.0D) {
-+                        this.forceDrops = true; // CraftBukkit
-                         this.spawnAtLocation(itemstack);
-+                        this.forceDrops = false; // CraftBukkit
-                     }
+             while (iterator.hasNext()) {
+                 EnumItemSlot enumitemslot = (EnumItemSlot) iterator.next();
+@@ -249,7 +272,7 @@
                  }
              }
-@@ -253,7 +276,7 @@
-             }
-         }
  
--        entityvillager.addEffect(new MobEffect(MobEffects.CONFUSION, 200, 0));
-+        entityvillager.addEffect(new MobEffect(MobEffects.CONFUSION, 200, 0), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION); // CraftBukkit
-         if (!this.isSilent()) {
-             worldserver.levelEvent((EntityHuman) null, 1027, this.blockPosition(), 0);
-         }
+-            entityvillager.addEffect(new MobEffect(MobEffects.CONFUSION, 200, 0));
++            entityvillager.addEffect(new MobEffect(MobEffects.CONFUSION, 200, 0), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION); // CraftBukkit
+             if (!this.isSilent()) {
+                 worldserver.levelEvent((EntityHuman) null, 1027, this.blockPosition(), 0);
+             }

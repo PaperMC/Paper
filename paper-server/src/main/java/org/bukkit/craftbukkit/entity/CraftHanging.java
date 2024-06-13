@@ -7,7 +7,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.entity.Hanging;
 
-public class CraftHanging extends CraftEntity implements Hanging {
+public class CraftHanging extends CraftBlockAttachedEntity implements Hanging {
     public CraftHanging(CraftServer server, EntityHanging entity) {
         super(server, entity);
     }

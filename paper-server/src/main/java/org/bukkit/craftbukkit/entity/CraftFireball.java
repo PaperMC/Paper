@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
 import net.minecraft.world.entity.projectile.EntityFireball;
+import net.minecraft.world.phys.Vec3D;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Fireball;
 import org.bukkit.projectiles.ProjectileSource;
@@ -72,16 +73,15 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
         Preconditions.checkArgument(acceleration != null, "Vector acceleration cannot be null");
         // SPIGOT-6993: EntityFireball#assignPower will normalize the given values
         // Note: Because of MC-80142 the fireball will stutter on the client when setting the power to something other than 0 or the normalized vector * 0.1
-        getHandle().xPower = acceleration.getX();
-        getHandle().yPower = acceleration.getY();
-        getHandle().zPower = acceleration.getZ();
+        getHandle().assignDirectionalMovement(new Vec3D(acceleration.getX(), acceleration.getY(), acceleration.getZ()), acceleration.length());
         update(); // SPIGOT-6579
     }
 
     @NotNull
     @Override
     public Vector getAcceleration() {
-        return new Vector(getHandle().xPower, getHandle().yPower, getHandle().zPower);
+        Vec3D delta = getHandle().getDeltaMovement();
+        return new Vector(delta.x, delta.y, delta.z);
     }
 
     @Override

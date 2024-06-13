@@ -124,14 +124,14 @@ public class CraftStructureManager implements StructureManager {
         if (unregister) {
             structureManager.structureRepository.remove(key);
         }
-        Path path = structureManager.getPathToGeneratedStructure(key, ".nbt");
+        Path path = structureManager.createAndValidatePathToGeneratedStructure(key, ".nbt");
         Files.deleteIfExists(path);
     }
 
     @Override
     public File getStructureFile(NamespacedKey structureKey) {
         MinecraftKey minecraftKey = createAndValidateMinecraftStructureKey(structureKey);
-        return structureManager.getPathToGeneratedStructure(minecraftKey, ".nbt").toFile();
+        return structureManager.createAndValidatePathToGeneratedStructure(minecraftKey, ".nbt").toFile();
     }
 
     @Override

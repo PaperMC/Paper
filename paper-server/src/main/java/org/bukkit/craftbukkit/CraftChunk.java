@@ -194,7 +194,7 @@ public class CraftChunk implements Chunk {
     @Override
     public boolean isGenerated() {
         IChunkAccess chunk = getHandle(ChunkStatus.EMPTY);
-        return chunk.getStatus().isOrAfter(ChunkStatus.FULL);
+        return chunk.getPersistedStatus().isOrAfter(ChunkStatus.FULL);
     }
 
     @Override

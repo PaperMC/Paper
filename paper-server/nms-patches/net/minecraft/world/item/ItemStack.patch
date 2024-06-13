@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
-@@ -92,6 +92,40 @@
+@@ -91,6 +91,40 @@
  import org.apache.commons.lang3.mutable.MutableBoolean;
  import org.slf4j.Logger;
  
@@ -41,13 +41,13 @@
  public final class ItemStack implements DataComponentHolder {
  
      public static final Codec<Holder<Item>> ITEM_NON_AIR_CODEC = BuiltInRegistries.ITEM.holderByNameCodec().validate((holder) -> {
-@@ -100,14 +134,14 @@
+@@ -99,14 +133,14 @@
          }) : DataResult.success(holder);
      });
      public static final Codec<ItemStack> CODEC = Codec.lazyInitialized(() -> {
 -        return RecordCodecBuilder.create((instance) -> {
 +        return RecordCodecBuilder.<ItemStack>create((instance) -> { // CraftBukkit - decompile error
-             return instance.group(ItemStack.ITEM_NON_AIR_CODEC.fieldOf("id").forGetter(ItemStack::getItemHolder), ExtraCodecs.POSITIVE_INT.fieldOf("count").orElse(1).forGetter(ItemStack::getCount), DataComponentPatch.CODEC.optionalFieldOf("components", DataComponentPatch.EMPTY).forGetter((itemstack) -> {
+             return instance.group(ItemStack.ITEM_NON_AIR_CODEC.fieldOf("id").forGetter(ItemStack::getItemHolder), ExtraCodecs.intRange(1, 99).fieldOf("count").orElse(1).forGetter(ItemStack::getCount), DataComponentPatch.CODEC.optionalFieldOf("components", DataComponentPatch.EMPTY).forGetter((itemstack) -> {
                  return itemstack.components.asPatch();
              })).apply(instance, ItemStack::new);
          });
@@ -58,7 +58,7 @@
              return instance.group(ItemStack.ITEM_NON_AIR_CODEC.fieldOf("id").forGetter(ItemStack::getItemHolder), DataComponentPatch.CODEC.optionalFieldOf("components", DataComponentPatch.EMPTY).forGetter((itemstack) -> {
                  return itemstack.components.asPatch();
              })).apply(instance, (holder, datacomponentpatch) -> {
-@@ -132,19 +166,25 @@
+@@ -131,19 +165,25 @@
              if (i <= 0) {
                  return ItemStack.EMPTY;
              } else {
@@ -88,7 +88,7 @@
                  DataComponentPatch.STREAM_CODEC.encode(registryfriendlybytebuf, itemstack.components.asPatch());
              }
          }
-@@ -188,7 +228,7 @@
+@@ -187,7 +227,7 @@
  
          return dataresult.isError() ? dataresult.map((unit) -> {
              return itemstack;
@@ -97,7 +97,18 @@
              int i = itemstack.getCount();
  
              return "Item stack with stack size of " + i + " was larger than maximum: " + itemstack.getMaxStackSize();
-@@ -347,11 +387,191 @@
+@@ -286,8 +326,9 @@
+                 j = itemstack.getMaxStackSize();
+             } while (i <= j);
+ 
++            int finalI = i, finalJ = j; // CraftBukkit - decompile error
+             return DataResult.error(() -> {
+-                return "Item stack with count of " + i + " was larger than maximum: " + j;
++                return "Item stack with count of " + finalI + " was larger than maximum: " + finalJ; // CraftBukkit - decompile error
+             });
+         }
+     }
+@@ -369,11 +410,169 @@
              return EnumInteractionResult.PASS;
          } else {
              Item item = this.getItem();
@@ -213,28 +224,6 @@
 +                        world.notifyAndUpdatePhysics(newblockposition, null, oldBlock, block, world.getBlockState(newblockposition), updateFlag, 512); // send null chunk as chunk.k() returns false by this point
 +                    }
 +
-+                    // Special case juke boxes as they update their tile entity. Copied from ItemRecord.
-+                    // PAIL: checkme on updates.
-+                    if (this.item instanceof ItemRecord) {
-+                        TileEntity tileentity = world.getBlockEntity(blockposition);
-+
-+                        if (tileentity instanceof TileEntityJukeBox) {
-+                            TileEntityJukeBox tileentityjukebox = (TileEntityJukeBox) tileentity;
-+
-+                            // There can only be one
-+                            ItemStack record = this.copy();
-+                            if (!record.isEmpty()) {
-+                                record.setCount(1);
-+                            }
-+
-+                            tileentityjukebox.setTheItem(record);
-+                            world.gameEvent(GameEvent.BLOCK_CHANGE, blockposition, GameEvent.a.of(entityhuman, world.getBlockState(blockposition)));
-+                        }
-+
-+                        this.shrink(1);
-+                        entityhuman.awardStat(StatisticList.PLAY_RECORD);
-+                    }
-+
 +                    if (this.item == Items.WITHER_SKELETON_SKULL) { // Special case skulls to allow wither spawns to be cancelled
 +                        BlockPosition bp = blockposition;
 +                        if (!world.getBlockState(blockposition).canBeReplaced()) {
@@ -291,41 +280,41 @@
  
              return enuminteractionresult;
          }
-@@ -432,6 +652,21 @@
-                 }
+@@ -444,6 +643,21 @@
+             if (entityplayer == null || !entityplayer.hasInfiniteMaterials()) {
+                 if (i > 0) {
+                     i = EnchantmentManager.processDurabilityChange(worldserver, this, i);
++                    // CraftBukkit start
++                    if (entityplayer != null) {
++                        PlayerItemDamageEvent event = new PlayerItemDamageEvent(entityplayer.getBukkitEntity(), CraftItemStack.asCraftMirror(this), i);
++                        event.getPlayer().getServer().getPluginManager().callEvent(event);
++
++                        if (i != event.getDamage() || event.isCancelled()) {
++                            event.getPlayer().updateInventory();
++                        }
++                        if (event.isCancelled()) {
++                            return;
++                        }
++
++                        i = event.getDamage();
++                    }
++                    // CraftBukkit end
+                     if (i <= 0) {
+                         return;
+                     }
+@@ -480,6 +694,11 @@
+             }
  
-                 i -= k;
-+                // CraftBukkit start
-+                if (entityplayer != null) {
-+                    PlayerItemDamageEvent event = new PlayerItemDamageEvent(entityplayer.getBukkitEntity(), CraftItemStack.asCraftMirror(this), i);
-+                    event.getPlayer().getServer().getPluginManager().callEvent(event);
-+
-+                    if (i != event.getDamage() || event.isCancelled()) {
-+                        event.getPlayer().updateInventory();
-+                    }
-+                    if (event.isCancelled()) {
-+                        return;
-+                    }
-+
-+                    i = event.getDamage();
-+                }
-+                // CraftBukkit end
-                 if (i <= 0) {
-                     return;
-                 }
-@@ -474,6 +709,11 @@
-             this.hurtAndBreak(i, randomsource, entityplayer, () -> {
-                 entityliving.broadcastBreakEvent(enumitemslot);
-                 Item item = this.getItem();
+             this.hurtAndBreak(i, worldserver, entityplayer, (item) -> {
 +                // CraftBukkit start - Check for item breaking
 +                if (this.count == 1 && entityliving instanceof EntityHuman) {
 +                    org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemBreakEvent((EntityHuman) entityliving, this);
 +                }
 +                // CraftBukkit end
- 
-                 this.shrink(1);
-                 if (entityliving instanceof EntityHuman) {
-@@ -669,6 +909,12 @@
+                 entityliving.onEquippedItemBroken(item, enumitemslot);
+             });
+         }
+@@ -693,6 +912,12 @@
          return this.getItem().useOnRelease(this);
      }
  
@@ -338,7 +327,7 @@
      @Nullable
      public <T> T set(DataComponentType<? super T> datacomponenttype, @Nullable T t0) {
          return this.components.set(datacomponenttype, t0);
-@@ -728,7 +974,7 @@
+@@ -752,7 +977,7 @@
      }
  
      private <T extends TooltipProvider> void addToTooltip(DataComponentType<T> datacomponenttype, Item.b item_b, Consumer<IChatBaseComponent> consumer, TooltipFlag tooltipflag) {
@@ -347,8 +336,8 @@
  
          if (t0 != null) {
              t0.addToTooltip(item_b, consumer, tooltipflag);
-@@ -955,6 +1201,13 @@
- 
+@@ -992,6 +1217,13 @@
+         EnchantmentManager.forEachModifier(this, enumitemslot, biconsumer);
      }
  
 +    // CraftBukkit start
@@ -361,7 +350,7 @@
      public IChatBaseComponent getDisplayName() {
          IChatMutableComponent ichatmutablecomponent = IChatBaseComponent.empty().append(this.getHoverName());
  
-@@ -1017,7 +1270,7 @@
+@@ -1054,7 +1286,7 @@
      }
  
      public void consume(int i, @Nullable EntityLiving entityliving) {

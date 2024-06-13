@@ -1,11 +1,11 @@
 --- a/net/minecraft/world/entity/projectile/EntityEnderPearl.java
 +++ b/net/minecraft/world/entity/projectile/EntityEnderPearl.java
-@@ -18,6 +18,13 @@
- import net.minecraft.world.phys.MovingObjectPosition;
+@@ -21,6 +21,13 @@
  import net.minecraft.world.phys.MovingObjectPositionEntity;
+ import net.minecraft.world.phys.Vec3D;
  
 +// CraftBukkit start
-+import org.bukkit.Bukkit;
++import net.minecraft.world.level.dimension.WorldDimension;
 +import org.bukkit.event.entity.CreatureSpawnEvent;
 +import org.bukkit.event.entity.EntityRemoveEvent;
 +import org.bukkit.event.player.PlayerTeleportEvent;
@@ -14,64 +14,51 @@
  public class EntityEnderPearl extends EntityProjectileThrowable {
  
      public EntityEnderPearl(EntityTypes<? extends EntityEnderPearl> entitytypes, World world) {
-@@ -54,23 +61,34 @@
-                 EntityPlayer entityplayer = (EntityPlayer) entity;
+@@ -65,19 +72,26 @@
+                         EntityPlayer entityplayer = (EntityPlayer) entity;
  
-                 if (entityplayer.connection.isAcceptingMessages() && entityplayer.level() == this.level() && !entityplayer.isSleeping()) {
--                    if (this.random.nextFloat() < 0.05F && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)) {
--                        EntityEndermite entityendermite = (EntityEndermite) EntityTypes.ENDERMITE.create(this.level());
-+                    // CraftBukkit start - Fire PlayerTeleportEvent
-+                    org.bukkit.craftbukkit.entity.CraftPlayer player = entityplayer.getBukkitEntity();
-+                    org.bukkit.Location location = getBukkitEntity().getLocation();
-+                    location.setPitch(player.getLocation().getPitch());
-+                    location.setYaw(player.getLocation().getYaw());
- 
--                        if (entityendermite != null) {
--                            entityendermite.moveTo(entity.getX(), entity.getY(), entity.getZ(), entity.getYRot(), entity.getXRot());
--                            this.level().addFreshEntity(entityendermite);
-+                    PlayerTeleportEvent teleEvent = new PlayerTeleportEvent(player, player.getLocation(), location, PlayerTeleportEvent.TeleportCause.ENDER_PEARL);
-+                    Bukkit.getPluginManager().callEvent(teleEvent);
-+
-+                    if (!teleEvent.isCancelled() && entityplayer.connection.isAcceptingMessages()) {
-+                        if (this.random.nextFloat() < 0.05F && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)) {
-+                            EntityEndermite entityendermite = (EntityEndermite) EntityTypes.ENDERMITE.create(this.level());
-+
-+                            if (entityendermite != null) {
-+                                entityendermite.moveTo(entity.getX(), entity.getY(), entity.getZ(), entity.getYRot(), entity.getXRot());
-+                                this.level().addFreshEntity(entityendermite, CreatureSpawnEvent.SpawnReason.ENDER_PEARL);
+                         if (entityplayer.connection.isAcceptingMessages()) {
++                            // CraftBukkit start
++                            Entity tp = entity.changeDimension(new DimensionTransition(worldserver, this.position(), entity.getDeltaMovement(), entity.getYRot(), entity.getXRot(), DimensionTransition.DO_NOTHING, PlayerTeleportEvent.TeleportCause.ENDER_PEARL));
++                            if (tp == null) {
++                                this.discard(EntityRemoveEvent.Cause.HIT);
++                                return;
 +                            }
++                            // CraftBukkit end
+                             if (this.random.nextFloat() < 0.05F && worldserver.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)) {
+                                 EntityEndermite entityendermite = (EntityEndermite) EntityTypes.ENDERMITE.create(worldserver);
+ 
+                                 if (entityendermite != null) {
+                                     entityendermite.moveTo(entity.getX(), entity.getY(), entity.getZ(), entity.getYRot(), entity.getXRot());
+-                                    worldserver.addFreshEntity(entityendermite);
++                                    worldserver.addFreshEntity(entityendermite, CreatureSpawnEvent.SpawnReason.ENDER_PEARL);
+                                 }
+                             }
+ 
+-                            entity.changeDimension(new DimensionTransition(worldserver, this.position(), entity.getDeltaMovement(), entity.getYRot(), entity.getXRot(), DimensionTransition.DO_NOTHING));
++                            // entity.changeDimension(new DimensionTransition(worldserver, this.position(), entity.getDeltaMovement(), entity.getYRot(), entity.getXRot(), DimensionTransition.DO_NOTHING)); // CraftBukkit - moved up
+                             entity.resetFallDistance();
+                             entityplayer.resetCurrentImpulseContext();
+-                            entity.hurt(this.damageSources().fall(), 5.0F);
++                            entity.hurt(this.damageSources().fall().customEntityDamager(this), 5.0F); // CraftBukkit
+                             this.playSound(worldserver, this.position());
                          }
--                    }
+                     } else {
+@@ -86,11 +100,11 @@
+                         this.playSound(worldserver, this.position());
+                     }
  
--                    if (entity.isPassenger()) {
--                        entityplayer.dismountTo(this.getX(), this.getY(), this.getZ());
--                    } else {
--                        entity.teleportTo(this.getX(), this.getY(), this.getZ());
--                    }
-+                        if (entity.isPassenger()) {
-+                            entity.stopRiding();
-+                        }
- 
--                    entity.resetFallDistance();
--                    entity.hurt(this.damageSources().fall(), 5.0F);
-+                        entityplayer.connection.teleport(teleEvent.getTo());
-+                        entity.resetFallDistance();
-+                        entity.hurt(this.damageSources().fall().customEntityDamager(this), 5.0F); // CraftBukkit
-+                    }
-+                    // CraftBukkit end
-                     this.level().playSound((EntityHuman) null, this.getX(), this.getY(), this.getZ(), SoundEffects.PLAYER_TELEPORT, SoundCategory.PLAYERS);
+-                    this.discard();
++                    this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
+                     return;
                  }
-             } else if (entity != null) {
-@@ -78,7 +96,7 @@
-                 entity.resetFallDistance();
+ 
+-                this.discard();
++                this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
+                 return;
              }
- 
--            this.discard();
-+            this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
          }
- 
-     }
-@@ -88,7 +106,7 @@
+@@ -116,7 +130,7 @@
          Entity entity = this.getOwner();
  
          if (entity instanceof EntityPlayer && !entity.isAlive() && this.level().getGameRules().getBoolean(GameRules.RULE_ENDER_PEARLS_VANISH_ON_DEATH)) {
@@ -80,12 +67,12 @@
          } else {
              super.tick();
          }
-@@ -100,7 +118,7 @@
-     public Entity changeDimension(WorldServer worldserver) {
-         Entity entity = this.getOwner();
+@@ -129,7 +143,7 @@
  
--        if (entity != null && entity.level().dimension() != worldserver.dimension()) {
-+        if (entity != null && worldserver != null && entity.level().dimension() != worldserver.dimension()) { // CraftBukkit - SPIGOT-6113
-             this.setOwner((Entity) null);
-         }
+     @Override
+     public boolean canChangeDimensions(World world, World world1) {
+-        if (world.dimension() == World.END) {
++        if (world.getTypeKey() == WorldDimension.END) { // CraftBukkit
+             Entity entity = this.getOwner();
  
+             if (entity instanceof EntityPlayer) {

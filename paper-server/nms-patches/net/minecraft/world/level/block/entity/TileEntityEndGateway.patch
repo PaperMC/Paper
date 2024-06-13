@@ -1,72 +1,22 @@
 --- a/net/minecraft/world/level/block/entity/TileEntityEndGateway.java
 +++ b/net/minecraft/world/level/block/entity/TileEntityEndGateway.java
-@@ -34,6 +34,15 @@
+@@ -27,6 +27,10 @@
  import net.minecraft.world.phys.Vec3D;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
 +import net.minecraft.world.level.dimension.WorldDimension;
-+import org.bukkit.Bukkit;
-+import org.bukkit.craftbukkit.entity.CraftPlayer;
-+import org.bukkit.craftbukkit.util.CraftLocation;
-+import org.bukkit.event.entity.EntityRemoveEvent;
-+import org.bukkit.event.player.PlayerTeleportEvent;
 +// CraftBukkit end
 +
  public class TileEntityEndGateway extends TileEntityEnderPortal {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -163,7 +172,7 @@
-             tileentityendgateway.teleportCooldown = 100;
-             BlockPosition blockposition1;
+@@ -143,7 +147,7 @@
+     public Vec3D getPortalPosition(WorldServer worldserver, BlockPosition blockposition) {
+         BlockPosition blockposition1;
  
--            if (tileentityendgateway.exitPortal == null && world.dimension() == World.END) {
-+            if (tileentityendgateway.exitPortal == null && world.getTypeKey() == WorldDimension.END) { // CraftBukkit - work in alternate worlds
-                 blockposition1 = findOrCreateValidTeleportPos(worldserver, blockposition);
-                 blockposition1 = blockposition1.above(10);
-                 TileEntityEndGateway.LOGGER.debug("Creating portal at {}", blockposition1);
-@@ -184,7 +193,7 @@
- 
-                     if (entity2 != null) {
-                         entity1 = entity2;
--                        entity.discard();
-+                        entity.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
-                     } else {
-                         entity1 = entity;
-                     }
-@@ -192,8 +201,34 @@
-                     entity1 = entity.getRootVehicle();
-                 }
- 
-+                // CraftBukkit start - Fire PlayerTeleportEvent/EntityTeleportEvent
-+                if (entity1 instanceof EntityPlayer) {
-+                    org.bukkit.craftbukkit.entity.CraftPlayer player = (CraftPlayer) entity1.getBukkitEntity();
-+                    org.bukkit.Location location = CraftLocation.toBukkit(blockposition1, world.getWorld()).add(0.5D, 0.5D, 0.5D);
-+                    location.setPitch(player.getLocation().getPitch());
-+                    location.setYaw(player.getLocation().getYaw());
-+
-+                    PlayerTeleportEvent teleEvent = new PlayerTeleportEvent(player, player.getLocation(), location, PlayerTeleportEvent.TeleportCause.END_GATEWAY);
-+                    Bukkit.getPluginManager().callEvent(teleEvent);
-+                    if (teleEvent.isCancelled()) {
-+                        return;
-+                    }
-+
-+                    entity1.setPortalCooldown();
-+                    ((EntityPlayer) entity1).connection.teleport(teleEvent.getTo());
-+                    triggerCooldown(world, blockposition, iblockdata, tileentityendgateway); // CraftBukkit - call at end of method
-+                    return;
-+
-+                }
-+
-+                org.bukkit.event.entity.EntityTeleportEvent teleEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTeleportEvent(entity1, blockposition1.getX() + 0.5, blockposition1.getY() + 0.5, blockposition1.getZ() + 0.5);
-+                if (teleEvent.isCancelled()) {
-+                    return;
-+                }
-+
-                 entity1.setPortalCooldown();
--                entity1.teleportToWithTicket((double) blockposition1.getX() + 0.5D, (double) blockposition1.getY(), (double) blockposition1.getZ() + 0.5D);
-+                entity1.teleportToWithTicket(teleEvent.getTo().getX(), teleEvent.getTo().getY(), teleEvent.getTo().getZ());
-+                // CraftBukkit end
-             }
- 
-             triggerCooldown(world, blockposition, iblockdata, tileentityendgateway);
+-        if (this.exitPortal == null && worldserver.dimension() == World.END) {
++        if (this.exitPortal == null && worldserver.getTypeKey() == WorldDimension.END) { // CraftBukkit - work in alternate worlds
+             blockposition1 = findOrCreateValidTeleportPos(worldserver, blockposition);
+             blockposition1 = blockposition1.above(10);
+             TileEntityEndGateway.LOGGER.debug("Creating portal at {}", blockposition1);

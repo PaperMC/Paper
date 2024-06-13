@@ -1,21 +1,19 @@
 --- a/net/minecraft/world/entity/animal/EntitySheep.java
 +++ b/net/minecraft/world/entity/animal/EntitySheep.java
-@@ -64,6 +64,14 @@
+@@ -63,6 +63,12 @@
  import net.minecraft.world.level.storage.loot.LootTable;
  import net.minecraft.world.level.storage.loot.LootTables;
  
 +// CraftBukkit start
-+import net.minecraft.world.inventory.InventoryCraftResult;
 +import net.minecraft.world.item.Item;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.event.entity.SheepRegrowWoolEvent;
-+import org.bukkit.inventory.InventoryView;
 +// CraftBukkit end
 +
  public class EntitySheep extends EntityAnimal implements IShearable {
  
      private static final int EAT_ANIMATION_TICKS = 40;
-@@ -251,6 +259,11 @@
+@@ -250,6 +256,11 @@
  
          if (itemstack.is(Items.SHEARS)) {
              if (!this.level().isClientSide && this.readyForShearing()) {
@@ -27,7 +25,7 @@
                  this.shear(SoundCategory.PLAYERS);
                  this.gameEvent(GameEvent.SHEAR, entityhuman);
                  itemstack.hurtAndBreak(1, entityhuman, getSlotForHand(enumhand));
-@@ -270,7 +283,9 @@
+@@ -269,7 +280,9 @@
          int i = 1 + this.random.nextInt(3);
  
          for (int j = 0; j < i; ++j) {
@@ -37,7 +35,7 @@
  
              if (entityitem != null) {
                  entityitem.setDeltaMovement(entityitem.getDeltaMovement().add((double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F), (double) (this.random.nextFloat() * 0.05F), (double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F)));
-@@ -363,6 +378,12 @@
+@@ -362,6 +375,12 @@
  
      @Override
      public void ate() {
@@ -50,31 +48,12 @@
          super.ate();
          this.setSheared(false);
          if (this.isBaby()) {
-@@ -382,7 +403,7 @@
+@@ -381,7 +400,7 @@
          EnumColor enumcolor = ((EntitySheep) entityanimal).getColor();
          EnumColor enumcolor1 = ((EntitySheep) entityanimal1).getColor();
-         InventoryCrafting inventorycrafting = makeContainer(enumcolor, enumcolor1);
--        Optional optional = this.level().getRecipeManager().getRecipeFor(Recipes.CRAFTING, inventorycrafting, this.level()).map((recipeholder) -> {
-+        Optional<Item> optional = this.level().getRecipeManager().getRecipeFor(Recipes.CRAFTING, inventorycrafting, this.level()).map((recipeholder) -> { // CraftBukkit - decompile error
-             return ((RecipeCrafting) recipeholder.value()).assemble(inventorycrafting, this.level().registryAccess());
+         CraftingInput craftinginput = makeCraftInput(enumcolor, enumcolor1);
+-        Optional optional = this.level().getRecipeManager().getRecipeFor(Recipes.CRAFTING, craftinginput, this.level()).map((recipeholder) -> {
++        Optional<Item> optional = this.level().getRecipeManager().getRecipeFor(Recipes.CRAFTING, craftinginput, this.level()).map((recipeholder) -> { // CraftBukkit - decompile error
+             return ((RecipeCrafting) recipeholder.value()).assemble(craftinginput, this.level().registryAccess());
          }).map(ItemStack::getItem);
  
-@@ -405,10 +426,18 @@
-             public boolean stillValid(EntityHuman entityhuman) {
-                 return false;
-             }
-+
-+            // CraftBukkit start
-+            @Override
-+            public InventoryView getBukkitView() {
-+                return null; // TODO: O.O
-+            }
-+            // CraftBukkit end
-         }, 2, 1);
- 
-         transientcraftingcontainer.setItem(0, new ItemStack(ItemDye.byColor(enumcolor)));
-         transientcraftingcontainer.setItem(1, new ItemStack(ItemDye.byColor(enumcolor1)));
-+        transientcraftingcontainer.resultInventory = new InventoryCraftResult(); // CraftBukkit - add result slot for event
-         return transientcraftingcontainer;
-     }
- }

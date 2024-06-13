@@ -12,7 +12,7 @@
  public class CraftingManager extends ResourceDataJson {
  
      private static final Gson GSON = (new GsonBuilder()).setPrettyPrinting().disableHtmlEscaping().create();
-@@ -70,19 +75,39 @@
+@@ -70,11 +75,26 @@
              }
          }
  
@@ -41,48 +41,32 @@
      public boolean hadErrorsLoading() {
          return this.hasErrors;
      }
- 
-     public <C extends IInventory, T extends IRecipe<C>> Optional<RecipeHolder<T>> getRecipeFor(Recipes<T> recipes, C c0, World world) {
--        return this.byType(recipes).stream().filter((recipeholder) -> {
-+        // CraftBukkit start
-+        List<RecipeHolder<T>> list = this.byType(recipes).stream().filter((recipeholder) -> {
-             return recipeholder.value().matches(c0, world);
--        }).findFirst();
-+        }).toList();
-+        Optional<RecipeHolder<T>> recipe = (list.isEmpty()) ? Optional.empty() : Optional.of(list.getLast()); // CraftBukkit - SPIGOT-4638: last recipe gets priority
-+        c0.setCurrentRecipe(recipe.orElse(null)); // CraftBukkit - Clear recipe when no recipe is found
-+        return recipe;
-+        // CraftBukkit end
+@@ -90,9 +110,13 @@
      }
  
-     public <C extends IInventory, T extends IRecipe<C>> Optional<RecipeHolder<T>> getRecipeFor(Recipes<T> recipes, C c0, World world, @Nullable MinecraftKey minecraftkey) {
-@@ -94,9 +119,14 @@
-             }
-         }
- 
--        return this.byType(recipes).stream().filter((recipeholder1) -> {
+     public <I extends RecipeInput, T extends IRecipe<I>> Optional<RecipeHolder<T>> getRecipeFor(Recipes<T> recipes, I i0, World world, @Nullable RecipeHolder<T> recipeholder) {
+-        return i0.isEmpty() ? Optional.empty() : (recipeholder != null && recipeholder.value().matches(i0, world) ? Optional.of(recipeholder) : this.byType(recipes).stream().filter((recipeholder1) -> {
 +        // CraftBukkit start
 +        List<RecipeHolder<T>> list = this.byType(recipes).stream().filter((recipeholder1) -> {
-             return recipeholder1.value().matches(c0, world);
--        }).findFirst();
+             return recipeholder1.value().matches(i0, world);
+-        }).findFirst());
 +        }).toList();
-+        Optional<RecipeHolder<T>> recipe = (list.isEmpty()) ? Optional.empty() : Optional.of(list.getLast()); // CraftBukkit - SPIGOT-4638: last recipe gets priority
-+        c0.setCurrentRecipe(recipe.orElse(null)); // CraftBukkit - Clear recipe when no recipe is found
++        Optional<RecipeHolder<T>> recipe = (list.isEmpty() || i0.isEmpty()) ? Optional.empty() : (recipeholder != null && recipeholder.value().matches(i0, world) ? Optional.of(recipeholder) : Optional.of(list.getLast())); // CraftBukkit - SPIGOT-4638: last recipe gets priority
 +        return recipe;
 +        // CraftBukkit end
      }
  
-     public <C extends IInventory, T extends IRecipe<C>> List<RecipeHolder<T>> getAllRecipesFor(Recipes<T> recipes) {
-@@ -112,7 +142,7 @@
+     public <I extends RecipeInput, T extends IRecipe<I>> List<RecipeHolder<T>> getAllRecipesFor(Recipes<T> recipes) {
+@@ -108,7 +132,7 @@
      }
  
-     private <C extends IInventory, T extends IRecipe<C>> Collection<RecipeHolder<T>> byType(Recipes<T> recipes) {
+     private <I extends RecipeInput, T extends IRecipe<I>> Collection<RecipeHolder<T>> byType(Recipes<T> recipes) {
 -        return this.byType.get(recipes);
 +        return (Collection) this.byType.get(recipes); // CraftBukkit - decompile error
      }
  
-     public <C extends IInventory, T extends IRecipe<C>> NonNullList<ItemStack> getRemainingItemsFor(Recipes<T> recipes, C c0, World world) {
-@@ -139,7 +169,7 @@
+     public <I extends RecipeInput, T extends IRecipe<I>> NonNullList<ItemStack> getRemainingItemsFor(Recipes<T> recipes, I i0, World world) {
+@@ -135,7 +159,7 @@
      private <T extends IRecipe<?>> RecipeHolder<T> byKeyTyped(Recipes<T> recipes, MinecraftKey minecraftkey) {
          RecipeHolder<?> recipeholder = (RecipeHolder) this.byName.get(minecraftkey);
  
@@ -91,7 +75,7 @@
      }
  
      public Collection<RecipeHolder<?>> getOrderedRecipes() {
-@@ -175,10 +205,31 @@
+@@ -171,10 +195,31 @@
              com_google_common_collect_immutablemap_builder.put(recipeholder.id(), recipeholder);
          }
  
@@ -101,8 +85,8 @@
 +        this.byType = LinkedHashMultimap.create(builder.build());
 +        this.byName = Maps.newHashMap(com_google_common_collect_immutablemap_builder.build());
 +        // CraftBukkit end
-     }
- 
++    }
++
 +    // CraftBukkit start
 +    public boolean removeRecipe(MinecraftKey mcKey) {
 +        Iterator<RecipeHolder<?>> iter = byType.values().iterator();
@@ -114,14 +98,14 @@
 +        }
 +
 +        return byName.remove(mcKey) != null;
-+    }
-+
+     }
+ 
 +    public void clearRecipes() {
 +        this.byType = LinkedHashMultimap.create();
 +        this.byName = Maps.newHashMap();
 +    }
 +    // CraftBukkit end
 +
-     public static <C extends IInventory, T extends IRecipe<C>> CraftingManager.a<C, T> createCheck(final Recipes<T> recipes) {
-         return new CraftingManager.a<C, T>() {
+     public static <I extends RecipeInput, T extends IRecipe<I>> CraftingManager.a<I, T> createCheck(final Recipes<T> recipes) {
+         return new CraftingManager.a<I, T>() {
              @Nullable
