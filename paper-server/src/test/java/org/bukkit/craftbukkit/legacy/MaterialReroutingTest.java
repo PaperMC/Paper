@@ -56,6 +56,9 @@ public class MaterialReroutingTest {
                 .filter(entry -> !entry.getName().endsWith("ItemType.class"))
                 .filter(entry -> !entry.getName().endsWith("Registry.class"))
                 .filter(entry -> !entry.getName().startsWith("org/bukkit/material"))
+                // Paper start - types that cannot be translated to ItemType/BlockType
+                .filter(entry -> !entry.getName().equals("com/destroystokyo/paper/MaterialSetTag.class"))
+                // Paper end - types that cannot be translated to ItemType/BlockType
                 .map(entry -> {
                     try {
                         return MaterialReroutingTest.jarFile.getInputStream(entry);
@@ -93,6 +96,10 @@ public class MaterialReroutingTest {
                             continue;
                         }
                     }
+                    // Paper start - filter out more methods from rerouting test
+                    if (methodNode.name.startsWith("lambda$")) continue;
+                    if (isInternal(methodNode.invisibleAnnotations)) continue;
+                    // Paper end - filter out more methods from rerouting test
 
                     if (!Commodore.rerouteMethods(ApiVersion.CURRENT, MaterialReroutingTest.MATERIAL_METHOD_REROUTE, (methodNode.access & Opcodes.ACC_STATIC) != 0, classNode.name, methodNode.name, methodNode.desc, a -> { })) {
                         missingReroute.add(methodNode.name + " " + methodNode.desc + " " + methodNode.signature);
@@ -108,6 +115,13 @@ public class MaterialReroutingTest {
                     %s""", classNode.name, Joiner.on('\n').join(missingReroute)));
         }
     }
+
+    // Paper start - filter out more methods from rerouting test
+    private static boolean isInternal(final List<org.objectweb.asm.tree.AnnotationNode> annotationNodes) {
+        return annotationNodes != null
+            && annotationNodes.stream().anyMatch(a -> a.desc.equals("Lorg/jetbrains/annotations/ApiStatus$Internal;"));
+    }
+    // Paper end - filter out more methods from rerouting test
 
     @AfterAll
     public static void clear() throws IOException {

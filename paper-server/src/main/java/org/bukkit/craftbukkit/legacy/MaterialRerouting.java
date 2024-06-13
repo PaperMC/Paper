@@ -600,4 +600,82 @@ public class MaterialRerouting {
     public static void setBlocks(ToolComponent.ToolRule toolRule, Collection<Material> blocks) {
         toolRule.setBlocks(blocks.stream().map(MaterialRerouting::transformToBlockType).toList());
     }
+
+    // Paper start - register paper API specific material consumers in rerouting
+    // A lot of these methods do *not* run through MaterialRerouting to avoid the overhead of a system that
+    // currently is an effective noop.
+    // The only downside is that upstream moved the handling of legacy materials into transformFromXType methods.
+    // As such, methods introduced prior to 1.13 need to run through the transformation to make sure legacy material
+    // constants still work.
+
+    // Utility method for constructing a set from an existing one after mapping each element.
+    private static <I, O> Set<O> mapSet(final Set<I> input, final java.util.function.Function<I,O> mapper) {
+        final Set<O> output = new it.unimi.dsi.fastutil.objects.ObjectOpenHashSet<>(input.size());
+        for (final I i : input) {
+            output.add(mapper.apply(i));
+        }
+        return output;
+    }
+
+    // Method added post-1.13, noop (https://github.com/PaperMC/Paper/pull/4965)
+    public static org.bukkit.Material getMinecartMaterial(org.bukkit.entity.Minecart minecart, @InjectPluginVersion ApiVersion version) {
+        return minecart.getMinecartMaterial();
+    }
+
+    // Method added post-1.13, noop (https://github.com/PaperMC/Paper/pull/4965)
+    public static Material getBoatMaterial(Boat boat, @InjectPluginVersion ApiVersion version) {
+        return boat.getBoatMaterial();
+    }
+
+    // Method added post-1.13, noop (https://github.com/PaperMC/Paper/pull/3807)
+    public static Material getType(io.papermc.paper.event.player.PlayerItemCooldownEvent event, @InjectPluginVersion ApiVersion version) {
+        return event.getType();
+    }
+
+    // Method added post-1.13, noop (https://github.com/PaperMC/Paper/pull/3850)
+    public static Collection<Material> getInfiniburn(World world, @InjectPluginVersion ApiVersion version) {
+        return world.getInfiniburn();
+    }
+
+    // Method added pre-1.13, needs legacy rerouting (https://github.com/PaperMC/Paper/commit/3438e96192)
+    public static Set<Material> getTypes(
+        final com.destroystokyo.paper.event.player.PlayerArmorChangeEvent.SlotType slotType,
+        @InjectPluginVersion final ApiVersion apiVersion
+    ) {
+        if (apiVersion.isNewerThanOrSameAs(ApiVersion.FLATTENING)) return slotType.getTypes();
+        else return mapSet(slotType.getTypes(), MaterialRerouting::transformToItemType); // Needed as pre-flattening is hanled by transformToItemType
+    }
+
+    // Method added pre-1.13, needs legacy rerouting (https://github.com/PaperMC/Paper/commit/3438e96192)
+    @RerouteStatic("com/destroystokyo/paper/event/player/PlayerArmorChangeEvent$SlotType")
+    public static com.destroystokyo.paper.event.player.PlayerArmorChangeEvent.SlotType getByMaterial(
+        final Material material
+    ) {
+        return com.destroystokyo.paper.event.player.PlayerArmorChangeEvent.SlotType.getByMaterial(MaterialRerouting.transformToItemType(material));
+    }
+
+    // Method added pre-1.13, needs legacy rerouting (https://github.com/PaperMC/Paper/commit/3438e96192)
+    @RerouteStatic("com/destroystokyo/paper/event/player/PlayerArmorChangeEvent$SlotType")
+    public static boolean isEquipable(final Material material) {
+        return com.destroystokyo.paper.event.player.PlayerArmorChangeEvent.SlotType.isEquipable(MaterialRerouting.transformToItemType(material));
+    }
+
+    // Method added post 1.13, no-op (https://github.com/PaperMC/Paper/pull/1244)
+    public static Material getMaterial(final com.destroystokyo.paper.event.block.AnvilDamagedEvent.DamageState damageState) {
+        return damageState.getMaterial();
+    }
+
+    // Method added post 1.13, no-op (https://github.com/PaperMC/Paper/pull/1244)
+    @RerouteStatic("com/destroystokyo/paper/event/block/AnvilDamagedEvent$DamageState")
+    public static com.destroystokyo.paper.event.block.AnvilDamagedEvent.DamageState getState(
+        final Material material
+    ) {
+        return com.destroystokyo.paper.event.block.AnvilDamagedEvent.DamageState.getState(material);
+    }
+
+    // Method added post 1.13, no-op (https://github.com/PaperMC/Paper/pull/10290)
+    public static ItemStack withType(final ItemStack itemStack, final Material material) {
+        return itemStack.withType(material);
+    }
+    // Paper end - register paper API specific material consumers in rerouting
 }
