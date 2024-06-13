@@ -2600,7 +2600,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ import org.bukkit.craftbukkit.SpigotTimings; // Spigot
- public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements ServerInfo, CommandSource, AutoCloseable {
+ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements ServerInfo, ChunkIOErrorReporter, CommandSource, AutoCloseable {
  
      public static final Logger LOGGER = LogUtils.getLogger();
 +    public static final net.kyori.adventure.text.logger.slf4j.ComponentLogger COMPONENT_LOGGER = net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger(LOGGER.getName()); // Paper
@@ -2692,7 +2692,7 @@ diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/ma
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -0,0 +0,0 @@ import net.minecraft.world.damagesource.CombatTracker;
+@@ -0,0 +0,0 @@ import net.minecraft.world.item.trading.MerchantOffers;
  import net.minecraft.world.scores.Scoreboard;
  import net.minecraft.world.scores.Team;
  import net.minecraft.world.scores.criteria.ObjectiveCriteria;
@@ -2700,7 +2700,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import org.bukkit.Bukkit;
  import org.bukkit.Location;
  import org.bukkit.WeatherType;
-@@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
+@@ -0,0 +0,0 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
      private boolean disconnected;
      private int requestedViewDistance;
      public String language = "en_us"; // CraftBukkit - default
@@ -2708,7 +2708,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Nullable
      private Vec3 startingToFallPosition;
      @Nullable
-@@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
+@@ -0,0 +0,0 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
      // CraftBukkit start
      public CraftPlayer.TransferCookieConnection transferCookieConnection;
      public String displayName;
@@ -2716,7 +2716,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public Component listName;
      public org.bukkit.Location compassTarget;
      public int newExp = 0;
-@@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
+@@ -0,0 +0,0 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
  
          // CraftBukkit start
          this.displayName = this.getScoreboardName();
@@ -2724,7 +2724,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.bukkitPickUpLoot = true;
          this.maxHealthCache = this.getMaxHealth();
      }
-@@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
+@@ -0,0 +0,0 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
  
          String deathmessage = defaultMessage.getString();
          this.keepLevel = keepInventory; // SPIGOT-2222: pre-set keepLevel
@@ -2751,7 +2751,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              this.connection.send(new ClientboundPlayerCombatKillPacket(this.getId(), ichatbasecomponent), PacketSendListener.exceptionallySend(() -> {
                  boolean flag1 = true;
-@@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
+@@ -0,0 +0,0 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
      }
  
      public void sendChatMessage(OutgoingChatMessage message, boolean filterMaskEnabled, ChatType.Bound params) {
@@ -2766,7 +2766,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
      }
-@@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
+@@ -0,0 +0,0 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
          }
          // CraftBukkit end
          this.language = clientOptions.language();
@@ -2797,7 +2797,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.server = minecraftserver;
 @@ -0,0 +0,0 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
              ServerCommonPacketListenerImpl.LOGGER.info("Disconnecting {} due to resource pack {} rejection", this.playerProfile().getName(), packet.id());
-             this.disconnect(Component.translatable("multiplayer.requiredTexturePrompt.disconnect"));
+             this.disconnect((Component) Component.translatable("multiplayer.requiredTexturePrompt.disconnect"));
          }
 +        // Paper start - adventure pack callbacks
 +        // call the callbacks before the previously-existing event so the event has final say
@@ -2815,36 +2815,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      }
 @@ -0,0 +0,0 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
- 
-     // CraftBukkit start
-     @Deprecated
--    public void disconnect(Component reason) {
--        this.disconnect(CraftChatMessage.fromComponent(reason));
-+    public void disconnect(String s) { // Paper
-+        this.disconnect(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(s)); // Paper
+         }
      }
-     // CraftBukkit end
  
--    public void disconnect(String s) {
-+    // Paper start
-+    public void disconnect(final Component reason) {
-+        this.disconnect(io.papermc.paper.adventure.PaperAdventure.asAdventure(reason));
++    // Paper start - adventure
++    public void disconnect(@Nullable final net.kyori.adventure.text.Component reason) {
++        this.disconnect(io.papermc.paper.adventure.PaperAdventure.asVanilla(reason));
 +    }
++    // Paper end - adventure
 +
-+    public void disconnect(net.kyori.adventure.text.Component reason) {
-+        // Paper end
-         // CraftBukkit start - fire PlayerKickEvent
-         if (this.processedDisconnect) {
-             return;
-@@ -0,0 +0,0 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
-             Waitable waitable = new Waitable() {
-                 @Override
-                 protected Object evaluate() {
--                    ServerCommonPacketListenerImpl.this.disconnect(s);
-+                    ServerCommonPacketListenerImpl.this.disconnect(reason); // Paper - adventure
-                     return null;
-                 }
-             };
+     public void disconnect(Component reason) {
+         this.disconnect(new DisconnectionDetails(reason));
+     }
 @@ -0,0 +0,0 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
              return;
          }
@@ -2852,8 +2834,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        String leaveMessage = ChatFormatting.YELLOW + this.player.getScoreboardName() + " left the game.";
 +        net.kyori.adventure.text.Component leaveMessage = net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, io.papermc.paper.configuration.GlobalConfiguration.get().messages.useDisplayNameInQuitMessage ? this.player.getBukkitEntity().displayName() : net.kyori.adventure.text.Component.text(this.player.getScoreboardName())); // Paper - Adventure
  
--        PlayerKickEvent event = new PlayerKickEvent(this.player.getBukkitEntity(), s, leaveMessage);
-+        PlayerKickEvent event = new PlayerKickEvent(this.player.getBukkitEntity(), reason, leaveMessage); // Paper - adventure
+-        PlayerKickEvent event = new PlayerKickEvent(this.player.getBukkitEntity(), CraftChatMessage.fromComponent(disconnectionInfo.reason()), leaveMessage);
++        PlayerKickEvent event = new PlayerKickEvent(this.player.getBukkitEntity(), io.papermc.paper.adventure.PaperAdventure.asAdventure(disconnectionInfo.reason()), leaveMessage); // Paper - adventure
  
          if (this.cserver.getServer().isRunning()) {
              this.cserver.getPluginManager().callEvent(event);
@@ -2861,11 +2843,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
          this.player.kickLeaveMessage = event.getLeaveMessage(); // CraftBukkit - SPIGOT-3034: Forward leave message to PlayerQuitEvent
          // Send the possibly modified leave message
--        final Component ichatbasecomponent = CraftChatMessage.fromString(event.getReason(), true)[0];
-+        final Component ichatbasecomponent = io.papermc.paper.adventure.PaperAdventure.asVanilla(event.reason()); // Paper - Adventure
-         // CraftBukkit end
+-        this.disconnect0(new DisconnectionDetails(CraftChatMessage.fromString(event.getReason(), true)[0], disconnectionInfo.report(), disconnectionInfo.bugReportLink()));
++        this.disconnect0(new DisconnectionDetails(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.reason()), disconnectionInfo.report(), disconnectionInfo.bugReportLink())); // Paper - Adventure
+     }
  
-         this.connection.send(new ClientboundDisconnectPacket(ichatbasecomponent), PacketSendListener.thenRun(() -> {
+     private void disconnect0(DisconnectionDetails disconnectiondetails) {
 diff --git a/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
@@ -2882,9 +2864,9 @@ diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListener
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -0,0 +0,0 @@ import net.minecraft.core.registries.Registries;
- import net.minecraft.nbt.CompoundTag;
+@@ -0,0 +0,0 @@ import net.minecraft.nbt.CompoundTag;
  import net.minecraft.network.Connection;
+ import net.minecraft.network.DisconnectionDetails;
  import net.minecraft.network.TickablePacketListener;
 +import net.minecraft.network.chat.ChatDecorator;
  import net.minecraft.network.chat.ChatType;
@@ -3099,7 +3081,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void removeAll() {
          // CraftBukkit start - disconnect safely
          for (ServerPlayer player : this.players) {
--            player.connection.disconnect(this.server.server.getShutdownMessage()); // CraftBukkit - add custom shutdown message
+-            player.connection.disconnect(CraftChatMessage.fromStringOrEmpty(this.server.server.getShutdownMessage())); // CraftBukkit - add custom shutdown message
 +            player.connection.disconnect(this.server.server.shutdownMessage()); // CraftBukkit - add custom shutdown message // Paper - Adventure
          }
          // CraftBukkit end
@@ -3978,7 +3960,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/org/bukkit/craftbukkit/enchantments/CraftEnchantment.java
 @@ -0,0 +0,0 @@ public class CraftEnchantment extends Enchantment implements Handleable<net.mine
          CraftEnchantment ench = (CraftEnchantment) other;
-         return !this.handle.isCompatibleWith(ench.getHandle());
+         return !net.minecraft.world.item.enchantment.Enchantment.areCompatible(this.handle, ench.handle);
      }
 +    // Paper start
 +    @Override
@@ -4210,7 +4192,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-         this.getHandle().connection.disconnect(message == null ? "" : message);
+         this.getHandle().connection.disconnect(CraftChatMessage.fromStringOrEmpty(message));
      }
  
 +    // Paper start
@@ -4645,7 +4627,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public static PlayerDeathEvent callPlayerDeathEvent(ServerPlayer victim, DamageSource damageSource, List<org.bukkit.inventory.ItemStack> drops, net.kyori.adventure.text.Component deathMessage, boolean keepInventory) { // Paper - Adventure
          CraftPlayer entity = victim.getBukkitEntity();
          CraftDamageSource bukkitDamageSource = new CraftDamageSource(damageSource);
-         PlayerDeathEvent event = new PlayerDeathEvent(entity, bukkitDamageSource, drops, victim.getExpReward(), 0, deathMessage);
+         PlayerDeathEvent event = new PlayerDeathEvent(entity, bukkitDamageSource, drops, victim.getExpReward(damageSource.getEntity()), 0, deathMessage);
 @@ -0,0 +0,0 @@ public class CraftEventFactory {
       * Server methods
       */
@@ -4782,8 +4764,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 @@ -0,0 +0,0 @@ public final class CraftItemFactory implements ItemFactory {
-         CraftItemStack craft = (CraftItemStack) itemStack;
-         return CraftItemStack.asCraftMirror(EnchantmentHelper.enchantItem(MinecraftServer.getServer().getWorldData().enabledFeatures(), source, craft.handle, level, allowTreasures));
+         Optional<HolderSet.Named<Enchantment>> optional = (allowTreasures) ? Optional.empty() : registry.registryOrThrow(Registries.ENCHANTMENT).getTag(EnchantmentTags.IN_ENCHANTING_TABLE);
+         return CraftItemStack.asCraftMirror(EnchantmentHelper.enchantItem(source, craft.handle, level, registry, optional));
      }
 +
 +    // Paper start - Adventure

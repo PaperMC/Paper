@@ -27,14 +27,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
 +++ b/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
 @@ -0,0 +0,0 @@ public class PortalForcer {
-         Optional<PoiRecord> optional = villageplace.getInSquare((holder) -> {
-             return holder.is(PoiTypes.NETHER_PORTAL);
-         }, blockposition, i, PoiManager.Occupancy.ANY).filter((villageplacerecord) -> {
--            return worldborder.isWithinBounds(villageplacerecord.getPos());
-+            return worldborder.isWithinBounds(villageplacerecord.getPos()) && !(this.level.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER && this.level.paperConfig().environment.netherCeilingVoidDamageHeight.test(v -> villageplacerecord.getPos().getY() >= v)); // Paper - Configurable nether ceiling damage
-         }).sorted(Comparator.comparingDouble((PoiRecord villageplacerecord) -> { // CraftBukkit - decompile error
-             return villageplacerecord.getPos().distSqr(blockposition);
-         }).thenComparingInt((villageplacerecord) -> {
+         }, blockposition, i, PoiManager.Occupancy.ANY).map(PoiRecord::getPos);
+ 
+         Objects.requireNonNull(worldborder);
+-        return stream.filter(worldborder::isWithinBounds).filter((blockposition1) -> {
++        return stream.filter(worldborder::isWithinBounds).filter(pos -> !(this.level.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER && this.level.paperConfig().environment.netherCeilingVoidDamageHeight.test(v -> pos.getY() >= v))).filter((blockposition1) -> { // Paper - Configurable nether ceiling damage
+             return this.level.getBlockState(blockposition1).hasProperty(BlockStateProperties.HORIZONTAL_AXIS);
+         }).min(Comparator.comparingDouble((BlockPos blockposition1) -> { // CraftBukkit - decompile error
+             return blockposition1.distSqr(blockposition);
 @@ -0,0 +0,0 @@ public class PortalForcer {
          BlockPos blockposition2 = null;
          WorldBorder worldborder = this.level.getWorldBorder();
@@ -44,6 +44,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            i = Math.min(i, this.level.paperConfig().environment.netherCeilingVoidDamageHeight.intValue() - 1);
 +        }
 +        // Paper end - Configurable nether ceiling damage
+         boolean flag = true;
          BlockPos.MutableBlockPos blockposition_mutableblockposition = blockposition.mutable();
          Iterator iterator = BlockPos.spiralAround(blockposition, createRadius, Direction.EAST, Direction.SOUTH).iterator(); // CraftBukkit
- 
