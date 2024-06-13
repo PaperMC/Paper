@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: aerulion <aerulion@gmail.com>
+Date: Mon, 21 Aug 2023 04:36:07 +0200
+Subject: [PATCH] Add BlockFace to BlockDamageEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+index 266fd2874293091f7bf49dcb8c9295250ac7286c..dd78a1685bd841577aa9d5010fffda1468901baf 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -256,7 +256,7 @@ public class ServerPlayerGameMode {
+                     }
+                     return;
+                 }
+-                org.bukkit.event.block.BlockDamageEvent blockEvent = CraftEventFactory.callBlockDamageEvent(this.player, pos, this.player.getInventory().getSelected(), f >= 1.0f);
++                org.bukkit.event.block.BlockDamageEvent blockEvent = CraftEventFactory.callBlockDamageEvent(this.player, pos, direction, this.player.getInventory().getSelected(), f >= 1.0f); // Paper - Add BlockFace to BlockDamageEvent
+ 
+                 if (blockEvent.isCancelled()) {
+                     // Let the client know the block still exists
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 97ce8663744041bd57bbb1000f77a05e01156a6c..cdb5fd2642e7c5325f11633de8d58a5a8cdc2c77 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -650,13 +650,13 @@ public class CraftEventFactory {
+     /**
+      * BlockDamageEvent
+      */
+-    public static BlockDamageEvent callBlockDamageEvent(ServerPlayer who, BlockPos pos, ItemStack itemstack, boolean instaBreak) {
++    public static BlockDamageEvent callBlockDamageEvent(ServerPlayer who, BlockPos pos, Direction direction, ItemStack itemstack, boolean instaBreak) { // Paper - Add BlockFace to BlockDamageEvent
+         Player player = who.getBukkitEntity();
+         CraftItemStack itemInHand = CraftItemStack.asCraftMirror(itemstack);
+ 
+         Block blockClicked = CraftBlock.at(who.level(), pos);
+ 
+-        BlockDamageEvent event = new BlockDamageEvent(player, blockClicked, itemInHand, instaBreak);
++        BlockDamageEvent event = new BlockDamageEvent(player, blockClicked, CraftBlock.notchToBlockFace(direction), itemInHand, instaBreak); // Paper - Add BlockFace to BlockDamageEvent
+         player.getServer().getPluginManager().callEvent(event);
+ 
+         return event;
