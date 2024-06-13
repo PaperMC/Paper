@@ -84,6 +84,26 @@ public enum Attribute implements Keyed, Translatable {
      */
     GENERIC_JUMP_STRENGTH("generic.jump_strength"),
     /**
+     * How long an entity remains burning after ingition.
+     */
+    GENERIC_BURNING_TIME("generic.burning_time"),
+    /**
+     * Resistance to knockback from explosions.
+     */
+    GENERIC_EXPLOSION_KNOCKBACK_RESISTANCE("generic.explosion_knockback_resistance"),
+    /**
+     * Movement speed through difficult terrain.
+     */
+    GENERIC_MOVEMENT_EFFICIENCY("generic.movement_efficiency"),
+    /**
+     * Oxygen use underwater.
+     */
+    GENERIC_OXYGEN_BONUS("generic.oxygen_bonus"),
+    /**
+     * Movement speed through water.
+     */
+    GENERIC_WATER_MOVEMENT_EFFICIENCY("generic.water_movement_efficiency"),
+    /**
      * The block reach distance of a Player.
      */
     PLAYER_BLOCK_INTERACTION_RANGE("player.block_interaction_range"),
@@ -95,6 +115,22 @@ public enum Attribute implements Keyed, Translatable {
      * Block break speed of a Player.
      */
     PLAYER_BLOCK_BREAK_SPEED("player.block_break_speed"),
+    /**
+     * Mining speed for correct tools.
+     */
+    PLAYER_MINING_EFFICIENCY("player.mining_efficiency"),
+    /**
+     * Sneaking speed.
+     */
+    PLAYER_SNEAKING_SPEED("player.sneaking_speed"),
+    /**
+     * Underwater mining speed.
+     */
+    PLAYER_SUBMERGED_MINING_SPEED("player.submerged_mining_speed"),
+    /**
+     * Sweeping damage.
+     */
+    PLAYER_SWEEPING_DAMAGE_RATIO("player.sweeping_damage_ratio"),
     /**
      * Chance of a zombie to spawn reinforcements.
      */

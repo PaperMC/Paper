@@ -3,7 +3,6 @@ package org.bukkit.packs;
 import java.util.Set;
 import org.bukkit.FeatureFlag;
 import org.bukkit.Keyed;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -11,7 +10,6 @@ import org.jetbrains.annotations.NotNull;
  *
  * @see <a href="https://minecraft.wiki/w/Data_pack">Minecraft wiki</a>
  */
-@ApiStatus.Experimental
 public interface DataPack extends Keyed {
 
     /**

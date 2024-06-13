@@ -1,7 +1,6 @@
 package org.bukkit;
 
 import org.bukkit.entity.Entity;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -11,7 +10,6 @@ import org.jetbrains.annotations.NotNull;
  *
  * @see <a href="https://minecraft.wiki/w/Commands/tick">Tick Command</a>
  */
-@ApiStatus.Experimental
 public interface ServerTickManager {
 
     /**

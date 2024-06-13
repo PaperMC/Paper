@@ -1,7 +1,5 @@
 package org.bukkit.block;
 
-import org.bukkit.MinecraftExperimental;
-import org.bukkit.MinecraftExperimental.Requires;
 import org.bukkit.loot.Lootable;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -9,7 +7,6 @@ import org.jetbrains.annotations.ApiStatus;
  * Represents a captured state of a crafter.
  */
 @ApiStatus.Experimental
-@MinecraftExperimental(Requires.UPDATE_1_21)
 public interface Crafter extends Container, Lootable {
 
     /**

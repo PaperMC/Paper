@@ -1,7 +1,6 @@
 package org.bukkit.packs;
 
 import java.util.UUID;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -10,7 +9,6 @@ import org.jetbrains.annotations.Nullable;
  *
  * @see <a href="https://minecraft.wiki/w/Resource_pack">Minecraft wiki</a>
  */
-@ApiStatus.Experimental
 public interface ResourcePack {
 
     /**

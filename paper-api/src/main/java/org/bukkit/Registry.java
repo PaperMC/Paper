@@ -237,6 +237,13 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
     @ApiStatus.Experimental
     Registry<DamageType> DAMAGE_TYPE = Objects.requireNonNull(Bukkit.getRegistry(DamageType.class), "No registry present for DamageType. This is a bug.");
     /**
+     * Jukebox songs.
+     *
+     * @see JukeboxSong
+     */
+    @ApiStatus.Experimental
+    Registry<JukeboxSong> JUKEBOX_SONG = Objects.requireNonNull(Bukkit.getRegistry(JukeboxSong.class), "No registry present for JukeboxSong. This is a bug.");
+    /**
      * Villager profession.
      *
      * @see Villager.Profession

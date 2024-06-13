@@ -14,6 +14,7 @@ import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemRarity;
 import org.bukkit.inventory.meta.components.FoodComponent;
+import org.bukkit.inventory.meta.components.JukeboxPlayableComponent;
 import org.bukkit.inventory.meta.components.ToolComponent;
 import org.bukkit.inventory.meta.tags.CustomItemTagContainer;
 import org.bukkit.persistence.PersistentDataHolder;
@@ -453,6 +454,34 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
     void setTool(@Nullable ToolComponent tool);
 
     /**
+     * Checks if the jukebox playable is set.
+     *
+     * @return if a jukebox playable is set
+     */
+    boolean hasJukeboxPlayable();
+
+    /**
+     * Gets the jukebox playable component set on this item.
+     * <p>
+     * The returned component is a snapshot of its current state and does not
+     * reflect a live view of what is on an item. After changing any value on
+     * this component, it must be set with
+     * {@link #setJukeboxPlayable(org.bukkit.inventory.meta.components.JukeboxComponent)}
+     * to apply the changes.
+     *
+     * @return component
+     */
+    @Nullable
+    JukeboxPlayableComponent getJukeboxPlayable();
+
+    /**
+     * Sets the item tool.
+     *
+     * @param jukeboxPlayable new component
+     */
+    void setJukeboxPlayable(@Nullable JukeboxPlayableComponent jukeboxPlayable);
+
+    /**
      * Checks for the existence of any AttributeModifiers.
      *
      * @return true if any AttributeModifiers exist
@@ -566,7 +595,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * @throws NullPointerException if the Attribute is null
      * @throws NullPointerException if the AttributeModifier is null
      *
-     * @see AttributeModifier#getUniqueId()
+     * @see AttributeModifier#getKey()
      */
     boolean removeAttributeModifier(@NotNull Attribute attribute, @NotNull AttributeModifier modifier);
 

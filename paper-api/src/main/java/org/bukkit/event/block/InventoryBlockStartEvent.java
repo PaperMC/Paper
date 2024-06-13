@@ -4,7 +4,6 @@ import org.bukkit.block.Block;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.inventory.FurnaceStartSmeltEvent;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -14,10 +13,7 @@ import org.jetbrains.annotations.NotNull;
  * <li>A Brewing-Stand starts brewing {@link BrewingStartEvent}</li>
  * <li>A Campfire starts cooking {@link CampfireStartEvent}</li>
  * </ul>
- *
- * @apiNote draft API
  */
-@ApiStatus.Experimental
 public class InventoryBlockStartEvent extends BlockEvent {
 
     private static final HandlerList handlers = new HandlerList();

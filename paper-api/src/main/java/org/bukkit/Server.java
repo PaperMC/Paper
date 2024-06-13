@@ -58,6 +58,7 @@ import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.structure.StructureManager;
 import org.bukkit.util.CachedServerIcon;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -1437,6 +1438,15 @@ public interface Server extends PluginMessageRecipient {
      * @param motd The message to be displayed
      */
     void setMotd(@NotNull String motd);
+
+    /**
+     * Gets the server links which will be sent to clients
+     *
+     * @return the server's links
+     */
+    @NotNull
+    @ApiStatus.Experimental
+    ServerLinks getServerLinks();
 
     /**
      * Gets the default message that is displayed when the server is stopped.

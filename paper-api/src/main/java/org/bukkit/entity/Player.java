@@ -21,6 +21,7 @@ import org.bukkit.Note;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Particle;
 import org.bukkit.Server;
+import org.bukkit.ServerLinks;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
 import org.bukkit.WeatherType;
@@ -184,7 +185,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * null value.
      */
     @NotNull
-    @ApiStatus.Experimental
     CompletableFuture<byte[]> retrieveCookie(@NotNull NamespacedKey key);
 
     /**
@@ -194,7 +194,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param value the data to store in the cookie
      * @throws IllegalStateException if a cookie cannot be stored at this time
      */
-    @ApiStatus.Experimental
     void storeCookie(@NotNull NamespacedKey key, @NotNull byte[] value);
 
     /**
@@ -206,7 +205,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @throws IllegalStateException if a transfer cannot take place at this
      * time
      */
-    @ApiStatus.Experimental
     void transfer(@NotNull String host, int port);
 
     /**
@@ -1014,6 +1012,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * to the left
      */
     public void sendHurtAnimation(float yaw);
+
+    /**
+     * Sends the given server links to the player.
+     *
+     * @param links links to send
+     */
+    public void sendLinks(@NotNull ServerLinks links);
 
     /**
      * Add custom chat completion suggestions shown to the player while typing a

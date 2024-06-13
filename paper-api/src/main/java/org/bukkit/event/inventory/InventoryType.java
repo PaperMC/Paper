@@ -1,7 +1,5 @@
 package org.bukkit.event.inventory;
 
-import org.bukkit.MinecraftExperimental;
-import org.bukkit.MinecraftExperimental.Requires;
 import org.bukkit.inventory.InventoryHolder;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -148,7 +146,6 @@ public enum InventoryType {
     /**
      * A crafter inventory, with 9 CRAFTING slots.
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
     @ApiStatus.Experimental
     CRAFTER(9, "Crafter"),
     /**

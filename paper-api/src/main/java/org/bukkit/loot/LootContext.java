@@ -62,7 +62,9 @@ public final class LootContext {
      * {@link #getKiller()} entity's looting level will be used instead.
      *
      * @return the looting level
+     * @deprecated no longer functional
      */
+    @Deprecated
     public int getLootingModifier() {
         return lootingModifier;
     }
@@ -131,8 +133,10 @@ public final class LootContext {
          *
          * @param modifier the looting level modifier
          * @return the Builder
+         * @deprecated no longer functional
          */
         @NotNull
+        @Deprecated
         public Builder lootingModifier(int modifier) {
             this.lootingModifier = modifier;
             return this;

@@ -11,7 +11,12 @@ import org.jetbrains.annotations.Nullable;
 public class EntityCombustByBlockEvent extends EntityCombustEvent {
     private final Block combuster;
 
+    @Deprecated
     public EntityCombustByBlockEvent(@Nullable final Block combuster, @NotNull final Entity combustee, final int duration) {
+        this(combuster, combustee, (float) duration);
+    }
+
+    public EntityCombustByBlockEvent(@Nullable final Block combuster, @NotNull final Entity combustee, final float duration) {
         super(combustee, duration);
         this.combuster = combuster;
     }

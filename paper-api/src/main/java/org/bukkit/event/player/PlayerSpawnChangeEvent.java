@@ -5,15 +5,12 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * This event is fired when the spawn point of the player is changed.
- * @apiNote draft API
  */
-@ApiStatus.Experimental
 public class PlayerSpawnChangeEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();

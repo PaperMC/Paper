@@ -7,8 +7,6 @@ import java.util.Map;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.Location;
-import org.bukkit.MinecraftExperimental;
-import org.bukkit.MinecraftExperimental.Requires;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Translatable;
 import org.bukkit.World;
@@ -21,7 +19,6 @@ import org.bukkit.entity.minecart.SpawnerMinecart;
 import org.bukkit.entity.minecart.StorageMinecart;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffectType;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -288,21 +285,11 @@ public enum EntityType implements Keyed, Translatable {
     ITEM_DISPLAY("item_display", ItemDisplay.class, -1),
     SNIFFER("sniffer", Sniffer.class, -1),
     TEXT_DISPLAY("text_display", TextDisplay.class, -1),
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BREEZE("breeze", Breeze.class, -1),
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     WIND_CHARGE("wind_charge", WindCharge.class, -1),
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BREEZE_WIND_CHARGE("breeze_wind_charge", BreezeWindCharge.class, -1),
     ARMADILLO("armadillo", Armadillo.class, -1),
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BOGGED("bogged", Bogged.class, -1),
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     OMINOUS_ITEM_SPAWNER("ominous_item_spawner", OminousItemSpawner.class, -1),
     /**
      * A fishing line and bobber.

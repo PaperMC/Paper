@@ -1,8 +1,6 @@
 package org.bukkit.generator.structure;
 
 import org.bukkit.Keyed;
-import org.bukkit.MinecraftExperimental;
-import org.bukkit.MinecraftExperimental.Requires;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.jetbrains.annotations.NotNull;
@@ -49,7 +47,6 @@ public abstract class Structure implements Keyed {
     public static final Structure RUINED_PORTAL_NETHER = getStructure("ruined_portal_nether");
     public static final Structure ANCIENT_CITY = getStructure("ancient_city");
     public static final Structure TRAIL_RUINS = getStructure("trail_ruins");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
     public static final Structure TRIAL_CHAMBERS = getStructure("trial_chambers");
 
     private static Structure getStructure(String name) {

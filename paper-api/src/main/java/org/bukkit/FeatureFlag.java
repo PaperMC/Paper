@@ -25,5 +25,11 @@ public interface FeatureFlag extends Keyed {
 
     public static final FeatureFlag TRADE_REBALANCE = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("trade_rebalance"));
 
+    /**
+     * <strong>AVAILABLE BETWEEN VERSIONS:</strong> 1.20.5 - 1.20.6
+     *
+     * @deprecated not available since 1.21
+     */
+    @Deprecated
     public static final FeatureFlag UPDATE_121 = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("update_1_21"));
 }

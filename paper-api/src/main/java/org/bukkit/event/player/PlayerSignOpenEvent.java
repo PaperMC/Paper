@@ -5,13 +5,11 @@ import org.bukkit.block.sign.Side;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * This event is fired when a sign is opened by the player.
  */
-@ApiStatus.Experimental
 public class PlayerSignOpenEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
@@ -78,7 +76,6 @@ public class PlayerSignOpenEvent extends PlayerEvent implements Cancellable {
         return handlers;
     }
 
-    @ApiStatus.Experimental
     public enum Cause {
 
         /**

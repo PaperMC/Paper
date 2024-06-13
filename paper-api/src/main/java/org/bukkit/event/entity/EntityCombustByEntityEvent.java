@@ -9,7 +9,12 @@ import org.jetbrains.annotations.NotNull;
 public class EntityCombustByEntityEvent extends EntityCombustEvent {
     private final Entity combuster;
 
+    @Deprecated
     public EntityCombustByEntityEvent(@NotNull final Entity combuster, @NotNull final Entity combustee, final int duration) {
+        this(combuster, combustee, (float) duration);
+    }
+
+    public EntityCombustByEntityEvent(@NotNull final Entity combuster, @NotNull final Entity combustee, final float duration) {
         super(combustee, duration);
         this.combuster = combuster;
     }

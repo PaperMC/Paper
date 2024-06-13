@@ -2,9 +2,11 @@ package org.bukkit.inventory.meta.components;
 
 import java.util.List;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a component which can turn any item into food.
@@ -67,6 +69,21 @@ public interface FoodComponent extends ConfigurationSerializable {
      * @param eatSeconds new eat time
      */
     void setEatSeconds(float eatSeconds);
+
+    /**
+     * Gets the item this food will convert to once eaten.
+     *
+     * @return converted item
+     */
+    @Nullable
+    ItemStack getUsingConvertsTo();
+
+    /**
+     * Sets the item this food will convert to once eaten.
+     *
+     * @param item converted item
+     */
+    void setUsingConvertsTo(@Nullable ItemStack item);
 
     /**
      * Gets the effects which may be applied by this item when eaten.

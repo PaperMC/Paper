@@ -12,10 +12,15 @@ import org.jetbrains.annotations.NotNull;
  */
 public class EntityCombustEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
-    private int duration;
+    private float duration;
     private boolean cancel;
 
+    @Deprecated
     public EntityCombustEvent(@NotNull final Entity combustee, final int duration) {
+        this(combustee, (float) duration);
+    }
+
+    public EntityCombustEvent(@NotNull final Entity combustee, final float duration) {
         super(combustee);
         this.duration = duration;
         this.cancel = false;
@@ -35,7 +40,7 @@ public class EntityCombustEvent extends EntityEvent implements Cancellable {
      * @return the amount of time (in seconds) the combustee should be alight
      *     for
      */
-    public int getDuration() {
+    public float getDuration() {
         return duration;
     }
 
@@ -47,6 +52,21 @@ public class EntityCombustEvent extends EntityEvent implements Cancellable {
      *
      * @param duration the time in seconds to be alight for.
      */
+    public void setDuration(float duration) {
+        this.duration = duration;
+    }
+
+    /**
+     * The number of seconds the combustee should be alight for.
+     * <p>
+     * This value will only ever increase the combustion time, not decrease
+     * existing combustion times.
+     *
+     * @param duration the time in seconds to be alight for.
+     * @see #setDuration(float)
+     * @deprecated duration is now a float
+     */
+    @Deprecated(forRemoval = true)
     public void setDuration(int duration) {
         this.duration = duration;
     }

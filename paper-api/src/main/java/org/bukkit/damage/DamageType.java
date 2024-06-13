@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 public interface DamageType extends Keyed, Translatable {
 
     public static final DamageType IN_FIRE = getDamageType("in_fire");
+    public static final DamageType CAMPFIRE = getDamageType("campfire");
     public static final DamageType LIGHTNING_BOLT = getDamageType("lightning_bolt");
     public static final DamageType ON_FIRE = getDamageType("on_fire");
     public static final DamageType LAVA = getDamageType("lava");

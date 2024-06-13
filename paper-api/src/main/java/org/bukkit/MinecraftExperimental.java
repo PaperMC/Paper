@@ -47,6 +47,5 @@ public @interface MinecraftExperimental {
     @ApiStatus.Internal
     public enum Requires {
 
-        UPDATE_1_21
     }
 }

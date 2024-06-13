@@ -4,8 +4,6 @@ import com.google.common.base.Preconditions;
 import java.util.function.Consumer;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
-import org.bukkit.MinecraftExperimental;
-import org.bukkit.MinecraftExperimental.Requires;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.Translatable;
@@ -2877,68 +2875,42 @@ public interface BlockType extends Keyed, Translatable {
     /**
      * BlockData: {@link Slab}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<Slab> TUFF_SLAB = getBlockType("tuff_slab");
     /**
      * BlockData: {@link Stairs}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<Stairs> TUFF_STAIRS = getBlockType("tuff_stairs");
     /**
      * BlockData: {@link Wall}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<Wall> TUFF_WALL = getBlockType("tuff_wall");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<BlockData> POLISHED_TUFF = getBlockType("polished_tuff");
     /**
      * BlockData: {@link Slab}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<Slab> POLISHED_TUFF_SLAB = getBlockType("polished_tuff_slab");
     /**
      * BlockData: {@link Stairs}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<Stairs> POLISHED_TUFF_STAIRS = getBlockType("polished_tuff_stairs");
     /**
      * BlockData: {@link Wall}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<Wall> POLISHED_TUFF_WALL = getBlockType("polished_tuff_wall");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<BlockData> CHISELED_TUFF = getBlockType("chiseled_tuff");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<BlockData> TUFF_BRICKS = getBlockType("tuff_bricks");
     /**
      * BlockData: {@link Slab}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<Slab> TUFF_BRICK_SLAB = getBlockType("tuff_brick_slab");
     /**
      * BlockData: {@link Stairs}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<Stairs> TUFF_BRICK_STAIRS = getBlockType("tuff_brick_stairs");
     /**
      * BlockData: {@link Wall}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<Wall> TUFF_BRICK_WALL = getBlockType("tuff_brick_wall");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<BlockData> CHISELED_TUFF_BRICKS = getBlockType("chiseled_tuff_bricks");
     BlockType.Typed<BlockData> CALCITE = getBlockType("calcite");
     BlockType.Typed<BlockData> TINTED_GLASS = getBlockType("tinted_glass");
@@ -2974,29 +2946,13 @@ public interface BlockType extends Keyed, Translatable {
     BlockType.Typed<BlockData> WEATHERED_CUT_COPPER = getBlockType("weathered_cut_copper");
     BlockType.Typed<BlockData> EXPOSED_CUT_COPPER = getBlockType("exposed_cut_copper");
     BlockType.Typed<BlockData> CUT_COPPER = getBlockType("cut_copper");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<BlockData> OXIDIZED_CHISELED_COPPER = getBlockType("oxidized_chiseled_copper");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<BlockData> WEATHERED_CHISELED_COPPER = getBlockType("weathered_chiseled_copper");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<BlockData> EXPOSED_CHISELED_COPPER = getBlockType("exposed_chiseled_copper");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<BlockData> CHISELED_COPPER = getBlockType("chiseled_copper");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<BlockData> WAXED_OXIDIZED_CHISELED_COPPER = getBlockType("waxed_oxidized_chiseled_copper");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<BlockData> WAXED_WEATHERED_CHISELED_COPPER = getBlockType("waxed_weathered_chiseled_copper");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<BlockData> WAXED_EXPOSED_CHISELED_COPPER = getBlockType("waxed_exposed_chiseled_copper");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<BlockData> WAXED_CHISELED_COPPER = getBlockType("waxed_chiseled_copper");
     /**
      * BlockData: {@link Stairs}
@@ -3073,194 +3029,130 @@ public interface BlockType extends Keyed, Translatable {
     /**
      * BlockData: {@link Door}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<Door> COPPER_DOOR = getBlockType("copper_door");
     /**
      * BlockData: {@link Door}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<Door> EXPOSED_COPPER_DOOR = getBlockType("exposed_copper_door");
     /**
      * BlockData: {@link Door}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<Door> OXIDIZED_COPPER_DOOR = getBlockType("oxidized_copper_door");
     /**
      * BlockData: {@link Door}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<Door> WEATHERED_COPPER_DOOR = getBlockType("weathered_copper_door");
     /**
      * BlockData: {@link Door}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<Door> WAXED_COPPER_DOOR = getBlockType("waxed_copper_door");
     /**
      * BlockData: {@link Door}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<Door> WAXED_EXPOSED_COPPER_DOOR = getBlockType("waxed_exposed_copper_door");
     /**
      * BlockData: {@link Door}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<Door> WAXED_OXIDIZED_COPPER_DOOR = getBlockType("waxed_oxidized_copper_door");
     /**
      * BlockData: {@link Door}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<Door> WAXED_WEATHERED_COPPER_DOOR = getBlockType("waxed_weathered_copper_door");
     /**
      * BlockData: {@link TrapDoor}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<TrapDoor> COPPER_TRAPDOOR = getBlockType("copper_trapdoor");
     /**
      * BlockData: {@link TrapDoor}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<TrapDoor> EXPOSED_COPPER_TRAPDOOR = getBlockType("exposed_copper_trapdoor");
     /**
      * BlockData: {@link TrapDoor}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<TrapDoor> OXIDIZED_COPPER_TRAPDOOR = getBlockType("oxidized_copper_trapdoor");
     /**
      * BlockData: {@link TrapDoor}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<TrapDoor> WEATHERED_COPPER_TRAPDOOR = getBlockType("weathered_copper_trapdoor");
     /**
      * BlockData: {@link TrapDoor}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<TrapDoor> WAXED_COPPER_TRAPDOOR = getBlockType("waxed_copper_trapdoor");
     /**
      * BlockData: {@link TrapDoor}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<TrapDoor> WAXED_EXPOSED_COPPER_TRAPDOOR = getBlockType("waxed_exposed_copper_trapdoor");
     /**
      * BlockData: {@link TrapDoor}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<TrapDoor> WAXED_OXIDIZED_COPPER_TRAPDOOR = getBlockType("waxed_oxidized_copper_trapdoor");
     /**
      * BlockData: {@link TrapDoor}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<TrapDoor> WAXED_WEATHERED_COPPER_TRAPDOOR = getBlockType("waxed_weathered_copper_trapdoor");
     /**
      * BlockData: {@link Waterlogged}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<Waterlogged> COPPER_GRATE = getBlockType("copper_grate");
     /**
      * BlockData: {@link Waterlogged}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<Waterlogged> EXPOSED_COPPER_GRATE = getBlockType("exposed_copper_grate");
     /**
      * BlockData: {@link Waterlogged}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<Waterlogged> WEATHERED_COPPER_GRATE = getBlockType("weathered_copper_grate");
     /**
      * BlockData: {@link Waterlogged}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<Waterlogged> OXIDIZED_COPPER_GRATE = getBlockType("oxidized_copper_grate");
     /**
      * BlockData: {@link Waterlogged}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<Waterlogged> WAXED_COPPER_GRATE = getBlockType("waxed_copper_grate");
     /**
      * BlockData: {@link Waterlogged}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<Waterlogged> WAXED_EXPOSED_COPPER_GRATE = getBlockType("waxed_exposed_copper_grate");
     /**
      * BlockData: {@link Waterlogged}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<Waterlogged> WAXED_WEATHERED_COPPER_GRATE = getBlockType("waxed_weathered_copper_grate");
     /**
      * BlockData: {@link Waterlogged}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<Waterlogged> WAXED_OXIDIZED_COPPER_GRATE = getBlockType("waxed_oxidized_copper_grate");
     /**
      * BlockData: {@link CopperBulb}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<CopperBulb> COPPER_BULB = getBlockType("copper_bulb");
     /**
      * BlockData: {@link CopperBulb}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<CopperBulb> EXPOSED_COPPER_BULB = getBlockType("exposed_copper_bulb");
     /**
      * BlockData: {@link CopperBulb}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<CopperBulb> WEATHERED_COPPER_BULB = getBlockType("weathered_copper_bulb");
     /**
      * BlockData: {@link CopperBulb}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<CopperBulb> OXIDIZED_COPPER_BULB = getBlockType("oxidized_copper_bulb");
     /**
      * BlockData: {@link CopperBulb}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<CopperBulb> WAXED_COPPER_BULB = getBlockType("waxed_copper_bulb");
     /**
      * BlockData: {@link CopperBulb}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<CopperBulb> WAXED_EXPOSED_COPPER_BULB = getBlockType("waxed_exposed_copper_bulb");
     /**
      * BlockData: {@link CopperBulb}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<CopperBulb> WAXED_WEATHERED_COPPER_BULB = getBlockType("waxed_weathered_copper_bulb");
     /**
      * BlockData: {@link CopperBulb}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<CopperBulb> WAXED_OXIDIZED_COPPER_BULB = getBlockType("waxed_oxidized_copper_bulb");
     /**
      * BlockData: {@link LightningRod}
@@ -3396,14 +3288,10 @@ public interface BlockType extends Keyed, Translatable {
     /**
      * BlockData: {@link Crafter}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<Crafter> CRAFTER = getBlockType("crafter");
     /**
      * BlockData: {@link TrialSpawner}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     BlockType.Typed<TrialSpawner> TRIAL_SPAWNER = getBlockType("trial_spawner");
 
     //</editor-fold>

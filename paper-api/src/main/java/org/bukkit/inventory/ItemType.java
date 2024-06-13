@@ -5,8 +5,6 @@ import com.google.common.collect.Multimap;
 import java.util.function.Consumer;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
-import org.bukkit.MinecraftExperimental;
-import org.bukkit.MinecraftExperimental.Requires;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.Translatable;
@@ -107,44 +105,18 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> POLISHED_DEEPSLATE = getItemType("polished_deepslate");
     ItemType.Typed<ItemMeta> CALCITE = getItemType("calcite");
     ItemType.Typed<ItemMeta> TUFF = getItemType("tuff");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> TUFF_SLAB = getItemType("tuff_slab");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> TUFF_STAIRS = getItemType("tuff_stairs");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> TUFF_WALL = getItemType("tuff_wall");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> CHISELED_TUFF = getItemType("chiseled_tuff");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> POLISHED_TUFF = getItemType("polished_tuff");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> POLISHED_TUFF_SLAB = getItemType("polished_tuff_slab");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> POLISHED_TUFF_STAIRS = getItemType("polished_tuff_stairs");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> POLISHED_TUFF_WALL = getItemType("polished_tuff_wall");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> TUFF_BRICKS = getItemType("tuff_bricks");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> TUFF_BRICK_SLAB = getItemType("tuff_brick_slab");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> TUFF_BRICK_STAIRS = getItemType("tuff_brick_stairs");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> TUFF_BRICK_WALL = getItemType("tuff_brick_wall");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> CHISELED_TUFF_BRICKS = getItemType("chiseled_tuff_bricks");
     ItemType.Typed<ItemMeta> DRIPSTONE_BLOCK = getItemType("dripstone_block");
     ItemType.Typed<ItemMeta> GRASS_BLOCK = getItemType("grass_block");
@@ -211,8 +183,6 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> RAW_IRON_BLOCK = getItemType("raw_iron_block");
     ItemType.Typed<ItemMeta> RAW_COPPER_BLOCK = getItemType("raw_copper_block");
     ItemType.Typed<ItemMeta> RAW_GOLD_BLOCK = getItemType("raw_gold_block");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> HEAVY_CORE = getItemType("heavy_core");
     ItemType.Typed<ItemMeta> AMETHYST_BLOCK = getItemType("amethyst_block");
     ItemType.Typed<ItemMeta> BUDDING_AMETHYST = getItemType("budding_amethyst");
@@ -224,17 +194,9 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> EXPOSED_COPPER = getItemType("exposed_copper");
     ItemType.Typed<ItemMeta> WEATHERED_COPPER = getItemType("weathered_copper");
     ItemType.Typed<ItemMeta> OXIDIZED_COPPER = getItemType("oxidized_copper");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> CHISELED_COPPER = getItemType("chiseled_copper");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> EXPOSED_CHISELED_COPPER = getItemType("exposed_chiseled_copper");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> WEATHERED_CHISELED_COPPER = getItemType("weathered_chiseled_copper");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> OXIDIZED_CHISELED_COPPER = getItemType("oxidized_chiseled_copper");
     ItemType.Typed<ItemMeta> CUT_COPPER = getItemType("cut_copper");
     ItemType.Typed<ItemMeta> EXPOSED_CUT_COPPER = getItemType("exposed_cut_copper");
@@ -252,17 +214,9 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> WAXED_EXPOSED_COPPER = getItemType("waxed_exposed_copper");
     ItemType.Typed<ItemMeta> WAXED_WEATHERED_COPPER = getItemType("waxed_weathered_copper");
     ItemType.Typed<ItemMeta> WAXED_OXIDIZED_COPPER = getItemType("waxed_oxidized_copper");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> WAXED_CHISELED_COPPER = getItemType("waxed_chiseled_copper");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> WAXED_EXPOSED_CHISELED_COPPER = getItemType("waxed_exposed_chiseled_copper");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> WAXED_WEATHERED_CHISELED_COPPER = getItemType("waxed_weathered_chiseled_copper");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> WAXED_OXIDIZED_CHISELED_COPPER = getItemType("waxed_oxidized_chiseled_copper");
     ItemType.Typed<ItemMeta> WAXED_CUT_COPPER = getItemType("waxed_cut_copper");
     ItemType.Typed<ItemMeta> WAXED_EXPOSED_CUT_COPPER = getItemType("waxed_exposed_cut_copper");
@@ -986,29 +940,13 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> BAMBOO_DOOR = getItemType("bamboo_door");
     ItemType.Typed<ItemMeta> CRIMSON_DOOR = getItemType("crimson_door");
     ItemType.Typed<ItemMeta> WARPED_DOOR = getItemType("warped_door");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> COPPER_DOOR = getItemType("copper_door");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> EXPOSED_COPPER_DOOR = getItemType("exposed_copper_door");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> WEATHERED_COPPER_DOOR = getItemType("weathered_copper_door");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> OXIDIZED_COPPER_DOOR = getItemType("oxidized_copper_door");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> WAXED_COPPER_DOOR = getItemType("waxed_copper_door");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> WAXED_EXPOSED_COPPER_DOOR = getItemType("waxed_exposed_copper_door");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> WAXED_WEATHERED_COPPER_DOOR = getItemType("waxed_weathered_copper_door");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> WAXED_OXIDIZED_COPPER_DOOR = getItemType("waxed_oxidized_copper_door");
     ItemType.Typed<ItemMeta> IRON_TRAPDOOR = getItemType("iron_trapdoor");
     ItemType.Typed<ItemMeta> OAK_TRAPDOOR = getItemType("oak_trapdoor");
@@ -1022,29 +960,13 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> BAMBOO_TRAPDOOR = getItemType("bamboo_trapdoor");
     ItemType.Typed<ItemMeta> CRIMSON_TRAPDOOR = getItemType("crimson_trapdoor");
     ItemType.Typed<ItemMeta> WARPED_TRAPDOOR = getItemType("warped_trapdoor");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> COPPER_TRAPDOOR = getItemType("copper_trapdoor");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> EXPOSED_COPPER_TRAPDOOR = getItemType("exposed_copper_trapdoor");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> WEATHERED_COPPER_TRAPDOOR = getItemType("weathered_copper_trapdoor");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> OXIDIZED_COPPER_TRAPDOOR = getItemType("oxidized_copper_trapdoor");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> WAXED_COPPER_TRAPDOOR = getItemType("waxed_copper_trapdoor");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> WAXED_EXPOSED_COPPER_TRAPDOOR = getItemType("waxed_exposed_copper_trapdoor");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> WAXED_WEATHERED_COPPER_TRAPDOOR = getItemType("waxed_weathered_copper_trapdoor");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> WAXED_OXIDIZED_COPPER_TRAPDOOR = getItemType("waxed_oxidized_copper_trapdoor");
     ItemType.Typed<ItemMeta> OAK_FENCE_GATE = getItemType("oak_fence_gate");
     ItemType.Typed<ItemMeta> SPRUCE_FENCE_GATE = getItemType("spruce_fence_gate");
@@ -1106,6 +1028,7 @@ public interface ItemType extends Keyed, Translatable {
      * ItemMeta: {@link ColorableArmorMeta}
      */
     ItemType.Typed<ColorableArmorMeta> WOLF_ARMOR = getItemType("wolf_armor");
+    ItemType.Typed<ItemMeta> BOWL = getItemType("bowl");
     ItemType.Typed<ItemMeta> FLINT_AND_STEEL = getItemType("flint_and_steel");
     ItemType.Typed<ItemMeta> APPLE = getItemType("apple");
     ItemType.Typed<ItemMeta> BOW = getItemType("bow");
@@ -1156,7 +1079,6 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> NETHERITE_AXE = getItemType("netherite_axe");
     ItemType.Typed<ItemMeta> NETHERITE_HOE = getItemType("netherite_hoe");
     ItemType.Typed<ItemMeta> STICK = getItemType("stick");
-    ItemType.Typed<ItemMeta> BOWL = getItemType("bowl");
     ItemType.Typed<ItemMeta> MUSHROOM_STEW = getItemType("mushroom_stew");
     ItemType.Typed<ItemMeta> STRING = getItemType("string");
     ItemType.Typed<ItemMeta> FEATHER = getItemType("feather");
@@ -1442,8 +1364,6 @@ public interface ItemType extends Keyed, Translatable {
     /**
      * ItemMeta: {@link BlockStateMeta}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<BlockStateMeta> CRAFTER = getItemType("crafter");
     /**
      * ItemMeta: {@link MapMeta}
@@ -1507,14 +1427,10 @@ public interface ItemType extends Keyed, Translatable {
     /**
      * ItemMeta: {@link SpawnEggMeta}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<SpawnEggMeta> BOGGED_SPAWN_EGG = getItemType("bogged_spawn_egg");
     /**
      * ItemMeta: {@link SpawnEggMeta}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<SpawnEggMeta> BREEZE_SPAWN_EGG = getItemType("breeze_spawn_egg");
     /**
      * ItemMeta: {@link SpawnEggMeta}
@@ -1806,8 +1722,6 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<SpawnEggMeta> ZOMBIFIED_PIGLIN_SPAWN_EGG = getItemType("zombified_piglin_spawn_egg");
     ItemType.Typed<ItemMeta> EXPERIENCE_BOTTLE = getItemType("experience_bottle");
     ItemType.Typed<ItemMeta> FIRE_CHARGE = getItemType("fire_charge");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> WIND_CHARGE = getItemType("wind_charge");
     /**
      * ItemMeta: {@link BookMeta}
@@ -1817,8 +1731,6 @@ public interface ItemType extends Keyed, Translatable {
      * ItemMeta: {@link BookMeta}
      */
     ItemType.Typed<BookMeta> WRITTEN_BOOK = getItemType("written_book");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> MACE = getItemType("mace");
     ItemType.Typed<ItemMeta> ITEM_FRAME = getItemType("item_frame");
     ItemType.Typed<ItemMeta> GLOW_ITEM_FRAME = getItemType("glow_item_frame");
@@ -1994,6 +1906,8 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> MUSIC_DISC_CAT = getItemType("music_disc_cat");
     ItemType.Typed<ItemMeta> MUSIC_DISC_BLOCKS = getItemType("music_disc_blocks");
     ItemType.Typed<ItemMeta> MUSIC_DISC_CHIRP = getItemType("music_disc_chirp");
+    ItemType.Typed<ItemMeta> MUSIC_DISC_CREATOR = getItemType("music_disc_creator");
+    ItemType.Typed<ItemMeta> MUSIC_DISC_CREATOR_MUSIC_BOX = getItemType("music_disc_creator_music_box");
     ItemType.Typed<ItemMeta> MUSIC_DISC_FAR = getItemType("music_disc_far");
     ItemType.Typed<ItemMeta> MUSIC_DISC_MALL = getItemType("music_disc_mall");
     ItemType.Typed<ItemMeta> MUSIC_DISC_MELLOHI = getItemType("music_disc_mellohi");
@@ -2006,6 +1920,7 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> MUSIC_DISC_RELIC = getItemType("music_disc_relic");
     ItemType.Typed<ItemMeta> MUSIC_DISC_5 = getItemType("music_disc_5");
     ItemType.Typed<ItemMeta> MUSIC_DISC_PIGSTEP = getItemType("music_disc_pigstep");
+    ItemType.Typed<ItemMeta> MUSIC_DISC_PRECIPICE = getItemType("music_disc_precipice");
     ItemType.Typed<ItemMeta> DISC_FRAGMENT_5 = getItemType("disc_fragment_5");
     ItemType.Typed<ItemMeta> TRIDENT = getItemType("trident");
     ItemType.Typed<ItemMeta> PHANTOM_MEMBRANE = getItemType("phantom_membrane");
@@ -2026,11 +1941,7 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> MOJANG_BANNER_PATTERN = getItemType("mojang_banner_pattern");
     ItemType.Typed<ItemMeta> GLOBE_BANNER_PATTERN = getItemType("globe_banner_pattern");
     ItemType.Typed<ItemMeta> PIGLIN_BANNER_PATTERN = getItemType("piglin_banner_pattern");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> FLOW_BANNER_PATTERN = getItemType("flow_banner_pattern");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> GUSTER_BANNER_PATTERN = getItemType("guster_banner_pattern");
     /**
      * ItemMeta: {@link MusicInstrumentMeta}
@@ -2142,11 +2053,7 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> SILENCE_ARMOR_TRIM_SMITHING_TEMPLATE = getItemType("silence_armor_trim_smithing_template");
     ItemType.Typed<ItemMeta> RAISER_ARMOR_TRIM_SMITHING_TEMPLATE = getItemType("raiser_armor_trim_smithing_template");
     ItemType.Typed<ItemMeta> HOST_ARMOR_TRIM_SMITHING_TEMPLATE = getItemType("host_armor_trim_smithing_template");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> FLOW_ARMOR_TRIM_SMITHING_TEMPLATE = getItemType("flow_armor_trim_smithing_template");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> BOLT_ARMOR_TRIM_SMITHING_TEMPLATE = getItemType("bolt_armor_trim_smithing_template");
     ItemType.Typed<ItemMeta> ANGLER_POTTERY_SHERD = getItemType("angler_pottery_sherd");
     ItemType.Typed<ItemMeta> ARCHER_POTTERY_SHERD = getItemType("archer_pottery_sherd");
@@ -2156,12 +2063,8 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> BURN_POTTERY_SHERD = getItemType("burn_pottery_sherd");
     ItemType.Typed<ItemMeta> DANGER_POTTERY_SHERD = getItemType("danger_pottery_sherd");
     ItemType.Typed<ItemMeta> EXPLORER_POTTERY_SHERD = getItemType("explorer_pottery_sherd");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> FLOW_POTTERY_SHERD = getItemType("flow_pottery_sherd");
     ItemType.Typed<ItemMeta> FRIEND_POTTERY_SHERD = getItemType("friend_pottery_sherd");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> GUSTER_POTTERY_SHERD = getItemType("guster_pottery_sherd");
     ItemType.Typed<ItemMeta> HEART_POTTERY_SHERD = getItemType("heart_pottery_sherd");
     ItemType.Typed<ItemMeta> HEARTBREAK_POTTERY_SHERD = getItemType("heartbreak_pottery_sherd");
@@ -2170,87 +2073,41 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> MOURNER_POTTERY_SHERD = getItemType("mourner_pottery_sherd");
     ItemType.Typed<ItemMeta> PLENTY_POTTERY_SHERD = getItemType("plenty_pottery_sherd");
     ItemType.Typed<ItemMeta> PRIZE_POTTERY_SHERD = getItemType("prize_pottery_sherd");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> SCRAPE_POTTERY_SHERD = getItemType("scrape_pottery_sherd");
     ItemType.Typed<ItemMeta> SHEAF_POTTERY_SHERD = getItemType("sheaf_pottery_sherd");
     ItemType.Typed<ItemMeta> SHELTER_POTTERY_SHERD = getItemType("shelter_pottery_sherd");
     ItemType.Typed<ItemMeta> SKULL_POTTERY_SHERD = getItemType("skull_pottery_sherd");
     ItemType.Typed<ItemMeta> SNORT_POTTERY_SHERD = getItemType("snort_pottery_sherd");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> COPPER_GRATE = getItemType("copper_grate");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> EXPOSED_COPPER_GRATE = getItemType("exposed_copper_grate");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> WEATHERED_COPPER_GRATE = getItemType("weathered_copper_grate");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> OXIDIZED_COPPER_GRATE = getItemType("oxidized_copper_grate");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> WAXED_COPPER_GRATE = getItemType("waxed_copper_grate");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> WAXED_EXPOSED_COPPER_GRATE = getItemType("waxed_exposed_copper_grate");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> WAXED_WEATHERED_COPPER_GRATE = getItemType("waxed_weathered_copper_grate");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> WAXED_OXIDIZED_COPPER_GRATE = getItemType("waxed_oxidized_copper_grate");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> COPPER_BULB = getItemType("copper_bulb");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> EXPOSED_COPPER_BULB = getItemType("exposed_copper_bulb");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> WEATHERED_COPPER_BULB = getItemType("weathered_copper_bulb");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> OXIDIZED_COPPER_BULB = getItemType("oxidized_copper_bulb");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> WAXED_COPPER_BULB = getItemType("waxed_copper_bulb");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> WAXED_EXPOSED_COPPER_BULB = getItemType("waxed_exposed_copper_bulb");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> WAXED_WEATHERED_COPPER_BULB = getItemType("waxed_weathered_copper_bulb");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> WAXED_OXIDIZED_COPPER_BULB = getItemType("waxed_oxidized_copper_bulb");
     /**
      * ItemMeta: {@link BlockStateMeta}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<BlockStateMeta> TRIAL_SPAWNER = getItemType("trial_spawner");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> TRIAL_KEY = getItemType("trial_key");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> OMINOUS_TRIAL_KEY = getItemType("ominous_trial_key");
     /**
      * ItemMeta: {@link BlockStateMeta}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<BlockStateMeta> VAULT = getItemType("vault");
     /**
      * ItemMeta: {@link OminousBottleMeta}
      */
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<OminousBottleMeta> OMINOUS_BOTTLE = getItemType("ominous_bottle");
-    @MinecraftExperimental(Requires.UPDATE_1_21)
-    @ApiStatus.Experimental
     ItemType.Typed<ItemMeta> BREEZE_ROD = getItemType("breeze_rod");
 
 

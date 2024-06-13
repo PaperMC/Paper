@@ -59,6 +59,10 @@ public interface Tag<T extends Keyed> extends Keyed {
      */
     Tag<Material> WOODEN_DOORS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("wooden_doors"), Material.class);
     /**
+     * Vanilla block tag representing all doors which can be opened by mobs.
+     */
+    Tag<Material> MOB_INTERACTABLE_DOORS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("mob_interactable_doors"), Material.class);
+    /**
      * Vanilla block tag representing all wooden stairs.
      */
     Tag<Material> WOODEN_STAIRS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("wooden_stairs"), Material.class);
@@ -772,6 +776,10 @@ public interface Tag<T extends Keyed> extends Keyed {
      */
     Tag<Material> DOES_NOT_BLOCK_HOPPERS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("does_not_block_hoppers"), Material.class);
     /**
+     * Vanilla block tag representing all blocks that resemble air.
+     */
+    Tag<Material> AIR = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("air"), Material.class);
+    /**
      * Key for the built in item registry.
      */
     String REGISTRY_ITEMS = "items";
@@ -933,10 +941,6 @@ public interface Tag<T extends Keyed> extends Keyed {
      * Vanilla item tag representing all fish items.
      */
     Tag<Material> ITEMS_FISHES = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("fishes"), Material.class);
-    /**
-     * Vanilla item tag representing all music disc items.
-     */
-    Tag<Material> ITEMS_MUSIC_DISCS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("music_discs"), Material.class);
     /**
      * Vanilla item tag representing all music disc items dropped by creepers.
      */

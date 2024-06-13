@@ -2,13 +2,11 @@ package org.bukkit.event.player;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player's experience cooldown changes.
  */
-@ApiStatus.Experimental
 public class PlayerExpCooldownChangeEvent extends PlayerEvent {
 
     private static final HandlerList handlers = new HandlerList();

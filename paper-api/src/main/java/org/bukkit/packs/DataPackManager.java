@@ -14,7 +14,6 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Manager of data packs.
  */
-@ApiStatus.Experimental
 public interface DataPackManager {
 
     /**

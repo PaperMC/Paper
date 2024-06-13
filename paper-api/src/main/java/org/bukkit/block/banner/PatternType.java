@@ -3,8 +3,6 @@ package org.bukkit.block.banner;
 import java.util.HashMap;
 import java.util.Map;
 import org.bukkit.Keyed;
-import org.bukkit.MinecraftExperimental;
-import org.bukkit.MinecraftExperimental.Requires;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.jetbrains.annotations.Contract;
@@ -53,9 +51,7 @@ public enum PatternType implements Keyed {
     MOJANG("moj", "mojang"),
     GLOBE("glb", "globe"),
     PIGLIN("pig", "piglin"),
-    @MinecraftExperimental(Requires.UPDATE_1_21)
     FLOW("flw", "flow"),
-    @MinecraftExperimental(Requires.UPDATE_1_21)
     GUSTER("gus", "guster");
 
     private final String identifier;

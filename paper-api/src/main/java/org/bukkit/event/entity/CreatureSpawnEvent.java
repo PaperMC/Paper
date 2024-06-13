@@ -198,6 +198,10 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
          */
         COMMAND,
         /**
+         * When a creature is spawned by an enchantment
+         */
+        ENCHANTMENT,
+        /**
          * When a creature is spawned by plugins
          */
         CUSTOM,

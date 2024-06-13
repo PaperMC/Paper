@@ -57,6 +57,7 @@ import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.structure.StructureManager;
 import org.bukkit.util.CachedServerIcon;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -1692,6 +1693,17 @@ public final class Bukkit {
      */
     public static void setMotd(@NotNull String motd) {
         server.setMotd(motd);
+    }
+
+    /**
+     * Gets the server links which will be sent to clients
+     *
+     * @return the server's links
+     */
+    @NotNull
+    @ApiStatus.Experimental
+    public static ServerLinks getServerLinks() {
+        return server.getServerLinks();
     }
 
     /**

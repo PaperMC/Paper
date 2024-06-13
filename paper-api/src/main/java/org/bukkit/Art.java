@@ -40,7 +40,27 @@ public enum Art implements Keyed {
     EARTH(26, 2, 2),
     WIND(27, 2, 2),
     WATER(28, 2, 2),
-    FIRE(29, 2, 2);
+    FIRE(29, 2, 2),
+    BAROQUE(30, 2, 2),
+    HUMBLE(31, 2, 2),
+    MEDITATIVE(32, 1, 1),
+    PRAIRIE_RIDE(33, 1, 2),
+    UNPACKED(34, 4, 4),
+    BACKYARD(35, 3, 4),
+    BOUQUET(36, 3, 3),
+    CAVEBIRD(37, 3, 3),
+    CHANGING(38, 4, 2),
+    COTAN(39, 3, 3),
+    ENDBOSS(40, 3, 3),
+    FERN(41, 3, 3),
+    FINDING(42, 4, 2),
+    LOWMIST(43, 4, 2),
+    ORB(44, 4, 4),
+    OWLEMONS(45, 3, 3),
+    PASSAGE(46, 4, 2),
+    POND(47, 3, 4),
+    SUNFLOWERS(48, 3, 3),
+    TIDES(49, 3, 3);
 
     private final int id, width, height;
     private final NamespacedKey key;

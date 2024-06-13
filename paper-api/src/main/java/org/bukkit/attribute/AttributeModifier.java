@@ -6,6 +6,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import org.bukkit.Keyed;
+import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.EquipmentSlotGroup;
@@ -16,33 +18,38 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Concrete implementation of an attribute modifier.
  */
-public class AttributeModifier implements ConfigurationSerializable {
+public class AttributeModifier implements ConfigurationSerializable, Keyed {
 
-    private final UUID uuid;
-    private final String name;
+    private final NamespacedKey key;
     private final double amount;
     private final Operation operation;
     private final EquipmentSlotGroup slot;
 
+    @Deprecated
     public AttributeModifier(@NotNull String name, double amount, @NotNull Operation operation) {
         this(UUID.randomUUID(), name, amount, operation);
     }
 
+    @Deprecated
     public AttributeModifier(@NotNull UUID uuid, @NotNull String name, double amount, @NotNull Operation operation) {
         this(uuid, name, amount, operation, (EquipmentSlot) null);
     }
 
+    @Deprecated
     public AttributeModifier(@NotNull UUID uuid, @NotNull String name, double amount, @NotNull Operation operation, @Nullable EquipmentSlot slot) {
         this(uuid, name, amount, operation, (slot) == null ? EquipmentSlotGroup.ANY : slot.getGroup());
     }
 
+    @Deprecated
     public AttributeModifier(@NotNull UUID uuid, @NotNull String name, double amount, @NotNull Operation operation, @NotNull EquipmentSlotGroup slot) {
-        Preconditions.checkArgument(uuid != null, "UUID cannot be null");
-        Preconditions.checkArgument(name != null, "Name cannot be null");
+        this(NamespacedKey.fromString(uuid.toString()), amount, operation, slot);
+    }
+
+    public AttributeModifier(@NotNull NamespacedKey key, double amount, @NotNull Operation operation, @NotNull EquipmentSlotGroup slot) {
+        Preconditions.checkArgument(key != null, "Key cannot be null");
         Preconditions.checkArgument(operation != null, "Operation cannot be null");
         Preconditions.checkArgument(slot != null, "EquipmentSlotGroup cannot be null");
-        this.uuid = uuid;
-        this.name = name;
+        this.key = key;
         this.amount = amount;
         this.operation = operation;
         this.slot = slot;
@@ -52,10 +59,19 @@ public class AttributeModifier implements ConfigurationSerializable {
      * Get the unique ID for this modifier.
      *
      * @return unique id
+     * @see #getKey()
+     * @deprecated attributes are now identified by keys
      */
     @NotNull
+    @Deprecated
     public UUID getUniqueId() {
-        return uuid;
+        return UUID.fromString(getKey().toString());
+    }
+
+    @NotNull
+    @Override
+    public NamespacedKey getKey() {
+        return key;
     }
 
     /**
@@ -65,7 +81,7 @@ public class AttributeModifier implements ConfigurationSerializable {
      */
     @NotNull
     public String getName() {
-        return name;
+        return key.getKey();
     }
 
     /**
@@ -115,8 +131,7 @@ public class AttributeModifier implements ConfigurationSerializable {
     @Override
     public Map<String, Object> serialize() {
         Map<String, Object> data = new HashMap<String, Object>();
-        data.put("uuid", uuid.toString());
-        data.put("name", name);
+        data.put("key", key.toString());
         data.put("operation", operation.ordinal());
         data.put("amount", amount);
         if (slot != null && slot != EquipmentSlotGroup.ANY) {
@@ -132,14 +147,13 @@ public class AttributeModifier implements ConfigurationSerializable {
         }
         AttributeModifier mod = (AttributeModifier) other;
         boolean slots = (this.slot != null ? (this.slot == mod.slot) : mod.slot == null);
-        return this.uuid.equals(mod.uuid) && this.name.equals(mod.name) && this.amount == mod.amount && this.operation == mod.operation && slots;
+        return this.key.equals(mod.key) && this.amount == mod.amount && this.operation == mod.operation && slots;
     }
 
     @Override
     public int hashCode() {
         int hash = 5;
-        hash = 17 * hash + Objects.hashCode(this.uuid);
-        hash = 17 * hash + Objects.hashCode(this.name);
+        hash = 17 * hash + Objects.hashCode(this.key);
         hash = 17 * hash + (int) (Double.doubleToLongBits(this.amount) ^ (Double.doubleToLongBits(this.amount) >>> 32));
         hash = 17 * hash + Objects.hashCode(this.operation);
         hash = 17 * hash + Objects.hashCode(this.slot);
@@ -149,8 +163,7 @@ public class AttributeModifier implements ConfigurationSerializable {
     @Override
     public String toString() {
         return "AttributeModifier{"
-                + "uuid=" + this.uuid.toString()
-                + ", name=" + this.name
+                + "key=" + this.key.toString()
                 + ", operation=" + this.operation.name()
                 + ", amount=" + this.amount
                 + ", slot=" + (this.slot != null ? this.slot.toString() : "")
@@ -159,6 +172,12 @@ public class AttributeModifier implements ConfigurationSerializable {
 
     @NotNull
     public static AttributeModifier deserialize(@NotNull Map<String, Object> args) {
+        NamespacedKey key;
+        if (args.containsKey("uuid")) {
+            key = NamespacedKey.fromString((String) args.get("uuid"));
+        } else {
+            key = NamespacedKey.fromString((String) args.get("key"));
+        }
         if (args.containsKey("slot")) {
             EquipmentSlotGroup slotGroup = EquipmentSlotGroup.getByName(args.get("slot").toString().toLowerCase(Locale.ROOT));
             if (slotGroup == null) {
@@ -170,9 +189,9 @@ public class AttributeModifier implements ConfigurationSerializable {
                 }
             }
 
-            return new AttributeModifier(UUID.fromString((String) args.get("uuid")), (String) args.get("name"), NumberConversions.toDouble(args.get("amount")), Operation.values()[NumberConversions.toInt(args.get("operation"))], slotGroup);
+            return new AttributeModifier(key, NumberConversions.toDouble(args.get("amount")), Operation.values()[NumberConversions.toInt(args.get("operation"))], slotGroup);
         }
-        return new AttributeModifier(UUID.fromString((String) args.get("uuid")), (String) args.get("name"), NumberConversions.toDouble(args.get("amount")), Operation.values()[NumberConversions.toInt(args.get("operation"))]);
+        return new AttributeModifier(key, NumberConversions.toDouble(args.get("amount")), Operation.values()[NumberConversions.toInt(args.get("operation"))], EquipmentSlotGroup.ANY);
     }
 
     /**
