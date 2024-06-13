@@ -126,35 +126,22 @@ diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-@@ -0,0 +0,0 @@
- package net.minecraft.world.level.chunk;
- 
- import com.google.common.collect.ImmutableList;
-+import com.destroystokyo.paper.exception.ServerInternalException;
- import com.google.common.collect.Maps;
- import com.google.common.collect.UnmodifiableIterator;
- import com.mojang.logging.LogUtils;
 @@ -0,0 +0,0 @@ public class LevelChunk extends ChunkAccess {
+         BlockState iblockdata = this.getBlockState(blockposition);
  
-             // CraftBukkit start
-         } else {
--            System.out.println("Attempted to place a tile entity (" + blockEntity + ") at " + blockEntity.getBlockPos().getX() + "," + blockEntity.getBlockPos().getY() + "," + blockEntity.getBlockPos().getZ()
--                + " (" + this.getBlockState(blockposition) + ") where there was no entity tile!");
--            System.out.println("Chunk coordinates: " + (this.chunkPos.x * 16) + "," + (this.chunkPos.z * 16));
--            new Exception().printStackTrace();
+         if (!iblockdata.hasBlockEntity()) {
+-            LevelChunk.LOGGER.warn("Trying to set block entity {} at position {}, but state {} does not allow it", new Object[]{blockEntity, blockposition, iblockdata});
+-            new Exception().printStackTrace(); // CraftBukkit
 +            // Paper start - ServerExceptionEvent
-+            ServerInternalException e = new ServerInternalException(
-+                "Attempted to place a tile entity (" + blockEntity + ") at " + blockEntity.getBlockPos().getX() + ","
-+                    + blockEntity.getBlockPos().getY() + "," + blockEntity.getBlockPos().getZ()
-+                    + " (" + getBlockState(blockposition) + ") where there was no entity tile!\n" +
-+                    "Chunk coordinates: " + (this.chunkPos.x * 16) + "," + (this.chunkPos.z * 16) +
-+                    "\nWorld: " + level.getLevel().dimension().location());
++            com.destroystokyo.paper.exception.ServerInternalException e = new com.destroystokyo.paper.exception.ServerInternalException(
++                "Trying to set block entity %s at position %s, but state %s does not allow it".formatted(blockEntity, blockposition, iblockdata)
++            );
 +            e.printStackTrace();
-+            ServerInternalException.reportInternalException(e);
++            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(e);
 +            // Paper end - ServerExceptionEvent
-             // CraftBukkit end
-         }
-     }
+         } else {
+             BlockState iblockdata1 = blockEntity.getBlockState();
+ 
 @@ -0,0 +0,0 @@ public class LevelChunk extends ChunkAccess {
                          // Paper start - Prevent block entity and entity crashes
                          final String msg = String.format("BlockEntity threw exception at %s:%s,%s,%s", LevelChunk.this.getLevel().getWorld().getName(), this.getPos().getX(), this.getPos().getY(), this.getPos().getZ());
