@@ -10,20 +10,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/world/item/CrossbowItem.java
 @@ -0,0 +0,0 @@ public class CrossbowItem extends ProjectileWeaponItem {
      public void releaseUsing(ItemStack stack, Level world, LivingEntity user, int remainingUseTicks) {
-         int i = this.getUseDuration(stack) - remainingUseTicks;
-         float f = getPowerForTime(i, stack);
+         int i = this.getUseDuration(stack, user) - remainingUseTicks;
+         float f = getPowerForTime(i, stack, user);
 -        if (f >= 1.0F && !isCharged(stack) && tryLoadProjectiles(user, stack)) {
-+        // Paper start
++        // Paper start - Add EntityLoadCrossbowEvent
 +        if (f >= 1.0F && !isCharged(stack)) {
 +            final io.papermc.paper.event.entity.EntityLoadCrossbowEvent event = new io.papermc.paper.event.entity.EntityLoadCrossbowEvent(user.getBukkitLivingEntity(), stack.asBukkitMirror(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(user.getUsedItemHand()));
 +            if (!event.callEvent() || !tryLoadProjectiles(user, stack, event.shouldConsumeItem()) || !event.shouldConsumeItem()) {
 +                if (user instanceof ServerPlayer player) player.containerMenu.sendAllDataToRemote();
 +                return;
 +            }
-+        // Paper end - Add EntityLoadCrossbowEvent
-             world.playSound(
-                 null,
-                 user.getX(),
++            // Paper end - Add EntityLoadCrossbowEvent
+             CrossbowItem.ChargingSounds chargingSounds = this.getChargingSounds(stack);
+             chargingSounds.end()
+                 .ifPresent(
 @@ -0,0 +0,0 @@ public class CrossbowItem extends ProjectileWeaponItem {
          }
      }
@@ -48,12 +48,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class ProjectileWeaponItem extends Item {
      }
  
-     protected static List<ItemStack> draw(ItemStack weaponStack, ItemStack projectileStack, LivingEntity shooter) {
-+    // Paper start
-+        return draw(weaponStack, projectileStack, shooter, true);
+     protected static List<ItemStack> draw(ItemStack stack, ItemStack projectileStack, LivingEntity shooter) {
++        // Paper start
++        return draw(stack, projectileStack, shooter, true);
 +    }
-+    protected static List<ItemStack> draw(ItemStack weaponStack, ItemStack projectileStack, LivingEntity shooter, boolean consume) {
-+    // Paper end
++    protected static List<ItemStack> draw(ItemStack stack, ItemStack projectileStack, LivingEntity shooter, boolean consume) {
++        // Paper end
          if (projectileStack.isEmpty()) {
              return List.of();
          } else {
@@ -61,8 +61,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              ItemStack itemstack2 = projectileStack.copy();
  
              for (int k = 0; k < j; ++k) {
--                list.add(ProjectileWeaponItem.useAmmo(weaponStack, k == 0 ? projectileStack : itemstack2, shooter, k > 0));
-+                list.add(ProjectileWeaponItem.useAmmo(weaponStack, k == 0 ? projectileStack : itemstack2, shooter, k > 0 || !consume)); // Paper
-             }
+-                ItemStack itemstack3 = ProjectileWeaponItem.useAmmo(stack, k == 0 ? projectileStack : itemstack2, shooter, k > 0);
++                ItemStack itemstack3 = ProjectileWeaponItem.useAmmo(stack, k == 0 ? projectileStack : itemstack2, shooter, k > 0 || !consume); // Paper
  
-             return list;
+                 if (!itemstack3.isEmpty()) {
+                     list.add(itemstack3);

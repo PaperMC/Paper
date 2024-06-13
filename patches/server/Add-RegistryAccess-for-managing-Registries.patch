@@ -30,10 +30,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.world.item.enchantment.Enchantment;
 +import net.minecraft.world.level.levelgen.structure.Structure;
 +import org.bukkit.GameEvent;
++import org.bukkit.JukeboxSong;
 +import org.bukkit.Keyed;
 +import org.bukkit.MusicInstrument;
 +import org.bukkit.block.BlockType;
 +import org.bukkit.craftbukkit.CraftGameEvent;
++import org.bukkit.craftbukkit.CraftJukeboxSong;
 +import org.bukkit.craftbukkit.CraftMusicInstrument;
 +import org.bukkit.craftbukkit.block.CraftBlockType;
 +import org.bukkit.craftbukkit.damage.CraftDamageType;
@@ -84,6 +86,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            entry(Registries.TRIM_PATTERN, RegistryKey.TRIM_PATTERN, TrimPattern.class, CraftTrimPattern::new).delayed(),
 +            entry(Registries.DAMAGE_TYPE, RegistryKey.DAMAGE_TYPE, DamageType.class, CraftDamageType::new).delayed(),
 +            entry(Registries.WOLF_VARIANT, RegistryKey.WOLF_VARIANT, Wolf.Variant.class, CraftWolf.CraftVariant::new).delayed(),
++            entry(Registries.JUKEBOX_SONG, RegistryKey.JUKEBOX_SONG, JukeboxSong.class, CraftJukeboxSong::new).delayed(),
 +
 +            // api-only
 +            apiOnly(Registries.BIOME, RegistryKey.BIOME, () -> org.bukkit.Registry.BIOME),
@@ -686,7 +689,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/resources/RegistryDataLoader.java
 +++ b/src/main/java/net/minecraft/resources/RegistryDataLoader.java
 @@ -0,0 +0,0 @@ public class RegistryDataLoader {
-     public static record RegistryData<T>(ResourceKey<? extends Registry<T>> key, Codec<T> elementCodec) {
+ 
          RegistryDataLoader.Loader<T> create(Lifecycle lifecycle, Map<ResourceKey<?>, Exception> errors) {
              WritableRegistry<T> writableRegistry = new MappedRegistry<>(this.key, lifecycle);
 +            io.papermc.paper.registry.PaperRegistryAccess.instance().registerRegistry(this.key, writableRegistry); // Paper - initialize API registry
@@ -703,8 +706,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  WritableRegistry<T> writableRegistry = new MappedRegistry<>(type.registryKey(), Lifecycle.experimental());
 +                io.papermc.paper.registry.PaperRegistryAccess.instance().registerReloadableRegistry(type.registryKey(), writableRegistry); // Paper - register reloadable registry
                  Map<ResourceLocation, JsonElement> map = new HashMap<>();
-                 SimpleJsonResourceReloadListener.scanDirectory(resourceManager, type.directory(), GSON, map);
-                 map.forEach(
+                 String string = Registries.elementsDirPath(type.registryKey());
+                 SimpleJsonResourceReloadListener.scanDirectory(resourceManager, string, GSON, map);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
@@ -747,6 +750,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        }
 -        if (bukkitClass == DamageType.class) {
 -            return new CraftRegistry<>(DamageType.class, registryHolder.registryOrThrow(Registries.DAMAGE_TYPE), CraftDamageType::new, FieldRename.NONE);
+-        }
+-        if (bukkitClass == JukeboxSong.class) {
+-            return new CraftRegistry<>(JukeboxSong.class, registryHolder.registryOrThrow(Registries.JUKEBOX_SONG), CraftJukeboxSong::new, FieldRename.NONE);
 -        }
 -        if (bukkitClass == Wolf.Variant.class) {
 -            return new CraftRegistry<>(Wolf.Variant.class, registryHolder.registryOrThrow(Registries.WOLF_VARIANT), CraftWolf.CraftVariant::new, FieldRename.NONE);
@@ -1092,6 +1098,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        register(TrimMaterial.class, Registries.TRIM_MATERIAL, CraftTrimMaterial.class, net.minecraft.world.item.armortrim.TrimMaterial.class);
 -        register(TrimPattern.class, Registries.TRIM_PATTERN, CraftTrimPattern.class, net.minecraft.world.item.armortrim.TrimPattern.class);
 -        register(DamageType.class, Registries.DAMAGE_TYPE, CraftDamageType.class, net.minecraft.world.damagesource.DamageType.class);
+-        register(JukeboxSong.class, Registries.JUKEBOX_SONG, CraftJukeboxSong.class, net.minecraft.world.item.JukeboxSong.class);
 -        register(Wolf.Variant.class, Registries.WOLF_VARIANT, CraftWolf.CraftVariant.class, WolfVariant.class);
 -        register(ItemType.class, Registries.ITEM, CraftItemType.class, net.minecraft.world.item.Item.class, true);
 -        register(BlockType.class, Registries.BLOCK, CraftBlockType.class, net.minecraft.world.level.block.Block.class, true);
@@ -1105,6 +1112,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        register(RegistryKey.TRIM_MATERIAL, TrimMaterial.class, Registries.TRIM_MATERIAL, CraftTrimMaterial.class, net.minecraft.world.item.armortrim.TrimMaterial.class);
 +        register(RegistryKey.TRIM_PATTERN, TrimPattern.class, Registries.TRIM_PATTERN, CraftTrimPattern.class, net.minecraft.world.item.armortrim.TrimPattern.class);
 +        register(RegistryKey.DAMAGE_TYPE, DamageType.class, Registries.DAMAGE_TYPE, CraftDamageType.class, net.minecraft.world.damagesource.DamageType.class);
++        register(RegistryKey.JUKEBOX_SONG, JukeboxSong.class, Registries.JUKEBOX_SONG, CraftJukeboxSong.class, net.minecraft.world.item.JukeboxSong.class);
 +        register(RegistryKey.WOLF_VARIANT, Wolf.Variant.class, Registries.WOLF_VARIANT, CraftWolf.CraftVariant.class, WolfVariant.class);
 +        register(RegistryKey.ITEM, ItemType.class, Registries.ITEM, CraftItemType.class, net.minecraft.world.item.Item.class, true);
 +        register(RegistryKey.BLOCK, BlockType.class, Registries.BLOCK, CraftBlockType.class, net.minecraft.world.level.block.Block.class, true);

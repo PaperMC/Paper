@@ -16,9 +16,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  if (throwable instanceof TimeoutException) {
                      Connection.LOGGER.debug("Timeout", throwable);
 +                    if (player != null) player.quitReason = org.bukkit.event.player.PlayerQuitEvent.QuitReason.TIMED_OUT; // Paper - Add API for quit reason
-                     this.disconnect(Component.translatable("disconnect.timeout"));
+                     this.disconnect((Component) Component.translatable("disconnect.timeout"));
                  } else {
                      MutableComponent ichatmutablecomponent = Component.translatable("disconnect.genericReason", "Internal Exception: " + String.valueOf(throwable));
+@@ -0,0 +0,0 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+                         disconnectiondetails = new DisconnectionDetails(ichatmutablecomponent);
+                     }
  
 +                    if (player != null) player.quitReason = org.bukkit.event.player.PlayerQuitEvent.QuitReason.ERRONEOUS_STATE; // Paper - Add API for quit reason
                      if (flag) {
@@ -28,7 +31,7 @@ diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/ma
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
+@@ -0,0 +0,0 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
      public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleHashSet; // Paper
      public com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
      public @Nullable String clientBrandName = null; // Paper - Brand support
@@ -41,12 +44,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 @@ -0,0 +0,0 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
-         final Component ichatbasecomponent = io.papermc.paper.adventure.PaperAdventure.asVanilla(event.reason()); // Paper - Adventure
-         // CraftBukkit end
  
+     private void disconnect0(DisconnectionDetails disconnectiondetails) {
+         // CraftBukkit end
 +        this.player.quitReason = org.bukkit.event.player.PlayerQuitEvent.QuitReason.KICKED; // Paper - Add API for quit reason
-         this.connection.send(new ClientboundDisconnectPacket(ichatbasecomponent), PacketSendListener.thenRun(() -> {
-             this.connection.disconnect(ichatbasecomponent);
+         this.connection.send(new ClientboundDisconnectPacket(disconnectiondetails.reason()), PacketSendListener.thenRun(() -> {
+             this.connection.disconnect(disconnectiondetails);
          }));
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
