@@ -18,10 +18,12 @@ public class CraftGameEvent extends GameEvent implements Handleable<net.minecraf
     }
 
     private final NamespacedKey key;
+    private final net.minecraft.resources.ResourceKey<net.minecraft.world.level.gameevent.GameEvent> handleKey; // Paper
     private final net.minecraft.world.level.gameevent.GameEvent handle;
 
     public CraftGameEvent(NamespacedKey key, net.minecraft.world.level.gameevent.GameEvent handle) {
         this.key = key;
+        this.handleKey = net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.GAME_EVENT, org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(key)); // Paper
         this.handle = handle;
     }
 
@@ -29,6 +31,18 @@ public class CraftGameEvent extends GameEvent implements Handleable<net.minecraf
     public net.minecraft.world.level.gameevent.GameEvent getHandle() {
         return this.handle;
     }
+
+    // Paper start
+    @Override
+    public int getRange() {
+        return this.handle.notificationRadius();
+    }
+
+    @Override
+    public int getVibrationLevel() {
+        return net.minecraft.world.level.gameevent.vibrations.VibrationSystem.getGameEventFrequency(this.handleKey);
+    }
+    // Paper end
 
     @NotNull
     @Override
