@@ -120,6 +120,7 @@ import org.bukkit.entity.ZombieVillager;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -282,8 +283,8 @@ public class MobGoalNames {
         name = sb.toString();
         name = name.replaceFirst("_", "");
 
-        if (flag && !deobfuscationMap.containsKey(name.toLowerCase()) && !ignored.contains(name)) {
-            System.out.println("need to map " + original + " (" + name.toLowerCase() + ")");
+        if (flag && !deobfuscationMap.containsKey(name.toLowerCase(Locale.ROOT)) && !ignored.contains(name)) {
+            System.out.println("need to map " + original + " (" + name.toLowerCase(Locale.ROOT) + ")");
         }
 
         // did we rename this key?
