@@ -187,8 +187,8 @@ public final class MapCursor {
      */
     @Deprecated
     public void setRawType(byte type) {
-        if (type < 0 || type > 26) {
-            throw new IllegalArgumentException("Type must be in the range 0-26");
+        if (type < 0 || type > 34) {
+            throw new IllegalArgumentException("Type must be in the range 0-34");
         }
         this.type = type;
     }
