@@ -117,7 +117,6 @@ public final class MobEffectKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.UPDATE_1_21)
     public static final TypedKey<PotionEffectType> INFESTED = create(key("infested"));
 
     /**
@@ -188,8 +187,6 @@ public final class MobEffectKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.UPDATE_1_21)
     public static final TypedKey<PotionEffectType> OOZING = create(key("oozing"));
 
     /**
@@ -204,8 +201,6 @@ public final class MobEffectKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.UPDATE_1_21)
     public static final TypedKey<PotionEffectType> RAID_OMEN = create(key("raid_omen"));
 
     /**
@@ -263,7 +258,6 @@ public final class MobEffectKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.UPDATE_1_21)
     public static final TypedKey<PotionEffectType> TRIAL_OMEN = create(key("trial_omen"));
 
     /**
@@ -293,7 +287,6 @@ public final class MobEffectKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.UPDATE_1_21)
     public static final TypedKey<PotionEffectType> WEAVING = create(key("weaving"));
 
     /**
@@ -302,7 +295,6 @@ public final class MobEffectKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.UPDATE_1_21)
     public static final TypedKey<PotionEffectType> WIND_CHARGED = create(key("wind_charged"));
 
     /**

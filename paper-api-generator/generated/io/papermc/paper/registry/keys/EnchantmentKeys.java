@@ -61,7 +61,6 @@ public final class EnchantmentKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.UPDATE_1_21)
     public static final TypedKey<Enchantment> BREACH = create(key("breach"));
 
     /**
@@ -77,7 +76,6 @@ public final class EnchantmentKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.UPDATE_1_21)
     public static final TypedKey<Enchantment> DENSITY = create(key("density"));
 
     /**
@@ -323,8 +321,6 @@ public final class EnchantmentKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.UPDATE_1_21)
     public static final TypedKey<Enchantment> WIND_BURST = create(key("wind_burst"));
 
     private EnchantmentKeys() {
