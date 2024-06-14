@@ -6,7 +6,6 @@ import io.papermc.paper.generated.GeneratedFrom;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
-import org.bukkit.MinecraftExperimental;
 import org.bukkit.generator.structure.Structure;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -24,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.20.6")
+@GeneratedFrom("1.21")
 @ApiStatus.Experimental
 public final class StructureKeys {
     /**
