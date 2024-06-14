@@ -8,20 +8,28 @@ diff --git a/src/main/java/org/bukkit/event/player/PlayerItemMendEvent.java b/sr
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/event/player/PlayerItemMendEvent.java
 +++ b/src/main/java/org/bukkit/event/player/PlayerItemMendEvent.java
+@@ -0,0 +0,0 @@ import org.bukkit.event.Cancellable;
+ import org.bukkit.event.HandlerList;
+ import org.bukkit.inventory.EquipmentSlot;
+ import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.Contract;
+ import org.jetbrains.annotations.NotNull;
+ 
+ /**
 @@ -0,0 +0,0 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
      private final ExperienceOrb experienceOrb;
      private int repairAmount;
      private boolean cancelled;
-+    private java.util.function.IntUnaryOperator durabilityToXpOp; // Paper
++    private final int consumedExperience; // Paper
  
 +    @Deprecated // Paper
      public PlayerItemMendEvent(@NotNull Player who, @NotNull ItemStack item, @NotNull EquipmentSlot slot, @NotNull ExperienceOrb experienceOrb, int repairAmount) {
 +        // Paper start
-+        this(who, item, slot, experienceOrb, repairAmount, amount -> amount / 2);
++        this(who, item, slot, experienceOrb, repairAmount, repairAmount / 2);
 +    }
 +
 +    @org.jetbrains.annotations.ApiStatus.Internal
-+    public PlayerItemMendEvent(@NotNull Player who, @NotNull ItemStack item, @NotNull EquipmentSlot slot, @NotNull ExperienceOrb experienceOrb, int repairAmount, @NotNull java.util.function.IntUnaryOperator durabilityToXpOp) {
++    public PlayerItemMendEvent(@NotNull Player who, @NotNull ItemStack item, @NotNull EquipmentSlot slot, @NotNull ExperienceOrb experienceOrb, int repairAmount, int consumedExperience) {
 +        // Paper end
          super(who);
          this.item = item;
@@ -29,7 +37,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.experienceOrb = experienceOrb;
          this.repairAmount = repairAmount;
 +        // Paper start
-+        this.durabilityToXpOp = durabilityToXpOp;
++        this.consumedExperience = consumedExperience;
 +    }
 +
 +    /**
@@ -38,9 +46,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * an XP orb will be consumed by this mend operation.
 +     *
 +     * @return the durability-to-xp operation
++     * @deprecated the mending enchantment uses enchantment effects to compute how much durability is granted per xp.
++     * The enchantment effects operation are too complex to reliably offer the inverse function.
 +     */
++    @Contract("-> fail")
++    @Deprecated(forRemoval = true, since = "1.21")
 +    public @NotNull java.util.function.IntUnaryOperator getDurabilityToXpOperation() {
-+        return this.durabilityToXpOp;
++        throw new UnsupportedOperationException("Enchantments use effects to compute xp to durability since 1.21.");
 +    }
 +
 +    /**
@@ -49,10 +61,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * an XP orb will be consumed by this mend operation.
 +     *
 +     * @param durabilityToXpOp the durability-to-xp operation
++     * @deprecated the mending enchantment uses enchantment effects to compute how much durability is granted per xp.
++     * The enchantment effects operation are too complex to reliably offer the inverse function.
 +     */
++    @Contract("_ -> fail")
++    @Deprecated(forRemoval = true, since = "1.21")
 +    public void setDurabilityToXpOperation(@NotNull java.util.function.IntUnaryOperator durabilityToXpOp) {
-+        com.google.common.base.Preconditions.checkNotNull(durabilityToXpOp);
-+        this.durabilityToXpOp = durabilityToXpOp;
++        throw new UnsupportedOperationException("Enchantments use effects to compute xp to durability since 1.21.");
 +    }
 +
 +    /**
@@ -63,7 +78,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @return the amount of xp that will be consumed
 +     */
 +    public int getConsumedExperience() {
-+        return this.durabilityToXpOp.applyAsInt(this.getRepairAmount());
++         return this.consumedExperience;
      }
 +    // Paper end
  
