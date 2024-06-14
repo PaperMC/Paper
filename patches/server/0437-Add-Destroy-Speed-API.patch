@@ -6,10 +6,10 @@ Subject: [PATCH] Add Destroy Speed API
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
-index 9953b6b36cbcbfd1756bac478b568ca5700fc898..21ad2f461a5a578a2bf7fec1deeb421071245e6d 100644
+index 9953b6b36cbcbfd1756bac478b568ca5700fc898..9fd636424f1300e0b8263bdd26418e6892053f8f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
-@@ -721,4 +721,19 @@ public class CraftBlockData implements BlockData {
+@@ -721,4 +721,24 @@ public class CraftBlockData implements BlockData {
      public BlockState createBlockState() {
          return CraftBlockStates.getBlockState(this.state, null);
      }
@@ -20,10 +20,15 @@ index 9953b6b36cbcbfd1756bac478b568ca5700fc898..21ad2f461a5a578a2bf7fec1deeb4210
 +        net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.unwrap(itemStack);
 +        float speed = nmsItemStack.getDestroySpeed(this.state);
 +        if (speed > 1.0F && considerEnchants) {
-+            int enchantLevel = net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.EFFICIENCY, nmsItemStack);
-+            if (enchantLevel > 0) {
-+                speed += enchantLevel * enchantLevel + 1;
-+            }
++            final org.apache.commons.lang3.mutable.MutableFloat mutableFloat = new org.apache.commons.lang3.mutable.MutableFloat(0);
++            net.minecraft.world.item.enchantment.EnchantmentHelper.forEachModifier(
++                nmsItemStack, net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND,
++                (attributeHolder, attributeModifier) -> {
++                    if (!attributeHolder.is(net.minecraft.world.entity.ai.attributes.Attributes.MINING_EFFICIENCY)) return;
++
++                    // TODO do we just attempt to calculate the full "modifier" to the mining efficiency?
++                }
++            );
 +        }
 +        return speed;
 +    }

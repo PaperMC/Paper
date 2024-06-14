@@ -5,10 +5,10 @@ Subject: [PATCH] Implement enchantWithLevels API
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-index cd0b6819da81978b9186c83ee926e1fed5ee6fe4..01c441bcede88ce663c6b47b027c6239381c62c8 100644
+index cd0b6819da81978b9186c83ee926e1fed5ee6fe4..6d1eab448f368be8e1d768712f80f2c4d93c5e1a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-@@ -606,4 +606,26 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -606,4 +606,29 @@ public final class CraftItemFactory implements ItemFactory {
          return eggItem == null ? null : new net.minecraft.world.item.ItemStack(eggItem).asBukkitMirror();
      }
      // Paper end - old getSpawnEgg API
@@ -24,12 +24,15 @@ index cd0b6819da81978b9186c83ee926e1fed5ee6fe4..01c441bcede88ce663c6b47b027c6239
 +        if (internalStack.isEnchanted()) {
 +            internalStack.set(net.minecraft.core.component.DataComponents.ENCHANTMENTS, null);
 +        }
++        final net.minecraft.core.RegistryAccess registryAccess = net.minecraft.server.MinecraftServer.getServer().registryAccess();
++        final net.minecraft.core.Registry<Enchantment> enchantments = registryAccess.registryOrThrow(Registries.ENCHANTMENT);
 +        final net.minecraft.world.item.ItemStack enchanted = net.minecraft.world.item.enchantment.EnchantmentHelper.enchantItem(
-+            MinecraftServer.getServer().getWorldData().enabledFeatures(),
 +            new org.bukkit.craftbukkit.util.RandomSourceWrapper(random),
 +            internalStack,
 +            levels,
-+            allowTreasure
++            enchantments.holders()
++                .<net.minecraft.core.Holder<Enchantment>>map(r -> r)
++                .filter(r -> allowTreasure || !r.is(EnchantmentTags.TREASURE))
 +        );
 +        return CraftItemStack.asCraftMirror(enchanted);
 +    }
