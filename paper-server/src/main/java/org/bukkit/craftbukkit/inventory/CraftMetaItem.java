@@ -55,6 +55,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.SnbtPrinterTagVisitor;
 import net.minecraft.network.chat.IChatBaseComponent;
+import net.minecraft.resources.MinecraftKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Unit;
 import net.minecraft.world.entity.EnumItemSlot;
@@ -272,6 +273,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     private NBTTagCompound customTag;
     protected DataComponentPatch.a unhandledTags = DataComponentPatch.builder();
+    private Set<DataComponentType<?>> removedTags = Sets.newHashSet();
     private CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
 
     private int version = CraftMagicNumbers.INSTANCE.getDataVersion(); // Internal use only
@@ -319,6 +321,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         this.damage = meta.damage;
         this.maxDamage = meta.maxDamage;
         this.unhandledTags = meta.unhandledTags;
+        this.removedTags.addAll(meta.removedTags);
         this.persistentDataContainer.putAll(meta.persistentDataContainer.getRaw());
 
         this.customTag = meta.customTag;
@@ -426,11 +429,13 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         Set<Map.Entry<DataComponentType<?>, Optional<?>>> keys = tag.entrySet();
         for (Map.Entry<DataComponentType<?>, Optional<?>> key : keys) {
             if (!getHandledTags().contains(key.getKey())) {
-                key.getValue().ifPresentOrElse((value) -> {
+                key.getValue().ifPresent((value) -> {
                     unhandledTags.set((DataComponentType) key.getKey(), value);
-                }, () -> {
-                    unhandledTags.remove(key.getKey());
                 });
+            }
+
+            if (key.getValue().isEmpty()) {
+                removedTags.add(key.getKey());
             }
         }
     }
@@ -617,6 +622,21 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 unhandledTags.copy(DataComponentPatch.CODEC.parse(MinecraftServer.getDefaultRegistryAccess().createSerializationContext(DynamicOpsNBT.INSTANCE), unhandledTag).result().get());
             } catch (IOException ex) {
                 Logger.getLogger(CraftMetaItem.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
+        Iterable<?> removed = SerializableMeta.getObject(Iterable.class, map, "removed", true);
+        if (removed != null) {
+            IRegistryCustom registryAccess = CraftRegistry.getMinecraftRegistry();
+            IRegistry<DataComponentType<?>> componentTypeRegistry = registryAccess.registryOrThrow(Registries.DATA_COMPONENT_TYPE);
+
+            for (Object removedObject : removed) {
+                String removedString = (String) removedObject;
+
+                DataComponentType<?> component = componentTypeRegistry.get(MinecraftKey.parse(removedString));
+                if (component != null) {
+                    this.removedTags.add(component);
+                }
             }
         }
 
@@ -838,6 +858,12 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             });
         }
 
+        for (DataComponentType<?> removed : removedTags) {
+            if (!itemTag.builder.isSet(removed)) {
+                itemTag.builder.remove(removed);
+            }
+        }
+
         NBTTagCompound customTag = (this.customTag != null) ? this.customTag.copy() : null;
         if (!persistentDataContainer.isEmpty()) {
             NBTTagCompound bukkitCustomCompound = new NBTTagCompound();
@@ -914,7 +940,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Overridden
     boolean isEmpty() {
-        return !(hasDisplayName() || hasItemName() || hasLocalizedName() || hasEnchants() || (lore != null) || hasCustomModelData() || hasBlockData() || hasRepairCost() || !unhandledTags.build().isEmpty() || !persistentDataContainer.isEmpty() || hideFlag != 0 || isHideTooltip() || isUnbreakable() || hasEnchantmentGlintOverride() || isFireResistant() || hasMaxStackSize() || hasRarity() || hasFood() || hasTool() || hasDamage() || hasMaxDamage() || hasAttributeModifiers() || customTag != null);
+        return !(hasDisplayName() || hasItemName() || hasLocalizedName() || hasEnchants() || (lore != null) || hasCustomModelData() || hasBlockData() || hasRepairCost() || !unhandledTags.build().isEmpty() || !removedTags.isEmpty() || !persistentDataContainer.isEmpty() || hideFlag != 0 || isHideTooltip() || isUnbreakable() || hasEnchantmentGlintOverride() || isFireResistant() || hasMaxStackSize() || hasRarity() || hasFood() || hasTool() || hasDamage() || hasMaxDamage() || hasAttributeModifiers() || customTag != null);
     }
 
     @Override
@@ -1498,6 +1524,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 && (this.hasRepairCost() ? that.hasRepairCost() && this.repairCost == that.repairCost : !that.hasRepairCost())
                 && (this.hasAttributeModifiers() ? that.hasAttributeModifiers() && compareModifiers(this.attributeModifiers, that.attributeModifiers) : !that.hasAttributeModifiers())
                 && (this.unhandledTags.equals(that.unhandledTags))
+                && (this.removedTags.equals(that.removedTags))
                 && (Objects.equals(this.customTag, that.customTag))
                 && (this.persistentDataContainer.equals(that.persistentDataContainer))
                 && (this.hideFlag == that.hideFlag)
@@ -1541,6 +1568,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         hash = 61 * hash + (hasEnchants() ? this.enchantments.hashCode() : 0);
         hash = 61 * hash + (hasRepairCost() ? this.repairCost : 0);
         hash = 61 * hash + unhandledTags.hashCode();
+        hash = 61 * hash + removedTags.hashCode();
         hash = 61 * hash + ((customTag != null) ? this.customTag.hashCode() : 0);
         hash = 61 * hash + (!persistentDataContainer.isEmpty() ? persistentDataContainer.hashCode() : 0);
         hash = 61 * hash + hideFlag;
@@ -1579,6 +1607,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             if (this.customTag != null) {
                 clone.customTag = this.customTag.copy();
             }
+            clone.removedTags = Sets.newHashSet(this.removedTags);
             clone.persistentDataContainer = new CraftPersistentDataContainer(this.persistentDataContainer.getRaw(), DATA_TYPE_REGISTRY);
             clone.hideFlag = this.hideFlag;
             clone.hideTooltip = this.hideTooltip;
@@ -1725,6 +1754,20 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             } catch (IOException ex) {
                 Logger.getLogger(CraftMetaItem.class.getName()).log(Level.SEVERE, null, ex);
             }
+        }
+
+        if (!this.removedTags.isEmpty()) {
+            IRegistryCustom registryAccess = CraftRegistry.getMinecraftRegistry();
+            IRegistry<DataComponentType<?>> componentTypeRegistry = registryAccess.registryOrThrow(Registries.DATA_COMPONENT_TYPE);
+
+            List<String> removedTags = new ArrayList<>();
+            for (DataComponentType<?> removed : this.removedTags) {
+                String componentKey = componentTypeRegistry.getResourceKey(removed).orElseThrow().location().toString();
+
+                removedTags.add(componentKey);
+            }
+
+            builder.put("removed", removedTags);
         }
 
         if (!persistentDataContainer.isEmpty()) { // Store custom tags, wrapped in their compound
