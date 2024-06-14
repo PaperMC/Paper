@@ -36,12 +36,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            orb.spawnReason = org.bukkit.entity.ExperienceOrb.SpawnReason.CUSTOM;
 +            orb.setPosRaw(handle.getX(), handle.getY(), handle.getZ());
 +
-+            int i = Math.min(orb.xpToDurability(amount), itemstack.getDamageValue());
-+            org.bukkit.event.player.PlayerItemMendEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemMendEvent(handle, orb, itemstack, stackEntry.getKey(), i);
++            final int possibleDurabilityFromXp = net.minecraft.world.item.enchantment.EnchantmentHelper.modifyDurabilityToRepairFromXp(
++                handle.serverLevel(), itemstack, amount
++            );
++            int i = Math.min(possibleDurabilityFromXp, itemstack.getDamageValue());
++            org.bukkit.event.player.PlayerItemMendEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemMendEvent(handle, orb, itemstack, stackEntry.get().inSlot(), i);
 +            i = event.getRepairAmount();
 +            orb.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN);
 +            if (!event.isCancelled()) {
-+                amount -= orb.durabilityToXp(i);
++                amount -= i * amount / possibleDurabilityFromXp;
 +                itemstack.setDamageValue(itemstack.getDamageValue() - i);
 +            }
 +        }
