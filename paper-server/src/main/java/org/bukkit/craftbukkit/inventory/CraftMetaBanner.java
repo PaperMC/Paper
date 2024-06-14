@@ -3,17 +3,14 @@ package org.bukkit.craftbukkit.inventory;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.EnumColor;
 import net.minecraft.world.level.block.entity.BannerPatternLayers;
 import org.bukkit.DyeColor;
-import org.bukkit.Material;
 import org.bukkit.block.banner.Pattern;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
@@ -22,41 +19,6 @@ import org.bukkit.inventory.meta.BannerMeta;
 
 @DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
-
-    private static final Set<Material> BANNER_MATERIALS = Sets.newHashSet(
-            Material.BLACK_BANNER,
-            Material.BLACK_WALL_BANNER,
-            Material.BLUE_BANNER,
-            Material.BLUE_WALL_BANNER,
-            Material.BROWN_BANNER,
-            Material.BROWN_WALL_BANNER,
-            Material.CYAN_BANNER,
-            Material.CYAN_WALL_BANNER,
-            Material.GRAY_BANNER,
-            Material.GRAY_WALL_BANNER,
-            Material.GREEN_BANNER,
-            Material.GREEN_WALL_BANNER,
-            Material.LIGHT_BLUE_BANNER,
-            Material.LIGHT_BLUE_WALL_BANNER,
-            Material.LIGHT_GRAY_BANNER,
-            Material.LIGHT_GRAY_WALL_BANNER,
-            Material.LIME_BANNER,
-            Material.LIME_WALL_BANNER,
-            Material.MAGENTA_BANNER,
-            Material.MAGENTA_WALL_BANNER,
-            Material.ORANGE_BANNER,
-            Material.ORANGE_WALL_BANNER,
-            Material.PINK_BANNER,
-            Material.PINK_WALL_BANNER,
-            Material.PURPLE_BANNER,
-            Material.PURPLE_WALL_BANNER,
-            Material.RED_BANNER,
-            Material.RED_WALL_BANNER,
-            Material.WHITE_BANNER,
-            Material.WHITE_WALL_BANNER,
-            Material.YELLOW_BANNER,
-            Material.YELLOW_WALL_BANNER
-    );
 
     static final ItemMetaKeyType<BannerPatternLayers> PATTERNS = new ItemMetaKeyType<>(DataComponents.BANNER_PATTERNS, "patterns");
 
@@ -194,11 +156,6 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
     @Override
     boolean isEmpty() {
         return super.isEmpty() && patterns.isEmpty();
-    }
-
-    @Override
-    boolean applicableTo(Material type) {
-        return BANNER_MATERIALS.contains(type);
     }
 
     @Override

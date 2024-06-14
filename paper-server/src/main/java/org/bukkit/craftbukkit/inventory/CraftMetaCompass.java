@@ -15,7 +15,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.WorldServer;
 import net.minecraft.world.item.component.LodestoneTracker;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -104,11 +103,6 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
 
     boolean isCompassEmpty() {
         return !(hasLodestone() || hasLodestoneTracked());
-    }
-
-    @Override
-    boolean applicableTo(Material type) {
-        return type == Material.COMPASS;
     }
 
     @Override

@@ -1,11 +1,9 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.collect.ImmutableMap.Builder;
-import com.google.common.collect.Sets;
 import com.mojang.authlib.GameProfile;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 import net.minecraft.SystemUtils;
 import net.minecraft.core.component.DataComponentPatch;
@@ -15,7 +13,6 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.resources.MinecraftKey;
 import net.minecraft.world.item.component.ResolvableProfile;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
@@ -28,23 +25,6 @@ import org.bukkit.profile.PlayerProfile;
 
 @DelegateDeserialization(SerializableMeta.class)
 class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
-
-    private static final Set<Material> SKULL_MATERIALS = Sets.newHashSet(
-            Material.CREEPER_HEAD,
-            Material.CREEPER_WALL_HEAD,
-            Material.DRAGON_HEAD,
-            Material.DRAGON_WALL_HEAD,
-            Material.PIGLIN_HEAD,
-            Material.PIGLIN_WALL_HEAD,
-            Material.PLAYER_HEAD,
-            Material.PLAYER_WALL_HEAD,
-            Material.SKELETON_SKULL,
-            Material.SKELETON_WALL_SKULL,
-            Material.WITHER_SKELETON_SKULL,
-            Material.WITHER_SKELETON_WALL_SKULL,
-            Material.ZOMBIE_HEAD,
-            Material.ZOMBIE_WALL_HEAD
-    );
 
     @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
     static final ItemMetaKeyType<ResolvableProfile> SKULL_PROFILE = new ItemMetaKeyType<>(DataComponents.PROFILE, "SkullProfile");
@@ -156,11 +136,6 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
 
     boolean isSkullEmpty() {
         return profile == null && noteBlockSound == null;
-    }
-
-    @Override
-    boolean applicableTo(Material type) {
-        return SKULL_MATERIALS.contains(type);
     }
 
     @Override

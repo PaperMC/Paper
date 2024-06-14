@@ -7,7 +7,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.item.component.CustomData;
-import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.Axolotl;
@@ -106,11 +105,6 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
         if (bucketEntityTag != null) {
             tag.put(BUCKET_ENTITY_TAG, CustomData.of(bucketEntityTag));
         }
-    }
-
-    @Override
-    boolean applicableTo(Material type) {
-        return type == Material.AXOLOTL_BUCKET;
     }
 
     @Override

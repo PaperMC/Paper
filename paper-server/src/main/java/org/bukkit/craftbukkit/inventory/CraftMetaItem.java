@@ -134,6 +134,7 @@ import org.bukkit.persistence.PersistentDataContainer;
  * <li> SerializableMeta.Deserializers deserializer()
  */
 @DelegateDeserialization(SerializableMeta.class)
+// Important: ItemMeta needs to be the first interface see #applicableTo(Material)
 class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     static class ItemMetaKey {
@@ -898,9 +899,17 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         tag.put(ATTRIBUTES, list.build().withTooltip(!hasItemFlag(ItemFlag.HIDE_ATTRIBUTES)));
     }
 
-    @Overridden
     boolean applicableTo(Material type) {
-        return type != Material.AIR;
+        if (type == Material.AIR || !type.isItem()) {
+            return false;
+        }
+
+        if (getClass() == CraftMetaItem.class) {
+            return true;
+        }
+
+        // We assume that the corresponding bukkit interface is always the first one
+        return type.asItemType().getItemMetaClass() == getClass().getInterfaces()[0];
     }
 
     @Overridden

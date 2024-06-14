@@ -2,25 +2,14 @@ package org.bukkit.craftbukkit.inventory;
 
 import static org.bukkit.craftbukkit.inventory.CraftItemFactory.*;
 import com.google.common.collect.ImmutableMap.Builder;
-import com.google.common.collect.Sets;
 import java.util.Map;
-import java.util.Set;
 import net.minecraft.core.component.DataComponentPatch;
 import org.bukkit.Color;
-import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.inventory.meta.ColorableArmorMeta;
 
 @DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaColorableArmor extends CraftMetaArmor implements ColorableArmorMeta {
-
-    private static final Set<Material> LEATHER_ARMOR_MATERIALS = Sets.newHashSet(
-            Material.LEATHER_HELMET,
-            Material.LEATHER_CHESTPLATE,
-            Material.LEATHER_LEGGINGS,
-            Material.LEATHER_BOOTS,
-            Material.WOLF_ARMOR
-    );
 
     private Color color = DEFAULT_LEATHER_COLOR;
 
@@ -52,11 +41,6 @@ public class CraftMetaColorableArmor extends CraftMetaArmor implements Colorable
 
     boolean isLeatherArmorEmpty() {
         return !(hasColor());
-    }
-
-    @Override
-    boolean applicableTo(Material type) {
-        return LEATHER_ARMOR_MATERIALS.contains(type);
     }
 
     @Override

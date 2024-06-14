@@ -3,14 +3,12 @@ package org.bukkit.craftbukkit.inventory;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap.Builder;
-import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
@@ -18,7 +16,6 @@ import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.PotionRegistry;
 import org.bukkit.Color;
-import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 import org.bukkit.craftbukkit.potion.CraftPotionType;
@@ -31,13 +28,6 @@ import org.bukkit.potion.PotionType;
 
 @DelegateDeserialization(SerializableMeta.class)
 class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
-
-    private static final Set<Material> POTION_MATERIALS = Sets.newHashSet(
-            Material.POTION,
-            Material.SPLASH_POTION,
-            Material.LINGERING_POTION,
-            Material.TIPPED_ARROW
-    );
 
     @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
     static final ItemMetaKeyType<PotionContents> POTION_CONTENTS = new ItemMetaKeyType<>(DataComponents.POTION_CONTENTS);
@@ -145,11 +135,6 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
 
     boolean isPotionEmpty() {
         return (type == null) && !(hasCustomEffects() || hasColor());
-    }
-
-    @Override
-    boolean applicableTo(Material type) {
-        return POTION_MATERIALS.contains(type);
     }
 
     @Override

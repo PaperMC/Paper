@@ -8,7 +8,6 @@ import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.item.component.CustomData;
 import org.bukkit.DyeColor;
-import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.entity.CraftTropicalFish;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
@@ -108,11 +107,6 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
         if (bucketEntityTag != null) {
             tag.put(BUCKET_ENTITY_TAG, CustomData.of(bucketEntityTag));
         }
-    }
-
-    @Override
-    boolean applicableTo(Material type) {
-        return type == Material.TROPICAL_FISH_BUCKET;
     }
 
     @Override
