@@ -333,8 +333,6 @@ public final class DamageTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.UPDATE_1_21)
     public static final TypedKey<DamageType> WIND_CHARGE = create(key("wind_charge"));
 
     /**
