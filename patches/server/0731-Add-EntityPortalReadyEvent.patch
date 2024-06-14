@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 12 May 2021 04:30:42 -0700
+Subject: [PATCH] Add EntityPortalReadyEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index d328393e62e4e49ddd56c10a9f4f5fcf0b218ddf..6be5d68567ba7b598644a3feeaa34ae5171c3b97 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -2943,6 +2943,17 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+             if (this.portalProcess != null) {
+                 if (this.portalProcess.processPortalTeleportation(worldserver, this, this.canUsePortal(false))) {
+                     worldserver.getProfiler().push("portal");
++                    // Paper start - Add EntityPortalReadyEvent
++                    ServerLevel changedTarget = worldserver.getServer().getLevel(worldserver.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER ? Level.OVERWORLD : Level.NETHER);
++                    if (this.portalProcess.isSamePortal(((net.minecraft.world.level.block.NetherPortalBlock) net.minecraft.world.level.block.Blocks.NETHER_PORTAL))) {
++                        io.papermc.paper.event.entity.EntityPortalReadyEvent event = new io.papermc.paper.event.entity.EntityPortalReadyEvent(this.getBukkitEntity(), changedTarget == null ? null : changedTarget.getWorld(), org.bukkit.PortalType.NETHER);
++                        if (!event.callEvent()) {
++                            this.portalProcess = null;
++                            worldserver.getProfiler().pop();
++                            return;
++                        }
++                    }
++                    // Paper end - Add EntityPortalReadyEvent
+                     this.setPortalCooldown();
+                     DimensionTransition dimensiontransition = this.portalProcess.getPortalDestination(worldserver, this);
+ 
