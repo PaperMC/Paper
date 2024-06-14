@@ -60,23 +60,18 @@ index 0000000000000000000000000000000000000000..d926ad804355ee2fdc5910b2505e8671
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/network/StandardPaperServerListPingEventImpl.java b/src/main/java/com/destroystokyo/paper/network/StandardPaperServerListPingEventImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6b0bdc266109cdfb874f08bf74323603921d2260
+index 0000000000000000000000000000000000000000..aa2aff62c873ba85b0cbced5382398c858420e59
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/network/StandardPaperServerListPingEventImpl.java
-@@ -0,0 +1,116 @@
+@@ -0,0 +1,97 @@
 +package com.destroystokyo.paper.network;
 +
-+import com.destroystokyo.paper.profile.CraftPlayerProfile;
-+import com.destroystokyo.paper.profile.PlayerProfile;
-+import com.google.common.base.MoreObjects;
-+import com.google.common.base.Strings;
 +import com.mojang.authlib.GameProfile;
 +import io.papermc.paper.adventure.AdventureComponent;
 +import java.util.ArrayList;
 +import java.util.Collections;
 +import java.util.List;
 +import java.util.Optional;
-+import java.util.UUID;
 +import javax.annotation.Nonnull;
 +import net.minecraft.network.Connection;
 +import net.minecraft.network.chat.Component;
@@ -87,9 +82,6 @@ index 0000000000000000000000000000000000000000..6b0bdc266109cdfb874f08bf74323603
 +
 +public final class StandardPaperServerListPingEventImpl extends PaperServerListPingEventImpl {
 +
-+    // private static final GameProfile[] EMPTY_PROFILES = new GameProfile[0];
-+    private static final UUID FAKE_UUID = new UUID(0, 0);
-+
 +    private List<GameProfile> originalSample;
 +
 +    private StandardPaperServerListPingEventImpl(MinecraftServer server, Connection networkManager, ServerStatus ping) {
@@ -99,12 +91,12 @@ index 0000000000000000000000000000000000000000..6b0bdc266109cdfb874f08bf74323603
 +
 +    @Nonnull
 +    @Override
-+    public List<PlayerProfile> getPlayerSample() {
-+        List<PlayerProfile> sample = super.getPlayerSample();
++    public List<ListedPlayerInfo> getListedPlayers() {
++        List<ListedPlayerInfo> sample = super.getListedPlayers();
 +
 +        if (this.originalSample != null) {
 +            for (GameProfile profile : this.originalSample) {
-+                sample.add(CraftPlayerProfile.asBukkitCopy(profile));
++                sample.add(new ListedPlayerInfo(profile.getName(), profile.getId()));
 +            }
 +            this.originalSample = null;
 +        }
@@ -117,25 +109,14 @@ index 0000000000000000000000000000000000000000..6b0bdc266109cdfb874f08bf74323603
 +            return this.originalSample;
 +        }
 +
-+        List<PlayerProfile> entries = super.getPlayerSample();
++        List<ListedPlayerInfo> entries = super.getListedPlayers();
 +        if (entries.isEmpty()) {
 +            return Collections.emptyList();
 +        }
 +
 +        final List<GameProfile> profiles = new ArrayList<>();
-+        for (PlayerProfile profile : entries) {
-+            /*
-+             * Avoid null UUIDs/names since that will make the response invalid
-+             * on the client.
-+             * Instead, fall back to a fake/empty UUID and an empty string as name.
-+             * This can be used to create custom lines in the player list that do not
-+             * refer to a specific player.
-+             */
-+            if (profile.getId() != null && profile.getName() != null) {
-+                profiles.add(CraftPlayerProfile.asAuthlib(profile));
-+            } else {
-+                profiles.add(new GameProfile(MoreObjects.firstNonNull(profile.getId(), FAKE_UUID), Strings.nullToEmpty(profile.getName())));
-+            }
++        for (ListedPlayerInfo playerInfo : entries) {
++            profiles.add(new GameProfile(playerInfo.id(), playerInfo.name()));
 +        }
 +        return profiles;
 +    }
@@ -181,7 +162,7 @@ index 0000000000000000000000000000000000000000..6b0bdc266109cdfb874f08bf74323603
 +
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 260e364c91d8c3d774681f9f0ecba63df5dd3f5c..2ae6eb3a05bd0574143699e1286f63f5fd699f30 100644
+index 1fdd088f0bb6606f2a9a482d276aa3e9261be012..b6c5656665e492a7fdec0ae15545ecbabf585336 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -3,6 +3,9 @@ package net.minecraft.server;
