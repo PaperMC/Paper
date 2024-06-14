@@ -70,7 +70,7 @@ import org.jetbrains.annotations.NotNull;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.20.6")
+@GeneratedFrom("1.21")
 public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<AbstractHorse> RANDOM_STAND = create("random_stand", AbstractHorse.class);
 
@@ -330,8 +330,6 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<PolarBear> POLAR_BEAR_MELEE_ATTACK = create("polar_bear_melee_attack", PolarBear.class);
 
-    GoalKey<PolarBear> POLAR_BEAR_PANIC = create("polar_bear_panic", PolarBear.class);
-
     GoalKey<PufferFish> PUFFERFISH_PUFF = create("pufferfish_puff", PufferFish.class);
 
     GoalKey<Rabbit> RABBIT_AVOID_ENTITY = create("rabbit_avoid_entity", Rabbit.class);
@@ -406,6 +404,8 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<Tameable> SIT_WHEN_ORDERED_TO = create("sit_when_ordered_to", Tameable.class);
 
+    GoalKey<Tameable> TAMABLE_ANIMAL_PANIC = create("tamable_animal_panic", Tameable.class);
+
     GoalKey<Turtle> TURTLE_BREED = create("turtle_breed", Turtle.class);
 
     GoalKey<Turtle> TURTLE_GO_HOME = create("turtle_go_home", Turtle.class);
@@ -435,8 +435,6 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<Wolf> BEG = create("beg", Wolf.class);
 
     GoalKey<Wolf> WOLF_AVOID_ENTITY = create("wolf_avoid_entity", Wolf.class);
-
-    GoalKey<Wolf> WOLF_PANIC = create("wolf_panic", Wolf.class);
 
     GoalKey<Zombie> ZOMBIE_ATTACK = create("zombie_attack", Zombie.class);
 

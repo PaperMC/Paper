@@ -6,7 +6,6 @@ import io.papermc.paper.generated.GeneratedFrom;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
-import org.bukkit.MinecraftExperimental;
 import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -24,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.20.6")
+@GeneratedFrom("1.21")
 @ApiStatus.Experimental
 public final class MobEffectKeys {
     /**
@@ -116,7 +115,6 @@ public final class MobEffectKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
     public static final TypedKey<PotionEffectType> INFESTED = create(key("infested"));
 
     /**
@@ -257,7 +255,6 @@ public final class MobEffectKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
     public static final TypedKey<PotionEffectType> TRIAL_OMEN = create(key("trial_omen"));
 
     /**
@@ -286,7 +283,6 @@ public final class MobEffectKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
     public static final TypedKey<PotionEffectType> WEAVING = create(key("weaving"));
 
     /**
@@ -294,7 +290,6 @@ public final class MobEffectKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
     public static final TypedKey<PotionEffectType> WIND_CHARGED = create(key("wind_charged"));
 
     /**
