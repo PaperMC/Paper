@@ -1,0 +1,68 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Thu, 11 Mar 2021 03:03:32 -0800
+Subject: [PATCH] Do not run close logic for inventories on chunk unload
+
+Still call the event and change the active container though. We
+want to avoid close logic because it's possible to load the
+chunk through it. This should also be OK from a leak prevention/
+state desync POV because the TE is getting unloaded anyways.
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index efc27bb4072172f10839c181de9b5fba1f488b6f..4c739717fcf53b28312e8a98f9bf0989c604d0f0 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1274,9 +1274,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         // Spigot Start
+         for (net.minecraft.world.level.block.entity.BlockEntity tileentity : chunk.getBlockEntities().values()) {
+             if (tileentity instanceof net.minecraft.world.Container) {
++                // Paper start - this area looks like it can load chunks, change the behavior
++                // chests for example can apply physics to the world
++                // so instead we just change the active container and call the event
+                 for (org.bukkit.entity.HumanEntity h : Lists.newArrayList(((net.minecraft.world.Container) tileentity).getViewers())) {
+-                    h.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNLOADED); // Paper - Inventory close reason
++                    ((org.bukkit.craftbukkit.entity.CraftHumanEntity) h).getHandle().closeUnloadedInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNLOADED); // Paper - Inventory close reason
+                 }
++                // Paper end - this area looks like it can load chunks, change the behavior
+             }
+         }
+         // Spigot End
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index bc0a26cfbc5e1d21880f976c6bd4d0e30b277767..586f9bda04a74990b3eebbd2a52dcdb7273e8484 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -1718,6 +1718,18 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+         this.connection.send(new ClientboundContainerClosePacket(this.containerMenu.containerId));
+         this.doCloseContainer();
+     }
++    // Paper start - special close for unloaded inventory
++    @Override
++    public void closeUnloadedInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
++        // copied from above
++        CraftEventFactory.handleInventoryCloseEvent(this, reason); // CraftBukkit
++        // Paper end
++        // copied from below
++        this.connection.send(new ClientboundContainerClosePacket(this.containerMenu.containerId));
++        this.containerMenu = this.inventoryMenu;
++        // do not run close logic
++    }
++    // Paper end - special close for unloaded inventory
+ 
+     @Override
+     public void doCloseContainer() {
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index 536a4e3c26e83f359083bde19832a962628244fa..538c530ce9a2ce94dc013d8237b68b66bfcaa610 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -509,6 +509,11 @@ public abstract class Player extends LivingEntity {
+         this.containerMenu = this.inventoryMenu;
+     }
+     // Paper end - Inventory close reason
++    // Paper start - special close for unloaded inventory
++    public void closeUnloadedInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
++        this.containerMenu = this.inventoryMenu;
++    }
++    // Paper end - special close for unloaded inventory
+ 
+     public void closeContainer() {
+         this.containerMenu = this.inventoryMenu;

@@ -1,0 +1,59 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 24 Oct 2021 20:29:45 -0700
+Subject: [PATCH] Fix issues with mob conversion
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Skeleton.java b/src/main/java/net/minecraft/world/entity/monster/Skeleton.java
+index 44313973318cc330bb0288ec5b857c61d4c8f9be..cee42ae2b75c29c89e7fc5b1c77d3b45ce40e9ba 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Skeleton.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Skeleton.java
+@@ -91,10 +91,15 @@ public class Skeleton extends AbstractSkeleton {
+     }
+ 
+     protected void doFreezeConversion() {
+-        this.convertTo(EntityType.STRAY, true, org.bukkit.event.entity.EntityTransformEvent.TransformReason.FROZEN, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.FROZEN); // CraftBukkit - add spawn and transform reasons
++        Stray stray = this.convertTo(EntityType.STRAY, true, org.bukkit.event.entity.EntityTransformEvent.TransformReason.FROZEN, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.FROZEN); // CraftBukkit - add spawn and transform reasons // Paper - Fix issues with mob conversion
+         if (!this.isSilent()) {
+             this.level().levelEvent((Player) null, 1048, this.blockPosition(), 0);
+         }
++        // Paper start - Fix issues with mob conversion; reset conversion time to prevent event spam
++        if (stray == null) {
++            this.conversionTime = 300;
++        }
++        // Paper end - Fix issues with mob conversion
+ 
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java b/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
+index d35214c485dfc3abdb3f2d6683c9293b3b5f035d..d5e0c493f4c348724958193795ceb987765a465f 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
++++ b/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
+@@ -258,6 +258,11 @@ public class Hoglin extends Animal implements Enemy, HoglinBase {
+         if (zoglin != null) {
+             zoglin.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 200, 0));
+         }
++        // Paper start - Fix issues with mob conversion; reset to prevent event spam
++        else {
++            this.timeInOverworld = 0;
++        }
++        // Paper end - Fix issues with mob conversion
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/piglin/AbstractPiglin.java b/src/main/java/net/minecraft/world/entity/monster/piglin/AbstractPiglin.java
+index 4e4cfbcaa5c236969da288b9d6f9cd7773bf4687..dedbf88e03d5840fa9f5c5198033379701a9a29e 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/piglin/AbstractPiglin.java
++++ b/src/main/java/net/minecraft/world/entity/monster/piglin/AbstractPiglin.java
+@@ -99,6 +99,11 @@ public abstract class AbstractPiglin extends Monster {
+         if (entitypigzombie != null) {
+             entitypigzombie.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 200, 0));
+         }
++        // Paper start - Fix issues with mob conversion; reset to prevent event spam
++        else {
++            this.timeInOverworld = 0;
++        }
++        // Paper end - Fix issues with mob conversion
+ 
+     }
+ 
