@@ -17,7 +17,7 @@ index 997bea27d9aba6b10352e25f84b06caec4d56e01..1bcaf0c663070364c36f00a912c85fe0
      public boolean isRealPlayer; // Paper
      public final com.destroystokyo.paper.util.misc.PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<ServerPlayer> cachedSingleHashSet; // Paper
 diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-index feb529adf2168025c785ab92d95a3246e73c0236..7ab900fcb949962d226b8293360bb42f7cb0836b 100644
+index feb529adf2168025c785ab92d95a3246e73c0236..b43f87ff4b9853b5d4bbea5ff9686d64d9d0d26b 100644
 --- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 @@ -110,6 +110,11 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
@@ -32,25 +32,30 @@ index feb529adf2168025c785ab92d95a3246e73c0236..7ab900fcb949962d226b8293360bb42f
          if (this.isSingleplayerOwner()) {
              ServerCommonPacketListenerImpl.LOGGER.info("Stopping singleplayer server as player logged out");
              this.server.halt(false);
-@@ -374,7 +379,6 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -374,18 +379,17 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
              // Do not kick the player
              return;
          }
 -        this.player.kickLeaveMessage = event.getLeaveMessage(); // CraftBukkit - SPIGOT-3034: Forward leave message to PlayerQuitEvent
          // Send the possibly modified leave message
-         this.disconnect0(new DisconnectionDetails(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.reason()), disconnectionInfo.report(), disconnectionInfo.bugReportLink())); // Paper - Adventure
+-        this.disconnect0(new DisconnectionDetails(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.reason()), disconnectionInfo.report(), disconnectionInfo.bugReportLink())); // Paper - Adventure
++        this.disconnect0(new DisconnectionDetails(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.reason()), disconnectionInfo.report(), disconnectionInfo.bugReportLink()), event.leaveMessage()); // Paper - Adventure & use kick event leave message
      }
-@@ -385,7 +389,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+ 
+-    private void disconnect0(DisconnectionDetails disconnectiondetails) {
++    private void disconnect0(DisconnectionDetails disconnectiondetails, @Nullable net.kyori.adventure.text.Component leaveMessage) { // Paper - use kick event leave message
+         // CraftBukkit end
+         this.player.quitReason = org.bukkit.event.player.PlayerQuitEvent.QuitReason.KICKED; // Paper - Add API for quit reason
          this.connection.send(new ClientboundDisconnectPacket(disconnectiondetails.reason()), PacketSendListener.thenRun(() -> {
              this.connection.disconnect(disconnectiondetails);
          }));
 -        this.onDisconnect(disconnectiondetails); // CraftBukkit - fire quit instantly
-+        this.onDisconnect(disconnectiondetails, event.leaveMessage()); // CraftBukkit - fire quit instantly // Paper - use kick event leave message
++        this.onDisconnect(disconnectiondetails, leaveMessage); // CraftBukkit - fire quit instantly // Paper - use kick event leave message
          this.connection.setReadOnly();
          MinecraftServer minecraftserver = this.server;
          Connection networkmanager = this.connection;
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 0a21e25e7a7771e1c86a857af8133cf7203333e3..1aad9232786994b89d08fb36ca877ceffcf98d2c 100644
+index d4917f507b5602bd1cc5e0cc6dc1ca166888f21e..63830e8dd1a91836b8b6830f0f5758e5d0e9956f 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -1895,6 +1895,12 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
