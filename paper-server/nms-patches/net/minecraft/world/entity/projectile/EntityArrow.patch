@@ -14,7 +14,33 @@
  public abstract class EntityArrow extends IProjectile {
  
      private static final double ARROW_BASE_DAMAGE = 2.0D;
-@@ -242,7 +249,7 @@
+@@ -86,7 +93,14 @@
+     }
+ 
+     protected EntityArrow(EntityTypes<? extends EntityArrow> entitytypes, double d0, double d1, double d2, World world, ItemStack itemstack, @Nullable ItemStack itemstack1) {
++        // CraftBukkit start - handle the owner before the rest of things
++        this(entitytypes, d0, d1, d2, world, itemstack, itemstack1, null);
++    }
++
++    protected EntityArrow(EntityTypes<? extends EntityArrow> entitytypes, double d0, double d1, double d2, World world, ItemStack itemstack, @Nullable ItemStack itemstack1, @Nullable EntityLiving ownerEntity) {
+         this(entitytypes, world);
++        this.setOwner(ownerEntity);
++        // CraftBukkit end
+         this.pickupItemStack = itemstack.copy();
+         this.setCustomName((IChatBaseComponent) itemstack.get(DataComponents.CUSTOM_NAME));
+         Unit unit = (Unit) itemstack.remove(DataComponents.INTANGIBLE_PROJECTILE);
+@@ -116,8 +130,8 @@
+     }
+ 
+     protected EntityArrow(EntityTypes<? extends EntityArrow> entitytypes, EntityLiving entityliving, World world, ItemStack itemstack, @Nullable ItemStack itemstack1) {
+-        this(entitytypes, entityliving.getX(), entityliving.getEyeY() - 0.10000000149011612D, entityliving.getZ(), world, itemstack, itemstack1);
+-        this.setOwner(entityliving);
++        this(entitytypes, entityliving.getX(), entityliving.getEyeY() - 0.10000000149011612D, entityliving.getZ(), world, itemstack, itemstack1, entityliving); // CraftBukkit
++        // this.setOwner(entityliving); // SPIGOT-7744 - Moved to the above constructor
+     }
+ 
+     public void setSoundEvent(SoundEffect soundeffect) {
+@@ -242,7 +256,7 @@
                  }
  
                  if (object != null && !flag) {
@@ -23,7 +49,7 @@
  
                      this.hasImpulse = true;
                      if (projectiledeflection != ProjectileDeflection.NONE) {
-@@ -333,7 +340,7 @@
+@@ -333,7 +347,7 @@
      protected void tickDespawn() {
          ++this.life;
          if (this.life >= 1200) {
@@ -32,7 +58,7 @@
          }
  
      }
-@@ -380,7 +387,7 @@
+@@ -380,7 +394,7 @@
              }
  
              if (this.piercingIgnoreEntityIds.size() >= this.getPierceLevel() + 1) {
@@ -41,7 +67,7 @@
                  return;
              }
  
-@@ -401,7 +408,13 @@
+@@ -401,7 +415,13 @@
          int k = entity.getRemainingFireTicks();
  
          if (this.isOnFire() && !flag) {
@@ -56,7 +82,7 @@
          }
  
          if (entity.hurt(damagesource, (float) i)) {
-@@ -447,7 +460,7 @@
+@@ -447,7 +467,7 @@
  
              this.playSound(this.soundEvent, 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
              if (this.getPierceLevel() <= 0) {
@@ -65,7 +91,7 @@
              }
          } else {
              entity.setRemainingFireTicks(k);
-@@ -458,7 +471,7 @@
+@@ -458,7 +478,7 @@
                      this.spawnAtLocation(this.getPickupItem(), 0.1F);
                  }
  
@@ -74,7 +100,7 @@
              }
          }
  
-@@ -614,7 +627,7 @@
+@@ -614,7 +634,7 @@
          }
  
          if (nbttagcompound.contains("weapon", 10)) {
@@ -83,7 +109,7 @@
          } else {
              this.firedFromWeapon = null;
          }
-@@ -627,34 +640,30 @@
+@@ -627,34 +647,30 @@
          Entity entity1 = entity;
          byte b0 = 0;
  
@@ -129,7 +155,7 @@
          }
  
          this.pickup = entityarrow_pickupstatus;
-@@ -663,9 +672,24 @@
+@@ -663,9 +679,24 @@
      @Override
      public void playerTouch(EntityHuman entityhuman) {
          if (!this.level().isClientSide && (this.inGround || this.isNoPhysics()) && this.shakeTime <= 0) {
