@@ -320,7 +320,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         }
         this.damage = meta.damage;
         this.maxDamage = meta.maxDamage;
-        this.unhandledTags = meta.unhandledTags;
+        this.unhandledTags.copy(meta.unhandledTags.build());
         this.removedTags.addAll(meta.removedTags);
         this.persistentDataContainer.putAll(meta.persistentDataContainer.getRaw());
 
