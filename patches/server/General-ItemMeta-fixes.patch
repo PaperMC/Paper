@@ -926,8 +926,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public FoodComponent getFood() {
--        return (this.hasFood()) ? new CraftFoodComponent(this.food) : new CraftFoodComponent(new FoodProperties(0, 0, false, 0, Collections.emptyList()));
-+        return (this.hasFood()) ? new CraftFoodComponent(this.food) : new CraftFoodComponent(new FoodProperties(0, 0, false, FoodProperties.DEFAULT_EAT_SECONDS, Collections.emptyList())); // Paper - create a valid food properties
+-        return (this.hasFood()) ? new CraftFoodComponent(this.food) : new CraftFoodComponent(new FoodProperties(0, 0, false, 0, Optional.empty(), Collections.emptyList()));
++        return (this.hasFood()) ? new CraftFoodComponent(this.food) : new CraftFoodComponent(new FoodProperties(0, 0, false, FoodProperties.DEFAULT_EAT_SECONDS, Optional.empty(), Collections.emptyList())); // Paper - create a valid food properties
      }
  
      @Override
@@ -955,7 +955,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        this.checkAttributeList();
 +        if (this.attributeModifiers != null) { // Paper
          for (Map.Entry<Attribute, AttributeModifier> entry : this.attributeModifiers.entries()) {
-             Preconditions.checkArgument(!(entry.getValue().getUniqueId().equals(modifier.getUniqueId()) && entry.getKey() == attribute), "Cannot register AttributeModifier. Modifier is already applied! %s", modifier); // Paper
+             Preconditions.checkArgument(!entry.getValue().getKey().equals(modifier.getKey()) && entry.getKey() == attribute, "Cannot register AttributeModifier. Modifier is already applied! %s", modifier); // Paper - attribute modifiers with same namespaced key but on different attributes are fine
          }
 +        } // Paper
 +        this.checkAttributeList(); // Paper - moved down
@@ -1062,8 +1062,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  && (Objects.equals(this.customTag, that.customTag))
                  && (this.persistentDataContainer.equals(that.persistentDataContainer))
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
-         hash = 61 * hash + (this.hasFood() ? this.food.hashCode() : 0);
          hash = 61 * hash + (this.hasTool() ? this.tool.hashCode() : 0);
+         hash = 61 * hash + (this.hasJukeboxPlayable() ? this.jukebox.hashCode() : 0);
          hash = 61 * hash + (this.hasDamage() ? this.damage : 0);
 -        hash = 61 * hash + (this.hasMaxDamage() ? 1231 : 1237);
 -        hash = 61 * hash + (this.hasAttributeModifiers() ? this.attributeModifiers.hashCode() : 0);
@@ -1433,7 +1433,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public void setEatSeconds(float eatSeconds) {
 +        Preconditions.checkArgument(eatSeconds > 0, "Eat seconds must be positive"); // Paper - validate eat_seconds
-         this.handle = new FoodProperties(this.handle.nutrition(), this.handle.saturation(), this.handle.canAlwaysEat(), eatSeconds, this.handle.effects());
+         this.handle = new FoodProperties(this.handle.nutrition(), this.handle.saturation(), this.handle.canAlwaysEat(), eatSeconds, this.handle.usingConvertsTo(), this.handle.effects());
      }
  
 @@ -0,0 +0,0 @@ public final class CraftFoodComponent implements FoodComponent {
