@@ -5,7 +5,7 @@ Subject: [PATCH] Reduce allocation of Vec3D by entity tracker
 
 
 diff --git a/src/main/java/net/minecraft/network/protocol/game/VecDeltaCodec.java b/src/main/java/net/minecraft/network/protocol/game/VecDeltaCodec.java
-index a3d247c93ac1a2d872ff0e3841efc3d7b84fcbc1..23fe7c4c1844d321efed6b7b886c422761ad6594 100644
+index a043ac10834562d357ef0b5aded2e916e2a0d056..74276c368016fcc4dbf9579b2ecbadc9614baf15 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/VecDeltaCodec.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/VecDeltaCodec.java
 @@ -5,7 +5,7 @@ import org.jetbrains.annotations.VisibleForTesting;
@@ -18,10 +18,10 @@ index a3d247c93ac1a2d872ff0e3841efc3d7b84fcbc1..23fe7c4c1844d321efed6b7b886c4227
      @VisibleForTesting
      static long encode(double value) {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 027f2734b0ff226437f4c94430215929b6ea2219..35f627c58e93c03ee58b44877398432bba57dc2d 100644
+index cf4517e57169856acd0782e5ced4eb8c045b8d78..6129720c9da217745fcd281186de7894597c267c 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -1748,10 +1748,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1587,10 +1587,14 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          public void updatePlayer(ServerPlayer player) {
              org.spigotmc.AsyncCatcher.catchOp("player tracker update"); // Spigot
              if (player != this.entity) {
@@ -39,10 +39,10 @@ index 027f2734b0ff226437f4c94430215929b6ea2219..35f627c58e93c03ee58b44877398432b
                  boolean flag = d1 <= d2 && this.entity.broadcastToPlayer(player) && ChunkMap.this.isChunkTracked(player, this.entity.chunkPosition().x, this.entity.chunkPosition().z);
                  // Paper start - Configurable entity tracking range by Y
 diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
-index 0373b2de2b992b648f346d6df3960a3586a54567..22eec853588ded2d255ab69d408f8e987832abe2 100644
+index a2fbbbd7a66d4e7b1063638f8467e8887a417282..0e7ace92522fbd4cef7b2c2b8a0f8b86c2cce192 100644
 --- a/src/main/java/net/minecraft/server/level/ServerEntity.java
 +++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
-@@ -164,7 +164,13 @@ public class ServerEntity {
+@@ -163,7 +163,13 @@ public class ServerEntity {
                  i = Mth.floor(this.entity.getYRot() * 256.0F / 360.0F);
                  j = Mth.floor(this.entity.getXRot() * 256.0F / 360.0F);
                  Vec3 vec3d = this.entity.trackingPosition();
@@ -56,4 +56,4 @@ index 0373b2de2b992b648f346d6df3960a3586a54567..22eec853588ded2d255ab69d408f8e98
 +                // Paper end - reduce allocation of Vec3D here
                  Packet<?> packet1 = null;
                  boolean flag2 = flag1 || this.tickCount % 60 == 0;
-                 boolean flag3 = Math.abs(i - this.yRotp) >= 1 || Math.abs(j - this.xRotp) >= 1;
+                 boolean flag3 = Math.abs(i - this.lastSentYRot) >= 1 || Math.abs(j - this.lastSentXRot) >= 1;

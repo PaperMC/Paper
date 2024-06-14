@@ -5,10 +5,10 @@ Subject: [PATCH] Add drops to shear events
 
 
 diff --git a/src/main/java/net/minecraft/core/dispenser/ShearsDispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/ShearsDispenseItemBehavior.java
-index fbed5d57db0c0e79996f85571b9af0071fa953c7..a024c697a65bbab27408da1d6a75e531d9719b47 100644
+index f32f8d5cb22feb885a53d3b56c04ad4219d2bafa..44b79a7c2f8b95a484d1999fa2167ce588f7985b 100644
 --- a/src/main/java/net/minecraft/core/dispenser/ShearsDispenseItemBehavior.java
 +++ b/src/main/java/net/minecraft/core/dispenser/ShearsDispenseItemBehavior.java
-@@ -104,11 +104,14 @@ public class ShearsDispenseItemBehavior extends OptionalDispenseItemBehavior {
+@@ -103,11 +103,14 @@ public class ShearsDispenseItemBehavior extends OptionalDispenseItemBehavior {
              if (entityliving instanceof Shearable ishearable) {
                  if (ishearable.readyForShearing()) {
                      // CraftBukkit start
@@ -116,10 +116,10 @@ index aa125e3043b120935aaa015803f065f99eb8d050..0c21959f57ae88fcd0a4d6dc911c1ce3
          }
  
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Sheep.java b/src/main/java/net/minecraft/world/entity/animal/Sheep.java
-index 784a89f39e0b243e2968dca33b60ae40e58d824e..3ce86f952a18cae7fda1903916903b31a63a40b4 100644
+index 6b26af41423110bd982eb8c0eea0cba5e9fdc633..38ac2759894660be1ee7ba59b0bd1270158e9232 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Sheep.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/Sheep.java
-@@ -258,11 +258,18 @@ public class Sheep extends Animal implements Shearable {
+@@ -256,11 +256,18 @@ public class Sheep extends Animal implements Shearable {
          if (itemstack.is(Items.SHEARS)) {
              if (!this.level().isClientSide && this.readyForShearing()) {
                  // CraftBukkit start
@@ -141,7 +141,7 @@ index 784a89f39e0b243e2968dca33b60ae40e58d824e..3ce86f952a18cae7fda1903916903b31
                  this.gameEvent(GameEvent.SHEAR, player);
                  itemstack.hurtAndBreak(1, player, getSlotForHand(hand));
                  return InteractionResult.SUCCESS;
-@@ -276,13 +283,30 @@ public class Sheep extends Animal implements Shearable {
+@@ -274,13 +281,30 @@ public class Sheep extends Animal implements Shearable {
  
      @Override
      public void shear(SoundSource shearedSoundCategory) {
@@ -233,7 +233,7 @@ index 2de1a2f666da9db1832907e1651dbff948e37252..5c2ed3c39c8eb850f3be1e2ea5b5a7ea
  
      }
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Bogged.java b/src/main/java/net/minecraft/world/entity/monster/Bogged.java
-index 9c0bfddd479eef688d2509ad700371c3c860ff1a..e9f9b041ae7195e9d23bd446454b1d8c47a1ace1 100644
+index 8420d75865b86e1d8afea2527b5521cac184e8b1..6e290d67b00c88ecd2cf2ce5f612f52ebda9e280 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Bogged.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Bogged.java
 @@ -135,6 +135,15 @@ public class Bogged extends AbstractSkeleton implements Shearable {
@@ -243,20 +243,20 @@ index 9c0bfddd479eef688d2509ad700371c3c860ff1a..e9f9b041ae7195e9d23bd446454b1d8c
 +        // Paper start - shear drops API
 +        this.generateShearedMushrooms(stack -> {
 +            this.forceDrops = true;
-+            this.spawnAtLocation(stack);
++            this.spawnAtLocation(stack, this.getBbHeight());
 +            this.forceDrops = false;
 +        });
 +    }
 +    private void generateShearedMushrooms(java.util.function.Consumer<ItemStack> stackConsumer) {
 +        // Paper end - shear drops API
-         if (this.level() instanceof ServerLevel serverLevel && serverLevel.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
+         if (this.level() instanceof ServerLevel serverLevel) {
              LootTable lootTable = serverLevel.getServer().reloadableRegistries().getLootTable(BuiltInLootTables.BOGGED_SHEAR);
              LootParams lootParams = new LootParams.Builder(serverLevel)
 @@ -143,11 +152,20 @@ public class Bogged extends AbstractSkeleton implements Shearable {
                  .create(LootContextParamSets.SHEARING);
  
              for (ItemStack itemStack : lootTable.getRandomItems(lootParams)) {
--                this.spawnAtLocation(itemStack);
+-                this.spawnAtLocation(itemStack, this.getBbHeight());
 +                stackConsumer.accept(itemStack); // Paper
              }
          }
@@ -275,10 +275,10 @@ index 9c0bfddd479eef688d2509ad700371c3c860ff1a..e9f9b041ae7195e9d23bd446454b1d8c
      public boolean readyForShearing() {
          return !this.isSheared() && this.isAlive();
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 8b322ade83e8e571af7c2e91a3c0d0784a7b9fad..e20feab675d05ae5b5b19870546585936c757970 100644
+index 54c9c19d773df01b0004da6587f7c7a388e61c21..a4ea5d942eb61ee733eb1b8b4a3c50fb93f037ea 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -1666,20 +1666,20 @@ public class CraftEventFactory {
+@@ -1667,20 +1667,20 @@ public class CraftEventFactory {
          player.level().getCraftServer().getPluginManager().callEvent(event);
      }
  
@@ -306,7 +306,7 @@ index 8b322ade83e8e571af7c2e91a3c0d0784a7b9fad..e20feab675d05ae5b5b1987054658593
  
      public static Cancellable handleStatisticsIncrease(net.minecraft.world.entity.player.Player entityHuman, net.minecraft.stats.Stat<?> statistic, int current, int newValue) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index 776437ae42865baccab4fb5d3f2715c8f0519b8a..520b637e0f281d3d3018681ec7b48b06c47f621e 100644
+index 0774711e3797c10526c65b7e5824a739c04597e7..94adc5c827c69f3cca08404faf0764ae91a9d1df 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 @@ -65,6 +65,16 @@ public final class CraftItemStack extends ItemStack {
