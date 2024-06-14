@@ -2663,19 +2663,19 @@ index 0000000000000000000000000000000000000000..a5f706d6f716b2a463ae58adcde69d9e
 +}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/ChunkSystem.java b/src/main/java/io/papermc/paper/chunk/system/ChunkSystem.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cff2f04409fab9abca87ceec85a551e1d59f9e7d
+index 0000000000000000000000000000000000000000..0d0cb3e63acd5156b6f9d6d78cc949b0af36a77b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chunk/system/ChunkSystem.java
-@@ -0,0 +1,296 @@
+@@ -0,0 +1,303 @@
 +package io.papermc.paper.chunk.system;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
 +import com.destroystokyo.paper.util.SneakyThrow;
-+import com.mojang.datafixers.util.Either;
 +import com.mojang.logging.LogUtils;
 +import io.papermc.paper.util.CoordinateUtils;
 +import net.minecraft.server.level.ChunkHolder;
 +import net.minecraft.server.level.ChunkMap;
++import net.minecraft.server.level.ChunkResult;
 +import net.minecraft.server.level.FullChunkStatus;
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.server.level.ServerPlayer;
@@ -2683,8 +2683,10 @@ index 0000000000000000000000000000000000000000..cff2f04409fab9abca87ceec85a551e1
 +import net.minecraft.world.entity.Entity;
 +import net.minecraft.world.level.ChunkPos;
 +import net.minecraft.world.level.chunk.ChunkAccess;
++import net.minecraft.world.level.chunk.status.ChunkPyramid;
 +import net.minecraft.world.level.chunk.status.ChunkStatus;
 +import net.minecraft.world.level.chunk.LevelChunk;
++import net.minecraft.world.level.chunk.status.ChunkStep;
 +import org.bukkit.Bukkit;
 +import org.slf4j.Logger;
 +import java.util.ArrayList;
@@ -2695,6 +2697,11 @@ index 0000000000000000000000000000000000000000..cff2f04409fab9abca87ceec85a551e1
 +public final class ChunkSystem {
 +
 +    private static final Logger LOGGER = LogUtils.getLogger();
++    private static final ChunkStep FULL_CHUNK_STEP = ChunkPyramid.GENERATION_PYRAMID.getStepTo(ChunkStatus.FULL);
++
++    public static int getDistance(final ChunkStatus status) {
++        return FULL_CHUNK_STEP.getAccumulatedRadiusOf(status);
++    }
 +
 +    public static void scheduleChunkTask(final ServerLevel level, final int chunkX, final int chunkZ, final Runnable run) {
 +        scheduleChunkTask(level, chunkX, chunkZ, run, PrioritisedExecutor.Priority.NORMAL);
@@ -2715,7 +2722,7 @@ index 0000000000000000000000000000000000000000..cff2f04409fab9abca87ceec85a551e1
 +            if (chunk == null) {
 +                onComplete.accept(null);
 +            } else {
-+                if (chunk.getStatus().isOrAfter(toStatus)) {
++                if (chunk.getPersistedStatus().isOrAfter(toStatus)) {
 +                    scheduleChunkLoad(level, chunkX, chunkZ, toStatus, addTicket, priority, onComplete);
 +                } else {
 +                    onComplete.accept(null);
@@ -2736,7 +2743,7 @@ index 0000000000000000000000000000000000000000..cff2f04409fab9abca87ceec85a551e1
 +            return;
 +        }
 +
-+        final int minLevel = 33 + ChunkStatus.getDistance(toStatus);
++        final int minLevel = 33 + ChunkSystem.getDistance(toStatus);
 +        final Long chunkReference = addTicket ? Long.valueOf(++chunkLoadCounter) : null;
 +        final ChunkPos chunkPos = new ChunkPos(chunkX, chunkZ);
 +
@@ -2770,19 +2777,19 @@ index 0000000000000000000000000000000000000000..cff2f04409fab9abca87ceec85a551e1
 +            return;
 +        }
 +
-+        final CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> loadFuture = holder.getOrScheduleFuture(toStatus, level.chunkSource.chunkMap);
++        final CompletableFuture<ChunkResult<ChunkAccess>> loadFuture = holder.scheduleChunkGenerationTask(toStatus, level.chunkSource.chunkMap);
 +
 +        if (loadFuture.isDone()) {
-+            loadCallback.accept(loadFuture.join().left().orElse(null));
++            loadCallback.accept(loadFuture.join().orElse(null));
 +            return;
 +        }
 +
-+        loadFuture.whenCompleteAsync((final Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure> either, final Throwable thr) -> {
++        loadFuture.whenCompleteAsync((final ChunkResult<ChunkAccess> result, final Throwable thr) -> {
 +            if (thr != null) {
 +                loadCallback.accept(null);
 +                return;
 +            }
-+            loadCallback.accept(either.left().orElse(null));
++            loadCallback.accept(result.orElse(null));
 +        }, (final Runnable r) -> {
 +            scheduleChunkTask(level, chunkX, chunkZ, r, PrioritisedExecutor.Priority.HIGHEST);
 +        });
@@ -2838,7 +2845,7 @@ index 0000000000000000000000000000000000000000..cff2f04409fab9abca87ceec85a551e1
 +            return;
 +        }
 +
-+        final CompletableFuture<Either<LevelChunk, ChunkHolder.ChunkLoadingFailure>> tickingState;
++        final CompletableFuture<ChunkResult<LevelChunk>> tickingState;
 +        switch (toStatus) {
 +            case FULL: {
 +                tickingState = holder.getFullChunkFuture();
@@ -2858,16 +2865,16 @@ index 0000000000000000000000000000000000000000..cff2f04409fab9abca87ceec85a551e1
 +        }
 +
 +        if (tickingState.isDone()) {
-+            loadCallback.accept(tickingState.join().left().orElse(null));
++            loadCallback.accept(tickingState.join().orElse(null));
 +            return;
 +        }
 +
-+        tickingState.whenCompleteAsync((final Either<LevelChunk, ChunkHolder.ChunkLoadingFailure> either, final Throwable thr) -> {
++        tickingState.whenCompleteAsync((final ChunkResult<LevelChunk> result, final Throwable thr) -> {
 +            if (thr != null) {
 +                loadCallback.accept(null);
 +                return;
 +            }
-+            loadCallback.accept(either.left().orElse(null));
++            loadCallback.accept(result.orElse(null));
 +        }, (final Runnable r) -> {
 +            scheduleChunkTask(level, chunkX, chunkZ, r, PrioritisedExecutor.Priority.HIGHEST);
 +        });
@@ -3482,7 +3489,7 @@ index 0000000000000000000000000000000000000000..cea9c098ade00ee87b8efc8164ab72f5
 +}
 diff --git a/src/main/java/io/papermc/paper/util/MCUtil.java b/src/main/java/io/papermc/paper/util/MCUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9e21566fc4d76ae2e305f0e1d47d8c2f1c1f2c4c
+index 0000000000000000000000000000000000000000..eb36bef19e6729c1cc44aefa927317963aba929e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/MCUtil.java
 @@ -0,0 +1,554 @@
@@ -4014,7 +4021,7 @@ index 0000000000000000000000000000000000000000..9e21566fc4d76ae2e305f0e1d47d8c2f
 +    }
 +
 +    public static int getTicketLevelFor(net.minecraft.world.level.chunk.status.ChunkStatus status) {
-+        return net.minecraft.server.level.ChunkMap.MAX_VIEW_DISTANCE + net.minecraft.world.level.chunk.status.ChunkStatus.getDistance(status);
++        return net.minecraft.server.level.ChunkMap.MAX_VIEW_DISTANCE + io.papermc.paper.chunk.system.ChunkSystem.getDistance(status);
 +    }
 +
 +    @NotNull
@@ -6125,7 +6132,7 @@ index 40adb6117b9e0d5f70103113202a07715e403e2a..b1325e090f2c7aff31d27fc38ca7173e
              } catch (Throwable throwable) {
                  CrashReport crashreport = CrashReport.forThrowable(throwable, "Exception ticking world");
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 5d4336210e11ee39521b4096a5f0874329053cdc..526d5b9bd6ce8eade59d3d3cf8bd7ad700483eff 100644
+index 5d4336210e11ee39521b4096a5f0874329053cdc..09d7b416c02eb13c506e9dc92d78e983bf43f4f0 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -37,9 +37,9 @@ public class ChunkHolder extends GenerationChunkHolder {
@@ -6160,7 +6167,7 @@ index 5d4336210e11ee39521b4096a5f0874329053cdc..526d5b9bd6ce8eade59d3d3cf8bd7ad7
      public ChunkHolder(ChunkPos pos, int level, LevelHeightAccessor world, LevelLightEngine lightingProvider, ChunkHolder.LevelChangeListener levelUpdateListener, ChunkHolder.PlayerProvider playersWatchingChunkProvider) {
          super(pos);
          this.fullChunkFuture = ChunkHolder.UNLOADED_LEVEL_CHUNK_FUTURE;
-@@ -74,8 +86,23 @@ public class ChunkHolder extends GenerationChunkHolder {
+@@ -74,8 +86,22 @@ public class ChunkHolder extends GenerationChunkHolder {
          this.queueLevel = this.oldTicketLevel;
          this.setTicketLevel(level);
          this.changedBlocksPerSection = new ShortSet[world.getSectionsCount()];
@@ -6171,12 +6178,11 @@ index 5d4336210e11ee39521b4096a5f0874329053cdc..526d5b9bd6ce8eade59d3d3cf8bd7ad7
 +    public @Nullable ChunkAccess getAvailableChunkNow() {
 +        // TODO can we just getStatusFuture(EMPTY)?
 +        for (ChunkStatus curr = ChunkStatus.FULL, next = curr.getParent(); curr != next; curr = next, next = next.getParent()) {
-+            CompletableFuture<ChunkResult<ChunkAccess>> future = this.getFutureIfPresentUnchecked(curr);
-+            ChunkResult<ChunkAccess> either = future.getNow(null);
-+            if (either == null || either.isSuccess()) {
++            ChunkAccess chunkAccess = this.getChunkIfPresentUnchecked(curr);
++            if (chunkAccess == null) {
 +                continue;
 +            }
-+            return either.orElseThrow(IllegalStateException::new);
++            return chunkAccess;
 +        }
 +        return null;
 +    }
@@ -6184,7 +6190,7 @@ index 5d4336210e11ee39521b4096a5f0874329053cdc..526d5b9bd6ce8eade59d3d3cf8bd7ad7
      // CraftBukkit start
      public LevelChunk getFullChunkNow() {
          return (LevelChunk) this.getChunkIfPresent(ChunkStatus.FULL);
-@@ -86,20 +113,20 @@ public class ChunkHolder extends GenerationChunkHolder {
+@@ -86,20 +112,20 @@ public class ChunkHolder extends GenerationChunkHolder {
      }
      // CraftBukkit end
  
@@ -6209,16 +6215,15 @@ index 5d4336210e11ee39521b4096a5f0874329053cdc..526d5b9bd6ce8eade59d3d3cf8bd7ad7
          return (LevelChunk) ((ChunkResult) this.getTickingChunkFuture().getNow(ChunkHolder.UNLOADED_LEVEL_CHUNK)).orElse(null); // CraftBukkit - decompile error
      }
  
-@@ -123,6 +150,21 @@ public class ChunkHolder extends GenerationChunkHolder {
+@@ -123,6 +149,20 @@ public class ChunkHolder extends GenerationChunkHolder {
  
      }
  
 +    // Paper start
 +    public @Nullable ChunkStatus getChunkHolderStatus() {
 +        for (ChunkStatus curr = ChunkStatus.FULL, next = curr.getParent(); curr != next; curr = next, next = next.getParent()) {
-+            CompletableFuture<ChunkResult<ChunkAccess>> future = this.getFutureIfPresentUnchecked(curr);
-+            ChunkResult<ChunkAccess> either = future.getNow(null);
-+            if (either == null || !either.isSuccess()) {
++            ChunkAccess chunkAccess = this.getChunkIfPresentUnchecked(curr);
++            if (chunkAccess == null) {
 +                continue;
 +            }
 +            return curr;
@@ -6231,7 +6236,7 @@ index 5d4336210e11ee39521b4096a5f0874329053cdc..526d5b9bd6ce8eade59d3d3cf8bd7ad7
      public CompletableFuture<?> getSaveSyncFuture() {
          return this.saveSync;
      }
-@@ -266,7 +308,7 @@ public class ChunkHolder extends GenerationChunkHolder {
+@@ -266,7 +306,7 @@ public class ChunkHolder extends GenerationChunkHolder {
      }
  
      @Override
@@ -6240,7 +6245,7 @@ index 5d4336210e11ee39521b4096a5f0874329053cdc..526d5b9bd6ce8eade59d3d3cf8bd7ad7
          return this.ticketLevel;
      }
  
-@@ -335,12 +377,28 @@ public class ChunkHolder extends GenerationChunkHolder {
+@@ -335,12 +375,28 @@ public class ChunkHolder extends GenerationChunkHolder {
  
          this.wasAccessibleSinceLastSave |= flag1;
          if (!flag && flag1) {
@@ -6269,7 +6274,7 @@ index 5d4336210e11ee39521b4096a5f0874329053cdc..526d5b9bd6ce8eade59d3d3cf8bd7ad7
              this.fullChunkFuture.complete(ChunkHolder.UNLOADED_LEVEL_CHUNK);
              this.fullChunkFuture = ChunkHolder.UNLOADED_LEVEL_CHUNK_FUTURE;
          }
-@@ -351,11 +409,25 @@ public class ChunkHolder extends GenerationChunkHolder {
+@@ -351,11 +407,25 @@ public class ChunkHolder extends GenerationChunkHolder {
          if (!flag2 && flag3) {
              this.tickingChunkFuture = chunkLoadingManager.prepareTickingChunk(this);
              this.scheduleFullChunkPromotion(chunkLoadingManager, this.tickingChunkFuture, executor, FullChunkStatus.BLOCK_TICKING);
@@ -6296,7 +6301,7 @@ index 5d4336210e11ee39521b4096a5f0874329053cdc..526d5b9bd6ce8eade59d3d3cf8bd7ad7
              this.tickingChunkFuture = ChunkHolder.UNLOADED_LEVEL_CHUNK_FUTURE;
          }
  
-@@ -369,11 +441,24 @@ public class ChunkHolder extends GenerationChunkHolder {
+@@ -369,11 +439,24 @@ public class ChunkHolder extends GenerationChunkHolder {
  
              this.entityTickingChunkFuture = chunkLoadingManager.prepareEntityTickingChunk(this);
              this.scheduleFullChunkPromotion(chunkLoadingManager, this.entityTickingChunkFuture, executor, FullChunkStatus.ENTITY_TICKING);
@@ -6322,7 +6327,7 @@ index 5d4336210e11ee39521b4096a5f0874329053cdc..526d5b9bd6ce8eade59d3d3cf8bd7ad7
              this.entityTickingChunkFuture = ChunkHolder.UNLOADED_LEVEL_CHUNK_FUTURE;
          }
  
-@@ -423,4 +508,18 @@ public class ChunkHolder extends GenerationChunkHolder {
+@@ -423,4 +506,18 @@ public class ChunkHolder extends GenerationChunkHolder {
  
          List<ServerPlayer> getPlayers(ChunkPos chunkPos, boolean onlyOnWatchDistanceEdge);
      }
@@ -6650,7 +6655,7 @@ index b6cc33943fe7e4667944f3e6f868b3033ea9ca18..27065ffc5473c518acee3a3096b83fac
  
          while (objectiterator.hasNext()) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 47ae79cb2a03b43cbb881bcdea7ca231082b6614..ff68eff051c5f50b20b26d33001e12741dd3000e 100644
+index 47ae79cb2a03b43cbb881bcdea7ca231082b6614..117aca5a73dca70cd38c15e028c79d74eb834e81 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -48,6 +48,7 @@ import net.minecraft.world.level.storage.LevelStorageSource;
@@ -6745,7 +6750,7 @@ index 47ae79cb2a03b43cbb881bcdea7ca231082b6614..ff68eff051c5f50b20b26d33001e1274
 +            return null;
 +        }
 +
-+        return holder.getLastAvailable();
++        return holder.getLatestChunk();
 +    }
 +
 +    public <T> void addTicketAtLevel(TicketType<T> ticketType, ChunkPos chunkPos, int ticketLevel, T identifier) {

@@ -16,6 +16,21 @@ index 58e7bb57ef9915cf9c497ad53e67e95535291ddd..c31d5459cdee1ba6ebb68bcf9785f982
      public void resendItemInHands() {
          this.containerMenu.findSlot(this.getInventory(), this.getInventory().selected).ifPresent(s -> {
              this.containerSynchronizer.sendSlotChange(this.containerMenu, s, this.getMainHandItem());
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 84d735d358e2b58df0fccc8ffc5ef3346e62071d..9afb2154a85da83ed50b1c80c21f03e4843ce63c 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -2640,8 +2640,9 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+                 if (!this.level().isClientSide()) {
+                     // CraftBukkit start - fire PlayerLeashEntityEvent
+                     if (CraftEventFactory.callPlayerLeashEntityEvent(this, player, player, hand).isCancelled()) {
+-                        ((ServerPlayer) player).resendItemInHands(); // SPIGOT-7615: Resend to fix client desync with used item
++                        // ((ServerPlayer) player).resendItemInHands(); // SPIGOT-7615: Resend to fix client desync with used item // Paper - Fix inventory desync
+                         ((ServerPlayer) player).connection.send(new ClientboundSetEntityLinkPacket(this, leashable.getLeashHolder()));
++                        player.containerMenu.sendAllDataToRemote(); // Paper - Fix inventory desync
+                         return InteractionResult.PASS;
+                     }
+                     // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Cow.java b/src/main/java/net/minecraft/world/entity/animal/Cow.java
 index 5a7b1be351834a6b8889b1380cede1be025cb302..e336934f37075a827843e4b1bb2b6b660d2c60c9 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Cow.java
