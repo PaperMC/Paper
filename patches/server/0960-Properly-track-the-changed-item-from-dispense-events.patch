@@ -5,10 +5,10 @@ Subject: [PATCH] Properly track the changed item from dispense events
 
 
 diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
-index 32084df594649d8da04052bbfa111896d8ea1f91..5dab1e10303177e5a4d97a91ee46ede66f30ae35 100644
+index f96734580a29e0436ac808e41c6cbc3f35eff5f5..9d71388c6e8ff56228afbf8cb18c37f861d0b246 100644
 --- a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
 +++ b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
-@@ -133,10 +133,14 @@ public interface DispenseItemBehavior {
+@@ -134,10 +134,14 @@ public interface DispenseItemBehavior {
                          idispensebehavior.dispense(pointer, eventStack);
                          return stack;
                      }
@@ -24,7 +24,7 @@ index 32084df594649d8da04052bbfa111896d8ea1f91..5dab1e10303177e5a4d97a91ee46ede6
                  } catch (Exception exception) {
                      DispenseItemBehavior.LOGGER.error("Error while dispensing spawn egg from dispenser at {}", pointer.pos(), exception); // CraftBukkit - decompile error
                      return ItemStack.EMPTY;
-@@ -191,9 +195,10 @@ public interface DispenseItemBehavior {
+@@ -192,9 +196,10 @@ public interface DispenseItemBehavior {
                  }
                  // CraftBukkit end
  
@@ -36,7 +36,7 @@ index 32084df594649d8da04052bbfa111896d8ea1f91..5dab1e10303177e5a4d97a91ee46ede6
                  ArmorStand entityarmorstand = (ArmorStand) EntityType.ARMOR_STAND.spawn(worldserver, consumer, blockposition, MobSpawnType.DISPENSER, false, false);
  
                  if (entityarmorstand != null) {
-@@ -413,6 +418,7 @@ public interface DispenseItemBehavior {
+@@ -414,6 +419,7 @@ public interface DispenseItemBehavior {
                  int y = blockposition.getY();
                  int z = blockposition.getZ();
                  BlockState iblockdata = worldserver.getBlockState(blockposition);
@@ -44,7 +44,7 @@ index 32084df594649d8da04052bbfa111896d8ea1f91..5dab1e10303177e5a4d97a91ee46ede6
                  // Paper start - correctly check if the bucket place will succeed
                  /* Taken from SolidBucketItem#emptyContents */
                  boolean willEmptyContentsSolidBucketItem = dispensiblecontaineritem instanceof net.minecraft.world.item.SolidBucketItem && worldserver.isInWorldBounds(blockposition) && iblockdata.isAir();
-@@ -442,12 +448,15 @@ public interface DispenseItemBehavior {
+@@ -443,12 +449,15 @@ public interface DispenseItemBehavior {
                          }
                      }
  
@@ -59,9 +59,9 @@ index 32084df594649d8da04052bbfa111896d8ea1f91..5dab1e10303177e5a4d97a91ee46ede6
                  if (dispensiblecontaineritem.emptyContents((Player) null, worldserver, blockposition, (BlockHitResult) null)) {
 -                    dispensiblecontaineritem.checkExtraContent((Player) null, worldserver, stack, blockposition);
 +                    dispensiblecontaineritem.checkExtraContent((Player) null, worldserver, dispensedItem, blockposition); // Paper - track changed item from dispense event
-                     // CraftBukkit start - Handle stacked buckets
-                     Item item = Items.BUCKET;
-                     stack.shrink(1);
+                     return this.consumeWithRemainder(pointer, stack, new ItemStack(Items.BUCKET));
+                 } else {
+                     return this.defaultDispenseItemBehavior.dispense(pointer, stack);
 diff --git a/src/main/java/net/minecraft/core/dispenser/ProjectileDispenseBehavior.java b/src/main/java/net/minecraft/core/dispenser/ProjectileDispenseBehavior.java
 index 985954030654d521291cccbfc3ca49b67ee4357d..e37d2d29f3ba67cfe28abe4847a3dca07121f0be 100644
 --- a/src/main/java/net/minecraft/core/dispenser/ProjectileDispenseBehavior.java
