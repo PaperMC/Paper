@@ -8,20 +8,28 @@ and allows full control of the response sent to the client.
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/server/PaperServerListPingEvent.java b/src/main/java/com/destroystokyo/paper/event/server/PaperServerListPingEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0bb6fdbdd05ae6a8fb413e0f6b8d84302d697267
+index 0000000000000000000000000000000000000000..acff2ff570f8419ffa4dfefe890795c63d75325d
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/server/PaperServerListPingEvent.java
-@@ -0,0 +1,338 @@
+@@ -0,0 +1,502 @@
 +package com.destroystokyo.paper.event.server;
 +
 +import static java.util.Objects.requireNonNull;
 +
 +import com.destroystokyo.paper.network.StatusClient;
 +import com.destroystokyo.paper.profile.PlayerProfile;
++import com.destroystokyo.paper.profile.ProfileProperty;
++import com.google.common.base.Preconditions;
++import io.papermc.paper.util.TransformingRandomAccessList;
++import java.util.Collection;
++import java.util.Map;
++import java.util.Set;
++import java.util.concurrent.CompletableFuture;
 +import org.bukkit.Bukkit;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.server.ServerListPingEvent;
++import org.bukkit.profile.PlayerTextures;
 +import org.bukkit.util.CachedServerIcon;
 +
 +import java.util.ArrayList;
@@ -44,7 +52,12 @@ index 0000000000000000000000000000000000000000..0bb6fdbdd05ae6a8fb413e0f6b8d8430
 +
 +    private int numPlayers;
 +    private boolean hidePlayers;
-+    @NotNull private final List<PlayerProfile> playerSample = new ArrayList<>();
++    @NotNull private final List<ListedPlayerInfo> listedPlayers = new ArrayList<>();
++    @NotNull private final TransformingRandomAccessList<ListedPlayerInfo, PlayerProfile> playerSample = new TransformingRandomAccessList<>(
++        listedPlayers,
++        info -> new UncheckedPlayerProfile(info.name(), info.id()),
++        profile -> new ListedPlayerInfo(profile.getName(), profile.getId())
++    );
 +
 +    @NotNull private String version;
 +    private int protocolVersion;
@@ -163,7 +176,7 @@ index 0000000000000000000000000000000000000000..0bb6fdbdd05ae6a8fb413e0f6b8d8430
 +    }
 +
 +    /**
-+     * Returns a mutable list of {@link PlayerProfile} that will be displayed
++     * Returns a mutable list of {@link ListedPlayerInfo} that will be displayed
 +     * as online players on the client.
 +     * <p>
 +     * The Vanilla Minecraft client will display them when hovering the
@@ -172,6 +185,22 @@ index 0000000000000000000000000000000000000000..0bb6fdbdd05ae6a8fb413e0f6b8d8430
 +     * @return The mutable player sample list
 +     */
 +    @NotNull
++    public List<ListedPlayerInfo> getListedPlayers() {
++        return this.listedPlayers;
++    }
++
++    /**
++     * Returns a mutable list of {@link PlayerProfile} that will be displayed
++     * as online players on the client.
++     * <p>
++     * The Vanilla Minecraft client will display them when hovering the
++     * player count with the mouse.
++     *
++     * @return The mutable player sample list
++     * @deprecated Use {@link #getListedPlayers()}, as this does not contain real player profiles
++     */
++    @NotNull
++    @Deprecated(forRemoval = true, since = "1.20.6")
 +    public List<PlayerProfile> getPlayerSample() {
 +        return this.playerSample;
 +    }
@@ -276,9 +305,11 @@ index 0000000000000000000000000000000000000000..0bb6fdbdd05ae6a8fb413e0f6b8d8430
 +     *     <li>Remove all entries from {@link #getPlayerSample()} that refer to
 +     *     the removed player (based on their {@link UUID}).</li>
 +     * </ul>
++     * @deprecated the Iterable interface will be removed at some point
 +     */
 +    @NotNull
 +    @Override
++    @Deprecated(forRemoval = true, since = "1.20.6")
 +    public Iterator<Player> iterator() {
 +        if (this.players == null) {
 +            this.players = getOnlinePlayers();
@@ -349,6 +380,139 @@ index 0000000000000000000000000000000000000000..0bb6fdbdd05ae6a8fb413e0f6b8d8430
 +        }
 +    }
 +
++    /**
++     * Represents a player that will be displayed in the player sample of the server list.
++     *
++     * @param name name of the listed player
++     * @param id   UUID of the listed player
++     */
++    public record ListedPlayerInfo(@NotNull String name, @NotNull UUID id) {
++    }
++
++    @ApiStatus.Internal
++    private static final class UncheckedPlayerProfile implements PlayerProfile {
++        private String name;
++        private UUID uuid;
++
++        public UncheckedPlayerProfile(final @NotNull String name, final @NotNull UUID uuid) {
++            Preconditions.checkNotNull(name, "name cannot be null");
++            Preconditions.checkNotNull(uuid, "uuid cannot be null");
++            this.name = name;
++            this.uuid = uuid;
++        }
++
++        @Override
++        public @Nullable UUID getUniqueId() {
++            return uuid;
++        }
++
++        @Override
++        public @Nullable String getName() {
++            return name;
++        }
++
++        @Override
++        public @NotNull String setName(@Nullable final String name) {
++            Preconditions.checkNotNull(name, "name cannot be null");
++            return this.name = name;
++        }
++
++        @Override
++        public @Nullable UUID getId() {
++            return uuid;
++        }
++
++        @Override
++        public @Nullable UUID setId(@Nullable final UUID uuid) {
++            Preconditions.checkNotNull(uuid, "uuid cannot be null");
++            return this.uuid = uuid;
++        }
++
++        @Override
++        public @NotNull PlayerTextures getTextures() {
++            throw new UnsupportedOperationException();
++        }
++
++        @Override
++        public void setTextures(@Nullable final PlayerTextures textures) {
++            throw new UnsupportedOperationException();
++        }
++
++        @Override
++        public @NotNull Set<ProfileProperty> getProperties() {
++            throw new UnsupportedOperationException();
++        }
++
++        @Override
++        public boolean hasProperty(@Nullable final String property) {
++            throw new UnsupportedOperationException();
++        }
++
++        @Override
++        public void setProperty(@NotNull final ProfileProperty property) {
++            throw new UnsupportedOperationException();
++        }
++
++        @Override
++        public void setProperties(@NotNull final Collection<ProfileProperty> properties) {
++            throw new UnsupportedOperationException();
++        }
++
++        @Override
++        public boolean removeProperty(@Nullable final String property) {
++            throw new UnsupportedOperationException();
++        }
++
++        @Override
++        public void clearProperties() {
++            throw new UnsupportedOperationException();
++        }
++
++        @Override
++        public boolean isComplete() {
++            return false;
++        }
++
++        @Override
++        public boolean completeFromCache() {
++            throw new UnsupportedOperationException();
++        }
++
++        @Override
++        public boolean completeFromCache(final boolean onlineMode) {
++            throw new UnsupportedOperationException();
++        }
++
++        @Override
++        public boolean completeFromCache(final boolean lookupUUID, final boolean onlineMode) {
++            throw new UnsupportedOperationException();
++        }
++
++        @Override
++        public boolean complete(final boolean textures) {
++            throw new UnsupportedOperationException();
++        }
++
++        @Override
++        public boolean complete(final boolean textures, final boolean onlineMode) {
++            throw new UnsupportedOperationException();
++        }
++
++        @Override
++        public @NotNull CompletableFuture<PlayerProfile> update() {
++            throw new UnsupportedOperationException();
++        }
++
++        @Override
++        public org.bukkit.profile.@NotNull PlayerProfile clone() {
++            throw new UnsupportedOperationException();
++        }
++
++        @Override
++        public @NotNull Map<String, Object> serialize() {
++            throw new UnsupportedOperationException();
++        }
++    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/network/StatusClient.java b/src/main/java/com/destroystokyo/paper/network/StatusClient.java
 new file mode 100644
@@ -369,6 +533,22 @@ index 0000000000000000000000000000000000000000..517d15238ed117f38bbd39f570874014
 +public interface StatusClient extends NetworkClient {
 +
 +}
+diff --git a/src/main/java/org/bukkit/event/server/ServerListPingEvent.java b/src/main/java/org/bukkit/event/server/ServerListPingEvent.java
+index 72ebc29db42d08d1d0361dba462fc8a573fbf918..d351f62971f8f1317b3fc92f8b1d446e48149c3a 100644
+--- a/src/main/java/org/bukkit/event/server/ServerListPingEvent.java
++++ b/src/main/java/org/bukkit/event/server/ServerListPingEvent.java
+@@ -248,9 +248,11 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
+      *
+      * @throws UnsupportedOperationException if the caller of this event does
+      *     not support removing players
++     * @deprecated the Iterable interface will be removed at some point
+      */
+     @NotNull
+     @Override
++    @Deprecated(forRemoval = true, since = "1.20.6")
+     public Iterator<Player> iterator() throws UnsupportedOperationException {
+         throw new UnsupportedOperationException();
+     }
 diff --git a/src/main/java/org/bukkit/util/CachedServerIcon.java b/src/main/java/org/bukkit/util/CachedServerIcon.java
 index 9a7768d41270714d4a1c89b4dcb436cc66f57545..b74b21a1ac7798e847b6d34ff45026e1c9cfed14 100644
 --- a/src/main/java/org/bukkit/util/CachedServerIcon.java
