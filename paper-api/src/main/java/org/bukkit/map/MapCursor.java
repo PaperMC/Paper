@@ -1,5 +1,6 @@
 package org.bukkit.map;
 
+import com.google.common.base.Preconditions;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
@@ -10,9 +11,10 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class MapCursor {
     private byte x, y;
-    private byte direction, type;
+    private byte direction;
     private boolean visible;
     private String caption;
+    private Type type;
 
     /**
      * Initialize the map cursor.
@@ -51,7 +53,7 @@ public final class MapCursor {
      * @param type The type (color/style) of the map cursor.
      * @param visible Whether the cursor is visible by default.
      * @param caption cursor caption
-     * @deprecated Magic value
+     * @deprecated Magic value, use {@link #MapCursor(byte, byte, byte, Type, boolean, String)}
      */
     @Deprecated
     public MapCursor(byte x, byte y, byte direction, byte type, boolean visible, @Nullable String caption) {
@@ -77,7 +79,7 @@ public final class MapCursor {
         this.x = x;
         this.y = y;
         setDirection(direction);
-        setType(type);
+        this.type = type;
         this.visible = visible;
         this.caption = caption;
     }
@@ -116,8 +118,7 @@ public final class MapCursor {
      */
     @NotNull
     public Type getType() {
-        // It should be impossible to set type to something without appropriate Type, so this shouldn't return null
-        return Type.byValue(type);
+        return type;
     }
 
     /**
@@ -128,7 +129,7 @@ public final class MapCursor {
      */
     @Deprecated
     public byte getRawType() {
-        return type;
+        return type.value;
     }
 
     /**
@@ -164,9 +165,7 @@ public final class MapCursor {
      * @param direction The facing of the cursor, from 0 to 15.
      */
     public void setDirection(byte direction) {
-        if (direction < 0 || direction > 15) {
-            throw new IllegalArgumentException("Direction must be in the range 0-15");
-        }
+        Preconditions.checkArgument(direction >= 0 && direction <= 15, "direction must be between 0 and 15 but is %s", direction);
         this.direction = direction;
     }
 
@@ -176,7 +175,7 @@ public final class MapCursor {
      * @param type The type (color/style) of the map cursor.
      */
     public void setType(@NotNull Type type) {
-        setRawType(type.value);
+        this.type = type;
     }
 
     /**
@@ -187,10 +186,9 @@ public final class MapCursor {
      */
     @Deprecated
     public void setRawType(byte type) {
-        if (type < 0 || type > 34) {
-            throw new IllegalArgumentException("Type must be in the range 0-34");
-        }
-        this.type = type;
+        Type enumType = Type.byValue(type);
+        Preconditions.checkArgument(enumType != null, "Unknown type by id %s", type);
+        this.type = enumType;
     }
 
     /**
@@ -265,10 +263,10 @@ public final class MapCursor {
         TRIAL_CHAMBERS(34, "trial_chambers")
         ;
 
-        private byte value;
+        private final byte value;
         private final NamespacedKey key;
 
-        private Type(int value, String key) {
+        Type(int value, String key) {
             this.value = (byte) value;
             this.key = NamespacedKey.minecraft(key);
         }
