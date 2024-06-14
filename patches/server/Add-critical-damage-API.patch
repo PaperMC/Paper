@@ -32,38 +32,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
 @@ -0,0 +0,0 @@ public abstract class Player extends LivingEntity {
-                         }
  
-                         f += this.getItemInHand(InteractionHand.MAIN_HAND).getItem().getAttackDamageBonus(this, f);
--                        boolean flag2 = flag && this.fallDistance > 0.0F && !this.onGround() && !this.onClimbable() && !this.isInWater() && !this.hasEffect(MobEffects.BLINDNESS) && !this.isPassenger() && target instanceof LivingEntity && !this.isSprinting();
-+                        boolean flag2 = flag && this.fallDistance > 0.0F && !this.onGround() && !this.onClimbable() && !this.isInWater() && !this.hasEffect(MobEffects.BLINDNESS) && !this.isPassenger() && target instanceof LivingEntity && !this.isSprinting(); // Paper - Add critical damage API; diff on change
+                     flag2 = flag2 && !this.level().paperConfig().entities.behavior.disablePlayerCrits; // Paper - Toggleable player crits
+                     if (flag2) {
++                        damagesource = damagesource.critical(true); // Paper start - critical damage API
+                         f *= 1.5F;
+                     }
  
-                         flag2 = flag2 && !this.level().paperConfig().entities.behavior.disablePlayerCrits; // Paper - Toggleable player crits
-                         if (flag2) {
 @@ -0,0 +0,0 @@ public abstract class Player extends LivingEntity {
-                         }
+                                     float f7 = this.getEnchantedDamage(entityliving2, f6, damagesource) * f2;
  
-                         Vec3 vec3d = target.getDeltaMovement();
--                        boolean flag5 = target.hurt(this.damageSources().playerAttack(this), f);
-+                        boolean flag5 = target.hurt(this.damageSources().playerAttack(this).critical(flag2), f); // Paper - add critical damage API
- 
-                         if (flag5) {
-                             if (i > 0) {
-@@ -0,0 +0,0 @@ public abstract class Player extends LivingEntity {
- 
-                                     if (entityliving != this && entityliving != target && !this.isAlliedTo((Entity) entityliving) && (!(entityliving instanceof ArmorStand) || !((ArmorStand) entityliving).isMarker()) && this.distanceToSqr((Entity) entityliving) < 9.0D) {
-                                         // CraftBukkit start - Only apply knockback if the damage hits
--                                        if (entityliving.hurt(this.damageSources().playerAttack(this).sweep(), f4)) {
-+                                        if (entityliving.hurt(this.damageSources().playerAttack(this).sweep().critical(flag2), f4)) { // Paper - add critical damage API
-                                             entityliving.knockback(0.4000000059604645D, (double) Mth.sin(this.getYRot() * 0.017453292F), (double) (-Mth.cos(this.getYRot() * 0.017453292F)), this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.SWEEP_ATTACK); // CraftBukkit // Paper - knockback events
-                                         }
-                                         // CraftBukkit end
+                                     // CraftBukkit start - Only apply knockback if the damage hits
+-                                    if (entityliving2.hurt(this.damageSources().playerAttack(this).sweep(), f7)) {
++                                    if (entityliving2.hurt(this.damageSources().playerAttack(this).sweep().critical(flag2), f7)) { // Paper - add critical damage API
+                                         entityliving2.knockback(0.4000000059604645D, (double) Mth.sin(this.getYRot() * 0.017453292F), (double) (-Mth.cos(this.getYRot() * 0.017453292F)), this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.SWEEP_ATTACK); // CraftBukkit // Paper - knockback events
+                                     }
+                                     // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
 @@ -0,0 +0,0 @@ public abstract class AbstractArrow extends Projectile {
-             }
+             entityliving.setLastHurtMob(entity);
          }
  
 +        if (this.isCritArrow()) damagesource = damagesource.critical(); // Paper - add critical damage API
