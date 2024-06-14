@@ -22,9 +22,6 @@ https://bugs.mojang.com/browse/MC-147659
 https://bugs.mojang.com/browse/MC-179072
   Creepers do not defuse when switching from Survival to Creative/Spectator
 
-https://bugs.mojang.com/browse/MC-191591
-  Fix items equipped on AbstractHorse losing NBT
-
 https://bugs.mojang.com/browse/MC-259571
   Fix changeGameModeForPlayer to use gameModeForPlayer
 
@@ -42,9 +39,6 @@ https://bugs.mojang.com/browse/MC-210802
 
 https://bugs.mojang.com/browse/MC-123848
   Fixes item frames dropping items above when pointing down
-
-https://bugs.mojang.com/browse/MC-84789
-  Fix wild wolves not considering bones interesting
 
 https://bugs.mojang.com/browse/MC-174630
   Fix secondary beacon effect remaining after switching effect
@@ -64,19 +58,6 @@ public net/minecraft/world/entity/Mob leashInfoTag
 Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
 Co-authored-by: Spottedleaf <Spottedleaf@users.noreply.github.com>
 
-diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
-+++ b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
-@@ -0,0 +0,0 @@ public interface DispenseItemBehavior {
-                         }
-                     }
-                     // CraftBukkit end
--                    ((Saddleable) list.get(0)).equipSaddle(SoundSource.BLOCKS);
-+                    ((Saddleable) list.get(0)).equipSaddle(SoundSource.BLOCKS, CraftItemStack.asNMSCopy(event.getItem())); // Paper - Fix saddles losing nbt data - MC-191591
-                     // itemstack.shrink(1); // CraftBukkit - handled above
-                     this.setSuccess(true);
-                     return stack;
 diff --git a/src/main/java/net/minecraft/server/commands/DeOpCommands.java b/src/main/java/net/minecraft/server/commands/DeOpCommands.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/commands/DeOpCommands.java
@@ -129,27 +110,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              });
  
              if (!list.isEmpty()) {
-diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
-+++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -0,0 +0,0 @@ public class ServerPlayer extends Player {
-                 BlockPos blockposition1 = PlayerRespawnLogic.getOverworldRespawnPos(world, blockposition.getX() + j2 - i, blockposition.getZ() + k2 - i);
- 
-                 if (blockposition1 != null) {
--                    this.moveTo(blockposition1, 0.0F, 0.0F);
-+                    this.moveTo(blockposition1, world.getSharedSpawnAngle(), 0.0F); // Paper - MC-200092 - fix first spawn pos yaw being ignored
-                     if (world.noCollision((Entity) this)) {
-                         break;
-                     }
-                 }
-             }
-         } else {
--            this.moveTo(blockposition, 0.0F, 0.0F);
-+            this.moveTo(blockposition, world.getSharedSpawnAngle(), 0.0F); // Paper - MC-200092 - fix first spawn pos yaw being ignored
- 
-             while (!world.noCollision((Entity) this) && this.getY() < (double) (world.getMaxBuildHeight() - 1)) {
-                 this.setPos(this.getX(), this.getY() + 1.0D, this.getZ());
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
@@ -168,6 +128,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
+         }
+         if (optional.isEmpty() || invalidPlayerWorld[0]) {
+             // Paper end - reset to main world spawn if first spawn or invalid world
+-            player.moveTo(player.adjustSpawnLocation(worldserver1, worldserver1.getSharedSpawnPos()).getBottomCenter(), 0.0F, 0.0F);
++            player.moveTo(player.adjustSpawnLocation(worldserver1, worldserver1.getSharedSpawnPos()).getBottomCenter(), worldserver1.getSharedSpawnAngle(), 0.0F); // Paper - MC-200092 - fix first spawn pos yaw being ignored
+         }
+         // Paper end - Entity#getEntitySpawnReason
+         player.setServerLevel(worldserver1);
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
          Player player = entity.getBukkitEntity();
          PlayerLoginEvent event = new PlayerLoginEvent(player, loginlistener.connection.hostname, ((java.net.InetSocketAddress) socketaddress).getAddress(), ((java.net.InetSocketAddress) loginlistener.connection.channel.remoteAddress()).getAddress());
  
@@ -180,35 +149,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              ichatmutablecomponent = Component.translatable("multiplayer.disconnect.banned.reason", gameprofilebanentry.getReason());
              if (gameprofilebanentry.getExpires() != null) {
-diff --git a/src/main/java/net/minecraft/world/entity/Saddleable.java b/src/main/java/net/minecraft/world/entity/Saddleable.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/entity/Saddleable.java
-+++ b/src/main/java/net/minecraft/world/entity/Saddleable.java
-@@ -0,0 +0,0 @@ public interface Saddleable {
-     boolean isSaddleable();
- 
-     void equipSaddle(@Nullable SoundSource sound);
-+    // Paper start - Fix saddles losing nbt data - MC-191591
-+    default void equipSaddle(final @Nullable SoundSource sound, final @Nullable net.minecraft.world.item.ItemStack stack) {
-+        this.equipSaddle(sound);
-+    }
-+    // Paper end
- 
-     default SoundEvent getSaddleSoundEvent() {
-         return SoundEvents.HORSE_SADDLE;
-diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/BegGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/BegGoal.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/entity/ai/goal/BegGoal.java
-+++ b/src/main/java/net/minecraft/world/entity/ai/goal/BegGoal.java
-@@ -0,0 +0,0 @@ public class BegGoal extends Goal {
-     private boolean playerHoldingInteresting(Player player) {
-         for (InteractionHand interactionHand : InteractionHand.values()) {
-             ItemStack itemStack = player.getItemInHand(interactionHand);
--            if (this.wolf.isTame() && itemStack.is(Items.BONE)) {
-+            if (!this.wolf.isTame() && itemStack.is(Items.BONE)) { // Paper - Fix MC-84789
-                 return true;
-             }
- 
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java
@@ -275,25 +215,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  this.level().playSound((Player) null, (Entity) this, this.getEatingSound(itemstack), SoundSource.NEUTRAL, 1.0F, Mth.randomBetween(this.level().random, 0.8F, 1.2F));
              }
  
-diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
-+++ b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
-@@ -0,0 +0,0 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
- 
-     @Override
-     public void equipSaddle(@Nullable SoundSource sound) {
--        this.inventory.setItem(0, new ItemStack(Items.SADDLE));
-+        // Paper start - Fix saddles losing nbt data - MC-191591
-+        this.equipSaddle(sound, null);
-+    }
-+    @Override
-+    public void equipSaddle(@Nullable SoundSource sound, @Nullable ItemStack stack) {
-+        this.inventory.setItem(0, stack != null ? stack : new ItemStack(Items.SADDLE));
-+        // Paper end
-     }
- 
-     public void equipBodyArmor(Player player, ItemStack stack) {
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
@@ -311,8 +232,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end
 +
      @Nullable
-     public MapId getFramedMapId() {
-         return (MapId) this.getItem().get(DataComponents.MAP_ID);
+     public MapId getFramedMapId(ItemStack itemstack) {
+         return (MapId) itemstack.get(DataComponents.MAP_ID);
 diff --git a/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java b/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
@@ -343,19 +264,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (this.paymentSlot.hasItem()) {
              // Paper start - Add PlayerChangeBeaconEffectEvent
              io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent event = new io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent((org.bukkit.entity.Player) this.player.player.getBukkitEntity(), convert(primary), convert(secondary), this.access.getLocation().getBlock());
-diff --git a/src/main/java/net/minecraft/world/item/SaddleItem.java b/src/main/java/net/minecraft/world/item/SaddleItem.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/item/SaddleItem.java
-+++ b/src/main/java/net/minecraft/world/item/SaddleItem.java
-@@ -0,0 +0,0 @@ public class SaddleItem extends Item {
-     public InteractionResult interactLivingEntity(ItemStack stack, Player user, LivingEntity entity, InteractionHand hand) {
-         if (entity instanceof Saddleable saddleable && entity.isAlive() && !saddleable.isSaddled() && saddleable.isSaddleable()) {
-             if (!user.level().isClientSide) {
--                saddleable.equipSaddle(SoundSource.NEUTRAL);
-+                saddleable.equipSaddle(SoundSource.NEUTRAL, stack.copyWithCount(1)); // Paper - Fix saddles losing nbt data - MC-191591
-                 entity.level().gameEvent(entity, GameEvent.EQUIP, entity.position());
-                 stack.shrink(1);
-             }
 diff --git a/src/main/java/net/minecraft/world/level/block/AzaleaBlock.java b/src/main/java/net/minecraft/world/level/block/AzaleaBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/AzaleaBlock.java
@@ -423,3 +331,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          super.setRemoved();
      }
  
+diff --git a/src/main/java/net/minecraft/world/level/portal/DimensionTransition.java b/src/main/java/net/minecraft/world/level/portal/DimensionTransition.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/portal/DimensionTransition.java
++++ b/src/main/java/net/minecraft/world/level/portal/DimensionTransition.java
+@@ -0,0 +0,0 @@ public record DimensionTransition(ServerLevel newLevel, Vec3 pos, Vec3 speed, fl
+     }
+ 
+     public DimensionTransition(ServerLevel worldserver, Entity entity, DimensionTransition.PostDimensionTransition dimensiontransition_a, PlayerTeleportEvent.TeleportCause cause) {
+-        this(worldserver, findAdjustedSharedSpawnPos(worldserver, entity), Vec3.ZERO, 0.0F, 0.0F, false, dimensiontransition_a, cause);
++        this(worldserver, findAdjustedSharedSpawnPos(worldserver, entity), Vec3.ZERO, worldserver.getSharedSpawnAngle(), 0.0F, false, dimensiontransition_a, cause); // Paper - MC-200092 - fix spawn pos yaw being ignored
+         // CraftBukkit end
+     }
+ 
+@@ -0,0 +0,0 @@ public record DimensionTransition(ServerLevel newLevel, Vec3 pos, Vec3 speed, fl
+     }
+ 
+     public static DimensionTransition missingRespawnBlock(ServerLevel world, Entity entity, DimensionTransition.PostDimensionTransition postDimensionTransition) {
+-        return new DimensionTransition(world, findAdjustedSharedSpawnPos(world, entity), Vec3.ZERO, 0.0F, 0.0F, true, postDimensionTransition);
++        return new DimensionTransition(world, findAdjustedSharedSpawnPos(world, entity), Vec3.ZERO, world.getSharedSpawnAngle(), 0.0F, true, postDimensionTransition); // Paper - MC-200092 - fix spawn pos yaw being ignored
+     }
+ 
+     private static Vec3 findAdjustedSharedSpawnPos(ServerLevel world, Entity entity) {

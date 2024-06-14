@@ -84,17 +84,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/item/AxeItem.java
 +++ b/src/main/java/net/minecraft/world/item/AxeItem.java
 @@ -0,0 +0,0 @@ public class AxeItem extends DiggerItem {
-             return InteractionResult.PASS;
-         } else {
-             ItemStack itemStack = context.getItemInHand();
-+            // Paper start - EntityChangeBlockEvent
-+            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, blockPos, optional.get())) {
-+                return InteractionResult.PASS;
-+            }
-+            // Paper end
-             if (player instanceof ServerPlayer) {
-                 CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger((ServerPlayer)player, blockPos, itemStack);
-             }
+                 return InteractionResult.PASS;
+             } else {
+                 ItemStack itemStack = context.getItemInHand();
++                // Paper start - EntityChangeBlockEvent
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, blockPos, optional.get())) {
++                    return InteractionResult.PASS;
++                }
++                // Paper end
+                 if (player instanceof ServerPlayer) {
+                     CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger((ServerPlayer)player, blockPos, itemStack);
+                 }
 diff --git a/src/main/java/net/minecraft/world/item/EnderEyeItem.java b/src/main/java/net/minecraft/world/item/EnderEyeItem.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/item/EnderEyeItem.java
@@ -187,19 +187,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/block/CakeBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/CakeBlock.java
 @@ -0,0 +0,0 @@ public class CakeBlock extends Block {
- 
              if (block instanceof CandleBlock) {
                  CandleBlock candleblock = (CandleBlock) block;
--
+ 
 +                // Paper start - call change block event
 +                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, pos, CandleCakeBlock.byCandle(candleblock))) {
 +                    player.containerMenu.sendAllDataToRemote(); // update inv because candle could decrease
 +                    return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 +                }
 +                // Paper end - call change block event
-                 if (!player.isCreative()) {
-                     stack.shrink(1);
-                 }
+                 stack.consume(1, player);
+                 world.playSound((Player) null, pos, SoundEvents.CAKE_ADD_CANDLE, SoundSource.BLOCKS, 1.0F, 1.0F);
+                 world.setBlockAndUpdate(pos, CandleCakeBlock.byCandle(candleblock));
 @@ -0,0 +0,0 @@ public class CakeBlock extends Block {
          if (!player.canEat(false)) {
              return InteractionResult.PASS;
