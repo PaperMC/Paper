@@ -29210,6 +29210,34 @@ index 0000000000000000000000000000000000000000..5a6536377c9c1e1753e930ff2a6bb98e
 +        return correct.equals(value) ? null : correct;
 +    }
 +}
+diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/ChunkSystemConverters.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/ChunkSystemConverters.java
+index 49160a30b8e19e5c5ada811fbcae2a05959524f3..5fca5dc7cdfa976bcc58dfcf0d14abb78a931475 100644
+--- a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/ChunkSystemConverters.java
++++ b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/ChunkSystemConverters.java
+@@ -25,13 +25,21 @@ public final class ChunkSystemConverters {
+     public static CompoundTag convertPoiCompoundTag(final CompoundTag data, final ServerLevel world) {
+         final int dataVersion = getDataVersion(data, DEFAULT_POI_DATA_VERSION);
+ 
+-        return DataFixTypes.POI_CHUNK.update(world.getServer().getFixerUpper(), data, dataVersion, getCurrentVersion());
++        // Paper start - dataconverter
++        return ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(
++            ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.POI_CHUNK, data, dataVersion, getCurrentVersion()
++        );
++        // Paper end - dataconverter
+     }
+ 
+     public static CompoundTag convertEntityChunkCompoundTag(final CompoundTag data, final ServerLevel world) {
+         final int dataVersion = getDataVersion(data, DEFAULT_ENTITY_CHUNK_DATA_VERSION);
+ 
+-        return DataFixTypes.ENTITY_CHUNK.update(world.getServer().getFixerUpper(), data, dataVersion, getCurrentVersion());
++        // Paper start - dataconverter
++        return ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(
++            ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.ENTITY_CHUNK, data, dataVersion, getCurrentVersion()
++        );
++        // Paper end - dataconverter
+     }
+ 
+     private ChunkSystemConverters() {}
 diff --git a/src/main/java/net/minecraft/data/structures/StructureUpdater.java b/src/main/java/net/minecraft/data/structures/StructureUpdater.java
 index 6082d2a4dda21e1b1a9154629aaf0b282b154a42..d8fe611bb4e121dfe96ccd5b8e7949f91eeba023 100644
 --- a/src/main/java/net/minecraft/data/structures/StructureUpdater.java
@@ -29224,10 +29252,10 @@ index 6082d2a4dda21e1b1a9154629aaf0b282b154a42..d8fe611bb4e121dfe96ccd5b8e7949f9
          return structureTemplate.save(new CompoundTag());
      }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
-index f0f5e9bb5ac65250f0a151f9f90b58468335a8c2..278019416ce3be0ccec703c6a70c2a29f11e21b1 100644
+index 0cdc224656a2baa09b7dfbb249b6a96320ac43e0..8c270fee6ecdfbf2bf214428c6f7fcebc2087719 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
-@@ -86,7 +86,7 @@ public class ChunkStorage implements AutoCloseable {
+@@ -96,7 +96,7 @@ public class ChunkStorage implements AutoCloseable, ca.spottedleaf.moonrise.patc
          } else {
              try {
                  // CraftBukkit start
@@ -29236,7 +29264,7 @@ index f0f5e9bb5ac65250f0a151f9f90b58468335a8c2..278019416ce3be0ccec703c6a70c2a29
                      CompoundTag level = nbttagcompound.getCompound("Level");
                      if (level.getBoolean("TerrainPopulated") && !level.getBoolean("LightPopulated")) {
                          ServerChunkCache cps = (generatoraccess == null) ? null : ((ServerLevel) generatoraccess).getChunkSource();
-@@ -98,7 +98,7 @@ public class ChunkStorage implements AutoCloseable {
+@@ -108,7 +108,7 @@ public class ChunkStorage implements AutoCloseable, ca.spottedleaf.moonrise.patc
                  // CraftBukkit end
  
                  if (i < 1493) {
@@ -29245,7 +29273,7 @@ index f0f5e9bb5ac65250f0a151f9f90b58468335a8c2..278019416ce3be0ccec703c6a70c2a29
                      if (nbttagcompound.getCompound("Level").getBoolean("hasLegacyStructureData")) {
                          LegacyStructureDataHandler persistentstructurelegacy = this.getLegacyStructureHandler(resourcekey, supplier);
  
-@@ -116,7 +116,7 @@ public class ChunkStorage implements AutoCloseable {
+@@ -128,7 +128,7 @@ public class ChunkStorage implements AutoCloseable, ca.spottedleaf.moonrise.patc
                  // Spigot end
  
                  ChunkStorage.injectDatafixingContext(nbttagcompound, resourcekey, optional);
@@ -29255,7 +29283,7 @@ index f0f5e9bb5ac65250f0a151f9f90b58468335a8c2..278019416ce3be0ccec703c6a70c2a29
                  if (stopBelowZero) {
                      nbttagcompound.putString("Status", net.minecraft.core.registries.BuiltInRegistries.CHUNK_STATUS.getKey(ChunkStatus.SPAWN).toString());
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
-index e0e843f4f69013379ed70cb63d9b4f72163b828b..578d270d5b7efb9ac8f5dde539170f6021e2b786 100644
+index aafb05c5e63903f5790a6bcb862c8d79588be5a6..c5085ebf4e801837010f3750c5e89576bb0c27a5 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/SimpleRegionStorage.java
 @@ -32,13 +32,30 @@ public class SimpleRegionStorage implements AutoCloseable {
@@ -29293,10 +29321,10 @@ index e0e843f4f69013379ed70cb63d9b4f72163b828b..578d270d5b7efb9ac8f5dde539170f60
  
      public CompletableFuture<Void> synchronize(boolean sync) {
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java b/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
-index c6181e14d85d454506534f9bbe856156c0d4a062..609100ed7aa0b23aa5a9c6fbf6878ea320bd3a93 100644
+index 3694c5d2d522216cd2e6e91e502a56a08595ca84..9d282c263151c51cae84f8db00f6b8fa742fbad3 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
-@@ -151,7 +151,7 @@ public class StructureCheck {
+@@ -158,7 +158,7 @@ public class StructureCheck {
  
                  CompoundTag compoundTag2;
                  try {
