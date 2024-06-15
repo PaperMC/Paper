@@ -21,7 +21,6 @@ import net.minecraft.world.inventory.ContainerMerchant;
 import net.minecraft.world.inventory.ContainerProperties;
 import net.minecraft.world.inventory.ContainerShulkerBox;
 import net.minecraft.world.inventory.ContainerSmoker;
-import net.minecraft.world.inventory.ContainerStonecutter;
 import net.minecraft.world.inventory.ContainerWorkbench;
 import net.minecraft.world.inventory.Containers;
 import net.minecraft.world.inventory.CrafterMenu;
