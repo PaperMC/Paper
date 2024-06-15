@@ -5,12 +5,12 @@ Subject: [PATCH] Use Velocity compression and cipher natives
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 48b8db6d5fdf9b2f7155b9356418178f5594ddcb..4998aff0b7cb084dcda15c6a18bbe45e99b6000a 100644
+index b06f38b87765d084565bc11cf5da6076562b6be8..299b7b029384c58fed80d53cc0b77c420d62eed7 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -37,6 +37,11 @@ dependencies {
-     runtimeOnly("org.xerial:sqlite-jdbc:3.45.3.0")
-     runtimeOnly("com.mysql:mysql-connector-j:8.3.0")
+     runtimeOnly("org.xerial:sqlite-jdbc:3.46.0.0")
+     runtimeOnly("com.mysql:mysql-connector-j:8.4.0")
      runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
 +    // Paper start - Use Velocity cipher
 +    implementation("com.velocitypowered:velocity-native:3.1.2-SNAPSHOT") {
@@ -275,10 +275,10 @@ index 34a80d2f34555663ab1b394972957089214cb337..ec30c291188ac3bba7f1c3bc397576d1
          return this.threshold;
      }
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index f94458d4270042062b9ae18931cc8179ef1fb420..63066dfde00569833546da01cd580434f8be6593 100644
+index 7dc7aeb1d94d26cf54bd4e4ab13972a3a60c1f98..90a2c61c42cba7e38f167eccdd7a951a947963c4 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
-@@ -763,11 +763,28 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -792,11 +792,28 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
          return networkmanager;
      }
  
@@ -311,7 +311,7 @@ index f94458d4270042062b9ae18931cc8179ef1fb420..63066dfde00569833546da01cd580434
  
      public boolean isEncrypted() {
          return this.encrypted;
-@@ -800,12 +817,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -829,12 +846,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
  
      public void setupCompression(int compressionThreshold, boolean rejectsBadPackets) {
          if (compressionThreshold >= 0) {
@@ -326,7 +326,7 @@ index f94458d4270042062b9ae18931cc8179ef1fb420..63066dfde00569833546da01cd580434
              } else {
                  this.channel.pipeline().addAfter("splitter", "decompress", new CompressionDecoder(compressionThreshold, rejectsBadPackets));
              }
-@@ -816,7 +834,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -845,7 +863,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
  
                  packetcompressor.setThreshold(compressionThreshold);
              } else {
@@ -336,7 +336,7 @@ index f94458d4270042062b9ae18931cc8179ef1fb420..63066dfde00569833546da01cd580434
              this.channel.pipeline().fireUserEventTriggered(io.papermc.paper.network.ConnectionEvent.COMPRESSION_THRESHOLD_SET); // Paper - Add Channel initialization listeners
          } else {
 diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
-index a08d9aa6e420f691795df9b627a9cd5b5c0112c5..52f537b7bfbdeaad9d17c0e88a1ed1c8925a833f 100644
+index 2929d9a2efa9669781b6773161db7c5f968c2544..8aff5129f85ab5729b3da2e465871be62d15bdf2 100644
 --- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 +++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
 @@ -106,6 +106,11 @@ public class ServerConnectionListener {
@@ -352,10 +352,10 @@ index a08d9aa6e420f691795df9b627a9cd5b5c0112c5..52f537b7bfbdeaad9d17c0e88a1ed1c8
                  protected void initChannel(Channel channel) {
                      try {
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index cb006ae0e5be2f1d31261bdd36964229ec44416d..b656741eb68adeb04bf995f1045902cb6bd5f2e7 100644
+index 0fc30ce511f449d2a3ddab28c86f7e388223ece1..b0f7a378f19b9837c060c891002cd5db756cdae1 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -280,12 +280,14 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+@@ -282,12 +282,14 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
              }
  
              SecretKey secretkey = packet.getSecretKey(privatekey);
