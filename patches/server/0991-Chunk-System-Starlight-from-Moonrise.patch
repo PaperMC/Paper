@@ -10995,7 +10995,7 @@ index 0000000000000000000000000000000000000000..f52e104b3e07825caf0d6d1bda2e45c8
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cbc48ffafd3afd8d9f71790fafd15fcecfcedd78
+index 0000000000000000000000000000000000000000..545624cfeefacc7bff3bb24adc9b6d52672db701
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
 @@ -0,0 +1,2014 @@
@@ -11976,8 +11976,8 @@ index 0000000000000000000000000000000000000000..cbc48ffafd3afd8d9f71790fafd15fce
 +        final boolean oldUnloaded = oldLevel > ChunkHolderManager.MAX_TICKET_LEVEL;
 +        final boolean newUnloaded = newLevel > ChunkHolderManager.MAX_TICKET_LEVEL;
 +
-+        final ChunkStatus maxGenerationStatusOld = ChunkLevel.generationStatusOrEmpty(oldLevel);
-+        final ChunkStatus maxGenerationStatusNew = ChunkLevel.generationStatusOrEmpty(newLevel);
++        final ChunkStatus maxGenerationStatusOld = ChunkLevel.generationStatus(oldLevel);
++        final ChunkStatus maxGenerationStatusNew = ChunkLevel.generationStatus(newLevel);
 +
 +        // check for cancellations from downgrading ticket level
 +        if (this.requestedGenStatus != null && !newState.isOrAfter(FullChunkStatus.FULL) && newLevel > oldLevel) {
@@ -22983,7 +22983,7 @@ index c643bb0daa5cd264fd6ebab7acf0a2bdd7fe7029..0048077dedd19adc6c5a88e7d916d88a
      // Paper end
  }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkLevel.java b/src/main/java/net/minecraft/server/level/ChunkLevel.java
-index d9ad32acdf46a43a649334a3b736aeb7b3af21d1..e56b9333a4d99fa6a94e923cb5e8c7544c6309bf 100644
+index d9ad32acdf46a43a649334a3b736aeb7b3af21d1..fae17a075d7efaf24d916877dd5968eb9652bb66 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkLevel.java
 @@ -7,9 +7,9 @@ import net.minecraft.world.level.chunk.status.ChunkStep;
@@ -22999,19 +22999,6 @@ index d9ad32acdf46a43a649334a3b736aeb7b3af21d1..e56b9333a4d99fa6a94e923cb5e8c754
      private static final ChunkStep FULL_CHUNK_STEP = ChunkPyramid.GENERATION_PYRAMID.getStepTo(ChunkStatus.FULL);
      public static final int RADIUS_AROUND_FULL_CHUNK = FULL_CHUNK_STEP.accumulatedDependencies().getRadius();
      public static final int MAX_LEVEL = 33 + RADIUS_AROUND_FULL_CHUNK;
-@@ -19,6 +19,12 @@ public class ChunkLevel {
-         return getStatusAroundFullChunk(level - 33, null);
-     }
- 
-+    // Paper start - rewrite chunk system
-+    public static ChunkStatus generationStatusOrEmpty(int level) {
-+        return getStatusAroundFullChunk(level - 33, ChunkStatus.EMPTY);
-+    }
-+    // Paper end - rewrite chunk system
-+
-     @Nullable
-     @Contract("_,!null->!null;_,_->_")
-     public static ChunkStatus getStatusAroundFullChunk(int additionalLevel, @Nullable ChunkStatus emptyStatus) {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
 index 2ce7da9707d7c1a48b5609ae51a516d599d7aee8..b849e0cf15f894aa87b1bb397d85b887b8fb816e 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
