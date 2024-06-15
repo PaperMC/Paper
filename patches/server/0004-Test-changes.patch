@@ -3,6 +3,7 @@ From: Jake Potrebic <jake.m.potrebic@gmail.com>
 Date: Mon, 13 Feb 2023 14:14:56 -0800
 Subject: [PATCH] Test changes
 
+Co-authored-by: yannnicklamprecht <yannicklamprecht@live.de>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
 index f276414e9e81abf8f1f80991ebd5ab43472e07b1..7a0f2391a464eeebc5e57856300bc000b8d35e52 100644
@@ -351,9 +352,35 @@ index ebcb65cb74acdb9d1bcf2b4b3551a2dc6d809bc9..7d9dbed7281099b78d7f898885b37cdc
  
      @Test
 diff --git a/src/test/java/org/bukkit/support/DummyServer.java b/src/test/java/org/bukkit/support/DummyServer.java
-index 1acdf5bc439c073c1777c2c4f5743ae082f4a621..bd13fd46f79ab9000b708526acbadcc7210c8a92 100644
+index 1acdf5bc439c073c1777c2c4f5743ae082f4a621..f5347d46b979c7a501d47bae6ba0f1c0db7011a2 100644
 --- a/src/test/java/org/bukkit/support/DummyServer.java
 +++ b/src/test/java/org/bukkit/support/DummyServer.java
+@@ -62,7 +62,7 @@ public final class DummyServer {
+             when(instance.getTag(any(), any(), any())).then(mock -> {
+                 String registry = mock.getArgument(0);
+                 Class<?> clazz = mock.getArgument(2);
+-                MinecraftKey key = CraftNamespacedKey.toMinecraft(mock.getArgument(1));
++                net.minecraft.resources.ResourceLocation key = CraftNamespacedKey.toMinecraft(mock.getArgument(1)); // Paper - address remapping issues
+ 
+                 switch (registry) {
+                     case org.bukkit.Tag.REGISTRY_BLOCKS -> {
+@@ -81,14 +81,14 @@ public final class DummyServer {
+                     }
+                     case org.bukkit.Tag.REGISTRY_FLUIDS -> {
+                         Preconditions.checkArgument(clazz == org.bukkit.Fluid.class, "Fluid namespace must have fluid type");
+-                        TagKey<FluidType> fluidTagKey = TagKey.create(Registries.FLUID, key);
++                        TagKey<net.minecraft.world.level.material.Fluid> fluidTagKey = TagKey.create(Registries.FLUID, key); // Paper - address remapping issues
+                         if (BuiltInRegistries.FLUID.getTag(fluidTagKey).isPresent()) {
+                             return new CraftFluidTag(BuiltInRegistries.FLUID, fluidTagKey);
+                         }
+                     }
+                     case org.bukkit.Tag.REGISTRY_ENTITY_TYPES -> {
+                         Preconditions.checkArgument(clazz == org.bukkit.entity.EntityType.class, "Entity type namespace must have entity type");
+-                        TagKey<EntityTypes<?>> entityTagKey = TagKey.create(Registries.ENTITY_TYPE, key);
++                        TagKey<net.minecraft.world.entity.EntityType<?>> entityTagKey = TagKey.create(Registries.ENTITY_TYPE, key); // Paper - address remapping issues
+                         if (BuiltInRegistries.ENTITY_TYPE.getTag(entityTagKey).isPresent()) {
+                             return new CraftEntityTag(BuiltInRegistries.ENTITY_TYPE, entityTagKey);
+                         }
 @@ -99,6 +99,15 @@ public final class DummyServer {
                  return null;
              });
@@ -364,7 +391,7 @@ index 1acdf5bc439c073c1777c2c4f5743ae082f4a621..bd13fd46f79ab9000b708526acbadcc7
 +
 +            final org.bukkit.plugin.PluginManager pluginManager = new org.bukkit.plugin.SimplePluginManager(instance, new org.bukkit.command.SimpleCommandMap(instance));
 +            when(instance.getPluginManager()).thenReturn(pluginManager);
-+            when(instance.getTag(anyString(), any(org.bukkit.NamespacedKey.class), any())).thenAnswer(ignored -> new io.papermc.paper.util.EmptyTag());
++            doAnswer(mock -> new io.papermc.paper.util.EmptyTag()).when(instance).getTag(anyString(), any(org.bukkit.NamespacedKey.class), any()); // Paper - address wrong mocking which resulted in NPE
 +            // paper end - testing additions
 +
              Bukkit.setServer(instance);
