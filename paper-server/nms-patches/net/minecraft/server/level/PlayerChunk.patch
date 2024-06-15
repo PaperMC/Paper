@@ -24,13 +24,15 @@
          this.levelHeightAccessor = levelheightaccessor;
          this.lightEngine = levellightengine;
          this.onLevelChange = playerchunk_a;
-@@ -72,6 +76,16 @@
+@@ -72,6 +76,18 @@
          this.changedBlocksPerSection = new ShortSet[levelheightaccessor.getSectionsCount()];
      }
  
 +    // CraftBukkit start
 +    public Chunk getFullChunkNow() {
-+        return (Chunk) this.getChunkIfPresent(ChunkStatus.FULL);
++        // Note: We use the oldTicketLevel for isLoaded checks.
++        if (!ChunkLevel.fullStatus(this.oldTicketLevel).isOrAfter(FullChunkStatus.FULL)) return null;
++        return this.getFullChunkNowUnchecked();
 +    }
 +
 +    public Chunk getFullChunkNowUnchecked() {
@@ -41,7 +43,7 @@
      public CompletableFuture<ChunkResult<Chunk>> getTickingChunkFuture() {
          return this.tickingChunkFuture;
      }
-@@ -86,7 +100,7 @@
+@@ -86,7 +102,7 @@
  
      @Nullable
      public Chunk getTickingChunk() {
@@ -50,7 +52,7 @@
      }
  
      @Nullable
-@@ -134,6 +148,7 @@
+@@ -134,6 +150,7 @@
          if (chunk != null) {
              int i = this.levelHeightAccessor.getSectionIndex(blockposition.getY());
  
@@ -58,7 +60,7 @@
              if (this.changedBlocksPerSection[i] == null) {
                  this.hasChangedSections = true;
                  this.changedBlocksPerSection[i] = new ShortOpenHashSet();
-@@ -208,8 +223,11 @@
+@@ -208,8 +225,11 @@
                                  PacketPlayOutMultiBlockChange packetplayoutmultiblockchange = new PacketPlayOutMultiBlockChange(sectionposition, shortset, chunksection);
  
                                  this.broadcast(list, packetplayoutmultiblockchange);
@@ -71,7 +73,7 @@
                                  });
                              }
                          }
-@@ -275,7 +293,7 @@
+@@ -275,7 +295,7 @@
          this.pendingFullStateConfirmation = completablefuture1;
          completablefuture.thenAccept((chunkresult) -> {
              chunkresult.ifSuccess((chunk) -> {
@@ -80,7 +82,7 @@
              });
          });
      }
-@@ -290,6 +308,30 @@
+@@ -290,6 +310,30 @@
          FullChunkStatus fullchunkstatus1 = ChunkLevel.fullStatus(this.ticketLevel);
          boolean flag = fullchunkstatus.isOrAfter(FullChunkStatus.FULL);
          boolean flag1 = fullchunkstatus1.isOrAfter(FullChunkStatus.FULL);
@@ -111,7 +113,7 @@
  
          this.wasAccessibleSinceLastSave |= flag1;
          if (!flag && flag1) {
-@@ -341,6 +383,26 @@
+@@ -341,6 +385,26 @@
  
          this.onLevelChange.onLevelChange(this.pos, this::getQueueLevel, this.ticketLevel, this::setQueueLevel);
          this.oldTicketLevel = this.ticketLevel;
