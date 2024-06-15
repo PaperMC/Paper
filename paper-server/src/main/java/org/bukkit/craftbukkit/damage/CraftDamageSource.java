@@ -65,7 +65,7 @@ public class CraftDamageSource implements DamageSource {
 
     @Override
     public boolean isIndirect() {
-        return this.getHandle().getEntity() != this.getHandle().getDamager();
+        return this.getHandle().getCausingDamager() != this.getHandle().getDamager();
     }
 
     @Override
