@@ -1,5 +1,6 @@
 package io.papermc.generator.utils;
 
+import java.util.Optional;
 import org.apache.commons.lang3.math.NumberUtils;
 import java.util.Comparator;
 import java.util.Locale;
@@ -13,6 +14,15 @@ public final class Formatting {
 
     public static String formatKeyAsField(String path) {
         return ILLEGAL_FIELD_CHARACTERS.matcher(path.toUpperCase(Locale.ROOT)).replaceAll("_");
+    }
+
+    public static Optional<String> formatTagKey(String tagDir, String resourcePath) {
+        int tagsIndex = resourcePath.indexOf(tagDir);
+        int dotIndex = resourcePath.lastIndexOf('.');
+        if (tagsIndex == -1 || dotIndex == -1) {
+            return Optional.empty();
+        }
+        return Optional.of(resourcePath.substring(tagsIndex + tagDir.length() + 1, dotIndex)); // namespace/tags/registry_key/[tag_key].json
     }
 
     public static Comparator<String> ALPHABETIC_KEY_ORDER = alphabeticKeyOrder(path -> path);
