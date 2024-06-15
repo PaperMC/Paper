@@ -11976,8 +11976,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        final boolean oldUnloaded = oldLevel > ChunkHolderManager.MAX_TICKET_LEVEL;
 +        final boolean newUnloaded = newLevel > ChunkHolderManager.MAX_TICKET_LEVEL;
 +
-+        final ChunkStatus maxGenerationStatusOld = ChunkLevel.generationStatus(oldLevel);
-+        final ChunkStatus maxGenerationStatusNew = ChunkLevel.generationStatus(newLevel);
++        final ChunkStatus maxGenerationStatusOld = ChunkLevel.generationStatusOrEmpty(oldLevel);
++        final ChunkStatus maxGenerationStatusNew = ChunkLevel.generationStatusOrEmpty(newLevel);
 +
 +        // check for cancellations from downgrading ticket level
 +        if (this.requestedGenStatus != null && !newState.isOrAfter(FullChunkStatus.FULL) && newLevel > oldLevel) {
@@ -22999,6 +22999,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private static final ChunkStep FULL_CHUNK_STEP = ChunkPyramid.GENERATION_PYRAMID.getStepTo(ChunkStatus.FULL);
      public static final int RADIUS_AROUND_FULL_CHUNK = FULL_CHUNK_STEP.accumulatedDependencies().getRadius();
      public static final int MAX_LEVEL = 33 + RADIUS_AROUND_FULL_CHUNK;
+@@ -0,0 +0,0 @@ public class ChunkLevel {
+         return getStatusAroundFullChunk(level - 33, null);
+     }
+ 
++    // Paper start - rewrite chunk system
++    public static ChunkStatus generationStatusOrEmpty(int level) {
++        return getStatusAroundFullChunk(level - 33, ChunkStatus.EMPTY);
++    }
++    // Paper end - rewrite chunk system
++
+     @Nullable
+     @Contract("_,!null->!null;_,_->_")
+     public static ChunkStatus getStatusAroundFullChunk(int additionalLevel, @Nullable ChunkStatus emptyStatus) {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
@@ -24621,7 +24634,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start - rewrite chunk system
 +        final ChunkStatus maxStatus = ChunkLevel.generationStatus(this.getTicketLevel());
 +
-+        if (requestedStatus.isOrAfter(maxStatus)) {
++        if (maxStatus == null || requestedStatus.isOrAfter(maxStatus)) {
 +            return null;
 +        }
 +
