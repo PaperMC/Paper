@@ -346,7 +346,7 @@ index 1b084d63bdbb24dad45d28eed1693eb6e26e24dc..43d7bea201a52cfeacf60c75caa28dfd
      @Override
      public Vector getDirection() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
-index c9e15a9d82dee935293b2e7e233f5b9b2d822448..3c31ff72f3e77ee0d9231fec5f15267c56799a7c 100644
+index c9e15a9d82dee935293b2e7e233f5b9b2d822448..2d54cf6f3d9696c55335f0a2057025e2034d4e13 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
 @@ -15,24 +15,26 @@ import org.bukkit.inventory.meta.FireworkMeta;
@@ -395,7 +395,7 @@ index c9e15a9d82dee935293b2e7e233f5b9b2d822448..3c31ff72f3e77ee0d9231fec5f15267c
      @Override
      public FireworkMeta getFireworkMeta() {
 -        return (FireworkMeta) this.item.getItemMeta();
-+        return (FireworkMeta) CraftItemStack.getItemMeta(this.getHandle().getEntityData().get(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM), Material.FIREWORK_ROCKET); // Paper - Expose firework item directly
++        return (FireworkMeta) CraftItemStack.getItemMeta(this.getHandle().getEntityData().get(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM), org.bukkit.inventory.ItemType.FIREWORK_ROCKET); // Paper - Expose firework item directly
      }
  
      @Override
@@ -625,7 +625,7 @@ index d685d09cae5f862c0004f148298c800736d2139e..636c4481e3afdf20197e502cf221f5d3
      public String toString() {
          return "CraftShulkerBullet";
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftThrownPotion.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftThrownPotion.java
-index d67a80161b3e7c1fe02a6ed9d341c00dc7c2847a..408a0a0433b97d7f97d758fd1dfa7975dbf8eccd 100644
+index d67a80161b3e7c1fe02a6ed9d341c00dc7c2847a..f6fa6f1ac50b757dd3bc9a8dee9f6085446182c8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftThrownPotion.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftThrownPotion.java
 @@ -36,11 +36,31 @@ public class CraftThrownPotion extends CraftThrowableProjectile implements Throw
@@ -643,7 +643,7 @@ index d67a80161b3e7c1fe02a6ed9d341c00dc7c2847a..408a0a0433b97d7f97d758fd1dfa7975
 +    // Paper start - Projectile API
 +    @Override
 +    public org.bukkit.inventory.meta.PotionMeta getPotionMeta() {
-+        return (org.bukkit.inventory.meta.PotionMeta) CraftItemStack.getItemMeta(this.getHandle().getItem(), Material.SPLASH_POTION);
++        return (org.bukkit.inventory.meta.PotionMeta) CraftItemStack.getItemMeta(this.getHandle().getItem(), org.bukkit.inventory.ItemType.SPLASH_POTION);
 +    }
 +
 +    @Override
@@ -733,10 +733,10 @@ index 76e262cc2d6686096eb7b58b6e7343c2a0ecafe5..f47c881aada65e91a6a433b0d2df031f
          }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index 52622ed31fe2f3616a53681030cc01517b63e7ab..7fd33fa4b3b0d9faf603c0f17ecd035e5a620bb1 100644
+index 23d61d553be3ab0a62624e469b2782baa2b075db..a147b54668854668b02bbe39c9eae22bb98dc217 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-@@ -306,12 +306,22 @@ public final class CraftItemStack extends ItemStack {
+@@ -306,12 +306,23 @@ public final class CraftItemStack extends ItemStack {
      public ItemMeta getItemMeta() {
          return CraftItemStack.getItemMeta(this.handle);
      }
@@ -748,16 +748,15 @@ index 52622ed31fe2f3616a53681030cc01517b63e7ab..7fd33fa4b3b0d9faf603c0f17ecd035e
 +    }
  
      public static ItemMeta getItemMeta(net.minecraft.world.item.ItemStack item) {
-+        return getItemMeta(item, CraftItemStack.getType(item));
++        return getItemMeta(item, null);
 +    }
-+    public static ItemMeta getItemMeta(net.minecraft.world.item.ItemStack item, Material material) {
++    public static ItemMeta getItemMeta(net.minecraft.world.item.ItemStack item, org.bukkit.inventory.ItemType metaForType) {
 +        // Paper end
          if (!CraftItemStack.hasItemMeta(item)) {
--            return CraftItemFactory.instance().getItemMeta(CraftItemStack.getType(item));
-+            return CraftItemFactory.instance().getItemMeta(material); // Paper
+             return CraftItemFactory.instance().getItemMeta(CraftItemStack.getType(item));
          }
--        switch (CraftItemStack.getType(item)) {
-+        switch (material) {  // Paper
-             case WRITTEN_BOOK:
-                 return new CraftMetaBookSigned(item.getComponentsPatch());
-             case WRITABLE_BOOK:
+ 
++        if (metaForType != null) { return ((CraftItemType<?>) metaForType).getItemMeta(item); } // Paper
+         return ((CraftItemType<?>) CraftItemType.minecraftToBukkitNew(item.getItem())).getItemMeta(item);
+     }
+ 

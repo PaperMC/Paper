@@ -12,19 +12,26 @@ starting point for future additions in this area.
 
 Fixes GH-559
 
-diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java
-index 3006a6d19de35e7e0d6e542e80eb0406c5422c3e..fc522ae106d1172172c496da543b8ca403e73456 100644
---- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java
-+++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemType.java
-@@ -66,7 +66,7 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
-     private Class<M> getItemMetaClass(Item item) {
-         ItemMeta meta = new ItemStack(this.asMaterial()).getItemMeta();
-         if (meta != null) {
--            if (CraftMetaEntityTag.class != meta.getClass() && CraftMetaArmorStand.class != meta.getClass()) {
-+            if (CraftMetaEntityTag.class != meta.getClass()/* && CraftMetaArmorStand.class != meta.getClass()*/) { // Paper - CraftMetaArmorStand is implemented in the API via ArmorStandMeta.
-                 return (Class<M>) meta.getClass().getInterfaces()[0];
-             }
-         }
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemMetas.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemMetas.java
+index 85aab880fdb2f23d09096f8f2b1ede4f068fa023..4ae9930c2d74e5b1e3ad0c2ecf6556dc59cbf23c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemMetas.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemMetas.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.craftbukkit.inventory;
+ 
++import com.destroystokyo.paper.inventory.meta.ArmorStandMeta;
+ import java.util.function.BiFunction;
+ import java.util.function.Function;
+ import net.minecraft.world.item.ItemStack;
+@@ -95,7 +96,7 @@ public final class CraftItemMetas {
+             item -> new CraftMetaSpawnEgg(item.getComponentsPatch()),
+             (type, meta) -> meta instanceof CraftMetaSpawnEgg spawnEgg ? spawnEgg : new CraftMetaSpawnEgg(meta));
+ 
+-    private static final ItemMetaData<ItemMeta> ARMOR_STAND_META_DATA = new ItemMetaData<>(ItemMeta.class,
++    private static final ItemMetaData<ArmorStandMeta> ARMOR_STAND_META_DATA = new ItemMetaData<>(ArmorStandMeta.class, // paper
+             item -> new CraftMetaArmorStand(item.getComponentsPatch()),
+             (type, meta) -> meta instanceof CraftMetaArmorStand armorStand ? armorStand : new CraftMetaArmorStand(meta));
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java
 index c4f12f96e39cb6189799a796b4cb2cb4f0b92392..59bdac414e8205ed608f79ef0d1502acd826d216 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java

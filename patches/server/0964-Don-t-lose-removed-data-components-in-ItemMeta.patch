@@ -5,10 +5,10 @@ Subject: [PATCH] Don't lose removed data components in ItemMeta
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 737b325f87bcaa8871dbed5deec01215a1f11bf7..8a5785565d71f3f74a9ce0179a26dbff5530023d 100644
+index 64457318250c8ab1dcefdbd1f3373b891d859a7a..b5103f318b685145d10337c833f0026d4785f05f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-@@ -196,6 +196,13 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -198,6 +198,13 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
              return this;
          }
  
@@ -22,18 +22,20 @@ index 737b325f87bcaa8871dbed5deec01215a1f11bf7..8a5785565d71f3f74a9ce0179a26dbff
          DataComponentPatch build() {
              return this.builder.build();
          }
-@@ -424,7 +431,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -428,7 +435,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
          Set<Map.Entry<DataComponentType<?>, Optional<?>>> keys = tag.entrySet();
          for (Map.Entry<DataComponentType<?>, Optional<?>> key : keys) {
 -            if (!CraftMetaItem.getHandledTags().contains(key.getKey())) {
++            // Paper start - don't lose unhandled tags
 +            if (key.getValue().isEmpty()) {
 +                this.unhandledTags.remove(key.getKey());
 +            } else if (!CraftMetaItem.getHandledTags().contains(key.getKey())) {
-                 key.getValue().ifPresentOrElse((value) -> {
++                // Paper end - don't lose unhandled tags
+                 key.getValue().ifPresent((value) -> {
                      this.unhandledTags.set((DataComponentType) key.getKey(), value);
-                 }, () -> {
-@@ -832,9 +841,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+                 });
+@@ -864,9 +875,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          }
  
          for (Map.Entry<DataComponentType<?>, Optional<?>> e : this.unhandledTags.build().entrySet()) {
@@ -44,4 +46,4 @@ index 737b325f87bcaa8871dbed5deec01215a1f11bf7..8a5785565d71f3f74a9ce0179a26dbff
 +            }, () -> itemTag.remove(e.getKey()));
          }
  
-         CompoundTag customTag = (this.customTag != null) ? this.customTag.copy() : null;
+         for (DataComponentType<?> removed : this.removedTags) {

@@ -10995,7 +10995,7 @@ index 0000000000000000000000000000000000000000..f52e104b3e07825caf0d6d1bda2e45c8
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dd86394b4503dc47c17517b2c79e482fa683b3cf
+index 0000000000000000000000000000000000000000..545624cfeefacc7bff3bb24adc9b6d52672db701
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
 @@ -0,0 +1,2014 @@
@@ -11605,7 +11605,7 @@ index 0000000000000000000000000000000000000000..dd86394b4503dc47c17517b2c79e482f
 +    }
 +
 +    // ticket level state
-+    private int oldTicketLevel = ChunkHolderManager.MAX_TICKET_LEVEL + 1;
++    public int oldTicketLevel = ChunkHolderManager.MAX_TICKET_LEVEL + 1;
 +    private int currentTicketLevel = ChunkHolderManager.MAX_TICKET_LEVEL + 1;
 +
 +    public int getTicketLevel() {
@@ -22461,7 +22461,7 @@ index 6915522f669631779c1fb8a8e2db330f4b9fb921..cd69971065b13353353eca55f6e14594
                  this.mayHaveDelayedTasks = true;
                  this.delayedTasksMaxNextTickTimeNanos = Math.max(Util.getNanos() + i, this.nextTickTimeNanos);
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 09d7b416c02eb13c506e9dc92d78e983bf43f4f0..963a591e1031834cb6e98b5ed6f2ef307ba1ae78 100644
+index c643bb0daa5cd264fd6ebab7acf0a2bdd7fe7029..0048077dedd19adc6c5a88e7d916d88a71662115 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -32,28 +32,20 @@ import net.minecraft.world.level.lighting.LevelLightEngine;
@@ -22618,7 +22618,7 @@ index 09d7b416c02eb13c506e9dc92d78e983bf43f4f0..963a591e1031834cb6e98b5ed6f2ef30
          this.setTicketLevel(level);
          this.changedBlocksPerSection = new ShortSet[world.getSectionsCount()];
          this.chunkMap = (ChunkMap)playersWatchingChunkProvider; // Paper
-@@ -91,15 +170,7 @@ public class ChunkHolder extends GenerationChunkHolder {
+@@ -91,21 +170,13 @@ public class ChunkHolder extends GenerationChunkHolder {
  
      // Paper start
      public @Nullable ChunkAccess getAvailableChunkNow() {
@@ -22635,7 +22635,14 @@ index 09d7b416c02eb13c506e9dc92d78e983bf43f4f0..963a591e1031834cb6e98b5ed6f2ef30
      }
      // Paper end
      // CraftBukkit start
-@@ -113,39 +184,46 @@ public class ChunkHolder extends GenerationChunkHolder {
+     public LevelChunk getFullChunkNow() {
+         // Note: We use the oldTicketLevel for isLoaded checks.
+-        if (!ChunkLevel.fullStatus(this.oldTicketLevel).isOrAfter(FullChunkStatus.FULL)) return null;
++        if (!ChunkLevel.fullStatus(this.newChunkHolder.oldTicketLevel).isOrAfter(FullChunkStatus.FULL)) return null; // Paper - rewrite chunk system
+         return this.getFullChunkNowUnchecked();
+     }
+ 
+@@ -115,39 +186,46 @@ public class ChunkHolder extends GenerationChunkHolder {
      // CraftBukkit end
  
      public final CompletableFuture<ChunkResult<LevelChunk>> getTickingChunkFuture() { // Paper - final for inline
@@ -22695,7 +22702,7 @@ index 09d7b416c02eb13c506e9dc92d78e983bf43f4f0..963a591e1031834cb6e98b5ed6f2ef30
  
      }
  
-@@ -164,26 +242,20 @@ public class ChunkHolder extends GenerationChunkHolder {
+@@ -166,26 +244,20 @@ public class ChunkHolder extends GenerationChunkHolder {
      // Paper end
  
      public CompletableFuture<?> getSaveSyncFuture() {
@@ -22726,7 +22733,7 @@ index 09d7b416c02eb13c506e9dc92d78e983bf43f4f0..963a591e1031834cb6e98b5ed6f2ef30
  
          if (chunk != null) {
              int i = this.levelHeightAccessor.getSectionIndex(pos.getY());
-@@ -203,7 +275,7 @@ public class ChunkHolder extends GenerationChunkHolder {
+@@ -205,7 +277,7 @@ public class ChunkHolder extends GenerationChunkHolder {
  
          if (ichunkaccess != null) {
              ichunkaccess.setUnsaved(true);
@@ -22735,7 +22742,7 @@ index 09d7b416c02eb13c506e9dc92d78e983bf43f4f0..963a591e1031834cb6e98b5ed6f2ef30
  
              if (chunk != null) {
                  int j = this.lightEngine.getMinLightSection();
-@@ -229,7 +301,7 @@ public class ChunkHolder extends GenerationChunkHolder {
+@@ -231,7 +303,7 @@ public class ChunkHolder extends GenerationChunkHolder {
              List list;
  
              if (!this.skyChangedLightSectionFilter.isEmpty() || !this.blockChangedLightSectionFilter.isEmpty()) {
@@ -22744,7 +22751,7 @@ index 09d7b416c02eb13c506e9dc92d78e983bf43f4f0..963a591e1031834cb6e98b5ed6f2ef30
                  if (!list.isEmpty()) {
                      ClientboundLightUpdatePacket packetplayoutlightupdate = new ClientboundLightUpdatePacket(chunk.getPos(), this.lightEngine, this.skyChangedLightSectionFilter, this.blockChangedLightSectionFilter);
  
-@@ -241,7 +313,7 @@ public class ChunkHolder extends GenerationChunkHolder {
+@@ -243,7 +315,7 @@ public class ChunkHolder extends GenerationChunkHolder {
              }
  
              if (this.hasChangedSections) {
@@ -22753,7 +22760,7 @@ index 09d7b416c02eb13c506e9dc92d78e983bf43f4f0..963a591e1031834cb6e98b5ed6f2ef30
  
                  for (int i = 0; i < this.changedBlocksPerSection.length; ++i) {
                      ShortSet shortset = this.changedBlocksPerSection[i];
-@@ -307,193 +379,40 @@ public class ChunkHolder extends GenerationChunkHolder {
+@@ -309,193 +381,40 @@ public class ChunkHolder extends GenerationChunkHolder {
  
      @Override
      public final int getTicketLevel() { // Paper - final for inline
@@ -22956,7 +22963,7 @@ index 09d7b416c02eb13c506e9dc92d78e983bf43f4f0..963a591e1031834cb6e98b5ed6f2ef30
      }
  
      @FunctionalInterface
-@@ -509,15 +428,15 @@ public class ChunkHolder extends GenerationChunkHolder {
+@@ -511,15 +430,15 @@ public class ChunkHolder extends GenerationChunkHolder {
  
      // Paper start
      public final boolean isEntityTickingReady() {
@@ -24692,7 +24699,7 @@ index 3dc1daa3c6a04d3ff1a2353773b465fc380994a2..4fa938e2d893c0db7d3fbd4c20b829cb
      }
  }
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 6f506ed8c8052f56356f60c5987cca8aa34d1d78..ade744dd17431cc671de1322d7f58b54039fe1c9 100644
+index a94833f58eb823332890d07c147161e9e0a938e9..b2d444f5b1a89e1f03bf4422474accde184240b0 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -75,6 +75,29 @@ public class ServerChunkCache extends ChunkSource {
@@ -24809,7 +24816,7 @@ index 6f506ed8c8052f56356f60c5987cca8aa34d1d78..ade744dd17431cc671de1322d7f58b54
      }
  
      private void clearCache() {
-@@ -335,35 +331,42 @@ public class ServerChunkCache extends ChunkSource {
+@@ -335,56 +331,63 @@ public class ServerChunkCache extends ChunkSource {
      }
  
      private CompletableFuture<ChunkResult<ChunkAccess>> getChunkFutureMainThread(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
@@ -24862,12 +24869,15 @@ index 6f506ed8c8052f56356f60c5987cca8aa34d1d78..ade744dd17431cc671de1322d7f58b54
 +            };
  
 -        return this.chunkAbsent(playerchunk, l) ? GenerationChunkHolder.UNLOADED_CHUNK_FUTURE : playerchunk.scheduleChunkGenerationTask(leastStatus, this.chunkMap);
+-    }
 +            ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().scheduleChunkLoad(
 +                chunkX, chunkZ, leastStatus, true,
 +                ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.HIGHER,
 +                complete
 +            );
-+
+ 
+-    private boolean chunkAbsent(@Nullable ChunkHolder holder, int maxLevel) {
+-        return holder == null || holder.oldTicketLevel > maxLevel; // CraftBukkit using oldTicketLevel for isLoaded checks
 +            return ret;
 +        } else {
 +            // can return now
@@ -24875,9 +24885,6 @@ index 6f506ed8c8052f56356f60c5987cca8aa34d1d78..ade744dd17431cc671de1322d7f58b54
 +        }
 +        // Paper end - rewrite chunk system
      }
- 
-     private boolean chunkAbsent(@Nullable ChunkHolder holder, int maxLevel) {
-@@ -372,19 +375,23 @@ public class ServerChunkCache extends ChunkSource {
  
      @Override
      public boolean hasChunk(int x, int z) {
@@ -24909,7 +24916,7 @@ index 6f506ed8c8052f56356f60c5987cca8aa34d1d78..ade744dd17431cc671de1322d7f58b54
      }
  
      @Override
-@@ -397,16 +404,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -397,16 +400,7 @@ public class ServerChunkCache extends ChunkSource {
      }
  
      public boolean runDistanceManagerUpdates() { // Paper - public
@@ -24927,7 +24934,7 @@ index 6f506ed8c8052f56356f60c5987cca8aa34d1d78..ade744dd17431cc671de1322d7f58b54
      }
  
      // Paper start
-@@ -416,13 +414,14 @@ public class ServerChunkCache extends ChunkSource {
+@@ -416,13 +410,14 @@ public class ServerChunkCache extends ChunkSource {
      // Paper end
  
      public boolean isPositionTicking(long pos) {
@@ -24946,7 +24953,7 @@ index 6f506ed8c8052f56356f60c5987cca8aa34d1d78..ade744dd17431cc671de1322d7f58b54
          try (co.aikar.timings.Timing timed = level.timings.chunkSaveData.startTiming()) { // Paper - Timings
          this.chunkMap.saveAllChunks(flush);
          } // Paper - Timings
-@@ -435,12 +434,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -435,12 +430,7 @@ public class ServerChunkCache extends ChunkSource {
      }
  
      public void close(boolean save) throws IOException {
@@ -24960,7 +24967,7 @@ index 6f506ed8c8052f56356f60c5987cca8aa34d1d78..ade744dd17431cc671de1322d7f58b54
      }
  
      // CraftBukkit start - modelled on below
-@@ -468,6 +462,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -468,6 +458,7 @@ public class ServerChunkCache extends ChunkSource {
          this.level.getProfiler().popPush("chunks");
          if (tickChunks) {
              this.level.timings.chunks.startTiming(); // Paper - timings
@@ -24968,7 +24975,7 @@ index 6f506ed8c8052f56356f60c5987cca8aa34d1d78..ade744dd17431cc671de1322d7f58b54
              this.tickChunks();
              this.level.timings.chunks.stopTiming(); // Paper - timings
              this.chunkMap.tick();
-@@ -567,11 +562,12 @@ public class ServerChunkCache extends ChunkSource {
+@@ -567,11 +558,12 @@ public class ServerChunkCache extends ChunkSource {
      }
  
      private void getFullChunk(long pos, Consumer<LevelChunk> chunkConsumer) {
@@ -24985,7 +24992,7 @@ index 6f506ed8c8052f56356f60c5987cca8aa34d1d78..ade744dd17431cc671de1322d7f58b54
  
      }
  
-@@ -665,6 +661,12 @@ public class ServerChunkCache extends ChunkSource {
+@@ -665,6 +657,12 @@ public class ServerChunkCache extends ChunkSource {
          this.chunkMap.setServerViewDistance(watchDistance);
      }
  
@@ -24998,7 +25005,7 @@ index 6f506ed8c8052f56356f60c5987cca8aa34d1d78..ade744dd17431cc671de1322d7f58b54
      public void setSimulationDistance(int simulationDistance) {
          this.distanceManager.updateSimulationDistance(simulationDistance);
      }
-@@ -743,16 +745,14 @@ public class ServerChunkCache extends ChunkSource {
+@@ -743,16 +741,14 @@ public class ServerChunkCache extends ChunkSource {
          @Override
          // CraftBukkit start - process pending Chunk loadCallback() and unloadCallback() after each run task
          public boolean pollTask() {
