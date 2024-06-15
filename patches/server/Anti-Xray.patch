@@ -1107,7 +1107,7 @@ diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/mai
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
          // Holder holder = worlddimension.type(); // CraftBukkit - decompile error
  
          // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
@@ -1143,9 +1143,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/network/PlayerChunkSender.java
 +++ b/src/main/java/net/minecraft/server/network/PlayerChunkSender.java
 @@ -0,0 +0,0 @@ public class PlayerChunkSender {
+     }
  
-     public static void sendChunk(ServerGamePacketListenerImpl handler, ServerLevel world, LevelChunk chunk) { // Paper - rewrite chunk loader - public
-         handler.player.serverLevel().chunkSource.chunkMap.getVisibleChunkIfPresent(chunk.getPos().toLong()).addPlayer(handler.player);
+     public static void sendChunk(ServerGamePacketListenerImpl handler, ServerLevel world, LevelChunk chunk) { // Paper - public
 -        handler.send(new ClientboundLevelChunkWithLightPacket(chunk, world.getLightEngine(), null, null));
 +        // Paper start - Anti-Xray
 +        final boolean shouldModify = world.chunkPacketBlockController.shouldModify(handler.player, chunk);
@@ -1171,7 +1171,7 @@ diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      }
      // Paper end - add paper world config
  
@@ -1179,24 +1179,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public final co.aikar.timings.WorldTimingsHandler timings; // Paper
      public static BlockPos lastPhysicsProblem; // Spigot
      private org.spigotmc.TickLimiter entityLimiter;
-@@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
- 
-     public abstract ResourceKey<LevelStem> getTypeKey();
+@@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+     }
+     // Paper end - rewrite chunk system
  
 -    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator) { // Paper - create paper world config
-+    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, java.util.concurrent.Executor executor) { // Paper - create paper world config; Async-Anti-Xray: Pass executor
++    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, java.util.concurrent.Executor executor) { // Paper - create paper world config & Anti-Xray
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
          this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper - create paper world config
          this.generator = gen;
-@@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
-         this.timings = new co.aikar.timings.WorldTimingsHandler(this); // Paper - code below can generate new world and access timings
+@@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
          this.entityLimiter = new org.spigotmc.TickLimiter(this.spigotConfig.entityMaxTickTime);
          this.tileLimiter = new org.spigotmc.TickLimiter(this.spigotConfig.tileMaxTickTime);
+         this.entityLookup = new ca.spottedleaf.moonrise.patches.chunk_system.level.entity.dfl.DefaultEntityLookup(this); // Paper - rewrite chunk system
 +        this.chunkPacketBlockController = this.paperConfig().anticheat.antiXray.enabled ? new com.destroystokyo.paper.antixray.ChunkPacketBlockControllerAntiXray(this, executor) : com.destroystokyo.paper.antixray.ChunkPacketBlockController.NO_OPERATION_INSTANCE; // Paper - Anti-Xray
      }
  
      // Paper start - Cancel hit for vanished players
-@@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
              // CraftBukkit end
  
              BlockState iblockdata1 = chunk.setBlockState(pos, state, (flags & 64) != 0, (flags & 1024) == 0); // CraftBukkit custom NO_PLACE flag
@@ -1216,16 +1216,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.replaceMissingSections(biomeRegistry, this.sections); // Paper - Anti-Xray - make it a non-static method
          // CraftBukkit start
          this.biomeRegistry = biomeRegistry;
-     }
+         // Paper start - rewrite chunk system
+@@ -0,0 +0,0 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom
      public final Registry<Biome> biomeRegistry;
      // CraftBukkit end
  
 -    private static void replaceMissingSections(Registry<Biome> biomeRegistry, LevelChunkSection[] sectionArray) {
-+    private void replaceMissingSections(Registry<Biome> biomeRegistry, LevelChunkSection[] sectionArray) { // Paper - Anti-Xray - static -> non-static
++    private void replaceMissingSections(Registry<Biome> biomeRegistry, LevelChunkSection[] sectionArray) { // Paper - Anti-Xray - make it a non-static method
          for (int i = 0; i < sectionArray.length; ++i) {
              if (sectionArray[i] == null) {
 -                sectionArray[i] = new LevelChunkSection(biomeRegistry);
-+                sectionArray[i] = new LevelChunkSection(biomeRegistry, this.levelHeightAccessor instanceof net.minecraft.world.level.Level ? (net.minecraft.world.level.Level) this.levelHeightAccessor : null, this.chunkPos, this.levelHeightAccessor.getSectionYFromSectionIndex(i)); // Paper start - Anti-Xray - Add parameters
++                sectionArray[i] = new LevelChunkSection(biomeRegistry, this.levelHeightAccessor instanceof net.minecraft.world.level.Level ? (net.minecraft.world.level.Level) this.levelHeightAccessor : null, this.chunkPos, this.levelHeightAccessor.getSectionYFromSectionIndex(i)); // Paper - Anti-Xray - Add parameters
              }
          }
  
@@ -1233,7 +1234,7 @@ diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-@@ -0,0 +0,0 @@ public class LevelChunk extends ChunkAccess {
+@@ -0,0 +0,0 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
      }
  
      public LevelChunk(Level world, ChunkPos pos, UpgradeData upgradeData, LevelChunkTicks<Block> blockTickScheduler, LevelChunkTicks<Fluid> fluidTickScheduler, long inhabitedTime, @Nullable LevelChunkSection[] sectionArrayInitializer, @Nullable LevelChunk.PostLoadProcessor entityLoader, @Nullable BlendingData blendingData) {
@@ -1584,18 +1585,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return new OldCraftChunkData(world.getMinHeight(), world.getMaxHeight(), handle.registryAccess().registryOrThrow(Registries.BIOME), world); // Paper - Anti-Xray - Add parameters
      }
  
-     // Paper start - Allow delegation to vanilla chunk gen
+     @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
                  List<ServerPlayer> playersInRange = playerChunk.playerProvider.getPlayers(playerChunk.getPos(), false);
-                 if (playersInRange.isEmpty()) return true; // Paper - rewrite player chunk loader
+                 if (playersInRange.isEmpty()) return true; // Paper - chunk system
  
 -                ClientboundLevelChunkWithLightPacket refreshPacket = new ClientboundLevelChunkWithLightPacket(chunk, this.world.getLightEngine(), null, null);
-+                // Paper start - Anti-Xray - Bypass
-+                Map<Object, ClientboundLevelChunkWithLightPacket> refreshPackets = new HashMap<>();
++                // Paper start - Anti-Xray bypass
++                final Map<Object, ClientboundLevelChunkWithLightPacket> refreshPackets = new HashMap<>();
                  for (ServerPlayer player : playersInRange) {
                      if (player.connection == null) continue;
  
@@ -1604,9 +1605,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    player.connection.send(refreshPackets.computeIfAbsent(shouldModify, s -> { // Use connection to prevent creating firing event
 +                        return new ClientboundLevelChunkWithLightPacket(chunk, this.world.getLightEngine(), null, null, (Boolean) s);
 +                    }));
-+                    // Paper end
++                    // Paper end - Anti-Xray bypass
                  }
-         // Paper - rewrite player chunk loader
+         // Paper - chunk system
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java b/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
