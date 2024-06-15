@@ -27,12 +27,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          Set<Map.Entry<DataComponentType<?>, Optional<?>>> keys = tag.entrySet();
          for (Map.Entry<DataComponentType<?>, Optional<?>> key : keys) {
 -            if (!CraftMetaItem.getHandledTags().contains(key.getKey())) {
++            // Paper start - don't lose unhandled tags
 +            if (key.getValue().isEmpty()) {
 +                this.unhandledTags.remove(key.getKey());
 +            } else if (!CraftMetaItem.getHandledTags().contains(key.getKey())) {
-                 key.getValue().ifPresentOrElse((value) -> {
++                // Paper end - don't lose unhandled tags
+                 key.getValue().ifPresent((value) -> {
                      this.unhandledTags.set((DataComponentType) key.getKey(), value);
-                 }, () -> {
+                 });
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          }
  
@@ -44,4 +46,4 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }, () -> itemTag.remove(e.getKey()));
          }
  
-         CompoundTag customTag = (this.customTag != null) ? this.customTag.copy() : null;
+         for (DataComponentType<?> removed : this.removedTags) {

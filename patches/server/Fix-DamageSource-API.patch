@@ -14,7 +14,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private boolean sweep = false;
      private boolean melting = false;
      private boolean poison = false;
--    private Entity customEntityDamager = null; // This field is a helper for when causing entity damage is not set by vanilla
+-    private Entity customEntityDamager = null; // This field is a helper for when direct entity damage is not set by vanilla
+-    private Entity customCausingEntityDamager = null; // This field is a helper for when causing entity damage is not set by vanilla
 +    @Nullable
 +    private Entity customEventDamager = null; // This field is a helper for when causing entity damage is not set by vanilla // Paper - fix DamageSource API
  
@@ -26,23 +27,38 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -    public Entity getDamager() {
 -        return (this.customEntityDamager != null) ? this.customEntityDamager : this.directEntity;
+-    }
+-
+-    public Entity getCausingDamager() {
+-        return (this.customCausingEntityDamager != null) ? this.customCausingEntityDamager : this.causingEntity;
+-    }
+-
+-    public DamageSource customEntityDamager(Entity entity) {
+-        // This method is not intended for change the causing entity if is already set
+-        // also is only necessary if the entity passed is not the direct entity or different from the current causingEntity
+-        if (this.customEntityDamager != null || this.directEntity == entity || this.causingEntity == entity) {
+-            return this;
+-        }
+-        DamageSource damageSource = this.cloneInstance();
+-        damageSource.customEntityDamager = entity;
+-        return damageSource;
 +    // Paper start - fix DamageSource API
 +    @Nullable
 +    public Entity getCustomEventDamager() {
 +        return (this.customEventDamager != null) ? this.customEventDamager : this.directEntity;
      }
  
--    public DamageSource customEntityDamager(Entity entity) {
+-    public DamageSource customCausingEntityDamager(Entity entity) {
 -        // This method is not intended for change the causing entity if is already set
 -        // also is only necessary if the entity passed is not the direct entity or different from the current causingEntity
--        if (this.customEntityDamager != null || this.directEntity == entity || this.causingEntity == entity) {
+-        if (this.customCausingEntityDamager != null || this.directEntity == entity || this.causingEntity == entity) {
 -            return this;
 +    public DamageSource customEventDamager(Entity entity) {
 +        if (this.directEntity != null) {
 +            throw new IllegalStateException("Cannot set custom event damager when direct entity is already set (report a bug to Paper)");
          }
          DamageSource damageSource = this.cloneInstance();
--        damageSource.customEntityDamager = entity;
+-        damageSource.customCausingEntityDamager = entity;
 +        damageSource.customEventDamager = entity;
 +        // Paper end - fix DamageSource API
          return damageSource;
@@ -114,7 +130,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (!event.isCancelled()) {
              // CraftBukkit end
              this.dead = true;
--            this.level().explode(this, net.minecraft.world.level.Explosion.getDefaultDamageSource(this.level(), this).customEntityDamager(this.entityIgniter), null, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.MOB); // CraftBukkit
+-            this.level().explode(this, net.minecraft.world.level.Explosion.getDefaultDamageSource(this.level(), this).customCausingEntityDamager(this.entityIgniter), null, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.MOB); // CraftBukkit
 +            this.level().explode(this, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.MOB); // CraftBukkit // Paper - fix DamageSource API (revert to vanilla, no, just no, don't change this)
              this.spawnLingeringCloud();
              this.triggerOnDeathMobEffects(Entity.RemovalReason.KILLED);
@@ -163,6 +179,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/damage/CraftDamageSource.java
 +++ b/src/main/java/org/bukkit/craftbukkit/damage/CraftDamageSource.java
 @@ -0,0 +0,0 @@ public class CraftDamageSource implements DamageSource {
+ 
+     @Override
+     public org.bukkit.entity.Entity getCausingEntity() {
+-        net.minecraft.world.entity.Entity entity = this.getHandle().getCausingDamager();
++        net.minecraft.world.entity.Entity entity = this.getHandle().getCustomEventDamager(); // Paper
+         return (entity != null) ? entity.getBukkitEntity() : null;
+     }
  
      @Override
      public org.bukkit.entity.Entity getDirectEntity() {

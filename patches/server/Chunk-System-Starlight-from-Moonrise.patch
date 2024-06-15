@@ -11605,7 +11605,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    // ticket level state
-+    private int oldTicketLevel = ChunkHolderManager.MAX_TICKET_LEVEL + 1;
++    public int oldTicketLevel = ChunkHolderManager.MAX_TICKET_LEVEL + 1;
 +    private int currentTicketLevel = ChunkHolderManager.MAX_TICKET_LEVEL + 1;
 +
 +    public int getTicketLevel() {
@@ -22635,6 +22635,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
      // Paper end
      // CraftBukkit start
+     public LevelChunk getFullChunkNow() {
+         // Note: We use the oldTicketLevel for isLoaded checks.
+-        if (!ChunkLevel.fullStatus(this.oldTicketLevel).isOrAfter(FullChunkStatus.FULL)) return null;
++        if (!ChunkLevel.fullStatus(this.newChunkHolder.oldTicketLevel).isOrAfter(FullChunkStatus.FULL)) return null; // Paper - rewrite chunk system
+         return this.getFullChunkNowUnchecked();
+     }
+ 
 @@ -0,0 +0,0 @@ public class ChunkHolder extends GenerationChunkHolder {
      // CraftBukkit end
  
@@ -24862,12 +24869,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            };
  
 -        return this.chunkAbsent(playerchunk, l) ? GenerationChunkHolder.UNLOADED_CHUNK_FUTURE : playerchunk.scheduleChunkGenerationTask(leastStatus, this.chunkMap);
+-    }
 +            ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().scheduleChunkLoad(
 +                chunkX, chunkZ, leastStatus, true,
 +                ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor.Priority.HIGHER,
 +                complete
 +            );
-+
+ 
+-    private boolean chunkAbsent(@Nullable ChunkHolder holder, int maxLevel) {
+-        return holder == null || holder.oldTicketLevel > maxLevel; // CraftBukkit using oldTicketLevel for isLoaded checks
 +            return ret;
 +        } else {
 +            // can return now
@@ -24875,9 +24885,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        // Paper end - rewrite chunk system
      }
- 
-     private boolean chunkAbsent(@Nullable ChunkHolder holder, int maxLevel) {
-@@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
  
      @Override
      public boolean hasChunk(int x, int z) {
