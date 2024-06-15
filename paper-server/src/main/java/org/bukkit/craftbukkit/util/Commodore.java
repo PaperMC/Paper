@@ -67,6 +67,10 @@ public class Commodore {
             "org/spigotmc/event/entity/EntityDismountEvent", "org/bukkit/event/entity/EntityDismountEvent"
     );
 
+    private static final Set<String> CLASS_TO_INTERFACE = Set.of(
+            "org/bukkit/inventory/InventoryView"
+    );
+
     private static Map<String, RerouteMethodData> createReroutes(Class<?> clazz) {
         Map<String, RerouteMethodData> reroutes = RerouteBuilder.buildFromClass(clazz);
         REROUTES.add(reroutes);
@@ -286,6 +290,17 @@ public class Commodore {
                         }
                         if (checkReroute(visitor, METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
                             return;
+                        }
+
+                        if (CLASS_TO_INTERFACE.contains(owner)) {
+                            if (opcode == Opcodes.INVOKEVIRTUAL) {
+                                opcode = Opcodes.INVOKEINTERFACE;
+                            }
+
+                            if (opcode == Opcodes.H_INVOKEVIRTUAL) {
+                                opcode = Opcodes.H_INVOKEINTERFACE;
+                            }
+                            itf = true;
                         }
 
                         // SPIGOT-4496

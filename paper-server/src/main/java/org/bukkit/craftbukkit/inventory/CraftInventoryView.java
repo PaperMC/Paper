@@ -15,7 +15,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 
-public class CraftInventoryView extends InventoryView {
+public class CraftInventoryView extends CraftAbstractInventoryView {
     private final Container container;
     private final CraftHumanEntity player;
     private final CraftInventory viewing;

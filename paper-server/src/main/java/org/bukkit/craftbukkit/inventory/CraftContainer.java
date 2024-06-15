@@ -48,7 +48,7 @@ public class CraftContainer extends Container {
     }
 
     public CraftContainer(final Inventory inventory, final EntityHuman player, int id) {
-        this(new InventoryView() {
+        this(new CraftAbstractInventoryView() {
 
             private final String originalTitle = (inventory instanceof CraftInventoryCustom) ? ((CraftInventoryCustom.MinecraftInventory) ((CraftInventory) inventory).getInventory()).getTitle() : inventory.getType().getDefaultTitle();
             private String title = originalTitle;
