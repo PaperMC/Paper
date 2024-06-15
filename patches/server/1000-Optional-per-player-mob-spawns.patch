@@ -5,11 +5,11 @@ Subject: [PATCH] Optional per player mob spawns
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 1d2d4d38ff3414896d07f7f4e40d0edb9a8c3993..56f855ed9dbbb9a7025bef6f9e98a8cdcf2ad4fc 100644
+index b849e0cf15f894aa87b1bb397d85b887b8fb816e..7bebf252887ecc7594b1ce21471fb6ba7aa2c051 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -291,9 +291,28 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         });
+@@ -283,8 +283,26 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         return this.nearbyPlayers;
      }
  
 +    // Paper start - Optional per player mob spawns
@@ -17,7 +17,7 @@ index 1d2d4d38ff3414896d07f7f4e40d0edb9a8c3993..56f855ed9dbbb9a7025bef6f9e98a8cd
 +        if (!this.level.paperConfig().entities.spawning.perPlayerMobSpawns) {
 +            return;
 +        }
-+        int index = entity.getType().getCategory().ordinal();
++        final int index = entity.getType().getCategory().ordinal();
 +
 +        final com.destroystokyo.paper.util.maplist.ReferenceList<ServerPlayer> inRange =
 +            this.getNearbyPlayers().getPlayers(entity.chunkPosition(), io.papermc.paper.util.player.NearbyPlayers.NearbyMapType.TICK_VIEW_DISTANCE);
@@ -29,20 +29,18 @@ index 1d2d4d38ff3414896d07f7f4e40d0edb9a8c3993..56f855ed9dbbb9a7025bef6f9e98a8cd
 +            ++((ServerPlayer)backingSet[i]).mobCounts[index];
 +        }
 +    }
-+
      public int getMobCountNear(final ServerPlayer player, final net.minecraft.world.entity.MobCategory mobCategory) {
 -        return -1;
 +        return player.mobCounts[mobCategory.ordinal()];
++        // Paper end - Optional per player mob spawns
      }
-+    // Paper end - Optional per player mob spawns
+     // Paper end
  
-     private static double euclideanDistanceSquared(ChunkPos pos, Entity entity) {
-         double d0 = (double) SectionPos.sectionToBlockCoord(pos.x, 8);
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index e8432337df6b9ea67285f8420b4fa5fe20d657b6..41be61c8d239515975b5a73ecf448734710abd23 100644
+index c742667e6b6d94dde7b0e27737c1e71dc0cfcbdc..ce056e5d17694611236ce604d4d989173a87d399 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -516,7 +516,19 @@ public class ServerChunkCache extends ChunkSource {
+@@ -512,7 +512,19 @@ public class ServerChunkCache extends ChunkSource {
                  gameprofilerfiller.popPush("naturalSpawnCount");
                  this.level.timings.countNaturalMobs.startTiming(); // Paper - timings
                  int k = this.distanceManager.getNaturalSpawnChunkCount();
@@ -64,10 +62,10 @@ index e8432337df6b9ea67285f8420b4fa5fe20d657b6..41be61c8d239515975b5a73ecf448734
  
                  this.lastSpawnState = spawnercreature_d;
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 30bd4ff4e9d4160b547681603127a5aa13a7ebbc..2a7d050c785e6cba36ec3df3127c2fc3b7932db6 100644
+index 92c9304d0ea1286766243e679fea357f7e690402..62569beec171e1398d18197994092c205074c025 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -272,6 +272,10 @@ public class ServerPlayer extends Player {
+@@ -276,6 +276,10 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player imple
      public boolean queueHealthUpdatePacket;
      public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
      // Paper end - cancellable death event
