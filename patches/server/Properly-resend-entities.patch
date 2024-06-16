@@ -96,8 +96,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
                              // Entity in bucket - SPIGOT-4048 and SPIGOT-6859a
                              if ((entity instanceof Bucketable && entity instanceof LivingEntity && origItem != null && origItem.asItem() == Items.WATER_BUCKET) && (event.isCancelled() || ServerGamePacketListenerImpl.this.player.getInventory().getSelected() == null || ServerGamePacketListenerImpl.this.player.getInventory().getSelected().getItem() != origItem)) {
--                                ServerGamePacketListenerImpl.this.send(new ClientboundAddEntityPacket(entity));
-+                                entity.resendPossiblyDesyncedEntityData(ServerGamePacketListenerImpl.this.player); // Paper - The entire mob gets deleted, so resend it.
+-                                entity.getBukkitEntity().update(ServerGamePacketListenerImpl.this.player);
++                                entity.resendPossiblyDesyncedEntityData(ServerGamePacketListenerImpl.this.player); // Paper - The entire mob gets deleted, so resend it
                                  ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote();
                              }
  
@@ -189,7 +189,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              itemstack1 = CraftItemStack.asNMSCopy(playerBucketFishEvent.getEntityBucket());
              if (playerBucketFishEvent.isCancelled()) {
                  ((ServerPlayer) player).containerMenu.sendAllDataToRemote(); // We need to update inventory to resync client's bucket
--                ((ServerPlayer) player).connection.send(new ClientboundAddEntityPacket(entity)); // We need to play out these packets as the client assumes the fish is gone
+-                entity.getBukkitEntity().update((ServerPlayer) player); // We need to play out these packets as the client assumes the fish is gone
 -                entity.refreshEntityData((ServerPlayer) player); // Need to send data such as the display name to client
 +                entity.resendPossiblyDesyncedEntityData((ServerPlayer) player); // Paper
                  return Optional.of(InteractionResult.FAIL);
@@ -203,15 +203,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              return;
          }
  
--        entityTracker.broadcast(this.getHandle().getAddEntityPacket());
-+        // Paper start, resend possibly desynced entity instead of add entity packet
-+        for (ServerPlayerConnection playerConnection : entityTracker.seenBy) {
-+            this.getHandle().resendPossiblyDesyncedEntityData(playerConnection.getPlayer());
+-        entityTracker.broadcast(this.getHandle().getAddEntityPacket(entityTracker.serverEntity));
++        // Paper start - resend possibly desynced entity instead of add entity packet
++        for (final ServerPlayerConnection connection : entityTracker.seenBy) {
++            this.getHandle().resendPossiblyDesyncedEntityData(connection.getPlayer());
 +        }
-+        // Paper end
++        // Paper end - resend possibly desynced entity instead of add entity packet
      }
  
-     private static PermissibleBase getPermissibleBase() {
+     public void update(ServerPlayer player) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftItemFrame.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftItemFrame.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftItemFrame.java

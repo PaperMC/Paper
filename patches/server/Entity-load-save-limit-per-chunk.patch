@@ -8,6 +8,29 @@ to a chunk. The default values of -1 disable the limit. Although
 defaults are only included for certain entites, this allows setting
 limits for any entity type.
 
+diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java
++++ b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java
+@@ -0,0 +0,0 @@ public final class ChunkEntitySlices {
+         }
+ 
+         final ListTag entitiesTag = new ListTag();
++        final java.util.Map<net.minecraft.world.entity.EntityType<?>, Integer> savedEntityCounts = new java.util.HashMap<>(); // Paper - Entity load/save limit per chunk
+         for (final Entity entity : entities) {
++            // Paper start - Entity load/save limit per chunk
++            final EntityType<?> entityType = entity.getType();
++            final int saveLimit = world.paperConfig().chunks.entityPerChunkSaveLimit.getOrDefault(entityType, -1);
++            if (saveLimit > -1) {
++                if (savedEntityCounts.getOrDefault(entityType, 0) >= saveLimit) {
++                    break;
++                }
++                savedEntityCounts.merge(entityType, 1, Integer::sum);
++            }
++            // Paper end - Entity load/save limit per chunk
+             CompoundTag compoundTag = new CompoundTag();
+             if (entity.save(compoundTag)) {
+                 entitiesTag.add(compoundTag);
 diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/EntityType.java
@@ -38,21 +61,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/EntityStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/EntityStorage.java
 @@ -0,0 +0,0 @@ public class EntityStorage implements EntityPersistentStorage<Entity> {
-         }
- 
-         ListTag listTag = new ListTag();
-+        final java.util.Map<net.minecraft.world.entity.EntityType<?>, Integer> savedEntityCounts = new java.util.HashMap<>(); // Paper - Entity load/save limit per chunk
-         entities.forEach((entity) -> { // diff here: use entities parameter
-+            // Paper start - Entity load/save limit per chunk
-+            final EntityType<?> entityType = entity.getType();
-+            final int saveLimit = level.paperConfig().chunks.entityPerChunkSaveLimit.getOrDefault(entityType, -1);
-+            if (saveLimit > -1) {
-+                if (savedEntityCounts.getOrDefault(entityType, 0) >= saveLimit) {
-+                    return;
+             }
+         } else {
+             ListTag listTag = new ListTag();
++            final java.util.Map<net.minecraft.world.entity.EntityType<?>, Integer> savedEntityCounts = new java.util.HashMap<>(); // Paper - Entity load/save limit per chunk
+             dataList.getEntities().forEach(entity -> {
++                // Paper start - Entity load/save limit per chunk
++                final EntityType<?> entityType = entity.getType();
++                final int saveLimit = this.level.paperConfig().chunks.entityPerChunkSaveLimit.getOrDefault(entityType, -1);
++                if (saveLimit > -1) {
++                    if (savedEntityCounts.getOrDefault(entityType, 0) >= saveLimit) {
++                        return;
++                    }
++                    savedEntityCounts.merge(entityType, 1, Integer::sum);
 +                }
-+                savedEntityCounts.merge(entityType, 1, Integer::sum);
-+            }
-+            // Paper end - Entity load/save limit per chunk
-             CompoundTag compoundTag = new CompoundTag();
-             if (entity.save(compoundTag)) {
-                 listTag.add(compoundTag);
++                // Paper end - Entity load/save limit per chunk
+                 CompoundTag compoundTagx = new CompoundTag();
+                 if (entity.save(compoundTagx)) {
+                     listTag.add(compoundTagx);
