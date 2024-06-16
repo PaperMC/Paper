@@ -37,10 +37,10 @@ index a688af29273ebfbb4f75dd74cd30627fc481c96c..9c0972023bc9be20ba81bbc2e1d6688b
              // api-only
 diff --git a/src/main/java/io/papermc/paper/registry/data/PaperEnchantmentRegistryEntry.java b/src/main/java/io/papermc/paper/registry/data/PaperEnchantmentRegistryEntry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8587d9e6167f70894960dd205ca28fbf9340eb92
+index 0000000000000000000000000000000000000000..293d940b81b6a18fb86512eedb82c71637c9793d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/data/PaperEnchantmentRegistryEntry.java
-@@ -0,0 +1,231 @@
+@@ -0,0 +1,234 @@
 +package io.papermc.paper.registry.data;
 +
 +import com.google.common.base.Preconditions;
@@ -49,6 +49,7 @@ index 0000000000000000000000000000000000000000..8587d9e6167f70894960dd205ca28fbf
 +import io.papermc.paper.registry.PaperRegistryBuilder;
 +import io.papermc.paper.registry.RegistryKey;
 +import io.papermc.paper.registry.TypedKey;
++import io.papermc.paper.registry.data.util.Checks;
 +import io.papermc.paper.registry.data.util.Conversions;
 +import io.papermc.paper.registry.set.PaperRegistrySets;
 +import io.papermc.paper.registry.set.RegistryKeySet;
@@ -71,6 +72,8 @@ index 0000000000000000000000000000000000000000..8587d9e6167f70894960dd205ca28fbf
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +import org.jetbrains.annotations.Range;
 +
++import static io.papermc.paper.registry.data.util.Checks.asArgument;
++import static io.papermc.paper.registry.data.util.Checks.asArgumentMin;
 +import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 +
 +@DefaultQualifier(NonNull.class)
@@ -90,8 +93,9 @@ index 0000000000000000000000000000000000000000..8587d9e6167f70894960dd205ca28fbf
 +    protected @MonotonicNonNull List<EquipmentSlotGroup> activeSlots;
 +
 +    // Exclusive
-+    protected HolderSet<Enchantment> exclusiveWith = HolderSet.empty();
++    protected HolderSet<Enchantment> exclusiveWith = HolderSet.empty(); // Paper added default to empty.
 +
++    // Effects
 +    protected final DataComponentMap effects;
 +
 +    protected final Conversions conversions;
@@ -101,7 +105,6 @@ index 0000000000000000000000000000000000000000..8587d9e6167f70894960dd205ca28fbf
 +        final TypedKey<org.bukkit.enchantments.Enchantment> ignoredKey,
 +        final @Nullable Enchantment internal
 +    ) {
-+        Preconditions.checkState(conversions != null);
 +        this.conversions = conversions;
 +        if (internal == null) {
 +            this.effects = DataComponentMap.EMPTY;
@@ -173,7 +176,7 @@ index 0000000000000000000000000000000000000000..8587d9e6167f70894960dd205ca28fbf
 +
 +    @Override
 +    public List<org.bukkit.inventory.EquipmentSlotGroup> activeSlots() {
-+        return Collections.unmodifiableList(Lists.transform(this.activeSlots, CraftEquipmentSlot::getSlot));
++        return Collections.unmodifiableList(Lists.transform(asConfigured(this.activeSlots, "activeSlots"), CraftEquipmentSlot::getSlot));
 +    }
 +
 +    @Override
@@ -190,13 +193,13 @@ index 0000000000000000000000000000000000000000..8587d9e6167f70894960dd205ca28fbf
 +
 +        @Override
 +        public Builder description(final net.kyori.adventure.text.Component description) {
-+            this.description = this.conversions.asVanilla(description);
++            this.description = this.conversions.asVanilla(asArgument(description, "description"));
 +            return this;
 +        }
 +
 +        @Override
 +        public Builder supportedItems(final RegistryKeySet<ItemType> supportedItems) {
-+            this.supportedItems = PaperRegistrySets.convertToNms(Registries.ITEM, this.conversions.lookup(), supportedItems);
++            this.supportedItems = PaperRegistrySets.convertToNms(Registries.ITEM, this.conversions.lookup(), asArgument(supportedItems, "supportedItems"));
 +            return this;
 +        }
 +
@@ -208,46 +211,46 @@ index 0000000000000000000000000000000000000000..8587d9e6167f70894960dd205ca28fbf
 +
 +        @Override
 +        public Builder weight(final @Range(from = 1, to = 1024) int weight) {
-+            Preconditions.checkArgument(weight >= 1 && weight <= 1024, "weight must be between 1 and 1024 (inclusive)");
-+            this.weight = OptionalInt.of(weight);
++            this.weight = OptionalInt.of(Checks.asArgumentRange(weight, "weight", 1, 1024));
 +            return this;
 +        }
 +
 +        @Override
 +        public Builder maxLevel(final @Range(from = 1, to = 255) int maxLevel) {
-+            Preconditions.checkArgument(maxLevel >= 1 && maxLevel <= 255, "maxLevel must be between 1 and 255 (inclusive)");
-+            this.maxLevel = OptionalInt.of(maxLevel);
++            this.maxLevel = OptionalInt.of(Checks.asArgumentRange(maxLevel, "maxLevel", 1, 255));
 +            return this;
 +        }
 +
 +        @Override
 +        public Builder minimumCost(final EnchantmentCost minimumCost) {
-+            this.minimumCost = Enchantment.dynamicCost(minimumCost.baseCost(), minimumCost.additionalPerLevelCost());
++            final EnchantmentCost validCost = asArgument(minimumCost, "minimumCost");
++            this.minimumCost = Enchantment.dynamicCost(validCost.baseCost(), validCost.additionalPerLevelCost());
 +            return this;
 +        }
 +
 +        @Override
 +        public Builder maximumCost(final EnchantmentCost maximumCost) {
-+            this.maximumCost = Enchantment.dynamicCost(maximumCost.baseCost(), maximumCost.additionalPerLevelCost());
++            final EnchantmentCost validCost = asArgument(maximumCost, "maximumCost");
++            this.maximumCost = Enchantment.dynamicCost(validCost.baseCost(), validCost.additionalPerLevelCost());
 +            return this;
 +        }
 +
 +        @Override
 +        public Builder anvilCost(final @Range(from = 0, to = Integer.MAX_VALUE) int anvilCost) {
 +            Preconditions.checkArgument(anvilCost >= 0, "anvilCost must be non-negative");
-+            this.anvilCost = OptionalInt.of(anvilCost);
++            this.anvilCost = OptionalInt.of(asArgumentMin(anvilCost, "anvilCost", 0));
 +            return this;
 +        }
 +
 +        @Override
 +        public Builder activeSlots(final Iterable<org.bukkit.inventory.EquipmentSlotGroup> activeSlots) {
-+            this.activeSlots = Lists.newArrayList(Iterables.transform(activeSlots, CraftEquipmentSlot::getNMSGroup));
++            this.activeSlots = Lists.newArrayList(Iterables.transform(asArgument(activeSlots, "activeSlots"), CraftEquipmentSlot::getNMSGroup));
 +            return this;
 +        }
 +
 +        @Override
 +        public Builder exclusiveWith(final RegistryKeySet<org.bukkit.enchantments.Enchantment> exclusiveWith) {
-+            this.exclusiveWith = PaperRegistrySets.convertToNms(Registries.ENCHANTMENT, this.conversions.lookup(), exclusiveWith);
++            this.exclusiveWith = PaperRegistrySets.convertToNms(Registries.ENCHANTMENT, this.conversions.lookup(), asArgument(exclusiveWith, "exclusiveWith"));
 +            return this;
 +        }
 +
@@ -274,13 +277,12 @@ index 0000000000000000000000000000000000000000..8587d9e6167f70894960dd205ca28fbf
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/data/PaperGameEventRegistryEntry.java b/src/main/java/io/papermc/paper/registry/data/PaperGameEventRegistryEntry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5311a75dbf9f093a4647f95907eb11adf23af948
+index 0000000000000000000000000000000000000000..0b3496ee370f3c4cf08b0acf62431fcc097f0414
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/data/PaperGameEventRegistryEntry.java
 @@ -0,0 +1,57 @@
 +package io.papermc.paper.registry.data;
 +
-+import com.google.common.base.Preconditions;
 +import io.papermc.paper.registry.PaperRegistryBuilder;
 +import io.papermc.paper.registry.data.util.Conversions;
 +import java.util.OptionalInt;
@@ -290,6 +292,7 @@ index 0000000000000000000000000000000000000000..5311a75dbf9f093a4647f95907eb11ad
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +import org.jetbrains.annotations.Range;
 +
++import static io.papermc.paper.registry.data.util.Checks.asArgumentMin;
 +import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 +
 +@DefaultQualifier(NonNull.class)
@@ -314,6 +317,7 @@ index 0000000000000000000000000000000000000000..5311a75dbf9f093a4647f95907eb11ad
 +
 +    public static final class PaperBuilder extends PaperGameEventRegistryEntry implements GameEventRegistryEntry.Builder,
 +        PaperRegistryBuilder<GameEvent, org.bukkit.GameEvent> {
++
 +        public PaperBuilder(
 +            final @Nullable Conversions conversions,
 +            final io.papermc.paper.registry.TypedKey<org.bukkit.GameEvent> key,
@@ -324,8 +328,7 @@ index 0000000000000000000000000000000000000000..5311a75dbf9f093a4647f95907eb11ad
 +
 +        @Override
 +        public GameEventRegistryEntry.Builder range(final @Range(from = 0, to = Integer.MAX_VALUE) int range) {
-+            Preconditions.checkArgument(range >= 0, "range must be non-negative");
-+            this.range = OptionalInt.of(range);
++            this.range = OptionalInt.of(asArgumentMin(range, "range", 0));
 +            return this;
 +        }
 +
@@ -337,10 +340,10 @@ index 0000000000000000000000000000000000000000..5311a75dbf9f093a4647f95907eb11ad
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/data/util/Checks.java b/src/main/java/io/papermc/paper/registry/data/util/Checks.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f0f6c7779aa9ae38d8d616068b76698eb62f854b
+index 0000000000000000000000000000000000000000..a66cebe2b918a22b84e346127ffb671621050e5f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/data/util/Checks.java
-@@ -0,0 +1,27 @@
+@@ -0,0 +1,48 @@
 +package io.papermc.paper.registry.data.util;
 +
 +import java.util.OptionalInt;
@@ -363,6 +366,27 @@ index 0000000000000000000000000000000000000000..f0f6c7779aa9ae38d8d616068b76698e
 +            throw new IllegalStateException(field + " has not been configured");
 +        }
 +        return value.getAsInt();
++    }
++
++    public static <T> T asArgument(final @Nullable T value, final String field) {
++        if (value == null) {
++            throw new IllegalArgumentException("argument " + value + " cannot be null");
++        }
++        return value;
++    }
++
++    public static int asArgumentRange(final int value, final String field, final int min, final int max) {
++        if (value < min || value > max) {
++            throw new IllegalArgumentException("argument " + field + " must be [" + min + ", " + max + "]");
++        }
++        return value;
++    }
++
++    public static int asArgumentMin(final int value, final String field, final int min) {
++        if (value < min) {
++            throw new IllegalArgumentException("argument " + field + " must be [" + min + ",+inf)");
++        }
++        return value;
 +    }
 +
 +    private Checks() {
