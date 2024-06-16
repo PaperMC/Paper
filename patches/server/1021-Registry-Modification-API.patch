@@ -65,7 +65,7 @@ index d591e3a2e19d5358a0d25a5a681368943622d231..f05ebf453406a924da3de6fb250f4793
              return delayedRegistry.delegate();
 diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistryBuilder.java b/src/main/java/io/papermc/paper/registry/PaperRegistryBuilder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6932ffef54f90cc486f517561f73c2e4daf3983b
+index 0000000000000000000000000000000000000000..528c6ee1739d92f766f3904acd7fc5734c93388a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/PaperRegistryBuilder.java
 @@ -0,0 +1,26 @@
@@ -82,7 +82,7 @@ index 0000000000000000000000000000000000000000..6932ffef54f90cc486f517561f73c2e4
 +    @FunctionalInterface
 +    interface Filler<M, T, B extends PaperRegistryBuilder<M, T>> {
 +
-+        B fill(@Nullable Conversions conversions, TypedKey<T> key, @Nullable M nms);
++        B fill(Conversions conversions, TypedKey<T> key, @Nullable M nms);
 +
 +        default Factory<M, T, B> asFactory() {
 +            return (lookup, key) -> this.fill(lookup, key, null);
@@ -92,7 +92,7 @@ index 0000000000000000000000000000000000000000..6932ffef54f90cc486f517561f73c2e4
 +    @FunctionalInterface
 +    interface Factory<M, T, B extends PaperRegistryBuilder<M, T>> {
 +
-+        B create(@Nullable Conversions conversions, TypedKey<T> key);
++        B create(Conversions conversions, TypedKey<T> key);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistryListenerManager.java b/src/main/java/io/papermc/paper/registry/PaperRegistryListenerManager.java
@@ -426,10 +426,10 @@ index 0000000000000000000000000000000000000000..eda5cc7d45ef59ccc1c9c7e027c1f044
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/entry/AddableRegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/AddableRegistryEntry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a93ee8a52c6ec8b8e9712e8449a9c0e6c3fd4046
+index 0000000000000000000000000000000000000000..aeec9b3ae2911f041d000b3db72f37974020ba60
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/entry/AddableRegistryEntry.java
-@@ -0,0 +1,46 @@
+@@ -0,0 +1,44 @@
 +package io.papermc.paper.registry.entry;
 +
 +import io.papermc.paper.registry.PaperRegistryBuilder;
@@ -441,11 +441,9 @@ index 0000000000000000000000000000000000000000..a93ee8a52c6ec8b8e9712e8449a9c0e6
 +import java.util.function.BiFunction;
 +import net.minecraft.core.MappedRegistry;
 +import net.minecraft.core.Registry;
-+import net.minecraft.resources.RegistryOps;
 +import net.minecraft.resources.ResourceKey;
 +import org.bukkit.Keyed;
 +import org.bukkit.NamespacedKey;
-+import org.checkerframework.checker.nullness.qual.Nullable;
 +
 +public class AddableRegistryEntry<M, T extends Keyed, B extends PaperRegistryBuilder<M, T>> extends CraftRegistryEntry<M, T> implements RegistryEntry.Addable<M, T, B> {
 +
@@ -472,16 +470,16 @@ index 0000000000000000000000000000000000000000..a93ee8a52c6ec8b8e9712e8449a9c0e6
 +    }
 +
 +    @Override
-+    public B fillBuilder(final @Nullable Conversions conversions, final TypedKey<T> key, final M nms) {
++    public B fillBuilder(final Conversions conversions, final TypedKey<T> key, final M nms) {
 +        return this.builderFiller.fill(conversions, key, nms);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/entry/ModifiableRegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/ModifiableRegistryEntry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cdc490c5254a80f8c38ff0b56c0fcd973df87f59
+index 0000000000000000000000000000000000000000..515a995e3862f8e7cb93d149315ea32e04a08716
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/entry/ModifiableRegistryEntry.java
-@@ -0,0 +1,33 @@
+@@ -0,0 +1,32 @@
 +package io.papermc.paper.registry.entry;
 +
 +import io.papermc.paper.registry.PaperRegistryBuilder;
@@ -493,7 +491,6 @@ index 0000000000000000000000000000000000000000..cdc490c5254a80f8c38ff0b56c0fcd97
 +import net.minecraft.resources.ResourceKey;
 +import org.bukkit.Keyed;
 +import org.bukkit.NamespacedKey;
-+import org.checkerframework.checker.nullness.qual.Nullable;
 +
 +public class ModifiableRegistryEntry<M, T extends Keyed, B extends PaperRegistryBuilder<M, T>> extends CraftRegistryEntry<M, T> implements RegistryEntry.Modifiable<M, T, B> {
 +
@@ -511,15 +508,15 @@ index 0000000000000000000000000000000000000000..cdc490c5254a80f8c38ff0b56c0fcd97
 +    }
 +
 +    @Override
-+    public B fillBuilder(final @Nullable Conversions conversions, final TypedKey<T> key, final M nms) {
++    public B fillBuilder(final Conversions conversions, final TypedKey<T> key, final M nms) {
 +        return this.builderFiller.fill(conversions, key, nms);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/entry/RegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/RegistryEntry.java
-index 15991bf13894d850f360a520d1815711d25973ec..4712ff8be61994f4b0fa7c14a688c828ef13a175 100644
+index 15991bf13894d850f360a520d1815711d25973ec..f2e919705301cb23ed1938ca3c1976378249172c 100644
 --- a/src/main/java/io/papermc/paper/registry/entry/RegistryEntry.java
 +++ b/src/main/java/io/papermc/paper/registry/entry/RegistryEntry.java
-@@ -1,16 +1,24 @@
+@@ -1,7 +1,13 @@
  package io.papermc.paper.registry.entry;
  
 +import io.papermc.paper.registry.PaperRegistryBuilder;
@@ -533,10 +530,7 @@ index 15991bf13894d850f360a520d1815711d25973ec..4712ff8be61994f4b0fa7c14a688c828
  import io.papermc.paper.registry.legacy.DelayedRegistryEntry;
  import java.util.function.BiFunction;
  import java.util.function.Supplier;
- import net.minecraft.core.Registry;
-+import net.minecraft.resources.RegistryOps;
- import net.minecraft.resources.ResourceKey;
- import org.bukkit.Keyed;
+@@ -11,6 +17,7 @@ import org.bukkit.Keyed;
  import org.bukkit.NamespacedKey;
  import org.bukkit.craftbukkit.util.ApiVersion;
  import org.checkerframework.checker.nullness.qual.NonNull;
@@ -544,13 +538,13 @@ index 15991bf13894d850f360a520d1815711d25973ec..4712ff8be61994f4b0fa7c14a688c828
  import org.checkerframework.framework.qual.DefaultQualifier;
  
  @DefaultQualifier(NonNull.class)
-@@ -32,6 +40,65 @@ public interface RegistryEntry<M, B extends Keyed> extends RegistryEntryInfo<M,
+@@ -32,6 +39,65 @@ public interface RegistryEntry<M, B extends Keyed> extends RegistryEntryInfo<M,
          return new DelayedRegistryEntry<>(this);
      }
  
 +    interface BuilderHolder<M, T, B extends PaperRegistryBuilder<M, T>> extends RegistryEntryInfo<M, T> {
 +
-+        B fillBuilder(@Nullable Conversions conversions, TypedKey<T> key, M nms);
++        B fillBuilder(Conversions conversions, TypedKey<T> key, M nms);
 +    }
 +
 +    /**
@@ -610,7 +604,7 @@ index 15991bf13894d850f360a520d1815711d25973ec..4712ff8be61994f4b0fa7c14a688c828
      static <M, B extends Keyed> RegistryEntry<M, B> entry(
          final ResourceKey<? extends Registry<M>> mcKey,
          final RegistryKey<B> apiKey,
-@@ -48,4 +115,24 @@ public interface RegistryEntry<M, B extends Keyed> extends RegistryEntryInfo<M,
+@@ -48,4 +114,24 @@ public interface RegistryEntry<M, B extends Keyed> extends RegistryEntryInfo<M,
      ) {
          return new ApiRegistryEntry<>(mcKey, apiKey, apiRegistrySupplier);
      }
