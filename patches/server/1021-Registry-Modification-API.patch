@@ -8,19 +8,6 @@ public net.minecraft.core.MappedRegistry validateWrite(Lnet/minecraft/resources/
 public net.minecraft.resources.RegistryOps lookupProvider
 public net.minecraft.resources.RegistryOps$HolderLookupAdapter
 
-diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java
-index 618e9c5e48062840e623cccc7ace4e5c3c118e78..cca76f2d1623952017a83fdb027f77a601c79b3e 100644
---- a/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java
-+++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java
-@@ -67,7 +67,7 @@ public class LifecycleEventRunner {
-                 }
-                 registeredHandler.lifecycleEventHandler().run(event);
-             } catch (final Throwable ex) {
--                LOGGER.error("Could not run '{}' lifecycle event handler from {}", lifecycleEventType.name(), registeredHandler.owner().getPluginMeta().getDisplayName(), ex);
-+                throw new RuntimeException("Could not run '%s' lifecycle event handler from %s".formatted(lifecycleEventType.name(), registeredHandler.owner().getPluginMeta().getDisplayName()), ex);
-             } finally {
-                 if (event instanceof final OwnerAwareLifecycleEvent<?> ownerAwareEvent) {
-                     ownerAwareEvent.setOwner(null);
 diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistries.java b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
 index 1e098dc25bd338ff179491ff3382ac56aad9948e..a688af29273ebfbb4f75dd74cd30627fc481c96c 100644
 --- a/src/main/java/io/papermc/paper/registry/PaperRegistries.java
@@ -110,10 +97,10 @@ index 0000000000000000000000000000000000000000..6932ffef54f90cc486f517561f73c2e4
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistryListenerManager.java b/src/main/java/io/papermc/paper/registry/PaperRegistryListenerManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b1e900631a171a29ede251762085a4d7a35862e4
+index 0000000000000000000000000000000000000000..a7f2b264d4f37f5293ae72195b4c78faf35351c9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/PaperRegistryListenerManager.java
-@@ -0,0 +1,180 @@
+@@ -0,0 +1,183 @@
 +package io.papermc.paper.registry;
 +
 +import com.google.common.base.Preconditions;
@@ -222,16 +209,19 @@ index 0000000000000000000000000000000000000000..b1e900631a171a29ede251762085a4d7
 +        return this.registerWithListeners(registry, modifiableEntry, key, nms, builder, registrationInfo, registerMethod, conversions);
 +    }
 +
-+    public <M, T extends org.bukkit.Keyed, B extends PaperRegistryBuilder<M, T>> void registerWithListeners( // TODO remove Keyed
-+        final Registry<M> registry,
-+        final RegistryEntry.Modifiable<M, T, B> entry,
++    <M, T extends org.bukkit.Keyed, B extends PaperRegistryBuilder<M, T>> void registerWithListeners( // TODO remove Keyed
++        final WritableRegistry<M> registry,
++        final RegistryEntryInfo<M, T> entry,
 +        final ResourceKey<M> key,
-+        final @Nullable M oldNms,
 +        final B builder,
 +        final RegistrationInfo registrationInfo,
 +        final Conversions conversions
 +    ) {
-+        this.registerWithListeners(registry, entry, key, oldNms, builder, registrationInfo, WritableRegistry::register, conversions);
++        if (!RegistryEntry.Modifiable.isModifiable(entry) || !this.valueAddHooks.hasHooks(entry.apiKey())) {
++            registry.register(key, builder.build(), registrationInfo);
++            return;
++        }
++        this.registerWithListeners(registry, RegistryEntry.Modifiable.asModifiable(entry), key, null, builder, registrationInfo, WritableRegistry::register, conversions);
 +    }
 +
 +    public <M, T extends org.bukkit.Keyed, B extends PaperRegistryBuilder<M, T>, R> R registerWithListeners( // TODO remove Keyed
@@ -296,10 +286,10 @@ index 0000000000000000000000000000000000000000..b1e900631a171a29ede251762085a4d7
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/WritableCraftRegistry.java b/src/main/java/io/papermc/paper/registry/WritableCraftRegistry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3859e1377841f175416017e56d6eb0ff84a2cd53
+index 0000000000000000000000000000000000000000..78317c7ab42a666f19634593a8f3b696700764c8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/WritableCraftRegistry.java
-@@ -0,0 +1,97 @@
+@@ -0,0 +1,92 @@
 +package io.papermc.paper.registry;
 +
 +import com.mojang.serialization.Lifecycle;
@@ -348,19 +338,14 @@ index 0000000000000000000000000000000000000000..3859e1377841f175416017e56d6eb0ff
 +        this.registry.validateWrite(resourceKey);
 +        final B builder = this.newBuilder(conversions, key);
 +        value.accept(builder);
-+        if (RegistryEntry.Modifiable.isModifiable(this.entry) && PaperRegistryListenerManager.INSTANCE.valueAddHooks.hasHooks(this.entry.apiKey())) {
-+            PaperRegistryListenerManager.INSTANCE.registerWithListeners(
-+                this.registry,
-+                RegistryEntry.Modifiable.asModifiable(this.entry),
-+                resourceKey,
-+                null,
-+                builder,
-+                FROM_PLUGIN,
-+                conversions
-+            );
-+        } else {
-+            this.registry.register(resourceKey, builder.build(), FROM_PLUGIN);
-+        }
++        PaperRegistryListenerManager.INSTANCE.registerWithListeners(
++            this.registry,
++            RegistryEntry.Modifiable.asModifiable(this.entry),
++            resourceKey,
++            builder,
++            FROM_PLUGIN,
++            conversions
++        );
 +    }
 +
 +    @Override
@@ -992,14 +977,15 @@ index 0000000000000000000000000000000000000000..0b80179ff90e085568d7ceafd9b17511
 +import org.checkerframework.framework.qual.DefaultQualifier;
 diff --git a/src/main/java/io/papermc/paper/registry/set/NamedRegistryKeySetImpl.java b/src/main/java/io/papermc/paper/registry/set/NamedRegistryKeySetImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..918d80542a1185988fcda3d7642548c7935f73af
+index 0000000000000000000000000000000000000000..e8c2c18a1ed5cd587266bd415170610781531a12
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/set/NamedRegistryKeySetImpl.java
-@@ -0,0 +1,75 @@
+@@ -0,0 +1,76 @@
 +package io.papermc.paper.registry.set;
 +
 +import com.google.common.collect.ImmutableList;
-+import io.papermc.paper.adventure.PaperAdventure;
++import com.google.common.collect.Iterables;
++import io.papermc.paper.registry.PaperRegistries;
 +import io.papermc.paper.registry.RegistryAccess;
 +import io.papermc.paper.registry.RegistryKey;
 +import io.papermc.paper.registry.TypedKey;
@@ -1041,8 +1027,8 @@ index 0000000000000000000000000000000000000000..918d80542a1185988fcda3d7642548c7
 +
 +    @Override
 +    public boolean contains(final TypedKey<T> valueKey) {
-+        return this.namedSet.stream().anyMatch(h -> {
-+            return ((Holder.Reference<?>) h).key().location().equals(PaperAdventure.asVanilla(valueKey.key()));
++        return Iterables.any(this.namedSet, h -> {
++            return PaperRegistries.fromNms(((Holder.Reference<?>) h).key()).equals(valueKey);
 +        });
 +    }
 +
@@ -1181,7 +1167,7 @@ index 44b7927081b476813505cab6b3a2da2ec2942c54..0497318e8f647453f38f3a16a8be6bd9
          }
      }
 diff --git a/src/main/java/net/minecraft/resources/RegistryDataLoader.java b/src/main/java/net/minecraft/resources/RegistryDataLoader.java
-index abadf4abe08dc3bb6612b42cbb3f7df3ffa28ce9..63b296f87c47d30ec63800fcf9da09fcc2e00327 100644
+index abadf4abe08dc3bb6612b42cbb3f7df3ffa28ce9..3053243866c655829fe2e980446b4abf1da6d37c 100644
 --- a/src/main/java/net/minecraft/resources/RegistryDataLoader.java
 +++ b/src/main/java/net/minecraft/resources/RegistryDataLoader.java
 @@ -115,7 +115,7 @@ public class RegistryDataLoader {
@@ -1189,7 +1175,7 @@ index abadf4abe08dc3bb6612b42cbb3f7df3ffa28ce9..63b296f87c47d30ec63800fcf9da09fc
  
      public static RegistryAccess.Frozen load(ResourceManager resourceManager, RegistryAccess registryManager, List<RegistryDataLoader.RegistryData<?>> entries) {
 -        return load((loader, infoGetter) -> loader.loadFromResources(resourceManager, infoGetter), registryManager, entries);
-+        return load((loader, infoGetter, conversions) -> loader.loadFromResources(resourceManager, infoGetter, conversions), registryManager, entries); // Paper
++        return load((loader, infoGetter, conversions) -> loader.loadFromResources(resourceManager, infoGetter, conversions), registryManager, entries); // Paper - pass conversions
      }
  
      public static RegistryAccess.Frozen load(
@@ -1198,7 +1184,7 @@ index abadf4abe08dc3bb6612b42cbb3f7df3ffa28ce9..63b296f87c47d30ec63800fcf9da09fc
          List<RegistryDataLoader.RegistryData<?>> entries
      ) {
 -        return load((loader, infoGetter) -> loader.loadFromNetwork(data, factory, infoGetter), registryManager, entries);
-+        return load((loader, infoGetter, conversions) -> loader.loadFromNetwork(data, factory, infoGetter, conversions), registryManager, entries); // Paper
++        return load((loader, infoGetter, conversions) -> loader.loadFromNetwork(data, factory, infoGetter, conversions), registryManager, entries); // Paper - pass conversions
      }
  
      private static RegistryAccess.Frozen load(
@@ -1207,7 +1193,7 @@ index abadf4abe08dc3bb6612b42cbb3f7df3ffa28ce9..63b296f87c47d30ec63800fcf9da09fc
          List<RegistryDataLoader.Loader<?>> list = entries.stream().map(entry -> entry.create(Lifecycle.stable(), map)).collect(Collectors.toUnmodifiableList());
          RegistryOps.RegistryInfoLookup registryInfoLookup = createContext(baseRegistryManager, list);
 -        list.forEach(loader -> loadable.apply((RegistryDataLoader.Loader<?>)loader, registryInfoLookup));
-+        final io.papermc.paper.registry.data.util.Conversions conversions = new io.papermc.paper.registry.data.util.Conversions(registryInfoLookup); // Paper
++        final io.papermc.paper.registry.data.util.Conversions conversions = new io.papermc.paper.registry.data.util.Conversions(registryInfoLookup); // Paper - create conversions
 +        list.forEach(loader -> loadable.apply((RegistryDataLoader.Loader<?>)loader, registryInfoLookup, conversions));
          list.forEach(loader -> {
              Registry<?> registry = loader.registry();
@@ -1237,7 +1223,7 @@ index abadf4abe08dc3bb6612b42cbb3f7df3ffa28ce9..63b296f87c47d30ec63800fcf9da09fc
          Decoder<E> elementDecoder,
 -        Map<ResourceKey<?>, Exception> errors
 +        Map<ResourceKey<?>, Exception> errors,
-+        io.papermc.paper.registry.data.util.Conversions conversions // Paper
++        io.papermc.paper.registry.data.util.Conversions conversions // Paper - pass conversions
      ) {
          String string = Registries.elementsDirPath(registry.key());
          FileToIdConverter fileToIdConverter = FileToIdConverter.json(string);
@@ -1246,7 +1232,7 @@ index abadf4abe08dc3bb6612b42cbb3f7df3ffa28ce9..63b296f87c47d30ec63800fcf9da09fc
  
              try {
 -                loadElementFromResource(registry, elementDecoder, registryOps, resourceKey, resource, registrationInfo);
-+                loadElementFromResource(registry, elementDecoder, registryOps, resourceKey, resource, registrationInfo, conversions); // Paper
++                loadElementFromResource(registry, elementDecoder, registryOps, resourceKey, resource, registrationInfo, conversions); // Paper - pass conversions
              } catch (Exception var15) {
                  errors.put(
                      resourceKey,
@@ -1256,7 +1242,7 @@ index abadf4abe08dc3bb6612b42cbb3f7df3ffa28ce9..63b296f87c47d30ec63800fcf9da09fc
          Decoder<E> decoder,
 -        Map<ResourceKey<?>, Exception> loadingErrors
 +        Map<ResourceKey<?>, Exception> loadingErrors,
-+        io.papermc.paper.registry.data.util.Conversions conversions // Paper
++        io.papermc.paper.registry.data.util.Conversions conversions // Paper - pass conversions
      ) {
          List<RegistrySynchronization.PackedRegistryEntry> list = data.get(registry.key());
          if (list != null) {
@@ -1265,7 +1251,7 @@ index abadf4abe08dc3bb6612b42cbb3f7df3ffa28ce9..63b296f87c47d30ec63800fcf9da09fc
                      try {
                          Resource resource = factory.getResourceOrThrow(resourceLocation);
 -                        loadElementFromResource(registry, decoder, registryOps2, resourceKey, resource, NETWORK_REGISTRATION_INFO);
-+                        loadElementFromResource(registry, decoder, registryOps2, resourceKey, resource, NETWORK_REGISTRATION_INFO, conversions); // Paper
++                        loadElementFromResource(registry, decoder, registryOps2, resourceKey, resource, NETWORK_REGISTRATION_INFO, conversions); // Paper - pass conversions
                      } catch (Exception var18) {
                          loadingErrors.put(resourceKey, new IllegalStateException("Failed to parse local data", var18));
                      }
@@ -1275,8 +1261,8 @@ index abadf4abe08dc3bb6612b42cbb3f7df3ffa28ce9..63b296f87c47d30ec63800fcf9da09fc
      static record Loader<T>(RegistryDataLoader.RegistryData<T> data, WritableRegistry<T> registry, Map<ResourceKey<?>, Exception> loadingErrors) {
 -        public void loadFromResources(ResourceManager resourceManager, RegistryOps.RegistryInfoLookup infoGetter) {
 -            RegistryDataLoader.loadContentsFromManager(resourceManager, infoGetter, this.registry, this.data.elementCodec, this.loadingErrors);
-+        public void loadFromResources(ResourceManager resourceManager, RegistryOps.RegistryInfoLookup infoGetter, io.papermc.paper.registry.data.util.Conversions conversions) { // Paper
-+            RegistryDataLoader.loadContentsFromManager(resourceManager, infoGetter, this.registry, this.data.elementCodec, this.loadingErrors, conversions); // Paper
++        public void loadFromResources(ResourceManager resourceManager, RegistryOps.RegistryInfoLookup infoGetter, io.papermc.paper.registry.data.util.Conversions conversions) { // Paper - pass conversions
++            RegistryDataLoader.loadContentsFromManager(resourceManager, infoGetter, this.registry, this.data.elementCodec, this.loadingErrors, conversions); // Paper - pass conversions
          }
  
          public void loadFromNetwork(
@@ -1287,14 +1273,14 @@ index abadf4abe08dc3bb6612b42cbb3f7df3ffa28ce9..63b296f87c47d30ec63800fcf9da09fc
 +            io.papermc.paper.registry.data.util.Conversions conversions // Paper
          ) {
 -            RegistryDataLoader.loadContentsFromNetwork(data, factory, infoGetter, this.registry, this.data.elementCodec, this.loadingErrors);
-+            RegistryDataLoader.loadContentsFromNetwork(data, factory, infoGetter, this.registry, this.data.elementCodec, this.loadingErrors, conversions); // Paper
++            RegistryDataLoader.loadContentsFromNetwork(data, factory, infoGetter, this.registry, this.data.elementCodec, this.loadingErrors, conversions); // Paper - pass conversions
          }
      }
  
      @FunctionalInterface
      interface LoadingFunction {
 -        void apply(RegistryDataLoader.Loader<?> loader, RegistryOps.RegistryInfoLookup infoGetter);
-+        void apply(RegistryDataLoader.Loader<?> loader, RegistryOps.RegistryInfoLookup infoGetter, io.papermc.paper.registry.data.util.Conversions conversions); // Paper
++        void apply(RegistryDataLoader.Loader<?> loader, RegistryOps.RegistryInfoLookup infoGetter, io.papermc.paper.registry.data.util.Conversions conversions); // Paper - pass conversions
      }
  
      public static record RegistryData<T>(ResourceKey<? extends Registry<T>> key, Codec<T> elementCodec, boolean requiredNonEmpty) {
