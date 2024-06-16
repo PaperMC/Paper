@@ -1166,6 +1166,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import com.mojang.brigadier.StringReader;
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
 +import com.mojang.serialization.JavaOps;
++import com.mojang.serialization.JsonOps;
 +import io.netty.util.AttributeKey;
 +import java.io.IOException;
 +import java.util.ArrayList;
@@ -1302,7 +1303,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return decoded.toString();
 +        }
 +    };
-+    public static final ComponentSerializer<Component, Component, net.minecraft.network.chat.Component> WRAPPER_AWARE_SERIALIZER = new WrapperAwareSerializer();
++    public static final ComponentSerializer<Component, Component, net.minecraft.network.chat.Component> WRAPPER_AWARE_SERIALIZER = new WrapperAwareSerializer(() -> CraftRegistry.getMinecraftRegistry().createSerializationContext(JavaOps.INSTANCE));
 +
 +    private PaperAdventure() {
 +    }
@@ -1647,21 +1648,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.adventure;
 +
++import com.google.common.base.Suppliers;
 +import com.mojang.datafixers.util.Pair;
 +import com.mojang.serialization.JavaOps;
++import java.util.function.Supplier;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.serializer.ComponentSerializer;
 +import net.minecraft.network.chat.ComponentSerialization;
 +import net.minecraft.resources.RegistryOps;
 +import org.bukkit.craftbukkit.CraftRegistry;
 +
-+final class WrapperAwareSerializer implements ComponentSerializer<Component, Component, net.minecraft.network.chat.Component> {
++public final class WrapperAwareSerializer implements ComponentSerializer<Component, Component, net.minecraft.network.chat.Component> {
++
++    private final Supplier<RegistryOps<Object>> javaOps;
++
++    public WrapperAwareSerializer(final Supplier<RegistryOps<Object>> javaOps) {
++        this.javaOps = Suppliers.memoize(javaOps::get);
++    }
++
 +    @Override
 +    public Component deserialize(final net.minecraft.network.chat.Component input) {
 +        if (input instanceof AdventureComponent) {
 +            return ((AdventureComponent) input).adventure;
 +        }
-+        final RegistryOps<Object> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JavaOps.INSTANCE);
++        final RegistryOps<Object> ops = this.javaOps.get();
 +        final Object obj = ComponentSerialization.CODEC.encodeStart(ops, input)
 +            .getOrThrow(s -> new RuntimeException("Failed to encode Minecraft Component: " + input + "; " + s));
 +        final Pair<Component, Object> converted = AdventureCodecs.COMPONENT_CODEC.decode(ops, obj)
@@ -1671,7 +1681,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public net.minecraft.network.chat.Component serialize(final Component component) {
-+        final RegistryOps<Object> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JavaOps.INSTANCE);
++        final RegistryOps<Object> ops = this.javaOps.get();
 +        final Object obj = AdventureCodecs.COMPONENT_CODEC.encodeStart(ops, component)
 +            .getOrThrow(s -> new RuntimeException("Failed to encode adventure Component: " + component + "; " + s));
 +        final Pair<net.minecraft.network.chat.Component, Object> converted = ComponentSerialization.CODEC.decode(ops, obj)
