@@ -3,6 +3,7 @@ From: Jake Potrebic <jake.m.potrebic@gmail.com>
 Date: Mon, 13 Feb 2023 14:14:56 -0800
 Subject: [PATCH] Test changes
 
+Co-authored-by: yannnicklamprecht <yannicklamprecht@live.de>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -355,6 +356,36 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/test/java/org/bukkit/support/DummyServer.java
 +++ b/src/test/java/org/bukkit/support/DummyServer.java
 @@ -0,0 +0,0 @@ public final class DummyServer {
+             when(instance.getTag(any(), any(), any())).then(mock -> {
+                 String registry = mock.getArgument(0);
+                 Class<?> clazz = mock.getArgument(2);
+-                MinecraftKey key = CraftNamespacedKey.toMinecraft(mock.getArgument(1));
++                net.minecraft.resources.ResourceLocation key = CraftNamespacedKey.toMinecraft(mock.getArgument(1)); // Paper - address remapping issues
+ 
+                 switch (registry) {
+                     case org.bukkit.Tag.REGISTRY_BLOCKS -> {
+@@ -0,0 +0,0 @@ public final class DummyServer {
+                     }
+                     case org.bukkit.Tag.REGISTRY_FLUIDS -> {
+                         Preconditions.checkArgument(clazz == org.bukkit.Fluid.class, "Fluid namespace must have fluid type");
+-                        TagKey<FluidType> fluidTagKey = TagKey.create(Registries.FLUID, key);
++                        TagKey<net.minecraft.world.level.material.Fluid> fluidTagKey = TagKey.create(Registries.FLUID, key); // Paper - address remapping issues
+                         if (BuiltInRegistries.FLUID.getTag(fluidTagKey).isPresent()) {
+                             return new CraftFluidTag(BuiltInRegistries.FLUID, fluidTagKey);
+                         }
+                     }
+                     case org.bukkit.Tag.REGISTRY_ENTITY_TYPES -> {
+                         Preconditions.checkArgument(clazz == org.bukkit.entity.EntityType.class, "Entity type namespace must have entity type");
+-                        TagKey<EntityTypes<?>> entityTagKey = TagKey.create(Registries.ENTITY_TYPE, key);
++                        TagKey<net.minecraft.world.entity.EntityType<?>> entityTagKey = TagKey.create(Registries.ENTITY_TYPE, key); // Paper - address remapping issues
+                         if (BuiltInRegistries.ENTITY_TYPE.getTag(entityTagKey).isPresent()) {
+                             return new CraftEntityTag(BuiltInRegistries.ENTITY_TYPE, entityTagKey);
+                         }
+                     }
+-                    default -> throw new IllegalArgumentException();
++                    default -> new io.papermc.paper.util.EmptyTag(); // Paper - testing additions
+                 }
+ 
                  return null;
              });
  
@@ -364,7 +395,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +            final org.bukkit.plugin.PluginManager pluginManager = new org.bukkit.plugin.SimplePluginManager(instance, new org.bukkit.command.SimpleCommandMap(instance));
 +            when(instance.getPluginManager()).thenReturn(pluginManager);
-+            when(instance.getTag(anyString(), any(org.bukkit.NamespacedKey.class), any())).thenAnswer(ignored -> new io.papermc.paper.util.EmptyTag());
 +            // paper end - testing additions
 +
              Bukkit.setServer(instance);
