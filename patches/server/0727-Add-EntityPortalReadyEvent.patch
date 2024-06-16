@@ -4,25 +4,22 @@ Date: Wed, 12 May 2021 04:30:42 -0700
 Subject: [PATCH] Add EntityPortalReadyEvent
 
 
-diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index d328393e62e4e49ddd56c10a9f4f5fcf0b218ddf..6be5d68567ba7b598644a3feeaa34ae5171c3b97 100644
---- a/src/main/java/net/minecraft/world/entity/Entity.java
-+++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -2943,6 +2943,17 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
-             if (this.portalProcess != null) {
-                 if (this.portalProcess.processPortalTeleportation(worldserver, this, this.canUsePortal(false))) {
-                     worldserver.getProfiler().push("portal");
-+                    // Paper start - Add EntityPortalReadyEvent
-+                    ServerLevel changedTarget = worldserver.getServer().getLevel(worldserver.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER ? Level.OVERWORLD : Level.NETHER);
-+                    if (this.portalProcess.isSamePortal(((net.minecraft.world.level.block.NetherPortalBlock) net.minecraft.world.level.block.Blocks.NETHER_PORTAL))) {
-+                        io.papermc.paper.event.entity.EntityPortalReadyEvent event = new io.papermc.paper.event.entity.EntityPortalReadyEvent(this.getBukkitEntity(), changedTarget == null ? null : changedTarget.getWorld(), org.bukkit.PortalType.NETHER);
-+                        if (!event.callEvent()) {
-+                            this.portalProcess = null;
-+                            worldserver.getProfiler().pop();
-+                            return;
-+                        }
-+                    }
-+                    // Paper end - Add EntityPortalReadyEvent
-                     this.setPortalCooldown();
-                     DimensionTransition dimensiontransition = this.portalProcess.getPortalDestination(worldserver, this);
+diff --git a/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java b/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java
+index caa22afb0781671b901c23ebcc89e5bb0d2bd615..a530276b0123dee5680d7e09ad3d2f0414909c91 100644
+--- a/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java
+@@ -133,6 +133,14 @@ public class NetherPortalBlock extends Block implements Portal {
+         // CraftBukkit start
+         ResourceKey<Level> resourcekey = world.getTypeKey() == LevelStem.NETHER ? Level.OVERWORLD : Level.NETHER;
+         ServerLevel worldserver1 = world.getServer().getLevel(resourcekey);
++        // Paper start - Add EntityPortalReadyEvent
++        io.papermc.paper.event.entity.EntityPortalReadyEvent portalReadyEvent = new io.papermc.paper.event.entity.EntityPortalReadyEvent(entity.getBukkitEntity(), worldserver1 == null ? null : worldserver1.getWorld(), org.bukkit.PortalType.NETHER);
++        if (!portalReadyEvent.callEvent()) {
++            entity.portalProcess = null;
++            return null;
++        }
++        worldserver1 = portalReadyEvent.getTargetWorld() == null ? null : ((org.bukkit.craftbukkit.CraftWorld) portalReadyEvent.getTargetWorld()).getHandle();
++        // Paper end - Add EntityPortalReadyEvent
  
+         if (worldserver1 == null) {
+             return new DimensionTransition(PlayerTeleportEvent.TeleportCause.NETHER_PORTAL); // always fire event in case plugins wish to change it
