@@ -841,7 +841,7 @@ index 0000000000000000000000000000000000000000..14d2d9766b8dee763f220c397aba3ad4
 +import org.checkerframework.framework.qual.DefaultQualifier;
 diff --git a/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddEventTypeImpl.java b/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddEventTypeImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..32303ea9b3da736cbe26d06e57f5dcc3aa32a99b
+index 0000000000000000000000000000000000000000..5d709ed04e1078b631f5b9c74ca35f042251e14f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddEventTypeImpl.java
 @@ -0,0 +1,32 @@
@@ -874,15 +874,15 @@ index 0000000000000000000000000000000000000000..32303ea9b3da736cbe26d06e57f5dcc3
 +
 +    private boolean matchesTarget(final RegistryEntryAddEvent<T, B> event, final RegisteredHandler<BootstrapContext, RegistryEntryAddEvent<T, B>> handler) {
 +        final RegistryEntryAddHandlerConfiguration<T, B> config = (RegistryEntryAddHandlerConfiguration<T, B>) handler.config();
-+        return config.target() == null || event.key().equals(config.target());
++        return config.filter() == null || config.filter().test(event.key());
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddHandlerConfiguration.java b/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddHandlerConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..53df2dd1a9e1cef90bd8504c717b1cc6374b6f4e
+index 0000000000000000000000000000000000000000..548f5bf979e88708e98d04dfe22ccaa300c91ddd
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddHandlerConfiguration.java
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,42 @@
 +package io.papermc.paper.registry.event.type;
 +
 +import io.papermc.paper.plugin.bootstrap.BootstrapContext;
@@ -892,23 +892,26 @@ index 0000000000000000000000000000000000000000..53df2dd1a9e1cef90bd8504c717b1cc6
 +import io.papermc.paper.registry.RegistryBuilder;
 +import io.papermc.paper.registry.TypedKey;
 +import io.papermc.paper.registry.event.RegistryEntryAddEvent;
++import java.util.function.Predicate;
 +import org.checkerframework.checker.nullness.qual.Nullable;
++import org.jetbrains.annotations.Contract;
 +
 +public class RegistryEntryAddHandlerConfiguration<T, B extends RegistryBuilder<T>> extends PrioritizedLifecycleEventHandlerConfigurationImpl<BootstrapContext, RegistryEntryAddEvent<T, B>> implements RegistryEntryAddConfiguration<T> {
 +
-+    private @Nullable TypedKey<T> target;
++    private @Nullable Predicate<TypedKey<T>> filter;
 +
 +    public RegistryEntryAddHandlerConfiguration(final LifecycleEventHandler<? super RegistryEntryAddEvent<T, B>> handler, final AbstractLifecycleEventType<BootstrapContext, RegistryEntryAddEvent<T, B>, ?> eventType) {
 +        super(handler, eventType);
 +    }
 +
-+    public @Nullable TypedKey<T> target() {
-+        return this.target;
++    @Contract(pure = true)
++    public @Nullable Predicate<TypedKey<T>> filter() {
++        return this.filter;
 +    }
 +
 +    @Override
-+    public RegistryEntryAddConfiguration<T> onlyFor(final TypedKey<T> key) {
-+        this.target = key;
++    public RegistryEntryAddConfiguration<T> filter(final Predicate<TypedKey<T>> filter) {
++        this.filter = filter;
 +        return this;
 +    }
 +
@@ -1328,7 +1331,7 @@ index 397bdacab9517354875ebc0bc68d35059b3c318b..908431652a0fea79b5a0cee1efd0c7a7
                  return writableRegistry;
              },
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
-index d21b7e39d71c785f47f790e1ad4be33a8e8e6e51..f0248e3d3782b1f6b4ff209502f626d66c05647b 100644
+index d21b7e39d71c785f47f790e1ad4be33a8e8e6e51..a47421425a8d5d2f07e08890fded0f7bfec4efb7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
 @@ -156,11 +156,11 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
@@ -1358,13 +1361,13 @@ index d21b7e39d71c785f47f790e1ad4be33a8e8e6e51..f0248e3d3782b1f6b4ff209502f626d6
 +
 +    @Override
 +    public io.papermc.paper.registry.tag.Tag<B> getTag(final io.papermc.paper.registry.tag.TagKey<B> key) {
-+        final net.minecraft.core.HolderSet.Named<M> namedHolderSet = this.minecraftRegistry.getTag(net.minecraft.tags.TagKey.create(this.minecraftRegistry.key(), io.papermc.paper.adventure.PaperAdventure.asVanilla(key.key()))).orElseThrow();
++        final net.minecraft.core.HolderSet.Named<M> namedHolderSet = this.minecraftRegistry.getTag(io.papermc.paper.registry.PaperRegistries.toNms(key)).orElseThrow();
 +        return new io.papermc.paper.registry.set.NamedRegistryKeySetImpl<>(key, namedHolderSet);
 +    }
 +    // Paper end - RegistrySet API
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index 5a04134973dd1db7f778a57ec5f185feec370990..b93641f9637024ef80927ccb0cab1f7fa6ceffe3 100644
+index 5a04134973dd1db7f778a57ec5f185feec370990..8dba6c4a2e1f305cf576e8bfdca5d0c07ab871ae 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 @@ -685,6 +685,21 @@ public final class CraftMagicNumbers implements UnsafeValues {
@@ -1380,7 +1383,7 @@ index 5a04134973dd1db7f778a57ec5f185feec370990..b93641f9637024ef80927ccb0cab1f7f
 +        final net.minecraft.resources.ResourceKey<? extends net.minecraft.core.Registry<M>> nmsKey = io.papermc.paper.registry.PaperRegistries.registryToNms(tagKey.registryKey());
 +        final net.minecraft.core.Registry<M> nmsRegistry = org.bukkit.craftbukkit.CraftRegistry.getMinecraftRegistry().registryOrThrow(nmsKey);
 +        return nmsRegistry
-+            .getTag(net.minecraft.tags.TagKey.create(nmsKey, io.papermc.paper.adventure.PaperAdventure.asVanilla(tagKey.key())))
++            .getTag(io.papermc.paper.registry.PaperRegistries.toNms(tagKey))
 +            .map(named -> new io.papermc.paper.registry.set.NamedRegistryKeySetImpl<>(tagKey, named))
 +            .orElse(null);
 +    }

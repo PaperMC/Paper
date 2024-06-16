@@ -335,15 +335,16 @@ index 0000000000000000000000000000000000000000..6de377275097f065c38dd59c6db97040
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddConfiguration.java b/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ad54c48ff2de18fe135c29102655f39c84063792
+index 0000000000000000000000000000000000000000..c5b484ee5f4a0f283a8d46f5490afac4b58b06be
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddConfiguration.java
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,42 @@
 +package io.papermc.paper.registry.event.type;
 +
 +import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 +import io.papermc.paper.plugin.lifecycle.event.handler.configuration.PrioritizedLifecycleEventHandlerConfiguration;
 +import io.papermc.paper.registry.TypedKey;
++import java.util.function.Predicate;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.Contract;
 +
@@ -361,7 +362,18 @@ index 0000000000000000000000000000000000000000..ad54c48ff2de18fe135c29102655f39c
 +     * @return this configuration
 +     */
 +    @Contract(value = "_ -> this", mutates = "this")
-+    @NonNull RegistryEntryAddConfiguration<T> onlyFor(@NonNull TypedKey<T> key);
++    default @NonNull RegistryEntryAddConfiguration<T> filter(final @NonNull TypedKey<T> key) {
++        return this.filter(key::equals);
++    }
++
++    /**
++     * Only call the handler if the value being added passes the provided filter.
++     *
++     * @param filter the predicate to match the key against
++     * @return this configuration
++     */
++    @Contract(value = "_ -> this", mutates = "this")
++    @NonNull RegistryEntryAddConfiguration<T> filter(@NonNull Predicate<TypedKey<T>> filter);
 +
 +    @Override
 +    @NonNull RegistryEntryAddConfiguration<T> priority(int priority);
@@ -510,7 +522,7 @@ index 0000000000000000000000000000000000000000..c712181ad4c6a9d00bc04f8a48515a38
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/set/RegistrySet.java b/src/main/java/io/papermc/paper/registry/set/RegistrySet.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6b8ea31dce5d09389285cef29dfc52001c985dbe
+index 0000000000000000000000000000000000000000..108df480e16131781a52c7bbba2ca6581e4c1ca1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/set/RegistrySet.java
 @@ -0,0 +1,112 @@
@@ -532,7 +544,7 @@ index 0000000000000000000000000000000000000000..6b8ea31dce5d09389285cef29dfc5200
 + * <ul>
 + *     <li>{@link Tag} which is a tag from vanilla or a datapack.
 + *     These are obtained via {@link org.bukkit.Registry#getTag(io.papermc.paper.registry.tag.TagKey)}.</li>
-+ *     <li>{@link RegistryKeySet} which is a set of of values that are present in the registry. These are
++ *     <li>{@link RegistryKeySet} which is a set of of keys linked to values that are present in the registry. These are
 + *     created via {@link #keySet(RegistryKey, Iterable)} or {@link #keySetFromValues(RegistryKey, Iterable)}.</li>
 + *     <!-- <li>{@link RegistryValueSet} which is a set of values which are anonymous (don't have keys in the registry). These are
 + *     created via {@link #valueSet(RegistryKey, Iterable)}.</li>-->
@@ -778,7 +790,7 @@ index 0000000000000000000000000000000000000000..11d19e339c7c62f2eb4467277552c27e
 +record TagKeyImpl<T>(RegistryKey<T> registryKey, Key key) implements TagKey<T> {
 +}
 diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
-index 27b987db385a594fede4e884b6437dc363f6e817..e2ca3b1bdc181d16286d4c2b2535c7ba7b0cdaeb 100644
+index 27b987db385a594fede4e884b6437dc363f6e817..9725580b6458e5d37fbc6059869604f9883bd6d1 100644
 --- a/src/main/java/org/bukkit/Registry.java
 +++ b/src/main/java/org/bukkit/Registry.java
 @@ -357,6 +357,27 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
@@ -809,7 +821,7 @@ index 27b987db385a594fede4e884b6437dc363f6e817..e2ca3b1bdc181d16286d4c2b2535c7ba
  
      // Paper start - improve Registry
      /**
-@@ -431,6 +452,30 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+@@ -431,6 +452,34 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      }
      // Paper end - improve Registry
  
@@ -819,6 +831,7 @@ index 27b987db385a594fede4e884b6437dc363f6e817..e2ca3b1bdc181d16286d4c2b2535c7ba
 +     *
 +     * @param key the key to check for
 +     * @return true if this registry has a tag with the given key, false otherwise
++     * @see #getTag(io.papermc.paper.registry.tag.TagKey)
 +     */
 +    @ApiStatus.Experimental
 +    default boolean hasTag(final io.papermc.paper.registry.tag.@NotNull TagKey<T> key) {
@@ -830,6 +843,9 @@ index 27b987db385a594fede4e884b6437dc363f6e817..e2ca3b1bdc181d16286d4c2b2535c7ba
 +     *
 +     * @param key the key to get the tag for
 +     * @return the tag for the key
++     * @throws java.util.NoSuchElementException if no tag with the given key is found
++     * @throws UnsupportedOperationException if this registry doesn't have or support tags
++     * @see #hasTag(io.papermc.paper.registry.tag.TagKey)
 +     */
 +    @ApiStatus.Experimental
 +    default @NotNull io.papermc.paper.registry.tag.Tag<T> getTag(final io.papermc.paper.registry.tag.@NotNull TagKey<T> key) {
@@ -840,16 +856,7 @@ index 27b987db385a594fede4e884b6437dc363f6e817..e2ca3b1bdc181d16286d4c2b2535c7ba
      /**
       * Returns a new stream, which contains all registry items, which are registered to the registry.
       *
-@@ -460,7 +505,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
-         return (namespacedKey != null) ? get(namespacedKey) : null;
-     }
- 
--    static final class SimpleRegistry<T extends Enum<T> & Keyed> implements Registry<T> {
-+    static class SimpleRegistry<T extends Enum<T> & Keyed> implements Registry<T> { // Paper - not final
- 
-         private final Class<T> type;
-         private final Map<NamespacedKey, T> map;
-@@ -512,5 +557,23 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+@@ -512,5 +561,23 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
              return value.getKey();
          }
          // Paper end - improve Registry
