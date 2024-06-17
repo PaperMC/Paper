@@ -563,18 +563,20 @@ index 0000000000000000000000000000000000000000..8e6b91f994b5790886f5da908bbee6f3
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/FoodProperties.java b/src/main/java/io/papermc/paper/component/item/FoodProperties.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4a327687011b3e7d81a4d455436ebb1d57c667e0
+index 0000000000000000000000000000000000000000..fec96d323477fdf8fb410629ac2d23cd8f0a2ecb
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/FoodProperties.java
-@@ -0,0 +1,66 @@
+@@ -0,0 +1,75 @@
 +package io.papermc.paper.component.item;
 +
 +import io.papermc.paper.component.ComponentBuilder;
 +import java.util.List;
++import org.bukkit.inventory.ItemStack;
 +import org.bukkit.potion.PotionEffect;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.Nullable;
 +import org.jetbrains.annotations.Unmodifiable;
 +
 +@ApiStatus.NonExtendable
@@ -596,6 +598,10 @@ index 0000000000000000000000000000000000000000..4a327687011b3e7d81a4d455436ebb1d
 +
 +    @Contract(pure = true)
 +    float eatSeconds();
++
++    @Nullable
++    @Contract(pure = true)
++    ItemStack usingConvertsTo();
 +
 +    @Unmodifiable @NonNull List<@NonNull PossibleEffect> effects();
 +
@@ -625,6 +631,9 @@ index 0000000000000000000000000000000000000000..4a327687011b3e7d81a4d455436ebb1d
 +
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder nutrition(int nutrition);
++
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull Builder usingConvertsTo(@Nullable ItemStack itemStack);
 +
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder addEffect(@NonNull PossibleEffect effect);
@@ -1518,7 +1527,7 @@ index 0000000000000000000000000000000000000000..37c9e2b084fe4c82242ae64569bb76be
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 diff --git a/src/main/java/io/papermc/paper/registry/RegistryKey.java b/src/main/java/io/papermc/paper/registry/RegistryKey.java
-index 7b79bf33074355020e0b3b5ef40c7f2e6ba644b4..5cf3aa4641822c91adfbd70a847ca529fb2752a5 100644
+index 2945dde566682f977e84fde5d473a6c69be24df1..f212fa95d1fdfee7f8465ffa06b68ba2045c8f14 100644
 --- a/src/main/java/io/papermc/paper/registry/RegistryKey.java
 +++ b/src/main/java/io/papermc/paper/registry/RegistryKey.java
 @@ -1,5 +1,6 @@
@@ -1528,7 +1537,7 @@ index 7b79bf33074355020e0b3b5ef40c7f2e6ba644b4..5cf3aa4641822c91adfbd70a847ca529
  import net.kyori.adventure.key.Keyed;
  import org.bukkit.Art;
  import org.bukkit.Fluid;
-@@ -138,4 +139,5 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
+@@ -145,4 +146,5 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      RegistryKey<Fluid> FLUID = create("fluid");
      RegistryKey<Frog.Variant> FROG_VARIANT = create("frog_variant");
      RegistryKey<MapCursor.Type> MAP_DECORATION_TYPE = create("map_decoration_type");
@@ -1571,10 +1580,10 @@ index 0000000000000000000000000000000000000000..5c8cdf46bc12501e1f284b4760c48e79
 +    @Nullable T filtered();
 +}
 diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
-index 7509b61dfdc0a6675256970cb850b08f9e814580..28e2628d8d0a6af742b2fa89e5581e6b0d1a38a4 100644
+index 54704da43cf9c429f3914f0580246dde99aa93c0..a30cd6e6a72dc299a6a1cd26dc9dcd8af0d0c18e 100644
 --- a/src/main/java/org/bukkit/Material.java
 +++ b/src/main/java/org/bukkit/Material.java
-@@ -131,7 +131,7 @@ import org.jetbrains.annotations.Nullable;
+@@ -130,7 +130,7 @@ import org.jetbrains.annotations.Nullable;
  @SuppressWarnings({"DeprecatedIsStillUsed", "deprecation"}) // Paper
  public enum Material implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper
      //<editor-fold desc="Materials" defaultstate="collapsed">
@@ -1583,7 +1592,7 @@ index 7509b61dfdc0a6675256970cb850b08f9e814580..28e2628d8d0a6af742b2fa89e5581e6b
      STONE(22948),
      GRANITE(21091),
      POLISHED_GRANITE(5477),
-@@ -5710,6 +5710,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
+@@ -5599,6 +5599,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
       */
      @ApiStatus.Internal
      @Nullable
@@ -1591,7 +1600,7 @@ index 7509b61dfdc0a6675256970cb850b08f9e814580..28e2628d8d0a6af742b2fa89e5581e6b
      public ItemType asItemType() {
          Material material = this;
          if (isLegacy()) {
-@@ -5726,6 +5727,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
+@@ -5615,6 +5616,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
       */
      @ApiStatus.Internal
      @Nullable
@@ -1599,7 +1608,7 @@ index 7509b61dfdc0a6675256970cb850b08f9e814580..28e2628d8d0a6af742b2fa89e5581e6b
      public BlockType asBlockType() {
          Material material = this;
          if (isLegacy()) {
-@@ -5733,4 +5735,43 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
+@@ -5622,4 +5624,43 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
          }
          return Registry.BLOCK.get(material.key);
      }
@@ -1644,35 +1653,23 @@ index 7509b61dfdc0a6675256970cb850b08f9e814580..28e2628d8d0a6af742b2fa89e5581e6b
 +    // Paper end - data component API
  }
 diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
-index 88bb3b9ae99fae97ec21972b75ec43cb6b7b22b5..ca3a0a268a80ea3d342ec1c2c9d8ae105d271c88 100644
+index 9725580b6458e5d37fbc6059869604f9883bd6d1..0e4f8505d47c55c52571e217265d7deeed645b8b 100644
 --- a/src/main/java/org/bukkit/Registry.java
 +++ b/src/main/java/org/bukkit/Registry.java
-@@ -343,6 +343,8 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+@@ -348,6 +348,8 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
              return StreamSupport.stream(this.spliterator(), false);
          }
      };
 +
 +    Registry<io.papermc.paper.component.DataComponentType> DATA_COMPONENT_TYPE = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.DATA_COMPONENT_TYPE); // Paper
-     // Paper end
+     // Paper end - potion effect type registry
      /**
       * Get the object by its key.
-diff --git a/src/main/java/org/bukkit/inventory/ItemFactory.java b/src/main/java/org/bukkit/inventory/ItemFactory.java
-index e20f64828548c647a29dad5a475f4596cad88cd8..80c10ab30ca6ea6e2a80a916d8a5831a01c3d5ae 100644
---- a/src/main/java/org/bukkit/inventory/ItemFactory.java
-+++ b/src/main/java/org/bukkit/inventory/ItemFactory.java
-@@ -162,6 +162,7 @@ public interface ItemFactory {
-      */
-     @ApiStatus.Internal
-     @NotNull
-+    @Deprecated // Paper - This seems to be flawed-- this is not good anymore
-     Material updateMaterial(@NotNull final ItemMeta meta, @NotNull final Material material) throws IllegalArgumentException;
- 
-     /**
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index 15a59a27f0854ff6f4038349d3a0d00347130140..c2212e34197cb0c1c8b378e8f2a049af66c7ab16 100644
+index f603b5b6ba80af919f415322583a8345a5b1358a..577fa629f8bf0fb3b90689ce391155e5fd898a72 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
-@@ -1029,4 +1029,123 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -1031,4 +1031,123 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
          return Bukkit.getUnsafe().computeTooltipLines(this, tooltipContext, player);
      }
      // Paper end - expose itemstack tooltip lines
@@ -1797,10 +1794,10 @@ index 15a59a27f0854ff6f4038349d3a0d00347130140..c2212e34197cb0c1c8b378e8f2a049af
 +    // Paper end - data component API
  }
 diff --git a/src/main/java/org/bukkit/inventory/ItemType.java b/src/main/java/org/bukkit/inventory/ItemType.java
-index 077bd4d4e50169780f27e8502104e9e4b2ecdae6..a202cede658cb6fb5c12c80dceac7a514a31d46c 100644
+index 6bc1853ada3ea38bc36cb31fbb5ce246347fe5d4..a985de6eeeee2b4a856dbcfb403cfe128235dd24 100644
 --- a/src/main/java/org/bukkit/inventory/ItemType.java
 +++ b/src/main/java/org/bukkit/inventory/ItemType.java
-@@ -2443,4 +2443,31 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
+@@ -2326,4 +2326,31 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      @Override
      @NotNull String getTranslationKey();
      // Paper end - add Translatable
