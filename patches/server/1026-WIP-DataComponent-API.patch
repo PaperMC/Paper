@@ -40,10 +40,10 @@ index 0000000000000000000000000000000000000000..e538819c873a324c58bcd8e73f89510e
 +}
 diff --git a/src/main/java/io/papermc/paper/component/ComponentAdapters.java b/src/main/java/io/papermc/paper/component/ComponentAdapters.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ca118915720c35075e0ceead4f5fbb2f2ae7835b
+index 0000000000000000000000000000000000000000..d8eaf4970a6531693e4ef18e4d5954322a3f8345
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/ComponentAdapters.java
-@@ -0,0 +1,183 @@
+@@ -0,0 +1,184 @@
 +package io.papermc.paper.component;
 +
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -61,6 +61,7 @@ index 0000000000000000000000000000000000000000..ca118915720c35075e0ceead4f5fbb2f
 +import io.papermc.paper.component.item.PaperItemContainerContents;
 +import io.papermc.paper.component.item.PaperItemEnchantments;
 +import io.papermc.paper.component.item.PaperItemLore;
++import io.papermc.paper.component.item.PaperItemTool;
 +import io.papermc.paper.component.item.PaperJukeboxPlayable;
 +import io.papermc.paper.component.item.PaperLockCode;
 +import io.papermc.paper.component.item.PaperLodestoneTracker;
@@ -145,7 +146,7 @@ index 0000000000000000000000000000000000000000..ca118915720c35075e0ceead4f5fbb2f
 +        registerUntyped(DataComponents.INTANGIBLE_PROJECTILE);
 +        register(DataComponents.FOOD, PaperFoodProperties::new);
 +        registerUntyped(DataComponents.FIRE_RESISTANT);
-+        // tool
++        register(DataComponents.TOOL, PaperItemTool::new);
 +        register(DataComponents.STORED_ENCHANTMENTS, PaperItemEnchantments::new);
 +        register(DataComponents.DYED_COLOR, PaperDyedItemColor::new);
 +        register(DataComponents.MAP_COLOR, PaperMapItemColor::new);
@@ -353,14 +354,17 @@ index 0000000000000000000000000000000000000000..5639559368e6866e9b0afa6688f3b12c
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/ComponentTypesBridgesImpl.java b/src/main/java/io/papermc/paper/component/item/ComponentTypesBridgesImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8b130ee6a8eaa74e4899429d4f707e2e2615e9d0
+index 0000000000000000000000000000000000000000..da9fe244f027c7932d9ed73e25f9e585106b70bf
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/ComponentTypesBridgesImpl.java
-@@ -0,0 +1,155 @@
+@@ -0,0 +1,168 @@
 +package io.papermc.paper.component.item;
 +
++import io.papermc.paper.registry.set.RegistryKeySet;
 +import io.papermc.paper.util.Filtered;
 +import net.kyori.adventure.key.Key;
++import net.kyori.adventure.util.TriState;
++import org.bukkit.block.BlockType;
 +import org.bukkit.inventory.meta.trim.ArmorTrim;
 +import org.bukkit.map.MapCursor;
 +import org.bukkit.potion.PotionEffect;
@@ -465,6 +469,16 @@ index 0000000000000000000000000000000000000000..8b130ee6a8eaa74e4899429d4f707e2e
 +    @Override
 +    public JukeboxPlayable.Builder jukeboxPlayable() {
 +        return new PaperJukeboxPlayable.BuilderImpl();
++    }
++
++    @Override
++    public Tool.Builder tool() {
++        return new PaperItemTool.BuilderImpl();
++    }
++
++    @Override
++    public Tool.Rule rule(final RegistryKeySet<BlockType> blockTypes, final Float speed, final TriState correctForDrops) {
++        return new PaperItemTool.PaperRule(blockTypes, speed, correctForDrops);
 +    }
 +
 +    @Override
@@ -1567,6 +1581,119 @@ index 0000000000000000000000000000000000000000..66c18c734d25fa4184f62146cdb84953
 +            }
 +            final List<net.minecraft.network.chat.Component> lines = PaperAdventure.asVanilla(this.lines);
 +            return new PaperItemLore(new net.minecraft.world.item.component.ItemLore(Collections.unmodifiableList(lines)));
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/component/item/PaperItemTool.java b/src/main/java/io/papermc/paper/component/item/PaperItemTool.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..67efd3e55c95567187319010d7ea825fb736e375
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/component/item/PaperItemTool.java
+@@ -0,0 +1,107 @@
++package io.papermc.paper.component.item;
++
++import com.google.common.base.Preconditions;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.Optional;
++import io.papermc.paper.registry.PaperRegistries;
++import io.papermc.paper.registry.RegistryKey;
++import io.papermc.paper.registry.set.PaperRegistrySets;
++import io.papermc.paper.registry.set.RegistryKeySet;
++import net.kyori.adventure.util.TriState;
++import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.core.registries.Registries;
++import net.minecraft.server.MinecraftServer;
++import org.bukkit.attribute.Attribute;
++import org.bukkit.attribute.AttributeModifier;
++import org.bukkit.block.BlockType;
++import org.bukkit.craftbukkit.CraftEquipmentSlot;
++import org.bukkit.craftbukkit.attribute.CraftAttribute;
++import org.bukkit.craftbukkit.attribute.CraftAttributeInstance;
++import org.bukkit.craftbukkit.util.Handleable;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.units.qual.N;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++import static io.papermc.paper.component.item.ComponentUtils.transform;
++
++@DefaultQualifier(NonNull.class)
++public record PaperItemTool(
++    net.minecraft.world.item.component.Tool impl,
++    List<Tool.Rule> rules
++) implements Tool, Handleable<net.minecraft.world.item.component.Tool> {
++
++    public PaperItemTool(final net.minecraft.world.item.component.Tool itemModifiers) {
++        this(itemModifiers, convert(itemModifiers));
++    }
++
++    private static List<Tool.Rule> convert(final net.minecraft.world.item.component.Tool nmsModifiers) {
++        return transform(nmsModifiers.rules(), nms -> new PaperRule(
++            PaperRegistrySets.convertToApi(RegistryKey.BLOCK, nms.blocks()),
++            nms.speed().orElse(null),
++            TriState.byBoolean(nms.correctForDrops().orElse(null))
++        ));
++    }
++
++    @Override
++    public net.minecraft.world.item.component.Tool getHandle() {
++        return this.impl;
++    }
++
++    @Override
++    public float defaultMiningSpeed() {
++        return this.impl.defaultMiningSpeed();
++    }
++
++    @Override
++    public int damagePerBlock() {
++        return this.impl.damagePerBlock();
++    }
++
++
++    // TODO maybe move to API as package-private so they can create Entry objects? not sure if needed
++    public record PaperRule(RegistryKeySet<BlockType> blockTypes, @Nullable Float speed, @NotNull TriState correctForDrops) implements Rule {
++    }
++
++    static final class BuilderImpl implements Builder {
++
++        private final List<net.minecraft.world.item.component.Tool.Rule> rules = new ArrayList<>();
++        private int damage = 1;
++        private float miningSpeed = 1.0F;
++
++        @Override
++        public @NonNull Builder damagePerBlock(@NonNull final int damage) {
++            this.damage = damage;
++            return this;
++        }
++
++        @Override
++        public @NonNull Builder defaultMiningSpeed(final float speed) {
++            this.miningSpeed = speed;
++            return this;
++        }
++
++        @Override
++        public @NonNull Builder addRule(@NonNull final Rule rule) {
++            this.rules.add(new net.minecraft.world.item.component.Tool.Rule(
++                PaperRegistrySets.convertToNms(Registries.BLOCK, BuiltInRegistries.BUILT_IN_CONVERSIONS.lookup(), rule.blockTypes()),
++                Optional.ofNullable(rule.speed()),
++                Optional.of(rule.correctForDrops().toBoolean())
++            ));
++            return this;
++        }
++
++        @Override
++        public @NonNull Builder addRules(@NonNull final List<@NonNull Rule> rules) {
++            rules.forEach(this::addRule);
++            return this;
++        }
++
++        @Override
++        public @NonNull Tool build() {
++            return new PaperItemTool(new net.minecraft.world.item.component.Tool(this.rules, this.miningSpeed, this.damage));
 +        }
 +    }
 +}
