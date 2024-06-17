@@ -847,6 +847,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          <T> Applicator put(ItemMetaKeyType<T> key, T value) {
              this.builder.set(key.TYPE, value);
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+     private CraftFoodComponent food;
+     private CraftToolComponent tool;
+     private CraftJukeboxComponent jukebox;
+-    private int damage;
++    private Integer damage; // Paper - may not be set
+     private Integer maxDamage;
+ 
+     private static final Set<DataComponentType> HANDLED_TAGS = Sets.newHashSet();
+@@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
              this.enchantments = new EnchantmentMap(meta.enchantments); // Paper
          }
  
@@ -877,6 +886,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          for (Object obj : mods.keySet()) {
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+             itemTag.put(CraftMetaItem.JUKEBOX_PLAYABLE, this.jukebox.getHandle());
+         }
+ 
+-        if (this.hasDamage()) {
++        if (this.hasDamageValue()) { // Paper - preserve empty/0 damage
+             itemTag.put(CraftMetaItem.DAMAGE, this.damage);
+         }
+ 
+@@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
      }
  
      void applyModifiers(Multimap<Attribute, AttributeModifier> modifiers, CraftMetaItem.Applicator tag) {
@@ -889,6 +907,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              return;
          }
  
+@@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+ 
+     @Overridden
+     boolean isEmpty() {
+-        return !(this.hasDisplayName() || this.hasItemName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.build().isEmpty() || !this.removedTags.isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isHideTooltip() || this.isUnbreakable() || this.hasEnchantmentGlintOverride() || this.isFireResistant() || this.hasMaxStackSize() || this.hasRarity() || this.hasFood() || this.hasTool() || this.hasDamage() || this.hasMaxDamage() || this.hasAttributeModifiers() || this.customTag != null || this.canPlaceOnPredicates != null || this.canBreakPredicates != null); // Paper
++        return !(this.hasDisplayName() || this.hasItemName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.build().isEmpty() || !this.removedTags.isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isHideTooltip() || this.isUnbreakable() || this.hasEnchantmentGlintOverride() || this.isFireResistant() || this.hasMaxStackSize() || this.hasRarity() || this.hasFood() || this.hasTool() || this.hasDamageValue() || this.hasMaxDamage() || this.hasAttributeModifiers() || this.customTag != null || this.canPlaceOnPredicates != null || this.canBreakPredicates != null); // Paper
+     }
+ 
+     // Paper start
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      @Override
@@ -1038,12 +1065,39 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      @Override
+     public boolean hasDamage() {
+-        return this.damage > 0;
++        return this.damage != null && this.damage > 0; // Paper - null check
+     }
+ 
+     @Override
+     public int getDamage() {
+-        return this.damage;
++        return this.damage == null ? 0 : this.damage; // Paper - null check
+     }
+ 
+     @Override
      public void setDamage(int damage) {
 +        Preconditions.checkArgument(damage >= 0, "Damage cannot be negative"); // Paper
 +        Preconditions.checkArgument(!this.hasMaxDamage() || damage <= this.maxDamage, "Damage cannot exceed max damage"); // Paper
          this.damage = damage;
      }
  
++    // Paper start - preserve empty/0 damage
++    @Override
++    public boolean hasDamageValue() {
++        return this.damage != null;
++    }
++
++    @Override
++    public void resetDamage() {
++        this.damage = null;
++    }
++    // Paper end - preserve empty/0 damage
++
+     @Override
+     public boolean hasMaxDamage() {
+         return this.maxDamage != null;
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      @Override
@@ -1062,11 +1116,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  && (this.removedTags.equals(that.removedTags))
                  && (Objects.equals(this.customTag, that.customTag))
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+                 && (this.hasFood() ? that.hasFood() && this.food.equals(that.food) : !that.hasFood())
+                 && (this.hasTool() ? that.hasTool() && this.tool.equals(that.tool) : !that.hasTool())
+                 && (this.hasJukeboxPlayable() ? that.hasJukeboxPlayable() && this.jukebox.equals(that.jukebox) : !that.hasJukeboxPlayable())
+-                && (this.hasDamage() ? that.hasDamage() && this.damage == that.damage : !that.hasDamage())
++                && (Objects.equals(this.damage, that.damage)) // Paper - preserve empty/0 damage
+                 && (this.hasMaxDamage() ? that.hasMaxDamage() && this.maxDamage.equals(that.maxDamage) : !that.hasMaxDamage())
+                 && (this.canPlaceOnPredicates != null ? that.canPlaceOnPredicates != null && this.canPlaceOnPredicates.equals(that.canPlaceOnPredicates) : that.canPlaceOnPredicates == null) // Paper
+                 && (this.canBreakPredicates != null ? that.canBreakPredicates != null && this.canBreakPredicates.equals(that.canBreakPredicates) : that.canBreakPredicates == null) // Paper
+@@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         hash = 61 * hash + (this.hasFood() ? this.food.hashCode() : 0);
          hash = 61 * hash + (this.hasTool() ? this.tool.hashCode() : 0);
          hash = 61 * hash + (this.hasJukeboxPlayable() ? this.jukebox.hashCode() : 0);
-         hash = 61 * hash + (this.hasDamage() ? this.damage : 0);
+-        hash = 61 * hash + (this.hasDamage() ? this.damage : 0);
 -        hash = 61 * hash + (this.hasMaxDamage() ? 1231 : 1237);
 -        hash = 61 * hash + (this.hasAttributeModifiers() ? this.attributeModifiers.hashCode() : 0);
++        hash = 61 * hash + (this.hasDamageValue() ? this.damage : -1); // Paper - preserve empty/0 damage
 +        hash = 61 * hash + (this.hasMaxDamage() ? this.maxDamage.hashCode() : 0); // Paper - max damage is not a boolean
 +        hash = 61 * hash + (this.attributeModifiers != null ? this.attributeModifiers.hashCode() : 0); // Paper - track only null attributes
          hash = 61 * hash + (this.canPlaceOnPredicates != null ? this.canPlaceOnPredicates.hashCode() : 0); // Paper
@@ -1081,6 +1146,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  clone.attributeModifiers = LinkedHashMultimap.create(this.attributeModifiers);
              }
              if (this.customTag != null) {
+@@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+             builder.put(CraftMetaItem.JUKEBOX_PLAYABLE.BUKKIT, this.jukebox);
+         }
+ 
+-        if (this.hasDamage()) {
++        if (this.hasDamageValue()) { // Paper - preserve empty/0 damage
+             builder.put(CraftMetaItem.DAMAGE.BUKKIT, this.damage);
+         }
+ 
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
      }
  
