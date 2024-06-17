@@ -82,6 +82,7 @@ public interface UnsafeValues {
      */
     boolean removeAdvancement(NamespacedKey key);
 
+    @Deprecated(since = "1.21", forRemoval = true)
     Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(Material material, EquipmentSlot slot);
 
     CreativeCategory getCreativeCategory(Material material);
