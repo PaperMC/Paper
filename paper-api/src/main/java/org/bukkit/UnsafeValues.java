@@ -85,10 +85,13 @@ public interface UnsafeValues {
     @Deprecated(since = "1.21", forRemoval = true)
     Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(Material material, EquipmentSlot slot);
 
+    @Deprecated(since = "1.21", forRemoval = true)
     CreativeCategory getCreativeCategory(Material material);
 
+    @Deprecated(since = "1.21", forRemoval = true)
     String getBlockTranslationKey(Material material);
 
+    @Deprecated(since = "1.21", forRemoval = true)
     String getItemTranslationKey(Material material);
 
     String getTranslationKey(EntityType entityType);
