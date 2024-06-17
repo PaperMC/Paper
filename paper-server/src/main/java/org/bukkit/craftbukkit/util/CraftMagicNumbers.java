@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.util;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.io.Files;
 import com.google.gson.JsonElement;
@@ -35,7 +34,6 @@ import net.minecraft.util.datafix.fixes.DataConverterTypes;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.alchemy.PotionRegistry;
-import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.IBlockData;
 import net.minecraft.world.level.storage.SavedFile;
@@ -50,12 +48,10 @@ import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.CraftFeatureFlag;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.attribute.CraftAttribute;
-import org.bukkit.craftbukkit.attribute.CraftAttributeInstance;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.damage.CraftDamageEffect;
 import org.bukkit.craftbukkit.damage.CraftDamageSourceBuilder;
@@ -334,15 +330,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(Material material, EquipmentSlot slot) {
-        ImmutableMultimap.Builder<Attribute, AttributeModifier> defaultAttributes = ImmutableMultimap.builder();
-
-        ItemAttributeModifiers nmsDefaultAttributes = getItem(material).getDefaultAttributeModifiers();
-        nmsDefaultAttributes.forEach(CraftEquipmentSlot.getNMS(slot), (key, value) -> {
-            Attribute attribute = CraftAttribute.minecraftToBukkit(key.value());
-            defaultAttributes.put(attribute, CraftAttributeInstance.convert(value, slot));
-        });
-
-        return defaultAttributes.build();
+        return material.getDefaultAttributeModifiers(slot);
     }
 
     @Override

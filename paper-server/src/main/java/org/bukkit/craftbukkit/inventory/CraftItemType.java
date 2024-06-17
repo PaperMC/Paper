@@ -201,7 +201,11 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
     public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(EquipmentSlot slot) {
         ImmutableMultimap.Builder<Attribute, AttributeModifier> defaultAttributes = ImmutableMultimap.builder();
 
-        ItemAttributeModifiers nmsDefaultAttributes = item.getDefaultAttributeModifiers();
+        ItemAttributeModifiers nmsDefaultAttributes = item.components().getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
+        if (nmsDefaultAttributes.modifiers().isEmpty()) {
+            nmsDefaultAttributes = item.getDefaultAttributeModifiers();
+        }
+
         nmsDefaultAttributes.forEach(CraftEquipmentSlot.getNMS(slot), (key, value) -> {
             Attribute attribute = CraftAttribute.minecraftToBukkit(key.value());
             defaultAttributes.put(attribute, CraftAttributeInstance.convert(value, slot));
