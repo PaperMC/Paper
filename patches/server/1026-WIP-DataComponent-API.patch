@@ -40,10 +40,10 @@ index 0000000000000000000000000000000000000000..e538819c873a324c58bcd8e73f89510e
 +}
 diff --git a/src/main/java/io/papermc/paper/component/ComponentAdapters.java b/src/main/java/io/papermc/paper/component/ComponentAdapters.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..067930a2f5d3655f74a52c75a10d1d2958c1adfa
+index 0000000000000000000000000000000000000000..ca118915720c35075e0ceead4f5fbb2f2ae7835b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/ComponentAdapters.java
-@@ -0,0 +1,181 @@
+@@ -0,0 +1,183 @@
 +package io.papermc.paper.component;
 +
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -61,6 +61,7 @@ index 0000000000000000000000000000000000000000..067930a2f5d3655f74a52c75a10d1d29
 +import io.papermc.paper.component.item.PaperItemContainerContents;
 +import io.papermc.paper.component.item.PaperItemEnchantments;
 +import io.papermc.paper.component.item.PaperItemLore;
++import io.papermc.paper.component.item.PaperJukeboxPlayable;
 +import io.papermc.paper.component.item.PaperLockCode;
 +import io.papermc.paper.component.item.PaperLodestoneTracker;
 +import io.papermc.paper.component.item.PaperMapDecorations;
@@ -164,6 +165,7 @@ index 0000000000000000000000000000000000000000..067930a2f5d3655f74a52c75a10d1d29
 +        // block entity data
 +        register(DataComponents.INSTRUMENT, CraftMusicInstrument::minecraftHolderToBukkit, CraftMusicInstrument::bukkitToMinecraftHolder);
 +        registerIdentity(DataComponents.OMINOUS_BOTTLE_AMPLIFIER);
++        register(DataComponents.JUKEBOX_PLAYABLE, PaperJukeboxPlayable::new);
 +        register(DataComponents.RECIPES, nms -> {
 +            final List<Key> api = new ArrayList<>(nms.size());
 +            for (final ResourceLocation location : nms) {
@@ -351,10 +353,10 @@ index 0000000000000000000000000000000000000000..5639559368e6866e9b0afa6688f3b12c
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/ComponentTypesBridgesImpl.java b/src/main/java/io/papermc/paper/component/item/ComponentTypesBridgesImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5c26aec36c4e2ad2cc683735485f139cb32c05be
+index 0000000000000000000000000000000000000000..8b130ee6a8eaa74e4899429d4f707e2e2615e9d0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/ComponentTypesBridgesImpl.java
-@@ -0,0 +1,150 @@
+@@ -0,0 +1,155 @@
 +package io.papermc.paper.component.item;
 +
 +import io.papermc.paper.util.Filtered;
@@ -458,6 +460,11 @@ index 0000000000000000000000000000000000000000..5c26aec36c4e2ad2cc683735485f139c
 +    @Override
 +    public ItemContainerContents.Builder itemContainerContents() {
 +        return new PaperItemContainerContents.BuilderImpl();
++    }
++
++    @Override
++    public JukeboxPlayable.Builder jukeboxPlayable() {
++        return new PaperJukeboxPlayable.BuilderImpl();
 +    }
 +
 +    @Override
@@ -1560,6 +1567,74 @@ index 0000000000000000000000000000000000000000..66c18c734d25fa4184f62146cdb84953
 +            }
 +            final List<net.minecraft.network.chat.Component> lines = PaperAdventure.asVanilla(this.lines);
 +            return new PaperItemLore(new net.minecraft.world.item.component.ItemLore(Collections.unmodifiableList(lines)));
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/component/item/PaperJukeboxPlayable.java b/src/main/java/io/papermc/paper/component/item/PaperJukeboxPlayable.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..dbf25090748b0c6b675a4681f0d0c1b826f6757b
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/component/item/PaperJukeboxPlayable.java
+@@ -0,0 +1,62 @@
++package io.papermc.paper.component.item;
++
++import com.google.common.base.Preconditions;
++import java.util.ArrayList;
++import java.util.List;
++import net.minecraft.world.item.EitherHolder;
++import org.bukkit.JukeboxSong;
++import org.bukkit.attribute.Attribute;
++import org.bukkit.attribute.AttributeModifier;
++import org.bukkit.craftbukkit.CraftEquipmentSlot;
++import org.bukkit.craftbukkit.CraftJukeboxSong;
++import org.bukkit.craftbukkit.attribute.CraftAttribute;
++import org.bukkit.craftbukkit.attribute.CraftAttributeInstance;
++import org.bukkit.craftbukkit.util.Handleable;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++import static io.papermc.paper.component.item.ComponentUtils.transform;
++
++@DefaultQualifier(NonNull.class)
++public record PaperJukeboxPlayable(
++    net.minecraft.world.item.JukeboxPlayable impl
++) implements JukeboxPlayable, Handleable<net.minecraft.world.item.JukeboxPlayable> {
++
++    @Override
++    public net.minecraft.world.item.JukeboxPlayable getHandle() {
++        return this.impl;
++    }
++
++    @Override
++    public boolean showInTooltip() {
++        return this.impl.showInTooltip();
++    }
++
++    @Override
++    public PaperJukeboxPlayable showInTooltip(final boolean showInTooltip) {
++        return new PaperJukeboxPlayable(this.impl.withTooltip(showInTooltip));
++    }
++
++    static final class BuilderImpl implements Builder {
++
++        private JukeboxSong song = null;
++        private boolean showInTooltip = true;
++
++        @Override
++        public Builder showInTooltip(final boolean showInTooltip) {
++            this.showInTooltip = showInTooltip;
++            return this;
++        }
++
++        @Override
++        public @NonNull Builder jukeboxSong(@NonNull final JukeboxSong song) {
++            this.song = song;
++            return this;
++        }
++
++        @Override
++        public @NonNull JukeboxPlayable build() {
++            return new PaperJukeboxPlayable(new net.minecraft.world.item.JukeboxPlayable(new EitherHolder<>(CraftJukeboxSong.bukkitToMinecraftHolder(this.song)), this.showInTooltip));
 +        }
 +    }
 +}

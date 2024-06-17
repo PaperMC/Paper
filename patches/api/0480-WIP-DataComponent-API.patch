@@ -67,10 +67,10 @@ index 0000000000000000000000000000000000000000..50d15b4e0ed5cd17fdc95476ee4650ef
 +}
 diff --git a/src/main/java/io/papermc/paper/component/DataComponentTypes.java b/src/main/java/io/papermc/paper/component/DataComponentTypes.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dfb4bfa4183818d7aa6a714979b5f7b8808867f0
+index 0000000000000000000000000000000000000000..f400a1e230c51c96584e91a663d6f3500b0fb966
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/DataComponentTypes.java
-@@ -0,0 +1,112 @@
+@@ -0,0 +1,114 @@
 +package io.papermc.paper.component;
 +
 +import io.papermc.paper.component.item.BannerPatternLayers;
@@ -86,6 +86,7 @@ index 0000000000000000000000000000000000000000..dfb4bfa4183818d7aa6a714979b5f7b8
 +import io.papermc.paper.component.item.ItemContainerContents;
 +import io.papermc.paper.component.item.ItemEnchantments;
 +import io.papermc.paper.component.item.ItemLore;
++import io.papermc.paper.component.item.JukeboxPlayable;
 +import io.papermc.paper.component.item.LockCode;
 +import io.papermc.paper.component.item.LodestoneTracker;
 +import io.papermc.paper.component.item.MapDecorations;
@@ -156,6 +157,7 @@ index 0000000000000000000000000000000000000000..dfb4bfa4183818d7aa6a714979b5f7b8
 +    // block_entity_data
 +    public static final DataComponentType.Valued<MusicInstrument> INSTRUMENT = valued("instrument");
 +    public static final DataComponentType.Valued<Integer> OMINOUS_BOTTLE_AMPLIFIER = valued("ominous_bottle_amplifier");
++    public static final DataComponentType.Valued<JukeboxPlayable> JUKEBOX_PLAYALE = valued("jukebox_playable");
 +    public static final DataComponentType.Valued<List<Key>> RECIPES = valued("recipes");
 +    public static final DataComponentType.Valued<LodestoneTracker> LODESTONE_TRACKER = valued("lodestone_tracker");
 +    public static final DataComponentType.Valued<FireworkEffect> FIREWORK_EXPLOSION = valued("firework_explosion");
@@ -363,10 +365,10 @@ index 0000000000000000000000000000000000000000..48f5b0a3bceb4312a5a2e10ee27811ce
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/ComponentTypesBridge.java b/src/main/java/io/papermc/paper/component/item/ComponentTypesBridge.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6b00f5383bb3c957da62d2abe675f0d3059bad33
+index 0000000000000000000000000000000000000000..106790f1eb225fc6557d412f075fd40aeeebe412
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/ComponentTypesBridge.java
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,78 @@
 +package io.papermc.paper.component.item;
 +
 +import io.papermc.paper.util.Filtered;
@@ -442,6 +444,8 @@ index 0000000000000000000000000000000000000000..6b00f5383bb3c957da62d2abe675f0d3
 +    LockCode.Builder lockCode();
 +
 +    ItemContainerContents.Builder itemContainerContents();
++
++    JukeboxPlayable.Builder jukeboxPlayable();
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/CustomModelData.java b/src/main/java/io/papermc/paper/component/item/CustomModelData.java
 new file mode 100644
@@ -860,6 +864,40 @@ index 0000000000000000000000000000000000000000..f2db3054e16bcdd615b98cc728d17f96
 +
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder addAllLines(@NonNull List<@NonNull ? extends ComponentLike> lines);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/component/item/JukeboxPlayable.java b/src/main/java/io/papermc/paper/component/item/JukeboxPlayable.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..85ebf9c5e372ffc15b556c48f52baba540da1afa
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/component/item/JukeboxPlayable.java
+@@ -0,0 +1,28 @@
++package io.papermc.paper.component.item;
++
++import io.papermc.paper.component.ComponentBuilder;
++import org.bukkit.JukeboxSong;
++import org.bukkit.attribute.Attribute;
++import org.bukkit.attribute.AttributeModifier;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.Unmodifiable;
++import java.util.List;
++
++public interface JukeboxPlayable extends ShownInTooltip<JukeboxPlayable> {
++
++    @Contract(value = "-> new", pure = true)
++    static JukeboxPlayable.@NonNull Builder jukeboxPlayable() {
++        return ComponentTypesBridge.bridge().jukeboxPlayable();
++    }
++
++
++    @ApiStatus.NonExtendable
++    interface Builder extends ShownInTooltip.Builder<JukeboxPlayable.Builder>, ComponentBuilder<JukeboxPlayable> {
++
++        @Contract(value = "_, -> this", mutates = "this")
++        @NonNull
++        Builder jukeboxSong(@NonNull JukeboxSong song);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/LockCode.java b/src/main/java/io/papermc/paper/component/item/LockCode.java
