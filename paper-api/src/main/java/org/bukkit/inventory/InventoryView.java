@@ -8,10 +8,6 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a view linking two inventories and a single player (whose
  * inventory may or may not be one of the two).
- * <p>
- * Note: If you implement this interface but fail to satisfy the expected
- * contracts of certain methods, there's no guarantee that the game will work
- * as it should.
  */
 public interface InventoryView {
     public static final int OUTSIDE = -999;
