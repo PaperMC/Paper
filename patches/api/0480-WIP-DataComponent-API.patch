@@ -67,10 +67,10 @@ index 0000000000000000000000000000000000000000..50d15b4e0ed5cd17fdc95476ee4650ef
 +}
 diff --git a/src/main/java/io/papermc/paper/component/DataComponentTypes.java b/src/main/java/io/papermc/paper/component/DataComponentTypes.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f400a1e230c51c96584e91a663d6f3500b0fb966
+index 0000000000000000000000000000000000000000..d0ff39fe9fdd6ad011e83f17080d75659a6d07af
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/DataComponentTypes.java
-@@ -0,0 +1,114 @@
+@@ -0,0 +1,115 @@
 +package io.papermc.paper.component;
 +
 +import io.papermc.paper.component.item.BannerPatternLayers;
@@ -98,6 +98,7 @@ index 0000000000000000000000000000000000000000..f400a1e230c51c96584e91a663d6f350
 +import io.papermc.paper.component.item.ResolvableProfile;
 +import io.papermc.paper.component.item.SeededContainerLoot;
 +import io.papermc.paper.component.item.SuspiciousStewEffects;
++import io.papermc.paper.component.item.Tool;
 +import io.papermc.paper.component.item.Unbreakable;
 +import io.papermc.paper.component.item.WritableBookContent;
 +import io.papermc.paper.component.item.WrittenBookContent;
@@ -137,7 +138,7 @@ index 0000000000000000000000000000000000000000..f400a1e230c51c96584e91a663d6f350
 +    public static final DataComponentType.NonValued INTANGIBLE_PROJECTILE = unvalued("intangible_projectile");
 +    public static final DataComponentType.Valued<FoodProperties> FOOD = valued("food");
 +    public static final DataComponentType.NonValued FIRE_RESISTANT = unvalued("fire_resistant");
-+    // tool
++    public static final DataComponentType.Valued<Tool> TOOL = valued("tool");
 +    public static final DataComponentType.Valued<ItemEnchantments> STORED_ENCHANTMENTS = valued("stored_enchantments");
 +    public static final DataComponentType.Valued<DyedItemColor> DYED_COLOR = valued("dyed_color");
 +    public static final DataComponentType.Valued<MapItemColor> MAP_COLOR = valued("map_color");
@@ -365,16 +366,19 @@ index 0000000000000000000000000000000000000000..48f5b0a3bceb4312a5a2e10ee27811ce
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/ComponentTypesBridge.java b/src/main/java/io/papermc/paper/component/item/ComponentTypesBridge.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..106790f1eb225fc6557d412f075fd40aeeebe412
+index 0000000000000000000000000000000000000000..a0ba12928b1aed432351164dfeb5daa1c6d40b1b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/ComponentTypesBridge.java
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,85 @@
 +package io.papermc.paper.component.item;
 +
++import io.papermc.paper.registry.set.RegistryKeySet;
 +import io.papermc.paper.util.Filtered;
 +import java.util.Optional;
 +import java.util.ServiceLoader;
 +import net.kyori.adventure.key.Key;
++import net.kyori.adventure.util.TriState;
++import org.bukkit.block.BlockType;
 +import org.bukkit.inventory.meta.trim.ArmorTrim;
 +import org.bukkit.map.MapCursor;
 +import org.bukkit.potion.PotionEffect;
@@ -446,6 +450,10 @@ index 0000000000000000000000000000000000000000..106790f1eb225fc6557d412f075fd40a
 +    ItemContainerContents.Builder itemContainerContents();
 +
 +    JukeboxPlayable.Builder jukeboxPlayable();
++
++    Tool.Builder tool();
++
++    Tool.Rule rule(RegistryKeySet<BlockType> blockTypes, Float speed, TriState correctForDrops);
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/CustomModelData.java b/src/main/java/io/papermc/paper/component/item/CustomModelData.java
 new file mode 100644
@@ -1399,6 +1407,90 @@ index 0000000000000000000000000000000000000000..59c559fc0c139a6b688ef69a484e24c1
 +
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder addAll(@NonNull List<@NonNull SuspiciousEffectEntry> entries);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/component/item/Tool.java b/src/main/java/io/papermc/paper/component/item/Tool.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..13ac8404c63ffdd08392c07915a07ebff57efae3
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/component/item/Tool.java
+@@ -0,0 +1,78 @@
++package io.papermc.paper.component.item;
++
++import io.papermc.paper.component.ComponentBuilder;
++import java.util.List;
++import java.util.Optional;
++import io.papermc.paper.registry.set.RegistryKeySet;
++import net.kyori.adventure.util.TriState;
++import org.bukkit.block.BlockType;
++import org.bukkit.inventory.ItemStack;
++import org.bukkit.potion.PotionEffect;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++import org.jetbrains.annotations.Unmodifiable;
++
++@ApiStatus.NonExtendable
++public interface Tool {
++
++    @Contract(value = "-> new", pure = true)
++    static Tool.@NonNull Builder tool() {
++        return ComponentTypesBridge.bridge().tool();
++    }
++
++    @Contract(pure = true)
++    float defaultMiningSpeed();
++
++    @Contract(pure = true)
++    int damagePerBlock();
++
++    @Contract(pure = true)
++    @NonNull @Unmodifiable List<Tool.@NonNull Rule> rules();
++
++    @ApiStatus.NonExtendable
++    interface Rule {
++
++        static @NonNull Rule of(final @NonNull RegistryKeySet<BlockType> blockTypes, final @Nullable Float speed, final @NotNull TriState correctForDrops) {
++            return ComponentTypesBridge.bridge().rule(blockTypes, speed, correctForDrops);
++        }
++
++        static @NonNull Rule minesAndDrops(final @NonNull RegistryKeySet<BlockType> blocks, float speed) {
++            return of(blocks, speed, TriState.TRUE);
++        }
++
++        static @NonNull Rule deniesDrops(final @NonNull RegistryKeySet<BlockType> tag) {
++            return of(tag, null, TriState.FALSE);
++        }
++
++        static @NonNull Rule overrideSpeed(final @NonNull RegistryKeySet<BlockType> tag, float speed) {
++            return of(tag, speed, TriState.NOT_SET);
++        }
++
++        @NonNull RegistryKeySet<BlockType> blockTypes();
++
++        @Nullable
++        Float speed();
++
++        @NotNull
++        TriState correctForDrops();
++    }
++
++    @ApiStatus.NonExtendable
++    interface Builder extends ComponentBuilder<Tool> {
++
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull Builder damagePerBlock(@NonNull int damage);
++
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull Builder defaultMiningSpeed(float speed);
++
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull Builder addRule(@NonNull Rule rule);
++
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull Builder addRules(@NonNull List<@NonNull Rule> rules);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/Unbreakable.java b/src/main/java/io/papermc/paper/component/item/Unbreakable.java
