@@ -67,8 +67,8 @@ public class Commodore {
             "org/spigotmc/event/entity/EntityDismountEvent", "org/bukkit/event/entity/EntityDismountEvent"
     );
 
-    private static final Set<String> CLASS_TO_INTERFACE = Set.of(
-            "org/bukkit/inventory/InventoryView"
+    private static final Map<String, String> CLASS_TO_INTERFACE = Map.of(
+            "org/bukkit/inventory/InventoryView", "org/bukkit/craftbukkit/inventory/CraftAbstractInventoryView"
     );
 
     private static Map<String, RerouteMethodData> createReroutes(Class<?> clazz) {
@@ -159,6 +159,10 @@ public class Commodore {
             public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
                 className = name;
                 isInterface = (access & Opcodes.ACC_INTERFACE) != 0;
+                String craftbukkitClass = CLASS_TO_INTERFACE.get(superName);
+                if (craftbukkitClass != null) {
+                    superName = craftbukkitClass;
+                }
                 super.visit(version, access, name, signature, superName, interfaces);
             }
 
@@ -292,15 +296,21 @@ public class Commodore {
                             return;
                         }
 
-                        if (CLASS_TO_INTERFACE.contains(owner)) {
-                            if (opcode == Opcodes.INVOKEVIRTUAL) {
-                                opcode = Opcodes.INVOKEINTERFACE;
-                            }
+                        String craftbukkitClass = CLASS_TO_INTERFACE.get(owner);
+                        if (craftbukkitClass != null) {
+                            if (opcode == Opcodes.INVOKESPECIAL || opcode == Opcodes.H_INVOKESPECIAL) {
+                                owner = craftbukkitClass;
+                            } else {
+                                if (opcode == Opcodes.INVOKEVIRTUAL) {
+                                    opcode = Opcodes.INVOKEINTERFACE;
+                                }
 
-                            if (opcode == Opcodes.H_INVOKEVIRTUAL) {
-                                opcode = Opcodes.H_INVOKEINTERFACE;
+                                if (opcode == Opcodes.H_INVOKEVIRTUAL) {
+                                    opcode = Opcodes.H_INVOKEINTERFACE;
+                                }
+
+                                itf = true;
                             }
-                            itf = true;
                         }
 
                         // SPIGOT-4496
