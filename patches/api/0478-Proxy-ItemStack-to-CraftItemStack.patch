@@ -16,7 +16,7 @@ index 7332034bb1753f48f7904dafab1ef4b3ee117ea3..11bccf6c27b8b2a2ed558a1375a3b3ad
 +    ItemStack createEmptyStack(); // Paper - proxy ItemStack
  }
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index 7f5633e7689b82b937d5b985c3e6ae15dc94a20f..da91938ff941bb5903dcbd430c68c5980c01b57b 100644
+index 7f5633e7689b82b937d5b985c3e6ae15dc94a20f..2b414b01f80f9c683381c92deb1fca2ec15be2c7 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
 @@ -28,10 +28,38 @@ import org.jetbrains.annotations.Nullable;
@@ -83,17 +83,19 @@ index 7f5633e7689b82b937d5b985c3e6ae15dc94a20f..da91938ff941bb5903dcbd430c68c598
      public ItemStack(@NotNull final Material type, final int amount) {
          this(type, amount, (short) 0);
      }
-@@ -93,8 +127,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -93,8 +127,9 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
                  type = Bukkit.getUnsafe().fromLegacy(new MaterialData(type, data == null ? (byte) damage : data), true);
              }
          }
 -        this.type = type;
 -        this.amount = amount;
-+        this.craftDelegate = ItemStack.of(type, amount); // Paper - create delegate
++        // Paper start - create delegate
++        this.craftDelegate = type == Material.AIR ? ItemStack.empty() : ItemStack.of(type, amount);
++        // Paper end - create delegate
          if (damage != 0) {
              setDurability(damage);
          }
-@@ -109,17 +142,16 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -109,17 +144,16 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       * @param stack the stack to copy
       * @throws IllegalArgumentException if the specified stack is null or
       *     returns an item meta not created by the item factory
@@ -116,7 +118,7 @@ index 7f5633e7689b82b937d5b985c3e6ae15dc94a20f..da91938ff941bb5903dcbd430c68c598
      }
  
      /**
-@@ -127,10 +159,9 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -127,10 +161,9 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       *
       * @return Type of the items in this stack
       */
@@ -128,7 +130,7 @@ index 7f5633e7689b82b937d5b985c3e6ae15dc94a20f..da91938ff941bb5903dcbd430c68c598
      }
  
      /**
-@@ -153,19 +184,10 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -153,19 +186,10 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       * Using this method in ItemStacks passed in events will result in undefined behavior.
       * @see ItemStack#withType(Material)
       */
@@ -149,7 +151,7 @@ index 7f5633e7689b82b937d5b985c3e6ae15dc94a20f..da91938ff941bb5903dcbd430c68c598
      }
      // Paper start
      /**
-@@ -177,12 +199,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -177,12 +201,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      @NotNull
      @org.jetbrains.annotations.Contract(value = "_ -> new", pure = true)
      public ItemStack withType(@NotNull Material type) {
@@ -163,7 +165,7 @@ index 7f5633e7689b82b937d5b985c3e6ae15dc94a20f..da91938ff941bb5903dcbd430c68c598
      }
      // Paper end
  
-@@ -192,7 +209,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -192,7 +211,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       * @return Amount of items in this stack
       */
      public int getAmount() {
@@ -172,7 +174,7 @@ index 7f5633e7689b82b937d5b985c3e6ae15dc94a20f..da91938ff941bb5903dcbd430c68c598
      }
  
      /**
-@@ -201,7 +218,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -201,7 +220,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       * @param amount New amount of items in this stack
       */
      public void setAmount(int amount) {
@@ -181,7 +183,7 @@ index 7f5633e7689b82b937d5b985c3e6ae15dc94a20f..da91938ff941bb5903dcbd430c68c598
      }
  
      /**
-@@ -254,11 +271,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -254,11 +273,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       */
      @Deprecated
      public void setDurability(final short durability) {
@@ -194,7 +196,7 @@ index 7f5633e7689b82b937d5b985c3e6ae15dc94a20f..da91938ff941bb5903dcbd430c68c598
      }
  
      /**
-@@ -269,8 +282,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -269,8 +284,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       */
      @Deprecated
      public short getDurability() {
@@ -204,7 +206,7 @@ index 7f5633e7689b82b937d5b985c3e6ae15dc94a20f..da91938ff941bb5903dcbd430c68c598
      }
  
      /**
-@@ -282,17 +294,12 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -282,17 +296,12 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       *
       * @return The maximum you can stack this item to.
       */
@@ -224,7 +226,7 @@ index 7f5633e7689b82b937d5b985c3e6ae15dc94a20f..da91938ff941bb5903dcbd430c68c598
      }
  
      @Override
-@@ -306,17 +313,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -306,17 +315,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      }
  
      @Override
@@ -243,7 +245,7 @@ index 7f5633e7689b82b937d5b985c3e6ae15dc94a20f..da91938ff941bb5903dcbd430c68c598
      }
  
      /**
-@@ -326,49 +324,19 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -326,49 +326,19 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       * @param stack the item stack to compare to
       * @return true if the two stacks are equal, ignoring the amount
       */
@@ -296,7 +298,7 @@ index 7f5633e7689b82b937d5b985c3e6ae15dc94a20f..da91938ff941bb5903dcbd430c68c598
      }
  
      /**
-@@ -378,7 +346,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -378,7 +348,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       * @return True if this has the given enchantment
       */
      public boolean containsEnchantment(@NotNull Enchantment ench) {
@@ -305,7 +307,7 @@ index 7f5633e7689b82b937d5b985c3e6ae15dc94a20f..da91938ff941bb5903dcbd430c68c598
      }
  
      /**
-@@ -388,7 +356,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -388,7 +358,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       * @return Level of the enchantment, or 0
       */
      public int getEnchantmentLevel(@NotNull Enchantment ench) {
@@ -314,7 +316,7 @@ index 7f5633e7689b82b937d5b985c3e6ae15dc94a20f..da91938ff941bb5903dcbd430c68c598
      }
  
      /**
-@@ -398,7 +366,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -398,7 +368,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       */
      @NotNull
      public Map<Enchantment, Integer> getEnchantments() {
@@ -323,7 +325,7 @@ index 7f5633e7689b82b937d5b985c3e6ae15dc94a20f..da91938ff941bb5903dcbd430c68c598
      }
  
      /**
-@@ -474,10 +442,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -474,10 +444,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       * @param level Level of the enchantment
       */
      public void addUnsafeEnchantment(@NotNull Enchantment ench, int level) {
@@ -335,7 +337,7 @@ index 7f5633e7689b82b937d5b985c3e6ae15dc94a20f..da91938ff941bb5903dcbd430c68c598
      }
  
      /**
-@@ -488,23 +453,14 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -488,23 +455,14 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       * @return Previous level, or 0
       */
      public int removeEnchantment(@NotNull Enchantment ench) {
@@ -361,7 +363,7 @@ index 7f5633e7689b82b937d5b985c3e6ae15dc94a20f..da91938ff941bb5903dcbd430c68c598
      }
  
      @Override
-@@ -660,7 +616,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -660,7 +618,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       */
      @UndefinedNullability // Paper
      public ItemMeta getItemMeta() {
@@ -370,7 +372,7 @@ index 7f5633e7689b82b937d5b985c3e6ae15dc94a20f..da91938ff941bb5903dcbd430c68c598
      }
  
      /**
-@@ -669,7 +625,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -669,7 +627,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       * @return Returns true if some meta data has been set for this item
       */
      public boolean hasItemMeta() {
@@ -379,7 +381,7 @@ index 7f5633e7689b82b937d5b985c3e6ae15dc94a20f..da91938ff941bb5903dcbd430c68c598
      }
  
      /**
-@@ -682,28 +638,10 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -682,28 +640,10 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       *     the {@link ItemFactory}
       */
      public boolean setItemMeta(@Nullable ItemMeta itemMeta) {
@@ -410,7 +412,7 @@ index 7f5633e7689b82b937d5b985c3e6ae15dc94a20f..da91938ff941bb5903dcbd430c68c598
  
      @Override
      @NotNull
-@@ -807,11 +745,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -807,11 +747,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      }
  
      public int getMaxItemUseDuration(@NotNull final org.bukkit.entity.LivingEntity entity) {
@@ -423,7 +425,7 @@ index 7f5633e7689b82b937d5b985c3e6ae15dc94a20f..da91938ff941bb5903dcbd430c68c598
      }
  
      /**
-@@ -1061,7 +995,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -1061,7 +997,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       */
      @NotNull
      public static ItemStack empty() {
@@ -433,7 +435,7 @@ index 7f5633e7689b82b937d5b985c3e6ae15dc94a20f..da91938ff941bb5903dcbd430c68c598
      }
  
      /**
-@@ -1069,7 +1004,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -1069,7 +1006,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
       * it is either air or the stack has a size of 0.
       */
      public boolean isEmpty() {
