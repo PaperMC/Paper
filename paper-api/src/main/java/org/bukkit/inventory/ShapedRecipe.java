@@ -54,11 +54,11 @@ public class ShapedRecipe extends CraftingRecipe {
 
     /**
      * Set the shape of this recipe to the specified rows. Each character
-     * represents a different ingredient; exactly what each character
-     * represents is set separately. The first row supplied corresponds with
-     * the upper most part of the recipe on the workbench e.g. if all three
-     * rows are supplies the first string represents the top row on the
-     * workbench.
+     * represents a different ingredient; excluding space characters, which
+     * must be empty, exactly what each character represents is set separately.
+     * The first row supplied corresponds with the upper most part of the recipe
+     * on the workbench e.g. if all three rows are supplies the first string
+     * represents the top row on the workbench.
      *
      * @param shape The rows of the recipe (up to 3 rows).
      * @return The changed recipe, so you can chain calls.
@@ -84,7 +84,12 @@ public class ShapedRecipe extends CraftingRecipe {
         // Remove character mappings for characters that no longer exist in the shape
         HashMap<Character, RecipeChoice> newIngredients = new HashMap<>();
         for (String row : shape) {
-            for (Character c : row.toCharArray()) {
+            for (char c : row.toCharArray()) {
+                // SPIGOT-7770: Space in recipe shape must represent no ingredient
+                if (c == ' ') {
+                    continue;
+                }
+
                 newIngredients.put(c, ingredients.get(c));
             }
         }
@@ -102,6 +107,7 @@ public class ShapedRecipe extends CraftingRecipe {
      * @param key The character that represents the ingredient in the shape.
      * @param ingredient The ingredient.
      * @return The changed recipe, so you can chain calls.
+     * @throws IllegalArgumentException if the {@code key} is a space character
      * @throws IllegalArgumentException if the {@code key} does not appear in the shape.
      */
     @NotNull
@@ -118,6 +124,7 @@ public class ShapedRecipe extends CraftingRecipe {
      * @param key The character that represents the ingredient in the shape.
      * @param ingredient The ingredient.
      * @return The changed recipe, so you can chain calls.
+     * @throws IllegalArgumentException if the {@code key} is a space character
      * @throws IllegalArgumentException if the {@code key} does not appear in the shape.
      */
     @NotNull
@@ -135,12 +142,14 @@ public class ShapedRecipe extends CraftingRecipe {
      * @param ingredient The ingredient.
      * @param raw The raw material data as an integer.
      * @return The changed recipe, so you can chain calls.
+     * @throws IllegalArgumentException if the {@code key} is a space character
      * @throws IllegalArgumentException if the {@code key} does not appear in the shape.
      * @deprecated Magic value
      */
     @Deprecated
     @NotNull
     public ShapedRecipe setIngredient(char key, @NotNull Material ingredient, int raw) {
+        Preconditions.checkArgument(key != ' ', "Space in recipe shape must represent no ingredient");
         Preconditions.checkArgument(ingredients.containsKey(key), "Symbol does not appear in the shape:", key);
 
         // -1 is the old wildcard, map to Short.MAX_VALUE as the new one
@@ -161,10 +170,12 @@ public class ShapedRecipe extends CraftingRecipe {
      * @param key The character that represents the ingredient in the shape.
      * @param ingredient The ingredient.
      * @return The changed recipe, so you can chain calls.
+     * @throws IllegalArgumentException if the {@code key} is a space character
      * @throws IllegalArgumentException if the {@code key} does not appear in the shape.
      */
     @NotNull
     public ShapedRecipe setIngredient(char key, @NotNull RecipeChoice ingredient) {
+        Preconditions.checkArgument(key != ' ', "Space in recipe shape must represent no ingredient");
         Preconditions.checkArgument(ingredients.containsKey(key), "Symbol does not appear in the shape:", key);
 
         ingredients.put(key, ingredient);
