@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+Date: Tue, 18 Jun 2024 22:30:12 +0200
+Subject: [PATCH] Call PlayerShearEntityEvent for bogged
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Bogged.java b/src/main/java/net/minecraft/world/entity/monster/Bogged.java
+index 6e290d67b00c88ecd2cf2ce5f612f52ebda9e280..1991f7c2c9b74ec16af3eed93b0bd5b6f9b8be91 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Bogged.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Bogged.java
+@@ -75,7 +75,20 @@ public class Bogged extends AbstractSkeleton implements Shearable {
+     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
+         ItemStack itemStack = player.getItemInHand(hand);
+         if (itemStack.is(Items.SHEARS) && this.readyForShearing()) {
+-            this.shear(SoundSource.PLAYERS);
++            // Paper start - call PlayerShearEntityEvent
++            java.util.List<ItemStack> drops = this.generateDefaultDrops();
++            org.bukkit.event.player.PlayerShearEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemStack, hand, drops);
++            if (event != null) {
++                if (event.isCancelled()) {
++                    if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
++                        this.resendPossiblyDesyncedDataValues(java.util.Collections.singletonList(DATA_SHEARED), serverPlayer); // prevent visual desync
++                    }
++                    return InteractionResult.PASS;
++                }
++                drops = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops());
++            }
++            this.shear(SoundSource.PLAYERS, drops);
++            // Paper end - call PlayerShearEntityEvent
+             this.gameEvent(GameEvent.SHEAR, player);
+             if (!this.level().isClientSide) {
+                 itemStack.hurtAndBreak(1, player, getSlotForHand(hand));
+@@ -129,14 +142,21 @@ public class Bogged extends AbstractSkeleton implements Shearable {
+ 
+     @Override
+     public void shear(SoundSource shearedSoundCategory) {
++        // Paper start - call PlayerShearEntityEvent
++        shear(shearedSoundCategory, this.generateDefaultDrops());
++    }
++
++    @Override
++    public void shear(SoundSource shearedSoundCategory, java.util.List<ItemStack> drops) {
++        // Paper end - call PlayerShearEntityEvent
+         this.level().playSound(null, this, SoundEvents.BOGGED_SHEAR, shearedSoundCategory, 1.0F, 1.0F);
+-        this.spawnShearedMushrooms();
++        this.spawnShearedMushrooms(drops); // Paper - call PlayerShearEntityEvent
+         this.setSheared(true);
+     }
+ 
+-    private void spawnShearedMushrooms() {
++    private void spawnShearedMushrooms(java.util.List<ItemStack> drops) { // Paper - call PlayerShearEntityEvent
+         // Paper start - shear drops API
+-        this.generateShearedMushrooms(stack -> {
++        drops.forEach(stack -> {
+             this.forceDrops = true;
+             this.spawnAtLocation(stack, this.getBbHeight());
+             this.forceDrops = false;
