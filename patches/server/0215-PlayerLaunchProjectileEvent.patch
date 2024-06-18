@@ -317,3 +317,47 @@ index 2d34f206b4b02d5f2ee35101233afc6b4f58a579..f1b2d388a1a40a1d909a2e726f32d6c1
                                      entityhuman.getInventory().removeItem(stack);
                                  }
                                  // CraftBukkit start - SPIGOT-5458 also need in this branch :(
+diff --git a/src/main/java/net/minecraft/world/item/WindChargeItem.java b/src/main/java/net/minecraft/world/item/WindChargeItem.java
+index 6222e867bb959fab05bcd8f2114ab00b26847c3e..eed0d754e9a3c7c94614e0fd54651500e0612ea8 100644
+--- a/src/main/java/net/minecraft/world/item/WindChargeItem.java
++++ b/src/main/java/net/minecraft/world/item/WindChargeItem.java
+@@ -24,10 +24,26 @@ public class WindChargeItem extends Item implements ProjectileItem {
+ 
+     @Override
+     public InteractionResultHolder<ItemStack> use(Level world, Player user, InteractionHand hand) {
++        ItemStack itemStack = user.getItemInHand(hand); // Paper - PlayerLaunchProjectileEvent; moved from below
++        boolean shouldConsume = true; // Paper - PlayerLaunchProjectileEvent
+         if (!world.isClientSide()) {
+             WindCharge windCharge = new WindCharge(user, world, user.position().x(), user.getEyePosition().y(), user.position().z());
+             windCharge.shootFromRotation(user, user.getXRot(), user.getYRot(), 0.0F, 1.5F, 1.0F);
+-            world.addFreshEntity(windCharge);
++            // Paper start - PlayerLaunchProjectileEvent
++            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) user.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack), (org.bukkit.entity.Projectile) windCharge.getBukkitEntity());
++            if (!event.callEvent() || !world.addFreshEntity(windCharge)) {
++                user.containerMenu.sendAllDataToRemote();
++                if (user instanceof net.minecraft.server.level.ServerPlayer player) {
++                    player.connection.send(new net.minecraft.network.protocol.game.ClientboundCooldownPacket(this, 0)); // prevent visual desync of cooldown on the slot
++                }
++                return InteractionResultHolder.fail(itemStack);
++            }
++
++            shouldConsume = event.shouldConsume();
++            if (!shouldConsume && !user.hasInfiniteMaterials()) {
++                user.containerMenu.sendAllDataToRemote();
++            }
++            // Paper end - PlayerLaunchProjectileEvent
+         }
+ 
+         world.playSound(
+@@ -40,10 +56,9 @@ public class WindChargeItem extends Item implements ProjectileItem {
+             0.5F,
+             0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F)
+         );
+-        ItemStack itemStack = user.getItemInHand(hand);
+         user.getCooldowns().addCooldown(this, 10);
+         user.awardStat(Stats.ITEM_USED.get(this));
+-        itemStack.consume(1, user);
++        if (shouldConsume) itemStack.consume(1, user); // Paper - PlayerLaunchProjectileEvent
+         return InteractionResultHolder.sidedSuccess(itemStack, world.isClientSide());
+     }
+ 
