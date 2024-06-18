@@ -398,11 +398,28 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean isChunkGenerated(int x, int z) {
-        try {
-            return this.isChunkLoaded(x, z) || this.world.getChunkSource().chunkMap.read(new ChunkPos(x, z)).get().isPresent();
-        } catch (InterruptedException | ExecutionException ex) {
-            throw new RuntimeException(ex);
+        // Paper start - Fix this method
+        if (!Bukkit.isPrimaryThread()) {
+            return java.util.concurrent.CompletableFuture.supplyAsync(() -> {
+                return CraftWorld.this.isChunkGenerated(x, z);
+            }, world.getChunkSource().mainThreadProcessor).join();
         }
+        ChunkAccess chunk = world.getChunkSource().getChunkAtImmediately(x, z);
+        if (chunk != null) {
+            return chunk instanceof ImposterProtoChunk || chunk instanceof net.minecraft.world.level.chunk.LevelChunk;
+        }
+        final java.util.concurrent.CompletableFuture<ChunkAccess> future = new java.util.concurrent.CompletableFuture<>();
+        ca.spottedleaf.moonrise.common.util.ChunkSystem.scheduleChunkLoad(
+            this.world, x, z, false, ChunkStatus.EMPTY, true, ca.spottedleaf.concurrentutil.util.Priority.NORMAL, future::complete
+        );
+        world.getChunkSource().mainThreadProcessor.managedBlock(future::isDone);
+        return future.thenApply(c -> {
+            if (c != null) {
+                return c.getPersistedStatus() == ChunkStatus.FULL;
+            }
+            return false;
+        }).join();
+        // Paper end - Fix this method
     }
 
     @Override
