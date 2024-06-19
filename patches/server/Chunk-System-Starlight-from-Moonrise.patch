@@ -2961,6 +2961,46 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private FlatBitsetUtil() {}
 +}
+diff --git a/src/main/java/ca/spottedleaf/moonrise/common/util/JsonUtil.java b/src/main/java/ca/spottedleaf/moonrise/common/util/JsonUtil.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/moonrise/common/util/JsonUtil.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.moonrise.common.util;
++
++import com.google.gson.JsonElement;
++import com.google.gson.internal.Streams;
++import com.google.gson.stream.JsonWriter;
++import java.io.File;
++import java.io.FileOutputStream;
++import java.io.IOException;
++import java.io.PrintStream;
++import java.io.StringWriter;
++import java.nio.charset.StandardCharsets;
++
++public final class JsonUtil {
++
++    public static void writeJson(final JsonElement element, final File file) throws IOException {
++        final StringWriter stringWriter = new StringWriter();
++        final JsonWriter jsonWriter = new JsonWriter(stringWriter);
++        jsonWriter.setIndent(" ");
++        jsonWriter.setLenient(false);
++        Streams.write(element, jsonWriter);
++
++        final String jsonString = stringWriter.toString();
++
++        final File parent = file.getParentFile();
++        if (parent != null) {
++            parent.mkdirs();
++        }
++        file.createNewFile();
++        try (final PrintStream out = new PrintStream(new FileOutputStream(file), false, StandardCharsets.UTF_8)) {
++            out.print(jsonString);
++        }
++    }
++
++}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/common/util/MixinWorkarounds.java b/src/main/java/ca/spottedleaf/moonrise/common/util/MixinWorkarounds.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -10045,10 +10085,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public JsonObject getDebugJson() {
 +        final JsonObject ret = new JsonObject();
 +
-+        ret.addProperty("lock_shift", Integer.valueOf(this.taskScheduler.getChunkSystemLockShift()));
-+        ret.addProperty("ticket_shift", Integer.valueOf(ThreadedTicketLevelPropagator.SECTION_SHIFT));
-+        ret.addProperty("region_shift", Integer.valueOf(((ChunkSystemServerLevel)this.world).moonrise$getRegionChunkShift()));
-+
 +        ret.add("unload_queue", this.unloadQueue.toDebugJson());
 +
 +        final JsonArray holders = new JsonArray();
@@ -10112,11 +10148,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import ca.spottedleaf.concurrentutil.lock.ReentrantAreaLock;
 +import ca.spottedleaf.concurrentutil.util.ConcurrentUtil;
 +import ca.spottedleaf.moonrise.common.util.CoordinateUtils;
++import ca.spottedleaf.moonrise.common.util.JsonUtil;
 +import ca.spottedleaf.moonrise.common.util.MoonriseCommon;
 +import ca.spottedleaf.moonrise.common.util.WorldUtil;
 +import ca.spottedleaf.moonrise.patches.chunk_system.io.RegionFileIOThread;
 +import ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel;
 +import ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkSystemChunkStatus;
++import ca.spottedleaf.moonrise.patches.chunk_system.player.ChunkSystemServerPlayer;
 +import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.executor.RadiusAwarePrioritisedExecutor;
 +import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.task.ChunkFullTask;
 +import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.task.ChunkLightTask;
@@ -10127,23 +10165,33 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import ca.spottedleaf.moonrise.patches.chunk_system.status.ChunkSystemChunkStep;
 +import ca.spottedleaf.moonrise.patches.chunk_system.util.ParallelSearchRadiusIteration;
 +import com.mojang.logging.LogUtils;
++import com.google.gson.JsonArray;
++import com.google.gson.JsonObject;
 +import net.minecraft.CrashReport;
 +import net.minecraft.CrashReportCategory;
 +import net.minecraft.ReportedException;
++import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.level.ChunkLevel;
 +import net.minecraft.server.level.ChunkMap;
 +import net.minecraft.server.level.FullChunkStatus;
 +import net.minecraft.server.level.GenerationChunkHolder;
 +import net.minecraft.server.level.ServerLevel;
++import net.minecraft.server.level.ServerPlayer;
 +import net.minecraft.server.level.TicketType;
 +import net.minecraft.util.StaticCache2D;
++import net.minecraft.world.entity.Entity;
 +import net.minecraft.world.level.ChunkPos;
++import net.minecraft.world.level.Level;
 +import net.minecraft.world.level.chunk.ChunkAccess;
 +import net.minecraft.world.level.chunk.LevelChunk;
 +import net.minecraft.world.level.chunk.status.ChunkPyramid;
 +import net.minecraft.world.level.chunk.status.ChunkStatus;
 +import net.minecraft.world.level.chunk.status.ChunkStep;
++import net.minecraft.world.phys.Vec3;
 +import org.slf4j.Logger;
++import java.io.File;
++import java.time.LocalDateTime;
++import java.time.format.DateTimeFormatter;
 +import java.util.ArrayDeque;
 +import java.util.ArrayList;
 +import java.util.Arrays;
@@ -10986,6 +11034,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            this.world = world;
 +        }
 +
++        public JsonObject toJson() {
++            final JsonObject ret = new JsonObject();
++
++            ret.addProperty("chunk-x", Integer.valueOf(this.chunkX));
++            ret.addProperty("chunk-z", Integer.valueOf(this.chunkZ));
++            ret.addProperty("world-name", WorldUtil.getWorldName(this.world));
++
++            return ret;
++        }
++
 +        @Override
 +        public String toString() {
 +            return "[( " + this.chunkX + "," + this.chunkZ + ") in '" + WorldUtil.getWorldName(this.world) + "']";
@@ -11010,33 +11068,114 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +
-+    // Paper start
-+    public static void dumpAllChunkLoadInfo(final boolean longPrint) {
++    private static JsonObject debugPlayer(final ServerPlayer player) {
++        final Level world = player.level();
++
++        final JsonObject ret = new JsonObject();
++
++        ret.addProperty("name", player.getScoreboardName());
++        ret.addProperty("uuid", player.getUUID().toString());
++        ret.addProperty("real", ((ChunkSystemServerPlayer)player).moonrise$isRealPlayer());
++
++        ret.addProperty("world-name", WorldUtil.getWorldName(world));
++
++        final Vec3 pos = player.position();
++
++        ret.addProperty("x", pos.x);
++        ret.addProperty("y", pos.y);
++        ret.addProperty("z", pos.z);
++
++        final Entity.RemovalReason removalReason = player.getRemovalReason();
++
++        ret.addProperty("removal-reason", removalReason == null ? "null" : removalReason.name());
++
++        ret.add("view-distances", ((ChunkSystemServerPlayer)player).moonrise$getViewDistanceHolder().toJson());
++
++        return ret;
++    }
++
++    public JsonObject getDebugJson() {
++        final JsonObject ret = new JsonObject();
++
++        ret.addProperty("lock_shift", Integer.valueOf(this.getChunkSystemLockShift()));
++        ret.addProperty("ticket_shift", Integer.valueOf(ThreadedTicketLevelPropagator.SECTION_SHIFT));
++        ret.addProperty("region_shift", Integer.valueOf(((ChunkSystemServerLevel)this.world).moonrise$getRegionChunkShift()));
++
++        ret.addProperty("name", WorldUtil.getWorldName(this.world));
++        ret.addProperty("view-distance", ((ChunkSystemServerLevel)this.world).moonrise$getPlayerChunkLoader().getAPIViewDistance());
++        ret.addProperty("tick-distance", ((ChunkSystemServerLevel)this.world).moonrise$getPlayerChunkLoader().getAPITickDistance());
++        ret.addProperty("send-distance", ((ChunkSystemServerLevel)this.world).moonrise$getPlayerChunkLoader().getAPISendViewDistance());
++
++        final JsonArray players = new JsonArray();
++        ret.add("players", players);
++
++        for (final ServerPlayer player : this.world.players()) {
++            players.add(debugPlayer(player));
++        }
++
++        ret.add("chunk-holder-manager", this.chunkHolderManager.getDebugJson());
++
++        return ret;
++    }
++
++    public static JsonObject debugAllWorlds(final MinecraftServer server) {
++        final JsonObject ret = new JsonObject();
++
++        ret.addProperty("data-version", 2);
++
++        final JsonArray allPlayers = new JsonArray();
++        ret.add("all-players", allPlayers);
++
++        for (final ServerPlayer player : server.getPlayerList().getPlayers()) {
++            allPlayers.add(debugPlayer(player));
++        }
++
++        final JsonArray chunkWaitInfos = new JsonArray();
++        ret.add("chunk-wait-infos", chunkWaitInfos);
++
++        for (final ChunkTaskScheduler.ChunkInfo info : getChunkInfos()) {
++            chunkWaitInfos.add(info.toJson());
++        }
++
++        final JsonArray worlds = new JsonArray();
++        ret.add("worlds", worlds);
++
++        for (final ServerLevel world : server.getAllLevels()) {
++            worlds.add(((ChunkSystemServerLevel)world).moonrise$getChunkTaskScheduler().getDebugJson());
++        }
++
++        return ret;
++    }
++
++    public static File getChunkDebugFile() {
++        return new File(
++                new File(new File("."), "debug"),
++                "chunks-" + DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss").format(LocalDateTime.now()) + ".txt"
++        );
++    }
++
++    public static void dumpAllChunkLoadInfo(final MinecraftServer server, final boolean writeDebugInfo) {
 +        final ChunkInfo[] chunkInfos = getChunkInfos();
 +        if (chunkInfos.length > 0) {
 +            LOGGER.error("Chunk wait task info below: ");
 +            for (final ChunkInfo chunkInfo : chunkInfos) {
-+                final NewChunkHolder holder = chunkInfo.world.moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(chunkInfo.chunkX, chunkInfo.chunkZ);
++                final NewChunkHolder holder = ((ChunkSystemServerLevel)chunkInfo.world).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(chunkInfo.chunkX, chunkInfo.chunkZ);
 +                LOGGER.error("Chunk wait: " + chunkInfo);
 +                LOGGER.error("Chunk holder: " + holder);
 +            }
 +
-+            // TODO
-+            /*
-+            if (longPrint) {
-+                final File file = new File(new File(new File("."), "debug"), "chunks-watchdog.txt");
++            if (writeDebugInfo) {
++                final File file = getChunkDebugFile();
 +                LOGGER.error("Writing chunk information dump to " + file);
 +                try {
-+                    MCUtil.dumpChunks(file, true);
++                    JsonUtil.writeJson(ChunkTaskScheduler.debugAllWorlds(server), file);
 +                    LOGGER.error("Successfully written chunk information!");
 +                } catch (final Throwable thr) {
-+                    LOGGER.warn("Failed to dump chunk information to file " + file.toString(), thr);
++                    LOGGER.error("Failed to dump chunk information to file " + file.toString(), thr);
 +                }
 +            }
-+             */
 +        }
 +    }
-+    // Paper end
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
 new file mode 100644
@@ -22218,9 +22357,293 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          commands.put(Set.of("mobcaps", "playermobcaps"), new MobcapsCommand());
          commands.put(Set.of("dumplisteners"), new DumpListenersCommand());
 +        commands.put(Set.of("fixlight"), new FixLightCommand()); // Paper - rewrite chunk system
++        commands.put(Set.of("debug", "chunkinfo", "holderinfo"), new ChunkDebugCommand());  // Paper - rewrite chunk system
  
          return commands.entrySet().stream()
              .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
+diff --git a/src/main/java/io/papermc/paper/command/subcommands/ChunkDebugCommand.java b/src/main/java/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.command.subcommands;
++
++import ca.spottedleaf.moonrise.common.util.JsonUtil;
++import ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel;
++import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler;
++import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder;
++import io.papermc.paper.command.CommandUtil;
++import io.papermc.paper.command.PaperSubcommand;
++import java.io.File;
++import java.util.ArrayList;
++import java.util.Collections;
++import java.util.List;
++import java.util.Locale;
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.world.level.chunk.ChunkAccess;
++import net.minecraft.world.level.chunk.ImposterProtoChunk;
++import net.minecraft.world.level.chunk.LevelChunk;
++import net.minecraft.world.level.chunk.ProtoChunk;
++import org.bukkit.Bukkit;
++import org.bukkit.command.CommandSender;
++import org.bukkit.craftbukkit.CraftWorld;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++import static net.kyori.adventure.text.Component.text;
++import static net.kyori.adventure.text.format.NamedTextColor.BLUE;
++import static net.kyori.adventure.text.format.NamedTextColor.DARK_AQUA;
++import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
++import static net.kyori.adventure.text.format.NamedTextColor.RED;
++
++@DefaultQualifier(NonNull.class)
++public final class ChunkDebugCommand implements PaperSubcommand {
++    @Override
++    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
++        switch (subCommand) {
++            case "debug" -> this.doDebug(sender, args);
++            case "chunkinfo" -> this.doChunkInfo(sender, args);
++            case "holderinfo" -> this.doHolderInfo(sender, args);
++        }
++        return true;
++    }
++
++    @Override
++    public List<String> tabComplete(final CommandSender sender, final String subCommand, final String[] args) {
++        switch (subCommand) {
++            case "debug" -> {
++                if (args.length == 1) {
++                    return CommandUtil.getListMatchingLast(sender, args, "help", "chunks");
++                }
++            }
++            case "holderinfo" -> {
++                List<String> worldNames = new ArrayList<>();
++                worldNames.add("*");
++                for (org.bukkit.World world : Bukkit.getWorlds()) {
++                    worldNames.add(world.getName());
++                }
++                if (args.length == 1) {
++                    return CommandUtil.getListMatchingLast(sender, args, worldNames);
++                }
++            }
++            case "chunkinfo" -> {
++                List<String> worldNames = new ArrayList<>();
++                worldNames.add("*");
++                for (org.bukkit.World world : Bukkit.getWorlds()) {
++                    worldNames.add(world.getName());
++                }
++                if (args.length == 1) {
++                    return CommandUtil.getListMatchingLast(sender, args, worldNames);
++                }
++            }
++        }
++        return Collections.emptyList();
++    }
++
++    private void doChunkInfo(final CommandSender sender, final String[] args) {
++        List<org.bukkit.World> worlds;
++        if (args.length < 1 || args[0].equals("*")) {
++            worlds = Bukkit.getWorlds();
++        } else {
++            worlds = new ArrayList<>(args.length);
++            for (final String arg : args) {
++                org.bukkit.@Nullable World world = Bukkit.getWorld(arg);
++                if (world == null) {
++                    sender.sendMessage(text("World '" + arg + "' is invalid", RED));
++                    return;
++                }
++                worlds.add(world);
++            }
++        }
++
++        int accumulatedTotal = 0;
++        int accumulatedInactive = 0;
++        int accumulatedBorder = 0;
++        int accumulatedTicking = 0;
++        int accumulatedEntityTicking = 0;
++
++        for (final org.bukkit.World bukkitWorld : worlds) {
++            final ServerLevel world = ((CraftWorld) bukkitWorld).getHandle();
++
++            int total = 0;
++            int inactive = 0;
++            int full = 0;
++            int blockTicking = 0;
++            int entityTicking = 0;
++
++            for (final NewChunkHolder holder : ((ChunkSystemServerLevel)world).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolders()) {
++                final NewChunkHolder.ChunkCompletion completion = holder.getLastChunkCompletion();
++                final ChunkAccess chunk = completion == null ? null : completion.chunk();
++
++                if (!(chunk instanceof LevelChunk fullChunk)) {
++                    continue;
++                }
++
++                ++total;
++
++                switch (holder.getChunkStatus()) {
++                    case INACCESSIBLE: {
++                        ++inactive;
++                        break;
++                    }
++                    case FULL: {
++                        ++full;
++                        break;
++                    }
++                    case BLOCK_TICKING: {
++                        ++blockTicking;
++                        break;
++                    }
++                    case ENTITY_TICKING: {
++                        ++entityTicking;
++                        break;
++                    }
++                }
++            }
++
++            accumulatedTotal += total;
++            accumulatedInactive += inactive;
++            accumulatedBorder += full;
++            accumulatedTicking += blockTicking;
++            accumulatedEntityTicking += entityTicking;
++
++            sender.sendMessage(text().append(text("Chunks in ", BLUE), text(bukkitWorld.getName(), GREEN), text(":")));
++            sender.sendMessage(text().color(DARK_AQUA).append(
++                text("Total: ", BLUE), text(total),
++                text(" Inactive: ", BLUE), text(inactive),
++                text(" Full: ", BLUE), text(full),
++                text(" Block Ticking: ", BLUE), text(blockTicking),
++                text(" Entity Ticking: ", BLUE), text(entityTicking)
++            ));
++        }
++        if (worlds.size() > 1) {
++            sender.sendMessage(text().append(text("Chunks in ", BLUE), text("all listed worlds", GREEN), text(":", DARK_AQUA)));
++            sender.sendMessage(text().color(DARK_AQUA).append(
++                text("Total: ", BLUE), text(accumulatedTotal),
++                text(" Inactive: ", BLUE), text(accumulatedInactive),
++                text(" Full: ", BLUE), text(accumulatedBorder),
++                text(" Block Ticking: ", BLUE), text(accumulatedTicking),
++                text(" Entity Ticking: ", BLUE), text(accumulatedEntityTicking)
++            ));
++        }
++    }
++
++    private void doHolderInfo(final CommandSender sender, final String[] args) {
++        List<org.bukkit.World> worlds;
++        if (args.length < 1 || args[0].equals("*")) {
++            worlds = Bukkit.getWorlds();
++        } else {
++            worlds = new ArrayList<>(args.length);
++            for (final String arg : args) {
++                org.bukkit.@Nullable World world = Bukkit.getWorld(arg);
++                if (world == null) {
++                    sender.sendMessage(text("World '" + arg + "' is invalid", RED));
++                    return;
++                }
++                worlds.add(world);
++            }
++        }
++
++        int accumulatedTotal = 0;
++        int accumulatedCanUnload = 0;
++        int accumulatedNull = 0;
++        int accumulatedReadOnly = 0;
++        int accumulatedProtoChunk = 0;
++        int accumulatedFullChunk = 0;
++
++        for (final org.bukkit.World bukkitWorld : worlds) {
++            final ServerLevel world = ((CraftWorld) bukkitWorld).getHandle();
++
++            int total = 0;
++            int canUnload = 0;
++            int nullChunks = 0;
++            int readOnly = 0;
++            int protoChunk = 0;
++            int fullChunk = 0;
++
++            for (final NewChunkHolder holder : ((ChunkSystemServerLevel)world).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolders()) {
++                final NewChunkHolder.ChunkCompletion completion = holder.getLastChunkCompletion();
++                final ChunkAccess chunk = completion == null ? null : completion.chunk();
++
++                ++total;
++
++                if (chunk == null) {
++                    ++nullChunks;
++                } else if (chunk instanceof ImposterProtoChunk) {
++                    ++readOnly;
++                } else if (chunk instanceof ProtoChunk) {
++                    ++protoChunk;
++                } else if (chunk instanceof LevelChunk) {
++                    ++fullChunk;
++                }
++
++                if (holder.isSafeToUnload() == null) {
++                    ++canUnload;
++                }
++            }
++
++            accumulatedTotal += total;
++            accumulatedCanUnload += canUnload;
++            accumulatedNull += nullChunks;
++            accumulatedReadOnly += readOnly;
++            accumulatedProtoChunk += protoChunk;
++            accumulatedFullChunk += fullChunk;
++
++            sender.sendMessage(text().append(text("Chunks in ", BLUE), text(bukkitWorld.getName(), GREEN), text(":")));
++            sender.sendMessage(text().color(DARK_AQUA).append(
++                text("Total: ", BLUE), text(total),
++                text(" Unloadable: ", BLUE), text(canUnload),
++                text(" Null: ", BLUE), text(nullChunks),
++                text(" ReadOnly: ", BLUE), text(readOnly),
++                text(" Proto: ", BLUE), text(protoChunk),
++                text(" Full: ", BLUE), text(fullChunk)
++            ));
++        }
++        if (worlds.size() > 1) {
++            sender.sendMessage(text().append(text("Chunks in ", BLUE), text("all listed worlds", GREEN), text(":", DARK_AQUA)));
++            sender.sendMessage(text().color(DARK_AQUA).append(
++                text("Total: ", BLUE), text(accumulatedTotal),
++                text(" Unloadable: ", BLUE), text(accumulatedCanUnload),
++                text(" Null: ", BLUE), text(accumulatedNull),
++                text(" ReadOnly: ", BLUE), text(accumulatedReadOnly),
++                text(" Proto: ", BLUE), text(accumulatedProtoChunk),
++                text(" Full: ", BLUE), text(accumulatedFullChunk)
++            ));
++        }
++    }
++
++    private void doDebug(final CommandSender sender, final String[] args) {
++        if (args.length < 1) {
++            sender.sendMessage(text("Use /paper debug [chunks] help for more information on a specific command", RED));
++            return;
++        }
++
++        final String debugType = args[0].toLowerCase(Locale.ROOT);
++        switch (debugType) {
++            case "chunks" -> {
++                if (args.length >= 2 && args[1].toLowerCase(Locale.ROOT).equals("help")) {
++                    sender.sendMessage(text("Use /paper debug chunks to dump loaded chunk information to a file", RED));
++                    break;
++                }
++                final File file = ChunkTaskScheduler.getChunkDebugFile();
++                sender.sendMessage(text("Writing chunk information dump to " + file, GREEN));
++                try {
++                    JsonUtil.writeJson(ChunkTaskScheduler.debugAllWorlds(MinecraftServer.getServer()), file);
++                    sender.sendMessage(text("Successfully written chunk information!", GREEN));
++                } catch (Throwable thr) {
++                    MinecraftServer.LOGGER.warn("Failed to dump chunk information to file " + file.toString(), thr);
++                    sender.sendMessage(text("Failed to dump chunk information, see console", RED));
++                }
++            }
++            // "help" & default
++            default -> sender.sendMessage(text("Use /paper debug [chunks] help for more information on a specific command", RED));
++        }
++    }
++
++}
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/FixLightCommand.java b/src/main/java/io/papermc/paper/command/subcommands/FixLightCommand.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -22721,6 +23144,44 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // CraftBukkit start
      public boolean isDebugging() {
          return false;
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -0,0 +0,0 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         return world.dimension() == net.minecraft.world.level.Level.NETHER ? this.getProperties().allowNether : true;
+     }
+ 
++    private static final java.util.concurrent.atomic.AtomicInteger ASYNC_DEBUG_CHUNKS_COUNT = new java.util.concurrent.atomic.AtomicInteger(); // Paper - rewrite chunk system
++
+     public void handleConsoleInput(String command, CommandSourceStack commandSource) {
++        // Paper start - rewrite chunk system
++        if (command.equalsIgnoreCase("paper debug chunks --async")) {
++            LOGGER.info("Scheduling async debug chunks");
++            Runnable run = () -> {
++                LOGGER.info("Async debug chunks executing");
++                ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.dumpAllChunkLoadInfo(this, false);
++                CommandSender sender = MinecraftServer.getServer().console;
++                java.io.File file = ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.getChunkDebugFile();
++                sender.sendMessage(net.kyori.adventure.text.Component.text("Writing chunk information dump to " + file, net.kyori.adventure.text.format.NamedTextColor.GREEN));
++                try {
++                    ca.spottedleaf.moonrise.common.util.JsonUtil.writeJson(ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.debugAllWorlds(this), file);
++                    sender.sendMessage(net.kyori.adventure.text.Component.text("Successfully written chunk information!", net.kyori.adventure.text.format.NamedTextColor.GREEN));
++                } catch (Throwable thr) {
++                    MinecraftServer.LOGGER.warn("Failed to dump chunk information to file " + file.toString(), thr);
++                    sender.sendMessage(net.kyori.adventure.text.Component.text("Failed to dump chunk information, see console", net.kyori.adventure.text.format.NamedTextColor.RED));
++                }
++            };
++            Thread t = new Thread(run);
++            t.setName("Async debug thread #" + ASYNC_DEBUG_CHUNKS_COUNT.getAndIncrement());
++            t.setDaemon(true);
++            t.start();
++            return;
++        }
++        // Paper end - rewrite chunk system
+         this.serverCommandQueue.add(new ConsoleInput(command, commandSource)); // Paper - Perf: use proper queue
+     }
+ 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
@@ -29133,7 +29594,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  // Paper end - Different message for short timeout
                  log.log( Level.SEVERE, "------------------------------" );
                  log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Paper!):" ); // Paper
-+                ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.dumpAllChunkLoadInfo(isLongTimeout); // Paper - rewrite chunk system
++                ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.dumpAllChunkLoadInfo(MinecraftServer.getServer(), isLongTimeout); // Paper - rewrite chunk system
                  WatchdogThread.dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( MinecraftServer.getServer().serverThread.getId(), Integer.MAX_VALUE ), log );
                  log.log( Level.SEVERE, "------------------------------" );
                  //
