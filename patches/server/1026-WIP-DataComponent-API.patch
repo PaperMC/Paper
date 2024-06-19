@@ -3204,10 +3204,10 @@ index 0000000000000000000000000000000000000000..a2c02206254a18e089cb2b40eab5c59e
 +io.papermc.paper.component.item.ComponentTypesBridgesImpl
 diff --git a/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java b/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f53fb0732aa3a90ebc75dc786cc61d0037fa5648
+index 0000000000000000000000000000000000000000..cb52cc252934561e7b47fbd4a26d10013e9e7e77
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java
-@@ -0,0 +1,391 @@
+@@ -0,0 +1,403 @@
 +package io.papermc.paper.item;
 +
 +import ca.spottedleaf.concurrentutil.util.CollectionUtil;
@@ -3564,7 +3564,8 @@ index 0000000000000000000000000000000000000000..f53fb0732aa3a90ebc75dc786cc61d00
 +    }
 +
 +    @SuppressWarnings("unchecked")
-+    private static <T, M> void testWithMeta(final ItemStack stack, final DataComponentType.Valued<T> type, final T value, final Class<M> metaType, final Function<M, T> metaGetter, final BiConsumer<M, T> metaSetter) {
++    private static <T, M extends ItemMeta> void testWithMeta(final ItemStack stack, final DataComponentType.Valued<T> type, final T value, final Class<M> metaType, final Function<M, T> metaGetter, final BiConsumer<M, T> metaSetter) {
++        ItemStack original = stack.clone();
 +        stack.setData(type, value);
 +
 +        Assertions.assertEquals(value, stack.getData(type));
@@ -3573,10 +3574,16 @@ index 0000000000000000000000000000000000000000..f53fb0732aa3a90ebc75dc786cc61d00
 +        final M typedMeta = Assertions.assertInstanceOf(metaType, meta);
 +
 +        Assertions.assertEquals(metaGetter.apply(typedMeta), value);
++
++        // SETTING
++        metaSetter.accept(typedMeta, value);
++        original.setItemMeta(typedMeta);
++        Assertions.assertEquals(value, original.getData(type));
 +    }
 +
 +    @SuppressWarnings("unchecked")
-+    private static <T, M, R> void testWithMeta(final ItemStack stack, final DataComponentType.Valued<T> type, final T value, Function<T, R> mapper, final Class<M> metaType, final Function<M, R> metaGetter, final BiConsumer<M, R> metaSetter) {
++    private static <T, M extends ItemMeta, R> void testWithMeta(final ItemStack stack, final DataComponentType.Valued<T> type, final T value, Function<T, R> mapper, final Class<M> metaType, final Function<M, R> metaGetter, final BiConsumer<M, R> metaSetter) {
++        ItemStack original = stack.clone();
 +        stack.setData(type, value);
 +
 +        Assertions.assertEquals(value, stack.getData(type));
@@ -3585,6 +3592,11 @@ index 0000000000000000000000000000000000000000..f53fb0732aa3a90ebc75dc786cc61d00
 +        final M typedMeta = Assertions.assertInstanceOf(metaType, meta);
 +
 +        Assertions.assertEquals(metaGetter.apply(typedMeta), mapper.apply(value));
++
++        // SETTING
++        metaSetter.accept(typedMeta, mapper.apply(value));
++        original.setItemMeta(typedMeta);
++        Assertions.assertEquals(value, original.getData(type));
 +    }
 +
 +    @SuppressWarnings("unchecked")
