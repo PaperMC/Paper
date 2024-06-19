@@ -5029,10 +5029,10 @@ index 0000000000000000000000000000000000000000..755b08dd32e568d341ceef8a8aef8418
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..19672631d7c69ade16a6f966c72a4a9d57b77c55
+index 0000000000000000000000000000000000000000..997b05167c19472acb98edac32d4548cc65efa8e
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java
-@@ -0,0 +1,811 @@
+@@ -0,0 +1,819 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.level.entity;
 +
 +import ca.spottedleaf.moonrise.common.list.EntityList;
@@ -5212,6 +5212,14 @@ index 0000000000000000000000000000000000000000..19672631d7c69ade16a6f966c72a4a9d
 +        }
 +
 +        return ret.toArray(new org.bukkit.entity.Entity[0]);
++    }
++
++    public void callEntitiesLoadEvent() {
++        org.bukkit.craftbukkit.event.CraftEventFactory.callEntitiesLoadEvent(this.world, new ChunkPos(this.chunkX, this.chunkZ), this.getAllEntities());
++    }
++
++    public void callEntitiesUnloadEvent() {
++        org.bukkit.craftbukkit.event.CraftEventFactory.callEntitiesUnloadEvent(this.world, new ChunkPos(this.chunkX, this.chunkZ), this.getAllEntities());
 +    }
 +    // Paper end
 +
@@ -22550,8 +22558,20 @@ index 73e83d56a340f0c7dcb8ff737d621003e72c6de4..d05297d77147ab68f8c5bb08f13a1f88
      public static boolean isTickThreadFor(final ServerLevel world, final int chunkX, final int chunkZ, final int radius) {
          return isTickThread();
      }
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index c33f85b570f159ab465b5a10a8044a81f2797f43..244a19ecd0234fa1d7a6ecfea20751595688605d 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -320,6 +320,7 @@ public class Main {
+ 
+             convertable_conversionsession.saveDataTag(iregistrycustom_dimension, savedata);
+             */
++            Class.forName(net.minecraft.world.entity.npc.VillagerTrades.class.getName()); // Paper - load this sync so it won't fail later async
+             final DedicatedServer dedicatedserver = (DedicatedServer) MinecraftServer.spin((thread) -> {
+                 DedicatedServer dedicatedserver1 = new DedicatedServer(optionset, worldLoader.get(), thread, convertable_conversionsession, resourcepackrepository, worldstem, dedicatedserversettings, DataFixers.getDataFixer(), services, LoggerChunkProgressListener::createFromGameruleRadius);
+ 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 6915522f669631779c1fb8a8e2db330f4b9fb921..cd69971065b13353353eca55f6e145949390de11 100644
+index 6915522f669631779c1fb8a8e2db330f4b9fb921..3aecd55b9a069710c5d383b2f9113b147ad1ab57 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -198,7 +198,7 @@ import org.bukkit.event.server.ServerLoadEvent;
@@ -22670,6 +22690,29 @@ index 6915522f669631779c1fb8a8e2db330f4b9fb921..cd69971065b13353353eca55f6e14594
                  this.profiler.popPush("nextTickWait");
                  this.mayHaveDelayedTasks = true;
                  this.delayedTasksMaxNextTickTimeNanos = Math.max(Util.getNanos() + i, this.nextTickTimeNanos);
+@@ -1594,7 +1604,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         // Paper start - Folia scheduler API
+         ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) Bukkit.getGlobalRegionScheduler()).tick();
+         getAllLevels().forEach(level -> {
+-            for (final Entity entity : level.getEntities().getAll()) {
++            for (final Entity entity : level.moonrise$getEntityLookup().getAllCopy()) { // Paper - rewrite chunk system
+                 if (entity.isRemoved()) {
+                     continue;
+                 }
+@@ -2661,6 +2671,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+     }
+ 
++    // Paper start - rewrite chunk system
++    @Override
++    public boolean isSameThread() {
++        return io.papermc.paper.util.TickThread.isTickThread();
++    }
++    // Paper end - rewrite chunk system
++
+     // CraftBukkit start
+     public boolean isDebugging() {
+         return false;
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 index c643bb0daa5cd264fd6ebab7acf0a2bdd7fe7029..0048077dedd19adc6c5a88e7d916d88a71662115 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
@@ -27272,7 +27315,7 @@ index 365074be989aa4a178114fd5e9810f1a68640196..4af698930712389881601069a921f054
      @Override
      public BlockEntity getBlockEntity(BlockPos pos) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index 6c0e12c9c9c0fb8377cd1f48a43ca75c9fc3e58e..3be8f35ece18d4cffe8b23ecfeeff359e0b36e3e 100644
+index 6c0e12c9c9c0fb8377cd1f48a43ca75c9fc3e58e..c4f87ff9e0c9806a1d7abc4842caa5a4caa357bd 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -53,7 +53,7 @@ import net.minecraft.world.ticks.LevelChunkTicks;
@@ -27329,7 +27372,36 @@ index 6c0e12c9c9c0fb8377cd1f48a43ca75c9fc3e58e..3be8f35ece18d4cffe8b23ecfeeff359
                      gameprofilerfiller.popPush("queueCheckLight");
                      this.level.getChunkSource().getLightEngine().checkBlock(blockposition);
                      gameprofilerfiller.pop();
-@@ -777,8 +791,27 @@ public class LevelChunk extends ChunkAccess {
+@@ -696,6 +710,7 @@ public class LevelChunk extends ChunkAccess {
+ 
+     // CraftBukkit start
+     public void loadCallback() {
++        if (this.loadedTicketLevel) { LOGGER.error("Double calling chunk load!", new Throwable()); } // Paper
+         // Paper start - neighbour cache
+         int chunkX = this.chunkPos.x;
+         int chunkZ = this.chunkPos.z;
+@@ -723,6 +738,7 @@ public class LevelChunk extends ChunkAccess {
+              */
+             org.bukkit.Chunk bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
+             server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkLoadEvent(bukkitChunk, this.needsDecoration));
++            ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(this.locX, this.locZ).getEntityChunk().callEntitiesLoadEvent(); // Paper - rewrite chunk system
+ 
+             if (this.needsDecoration) {
+                 try (co.aikar.timings.Timing ignored = this.level.timings.chunkLoadPopulate.startTiming()) { // Paper
+@@ -751,9 +767,11 @@ public class LevelChunk extends ChunkAccess {
+     }
+ 
+     public void unloadCallback() {
++        if (!this.loadedTicketLevel) { LOGGER.error("Double calling chunk unload!", new Throwable()); } // Paper
+         org.bukkit.Server server = this.level.getCraftServer();
++        ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(this.locX, this.locZ).getEntityChunk().callEntitiesUnloadEvent(); // Paper - rewrite chunk system
+         org.bukkit.Chunk bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
+-        org.bukkit.event.world.ChunkUnloadEvent unloadEvent = new org.bukkit.event.world.ChunkUnloadEvent(bukkitChunk, this.isUnsaved());
++        org.bukkit.event.world.ChunkUnloadEvent unloadEvent = new org.bukkit.event.world.ChunkUnloadEvent(bukkitChunk, true); // Paper - rewrite chunk system - force save to true so that mustNotSave is correctly set below
+         server.getPluginManager().callEvent(unloadEvent);
+         // note: saving can be prevented, but not forced if no saving is actually required
+         this.mustNotSave = !unloadEvent.isSaveChunk();
+@@ -777,8 +795,27 @@ public class LevelChunk extends ChunkAccess {
  
      @Override
      public boolean isUnsaved() {
@@ -27358,7 +27430,7 @@ index 6c0e12c9c9c0fb8377cd1f48a43ca75c9fc3e58e..3be8f35ece18d4cffe8b23ecfeeff359
      // CraftBukkit end
  
      public boolean isEmpty() {
-@@ -884,6 +917,7 @@ public class LevelChunk extends ChunkAccess {
+@@ -884,6 +921,7 @@ public class LevelChunk extends ChunkAccess {
  
          this.pendingBlockEntities.clear();
          this.upgradeData.upgrade(this);
