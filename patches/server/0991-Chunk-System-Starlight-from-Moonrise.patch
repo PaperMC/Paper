@@ -7424,10 +7424,10 @@ index 0000000000000000000000000000000000000000..003a857e70ead858e8437e3c1bfaf22f
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dba09cb32844533c383635e7623f5180a468f636
+index 0000000000000000000000000000000000000000..82e8ce73b77accd6a4210f88c9fccb325ae367d4
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java
-@@ -0,0 +1,1059 @@
+@@ -0,0 +1,1074 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.player;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -7443,6 +7443,7 @@ index 0000000000000000000000000000000000000000..dba09cb32844533c383635e7623f5180
 +import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkHolderManager;
 +import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler;
 +import ca.spottedleaf.moonrise.patches.chunk_system.util.ParallelSearchRadiusIteration;
++import com.google.gson.JsonObject;
 +import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
 +import it.unimi.dsi.fastutil.longs.LongArrayList;
 +import it.unimi.dsi.fastutil.longs.LongComparator;
@@ -7482,7 +7483,7 @@ index 0000000000000000000000000000000000000000..dba09cb32844533c383635e7623f5180
 +    public static final int LOADED_TICKET_LEVEL = ChunkTaskScheduler.getTicketLevel(ChunkStatus.EMPTY);
 +    public static final int TICK_TICKET_LEVEL = ChunkHolderManager.ENTITY_TICKING_TICKET_LEVEL;
 +
-+    public static class ViewDistanceHolder {
++    public static final class ViewDistanceHolder {
 +
 +        private volatile ViewDistances viewDistances;
 +        private static final VarHandle VIEW_DISTANCES_HANDLE = ConcurrentUtil.getVarHandle(ViewDistanceHolder.class, "viewDistances", ViewDistances.class);
@@ -7530,6 +7531,10 @@ index 0000000000000000000000000000000000000000..dba09cb32844533c383635e7623f5180
 +                return param.setTickViewDistance(distance);
 +            });
 +        }
++
++        public JsonObject toJson() {
++            return this.getViewDistances().toJson();
++        }
 +    }
 +
 +    public static final record ViewDistances(
@@ -7547,6 +7552,16 @@ index 0000000000000000000000000000000000000000..dba09cb32844533c383635e7623f5180
 +
 +        public ViewDistances setSendViewDistance(final int distance) {
 +            return new ViewDistances(this.tickViewDistance, this.loadViewDistance, distance);
++        }
++
++        public JsonObject toJson() {
++            final JsonObject ret = new JsonObject();
++
++            ret.addProperty("tick-view-distance", this.tickViewDistance);
++            ret.addProperty("load-view-distance", this.loadViewDistance);
++            ret.addProperty("send-view-distance", this.sendViewDistance);
++
++            return ret;
 +        }
 +    }
 +
@@ -8636,10 +8651,10 @@ index 0000000000000000000000000000000000000000..bc07e710a5854fd526e3bb56d1565602
 \ No newline at end of file
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5576924839c9c5a42a8c430c30cb5a6275ae6f23
+index 0000000000000000000000000000000000000000..ad339978cd2e8d78b0566c2daf0495a418d127c7
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
-@@ -0,0 +1,1430 @@
+@@ -0,0 +1,1429 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -9949,7 +9964,6 @@ index 0000000000000000000000000000000000000000..5576924839c9c5a42a8c430c30cb5a62
 +    }
 +
 +    private boolean processTicketUpdates(final boolean processFullUpdates, List<ChunkProgressionTask> scheduledTasks) {
-+        io.papermc.paper.util.TickThread.ensureTickThread("Cannot process ticket levels off-main");
 +        if (BLOCK_TICKET_UPDATES.get() == Boolean.TRUE) {
 +            throw new IllegalStateException("Cannot update ticket level while unloading chunks or updating entity manager");
 +        }
@@ -10072,10 +10086,10 @@ index 0000000000000000000000000000000000000000..5576924839c9c5a42a8c430c30cb5a62
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bfb53d1f2f96539fbe62946252faa506188560a1
+index 0000000000000000000000000000000000000000..faf76a5c2f9fa2eea38d2c7f2ab1c43873254e72
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java
-@@ -0,0 +1,923 @@
+@@ -0,0 +1,934 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -10201,6 +10215,13 @@ index 0000000000000000000000000000000000000000..bfb53d1f2f96539fbe62946252faa506
 +
 +    public static Long getNextPoiLoadId() {
 +        return Long.valueOf(POI_LOAD_IDS.getAndIncrement());
++    }
++
++    public static final TicketType<Long> CHUNK_RELIGHT = TicketType.create("starlight:chunk_relight", Long::compareTo);
++    private static final AtomicLong CHUNK_RELIGHT_IDS = new AtomicLong();
++
++    public static Long getNextChunkRelightId() {
++        return Long.valueOf(CHUNK_RELIGHT_IDS.getAndIncrement());
 +    }
 +
 +
@@ -10541,12 +10562,16 @@ index 0000000000000000000000000000000000000000..bfb53d1f2f96539fbe62946252faa506
 +        }
 +        this.scheduleChunkLoad(chunkX, chunkZ, ChunkStatus.EMPTY, addTicket, priority, (final ChunkAccess chunk) -> {
 +            if (chunk == null) {
-+                onComplete.accept(null);
++                if (onComplete != null) {
++                    onComplete.accept(null);
++                }
 +            } else {
 +                if (chunk.getPersistedStatus().isOrAfter(toStatus)) {
 +                    this.scheduleChunkLoad(chunkX, chunkZ, toStatus, addTicket, priority, onComplete);
 +                } else {
-+                    onComplete.accept(null);
++                    if (onComplete != null) {
++                        onComplete.accept(null);
++                    }
 +                }
 +            }
 +        });
@@ -17327,7 +17352,7 @@ index 0000000000000000000000000000000000000000..ce3bb903c9ccb7efa0f004cf79b291dc
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/util/ParallelSearchRadiusIteration.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/util/ParallelSearchRadiusIteration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..51c9ed3dbb1787afc8e123b4f8104d54ed7ace89
+index 0000000000000000000000000000000000000000..3a9a564edfdb99e006e4816cb8821bd1e9ecff43
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/util/ParallelSearchRadiusIteration.java
 @@ -0,0 +1,320 @@
@@ -17342,7 +17367,7 @@ index 0000000000000000000000000000000000000000..51c9ed3dbb1787afc8e123b4f8104d54
 +import java.util.Arrays;
 +import java.util.Objects;
 +
-+public class ParallelSearchRadiusIteration {
++public final class ParallelSearchRadiusIteration {
 +
 +    // expected that this list returns for a given radius, the set of chunks ordered
 +    // by manhattan distance
@@ -21688,10 +21713,10 @@ index 0000000000000000000000000000000000000000..c64ab41198a5e0c7cbcbe6452af11f82
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/starlight/light/StarLightLightingProvider.java b/src/main/java/ca/spottedleaf/moonrise/patches/starlight/light/StarLightLightingProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..39ec319d0899a6e26f29fa7a6ead4bda78ecbaeb
+index 0000000000000000000000000000000000000000..7fe59ab70557aa6a484a02db2b2007fdd9e4bbb8
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/moonrise/patches/starlight/light/StarLightLightingProvider.java
-@@ -0,0 +1,20 @@
+@@ -0,0 +1,29 @@
 +package ca.spottedleaf.moonrise.patches.starlight.light;
 +
 +import net.minecraft.core.SectionPos;
@@ -21699,6 +21724,9 @@ index 0000000000000000000000000000000000000000..39ec319d0899a6e26f29fa7a6ead4bda
 +import net.minecraft.world.level.LightLayer;
 +import net.minecraft.world.level.chunk.DataLayer;
 +import net.minecraft.world.level.chunk.LevelChunk;
++import java.util.Collection;
++import java.util.function.Consumer;
++import java.util.function.IntConsumer;
 +
 +public interface StarLightLightingProvider {
 +
@@ -21710,6 +21738,12 @@ index 0000000000000000000000000000000000000000..39ec319d0899a6e26f29fa7a6ead4bda
 +    public void starlight$clientRemoveLightData(final ChunkPos chunkPos);
 +
 +    public void starlight$clientChunkLoad(final ChunkPos pos, final LevelChunk chunk);
++
++    public default int starlight$serverRelightChunks(final Collection<ChunkPos> chunks,
++                                                      final Consumer<ChunkPos> chunkLightCallback,
++                                                      final IntConsumer onComplete) throws UnsupportedOperationException {
++        throw new UnsupportedOperationException();
++    }
 +
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/starlight/util/SaveUtil.java b/src/main/java/ca/spottedleaf/moonrise/patches/starlight/util/SaveUtil.java
@@ -22159,6 +22193,140 @@ index 0d0cb3e63acd5156b6f9d6d78cc949b0af36a77b..dd1649abe57d7191c15a9b2862d5fd11
      }
  
      private ChunkSystem() {
+diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
+index 46bf42d5ea9e7b046f962531c5962d287cf44a41..adf4ed787ca94cd4e21b870587cf04696fc32def 100644
+--- a/src/main/java/io/papermc/paper/command/PaperCommand.java
++++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
+@@ -42,6 +42,7 @@ public final class PaperCommand extends Command {
+         commands.put(Set.of("dumpitem"), new DumpItemCommand());
+         commands.put(Set.of("mobcaps", "playermobcaps"), new MobcapsCommand());
+         commands.put(Set.of("dumplisteners"), new DumpListenersCommand());
++        commands.put(Set.of("fixlight"), new FixLightCommand()); // Paper - rewrite chunk system
+ 
+         return commands.entrySet().stream()
+             .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
+diff --git a/src/main/java/io/papermc/paper/command/subcommands/FixLightCommand.java b/src/main/java/io/papermc/paper/command/subcommands/FixLightCommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..85950a1aa732ab8c01ad28bec9e0de140e1a172e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/subcommands/FixLightCommand.java
+@@ -0,0 +1,116 @@
++package io.papermc.paper.command.subcommands;
++
++import ca.spottedleaf.moonrise.patches.starlight.light.StarLightLightingProvider;
++import io.papermc.paper.command.PaperSubcommand;
++import io.papermc.paper.util.MCUtil;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.server.level.ServerPlayer;
++import net.minecraft.server.level.ThreadedLevelLightEngine;
++import net.minecraft.world.level.ChunkPos;
++import net.minecraft.world.level.chunk.ChunkAccess;
++import org.bukkit.command.CommandSender;
++import org.bukkit.craftbukkit.entity.CraftPlayer;
++import org.bukkit.entity.Player;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++import java.text.DecimalFormat;
++
++import static net.kyori.adventure.text.Component.text;
++import static net.kyori.adventure.text.format.NamedTextColor.BLUE;
++import static net.kyori.adventure.text.format.NamedTextColor.DARK_AQUA;
++import static net.kyori.adventure.text.format.NamedTextColor.RED;
++
++@DefaultQualifier(NonNull.class)
++public final class FixLightCommand implements PaperSubcommand {
++
++    private static final ThreadLocal<DecimalFormat> ONE_DECIMAL_PLACES = ThreadLocal.withInitial(() -> {
++        return new DecimalFormat("#,##0.0");
++    });
++
++    @Override
++    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
++        this.doFixLight(sender, args);
++        return true;
++    }
++
++    private void doFixLight(final CommandSender sender, final String[] args) {
++        if (!(sender instanceof Player)) {
++            sender.sendMessage(text("Only players can use this command", RED));
++            return;
++        }
++        @Nullable Runnable post = null;
++        int radius = 2;
++        if (args.length > 0) {
++            try {
++                final int parsed = Integer.parseInt(args[0]);
++                if (parsed < 0) {
++                    sender.sendMessage(text("Radius cannot be negative!", RED));
++                    return;
++                }
++                final int maxRadius = 32;
++                radius = Math.min(maxRadius, parsed);
++                if (radius != parsed) {
++                    post = () -> sender.sendMessage(text("Radius '" + parsed + "' was not in the required range [0, " + maxRadius + "], it was lowered to the maximum (" + maxRadius + " chunks).", RED));
++                }
++            } catch (final Exception e) {
++                sender.sendMessage(text("'" + args[0] + "' is not a valid number.", RED));
++                return;
++            }
++        }
++
++        CraftPlayer player = (CraftPlayer) sender;
++        ServerPlayer handle = player.getHandle();
++        ServerLevel world = (ServerLevel) handle.level();
++        ThreadedLevelLightEngine lightengine = world.getChunkSource().getLightEngine();
++        this.starlightFixLight(handle, world, lightengine, radius, post);
++    }
++
++    private void starlightFixLight(
++        final ServerPlayer sender,
++        final ServerLevel world,
++        final ThreadedLevelLightEngine lightengine,
++        final int radius,
++        final @Nullable Runnable done
++    ) {
++        final long start = System.nanoTime();
++        final java.util.LinkedHashSet<ChunkPos> chunks = new java.util.LinkedHashSet<>(MCUtil.getSpiralOutChunks(sender.blockPosition(), radius)); // getChunkCoordinates is actually just bad mappings, this function rets position as blockpos
++
++        final int[] pending = new int[1];
++        for (java.util.Iterator<ChunkPos> iterator = chunks.iterator(); iterator.hasNext(); ) {
++            final ChunkPos chunkPos = iterator.next();
++
++            final @Nullable ChunkAccess chunk = (ChunkAccess) world.getChunkSource().getChunkForLighting(chunkPos.x, chunkPos.z);
++            if (chunk == null || !chunk.isLightCorrect() || !chunk.getPersistedStatus().isOrAfter(net.minecraft.world.level.chunk.status.ChunkStatus.LIGHT)) {
++                // cannot relight this chunk
++                iterator.remove();
++                continue;
++            }
++
++            ++pending[0];
++        }
++
++        final int[] relitChunks = new int[1];
++        ((StarLightLightingProvider)lightengine).starlight$serverRelightChunks(chunks,
++            (final ChunkPos chunkPos) -> {
++                ++relitChunks[0];
++                sender.getBukkitEntity().sendMessage(text().color(DARK_AQUA).append(
++                    text("Relit chunk ", BLUE), text(chunkPos.toString()),
++                    text(", progress: ", BLUE), text(ONE_DECIMAL_PLACES.get().format(100.0 * (double) (relitChunks[0]) / (double) pending[0]) + "%")
++                ));
++            },
++            (final int totalRelit) -> {
++                final long end = System.nanoTime();
++                sender.getBukkitEntity().sendMessage(text().color(DARK_AQUA).append(
++                    text("Relit ", BLUE), text(totalRelit),
++                    text(" chunks. Took ", BLUE), text(ONE_DECIMAL_PLACES.get().format(1.0e-6 * (end - start)) + "ms")
++                ));
++                if (done != null) {
++                    done.run();
++                }
++            }
++        );
++        sender.getBukkitEntity().sendMessage(text().color(BLUE).append(text("Relighting "), text(pending[0], DARK_AQUA), text(" chunks")));
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 index 2a5453707bc172d8d0efe3f11959cb0b5f830984..b8499c1cea97a1a88a53053bc7da132f2fd3928d 100644
 --- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
@@ -25592,10 +25760,10 @@ index 3cbb59df34156479d24a8251f2b3acbb5e60dc2c..6b9354e3ac064daa3101e71d8e54e883
          super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile);
          this.chatVisibility = ChatVisiblity.FULL;
 diff --git a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java b/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
-index 63fae619e9b4ed49585f88ea7c167b0ee5efd859..4700c97487e176c670a3930564b621b4a6bf52bb 100644
+index 63fae619e9b4ed49585f88ea7c167b0ee5efd859..cc779de06773451d51f54040fc899e4f45110bc1 100644
 --- a/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
 +++ b/src/main/java/net/minecraft/server/level/ThreadedLevelLightEngine.java
-@@ -23,15 +23,49 @@ import net.minecraft.world.level.chunk.LightChunkGetter;
+@@ -23,15 +23,128 @@ import net.minecraft.world.level.chunk.LightChunkGetter;
  import net.minecraft.world.level.lighting.LevelLightEngine;
  import org.slf4j.Logger;
  
@@ -25646,11 +25814,90 @@ index 63fae619e9b4ed49585f88ea7c167b0ee5efd859..4700c97487e176c670a3930564b621b4
 +            world.getChunkSource().removeRegionTicket(ca.spottedleaf.moonrise.patches.starlight.light.StarLightInterface.CHUNK_WORK_TICKET, pos, ca.spottedleaf.moonrise.patches.starlight.light.StarLightInterface.REGION_LIGHT_TICKET_LEVEL, ticketId);
 +        });
 +    }
++
++    @Override
++    public final int starlight$serverRelightChunks(final java.util.Collection<net.minecraft.world.level.ChunkPos> chunks0,
++                                                   final java.util.function.Consumer<net.minecraft.world.level.ChunkPos> chunkLightCallback,
++                                                   final java.util.function.IntConsumer onComplete) {
++        final java.util.Set<net.minecraft.world.level.ChunkPos> chunks = new java.util.LinkedHashSet<>(chunks0);
++        final java.util.Map<net.minecraft.world.level.ChunkPos, Long> ticketIds = new java.util.HashMap<>();
++        final ServerLevel world = (ServerLevel)this.starlight$getLightEngine().getWorld();
++
++        for (final java.util.Iterator<net.minecraft.world.level.ChunkPos> iterator = chunks.iterator(); iterator.hasNext();) {
++            final ChunkPos pos = iterator.next();
++
++            final Long id = ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.getNextChunkRelightId();
++            world.getChunkSource().addRegionTicket(ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.CHUNK_RELIGHT, pos, ca.spottedleaf.moonrise.patches.starlight.light.StarLightInterface.REGION_LIGHT_TICKET_LEVEL, id);
++            ticketIds.put(pos, id);
++
++            final ChunkAccess chunk = (ChunkAccess)world.getChunkSource().getChunkForLighting(pos.x, pos.z);
++            if (chunk == null || !chunk.isLightCorrect() || !chunk.getPersistedStatus().isOrAfter(net.minecraft.world.level.chunk.status.ChunkStatus.LIGHT)) {
++                // cannot relight this chunk
++                iterator.remove();
++                ticketIds.remove(pos);
++                world.getChunkSource().removeRegionTicket(ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.CHUNK_RELIGHT, pos, ca.spottedleaf.moonrise.patches.starlight.light.StarLightInterface.REGION_LIGHT_TICKET_LEVEL, id);
++                continue;
++            }
++        }
++
++        ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)world).moonrise$getChunkTaskScheduler().radiusAwareScheduler.queueInfiniteRadiusTask(() -> {
++            ThreadedLevelLightEngine.this.starlight$getLightEngine().relightChunks(
++                chunks,
++                (final ChunkPos pos) -> {
++                    if (chunkLightCallback != null) {
++                        chunkLightCallback.accept(pos);
++                    }
++
++                    ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)world).moonrise$getChunkTaskScheduler().scheduleChunkTask(pos.x, pos.z, () -> {
++                        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder chunkHolder = ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)world).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(
++                            pos.x, pos.z
++                        );
++
++                        if (chunkHolder == null) {
++                            return;
++                        }
++
++                        final java.util.List<ServerPlayer> players = ((ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkSystemChunkHolder)chunkHolder.vanillaChunkHolder).moonrise$getPlayers(false);
++
++                        if (players.isEmpty()) {
++                            return;
++                        }
++
++                        final net.minecraft.network.protocol.Packet<?> relightPacket = new net.minecraft.network.protocol.game.ClientboundLightUpdatePacket(
++                            pos, (ThreadedLevelLightEngine)(Object)ThreadedLevelLightEngine.this,
++                            null, null
++                        );
++
++                        for (final ServerPlayer player : players) {
++                            final net.minecraft.server.network.ServerGamePacketListenerImpl conn = player.connection;
++                            if (conn != null) {
++                                conn.send(relightPacket);
++                            }
++                        }
++                    });
++                },
++                (final int relight) -> {
++                    if (onComplete != null) {
++                        onComplete.accept(relight);
++                    }
++
++                    for (final java.util.Map.Entry<ChunkPos, Long> entry : ticketIds.entrySet()) {
++                        world.getChunkSource().removeRegionTicket(
++                            ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.CHUNK_RELIGHT, entry.getKey(),
++                            ca.spottedleaf.moonrise.patches.starlight.light.StarLightInterface.REGION_LIGHT_TICKET_LEVEL, entry.getValue()
++                        );
++                    }
++                }
++            );
++        });
++
++        return chunks.size();
++    }
 +    // Paper end - rewrite chunk system
  
      public ThreadedLevelLightEngine(
          LightChunkGetter chunkProvider,
-@@ -42,8 +76,7 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+@@ -42,8 +155,7 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
      ) {
          super(chunkProvider, true, hasBlockLight);
          this.chunkMap = chunkLoadingManager;
@@ -25660,7 +25907,7 @@ index 63fae619e9b4ed49585f88ea7c167b0ee5efd859..4700c97487e176c670a3930564b621b4
      }
  
      @Override
-@@ -57,164 +90,73 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
+@@ -57,164 +169,73 @@ public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCl
  
      @Override
      public void checkBlock(BlockPos pos) {
