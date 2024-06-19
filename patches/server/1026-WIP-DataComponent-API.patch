@@ -765,7 +765,7 @@ index 0000000000000000000000000000000000000000..fbd9a0a1eb447d1a5ab0e898d9dc80b6
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperChargedProjectiles.java b/src/main/java/io/papermc/paper/component/item/PaperChargedProjectiles.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6a3d6541d1d009a882f717f3d10920f49b627519
+index 0000000000000000000000000000000000000000..862eb057c156117b5856cd9bc453a6e378c972e6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperChargedProjectiles.java
 @@ -0,0 +1,51 @@
@@ -807,8 +807,8 @@ index 0000000000000000000000000000000000000000..6a3d6541d1d009a882f717f3d10920f4
 +        }
 +
 +        @Override
-+        public ChargedProjectiles.Builder addAll(final List<ItemStack> itemStack) {
-+            for (final ItemStack item : itemStack) {
++        public ChargedProjectiles.Builder addAll(final List<ItemStack> itemStacks) {
++            for (final ItemStack item : itemStacks) {
 +                this.items.add(CraftItemStack.asNMSCopy(item));
 +            }
 +            return this;
@@ -1917,7 +1917,7 @@ index 0000000000000000000000000000000000000000..0e6320385a3eaea265bd3ffd2a9ee831
 +}
 diff --git a/src/main/java/io/papermc/paper/component/item/PaperLodestoneTracker.java b/src/main/java/io/papermc/paper/component/item/PaperLodestoneTracker.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..eb9bf45b5599d72be4f54452437cce565a1140ec
+index 0000000000000000000000000000000000000000..5611a001165a32f39a26ce171142420ed704430b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/component/item/PaperLodestoneTracker.java
 @@ -0,0 +1,56 @@
@@ -1958,8 +1958,8 @@ index 0000000000000000000000000000000000000000..eb9bf45b5599d72be4f54452437cce56
 +        private boolean tracked = true;
 +
 +        @Override
-+        public LodestoneTracker.Builder location(final @Nullable Location page) {
-+            this.pos = Optional.ofNullable(page).map(CraftMemoryMapper::toNms);
++        public LodestoneTracker.Builder location(final @Nullable Location location) {
++            this.pos = Optional.ofNullable(location).map(CraftMemoryMapper::toNms);
 +            return this;
 +        }
 +
@@ -3204,33 +3204,84 @@ index 0000000000000000000000000000000000000000..a2c02206254a18e089cb2b40eab5c59e
 +io.papermc.paper.component.item.ComponentTypesBridgesImpl
 diff --git a/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java b/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3ee8696686d4e91de57e2dbb2772c9313dc4c21b
+index 0000000000000000000000000000000000000000..f53fb0732aa3a90ebc75dc786cc61d0037fa5648
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java
-@@ -0,0 +1,127 @@
+@@ -0,0 +1,391 @@
 +package io.papermc.paper.item;
 +
++import ca.spottedleaf.concurrentutil.util.CollectionUtil;
++import com.google.common.collect.HashMultiset;
++import com.google.common.collect.Iterators;
++import com.google.common.collect.Lists;
++import io.papermc.paper.block.BlockPredicate;
 +import io.papermc.paper.component.DataComponentType;
 +import io.papermc.paper.component.DataComponentTypes;
 +import io.papermc.paper.component.item.ChargedProjectiles;
++import io.papermc.paper.component.item.CustomModelData;
++import io.papermc.paper.component.item.DyedItemColor;
++import io.papermc.paper.component.item.Fireworks;
++import io.papermc.paper.component.item.FoodProperties;
++import io.papermc.paper.component.item.ItemAdventurePredicate;
++import io.papermc.paper.component.item.ItemArmorTrim;
++import io.papermc.paper.component.item.ItemAttributeModifiers;
++import io.papermc.paper.component.item.ItemEnchantments;
++import io.papermc.paper.component.item.ItemLore;
++import io.papermc.paper.component.item.MapID;
++import io.papermc.paper.component.item.MapItemColor;
 +import io.papermc.paper.component.item.PotDecorations;
++import io.papermc.paper.component.item.Tool;
 +import io.papermc.paper.component.item.Unbreakable;
++import io.papermc.paper.registry.RegistryAccess;
++import io.papermc.paper.registry.RegistryKey;
++import io.papermc.paper.registry.set.RegistrySet;
++import io.papermc.paper.registry.tag.TagKey;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.util.TriState;
++import net.minecraft.world.item.enchantment.Enchantments;
++import net.minecraft.world.level.saveddata.maps.MapId;
++import org.bukkit.Color;
++import org.bukkit.FireworkEffect;
 +import org.bukkit.Material;
++import org.bukkit.NamespacedKey;
++import org.bukkit.Registry;
++import org.bukkit.Tag;
++import org.bukkit.attribute.Attribute;
++import org.bukkit.attribute.AttributeModifier;
 +import org.bukkit.block.BlockState;
++import org.bukkit.block.BlockType;
 +import org.bukkit.block.DecoratedPot;
++import org.bukkit.enchantments.Enchantment;
++import org.bukkit.inventory.EquipmentSlotGroup;
 +import org.bukkit.inventory.ItemFlag;
++import org.bukkit.inventory.ItemRarity;
 +import org.bukkit.inventory.ItemStack;
 +import org.bukkit.inventory.ItemType;
++import org.bukkit.inventory.meta.ArmorMeta;
 +import org.bukkit.inventory.meta.BlockStateMeta;
 +import org.bukkit.inventory.meta.CrossbowMeta;
 +import org.bukkit.inventory.meta.Damageable;
++import org.bukkit.inventory.meta.FireworkMeta;
 +import org.bukkit.inventory.meta.ItemMeta;
++import org.bukkit.inventory.meta.LeatherArmorMeta;
++import org.bukkit.inventory.meta.MapMeta;
 +import org.bukkit.inventory.meta.Repairable;
++import org.bukkit.inventory.meta.components.FoodComponent;
++import org.bukkit.inventory.meta.components.ToolComponent;
++import org.bukkit.inventory.meta.trim.ArmorTrim;
++import org.bukkit.inventory.meta.trim.TrimMaterial;
++import org.bukkit.inventory.meta.trim.TrimPattern;
++import org.bukkit.potion.PotionEffect;
++import org.bukkit.potion.PotionEffectType;
 +import org.bukkit.support.AbstractTestingBase;
++import org.codehaus.plexus.util.CollectionUtils;
 +import org.junit.jupiter.api.Assertions;
 +import org.junit.jupiter.api.Test;
++import java.util.List;
++import java.util.Map;
 +import java.util.function.BiConsumer;
 +import java.util.function.Function;
++import java.util.stream.Collectors;
 +
 +class ItemStackDataComponentTest extends AbstractTestingBase {
 +
@@ -3259,7 +3310,7 @@ index 0000000000000000000000000000000000000000..3ee8696686d4e91de57e2dbb2772c931
 +
 +        Assertions.assertTrue(stack.getItemMeta().isUnbreakable());
 +        Assertions.assertTrue(stack.getItemMeta().getItemFlags().contains(ItemFlag.HIDE_UNBREAKABLE));
-+        stack.setData(DataComponentTypes.UNBREAKABLE, null);
++        stack.unsetData(DataComponentTypes.UNBREAKABLE);
 +        Assertions.assertFalse(stack.getItemMeta().isUnbreakable());
 +    }
 +
@@ -3296,6 +3347,195 @@ index 0000000000000000000000000000000000000000..3ee8696686d4e91de57e2dbb2772c931
 +    }
 +
 +    @Test
++    void testCustomName() {
++        testWithMeta(new ItemStack(Material.STONE), DataComponentTypes.CUSTOM_NAME, Component.text("HELLO!!!!!!"), ItemMeta.class, ItemMeta::displayName, ItemMeta::displayName);
++    }
++
++    @Test
++    void testItemName() {
++        testWithMeta(new ItemStack(Material.STONE), DataComponentTypes.ITEM_NAME, Component.text("HELLO!!!!!! ITEM NAME"), ItemMeta.class, ItemMeta::itemName, ItemMeta::itemName);
++    }
++
++    @Test
++    void testItemLore() {
++        List<Component> list = List.of(Component.text("1"), Component.text("2"));
++        testWithMeta(new ItemStack(Material.STONE), DataComponentTypes.LORE, ItemLore.lore().lines(list).build(), ItemLore::lines, ItemMeta.class, ItemMeta::lore, ItemMeta::lore);
++    }
++
++    @Test
++    void testItemRarity() {
++        testWithMeta(new ItemStack(Material.STONE), DataComponentTypes.RARITY, ItemRarity.RARE, ItemMeta.class, ItemMeta::getRarity, ItemMeta::setRarity);
++    }
++
++    @Test
++    void testItemEnchantments() {
++        final ItemStack stack = new ItemStack(Material.STONE);
++        Map<Enchantment, Integer> enchantmentIntegerMap = Map.of(Enchantment.SOUL_SPEED, 1);
++        stack.setData(DataComponentTypes.ENCHANTMENTS, ItemEnchantments.itemEnchantments(enchantmentIntegerMap, false));
++
++        Assertions.assertTrue(stack.getItemMeta().hasItemFlag(ItemFlag.HIDE_ENCHANTS));
++        Assertions.assertEquals(1, stack.getItemMeta().getEnchantLevel(Enchantment.SOUL_SPEED));
++        Assertions.assertEquals(stack.getItemMeta().getEnchants(), enchantmentIntegerMap);
++        stack.unsetData(DataComponentTypes.ENCHANTMENTS);
++        Assertions.assertTrue(stack.getItemMeta().getEnchants().isEmpty());
++    }
++
++
++    @Test
++    void testItemAttributes() {
++        final ItemStack stack = new ItemStack(Material.STONE);
++        AttributeModifier modifier = new AttributeModifier(NamespacedKey.minecraft("test"), 5, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ANY);
++        stack.setData(DataComponentTypes.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.itemAttributes().showInTooltip(false).addModifier(Attribute.GENERIC_ATTACK_DAMAGE, modifier).build());
++
++
++        Assertions.assertTrue(stack.getItemMeta().hasItemFlag(ItemFlag.HIDE_ATTRIBUTES));
++        Assertions.assertEquals(modifier, Iterators.get(stack.getItemMeta().getAttributeModifiers(Attribute.GENERIC_ATTACK_DAMAGE).iterator(), 0));
++        stack.unsetData(DataComponentTypes.ATTRIBUTE_MODIFIERS);
++        Assertions.assertNull(stack.getItemMeta().getAttributeModifiers());
++    }
++
++
++    @Test
++    void testCustomModelData() {
++        testWithMeta(new ItemStack(Material.STONE), DataComponentTypes.CUSTOM_MODEL_DATA, CustomModelData.customModelData().customModelData(1).build(), CustomModelData::data, ItemMeta.class, ItemMeta::getCustomModelData, ItemMeta::setCustomModelData);
++    }
++
++    @Test
++    void testEnchantmentGlintOverride() {
++        testWithMeta(new ItemStack(Material.STONE), DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, true, ItemMeta.class, ItemMeta::getEnchantmentGlintOverride, ItemMeta::setEnchantmentGlintOverride);
++    }
++
++    @Test
++    void testFood() {
++        FoodProperties properties = FoodProperties.food()
++            .canAlwaysEat(true)
++            .eatSeconds(1.3F)
++            .nutrition(1)
++            .addAllEffects(List.of(FoodProperties.PossibleEffect.of(new PotionEffect(PotionEffectType.SLOWNESS, 5, 255), 1F)))
++            .usingConvertsTo(new ItemStack(Material.STONE))
++            .build();
++
++        final ItemStack stack = new ItemStack(Material.CROSSBOW);
++        stack.setData(DataComponentTypes.FOOD, properties);
++
++        ItemMeta meta = stack.getItemMeta();
++        FoodComponent component = meta.getFood();
++        Assertions.assertEquals(properties.canAlwaysEat(), component.canAlwaysEat());
++        Assertions.assertEquals(properties.eatSeconds(), component.getEatSeconds());
++        Assertions.assertEquals(properties.nutrition(), component.getNutrition());
++
++        int idx = 0;
++        for (FoodComponent.FoodEffect effect : component.getEffects()) {
++            Assertions.assertEquals(properties.effects().get(idx).effect(), effect.getEffect());
++            Assertions.assertEquals(properties.effects().get(idx).probability(), effect.getProbability());
++            idx++;
++        }
++        Assertions.assertEquals(properties.usingConvertsTo(), component.getUsingConvertsTo());
++
++
++        stack.unsetData(DataComponentTypes.FOOD);
++        meta = (CrossbowMeta) stack.getItemMeta();
++        Assertions.assertFalse(meta.hasFood());
++    }
++
++    @Test
++    void testTool() {
++        Tool properties = Tool.tool()
++            .damagePerBlock(1)
++            .defaultMiningSpeed(2F)
++            .addRules(List.of(
++                Tool.Rule.of(
++                    RegistrySet.keySetFromValues(RegistryKey.BLOCK, List.of(BlockType.STONE, BlockType.GRAVEL)),
++                    2F,
++                    TriState.TRUE
++
++                ),
++                Tool.Rule.of(
++                    RegistryAccess.registryAccess().getRegistry(RegistryKey.BLOCK).getTag(TagKey.create(RegistryKey.BLOCK, NamespacedKey.minecraft("bamboo_blocks"))),
++                    2F,
++                    TriState.TRUE
++
++                )
++
++
++            ))
++            .build();
++
++        final ItemStack stack = new ItemStack(Material.CROSSBOW);
++        stack.setData(DataComponentTypes.TOOL, properties);
++
++        ItemMeta meta = stack.getItemMeta();
++        ToolComponent component = meta.getTool();
++        Assertions.assertEquals(properties.damagePerBlock(), component.getDamagePerBlock());
++        Assertions.assertEquals(properties.defaultMiningSpeed(), component.getDefaultMiningSpeed());
++
++        int idx = 0;
++        for (ToolComponent.ToolRule effect : component.getRules()) {
++            Assertions.assertEquals(properties.rules().get(idx).speed(), effect.getSpeed());
++            Assertions.assertEquals(properties.rules().get(idx).correctForDrops().toBoolean(), effect.isCorrectForDrops());
++            Assertions.assertEquals(properties.rules().get(idx).blockTypes().resolve(Registry.BLOCK), effect.getBlocks().stream().map(Material::asBlockType).toList());
++            idx++;
++        }
++
++
++        stack.unsetData(DataComponentTypes.TOOL);
++        meta = stack.getItemMeta();
++        Assertions.assertFalse(meta.hasTool());
++    }
++
++
++    @Test
++    void testFireResistant() {
++        testWithMeta(new ItemStack(Material.STONE), DataComponentTypes.FIRE_RESISTANT, true, ItemMeta.class, ItemMeta::isFireResistant, ItemMeta::setFireResistant);
++    }
++
++    @Test
++    void testDyedColor() {
++        final ItemStack stack = new ItemStack(Material.LEATHER_CHESTPLATE);
++        Color color = Color.BLUE;
++        stack.setData(DataComponentTypes.DYED_COLOR, DyedItemColor.dyedItemColor(color, false));
++
++        Assertions.assertTrue(stack.getItemMeta().hasItemFlag(ItemFlag.HIDE_DYE));
++        Assertions.assertEquals(color, ((LeatherArmorMeta) stack.getItemMeta()).getColor());
++        stack.unsetData(DataComponentTypes.DYED_COLOR);
++        Assertions.assertFalse(((LeatherArmorMeta) stack.getItemMeta()).isDyed());
++    }
++
++    @Test
++    void testMapColor() {
++        testWithMeta(new ItemStack(Material.FILLED_MAP), DataComponentTypes.MAP_COLOR, MapItemColor.mapItemColor().mapColor(Color.BLUE).build(), MapItemColor::mapColor, MapMeta.class, MapMeta::getColor, MapMeta::setColor);
++    }
++
++    @Test
++    void testMapId() {
++        testWithMeta(new ItemStack(Material.FILLED_MAP), DataComponentTypes.MAP_ID, MapID.mapId().mapId(1).build(), MapID::id, MapMeta.class, MapMeta::getMapId, MapMeta::setMapId);
++    }
++
++    @Test
++    void testFireworks() {
++        testWithMeta(new ItemStack(Material.FIREWORK_ROCKET), DataComponentTypes.FIREWORKS, Fireworks.fireworks(List.of(FireworkEffect.builder().build()), 1), Fireworks::effects, FireworkMeta.class, FireworkMeta::getEffects, (fireworkMeta, o) -> {
++            fireworkMeta.clearEffects();
++            fireworkMeta.addEffects(o);
++        });
++
++        testWithMeta(new ItemStack(Material.FIREWORK_ROCKET), DataComponentTypes.FIREWORKS, Fireworks.fireworks(List.of(FireworkEffect.builder().build()), 1), Fireworks::flightDuration, FireworkMeta.class, FireworkMeta::getPower, FireworkMeta::setPower);
++    }
++
++    @Test
++    void testTrim() {
++        final ItemStack stack = new ItemStack(Material.LEATHER_CHESTPLATE);
++        ItemArmorTrim armorTrim = ItemArmorTrim.itemArmorTrim(new ArmorTrim(TrimMaterial.AMETHYST, TrimPattern.BOLT), false);
++        stack.setData(DataComponentTypes.TRIM, armorTrim);
++
++        Assertions.assertTrue(stack.getItemMeta().hasItemFlag(ItemFlag.HIDE_ARMOR_TRIM));
++        Assertions.assertEquals(armorTrim.armorTrim(), ((ArmorMeta) stack.getItemMeta()).getTrim());
++        stack.unsetData(DataComponentTypes.TRIM);
++        Assertions.assertFalse(stack.getItemMeta().hasItemFlag(ItemFlag.HIDE_ARMOR_TRIM));
++        Assertions.assertFalse(((ArmorMeta) stack.getItemMeta()).hasTrim());
++    }
++
++
++    @Test
 +    void testChargedProjectiles() {
 +        final ItemStack stack = new ItemStack(Material.CROSSBOW);
 +        ItemStack projectile = new ItemStack(Material.FIREWORK_ROCKET);
@@ -3328,6 +3568,30 @@ index 0000000000000000000000000000000000000000..3ee8696686d4e91de57e2dbb2772c931
 +        stack.setData(type, value);
 +
 +        Assertions.assertEquals(value, stack.getData(type));
++
++        final ItemMeta meta = stack.getItemMeta();
++        final M typedMeta = Assertions.assertInstanceOf(metaType, meta);
++
++        Assertions.assertEquals(metaGetter.apply(typedMeta), value);
++    }
++
++    @SuppressWarnings("unchecked")
++    private static <T, M, R> void testWithMeta(final ItemStack stack, final DataComponentType.Valued<T> type, final T value, Function<T, R> mapper, final Class<M> metaType, final Function<M, R> metaGetter, final BiConsumer<M, R> metaSetter) {
++        stack.setData(type, value);
++
++        Assertions.assertEquals(value, stack.getData(type));
++
++        final ItemMeta meta = stack.getItemMeta();
++        final M typedMeta = Assertions.assertInstanceOf(metaType, meta);
++
++        Assertions.assertEquals(metaGetter.apply(typedMeta), mapper.apply(value));
++    }
++
++    @SuppressWarnings("unchecked")
++    private static <M> void testWithMeta(final ItemStack stack, final DataComponentType.NonValued type, final boolean value, final Class<M> metaType, final Function<M, Boolean> metaGetter, final BiConsumer<M, Boolean> metaSetter) {
++        stack.setData(type);
++
++        Assertions.assertEquals(value, stack.hasData(type));
 +
 +        final ItemMeta meta = stack.getItemMeta();
 +        final M typedMeta = Assertions.assertInstanceOf(metaType, meta);
