@@ -17,15 +17,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public final LevelChunk getChunk(int chunkX, int chunkZ) { // Paper - final to help inline
+-        return (LevelChunk) this.getChunk(chunkX, chunkZ, ChunkStatus.FULL, true); // Paper - avoid a method jump
 +        // Paper start - Perf: make sure loaded chunks get the inlined variant of this function
 +        net.minecraft.server.level.ServerChunkCache cps = ((ServerLevel)this).getChunkSource();
-+        if (cps.mainThread == Thread.currentThread()) {
-+            LevelChunk ifLoaded = cps.getChunkAtIfLoadedMainThread(chunkX, chunkZ);
-+            if (ifLoaded != null) {
-+                return ifLoaded;
-+            }
++        LevelChunk ifLoaded = cps.getChunkAtIfLoadedImmediately(chunkX, chunkZ);
++        if (ifLoaded != null) {
++            return ifLoaded;
 +        }
++        return (LevelChunk) cps.getChunk(chunkX, chunkZ, ChunkStatus.FULL, true); // Paper - avoid a method jump
 +        // Paper end - Perf: make sure loaded chunks get the inlined variant of this function
-         return (LevelChunk) this.getChunk(chunkX, chunkZ, ChunkStatus.FULL, true); // Paper - avoid a method jump
      }
  
+     // Paper start - if loaded
