@@ -185,8 +185,10 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
         }
 
         List<FireworkExplosion> effects = new ArrayList<>();
-        for (FireworkEffect effect : this.effects) {
-            effects.add(getExplosion(effect));
+        if (hasEffects()) {
+            for (FireworkEffect effect : this.effects) {
+                effects.add(getExplosion(effect));
+            }
         }
 
         itemTag.put(FIREWORKS, new Fireworks(power, effects));
