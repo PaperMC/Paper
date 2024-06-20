@@ -11,7 +11,7 @@
              .toList();
          CompletableFuture<List<WritableRegistry<?>>> completableFuture = Util.sequence(list2);
          return completableFuture.thenApplyAsync(
-@@ -60,13 +61,14 @@
+@@ -60,14 +61,15 @@
      }
  
      private static <T> CompletableFuture<WritableRegistry<?>> scheduleRegistryLoad(
@@ -24,7 +24,9 @@
              Map<ResourceLocation, T> map = new HashMap<>();
              SimpleJsonResourceReloadListener.scanDirectory(resourceManager, type.registryKey(), ops, type.codec(), map);
 -            map.forEach((id, value) -> writableRegistry.register(ResourceKey.create(type.registryKey(), id), (T)value, DEFAULT_REGISTRATION_INFO));
+-            TagLoader.loadTagsForRegistry(resourceManager, writableRegistry);
 +            map.forEach((id, value) -> io.papermc.paper.registry.PaperRegistryListenerManager.INSTANCE.registerWithListeners(writableRegistry, ResourceKey.create(type.registryKey(), id), value, DEFAULT_REGISTRATION_INFO, conversions)); // Paper - register with listeners
-             TagLoader.loadTagsForRegistry(resourceManager, writableRegistry);
++            TagLoader.loadTagsForRegistry(resourceManager, writableRegistry, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.RELOAD); // Paper - tag life cycle - reload
              return writableRegistry;
          }, prepareExecutor);
+     }

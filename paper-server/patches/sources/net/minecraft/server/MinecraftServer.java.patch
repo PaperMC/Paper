@@ -1129,7 +1129,7 @@
          gameprofilerfiller.popPush("levels");
 -        Iterator iterator = this.getAllLevels().iterator();
 +        //Iterator iterator = this.getAllLevels().iterator(); // Paper - Throw exception on world create while being ticked; moved down
-+
+ 
 +        // CraftBukkit start
 +        // Run tasks that are waiting on processing
 +        while (!this.processQueue.isEmpty()) {
@@ -1155,7 +1155,7 @@
 +                // Paper end - Perf: Optimize time updates
 +            }
 +        }
- 
++
 +        this.isIteratingOverLevels = true; // Paper - Throw exception on world create while being ticked
 +        Iterator iterator = this.getAllLevels().iterator(); // Paper - Throw exception on world create while being ticked; move down
          while (iterator.hasNext()) {
@@ -1298,7 +1298,7 @@
          } else {
              super.executeIfPossible(runnable);
          }
-@@ -1632,13 +2215,19 @@
+@@ -1632,16 +2215,22 @@
          return this.functionManager;
      }
  
@@ -1319,7 +1319,11 @@
 +            return stream.<Pack>map(resourcepackrepository::getPack).filter(Objects::nonNull).map(Pack::open).collect(ImmutableList.toImmutableList()); // CraftBukkit - decompile error // Paper - decompile error // todo: is this needed anymore?
          }, this).thenCompose((immutablelist) -> {
              MultiPackResourceManager resourcemanager = new MultiPackResourceManager(PackType.SERVER_DATA, immutablelist);
-             List<Registry.PendingTags<?>> list = TagLoader.loadTagsForExistingRegistries(resourcemanager, this.registries.compositeAccess());
+-            List<Registry.PendingTags<?>> list = TagLoader.loadTagsForExistingRegistries(resourcemanager, this.registries.compositeAccess());
++            List<Registry.PendingTags<?>> list = TagLoader.loadTagsForExistingRegistries(resourcemanager, this.registries.compositeAccess(), io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.RELOAD); // Paper - tag lifecycle - add cause
+ 
+             return ReloadableServerResources.loadResources(resourcemanager, this.registries, list, this.worldData.enabledFeatures(), this.isDedicatedServer() ? Commands.CommandSelection.DEDICATED : Commands.CommandSelection.INTEGRATED, this.getFunctionCompilationLevel(), this.executor, this).whenComplete((datapackresources, throwable) -> {
+                 if (throwable != null) {
 @@ -1652,6 +2241,7 @@
                  return new MinecraftServer.ReloadableResources(resourcemanager, datapackresources);
              });
