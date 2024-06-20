@@ -26,6 +26,12 @@ public final class LifecycleEvents {
      */
     public static final LifecycleEventType.Prioritizable<LifecycleEventOwner, ReloadableRegistrarEvent<Commands>> COMMANDS = prioritized("commands", LifecycleEventOwner.class);
 
+    /**
+     * These events are for registering tags to the server's tag system. You can register a handler for these events
+     * only in {@link io.papermc.paper.plugin.bootstrap.PluginBootstrap#bootstrap(BootstrapContext)}.
+     */
+    public static final TagEventTypeProvider TAGS = LifecycleEventTypeProvider.provider().tagProvider();
+
     //<editor-fold desc="helper methods" defaultstate="collapsed">
     @ApiStatus.Internal
     static <E extends LifecycleEvent> LifecycleEventType.Monitorable<Plugin, E> plugin(final String name) {

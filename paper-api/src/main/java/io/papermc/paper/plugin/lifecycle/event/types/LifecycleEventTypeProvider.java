@@ -21,4 +21,6 @@ interface LifecycleEventTypeProvider {
     <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Monitorable<O, E> monitor(String name, Class<? extends O> ownerType);
 
     <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Prioritizable<O, E> prioritized(String name, Class<? extends O> ownerType);
+
+    TagEventTypeProvider tagProvider();
 }
