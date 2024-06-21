@@ -11,8 +11,12 @@
  public class TileEntityBeehive extends TileEntity {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -55,6 +59,7 @@
-     private final List<TileEntityBeehive.HiveBee> stored = Lists.newArrayList();
+@@ -52,9 +56,10 @@
+     private static final int MIN_TICKS_BEFORE_REENTERING_HIVE = 400;
+     private static final int MIN_OCCUPATION_TICKS_NECTAR = 2400;
+     public static final int MIN_OCCUPATION_TICKS_NECTARLESS = 600;
+-    private final List<TileEntityBeehive.HiveBee> stored = Lists.newArrayList();
++    private List<TileEntityBeehive.HiveBee> stored = Lists.newArrayList();
      @Nullable
      public BlockPosition savedFlowerPos;
 +    public int maxBees = 3; // CraftBukkit - allow setting max amount of bees a hive can hold
@@ -152,6 +156,15 @@
                  }
              }
          }
+@@ -284,7 +331,7 @@
+     @Override
+     protected void loadAdditional(NBTTagCompound nbttagcompound, HolderLookup.a holderlookup_a) {
+         super.loadAdditional(nbttagcompound, holderlookup_a);
+-        this.stored.clear();
++        this.stored = Lists.newArrayList(); // CraftBukkit - SPIGOT-7790: create new copy (may be modified in physics event triggered by honey change)
+         if (nbttagcompound.contains("bees")) {
+             TileEntityBeehive.c.LIST_CODEC.parse(DynamicOpsNBT.INSTANCE, nbttagcompound.get("bees")).resultOrPartial((s) -> {
+                 TileEntityBeehive.LOGGER.error("Failed to parse bees: '{}'", s);
 @@ -293,7 +340,12 @@
              });
          }
@@ -166,7 +179,7 @@
      }
  
      @Override
-@@ -303,6 +355,7 @@
+@@ -303,13 +355,14 @@
          if (this.hasSavedFlowerPos()) {
              nbttagcompound.put("flower_pos", GameProfileSerializer.writeBlockPos(this.savedFlowerPos));
          }
@@ -174,6 +187,14 @@
  
      }
  
+     @Override
+     protected void applyImplicitComponents(TileEntity.b tileentity_b) {
+         super.applyImplicitComponents(tileentity_b);
+-        this.stored.clear();
++        this.stored = Lists.newArrayList(); // CraftBukkit - SPIGOT-7790: create new copy (may be modified in physics event triggered by honey change)
+         List<TileEntityBeehive.c> list = (List) tileentity_b.getOrDefault(DataComponents.BEES, List.of());
+ 
+         list.forEach(this::storeBee);
 @@ -350,7 +403,7 @@
              NBTTagCompound nbttagcompound = new NBTTagCompound();
  
