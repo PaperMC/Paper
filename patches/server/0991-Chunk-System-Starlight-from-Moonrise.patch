@@ -8558,10 +8558,10 @@ index 0000000000000000000000000000000000000000..82e8ce73b77accd6a4210f88c9fccb32
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/queue/ChunkUnloadQueue.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/queue/ChunkUnloadQueue.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bc07e710a5854fd526e3bb56d1565602ec728ce1
+index 0000000000000000000000000000000000000000..7eafc5b7cba23d8dec92ecc1050afe3fd8c9e309
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/queue/ChunkUnloadQueue.java
-@@ -0,0 +1,140 @@
+@@ -0,0 +1,144 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.queue;
 +
 +import ca.spottedleaf.concurrentutil.map.ConcurrentLong2ReferenceChainedHashTable;
@@ -8627,12 +8627,13 @@ index 0000000000000000000000000000000000000000..bc07e710a5854fd526e3bb56d1565602
 +        final int shift = this.coordinateShift;
 +        final int sectionX = chunkX >> shift;
 +        final int sectionZ = chunkZ >> shift;
++        final long sectionKey = CoordinateUtils.getChunkKey(sectionX, sectionZ);
 +        final long chunkKey = CoordinateUtils.getChunkKey(chunkX, chunkZ);
 +
-+        UnloadSection section = this.unloadSections.get(chunkKey);
++        UnloadSection section = this.unloadSections.get(sectionKey);
 +        if (section == null) {
 +            section = new UnloadSection(this.orderGenerator.getAndIncrement());
-+            this.unloadSections.put(chunkKey, section);
++            this.unloadSections.put(sectionKey, section);
 +        }
 +
 +        return section.chunks.add(chunkKey);
@@ -8644,9 +8645,10 @@ index 0000000000000000000000000000000000000000..bc07e710a5854fd526e3bb56d1565602
 +        final int shift = this.coordinateShift;
 +        final int sectionX = chunkX >> shift;
 +        final int sectionZ = chunkZ >> shift;
++        final long sectionKey = CoordinateUtils.getChunkKey(sectionX, sectionZ);
 +        final long chunkKey = CoordinateUtils.getChunkKey(chunkX, chunkZ);
 +
-+        final UnloadSection section = this.unloadSections.get(chunkKey);
++        final UnloadSection section = this.unloadSections.get(sectionKey);
 +
 +        if (section == null) {
 +            return false;
@@ -8657,7 +8659,7 @@ index 0000000000000000000000000000000000000000..bc07e710a5854fd526e3bb56d1565602
 +        }
 +
 +        if (section.chunks.isEmpty()) {
-+            this.unloadSections.remove(chunkKey);
++            this.unloadSections.remove(sectionKey);
 +        }
 +
 +        return true;
@@ -8678,14 +8680,16 @@ index 0000000000000000000000000000000000000000..bc07e710a5854fd526e3bb56d1565602
 +            sectionJson.add("coordinates", coordinates);
 +
 +            final UnloadSection actualSection = this.getSectionUnsynchronized(section.sectionX(), section.sectionZ());
-+            for (final LongIterator iterator = actualSection.chunks.clone().iterator(); iterator.hasNext();) {
-+                final long coordinate = iterator.nextLong();
++            if (actualSection != null) {
++                for (final LongIterator iterator = actualSection.chunks.clone().iterator(); iterator.hasNext(); ) {
++                    final long coordinate = iterator.nextLong();
 +
-+                final JsonObject coordinateJson = new JsonObject();
-+                coordinates.add(coordinateJson);
++                    final JsonObject coordinateJson = new JsonObject();
++                    coordinates.add(coordinateJson);
 +
-+                coordinateJson.addProperty("chunkX", Integer.valueOf(CoordinateUtils.getChunkX(coordinate)));
-+                coordinateJson.addProperty("chunkZ", Integer.valueOf(CoordinateUtils.getChunkZ(coordinate)));
++                    coordinateJson.addProperty("chunkX", Integer.valueOf(CoordinateUtils.getChunkX(coordinate)));
++                    coordinateJson.addProperty("chunkZ", Integer.valueOf(CoordinateUtils.getChunkZ(coordinate)));
++                }
 +            }
 +        }
 +
@@ -22849,7 +22853,7 @@ index 2a5453707bc172d8d0efe3f11959cb0b5f830984..b8499c1cea97a1a88a53053bc7da132f
  
 diff --git a/src/main/java/io/papermc/paper/threadedregions/TickRegions.java b/src/main/java/io/papermc/paper/threadedregions/TickRegions.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9d04285165241baec1005cb3ae81a623bcd3945a
+index 0000000000000000000000000000000000000000..8424cf9d4617b4732d44cc460d25b04481068989
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/threadedregions/TickRegions.java
 @@ -0,0 +1,10 @@
@@ -22859,7 +22863,7 @@ index 0000000000000000000000000000000000000000..9d04285165241baec1005cb3ae81a623
 +public class TickRegions {
 +
 +    public static int getRegionChunkShift() {
-+        return 2;
++        return ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ThreadedTicketLevelPropagator.SECTION_SHIFT;
 +    }
 +
 +}
