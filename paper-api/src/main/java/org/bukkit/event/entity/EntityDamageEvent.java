@@ -248,6 +248,10 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          */
         BASE,
         /**
+         * This represents the damage increased by freezing status.
+         */
+        FREEZING,
+        /**
          * This represents the damage reduced by a wearing a helmet when hit
          * by a falling block.
          */
