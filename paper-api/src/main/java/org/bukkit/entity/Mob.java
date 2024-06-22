@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a Mob. Mobs are living entities with simple AI.
  */
-public interface Mob extends LivingEntity, Lootable {
+public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Leashable { // Paper - Leashable API
 
     // Paper start
     @Override
