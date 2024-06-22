@@ -187,7 +187,7 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
         super.applyTo(skull);
 
         if (getSkullType() == SkullType.PLAYER) {
-            skull.setOwner(new ResolvableProfile(profile));
+            skull.setOwner((profile != null) ? new ResolvableProfile(profile) : null);
         }
     }
 
