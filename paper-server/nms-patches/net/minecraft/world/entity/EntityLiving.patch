@@ -417,22 +417,37 @@
              float f2 = 0.0F;
  
 -            if (f > 0.0F && this.isDamageSourceBlocked(damagesource)) {
-+            // CraftBukkit - Moved into actuallyHurt(DamageSource, float)
++            // CraftBukkit - Moved into handleEntityDamage(DamageSource, float)
 +            if (false && f > 0.0F && this.isDamageSourceBlocked(damagesource)) {
                  this.hurtCurrentlyUsedShield(f);
                  f2 = f;
                  f = 0.0F;
-@@ -1180,7 +1397,8 @@
+@@ -1176,30 +1393,50 @@
+                 flag = true;
+             }
+ 
+-            if (damagesource.is(DamageTypeTags.IS_FREEZING) && this.getType().is(TagsEntity.FREEZE_HURTS_EXTRA_TYPES)) {
++            // CraftBukkit - Moved into handleEntityDamage(DamageSource, float)
++            if (false && damagesource.is(DamageTypeTags.IS_FREEZING) && this.getType().is(TagsEntity.FREEZE_HURTS_EXTRA_TYPES)) {
                  f *= 5.0F;
              }
  
 -            if (damagesource.is(DamageTypeTags.DAMAGES_HELMET) && !this.getItemBySlot(EnumItemSlot.HEAD).isEmpty()) {
-+            // CraftBukkit - Moved into actuallyHurt(DamageSource, float)
++            // CraftBukkit - Moved into handleEntityDamage(DamageSource, float)
 +            if (false && damagesource.is(DamageTypeTags.DAMAGES_HELMET) && !this.getItemBySlot(EnumItemSlot.HEAD).isEmpty()) {
                  this.hurtHelmet(damagesource, f);
                  f *= 0.75F;
              }
-@@ -1188,18 +1406,27 @@
+ 
++            // CraftBukkit start
++            EntityDamageEvent event = handleEntityDamage(damagesource, f);
++            f = 0;
++            f += (float) event.getDamage(DamageModifier.BASE);
++            f += (float) event.getDamage(DamageModifier.BLOCKING);
++            f += (float) event.getDamage(DamageModifier.FREEZING);
++            f += (float) event.getDamage(DamageModifier.HARD_HAT);
++            // CraftBukkit end
++
              this.walkAnimation.setSpeed(1.5F);
              boolean flag1 = true;
  
@@ -444,7 +459,7 @@
  
 -                this.actuallyHurt(damagesource, f - this.lastHurt);
 +                // CraftBukkit start
-+                if (!this.actuallyHurt(damagesource, f - this.lastHurt)) {
++                if (!this.actuallyHurt(damagesource, (float) event.getFinalDamage() - this.lastHurt, event)) {
 +                    return false;
 +                }
 +                // CraftBukkit end
@@ -452,7 +467,7 @@
                  flag1 = false;
              } else {
 +                // CraftBukkit start
-+                if (!this.actuallyHurt(damagesource, f)) {
++                if (!this.actuallyHurt(damagesource, (float) event.getFinalDamage(), event)) {
 +                    return false;
 +                }
                  this.lastHurt = f;
@@ -464,7 +479,7 @@
                  this.hurtDuration = 10;
                  this.hurtTime = this.hurtDuration;
              }
-@@ -1245,7 +1472,7 @@
+@@ -1245,7 +1482,7 @@
                      this.level().broadcastDamageEvent(this, damagesource);
                  }
  
@@ -473,7 +488,7 @@
                      this.markHurt();
                  }
  
-@@ -1265,7 +1492,7 @@
+@@ -1265,7 +1502,7 @@
                          d1 = damagesource.getSourcePosition().z() - this.getZ();
                      }
  
@@ -482,7 +497,7 @@
                      if (!flag) {
                          this.indicateDamage(d0, d1);
                      }
-@@ -1284,7 +1511,7 @@
+@@ -1284,7 +1521,7 @@
                  this.playHurtSound(damagesource);
              }
  
@@ -491,7 +506,7 @@
  
              if (flag2) {
                  this.lastDamageSource = damagesource;
-@@ -1318,7 +1545,7 @@
+@@ -1318,7 +1555,7 @@
      }
  
      protected void blockedByShield(EntityLiving entityliving) {
@@ -500,7 +515,7 @@
      }
  
      private boolean checkTotemDeathProtection(DamageSource damagesource) {
-@@ -1329,19 +1556,32 @@
+@@ -1329,19 +1566,32 @@
              EnumHand[] aenumhand = EnumHand.values();
              int i = aenumhand.length;
  
@@ -537,7 +552,7 @@
                      EntityPlayer entityplayer = (EntityPlayer) this;
  
                      entityplayer.awardStat(StatisticList.ITEM_USED.get(Items.TOTEM_OF_UNDYING));
-@@ -1350,14 +1590,16 @@
+@@ -1350,14 +1600,16 @@
                  }
  
                  this.setHealth(1.0F);
@@ -559,7 +574,7 @@
          }
      }
  
-@@ -1464,14 +1706,22 @@
+@@ -1464,14 +1716,22 @@
                      IBlockData iblockdata = Blocks.WITHER_ROSE.defaultBlockState();
  
                      if (this.level().getBlockState(blockposition).isAir() && iblockdata.canSurvive(this.level(), blockposition)) {
@@ -584,7 +599,7 @@
                      this.level().addFreshEntity(entityitem);
                  }
              }
-@@ -1482,26 +1732,41 @@
+@@ -1482,26 +1742,41 @@
      protected void dropAllDeathLoot(WorldServer worldserver, DamageSource damagesource) {
          boolean flag = this.lastHurtByPlayerTime > 0;
  
@@ -629,7 +644,7 @@
      }
  
      protected void dropCustomDeathLoot(WorldServer worldserver, DamageSource damagesource, boolean flag) {}
-@@ -1540,9 +1805,14 @@
+@@ -1540,9 +1815,14 @@
      }
  
      public void knockback(double d0, double d1, double d2) {
@@ -646,7 +661,7 @@
  
              Vec3D vec3d;
  
-@@ -1552,7 +1822,14 @@
+@@ -1552,7 +1832,14 @@
  
              Vec3D vec3d1 = (new Vec3D(d1, 0.0D, d2)).normalize().scale(d0);
  
@@ -662,7 +677,7 @@
          }
      }
  
-@@ -1613,6 +1890,28 @@
+@@ -1613,6 +1900,28 @@
          return itemstack.getEatingSound();
      }
  
@@ -691,7 +706,7 @@
      public Optional<BlockPosition> getLastClimbablePos() {
          return this.lastClimbablePos;
      }
-@@ -1666,9 +1965,14 @@
+@@ -1666,9 +1975,14 @@
          int i = this.calculateFallDamage(f, f1);
  
          if (i > 0) {
@@ -707,164 +722,184 @@
              return true;
          } else {
              return flag;
-@@ -1738,7 +2042,7 @@
+@@ -1738,7 +2052,7 @@
  
      protected float getDamageAfterArmorAbsorb(DamageSource damagesource, float f) {
          if (!damagesource.is(DamageTypeTags.BYPASSES_ARMOR)) {
 -            this.hurtArmor(damagesource, f);
-+            // this.hurtArmor(damagesource, f); // CraftBukkit - Moved into actuallyHurt(DamageSource, float)
++            // this.hurtArmor(damagesource, f); // CraftBukkit - Moved into handleEntityDamage(DamageSource, float)
              f = CombatMath.getDamageAfterAbsorb(this, f, damagesource, (float) this.getArmorValue(), (float) this.getAttributeValue(GenericAttributes.ARMOR_TOUGHNESS));
          }
  
-@@ -1749,7 +2053,8 @@
+@@ -1749,7 +2063,8 @@
          if (damagesource.is(DamageTypeTags.BYPASSES_EFFECTS)) {
              return f;
          } else {
 -            if (this.hasEffect(MobEffects.DAMAGE_RESISTANCE) && !damagesource.is(DamageTypeTags.BYPASSES_RESISTANCE)) {
-+            // CraftBukkit - Moved to actuallyHurt(DamageSource, float)
++            // CraftBukkit - Moved to handleEntityDamage(DamageSource, float)
 +            if (false && this.hasEffect(MobEffects.DAMAGE_RESISTANCE) && !damagesource.is(DamageTypeTags.BYPASSES_RESISTANCE)) {
                  int i = (this.getEffect(MobEffects.DAMAGE_RESISTANCE).getAmplifier() + 1) * 5;
                  int j = 25 - i;
                  float f1 = f * (float) j;
-@@ -1792,16 +2097,125 @@
+@@ -1792,15 +2107,145 @@
          }
      }
  
 -    protected void actuallyHurt(DamageSource damagesource, float f) {
--        if (!this.isInvulnerableTo(damagesource)) {
++    // CraftBukkit start
++    private EntityDamageEvent handleEntityDamage(final DamageSource damagesource, float f) {
++        float originalDamage = f;
++
++        Function<Double, Double> freezing = new Function<Double, Double>() {
++            @Override
++            public Double apply(Double f) {
++                if (damagesource.is(DamageTypeTags.IS_FREEZING) && EntityLiving.this.getType().is(TagsEntity.FREEZE_HURTS_EXTRA_TYPES)) {
++                    return -(f - (f * 5.0F));
++                }
++                return -0.0;
++            }
++        };
++        float freezingModifier = freezing.apply((double) f).floatValue();
++        f += freezingModifier;
++
++        Function<Double, Double> hardHat = new Function<Double, Double>() {
++            @Override
++            public Double apply(Double f) {
++                if (damagesource.is(DamageTypeTags.DAMAGES_HELMET) && !EntityLiving.this.getItemBySlot(EnumItemSlot.HEAD).isEmpty()) {
++                    return -(f - (f * 0.75F));
++                }
++                return -0.0;
++            }
++        };
++        float hardHatModifier = hardHat.apply((double) f).floatValue();
++        f += hardHatModifier;
++
++        Function<Double, Double> blocking = new Function<Double, Double>() {
++            @Override
++            public Double apply(Double f) {
++                return -((EntityLiving.this.isDamageSourceBlocked(damagesource)) ? f : 0.0);
++            }
++        };
++        float blockingModifier = blocking.apply((double) f).floatValue();
++        f += blockingModifier;
++
++        Function<Double, Double> armor = new Function<Double, Double>() {
++            @Override
++            public Double apply(Double f) {
++                return -(f - EntityLiving.this.getDamageAfterArmorAbsorb(damagesource, f.floatValue()));
++            }
++        };
++        float armorModifier = armor.apply((double) f).floatValue();
++        f += armorModifier;
++
++        Function<Double, Double> resistance = new Function<Double, Double>() {
++            @Override
++            public Double apply(Double f) {
++                if (!damagesource.is(DamageTypeTags.BYPASSES_EFFECTS) && EntityLiving.this.hasEffect(MobEffects.DAMAGE_RESISTANCE) && !damagesource.is(DamageTypeTags.BYPASSES_RESISTANCE)) {
++                    int i = (EntityLiving.this.getEffect(MobEffects.DAMAGE_RESISTANCE).getAmplifier() + 1) * 5;
++                    int j = 25 - i;
++                    float f1 = f.floatValue() * (float) j;
++                    return -(f - (f1 / 25.0F));
++                }
++                return -0.0;
++            }
++        };
++        float resistanceModifier = resistance.apply((double) f).floatValue();
++        f += resistanceModifier;
++
++        Function<Double, Double> magic = new Function<Double, Double>() {
++            @Override
++            public Double apply(Double f) {
++                return -(f - EntityLiving.this.getDamageAfterMagicAbsorb(damagesource, f.floatValue()));
++            }
++        };
++        float magicModifier = magic.apply((double) f).floatValue();
++        f += magicModifier;
++
++        Function<Double, Double> absorption = new Function<Double, Double>() {
++            @Override
++            public Double apply(Double f) {
++                return -(Math.max(f - Math.max(f - EntityLiving.this.getAbsorptionAmount(), 0.0F), 0.0F));
++            }
++        };
++        float absorptionModifier = absorption.apply((double) f).floatValue();
++
++        EntityDamageEvent event = CraftEventFactory.handleLivingEntityDamageEvent(this, damagesource, originalDamage, freezingModifier, hardHatModifier, blockingModifier, armorModifier, resistanceModifier, magicModifier, absorptionModifier, freezing, hardHat, blocking, armor, resistance, magic, absorption);
++        if (damagesource.getEntity() instanceof EntityHuman) {
++            ((EntityHuman) damagesource.getEntity()).resetAttackStrengthTicker(); // Moved from EntityHuman in order to make the cooldown reset get called after the damage event is fired
++        }
++
++        if (this.isInvulnerableTo(damagesource)) {
++            event.setCancelled(true);
++        }
++
++        // Resistance
++        if (event.getDamage(DamageModifier.RESISTANCE) < 0) {
++            float f3 = (float) -event.getDamage(DamageModifier.RESISTANCE);
++            if (f3 > 0.0F && f3 < 3.4028235E37F) {
++                if (this instanceof EntityPlayer) {
++                    ((EntityPlayer) this).awardStat(StatisticList.DAMAGE_RESISTED, Math.round(f3 * 10.0F));
++                } else if (damagesource.getEntity() instanceof EntityPlayer) {
++                    ((EntityPlayer) damagesource.getEntity()).awardStat(StatisticList.DAMAGE_DEALT_RESISTED, Math.round(f3 * 10.0F));
++                }
++            }
++        }
++
++        // Apply damage to helmet
++        if (damagesource.is(DamageTypeTags.DAMAGES_HELMET) && !this.getItemBySlot(EnumItemSlot.HEAD).isEmpty()) {
++            this.hurtHelmet(damagesource, f);
++        }
++
++        // Apply damage to armor
++        if (!damagesource.is(DamageTypeTags.BYPASSES_ARMOR)) {
++            float armorDamage = (float) (event.getDamage() + event.getDamage(DamageModifier.BLOCKING) + event.getDamage(DamageModifier.HARD_HAT));
++            this.hurtArmor(damagesource, armorDamage);
++        }
++
++        // Apply blocking code // PAIL: steal from above
++        if (event.getDamage(DamageModifier.BLOCKING) < 0) {
++            this.hurtCurrentlyUsedShield((float) -event.getDamage(DamageModifier.BLOCKING));
++            Entity entity = damagesource.getDirectEntity();
++
++            if (entity instanceof EntityLiving) {
++                this.blockUsingShield((EntityLiving) entity);
++            }
++        }
++
++        return event;
++    }
++
++    protected boolean actuallyHurt(final DamageSource damagesource, float f, final EntityDamageEvent event) { // void -> boolean, add final
+         if (!this.isInvulnerableTo(damagesource)) {
 -            f = this.getDamageAfterArmorAbsorb(damagesource, f);
 -            f = this.getDamageAfterMagicAbsorb(damagesource, f);
 -            float f1 = f;
-+    // CraftBukkit start
-+    protected boolean actuallyHurt(final DamageSource damagesource, float f) { // void -> boolean, add final
-+       if (!this.isInvulnerableTo(damagesource)) {
-+            final boolean human = this instanceof EntityHuman;
-+            float originalDamage = f;
-+            Function<Double, Double> hardHat = new Function<Double, Double>() {
-+                @Override
-+                public Double apply(Double f) {
-+                    if (damagesource.is(DamageTypeTags.DAMAGES_HELMET) && !EntityLiving.this.getItemBySlot(EnumItemSlot.HEAD).isEmpty()) {
-+                        return -(f - (f * 0.75F));
++            if (event.isCancelled()) {
++                return false;
++            }
  
 -            f = Math.max(f - this.getAbsorptionAmount(), 0.0F);
 -            this.setAbsorptionAmount(this.getAbsorptionAmount() - (f1 - f));
 -            float f2 = f1 - f;
-+                    }
-+                    return -0.0;
-+                }
-+            };
-+            float hardHatModifier = hardHat.apply((double) f).floatValue();
-+            f += hardHatModifier;
-+
-+            Function<Double, Double> blocking = new Function<Double, Double>() {
-+                @Override
-+                public Double apply(Double f) {
-+                    return -((EntityLiving.this.isDamageSourceBlocked(damagesource)) ? f : 0.0);
-+                }
-+            };
-+            float blockingModifier = blocking.apply((double) f).floatValue();
-+            f += blockingModifier;
-+
-+            Function<Double, Double> armor = new Function<Double, Double>() {
-+                @Override
-+                public Double apply(Double f) {
-+                    return -(f - EntityLiving.this.getDamageAfterArmorAbsorb(damagesource, f.floatValue()));
-+                }
-+            };
-+            float armorModifier = armor.apply((double) f).floatValue();
-+            f += armorModifier;
- 
-+            Function<Double, Double> resistance = new Function<Double, Double>() {
-+                @Override
-+                public Double apply(Double f) {
-+                    if (!damagesource.is(DamageTypeTags.BYPASSES_EFFECTS) && EntityLiving.this.hasEffect(MobEffects.DAMAGE_RESISTANCE) && !damagesource.is(DamageTypeTags.BYPASSES_RESISTANCE)) {
-+                        int i = (EntityLiving.this.getEffect(MobEffects.DAMAGE_RESISTANCE).getAmplifier() + 1) * 5;
-+                        int j = 25 - i;
-+                        float f1 = f.floatValue() * (float) j;
-+                        return -(f - (f1 / 25.0F));
-+                    }
-+                    return -0.0;
-+                }
-+            };
-+            float resistanceModifier = resistance.apply((double) f).floatValue();
-+            f += resistanceModifier;
-+
-+            Function<Double, Double> magic = new Function<Double, Double>() {
-+                @Override
-+                public Double apply(Double f) {
-+                    return -(f - EntityLiving.this.getDamageAfterMagicAbsorb(damagesource, f.floatValue()));
-+                }
-+            };
-+            float magicModifier = magic.apply((double) f).floatValue();
-+            f += magicModifier;
-+
-+            Function<Double, Double> absorption = new Function<Double, Double>() {
-+                @Override
-+                public Double apply(Double f) {
-+                    return -(Math.max(f - Math.max(f - EntityLiving.this.getAbsorptionAmount(), 0.0F), 0.0F));
-+                }
-+            };
-+            float absorptionModifier = absorption.apply((double) f).floatValue();
-+
-+            EntityDamageEvent event = CraftEventFactory.handleLivingEntityDamageEvent(this, damagesource, originalDamage, hardHatModifier, blockingModifier, armorModifier, resistanceModifier, magicModifier, absorptionModifier, hardHat, blocking, armor, resistance, magic, absorption);
-+            if (damagesource.getEntity() instanceof EntityHuman) {
-+                ((EntityHuman) damagesource.getEntity()).resetAttackStrengthTicker(); // Moved from EntityHuman in order to make the cooldown reset get called after the damage event is fired
-+            }
-+            if (event.isCancelled()) {
-+                return false;
-+            }
-+
-+            f = (float) event.getFinalDamage();
-+
-+            // Resistance
-+            if (event.getDamage(DamageModifier.RESISTANCE) < 0) {
-+                float f3 = (float) -event.getDamage(DamageModifier.RESISTANCE);
-+                if (f3 > 0.0F && f3 < 3.4028235E37F) {
-+                    if (this instanceof EntityPlayer) {
-+                        ((EntityPlayer) this).awardStat(StatisticList.DAMAGE_RESISTED, Math.round(f3 * 10.0F));
-+                    } else if (damagesource.getEntity() instanceof EntityPlayer) {
-+                        ((EntityPlayer) damagesource.getEntity()).awardStat(StatisticList.DAMAGE_DEALT_RESISTED, Math.round(f3 * 10.0F));
-+                    }
-+                }
-+            }
-+
-+            // Apply damage to helmet
-+            if (damagesource.is(DamageTypeTags.DAMAGES_HELMET) && !this.getItemBySlot(EnumItemSlot.HEAD).isEmpty()) {
-+                this.hurtHelmet(damagesource, f);
-+            }
-+
-+            // Apply damage to armor
-+            if (!damagesource.is(DamageTypeTags.BYPASSES_ARMOR)) {
-+                float armorDamage = (float) (event.getDamage() + event.getDamage(DamageModifier.BLOCKING) + event.getDamage(DamageModifier.HARD_HAT));
-+                this.hurtArmor(damagesource, armorDamage);
-+            }
-+
-+            // Apply blocking code // PAIL: steal from above
-+            if (event.getDamage(DamageModifier.BLOCKING) < 0) {
-+                this.level().broadcastEntityEvent(this, (byte) 29); // SPIGOT-4635 - shield damage sound
-+                this.hurtCurrentlyUsedShield((float) -event.getDamage(DamageModifier.BLOCKING));
-+                Entity entity = damagesource.getDirectEntity();
-+
-+                if (entity instanceof EntityLiving) {
-+                    this.blockUsingShield((EntityLiving) entity);
-+                }
-+            }
-+
-+            absorptionModifier = (float) -event.getDamage(DamageModifier.ABSORPTION);
++            boolean human = this instanceof EntityHuman;
++            float originalDamage = (float) event.getDamage();
++            float absorptionModifier = (float) -event.getDamage(DamageModifier.ABSORPTION);
 +            this.setAbsorptionAmount(Math.max(this.getAbsorptionAmount() - absorptionModifier, 0.0F));
 +            float f2 = absorptionModifier;
 +
 +            if (f2 > 0.0F && f2 < 3.4028235E37F && this instanceof EntityHuman) {
 +                ((EntityHuman) this).awardStat(StatisticList.DAMAGE_ABSORBED, Math.round(f2 * 10.0F));
 +            }
++            // CraftBukkit end
+ 
              if (f2 > 0.0F && f2 < 3.4028235E37F) {
                  Entity entity = damagesource.getEntity();
- 
-@@ -1812,13 +2226,47 @@
+@@ -1812,13 +2257,48 @@
                  }
              }
  
 -            if (f != 0.0F) {
++            // CraftBukkit start
 +            if (f > 0 || !human) {
 +                if (human) {
 +                    // PAIL: Be sure to drag all this code from the EntityHuman subclass each update.
@@ -910,27 +945,28 @@
      }
  
      public CombatTracker getCombatTracker() {
-@@ -1843,8 +2291,18 @@
+@@ -1843,9 +2323,19 @@
      }
  
      public final void setArrowCount(int i) {
 -        this.entityData.set(EntityLiving.DATA_ARROW_COUNT_ID, i);
 +        // CraftBukkit start
 +        setArrowCount(i, false);
-+    }
-+
+     }
+ 
 +    public final void setArrowCount(int i, boolean flag) {
 +        ArrowBodyCountChangeEvent event = CraftEventFactory.callArrowBodyCountChangeEvent(this, getArrowCount(), i, flag);
 +        if (event.isCancelled()) {
 +            return;
 +        }
 +        this.entityData.set(EntityLiving.DATA_ARROW_COUNT_ID, event.getNewAmount());
-     }
++    }
 +    // CraftBukkit end
- 
++
      public final int getStingerCount() {
          return (Integer) this.entityData.get(EntityLiving.DATA_STINGER_COUNT_ID);
-@@ -2086,6 +2544,12 @@
+     }
+@@ -2086,6 +2576,12 @@
  
      public abstract ItemStack getItemBySlot(EnumItemSlot enumitemslot);
  
@@ -943,7 +979,7 @@
      public abstract void setItemSlot(EnumItemSlot enumitemslot, ItemStack itemstack);
  
      public Iterable<ItemStack> getHandSlots() {
-@@ -2336,6 +2800,7 @@
+@@ -2336,6 +2832,7 @@
                  }
  
                  if (this.onGround() && !this.level().isClientSide) {
@@ -951,7 +987,7 @@
                      this.setSharedFlag(7, false);
                  }
              } else {
-@@ -2506,7 +2971,7 @@
+@@ -2506,7 +3003,7 @@
                  }
              }
  
@@ -960,7 +996,7 @@
              if (this.tickCount % 20 == 0) {
                  this.getCombatTracker().recheckStatus();
              }
-@@ -2610,7 +3075,7 @@
+@@ -2610,7 +3107,7 @@
  
      }
  
@@ -969,7 +1005,7 @@
          Map<EnumItemSlot, ItemStack> map = this.collectEquipmentChanges();
  
          if (map != null) {
-@@ -2949,6 +3414,7 @@
+@@ -2949,6 +3446,7 @@
          }
  
          if (!this.level().isClientSide) {
@@ -977,7 +1013,7 @@
              this.setSharedFlag(7, flag);
          }
  
-@@ -3141,14 +3607,21 @@
+@@ -3141,14 +3639,21 @@
  
      @Override
      public boolean isPickable() {
@@ -1001,7 +1037,7 @@
      @Override
      public float getYHeadRot() {
          return this.yHeadRot;
-@@ -3346,7 +3819,26 @@
+@@ -3346,7 +3851,26 @@
              } else {
                  if (!this.useItem.isEmpty() && this.isUsingItem()) {
                      this.triggerItemUseEffects(this.useItem, 16);
@@ -1029,7 +1065,7 @@
  
                      if (itemstack != this.useItem) {
                          this.setItemInHand(enumhand, itemstack);
-@@ -3424,6 +3916,12 @@
+@@ -3424,6 +3948,12 @@
      }
  
      public boolean randomTeleport(double d0, double d1, double d2, boolean flag) {
@@ -1042,7 +1078,7 @@
          double d3 = this.getX();
          double d4 = this.getY();
          double d5 = this.getZ();
-@@ -3448,16 +3946,41 @@
+@@ -3448,16 +3978,41 @@
              }
  
              if (flag2) {
@@ -1087,7 +1123,7 @@
          } else {
              if (flag) {
                  world.broadcastEntityEvent(this, (byte) 46);
-@@ -3469,7 +3992,7 @@
+@@ -3469,7 +4024,7 @@
                  entitycreature.getNavigation().stop();
              }
  
@@ -1096,7 +1132,7 @@
          }
      }
  
-@@ -3562,7 +4085,7 @@
+@@ -3562,7 +4117,7 @@
      }
  
      public void stopSleeping() {
@@ -1105,7 +1141,7 @@
          World world = this.level();
  
          java.util.Objects.requireNonNull(world);
-@@ -3596,7 +4119,7 @@
+@@ -3596,7 +4151,7 @@
  
      @Nullable
      public EnumDirection getBedOrientation() {
@@ -1114,7 +1150,7 @@
  
          return blockposition != null ? BlockBed.getBedOrientation(this.level(), blockposition) : null;
      }
-@@ -3633,7 +4156,7 @@
+@@ -3633,7 +4188,7 @@
                  FoodInfo.b foodinfo_b = (FoodInfo.b) iterator.next();
  
                  if (this.random.nextFloat() < foodinfo_b.probability()) {

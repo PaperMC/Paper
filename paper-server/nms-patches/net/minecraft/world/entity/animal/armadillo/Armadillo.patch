@@ -1,6 +1,17 @@
 --- a/net/minecraft/world/entity/animal/armadillo/Armadillo.java
 +++ b/net/minecraft/world/entity/animal/armadillo/Armadillo.java
-@@ -132,14 +132,16 @@
+@@ -47,6 +47,10 @@
+ import net.minecraft.world.level.block.state.IBlockData;
+ import net.minecraft.world.level.gameevent.GameEvent;
+ 
++// CraftBukkit start
++import org.bukkit.event.entity.EntityDamageEvent;
++// CraftBukkit end
++
+ public class Armadillo extends EntityAnimal {
+ 
+     public static final float BABY_SCALE = 0.6F;
+@@ -132,14 +136,16 @@
      @Override
      protected void customServerAiStep() {
          this.level().getProfiler().push("armadilloBrain");
@@ -18,31 +29,31 @@
              this.gameEvent(GameEvent.ENTITY_PLACE);
              this.scuteTime = this.pickNextScuteDropTime();
          }
-@@ -286,8 +288,13 @@
+@@ -286,8 +292,13 @@
      }
  
      @Override
 -    protected void actuallyHurt(DamageSource damagesource, float f) {
 -        super.actuallyHurt(damagesource, f);
 +    // CraftBukkit start - void -> boolean
-+    public boolean actuallyHurt(DamageSource damagesource, float f) {
-+        boolean hurt = super.actuallyHurt(damagesource, f);
-+        if (!hurt) {
-+            return hurt;
++    public boolean actuallyHurt(DamageSource damagesource, float f, EntityDamageEvent event) {
++        boolean damageResult = super.actuallyHurt(damagesource, f, event);
++        if (!damageResult) {
++            return false;
 +        }
 +        // CraftBukkit end
          if (!this.isNoAi() && !this.isDeadOrDying()) {
              if (damagesource.getEntity() instanceof EntityLiving) {
                  this.getBrain().setMemoryWithExpiry(MemoryModuleType.DANGER_DETECTED_RECENTLY, true, 80L);
-@@ -299,6 +306,7 @@
+@@ -299,6 +310,7 @@
              }
  
          }
-+        return hurt; // CraftBukkit
++        return true; // CraftBukkit
      }
  
      @Override
-@@ -326,7 +334,9 @@
+@@ -326,7 +338,9 @@
          if (this.isBaby()) {
              return false;
          } else {

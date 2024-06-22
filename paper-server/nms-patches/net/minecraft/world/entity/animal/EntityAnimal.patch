@@ -1,12 +1,13 @@
 --- a/net/minecraft/world/entity/animal/EntityAnimal.java
 +++ b/net/minecraft/world/entity/animal/EntityAnimal.java
-@@ -29,12 +29,19 @@
+@@ -29,12 +29,20 @@
  import net.minecraft.world.level.block.Blocks;
  import net.minecraft.world.level.pathfinder.PathType;
  
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.event.entity.EntityBreedEvent;
++import org.bukkit.event.entity.EntityDamageEvent;
 +import org.bukkit.event.entity.EntityEnterLoveModeEvent;
 +// CraftBukkit end
 +
@@ -20,25 +21,25 @@
  
      protected EntityAnimal(EntityTypes<? extends EntityAnimal> entitytypes, World world) {
          super(entitytypes, world);
-@@ -72,9 +79,15 @@
+@@ -72,9 +80,15 @@
      }
  
      @Override
 -    protected void actuallyHurt(DamageSource damagesource, float f) {
 +    // CraftBukkit start - void -> boolean
-+    public boolean actuallyHurt(DamageSource damagesource, float f) {
-+        boolean result = super.actuallyHurt(damagesource, f);
-+        if (!result) {
-+            return result;
++    public boolean actuallyHurt(DamageSource damagesource, float f, EntityDamageEvent event) {
++        boolean damageResult = super.actuallyHurt(damagesource, f, event);
++        if (!damageResult) {
++            return false;
 +        }
          this.resetLove();
 -        super.actuallyHurt(damagesource, f);
-+        return result;
++        return true;
 +        // CraftBukkit end
      }
  
      @Override
-@@ -162,10 +175,17 @@
+@@ -162,10 +176,17 @@
      }
  
      public void setInLove(@Nullable EntityHuman entityhuman) {
@@ -57,7 +58,7 @@
  
          this.level().broadcastEntityEvent(this, (byte) 18);
      }
-@@ -207,12 +227,29 @@
+@@ -207,12 +228,29 @@
          if (entityageable != null) {
              entityageable.setBaby(true);
              entityageable.moveTo(this.getX(), this.getY(), this.getZ(), 0.0F, 0.0F);
@@ -89,7 +90,7 @@
          Optional.ofNullable(this.getLoveCause()).or(() -> {
              return Optional.ofNullable(entityanimal.getLoveCause());
          }).ifPresent((entityplayer) -> {
-@@ -225,7 +262,11 @@
+@@ -225,7 +263,11 @@
          entityanimal.resetLove();
          worldserver.broadcastEntityEvent(this, (byte) 18);
          if (worldserver.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
