@@ -136,6 +136,12 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
 
     /**
      * Opens an inventory window to the specified inventory view.
+     * <p>
+     * The player associated with the InventoryView must be the same as this
+     * instance of HumanEntity.
+     * <p>
+     * The player of the InventoryView can be checked using
+     * {@link InventoryView#getPlayer()}.
      *
      * @param inventory The view to open
      */
