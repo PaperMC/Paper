@@ -784,43 +784,17 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public boolean isLeashed() {
-        if (!(this.getHandle() instanceof Mob)) {
-            return false;
-        }
-        return ((Mob) this.getHandle()).getLeashHolder() != null;
+        return false; // Paper - implement in CraftMob & PaperLeashable
     }
 
     @Override
     public Entity getLeashHolder() throws IllegalStateException {
-        Preconditions.checkState(this.isLeashed(), "Entity not leashed");
-        return ((Mob) this.getHandle()).getLeashHolder().getBukkitEntity();
-    }
-
-    private boolean unleash() {
-        if (!this.isLeashed()) {
-            return false;
-        }
-        ((Mob) this.getHandle()).removeLeash();
-        return true;
+        throw new IllegalStateException("Entity not leashed"); // Paper - implement in CraftMob & PaperLeashable
     }
 
     @Override
     public boolean setLeashHolder(Entity holder) {
-        if (this.getHandle().generation || (this.getHandle() instanceof WitherBoss) || !(this.getHandle() instanceof Mob)) {
-            return false;
-        }
-
-        if (holder == null) {
-            return this.unleash();
-        }
-
-        if (holder.isDead()) {
-            return false;
-        }
-
-        this.unleash();
-        ((Mob) this.getHandle()).setLeashedTo(((CraftEntity) holder).getHandle(), true);
-        return true;
+        return false; // Paper - implement in CraftMob & PaperLeashable
     }
 
     @Override
