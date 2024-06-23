@@ -4,6 +4,85 @@ Date: Thu, 15 Dec 2022 10:33:34 -0800
 Subject: [PATCH] Improve PortalEvents
 
 
+diff --git a/src/main/java/org/bukkit/PortalType.java b/src/main/java/org/bukkit/PortalType.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/PortalType.java
++++ b/src/main/java/org/bukkit/PortalType.java
+@@ -0,0 +0,0 @@ public enum PortalType {
+      * This is an Ender portal.
+      */
+     ENDER,
++    // Paper start
++    /**
++     * This is an end gateway
++     */
++    END_GATEWAY,
++    // Paper end
+ 
+     /**
+      * This is a custom Plugin portal.
+diff --git a/src/main/java/org/bukkit/event/entity/EntityPortalEnterEvent.java b/src/main/java/org/bukkit/event/entity/EntityPortalEnterEvent.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityPortalEnterEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityPortalEnterEvent.java
+@@ -0,0 +0,0 @@ import org.jetbrains.annotations.NotNull;
+ 
+ /**
+  * Called when an entity comes into contact with a portal
++ * <p>
++ * Cancelling this event prevents any further processing of the portal for that tick.
++ * @see io.papermc.paper.event.entity.EntityInsideBlockEvent
+  */
+-public class EntityPortalEnterEvent extends EntityEvent {
++public class EntityPortalEnterEvent extends EntityEvent implements org.bukkit.event.Cancellable { // Paper
+     private static final HandlerList handlers = new HandlerList();
+     private final Location location;
+ 
++    @Deprecated(since = "1.21") @io.papermc.paper.annotation.DoNotUse // Paper
+     public EntityPortalEnterEvent(@NotNull final Entity entity, @NotNull final Location location) {
++        // Paper start
++        this(entity, location, org.bukkit.PortalType.CUSTOM);
++    }
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public EntityPortalEnterEvent(@NotNull final Entity entity, @NotNull final Location location, @NotNull final org.bukkit.PortalType portalType) {
++        // Paper end
+         super(entity);
+         this.location = location;
++        this.portalType = portalType; // Paper
+     }
+ 
+     /**
+@@ -0,0 +0,0 @@ public class EntityPortalEnterEvent extends EntityEvent {
+         return location;
+     }
+ 
++    // Paper start
++    private boolean cancelled = false;
++    private final org.bukkit.PortalType portalType;
++
++    /**
++     * Get the portal type.
++     *
++     * @return the portal type
++     */
++    public org.bukkit.@NotNull PortalType getPortalType() {
++        return this.portalType;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    @Override
++    public void setCancelled(final boolean cancel) {
++        this.cancelled = cancel;
++    }
++    // Paper end
++
+     @NotNull
+     @Override
+     public HandlerList getHandlers() {
 diff --git a/src/main/java/org/bukkit/event/entity/EntityPortalEvent.java b/src/main/java/org/bukkit/event/entity/EntityPortalEvent.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/event/entity/EntityPortalEvent.java
