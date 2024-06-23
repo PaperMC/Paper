@@ -479,7 +479,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void kickPlayer(String message) {
         if (getHandle().connection == null) return;
 
-        getHandle().connection.disconnect(CraftChatMessage.fromStringOrEmpty(message));
+        getHandle().connection.disconnect(CraftChatMessage.fromStringOrEmpty(message, true));
     }
 
     @Override
