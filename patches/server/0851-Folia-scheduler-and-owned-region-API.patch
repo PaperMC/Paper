@@ -45,15 +45,16 @@ index d2dee700f2c5cc7d6a272e751a933901fe7a55b6..834b85f24df023642f8abf7213fe578a
          } catch (Throwable ex) {
 diff --git a/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java b/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..62484ebf4550b05182f693a3180bbac5d5fd906d
+index 0000000000000000000000000000000000000000..ba5ff3af4d3af6f8ec4a47262aafb50ff1348549
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java
-@@ -0,0 +1,181 @@
+@@ -0,0 +1,191 @@
 +package io.papermc.paper.threadedregions;
 +
 +import ca.spottedleaf.concurrentutil.util.Validate;
 +import io.papermc.paper.util.TickThread;
 +import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
++import net.minecraft.server.MinecraftServer;
 +import net.minecraft.world.entity.Entity;
 +import org.bukkit.craftbukkit.entity.CraftEntity;
 +
@@ -87,6 +88,7 @@ index 0000000000000000000000000000000000000000..62484ebf4550b05182f693a3180bbac5
 +     * The Entity. Note that it is the CraftEntity, since only that class properly tracks world transfers.
 +     */
 +    public final CraftEntity entity;
++    public final MinecraftServer server;
 +
 +    private static final record ScheduledTask(Consumer<? extends Entity> run, Consumer<? extends Entity> retired) {}
 +
@@ -97,7 +99,8 @@ index 0000000000000000000000000000000000000000..62484ebf4550b05182f693a3180bbac5
 +
 +    private final ArrayDeque<ScheduledTask> currentlyExecuting = new ArrayDeque<>();
 +
-+    public EntityScheduler(final CraftEntity entity) {
++    public EntityScheduler(final MinecraftServer server, final CraftEntity entity) {
++        this.server = Validate.notNull(server);
 +        this.entity = Validate.notNull(entity);
 +    }
 +
@@ -112,14 +115,15 @@ index 0000000000000000000000000000000000000000..62484ebf4550b05182f693a3180bbac5
 +     * @throws IllegalStateException If the scheduler is already retired.
 +     */
 +    public void retire() {
++        final Entity thisEntity = this.entity.getHandleRaw();
++
 +        synchronized (this.stateLock) {
 +            if (this.tickCount == RETIRED_TICK_COUNT) {
 +                throw new IllegalStateException("Already retired");
 +            }
 +            this.tickCount = RETIRED_TICK_COUNT;
++            this.server.entitiesWithScheduledTasks.remove(thisEntity);
 +        }
-+
-+        final Entity thisEntity = this.entity.getHandleRaw();
 +
 +        // correctly handle and order retiring while running executeTick
 +        for (int i = 0, len = this.currentlyExecuting.size(); i < len; ++i) {
@@ -175,6 +179,7 @@ index 0000000000000000000000000000000000000000..62484ebf4550b05182f693a3180bbac5
 +            if (this.tickCount == RETIRED_TICK_COUNT) {
 +                return false;
 +            }
++            this.server.entitiesWithScheduledTasks.add(this.entity.getHandleRaw());
 +            this.oneTimeDelayed.computeIfAbsent(this.tickCount + Math.max(1L, delay), (final long keyInMap) -> {
 +                return new ArrayList<>();
 +            }).add(task);
@@ -196,6 +201,11 @@ index 0000000000000000000000000000000000000000..62484ebf4550b05182f693a3180bbac5
 +        synchronized (this.stateLock) {
 +            if (this.tickCount == RETIRED_TICK_COUNT) {
 +                throw new IllegalStateException("Ticking retired scheduler");
++            }
++            // Do we *really* have scheduled tasks tho?
++            if (this.currentlyExecuting.isEmpty() && this.oneTimeDelayed.isEmpty()) { // Check if we have any pending tasks and, if not, skip!
++                this.server.entitiesWithScheduledTasks.remove(thisEntity);
++                return;
 +            }
 +            ++this.tickCount;
 +            if (this.oneTimeDelayed.isEmpty()) {
@@ -1148,26 +1158,33 @@ index 0000000000000000000000000000000000000000..d306f911757a4d556c82c0070d4837db
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 374c20e530d2abd41674d80c711bd3737c6f6941..cbceb0ddea32781f89a19b1edb258bc23b96ee92 100644
+index 374c20e530d2abd41674d80c711bd3737c6f6941..dfdf64e24e46dc3866cb167962a9c8c9a8e0b6cc 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1579,6 +1579,20 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -319,6 +319,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public final io.papermc.paper.configuration.PaperConfigurations paperConfigurations; // Paper - add paper configuration files
+     public static long currentTickLong = 0L; // Paper - track current tick as a long
+     public boolean isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
++    public final Set<Entity> entitiesWithScheduledTasks = java.util.concurrent.ConcurrentHashMap.newKeySet(); // Paper - Folia schedulers
+ 
+     public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
+         AtomicReference<S> atomicreference = new AtomicReference();
+@@ -1579,6 +1580,19 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          MinecraftTimings.bukkitSchedulerTimer.startTiming(); // Spigot // Paper
          this.server.getScheduler().mainThreadHeartbeat(this.tickCount); // CraftBukkit
          MinecraftTimings.bukkitSchedulerTimer.stopTiming(); // Spigot // Paper
 +        // Paper start - Folia scheduler API
 +        ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) Bukkit.getGlobalRegionScheduler()).tick();
-+        getAllLevels().forEach(level -> {
-+            for (final Entity entity : level.getEntities().getAll()) {
-+                if (entity.isRemoved()) {
-+                    continue;
-+                }
-+                final org.bukkit.craftbukkit.entity.CraftEntity bukkit = entity.getBukkitEntityRaw();
-+                if (bukkit != null) {
-+                    bukkit.taskScheduler.executeTick();
-+                }
++        for (final Entity entity : entitiesWithScheduledTasks) {
++            if (entity.isRemoved()) {
++                continue;
 +            }
-+        });
++
++            final org.bukkit.craftbukkit.entity.CraftEntity bukkit = entity.getBukkitEntityRaw();
++            if (bukkit != null) {
++                bukkit.taskScheduler.executeTick();
++            }
++        }
 +        // Paper end - Folia scheduler API
          io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CALLBACK_MANAGER.handleQueue(this.tickCount); // Paper
          this.profiler.push("commandFunctions");
@@ -1332,15 +1349,15 @@ index 7197cbf15ff9382cbc59c4a58e2f189c8cacbaaa..24097256203990a818aab2716fdb8a4a
          ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
          ConfigurationSerialization.registerClass(CraftPlayerProfile.class);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index d8b1cdc78eb234023a42d740599009737201e70e..bc37a3fc38e1966af3722ed16b3f940c2a8387a9 100644
+index d8b1cdc78eb234023a42d740599009737201e70e..1ba63d2ef3106e2f8e6a6f6dbd69efb3f17478cd 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-@@ -70,6 +70,15 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+@@ -70,11 +70,21 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
      private EntityDamageEvent lastDamageEvent;
      private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftEntity.DATA_TYPE_REGISTRY);
      protected net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
 +    // Paper start - Folia shedulers
-+    public final io.papermc.paper.threadedregions.EntityScheduler taskScheduler = new io.papermc.paper.threadedregions.EntityScheduler(this);
++    public final io.papermc.paper.threadedregions.EntityScheduler taskScheduler;
 +    private final io.papermc.paper.threadedregions.scheduler.FoliaEntityScheduler apiScheduler = new io.papermc.paper.threadedregions.scheduler.FoliaEntityScheduler(this);
 +
 +    @Override
@@ -1351,7 +1368,13 @@ index d8b1cdc78eb234023a42d740599009737201e70e..bc37a3fc38e1966af3722ed16b3f940c
  
      public CraftEntity(final CraftServer server, final Entity entity) {
          this.server = server;
-@@ -486,6 +495,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         this.entity = entity;
+         this.entityType = CraftEntityType.minecraftToBukkit(entity.getType());
++        this.taskScheduler = new io.papermc.paper.threadedregions.EntityScheduler(this.entity.getServer(), this); // Paper - Folia schedulers
+     }
+ 
+     public static <T extends Entity> CraftEntity getEntity(CraftServer server, T entity) {
+@@ -486,6 +496,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
          return this.entity;
      }
  
