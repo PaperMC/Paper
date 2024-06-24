@@ -60,12 +60,13 @@
      public TileEntityHopper(BlockPosition blockposition, IBlockData iblockdata) {
          super(TileEntityTypes.HOPPER, blockposition, iblockdata);
          this.items = NonNullList.withSize(5, ItemStack.EMPTY);
-@@ -167,7 +213,28 @@
+@@ -167,7 +213,29 @@
  
                      if (!itemstack.isEmpty()) {
                          int j = itemstack.getCount();
 -                        ItemStack itemstack1 = addItem(tileentityhopper, iinventory, tileentityhopper.removeItem(i, 1), enumdirection);
 +                        // CraftBukkit start - Call event when pushing items into other inventories
++                        ItemStack original = itemstack.copy();
 +                        CraftItemStack oitemstack = CraftItemStack.asCraftMirror(tileentityhopper.removeItem(i, 1));
 +
 +                        Inventory destinationInventory;
@@ -81,7 +82,7 @@
 +                        InventoryMoveItemEvent event = new InventoryMoveItemEvent(tileentityhopper.getOwner().getInventory(), oitemstack, destinationInventory, true);
 +                        world.getCraftServer().getPluginManager().callEvent(event);
 +                        if (event.isCancelled()) {
-+                            tileentityhopper.setItem(i, itemstack);
++                            tileentityhopper.setItem(i, original);
 +                            tileentityhopper.setCooldown(8); // Delay hopper checks
 +                            return false;
 +                        }
@@ -90,12 +91,13 @@
  
                          if (itemstack1.isEmpty()) {
                              iinventory.setChanged();
-@@ -279,7 +346,33 @@
+@@ -279,7 +347,34 @@
  
          if (!itemstack.isEmpty() && canTakeItemFromContainer(ihopper, iinventory, itemstack, i, enumdirection)) {
              int j = itemstack.getCount();
 -            ItemStack itemstack1 = addItem(iinventory, ihopper, iinventory.removeItem(i, 1), (EnumDirection) null);
 +            // CraftBukkit start - Call event on collection of items from inventories into the hopper
++            ItemStack original = itemstack.copy();
 +            CraftItemStack oitemstack = CraftItemStack.asCraftMirror(iinventory.removeItem(i, 1));
 +
 +            Inventory sourceInventory;
@@ -112,7 +114,7 @@
 +
 +            Bukkit.getServer().getPluginManager().callEvent(event);
 +            if (event.isCancelled()) {
-+                iinventory.setItem(i, itemstack);
++                iinventory.setItem(i, original);
 +
 +                if (ihopper instanceof TileEntityHopper) {
 +                    ((TileEntityHopper) ihopper).setCooldown(8); // Delay hopper checks
@@ -125,7 +127,7 @@
  
              if (itemstack1.isEmpty()) {
                  iinventory.setChanged();
-@@ -297,13 +390,20 @@
+@@ -297,13 +392,20 @@
  
      public static boolean addItem(IInventory iinventory, EntityItem entityitem) {
          boolean flag = false;
@@ -147,7 +149,7 @@
          } else {
              entityitem.setItem(itemstack1);
          }
-@@ -421,14 +521,38 @@
+@@ -421,14 +523,38 @@
          return itemstack;
      }
  
