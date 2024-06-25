@@ -62,7 +62,7 @@ public final class Registration {
             // ensure plugin commands override
             commands.register(Commands.literal("tag")
                     .executes(ctx -> {
-                        ctx.getSource().getSender().sendPlainMessage("overriden command");
+                        ctx.getSource().getSender().sendPlainMessage("overridden command");
                         return Command.SINGLE_SUCCESS;
                     })
                     .build(),
