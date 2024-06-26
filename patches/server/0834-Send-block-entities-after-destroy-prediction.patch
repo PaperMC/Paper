@@ -1,0 +1,91 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Sat, 25 Jun 2022 19:45:20 -0400
+Subject: [PATCH] Send block entities after destroy prediction
+
+Minecraft's prediction system does not handle block entities, so if we are manually sending block entities during
+block breaking we need to set it after the prediction is finished. This fixes block entities not showing when cancelling the BlockBreakEvent.
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+index 3fe747fdc4500bd65029446f63e314031d71ed4a..19573bfb05d7f9641964c76e6670e4a7658a1bbd 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -62,6 +62,8 @@ public class ServerPlayerGameMode {
+     private BlockPos delayedDestroyPos;
+     private int delayedTickStart;
+     private int lastSentState;
++    public boolean captureSentBlockEntities = false; // Paper
++    public boolean capturedBlockEntity = false; // Paper
+ 
+     public ServerPlayerGameMode(ServerPlayer player) {
+         this.gameModeForPlayer = GameType.DEFAULT_MODE;
+@@ -188,10 +190,7 @@ public class ServerPlayerGameMode {
+                     this.player.connection.send(new ClientboundBlockUpdatePacket(pos, this.level.getBlockState(pos)));
+                     this.debugLogging(pos, false, sequence, "may not interact");
+                     // Update any tile entity data for this block
+-                    BlockEntity tileentity = this.level.getBlockEntity(pos);
+-                    if (tileentity != null) {
+-                        this.player.connection.send(tileentity.getUpdatePacket());
+-                    }
++                    capturedBlockEntity = true; // Paper - send block entity after predicting
+                     // CraftBukkit end
+                     return;
+                 }
+@@ -207,10 +206,7 @@ public class ServerPlayerGameMode {
+                     // Paper end
+                     this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos));
+                     // Update any tile entity data for this block
+-                    BlockEntity tileentity = this.level.getBlockEntity(pos);
+-                    if (tileentity != null) {
+-                        this.player.connection.send(tileentity.getUpdatePacket());
+-                    }
++                    capturedBlockEntity = true; // Paper - send block entity after predicting
+                     return;
+                 }
+                 // CraftBukkit end
+@@ -394,10 +390,12 @@ public class ServerPlayerGameMode {
+                 }
+ 
+                 // Update any tile entity data for this block
++                if (!captureSentBlockEntities) { // Paper - Toggle this location for capturing as this is used for api
+                 BlockEntity tileentity = this.level.getBlockEntity(pos);
+                 if (tileentity != null) {
+                     this.player.connection.send(tileentity.getUpdatePacket());
+                 }
++                } else {capturedBlockEntity = true;} // Paper end
+                 return false;
+             }
+         }
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 331d8c69dc4464ff6b44b4b37ecf426ff3514fc3..bfa2e9919275a1eb5d83403c5ed88eee245e3194 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1751,8 +1751,28 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                     return;
+                 }
+                 // Paper end - Don't allow digging in unloaded chunks
++                // Paper start - send block entities after prediction
++                this.player.gameMode.capturedBlockEntity = false;
++                this.player.gameMode.captureSentBlockEntities = true;
++                // Paper end - send block entities after prediction
+                 this.player.gameMode.handleBlockBreakAction(blockposition, packetplayinblockdig_enumplayerdigtype, packet.getDirection(), this.player.level().getMaxBuildHeight(), packet.getSequence());
+                 this.player.connection.ackBlockChangesUpTo(packet.getSequence());
++                // Paper start - send block entities after prediction
++                this.player.gameMode.captureSentBlockEntities = false;
++                // If a block entity was modified speedup the block change ack to avoid the block entity
++                // being overriden.
++                if (this.player.gameMode.capturedBlockEntity) {
++                    // manually tick
++                    this.send(new ClientboundBlockChangedAckPacket(this.ackBlockChangesUpTo));
++                    this.player.connection.ackBlockChangesUpTo = -1;
++
++                    this.player.gameMode.capturedBlockEntity = false;
++                    BlockEntity tileentity = this.player.level().getBlockEntity(blockposition);
++                    if (tileentity != null) {
++                        this.player.connection.send(tileentity.getUpdatePacket());
++                    }
++                }
++                // Paper end - send block entities after prediction
+                 return;
+             default:
+                 throw new IllegalArgumentException("Invalid player action");
