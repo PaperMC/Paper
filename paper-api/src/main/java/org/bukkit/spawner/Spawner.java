@@ -11,6 +11,17 @@ import org.bukkit.entity.minecart.SpawnerMinecart;
 public interface Spawner extends BaseSpawner {
 
     /**
+     * {@inheritDoc}
+     * <br>
+     * If set to -1, the spawn delay will be reset to a random value between
+     * {@link #getMinSpawnDelay} and {@link #getMaxSpawnDelay()}.
+     *
+     * @param delay The delay.
+     */
+    @Override
+    public void setDelay(int delay);
+
+    /**
      * The minimum spawn delay amount (in ticks).
      * <br>
      * This value is used when the spawner resets its delay (for any reason).

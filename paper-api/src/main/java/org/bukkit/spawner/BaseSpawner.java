@@ -44,9 +44,6 @@ public interface BaseSpawner {
 
     /**
      * Set the spawner's delay.
-     * <br>
-     * If set to -1, the spawn delay will be reset to a random value between
-     * {@link #getMinSpawnDelay} and {@link #getMaxSpawnDelay()}.
      *
      * @param delay The delay.
      */
@@ -134,7 +131,6 @@ public interface BaseSpawner {
      * {@link #addPotentialSpawn}
      *
      * @param spawnerEntry the spawner entry to use
-     * @see #setSpawnedEntity(EntitySnapshot, SpawnRule)
      */
     public void setSpawnedEntity(@NotNull SpawnerEntry spawnerEntry);
 
