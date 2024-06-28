@@ -9,20 +9,24 @@ public net/minecraft/world/item/component/ItemContainerContents items
 
 diff --git a/src/main/java/io/papermc/paper/datacomponent/ComponentAdapter.java b/src/main/java/io/papermc/paper/datacomponent/ComponentAdapter.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2e6860c991b7484996897c3432d85f6df8cb1022
+index 0000000000000000000000000000000000000000..2ce01dbcbd205625bae879af14e2c1a7d919b200
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/ComponentAdapter.java
-@@ -0,0 +1,25 @@
+@@ -0,0 +1,36 @@
 +package io.papermc.paper.datacomponent;
 +
 +import java.util.function.Function;
++import com.mojang.serialization.JavaOps;
 +import net.minecraft.core.component.DataComponentType;
++import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.util.Unit;
++import org.bukkit.craftbukkit.CraftRegistry;
 +
 +public record ComponentAdapter<NMS, API>(
 +    DataComponentType<NMS> type,
 +    Function<API, NMS> apiToVanilla,
-+    Function<NMS, API> vanillaToApi
++    Function<NMS, API> vanillaToApi,
++    boolean codecValidation
 +) {
 +    static final Function<Void, Unit> API_TO_UNIT_CONVERTER = $ -> Unit.INSTANCE;
 +
@@ -31,7 +35,14 @@ index 0000000000000000000000000000000000000000..2e6860c991b7484996897c3432d85f6d
 +    }
 +
 +    public NMS toVanilla(final API value) {
-+        return this.apiToVanilla.apply(value);
++        NMS nms = this.apiToVanilla.apply(value);
++        if (this.codecValidation) {
++            this.type().codec().encodeStart(CraftRegistry.getMinecraftRegistry().createSerializationContext(JavaOps.INSTANCE), nms).error().ifPresent(error -> {
++                throw new IllegalArgumentException("Failed to encode data component %s (%s)".formatted(BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(this.type), error.message()));
++            });
++        }
++
++        return nms;
 +    }
 +
 +    public API fromVanilla(final NMS value) {
@@ -40,13 +51,14 @@ index 0000000000000000000000000000000000000000..2e6860c991b7484996897c3432d85f6d
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/ComponentAdapters.java b/src/main/java/io/papermc/paper/datacomponent/ComponentAdapters.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7aa48de3f2c02f8d4f775b23f563d6c4d47d5b64
+index 0000000000000000000000000000000000000000..852f456048940e07189810b4591b2a566b63a5f2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/ComponentAdapters.java
-@@ -0,0 +1,185 @@
+@@ -0,0 +1,186 @@
 +package io.papermc.paper.datacomponent;
 +
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
++import com.mojang.serialization.JavaOps;
 +import io.papermc.paper.adventure.PaperAdventure;
 +import io.papermc.paper.datacomponent.item.PaperBannerPatternLayers;
 +import io.papermc.paper.datacomponent.item.PaperBlockItemDataProperties;
@@ -153,7 +165,7 @@ index 0000000000000000000000000000000000000000..7aa48de3f2c02f8d4f775b23f563d6c4
 +        register(DataComponents.MAP_COLOR, PaperMapItemColor::new);
 +        register(DataComponents.MAP_ID, PaperMapID::new);
 +        register(DataComponents.MAP_DECORATIONS, PaperMapDecorations::new);
-+        register(DataComponents.MAP_POST_PROCESSING, nms -> io.papermc.paper.datacomponent.item.MapPostProcessing.valueOf(nms.name()), api -> MapPostProcessing.valueOf(api.name()));
++        register(DataComponents.MAP_POST_PROCESSING, nms -> io.papermc.paper.item.MapPostProcessing.valueOf(nms.name()), api -> MapPostProcessing.valueOf(api.name()));
 +        register(DataComponents.CHARGED_PROJECTILES, PaperChargedProjectiles::new);
 +        register(DataComponents.BUNDLE_CONTENTS, PaperBundleContents::new);
 +        register(DataComponents.POTION_CONTENTS, PaperPotionContents::new);
@@ -206,38 +218,76 @@ index 0000000000000000000000000000000000000000..7aa48de3f2c02f8d4f775b23f563d6c4
 +    }
 +
 +    public static void registerUntyped(final DataComponentType<Unit> type) {
-+        registerInternal(type, UNIT_TO_API_CONVERTER, ComponentAdapter.API_TO_UNIT_CONVERTER);
++        registerInternal(type, UNIT_TO_API_CONVERTER, ComponentAdapter.API_TO_UNIT_CONVERTER, false);
 +    }
 +
 +    private static <COMMON> void registerIdentity(final DataComponentType<COMMON> type) {
-+        registerInternal(type, Function.identity(), Function.identity());
++        registerInternal(type, Function.identity(), Function.identity(), true);
 +    }
 +
 +    private static <NMS, API extends Handleable<NMS>> void register(final DataComponentType<NMS> type, final Function<NMS, API> vanillaToApi) {
-+        register(type, vanillaToApi, Handleable::getHandle);
++        registerInternal(type, vanillaToApi, Handleable::getHandle, false);
 +    }
 +
 +    private static <NMS, API> void register(final DataComponentType<NMS> type, final Function<NMS, API> vanillaToApi, final Function<API, NMS> apiToVanilla) {
-+        registerInternal(type, vanillaToApi, apiToVanilla);
++        registerInternal(type, vanillaToApi, apiToVanilla, true);
 +    }
 +
-+    private static <NMS, API> void registerInternal(final DataComponentType<NMS> type, final Function<NMS, API> vanillaToApi, final Function<API, NMS> apiToVanilla) {
++    private static <NMS, API> void registerInternal(final DataComponentType<NMS> type, final Function<NMS, API> vanillaToApi, final Function<API, NMS> apiToVanilla, final boolean codecValidation) {
 +        final ResourceKey<DataComponentType<?>> key = BuiltInRegistries.DATA_COMPONENT_TYPE.getResourceKey(type).orElseThrow();
 +        if (ADAPTERS.containsKey(key)) {
 +            throw new IllegalStateException("Duplicate adapter registration for " + key);
 +        }
-+        ADAPTERS.put(key, new ComponentAdapter<>(type, apiToVanilla, vanillaToApi));
++        ADAPTERS.put(key, new ComponentAdapter<>(type, apiToVanilla, vanillaToApi, codecValidation && !type.isTransient()));
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/datacomponent/ComponentUtils.java b/src/main/java/io/papermc/paper/datacomponent/ComponentUtils.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..07e268941d95c315592e3464c3ea08023205813e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datacomponent/ComponentUtils.java
+@@ -0,0 +1,31 @@
++package io.papermc.paper.datacomponent;
++
++import com.google.common.collect.Collections2;
++import com.google.common.collect.Lists;
++import java.util.Collection;
++import java.util.Collections;
++import java.util.List;
++import java.util.function.Function;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public final class ComponentUtils {
++
++    private ComponentUtils() {
++    }
++
++    public static <A, M> List<A> transform(final List<? extends M> nms, final Function<? super M, ? extends A> converter) {
++        return Collections.unmodifiableList(Lists.transform(nms, converter::apply));
++    }
++
++    public static <A, M> Collection<A> transform(final Collection<? extends M> nms, final Function<? super M, ? extends A> converter) {
++        return Collections.unmodifiableCollection(Collections2.transform(nms, converter::apply));
++    }
++
++    public static <A, M, C extends Collection<M>> void addAndConvert(final C target, final Collection<A> toAdd, final Function<? super A, ? extends M> converter) {
++        for (final A value : toAdd) {
++            target.add(converter.apply(value));
++        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/PaperComponentType.java b/src/main/java/io/papermc/paper/datacomponent/PaperComponentType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b5db510f1e641bba6d6a70c920921a774dc411a0
+index 0000000000000000000000000000000000000000..60bb87cc071d21e58615210e6b0b4dfe0dc9ea71
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/PaperComponentType.java
-@@ -0,0 +1,118 @@
+@@ -0,0 +1,119 @@
 +package io.papermc.paper.datacomponent;
 +
 +import java.util.Collections;
++import java.util.HashSet;
 +import java.util.Set;
 +import net.kyori.adventure.key.Key;
 +import net.minecraft.core.component.DataComponentMap;
@@ -268,7 +318,7 @@ index 0000000000000000000000000000000000000000..b5db510f1e641bba6d6a70c920921a77
 +    }
 +
 +    public static Set<DataComponentType> minecraftToBukkit(final Set<net.minecraft.core.component.DataComponentType<?>> nmsTypes) {
-+        final Set<DataComponentType> types = new java.util.HashSet<>();
++        final Set<DataComponentType> types = new HashSet<>(nmsTypes.size());
 +        for (final net.minecraft.core.component.DataComponentType<?> nmsType : nmsTypes) {
 +            types.add(PaperComponentType.minecraftToBukkit(nmsType));
 +        }
@@ -355,10 +405,10 @@ index 0000000000000000000000000000000000000000..b5db510f1e641bba6d6a70c920921a77
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/ComponentTypesBridgesImpl.java b/src/main/java/io/papermc/paper/datacomponent/item/ComponentTypesBridgesImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c0d3af2b26390d48c3c5d825c31bc9fc07cdd778
+index 0000000000000000000000000000000000000000..c21519941b82788733d541bd114e8b0ea12024bc
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/ComponentTypesBridgesImpl.java
-@@ -0,0 +1,179 @@
+@@ -0,0 +1,178 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import io.papermc.paper.registry.set.RegistryKeySet;
@@ -473,7 +523,7 @@ index 0000000000000000000000000000000000000000..c0d3af2b26390d48c3c5d825c31bc9fc
 +    }
 +
 +    @Override
-+    public JukeboxPlayable.Builder jukeboxPlayable(JukeboxSong song) {
++    public JukeboxPlayable.Builder jukeboxPlayable(final JukeboxSong song) {
 +        return new PaperJukeboxPlayable.BuilderImpl(song);
 +    }
 +
@@ -484,8 +534,7 @@ index 0000000000000000000000000000000000000000..c0d3af2b26390d48c3c5d825c31bc9fc
 +
 +    @Override
 +    public Tool.Rule rule(final RegistryKeySet<BlockType> blockTypes, final @Nullable Float speed, final TriState correctForDrops) {
-+        //Preconditions.checkArgument(speed == null || speed > 0, "Speed must be positive");
-+        return new PaperItemTool.PaperRule(blockTypes, speed, correctForDrops);
++        return PaperItemTool.PaperRule.fromUnsafe(blockTypes, speed, correctForDrops);
 +    }
 +
 +    @Override
@@ -538,53 +587,9 @@ index 0000000000000000000000000000000000000000..c0d3af2b26390d48c3c5d825c31bc9fc
 +        return new PaperLockCode.BuilderImpl();
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/datacomponent/item/ComponentUtils.java b/src/main/java/io/papermc/paper/datacomponent/item/ComponentUtils.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..d91a8b1e903ebb01b7da7e4d0150af5cc9ef68e4
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/datacomponent/item/ComponentUtils.java
-@@ -0,0 +1,38 @@
-+package io.papermc.paper.datacomponent.item;
-+
-+import com.google.common.collect.Collections2;
-+import com.google.common.collect.ImmutableList;
-+import com.google.common.collect.Iterables;
-+import com.google.common.collect.Lists;
-+import java.util.Collection;
-+import java.util.Collections;
-+import java.util.List;
-+import java.util.function.Function;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.framework.qual.DefaultQualifier;
-+
-+@DefaultQualifier(NonNull.class)
-+final class ComponentUtils {
-+
-+    private ComponentUtils() {
-+    }
-+
-+    static <A, M> List<A> transform(final List<? extends M> nms, final Function<? super M, ? extends A> converter) {
-+        return Collections.unmodifiableList(Lists.transform(nms, converter::apply));
-+    }
-+
-+    static <A, M> Collection<A> transform(final Collection<? extends M> nms, final Function<? super M, ? extends A> converter) {
-+        return Collections.unmodifiableCollection(Collections2.transform(nms, converter::apply));
-+    }
-+
-+    @Deprecated
-+    static <A, M> List<A> transform(final Iterable<? extends M> nms, final Function<? super M, ? extends A> converter) {
-+        return ImmutableList.copyOf(Iterables.transform(nms, converter::apply));
-+    }
-+
-+    static <A, M, C extends Collection<M>> void addAndConvert(final C target, final Collection<A> toAdd, final Function<? super A, ? extends M> converter) {
-+        for (final A value : toAdd) {
-+            target.add(converter.apply(value));
-+        }
-+    }
-+}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperBannerPatternLayers.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperBannerPatternLayers.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a624e3fe2721ef55399b2d4bccf6ddf3917c756b
+index 0000000000000000000000000000000000000000..e8e602f99c718c8939ce71aa2aad57a06f373c94
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperBannerPatternLayers.java
 @@ -0,0 +1,62 @@
@@ -601,7 +606,7 @@ index 0000000000000000000000000000000000000000..a624e3fe2721ef55399b2d4bccf6ddf3
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
-+import static io.papermc.paper.datacomponent.item.ComponentUtils.transform;
++import static io.papermc.paper.datacomponent.ComponentUtils.transform;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperBannerPatternLayers(
@@ -616,7 +621,7 @@ index 0000000000000000000000000000000000000000..a624e3fe2721ef55399b2d4bccf6ddf3
 +    private static List<Pattern> convert(final net.minecraft.world.level.block.entity.BannerPatternLayers nmsPatterns) {
 +        return transform(nmsPatterns.layers(), input -> {
 +            final Optional<PatternType> type = CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.BANNER_PATTERN, input.pattern());
-+            return new Pattern(DyeColor.getByWoolData((byte) input.color().getId()), type.orElseThrow());
++            return new Pattern(DyeColor.getByWoolData((byte) input.color().getId()), type.orElseThrow(() -> new IllegalStateException("Custom banner are not supported yet in the API!")));
 +        });
 +    }
 +
@@ -713,10 +718,10 @@ index 0000000000000000000000000000000000000000..09335d46724831478fe396905a0f8d21
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperBundleContents.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperBundleContents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4865acd021f1d00b0f8fcecc6b2836e68a1d622c
+index 0000000000000000000000000000000000000000..7eb80089785a8c28db046402d52326ffab695e4d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperBundleContents.java
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,51 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import java.util.ArrayList;
@@ -728,7 +733,7 @@ index 0000000000000000000000000000000000000000..4865acd021f1d00b0f8fcecc6b2836e6
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
-+import static io.papermc.paper.datacomponent.item.ComponentUtils.transform;
++import static io.papermc.paper.datacomponent.ComponentUtils.transform;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperBundleContents(
@@ -742,8 +747,7 @@ index 0000000000000000000000000000000000000000..4865acd021f1d00b0f8fcecc6b2836e6
 +
 +    @Override
 +    public List<ItemStack> contents() {
-+        // TODO anyway to make this lazy? the nms itemsCopy returns an Iterable not a list so its a tad annoying. Can just change the nms impl maybe?
-+        return transform(this.impl.itemsCopy() /*makes copies internally*/, CraftItemStack::asCraftMirror);
++        return transform((List<net.minecraft.world.item.ItemStack>) this.impl.itemsCopy(), CraftItemStack::asCraftMirror);
 +    }
 +
 +    static final class BuilderImpl implements BundleContents.Builder {
@@ -771,7 +775,7 @@ index 0000000000000000000000000000000000000000..4865acd021f1d00b0f8fcecc6b2836e6
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperChargedProjectiles.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperChargedProjectiles.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c81b13d88f19ac272ab27986722543490ce38bec
+index 0000000000000000000000000000000000000000..080281b2feb577b0d9c9b342dda81352dd0fb922
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperChargedProjectiles.java
 @@ -0,0 +1,51 @@
@@ -786,7 +790,7 @@ index 0000000000000000000000000000000000000000..c81b13d88f19ac272ab2798672254349
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
-+import static io.papermc.paper.datacomponent.item.ComponentUtils.transform;
++import static io.papermc.paper.datacomponent.ComponentUtils.transform;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperChargedProjectiles(
@@ -871,7 +875,7 @@ index 0000000000000000000000000000000000000000..88f9697d3beda288c3e02b571753c124
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperDyedItemColor.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperDyedItemColor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..da22c58bcbf3e03686961f5a5127edeff700a545
+index 0000000000000000000000000000000000000000..ff2a81366fcd554451e9b2aa438e9277fa70248b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperDyedItemColor.java
 @@ -0,0 +1,55 @@
@@ -894,7 +898,7 @@ index 0000000000000000000000000000000000000000..da22c58bcbf3e03686961f5a5127edef
 +
 +    @Override
 +    public Color color() {
-+        return Color.fromRGB(this.impl.rgb());
++        return Color.fromRGB(this.impl.rgb() & 0x00FFFFFF); // skip alpha channel
 +    }
 +
 +    @Override
@@ -932,7 +936,7 @@ index 0000000000000000000000000000000000000000..da22c58bcbf3e03686961f5a5127edef
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperFireworks.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperFireworks.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..34ff8431ae588c1bfe0f6c7aa621de7357f084b7
+index 0000000000000000000000000000000000000000..605728447636c2a721d6e7c340900c8a8f4eaeb0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperFireworks.java
 @@ -0,0 +1,80 @@
@@ -948,8 +952,8 @@ index 0000000000000000000000000000000000000000..34ff8431ae588c1bfe0f6c7aa621de73
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
-+import static io.papermc.paper.datacomponent.item.ComponentUtils.addAndConvert;
-+import static io.papermc.paper.datacomponent.item.ComponentUtils.transform;
++import static io.papermc.paper.datacomponent.ComponentUtils.addAndConvert;
++import static io.papermc.paper.datacomponent.ComponentUtils.transform;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperFireworks(
@@ -1018,10 +1022,10 @@ index 0000000000000000000000000000000000000000..34ff8431ae588c1bfe0f6c7aa621de73
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperFoodProperties.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperFoodProperties.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1404f97914767e57c59e33cb0b0cdffa9c4b50c0
+index 0000000000000000000000000000000000000000..7b210b4172fbc78adaae52602045eef40701a98d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperFoodProperties.java
-@@ -0,0 +1,152 @@
+@@ -0,0 +1,153 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import com.google.common.base.Preconditions;
@@ -1037,8 +1041,8 @@ index 0000000000000000000000000000000000000000..1404f97914767e57c59e33cb0b0cdffa
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
-+import static io.papermc.paper.datacomponent.item.ComponentUtils.addAndConvert;
-+import static io.papermc.paper.datacomponent.item.ComponentUtils.transform;
++import static io.papermc.paper.datacomponent.ComponentUtils.addAndConvert;
++import static io.papermc.paper.datacomponent.ComponentUtils.transform;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperFoodProperties(
@@ -1144,8 +1148,9 @@ index 0000000000000000000000000000000000000000..1404f97914767e57c59e33cb0b0cdffa
 +        }
 +
 +        @Override
-+        public FoodProperties.Builder usingConvertsTo(final @Nullable ItemStack itemStack) {
-+            this.convertedStack = itemStack;
++        public FoodProperties.Builder usingConvertsTo(final @Nullable ItemStack stack) {
++            Preconditions.checkArgument(stack == null || !stack.isEmpty(), "Item stack cannot be empty!");
++            this.convertedStack = stack;
 +            return this;
 +        }
 +
@@ -1157,7 +1162,7 @@ index 0000000000000000000000000000000000000000..1404f97914767e57c59e33cb0b0cdffa
 +
 +        @Override
 +        public FoodProperties.Builder addAllEffects(final List<PossibleEffect> effects) {
-+            addAndConvert(this.possibleEffects, effects, ef -> ((PossibleEffectImpl) ef).possibleEffect());
++            addAndConvert(this.possibleEffects, effects, effect -> ((PossibleEffectImpl) effect).possibleEffect());
 +            return this;
 +        }
 +
@@ -1176,10 +1181,10 @@ index 0000000000000000000000000000000000000000..1404f97914767e57c59e33cb0b0cdffa
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperItemAdventurePredicate.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperItemAdventurePredicate.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a6368dc4288b5a4cb60c0cb006f8a5072afc1e2f
+index 0000000000000000000000000000000000000000..2bf2540e1ef88d8e20c0182bd794a09f5819aa53
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperItemAdventurePredicate.java
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,77 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import java.util.ArrayList;
@@ -1194,9 +1199,8 @@ index 0000000000000000000000000000000000000000..a6368dc4288b5a4cb60c0cb006f8a507
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.jetbrains.annotations.Unmodifiable;
 +
-+import static io.papermc.paper.datacomponent.item.ComponentUtils.transform;
++import static io.papermc.paper.datacomponent.ComponentUtils.transform;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperItemAdventurePredicate(
@@ -1229,17 +1233,17 @@ index 0000000000000000000000000000000000000000..a6368dc4288b5a4cb60c0cb006f8a507
 +    }
 +
 +    @Override
-+    public @NonNull @Unmodifiable List<@NonNull BlockPredicate> predicates() {
++    public List<BlockPredicate> predicates() {
 +        return this.predicates;
 +    }
 +
-+    static final class BuilderImpl implements Builder {
++    static final class BuilderImpl implements ItemAdventurePredicate.Builder {
 +
 +        private final List<net.minecraft.advancements.critereon.BlockPredicate> predicates = new ArrayList<>();
 +        private boolean showInTooltip = net.minecraft.world.item.component.ItemAttributeModifiers.EMPTY.showInTooltip();
 +
 +        @Override
-+        public @NonNull Builder addPredicate(@NonNull final BlockPredicate predicate) {
++        public ItemAdventurePredicate.Builder addPredicate(final BlockPredicate predicate) {
 +            this.predicates.add(new net.minecraft.advancements.critereon.BlockPredicate(Optional.ofNullable(predicate.blocks()).map(
 +                blocks -> PaperRegistrySets.convertToNms(Registries.BLOCK, BuiltInRegistries.BUILT_IN_CONVERSIONS.lookup(), blocks)
 +            ), Optional.empty(), Optional.empty()));
@@ -1247,23 +1251,23 @@ index 0000000000000000000000000000000000000000..a6368dc4288b5a4cb60c0cb006f8a507
 +        }
 +
 +        @Override
-+        public Builder showInTooltip(final boolean showInTooltip) {
++        public ItemAdventurePredicate.Builder showInTooltip(final boolean showInTooltip) {
 +            this.showInTooltip = showInTooltip;
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull ItemAdventurePredicate build() {
++        public ItemAdventurePredicate build() {
 +            return new PaperItemAdventurePredicate(new net.minecraft.world.item.AdventureModePredicate(Collections.unmodifiableList(this.predicates), this.showInTooltip));
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperItemArmorTrim.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperItemArmorTrim.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d96be0ea89094d080ab81722d36af99a4be7808f
+index 0000000000000000000000000000000000000000..861de65b528844756d2c1cea085768858bc50328
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperItemArmorTrim.java
-@@ -0,0 +1,68 @@
+@@ -0,0 +1,65 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import org.bukkit.craftbukkit.inventory.trim.CraftTrimMaterial;
@@ -1300,18 +1304,11 @@ index 0000000000000000000000000000000000000000..d96be0ea89094d080ab81722d36af99a
 +
 +    static final class BuilderImpl implements ItemArmorTrim.Builder {
 +
-+        private net.minecraft.world.item.armortrim.ArmorTrim armorTrim;
++        private ArmorTrim armorTrim;
 +        private boolean showInTooltip = true;
 +
 +        BuilderImpl(final ArmorTrim armorTrim) {
-+            this.armorTrim = convert(armorTrim);
-+        }
-+
-+        private static net.minecraft.world.item.armortrim.ArmorTrim convert(final ArmorTrim armorTrim) {
-+            return new net.minecraft.world.item.armortrim.ArmorTrim(
-+                CraftTrimMaterial.bukkitToMinecraftHolder(armorTrim.getMaterial()),
-+                CraftTrimPattern.bukkitToMinecraftHolder(armorTrim.getPattern())
-+            );
++            this.armorTrim = armorTrim;
 +        }
 +
 +        @Override
@@ -1322,19 +1319,23 @@ index 0000000000000000000000000000000000000000..d96be0ea89094d080ab81722d36af99a
 +
 +        @Override
 +        public ItemArmorTrim.Builder armorTrim(final ArmorTrim armorTrim) {
-+            this.armorTrim = convert(armorTrim);
++            this.armorTrim = armorTrim;
 +            return this;
 +        }
 +
 +        @Override
 +        public ItemArmorTrim build() {
-+            return new PaperItemArmorTrim(this.armorTrim.withTooltip(this.showInTooltip));
++            return new PaperItemArmorTrim(
++                new net.minecraft.world.item.armortrim.ArmorTrim(
++                CraftTrimMaterial.bukkitToMinecraftHolder(this.armorTrim.getMaterial()),
++                CraftTrimPattern.bukkitToMinecraftHolder(this.armorTrim.getPattern())
++            ).withTooltip(this.showInTooltip));
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperItemAttributeModifiers.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperItemAttributeModifiers.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..11cdc84f9d64e0c38d116eff0ca767e9de421990
+index 0000000000000000000000000000000000000000..78867991f5075005725307d16ed2c8487e0e7b7e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperItemAttributeModifiers.java
 @@ -0,0 +1,96 @@
@@ -1353,7 +1354,7 @@ index 0000000000000000000000000000000000000000..11cdc84f9d64e0c38d116eff0ca767e9
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
-+import static io.papermc.paper.datacomponent.item.ComponentUtils.transform;
++import static io.papermc.paper.datacomponent.ComponentUtils.transform;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperItemAttributeModifiers(
@@ -1436,7 +1437,7 @@ index 0000000000000000000000000000000000000000..11cdc84f9d64e0c38d116eff0ca767e9
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperItemContainerContents.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperItemContainerContents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..eb86427206b7f5d38c40bfe26358dc6a051ac87f
+index 0000000000000000000000000000000000000000..967da68950438b489a6e816eab94e58ffd316da7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperItemContainerContents.java
 @@ -0,0 +1,63 @@
@@ -1451,8 +1452,8 @@ index 0000000000000000000000000000000000000000..eb86427206b7f5d38c40bfe26358dc6a
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
-+import static io.papermc.paper.datacomponent.item.ComponentUtils.addAndConvert;
-+import static io.papermc.paper.datacomponent.item.ComponentUtils.transform;
++import static io.papermc.paper.datacomponent.ComponentUtils.addAndConvert;
++import static io.papermc.paper.datacomponent.ComponentUtils.transform;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperItemContainerContents(
@@ -1474,47 +1475,48 @@ index 0000000000000000000000000000000000000000..eb86427206b7f5d38c40bfe26358dc6a
 +        private final List<net.minecraft.world.item.ItemStack> items = new ArrayList<>();
 +
 +        @Override
-+        public ItemContainerContents.Builder add(final ItemStack itemStack) {
++        public ItemContainerContents.Builder add(final ItemStack stack) {
 +            Preconditions.checkArgument(
 +                this.items.size() + 1 <= net.minecraft.world.item.component.ItemContainerContents.MAX_SIZE,
 +                "Cannot have more than %s items, had %s",
 +                net.minecraft.world.item.component.ItemContainerContents.MAX_SIZE,
 +                this.items.size() + 1
 +            );
-+            this.items.add(CraftItemStack.asNMSCopy(itemStack));
++            this.items.add(CraftItemStack.asNMSCopy(stack));
 +            return this;
 +        }
 +
 +        @Override
-+        public ItemContainerContents.Builder addAll(final List<ItemStack> itemStacks) {
++        public ItemContainerContents.Builder addAll(final List<ItemStack> stacks) {
 +            Preconditions.checkArgument(
-+                this.items.size() + itemStacks.size() <= net.minecraft.world.item.component.ItemContainerContents.MAX_SIZE,
++                this.items.size() + stacks.size() <= net.minecraft.world.item.component.ItemContainerContents.MAX_SIZE,
 +                "Cannot have more than %s items, had %s",
 +                net.minecraft.world.item.component.ItemContainerContents.MAX_SIZE,
-+                this.items.size() + itemStacks.size()
++                this.items.size() + stacks.size()
 +            );
-+            addAndConvert(this.items, itemStacks, CraftItemStack::asNMSCopy);
++            addAndConvert(this.items, stacks, CraftItemStack::asNMSCopy);
 +            return this;
 +        }
 +
 +        @Override
 +        public ItemContainerContents build() {
-+            return new PaperItemContainerContents(net.minecraft.world.item.component.ItemContainerContents.fromItems(this.items));
++            return new PaperItemContainerContents(net.minecraft.world.item.component.ItemContainerContents.fromItems(this.items)); // todo expose container slot?
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperItemEnchantments.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperItemEnchantments.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1f1ae514250c586479da5d2bc45f39447679879d
+index 0000000000000000000000000000000000000000..47793f7b41850b982646e16485568dc7bdad0d9c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperItemEnchantments.java
-@@ -0,0 +1,92 @@
+@@ -0,0 +1,93 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import com.google.common.base.Preconditions;
 +import java.util.Collections;
 +import java.util.HashMap;
 +import java.util.Map;
++import it.unimi.dsi.fastutil.objects.Object2IntMap;
 +import net.minecraft.core.Holder;
 +import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
 +import org.bukkit.craftbukkit.util.Handleable;
@@ -1536,9 +1538,9 @@ index 0000000000000000000000000000000000000000..1f1ae514250c586479da5d2bc45f3944
 +        if (itemEnchantments.isEmpty()) {
 +            return Collections.emptyMap();
 +        }
-+        final Map<Enchantment, Integer> map = new HashMap<>();
-+        for (final Holder<net.minecraft.world.item.enchantment.Enchantment> nmsEnchantment : itemEnchantments.keySet()) {
-+            map.put(CraftEnchantment.minecraftHolderToBukkit(nmsEnchantment), itemEnchantments.getLevel(nmsEnchantment));
++        final Map<Enchantment, Integer> map = new HashMap<>(itemEnchantments.size());
++        for (final Object2IntMap.Entry<Holder<net.minecraft.world.item.enchantment.Enchantment>> entry : itemEnchantments.entrySet()) {
++            map.put(CraftEnchantment.minecraftHolderToBukkit(entry.getKey()), entry.getIntValue());
 +        }
 +        return Collections.unmodifiableMap(map); // TODO look into making a "transforming" map
 +    }
@@ -1603,7 +1605,7 @@ index 0000000000000000000000000000000000000000..1f1ae514250c586479da5d2bc45f3944
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperItemLore.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperItemLore.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a7374010c21d87a225805d2c7dce2c5d04cc2e19
+index 0000000000000000000000000000000000000000..041eb21f9d5a3549ce6f27cbfe7cdf2e32c4671e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperItemLore.java
 @@ -0,0 +1,85 @@
@@ -1620,7 +1622,7 @@ index 0000000000000000000000000000000000000000..a7374010c21d87a225805d2c7dce2c5d
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
-+import static io.papermc.paper.datacomponent.item.ComponentUtils.transform;
++import static io.papermc.paper.datacomponent.ComponentUtils.transform;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperItemLore(
@@ -1694,15 +1696,16 @@ index 0000000000000000000000000000000000000000..a7374010c21d87a225805d2c7dce2c5d
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperItemTool.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperItemTool.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..02cf3613bb93266c19988f3af47ecf992e573a36
+index 0000000000000000000000000000000000000000..35f12ebb9cb7dc222405de917b232a46a1afcade
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperItemTool.java
-@@ -0,0 +1,97 @@
+@@ -0,0 +1,103 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import java.util.ArrayList;
 +import java.util.List;
 +import java.util.Optional;
++import com.google.common.base.Preconditions;
 +import io.papermc.paper.registry.RegistryKey;
 +import io.papermc.paper.registry.set.PaperRegistrySets;
 +import io.papermc.paper.registry.set.RegistryKeySet;
@@ -1715,7 +1718,7 @@ index 0000000000000000000000000000000000000000..02cf3613bb93266c19988f3af47ecf99
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
-+import static io.papermc.paper.datacomponent.item.ComponentUtils.transform;
++import static io.papermc.paper.datacomponent.ComponentUtils.transform;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperItemTool(
@@ -1752,7 +1755,12 @@ index 0000000000000000000000000000000000000000..02cf3613bb93266c19988f3af47ecf99
 +
 +
 +    // TODO maybe move to API as package-private so they can create Entry objects? not sure if needed
-+    public record PaperRule(RegistryKeySet<BlockType> blockTypes, @Nullable Float speed, @NonNull TriState correctForDrops) implements Rule {
++    record PaperRule(RegistryKeySet<BlockType> blockTypes, @Nullable Float speed, TriState correctForDrops) implements Rule {
++
++        public static PaperRule fromUnsafe(RegistryKeySet<BlockType> blockTypes, @Nullable Float speed, TriState correctForDrops) {
++            Preconditions.checkArgument(speed == null || speed > 0, "Speed must be positive");
++            return new PaperRule(blockTypes, speed, correctForDrops);
++        }
 +    }
 +
 +    static final class BuilderImpl implements Builder {
@@ -1762,19 +1770,19 @@ index 0000000000000000000000000000000000000000..02cf3613bb93266c19988f3af47ecf99
 +        private float miningSpeed = 1.0F;
 +
 +        @Override
-+        public @NonNull Builder damagePerBlock(final int damage) {
++        public Builder damagePerBlock(final int damage) {
 +            this.damage = damage;
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull Builder defaultMiningSpeed(final float speed) {
++        public Builder defaultMiningSpeed(final float speed) {
 +            this.miningSpeed = speed;
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull Builder addRule(@NonNull final Rule rule) {
++        public Builder addRule(final Rule rule) {
 +            this.rules.add(new net.minecraft.world.item.component.Tool.Rule(
 +                PaperRegistrySets.convertToNms(Registries.BLOCK, BuiltInRegistries.BUILT_IN_CONVERSIONS.lookup(), rule.blockTypes()),
 +                Optional.ofNullable(rule.speed()),
@@ -1784,20 +1792,20 @@ index 0000000000000000000000000000000000000000..02cf3613bb93266c19988f3af47ecf99
 +        }
 +
 +        @Override
-+        public @NonNull Builder addRules(@NonNull final List<@NonNull Rule> rules) {
++        public Builder addRules(final List<Rule> rules) {
 +            rules.forEach(this::addRule);
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull Tool build() {
++        public Tool build() {
 +            return new PaperItemTool(new net.minecraft.world.item.component.Tool(this.rules, this.miningSpeed, this.damage));
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperJukeboxPlayable.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperJukeboxPlayable.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4eedbfc337fc3c937845268546dcd2f58ca0d789
+index 0000000000000000000000000000000000000000..2abd5f1a78fb0335bc4ed2651c53eb1290f213f2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperJukeboxPlayable.java
 @@ -0,0 +1,61 @@
@@ -1831,11 +1839,11 @@ index 0000000000000000000000000000000000000000..4eedbfc337fc3c937845268546dcd2f5
 +    }
 +
 +    @Override
-+    public @NonNull JukeboxSong jukeboxSong() {
++    public JukeboxSong jukeboxSong() {
 +        return this.impl.song().holder().map(CraftJukeboxSong::minecraftHolderToBukkit).orElseThrow();
 +    }
 +
-+    static final class BuilderImpl implements Builder {
++    static final class BuilderImpl implements JukeboxPlayable.Builder {
 +
 +        private JukeboxSong song;
 +        private boolean showInTooltip = true;
@@ -1845,19 +1853,19 @@ index 0000000000000000000000000000000000000000..4eedbfc337fc3c937845268546dcd2f5
 +        }
 +
 +        @Override
-+        public Builder showInTooltip(final boolean showInTooltip) {
++        public JukeboxPlayable.Builder showInTooltip(final boolean showInTooltip) {
 +            this.showInTooltip = showInTooltip;
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull Builder jukeboxSong(@NonNull final JukeboxSong song) {
++        public JukeboxPlayable.Builder jukeboxSong(final JukeboxSong song) {
 +            this.song = song;
 +            return this;
 +        }
 +
 +        @Override
-+        public @NonNull JukeboxPlayable build() {
++        public JukeboxPlayable build() {
 +            return new PaperJukeboxPlayable(new net.minecraft.world.item.JukeboxPlayable(new EitherHolder<>(CraftJukeboxSong.bukkitToMinecraftHolder(this.song)), this.showInTooltip));
 +        }
 +    }
@@ -1910,7 +1918,7 @@ index 0000000000000000000000000000000000000000..0737a3d3ed9a325f0cf232278de0098d
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperLodestoneTracker.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperLodestoneTracker.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fea818b24e2833033ef70c1ca825de814eccaf61
+index 0000000000000000000000000000000000000000..7f3a2929203a1c681f89d7f8aab8e574c4059921
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperLodestoneTracker.java
 @@ -0,0 +1,58 @@
@@ -1946,12 +1954,12 @@ index 0000000000000000000000000000000000000000..fea818b24e2833033ef70c1ca825de81
 +
 +    static final class BuilderImpl implements LodestoneTracker.Builder {
 +
-+        private @Nullable Location pos;
++        private @Nullable Location location;
 +        private boolean tracked = true;
 +
 +        @Override
 +        public LodestoneTracker.Builder location(final @Nullable Location location) {
-+            this.pos = location;
++            this.location = location;
 +            return this;
 +        }
 +
@@ -1965,7 +1973,7 @@ index 0000000000000000000000000000000000000000..fea818b24e2833033ef70c1ca825de81
 +        public LodestoneTracker build() {
 +            return new PaperLodestoneTracker(
 +                new net.minecraft.world.item.component.LodestoneTracker(
-+                    Optional.ofNullable(this.pos).map(CraftLocation::toGlobalPos),
++                    Optional.ofNullable(this.location).map(CraftLocation::toGlobalPos),
 +                    this.tracked
 +                )
 +            );
@@ -2251,7 +2259,7 @@ index 0000000000000000000000000000000000000000..3bf2538dff070f48b735bafe88a23e6e
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperPotionContents.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperPotionContents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a18cbe16298ad944e1fff4f4c5576ae377f9a00f
+index 0000000000000000000000000000000000000000..ac8973d7f558bb1391e7f7eb665bfdfe0e6d1ca1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperPotionContents.java
 @@ -0,0 +1,90 @@
@@ -2271,7 +2279,7 @@ index 0000000000000000000000000000000000000000..a18cbe16298ad944e1fff4f4c5576ae3
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
-+import static io.papermc.paper.datacomponent.item.ComponentUtils.transform;
++import static io.papermc.paper.datacomponent.ComponentUtils.transform;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperPotionContents(
@@ -2347,10 +2355,10 @@ index 0000000000000000000000000000000000000000..a18cbe16298ad944e1fff4f4c5576ae3
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperResolvableProfile.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperResolvableProfile.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d469fd6e0cd853c275ad263c832623f3b0b24cf5
+index 0000000000000000000000000000000000000000..96f91e0b7718eda002eaf8714c21516aa6ffe5bf
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperResolvableProfile.java
-@@ -0,0 +1,105 @@
+@@ -0,0 +1,106 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import com.destroystokyo.paper.profile.CraftPlayerProfile;
@@ -2370,7 +2378,7 @@ index 0000000000000000000000000000000000000000..d469fd6e0cd853c275ad263c832623f3
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
-+import static io.papermc.paper.datacomponent.item.ComponentUtils.transform;
++import static io.papermc.paper.datacomponent.ComponentUtils.transform;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperResolvableProfile(
@@ -2413,9 +2421,10 @@ index 0000000000000000000000000000000000000000..d469fd6e0cd853c275ad263c832623f3
 +
 +        @Override
 +        public ResolvableProfile.Builder name(final @Nullable String name) {
-+            final int length = name == null ? 0 : name.length();
-+            Preconditions.checkArgument(name == null || length <= 16, "name cannot be more than 16 characters, was %s", length);
-+            Preconditions.checkArgument(name == null || StringUtil.isValidPlayerName(name), "name cannot include invalid characters, was %s", name);
++            if (name != null) {
++                Preconditions.checkArgument(name.length() <= 16, "name cannot be more than 16 characters, was %s", name.length());
++                Preconditions.checkArgument(StringUtil.isValidPlayerName(name), "name cannot include invalid characters, was %s", name);
++            }
 +            this.name = name;
 +            return this;
 +        }
@@ -2429,7 +2438,7 @@ index 0000000000000000000000000000000000000000..d469fd6e0cd853c275ad263c832623f3
 +        @Override
 +        public ResolvableProfile.Builder addProperty(final ProfileProperty property) {
 +            // ProfileProperty constructor already has specific validations
-+            final int newSize = this.propertyMap.size() + 1;
++            final int newSize = this.propertyMap.size() + 1; // todo see below notice
 +            Preconditions.checkArgument(newSize <= 16, "Cannot have more than 16 properties, was %s", newSize);
 +            this.propertyMap.put(property.getName(), new Property(property.getName(), property.getValue(), property.getSignature()));
 +            return this;
@@ -2437,7 +2446,7 @@ index 0000000000000000000000000000000000000000..d469fd6e0cd853c275ad263c832623f3
 +
 +        @Override
 +        public ResolvableProfile.Builder addAllProperties(final List<ProfileProperty> properties) {
-+            final int newSize = this.propertyMap.size() + properties.size();
++            final int newSize = this.propertyMap.size() + properties.size(); // todo this check is wrong for duplicate property key since this is a map not a list
 +            Preconditions.checkArgument(newSize <= 16, "Cannot have more than 16 properties, was %s", newSize);
 +            for (final ProfileProperty property : properties) {
 +                this.propertyMap.put(property.getName(), new Property(property.getName(), property.getValue(), property.getSignature()));
@@ -2525,7 +2534,7 @@ index 0000000000000000000000000000000000000000..c6a11cbe924926ec6d7ac1d69b5dacfb
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperSuspiciousStewEffects.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperSuspiciousStewEffects.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..19827c8b88f9a9b882633c5aff0561df4cbf2f48
+index 0000000000000000000000000000000000000000..5113d65c36c64710b0d1668baa986a755a215d5a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperSuspiciousStewEffects.java
 @@ -0,0 +1,59 @@
@@ -2539,7 +2548,7 @@ index 0000000000000000000000000000000000000000..19827c8b88f9a9b882633c5aff0561df
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
-+import static io.papermc.paper.datacomponent.item.ComponentUtils.transform;
++import static io.papermc.paper.datacomponent.ComponentUtils.transform;
 +import static io.papermc.paper.potion.SuspiciousEffectEntry.create;
 +
 +@DefaultQualifier(NonNull.class)
@@ -2565,17 +2574,17 @@ index 0000000000000000000000000000000000000000..19827c8b88f9a9b882633c5aff0561df
 +        private final List<net.minecraft.world.item.component.SuspiciousStewEffects.Entry> effects = new ArrayList<>();
 +
 +        @Override
-+        public Builder add(final SuspiciousEffectEntry itemStack) {
++        public Builder add(final SuspiciousEffectEntry entry) {
 +            this.effects.add(new net.minecraft.world.item.component.SuspiciousStewEffects.Entry(
-+                org.bukkit.craftbukkit.potion.CraftPotionEffectType.bukkitToMinecraftHolder(itemStack.effect()),
-+                itemStack.duration()
++                org.bukkit.craftbukkit.potion.CraftPotionEffectType.bukkitToMinecraftHolder(entry.effect()),
++                entry.duration()
 +            ));
 +            return this;
 +        }
 +
 +        @Override
-+        public Builder addAll(final List<SuspiciousEffectEntry> itemStack) {
-+            itemStack.forEach(this::add);
++        public Builder addAll(final List<SuspiciousEffectEntry> entries) {
++            entries.forEach(this::add);
 +            return this;
 +        }
 +
@@ -2638,7 +2647,7 @@ index 0000000000000000000000000000000000000000..f95ceec3e154772f0af9e51eac99dcd7
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperWritableBookContent.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperWritableBookContent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5c8249525613bfb2ddca470f27947fbe7f8cac86
+index 0000000000000000000000000000000000000000..e6336a7fd93c8bd6f9c3d63d48ce3c7d154a0d4b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperWritableBookContent.java
 @@ -0,0 +1,107 @@
@@ -2655,7 +2664,7 @@ index 0000000000000000000000000000000000000000..5c8249525613bfb2ddca470f27947fbe
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
-+import static io.papermc.paper.datacomponent.item.ComponentUtils.transform;
++import static io.papermc.paper.datacomponent.ComponentUtils.transform;
 +import static io.papermc.paper.util.Filtered.create;
 +
 +@DefaultQualifier(NonNull.class)
@@ -2718,7 +2727,7 @@ index 0000000000000000000000000000000000000000..5c8249525613bfb2ddca470f27947fbe
 +        }
 +
 +        @Override
-+        public WritableBookContent.Builder addPageFiltered(final Filtered<String> page) {
++        public WritableBookContent.Builder addFilteredPage(final Filtered<String> page) {
 +            validatePageLength(page.raw());
 +            if (page.filtered() != null) {
 +                validatePageLength(page.filtered());
@@ -2729,7 +2738,7 @@ index 0000000000000000000000000000000000000000..5c8249525613bfb2ddca470f27947fbe
 +        }
 +
 +        @Override
-+        public WritableBookContent.Builder addPagesFiltered(final Collection<Filtered<String>> pages) {
++        public WritableBookContent.Builder addFilteredPages(final Collection<Filtered<String>> pages) {
 +            validatePageCount(this.pages.size(), pages.size());
 +            for (final Filtered<String> page : pages) {
 +                validatePageLength(page.raw());
@@ -2751,7 +2760,7 @@ index 0000000000000000000000000000000000000000..5c8249525613bfb2ddca470f27947fbe
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperWrittenBookContent.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperWrittenBookContent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..afb79f06d38fe0eeacfb5473b2f6d4e8cc869e83
+index 0000000000000000000000000000000000000000..c4de9165c341d9aa860ddb13c3c2d743a2680e81
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperWrittenBookContent.java
 @@ -0,0 +1,190 @@
@@ -2776,7 +2785,7 @@ index 0000000000000000000000000000000000000000..afb79f06d38fe0eeacfb5473b2f6d4e8
 +
 +import static io.papermc.paper.adventure.PaperAdventure.asAdventure;
 +import static io.papermc.paper.adventure.PaperAdventure.asVanilla;
-+import static io.papermc.paper.datacomponent.item.ComponentUtils.transform;
++import static io.papermc.paper.datacomponent.ComponentUtils.transform;
 +
 +@DefaultQualifier(NonNull.class)
 +public record PaperWrittenBookContent(
@@ -2863,7 +2872,7 @@ index 0000000000000000000000000000000000000000..afb79f06d38fe0eeacfb5473b2f6d4e8
 +        }
 +
 +        @Override
-+        public WrittenBookContent.Builder titleFiltered(final Filtered<String> title) {
++        public WrittenBookContent.Builder filteredTitle(final Filtered<String> title) {
 +            validateTitle(title.raw());
 +            if (title.filtered() != null) {
 +                validateTitle(title.filtered());
@@ -2905,7 +2914,7 @@ index 0000000000000000000000000000000000000000..afb79f06d38fe0eeacfb5473b2f6d4e8
 +        }
 +
 +        @Override
-+        public WrittenBookContent.Builder addPages(final @NonNull Collection<? extends ComponentLike> pages) {
++        public WrittenBookContent.Builder addPages(final Collection<? extends ComponentLike> pages) {
 +            for (final ComponentLike page : pages) {
 +                final Component component = page.asComponent();
 +                validatePageLength(component);
@@ -2980,7 +2989,7 @@ index 8ac485d82c2d2b32f4d54e02c18c2cb2c3df4fa4..4f15ec26c7512a6f2b9c14e108d582d3
  
      ItemEnchantments(Object2IntAVLTreeMap<Holder<Enchantment>> enchantments, boolean showInTooltip) { // Paper
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index 32a41c8b324aad67b9dcf74387aef299e6478a64..30cca598bdec443ffe4f8a38ae8c10c4b20d1027 100644
+index 32a41c8b324aad67b9dcf74387aef299e6478a64..8bc572919dfd04f477a5b6aa62ee6bd7710c8039 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 @@ -192,7 +192,7 @@ public final class CraftItemStack extends ItemStack {
@@ -3019,7 +3028,7 @@ index 32a41c8b324aad67b9dcf74387aef299e6478a64..30cca598bdec443ffe4f8a38ae8c10c4
                      item.set(DataComponents.PROFILE, new net.minecraft.world.item.component.ResolvableProfile(gameProfile));
                  }
              };
-@@ -539,4 +539,90 @@ public final class CraftItemStack extends ItemStack {
+@@ -539,4 +539,84 @@ public final class CraftItemStack extends ItemStack {
          return this.pdcView;
      }
      // Paper end - pdc
@@ -3066,13 +3075,7 @@ index 32a41c8b324aad67b9dcf74387aef299e6478a64..30cca598bdec443ffe4f8a38ae8c10c4
 +    }
 +
 +    private <A, V> void setDataInternal(final io.papermc.paper.datacomponent.PaperComponentType<A, V> type, final A value) {
-+        final io.papermc.paper.datacomponent.ComponentAdapter<V, A> adapter = type.getAdapter();
-+        if (adapter.isValued()) {
-+            Preconditions.checkArgument(value != null, "value cannot be null");
-+            this.handle.set(type.getHandle(), adapter.toVanilla(value));
-+        } else {
-+            this.handle.set(type.getHandle(), adapter.toVanilla(value));
-+        }
++        this.handle.set(type.getHandle(), type.getAdapter().toVanilla(value));
 +    }
 +
 +    @Override
@@ -3106,7 +3109,7 @@ index 32a41c8b324aad67b9dcf74387aef299e6478a64..30cca598bdec443ffe4f8a38ae8c10c4
 +        }
 +        final net.minecraft.core.component.DataComponentType<?> nms = io.papermc.paper.datacomponent.PaperComponentType.bukkitToMinecraft(type);
 +        // maybe a more efficient way is to expose the "patch" map in PatchedDataComponentMap and just check if the type exists as a key
-+        return java.util.Objects.equals(this.handle.get(nms), this.handle.getPrototype().get(nms));
++        return !java.util.Objects.equals(this.handle.get(nms), this.handle.getPrototype().get(nms));
 +    }
 +    // Paper end - data component API
  }
@@ -3159,7 +3162,7 @@ index 7277e7ee566aabf6e01937072d949ed67c3e8e38..24ff8b4ed2a70d02b850c3701d3295fd
          IntList fadeColors = CraftMetaFirework.addColors(effect.getFadeColors());
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 4d97024bb05ab815409fc25c5924903868cc3945..a1839baaef752f54efeebb982b160396a690fc2e 100644
+index 4d97024bb05ab815409fc25c5924903868cc3945..c3e2cf55768a28824764fee387e8c1b2c0863744 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -136,7 +136,7 @@ import org.bukkit.persistence.PersistentDataContainer;
@@ -3171,35 +3174,6 @@ index 4d97024bb05ab815409fc25c5924903868cc3945..a1839baaef752f54efeebb982b160396
  
      static class ItemMetaKey {
  
-@@ -182,10 +182,10 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
-         }
-     }
- 
--    static abstract class Applicator { // Paper - support updating profile after resolving it
-+    public static abstract class Applicator { // Paper - support updating profile after resolving it
- 
--        final DataComponentPatch.Builder builder = DataComponentPatch.builder(); // Paper - private -> package-private
--        void skullCallback(com.mojang.authlib.GameProfile gameProfile) {} // Paper - support updating profile after resolving it
-+        public final DataComponentPatch.Builder builder = DataComponentPatch.builder(); // Paper
-+        public void skullCallback(com.mojang.authlib.GameProfile gameProfile) {} // Paper - support updating profile after resolving it
- 
-         <T> Applicator put(ItemMetaKeyType<T> key, T value) {
-             this.builder.set(key.TYPE, value);
-@@ -840,8 +840,13 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
-         return result;
-     }
- 
-+    // Paper
-+    public void applyToItemPublic(CraftMetaItem.Applicator itemTag) {
-+        this.applyToItem(itemTag);
-+    }
-+    // Paper end
-     @Overridden
--    void applyToItem(CraftMetaItem.Applicator itemTag) {
-+    void applyToItem(CraftMetaItem.Applicator itemTag) { // Paper
-         if (this.hasDisplayName()) {
-             itemTag.put(CraftMetaItem.NAME, this.displayName);
-         }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftLocation.java b/src/main/java/org/bukkit/craftbukkit/util/CraftLocation.java
 index 097996d3955ab5126b71f7bff1dd2c62becb5ffd..0797ef29b76564491351042ce47e3d4500490bef 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftLocation.java
@@ -3230,13 +3204,12 @@ index 0000000000000000000000000000000000000000..1c1fcbbacc3881e088d64a7a840b3f3e
 +io.papermc.paper.datacomponent.item.ComponentTypesBridgesImpl
 diff --git a/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java b/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..eab92494238fc6664ba7d551a2b9d8b33e59e188
+index 0000000000000000000000000000000000000000..49e18cffd75bbd9c28e75807d303759f552819dd
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java
-@@ -0,0 +1,392 @@
+@@ -0,0 +1,389 @@
 +package io.papermc.paper.item;
 +
-+import com.google.common.collect.Iterators;
 +import io.papermc.paper.datacomponent.DataComponentType;
 +import io.papermc.paper.datacomponent.DataComponentTypes;
 +import io.papermc.paper.datacomponent.item.ChargedProjectiles;
@@ -3248,6 +3221,7 @@ index 0000000000000000000000000000000000000000..eab92494238fc6664ba7d551a2b9d8b3
 +import io.papermc.paper.datacomponent.item.ItemAttributeModifiers;
 +import io.papermc.paper.datacomponent.item.ItemEnchantments;
 +import io.papermc.paper.datacomponent.item.ItemLore;
++import io.papermc.paper.datacomponent.item.JukeboxPlayable;
 +import io.papermc.paper.datacomponent.item.MapID;
 +import io.papermc.paper.datacomponent.item.MapItemColor;
 +import io.papermc.paper.datacomponent.item.PotDecorations;
@@ -3261,6 +3235,7 @@ index 0000000000000000000000000000000000000000..eab92494238fc6664ba7d551a2b9d8b3
 +import net.kyori.adventure.util.TriState;
 +import org.bukkit.Color;
 +import org.bukkit.FireworkEffect;
++import org.bukkit.JukeboxSong;
 +import org.bukkit.Material;
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.Registry;
@@ -3284,6 +3259,7 @@ index 0000000000000000000000000000000000000000..eab92494238fc6664ba7d551a2b9d8b3
 +import org.bukkit.inventory.meta.MapMeta;
 +import org.bukkit.inventory.meta.Repairable;
 +import org.bukkit.inventory.meta.components.FoodComponent;
++import org.bukkit.inventory.meta.components.JukeboxPlayableComponent;
 +import org.bukkit.inventory.meta.components.ToolComponent;
 +import org.bukkit.inventory.meta.trim.ArmorTrim;
 +import org.bukkit.inventory.meta.trim.TrimMaterial;
@@ -3302,20 +3278,17 @@ index 0000000000000000000000000000000000000000..eab92494238fc6664ba7d551a2b9d8b3
 +
 +    @Test
 +    void testMaxStackSize() {
-+        final ItemStack stack = new ItemStack(Material.STONE);
-+        testWithMeta(stack, DataComponentTypes.MAX_STACK_SIZE, 32, ItemMeta.class, ItemMeta::getMaxStackSize, ItemMeta::setMaxStackSize);
++        testWithMeta(new ItemStack(Material.STONE), DataComponentTypes.MAX_STACK_SIZE, 32, ItemMeta.class, ItemMeta::getMaxStackSize, ItemMeta::setMaxStackSize);
 +    }
 +
 +    @Test
 +    void testMaxDamage() {
-+        final ItemStack stack = new ItemStack(Material.STONE);
-+        testWithMeta(stack, DataComponentTypes.MAX_DAMAGE, 120, Damageable.class, Damageable::getMaxDamage, Damageable::setMaxDamage);
++        testWithMeta(new ItemStack(Material.STONE), DataComponentTypes.MAX_DAMAGE, 120, Damageable.class, Damageable::getMaxDamage, Damageable::setMaxDamage);
 +    }
 +
 +    @Test
 +    void testDamage() {
-+        final ItemStack stack = new ItemStack(Material.STONE);
-+        testWithMeta(stack, DataComponentTypes.DAMAGE, 120, Damageable.class, Damageable::getDamage, Damageable::setDamage);
++        testWithMeta(new ItemStack(Material.STONE), DataComponentTypes.DAMAGE, 120, Damageable.class, Damageable::getDamage, Damageable::setDamage);
 +    }
 +
 +    @Test
@@ -3402,13 +3375,11 @@ index 0000000000000000000000000000000000000000..eab92494238fc6664ba7d551a2b9d8b3
 +        AttributeModifier modifier = new AttributeModifier(NamespacedKey.minecraft("test"), 5, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ANY);
 +        stack.setData(DataComponentTypes.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.itemAttributes().showInTooltip(false).addModifier(Attribute.GENERIC_ATTACK_DAMAGE, modifier).build());
 +
-+
 +        Assertions.assertTrue(stack.getItemMeta().hasItemFlag(ItemFlag.HIDE_ATTRIBUTES));
-+        Assertions.assertEquals(modifier, Iterators.get(stack.getItemMeta().getAttributeModifiers(Attribute.GENERIC_ATTACK_DAMAGE).iterator(), 0));
++        Assertions.assertEquals(modifier, ((List<AttributeModifier>) stack.getItemMeta().getAttributeModifiers(Attribute.GENERIC_ATTACK_DAMAGE)).getFirst());
 +        stack.unsetData(DataComponentTypes.ATTRIBUTE_MODIFIERS);
 +        Assertions.assertNull(stack.getItemMeta().getAttributeModifiers());
 +    }
-+
 +
 +    @Test
 +    void testCustomModelData() {
@@ -3449,7 +3420,7 @@ index 0000000000000000000000000000000000000000..eab92494238fc6664ba7d551a2b9d8b3
 +
 +
 +        stack.unsetData(DataComponentTypes.FOOD);
-+        meta = (CrossbowMeta) stack.getItemMeta();
++        meta = stack.getItemMeta();
 +        Assertions.assertFalse(meta.hasFood());
 +    }
 +
@@ -3463,16 +3434,12 @@ index 0000000000000000000000000000000000000000..eab92494238fc6664ba7d551a2b9d8b3
 +                    RegistrySet.keySetFromValues(RegistryKey.BLOCK, List.of(BlockType.STONE, BlockType.GRAVEL)),
 +                    2F,
 +                    TriState.TRUE
-+
 +                ),
 +                Tool.Rule.of(
 +                    RegistryAccess.registryAccess().getRegistry(RegistryKey.BLOCK).getTag(TagKey.create(RegistryKey.BLOCK, NamespacedKey.minecraft("bamboo_blocks"))),
 +                    2F,
 +                    TriState.TRUE
-+
 +                )
-+
-+
 +            ))
 +            .build();
 +
@@ -3492,12 +3459,26 @@ index 0000000000000000000000000000000000000000..eab92494238fc6664ba7d551a2b9d8b3
 +            idx++;
 +        }
 +
-+
 +        stack.unsetData(DataComponentTypes.TOOL);
 +        meta = stack.getItemMeta();
 +        Assertions.assertFalse(meta.hasTool());
 +    }
 +
++    @Test
++    void testJukeboxPlayable() {
++        JukeboxPlayable properties = JukeboxPlayable.jukeboxPlayable(JukeboxSong.MALL).build();
++
++        final ItemStack stack = new ItemStack(Material.BEEF);
++        stack.setData(DataComponentTypes.JUKEBOX_PLAYABLE, properties);
++
++        ItemMeta meta = stack.getItemMeta();
++        JukeboxPlayableComponent component = meta.getJukeboxPlayable();
++        Assertions.assertEquals(properties.jukeboxSong(), component.getSong());
++
++        stack.unsetData(DataComponentTypes.JUKEBOX_PLAYABLE);
++        meta = stack.getItemMeta();
++        Assertions.assertFalse(meta.hasJukeboxPlayable());
++    }
 +
 +    @Test
 +    void testFireResistant() {
@@ -3528,9 +3509,9 @@ index 0000000000000000000000000000000000000000..eab92494238fc6664ba7d551a2b9d8b3
 +
 +    @Test
 +    void testFireworks() {
-+        testWithMeta(new ItemStack(Material.FIREWORK_ROCKET), DataComponentTypes.FIREWORKS, Fireworks.fireworks(List.of(FireworkEffect.builder().build()), 1), Fireworks::effects, FireworkMeta.class, FireworkMeta::getEffects, (fireworkMeta, o) -> {
++        testWithMeta(new ItemStack(Material.FIREWORK_ROCKET), DataComponentTypes.FIREWORKS, Fireworks.fireworks(List.of(FireworkEffect.builder().build()), 1), Fireworks::effects, FireworkMeta.class, FireworkMeta::getEffects, (fireworkMeta, effects) -> {
 +            fireworkMeta.clearEffects();
-+            fireworkMeta.addEffects(o);
++            fireworkMeta.addEffects(effects);
 +        });
 +
 +        testWithMeta(new ItemStack(Material.FIREWORK_ROCKET), DataComponentTypes.FIREWORKS, Fireworks.fireworks(List.of(FireworkEffect.builder().build()), 1), Fireworks::flightDuration, FireworkMeta.class, FireworkMeta::getPower, FireworkMeta::setPower);
@@ -3578,25 +3559,10 @@ index 0000000000000000000000000000000000000000..eab92494238fc6664ba7d551a2b9d8b3
 +        Assertions.assertTrue(decoratedPot.getSherds().values().stream().allMatch((m) -> m == Material.BRICK));
 +    }
 +
-+    @SuppressWarnings("unchecked")
 +    private static <T, M extends ItemMeta> void testWithMeta(final ItemStack stack, final DataComponentType.Valued<T> type, final T value, final Class<M> metaType, final Function<M, T> metaGetter, final BiConsumer<M, T> metaSetter) {
-+        ItemStack original = stack.clone();
-+        stack.setData(type, value);
-+
-+        Assertions.assertEquals(value, stack.getData(type));
-+
-+        final ItemMeta meta = stack.getItemMeta();
-+        final M typedMeta = Assertions.assertInstanceOf(metaType, meta);
-+
-+        Assertions.assertEquals(metaGetter.apply(typedMeta), value);
-+
-+        // SETTING
-+        metaSetter.accept(typedMeta, value);
-+        original.setItemMeta(typedMeta);
-+        Assertions.assertEquals(value, original.getData(type));
++        testWithMeta(stack, type, value, Function.identity(), metaType, metaGetter, metaSetter);
 +    }
 +
-+    @SuppressWarnings("unchecked")
 +    private static <T, M extends ItemMeta, R> void testWithMeta(final ItemStack stack, final DataComponentType.Valued<T> type, final T value, Function<T, R> mapper, final Class<M> metaType, final Function<M, R> metaGetter, final BiConsumer<M, R> metaSetter) {
 +        ItemStack original = stack.clone();
 +        stack.setData(type, value);
@@ -3614,8 +3580,8 @@ index 0000000000000000000000000000000000000000..eab92494238fc6664ba7d551a2b9d8b3
 +        Assertions.assertEquals(value, original.getData(type));
 +    }
 +
-+    @SuppressWarnings("unchecked")
-+    private static <M> void testWithMeta(final ItemStack stack, final DataComponentType.NonValued type, final boolean value, final Class<M> metaType, final Function<M, Boolean> metaGetter, final BiConsumer<M, Boolean> metaSetter) {
++    private static <M extends ItemMeta> void testWithMeta(final ItemStack stack, final DataComponentType.NonValued type, final boolean value, final Class<M> metaType, final Function<M, Boolean> metaGetter, final BiConsumer<M, Boolean> metaSetter) {
++        ItemStack original = stack.clone();
 +        stack.setData(type);
 +
 +        Assertions.assertEquals(value, stack.hasData(type));
@@ -3624,11 +3590,16 @@ index 0000000000000000000000000000000000000000..eab92494238fc6664ba7d551a2b9d8b3
 +        final M typedMeta = Assertions.assertInstanceOf(metaType, meta);
 +
 +        Assertions.assertEquals(metaGetter.apply(typedMeta), value);
++
++        // SETTING
++        metaSetter.accept(typedMeta, value);
++        original.setItemMeta(typedMeta);
++        Assertions.assertEquals(value, original.hasData(type));
 +    }
 +}
 diff --git a/src/test/java/io/papermc/paper/item/MetaComparisonTest.java b/src/test/java/io/papermc/paper/item/MetaComparisonTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..03aeb992c274d762c1b3475458851671d3045ffc
+index 0000000000000000000000000000000000000000..6a5e874854a803c132de2fe638b89789af0f185a
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/item/MetaComparisonTest.java
 @@ -0,0 +1,284 @@
@@ -3655,11 +3626,12 @@ index 0000000000000000000000000000000000000000..03aeb992c274d762c1b3475458851671
 +import org.bukkit.potion.PotionEffect;
 +import org.bukkit.potion.PotionEffectType;
 +import org.bukkit.support.AbstractTestingBase;
-+import org.bukkit.util.Consumer;
 +import org.junit.jupiter.api.Assertions;
++import org.junit.jupiter.api.Disabled;
 +import org.junit.jupiter.api.Test;
 +
 +import java.util.UUID;
++import java.util.function.Consumer;
 +
 +// TODO: This should technically be used to compare legacy meta vs the newly implemented
 +public class MetaComparisonTest extends AbstractTestingBase {
@@ -3710,12 +3682,11 @@ index 0000000000000000000000000000000000000000..03aeb992c274d762c1b3475458851671
 +        Assertions.assertNull(downgraded.getColor());
 +    }
 +
-+
 +    @Test
 +    public void testNullMeta() {
 +        ItemStack itemStack = new ItemStack(Material.AIR);
 +
-+        //Assertions.assertFalse(itemStack.hasItemMeta());
++        Assertions.assertFalse(itemStack.hasItemMeta());
 +        Assertions.assertNull(itemStack.getItemMeta());
 +    }
 +
@@ -3726,7 +3697,7 @@ index 0000000000000000000000000000000000000000..03aeb992c274d762c1b3475458851671
 +
 +        testSetAndGet(nmsItemStack,
 +            (meta) -> ((PotionMeta) meta).addCustomEffect(potionEffect, true),
-+            (meta) -> Assertions.assertEquals(potionEffect, ((PotionMeta) meta).getCustomEffects().get(0))
++            (meta) -> Assertions.assertEquals(potionEffect, ((PotionMeta) meta).getCustomEffects().getFirst())
 +        );
 +    }
 +
@@ -3741,7 +3712,8 @@ index 0000000000000000000000000000000000000000..03aeb992c274d762c1b3475458851671
 +    }
 +
 +
-+    //@Test
++    @Test
++    @Disabled
 +    public void testPlayerHead() {
 +        PlayerProfile profile = new CraftPlayerProfile(UUID.randomUUID(), "Owen1212055");
 +        ItemStack stack = new ItemStack(Material.PLAYER_HEAD, 1);
@@ -3914,7 +3886,6 @@ index 0000000000000000000000000000000000000000..03aeb992c274d762c1b3475458851671
 +        set.accept(paperMeta);
 +        get.accept(paperMeta);
 +    }
-+
 +}
 diff --git a/src/test/java/org/bukkit/PerMaterialTest.java b/src/test/java/org/bukkit/PerMaterialTest.java
 index c28386c3114ce85d67832e55ab44e2ab8f6e04d7..c1fca209e67e2f7bfa6f9efdef52264253ef8d58 100644

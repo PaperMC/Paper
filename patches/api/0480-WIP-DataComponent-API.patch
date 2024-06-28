@@ -6,7 +6,7 @@ Subject: [PATCH] WIP DataComponent API
 
 diff --git a/src/main/java/io/papermc/paper/block/BlockPredicate.java b/src/main/java/io/papermc/paper/block/BlockPredicate.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..360f2b0075a478a034b1baddd1e7c70d252f84f7
+index 0000000000000000000000000000000000000000..ad7a6a260bc6903039ed3d0a961cec82b2f6fff7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/block/BlockPredicate.java
 @@ -0,0 +1,54 @@
@@ -25,7 +25,7 @@ index 0000000000000000000000000000000000000000..360f2b0075a478a034b1baddd1e7c70d
 +
 +    @NotNull
 +    static Builder predicate() {
-+        record BlockPredicateImpl(RegistryKeySet<BlockType> blocks) implements BlockPredicate {
++        record BlockPredicateImpl(RegistryKeySet<@NotNull BlockType> blocks) implements BlockPredicate {
 +
 +            @Override
 +            public @Nullable RegistryKeySet<@NotNull BlockType> blocks() {
@@ -35,7 +35,7 @@ index 0000000000000000000000000000000000000000..360f2b0075a478a034b1baddd1e7c70d
 +
 +        class BuilderImpl implements Builder {
 +
-+            private @Nullable RegistryKeySet<BlockType> blocks = null;
++            private @Nullable RegistryKeySet<@NotNull BlockType> blocks;
 +
 +            @Override
 +            public @NotNull Builder blocks(@Nullable final RegistryKeySet<@NotNull BlockType> blocks) {
@@ -52,7 +52,7 @@ index 0000000000000000000000000000000000000000..360f2b0075a478a034b1baddd1e7c70d
 +        return new BuilderImpl();
 +    }
 +
-+    @Nullable RegistryKeySet<@org.jetbrains.annotations.NotNull BlockType> blocks();
++    @Nullable RegistryKeySet<@NotNull BlockType> blocks();
 +
 +    @ApiStatus.Experimental
 +    @ApiStatus.NonExtendable
@@ -127,10 +127,10 @@ index 0000000000000000000000000000000000000000..e3fe89c9927d3b82ac7f6cadd51db565
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/DataComponentTypes.java b/src/main/java/io/papermc/paper/datacomponent/DataComponentTypes.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0660abc2a184a2684b4a6817590b67b38022b19f
+index 0000000000000000000000000000000000000000..9529246c5f4d7b0e5a071a662850776a24b4380a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/DataComponentTypes.java
-@@ -0,0 +1,316 @@
+@@ -0,0 +1,322 @@
 +package io.papermc.paper.datacomponent;
 +
 +import io.papermc.paper.datacomponent.item.BannerPatternLayers;
@@ -153,7 +153,7 @@ index 0000000000000000000000000000000000000000..0660abc2a184a2684b4a6817590b67b3
 +import io.papermc.paper.datacomponent.item.MapDecorations;
 +import io.papermc.paper.datacomponent.item.MapID;
 +import io.papermc.paper.datacomponent.item.MapItemColor;
-+import io.papermc.paper.datacomponent.item.MapPostProcessing;
++import io.papermc.paper.item.MapPostProcessing;
 +import io.papermc.paper.datacomponent.item.PotDecorations;
 +import io.papermc.paper.datacomponent.item.PotionContents;
 +import io.papermc.paper.datacomponent.item.ResolvableProfile;
@@ -186,36 +186,39 @@ index 0000000000000000000000000000000000000000..0660abc2a184a2684b4a6817590b67b3
 +
 +    // public static final DataComponentType.Valued<BinaryTagHolder> CUSTOM_DATA = valued("custom_data");
 +    /**
-+     * Controls the maximum stacking size of this item
++     * Controls the maximum stacking size of this item.
 +     * <br>
-+     * Values greater than 1 are mutually exclusive with the {@link #MAX_DAMAGE} component
++     * Values greater than 1 are mutually exclusive with the {@link #MAX_DAMAGE} component.
 +     */
 +    public static final DataComponentType.Valued<@IntRange(from = 1, to = 99) Integer> MAX_STACK_SIZE = valued("max_stack_size");
 +    /**
 +     * Controls the maximum amount of damage than an item can take,
-+     * if not present, the item cannot be damaged
++     * if not present, the item cannot be damaged.
 +     * <br>
-+     * Mutually exclusive with the {@link #MAX_STACK_SIZE} component greater than 1
++     * Mutually exclusive with the {@link #MAX_STACK_SIZE} component greater than 1.
++     *
 +     * @see #DAMAGE
 +     */
 +    public static final DataComponentType.Valued<@Positive Integer> MAX_DAMAGE = valued("max_damage");
 +    /**
 +     * The amount of durability removed from an item,
-+     * for damageable items (with the {@link #MAX_DAMAGE} component), has an implicit default value of: {@code 0}
++     * for damageable items (with the {@link #MAX_DAMAGE} component), has an implicit default value of: {@code 0}.
++     *
 +     * @see #MAX_DAMAGE
 +     */
 +    public static final DataComponentType.Valued<@NonNegative Integer> DAMAGE = valued("damage");
 +    /**
-+     * If set, the item will not lose any durability when used
++     * If set, the item will not lose any durability when used.
 +     */
 +    public static final DataComponentType.Valued<Unbreakable> UNBREAKABLE = valued("unbreakable");
 +    /**
-+     * Custom name override for an item (as set by renaming with an Anvil)
++     * Custom name override for an item (as set by renaming with an Anvil).
++     *
 +     * @see #ITEM_NAME
 +     */
 +    public static final DataComponentType.Valued<Component> CUSTOM_NAME = valued("custom_name");
 +    /**
-+     * When present, replaces default item name with contained chat component
++     * When present, replaces default item name with contained chat component.
 +     * <p>
 +     * Differences from {@link #CUSTOM_NAME}:
 +     * <ul>
@@ -224,21 +227,23 @@ index 0000000000000000000000000000000000000000..0660abc2a184a2684b4a6817590b67b3
 +     * <li>does not show labels where applicable
 +     *      (for example: banner markers, names in item frames)</li>
 +     * </ul>
++     *
 +     * @see #CUSTOM_NAME
 +     */
 +    public static final DataComponentType.Valued<Component> ITEM_NAME = valued("item_name");
 +    /**
-+     * Additional lines to include in an item's tooltip
++     * Additional lines to include in an item's tooltip.
 +     */
 +    public static final DataComponentType.Valued<ItemLore> LORE = valued("lore");
 +    /**
-+     * Controls the color of the item name
++     * Controls the color of the item name.
 +     */
 +    public static final DataComponentType.Valued<ItemRarity> RARITY = valued("rarity");
 +    /**
-+     * Controls the enchantments on an item
++     * Controls the enchantments on an item.
 +     * <br>
-+     * If not present on a non-enchantment book, this item will not work in an anvil
++     * If not present on a non-enchantment book, this item will not work in an anvil.
++     *
 +     * @see #STORED_ENCHANTMENTS
 +     */
 +    public static final DataComponentType.Valued<ItemEnchantments> ENCHANTMENTS = valued("enchantments");
@@ -253,25 +258,25 @@ index 0000000000000000000000000000000000000000..0660abc2a184a2684b4a6817590b67b3
 +    /**
 +     * Holds attribute modifiers applied to any item,
 +     * if not set, has an implicit default value based on the item type's
-+     * default attributes (e.g. attack damage for weapons)
++     * default attributes (e.g. attack damage for weapons).
 +     */
 +    public static final DataComponentType.Valued<ItemAttributeModifiers> ATTRIBUTE_MODIFIERS = valued("attribute_modifiers");
 +    /**
-+     * Controls the minecraft:custom_model_data property in the item model
++     * Controls the minecraft:custom_model_data property in the item model.
 +     */
 +    public static final DataComponentType.Valued<CustomModelData> CUSTOM_MODEL_DATA = valued("custom_model_data");
 +    /**
 +     * If set, disables 'additional' tooltip part which comes from the item type
-+     * (e.g. content of a shulker)
++     * (e.g. content of a shulker).
 +     */
 +    public static final DataComponentType.NonValued HIDE_ADDITIONAL_TOOLTIP = unvalued("hide_additional_tooltip");
 +    /**
-+     * If set, it will completely hide whole item tooltip (that includes item name)
++     * If set, it will completely hide whole item tooltip (that includes item name).
 +     */
 +    public static final DataComponentType.NonValued HIDE_TOOLTIP = unvalued("hide_tooltip");
 +    /**
 +     * The additional experience cost required to modify an item in an Anvil.
-+     * If not present, has an implicit default value of: {@code 0}
++     * If not present, has an implicit default value of: {@code 0}.
 +     */
 +    public static final DataComponentType.Valued<@NonNegative Integer> REPAIR_COST = valued("repair_cost");
 +    /**
@@ -280,24 +285,24 @@ index 0000000000000000000000000000000000000000..0660abc2a184a2684b4a6817590b67b3
 +    public static final DataComponentType.NonValued CREATIVE_SLOT_LOCK = unvalued("creative_slot_lock");
 +    /**
 +     * Overrides the enchantment glint effect on an item.
-+     * If not present, default behaviour is used
++     * If not present, default behaviour is used.
 +     */
 +    public static final DataComponentType.Valued<Boolean> ENCHANTMENT_GLINT_OVERRIDE = valued("enchantment_glint_override");
 +    /**
 +     * Marks that a projectile item would be intangible when fired
-+     * (i.e. can only be picked up by a creative mode player)
++     * (i.e. can only be picked up by a creative mode player).
 +     */
 +    public static final DataComponentType.NonValued INTANGIBLE_PROJECTILE = unvalued("intangible_projectile");
 +    /**
-+     * When present, this item will behave as if a food (can be eaten)
++     * When present, this item will behave as if a food (can be eaten).
 +     */
 +    public static final DataComponentType.Valued<FoodProperties> FOOD = valued("food");
 +    /**
-+     * If present, this item will not burn in fire
++     * If present, this item will not burn in fire.
 +     */
 +    public static final DataComponentType.NonValued FIRE_RESISTANT = unvalued("fire_resistant");
 +    /**
-+     * Controls the behavior of the item as a tool
++     * Controls the behavior of the item as a tool.
 +     */
 +    public static final DataComponentType.Valued<Tool> TOOL = valued("tool");
 +    /**
@@ -305,59 +310,60 @@ index 0000000000000000000000000000000000000000..0660abc2a184a2684b4a6817590b67b3
 +     * Unlike {@link #ENCHANTMENTS}, the effects provided by enchantments
 +     * do not apply from this component.
 +     * <br>
-+     * If not present on an Enchanted Book, it will not work in an anvil
-+     * <br>
++     * If not present on an Enchanted Book, it will not work in an anvil.
++     * <p>
 +     * Has an undefined behaviour if present on an item that is not an Enchanted Book
 +     * (currently the presence of this component allows enchantments from {@link #ENCHANTMENTS}
-+     * to be applied as if this item was an Enchanted Book)
++     * to be applied as if this item was an Enchanted Book).
++     *
 +     * @see #ENCHANTMENTS
 +     */
 +    public static final DataComponentType.Valued<ItemEnchantments> STORED_ENCHANTMENTS = valued("stored_enchantments");
 +    /**
-+     * Represents a color applied to a dyeable item (in the {@link org.bukkit.Tag#ITEMS_DYEABLE} item tag)
++     * Represents a color applied to a dyeable item (in the {@link io.papermc.paper.registry.keys.tags.ItemTypeTagKeys#DYEABLE} item tag).
 +     */
 +    public static final DataComponentType.Valued<DyedItemColor> DYED_COLOR = valued("dyed_color");
 +    /**
-+     * Represents the tint of the decorations on the Filled Map item
++     * Represents the tint of the decorations on the Filled Map item.
 +     */
 +    public static final DataComponentType.Valued<MapItemColor> MAP_COLOR = valued("map_color");
 +    /**
-+     * References the shared map state holding map contents and markers for a Filled Map
++     * References the shared map state holding map contents and markers for a Filled Map.
 +     */
 +    public static final DataComponentType.Valued<MapID> MAP_ID = valued("map_id");
 +    /**
-+     * Holds a list of markers to be placed on a Filled Map (used for Explorer Maps)
++     * Holds a list of markers to be placed on a Filled Map (used for Explorer Maps).
 +     */
 +    public static final DataComponentType.Valued<MapDecorations> MAP_DECORATIONS = valued("map_decorations");
 +    /**
-+     * Internal map item state used in the map crafting recipe
++     * Internal map item state used in the map crafting recipe.
 +     */
 +    public static final DataComponentType.Valued<MapPostProcessing> MAP_POST_PROCESSING = valued("map_post_processing");
 +    /**
 +     * Holds all projectiles that have been loaded into a Crossbow.
-+     * If not present, the Crossbow is not charged
++     * If not present, the Crossbow is not charged.
 +     */
 +    public static final DataComponentType.Valued<ChargedProjectiles> CHARGED_PROJECTILES = valued("charged_projectiles");
 +    /**
 +     * Holds all items stored inside a Bundle.
-+     * If removed, items cannot be added to the Bundle
++     * If removed, items cannot be added to the Bundle.
 +     */
 +    public static final DataComponentType.Valued<BundleContents> BUNDLE_CONTENTS = valued("bundle_contents");
 +    /**
 +     * Holds the contents of a potion (Potion, Splash Potion, Lingering Potion),
-+     * or potion applied to an item (Tipped Arrow)
++     * or potion applied to a Tipped Arrow.
 +     */
 +    public static final DataComponentType.Valued<PotionContents> POTION_CONTENTS = valued("potion_contents");
 +    /**
-+     * Holds the effects that will be applied when consuming Suspicious Stew
++     * Holds the effects that will be applied when consuming Suspicious Stew.
 +     */
 +    public static final DataComponentType.Valued<SuspiciousStewEffects> SUSPICIOUS_STEW_EFFECTS = valued("suspicious_stew_effects");
 +    /**
-+     * Holds the contents in a Book and Quill
++     * Holds the contents in a Book and Quill.
 +     */
 +    public static final DataComponentType.Valued<WritableBookContent> WRITABLE_BOOK_CONTENT = valued("writable_book_content");
 +    /**
-+     * Holds the contents and metadata of a Written Book
++     * Holds the contents and metadata of a Written Book.
 +     */
 +    public static final DataComponentType.Valued<WrittenBookContent> WRITTEN_BOOK_CONTENT = valued("written_book_content");
 +    /**
@@ -369,69 +375,69 @@ index 0000000000000000000000000000000000000000..0660abc2a184a2684b4a6817590b67b3
 +    // bucket_entity_data
 +    // block_entity_data
 +    /**
-+     * Holds the instrument type used by a Goat Horn
++     * Holds the instrument type used by a Goat Horn.
 +     */
 +    public static final DataComponentType.Valued<MusicInstrument> INSTRUMENT = valued("instrument");
 +    /**
-+     * Controls the amplifier amount for an Ominous Bottle's Bad Omen effect
++     * Controls the amplifier amount for an Ominous Bottle's Bad Omen effect.
 +     */
 +    public static final DataComponentType.Valued<@IntRange(from = 0, to = 4) Integer> OMINOUS_BOTTLE_AMPLIFIER = valued("ominous_bottle_amplifier");
 +    /**
-+     * List of recipes that should be unlocked when using the Knowledge Book item
++     * List of recipes that should be unlocked when using the Knowledge Book item.
 +     */
 +    public static final DataComponentType.Valued<JukeboxPlayable> JUKEBOX_PLAYABLE = valued("jukebox_playable");
 +    public static final DataComponentType.Valued<List<Key>> RECIPES = valued("recipes");
 +    /**
-+     * If present, specifies that the Compass is a Lodestone Compass
++     * If present, specifies that the Compass is a Lodestone Compass.
 +     */
 +    public static final DataComponentType.Valued<LodestoneTracker> LODESTONE_TRACKER = valued("lodestone_tracker");
 +    /**
-+     * Stores the explosion crafted in a Firework Star
++     * Stores the explosion crafted in a Firework Star.
 +     */
 +    public static final DataComponentType.Valued<FireworkEffect> FIREWORK_EXPLOSION = valued("firework_explosion");
 +    /**
-+     * Stores all explosions crafted into a Firework Rocket, as well as flight duration
++     * Stores all explosions crafted into a Firework Rocket, as well as flight duration.
 +     */
 +    public static final DataComponentType.Valued<Fireworks> FIREWORKS = valued("fireworks");
 +    /**
-+     * Controls the skin displayed on a Player Head
++     * Controls the skin displayed on a Player Head.
 +     */
 +    public static final DataComponentType.Valued<ResolvableProfile> PROFILE = valued("profile");
 +    /**
-+     * Controls the sound played by a Player Head when placed on a Note Block
++     * Controls the sound played by a Player Head when placed on a Note Block.
 +     */
 +    public static final DataComponentType.Valued<NamespacedKey> NOTE_BLOCK_SOUND = valued("note_block_sound");
 +    /**
-+     * Stores the additional patterns applied to a Banner or Shield
++     * Stores the additional patterns applied to a Banner or Shield.
 +     */
 +    public static final DataComponentType.Valued<BannerPatternLayers> BANNER_PATTERNS = valued("banner_patterns");
 +    /**
-+     * Stores the base color for a Shield
++     * Stores the base color for a Shield.
 +     */
 +    public static final DataComponentType.Valued<DyeColor> BASE_COLOR = valued("base_color");
 +    /**
-+     * Stores the Sherds applied to each side of a Decorated Pot
++     * Stores the Sherds applied to each side of a Decorated Pot.
 +     */
 +    public static final DataComponentType.Valued<PotDecorations> POT_DECORATIONS = valued("pot_decorations");
 +    /**
-+     * Holds the contents of container blocks (Chests, Shulker Boxes) in item form
++     * Holds the contents of container blocks (Chests, Shulker Boxes) in item form.
 +     */
 +    public static final DataComponentType.Valued<ItemContainerContents> CONTAINER = valued("container");
 +    /**
-+     * Holds block state properties to apply when placing a block
++     * Holds block state properties to apply when placing a block.
 +     */
 +    public static final DataComponentType.Valued<BlockItemDataProperties> BLOCK_DATA = valued("block_state");
 +    // bees
 +    /**
 +     * Holds the lock state of a container-like block,
-+     * copied to container block when placed
++     * copied to container block when placed.
 +     * <br>
 +     * An item with a custom name of the same value must be used
-+     * to open this container
++     * to open this container.
 +     */
 +    public static final DataComponentType.Valued<LockCode> LOCK = valued("lock");
 +    /**
-+     * Holds the unresolved loot table and seed of a container-like block
++     * Holds the unresolved loot table and seed of a container-like block.
 +     */
 +    public static final DataComponentType.Valued<SeededContainerLoot> CONTAINER_LOOT = valued("container_loot");
 +
@@ -531,7 +537,7 @@ index 0000000000000000000000000000000000000000..270f98e95b1d0322a42bad52d492fa00
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/BundleContents.java b/src/main/java/io/papermc/paper/datacomponent/item/BundleContents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..07b3efef6fa502468138c3fef4a9e9d8b1f06b93
+index 0000000000000000000000000000000000000000..d5b1718ae01d6ea73f75446240d169ba9f0d7778
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/BundleContents.java
 @@ -0,0 +1,62 @@
@@ -582,7 +588,7 @@ index 0000000000000000000000000000000000000000..07b3efef6fa502468138c3fef4a9e9d8
 +         * Adds an item to this builder.
 +         *
 +         * @param stack item
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder add(@NonNull ItemStack stack);
@@ -591,7 +597,7 @@ index 0000000000000000000000000000000000000000..07b3efef6fa502468138c3fef4a9e9d8
 +         * Adds items to this builder.
 +         *
 +         * @param stacks items
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder addAll(@NonNull List<@NonNull ItemStack> stacks);
@@ -599,7 +605,7 @@ index 0000000000000000000000000000000000000000..07b3efef6fa502468138c3fef4a9e9d8
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/ChargedProjectiles.java b/src/main/java/io/papermc/paper/datacomponent/item/ChargedProjectiles.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7c703b696cfe966a4dc400c419f97a1c9334b4fb
+index 0000000000000000000000000000000000000000..b8eea6dd890bfed0462cffb0aac48ee8010636f1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/ChargedProjectiles.java
 @@ -0,0 +1,62 @@
@@ -650,7 +656,7 @@ index 0000000000000000000000000000000000000000..7c703b696cfe966a4dc400c419f97a1c
 +         * Adds a projectile to be loaded in this builder.
 +         *
 +         * @param stack projectile
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder add(@NonNull ItemStack stack);
@@ -659,7 +665,7 @@ index 0000000000000000000000000000000000000000..7c703b696cfe966a4dc400c419f97a1c
 +         * Adds projectiles to be loaded in this builder.
 +         *
 +         * @param stacks projectiles
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder addAll(@NonNull List<@NonNull ItemStack> stacks);
@@ -795,7 +801,7 @@ index 0000000000000000000000000000000000000000..e93f962fc51c0f260719fccad7ccdadc
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/DyedItemColor.java b/src/main/java/io/papermc/paper/datacomponent/item/DyedItemColor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3c0061339a534cf7f255fa4ba3b5687721c18616
+index 0000000000000000000000000000000000000000..93f419b8e4d9c87b3ad4fa570d3bfad484deec2c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/DyedItemColor.java
 @@ -0,0 +1,45 @@
@@ -838,7 +844,7 @@ index 0000000000000000000000000000000000000000..3c0061339a534cf7f255fa4ba3b56877
 +         * Sets the color of this builder.
 +         *
 +         * @param color color
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder color(@NonNull Color color);
@@ -846,10 +852,10 @@ index 0000000000000000000000000000000000000000..3c0061339a534cf7f255fa4ba3b56877
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/Fireworks.java b/src/main/java/io/papermc/paper/datacomponent/item/Fireworks.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..feb1addc53213b2d32dc81614a7401e76a5aa38b
+index 0000000000000000000000000000000000000000..c59b57eab245e7c8de1c466aa535db4a4913ff17
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/Fireworks.java
-@@ -0,0 +1,75 @@
+@@ -0,0 +1,74 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import io.papermc.paper.datacomponent.ComponentBuilder;
@@ -891,8 +897,7 @@ index 0000000000000000000000000000000000000000..feb1addc53213b2d32dc81614a7401e7
 +     * @return the flight duration
 +     */
 +    @Contract(pure = true)
-+    @IntRange(from = 0, to = 255)
-+    int flightDuration();
++    @IntRange(from = 0, to = 255) int flightDuration();
 +
 +    @ApiStatus.NonExtendable
 +    interface Builder extends ComponentBuilder<Fireworks> {
@@ -901,7 +906,7 @@ index 0000000000000000000000000000000000000000..feb1addc53213b2d32dc81614a7401e7
 +         * Sets the number of gunpowder used in this builder.
 +         *
 +         * @param duration duration
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder flightDuration(@IntRange(from = 0, to = 255) int duration);
@@ -910,7 +915,7 @@ index 0000000000000000000000000000000000000000..feb1addc53213b2d32dc81614a7401e7
 +         * Adds an explosion to this builder.
 +         *
 +         * @param effect effect
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder add(@NonNull FireworkEffect effect);
@@ -919,7 +924,7 @@ index 0000000000000000000000000000000000000000..feb1addc53213b2d32dc81614a7401e7
 +         * Adds explosions to this builder.
 +         *
 +         * @param effects effects
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder addAll(@NonNull List<@NonNull FireworkEffect> effects);
@@ -927,10 +932,10 @@ index 0000000000000000000000000000000000000000..feb1addc53213b2d32dc81614a7401e7
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/FoodProperties.java b/src/main/java/io/papermc/paper/datacomponent/item/FoodProperties.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..451d9656707c61bca93193284dbf0f28a5190de8
+index 0000000000000000000000000000000000000000..9d207063f794873acb22ce1e88b072b4952aadfc
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/FoodProperties.java
-@@ -0,0 +1,114 @@
+@@ -0,0 +1,113 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import io.papermc.paper.datacomponent.ComponentBuilder;
@@ -953,16 +958,15 @@ index 0000000000000000000000000000000000000000..451d9656707c61bca93193284dbf0f28
 +    }
 +
 +    /**
-+     * Number of food points to restore when eaten
++     * Number of food points to restore when eaten.
 +     *
-+     * @return non-negative integer
++     * @return the nutrition
 +     */
 +    @Contract(pure = true)
-+    @NonNegative
-+    int nutrition();
++    @NonNegative int nutrition();
 +
 +    /**
-+     * Amount of saturation to restore when eaten
++     * Amount of saturation to restore when eaten.
 +     *
 +     * @return the saturation
 +     */
@@ -970,7 +974,7 @@ index 0000000000000000000000000000000000000000..451d9656707c61bca93193284dbf0f28
 +    float saturation();
 +
 +    /**
-+     * If true, this food can be eaten even if not hungry.
++     * If {@code true}, this food can be eaten even if not hungry.
 +     *
 +     * @return can always be eaten
 +     */
@@ -1006,7 +1010,7 @@ index 0000000000000000000000000000000000000000..451d9656707c61bca93193284dbf0f28
 +        }
 +
 +        /**
-+         * Effect instance
++         * Effect instance.
 +         *
 +         * @return effect
 +         */
@@ -1036,7 +1040,7 @@ index 0000000000000000000000000000000000000000..451d9656707c61bca93193284dbf0f28
 +        @NonNull Builder nutrition(int nutrition);
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder usingConvertsTo(@Nullable ItemStack itemStack);
++        @NonNull Builder usingConvertsTo(@Nullable ItemStack stack);
 +
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder addEffect(@NonNull PossibleEffect effect);
@@ -1047,7 +1051,7 @@ index 0000000000000000000000000000000000000000..451d9656707c61bca93193284dbf0f28
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/ItemAdventurePredicate.java b/src/main/java/io/papermc/paper/datacomponent/item/ItemAdventurePredicate.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8b71f115c853241091019c612112331706849373
+index 0000000000000000000000000000000000000000..000b681492032047287a8a412142268d29e63f3a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/ItemAdventurePredicate.java
 @@ -0,0 +1,42 @@
@@ -1086,16 +1090,16 @@ index 0000000000000000000000000000000000000000..8b71f115c853241091019c6121123317
 +         * Adds a block predicate to this builder.
 +         *
 +         * @param predicate predicate
-+         * @return self
++         * @return the builder for chaining
 +         * @see #predicates()
 +         */
-+        @Contract(value = "_, _ -> this", mutates = "this")
++        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder addPredicate(@NonNull BlockPredicate predicate);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/ItemArmorTrim.java b/src/main/java/io/papermc/paper/datacomponent/item/ItemArmorTrim.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dc968b953f89fd3a07eb633370a95879bc369f8c
+index 0000000000000000000000000000000000000000..e874f024a6a5493aad08db4a94dbfa58af78cfd4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/ItemArmorTrim.java
 @@ -0,0 +1,45 @@
@@ -1135,10 +1139,10 @@ index 0000000000000000000000000000000000000000..dc968b953f89fd3a07eb633370a95879
 +    interface Builder extends ShownInTooltip.Builder<Builder>, ComponentBuilder<ItemArmorTrim> {
 +
 +        /**
-+         * Sets the item trim for this builder.
++         * Sets the armor trim for this builder.
 +         *
 +         * @param armorTrim trim
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder armorTrim(@NonNull ArmorTrim armorTrim);
@@ -1146,7 +1150,7 @@ index 0000000000000000000000000000000000000000..dc968b953f89fd3a07eb633370a95879
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/ItemAttributeModifiers.java b/src/main/java/io/papermc/paper/datacomponent/item/ItemAttributeModifiers.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..32432542a4c11f0f5c5c7e397ac9a3c51530376b
+index 0000000000000000000000000000000000000000..852259c5ec59f1aa32261d14fbb5c7608795f9ee
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/ItemAttributeModifiers.java
 @@ -0,0 +1,57 @@
@@ -1201,7 +1205,7 @@ index 0000000000000000000000000000000000000000..32432542a4c11f0f5c5c7e397ac9a3c5
 +         *
 +         * @param attribute attribute
 +         * @param attributeModifier modifier
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_, _ -> this", mutates = "this")
 +        @NonNull Builder addModifier(@NonNull Attribute attribute, @NonNull AttributeModifier attributeModifier);
@@ -1209,7 +1213,7 @@ index 0000000000000000000000000000000000000000..32432542a4c11f0f5c5c7e397ac9a3c5
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/ItemContainerContents.java b/src/main/java/io/papermc/paper/datacomponent/item/ItemContainerContents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a748ef9a97a3aa1bba794470cc7c2a8ca58e7ecf
+index 0000000000000000000000000000000000000000..1f44eac662f975ee123305eb935e068bf916052e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/ItemContainerContents.java
 @@ -0,0 +1,42 @@
@@ -1249,15 +1253,15 @@ index 0000000000000000000000000000000000000000..a748ef9a97a3aa1bba794470cc7c2a8c
 +    interface Builder extends ComponentBuilder<ItemContainerContents> {
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder add(@NonNull ItemStack itemStack);
++        @NonNull Builder add(@NonNull ItemStack stack);
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder addAll(@NonNull List<@NonNull ItemStack> itemStacks);
++        @NonNull Builder addAll(@NonNull List<@NonNull ItemStack> stacks);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/ItemEnchantments.java b/src/main/java/io/papermc/paper/datacomponent/item/ItemEnchantments.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a6420ba58822faa3cf6be130d1afc865000918dc
+index 0000000000000000000000000000000000000000..3b519007fd7b7e62bcc15a1ad93fd61b954ee4c5
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/ItemEnchantments.java
 @@ -0,0 +1,58 @@
@@ -1304,7 +1308,7 @@ index 0000000000000000000000000000000000000000..a6420ba58822faa3cf6be130d1afc865
 +         *
 +         * @param enchantment enchantment
 +         * @param level level
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_, _ -> this", mutates = "this")
 +        @NonNull Builder add(@NonNull Enchantment enchantment, @IntRange(from = 1, to = 255) int level);
@@ -1313,7 +1317,7 @@ index 0000000000000000000000000000000000000000..a6420ba58822faa3cf6be130d1afc865
 +         * Adds enchantments with the given level to this component.
 +         *
 +         * @param enchantments enchantments
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder addAll(@NonNull Map<@NonNull Enchantment, @NonNull @IntRange(from = 1, to = 255) Integer> enchantments);
@@ -1321,7 +1325,7 @@ index 0000000000000000000000000000000000000000..a6420ba58822faa3cf6be130d1afc865
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/ItemLore.java b/src/main/java/io/papermc/paper/datacomponent/item/ItemLore.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dafb334c6b4ab41398e1473d39e1047a8ca362b2
+index 0000000000000000000000000000000000000000..6ee7cdd943833fc72ef7260478a3fadf3496adf4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/ItemLore.java
 @@ -0,0 +1,74 @@
@@ -1375,7 +1379,7 @@ index 0000000000000000000000000000000000000000..dafb334c6b4ab41398e1473d39e1047a
 +         * Sets the components of this lore.
 +         *
 +         * @param lines components
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        Builder lines(@NonNull List<@NonNull ? extends ComponentLike> lines);
@@ -1384,7 +1388,7 @@ index 0000000000000000000000000000000000000000..dafb334c6b4ab41398e1473d39e1047a
 +         * Adds a component to the lore.
 +         *
 +         * @param line component
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder addLine(@NonNull ComponentLike line);
@@ -1393,7 +1397,7 @@ index 0000000000000000000000000000000000000000..dafb334c6b4ab41398e1473d39e1047a
 +         * Adds components to the lore.
 +         *
 +         * @param lines components
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder addAllLines(@NonNull List<@NonNull ? extends ComponentLike> lines);
@@ -1401,7 +1405,7 @@ index 0000000000000000000000000000000000000000..dafb334c6b4ab41398e1473d39e1047a
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/JukeboxPlayable.java b/src/main/java/io/papermc/paper/datacomponent/item/JukeboxPlayable.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ece9afbceb21dec772111a1e7a6813d6a7d39656
+index 0000000000000000000000000000000000000000..1d2276a6522044f06713db5ab8495d8aad863faf
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/JukeboxPlayable.java
 @@ -0,0 +1,26 @@
@@ -1413,6 +1417,7 @@ index 0000000000000000000000000000000000000000..ece9afbceb21dec772111a1e7a6813d6
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
 +
++@ApiStatus.NonExtendable
 +public interface JukeboxPlayable extends ShownInTooltip<JukeboxPlayable> {
 +
 +    @Contract(value = "_ -> new", pure = true)
@@ -1427,8 +1432,7 @@ index 0000000000000000000000000000000000000000..ece9afbceb21dec772111a1e7a6813d6
 +    interface Builder extends ShownInTooltip.Builder<JukeboxPlayable.Builder>, ComponentBuilder<JukeboxPlayable> {
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull
-+        Builder jukeboxSong(@NonNull JukeboxSong song);
++        @NonNull Builder jukeboxSong(@NonNull JukeboxSong song);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/LockCode.java b/src/main/java/io/papermc/paper/datacomponent/item/LockCode.java
@@ -1466,7 +1470,7 @@ index 0000000000000000000000000000000000000000..cf6a2e8e6640deeae05283b3cb5755a4
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/LodestoneTracker.java b/src/main/java/io/papermc/paper/datacomponent/item/LodestoneTracker.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e5c6feb0267b05aab99d90e351ae2e848711a79b
+index 0000000000000000000000000000000000000000..7b195f3cea91446fa75c1c0982b0ac7070edb9e5
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/LodestoneTracker.java
 @@ -0,0 +1,63 @@
@@ -1504,7 +1508,7 @@ index 0000000000000000000000000000000000000000..e5c6feb0267b05aab99d90e351ae2e84
 +    @Nullable Location location();
 +
 +    /**
-+     * If true, when the Lodestone at the target position is removed, the component will be removed.
++     * If {@code true}, when the Lodestone at the target position is removed, the component will be removed.
 +     *
 +     * @return tracked
 +     */
@@ -1518,7 +1522,7 @@ index 0000000000000000000000000000000000000000..e5c6feb0267b05aab99d90e351ae2e84
 +         * Sets the location to point towards for this builder.
 +         *
 +         * @param location location to point towards
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder location(@Nullable Location location);
@@ -1527,7 +1531,7 @@ index 0000000000000000000000000000000000000000..e5c6feb0267b05aab99d90e351ae2e84
 +         * Sets if this location lodestone is tracked for this builder.
 +         *
 +         * @param tracked is tracked
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder tracked(boolean tracked);
@@ -1535,7 +1539,7 @@ index 0000000000000000000000000000000000000000..e5c6feb0267b05aab99d90e351ae2e84
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/MapDecorations.java b/src/main/java/io/papermc/paper/datacomponent/item/MapDecorations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..83b6d7b8675fc924c6129d4090ee863a7dc64e3f
+index 0000000000000000000000000000000000000000..3cf5e994ce00dcd1823b9fff5f0359316bbb647d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/MapDecorations.java
 @@ -0,0 +1,105 @@
@@ -1550,7 +1554,7 @@ index 0000000000000000000000000000000000000000..83b6d7b8675fc924c6129d4090ee863a
 +import org.jetbrains.annotations.Contract;
 +
 +/**
-+ * Holds a list of markers to be placed on a Filled Map (used for Explorer Maps)
++ * Holds a list of markers to be placed on a Filled Map (used for Explorer Maps).
 + */
 +@ApiStatus.NonExtendable
 +public interface MapDecorations {
@@ -1599,7 +1603,7 @@ index 0000000000000000000000000000000000000000..83b6d7b8675fc924c6129d4090ee863a
 +        /**
 +         * X world coordinate of the decoration.
 +         *
-+         * @return x
++         * @return x coordinate
 +         */
 +        @Contract(pure = true)
 +        double x();
@@ -1607,7 +1611,7 @@ index 0000000000000000000000000000000000000000..83b6d7b8675fc924c6129d4090ee863a
 +        /**
 +         * Z world coordinate of the decoration.
 +         *
-+         * @return z
++         * @return z coordinate
 +         */
 +        @Contract(pure = true)
 +        double z();
@@ -1629,7 +1633,7 @@ index 0000000000000000000000000000000000000000..83b6d7b8675fc924c6129d4090ee863a
 +         *
 +         * @param id id
 +         * @param entry decoration
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_, _ -> this", mutates = "this")
 +        MapDecorations.@NonNull Builder put(@NonNull String id, @NonNull DecorationEntry entry);
@@ -1638,7 +1642,7 @@ index 0000000000000000000000000000000000000000..83b6d7b8675fc924c6129d4090ee863a
 +         * Puts all the decoration with the given id in this builder.
 +         *
 +         * @param entries decorations
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        MapDecorations.@NonNull Builder putAll(@NonNull Map<@NonNull String, @NonNull DecorationEntry> entries);
@@ -1646,7 +1650,7 @@ index 0000000000000000000000000000000000000000..83b6d7b8675fc924c6129d4090ee863a
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/MapID.java b/src/main/java/io/papermc/paper/datacomponent/item/MapID.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..74d70614f00391136ff797f900024d13bc9d34b9
+index 0000000000000000000000000000000000000000..89e3f32ef74e7a2018cf76ebe51f31a1037bb701
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/MapID.java
 @@ -0,0 +1,41 @@
@@ -1679,10 +1683,10 @@ index 0000000000000000000000000000000000000000..74d70614f00391136ff797f900024d13
 +    interface Builder {
 +
 +        /**
-+         * Sets the map id of this builder
++         * Sets the map id of this builder.
 +         *
 +         * @param id id
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder mapId(int id);
@@ -1693,7 +1697,7 @@ index 0000000000000000000000000000000000000000..74d70614f00391136ff797f900024d13
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/MapItemColor.java b/src/main/java/io/papermc/paper/datacomponent/item/MapItemColor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..38d09482166323e8d06b82977e8bb7a95486afaf
+index 0000000000000000000000000000000000000000..776a9f554519a0737b363a494e628e64a40bfe66
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/MapItemColor.java
 @@ -0,0 +1,41 @@
@@ -1726,10 +1730,10 @@ index 0000000000000000000000000000000000000000..38d09482166323e8d06b82977e8bb7a9
 +    interface Builder {
 +
 +        /**
-+         * Sets the map color of this builder.
++         * Sets the tint color of this map.
 +         *
-+         * @param color color
-+         * @return self
++         * @param color tint color
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder mapColor(@NonNull Color color);
@@ -1737,18 +1741,6 @@ index 0000000000000000000000000000000000000000..38d09482166323e8d06b82977e8bb7a9
 +        @Contract(value = "-> new", pure = true)
 +        @NonNull MapItemColor build();
 +    }
-+}
-diff --git a/src/main/java/io/papermc/paper/datacomponent/item/MapPostProcessing.java b/src/main/java/io/papermc/paper/datacomponent/item/MapPostProcessing.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..acdede37bf2625698e9a6c0521e7e98a5fd9c377
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/datacomponent/item/MapPostProcessing.java
-@@ -0,0 +1,6 @@
-+package io.papermc.paper.datacomponent.item;
-+
-+public enum MapPostProcessing {
-+    LOCK,
-+    SCALE
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PotDecorations.java b/src/main/java/io/papermc/paper/datacomponent/item/PotDecorations.java
 new file mode 100644
@@ -1808,7 +1800,7 @@ index 0000000000000000000000000000000000000000..abd94c0c900f7c2bf936e0c5c28ec928
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PotionContents.java b/src/main/java/io/papermc/paper/datacomponent/item/PotionContents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e6779fb88cbb8d7166eecd161aab8620d05485f7
+index 0000000000000000000000000000000000000000..586f32d0198ec0f17006066c72fad8c5e7af6120
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PotionContents.java
 @@ -0,0 +1,92 @@
@@ -1826,7 +1818,7 @@ index 0000000000000000000000000000000000000000..e6779fb88cbb8d7166eecd161aab8620
 +import org.jetbrains.annotations.Unmodifiable;
 +
 +/**
-+ * Holds the contents of a potion (Potion, Splash Potion, Lingering Potion), or potion applied to an item (Tipped Arrow)
++ * Holds the contents of a potion (Potion, Splash Potion, Lingering Potion), or potion applied to a Tipped Arrow.
 + */
 +@ApiStatus.NonExtendable
 +public interface PotionContents {
@@ -1845,7 +1837,7 @@ index 0000000000000000000000000000000000000000..e6779fb88cbb8d7166eecd161aab8620
 +    @Nullable PotionType potion();
 +
 +    /**
-+     * Overrides the visual color of the potion
++     * Overrides the visual color of the potion.
 +     *
 +     * @return color override, or {@code null} if not present
 +     */
@@ -1864,11 +1856,11 @@ index 0000000000000000000000000000000000000000..e6779fb88cbb8d7166eecd161aab8620
 +    interface Builder extends ComponentBuilder<PotionContents> {
 +
 +        /**
-+         * Sets the potion type for this builder
++         * Sets the potion type for this builder.
 +         *
 +         * @param potionType builder
 +         * @see #potion()
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder potion(@Nullable PotionType potionType);
@@ -1878,7 +1870,7 @@ index 0000000000000000000000000000000000000000..e6779fb88cbb8d7166eecd161aab8620
 +         *
 +         * @param color color
 +         * @see #customColor()
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder customColor(@Nullable Color color);
@@ -1888,7 +1880,7 @@ index 0000000000000000000000000000000000000000..e6779fb88cbb8d7166eecd161aab8620
 +         *
 +         * @param potionEffect effect
 +         * @see #customEffects()
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder add(@NonNull PotionEffect potionEffect);
@@ -1898,7 +1890,7 @@ index 0000000000000000000000000000000000000000..e6779fb88cbb8d7166eecd161aab8620
 +         *
 +         * @param potionEffects effects
 +         * @see #customEffects()
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder addAll(@NonNull List<@NonNull PotionEffect> potionEffects);
@@ -2033,7 +2025,7 @@ index 0000000000000000000000000000000000000000..1e39fc6779e324030fb2890a4568376f
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/SuspiciousStewEffects.java b/src/main/java/io/papermc/paper/datacomponent/item/SuspiciousStewEffects.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0b82b863fd130d41a95ed758cdd50364a0bff8f2
+index 0000000000000000000000000000000000000000..64d99c69d17ca1bc5be5c2e21b6ae423048f1d87
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/SuspiciousStewEffects.java
 @@ -0,0 +1,62 @@
@@ -2049,7 +2041,7 @@ index 0000000000000000000000000000000000000000..0b82b863fd130d41a95ed758cdd50364
 +import org.jetbrains.annotations.Unmodifiable;
 +
 +/**
-+ * Holds the effects that will be applied when consuming Suspicious Stew
++ * Holds the effects that will be applied when consuming Suspicious Stew.
 + */
 +@ApiStatus.NonExtendable
 +public interface SuspiciousStewEffects {
@@ -2084,7 +2076,7 @@ index 0000000000000000000000000000000000000000..0b82b863fd130d41a95ed758cdd50364
 +         * Adds an effect applied to this builder.
 +         *
 +         * @param entry effect
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder add(@NonNull SuspiciousEffectEntry entry);
@@ -2093,7 +2085,7 @@ index 0000000000000000000000000000000000000000..0b82b863fd130d41a95ed758cdd50364
 +         * Adds effects applied to this builder.
 +         *
 +         * @param entries effect
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder addAll(@NonNull List<@NonNull SuspiciousEffectEntry> entries);
@@ -2101,13 +2093,12 @@ index 0000000000000000000000000000000000000000..0b82b863fd130d41a95ed758cdd50364
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/Tool.java b/src/main/java/io/papermc/paper/datacomponent/item/Tool.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3195077207827439a57e007ee5719fc88c92ed86
+index 0000000000000000000000000000000000000000..914fd3144dd81dd2209489671d1a1df5231b9167
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/Tool.java
-@@ -0,0 +1,133 @@
+@@ -0,0 +1,132 @@
 +package io.papermc.paper.datacomponent.item;
 +
-+import com.google.common.base.Preconditions;
 +import io.papermc.paper.datacomponent.ComponentBuilder;
 +import java.util.List;
 +import io.papermc.paper.registry.set.RegistryKeySet;
@@ -2132,7 +2123,7 @@ index 0000000000000000000000000000000000000000..3195077207827439a57e007ee5719fc8
 +    }
 +
 +    /**
-+     * Mining speed to use if no rules match and don't override mining speed
++     * Mining speed to use if no rules match and don't override mining speed.
 +     *
 +     * @return default mining speed
 +     */
@@ -2140,7 +2131,7 @@ index 0000000000000000000000000000000000000000..3195077207827439a57e007ee5719fc8
 +    float defaultMiningSpeed();
 +
 +    /**
-+     * Amount of durability to remove each time a block is mined with this tool
++     * Amount of durability to remove each time a block is mined with this tool.
 +     *
 +     * @return durability
 +     */
@@ -2148,7 +2139,7 @@ index 0000000000000000000000000000000000000000..3195077207827439a57e007ee5719fc8
 +    @NonNegative int damagePerBlock();
 +
 +    /**
-+     * List of rule entries
++     * List of rule entries.
 +     *
 +     * @return rules
 +     */
@@ -2205,7 +2196,7 @@ index 0000000000000000000000000000000000000000..3195077207827439a57e007ee5719fc8
 +         * Controls the amount of durability to remove each time a block is mined with this tool.
 +         *
 +         * @param damage durability to remove
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder damagePerBlock(int damage);
@@ -2214,7 +2205,7 @@ index 0000000000000000000000000000000000000000..3195077207827439a57e007ee5719fc8
 +         * Controls mining speed to use if no rules match and don't override mining speed.
 +         *
 +         * @param speed mining speed
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder defaultMiningSpeed(float speed);
@@ -2223,7 +2214,7 @@ index 0000000000000000000000000000000000000000..3195077207827439a57e007ee5719fc8
 +         * Adds a rule to the tool that controls the breaking speed / damage per block if matched.
 +         *
 +         * @param rule rule
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder addRule(@NonNull Rule rule);
@@ -2232,7 +2223,7 @@ index 0000000000000000000000000000000000000000..3195077207827439a57e007ee5719fc8
 +         * Adds rules to the tool that control the breaking speed / damage per block if matched.
 +         *
 +         * @param rules rules
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder addRules(@NonNull List<@NonNull Rule> rules);
@@ -2273,7 +2264,7 @@ index 0000000000000000000000000000000000000000..ecd1130152d0bac324cfd1feeb38b86e
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/WritableBookContent.java b/src/main/java/io/papermc/paper/datacomponent/item/WritableBookContent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a0c78a0bff8512792797d2268cdd9c4e774abf89
+index 0000000000000000000000000000000000000000..9e448331e8855143ebdad2ea6419bcf2bc61389c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/WritableBookContent.java
 @@ -0,0 +1,67 @@
@@ -2311,7 +2302,7 @@ index 0000000000000000000000000000000000000000..a0c78a0bff8512792797d2268cdd9c4e
 +         * Adds a page that can be written to for this builder.
 +         *
 +         * @param page page
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder addPage(@NonNull String page);
@@ -2320,7 +2311,7 @@ index 0000000000000000000000000000000000000000..a0c78a0bff8512792797d2268cdd9c4e
 +         * Adds pages that can be written to for this builder.
 +         *
 +         * @param pages pages
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder addPages(@NonNull Collection<@NonNull String> pages);
@@ -2329,24 +2320,24 @@ index 0000000000000000000000000000000000000000..a0c78a0bff8512792797d2268cdd9c4e
 +         * Adds a filterable page that can be written to for this builder.
 +         *
 +         * @param page page
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder addPageFiltered(@NonNull Filtered<@NonNull String> page);
++        @NonNull Builder addFilteredPage(@NonNull Filtered<@NonNull String> page);
 +
 +        /**
 +         * Adds filterable pages that can be written to for this builder.
 +         *
 +         * @param pages pages
-+         * @return self
++         * @return the builder for chaining
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder addPagesFiltered(@NonNull Collection<@NonNull Filtered<@NonNull String>> pages);
++        @NonNull Builder addFilteredPages(@NonNull Collection<@NonNull Filtered<@NonNull String>> pages);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/WrittenBookContent.java b/src/main/java/io/papermc/paper/datacomponent/item/WrittenBookContent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..07d5d7b5e281790e108a0a3acfd007782d175461
+index 0000000000000000000000000000000000000000..95e2323c875a36fb383b41fd3d58722ad304b829
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/WrittenBookContent.java
 @@ -0,0 +1,96 @@
@@ -2407,8 +2398,8 @@ index 0000000000000000000000000000000000000000..07d5d7b5e281790e108a0a3acfd00778
 +    @NonNull @Unmodifiable List<@NonNull Filtered<@NonNull Component>> pages();
 +
 +    /**
-+     * If the chat components in this book have already been resolved (entity selectors, scores substituted)
-+     * If false, will be resolved when opened by a player
++     * If the chat components in this book have already been resolved (entity selectors, scores substituted).
++     * If {@code false}, will be resolved when opened by a player.
 +     *
 +     * @return resolved
 +     */
@@ -2422,7 +2413,7 @@ index 0000000000000000000000000000000000000000..07d5d7b5e281790e108a0a3acfd00778
 +        @NonNull Builder title(@NonNull String title);
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder titleFiltered(@NonNull Filtered<@NonNull String> title);
++        @NonNull Builder filteredTitle(@NonNull Filtered<@NonNull String> title);
 +
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder author(@NonNull String author);
@@ -2457,6 +2448,18 @@ index 0000000000000000000000000000000000000000..3ddd1f787e97c22eee3e32bb2a9660a8
 +
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
+diff --git a/src/main/java/io/papermc/paper/item/MapPostProcessing.java b/src/main/java/io/papermc/paper/item/MapPostProcessing.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5843768d0be2ae4a0219636ed7640727808da567
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/item/MapPostProcessing.java
+@@ -0,0 +1,6 @@
++package io.papermc.paper.item;
++
++public enum MapPostProcessing {
++    LOCK,
++    SCALE
++}
 diff --git a/src/main/java/io/papermc/paper/registry/RegistryKey.java b/src/main/java/io/papermc/paper/registry/RegistryKey.java
 index 2945dde566682f977e84fde5d473a6c69be24df1..6ab6e9d3a1fcb5fcb370e507164da70012e61e88 100644
 --- a/src/main/java/io/papermc/paper/registry/RegistryKey.java
@@ -2597,10 +2600,10 @@ index 9725580b6458e5d37fbc6059869604f9883bd6d1..966bbc686280a1b7f479a2ff755e4776
      /**
       * Get the object by its key.
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index f603b5b6ba80af919f415322583a8345a5b1358a..26cb1e31a8169283f11b5a7af8a4fd52754095ae 100644
+index f603b5b6ba80af919f415322583a8345a5b1358a..22035e8cc586ca454fab6b494928d6d610574615 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
-@@ -1031,4 +1031,123 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -1031,4 +1031,124 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
          return Bukkit.getUnsafe().computeTooltipLines(this, tooltipContext, player);
      }
      // Paper end - expose itemstack tooltip lines
@@ -2660,7 +2663,7 @@ index f603b5b6ba80af919f415322583a8345a5b1358a..26cb1e31a8169283f11b5a7af8a4fd52
 +     * Sets the value of the data component type for this itemstack. To
 +     * reset the value to the default for the {@link #getType() item type}, use
 +     * {@link #resetData(io.papermc.paper.datacomponent.DataComponentType)}. To mark the data component type
-+     * as removed, use {@link #unsetData(io.papermc.paper.datacomponent.DataComponentType)}
++     * as removed, use {@link #unsetData(io.papermc.paper.datacomponent.DataComponentType)}.
 +     *
 +     * @param type component type
 +     * @param valueBuilder value builder
@@ -2675,7 +2678,7 @@ index f603b5b6ba80af919f415322583a8345a5b1358a..26cb1e31a8169283f11b5a7af8a4fd52
 +     * Sets the value of the data component type for this itemstack. To
 +     * reset the value to the default for the {@link #getType() item type}, use
 +     * {@link #resetData(io.papermc.paper.datacomponent.DataComponentType)}. To mark the data component type
-+     * as removed, use {@link #unsetData(io.papermc.paper.datacomponent.DataComponentType)}
++     * as removed, use {@link #unsetData(io.papermc.paper.datacomponent.DataComponentType)}.
 +     *
 +     * @param type component type
 +     * @param value value to set
@@ -2705,7 +2708,8 @@ index f603b5b6ba80af919f415322583a8345a5b1358a..26cb1e31a8169283f11b5a7af8a4fd52
 +
 +    /**
 +     * Resets the value of this component to be the default
-+     * value for the item type from {@link Material#getDefaultData(io.papermc.paper.datacomponent.DataComponentType.Valued)}
++     * value for the item type from {@link Material#getDefaultData(io.papermc.paper.datacomponent.DataComponentType.Valued)}.
++     *
 +     * @param type data component type to reset
 +     */
 +    public void resetData(final io.papermc.paper.datacomponent.@NotNull DataComponentType type) {
@@ -2717,7 +2721,7 @@ index f603b5b6ba80af919f415322583a8345a5b1358a..26cb1e31a8169283f11b5a7af8a4fd52
 +     * item type.
 +     *
 +     * @param type the data component type
-+     * @return true if the data type is overridden
++     * @return {@code true} if the data type is overridden
 +     */
 +    public boolean isOverridden(final io.papermc.paper.datacomponent.@NotNull DataComponentType type) {
 +        return this.craftDelegate.isOverridden(type);
