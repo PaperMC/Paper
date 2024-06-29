@@ -91,12 +91,41 @@ public class CraftMapCanvas implements MapCanvas {
 
     @Override
     public void drawImage(int x, int y, Image image) {
-        byte[] bytes = MapPalette.imageToBytes(image);
-        for (int x2 = 0; x2 < image.getWidth(null); ++x2) {
-            for (int y2 = 0; y2 < image.getHeight(null); ++y2) {
-                this.setPixel(x + x2, y + y2, bytes[y2 * image.getWidth(null) + x2]);
+        // Paper start - Reduce work done by limiting size of image and using System.arraycopy
+        int width = 128 - x;
+        int height = 128 - y;
+        if (image.getHeight(null) < height)
+            height = image.getHeight(null);
+
+        // Create a subimage if the image is larger than the max allowed size
+        java.awt.image.BufferedImage temp;
+        if (image.getWidth(null) >= width && image instanceof java.awt.image.BufferedImage bImage) {
+            // If the image is larger than the max allowed size, get a subimage, otherwise use the image as is
+            if (image.getWidth(null) > width || image.getHeight(null) > height) {
+                temp = bImage.getSubimage(0, 0, width, height);
+            } else {
+                temp = bImage;
             }
+        } else {
+            temp = new java.awt.image.BufferedImage(width, height, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+            java.awt.Graphics2D graphics = temp.createGraphics();
+            graphics.drawImage(image, 0, 0, null);
+            graphics.dispose();
         }
+
+        byte[] bytes = MapPalette.imageToBytes(temp);
+        
+        // Since we now control the size of the image, we can safely use System.arraycopy
+        // If x is 0, we can just copy the entire image as width is 128 and height is <=(128-y)
+        if (x == 0) {
+            System.arraycopy(bytes, 0, this.buffer, y * 128, width * height);
+            return;
+        }
+
+        for (int y2 = 0; y2 < height; ++y2) {
+            System.arraycopy(bytes, 0, this.buffer, (y + y2) * 128 + x, width);
+        }
+        // Paper end
     }
 
     @Override

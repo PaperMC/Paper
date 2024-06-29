@@ -23,8 +23,10 @@ public class CraftMapRenderer extends MapRenderer {
     @Override
     public void render(MapView map, MapCanvas canvas, Player player) {
         // Map
-        for (int x = 0; x < 128; ++x) {
-            for (int y = 0; y < 128; ++y) {
+        // Paper start - Swap inner and outer loops here to (theoretically) improve cache locality
+        for (int y = 0; y < 128; ++y) {
+            for (int x = 0; x < 128; ++x) {
+        // Paper end
                 canvas.setPixel(x, y, this.worldMap.colors[y * 128 + x]);
             }
         }
