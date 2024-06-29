@@ -331,7 +331,7 @@
 +        if (this.isRemoved()) {
 +            return;
 +        }
-+        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>(this.getInventory().getContainerSize());
++        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<>(this.getInventory().getContainerSize());
 +        boolean keepInventory = this.level().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY) || this.isSpectator();
  
 -        if (flag) {
@@ -345,9 +345,9 @@
 +        }
 +        // SPIGOT-5071: manually add player loot tables (SPIGOT-5195 - ignores keepInventory rule)
 +        this.dropFromLootTable(damagesource, this.lastHurtByPlayerTime > 0);
-+        for (org.bukkit.inventory.ItemStack item : this.drops) {
-+            loot.add(item);
-+        }
++        this.dropCustomDeathLoot(this.serverLevel(), damagesource, flag);
++
++        loot.addAll(this.drops);
 +        this.drops.clear(); // SPIGOT-5188: make sure to clear
 +
 +        IChatBaseComponent defaultMessage = this.getCombatTracker().getDeathMessage();
@@ -1058,7 +1058,23 @@
          if (blockposition != null) {
              boolean flag2 = blockposition.equals(this.respawnPosition) && resourcekey.equals(this.respawnDimension);
  
-@@ -2049,10 +2500,12 @@
+@@ -1852,7 +2303,14 @@
+ 
+     @Override
+     public EntityItem drop(ItemStack itemstack, boolean flag, boolean flag1) {
+-        EntityItem entityitem = super.drop(itemstack, flag, flag1);
++        // CraftBukkit start - SPIGOT-2942: Add boolean to call event
++        return drop(itemstack, flag, flag1, true);
++    }
++
++    @Override
++    public EntityItem drop(ItemStack itemstack, boolean flag, boolean flag1, boolean callEvent) {
++        EntityItem entityitem = super.drop(itemstack, flag, flag1, callEvent);
++        // CraftBukkit end
+ 
+         if (entityitem == null) {
+             return null;
+@@ -2049,10 +2507,12 @@
          this.awardStat(StatisticList.ITEM_BROKEN.get(item));
      }
  
@@ -1074,7 +1090,7 @@
          }
  
          private static float calculateLookAtYaw(Vec3D vec3d, BlockPosition blockposition) {
-@@ -2061,4 +2514,147 @@
+@@ -2061,4 +2521,147 @@
              return (float) MathHelper.wrapDegrees(MathHelper.atan2(vec3d1.z, vec3d1.x) * 57.2957763671875D - 90.0D);
          }
      }
