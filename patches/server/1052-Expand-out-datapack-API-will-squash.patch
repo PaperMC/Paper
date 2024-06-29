@@ -1,0 +1,181 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 29 May 2024 17:55:51 -0700
+Subject: [PATCH] Expand out datapack API (will squash)
+
+
+diff --git a/src/main/java/io/papermc/paper/datapack/PaperDatapack.java b/src/main/java/io/papermc/paper/datapack/PaperDatapack.java
+index 9b7dd8a0fba4547f5268b3f99e21ddbe6b5bf566..2793e3c80d51463d97795cd9ef3312b2b9c4168b 100644
+--- a/src/main/java/io/papermc/paper/datapack/PaperDatapack.java
++++ b/src/main/java/io/papermc/paper/datapack/PaperDatapack.java
+@@ -1,50 +1,88 @@
+ package io.papermc.paper.datapack;
+ 
++import com.google.common.base.Preconditions;
++import io.papermc.paper.adventure.PaperAdventure;
+ import io.papermc.paper.event.server.ServerResourcesReloadedEvent;
++import java.lang.ref.WeakReference;
++import java.util.ArrayList;
++import java.util.List;
++import net.kyori.adventure.text.Component;
+ import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.packs.repository.Pack;
+-import java.util.List;
+-import java.util.stream.Collectors;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
+ 
++@DefaultQualifier(NonNull.class)
+ public class PaperDatapack implements Datapack {
+-    private final String name;
+-    private final Compatibility compatibility;
+-    private final boolean enabled;
+ 
+-    PaperDatapack(Pack loader, boolean enabled) {
+-        this.name = loader.getId();
+-        this.compatibility = Compatibility.valueOf(loader.getCompatibility().name());
++    private final WeakReference<Pack> pack;
++    private boolean enabled;
++
++    PaperDatapack(final Pack loader, final boolean enabled) {
++        this.pack = new WeakReference<>(loader);
+         this.enabled = enabled;
+     }
+ 
++    private Pack get() {
++        final @Nullable Pack pack = this.pack.get();
++        Preconditions.checkState(pack != null, "This pack isn't valid anymore. Don't retain references to Datapack.");
++        return pack;
++    }
++
+     @Override
+     public String getName() {
+-        return name;
++        return this.get().getId();
++    }
++
++    @Override
++    public @NonNull Component description() {
++        return PaperAdventure.asAdventure(this.get().getDescription());
++    }
++
++    @Override
++    public boolean isRequired() {
++        return this.get().isRequired();
+     }
+ 
+     @Override
+     public Compatibility getCompatibility() {
+-        return compatibility;
++        return Datapack.Compatibility.valueOf(this.get().getCompatibility().name());
+     }
+ 
++    // @Override // TODO when we redo FeatureFlag API
++    // public Set<FeatureFlag> getRequiredFeatures() {
++    //     return Collections.unmodifiableSet(CraftFeatureFlag.getFromNMS(this.get().getRequestedFeatures()));
++    // }
++
+     @Override
+     public boolean isEnabled() {
+-        return enabled;
++        return this.enabled;
+     }
+ 
+     @Override
+-    public void setEnabled(boolean enabled) {
++    public void setEnabled(final boolean enabled) {
+         if (enabled == this.enabled) {
+             return;
+         }
+ 
+-        MinecraftServer server = MinecraftServer.getServer();
+-        List<String> enabledKeys = server.getPackRepository().getSelectedPacks().stream().map(Pack::getId).collect(Collectors.toList());
++        final MinecraftServer server = MinecraftServer.getServer();
++        final List<Pack> enabledPacks = new ArrayList<>(server.getPackRepository().getSelectedPacks());
++        final @Nullable Pack packToChange = server.getPackRepository().getPack(this.getName());
++        if (packToChange == null) {
++            throw new IllegalStateException("Cannot toggle state of pack that doesn't exist: " + this.getName());
++        }
+         if (enabled) {
+-            enabledKeys.add(this.name);
++            packToChange.getDefaultPosition().insert(enabledPacks, packToChange, Pack::selectionConfig, false); // modeled off the default /datapack enable logic
+         } else {
+-            enabledKeys.remove(this.name);
++            enabledPacks.remove(packToChange);
+         }
+-        server.reloadResources(enabledKeys, ServerResourcesReloadedEvent.Cause.PLUGIN);
++        server.reloadResources(enabledPacks.stream().map(Pack::getId).toList(), ServerResourcesReloadedEvent.Cause.PLUGIN);
++        this.enabled = enabled;
++    }
++
++    @Override
++    public Component asComponent() {
++        return PaperAdventure.asAdventure(this.get().getChatLink(this.enabled));
+     }
+ }
+diff --git a/src/main/java/io/papermc/paper/datapack/PaperDatapackManager.java b/src/main/java/io/papermc/paper/datapack/PaperDatapackManager.java
+index cf4374493c11057451a62a655514415cf6b298e0..b0db5190f76394026e1f3d83bd94ccd8a950c98c 100644
+--- a/src/main/java/io/papermc/paper/datapack/PaperDatapackManager.java
++++ b/src/main/java/io/papermc/paper/datapack/PaperDatapackManager.java
+@@ -1,25 +1,55 @@
+ package io.papermc.paper.datapack;
+ 
++import com.google.common.collect.Collections2;
+ import java.util.Collection;
+-import java.util.stream.Collectors;
++import java.util.Collections;
++import java.util.function.Predicate;
+ import net.minecraft.server.packs.repository.Pack;
+ import net.minecraft.server.packs.repository.PackRepository;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
+ 
++@DefaultQualifier(NonNull.class)
+ public class PaperDatapackManager implements DatapackManager {
++
+     private final PackRepository repository;
+ 
+-    public PaperDatapackManager(PackRepository repository) {
++    public PaperDatapackManager(final PackRepository repository) {
+         this.repository = repository;
+     }
+ 
++    @Override
++    public void refreshPacks() {
++        this.repository.reload();
++    }
++
++    @Override
++    public @Nullable Datapack getPack(@NonNull final String name) {
++        final @Nullable Pack pack = this.repository.getPack(name);
++        if (pack == null) {
++            return null;
++        }
++        return new PaperDatapack(pack, this.repository.getSelectedPacks().contains(pack));
++    }
++
+     @Override
+     public Collection<Datapack> getPacks() {
+-        Collection<Pack> enabledPacks = repository.getSelectedPacks();
+-        return repository.getAvailablePacks().stream().map(loader -> new PaperDatapack(loader, enabledPacks.contains(loader))).collect(Collectors.toList());
++        final Collection<Pack> enabledPacks = this.repository.getSelectedPacks();
++        return this.transformPacks(this.repository.getAvailablePacks(), enabledPacks::contains);
+     }
+ 
+     @Override
+     public Collection<Datapack> getEnabledPacks() {
+-        return repository.getSelectedPacks().stream().map(loader -> new PaperDatapack(loader, true)).collect(Collectors.toList());
++        return this.transformPacks(this.repository.getSelectedPacks(), pack -> true);
++    }
++
++    private Collection<Datapack> transformPacks(final Collection<Pack> packs, final Predicate<Pack> enabled) {
++        return Collections.unmodifiableCollection(
++            Collections2.transform(
++                packs,
++                pack -> new PaperDatapack(pack, enabled.test(pack))
++            )
++        );
+     }
+ }
