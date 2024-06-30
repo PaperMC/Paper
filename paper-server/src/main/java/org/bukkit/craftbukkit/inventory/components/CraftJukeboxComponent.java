@@ -35,7 +35,7 @@ public final class CraftJukeboxComponent implements JukeboxPlayableComponent {
 
     public CraftJukeboxComponent(Map<String, Object> map) {
         String song = SerializableMeta.getObject(String.class, map, "song", false);
-        Boolean showTooltip = SerializableMeta.getObject(boolean.class, map, "show-in-tooltip", true);
+        Boolean showTooltip = SerializableMeta.getObject(Boolean.class, map, "show-in-tooltip", true);
 
         this.handle = new JukeboxPlayable(new EitherHolder<>(ResourceKey.create(Registries.JUKEBOX_SONG, MinecraftKey.parse(song))), (showTooltip != null) ? showTooltip : true);
     }
