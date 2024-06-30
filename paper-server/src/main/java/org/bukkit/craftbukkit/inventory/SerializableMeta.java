@@ -96,6 +96,11 @@ public final class SerializableMeta implements ConfigurationSerializable {
         return value != null && value;
     }
 
+    public static int getInteger(Map<?, ?> map, Object field) {
+        Integer value = getObject(Integer.class, map, field, true);
+        return value != null ? value : 0;
+    }
+
     public static <T> T getObject(Class<T> clazz, Map<?, ?> map, Object field, boolean nullable) {
         final Object object = map.get(field);
 

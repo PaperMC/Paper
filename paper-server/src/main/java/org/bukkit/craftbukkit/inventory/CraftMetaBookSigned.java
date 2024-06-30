@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.inventory;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap.Builder;
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -35,8 +36,7 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
 
     protected String title;
     protected String author;
-    // We store the pages in their raw original text representation. See SPIGOT-5063, SPIGOT-5350, SPIGOT-3206
-    // For written books (CraftMetaBookSigned) the pages are stored in Minecraft's JSON format.
+    // Stored as components and serialized as JSON. See SPIGOT-5063, SPIGOT-5350, SPIGOT-3206
     protected List<IChatBaseComponent> pages; // null and empty are two different states internally
     protected boolean resolved;
     protected int generation;
@@ -105,13 +105,13 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
             this.pages = new ArrayList<IChatBaseComponent>();
             for (Object page : pages) {
                 if (page instanceof String) {
-                    internalAddPage(CraftChatMessage.fromJSON(CraftChatMessage.fromJSONOrStringToJSON((String) page, false, true, MAX_PAGE_LENGTH, false)));
+                    internalAddPage(CraftChatMessage.fromJSONOrString((String) page, false, true, MAX_PAGE_LENGTH, false));
                 }
             }
         }
 
-        resolved = SerializableMeta.getObject(Boolean.class, map, RESOLVED.BUKKIT, true);
-        generation = SerializableMeta.getObject(Integer.class, map, GENERATION.BUKKIT, true);
+        resolved = SerializableMeta.getBoolean(map, RESOLVED.BUKKIT);
+        generation = SerializableMeta.getInteger(map, GENERATION.BUKKIT);
     }
 
     @Override
@@ -351,7 +351,7 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
         }
 
         if (pages != null) {
-            builder.put(BOOK_PAGES.BUKKIT, ImmutableList.copyOf(pages));
+            builder.put(BOOK_PAGES.BUKKIT, ImmutableList.copyOf(Lists.transform(pages, CraftChatMessage::toJSON)));
         }
 
         if (resolved) {
