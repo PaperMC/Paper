@@ -6,6 +6,8 @@ Subject: [PATCH] CB fixes
 * Missing Level -> LevelStem generic in StructureCheck
   Need to use the right for injectDatafixingContext (Spottedleaf)
 
+* Fix summon_entity effect attempting to add incorrect entity (granny)
+
 * Removed incorrect parent perm for `minecraft.debugstick.always` (Machine_Maker)
 
 * Fixed method signature of Marker#addPassenger (Machine_Maker)
@@ -29,6 +31,19 @@ index a696a0d168987aaa4e59c471a23eeb48d683c1b2..9d11fcb3df12182ae00ce73f7e30091f
          this.structureManager = new StructureManager(this, this.serverLevelData.worldGenOptions(), this.structureCheck); // CraftBukkit
          if ((this.dimension() == Level.END && this.dimensionTypeRegistration().is(BuiltinDimensionTypes.END)) || env == org.bukkit.World.Environment.THE_END) { // CraftBukkit - Allow to create EnderDragonBattle in default and custom END
              this.dragonFight = new EndDragonFight(this, this.serverLevelData.worldGenOptions().seed(), this.serverLevelData.endDragonFightData()); // CraftBukkit
+diff --git a/src/main/java/net/minecraft/world/item/enchantment/effects/SummonEntityEffect.java b/src/main/java/net/minecraft/world/item/enchantment/effects/SummonEntityEffect.java
+index d927357d541cf206bb3019b2fda3473a77b44ec4..4601c7069ba82ccfe87e9dc304b6f3262f7bbfbf 100644
+--- a/src/main/java/net/minecraft/world/item/enchantment/effects/SummonEntityEffect.java
++++ b/src/main/java/net/minecraft/world/item/enchantment/effects/SummonEntityEffect.java
+@@ -54,7 +54,7 @@ public record SummonEntityEffect(HolderSet<EntityType<?>> entityTypes, boolean j
+                         // CraftBukkit start
+                         world.strikeLightning(entity1, (context.itemStack().getItem() == Items.TRIDENT) ? LightningStrikeEvent.Cause.TRIDENT : LightningStrikeEvent.Cause.ENCHANTMENT);
+                     } else {
+-                        world.addFreshEntityWithPassengers(user, CreatureSpawnEvent.SpawnReason.ENCHANTMENT);
++                        world.addFreshEntityWithPassengers(entity1, CreatureSpawnEvent.SpawnReason.ENCHANTMENT); // Paper - Fix typo when adding summoned entity
+                         // CraftBukkit end
+                     }
+ 
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java b/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
 index 0dc7f88877020bddd5a84db51d349f52b673048e..aae73586265593ee7830fb8dd5c2e3d7560057f0 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
