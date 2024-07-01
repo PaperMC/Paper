@@ -6,35 +6,93 @@ Subject: [PATCH] Add Raw Byte Entity Serialization
 == AT ==
 public net.minecraft.world.entity.Entity setLevel(Lnet/minecraft/world/level/Level;)V
 
+Co-authored-by: SoSeDiK <mrsosedik@gmail.com>
+
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 28c20c14fa36470a96fad88787fc01c77592d19f..13e1b47873f0a4a974bb0763679fee6e37932b5c 100644
+index 28c20c14fa36470a96fad88787fc01c77592d19f..724444ce7b844b2c04b1d91d68a4432ed22a19f5 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -2145,6 +2145,15 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
-         }
+@@ -2129,17 +2129,23 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      }
  
-+    // Paper start - Entity serialization api
-+    public boolean serializeEntity(CompoundTag compound) {
-+        List<Entity> pass = new java.util.ArrayList<>(this.getPassengers());
-+        this.passengers = ImmutableList.of();
-+        boolean result = save(compound);
-+        this.passengers = ImmutableList.copyOf(pass);
-+        return result;
+     public boolean saveAsPassenger(CompoundTag nbttagcompound, boolean includeAll) {
++        // Paper start - Raw entity serialization API
++        return this.saveAsPassenger(nbttagcompound, includeAll, false);
 +    }
-+    // Paper end - Entity serialization api
-     public boolean save(CompoundTag nbt) {
-         return this.isPassenger() ? false : this.saveAsPassenger(nbt);
++
++    public boolean saveAsPassenger(CompoundTag nbttagcompound, boolean includeAll, boolean force) {
++        // Paper end - Raw entity serialization API
+         // CraftBukkit end
+-        if (this.removalReason != null && !this.removalReason.shouldSave()) {
++        if (this.removalReason != null && !this.removalReason.shouldSave() && !force) { // Paper - Raw entity serialization API
+             return false;
+         } else {
+-            String s = this.getEncodeId();
++            String s = this.getEncodeId(force); // Paper - Raw entity serialization API
+ 
+-            if (!this.persist || s == null) { // CraftBukkit - persist flag
++            if ((!this.persist && !force) || s == null) { // CraftBukkit - persist flag // Paper - Raw entity serialization API
+                 return false;
+             } else {
+                 nbttagcompound.putString("id", s);
+-                this.saveWithoutId(nbttagcompound, includeAll); // CraftBukkit - pass on includeAll
++                this.saveWithoutId(nbttagcompound, includeAll, force); // CraftBukkit - pass on includeAll // Paper - Raw entity serialization API
+                 return true;
+             }
+         }
+@@ -2155,6 +2161,15 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      }
+ 
+     public CompoundTag saveWithoutId(CompoundTag nbttagcompound, boolean includeAll) {
++        // Paper start - Raw entity serialization API
++        return saveWithoutId(nbttagcompound, includeAll, false);
++    }
++
++    public CompoundTag saveWithoutId(CompoundTag nbttagcompound, boolean includeAll, boolean force) {
++        if (force) {
++            includeAll = true;
++        }
++        // Paper end - Raw entity serialization API
+         // CraftBukkit end
+         try {
+             // CraftBukkit start - selectively save position
+@@ -2269,7 +2284,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+                     Entity entity = (Entity) iterator.next();
+                     CompoundTag nbttagcompound1 = new CompoundTag();
+ 
+-                    if (entity.saveAsPassenger(nbttagcompound1, includeAll)) { // CraftBukkit - pass on includeAll
++                    if (entity.saveAsPassenger(nbttagcompound1, includeAll, force)) { // CraftBukkit - pass on includeAll // Paper - Raw entity serialization API
+                         nbttaglist.add(nbttagcompound1);
+                     }
+                 }
+@@ -2463,10 +2478,17 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+ 
+     @Nullable
+     public final String getEncodeId() {
++        // Paper start - Raw entity serialization API
++        return getEncodeId(false);
++    }
++
++    @Nullable
++    public final String getEncodeId(boolean force) {
++        // Paper end - Raw entity serialization API
+         EntityType<?> entitytypes = this.getType();
+         ResourceLocation minecraftkey = EntityType.getKey(entitytypes);
+ 
+-        return entitytypes.canSerialize() && minecraftkey != null ? minecraftkey.toString() : null;
++        return (entitytypes.canSerialize() || force) && minecraftkey != null ? minecraftkey.toString() : null; // Paper - Raw entity serialization API
+     }
+ 
+     // CraftBukkit start - allow excluding certain data when saving
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index 7310f53747e68b918f132ee0f0a142e36537902e..6f9286e65f7ac730b808ddf9b52c344f03b4d778 100644
+index 7310f53747e68b918f132ee0f0a142e36537902e..821dd20aaaf555bfe38049f993067453e71fbfff 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-@@ -1085,6 +1085,18 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+@@ -1085,6 +1085,24 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
      }
      // Paper end - tracked players API
  
-+    // Paper start - raw entity serialization API
++    // Paper start - Raw entity serialization API
 +    @Override
 +    public boolean spawnAt(Location location, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
 +        Preconditions.checkNotNull(location, "location cannot be null");
@@ -42,49 +100,94 @@ index 7310f53747e68b918f132ee0f0a142e36537902e..6f9286e65f7ac730b808ddf9b52c344f
 +        this.entity.setLevel(((CraftWorld) location.getWorld()).getHandle());
 +        this.entity.setPos(location.getX(), location.getY(), location.getZ());
 +        this.entity.setRot(location.getYaw(), location.getPitch());
-+        return !this.entity.valid && this.entity.level().addFreshEntity(this.entity, reason);
++        boolean spawned = !this.entity.valid && this.entity.level().addFreshEntity(this.entity, reason);
++        if (spawned) {
++            for (org.bukkit.entity.Entity pass : getPassengers()) {
++                pass.spawnAt(getLocation());
++            }
++        }
++        return spawned;
 +    }
-+    // Paper end - raw entity serialization API
++    // Paper end - Raw entity serialization API
 +
      // Paper start - missing entity api
      @Override
      public boolean isInvisible() {  // Paper - moved up from LivingEntity
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index cfd003e975573564a3fea9d4379842979711e841..1a46245fed7a5fca532df7e3febb22f5effca764 100644
+index e225c716d0177e7f6935a77e1b5f5cf883e1d9e7..c1570800dab144670689dc7a9d3d6ce4966b85d7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -505,7 +505,33 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -505,6 +505,73 @@ public final class CraftMagicNumbers implements UnsafeValues {
          return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.parse(MinecraftServer.getServer().registryAccess(), compound).orElseThrow());
      }
  
--    private byte[] serializeNbtToBytes(CompoundTag compound) {
++    // Paper start - Raw entity serialization API
 +    @Override
-+    public byte[] serializeEntity(org.bukkit.entity.Entity entity) {
++    public byte[] serializeEntity(org.bukkit.entity.Entity entity, io.papermc.paper.entity.EntitySerializationFlag... serializationFlags) {
 +        Preconditions.checkNotNull(entity, "null cannot be serialized");
-+        Preconditions.checkArgument(entity instanceof org.bukkit.craftbukkit.entity.CraftEntity, "only CraftEntities can be serialized");
++        Preconditions.checkArgument(entity instanceof org.bukkit.craftbukkit.entity.CraftEntity, "Only CraftEntities can be serialized");
++
++        java.util.Set<io.papermc.paper.entity.EntitySerializationFlag> flags = java.util.Set.of(serializationFlags);
++        boolean force = flags.contains(io.papermc.paper.entity.EntitySerializationFlag.FORCE);
++        boolean misc = flags.contains(io.papermc.paper.entity.EntitySerializationFlag.MISC);
++        Preconditions.checkArgument(entity.isValid() || force, "Cannot serialize invalid entity without the FORCE flag");
++
++        net.minecraft.world.entity.Entity nmsEntity = ((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle();
++        if (entity instanceof org.bukkit.entity.Player) {
++            Preconditions.checkArgument(flags.contains(io.papermc.paper.entity.EntitySerializationFlag.PLAYER), "Cannot serialize Players without the PLAYER flag");
++        } else {
++            Preconditions.checkArgument(nmsEntity.getType().canSerialize() || misc, String.format("Cannot serialize misc non-savable entity (%s) without the MISC flag", entity.getType().name()));
++        }
 +
 +        net.minecraft.nbt.CompoundTag compound = new net.minecraft.nbt.CompoundTag();
-+        ((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().serializeEntity(compound);
++        if (flags.contains(io.papermc.paper.entity.EntitySerializationFlag.PASSENGERS)) {
++            nmsEntity.saveAsPassenger(compound, true, force || misc);
++        } else {
++            java.util.List<net.minecraft.world.entity.Entity> pass = new java.util.ArrayList<>(nmsEntity.getPassengers());
++            nmsEntity.passengers = com.google.common.collect.ImmutableList.of();
++            nmsEntity.saveAsPassenger(compound, true, force || misc);
++            nmsEntity.passengers = com.google.common.collect.ImmutableList.copyOf(pass);
++
++        }
 +        return serializeNbtToBytes(compound);
 +    }
 +
 +    @Override
-+    public org.bukkit.entity.Entity deserializeEntity(byte[] data, org.bukkit.World world, boolean preserveUUID) {
++    public org.bukkit.entity.Entity deserializeEntity(byte[] data, org.bukkit.World world, boolean preserveUUID, boolean preservePassengers) {
 +        Preconditions.checkNotNull(data, "null cannot be deserialized");
-+        Preconditions.checkArgument(data.length > 0, "cannot deserialize nothing");
++        Preconditions.checkArgument(data.length > 0, "Cannot deserialize empty data");
 +
 +        net.minecraft.nbt.CompoundTag compound = deserializeNbtFromBytes(data);
 +        int dataVersion = compound.getInt("DataVersion");
 +        compound = (net.minecraft.nbt.CompoundTag) MinecraftServer.getServer().fixerUpper.update(References.ENTITY, new Dynamic<>(NbtOps.INSTANCE, compound), dataVersion, this.getDataVersion()).getValue();
-+        if (!preserveUUID) {
-+            // Generate a new UUID so we don't have to worry about deserializing the same entity twice
-+            compound.remove("UUID");
++        if (!preservePassengers) {
++            compound.remove("Passengers");
 +        }
-+        return net.minecraft.world.entity.EntityType.create(compound, ((org.bukkit.craftbukkit.CraftWorld) world).getHandle())
-+            .orElseThrow(() -> new IllegalArgumentException("An ID was not found for the data. Did you downgrade?")).getBukkitEntity();
++        net.minecraft.world.entity.Entity nmsEntity = deserializeEntity(compound, ((org.bukkit.craftbukkit.CraftWorld) world).getHandle(), preserveUUID);
++        return nmsEntity.getBukkitEntity();
 +    }
 +
-+    private byte[] serializeNbtToBytes(net.minecraft.nbt.CompoundTag compound) {
++    private net.minecraft.world.entity.Entity deserializeEntity(net.minecraft.nbt.CompoundTag compound,  net.minecraft.server.level.ServerLevel world, boolean preserveUUID) {
++        if (!preserveUUID) {
++            // Generate a new UUID, so we don't have to worry about deserializing the same entity twice
++            compound.remove("UUID");
++        }
++        net.minecraft.world.entity.Entity nmsEntity = net.minecraft.world.entity.EntityType.create(compound, world)
++            .orElseThrow(() -> new IllegalArgumentException("An ID was not found for the data. Did you downgrade?"));
++        if (compound.contains("Passengers", Tag.TAG_LIST)) {
++            net.minecraft.nbt.ListTag passengersCompound = compound.getList("Passengers", Tag.TAG_COMPOUND);
++            for (Tag tag : passengersCompound) {
++                if (!(tag instanceof net.minecraft.nbt.CompoundTag serializedPassenger)) {
++                    continue;
++                }
++                net.minecraft.world.entity.Entity passengerEntity = deserializeEntity(serializedPassenger, world, preserveUUID);
++                passengerEntity.startRiding(nmsEntity, true);
++            }
++        }
++        return nmsEntity;
++    }
++    // Paper end - Raw entity serialization API
++
+     private byte[] serializeNbtToBytes(net.minecraft.nbt.CompoundTag compound) {
          compound.putInt("DataVersion", getDataVersion());
          java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream();
-         try {
