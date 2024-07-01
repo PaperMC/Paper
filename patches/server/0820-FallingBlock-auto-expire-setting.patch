@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Sun, 5 Dec 2021 14:58:17 -0500
+Subject: [PATCH] FallingBlock auto expire setting
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
+index 562462729d0262bac5968583b064124167437449..18eaccb39a4c81338a8cbebe3de03934913ac2a4 100644
+--- a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
++++ b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
+@@ -66,6 +66,7 @@ public class FallingBlockEntity extends Entity {
+     @Nullable
+     public CompoundTag blockData;
+     protected static final EntityDataAccessor<BlockPos> DATA_START_POS = SynchedEntityData.defineId(FallingBlockEntity.class, EntityDataSerializers.BLOCK_POS);
++    public boolean autoExpire = true; // Paper - Auto expire setting
+ 
+     public FallingBlockEntity(EntityType<? extends FallingBlockEntity> type, Level world) {
+         super(type, world);
+@@ -180,7 +181,7 @@ public class FallingBlockEntity extends Entity {
+                 }
+ 
+                 if (!this.onGround() && !flag1) {
+-                    if (!this.level().isClientSide && (this.time > 100 && (blockposition.getY() <= this.level().getMinBuildHeight() || blockposition.getY() > this.level().getMaxBuildHeight()) || this.time > 600)) {
++                    if (!this.level().isClientSide && ((this.time > 100 && autoExpire) && (blockposition.getY() <= this.level().getMinBuildHeight() || blockposition.getY() > this.level().getMaxBuildHeight()) || (this.time > 600 && autoExpire))) { // Paper - Auto expire setting
+                         if (this.dropItem && this.level().getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
+                             this.spawnAtLocation((ItemLike) block);
+                         }
+@@ -328,6 +329,7 @@ public class FallingBlockEntity extends Entity {
+         }
+ 
+         nbt.putBoolean("CancelDrop", this.cancelDrop);
++        if (!autoExpire) {nbt.putBoolean("Paper.AutoExpire", false);} // Paper - AutoExpire setting
+     }
+ 
+     @Override
+@@ -363,6 +365,11 @@ public class FallingBlockEntity extends Entity {
+             this.setOrigin(new org.bukkit.Location(this.level().getWorld(), srcX, srcY, srcZ));
+         }
+         // Paper end
++        // Paper start
++         if (nbt.contains("Paper.AutoExpire")) {
++            this.autoExpire = nbt.getBoolean("Paper.AutoExpire");
++         }
++        // Paper end
+     }
+ 
+     public void setHurtsEntities(float fallHurtAmount, int fallHurtMax) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingBlock.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingBlock.java
+index 7124d996fd34155fa76ff1b7ee3f823fb94b08a8..d17808d132b332d51189067fed245eb6bb904968 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingBlock.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFallingBlock.java
+@@ -107,4 +107,15 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
+             this.setHurtEntities(true);
+         }
+     }
++    // Paper Start - Auto expire setting
++    @Override
++    public boolean doesAutoExpire() {
++        return this.getHandle().autoExpire;
++    }
++
++    @Override
++    public void shouldAutoExpire(boolean autoExpires) {
++        this.getHandle().autoExpire = autoExpires;
++    }
++    // Paper End - Auto expire setting
+ }

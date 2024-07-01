@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 9 Dec 2022 01:47:23 -0800
+Subject: [PATCH] fix Instruments
+
+properly handle Player#playNote
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index d1db06cab4c74610f5e3815ae615e9423b92c124..1b776dc69369c1ce8042e379e8064c00f17f0c43 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -723,29 +723,18 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+         if (this.getHandle().connection == null) return;
+ 
+-        String instrumentName = switch (instrument.ordinal()) {
+-            case 0 -> "harp";
+-            case 1 -> "basedrum";
+-            case 2 -> "snare";
+-            case 3 -> "hat";
+-            case 4 -> "bass";
+-            case 5 -> "flute";
+-            case 6 -> "bell";
+-            case 7 -> "guitar";
+-            case 8 -> "chime";
+-            case 9 -> "xylophone";
+-            case 10 -> "iron_xylophone";
+-            case 11 -> "cow_bell";
+-            case 12 -> "didgeridoo";
+-            case 13 -> "bit";
+-            case 14 -> "banjo";
+-            case 15 -> "pling";
+-            case 16 -> "xylophone";
+-            default -> null;
+-        };
+-
+-        float f = (float) Math.pow(2.0D, (note.getId() - 12.0D) / 12.0D);
+-        this.getHandle().connection.send(new ClientboundSoundPacket(BuiltInRegistries.SOUND_EVENT.wrapAsHolder(CraftSound.getSoundEffect("block.note_block." + instrumentName)), net.minecraft.sounds.SoundSource.RECORDS, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, f, this.getHandle().getRandom().nextLong()));
++        // Paper start - fix all this (modeled off of NoteBlock)
++        net.minecraft.world.level.block.state.properties.NoteBlockInstrument nms = CraftBlockData.toNMS(instrument, net.minecraft.world.level.block.state.properties.NoteBlockInstrument.class);
++        float f;
++        if (nms.isTunable()) {
++            f = (float) Math.pow(2.0D, (note.getId() - 12.0D) / 12.0D);
++        } else {
++            f = 1.0f;
++        }
++        if (!nms.hasCustomSound()) {
++            this.getHandle().connection.send(new ClientboundSoundPacket(nms.getSoundEvent(), net.minecraft.sounds.SoundSource.RECORDS, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, f, this.getHandle().getRandom().nextLong()));
++        }
++        // Paper end
+     }
+ 
+     @Override
