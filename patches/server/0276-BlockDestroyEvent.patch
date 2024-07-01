@@ -11,7 +11,7 @@ floating in the air.
 This can replace many uses of BlockPhysicsEvent
 
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index c0b0a9328faf93b85ceaf6cc9989f1a59520c7f4..8e2acb3c6f815b5b1d3237a2f4e0b5f3683d2c60 100644
+index c0b0a9328faf93b85ceaf6cc9989f1a59520c7f4..ed387fddc8e6870ed00979291a89faff94f8629a 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -25,6 +25,7 @@ import net.minecraft.core.registries.Registries;
@@ -22,18 +22,29 @@ index c0b0a9328faf93b85ceaf6cc9989f1a59520c7f4..8e2acb3c6f815b5b1d3237a2f4e0b5f3
  import net.minecraft.server.MinecraftServer;
  import net.minecraft.server.level.FullChunkStatus;
  import net.minecraft.server.level.ServerLevel;
-@@ -576,9 +577,26 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -570,15 +571,37 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+ 
+     @Override
+     public boolean destroyBlock(BlockPos pos, boolean drop, @Nullable Entity breakingEntity, int maxUpdateDepth) {
++        // Paper start - create new override since sometimes we don't want to play the effect
++        return destroyBlock(pos, drop, breakingEntity, maxUpdateDepth, true);
++    }
++
++    public boolean destroyBlock(BlockPos pos, boolean drop, @Nullable Entity breakingEntity, int maxUpdateDepth, boolean playEffect) {
++        // Paper end
+         BlockState iblockdata = this.getBlockState(pos);
+ 
+         if (iblockdata.isAir()) {
              return false;
          } else {
              FluidState fluid = this.getFluidState(pos);
 +            // Paper start - BlockDestroyEvent; while the above setAir method is named same and looks very similar
 +            // they are NOT used with same intent and the above should not fire this event. The above method is more of a BlockSetToAirEvent,
 +            // it doesn't imply destruction of a block that plays a sound effect / drops an item.
-+            boolean playEffect = true;
 +            BlockState effectType = iblockdata;
 +            int xp = iblockdata.getBlock().getExpDrop(iblockdata, (ServerLevel) this, pos, ItemStack.EMPTY, true);
 +            if (com.destroystokyo.paper.event.block.BlockDestroyEvent.getHandlerList().getRegisteredListeners().length > 0) {
-+                com.destroystokyo.paper.event.block.BlockDestroyEvent event = new com.destroystokyo.paper.event.block.BlockDestroyEvent(org.bukkit.craftbukkit.block.CraftBlock.at(this, pos), fluid.createLegacyBlock().createCraftBlockData(), effectType.createCraftBlockData(), xp, drop);
++                com.destroystokyo.paper.event.block.BlockDestroyEvent event = new com.destroystokyo.paper.event.block.BlockDestroyEvent(org.bukkit.craftbukkit.block.CraftBlock.at(this, pos), fluid.createLegacyBlock().createCraftBlockData(), effectType.createCraftBlockData(), xp, drop, playEffect);
 +                if (!event.callEvent()) {
 +                    return false;
 +                }
@@ -51,3 +62,57 @@ index c0b0a9328faf93b85ceaf6cc9989f1a59520c7f4..8e2acb3c6f815b5b1d3237a2f4e0b5f3
              }
  
              if (drop) {
+diff --git a/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java b/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java
+index f9b6db516fa0788a6d4d40fa7ea2039cd3282b24..db43f834fd618cbdff28419163f6e176bfca6210 100644
+--- a/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java
+@@ -78,8 +78,11 @@ public abstract class BaseRailBlock extends Block implements SimpleWaterloggedBl
+         if (!world.isClientSide && world.getBlockState(pos).is(this)) {
+             RailShape railShape = state.getValue(this.getShapeProperty());
+             if (shouldBeRemoved(pos, world, railShape)) {
+-                dropResources(state, world, pos);
+-                world.removeBlock(pos, notify);
++                //dropResources(state, world, pos); Paper - change call so that BlockDestroyEvent is called
++                //world.removeBlock(pos, notify); Paper - change call so that BlockDestroyEvent is called
++                // Paper - change call so that BlockDestroyEvent is called
++                world.destroyBlock(pos, true, null, 512, false);
++                // Paper end
+             } else {
+                 this.updateState(state, world, pos, sourceBlock);
+             }
+diff --git a/src/main/java/net/minecraft/world/level/block/DiodeBlock.java b/src/main/java/net/minecraft/world/level/block/DiodeBlock.java
+index b9f605db2b0de1c18c615f0f6485da7eaaf09b65..f596001dc3eec0408630ee8ce56e6fbcb596dea5 100644
+--- a/src/main/java/net/minecraft/world/level/block/DiodeBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/DiodeBlock.java
+@@ -95,8 +95,11 @@ public abstract class DiodeBlock extends HorizontalDirectionalBlock {
+         } else {
+             BlockEntity tileentity = state.hasBlockEntity() ? world.getBlockEntity(pos) : null;
+ 
+-            dropResources(state, world, pos, tileentity);
+-            world.removeBlock(pos, false);
++            //dropResources(state, world, pos, tileentity); Paper - change call so that BlockDestroyEvent is called
++            //world.removeBlock(pos, false); Paper - change call so that BlockDestroyEvent is called
++            // Paper start - change call so that BlockDestroyEvent is called
++            world.destroyBlock(pos, true, null, 512, false);
++            // Paper end
+             Direction[] aenumdirection = Direction.values();
+             int i = aenumdirection.length;
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java b/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
+index c73bf0b36252796ca93c500affa2be568e3f6c9e..c63db09c4a838fef026f3afd7c00c17262961362 100644
+--- a/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
+@@ -413,8 +413,11 @@ public class RedStoneWireBlock extends Block {
+             if (state.canSurvive(world, pos)) {
+                 this.updatePowerStrength(world, pos, state);
+             } else {
+-                dropResources(state, world, pos);
+-                world.removeBlock(pos, false);
++                //dropResources(state, world, pos); Paper - change call so that BlockDestroyEvent is called
++                //world.removeBlock(pos, false); Paper - change call so that BlockDestroyEvent is called
++                // Paper start - change call so that BlockDestroyEvent is called
++                world.destroyBlock(pos, true, null, 512, false);
++                // Paper end
+             }
+ 
+         }
