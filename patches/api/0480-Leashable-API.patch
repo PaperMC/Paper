@@ -1,0 +1,143 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+Date: Sat, 22 Jun 2024 21:11:58 +0200
+Subject: [PATCH] Leashable API
+
+
+diff --git a/src/main/java/io/papermc/paper/entity/Leashable.java b/src/main/java/io/papermc/paper/entity/Leashable.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fc847f338642d984e6082a9f32c718a011baffb4
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/Leashable.java
+@@ -0,0 +1,37 @@
++package io.papermc.paper.entity;
++
++import org.bukkit.entity.Entity;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * Represents an entity that can be leashed.
++ */
++public interface Leashable extends Entity {
++
++    /**
++     * Returns whether the entity is currently leashed.
++     *
++     * @return whether the entity is leashed
++     */
++    boolean isLeashed();
++
++    /**
++     * Gets the entity that is currently leading this entity.
++     *
++     * @return the entity holding the leash
++     * @throws IllegalStateException if not currently leashed
++     */
++    @NotNull
++    Entity getLeashHolder() throws IllegalStateException;
++
++    /**
++     * Sets the leash on this entity to be held by the supplied entity.
++     * <p>
++     * This method has no effect on players.
++     *
++     * @param holder the entity to leash this entity to, or {@code null} to unleash
++     * @return whether the operation was successful
++     */
++    boolean setLeashHolder(@Nullable Entity holder);
++}
+diff --git a/src/main/java/org/bukkit/entity/Boat.java b/src/main/java/org/bukkit/entity/Boat.java
+index 2ac685fb1817f3ce06ebe6391cc863712d68367c..d80524fe32672a8b8940d1028abf22026dace8d2 100644
+--- a/src/main/java/org/bukkit/entity/Boat.java
++++ b/src/main/java/org/bukkit/entity/Boat.java
+@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
+ /**
+  * Represents a boat entity.
+  */
+-public interface Boat extends Vehicle {
++public interface Boat extends Vehicle, io.papermc.paper.entity.Leashable { // Paper - Leashable API
+ 
+     /**
+      * Gets the wood type of the boat.
+diff --git a/src/main/java/org/bukkit/entity/LivingEntity.java b/src/main/java/org/bukkit/entity/LivingEntity.java
+index 5c29956c6db53440322330ff723c7087193641f1..a4795c928842269ccff31999da65cea151d72001 100644
+--- a/src/main/java/org/bukkit/entity/LivingEntity.java
++++ b/src/main/java/org/bukkit/entity/LivingEntity.java
+@@ -740,7 +740,11 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
+      *
+      * @return whether the entity is leashed
+      */
+-    public boolean isLeashed();
++    // Paper start - Leashable API
++    default boolean isLeashed() {
++        return false;
++    }
++    // Paper end - Leashable API
+ 
+     /**
+      * Gets the entity that is currently leading this entity.
+@@ -749,19 +753,27 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
+      * @throws IllegalStateException if not currently leashed
+      */
+     @NotNull
+-    public Entity getLeashHolder() throws IllegalStateException;
++    // Paper start - Leashable API
++    default Entity getLeashHolder() throws IllegalStateException {
++        throw new IllegalStateException("Entity not leashed");
++    }
++    // Paper end - Leashable API
+ 
+     /**
+      * Sets the leash on this entity to be held by the supplied entity.
+      * <p>
+-     * This method has no effect on EnderDragons, Withers, Players, or Bats.
++     * This method has no effect on players.
+      * Non-living entities excluding leashes will not persist as leash
+      * holders.
+      *
+      * @param holder the entity to leash this entity to, or null to unleash
+      * @return whether the operation was successful
+      */
+-    public boolean setLeashHolder(@Nullable Entity holder);
++    // Paper start - Leashable API
++    default boolean setLeashHolder(@Nullable Entity holder) {
++        return false;
++    }
++    // Paper end - Leashable API
+ 
+     /**
+      * Checks to see if an entity is gliding, such as using an Elytra.
+diff --git a/src/main/java/org/bukkit/entity/Mob.java b/src/main/java/org/bukkit/entity/Mob.java
+index 256e5645bcfa76e7ede58ae365e69b4a4bed6204..98434cc332c0fb58fc831343a815682e434cebfd 100644
+--- a/src/main/java/org/bukkit/entity/Mob.java
++++ b/src/main/java/org/bukkit/entity/Mob.java
+@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * Represents a Mob. Mobs are living entities with simple AI.
+  */
+-public interface Mob extends LivingEntity, Lootable {
++public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Leashable { // Paper - Leashable API
+ 
+     // Paper start
+     @Override
+@@ -229,4 +229,19 @@ public interface Mob extends LivingEntity, Lootable {
+      */
+     public int getPossibleExperienceReward();
+     // Paper end - mob xp reward API
++
++    // Paper start - Leashable API; redirection needed for some reason leashable methods are on LivingEntity and not Mob
++    default boolean isLeashed() {
++        return ((io.papermc.paper.entity.Leashable) this).isLeashed();
++    }
++
++    @NotNull
++    default Entity getLeashHolder() throws IllegalStateException {
++        return ((io.papermc.paper.entity.Leashable) this).getLeashHolder();
++    }
++
++    default boolean setLeashHolder(@Nullable Entity holder) {
++        return ((io.papermc.paper.entity.Leashable) this).setLeashHolder(holder);
++    }
++    // Paper end - Leashable API
+ }
