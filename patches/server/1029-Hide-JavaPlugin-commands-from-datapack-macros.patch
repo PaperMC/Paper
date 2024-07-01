@@ -1,0 +1,127 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 27 Jun 2024 13:46:04 -0700
+Subject: [PATCH] Hide JavaPlugin commands from datapack macros
+
+
+diff --git a/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java b/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java
+index 27509813a90980be1dfc7bde27d0eba60adfc820..3c2500fdbe652a07e8e201e3f88cdfbd09234868 100644
+--- a/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java
++++ b/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java
+@@ -7,6 +7,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+ import com.mojang.brigadier.tree.CommandNode;
+ import com.mojang.brigadier.tree.LiteralCommandNode;
++import io.papermc.paper.plugin.bootstrap.BootstrapContext;
+ import io.papermc.paper.plugin.configuration.PluginMeta;
+ import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
+ import io.papermc.paper.plugin.lifecycle.event.registrar.PaperRegistrar;
+@@ -17,6 +18,7 @@ import java.util.HashSet;
+ import java.util.List;
+ import java.util.Locale;
+ import java.util.Set;
++import java.util.function.Function;
+ import net.minecraft.commands.CommandBuildContext;
+ import org.apache.commons.lang3.StringUtils;
+ import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
+@@ -35,6 +37,7 @@ public class PaperCommands implements Commands, PaperRegistrar<LifecycleEventOwn
+ 
+     private @Nullable LifecycleEventOwner currentContext;
+     private @MonotonicNonNull CommandDispatcher<CommandSourceStack> dispatcher;
++    private @MonotonicNonNull CommandDispatcher<CommandSourceStack> limitedDispatcher;
+     private @MonotonicNonNull CommandBuildContext buildContext;
+     private boolean invalid = false;
+ 
+@@ -51,6 +54,12 @@ public class PaperCommands implements Commands, PaperRegistrar<LifecycleEventOwn
+                 return commands.getDispatcher();
+             }
+         });
++        this.limitedDispatcher = new CommandDispatcher<>(new ApiMirrorRootNode() {
++            @Override
++            public CommandDispatcher<net.minecraft.commands.CommandSourceStack> getDispatcher() {
++                return commands.limitedDispatcher;
++            }
++        });
+         this.buildContext = commandBuildContext;
+     }
+ 
+@@ -80,6 +89,14 @@ public class PaperCommands implements Commands, PaperRegistrar<LifecycleEventOwn
+         return this.dispatcher;
+     }
+ 
++    private <R> R useDispatcher(final Function<CommandDispatcher<CommandSourceStack>, R> dispatcherConsumer) {
++        Preconditions.checkState(!this.invalid && this.dispatcher != null, "cannot access the dispatcher in this context");
++        if (this.currentContext instanceof BootstrapContext) {
++            dispatcherConsumer.apply(this.limitedDispatcher);
++        }
++        return dispatcherConsumer.apply(this.dispatcher);
++    }
++
+     @Override
+     public @Unmodifiable Set<String> register(final LiteralCommandNode<CommandSourceStack> node, final @Nullable String description, final Collection<String> aliases) {
+         return this.register(requireNonNull(this.currentContext, "No lifecycle owner context is set").getPluginMeta(), node, description, aliases);
+@@ -148,16 +165,18 @@ public class PaperCommands implements Commands, PaperRegistrar<LifecycleEventOwn
+     }
+ 
+     private boolean registerIntoDispatcher(final PluginCommandNode node, final boolean override) {
+-        final boolean hasChild = this.getDispatcher().getRoot().getChild(node.getLiteral()) != null;
+-        if (!hasChild || override) { // Avoid merging behavior. Maybe something to look into in the future
+-            if (override) {
+-                this.getDispatcher().getRoot().removeCommand(node.getLiteral());
++        return this.useDispatcher(dispatcher -> {
++            final boolean hasChild = dispatcher.getRoot().getChild(node.getLiteral()) != null;
++            if (!hasChild || override) { // Avoid merging behavior. Maybe something to look into in the future
++                if (override) {
++                    dispatcher.getRoot().removeCommand(node.getLiteral());
++                }
++                dispatcher.getRoot().addChild(node);
++                return true;
+             }
+-            this.getDispatcher().getRoot().addChild(node);
+-            return true;
+-        }
+ 
+-        return false;
++            return false;
++        });
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
+index 3e454515360c22a26c9329e4032d525579110d7e..a54a42ad7f26c9fb09697f18ce47db6c710a9ed7 100644
+--- a/src/main/java/net/minecraft/commands/Commands.java
++++ b/src/main/java/net/minecraft/commands/Commands.java
+@@ -153,6 +153,7 @@ public class Commands {
+     public static final int LEVEL_ADMINS = 3;
+     public static final int LEVEL_OWNERS = 4;
+     private final com.mojang.brigadier.CommandDispatcher<CommandSourceStack> dispatcher = new com.mojang.brigadier.CommandDispatcher();
++    public final com.mojang.brigadier.CommandDispatcher<CommandSourceStack> limitedDispatcher = new com.mojang.brigadier.CommandDispatcher<>();
+ 
+     public Commands(Commands.CommandSelection environment, CommandBuildContext commandRegistryAccess) {
+         // Paper
+@@ -282,6 +283,12 @@ public class Commands {
+         // Paper end - Brigadier Command API
+         // Paper - remove public constructor, no longer needed
+         this.dispatcher.setConsumer(ExecutionCommandSource.resultConsumer());
++        // Paper start - have limited dispatcher for specific command contexts
++        this.limitedDispatcher.setConsumer(ExecutionCommandSource.resultConsumer());
++        for (final CommandNode<CommandSourceStack> child : new java.util.ArrayList<>(this.dispatcher.getRoot().getChildren())) {
++            this.limitedDispatcher.getRoot().addChild(child);
++        }
++        // Paper end - have limited dispatcher for specific command contexts
+     }
+ 
+     public static <S> ParseResults<S> mapSource(ParseResults<S> parseResults, UnaryOperator<S> sourceMapper) {
+diff --git a/src/main/java/net/minecraft/server/ServerFunctionManager.java b/src/main/java/net/minecraft/server/ServerFunctionManager.java
+index 9cd4f7c6910727c849ac7f5d675dc6105c4bbba2..5e8f976c523845e6048bc470117ab31b75d726c1 100644
+--- a/src/main/java/net/minecraft/server/ServerFunctionManager.java
++++ b/src/main/java/net/minecraft/server/ServerFunctionManager.java
+@@ -36,7 +36,7 @@ public class ServerFunctionManager {
+     }
+ 
+     public CommandDispatcher<CommandSourceStack> getDispatcher() {
+-        return this.server.getCommands().getDispatcher(); // CraftBukkit // Paper - Don't override command dispatcher
++        return this.server.getCommands().limitedDispatcher; // CraftBukkit // Paper - Don't override command dispatcher
+     }
+ 
+     public void tick() {
