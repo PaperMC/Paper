@@ -1,10 +1,9 @@
 --- a/net/minecraft/commands/Commands.java
 +++ b/net/minecraft/commands/Commands.java
-@@ -138,6 +138,14 @@
- import net.minecraft.world.flag.FeatureFlags;
+@@ -139,6 +139,14 @@
  import net.minecraft.world.level.GameRules;
  import org.slf4j.Logger;
-+
+ 
 +// CraftBukkit start
 +import com.google.common.base.Joiner;
 +import java.util.Collection;
@@ -12,9 +11,10 @@
 +import org.bukkit.event.player.PlayerCommandSendEvent;
 +import org.bukkit.event.server.ServerCommandEvent;
 +// CraftBukkit end
- 
++
  public class Commands {
  
+     private static final ThreadLocal<ExecutionContext<CommandSourceStack>> CURRENT_EXECUTION_CONTEXT = new ThreadLocal();
 @@ -151,6 +159,7 @@
      private final com.mojang.brigadier.CommandDispatcher<CommandSourceStack> dispatcher = new com.mojang.brigadier.CommandDispatcher();
  
@@ -57,13 +57,10 @@
          this.dispatcher.setConsumer(ExecutionCommandSource.resultConsumer());
      }
  
-@@ -262,30 +296,75 @@
+@@ -262,30 +296,72 @@
          return new ParseResults(commandcontextbuilder1, parseResults.getReader(), parseResults.getExceptions());
      }
  
--    public void performPrefixedCommand(CommandSourceStack source, String command) {
--        command = command.startsWith("/") ? command.substring(1) : command;
--        this.performCommand(this.dispatcher.parse(command, source), command);
 +    // CraftBukkit start
 +    public void dispatchServerCommand(CommandSourceStack sender, String command) {
 +        Joiner joiner = Joiner.on(" ");
@@ -83,17 +80,16 @@
 +
 +        // Paper - Fix permission levels for command blocks
 +
-+        // Handle vanilla commands;
-+        if (sender.getLevel().getCraftServer().getCommandBlockOverride(args[0])) {
-+            args[0] = "minecraft:" + args[0];
-+        }
++        // Handle vanilla commands; // Paper - handled in CommandNode/CommandDispatcher
 +
 +        String newCommand = joiner.join(args);
 +        this.performPrefixedCommand(sender, newCommand, newCommand);
 +    }
 +    // CraftBukkit end
 +
-+    public void performPrefixedCommand(CommandSourceStack source, String command) {
+     public void performPrefixedCommand(CommandSourceStack source, String command) {
+-        command = command.startsWith("/") ? command.substring(1) : command;
+-        this.performCommand(this.dispatcher.parse(command, source), command);
 +        // CraftBukkit start
 +        this.performPrefixedCommand(source, command, command);
      }
@@ -142,7 +138,7 @@
                  StackTraceElement[] astacktraceelement = exception.getStackTrace();
  
                  for (int i = 0; i < Math.min(astacktraceelement.length, 3); ++i) {
-@@ -298,7 +377,7 @@
+@@ -298,7 +374,7 @@
              }));
              if (SharedConstants.IS_RUNNING_IN_IDE) {
                  commandlistenerwrapper.sendFailure(Component.literal(Util.describeError(exception)));
@@ -151,7 +147,7 @@
              }
          } finally {
              Profiler.get().pop();
-@@ -307,18 +386,22 @@
+@@ -307,18 +383,22 @@
      }
  
      @Nullable
@@ -180,7 +176,7 @@
                  });
  
                  if (i > 10) {
-@@ -333,8 +416,18 @@
+@@ -333,7 +413,17 @@
                  }
  
                  ichatmutablecomponent.append((Component) Component.translatable("command.context.here").withStyle(ChatFormatting.RED, ChatFormatting.ITALIC));
@@ -190,17 +186,16 @@
 +                builder
 +                    .append(net.kyori.adventure.text.Component.newline())
 +                    .append(io.papermc.paper.adventure.PaperAdventure.asAdventure(ichatmutablecomponent));
-             }
++            }
 +            org.bukkit.event.command.UnknownCommandEvent event = new org.bukkit.event.command.UnknownCommandEvent(commandlistenerwrapper.getBukkitSender(), s, org.spigotmc.SpigotConfig.unknownCommandMessage.isEmpty() ? null : builder.build());
 +            org.bukkit.Bukkit.getServer().getPluginManager().callEvent(event);
 +            if (event.message() != null) {
 +                commandlistenerwrapper.sendFailure(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.message()), false);
 +                // Paper end - Add UnknownCommandEvent
-+            }
+             }
  
              return null;
-         }
-@@ -368,7 +461,7 @@
+@@ -368,7 +458,7 @@
  
                  executioncontext1.close();
              } finally {
@@ -209,7 +204,7 @@
              }
          } else {
              callback.accept(executioncontext);
-@@ -377,23 +470,121 @@
+@@ -377,23 +467,121 @@
      }
  
      public void sendCommands(ServerPlayer player) {
@@ -336,7 +331,7 @@
                  argumentbuilder.requires((icompletionprovider) -> {
                      return true;
                  });
-@@ -415,12 +606,12 @@
+@@ -415,12 +603,12 @@
                      argumentbuilder.redirect((CommandNode) resultNodes.get(argumentbuilder.getRedirect()));
                  }
  
@@ -351,7 +346,7 @@
                  }
              }
          }
-@@ -481,7 +672,7 @@
+@@ -481,7 +669,7 @@
              }
  
              private <T> HolderLookup.RegistryLookup.Delegate<T> createLookup(final HolderLookup.RegistryLookup<T> original) {

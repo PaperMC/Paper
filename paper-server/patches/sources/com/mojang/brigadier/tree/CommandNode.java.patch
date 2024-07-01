@@ -52,7 +52,43 @@
          return this.requirement.test(source);
      }
  
-@@ -183,4 +205,11 @@
+@@ -151,6 +173,12 @@
+     protected abstract String getSortedKey();
+ 
+     public Collection<? extends CommandNode<S>> getRelevantNodes(final StringReader input) {
++        // Paper start - prioritize mc commands in function parsing
++        return this.getRelevantNodes(input, null);
++    }
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public Collection<? extends CommandNode<S>> getRelevantNodes(final StringReader input, final Object source) {
++        // Paper end - prioritize mc commands in function parsing
+         if (this.literals.size() > 0) {
+             final int cursor = input.getCursor();
+             while (input.canRead() && input.peek() != ' ') {
+@@ -158,7 +186,21 @@
+             }
+             final String text = input.getString().substring(cursor, input.getCursor());
+             input.setCursor(cursor);
+-            final LiteralCommandNode<S> literal = this.literals.get(text);
++            // Paper start - prioritize mc commands in function parsing
++            LiteralCommandNode<S> literal = null;
++            if (source instanceof CommandSourceStack css && css.source == net.minecraft.commands.CommandSource.NULL) {
++                if (!text.contains(":")) {
++                    literal = this.literals.get("minecraft:" + text);
++                }
++            } else if (source instanceof CommandSourceStack css && css.source instanceof net.minecraft.world.level.BaseCommandBlock) {
++                if (css.getServer().server.getCommandBlockOverride(text) && !text.contains(":")) {
++                    literal = this.literals.get("minecraft:" + text);
++                }
++            }
++            if (literal == null) {
++                literal = this.literals.get(text);
++            }
++            // Paper end - prioritize mc commands in function parsing
+             if (literal != null) {
+                 return Collections.singleton(literal);
+             } else {
+@@ -183,4 +225,11 @@
      }
  
      public abstract Collection<String> getExamples();
