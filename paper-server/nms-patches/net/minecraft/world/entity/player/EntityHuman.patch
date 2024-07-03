@@ -287,21 +287,22 @@
                      if (iprojectile.deflect(ProjectileDeflection.AIM_DEFLECT, this, this, true)) {
                          this.level().playSound((EntityHuman) null, this.getX(), this.getY(), this.getZ(), SoundEffects.PLAYER_ATTACK_NODAMAGE, this.getSoundSource());
                          return;
-@@ -1218,8 +1323,11 @@
+@@ -1218,8 +1323,13 @@
                                  if (entityliving2 != this && entityliving2 != entity && !this.isAlliedTo((Entity) entityliving2) && (!(entityliving2 instanceof EntityArmorStand) || !((EntityArmorStand) entityliving2).isMarker()) && this.distanceToSqr((Entity) entityliving2) < 9.0D) {
                                      float f7 = this.getEnchantedDamage(entityliving2, f6, damagesource) * f2;
  
--                                    entityliving2.knockback(0.4000000059604645D, (double) MathHelper.sin(this.getYRot() * 0.017453292F), (double) (-MathHelper.cos(this.getYRot() * 0.017453292F)));
--                                    entityliving2.hurt(damagesource, f7);
 +                                    // CraftBukkit start - Only apply knockback if the damage hits
-+                                    if (entityliving2.hurt(this.damageSources().playerAttack(this).sweep(), f7)) {
-+                                        entityliving2.knockback(0.4000000059604645D, (double) MathHelper.sin(this.getYRot() * 0.017453292F), (double) (-MathHelper.cos(this.getYRot() * 0.017453292F)), this, EntityKnockbackEvent.KnockbackCause.SWEEP_ATTACK); // CraftBukkit
++                                    if (!entityliving2.hurt(this.damageSources().playerAttack(this).sweep(), f7)) {
++                                        continue;
 +                                    }
 +                                    // CraftBukkit end
+                                     entityliving2.knockback(0.4000000059604645D, (double) MathHelper.sin(this.getYRot() * 0.017453292F), (double) (-MathHelper.cos(this.getYRot() * 0.017453292F)));
+-                                    entityliving2.hurt(damagesource, f7);
++                                    // entityliving2.hurt(damagesource, f7); // CraftBukkit - moved up
                                      World world = this.level();
  
                                      if (world instanceof WorldServer) {
-@@ -1235,9 +1343,26 @@
+@@ -1235,9 +1345,26 @@
                          }
  
                          if (entity instanceof EntityPlayer && entity.hurtMarked) {
@@ -328,7 +329,7 @@
                          }
  
                          if (flag2) {
-@@ -1303,9 +1428,14 @@
+@@ -1303,9 +1430,14 @@
                              }
                          }
  
@@ -344,7 +345,7 @@
                      }
                  }
  
-@@ -1346,7 +1476,14 @@
+@@ -1346,7 +1478,14 @@
  
      @Override
      public void remove(Entity.RemovalReason entity_removalreason) {
@@ -360,7 +361,7 @@
          this.inventoryMenu.removed(this);
          if (this.containerMenu != null && this.hasContainerOpen()) {
              this.doCloseContainer();
-@@ -1382,6 +1519,12 @@
+@@ -1382,6 +1521,12 @@
      }
  
      public Either<EntityHuman.EnumBedResult, Unit> startSleepInBed(BlockPosition blockposition) {
@@ -373,7 +374,7 @@
          this.startSleeping(blockposition);
          this.sleepCounter = 0;
          return Either.right(Unit.INSTANCE);
-@@ -1444,9 +1587,9 @@
+@@ -1444,9 +1589,9 @@
          super.jumpFromGround();
          this.awardStat(StatisticList.JUMP);
          if (this.isSprinting()) {
@@ -385,7 +386,7 @@
          }
  
      }
-@@ -1473,7 +1616,11 @@
+@@ -1473,7 +1618,11 @@
  
              this.setDeltaMovement(vec3d2.x, d0 * 0.6D, vec3d2.z);
              this.resetFallDistance();
@@ -398,7 +399,7 @@
          } else {
              super.travel(vec3d);
          }
-@@ -1547,12 +1694,24 @@
+@@ -1547,12 +1696,24 @@
      }
  
      public void startFallFlying() {
@@ -424,7 +425,7 @@
      }
  
      @Override
-@@ -1667,10 +1826,21 @@
+@@ -1667,10 +1828,21 @@
          return this.experienceLevel >= 30 ? 112 + (this.experienceLevel - 30) * 9 : (this.experienceLevel >= 15 ? 37 + (this.experienceLevel - 15) * 5 : 7 + this.experienceLevel * 2);
      }
  
@@ -447,7 +448,7 @@
              }
  
          }
-@@ -1756,13 +1926,20 @@
+@@ -1756,13 +1928,20 @@
  
      @Override
      public void setItemSlot(EnumItemSlot enumitemslot, ItemStack itemstack) {
@@ -471,7 +472,7 @@
          }
  
      }
-@@ -1806,26 +1983,31 @@
+@@ -1806,26 +1985,31 @@
  
      protected void removeEntitiesOnShoulder() {
          if (this.timeEntitySatOnShoulder + 20L < this.level().getGameTime()) {
@@ -511,7 +512,7 @@
      }
  
      @Override
-@@ -2040,7 +2222,7 @@
+@@ -2040,7 +2224,7 @@
  
      @Override
      public ItemStack eat(World world, ItemStack itemstack, FoodInfo foodinfo) {
