@@ -1927,7 +1927,6 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                         CraftMetaSkull.NOTE_BLOCK_SOUND.TYPE,
                         CraftMetaSpawnEgg.ENTITY_TAG.TYPE,
                         CraftMetaBlockState.BLOCK_ENTITY_TAG.TYPE,
-                        CraftMetaBlockState.BASE_COLOR.TYPE,
                         CraftMetaBook.BOOK_CONTENT.TYPE,
                         CraftMetaBookSigned.BOOK_CONTENT.TYPE,
                         CraftMetaFirework.FIREWORKS.TYPE,
