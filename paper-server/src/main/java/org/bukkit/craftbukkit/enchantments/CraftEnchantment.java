@@ -57,12 +57,10 @@ public class CraftEnchantment extends Enchantment implements Handleable<net.mine
 
     private final NamespacedKey key;
     private final Holder<net.minecraft.world.item.enchantment.Enchantment> handle;
-    private final int id;
 
     public CraftEnchantment(NamespacedKey key, net.minecraft.world.item.enchantment.Enchantment handle) {
         this.key = key;
         this.handle = CraftRegistry.getMinecraftRegistry(Registries.ENCHANTMENT).wrapAsHolder(handle);
-        this.id = CraftRegistry.getMinecraftRegistry(Registries.ENCHANTMENT).getId(handle);
     }
 
     @Override
@@ -108,50 +106,31 @@ public class CraftEnchantment extends Enchantment implements Handleable<net.mine
     @Override
     public String getName() {
         // PAIL: migration paths
-        return switch (id) {
-            case 0 -> "PROTECTION_ENVIRONMENTAL";
-            case 1 -> "PROTECTION_FIRE";
-            case 2 -> "PROTECTION_FALL";
-            case 3 -> "PROTECTION_EXPLOSIONS";
-            case 4 -> "PROTECTION_PROJECTILE";
-            case 5 -> "OXYGEN";
-            case 6 -> "WATER_WORKER";
-            case 7 -> "THORNS";
-            case 8 -> "DEPTH_STRIDER";
-            case 9 -> "FROST_WALKER";
-            case 10 -> "BINDING_CURSE";
-            case 11 -> "SOUL_SPEED";
-            case 12 -> "SWIFT_SNEAK";
-            case 13 -> "DAMAGE_ALL";
-            case 14 -> "DAMAGE_UNDEAD";
-            case 15 -> "DAMAGE_ARTHROPODS";
-            case 16 -> "KNOCKBACK";
-            case 17 -> "FIRE_ASPECT";
-            case 18 -> "LOOT_BONUS_MOBS";
-            case 19 -> "SWEEPING_EDGE";
-            case 20 -> "DIG_SPEED";
-            case 21 -> "SILK_TOUCH";
-            case 22 -> "DURABILITY";
-            case 23 -> "LOOT_BONUS_BLOCKS";
-            case 24 -> "ARROW_DAMAGE";
-            case 25 -> "ARROW_KNOCKBACK";
-            case 26 -> "ARROW_FIRE";
-            case 27 -> "ARROW_INFINITE";
-            case 28 -> "LUCK";
-            case 29 -> "LURE";
-            case 30 -> "LOYALTY";
-            case 31 -> "IMPALING";
-            case 32 -> "RIPTIDE";
-            case 33 -> "CHANNELING";
-            case 34 -> "MULTISHOT";
-            case 35 -> "QUICK_CHARGE";
-            case 36 -> "PIERCING";
-            case 37 -> "DENSITY";
-            case 38 -> "BREACH";
-            case 39 -> "WIND_BURST";
-            case 40 -> "MENDING";
-            case 41 -> "VANISHING_CURSE";
-            default -> getKey().toString();
+        if (!getKey().getNamespace().equals(NamespacedKey.MINECRAFT)) {
+            return getKey().toString();
+        }
+        String keyName = getKey().getKey().toUpperCase(Locale.ROOT);
+        return switch (keyName) {
+            case "PROTECTION" -> "PROTECTION_ENVIRONMENTAL";
+            case "FIRE_PROTECTION" -> "PROTECTION_FIRE";
+            case "FEATHER_FALLING" -> "PROTECTION_FALL";
+            case "BLAST_PROTECTION" -> "PROTECTION_EXPLOSIONS";
+            case "PROJECTILE_PROTECTION" -> "PROTECTION_PROJECTILE";
+            case "RESPIRATION" -> "OXYGEN";
+            case "AQUA_AFFINITY" -> "WATER_WORKER";
+            case "SHARPNESS" -> "DAMAGE_ALL";
+            case "SMITE" -> "DAMAGE_UNDEAD";
+            case "BANE_OF_ARTHROPODS" -> "DAMAGE_ARTHROPODS";
+            case "LOOTING" -> "LOOT_BONUS_MOBS";
+            case "EFFICIENCY" -> "DIG_SPEED";
+            case "UNBREAKING" -> "DURABILITY";
+            case "FORTUNE" -> "LOOT_BONUS_BLOCKS";
+            case "POWER" -> "ARROW_DAMAGE";
+            case "PUNCH" -> "ARROW_KNOCKBACK";
+            case "FLAME" -> "ARROW_FIRE";
+            case "INFINITY" -> "ARROW_INFINITE";
+            case "LUCK_OF_THE_SEA" -> "LUCK";
+            default -> keyName;
         };
     }
 
