@@ -25,6 +25,8 @@ public class CraftBanner extends CraftBlockEntityState<TileEntityBanner> impleme
 
     protected CraftBanner(CraftBanner state, Location location) {
         super(state, location);
+        this.base = state.getBaseColor();
+        this.patterns = state.getPatterns();
     }
 
     @Override

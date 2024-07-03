@@ -15,11 +15,13 @@ import net.minecraft.core.component.PatchedDataComponentMap;
 import net.minecraft.core.component.TypedDataComponent;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.item.EnumColor;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.block.entity.TileEntity;
 import org.bukkit.Material;
 import org.bukkit.block.BlockState;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
+import org.bukkit.craftbukkit.block.CraftBanner;
 import org.bukkit.craftbukkit.block.CraftBlockEntityState;
 import org.bukkit.craftbukkit.block.CraftBlockStates;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
@@ -50,6 +52,8 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
 
     @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
     static final ItemMetaKeyType<CustomData> BLOCK_ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.BLOCK_ENTITY_DATA, "BlockEntityTag");
+    @ItemMetaKey.Specific(ItemMetaKey.Specific.To.NBT)
+    static final ItemMetaKeyType<EnumColor> BASE_COLOR = new ItemMetaKeyType<>(DataComponents.BASE_COLOR, "Base", "base-color");
 
     final Material material;
     private CraftBlockEntityState<?> blockEntityTag;
@@ -73,8 +77,14 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         super(tag);
         this.material = material;
 
-        getOrEmpty(tag, BLOCK_ENTITY_TAG).ifPresent((nbt) -> {
-            blockEntityTag = getBlockState(material, nbt.copyTag());
+        getOrEmpty(tag, BLOCK_ENTITY_TAG).ifPresent((customData) -> {
+            NBTTagCompound nbt = customData.copyTag();
+
+            getOrEmpty(tag, BASE_COLOR).ifPresent((color) -> {
+                nbt.putInt(BASE_COLOR.NBT, color.getId());
+            });
+
+            blockEntityTag = getBlockState(material, nbt);
         });
 
         if (!tag.isEmpty()) {
@@ -119,6 +129,10 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         if (blockEntityTag != null) {
             tag.put(BLOCK_ENTITY_TAG, CustomData.of(blockEntityTag.getSnapshotNBTWithoutComponents()));
 
+            if (material == Material.SHIELD) {
+                tag.put(BASE_COLOR, EnumColor.byId(((CraftBanner) blockEntityTag).getBaseColor().getWoolData()));
+            }
+
             for (TypedDataComponent<?> component : blockEntityTag.collectComponents()) {
                 tag.putIfAbsent(component);
             }
@@ -137,7 +151,13 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
     @Override
     void serializeInternal(final Map<String, NBTBase> internalTags) {
         if (blockEntityTag != null) {
-            internalTags.put(BLOCK_ENTITY_TAG.NBT, blockEntityTag.getSnapshotNBT());
+            NBTTagCompound nbt = blockEntityTag.getSnapshotNBT();
+
+            if (material == Material.SHIELD) {
+                nbt.putInt(BASE_COLOR.NBT, ((CraftBanner) blockEntityTag).getBaseColor().getWoolData());
+            }
+
+            internalTags.put(BLOCK_ENTITY_TAG.NBT, nbt);
         }
     }
 
@@ -202,7 +222,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
 
     private static CraftBlockEntityState<?> getBlockState(Material material, NBTTagCompound blockEntityTag) {
         BlockPosition pos = BlockPosition.ZERO;
-        Material stateMaterial = (material != Material.SHIELD) ? material : shieldToBannerHack(); // Only actually used for jigsaws
+        Material stateMaterial = (material != Material.SHIELD) ? material : shieldToBannerHack(blockEntityTag); // Only actually used for jigsaws
         if (blockEntityTag != null) {
             if (material == Material.SHIELD) {
                 blockEntityTag.putString("id", "minecraft:banner");
@@ -223,14 +243,53 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
     public void setBlockState(BlockState blockState) {
         Preconditions.checkArgument(blockState != null, "blockState must not be null");
 
-        Material stateMaterial = (material != Material.SHIELD) ? material : shieldToBannerHack();
+        Material stateMaterial = (material != Material.SHIELD) ? material : shieldToBannerHack(null);
         Class<?> blockStateType = CraftBlockStates.getBlockStateType(stateMaterial);
         Preconditions.checkArgument(blockStateType == blockState.getClass() && blockState instanceof CraftBlockEntityState, "Invalid blockState for " + material);
 
         this.blockEntityTag = (CraftBlockEntityState<?>) blockState;
     }
 
-    private static Material shieldToBannerHack() {
-        return Material.WHITE_BANNER;
+    private static Material shieldToBannerHack(NBTTagCompound tag) {
+        if (tag == null || !tag.contains(BASE_COLOR.NBT, CraftMagicNumbers.NBT.TAG_INT)) {
+            return Material.WHITE_BANNER;
+        }
+
+        switch (tag.getInt(BASE_COLOR.NBT)) {
+            case 0:
+                return Material.WHITE_BANNER;
+            case 1:
+                return Material.ORANGE_BANNER;
+            case 2:
+                return Material.MAGENTA_BANNER;
+            case 3:
+                return Material.LIGHT_BLUE_BANNER;
+            case 4:
+                return Material.YELLOW_BANNER;
+            case 5:
+                return Material.LIME_BANNER;
+            case 6:
+                return Material.PINK_BANNER;
+            case 7:
+                return Material.GRAY_BANNER;
+            case 8:
+                return Material.LIGHT_GRAY_BANNER;
+            case 9:
+                return Material.CYAN_BANNER;
+            case 10:
+                return Material.PURPLE_BANNER;
+            case 11:
+                return Material.BLUE_BANNER;
+            case 12:
+                return Material.BROWN_BANNER;
+            case 13:
+                return Material.GREEN_BANNER;
+            case 14:
+                return Material.RED_BANNER;
+            case 15:
+                return Material.BLACK_BANNER;
+            default:
+                throw new IllegalArgumentException("Unknown banner colour");
+        }
     }
 }
