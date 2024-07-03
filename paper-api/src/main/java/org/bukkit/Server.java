@@ -544,7 +544,10 @@ public interface Server extends PluginMessageRecipient {
     public int getTicksPerSpawns(@NotNull SpawnCategory spawnCategory);
 
     /**
-     * Gets a player object by the given username.
+     * Gets a player whose name matches the given name closest.
+     * <p>
+     * Use {@link #getPlayerExact(String)} to get the player matching the input exactly
+     * and {@link #matchPlayer(String)} if you want a list of all players matching the input.
      * <p>
      * This method may not return objects for offline players.
      *
