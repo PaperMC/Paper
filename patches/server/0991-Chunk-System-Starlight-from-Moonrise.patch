@@ -27387,7 +27387,7 @@ index bd20bea7f76a7307f1698fb2dfef37125032d166..70c2017400168d4fef3c14462798edcf
          if (shape.isEmpty()) {
              return true;
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index e27d3547d1e19c137e05e6b8d075127a8bafb237..613752e2df61fdd8010f8ad0cf25257580bfe32e 100644
+index e27d3547d1e19c137e05e6b8d075127a8bafb237..a022bbaa16054c56696a7a03e71ef042340d88ec 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -102,7 +102,7 @@ import org.bukkit.entity.SpawnCategory;
@@ -27489,17 +27489,19 @@ index e27d3547d1e19c137e05e6b8d075127a8bafb237..613752e2df61fdd8010f8ad0cf252575
          int tilesThisCycle = 0;
          var toRemove = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<TickingBlockEntity>(); // Paper - Fix MC-117075; use removeAll
          toRemove.add(null); // Paper - Fix MC-117075
-@@ -828,6 +888,9 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -828,6 +888,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
                  // Spigot end
              } else if (flag && this.shouldTickBlocksAt(tickingblockentity.getPos())) {
                  tickingblockentity.tick();
++                // Paper start - rewrite chunk system
 +                if ((++tickedEntities & 7) == 0) {
 +                    ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel)(Level)(Object)this).moonrise$midTickTasks();
 +                }
++                // Paper end - rewrite chunk system
              }
          }
          this.blockEntityTickers.removeAll(toRemove); // Paper - Fix MC-117075
-@@ -850,6 +913,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -850,6 +915,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
              entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
              // Paper end - Prevent block entity and entity crashes
          }
@@ -27507,7 +27509,7 @@ index e27d3547d1e19c137e05e6b8d075127a8bafb237..613752e2df61fdd8010f8ad0cf252575
      }
      // Paper start - Option to prevent armor stands from doing entity lookups
      @Override
-@@ -949,7 +1013,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -949,7 +1015,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          }
          // Paper end - Perf: Optimize capturedTileEntities lookup
          // CraftBukkit end
@@ -27516,7 +27518,7 @@ index e27d3547d1e19c137e05e6b8d075127a8bafb237..613752e2df61fdd8010f8ad0cf252575
      }
  
      public void setBlockEntity(BlockEntity blockEntity) {
-@@ -1039,28 +1103,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1039,28 +1105,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      @Override
      public List<Entity> getEntities(@Nullable Entity except, AABB box, Predicate<? super Entity> predicate) {
          this.getProfiler().incrementCounter("getEntities");
@@ -27550,7 +27552,7 @@ index e27d3547d1e19c137e05e6b8d075127a8bafb237..613752e2df61fdd8010f8ad0cf252575
      }
  
      @Override
-@@ -1075,36 +1124,77 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1075,36 +1126,77 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          this.getEntities(filter, box, predicate, result, Integer.MAX_VALUE);
      }
  
