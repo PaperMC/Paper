@@ -249,10 +249,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        double closestDistanceSquared = maxDistanceSquared;
 +
 +        final int lowerX = Mth.floor(sourcePosition.getX() - range) >> 4;
-+        final int lowerY = WorldUtil.getMinSection(poiStorage.world);
++        final int lowerY = WorldUtil.getMinSection(poiStorage.moonrise$getWorld());
 +        final int lowerZ = Mth.floor(sourcePosition.getZ() - range) >> 4;
 +        final int upperX = Mth.floor(sourcePosition.getX() + range) >> 4;
-+        final int upperY = WorldUtil.getMaxSection(poiStorage.world);
++        final int upperY = WorldUtil.getMaxSection(poiStorage.moonrise$getWorld());
 +        final int upperZ = Mth.floor(sourcePosition.getZ() + range) >> 4;
 +
 +        final int centerX = sourcePosition.getX() >> 4;
@@ -492,10 +492,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        double furthestDistanceSquared = maxDistanceSquared;
 +
 +        final int lowerX = Mth.floor(sourcePosition.getX() - range) >> 4;
-+        final int lowerY = WorldUtil.getMinSection(poiStorage.world);
++        final int lowerY = WorldUtil.getMinSection(poiStorage.moonrise$getWorld());
 +        final int lowerZ = Mth.floor(sourcePosition.getZ() - range) >> 4;
 +        final int upperX = Mth.floor(sourcePosition.getX() + range) >> 4;
-+        final int upperY = WorldUtil.getMaxSection(poiStorage.world);
++        final int upperY = WorldUtil.getMaxSection(poiStorage.moonrise$getWorld());
 +        final int upperZ = Mth.floor(sourcePosition.getZ() + range) >> 4;
 +
 +        final int centerX = sourcePosition.getX() >> 4;
@@ -769,10 +769,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // First up, we need to iterate the chunks
 +        // all the values here are in chunk sections
 +        final int lowerX = Mth.floor(sourcePosition.getX() - range) >> 4;
-+        final int lowerY = Math.max(WorldUtil.getMinSection(poiStorage.world), Mth.floor(sourcePosition.getY() - range) >> 4);
++        final int lowerY = Math.max(WorldUtil.getMinSection(poiStorage.moonrise$getWorld()), Mth.floor(sourcePosition.getY() - range) >> 4);
 +        final int lowerZ = Mth.floor(sourcePosition.getZ() - range) >> 4;
 +        final int upperX = Mth.floor(sourcePosition.getX() + range) >> 4;
-+        final int upperY = Math.min(WorldUtil.getMaxSection(poiStorage.world), Mth.floor(sourcePosition.getY() + range) >> 4);
++        final int upperY = Math.min(WorldUtil.getMaxSection(poiStorage.moonrise$getWorld()), Mth.floor(sourcePosition.getY() + range) >> 4);
 +        final int upperZ = Mth.floor(sourcePosition.getZ() + range) >> 4;
 +
 +        // Vanilla iterates by x until max is reached then increases z
@@ -887,7 +887,7 @@ diff --git a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
-@@ -0,0 +0,0 @@ public class PoiManager extends SectionStorage<PoiSection> {
+@@ -0,0 +0,0 @@ public class PoiManager extends SectionStorage<PoiSection> implements ca.spotted
      public Optional<BlockPos> find(
          Predicate<Holder<PoiType>> typePredicate, Predicate<BlockPos> posPredicate, BlockPos pos, int radius, PoiManager.Occupancy occupationStatus
      ) {
@@ -947,7 +947,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              .map(poi -> {
                  poi.acquireTicket();
                  return poi.getPos();
-@@ -0,0 +0,0 @@ public class PoiManager extends SectionStorage<PoiSection> {
+@@ -0,0 +0,0 @@ public class PoiManager extends SectionStorage<PoiSection> implements ca.spotted
          int radius,
          RandomSource random
      ) {
@@ -976,19 +976,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiSection.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiSection.java
 @@ -0,0 +0,0 @@ import org.slf4j.Logger;
- public class PoiSection {
+ public class PoiSection implements ca.spottedleaf.moonrise.patches.chunk_system.level.poi.ChunkSystemPoiSection { // Paper - rewrite chunk system
      private static final Logger LOGGER = LogUtils.getLogger();
      private final Short2ObjectMap<PoiRecord> records = new Short2ObjectOpenHashMap<>();
 -    private final Map<Holder<PoiType>, Set<PoiRecord>> byType = Maps.newHashMap();
 +    private final Map<Holder<PoiType>, Set<PoiRecord>> byType = Maps.newHashMap(); public final Map<Holder<PoiType>, Set<PoiRecord>> getData() { return this.byType; } // Paper - public accessor
      private final Runnable setDirty;
      private boolean isValid;
-     public final Optional<PoiSection> noAllocateOptional = Optional.of(this); // Paper - rewrite chunk system
+ 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
-@@ -0,0 +0,0 @@ public class SectionStorage<R> extends RegionFileStorage implements AutoCloseabl
+@@ -0,0 +0,0 @@ public abstract class SectionStorage<R> implements AutoCloseable, ca.spottedleaf
      }
  
      @Nullable
@@ -1011,17 +1011,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // CraftBukkit end
  
 -        villageplace.ensureLoadedAndValid(this.level, blockposition, i);
--        Optional<PoiRecord> optional = villageplace.getInSquare((holder) -> {
+-        Stream<BlockPos> stream = villageplace.getInSquare((holder) -> { // CraftBukkit - decompile error
 -            return holder.is(PoiTypes.NETHER_PORTAL);
--        }, blockposition, i, PoiManager.Occupancy.ANY).filter((villageplacerecord) -> {
--            return worldborder.isWithinBounds(villageplacerecord.getPos()) && !(this.level.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER && this.level.paperConfig().environment.netherCeilingVoidDamageHeight.test(v -> villageplacerecord.getPos().getY() >= v)); // Paper - Configurable nether ceiling damage
--        }).sorted(Comparator.comparingDouble((PoiRecord villageplacerecord) -> { // CraftBukkit - decompile error
--            return villageplacerecord.getPos().distSqr(blockposition);
--        }).thenComparingInt((villageplacerecord) -> {
--            return villageplacerecord.getPos().getY();
--        })).filter((villageplacerecord) -> {
--            return this.level.getBlockState(villageplacerecord.getPos()).hasProperty(BlockStateProperties.HORIZONTAL_AXIS);
--        }).findFirst();
+-        }, blockposition, i, PoiManager.Occupancy.ANY).map(PoiRecord::getPos);
+-
+-        Objects.requireNonNull(worldborder);
+-        return stream.filter(worldborder::isWithinBounds).filter(pos -> !(this.level.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER && this.level.paperConfig().environment.netherCeilingVoidDamageHeight.test(v -> pos.getY() >= v))).filter((blockposition1) -> { // Paper - Configurable nether ceiling damage
+-            return this.level.getBlockState(blockposition1).hasProperty(BlockStateProperties.HORIZONTAL_AXIS);
+-        }).min(Comparator.comparingDouble((BlockPos blockposition1) -> { // CraftBukkit - decompile error
+-            return blockposition1.distSqr(blockposition);
+-        }).thenComparingInt(Vec3i::getY));
 +        // Paper start - optimise portals
 +        Optional<PoiRecord> optional;
 +        java.util.List<PoiRecord> records = new java.util.ArrayList<>();
@@ -1030,7 +1029,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            type -> type.is(PoiTypes.NETHER_PORTAL),
 +            (BlockPos pos) -> {
 +                net.minecraft.world.level.chunk.ChunkAccess lowest = this.level.getChunk(pos.getX() >> 4, pos.getZ() >> 4, net.minecraft.world.level.chunk.status.ChunkStatus.EMPTY);
-+                if (!lowest.getStatus().isOrAfter(net.minecraft.world.level.chunk.status.ChunkStatus.FULL)
++                if (!lowest.getPersistedStatus().isOrAfter(net.minecraft.world.level.chunk.status.ChunkStatus.FULL)
 +                    && (lowest.getBelowZeroRetrogen() == null || !lowest.getBelowZeroRetrogen().targetStatus().isOrAfter(net.minecraft.world.level.chunk.status.ChunkStatus.SPAWN))) {
 +                    // why would we generate the chunk?
 +                    return false;
@@ -1044,17 +1043,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        );
 +
 +        // this gets us most of the way there, but we bias towards lower y values.
-+        PoiRecord lowestYRecord = null;
++        BlockPos lowestPos = null;
 +        for (PoiRecord record : records) {
-+            if (lowestYRecord == null) {
-+                lowestYRecord = record;
-+            } else if (lowestYRecord.getPos().getY() > record.getPos().getY()) {
-+                lowestYRecord = record;
++            if (lowestPos == null) {
++                lowestPos = record.getPos();
++            } else if (lowestPos.getY() > record.getPos().getY()) {
++                lowestPos = record.getPos();
 +            }
 +        }
 +        // now we're done
-+        optional = Optional.ofNullable(lowestYRecord);
++        return Optional.ofNullable(lowestPos);
 +        // Paper end - optimise portals
+     }
  
-         return optional.map((villageplacerecord) -> {
-             BlockPos blockposition1 = villageplacerecord.getPos();
+     public Optional<BlockUtil.FoundRectangle> createPortal(BlockPos pos, Direction.Axis axis) {

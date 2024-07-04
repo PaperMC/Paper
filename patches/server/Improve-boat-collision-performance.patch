@@ -30,26 +30,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
                          this.blockUsingShield(entityliving);
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
-                 }
- 
-                 if (entity1 != null && !source.is(DamageTypeTags.NO_KNOCKBACK)) {
--                    double d0 = entity1.getX() - this.getX();
-+                    final boolean far = entity1.distanceToSqr(this) > (200.0 * 200.0); // Paper - Improve boat collision performance
-+                    double d0 = far ? (Math.random() - Math.random()) : entity1.getX() - this.getX(); // Paper - Improve boat collision performance
- 
-                     double d1;
- 
--                    for (d1 = entity1.getZ() - this.getZ(); d0 * d0 + d1 * d1 < 1.0E-4D; d1 = (Math.random() - Math.random()) * 0.01D) {
-+                    for (d1 = far ? Math.random() - Math.random() : entity1.getZ() - this.getZ(); d0 * d0 + d1 * d1 < 1.0E-4D; d1 = (Math.random() - Math.random()) * 0.01D) { // Paper - Improve boat collision performance
-                         d0 = (Math.random() - Math.random()) * 0.01D;
-                     }
+                     double d0 = 0.0D;
+                     double d1 = 0.0D;
+                     Entity entity2 = source.getDirectEntity();
+-
+-                    if (entity2 instanceof Projectile) {
++                    // Paper start - improve boat collision performance
++                    final boolean far = entity2.distanceToSqr(this) > (200.0D * 200.0D);
++                    if (far) {
++                        d0 = Math.random() - Math.random();
++                        d1 = Math.random() - Math.random();
++                    } else if (entity2 instanceof Projectile) {
++                        // Paper end - improve boat collision performance
+                         Projectile iprojectile = (Projectile) entity2;
+                         DoubleDoubleImmutablePair doubledoubleimmutablepair = iprojectile.calculateHorizontalHurtKnockbackDirection(this, source);
  
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
                  this.hurtCurrentlyUsedShield((float) -event.getDamage(DamageModifier.BLOCKING));
                  Entity entity = damagesource.getDirectEntity();
  
--                if (entity instanceof LivingEntity) {
-+                if (entity instanceof LivingEntity && entity.distanceToSqr(this) <= (200.0D * 200.0D)) { // Paper - Improve boat collision performance
+-                if (!damagesource.is(DamageTypeTags.IS_PROJECTILE) && entity instanceof LivingEntity) { // Paper - Fix shield disable inconsistency
++                if (!damagesource.is(DamageTypeTags.IS_PROJECTILE) && entity instanceof LivingEntity && entity.distanceToSqr(this) <= (200.0D * 200.0D)) { // Paper - Fix shield disable inconsistency & improve boat collision performance
                      this.blockUsingShield((LivingEntity) entity);
                  }
              }
@@ -57,12 +58,12 @@ diff --git a/src/main/java/net/minecraft/world/entity/vehicle/Boat.java b/src/ma
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
 +++ b/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
-@@ -0,0 +0,0 @@ public class Boat extends VehicleEntity implements VariantHolder<Boat.Type> {
-         this.invFriction = 0.05F;
-         if (this.oldStatus == Boat.Status.IN_AIR && this.status != Boat.Status.IN_AIR && this.status != Boat.Status.ON_LAND) {
-             this.waterLevel = this.getY(1.0D);
--            this.setPos(this.getX(), (double) (this.getWaterLevelAbove() - this.getBbHeight()) + 0.101D, this.getZ());
-+            this.move(MoverType.SELF, new Vec3(0.0, ((double) (this.getWaterLevelAbove() - this.getBbHeight()) + 0.101D) - this.getY(), 0.0)); // Paper - Improve boat collision performance
-             this.setDeltaMovement(this.getDeltaMovement().multiply(1.0D, 0.0D, 1.0D));
-             this.lastYd = 0.0D;
-             this.status = Boat.Status.IN_WATER;
+@@ -0,0 +0,0 @@ public class Boat extends VehicleEntity implements Leashable, VariantHolder<Boat
+             double d2 = (double) (this.getWaterLevelAbove() - this.getBbHeight()) + 0.101D;
+ 
+             if (this.level().noCollision(this, this.getBoundingBox().move(0.0D, d2 - this.getY(), 0.0D))) {
+-                this.setPos(this.getX(), d2, this.getZ());
++                this.move(MoverType.SELF, new Vec3(0.0D, d2 - this.getY(), 0.0D)); // Paper - improve boat collision performance
+                 this.setDeltaMovement(this.getDeltaMovement().multiply(1.0D, 0.0D, 1.0D));
+                 this.lastYd = 0.0D;
+             }
