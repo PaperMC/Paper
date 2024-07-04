@@ -4911,6 +4911,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public ChunkAccess moonrise$getSpecificChunkIfLoaded(final int chunkX, final int chunkZ, final ChunkStatus leastStatus);
 +
++    public void moonrise$midTickTasks();
++
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/level/ChunkSystemLevelReader.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/level/ChunkSystemLevelReader.java
 new file mode 100644
@@ -4980,6 +4982,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public RegionizedPlayerChunkLoader.ViewDistanceHolder moonrise$getViewDistanceHolder();
 +
++    public long moonrise$getLastMidTickFailure();
++
++    public void moonrise$setLastMidTickFailure(final long time);
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/level/chunk/ChunkSystemChunkHolder.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/level/chunk/ChunkSystemChunkHolder.java
 new file mode 100644
@@ -17427,6 +17432,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public void moonrise$setChunkSystemCrash(final Throwable throwable);
 +
++    public void moonrise$executeMidTickTasks();
++
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/status/ChunkSystemChunkStep.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/status/ChunkSystemChunkStep.java
 new file mode 100644
@@ -23038,6 +23045,68 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public final void moonrise$setChunkSystemCrash(final Throwable throwable) {
 +        this.chunkSystemCrash = throwable;
 +    }
++
++    private static final long CHUNK_TASK_QUEUE_BACKOFF_MIN_TIME = 25L * 1000L; // 25us
++    private static final long MAX_CHUNK_EXEC_TIME = 1000L; // 1us
++    private static final long TASK_EXECUTION_FAILURE_BACKOFF = 5L * 1000L; // 5us
++
++    private long lastMidTickExecute;
++    private long lastMidTickExecuteFailure;
++
++    private boolean tickMidTickTasks() {
++        // give all worlds a fair chance at by targeting them all.
++        // if we execute too many tasks, that's fine - we have logic to correctly handle overuse of allocated time.
++        boolean executed = false;
++        for (final ServerLevel world : this.getAllLevels()) {
++            long currTime = System.nanoTime();
++            if (currTime - ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)world).moonrise$getLastMidTickFailure() <= TASK_EXECUTION_FAILURE_BACKOFF) {
++                continue;
++            }
++            if (!world.getChunkSource().pollTask()) {
++                // we need to back off if this fails
++                ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)world).moonrise$setLastMidTickFailure(currTime);
++            } else {
++                executed = true;
++            }
++        }
++
++        return executed;
++    }
++
++    @Override
++    public final void moonrise$executeMidTickTasks() {
++        final long startTime = System.nanoTime();
++        if ((startTime - this.lastMidTickExecute) <= CHUNK_TASK_QUEUE_BACKOFF_MIN_TIME || (startTime - this.lastMidTickExecuteFailure) <= TASK_EXECUTION_FAILURE_BACKOFF) {
++            // it's shown to be bad to constantly hit the queue (chunk loads slow to a crawl), even if no tasks are executed.
++            // so, backoff to prevent this
++            return;
++        }
++
++        for (;;) {
++            final boolean moreTasks = this.tickMidTickTasks();
++            final long currTime = System.nanoTime();
++            final long diff = currTime - startTime;
++
++            if (!moreTasks || diff >= MAX_CHUNK_EXEC_TIME) {
++                if (!moreTasks) {
++                    this.lastMidTickExecuteFailure = currTime;
++                }
++
++                // note: negative values reduce the time
++                long overuse = diff - MAX_CHUNK_EXEC_TIME;
++                if (overuse >= (10L * 1000L * 1000L)) { // 10ms
++                    // make sure something like a GC or dumb plugin doesn't screw us over...
++                    overuse = 10L * 1000L * 1000L; // 10ms
++                }
++
++                final double overuseCount = (double)overuse/(double)MAX_CHUNK_EXEC_TIME;
++                final long extraSleep = (long)Math.round(overuseCount*CHUNK_TASK_QUEUE_BACKOFF_MIN_TIME);
++
++                this.lastMidTickExecute = currTime + extraSleep;
++                return;
++            }
++        }
++    }
 +    // Paper end - rewrite chunk system
 +
      public MinecraftServer(OptionSet options, WorldLoader.DataLoadContext worldLoader, Thread thread, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PackRepository resourcepackrepository, WorldStem worldstem, Proxy proxy, DataFixer datafixer, Services services, ChunkProgressListenerFactory worldloadlistenerfactory) {
@@ -23125,6 +23194,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  this.profiler.popPush("nextTickWait");
                  this.mayHaveDelayedTasks = true;
                  this.delayedTasksMaxNextTickTimeNanos = Math.max(Util.getNanos() + i, this.nextTickTimeNanos);
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+     private boolean pollTaskInternal() {
+         if (super.pollTask()) {
++            this.moonrise$executeMidTickTasks(); // Paper - rewrite chunk system
+             return true;
+         } else {
+             boolean ret = false; // Paper - force execution of all worlds, do not just bias the first
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          // Paper start - Folia scheduler API
          ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) Bukkit.getGlobalRegionScheduler()).tick();
@@ -25738,6 +25815,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
      }
  
+     private void tickChunks() {
++        long chunksTicked = 0; // Paper - rewrite chunk system
+         long i = this.level.getGameTime();
+         long j = i - this.lastInhabitedUpdate;
+ 
+@@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
+ 
+                         if (this.level.shouldTickBlocksAt(chunkcoordintpair.toLong())) {
+                             this.level.tickChunk(chunk1, l);
++                            // Paper start - rewrite chunk system
++                            if ((++chunksTicked & 7L) == 0L) {
++                                ((ca.spottedleaf.moonrise.patches.chunk_system.server.ChunkSystemMinecraftServer)this.level.getServer()).moonrise$executeMidTickTasks();
++                            }
++                            // Paper end - rewrite chunk system
+                         }
+                     }
+                 }
+@@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
+     }
+ 
      private void getFullChunk(long pos, Consumer<LevelChunk> chunkConsumer) {
 -        ChunkHolder playerchunk = this.getVisibleChunkIfPresent(pos);
 -
@@ -25821,6 +25918,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private final ca.spottedleaf.moonrise.patches.chunk_system.io.datacontroller.PoiDataController poiDataController;
 +    private final ca.spottedleaf.moonrise.patches.chunk_system.io.datacontroller.ChunkDataController chunkDataController;
 +    private final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler chunkTaskScheduler;
++    private long lastMidTickFailure;
++    private long tickedBlocksOrFluids;
 +
 +    @Override
 +    public final LevelChunk moonrise$getFullChunkIfLoaded(final int chunkX, final int chunkZ) {
@@ -25853,6 +25952,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return null;
 +        }
 +        return newChunkHolder.getChunkIfPresentUnchecked(leastStatus);
++    }
++
++    @Override
++    public final void moonrise$midTickTasks() {
++        ((ca.spottedleaf.moonrise.patches.chunk_system.server.ChunkSystemMinecraftServer)this.server).moonrise$executeMidTickTasks();
 +    }
 +
 +    @Override
@@ -25968,6 +26072,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public final ca.spottedleaf.moonrise.patches.chunk_system.player.RegionizedPlayerChunkLoader.ViewDistanceHolder moonrise$getViewDistanceHolder() {
 +        return this.viewDistanceHolder;
 +    }
++
++    @Override
++    public final long moonrise$getLastMidTickFailure() {
++        return this.lastMidTickFailure;
++    }
++
++    @Override
++    public final void moonrise$setLastMidTickFailure(final long time) {
++        this.lastMidTickFailure = time;
++    }
 +    // Paper end - rewrite chunk system
  
      // Add env and gen to constructor, IWorldDataServer -> WorldDataServer
@@ -26038,6 +26152,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      protected void tickTime() {
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         if (fluid1.is(fluid)) {
+             fluid1.tick(this, pos);
+         }
++        // Paper start - rewrite chunk system
++        if ((++this.tickedBlocksOrFluids & 7L) != 0L) {
++            ((ca.spottedleaf.moonrise.patches.chunk_system.server.ChunkSystemMinecraftServer)this.server).moonrise$executeMidTickTasks();
++        }
++        // Paper end - rewrite chunk system
+ 
+     }
+ 
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         if (iblockdata.is(block)) {
+             iblockdata.tick(this, pos, this.random);
+         }
++        // Paper start - rewrite chunk system
++        if ((++this.tickedBlocksOrFluids & 7L) != 0L) {
++            ((ca.spottedleaf.moonrise.patches.chunk_system.server.ChunkSystemMinecraftServer)this.server).moonrise$executeMidTickTasks();
++        }
++        // Paper end - rewrite chunk system
+ 
+     }
+ 
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
      }
  
@@ -27315,6 +27453,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public ChunkAccess moonrise$getSpecificChunkIfLoaded(final int chunkX, final int chunkZ, final ChunkStatus leastStatus) {
 +        return this.getChunkSource().getChunk(chunkX, chunkZ, leastStatus, false);
 +    }
++
++    @Override
++    public void moonrise$midTickTasks() {
++        // no-op on ClientLevel
++    }
 +    // Paper end - rewrite chunk system
 +
      protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator) { // Paper - create paper world config
@@ -27338,6 +27481,33 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
  
 @@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         // Iterator<TickingBlockEntity> iterator = this.blockEntityTickers.iterator();
+         boolean flag = this.tickRateManager().runsNormally();
+ 
++        int tickedEntities = 0; // Paper - rewrite chunk system
++
+         int tilesThisCycle = 0;
+         var toRemove = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<TickingBlockEntity>(); // Paper - Fix MC-117075; use removeAll
+         toRemove.add(null); // Paper - Fix MC-117075
+@@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+                 // Spigot end
+             } else if (flag && this.shouldTickBlocksAt(tickingblockentity.getPos())) {
+                 tickingblockentity.tick();
++                if ((++tickedEntities & 7) == 0) {
++                    ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel)(Level)(Object)this).moonrise$midTickTasks();
++                }
+             }
+         }
+         this.blockEntityTickers.removeAll(toRemove); // Paper - Fix MC-117075
+@@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+             entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
+             // Paper end - Prevent block entity and entity crashes
+         }
++        this.moonrise$midTickTasks(); // Paper - rewrite chunk system
+     }
+     // Paper start - Option to prevent armor stands from doing entity lookups
+     @Override
+@@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          }
          // Paper end - Perf: Optimize capturedTileEntities lookup
          // CraftBukkit end
@@ -27351,18 +27521,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public List<Entity> getEntities(@Nullable Entity except, AABB box, Predicate<? super Entity> predicate) {
          this.getProfiler().incrementCounter("getEntities");
 -        List<Entity> list = Lists.newArrayList();
--
++        // Paper start - rewrite chunk system
++        final List<Entity> ret = new java.util.ArrayList<>();
+ 
 -        this.getEntities().get(box, (entity1) -> {
 -            if (entity1 != except && predicate.test(entity1)) {
 -                list.add(entity1);
 -            }
-+        // Paper start - rewrite chunk system
-+        final List<Entity> ret = new java.util.ArrayList<>();
- 
+-
 -            if (entity1 instanceof EnderDragon) {
 -                EnderDragonPart[] aentitycomplexpart = ((EnderDragon) entity1).getSubEntities();
 -                int i = aentitycomplexpart.length;
--
++        ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities(except, box, ret, predicate);
+ 
 -                for (int j = 0; j < i; ++j) {
 -                    EnderDragonPart entitycomplexpart = aentitycomplexpart[j];
 -
@@ -27371,8 +27542,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                    }
 -                }
 -            }
-+        ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel)this).moonrise$getEntityLookup().getEntities(except, box, ret, predicate);
- 
+-
 -        });
 -        return list;
 +        return ret;
