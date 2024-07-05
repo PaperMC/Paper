@@ -15,7 +15,7 @@ public net.minecraft.server.dedicated.DedicatedServerProperties reload(Lnet/mine
 public net.minecraft.world.level.NaturalSpawner SPAWNING_CATEGORIES
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 2f73e709dcde063ec7ca2181f2f2d5670fd479f5..18221614060ec945cb8b197acd276e45450f7394 100644
+index 7a0f2391a464eeebc5e57856300bc000b8d35e52..94dfc105b197c9eda481cbe90bb48b71c845e702 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -10,6 +10,7 @@ dependencies {
@@ -24,8 +24,8 @@ index 2f73e709dcde063ec7ca2181f2f2d5670fd479f5..18221614060ec945cb8b197acd276e45
      implementation("org.ow2.asm:asm-commons:9.7")
 +    implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT") // Paper - config files
      implementation("commons-lang:commons-lang:2.6")
-     runtimeOnly("org.xerial:sqlite-jdbc:3.45.3.0")
-     runtimeOnly("com.mysql:mysql-connector-j:8.3.0")
+     runtimeOnly("org.xerial:sqlite-jdbc:3.46.0.0")
+     runtimeOnly("com.mysql:mysql-connector-j:8.4.0")
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..ef41cf3a7d1e6f2bfe81e0fb865d2f969bbc77c1
@@ -121,7 +121,7 @@ index 0000000000000000000000000000000000000000..042478cf7ce150f1f1bc5cddd7fa40f8
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/Configurations.java b/src/main/java/io/papermc/paper/configuration/Configurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7684e71f802f3d19e5340713b45cc84860ce9495
+index 0000000000000000000000000000000000000000..d9502ba028a96f9cc846f9ed428bd8066b857ca3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/Configurations.java
 @@ -0,0 +1,360 @@
@@ -164,7 +164,7 @@ index 0000000000000000000000000000000000000000..7684e71f802f3d19e5340713b45cc848
 +
 +    private static final Logger LOGGER = LogUtils.getClassLogger();
 +    public static final String WORLD_DEFAULTS = "__world_defaults__";
-+    public static final ResourceLocation WORLD_DEFAULTS_KEY = new ResourceLocation("configurations", WORLD_DEFAULTS);
++    public static final ResourceLocation WORLD_DEFAULTS_KEY = ResourceLocation.fromNamespaceAndPath("configurations", WORLD_DEFAULTS);
 +    protected final Path globalFolder;
 +    protected final Class<G> globalConfigClass;
 +    protected final Class<W> worldConfigClass;
@@ -487,10 +487,10 @@ index 0000000000000000000000000000000000000000..7684e71f802f3d19e5340713b45cc848
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..892351c3b6397b3cde6a31a6594c0e16bbe1252b
+index 0000000000000000000000000000000000000000..7045040681e639f36fefcf2735f67367d5e3cbc4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-@@ -0,0 +1,311 @@
+@@ -0,0 +1,313 @@
 +package io.papermc.paper.configuration;
 +
 +import co.aikar.timings.MinecraftTimings;
@@ -651,6 +651,8 @@ index 0000000000000000000000000000000000000000..892351c3b6397b3cde6a31a6594c0e16
 +        public boolean performUsernameValidation = true;
 +        @Comment("This setting controls if players should be able to create headless pistons.")
 +        public boolean allowHeadlessPistons = false;
++        @Comment("This setting controls if the vanilla damage tick should be skipped if damage was blocked via a shield.")
++        public boolean skipVanillaDamageTickWhenShieldBlocked = false;
 +        @Comment("This setting controls what compression format is used for region files.")
 +        public CompressionFormat compressionFormat = CompressionFormat.ZLIB;
 +
@@ -1401,10 +1403,10 @@ index 0000000000000000000000000000000000000000..990d1bb46e0f9719f4e9af928d80ac6f
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..efc91ff91827872c62b8bd060282549ccdcf67dd
+index 0000000000000000000000000000000000000000..7509b17414f836e8b53fc62b02b386ba4e8c5ca9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
-@@ -0,0 +1,550 @@
+@@ -0,0 +1,551 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.collect.HashBasedTable;
@@ -1444,6 +1446,7 @@ index 0000000000000000000000000000000000000000..efc91ff91827872c62b8bd060282549c
 +import net.minecraft.world.entity.Entity;
 +import net.minecraft.world.entity.EntityType;
 +import net.minecraft.world.entity.ExperienceOrb;
++import net.minecraft.world.entity.Leashable;
 +import net.minecraft.world.entity.MobCategory;
 +import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 +import net.minecraft.world.entity.decoration.HangingEntity;
@@ -1945,7 +1948,7 @@ index 0000000000000000000000000000000000000000..efc91ff91827872c62b8bd060282549c
 +        public boolean showSignClickCommandFailureMsgsToPlayer = false;
 +        public RedstoneImplementation redstoneImplementation = RedstoneImplementation.VANILLA;
 +        public boolean disableEndCredits = false;
-+        public float maxLeashDistance = 10f;
++        public double maxLeashDistance = Leashable.LEASH_TOO_FAR_DIST;
 +        public boolean disableSprintInterruptionOnAttack = false;
 +        public int shieldBlockingDelay = 5;
 +        public boolean disableRelativeProjectileVelocity = false;
@@ -3641,7 +3644,7 @@ index 0000000000000000000000000000000000000000..6cdc40cb4a5f94654c874f9dbdb106fa
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/transformation/world/LegacyPaperWorldConfig.java b/src/main/java/io/papermc/paper/configuration/transformation/world/LegacyPaperWorldConfig.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..edaa6ef28c1f9a2239439698708897008fea2f7e
+index 0000000000000000000000000000000000000000..3332531d902899a156179ef2e9ec85b2f42c1fd1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/transformation/world/LegacyPaperWorldConfig.java
 @@ -0,0 +1,322 @@
@@ -3752,7 +3755,7 @@ index 0000000000000000000000000000000000000000..edaa6ef28c1f9a223943969870889700
 +            )
 +            .addVersion(26, ConfigurationTransformation.builder().addAction(path("alt-item-despawn-rate", "items", ConfigurationTransformation.WILDCARD_OBJECT), (path, value) -> {
 +                String itemName = path.get(path.size() - 1).toString();
-+                final Optional<Holder.Reference<Item>> item = BuiltInRegistries.ITEM.getHolder(ResourceKey.create(Registries.ITEM, new ResourceLocation(itemName.toLowerCase(Locale.ENGLISH))));
++                final Optional<Holder.Reference<Item>> item = BuiltInRegistries.ITEM.getHolder(ResourceKey.create(Registries.ITEM, ResourceLocation.parse(itemName.toLowerCase(Locale.ROOT))));
 +                if (item.isEmpty()) {
 +                    itemName = Material.valueOf(itemName).getKey().getKey();
 +                }
@@ -3784,7 +3787,7 @@ index 0000000000000000000000000000000000000000..edaa6ef28c1f9a223943969870889700
 +                    Map<String, Integer> rebuild = new HashMap<>();
 +                    value.childrenMap().forEach((key, node) -> {
 +                        String itemName = key.toString();
-+                        final Optional<Holder.Reference<Item>> itemHolder = BuiltInRegistries.ITEM.getHolder(ResourceKey.create(Registries.ITEM, new ResourceLocation(itemName.toLowerCase(Locale.ENGLISH))));
++                        final Optional<Holder.Reference<Item>> itemHolder = BuiltInRegistries.ITEM.getHolder(ResourceKey.create(Registries.ITEM, ResourceLocation.parse(itemName.toLowerCase(Locale.ROOT))));
 +                        final @Nullable String item;
 +                        if (itemHolder.isEmpty()) {
 +                            final @Nullable Material bukkitMat = Material.matchMaterial(itemName);
@@ -4116,7 +4119,7 @@ index 0000000000000000000000000000000000000000..d872b1948df52759fed9c3d892aed6ab
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/type/BooleanOrDefault.java b/src/main/java/io/papermc/paper/configuration/type/BooleanOrDefault.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5f03dcdff99bcd33bf789b0dd5521e39afbe09bf
+index 0000000000000000000000000000000000000000..a3eaa47cfcfc4fd2a607f9b375230fada35620d3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/type/BooleanOrDefault.java
 @@ -0,0 +1,53 @@
@@ -4152,7 +4155,7 @@ index 0000000000000000000000000000000000000000..5f03dcdff99bcd33bf789b0dd5521e39
 +                    return USE_DEFAULT;
 +                }
 +                try {
-+                    return new BooleanOrDefault(BooleanUtils.toBoolean(string.toLowerCase(Locale.ENGLISH), "true", "false"));
++                    return new BooleanOrDefault(BooleanUtils.toBoolean(string.toLowerCase(Locale.ROOT), "true", "false"));
 +                } catch (IllegalArgumentException ex) {
 +                    throw new SerializationException(BooleanOrDefault.class, obj + "(" + type + ") is not a boolean or '" + DEFAULT_VALUE + "'", ex);
 +                }
@@ -4911,10 +4914,10 @@ index b334265d4015fec13d7fedbffba2b6c22f4c8bc8..5b4ac7b4fd0077e900e9f788963f1613
              String s = (String) Optional.ofNullable((String) optionset.valueOf("world")).orElse(dedicatedserversettings.getProperties().levelName);
              LevelStorageSource convertable = LevelStorageSource.createDefault(file.toPath());
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index a6d495371a35195d6f841124329188107af1736f..1d241972e6f93a88c31f1276e15bae0912db5c9e 100644
+index db2031ffbc802bd850ab40acaec2a9624b753f4c..299afe72a2fc2affca196f2fdfbf27e5533c51a6 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -302,6 +302,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -309,6 +309,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      private static final int SAMPLE_INTERVAL = 100;
      public final double[] recentTps = new double[ 3 ];
      // Spigot end
@@ -4922,7 +4925,7 @@ index a6d495371a35195d6f841124329188107af1736f..1d241972e6f93a88c31f1276e15bae09
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
-@@ -398,6 +399,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -405,6 +406,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
          Runtime.getRuntime().addShutdownHook(new org.bukkit.craftbukkit.util.ServerShutdownThread(this));
          // CraftBukkit end
@@ -4971,10 +4974,10 @@ index dfbb04800d6f1dcbb909fcdfeb1ebf1a5efa6a48..5928e5f1934b8e247ba516595018ed5c
  
      @Nullable
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 277a66863f76d9a7bf59ca87553fc1d335fc73ca..1b5e2e07a7723f61d4c4d4e3141c60b2f63e2b69 100644
+index d3c7c1e016af5d04b5a18a6ced898cf4dc9b1700..cd26616aba6abd44abc5eb8b01cc96f29248aecd 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -196,6 +196,10 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -200,6 +200,10 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          org.spigotmc.SpigotConfig.init((java.io.File) this.options.valueOf("spigot-settings"));
          org.spigotmc.SpigotConfig.registerCommands();
          // Spigot end
@@ -4998,10 +5001,10 @@ index 6d89a5414f46a0c30badb4fcd25bc6cb6d18db3a..0ec3b546db0cf3858dd9cd9ea067d1d6
              }
              // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index d7c5e872136d0452311b316c5703050c45960230..b84078f8105bccc40da0c14932ad3160c96d371c 100644
+index 63ad1280667a02e00f9c636193e38f933cad0185..a696a0d168987aaa4e59c471a23eeb48d683c1b2 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -241,7 +241,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -242,7 +242,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
          // Holder holder = worlddimension.type(); // CraftBukkit - decompile error
  
          // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
@@ -5011,10 +5014,10 @@ index d7c5e872136d0452311b316c5703050c45960230..b84078f8105bccc40da0c14932ad3160
          this.convertable = convertable_conversionsession;
          this.uuid = WorldUUID.getUUID(convertable_conversionsession.levelDirectory.path().toFile());
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index ecbb926986bbc0ad6fe108b782cdc17ee8a9f035..b06ffa8d5953c8f0a47daf056495cd424d9ac843 100644
+index e433037a03ffafabb952887ae3980e1d51411d4c..c061813d275fbc48d7629cc59d90dbb4c347516c 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -155,6 +155,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -156,6 +156,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public final it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<SpawnCategory> ticksPerSpawnCategory = new it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<>();
      public boolean populating;
      public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
@@ -5027,7 +5030,7 @@ index ecbb926986bbc0ad6fe108b782cdc17ee8a9f035..b06ffa8d5953c8f0a47daf056495cd42
  
      public final SpigotTimings.WorldTimingsHandler timings; // Spigot
      public static BlockPos lastPhysicsProblem; // Spigot
-@@ -172,8 +178,9 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -173,8 +179,9 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
  
      public abstract ResourceKey<LevelStem> getTypeKey();
  
@@ -5039,10 +5042,10 @@ index ecbb926986bbc0ad6fe108b782cdc17ee8a9f035..b06ffa8d5953c8f0a47daf056495cd42
          this.world = new CraftWorld((ServerLevel) this, gen, biomeProvider, env);
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 332d4e0771cf5a4eddd44b9a380df52fb8ab5d42..02ddd4e200a86d720297dbec508480fc0cd270d1 100644
+index 6d1d3f9cf7451494af7c57d8bb1cd0ed25ea63e2..f1302dfb68bf8e4e1f4d8b084ad81422f65eecc4 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -927,6 +927,7 @@ public final class CraftServer implements Server {
+@@ -954,6 +954,7 @@ public final class CraftServer implements Server {
          }
  
          org.spigotmc.SpigotConfig.init((File) this.console.options.valueOf("spigot-settings")); // Spigot
@@ -5075,7 +5078,7 @@ index 4b8602b168f9dd386aa72b4e5d189c441c93542e..1e3ca7ca98abfd5be233a7eeb6dad201
          };
  
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index 9658f2961d9b5632ad1abdba26a2443642624f69..38219af7d0ba2d871711102b6a29139a49678f6b 100644
+index 192b6fbd34b9b90112f869ae6e367ab9ba5a5906..08b0ca7b68bf238366f4d6904478852ecbe9394a 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
 @@ -96,7 +96,7 @@ public class SpigotConfig
@@ -5088,7 +5091,7 @@ index 9658f2961d9b5632ad1abdba26a2443642624f69..38219af7d0ba2d871711102b6a29139a
          for ( Method method : clazz.getDeclaredMethods() )
          {
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index 974e679ff20193f85fccb6e779a7ba791d0c5db4..8491ff48051224204b58d273c4971d16ab8867c1 100644
+index a6d2ce801b236b046b94913bccf7eccfc561f35a..8bc7a9da0eb345e65f42461e2fb22731eb80790a 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 @@ -58,8 +58,14 @@ public class SpigotWorldConfig
@@ -5108,6 +5111,47 @@ index 974e679ff20193f85fccb6e779a7ba791d0c5db4..8491ff48051224204b58d273c4971d16
      }
  
      public <T> List getList(String path, T def)
+@@ -138,14 +144,14 @@ public class SpigotWorldConfig
+     public double itemMerge;
+     private void itemMerge()
+     {
+-        this.itemMerge = this.getDouble("merge-radius.item", 2.5 );
++        this.itemMerge = this.getDouble("merge-radius.item", 0.5 );
+         this.log( "Item Merge Radius: " + this.itemMerge );
+     }
+ 
+     public double expMerge;
+     private void expMerge()
+     {
+-        this.expMerge = this.getDouble("merge-radius.exp", 3.0 );
++        this.expMerge = this.getDouble("merge-radius.exp", -1 );
+         this.log( "Experience Merge Radius: " + this.expMerge );
+     }
+ 
+@@ -197,7 +203,7 @@ public class SpigotWorldConfig
+ 
+     public int animalActivationRange = 32;
+     public int monsterActivationRange = 32;
+-    public int raiderActivationRange = 48;
++    public int raiderActivationRange = 64;
+     public int miscActivationRange = 16;
+     public boolean tickInactiveVillagers = true;
+     public boolean ignoreSpectatorActivation = false;
+@@ -212,10 +218,10 @@ public class SpigotWorldConfig
+         this.log( "Entity Activation Range: An " + this.animalActivationRange + " / Mo " + this.monsterActivationRange + " / Ra " + this.raiderActivationRange + " / Mi " + this.miscActivationRange + " / Tiv " + this.tickInactiveVillagers + " / Isa " + this.ignoreSpectatorActivation );
+     }
+ 
+-    public int playerTrackingRange = 48;
+-    public int animalTrackingRange = 48;
+-    public int monsterTrackingRange = 48;
+-    public int miscTrackingRange = 32;
++    public int playerTrackingRange = 128;
++    public int animalTrackingRange = 96;
++    public int monsterTrackingRange = 96;
++    public int miscTrackingRange = 96;
+     public int displayTrackingRange = 128;
+     public int otherTrackingRange = 64;
+     private void trackingRange()
 diff --git a/src/test/java/io/papermc/paper/configuration/GlobalConfigTestingBase.java b/src/test/java/io/papermc/paper/configuration/GlobalConfigTestingBase.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0396589795da1f83ddf62426236dde9a3afa1376

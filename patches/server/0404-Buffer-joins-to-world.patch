@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Wed, 19 Aug 2020 05:05:54 +0100
+Subject: [PATCH] Buffer joins to world
+
+This patch buffers the number of logins which will attempt to join
+the world per tick, this attempts to reduce the impact that join floods
+has on the server
+
+diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
+index 38947f40864f3661df2eb4baa0aef5740b82f9d9..134810ac91d828d67759cd1ed56f11b71e292917 100644
+--- a/src/main/java/net/minecraft/network/Connection.java
++++ b/src/main/java/net/minecraft/network/Connection.java
+@@ -445,12 +445,26 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+         }
+     }
+ 
++    private static final int MAX_PER_TICK = io.papermc.paper.configuration.GlobalConfiguration.get().misc.maxJoinsPerTick; // Paper - Buffer joins to world
++    private static int joinAttemptsThisTick; // Paper - Buffer joins to world
++    private static int currTick; // Paper - Buffer joins to world
+     public void tick() {
+         this.flushQueue();
++        // Paper start - Buffer joins to world
++        if (Connection.currTick != net.minecraft.server.MinecraftServer.currentTick) {
++            Connection.currTick = net.minecraft.server.MinecraftServer.currentTick;
++            Connection.joinAttemptsThisTick = 0;
++        }
++        // Paper end - Buffer joins to world
+         PacketListener packetlistener = this.packetListener;
+ 
+         if (packetlistener instanceof TickablePacketListener tickablepacketlistener) {
++            // Paper start - Buffer joins to world
++            if (!(this.packetListener instanceof net.minecraft.server.network.ServerLoginPacketListenerImpl loginPacketListener)
++                || loginPacketListener.state != net.minecraft.server.network.ServerLoginPacketListenerImpl.State.VERIFYING
++                || Connection.joinAttemptsThisTick++ < MAX_PER_TICK) {
+             tickablepacketlistener.tick();
++            } // Paper end - Buffer joins to world
+         }
+ 
+         if (!this.isConnected() && !this.disconnectionHandled) {

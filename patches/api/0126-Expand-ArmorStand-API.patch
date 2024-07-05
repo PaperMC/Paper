@@ -1,0 +1,343 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: willies952002 <admin@domnian.com>
+Date: Thu, 26 Jul 2018 02:22:44 -0400
+Subject: [PATCH] Expand ArmorStand API
+
+Adds the following:
+- Add proper methods for getting and setting items in both hands. Deprecates old methods
+- Enable/Disable slot interactions
+- Allow using degrees for ArmorStand rotations (via new Rotations class)
+
+Co-authored-by: SoSeDiK <mrsosedik@gmail.com>
+
+diff --git a/src/main/java/io/papermc/paper/math/Rotations.java b/src/main/java/io/papermc/paper/math/Rotations.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0ac1618113699ac50b9c35294bf23fb9fb7cfbad
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/math/Rotations.java
+@@ -0,0 +1,100 @@
++package io.papermc.paper.math;
++
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Rotations is an immutable object that stores rotations
++ * in degrees on each axis (X, Y, Z).
++ */
++public interface Rotations {
++
++    /**
++     * Rotations instance with every axis set to 0
++     */
++    Rotations ZERO = ofDegrees(0, 0, 0);
++
++    /**
++     * Creates a new Rotations instance holding the provided rotations
++     *
++     * @param x the angle for the X axis in degrees
++     * @param y the angle for the Y axis in degrees
++     * @param z the angle for the Z axis in degrees
++     * @return Rotations instance holding the provided rotations
++     */
++    static @NotNull Rotations ofDegrees(double x, double y, double z) {
++        return new RotationsImpl(x, y, z);
++    }
++
++    /**
++     * Returns the angle on the X axis in degrees
++     *
++     * @return the angle in degrees
++     */
++    double x();
++
++    /**
++     * Returns the angle on the Y axis in degrees
++     *
++     * @return the angle in degrees
++     */
++    double y();
++
++    /**
++     * Returns the angle on the Z axis in degrees
++     *
++     * @return the angle in degrees
++     */
++    double z();
++
++    /**
++     * Returns a new Rotations instance which is the result
++     * of changing the X axis to the passed angle
++     *
++     * @param x the angle in degrees
++     * @return the resultant Rotations
++     */
++    @NotNull Rotations withX(double x);
++
++    /**
++     * Returns a new Rotations instance which is the result
++     * of changing the Y axis to the passed angle
++     *
++     * @param y the angle in degrees
++     * @return the resultant Rotations
++     */
++    @NotNull Rotations withY(double y);
++
++    /**
++     * Returns a new Rotations instance which is the result
++     * of changing the Z axis to the passed angle
++     *
++     * @param z the angle in degrees
++     * @return the resultant Rotations
++     */
++    @NotNull Rotations withZ(double z);
++
++    /**
++     * Returns a new Rotations instance which is the result of adding
++     * the x, y, z components to this Rotations
++     *
++     * @param x the angle to add to the X axis in degrees
++     * @param y the angle to add to the Y axis in degrees
++     * @param z the angle to add to the Z axis in degrees
++     * @return the resultant Rotations
++     */
++    @NotNull Rotations add(double x, double y, double z);
++
++    /**
++     * Returns a new Rotations instance which is the result of subtracting
++     * the x, y, z components from this Rotations
++     *
++     * @param x the angle to subtract from the X axis in degrees
++     * @param y the angle to subtract from the Y axis in degrees
++     * @param z the angle to subtract from the Z axis in degrees
++     * @return the resultant Rotations
++     */
++    default @NotNull Rotations subtract(double x, double y, double z) {
++        return add(-x, -y, -z);
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/math/RotationsImpl.java b/src/main/java/io/papermc/paper/math/RotationsImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..53359ab4a6659bce895deef6a21cde848d3cadcd
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/math/RotationsImpl.java
+@@ -0,0 +1,27 @@
++package io.papermc.paper.math;
++
++import org.jetbrains.annotations.NotNull;
++
++record RotationsImpl(double x, double y, double z) implements Rotations {
++
++    @Override
++    public @NotNull RotationsImpl withX(double x) {
++        return new RotationsImpl(x, y, z);
++    }
++
++    @Override
++    public @NotNull RotationsImpl withY(double y) {
++        return new RotationsImpl(x, y, z);
++    }
++
++    @Override
++    public @NotNull RotationsImpl withZ(double z) {
++        return new RotationsImpl(x, y, z);
++    }
++
++    @Override
++    public @NotNull RotationsImpl add(double x, double y, double z) {
++        return new RotationsImpl(this.x + x, this.y + y, this.z + z);
++    }
++
++}
+diff --git a/src/main/java/org/bukkit/entity/ArmorStand.java b/src/main/java/org/bukkit/entity/ArmorStand.java
+index 2ee3814a52945f541e049b621b9552f8ae9e261d..575d58d96445e9ef3711cd6613471d5fe17bbb10 100644
+--- a/src/main/java/org/bukkit/entity/ArmorStand.java
++++ b/src/main/java/org/bukkit/entity/ArmorStand.java
+@@ -14,7 +14,7 @@ public interface ArmorStand extends LivingEntity {
+      *
+      * @return the held item
+      * @see #getEquipment()
+-     * @deprecated prefer {@link EntityEquipment#getItemInHand()}
++     * @deprecated prefer {@link ArmorStand#getItem(EquipmentSlot)} // Paper
+      */
+     @NotNull
+     @Deprecated
+@@ -26,7 +26,7 @@ public interface ArmorStand extends LivingEntity {
+      * @param item the item to hold
+      * @see #getEquipment()
+      * @deprecated prefer
+-     * {@link EntityEquipment#setItemInHand(org.bukkit.inventory.ItemStack)}
++     * {@link ArmorStand#setItem(EquipmentSlot, ItemStack)} // Paper
+      */
+     @Deprecated
+     void setItemInHand(@Nullable ItemStack item);
+@@ -379,5 +379,169 @@ public interface ArmorStand extends LivingEntity {
+      * @param tick {@code true} if this armour stand can tick, {@code false} otherwise
+      */
+     void setCanTick(final boolean tick);
++
++    /**
++     * Returns the item the armor stand has
++     * equip in the given equipment slot
++     *
++     * @param slot the equipment slot to get
++     * @return the ItemStack in the equipment slot
++     * @throws IllegalArgumentException if the slot is invalid for the entity
++     */
++    @NotNull
++    ItemStack getItem(@NotNull final org.bukkit.inventory.EquipmentSlot slot);
++
++    /**
++     * Sets the item the armor stand has
++     * equip in the given equipment slot
++     *
++     * @param slot the equipment slot to set
++     * @param item the item to hold
++     * @throws IllegalArgumentException if the slot is invalid for the entity
++     */
++    void setItem(@NotNull final org.bukkit.inventory.EquipmentSlot slot, @Nullable final ItemStack item);
++
++    /**
++     * Get the list of disabled slots
++     *
++     * @return list of disabled slots
++     */
++    @NotNull
++    java.util.Set<org.bukkit.inventory.EquipmentSlot> getDisabledSlots();
++
++    /**
++     * Set the disabled slots
++     *
++     * This makes it so a player is unable to interact with the Armor Stand to place, remove, or replace an item in the given slot(s)
++     * Note: Once a slot is disabled, the only way to get an item back it to break the armor stand.
++     *
++     * @param slots var-arg array of slots to lock
++     */
++    void setDisabledSlots(@NotNull org.bukkit.inventory.EquipmentSlot... slots);
++
++    /**
++     * Disable specific slots, adding them
++     * to the currently disabled slots
++     *
++     * This makes it so a player is unable to interact with the Armor Stand to place, remove, or replace an item in the given slot(s)
++     * Note: Once a slot is disabled, the only way to get an item back it to break the armor stand.
++     *
++     * @param slots var-arg array of slots to lock
++     */
++    void addDisabledSlots(@NotNull final org.bukkit.inventory.EquipmentSlot... slots);
++
++    /**
++     * Remove the given slots from the disabled
++     * slots list, enabling them.
++     *
++     * This makes it so a player is able to interact with the Armor Stand to place, remove, or replace an item in the given slot(s)
++     *
++     * @param slots var-arg array of slots to unlock
++     */
++    void removeDisabledSlots(@NotNull final org.bukkit.inventory.EquipmentSlot... slots);
++
++    /**
++     * Check if a specific slot is disabled
++     *
++     * @param slot The slot to check
++     * @return {@code true} if the slot is disabled, else {@code false}.
++     */
++    boolean isSlotDisabled(@NotNull org.bukkit.inventory.EquipmentSlot slot);
++
++    /**
++     * Returns the ArmorStand's body rotations as
++     * {@link io.papermc.paper.math.Rotations}.
++     *
++     * @return the current rotations
++     */
++    @NotNull io.papermc.paper.math.Rotations getBodyRotations();
++
++    /**
++     * Sets the ArmorStand's body rotations as
++     * {@link io.papermc.paper.math.Rotations}.
++     *
++     * @param rotations the current rotations
++     */
++    void setBodyRotations(@NotNull io.papermc.paper.math.Rotations rotations);
++
++    /**
++     * Returns the ArmorStand's left arm rotations as
++     * {@link io.papermc.paper.math.Rotations}.
++     *
++     * @return the current rotations
++     */
++    @NotNull io.papermc.paper.math.Rotations getLeftArmRotations();
++
++    /**
++     * Sets the ArmorStand's left arm rotations as
++     * {@link io.papermc.paper.math.Rotations}.
++     *
++     * @param rotations the current rotations
++     */
++    void setLeftArmRotations(@NotNull io.papermc.paper.math.Rotations rotations);
++
++    /**
++     * Returns the ArmorStand's right arm rotations as
++     * {@link io.papermc.paper.math.Rotations}.
++     *
++     * @return the current rotations
++     */
++    @NotNull io.papermc.paper.math.Rotations getRightArmRotations();
++
++    /**
++     * Sets the ArmorStand's right arm rotations as
++     * {@link io.papermc.paper.math.Rotations}.
++     *
++     * @param rotations the current rotations
++     */
++    void setRightArmRotations(@NotNull io.papermc.paper.math.Rotations rotations);
++
++    /**
++     * Returns the ArmorStand's left leg rotations as
++     * {@link io.papermc.paper.math.Rotations}.
++     *
++     * @return the current rotations
++     */
++    @NotNull io.papermc.paper.math.Rotations getLeftLegRotations();
++
++    /**
++     * Sets the ArmorStand's left leg rotations as
++     * {@link io.papermc.paper.math.Rotations}.
++     *
++     * @param rotations the current rotations
++     */
++    void setLeftLegRotations(@NotNull io.papermc.paper.math.Rotations rotations);
++
++    /**
++     * Returns the ArmorStand's right leg rotations as
++     * {@link io.papermc.paper.math.Rotations}.
++     *
++     * @return the current rotations
++     */
++    @NotNull io.papermc.paper.math.Rotations getRightLegRotations();
++
++    /**
++     * Sets the ArmorStand's right leg rotations as
++     * {@link io.papermc.paper.math.Rotations}.
++     *
++     * @param rotations the current rotations
++     */
++    void setRightLegRotations(@NotNull io.papermc.paper.math.Rotations rotations);
++
++    /**
++     * Returns the ArmorStand's head rotations as
++     * {@link io.papermc.paper.math.Rotations}.
++     *
++     * @return the current rotations
++     */
++    @NotNull io.papermc.paper.math.Rotations getHeadRotations();
++
++    /**
++     * Sets the ArmorStand's head rotations as
++     * {@link io.papermc.paper.math.Rotations}.
++     *
++     * @param rotations the current rotations
++     */
++    void setHeadRotations(@NotNull io.papermc.paper.math.Rotations rotations);
+     // Paper end
+ }

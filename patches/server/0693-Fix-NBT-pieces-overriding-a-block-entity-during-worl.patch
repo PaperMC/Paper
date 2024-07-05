@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: etil2jz <blanchot.arthur@protonmail.ch>
+Date: Sat, 2 Apr 2022 23:29:24 +0200
+Subject: [PATCH] Fix NBT pieces overriding a block entity during worldgen
+ deadlock
+
+By checking if the world passed into StructureTemplate's placeInWorld
+is not a WorldGenRegion, we can bypass the deadlock entirely.
+See https://bugs.mojang.com/browse/MC-246262
+
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate.java b/src/main/java/net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate.java
+index 33564e62e3181d28b18a957e28b8ec5152d8339f..cf8258e8d46ca7286a66c38fa24af369bd9a279f 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate.java
+@@ -279,7 +279,11 @@ public class StructureTemplate {
+ 
+                         if (definedstructure_blockinfo.nbt != null) {
+                             tileentity = world.getBlockEntity(blockposition2);
+-                            Clearable.tryClear(tileentity);
++                            // Paper start - Fix NBT pieces overriding a block entity during worldgen deadlock
++                            if (!(world instanceof net.minecraft.world.level.WorldGenLevel)) {
++                                Clearable.tryClear(tileentity);
++                            }
++                            // Paper end - Fix NBT pieces overriding a block entity during worldgen deadlock
+                             world.setBlock(blockposition2, Blocks.BARRIER.defaultBlockState(), 20);
+                         }
+                         // CraftBukkit start
+@@ -406,7 +410,11 @@ public class StructureTemplate {
+                         if (pair1.getSecond() != null) {
+                             tileentity = world.getBlockEntity(blockposition6);
+                             if (tileentity != null) {
+-                                tileentity.setChanged();
++                                // Paper start - Fix NBT pieces overriding a block entity during worldgen deadlock
++                                if (!(world instanceof net.minecraft.world.level.WorldGenLevel)) {
++                                    tileentity.setChanged();
++                                }
++                                // Paper end - Fix NBT pieces overriding a block entity during worldgen deadlock
+                             }
+                         }
+                     }

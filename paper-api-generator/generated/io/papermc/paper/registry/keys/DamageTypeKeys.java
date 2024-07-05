@@ -6,7 +6,6 @@ import io.papermc.paper.generated.GeneratedFrom;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
-import org.bukkit.MinecraftExperimental;
 import org.bukkit.damage.DamageType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -24,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.20.6")
+@GeneratedFrom("1.21")
 @ApiStatus.Experimental
 public final class DamageTypeKeys {
     /**
@@ -47,6 +46,13 @@ public final class DamageTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<DamageType> CACTUS = create(key("cactus"));
+
+    /**
+     * {@code minecraft:campfire}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DamageType> CAMPFIRE = create(key("campfire"));
 
     /**
      * {@code minecraft:cramming}
@@ -333,8 +339,6 @@ public final class DamageTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.UPDATE_1_21)
     public static final TypedKey<DamageType> WIND_CHARGE = create(key("wind_charge"));
 
     /**

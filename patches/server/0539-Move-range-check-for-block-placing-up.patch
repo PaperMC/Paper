@@ -1,0 +1,22 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Wed, 8 Jun 2022 10:52:18 +0200
+Subject: [PATCH] Move range check for block placing up
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 58e5acbd00c4f8c0fcafa4f2c21b6a9f4dcc4151..e713a2abca824e92a4922c34fca8c1f0bfdcdf68 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1746,6 +1746,11 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         if (itemstack.isItemEnabled(worldserver.enabledFeatures())) {
+             BlockHitResult movingobjectpositionblock = packet.getHitResult();
+             Vec3 vec3d = movingobjectpositionblock.getLocation();
++            // Paper start - improve distance check
++            if (!Double.isFinite(vec3d.x) || !Double.isFinite(vec3d.y) || !Double.isFinite(vec3d.z)) {
++                return;
++            }
++            // Paper end - improve distance check
+             BlockPos blockposition = movingobjectpositionblock.getBlockPos();
+ 
+             if (this.player.canInteractWithBlock(blockposition, 1.0D)) {

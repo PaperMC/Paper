@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 3 Oct 2020 20:32:25 -0500
+Subject: [PATCH] Fix item locations dropped from campfires
+
+Fixes #4259 by not flooring the blockposition among other weirdness
+Vanilla Issue: MC-267622
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
+index 391acc9dadc653e9e1285a71b4f1e7c063e8ca49..80f911692c97585a696a19ebbe616d6aa312b2d9 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
+@@ -86,7 +86,14 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
+                         result = blockCookEvent.getResult();
+                         itemstack1 = CraftItemStack.asNMSCopy(result);
+                         // CraftBukkit end
+-                        Containers.dropItemStack(world, (double) pos.getX(), (double) pos.getY(), (double) pos.getZ(), itemstack1);
++                        // Paper start - Fix item locations dropped from campfires
++                        double deviation = 0.05F * RandomSource.GAUSSIAN_SPREAD_FACTOR;
++                        while (!itemstack1.isEmpty()) {
++                            net.minecraft.world.entity.item.ItemEntity droppedItem = new net.minecraft.world.entity.item.ItemEntity(world, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, itemstack1.split(world.random.nextInt(21) + 10));
++                            droppedItem.setDeltaMovement(world.random.triangle(0.0D, deviation), world.random.triangle(0.2D, deviation), world.random.triangle(0.0D, deviation));
++                            world.addFreshEntity(droppedItem);
++                        }
++                        // Paper end - Fix item locations dropped from campfires
+                         campfire.items.set(i, ItemStack.EMPTY);
+                         world.sendBlockUpdated(pos, state, state, 3);
+                         world.gameEvent((Holder) GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(state));

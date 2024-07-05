@@ -6,7 +6,6 @@ import io.papermc.paper.generated.GeneratedFrom;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
-import org.bukkit.MinecraftExperimental;
 import org.bukkit.enchantments.Enchantment;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -24,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.20.6")
+@GeneratedFrom("1.21")
 @ApiStatus.Experimental
 public final class EnchantmentKeys {
     /**
@@ -60,8 +59,6 @@ public final class EnchantmentKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.UPDATE_1_21)
     public static final TypedKey<Enchantment> BREACH = create(key("breach"));
 
     /**
@@ -76,8 +73,6 @@ public final class EnchantmentKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.UPDATE_1_21)
     public static final TypedKey<Enchantment> DENSITY = create(key("density"));
 
     /**
@@ -323,8 +318,6 @@ public final class EnchantmentKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.UPDATE_1_21)
     public static final TypedKey<Enchantment> WIND_BURST = create(key("wind_burst"));
 
     private EnchantmentKeys() {

@@ -1,0 +1,141 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Fri, 3 Dec 2021 17:09:24 -0800
+Subject: [PATCH] Fix Spigot growth modifiers
+
+Fixes kelp modifier changing growth for other crops
+Also add growth modifiers for glow berries, mangrove propagules,
+torchflower crops and pitcher plant crops
+Also fix above-mentioned modifiers from having the reverse effect
+
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+Co-authored-by: Noah van der Aa <ndvdaa@gmail.com>
+Co-authored-by: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/world/level/block/CaveVinesBlock.java b/src/main/java/net/minecraft/world/level/block/CaveVinesBlock.java
+index 1e7235413fae39dc530eb843f1846f74bb5268b6..635fc086d832c641f840cf36d18cdc0fcc3beef3 100644
+--- a/src/main/java/net/minecraft/world/level/block/CaveVinesBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/CaveVinesBlock.java
+@@ -50,9 +50,18 @@ public class CaveVinesBlock extends GrowingPlantHeadBlock implements Bonemealabl
+         return to.setValue(BERRIES, from.getValue(BERRIES));
+     }
+ 
++    // Paper start - Fix Spigot growth modifiers
++    @Override
++    protected BlockState getGrowIntoState(BlockState state, RandomSource random, @javax.annotation.Nullable Level level) {
++        final boolean value = random.nextFloat() < (level != null ? (0.11F * (level.spigotConfig.glowBerryModifier / 100.0F)) : 0.11F);
++        return (BlockState) super.getGrowIntoState(state, random).setValue(CaveVinesBlock.BERRIES, value);
++    }
++    // Paper end - Fix Spigot growth modifiers
++
+     @Override
+     protected BlockState getGrowIntoState(BlockState state, RandomSource random) {
+-        return super.getGrowIntoState(state, random).setValue(BERRIES, Boolean.valueOf(random.nextFloat() < 0.11F));
++        // Paper start - Fix Spigot growth modifiers
++        return this.getGrowIntoState(state, random, null);
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/level/block/CropBlock.java b/src/main/java/net/minecraft/world/level/block/CropBlock.java
+index 73595922dcff8e7a8595fcf033ab238bc4096630..112d2feba5f75a2a873b595617780515945c10e4 100644
+--- a/src/main/java/net/minecraft/world/level/block/CropBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/CropBlock.java
+@@ -91,6 +91,10 @@ public class CropBlock extends BushBlock implements BonemealableBlock {
+                     modifier = world.spigotConfig.carrotModifier;
+                 } else if (this == Blocks.POTATOES) {
+                     modifier = world.spigotConfig.potatoModifier;
++                // Paper start - Fix Spigot growth modifiers
++                } else if (this == Blocks.TORCHFLOWER_CROP) {
++                    modifier = world.spigotConfig.torchFlowerModifier;
++                // Paper end - Fix Spigot growth modifiers
+                 } else {
+                     modifier = world.spigotConfig.wheatModifier;
+                 }
+diff --git a/src/main/java/net/minecraft/world/level/block/GrowingPlantHeadBlock.java b/src/main/java/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
+index 164a855d99cf36205bd9fce04640109f20a2b96c..cf05da1c86e3018db11dc079bf50317b6639e5cc 100644
+--- a/src/main/java/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
+@@ -60,12 +60,18 @@ public abstract class GrowingPlantHeadBlock extends GrowingPlantBlock implements
+             BlockPos blockposition1 = pos.relative(this.growthDirection);
+ 
+             if (this.canGrowInto(world.getBlockState(blockposition1))) {
+-                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, blockposition1, this.getGrowIntoState(state, world.random)); // CraftBukkit
++                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, blockposition1, this.getGrowIntoState(state, world.random, world)); // CraftBukkit // Paper - Fix Spigot growth modifiers
+             }
+         }
+ 
+     }
+ 
++    // Paper start - Fix Spigot growth modifiers
++    protected BlockState getGrowIntoState(BlockState state, RandomSource random, @javax.annotation.Nullable Level level) {
++        return this.getGrowIntoState(state, random);
++    }
++    // Paper end - Fix Spigot growth modifiers
++
+     protected BlockState getGrowIntoState(BlockState state, RandomSource random) {
+         return (BlockState) state.cycle(GrowingPlantHeadBlock.AGE);
+     }
+diff --git a/src/main/java/net/minecraft/world/level/block/MangrovePropaguleBlock.java b/src/main/java/net/minecraft/world/level/block/MangrovePropaguleBlock.java
+index fd7f7d58cd159f663f8f474d9c73841c795d2990..b98e17d21d43610fb7a7ce1641c518598ff48cb0 100644
+--- a/src/main/java/net/minecraft/world/level/block/MangrovePropaguleBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/MangrovePropaguleBlock.java
+@@ -114,7 +114,7 @@ public class MangrovePropaguleBlock extends SaplingBlock implements SimpleWaterl
+     @Override
+     protected void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+         if (!isHanging(state)) {
+-            if (random.nextInt(7) == 0) {
++            if (random.nextFloat() < (world.spigotConfig.saplingModifier / (100.0F * 7))) { // Paper - Fix Spigot growth modifiers
+                 this.advanceTree(world, pos, state, random);
+             }
+         } else {
+diff --git a/src/main/java/net/minecraft/world/level/block/PitcherCropBlock.java b/src/main/java/net/minecraft/world/level/block/PitcherCropBlock.java
+index c9ed129db2cadd0a33d69993961f43088725c3cb..d06e3892cf42723f8e3f621b5497c5348fa1a715 100644
+--- a/src/main/java/net/minecraft/world/level/block/PitcherCropBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/PitcherCropBlock.java
+@@ -123,7 +123,7 @@ public class PitcherCropBlock extends DoublePlantBlock implements BonemealableBl
+     @Override
+     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+         float f = CropBlock.getGrowthSpeed(this, world, pos);
+-        boolean bl = random.nextInt((int)(25.0F / f) + 1) == 0;
++        boolean bl = random.nextFloat() < (world.spigotConfig.pitcherPlantModifier / (100.0F * (Math.floor(25.0F / f) + 1))); // Paper - Fix Spigot growth modifiers
+         if (bl) {
+             this.grow(world, state, pos, 1);
+         }
+diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+index 491dd55b2870093184a606efabd251c68cc24719..e76f96a5c48d1eda2f9bbb3e11dd79f23f9ab75c 100644
+--- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
++++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
+@@ -96,6 +96,7 @@ public class SpigotWorldConfig
+     public int beetrootModifier;
+     public int carrotModifier;
+     public int potatoModifier;
++    public int torchFlowerModifier; // Paper
+     public int wheatModifier;
+     public int wartModifier;
+     public int vineModifier;
+@@ -106,6 +107,8 @@ public class SpigotWorldConfig
+     public int twistingVinesModifier;
+     public int weepingVinesModifier;
+     public int caveVinesModifier;
++    public int glowBerryModifier; // Paper
++    public int pitcherPlantModifier; // Paper
+     private int getAndValidateGrowth(String crop)
+     {
+         int modifier = this.getInt( "growth." + crop.toLowerCase(java.util.Locale.ENGLISH) + "-modifier", 100 );
+@@ -129,6 +132,7 @@ public class SpigotWorldConfig
+         this.beetrootModifier = this.getAndValidateGrowth( "Beetroot" );
+         this.carrotModifier = this.getAndValidateGrowth( "Carrot" );
+         this.potatoModifier = this.getAndValidateGrowth( "Potato" );
++        this.torchFlowerModifier = this.getAndValidateGrowth("TorchFlower"); // Paper
+         this.wheatModifier = this.getAndValidateGrowth( "Wheat" );
+         this.wartModifier = this.getAndValidateGrowth( "NetherWart" );
+         this.vineModifier = this.getAndValidateGrowth( "Vine" );
+@@ -139,6 +143,8 @@ public class SpigotWorldConfig
+         this.twistingVinesModifier = this.getAndValidateGrowth( "TwistingVines" );
+         this.weepingVinesModifier = this.getAndValidateGrowth( "WeepingVines" );
+         this.caveVinesModifier = this.getAndValidateGrowth( "CaveVines" );
++        this.glowBerryModifier = this.getAndValidateGrowth("GlowBerry"); // Paper
++        this.pitcherPlantModifier = this.getAndValidateGrowth("PitcherPlant"); // Paper
+     }
+ 
+     public double itemMerge;

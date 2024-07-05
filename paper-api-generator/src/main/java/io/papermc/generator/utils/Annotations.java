@@ -1,6 +1,7 @@
 package io.papermc.generator.utils;
 
 import com.squareup.javapoet.AnnotationSpec;
+import java.util.ArrayList;
 import java.util.List;
 
 import io.papermc.paper.generated.GeneratedFrom;
@@ -12,13 +13,17 @@ import org.jetbrains.annotations.Nullable;
 
 public final class Annotations {
 
-    public static List<AnnotationSpec> experimentalAnnotations(final MinecraftExperimental.Requires requiredFeatureFlag) {
-        return List.of(
-            AnnotationSpec.builder(ApiStatus.Experimental.class).build(),
-            AnnotationSpec.builder(MinecraftExperimental.class)
+    public static List<AnnotationSpec> experimentalAnnotations(final MinecraftExperimental.@Nullable Requires requiredFeatureFlag) {
+        final List<AnnotationSpec> annotationSpecs = new ArrayList<>();
+        annotationSpecs.add(AnnotationSpec.builder(ApiStatus.Experimental.class).build());
+        if (requiredFeatureFlag != null) {
+            annotationSpecs.add(AnnotationSpec.builder(MinecraftExperimental.class)
                 .addMember("value", "$T.$L", MinecraftExperimental.Requires.class, requiredFeatureFlag.name())
-                .build()
-        );
+                .build());
+        } else {
+            annotationSpecs.add(AnnotationSpec.builder(MinecraftExperimental.class).build());
+        }
+        return annotationSpecs;
     }
 
     public static AnnotationSpec deprecatedVersioned(final @Nullable String version, boolean forRemoval) {

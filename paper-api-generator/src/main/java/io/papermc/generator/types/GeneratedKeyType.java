@@ -28,7 +28,6 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistrySetBuilder;
-import net.minecraft.data.registries.UpdateOneTwentyOneRegistries;
 import net.minecraft.data.registries.VanillaRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.flag.FeatureElement;
@@ -54,8 +53,7 @@ public class GeneratedKeyType<T, A> extends SimpleGenerator {
     private static final Map<ResourceKey<? extends Registry<?>>, RegistrySetBuilder.RegistryBootstrap<?>> VANILLA_REGISTRY_ENTRIES = VanillaRegistries.BUILDER.entries.stream()
             .collect(Collectors.toMap(RegistrySetBuilder.RegistryStub::key, RegistrySetBuilder.RegistryStub::bootstrap));
 
-    private static final Map<ResourceKey<? extends Registry<?>>, RegistrySetBuilder.RegistryBootstrap<?>> EXPERIMENTAL_REGISTRY_ENTRIES = UpdateOneTwentyOneRegistries.BUILDER.entries.stream()
-            .collect(Collectors.toMap(RegistrySetBuilder.RegistryStub::key, RegistrySetBuilder.RegistryStub::bootstrap));
+    private static final Map<ResourceKey<? extends Registry<?>>, RegistrySetBuilder.RegistryBootstrap<?>> EXPERIMENTAL_REGISTRY_ENTRIES = Collections.emptyMap(); // Update for Experimental API
 
     private static final Map<RegistryKey<?>, String> REGISTRY_KEY_FIELD_NAMES;
     static {
@@ -139,15 +137,15 @@ public class GeneratedKeyType<T, A> extends SimpleGenerator {
                 .initializer("$N(key($S))", createMethod.build(), keyPath)
                 .addJavadoc(Javadocs.getVersionDependentField("{@code $L}"), key.location().toString());
             if (experimental.contains(key)) {
-                fieldBuilder.addAnnotations(experimentalAnnotations(MinecraftExperimental.Requires.UPDATE_1_21));
+                fieldBuilder.addAnnotations(experimentalAnnotations(null)); // Update for Experimental API
             } else {
                 allExperimental = false;
             }
             typeBuilder.addField(fieldBuilder.build());
         }
         if (allExperimental) {
-            typeBuilder.addAnnotations(experimentalAnnotations(MinecraftExperimental.Requires.UPDATE_1_21));
-            createMethod.addAnnotations(experimentalAnnotations(MinecraftExperimental.Requires.UPDATE_1_21));
+            typeBuilder.addAnnotations(experimentalAnnotations(null)); // Update for Experimental API
+            createMethod.addAnnotations(experimentalAnnotations(null)); // Update for Experimental API
         } else {
             typeBuilder.addAnnotation(EXPERIMENTAL_API_ANNOTATION); // TODO experimental API
         }
@@ -164,7 +162,7 @@ public class GeneratedKeyType<T, A> extends SimpleGenerator {
 
     private Set<ResourceKey<T>> collectExperimentalKeysBuiltIn(final Registry<T> registry) {
         final HolderLookup.RegistryLookup<T> filteredLookup = registry.asLookup().filterElements(v -> {
-            return ((FeatureElement) v).requiredFeatures().contains(FeatureFlags.UPDATE_1_21);
+            return false; // Update for Experimental API
         });
         return filteredLookup.listElementIds().collect(Collectors.toUnmodifiableSet());
     }

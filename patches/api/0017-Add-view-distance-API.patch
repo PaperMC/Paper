@@ -1,0 +1,167 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Mon, 29 Feb 2016 18:05:37 -0600
+Subject: [PATCH] Add view distance API
+
+Add per player no-tick, tick, and send view distances.
+
+Also add send/no-tick view distance to World.
+
+diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
+index 9732929b666b0a5e1a2a41c8e8794cc4f2535e41..0a3a66e04f8785874f10a76603bff46469543688 100644
+--- a/src/main/java/org/bukkit/World.java
++++ b/src/main/java/org/bukkit/World.java
+@@ -2968,6 +2968,66 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+     @NotNull
+     public Set<FeatureFlag> getFeatureFlags();
+ 
++    // Paper start - view distance api
++    /**
++     * Sets the view distance for this world.
++     * @param viewDistance view distance in [2, 32]
++     */
++    void setViewDistance(int viewDistance);
++
++    /**
++     * Sets the simulation distance for this world.
++     * @param simulationDistance simulation distance in [2, 32]
++     */
++    void setSimulationDistance(int simulationDistance);
++
++    /**
++     * Returns the no-tick view distance for this world.
++     * <p>
++     * No-tick view distance is the view distance where chunks will load, however the chunks and their entities will not
++     * be set to tick.
++     * </p>
++     * @return The no-tick view distance for this world.
++     * @deprecated Use {@link #getViewDistance()}
++     */
++    @Deprecated
++    default int getNoTickViewDistance() {
++        return this.getViewDistance();
++    }
++
++    /**
++     * Sets the no-tick view distance for this world.
++     * <p>
++     * No-tick view distance is the view distance where chunks will load, however the chunks and their entities will not
++     * be set to tick.
++     * </p>
++     * @param viewDistance view distance in [2, 32]
++     * @deprecated Use {@link #setViewDistance(int)}
++     */
++    @Deprecated
++    default void setNoTickViewDistance(int viewDistance) {
++        this.setViewDistance(viewDistance);
++    }
++
++    /**
++     * Gets the sending view distance for this world.
++     * <p>
++     * Sending view distance is the view distance where chunks will load in for players in this world.
++     * </p>
++     * @return The sending view distance for this world.
++     */
++    int getSendViewDistance();
++
++    /**
++     * Sets the sending view distance for this world.
++     * <p>
++     * Sending view distance is the view distance where chunks will load in for players in this world.
++     * </p>
++     * @param viewDistance view distance in [2, 32] or -1
++     */
++    void setSendViewDistance(int viewDistance);
++    // Paper end - view distance api
++
+     /**
+      * Gets all generated structures that intersect the chunk at the given
+      * coordinates. <br>
+diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
+index 1ba2f706a62ee6962451305b1895654453b485cd..7d530bd0e4d833da760d1cf82aba966b7fb480b1 100644
+--- a/src/main/java/org/bukkit/entity/Player.java
++++ b/src/main/java/org/bukkit/entity/Player.java
+@@ -2597,6 +2597,82 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      * @param affects Whether the player can affect mob spawning
+      */
+     public void setAffectsSpawning(boolean affects);
++
++    /**
++     * Gets the view distance for this player
++     *
++     * @return the player's view distance
++     * @see org.bukkit.World#getViewDistance()
++     */
++    public int getViewDistance();
++
++    /**
++     * Sets the view distance for this player
++     *
++     * @param viewDistance the player's view distance
++     * @see org.bukkit.World#setViewDistance(int)
++     */
++    public void setViewDistance(int viewDistance);
++
++    /**
++     * Gets the simulation distance for this player
++     *
++     * @return the player's simulation distance
++     */
++    public int getSimulationDistance();
++
++    /**
++     * Sets the simulation distance for this player
++     *
++     * @param simulationDistance the player's new simulation distance
++     */
++    public void setSimulationDistance(int simulationDistance);
++    
++    /**
++     * Gets the no-ticking view distance for this player.
++     * <p>
++     * No-tick view distance is the view distance where chunks will load, however the chunks and their entities will not
++     * be set to tick.
++     * </p>
++     * @return The no-tick view distance for this player.
++     * @deprecated Use {@link #getViewDistance()}
++     */
++    @Deprecated
++    default int getNoTickViewDistance() {
++        return this.getViewDistance();
++    }
++
++    /**
++     * Sets the no-ticking view distance for this player.
++     * <p>
++     * No-tick view distance is the view distance where chunks will load, however the chunks and their entities will not
++     * be set to tick.
++     * </p>
++     * @param viewDistance view distance in [2, 32] or -1
++     * @deprecated Use {@link #setViewDistance(int)}
++     */
++    @Deprecated
++    default void setNoTickViewDistance(int viewDistance) {
++        this.setViewDistance(viewDistance);
++    }
++
++    /**
++     * Gets the sending view distance for this player.
++     * <p>
++     * Sending view distance is the view distance where chunks will load in for players.
++     * </p>
++     * @return The sending view distance for this player.
++     */
++    public int getSendViewDistance();
++
++    /**
++     * Sets the sending view distance for this player.
++     * <p>
++     * Sending view distance is the view distance where chunks will load in for players.
++     * </p>
++     * @param viewDistance view distance in [2, 32] or -1
++     */
++    public void setSendViewDistance(int viewDistance);
+     // Paper end
+ 
+     /**

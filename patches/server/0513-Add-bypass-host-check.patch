@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Sun, 18 Apr 2021 21:27:01 +0100
+Subject: [PATCH] Add bypass host check
+
+Paper.bypassHostCheck
+
+Seriously, fix your firewalls. -.-
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
+index 0c1bdf2329936ce479a2cc53e8a46bd2ad685ec1..a5bbea6a073e00c10c3c5facd997eb8473fd9a5f 100644
+--- a/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
+@@ -32,6 +32,7 @@ public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketL
+     private static final Component IGNORE_STATUS_REASON = Component.translatable("disconnect.ignoring_status_request");
+     private final MinecraftServer server;
+     private final Connection connection;
++    private static final boolean BYPASS_HOSTCHECK = Boolean.getBoolean("Paper.bypassHostCheck"); // Paper
+ 
+     public ServerHandshakePacketListenerImpl(MinecraftServer server, Connection connection) {
+         this.server = server;
+@@ -164,7 +165,7 @@ public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketL
+             String[] split = packet.hostName().split("\00");
+             if (!handledByEvent && proxyLogicEnabled) { // Paper
+                 // if (org.spigotmc.SpigotConfig.bungee) { // Paper - comment out, we check above!
+-                if ( ( split.length == 3 || split.length == 4 ) && ( ServerHandshakePacketListenerImpl.HOST_PATTERN.matcher( split[1] ).matches() ) ) {
++                if ( ( split.length == 3 || split.length == 4 ) && ( ServerHandshakePacketListenerImpl.BYPASS_HOSTCHECK || ServerHandshakePacketListenerImpl.HOST_PATTERN.matcher( split[1] ).matches() ) ) { // Paper - Add bypass host check
+                     this.connection.hostname = split[0];
+                     this.connection.address = new java.net.InetSocketAddress(split[1], ((java.net.InetSocketAddress) this.connection.getRemoteAddress()).getPort());
+                     this.connection.spoofedUUID = com.mojang.util.UndashedUuid.fromStringLenient( split[2] );

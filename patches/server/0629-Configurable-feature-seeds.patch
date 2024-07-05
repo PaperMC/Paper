@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Tue, 31 Aug 2021 17:05:27 +0200
+Subject: [PATCH] Configurable feature seeds
+
+Co-authored-by: Thonk <30448663+ExcessiveAmountsOfZombies@users.noreply.github.com>
+
+diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
+index 49028463ba47e760281545c2f7597e3db8d6c453..7620c72a4c243cbeea245203ce03a97cbfa7d922 100644
+--- a/src/main/java/co/aikar/timings/TimingsExport.java
++++ b/src/main/java/co/aikar/timings/TimingsExport.java
+@@ -286,7 +286,7 @@ public class TimingsExport extends Thread {
+         JSONObject object = new JSONObject();
+         for (String key : config.getKeys(false)) {
+             String fullKey = (parentKey != null ? parentKey + "." + key : key);
+-            if (fullKey.equals("database") || fullKey.equals("settings.bungeecord-addresses") || TimingsManager.hiddenConfigs.contains(fullKey) || key.startsWith("seed-") || key.equals("worldeditregentempworld")) {
++            if (fullKey.equals("database") || fullKey.equals("settings.bungeecord-addresses") || TimingsManager.hiddenConfigs.contains(fullKey) || key.startsWith("seed-") || key.equals("worldeditregentempworld") || key.equals("feature-seeds")) {
+                 continue;
+             }
+             final Object val = config.get(key);
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
+index 5adc1952504b26772116b55a5144b7704136edfa..c5dd3aac54aa5936da4bd9f54f0e76ecf8141d27 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
+@@ -436,7 +436,14 @@ public abstract class ChunkGenerator {
+                                 return (String) optional.orElseGet(placedfeature::toString);
+                             };
+ 
+-                            seededrandom.setFeatureSeed(i, l1, l);
++                            // Paper start - Configurable feature seeds; change populationSeed used in random
++                            long featurePopulationSeed = i;
++                            final long configFeatureSeed = generatoraccessseed.getMinecraftWorld().paperConfig().featureSeeds.features.getLong(placedfeature.feature());
++                            if (configFeatureSeed != -1) {
++                                featurePopulationSeed = seededrandom.setDecorationSeed(configFeatureSeed, blockposition.getX(), blockposition.getZ()); // See seededrandom.setDecorationSeed from above
++                            }
++                            seededrandom.setFeatureSeed(featurePopulationSeed, l1, l);
++                            // Paper end - Configurable feature seeds
+ 
+                             try {
+                                 generatoraccessseed.setCurrentlyGenerating(supplier1);

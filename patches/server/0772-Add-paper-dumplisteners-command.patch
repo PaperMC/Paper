@@ -1,0 +1,197 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Warrior <50800980+Warriorrrr@users.noreply.github.com>
+Date: Tue, 25 Oct 2022 21:15:37 +0200
+Subject: [PATCH] Add /paper dumplisteners command
+
+Co-authored-by: TwoLeggedCat <80929284+TwoLeggedCat@users.noreply.github.com>
+
+diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
+index fd4f37711989431f997d77fb0917f8a9232ce53f..46bf42d5ea9e7b046f962531c5962d287cf44a41 100644
+--- a/src/main/java/io/papermc/paper/command/PaperCommand.java
++++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
+@@ -41,6 +41,7 @@ public final class PaperCommand extends Command {
+         commands.put(Set.of("syncloadinfo"), new SyncLoadInfoCommand());
+         commands.put(Set.of("dumpitem"), new DumpItemCommand());
+         commands.put(Set.of("mobcaps", "playermobcaps"), new MobcapsCommand());
++        commands.put(Set.of("dumplisteners"), new DumpListenersCommand());
+ 
+         return commands.entrySet().stream()
+             .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
+diff --git a/src/main/java/io/papermc/paper/command/subcommands/DumpListenersCommand.java b/src/main/java/io/papermc/paper/command/subcommands/DumpListenersCommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..aa44d4685de3caee4131449bead7a084868ff976
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/subcommands/DumpListenersCommand.java
+@@ -0,0 +1,172 @@
++package io.papermc.paper.command.subcommands;
++
++import com.destroystokyo.paper.util.SneakyThrow;
++import io.papermc.paper.command.PaperSubcommand;
++import java.io.File;
++import java.io.IOException;
++import java.io.PrintWriter;
++import java.lang.invoke.MethodHandle;
++import java.lang.invoke.MethodHandles;
++import java.lang.reflect.Field;
++import java.time.LocalDateTime;
++import java.time.format.DateTimeFormatter;
++import java.util.ArrayList;
++import java.util.Collections;
++import java.util.List;
++import java.util.Locale;
++import java.util.Set;
++import net.kyori.adventure.text.Component;
++import net.minecraft.server.MinecraftServer;
++import org.bukkit.Bukkit;
++import org.bukkit.command.CommandSender;
++import org.bukkit.event.HandlerList;
++import org.bukkit.plugin.Plugin;
++import org.bukkit.plugin.RegisteredListener;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++import static net.kyori.adventure.text.Component.newline;
++import static net.kyori.adventure.text.Component.space;
++import static net.kyori.adventure.text.Component.text;
++import static net.kyori.adventure.text.format.NamedTextColor.GRAY;
++import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
++import static net.kyori.adventure.text.format.NamedTextColor.RED;
++import static net.kyori.adventure.text.format.NamedTextColor.WHITE;
++
++@DefaultQualifier(NonNull.class)
++public final class DumpListenersCommand implements PaperSubcommand {
++    private static final MethodHandle EVENT_TYPES_HANDLE;
++
++    static {
++        try {
++            final Field eventTypesField = HandlerList.class.getDeclaredField("EVENT_TYPES");
++            eventTypesField.setAccessible(true);
++            EVENT_TYPES_HANDLE = MethodHandles.lookup().unreflectGetter(eventTypesField);
++        } catch (final ReflectiveOperationException e) {
++            throw new RuntimeException(e);
++        }
++    }
++
++    @Override
++    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
++        if (args.length >= 1 && args[0].equals("tofile")) {
++            this.dumpToFile(sender);
++            return true;
++        }
++        this.doDumpListeners(sender, args);
++        return true;
++    }
++
++    private void dumpToFile(final CommandSender sender) {
++        final File file = new File("debug/listeners-"
++            + DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss").format(LocalDateTime.now()) + ".txt");
++        file.getParentFile().mkdirs();
++        try (final PrintWriter writer = new PrintWriter(file)) {
++            for (final String eventClass : eventClassNames()) {
++                final HandlerList handlers;
++                try {
++                    handlers = (HandlerList) findClass(eventClass).getMethod("getHandlerList").invoke(null);
++                } catch (final ReflectiveOperationException e) {
++                    continue;
++                }
++                if (handlers.getRegisteredListeners().length != 0) {
++                    writer.println(eventClass);
++                }
++                for (final RegisteredListener registeredListener : handlers.getRegisteredListeners()) {
++                    writer.println(" - " + registeredListener);
++                }
++            }
++        } catch (final IOException ex) {
++            throw new RuntimeException(ex);
++        }
++        sender.sendMessage(text("Dumped listeners to " + file, GREEN));
++    }
++
++    private void doDumpListeners(final CommandSender sender, final String[] args) {
++        if (args.length == 0) {
++            sender.sendMessage(text("Usage: /paper dumplisteners tofile|<className>", RED));
++            return;
++        }
++
++        try {
++            final HandlerList handlers = (HandlerList) findClass(args[0]).getMethod("getHandlerList").invoke(null);
++
++            if (handlers.getRegisteredListeners().length == 0) {
++                sender.sendMessage(text(args[0] + " does not have any registered listeners."));
++                return;
++            }
++
++            sender.sendMessage(text("Listeners for " + args[0] + ":"));
++
++            for (final RegisteredListener listener : handlers.getRegisteredListeners()) {
++                final Component hoverText = text("Priority: " + listener.getPriority().name() + " (" + listener.getPriority().getSlot() + ")", WHITE)
++                    .append(newline())
++                    .append(text("Listener: " + listener.getListener()))
++                    .append(newline())
++                    .append(text("Executor: " + listener.getExecutor()))
++                    .append(newline())
++                    .append(text("Ignoring cancelled: " + listener.isIgnoringCancelled()));
++
++                sender.sendMessage(text(listener.getPlugin().getName(), GREEN)
++                    .append(space())
++                    .append(text("(" + listener.getListener().getClass().getName() + ")", GRAY).hoverEvent(hoverText)));
++            }
++
++            sender.sendMessage(text("Total listeners: " + handlers.getRegisteredListeners().length));
++
++        } catch (final ClassNotFoundException e) {
++            sender.sendMessage(text("Unable to find a class named '" + args[0] + "'. Make sure to use the fully qualified name.", RED));
++        } catch (final NoSuchMethodException e) {
++            sender.sendMessage(text("Class '" + args[0] + "' does not have a valid getHandlerList method.", RED));
++        } catch (final ReflectiveOperationException e) {
++            sender.sendMessage(text("Something went wrong, see the console for more details.", RED));
++            MinecraftServer.LOGGER.warn("Error occurred while dumping listeners for class " + args[0], e);
++        }
++    }
++
++    @Override
++    public List<String> tabComplete(final CommandSender sender, final String subCommand, final String[] args) {
++        return switch (args.length) {
++            case 0 -> suggestions();
++            case 1 -> suggestions().stream()
++                .filter(clazz -> clazz.toLowerCase(Locale.ROOT).contains(args[0].toLowerCase(Locale.ROOT)))
++                .toList();
++            default -> Collections.emptyList();
++        };
++    }
++
++    private static List<String> suggestions() {
++        final List<String> ret = new ArrayList<>();
++        ret.add("tofile");
++        ret.addAll(eventClassNames());
++        return ret;
++    }
++
++    @SuppressWarnings("unchecked")
++    private static Set<String> eventClassNames() {
++        try {
++            return (Set<String>) EVENT_TYPES_HANDLE.invokeExact();
++        } catch (final Throwable e) {
++            SneakyThrow.sneaky(e);
++            return Collections.emptySet(); // Unreachable
++        }
++    }
++
++    private static Class<?> findClass(final String className) throws ClassNotFoundException {
++        try {
++            return Class.forName(className);
++        } catch (final ClassNotFoundException ignore) {
++            for (final Plugin plugin : Bukkit.getServer().getPluginManager().getPlugins()) {
++                if (!plugin.isEnabled()) {
++                    continue;
++                }
++
++                try {
++                    return Class.forName(className, false, plugin.getClass().getClassLoader());
++                } catch (final ClassNotFoundException ignore0) {
++                }
++            }
++        }
++        throw new ClassNotFoundException(className);
++    }
++}

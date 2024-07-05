@@ -1,0 +1,92 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 25 Aug 2018 19:56:51 -0500
+Subject: [PATCH] Add PhantomPreSpawnEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Phantom.java b/src/main/java/net/minecraft/world/entity/monster/Phantom.java
+index 81e75e9d6619f7108fd769e462f24d72cbd5a73c..3c3f70d05fb51b530b792adf84c324840bd03c14 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Phantom.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Phantom.java
+@@ -165,6 +165,11 @@ public class Phantom extends FlyingMob implements Enemy {
+         }
+ 
+         this.setPhantomSize(nbt.getInt("Size"));
++        // Paper start
++        if (nbt.hasUUID("Paper.SpawningEntity")) {
++            this.spawningEntity = nbt.getUUID("Paper.SpawningEntity");
++        }
++        // Paper end
+     }
+ 
+     @Override
+@@ -174,6 +179,11 @@ public class Phantom extends FlyingMob implements Enemy {
+         nbt.putInt("AY", this.anchorPoint.getY());
+         nbt.putInt("AZ", this.anchorPoint.getZ());
+         nbt.putInt("Size", this.getPhantomSize());
++        // Paper start
++        if (this.spawningEntity != null) {
++            nbt.putUUID("Paper.SpawningEntity", this.spawningEntity);
++        }
++        // Paper end
+     }
+ 
+     @Override
+@@ -219,6 +229,17 @@ public class Phantom extends FlyingMob implements Enemy {
+         return entitysize.scale(1.0F + 0.15F * (float) i);
+     }
+ 
++    // Paper start
++    @Nullable
++    java.util.UUID spawningEntity;
++
++    @Nullable
++    public java.util.UUID getSpawningEntity() {
++        return this.spawningEntity;
++    }
++    public void setSpawningEntity(java.util.UUID entity) { this.spawningEntity = entity; }
++    // Paper end
++
+     private static enum AttackPhase {
+ 
+         CIRCLE, SWOOP;
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java b/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
+index 9d28e3855a9b150534ef8b6c89e186f5c4c47694..bb7f2d3ff7fc6f5cadb4ab24efb5a3a2f5bdc33f 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
+@@ -69,9 +69,19 @@ public class PhantomSpawner implements CustomSpawner {
+                                             int k = 1 + randomsource.nextInt(difficultydamagescaler.getDifficulty().getId() + 1);
+ 
+                                             for (int l = 0; l < k; ++l) {
++                                                // Paper start - PhantomPreSpawnEvent
++                                                com.destroystokyo.paper.event.entity.PhantomPreSpawnEvent event = new com.destroystokyo.paper.event.entity.PhantomPreSpawnEvent(io.papermc.paper.util.MCUtil.toLocation(world, blockposition1), entityplayer.getBukkitEntity(), org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL);
++                                                if (!event.callEvent()) {
++                                                    if (event.shouldAbortSpawn()) {
++                                                        break;
++                                                    }
++                                                    continue;
++                                                }
++                                                // Paper end - PhantomPreSpawnEvent
+                                                 Phantom entityphantom = (Phantom) EntityType.PHANTOM.create(world);
+ 
+                                                 if (entityphantom != null) {
++                                                    entityphantom.setSpawningEntity(entityplayer.getUUID()); // Paper - PhantomPreSpawnEvent
+                                                     entityphantom.moveTo(blockposition1, 0.0F, 0.0F);
+                                                     groupdataentity = entityphantom.finalizeSpawn(world, difficultydamagescaler, MobSpawnType.NATURAL, groupdataentity);
+                                                     world.addFreshEntityWithPassengers(entityphantom, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL); // CraftBukkit
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPhantom.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPhantom.java
+index 0359c161448941f1b9fdac545a5c47a68f19b760..305a635b049741ac5e2670060c6818cb2c07e5ab 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPhantom.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPhantom.java
+@@ -28,4 +28,11 @@ public class CraftPhantom extends CraftFlying implements Phantom, CraftEnemy {
+     public String toString() {
+         return "CraftPhantom";
+     }
++
++    // Paper start
++    @Override
++    public java.util.UUID getSpawningEntity() {
++        return getHandle().getSpawningEntity();
++    }
++    // Paper end
+ }

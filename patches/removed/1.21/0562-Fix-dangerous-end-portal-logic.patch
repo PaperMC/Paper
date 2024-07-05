@@ -1,0 +1,88 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <spottedleaf@users.noreply.github.com>
+Date: Fri, 4 Jun 2021 17:06:52 -0400
+Subject: [PATCH] Fix dangerous end portal logic
+
+End portals could teleport entities during move calls. Stupid
+logic given the caller will never expect that kind of thing,
+and will result in all kinds of dupes.
+
+Move the tick logic into the post tick, where portaling was
+designed to happen in the first place.
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 21150f44e4f71aba3801d5392e45243112d012c0..b4670fc653721283f95bb61ac57c306b224b7fb7 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -422,6 +422,36 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+         return this.originWorld;
+     }
+     // Paper end - Entity origin API
++    // Paper start - make end portalling safe
++    public BlockPos portalBlock;
++    public ServerLevel portalWorld;
++    public void tickEndPortal() {
++        BlockPos pos = this.portalBlock;
++        ServerLevel world = this.portalWorld;
++        this.portalBlock = null;
++        this.portalWorld = null;
++
++        if (pos == null || world == null || world != this.level) {
++            return;
++        }
++
++        if (this.isPassenger() || this.isVehicle() || !this.canChangeDimensions() || this.isRemoved() || !this.valid || !this.isAlive()) {
++            return;
++        }
++
++        ResourceKey<Level> resourcekey = world.getTypeKey() == LevelStem.END ? Level.OVERWORLD : Level.END; // CraftBukkit - SPIGOT-6152: send back to main overworld in custom ends
++        ServerLevel worldserver = world.getServer().getLevel(resourcekey);
++
++        org.bukkit.event.entity.EntityPortalEnterEvent event = new org.bukkit.event.entity.EntityPortalEnterEvent(this.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ()));
++        event.callEvent();
++
++        if (this instanceof ServerPlayer) {
++            ((ServerPlayer) this).changeDimension(worldserver, PlayerTeleportEvent.TeleportCause.END_PORTAL);
++            return;
++        }
++        this.teleportTo(worldserver, null);
++    }
++    // Paper end - make end portalling safe
+     public float getBukkitYaw() {
+         return this.yRot;
+     }
+@@ -2833,6 +2863,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+             }
+ 
+             this.processPortalCooldown();
++            if (!io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowUnsafeEndPortalTeleportation) this.tickEndPortal(); // Paper - make end portalling safe
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java b/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java
+index a2de13a366e4a462b746dab035372838127f4994..7272d70c672b54dcf595beafd7a2ed33c96e35cb 100644
+--- a/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java
+@@ -61,16 +61,13 @@ public class EndPortalBlock extends BaseEntityBlock {
+                 // return; // CraftBukkit - always fire event in case plugins wish to change it
+             }
+ 
+-            // CraftBukkit start - Entity in portal
+-            EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ()));
+-            world.getCraftServer().getPluginManager().callEvent(event);
+-
+-            if (entity instanceof ServerPlayer) {
+-                ((ServerPlayer) entity).changeDimension(worldserver, PlayerTeleportEvent.TeleportCause.END_PORTAL);
+-                return;
++            // Paper start - move all of this logic into portal tick
++            entity.portalWorld = ((ServerLevel)world);
++            entity.portalBlock = pos.immutable();
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowUnsafeEndPortalTeleportation) {
++                entity.tickEndPortal();
+             }
+-            // CraftBukkit end
+-            entity.changeDimension(worldserver);
++            // Paper end - move all of this logic into portal tick
+         }
+ 
+     }

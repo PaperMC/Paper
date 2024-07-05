@@ -1,0 +1,130 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MeFisto94 <MeFisto94@users.noreply.github.com>
+Date: Tue, 11 May 2021 00:48:33 +0200
+Subject: [PATCH] Add a "should burn in sunlight" API for Phantoms and
+ Skeletons
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
+index a5593ac33878efc970c1bdd6f636438d160e9d50..6627126ab02dbd5e9d1de6b186d75d850ef11280 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
++++ b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
+@@ -93,9 +93,15 @@ public abstract class AbstractSkeleton extends Monster implements RangedAttackMo
+ 
+     abstract SoundEvent getStepSound();
+ 
++    // Paper start - shouldBurnInDay API
++    private boolean shouldBurnInDay = true;
++    public boolean shouldBurnInDay() { return shouldBurnInDay; }
++    public void setShouldBurnInDay(boolean shouldBurnInDay) { this.shouldBurnInDay = shouldBurnInDay; }
++    // Paper end - shouldBurnInDay API
++
+     @Override
+     public void aiStep() {
+-        boolean flag = this.isSunBurnTick();
++        boolean flag = shouldBurnInDay && this.isSunBurnTick(); // Paper - shouldBurnInDay API
+ 
+         if (flag) {
+             ItemStack itemstack = this.getItemBySlot(EquipmentSlot.HEAD);
+@@ -232,7 +238,20 @@ public abstract class AbstractSkeleton extends Monster implements RangedAttackMo
+     public void readAdditionalSaveData(CompoundTag nbt) {
+         super.readAdditionalSaveData(nbt);
+         this.reassessWeaponGoal();
++        // Paper start - shouldBurnInDay API
++        if (nbt.contains("Paper.ShouldBurnInDay")) {
++            this.shouldBurnInDay = nbt.getBoolean("Paper.ShouldBurnInDay");
++        }
++        // Paper end - shouldBurnInDay API
++    }
++
++    // Paper start - shouldBurnInDay API
++    @Override
++    public void addAdditionalSaveData(CompoundTag nbt) {
++        super.addAdditionalSaveData(nbt);
++        nbt.putBoolean("Paper.ShouldBurnInDay", this.shouldBurnInDay);
+     }
++    // Paper end - shouldBurnInDay API
+ 
+     @Override
+     public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Phantom.java b/src/main/java/net/minecraft/world/entity/monster/Phantom.java
+index 4b3bec32921feb1dcf71abf5e8d34fcbbc59baf5..c277dac448a64809e93dd7a447ee3dc2a86c860e 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Phantom.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Phantom.java
+@@ -138,7 +138,7 @@ public class Phantom extends FlyingMob implements Enemy {
+ 
+     @Override
+     public void aiStep() {
+-        if (this.isAlive() && this.isSunBurnTick()) {
++        if (this.isAlive() && this.shouldBurnInDay && this.isSunBurnTick()) { // Paper - shouldBurnInDay API
+             this.igniteForSeconds(8.0F);
+         }
+ 
+@@ -169,6 +169,9 @@ public class Phantom extends FlyingMob implements Enemy {
+         if (nbt.hasUUID("Paper.SpawningEntity")) {
+             this.spawningEntity = nbt.getUUID("Paper.SpawningEntity");
+         }
++        if (nbt.contains("Paper.ShouldBurnInDay")) {
++            this.shouldBurnInDay = nbt.getBoolean("Paper.ShouldBurnInDay");
++        }
+         // Paper end
+     }
+ 
+@@ -183,6 +186,7 @@ public class Phantom extends FlyingMob implements Enemy {
+         if (this.spawningEntity != null) {
+             nbt.putUUID("Paper.SpawningEntity", this.spawningEntity);
+         }
++        nbt.putBoolean("Paper.ShouldBurnInDay", shouldBurnInDay);
+         // Paper end
+     }
+ 
+@@ -238,6 +242,9 @@ public class Phantom extends FlyingMob implements Enemy {
+         return this.spawningEntity;
+     }
+     public void setSpawningEntity(java.util.UUID entity) { this.spawningEntity = entity; }
++    private boolean shouldBurnInDay = true;
++    public boolean shouldBurnInDay() { return shouldBurnInDay; }
++    public void setShouldBurnInDay(boolean shouldBurnInDay) { this.shouldBurnInDay = shouldBurnInDay; }
+     // Paper end
+ 
+     private static enum AttackPhase {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractSkeleton.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractSkeleton.java
+index 5ff566186431440c25a26900aba14e4adb642031..5beaa2bb0d58fe477ce8d2de8b77600d3b416d8c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractSkeleton.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractSkeleton.java
+@@ -20,4 +20,15 @@ public abstract class CraftAbstractSkeleton extends CraftMonster implements Abst
+         return (net.minecraft.world.entity.monster.AbstractSkeleton) super.getHandle();
+     }
+     // Paper end
++    // Paper start
++    @Override
++    public boolean shouldBurnInDay() {
++        return getHandle().shouldBurnInDay();
++    }
++
++    @Override
++    public void setShouldBurnInDay(boolean shouldBurnInDay) {
++        getHandle().setShouldBurnInDay(shouldBurnInDay);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPhantom.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPhantom.java
+index 305a635b049741ac5e2670060c6818cb2c07e5ab..9304e201db1ec96d0916aa8ea781f3e4bc7991e6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPhantom.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPhantom.java
+@@ -34,5 +34,15 @@ public class CraftPhantom extends CraftFlying implements Phantom, CraftEnemy {
+     public java.util.UUID getSpawningEntity() {
+         return getHandle().getSpawningEntity();
+     }
++
++    @Override
++    public boolean shouldBurnInDay() {
++        return getHandle().shouldBurnInDay();
++    }
++
++    @Override
++    public void setShouldBurnInDay(boolean shouldBurnInDay) {
++        getHandle().setShouldBurnInDay(shouldBurnInDay);
++    }
+     // Paper end
+ }

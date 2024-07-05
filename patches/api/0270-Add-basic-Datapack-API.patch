@@ -1,0 +1,158 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Connor Linfoot <connorlinfoot@me.com>
+Date: Sun, 16 May 2021 15:07:34 +0100
+Subject: [PATCH] Add basic Datapack API
+
+
+diff --git a/src/main/java/io/papermc/paper/datapack/Datapack.java b/src/main/java/io/papermc/paper/datapack/Datapack.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7b2ab0be10a21e0496ad1d485ff8cb2c0b92a2cb
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datapack/Datapack.java
+@@ -0,0 +1,32 @@
++package io.papermc.paper.datapack;
++
++import org.checkerframework.checker.nullness.qual.NonNull;
++
++public interface Datapack {
++
++    /**
++     * @return the name of the pack
++     */
++    @NonNull
++    String getName();
++
++    /**
++     * @return the compatibility of the pack
++     */
++    @NonNull
++    Compatibility getCompatibility();
++
++    /**
++     * @return whether or not the pack is currently enabled
++     */
++    boolean isEnabled();
++
++    void setEnabled(boolean enabled);
++
++    enum Compatibility {
++        TOO_OLD,
++        TOO_NEW,
++        COMPATIBLE,
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/datapack/DatapackManager.java b/src/main/java/io/papermc/paper/datapack/DatapackManager.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..58f78d5e91beacaf710f62461cf869f70d08b2a2
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datapack/DatapackManager.java
+@@ -0,0 +1,21 @@
++package io.papermc.paper.datapack;
++
++import org.checkerframework.checker.nullness.qual.NonNull;
++
++import java.util.Collection;
++
++public interface DatapackManager {
++
++    /**
++     * @return all the packs known to the server
++     */
++    @NonNull
++    Collection<Datapack> getPacks();
++
++    /**
++     * @return all the packs which are currently enabled
++     */
++    @NonNull
++    Collection<Datapack> getEnabledPacks();
++
++}
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index a60b1d57904eefeb832ab93fb0e556de9409e5ae..913ab7ce4a754739ef786086d4da55c93d37a39e 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -328,9 +328,11 @@ public final class Bukkit {
+     /**
+      * Get the DataPack Manager.
+      *
++     * @deprecated use {@link #getDatapackManager()}
+      * @return the manager
+      */
+     @NotNull
++    @Deprecated(forRemoval = true)
+     public static DataPackManager getDataPackManager() {
+         return server.getDataPackManager();
+     }
+@@ -2603,6 +2605,14 @@ public final class Bukkit {
+     public static com.destroystokyo.paper.entity.ai.MobGoals getMobGoals() {
+         return server.getMobGoals();
+     }
++
++    /**
++     * @return the datapack manager
++     */
++    @NotNull
++    public static io.papermc.paper.datapack.DatapackManager getDatapackManager() {
++        return server.getDatapackManager();
++    }
+     // Paper end
+ 
+     @NotNull
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 1074a858f441133c9c3049601411a00b0d37cf3e..b383ca29be8f86e03e81dbb9962747c03aed1671 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -267,9 +267,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+     /**
+      * Get the DataPack Manager.
+      *
++     * @deprecated use {@link #getDatapackManager()}
+      * @return the manager
+      */
+     @NotNull
++    @Deprecated(forRemoval = true) // Paper
+     public DataPackManager getDataPackManager();
+ 
+     /**
+@@ -2270,5 +2272,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      */
+     @NotNull
+     com.destroystokyo.paper.entity.ai.MobGoals getMobGoals();
++
++    /**
++     * @return the datapack manager
++     */
++    @NotNull
++    io.papermc.paper.datapack.DatapackManager getDatapackManager();
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/packs/DataPack.java b/src/main/java/org/bukkit/packs/DataPack.java
+index ea03c51d51e015e69d3aaa795547033ceabff9e0..419f6bdbec5dc1c731fb0f93816a90f58a329021 100644
+--- a/src/main/java/org/bukkit/packs/DataPack.java
++++ b/src/main/java/org/bukkit/packs/DataPack.java
+@@ -9,7 +9,9 @@ import org.jetbrains.annotations.NotNull;
+  * Represents a data pack.
+  *
+  * @see <a href="https://minecraft.wiki/w/Data_pack">Minecraft wiki</a>
++ * @deprecated use {@link io.papermc.paper.datapack.Datapack}
+  */
++@Deprecated(forRemoval = true) // Paper
+ public interface DataPack extends Keyed {
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/packs/DataPackManager.java b/src/main/java/org/bukkit/packs/DataPackManager.java
+index aee6e828c6fac9b010356af1239a58b4579c1773..7d3694efc21c7bc3784207735bdd9fb27e69988a 100644
+--- a/src/main/java/org/bukkit/packs/DataPackManager.java
++++ b/src/main/java/org/bukkit/packs/DataPackManager.java
+@@ -13,7 +13,9 @@ import org.jetbrains.annotations.Nullable;
+ 
+ /**
+  * Manager of data packs.
++ * @deprecated use {@link io.papermc.paper.datapack.DatapackManager}
+  */
++@Deprecated(forRemoval = true) // Paper
+ public interface DataPackManager {
+ 
+     /**

@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alfie Cleveland <alfeh@me.com>
+Date: Tue, 27 Dec 2016 01:57:57 +0000
+Subject: [PATCH] Properly fix item duplication bug
+
+Credit to prplz for figuring out the real issue
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 70f0f4daff27754aefcadb84387bb3054cc66a8e..dae729c39e5d3fefc8188069e81f33066746c4a6 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -2623,7 +2623,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+ 
+     @Override
+     public boolean isImmobile() {
+-        return super.isImmobile() || !this.getBukkitEntity().isOnline();
++        return super.isImmobile() || (this.connection != null && this.connection.isDisconnected()); // Paper - Fix duplication bugs
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+index 8520f0f2b4b4e758b2e2fae206b7fd818a6fa14f..73d40f768b6882062656cba30acc5f86f26d1a96 100644
+--- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+@@ -179,7 +179,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+     }
+ 
+     public final boolean isDisconnected() {
+-        return !this.player.joining && !this.connection.isConnected();
++        return (!this.player.joining && !this.connection.isConnected()) || this.processedDisconnect; // Paper - Fix duplication bugs
+     }
+     // CraftBukkit end
+ 

@@ -6,7 +6,7 @@ Subject: [PATCH] Plugin remapping
 Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index b26d6e2b573ae806358656fbb7f2c89efeb8e008..3656f37763fb30fdf8643918d7d5652fc7fbd40c 100644
+index 7d3db5e39f33b73b852141c8b24c017e1b55ffb1..2369b767cadcca95ba69f8b01b9cd90a9e254dc8 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -47,6 +47,7 @@ dependencies {
@@ -1317,7 +1317,7 @@ index 0000000000000000000000000000000000000000..944250d2b8e1969f221b2f24cce7b101
 +}
 diff --git a/src/main/java/io/papermc/paper/util/Hashing.java b/src/main/java/io/papermc/paper/util/Hashing.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..49e235e0035d7f063c8544ec10bd8f9ef4e613c3
+index 0000000000000000000000000000000000000000..54c1324faa190a06bfa2b3b8f86928b4c51a57f8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/Hashing.java
 @@ -0,0 +1,50 @@
@@ -1346,7 +1346,7 @@ index 0000000000000000000000000000000000000000..49e235e0035d7f063c8544ec10bd8f9e
 +     */
 +    public static String sha256(final InputStream stream) {
 +        try (stream) {
-+            return com.google.common.hash.Hashing.sha256().hashBytes(IOUtils.toByteArray(stream)).toString().toUpperCase(Locale.ENGLISH);
++            return com.google.common.hash.Hashing.sha256().hashBytes(IOUtils.toByteArray(stream)).toString().toUpperCase(Locale.ROOT);
 +        } catch (final IOException ex) {
 +            throw new RuntimeException("Failed to take hash of InputStream", ex);
 +        }
@@ -1368,7 +1368,7 @@ index 0000000000000000000000000000000000000000..49e235e0035d7f063c8544ec10bd8f9e
 +        } catch (final IOException ex) {
 +            throw new RuntimeException("Failed to take hash of file '" + file + "'", ex);
 +        }
-+        return hash.toString().toUpperCase(Locale.ENGLISH);
++        return hash.toString().toUpperCase(Locale.ROOT);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/util/MappingEnvironment.java b/src/main/java/io/papermc/paper/util/MappingEnvironment.java
@@ -1553,18 +1553,18 @@ index 0000000000000000000000000000000000000000..badff5d6ae6dd8d209c82bc7e8afe370
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index c25d80a1d5aa0f3cc2cbf1e9b94154c759aab36e..c836204a04ca050988057dcc92c7a1fbcc02ef34 100644
+index b67cb9b027c33494f0ed3c6c6ac354a5c79fbf47..cde2e181bf1aaf92f1e96b00e03b7b001a06e6b3 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -637,6 +637,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -643,6 +643,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         }
  
          this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
-         this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
 +        if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
+         this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
          this.connection.acceptConnections();
      }
- 
-@@ -909,6 +910,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -916,6 +917,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              this.server.disablePlugins();
          }
          // CraftBukkit end
@@ -1573,10 +1573,10 @@ index c25d80a1d5aa0f3cc2cbf1e9b94154c759aab36e..c836204a04ca050988057dcc92c7a1fb
          this.isSaving = true;
          if (this.playerList != null) {
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 0d6688e9da81453e64daacfb81e4a13cc37b3e66..98cba55466d6798e5de33d8dcbf03e205e5199d8 100644
+index 6ba90739c20995362a5275e2259cac9e17fbcf59..d38ecbc208c34509eaf77751ac45d9ef51a5dce8 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -315,6 +315,12 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -319,6 +319,12 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          }
      }
  
@@ -1904,14 +1904,14 @@ index 0000000000000000000000000000000000000000..73b20a92f330311e3fef8f03b51a0985
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 45160b93a24dc74f6368441e2a4fe659ceaf5bf5..6573e72d041714ccc2bf0e3c8734bc212caf534e 100644
+index 3f748a8f067d8ce8c39272cb3decaf4ec4879da5..d1699fcca66bcfbbe8fcc426802cb766cf1e580b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -966,6 +966,7 @@ public final class CraftServer implements Server {
+@@ -992,6 +992,7 @@ public final class CraftServer implements Server {
+         this.loadPlugins();
          this.enablePlugins(PluginLoadOrder.STARTUP);
          this.enablePlugins(PluginLoadOrder.POSTWORLD);
-         this.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.RELOAD));
 +        if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
+         this.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.RELOAD));
      }
  
-     @Override
