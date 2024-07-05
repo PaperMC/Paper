@@ -52,29 +52,29 @@ index 9d74577af071954e1e37201a96368c1360076209..eafa54c870c3e2aef30c3f9f96f51660
                  throw new IllegalArgumentException("Not implemented. This is a bug");
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 776f4dcc0b61a5b8ee4020a283cfcfacefbe682e..9aef0223cd790d9f4a74dfe22e7926027c08dca5 100644
+index a82b8e123d3df343f643bdcf007bc3632518c6a1..cc9de0a940deb21c1ed660567e7d419fedcfd376 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -1452,7 +1452,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
-         if (this.attributeModifiers == null) return LinkedHashMultimap.create(); // Paper - don't change the components
-         SetMultimap<Attribute, AttributeModifier> result = LinkedHashMultimap.create();
-         for (Map.Entry<Attribute, AttributeModifier> entry : this.attributeModifiers.entries()) {
--            if (entry.getValue().getSlot() == null || entry.getValue().getSlot() == slot) {
+             if (this.attributeModifiers == null) return LinkedHashMultimap.create(); // Paper - don't change the components
+             SetMultimap<Attribute, AttributeModifier> result = LinkedHashMultimap.create();
+             for (Map.Entry<Attribute, AttributeModifier> entry : this.attributeModifiers.entries()) {
+-                if (entry.getValue().getSlot() == null || entry.getValue().getSlot() == slot) {
 +            if (entry.getValue().getSlotGroup().test(slot)) { // Paper - correctly test slot against group
-                 result.put(entry.getKey(), entry.getValue());
+                     result.put(entry.getKey(), entry.getValue());
+                 }
              }
-         }
 @@ -1520,9 +1520,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
-         while (iter.hasNext()) {
-             Map.Entry<Attribute, AttributeModifier> entry = iter.next();
--            // Explicitly match against null because (as of MC 1.13) AttributeModifiers without a -
--            // set slot are active in any slot.
--            if (entry.getValue().getSlot() == null || entry.getValue().getSlot() == slot) {
+             while (iter.hasNext()) {
+                 Map.Entry<Attribute, AttributeModifier> entry = iter.next();
+-                // Explicitly match against null because (as of MC 1.13) AttributeModifiers without a -
+-                // set slot are active in any slot.
+-                if (entry.getValue().getSlot() == null || entry.getValue().getSlot() == slot) {
 +            if (entry.getValue().getSlotGroup().test(slot)) { // Paper - correctly test slot against group
-                 iter.remove();
-                 ++removed;
-             }
+                     iter.remove();
+                     ++removed;
+                 }
 diff --git a/src/test/java/io/papermc/paper/inventory/item/EquipmentSlotGroupTest.java b/src/test/java/io/papermc/paper/inventory/item/EquipmentSlotGroupTest.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..ee0bfe4edb134d7ea3a3b97f5102a7f3122c3b99

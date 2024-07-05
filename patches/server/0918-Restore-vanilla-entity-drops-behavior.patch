@@ -9,14 +9,14 @@ on dropping the item instead of generalizing it for all dropped
 items like CB does.
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 184f3c7a1304f4f9d2aaeae27172be9d853c30de..3cbb59df34156479d24a8251f2b3acbb5e60dc2c 100644
+index f568fa18ddcb1a1cd060c469edd6db45431bb53c..09e60ea5c25f23bcc7e24f16c7a31f616d249ff9 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -978,22 +978,20 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
          if (this.isRemoved()) {
              return;
          }
--        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>(this.getInventory().getContainerSize());
+-        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<>(this.getInventory().getContainerSize());
 +        List<DefaultDrop> loot = new java.util.ArrayList<>(this.getInventory().getContainerSize()); // Paper - Restore vanilla drops behavior
          boolean keepInventory = this.level().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY) || this.isSpectator();
  
@@ -31,24 +31,13 @@ index 184f3c7a1304f4f9d2aaeae27172be9d853c30de..3cbb59df34156479d24a8251f2b3acbb
          if (this.shouldDropLoot() && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) { // Paper - fix player loottables running when mob loot gamerule is false
          // SPIGOT-5071: manually add player loot tables (SPIGOT-5195 - ignores keepInventory rule)
          this.dropFromLootTable(damageSource, this.lastHurtByPlayerTime > 0);
--        for (org.bukkit.inventory.ItemStack item : this.drops) {
--            loot.add(item);
--        }
+-        this.dropCustomDeathLoot(this.serverLevel(), damageSource, flag);
+-
+-        loot.addAll(this.drops);
 +        loot.addAll(this.drops); // Paper
          this.drops.clear(); // SPIGOT-5188: make sure to clear
          } // Paper - fix player loottables running when mob loot gamerule is false
  
-@@ -2530,8 +2528,8 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
-     }
- 
-     @Override
--    public ItemEntity drop(ItemStack stack, boolean throwRandomly, boolean retainOwnership) {
--        ItemEntity entityitem = super.drop(stack, throwRandomly, retainOwnership);
-+    public ItemEntity drop(ItemStack stack, boolean throwRandomly, boolean retainOwnership, boolean callDropEvent) { // Paper - Restore vanilla drops behavior; override method with most params
-+        ItemEntity entityitem = super.drop(stack, throwRandomly, retainOwnership, callDropEvent); // Paper - Restore vanilla drops behavior; override method with most params
- 
-         if (entityitem == null) {
-             return null;
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
 index 24aacf9997c9ea0bd68ef3803f4a3ee4a920ab44..363fe1aff439983199f5137547cef9516fbab2a8 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
@@ -104,7 +93,7 @@ index 24aacf9997c9ea0bd68ef3803f4a3ee4a920ab44..363fe1aff439983199f5137547cef951
              return this.spawnAtLocation(entityitem);
          }
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 3f788e88604b77761c5add39450cf1640604c0f0..3e58fa4160fd4e4e5b5d00ba8f963b1b74be2663 100644
+index 2cbb4ff57117382791eefa4881fc0b328c77d58a..3def6b7919484c330bc1c4aea1a8e2c6ad21f999 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -278,7 +278,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -165,10 +154,10 @@ index 5bcb9a53ebebeef4bd6ec2458df4b63002ebd804..2f398750bfee5758ad8b1367b6fc1436
              }
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index c9a38f6b91ac538aea4c4a6f23d18415585a931b..bec1f62559b42acee6c955baf7851aecb9179e16 100644
+index e079e8f4078078d737a9d554dbcd2568b1a1f9eb..1d958323eccd4cf5e369e99e32d2f1dec0959591 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -965,18 +965,24 @@ public class CraftEventFactory {
+@@ -966,18 +966,24 @@ public class CraftEventFactory {
      }
  
      public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, DamageSource damageSource) {
@@ -197,7 +186,7 @@ index c9a38f6b91ac538aea4c4a6f23d18415585a931b..bec1f62559b42acee6c955baf7851aec
          populateFields(victim, event); // Paper - make cancellable
          CraftWorld world = (CraftWorld) entity.getWorld();
          Bukkit.getServer().getPluginManager().callEvent(event);
-@@ -990,20 +996,24 @@ public class CraftEventFactory {
+@@ -991,20 +997,24 @@ public class CraftEventFactory {
          victim.expToDrop = event.getDroppedExp();
          lootCheck.run(); // Paper - advancement triggers before destroying items
  
@@ -238,8 +227,8 @@ index c9a38f6b91ac538aea4c4a6f23d18415585a931b..bec1f62559b42acee6c955baf7851aec
 +            // Paper end - Restore vanilla drops behavior
              if (stack == null || stack.getType() == Material.AIR) continue;
  
--            world.dropItem(entity.getLocation(), stack);
-+            drop.runConsumer(world, entity.getLocation()); // Paper - Restore vanilla drops behavior
+-            victim.drop(CraftItemStack.asNMSCopy(stack), true, false, false); // SPIGOT-7800, SPIGOT-7801: Vanilla Behaviour for dropped items
++            drop.runConsumer(entity.getWorld(), entity.getLocation()); // Paper - Restore vanilla drops behavior
          }
  
          return event;
