@@ -445,7 +445,7 @@ index d7e5491cc0296563fb9fdf28d64b21a10c08ea4a..224ea52574b80bb087c5c62eaf1d4626
  
      private static Material shieldToBannerHack() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
-index a395c7ce952f4a60a5edf80e8731afa6388d18ea..e213ac74f8f4a62b7b8b2b7889250f5cdeb348fe 100644
+index e064af399dcae40b4f35aa993d356b1462f91d6c..27a275f324891e395bf3fd3038c0b9a724bbbf66 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
 @@ -34,7 +34,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBo
@@ -457,45 +457,6 @@ index a395c7ce952f4a60a5edf80e8731afa6388d18ea..e213ac74f8f4a62b7b8b2b7889250f5c
      static final int MAX_PAGE_LENGTH = WritableBookContent.PAGE_EDIT_LENGTH; // SPIGOT-6911: Use Minecraft limits
  
      // We store the pages in their raw original text representation. See SPIGOT-5063, SPIGOT-5350, SPIGOT-3206
-diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
-index 3f78a0935d738854182254b345064e3c225dcd5f..218df87c596d47b431dbbf2aa42822ef174f948f 100644
---- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
-+++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
-@@ -116,8 +116,8 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
-             }
-         }
- 
--        this.resolved = SerializableMeta.getObject(Boolean.class, map, CraftMetaBookSigned.RESOLVED.BUKKIT, true);
--        this.generation = SerializableMeta.getObject(Integer.class, map, CraftMetaBookSigned.GENERATION.BUKKIT, true);
-+        this.resolved = SerializableMeta.getBoolean(map, CraftMetaBookSigned.RESOLVED.BUKKIT); // Paper - General ItemMeta fixes
-+        this.generation = SerializableMeta.getObjectOptionally(Integer.class, map, CraftMetaBookSigned.GENERATION.BUKKIT, true).orElse(0); // Paper - General ItemMeta Fixes
-     }
- 
-     @Override
-@@ -129,7 +129,7 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
-             for (Component page : this.pages) {
-                 list.add(Filterable.passThrough(page));
-             }
--            itemData.put(CraftMetaBookSigned.BOOK_CONTENT, new WrittenBookContent(Filterable.from(FilteredText.passThrough(this.title)), this.author, this.generation, list, this.resolved));
-+            itemData.put(CraftMetaBookSigned.BOOK_CONTENT, new WrittenBookContent(Filterable.from(FilteredText.passThrough(this.title == null ? "" : this.title)), this.author == null ? "" : this.author, this.generation, list, this.resolved));
-         }
-     }
- 
-@@ -358,7 +358,13 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
-         }
- 
-         if (this.pages != null) {
--            builder.put(CraftMetaBookSigned.BOOK_PAGES.BUKKIT, ImmutableList.copyOf(this.pages));
-+            // Paper start - deserialization expects json
-+            final List<String> jsonPages = new ArrayList<>(this.pages.size());
-+            for (final Component page : this.pages) {
-+                jsonPages.add(CraftChatMessage.toJSON(page));
-+            }
-+            builder.put(CraftMetaBookSigned.BOOK_PAGES.BUKKIT, ImmutableList.copyOf(jsonPages));
-+            // Paper end - deserialization expects json
-         }
- 
-         if (this.resolved) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBundle.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBundle.java
 index 2736a87a6c481da0575e6e29ea08faa539c24378..51da0db4da3549efd69f367e28450408968fa8d0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBundle.java
@@ -671,7 +632,7 @@ index 3f6c5cbbf63631e4b72dc43558651ea94f31ca78..da474a5b963d8e6769d120e9091e60ed
          return true;
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java
-index 97b7085250d749c5e46352b372068b51de89bc7f..7277e7ee566aabf6e01937072d949ed67c3e8e38 100644
+index 9600b23666668d7d581e2920a4e03e59cc2339fb..0eceacbb096481d3bd31f5f99e964c88aea2e3fb 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaFirework.java
 @@ -54,7 +54,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
@@ -740,23 +701,7 @@ index 97b7085250d749c5e46352b372068b51de89bc7f..7277e7ee566aabf6e01937072d949ed6
              effects.add((FireworkEffect) obj);
          }
      }
-@@ -185,9 +189,13 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
-         }
- 
-         List<FireworkExplosion> effects = new ArrayList<>();
--        for (FireworkEffect effect : this.effects) {
--            effects.add(CraftMetaFirework.getExplosion(effect));
-+        // Paper start - fix NPE with effects list being null
-+        if (this.effects != null) {
-+            for (FireworkEffect effect : this.effects) {
-+                effects.add(CraftMetaFirework.getExplosion(effect));
-+            }
-         }
-+        // Paper end
- 
-         itemTag.put(CraftMetaFirework.FIREWORKS, new Fireworks(this.power, effects));
-     }
-@@ -212,7 +220,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+@@ -214,7 +218,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
      }
  
      boolean isFireworkEmpty() {
@@ -765,7 +710,7 @@ index 97b7085250d749c5e46352b372068b51de89bc7f..7277e7ee566aabf6e01937072d949ed6
      }
  
      boolean hasPower() {
-@@ -228,7 +236,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+@@ -230,7 +234,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
          if (meta instanceof CraftMetaFirework that) {
  
              return (this.hasPower() ? that.hasPower() && this.power == that.power : !that.hasPower())
@@ -774,7 +719,7 @@ index 97b7085250d749c5e46352b372068b51de89bc7f..7277e7ee566aabf6e01937072d949ed6
          }
  
          return true;
-@@ -246,7 +254,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+@@ -248,7 +252,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
          if (this.hasPower()) {
              hash = 61 * hash + this.power;
          }
@@ -783,7 +728,7 @@ index 97b7085250d749c5e46352b372068b51de89bc7f..7277e7ee566aabf6e01937072d949ed6
              hash = 61 * hash + 13 * this.effects.hashCode();
          }
          return hash != original ? CraftMetaFirework.class.hashCode() ^ hash : hash;
-@@ -256,7 +264,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+@@ -258,7 +262,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
      Builder<String, Object> serialize(Builder<String, Object> builder) {
          super.serialize(builder);
  
@@ -792,7 +737,7 @@ index 97b7085250d749c5e46352b372068b51de89bc7f..7277e7ee566aabf6e01937072d949ed6
              builder.put(CraftMetaFirework.EXPLOSIONS.BUKKIT, ImmutableList.copyOf(this.effects));
          }
  
-@@ -281,6 +289,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+@@ -283,6 +287,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
      @Override
      public void addEffect(FireworkEffect effect) {
          Preconditions.checkArgument(effect != null, "FireworkEffect cannot be null");
@@ -800,7 +745,7 @@ index 97b7085250d749c5e46352b372068b51de89bc7f..7277e7ee566aabf6e01937072d949ed6
          if (this.effects == null) {
              this.effects = new ArrayList<FireworkEffect>();
          }
-@@ -290,6 +299,10 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+@@ -292,6 +297,10 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
      @Override
      public void addEffects(FireworkEffect... effects) {
          Preconditions.checkArgument(effects != null, "effects cannot be null");
@@ -811,7 +756,7 @@ index 97b7085250d749c5e46352b372068b51de89bc7f..7277e7ee566aabf6e01937072d949ed6
          if (effects.length == 0) {
              return;
          }
-@@ -308,7 +321,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+@@ -310,7 +319,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
      @Override
      public void addEffects(Iterable<FireworkEffect> effects) {
          Preconditions.checkArgument(effects != null, "effects cannot be null");
@@ -820,7 +765,7 @@ index 97b7085250d749c5e46352b372068b51de89bc7f..7277e7ee566aabf6e01937072d949ed6
      }
  
      @Override
-@@ -343,7 +356,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+@@ -345,7 +354,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
      @Override
      public void setPower(int power) {
          Preconditions.checkArgument(power >= 0, "power cannot be less than zero: %s", power);
@@ -1473,10 +1418,10 @@ index 17705059b81942e4df43a4a5180092e09c985ade..80e6b85a107d5236edba99540cb5074e
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/SerializableMeta.java b/src/main/java/org/bukkit/craftbukkit/inventory/SerializableMeta.java
-index 8b407a33b04af6ae396ada0b8aca7dc246d314ef..d204845cf0b9de00589593469755cb8e42e0aa67 100644
+index b7e93a6ec72ec3e3390fefa52fda0c2cd8e17c0c..758778650bebf7b96eefab42543e812849124b2f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/SerializableMeta.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/SerializableMeta.java
-@@ -123,4 +123,21 @@ public final class SerializableMeta implements ConfigurationSerializable {
+@@ -128,4 +128,21 @@ public final class SerializableMeta implements ConfigurationSerializable {
          }
          throw new IllegalArgumentException(field + "(" + object + ") is not a valid " + clazz);
      }
