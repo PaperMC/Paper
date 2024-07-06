@@ -5,10 +5,31 @@ Subject: [PATCH] Revert to vanilla handling of LivingEntity#actuallyHurt
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 8072d31525d9c7890804bb879893f1a69820e32d..abed03b44a2b0beb9931e52be9a5ce57001ae579 100644
+index 8072d31525d9c7890804bb879893f1a69820e32d..d41e22ff113231923d95567244fd33dcc4f320d4 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -2411,12 +2411,12 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1476,9 +1476,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                 }
+ 
+                 // CraftBukkit start
+-                if (!this.actuallyHurt(source, (float) event.getFinalDamage() - this.lastHurt, event)) {
++                final float actualDamage = (float) event.getFinalDamage() - this.lastHurt; // Paper - revert to vanilla damage - move out for diff on change
++                if (!this.actuallyHurt(source, actualDamage, event)) { // Paper - revert to vanilla damage - move out for diff on change
+                     return false;
+                 }
++                if (this instanceof ServerPlayer && actualDamage == 0.0F) return false; // Paper - revert to vanilla damage - players are not affected by damage that is 0.
+                 // CraftBukkit end
+                 this.lastHurt = amount;
+                 flag1 = false;
+@@ -1487,6 +1489,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                 if (!this.actuallyHurt(source, (float) event.getFinalDamage(), event)) {
+                     return false;
+                 }
++                if (this instanceof ServerPlayer && event.getFinalDamage() == 0.0F) return false; // Paper - revert to vanilla damage - players are not affected by damage that is 0.
+                 this.lastHurt = amount;
+                 this.invulnerableTime = this.invulnerableDuration; // CraftBukkit - restore use of maxNoDamageTicks
+                 // this.actuallyHurt(damagesource, f);
+@@ -2411,12 +2414,12 @@ public abstract class LivingEntity extends Entity implements Attackable {
  
                      return true;
                  } else {
