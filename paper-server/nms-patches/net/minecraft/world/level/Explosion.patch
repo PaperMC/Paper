@@ -112,13 +112,12 @@
                          entity.setDeltaMovement(entity.getDeltaMovement().add(vec3d1));
                          if (entity instanceof EntityHuman) {
                              EntityHuman entityhuman = (EntityHuman) entity;
-@@ -291,9 +350,65 @@
+@@ -291,9 +350,62 @@
  
              SystemUtils.shuffle(this.toBlow, this.level.random);
              ObjectListIterator objectlistiterator = this.toBlow.iterator();
 +            // CraftBukkit start
 +            org.bukkit.World bworld = this.level.getWorld();
-+            org.bukkit.entity.Entity explode = this.source == null ? null : this.source.getBukkitEntity();
 +            Location location = new Location(bworld, this.x, this.y, this.z);
 +
 +            List<org.bukkit.block.Block> blockList = new ObjectArrayList<>();
@@ -132,17 +131,15 @@
 +
 +            List<org.bukkit.block.Block> bukkitBlocks;
 +
-+            if (explode != null) {
-+                EntityExplodeEvent event = new EntityExplodeEvent(explode, location, blockList, this.yield);
-+                this.level.getCraftServer().getPluginManager().callEvent(event);
++            if (this.source != null) {
++                EntityExplodeEvent event = CraftEventFactory.callEntityExplodeEvent(this.source, blockList, this.yield, getBlockInteraction());
 +                this.wasCanceled = event.isCancelled();
 +                bukkitBlocks = event.blockList();
 +                this.yield = event.getYield();
 +            } else {
 +                org.bukkit.block.Block block = location.getBlock();
 +                org.bukkit.block.BlockState blockState = (damageSource.getDirectBlockState() != null) ? damageSource.getDirectBlockState() : block.getState();
-+                BlockExplodeEvent event = new BlockExplodeEvent(block, blockState, blockList, this.yield);
-+                this.level.getCraftServer().getPluginManager().callEvent(event);
++                BlockExplodeEvent event = CraftEventFactory.callBlockExplodeEvent(block, blockState, blockList, this.yield, getBlockInteraction());
 +                this.wasCanceled = event.isCancelled();
 +                bukkitBlocks = event.blockList();
 +                this.yield = event.getYield();
@@ -178,7 +175,7 @@
  
                  this.level.getBlockState(blockposition).onExplosionHit(this.level, blockposition, this, (itemstack, blockposition1) -> {
                      addOrAppendStack(list, itemstack, blockposition1);
-@@ -318,7 +433,11 @@
+@@ -318,7 +430,11 @@
                  BlockPosition blockposition1 = (BlockPosition) objectlistiterator1.next();
  
                  if (this.random.nextInt(3) == 0 && this.level.getBlockState(blockposition1).isAir() && this.level.getBlockState(blockposition1.below()).isSolidRender(this.level, blockposition1.below())) {
@@ -191,7 +188,7 @@
                  }
              }
          }
-@@ -326,6 +445,7 @@
+@@ -326,6 +442,7 @@
      }
  
      private static void addOrAppendStack(List<Pair<ItemStack, BlockPosition>> list, ItemStack itemstack, BlockPosition blockposition) {

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/boss/enderdragon/EntityEnderDragon.java
 +++ b/net/minecraft/world/entity/boss/enderdragon/EntityEnderDragon.java
-@@ -52,6 +52,20 @@
+@@ -52,6 +52,21 @@
  import net.minecraft.world.phys.Vec3D;
  import org.slf4j.Logger;
  
@@ -16,12 +16,13 @@
 +import org.bukkit.event.entity.EntityExplodeEvent;
 +import org.bukkit.event.entity.EntityRegainHealthEvent;
 +import org.bukkit.event.entity.EntityRemoveEvent;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
 +// CraftBukkit end
 +
  public class EntityEnderDragon extends EntityInsentient implements IMonster {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -89,6 +103,7 @@
+@@ -89,6 +104,7 @@
      private final PathPoint[] nodes;
      private final int[] nodeAdjacency;
      private final Path openSet;
@@ -29,7 +30,7 @@
  
      public EntityEnderDragon(EntityTypes<? extends EntityEnderDragon> entitytypes, World world) {
          super(EntityTypes.ENDER_DRAGON, world);
-@@ -110,6 +125,7 @@
+@@ -110,6 +126,7 @@
          this.noPhysics = true;
          this.noCulling = true;
          this.phaseManager = new DragonControllerManager(this);
@@ -37,7 +38,7 @@
      }
  
      public void setDragonFight(EnderDragonBattle enderdragonbattle) {
-@@ -257,7 +273,7 @@
+@@ -257,7 +274,7 @@
  
                      Vec3D vec3d1 = idragoncontroller.getFlyTargetLocation();
  
@@ -46,7 +47,7 @@
                          double d0 = vec3d1.x - this.getX();
                          double d1 = vec3d1.y - this.getY();
                          double d2 = vec3d1.z - this.getZ();
-@@ -404,7 +420,14 @@
+@@ -404,7 +421,14 @@
              if (this.nearestCrystal.isRemoved()) {
                  this.nearestCrystal = null;
              } else if (this.tickCount % 10 == 0 && this.getHealth() < this.getMaxHealth()) {
@@ -62,7 +63,7 @@
              }
          }
  
-@@ -489,6 +512,9 @@
+@@ -489,6 +513,9 @@
          int j1 = MathHelper.floor(axisalignedbb.maxZ);
          boolean flag = false;
          boolean flag1 = false;
@@ -72,7 +73,7 @@
  
          for (int k1 = i; k1 <= l; ++k1) {
              for (int l1 = j; l1 <= i1; ++l1) {
-@@ -498,7 +524,11 @@
+@@ -498,7 +525,11 @@
  
                      if (!iblockdata.isAir() && !iblockdata.is(TagsBlock.DRAGON_TRANSPARENT)) {
                          if (this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && !iblockdata.is(TagsBlock.DRAGON_IMMUNE)) {
@@ -85,7 +86,7 @@
                          } else {
                              flag = true;
                          }
-@@ -507,6 +537,51 @@
+@@ -507,6 +538,49 @@
              }
          }
  
@@ -95,9 +96,7 @@
 +            return flag;
 +        }
 +
-+        org.bukkit.entity.Entity bukkitEntity = this.getBukkitEntity();
-+        EntityExplodeEvent event = new EntityExplodeEvent(bukkitEntity, bukkitEntity.getLocation(), destroyedBlocks, 0F);
-+        bukkitEntity.getServer().getPluginManager().callEvent(event);
++        EntityExplodeEvent event = CraftEventFactory.callEntityExplodeEvent(this, destroyedBlocks, 0F, explosionSource.getBlockInteraction());
 +        if (event.isCancelled()) {
 +            // This flag literally means 'Dragon hit something hard' (Obsidian, White Stone or Bedrock) and will cause the dragon to slow down.
 +            // We should consider adding an event extension for it, or perhaps returning true if the event is cancelled.
@@ -137,7 +136,7 @@
          if (flag1) {
              BlockPosition blockposition1 = new BlockPosition(i + this.random.nextInt(l - i + 1), j + this.random.nextInt(i1 - j + 1), k + this.random.nextInt(j1 - k + 1));
  
-@@ -562,7 +637,7 @@
+@@ -562,7 +636,7 @@
  
      @Override
      public void kill() {
@@ -146,7 +145,7 @@
          this.gameEvent(GameEvent.ENTITY_DIE);
          if (this.dragonFight != null) {
              this.dragonFight.updateDragon(this);
-@@ -571,6 +646,21 @@
+@@ -571,6 +645,21 @@
  
      }
  
@@ -168,7 +167,7 @@
      @Override
      protected void tickDeath() {
          if (this.dragonFight != null) {
-@@ -586,15 +676,20 @@
+@@ -586,15 +675,20 @@
              this.level().addParticle(Particles.EXPLOSION_EMITTER, this.getX() + (double) f, this.getY() + 2.0D + (double) f1, this.getZ() + (double) f2, 0.0D, 0.0D, 0.0D);
          }
  
@@ -190,7 +189,7 @@
                  EntityExperienceOrb.award((WorldServer) this.level(), this.position(), MathHelper.floor((float) short0 * 0.08F));
              }
  
-@@ -605,7 +700,7 @@
+@@ -605,7 +699,7 @@
  
          this.move(EnumMoveType.SELF, new Vec3D(0.0D, 0.10000000149011612D, 0.0D));
          if (this.dragonDeathTime == 200 && this.level() instanceof WorldServer) {
@@ -199,7 +198,7 @@
                  EntityExperienceOrb.award((WorldServer) this.level(), this.position(), MathHelper.floor((float) short0 * 0.2F));
              }
  
-@@ -613,7 +708,7 @@
+@@ -613,7 +707,7 @@
                  this.dragonFight.setDragonKilled(this);
              }
  
@@ -208,7 +207,7 @@
              this.gameEvent(GameEvent.ENTITY_DIE);
          }
  
-@@ -826,6 +921,7 @@
+@@ -826,6 +920,7 @@
          super.addAdditionalSaveData(nbttagcompound);
          nbttagcompound.putInt("DragonPhase", this.phaseManager.getCurrentPhase().getPhase().getId());
          nbttagcompound.putInt("DragonDeathTime", this.dragonDeathTime);
@@ -216,7 +215,7 @@
      }
  
      @Override
-@@ -839,6 +935,11 @@
+@@ -839,6 +934,11 @@
              this.dragonDeathTime = nbttagcompound.getInt("DragonDeathTime");
          }
  
