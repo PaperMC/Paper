@@ -1,0 +1,70 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lilly <46890129+RainbowDashLabs@users.noreply.github.com>
+Date: Fri, 16 Feb 2024 20:18:12 +0100
+Subject: [PATCH] Fix changes on item in EntityPickupItemEvent not reflected
+
+
+diff --git a/src/main/java/org/bukkit/event/entity/EntityPickupItemEvent.java b/src/main/java/org/bukkit/event/entity/EntityPickupItemEvent.java
+index 94ee5a3354722aa5d825da727b7b7071fdc6bacc..64447122b6f917fced3bc10dd8e80ecaee983015 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityPickupItemEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityPickupItemEvent.java
+@@ -12,11 +12,21 @@ import org.jetbrains.annotations.NotNull;
+ public class EntityPickupItemEvent extends EntityEvent implements Cancellable {
+     private static final HandlerList handlers = new HandlerList();
+     private final Item item;
++    private final org.bukkit.inventory.ItemStack itemStack; // Paper - Fix changes on item in EntityPickupItemEvent not reflected
+     private boolean cancel = false;
+     private final int remaining;
+ 
++
++    @Deprecated // Paper - Fix changes on item in EntityPickupItemEvent not reflected
+     public EntityPickupItemEvent(@NotNull final LivingEntity entity, @NotNull final Item item, final int remaining) {
++        // Paper start - Fix changes on item in EntityPickupItemEvent not reflected
++        this(entity, item.getItemStack(), item, remaining);
++    }
++
++    public EntityPickupItemEvent(@NotNull final LivingEntity entity, @NotNull org.bukkit.inventory.ItemStack itemStack, @NotNull final Item item, final int remaining) {
++        // Paper end - Fix changes on item in EntityPickupItemEvent not reflected
+         super(entity);
++        this.itemStack = itemStack; // Paper - Fix changes on item in EntityPickupItemEvent not reflected
+         this.item = item;
+         this.remaining = remaining;
+     }
+@@ -31,11 +41,37 @@ public class EntityPickupItemEvent extends EntityEvent implements Cancellable {
+      * Gets the Item picked up by the entity.
+      *
+      * @return Item
++     * @deprecated Use {@link #getSourceItem()} instead
+      */
+     @NotNull
++    @Deprecated // Paper - Fix changes on item in EntityPickupItemEvent not reflected
+     public Item getItem() {
+         return item;
+     }
++    // Paper start - Fix changes on item in EntityPickupItemEvent not reflected
++
++    /**
++     * Get the ItemStack inside the Item entity.
++     * <p>
++     * Use this for modification of the ItemStack
++     *
++     * @return ItemStack
++     */
++    @NotNull
++    public org.bukkit.inventory.ItemStack getItemStack() {
++        return itemStack;
++    }
++
++    /**
++     * Gets the Item entity picked up by the entity.
++     *
++     * @return Item
++     */
++    @NotNull
++    public Item getSourceItem() {
++        return item;
++    }
++    // Paper end - Fix changes on item in EntityPickupItemEvent not reflected
+ 
+     /**
+      * Gets the amount remaining on the ground, if any
