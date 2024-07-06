@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
+import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.function.Consumer;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.registries.Registries;
@@ -54,28 +56,35 @@ public class CraftBlockType<B extends BlockData> implements BlockType.Typed<B>, 
         return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
-    private static boolean hasMethod(Class<?> clazz, String methodName, Class<?>... params) {
-        boolean hasMethod;
-        try {
-            hasMethod = clazz.getDeclaredMethod(methodName, params) != null;
-        } catch (NoSuchMethodException ex) {
-            hasMethod = false;
+    private static boolean hasMethod(Class<?> clazz, Class<?>... params) {
+        boolean hasMethod = false;
+        for (Method method : clazz.getDeclaredMethods()) {
+            if (Arrays.equals(method.getParameterTypes(), params)) {
+                Preconditions.checkArgument(!hasMethod, "More than one matching method for %s, args %s", clazz, Arrays.toString(params));
+
+                hasMethod = true;
+            }
         }
 
         return hasMethod;
     }
 
+    private static final Class<?>[] USE_WITHOUT_ITEM_ARGS = new Class[]{
+        IBlockData.class, net.minecraft.world.level.World.class, BlockPosition.class, EntityHuman.class, MovingObjectPositionBlock.class
+    };
+    private static final Class<?>[] USE_ITEM_ON_ARGS = new Class[]{
+        net.minecraft.world.item.ItemStack.class, IBlockData.class, net.minecraft.world.level.World.class, BlockPosition.class, EntityHuman.class, EnumHand.class, MovingObjectPositionBlock.class
+    };
+
     private static boolean isInteractable(Block block) {
         Class<?> clazz = block.getClass();
 
-        boolean hasMethod = hasMethod(clazz, "useWithoutItem", IBlockData.class, net.minecraft.world.level.World.class, BlockPosition.class, EntityHuman.class, MovingObjectPositionBlock.class)
-                || hasMethod(clazz, "useItemOn", net.minecraft.world.item.ItemStack.class, IBlockData.class, net.minecraft.world.level.World.class, BlockPosition.class, EntityHuman.class, EnumHand.class, MovingObjectPositionBlock.class);
+        boolean hasMethod = hasMethod(clazz, USE_WITHOUT_ITEM_ARGS) || hasMethod(clazz, USE_ITEM_ON_ARGS);
 
         if (!hasMethod && clazz.getSuperclass() != BlockBase.class) {
             clazz = clazz.getSuperclass();
 
-            hasMethod = hasMethod(clazz, "useWithoutItem", IBlockData.class, net.minecraft.world.level.World.class, BlockPosition.class, EntityHuman.class, MovingObjectPositionBlock.class)
-                    || hasMethod(clazz, "useItemOn", net.minecraft.world.item.ItemStack.class, IBlockData.class, net.minecraft.world.level.World.class, BlockPosition.class, EntityHuman.class, EnumHand.class, MovingObjectPositionBlock.class);
+            hasMethod = hasMethod(clazz, USE_WITHOUT_ITEM_ARGS) || hasMethod(clazz, USE_ITEM_ON_ARGS);
         }
 
         return hasMethod;
