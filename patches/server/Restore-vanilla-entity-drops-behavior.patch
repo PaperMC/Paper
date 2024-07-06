@@ -16,7 +16,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (this.isRemoved()) {
              return;
          }
--        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>(this.getInventory().getContainerSize());
+-        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<>(this.getInventory().getContainerSize());
 +        List<DefaultDrop> loot = new java.util.ArrayList<>(this.getInventory().getContainerSize()); // Paper - Restore vanilla drops behavior
          boolean keepInventory = this.level().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY) || this.isSpectator();
  
@@ -31,24 +31,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (this.shouldDropLoot() && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) { // Paper - fix player loottables running when mob loot gamerule is false
          // SPIGOT-5071: manually add player loot tables (SPIGOT-5195 - ignores keepInventory rule)
          this.dropFromLootTable(damageSource, this.lastHurtByPlayerTime > 0);
--        for (org.bukkit.inventory.ItemStack item : this.drops) {
--            loot.add(item);
--        }
-+        loot.addAll(this.drops); // Paper
+-        this.dropCustomDeathLoot(this.serverLevel(), damageSource, flag);
++        // Paper - Restore vanilla drops behaviour; custom death loot is a noop on server player, remove.
+ 
+         loot.addAll(this.drops);
          this.drops.clear(); // SPIGOT-5188: make sure to clear
-         } // Paper - fix player loottables running when mob loot gamerule is false
- 
-@@ -0,0 +0,0 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
-     }
- 
-     @Override
--    public ItemEntity drop(ItemStack stack, boolean throwRandomly, boolean retainOwnership) {
--        ItemEntity entityitem = super.drop(stack, throwRandomly, retainOwnership);
-+    public ItemEntity drop(ItemStack stack, boolean throwRandomly, boolean retainOwnership, boolean callDropEvent) { // Paper - Restore vanilla drops behavior; override method with most params
-+        ItemEntity entityitem = super.drop(stack, throwRandomly, retainOwnership, callDropEvent); // Paper - Restore vanilla drops behavior; override method with most params
- 
-         if (entityitem == null) {
-             return null;
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
@@ -238,8 +225,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper end - Restore vanilla drops behavior
              if (stack == null || stack.getType() == Material.AIR) continue;
  
--            world.dropItem(entity.getLocation(), stack);
-+            drop.runConsumer(world, entity.getLocation()); // Paper - Restore vanilla drops behavior
+-            victim.drop(CraftItemStack.asNMSCopy(stack), true, false, false); // SPIGOT-7800, SPIGOT-7801: Vanilla Behaviour for dropped items
++            drop.runConsumer(entity.getWorld(), entity.getLocation()); // Paper - Restore vanilla drops behavior
          }
  
          return event;

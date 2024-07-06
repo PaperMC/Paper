@@ -3,8 +3,6 @@ From: Jake Potrebic <jake.m.potrebic@gmail.com>
 Date: Sat, 8 May 2021 15:01:54 -0700
 Subject: [PATCH] Improve item default attribute API
 
-Also fixes an issue where upstream isn't
-actually getting the correct default attributes
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttributeInstance.java b/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttributeInstance.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -37,24 +35,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
      @Override
      public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(EquipmentSlot slot) {
--        ImmutableMultimap.Builder<Attribute, AttributeModifier> defaultAttributes = ImmutableMultimap.builder();
 +        // Paper start - improve/fix item default attribute API
 +        final net.minecraft.world.entity.EquipmentSlot nmsSlot = CraftEquipmentSlot.getNMS(slot);
 +        return this.getDefaultAttributeModifiers(sg -> sg.test(nmsSlot));
 +    }
++
++    private Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(final java.util.function.Predicate<net.minecraft.world.entity.EquipmentSlotGroup> slotPredicate) {
++        // Paper end - improve/fix item default attribute API
+         ImmutableMultimap.Builder<Attribute, AttributeModifier> defaultAttributes = ImmutableMultimap.builder();
  
--        ItemAttributeModifiers nmsDefaultAttributes = this.item.getDefaultAttributeModifiers();
+         ItemAttributeModifiers nmsDefaultAttributes = this.item.components().getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
+         if (nmsDefaultAttributes.modifiers().isEmpty()) {
+             nmsDefaultAttributes = this.item.getDefaultAttributeModifiers();
+         }
+-
 -        nmsDefaultAttributes.forEach(CraftEquipmentSlot.getNMS(slot), (key, value) -> {
 -            Attribute attribute = CraftAttribute.minecraftToBukkit(key.value());
 -            defaultAttributes.put(attribute, CraftAttributeInstance.convert(value, slot));
 -        });
-+    private Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(final java.util.function.Predicate<net.minecraft.world.entity.EquipmentSlotGroup> slotPredicate) {
-+        final ImmutableMultimap.Builder<Attribute, AttributeModifier> defaultAttributes = ImmutableMultimap.builder();
-+        ItemAttributeModifiers nmsDefaultAttributes = this.item.components().getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
-+        if (nmsDefaultAttributes.modifiers().isEmpty()) {
-+            // we have to check both places cause for some reason vanilla puts default modifiers for armor in a different place
-+            nmsDefaultAttributes = this.item.getDefaultAttributeModifiers();
-+        }
++        // Paper start - improve/fix item default attribute API
 +        for (final net.minecraft.world.item.component.ItemAttributeModifiers.Entry entry : nmsDefaultAttributes.modifiers()) {
 +            if (!slotPredicate.test(entry.slot())) continue;
 +            final Attribute attribute = CraftAttribute.minecraftHolderToBukkit(entry.attribute());
@@ -73,15 +72,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(Material material, EquipmentSlot slot) {
--        ImmutableMultimap.Builder<Attribute, AttributeModifier> defaultAttributes = ImmutableMultimap.builder();
--
--        ItemAttributeModifiers nmsDefaultAttributes = CraftMagicNumbers.getItem(material).getDefaultAttributeModifiers();
--        nmsDefaultAttributes.forEach(CraftEquipmentSlot.getNMS(slot), (key, value) -> {
--            Attribute attribute = CraftAttribute.minecraftToBukkit(key.value());
--            defaultAttributes.put(attribute, CraftAttributeInstance.convert(value, slot));
--        });
--
--        return defaultAttributes.build();
+-        return material.getDefaultAttributeModifiers(slot);
 +        // Paper start - delegate to method on ItemType
 +        final org.bukkit.inventory.ItemType item = material.asItemType();
 +        Preconditions.checkArgument(item != null, material + " is not an item and does not have default attributes");

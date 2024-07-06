@@ -237,29 +237,71 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/monster/Bogged.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Bogged.java
 @@ -0,0 +0,0 @@ public class Bogged extends AbstractSkeleton implements Shearable {
+ 
+         if (itemstack.is(Items.SHEARS) && this.readyForShearing()) {
+             // CraftBukkit start
+-            if (!org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemstack, hand)) {
+-                this.getEntityData().markDirty(Bogged.DATA_SHEARED); // CraftBukkit - mark dirty to restore sheared state to clients
+-                return InteractionResult.PASS;
++            // Paper start - expose drops in event
++            java.util.List<net.minecraft.world.item.ItemStack> drops = generateDefaultDrops();
++            final org.bukkit.event.player.PlayerShearEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemstack, hand, drops);
++            if (event != null) {
++                if (event.isCancelled()) {
++                    if (player instanceof final net.minecraft.server.level.ServerPlayer serverPlayer) this.resendPossiblyDesyncedDataValues(java.util.List.of(Bogged.DATA_SHEARED), serverPlayer);
++                    return InteractionResult.PASS;
++                }
++                drops = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops());
++            // Paper end - expose drops in event
+             }
+             // CraftBukkit end
+-            this.shear(SoundSource.PLAYERS);
++            this.shear(SoundSource.PLAYERS, drops); // Paper - expose drops in event
+             this.gameEvent(GameEvent.SHEAR, player);
+             if (!this.level().isClientSide) {
+                 itemstack.hurtAndBreak(1, player, getSlotForHand(hand));
+@@ -0,0 +0,0 @@ public class Bogged extends AbstractSkeleton implements Shearable {
+ 
+     @Override
+     public void shear(SoundSource shearedSoundCategory) {
++    // Paper start - shear drop API
++        this.shear(shearedSoundCategory, generateDefaultDrops());
++    }
++
++    @Override
++    public void shear(SoundSource shearedSoundCategory, java.util.List<net.minecraft.world.item.ItemStack> drops) {
++    // Paper end - shear drop API
+         this.level().playSound((Player) null, (Entity) this, SoundEvents.BOGGED_SHEAR, shearedSoundCategory, 1.0F, 1.0F);
+-        this.spawnShearedMushrooms();
++        this.spawnDrops(drops); // Paper - shear drop API
+         this.setSheared(true);
      }
  
      private void spawnShearedMushrooms() {
-+        // Paper start - shear drops API
-+        this.generateShearedMushrooms(stack -> {
++    // Paper start - shear drops API
++        this.spawnDrops(generateDefaultDrops()); // Only here for people calling spawnSheardMushrooms. Not used otherwise.
++    }
++    private void spawnDrops(java.util.List<net.minecraft.world.item.ItemStack> drops) {
++        drops.forEach(stack -> {
 +            this.forceDrops = true;
 +            this.spawnAtLocation(stack, this.getBbHeight());
 +            this.forceDrops = false;
 +        });
 +    }
 +    private void generateShearedMushrooms(java.util.function.Consumer<ItemStack> stackConsumer) {
-+        // Paper end - shear drops API
-         if (this.level() instanceof ServerLevel serverLevel) {
-             LootTable lootTable = serverLevel.getServer().reloadableRegistries().getLootTable(BuiltInLootTables.BOGGED_SHEAR);
-             LootParams lootParams = new LootParams.Builder(serverLevel)
-@@ -0,0 +0,0 @@ public class Bogged extends AbstractSkeleton implements Shearable {
-                 .create(LootContextParamSets.SHEARING);
++    // Paper end - shear drops API
+         Level world = this.level();
  
-             for (ItemStack itemStack : lootTable.getRandomItems(lootParams)) {
--                this.spawnAtLocation(itemStack, this.getBbHeight());
-+                stackConsumer.accept(itemStack); // Paper
+         if (world instanceof ServerLevel worldserver) {
+@@ -0,0 +0,0 @@ public class Bogged extends AbstractSkeleton implements Shearable {
+             while (objectlistiterator.hasNext()) {
+                 ItemStack itemstack = (ItemStack) objectlistiterator.next();
+ 
+-                this.spawnAtLocation(itemstack, this.getBbHeight());
++                stackConsumer.accept(itemstack); // Paper
              }
          }
+ 
      }
  
 +    // Paper start - shear drops API

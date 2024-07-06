@@ -457,45 +457,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      static final int MAX_PAGE_LENGTH = WritableBookContent.PAGE_EDIT_LENGTH; // SPIGOT-6911: Use Minecraft limits
  
      // We store the pages in their raw original text representation. See SPIGOT-5063, SPIGOT-5350, SPIGOT-3206
-diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
-+++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
-@@ -0,0 +0,0 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
-             }
-         }
- 
--        this.resolved = SerializableMeta.getObject(Boolean.class, map, CraftMetaBookSigned.RESOLVED.BUKKIT, true);
--        this.generation = SerializableMeta.getObject(Integer.class, map, CraftMetaBookSigned.GENERATION.BUKKIT, true);
-+        this.resolved = SerializableMeta.getBoolean(map, CraftMetaBookSigned.RESOLVED.BUKKIT); // Paper - General ItemMeta fixes
-+        this.generation = SerializableMeta.getObjectOptionally(Integer.class, map, CraftMetaBookSigned.GENERATION.BUKKIT, true).orElse(0); // Paper - General ItemMeta Fixes
-     }
- 
-     @Override
-@@ -0,0 +0,0 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
-             for (Component page : this.pages) {
-                 list.add(Filterable.passThrough(page));
-             }
--            itemData.put(CraftMetaBookSigned.BOOK_CONTENT, new WrittenBookContent(Filterable.from(FilteredText.passThrough(this.title)), this.author, this.generation, list, this.resolved));
-+            itemData.put(CraftMetaBookSigned.BOOK_CONTENT, new WrittenBookContent(Filterable.from(FilteredText.passThrough(this.title == null ? "" : this.title)), this.author == null ? "" : this.author, this.generation, list, this.resolved));
-         }
-     }
- 
-@@ -0,0 +0,0 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
-         }
- 
-         if (this.pages != null) {
--            builder.put(CraftMetaBookSigned.BOOK_PAGES.BUKKIT, ImmutableList.copyOf(this.pages));
-+            // Paper start - deserialization expects json
-+            final List<String> jsonPages = new ArrayList<>(this.pages.size());
-+            for (final Component page : this.pages) {
-+                jsonPages.add(CraftChatMessage.toJSON(page));
-+            }
-+            builder.put(CraftMetaBookSigned.BOOK_PAGES.BUKKIT, ImmutableList.copyOf(jsonPages));
-+            // Paper end - deserialization expects json
-         }
- 
-         if (this.resolved) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBundle.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBundle.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBundle.java
@@ -739,22 +700,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper end - limit firework effects
              effects.add((FireworkEffect) obj);
          }
-     }
-@@ -0,0 +0,0 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
-         }
- 
-         List<FireworkExplosion> effects = new ArrayList<>();
--        for (FireworkEffect effect : this.effects) {
--            effects.add(CraftMetaFirework.getExplosion(effect));
-+        // Paper start - fix NPE with effects list being null
-+        if (this.effects != null) {
-+            for (FireworkEffect effect : this.effects) {
-+                effects.add(CraftMetaFirework.getExplosion(effect));
-+            }
-         }
-+        // Paper end
- 
-         itemTag.put(CraftMetaFirework.FIREWORKS, new Fireworks(this.power, effects));
      }
 @@ -0,0 +0,0 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
      }
