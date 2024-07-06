@@ -1,15 +1,16 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import java.util.Locale;
 import net.minecraft.core.Holder;
-import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.animal.FrogVariant;
 import net.minecraft.world.entity.animal.frog.Frog;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.entity.Entity;
 
 public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog {
@@ -54,17 +55,11 @@ public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog {
         getHandle().setVariant(CraftVariant.bukkitToMinecraftHolder(variant));
     }
 
-    public static class CraftVariant {
+    public static class CraftVariant implements Variant, Handleable<FrogVariant> {
+        private static int count = 0;
 
         public static Variant minecraftToBukkit(FrogVariant minecraft) {
-            Preconditions.checkArgument(minecraft != null);
-
-            IRegistry<FrogVariant> registry = CraftRegistry.getMinecraftRegistry(Registries.FROG_VARIANT);
-            Variant bukkit = Registry.FROG_VARIANT.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().location()));
-
-            Preconditions.checkArgument(bukkit != null);
-
-            return bukkit;
+            return CraftRegistry.minecraftToBukkit(minecraft, Registries.FROG_VARIANT, Registry.FROG_VARIANT);
         }
 
         public static Variant minecraftHolderToBukkit(Holder<FrogVariant> minecraft) {
@@ -72,23 +67,80 @@ public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog {
         }
 
         public static FrogVariant bukkitToMinecraft(Variant bukkit) {
-            Preconditions.checkArgument(bukkit != null);
-
-            return CraftRegistry.getMinecraftRegistry(Registries.FROG_VARIANT)
-                    .getOptional(CraftNamespacedKey.toMinecraft(bukkit.getKey())).orElseThrow();
+            return CraftRegistry.bukkitToMinecraft(bukkit);
         }
 
         public static Holder<FrogVariant> bukkitToMinecraftHolder(Variant bukkit) {
-            Preconditions.checkArgument(bukkit != null);
+            return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.FROG_VARIANT);
+        }
 
-            IRegistry<FrogVariant> registry = CraftRegistry.getMinecraftRegistry(Registries.FROG_VARIANT);
+        private final NamespacedKey key;
+        private final FrogVariant frogVariant;
+        private final String name;
+        private final int ordinal;
 
-            if (registry.wrapAsHolder(bukkitToMinecraft(bukkit)) instanceof Holder.c<FrogVariant> holder) {
-                return holder;
+        public CraftVariant(NamespacedKey key, FrogVariant frogVariant) {
+            this.key = key;
+            this.frogVariant = frogVariant;
+            // For backwards compatibility, minecraft values will still return the uppercase name without the namespace,
+            // in case plugins use for example the name as key in a config file to receive variant specific values.
+            // Custom variants will return the key with namespace. For a plugin this should look than like a new variant
+            // (which can always be added in new minecraft versions and the plugin should therefore handle it accordingly).
+            if (NamespacedKey.MINECRAFT.equals(key.getNamespace())) {
+                this.name = key.getKey().toUpperCase(Locale.ROOT);
+            } else {
+                this.name = key.toString();
+            }
+            this.ordinal = count++;
+        }
+
+        @Override
+        public FrogVariant getHandle() {
+            return frogVariant;
+        }
+
+        @Override
+        public NamespacedKey getKey() {
+            return key;
+        }
+
+        @Override
+        public int compareTo(Variant variant) {
+            return ordinal - variant.ordinal();
+        }
+
+        @Override
+        public String name() {
+            return name;
+        }
+
+        @Override
+        public int ordinal() {
+            return ordinal;
+        }
+
+        @Override
+        public String toString() {
+            // For backwards compatibility
+            return name();
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (this == other) {
+                return true;
             }
 
-            throw new IllegalArgumentException("No Reference holder found for " + bukkit
-                    + ", this can happen if a plugin creates its own frog variant with out properly registering it.");
+            if (!(other instanceof CraftVariant)) {
+                return false;
+            }
+
+            return getKey().equals(((Variant) other).getKey());
+        }
+
+        @Override
+        public int hashCode() {
+            return getKey().hashCode();
         }
     }
 }

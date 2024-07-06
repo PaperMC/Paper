@@ -16,6 +16,7 @@ import java.util.stream.Stream;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteBuilder;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteMethodData;
+import org.bukkit.craftbukkit.util.ApiVersion;
 import org.bukkit.craftbukkit.util.Commodore;
 import org.bukkit.support.AbstractTestingBase;
 import org.junit.jupiter.api.AfterAll;
@@ -93,7 +94,7 @@ public class MaterialReroutingTest extends AbstractTestingBase {
                         }
                     }
 
-                    if (!Commodore.rerouteMethods(Collections.emptySet(), MATERIAL_METHOD_REROUTE, (methodNode.access & Opcodes.ACC_STATIC) != 0, classNode.name, methodNode.name, methodNode.desc, a -> { })) {
+                    if (!Commodore.rerouteMethods(Collections.emptySet(), ApiVersion.CURRENT, MATERIAL_METHOD_REROUTE, (methodNode.access & Opcodes.ACC_STATIC) != 0, classNode.name, methodNode.name, methodNode.desc, a -> { })) {
                         missingReroute.add(methodNode.name + " " + methodNode.desc + " " + methodNode.signature);
                     }
                 }

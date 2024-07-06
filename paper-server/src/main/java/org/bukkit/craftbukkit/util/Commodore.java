@@ -24,6 +24,7 @@ import org.bukkit.Material;
 import org.bukkit.craftbukkit.legacy.FieldRename;
 import org.bukkit.craftbukkit.legacy.MaterialRerouting;
 import org.bukkit.craftbukkit.legacy.MethodRerouting;
+import org.bukkit.craftbukkit.legacy.enums.EnumEvil;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteArgument;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteBuilder;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteMethodData;
@@ -61,6 +62,12 @@ public class Commodore {
             "org/bukkit/inventory/ItemStack (S)V setDurability"
     ));
 
+    private static final Map<String, String> ENUM_RENAMES = Map.of(
+            "java/lang/Enum", "java/lang/Object",
+            "java/util/EnumSet", "org/bukkit/craftbukkit/legacy/enums/ImposterEnumSet",
+            "java/util/EnumMap", "org/bukkit/craftbukkit/legacy/enums/ImposterEnumMap"
+    );
+
     private static final Map<String, String> RENAMES = Map.of(
             "org/bukkit/entity/TextDisplay$TextAligment", "org/bukkit/entity/TextDisplay$TextAlignment", // SPIGOT-7335
             "org/spigotmc/event/entity/EntityMountEvent", "org/bukkit/event/entity/EntityMountEvent",
@@ -68,7 +75,12 @@ public class Commodore {
     );
 
     private static final Map<String, String> CLASS_TO_INTERFACE = Map.of(
-            "org/bukkit/inventory/InventoryView", "org/bukkit/craftbukkit/inventory/CraftAbstractInventoryView"
+            "org/bukkit/inventory/InventoryView", "org/bukkit/craftbukkit/inventory/CraftAbstractInventoryView",
+            "org/bukkit/entity/Villager$Type", "NOP",
+            "org/bukkit/entity/Villager$Profession", "NOP",
+            "org/bukkit/entity/Frog$Variant", "NOP",
+            "org/bukkit/entity/Cat$Type", "NOP",
+            "org/bukkit/map/MapCursor$Type", "NOP"
     );
 
     private static Map<String, RerouteMethodData> createReroutes(Class<?> clazz) {
@@ -82,6 +94,7 @@ public class Commodore {
     private static final Map<String, RerouteMethodData> FIELD_RENAME_METHOD_REROUTE = createReroutes(FieldRename.class);
     private static final Map<String, RerouteMethodData> MATERIAL_METHOD_REROUTE = createReroutes(MaterialRerouting.class);
     private static final Map<String, RerouteMethodData> METHOD_REROUTE = createReroutes(MethodRerouting.class);
+    private static final Map<String, RerouteMethodData> ENUM_METHOD_REROUTE = createReroutes(EnumEvil.class);
 
     public static void main(String[] args) {
         OptionParser parser = new OptionParser();
@@ -148,9 +161,14 @@ public class Commodore {
     public static byte[] convert(byte[] b, final String pluginName, final ApiVersion pluginVersion, final Set<String> activeCompatibilities) {
         final boolean modern = pluginVersion.isNewerThanOrSameAs(ApiVersion.FLATTENING);
         ClassReader cr = new ClassReader(b);
-        ClassWriter cw = new ClassWriter(cr, 0);
+        ClassWriter cw = new ClassWriter(0); // TODO 2024-06-22: Open PR to ASM to included interface in handle hash
 
-        cr.accept(new ClassRemapper(new ClassVisitor(Opcodes.ASM9, cw) {
+        ClassVisitor visitor = cw;
+        if (pluginVersion.isOlderThanOrSameAs(ApiVersion.getOrCreateVersion("1.20.6")) && activeCompatibilities.contains("enum-compatibility-mode")) {
+            visitor = new LimitedClassRemapper(cw, new SimpleRemapper(ENUM_RENAMES));
+        }
+
+        cr.accept(new ClassRemapper(new ClassVisitor(Opcodes.ASM9, visitor) {
             final Set<RerouteMethodData> rerouteMethodData = new HashSet<>();
             String className;
             boolean isInterface;
@@ -179,8 +197,10 @@ public class Commodore {
                         } else if (argument.injectPluginVersion()) {
                             methodVisitor.visitLdcInsn(pluginVersion.getVersionString());
                             methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, Type.getInternalName(ApiVersion.class), "getOrCreateVersion", "(Ljava/lang/String;)L" + Type.getInternalName(ApiVersion.class) + ";", false);
+                        } else if (argument.injectCompatibility() != null) {
+                            methodVisitor.visitLdcInsn(activeCompatibilities.contains(argument.injectCompatibility()));
                         } else {
-                            methodVisitor.visitIntInsn(argument.instruction(), index);
+                            methodVisitor.visitVarInsn(argument.instruction(), index);
                             index++;
 
                             // Long and double need two space
@@ -313,6 +333,10 @@ public class Commodore {
                             }
                         }
 
+                        if (checkReroute(visitor, ENUM_METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
+                            return;
+                        }
+
                         // SPIGOT-4496
                         if (owner.equals("org/bukkit/map/MapView") && name.equals("getId") && desc.equals("()S")) {
                             // Should be same size on stack so just call other method
@@ -412,7 +436,7 @@ public class Commodore {
                     }
 
                     private boolean checkReroute(MethodPrinter visitor, Map<String, RerouteMethodData> rerouteMethodDataMap, int opcode, String owner, String name, String desc, Type samMethodType, Type instantiatedMethodType) {
-                        return rerouteMethods(activeCompatibilities, rerouteMethodDataMap, opcode == Opcodes.INVOKESTATIC || opcode == Opcodes.H_INVOKESTATIC, owner, name, desc, data -> {
+                        return rerouteMethods(activeCompatibilities, pluginVersion, rerouteMethodDataMap, opcode == Opcodes.INVOKESTATIC || opcode == Opcodes.H_INVOKESTATIC, owner, name, desc, data -> {
                             visitor.visit(Opcodes.INVOKESTATIC, className, buildMethodName(data), buildMethodDesc(data), isInterface, samMethodType, instantiatedMethodType);
                             rerouteMethodData.add(data);
                         });
@@ -582,7 +606,7 @@ public class Commodore {
     But since it is only applied for each class and method call once when they get first loaded, it should not be that bad.
     (Although some load time testing could be done)
      */
-    public static boolean rerouteMethods(Set<String> activeCompatibilities, Map<String, RerouteMethodData> rerouteMethodDataMap, boolean staticCall, String owner, String name, String desc, Consumer<RerouteMethodData> consumer) {
+    public static boolean rerouteMethods(Set<String> activeCompatibilities, ApiVersion pluginVersion, Map<String, RerouteMethodData> rerouteMethodDataMap, boolean staticCall, String owner, String name, String desc, Consumer<RerouteMethodData> consumer) {
         Type ownerType = Type.getObjectType(owner);
         Class<?> ownerClass;
         try {
@@ -609,6 +633,10 @@ public class Commodore {
                 return false;
             }
 
+            if (data.requiredPluginVersion() != null && !data.requiredPluginVersion().test(pluginVersion)) {
+                return false;
+            }
+
             consumer.accept(data);
             return true;
         }
@@ -621,7 +649,7 @@ public class Commodore {
     }
 
     private static String buildMethodDesc(RerouteMethodData rerouteMethodData) {
-        return Type.getMethodDescriptor(rerouteMethodData.sourceDesc().getReturnType(), rerouteMethodData.arguments().stream().filter(a -> !a.injectPluginName()).filter(a -> !a.injectPluginVersion()).map(RerouteArgument::type).toArray(Type[]::new));
+        return Type.getMethodDescriptor(rerouteMethodData.sourceDesc().getReturnType(), rerouteMethodData.arguments().stream().filter(a -> !a.injectPluginName()).filter(a -> !a.injectPluginVersion()).filter(a -> a.injectCompatibility() == null).map(RerouteArgument::sourceType).toArray(Type[]::new));
     }
 
     @FunctionalInterface

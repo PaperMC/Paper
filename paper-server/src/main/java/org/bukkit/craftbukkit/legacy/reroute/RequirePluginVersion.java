@@ -7,7 +7,11 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.TYPE})
-public @interface RequireCompatibility {
+public @interface RequirePluginVersion {
 
-    String value();
+    String value() default "";
+
+    String minInclusive() default "";
+
+    String maxInclusive() default "";
 }

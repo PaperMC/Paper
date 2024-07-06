@@ -51,11 +51,6 @@ public class FieldRename {
         };
     }
 
-    @RerouteStatic("java/lang/Enum")
-    public static <T extends Enum<T>> T valueOf(Class<T> enumClass, String name, @InjectPluginVersion ApiVersion apiVersion) {
-        return Enum.valueOf(enumClass, rename(apiVersion, enumClass.getName().replace('.', '/'), name));
-    }
-
     @RequireCompatibility("allow-old-keys-in-registry")
     public static <T extends Keyed> T get(Registry<T> registry, NamespacedKey namespacedKey) {
         // We don't have version-specific changes, so just use current, and don't inject a version

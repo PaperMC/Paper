@@ -443,6 +443,14 @@ public final class CraftServer implements Server {
             logger.info("Using following compatibilities: `" + Joiner.on("`, `").join(activeCompatibilities) + "`, this will affect performance and other plugins behavior.");
             logger.info("Only use when necessary and prefer updating plugins if possible.");
         }
+
+        if (activeCompatibilities.contains("enum-compatibility-mode")) {
+            getLogger().warning("Loading plugins in enum compatibility mode. This will affect plugin performance. Use only as a transition period or when absolutely necessary.");
+        } else if (System.getProperty("RemoveEnumBanner") == null) {
+            // TODO 2024-06-16: Remove in newer version
+            getLogger().info("*** This version of Spigot contains changes to some enums. If you notice that plugins no longer work after updating, please report this to the developers of those plugins first. ***");
+            getLogger().info("*** If you cannot update those plugins, you can try setting `settings.compatibility.enum-compatibility-mode` to `true` in `bukkit.yml`. ***");
+        }
     }
 
     public void loadPlugins() {

@@ -1,10 +1,11 @@
 package org.bukkit.craftbukkit.util;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
-public final class ApiVersion implements Comparable<ApiVersion> {
+public final class ApiVersion implements Comparable<ApiVersion>, Serializable {
 
     public static final ApiVersion CURRENT;
     public static final ApiVersion FLATTENING;
@@ -122,4 +123,6 @@ public final class ApiVersion implements Comparable<ApiVersion> {
     public String toString() {
         return getVersionString();
     }
+
+    private static final long serialVersionUID = 0L;
 }

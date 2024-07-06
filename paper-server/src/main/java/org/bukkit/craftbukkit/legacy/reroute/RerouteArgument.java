@@ -1,9 +1,10 @@
 package org.bukkit.craftbukkit.legacy.reroute;
 
+import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-public record RerouteArgument(Type type, boolean injectPluginName, boolean injectPluginVersion) {
+public record RerouteArgument(Type type, Type sourceType, boolean injectPluginName, boolean injectPluginVersion, @Nullable String injectCompatibility) {
 
     /**
      * Converts the type string to the correct load opcode.
@@ -30,8 +31,8 @@ public record RerouteArgument(Type type, boolean injectPluginName, boolean injec
      * @return the opcode of the type
      */
     public int instruction() {
-        if (injectPluginName() || injectPluginVersion()) {
-            throw new IllegalStateException(String.format("Cannot get instruction for plugin name / version argument: %s", this));
+        if (injectPluginName() || injectPluginVersion() || injectCompatibility() != null) {
+            throw new IllegalStateException(String.format("Cannot get instruction for plugin name / version argument / compatibility: %s", this));
         }
 
         return type.getOpcode(Opcodes.ILOAD);
