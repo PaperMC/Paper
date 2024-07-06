@@ -5,8 +5,10 @@ import org.bukkit.inventory.SaddledHorseInventory;
 
 public class CraftSaddledInventory extends CraftInventoryAbstractHorse implements SaddledHorseInventory {
 
-    public CraftSaddledInventory(Container inventory) {
-        super(inventory);
+    // Paper start - combine both inventories
+    public CraftSaddledInventory(Container inventory, final Container bodyArmor) {
+        super(inventory, bodyArmor);
+        // Paper end - combine both inventories
     }
 
 }
