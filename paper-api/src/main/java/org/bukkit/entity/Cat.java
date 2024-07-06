@@ -1,8 +1,13 @@
 package org.bukkit.entity;
 
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
+import java.util.Locale;
 import org.bukkit.DyeColor;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
+import org.bukkit.util.OldEnum;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -43,29 +48,50 @@ public interface Cat extends Tameable, Sittable {
     /**
      * Represents the various different cat types there are.
      */
-    public enum Type implements Keyed {
-        TABBY("tabby"),
-        BLACK("black"),
-        RED("red"),
-        SIAMESE("siamese"),
-        BRITISH_SHORTHAIR("british_shorthair"),
-        CALICO("calico"),
-        PERSIAN("persian"),
-        RAGDOLL("ragdoll"),
-        WHITE("white"),
-        JELLIE("jellie"),
-        ALL_BLACK("all_black");
+    interface Type extends OldEnum<Type>, Keyed {
 
-        private final NamespacedKey key;
+        Type TABBY = getType("tabby");
+        Type BLACK = getType("black");
+        Type RED = getType("red");
+        Type SIAMESE = getType("siamese");
+        Type BRITISH_SHORTHAIR = getType("british_shorthair");
+        Type CALICO = getType("calico");
+        Type PERSIAN = getType("persian");
+        Type RAGDOLL = getType("ragdoll");
+        Type WHITE = getType("white");
+        Type JELLIE = getType("jellie");
+        Type ALL_BLACK = getType("all_black");
 
-        private Type(String key) {
-            this.key = NamespacedKey.minecraft(key);
+        @NotNull
+        private static Type getType(@NotNull String key) {
+            NamespacedKey namespacedKey = NamespacedKey.minecraft(key);
+            Type type = Registry.CAT_VARIANT.get(namespacedKey);
+
+            Preconditions.checkNotNull(type, "No cat type found for %s. This is a bug.", namespacedKey);
+            return type;
         }
 
-        @Override
+        /**
+         * @param name of the cat type.
+         * @return the cat type with the given name.
+         * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
+         */
         @NotNull
-        public NamespacedKey getKey() {
-            return key;
+        @Deprecated(since = "1.21")
+        static Type valueOf(@NotNull String name) {
+            Type type = Registry.CAT_VARIANT.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+            Preconditions.checkArgument(type != null, "No cat type found with the name %s", name);
+            return type;
+        }
+
+        /**
+         * @return an array of all known cat types.
+         * @deprecated use {@link Registry#iterator()}.
+         */
+        @NotNull
+        @Deprecated(since = "1.21")
+        static Type[] values() {
+            return Lists.newArrayList(Registry.CAT_VARIANT).toArray(new Type[0]);
         }
     }
 }

@@ -134,7 +134,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see Cat.Type
      */
-    Registry<Cat.Type> CAT_VARIANT = new SimpleRegistry<>(Cat.Type.class);
+    Registry<Cat.Type> CAT_VARIANT = Objects.requireNonNull(Bukkit.getRegistry(Cat.Type.class), "No registry present for Cat Type. This is a bug.");
     /**
      * Server enchantments.
      *
@@ -248,13 +248,13 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see Villager.Profession
      */
-    Registry<Villager.Profession> VILLAGER_PROFESSION = new SimpleRegistry<>(Villager.Profession.class);
+    Registry<Villager.Profession> VILLAGER_PROFESSION = Objects.requireNonNull(Bukkit.getRegistry(Villager.Profession.class), "No registry present for Villager Profession. This is a bug.");
     /**
      * Villager type.
      *
      * @see Villager.Type
      */
-    Registry<Villager.Type> VILLAGER_TYPE = new SimpleRegistry<>(Villager.Type.class);
+    Registry<Villager.Type> VILLAGER_TYPE = Objects.requireNonNull(Bukkit.getRegistry(Villager.Type.class), "No registry present for Villager Type. This is a bug.");
     /**
      * Memory Keys.
      *
@@ -291,7 +291,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see Frog.Variant
      */
-    Registry<Frog.Variant> FROG_VARIANT = new SimpleRegistry<>(Frog.Variant.class);
+    Registry<Frog.Variant> FROG_VARIANT = Objects.requireNonNull(Bukkit.getRegistry(Frog.Variant.class), "No registry present for Frog Variant. This is a bug.");
     /**
      * Wolf variants.
      *
@@ -304,7 +304,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see MapCursor.Type
      */
     @ApiStatus.Internal
-    Registry<MapCursor.Type> MAP_DECORATION_TYPE = new SimpleRegistry<>(MapCursor.Type.class);
+    Registry<MapCursor.Type> MAP_DECORATION_TYPE = Objects.requireNonNull(Bukkit.getRegistry(MapCursor.Type.class), "No registry present for MapCursor Type. This is a bug.");
     /**
      * Game events.
      *
