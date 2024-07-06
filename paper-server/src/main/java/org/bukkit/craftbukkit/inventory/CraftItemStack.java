@@ -18,6 +18,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.MaterialData;
+import org.jetbrains.annotations.ApiStatus;
 
 @DelegateDeserialization(ItemStack.class)
 public final class CraftItemStack extends ItemStack {
@@ -85,6 +86,7 @@ public final class CraftItemStack extends ItemStack {
     }
 
     net.minecraft.world.item.ItemStack handle;
+    private boolean isForInventoryDrop;
 
     /**
      * Mirror
@@ -102,6 +104,27 @@ public final class CraftItemStack extends ItemStack {
         setAmount(amount);
         setDurability(durability);
         setItemMeta(itemMeta);
+    }
+
+    /**
+     * Gets if the item is marked as an inventory drop in death events.
+     *
+     * @return true if the item is marked as an inventory drop
+     */
+    @ApiStatus.Internal
+    public boolean isForInventoryDrop() {
+        return this.isForInventoryDrop;
+    }
+
+    /**
+     * Marks this item as an inventory drop in death events.
+     *
+     * @return the ItemStack marked as an inventory drop
+     */
+    @ApiStatus.Internal
+    public ItemStack markForInventoryDrop() {
+        this.isForInventoryDrop = true;
+        return this;
     }
 
     @Override
