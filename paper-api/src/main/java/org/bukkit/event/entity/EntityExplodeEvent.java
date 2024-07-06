@@ -1,6 +1,7 @@
 package org.bukkit.event.entity;
 
 import java.util.List;
+import org.bukkit.ExplosionResult;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
@@ -17,13 +18,15 @@ public class EntityExplodeEvent extends EntityEvent implements Cancellable {
     private final Location location;
     private final List<Block> blocks;
     private float yield;
+    private final ExplosionResult result;
 
-    public EntityExplodeEvent(@NotNull final Entity what, @NotNull final Location location, @NotNull final List<Block> blocks, final float yield) {
+    public EntityExplodeEvent(@NotNull final Entity what, @NotNull final Location location, @NotNull final List<Block> blocks, final float yield, @NotNull final ExplosionResult result) {
         super(what);
         this.location = location;
         this.blocks = blocks;
         this.yield = yield;
         this.cancel = false;
+        this.result = result;
     }
 
     @Override
@@ -34,6 +37,16 @@ public class EntityExplodeEvent extends EntityEvent implements Cancellable {
     @Override
     public void setCancelled(boolean cancel) {
         this.cancel = cancel;
+    }
+
+    /**
+     * Returns the result of the explosion if it is not cancelled.
+     *
+     * @return the result of the explosion
+     */
+    @NotNull
+    public ExplosionResult getExplosionResult() {
+        return result;
     }
 
     /**
