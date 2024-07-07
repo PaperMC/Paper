@@ -303,7 +303,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see MapCursor.Type
      */
-    @ApiStatus.Internal
     Registry<MapCursor.Type> MAP_DECORATION_TYPE = Objects.requireNonNull(Bukkit.getRegistry(MapCursor.Type.class), "No registry present for MapCursor Type. This is a bug.");
     /**
      * Game events.
