@@ -1,0 +1,83 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: radsteve <radsteve@radsteve.net>
+Date: Sun, 7 Jul 2024 10:51:55 +0200
+Subject: [PATCH] Item stack name tooltip API
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 9d1e68c09fa7093cf0f6fa636f90cb15a44cbb38..5392ce22ec1da5566e069438345bc26966741f20 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -301,6 +301,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player imple
+     public com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
+     public @Nullable String clientBrandName = null; // Paper - Brand support
+     public org.bukkit.event.player.PlayerQuitEvent.QuitReason quitReason = null; // Paper - Add API for quit reason; there are a lot of changes to do if we change all methods leading to the event
++    private ItemStack currentlySelectedItemStack = ItemStack.EMPTY; // Paper - Item stack name tooltip API
+ 
+     // Paper start - rewrite chunk system
+     private ca.spottedleaf.moonrise.patches.chunk_system.player.RegionizedPlayerChunkLoader.PlayerChunkLoaderData chunkLoader;
+@@ -805,6 +806,19 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player imple
+         this.trackEnteredOrExitedLavaOnVehicle();
+         this.updatePlayerAttributes();
+         this.advancements.flushDirty(this);
++
++        // Paper start - Item stack name tooltip API
++        CraftPlayer craftPlayer = this.getBukkitEntity();
++        ItemStack selectedStack = this.getInventory().getSelected();
++        if(selectedStack.isEmpty()) {
++            craftPlayer.setLastItemStackChange(0);
++        } else {
++            if(!selectedStack.is(this.currentlySelectedItemStack.getItem()) || !selectedStack.getDisplayName().equals(this.currentlySelectedItemStack.getDisplayName())) {
++                craftPlayer.setLastItemStackChange(Util.getMillis());
++            }
++        }
++        this.currentlySelectedItemStack = selectedStack;
++        // Paper end - Item stack name tooltip API
+     }
+ 
+     private void updatePlayerAttributes() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index d01b45a48d412e3cb591acee101730704574448a..360c1f814c8024e7a4082ea0cce249044d907730 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -35,6 +35,7 @@ import java.util.concurrent.CompletableFuture;
+ import java.util.logging.Level;
+ import java.util.logging.Logger;
+ import javax.annotation.Nullable;
++import net.minecraft.Util;
+ import net.minecraft.advancements.AdvancementProgress;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Holder;
+@@ -212,6 +213,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     public org.bukkit.event.player.PlayerResourcePackStatusEvent.Status resourcePackStatus; // Paper - more resource pack API
+     private static final boolean DISABLE_CHANNEL_LIMIT = System.getProperty("paper.disableChannelLimit") != null; // Paper - add a flag to disable the channel limit
+     private long lastSaveTime; // Paper - getLastPlayed replacement API
++    private long lastItemStackChange = 0; // Paper - Item stack name tooltip API
+ 
+     public CraftPlayer(CraftServer server, ServerPlayer entity) {
+         super(server, entity);
+@@ -3554,4 +3556,24 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         ((ca.spottedleaf.moonrise.patches.chunk_system.player.ChunkSystemServerPlayer)this.getHandle())
+             .moonrise$getViewDistanceHolder().setSendViewDistance(viewDistance);
+     }
++
++    // Paper start - Item stack name tooltip API
++    private static final long ITEM_TOOLTIP_DURATION_MS = 40 * 50;
++
++    @Override
++    public boolean isItemNameTooltipShown() {
++        long currentTime = Util.getMillis();
++        long lastItemStackChange = this.getLastItemStackChangeTime();
++        return currentTime - lastItemStackChange < ITEM_TOOLTIP_DURATION_MS;
++    }
++
++    @Override
++    public long getLastItemStackChangeTime() {
++        return this.lastItemStackChange;
++    }
++
++    public void setLastItemStackChange(long itemStackChange) {
++        this.lastItemStackChange = itemStackChange;
++    }
++    // Paper end - Item stack name tooltip API
+ }
