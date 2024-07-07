@@ -1,11 +1,14 @@
 package org.bukkit.craftbukkit.util;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import com.google.common.io.ByteStreams;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -160,11 +163,18 @@ public class Commodore {
 
     public static byte[] convert(byte[] b, final String pluginName, final ApiVersion pluginVersion, final Set<String> activeCompatibilities) {
         final boolean modern = pluginVersion.isNewerThanOrSameAs(ApiVersion.FLATTENING);
+        final boolean enumCompatibility = pluginVersion.isOlderThanOrSameAs(ApiVersion.getOrCreateVersion("1.20.6")) && activeCompatibilities.contains("enum-compatibility-mode");
         ClassReader cr = new ClassReader(b);
         ClassWriter cw = new ClassWriter(0); // TODO 2024-06-22: Open PR to ASM to included interface in handle hash
 
+        List<String> methodEnumSignatures = getMethodSignatures(b);
+        Multimap<String, String> enumLessToEnum = HashMultimap.create();
+        for (String method : methodEnumSignatures) {
+            enumLessToEnum.put(method.replace("Ljava/lang/Enum;", "Ljava/lang/Object;"), method);
+        }
+
         ClassVisitor visitor = cw;
-        if (pluginVersion.isOlderThanOrSameAs(ApiVersion.getOrCreateVersion("1.20.6")) && activeCompatibilities.contains("enum-compatibility-mode")) {
+        if (enumCompatibility) {
             visitor = new LimitedClassRemapper(cw, new SimpleRemapper(ENUM_RENAMES));
         }
 
@@ -232,6 +242,15 @@ public class Commodore {
 
             @Override
             public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+                if (enumCompatibility && (access & Opcodes.ACC_SYNTHETIC) != 0 && (access & Opcodes.ACC_BRIDGE) != 0 && desc.contains("Ljava/lang/Object;")) {
+                    // SPIGOT-7820: Do not use object method if enum method is present
+                    // The object method does only redirect to the enum method
+                    Collection<String> result = enumLessToEnum.get(desc.replace("Ljava/lang/Enum;", "Ljava/lang/Object;") + " " + name);
+                    if (result.size() == 2) {
+                        name = name + "_BUKKIT_UNUSED";
+                    }
+                }
+
                 return new MethodVisitor(api, super.visitMethod(access, name, desc, signature, exceptions)) {
 
                     @Override
@@ -642,6 +661,20 @@ public class Commodore {
         }
 
         return false;
+    }
+
+    private static List<String> getMethodSignatures(byte[] clazz) {
+        List<String> methods = new ArrayList<>();
+        ClassReader cr = new ClassReader(clazz);
+        cr.accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+                methods.add(descriptor + " " + name);
+                return null;
+            }
+        }, 0);
+
+        return methods;
     }
 
     private static String buildMethodName(RerouteMethodData rerouteMethodData) {
