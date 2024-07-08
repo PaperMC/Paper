@@ -510,6 +510,99 @@ index 0000000000000000000000000000000000000000..23525592d880f340745a28c956fa38d3
 +    }
 +
 +}
+diff --git a/src/main/java/io/papermc/paper/command/brigadier/BasicCommandRegistration.java b/src/main/java/io/papermc/paper/command/brigadier/BasicCommandRegistration.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9a07b3da38df6d38ed31360ab70565365e7f4076
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/brigadier/BasicCommandRegistration.java
+@@ -0,0 +1,87 @@
++package io.papermc.paper.command.brigadier;
++
++import io.papermc.paper.plugin.configuration.PluginMeta;
++import java.util.Collection;
++import java.util.Collections;
++import java.util.List;
++import java.util.Objects;
++import java.util.function.Predicate;
++import org.bukkit.command.CommandSender;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++public final class BasicCommandRegistration implements BasicCommand.RegistrationBuilder {
++
++    private Collection<String> aliases = Collections.emptyList();
++    private PluginMeta pluginMeta;
++    private String label;
++    private Predicate<CommandSender> requirement;
++    private String description;
++    private BasicCommand commandHandler;
++
++    @Override
++    public BasicCommand.@NotNull RegistrationBuilder pluginMeta(@NotNull final PluginMeta pluginMeta) {
++        this.pluginMeta = pluginMeta;
++        return this;
++    }
++
++    @Override
++    public BasicCommand.@NotNull RegistrationBuilder label(@NotNull final String label) {
++        this.label = Objects.requireNonNull(label);
++        return this;
++    }
++
++    @Override
++    public BasicCommand.@NotNull RegistrationBuilder description(@Nullable final String description) {
++        this.description = description;
++        return this;
++    }
++
++    @Override
++    public BasicCommand.@NotNull RegistrationBuilder aliases(final @NotNull String... aliases) {
++        this.aliases = List.of(aliases);
++        return this;
++    }
++
++    @Override
++    public BasicCommand.@NotNull RegistrationBuilder aliases(@NotNull final Collection<String> aliases) {
++        this.aliases = Collections.unmodifiableCollection(aliases);
++        return this;
++    }
++
++    @Override
++    public BasicCommand.@NotNull RegistrationBuilder commandHandler(@NotNull final BasicCommand basicCommand) {
++        this.commandHandler = Objects.requireNonNull(basicCommand);
++        return this;
++    }
++
++    @Override
++    public BasicCommand.@NotNull RegistrationBuilder requires(@NotNull final Predicate<CommandSender> requirement) {
++        this.requirement = Objects.requireNonNull(requirement);
++        return this;
++    }
++
++    public @Nullable PluginMeta pluginMeta() {
++        return this.pluginMeta;
++    }
++
++    public @NotNull String label() {
++        return Objects.requireNonNull(this.label, "Label missing in registration");
++    }
++
++    public @NotNull Predicate<CommandSender> requirement() {
++        return this.requirement;
++    }
++
++    public @Nullable String description() {
++        return this.description;
++    }
++
++    public @NotNull Collection<String> aliases() {
++        return this.aliases;
++    }
++
++    public @NotNull BasicCommand commandHandler() {
++        return Objects.requireNonNull(this.commandHandler, "BasicCommand handler missing in registration");
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/MessageComponentSerializerImpl.java b/src/main/java/io/papermc/paper/command/brigadier/MessageComponentSerializerImpl.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0b33c6cf2366568641e6f2fd7f74fb74f6ea0145
@@ -686,10 +779,10 @@ index 0000000000000000000000000000000000000000..1b1642f306771f029e6214a2e2ebebb6
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java b/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..27509813a90980be1dfc7bde27d0eba60adfc820
+index 0000000000000000000000000000000000000000..9893c6409613471251cf2b2064f1e1e5068b3cc4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java
-@@ -0,0 +1,193 @@
+@@ -0,0 +1,207 @@
 +package io.papermc.paper.command.brigadier;
 +
 +import com.google.common.base.Preconditions;
@@ -709,6 +802,7 @@ index 0000000000000000000000000000000000000000..27509813a90980be1dfc7bde27d0eba6
 +import java.util.List;
 +import java.util.Locale;
 +import java.util.Set;
++import java.util.function.Consumer;
 +import net.minecraft.commands.CommandBuildContext;
 +import org.apache.commons.lang3.StringUtils;
 +import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
@@ -854,33 +948,46 @@ index 0000000000000000000000000000000000000000..27509813a90980be1dfc7bde27d0eba6
 +
 +    @Override
 +    public @Unmodifiable Set<String> register(final String label, final @Nullable String description, final Collection<String> aliases, final BasicCommand basicCommand) {
-+        return this.register(requireNonNull(this.currentContext, "No lifecycle owner context is set").getPluginMeta(), label, description, aliases, basicCommand);
++        return this.register(
++            requireNonNull(this.currentContext, "No lifecycle owner context is set").getPluginMeta(),
++            label,
++            description,
++            aliases,
++            basicCommand
++        );
 +    }
 +
 +    @Override
-+    public @Unmodifiable Set<String> register(final PluginMeta pluginMeta, final String label, final @Nullable String description, final Collection<String> aliases, final BasicCommand basicCommand) {
-+        final LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal(label)
++    public @Unmodifiable @NotNull Set<String> register(@NotNull final Consumer<BasicCommand.RegistrationBuilder> registrationConsumer) {
++        final BasicCommandRegistration registration = new BasicCommandRegistration();
++        registrationConsumer.accept(registration);
++        final LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal(registration.label())
++            .requires(stack -> registration.requirement().test(stack.getSender()))
 +            .then(
 +                Commands.argument("args", StringArgumentType.greedyString())
 +                    .suggests((context, suggestionsBuilder) -> {
 +                        final String[] args = StringUtils.split(suggestionsBuilder.getRemaining());
-+                        final SuggestionsBuilder offsetSuggestionsBuilder = suggestionsBuilder.createOffset(suggestionsBuilder.getInput().lastIndexOf(' ') + 1);;
++                        final SuggestionsBuilder offsetSuggestionsBuilder = suggestionsBuilder.createOffset(suggestionsBuilder.getInput().lastIndexOf(' ') + 1);
 +
-+                        final Collection<String> suggestions = basicCommand.suggest(context.getSource(), args);
++                        final Collection<String> suggestions = registration.commandHandler().suggest(context.getSource(), args);
 +                        suggestions.forEach(offsetSuggestionsBuilder::suggest);
 +                        return offsetSuggestionsBuilder.buildFuture();
 +                    })
 +                    .executes((stack) -> {
-+                        basicCommand.execute(stack.getSource(), StringUtils.split(stack.getArgument("args", String.class), ' '));
++                        registration.commandHandler().execute(stack.getSource(), StringUtils.split(stack.getArgument("args", String.class), ' '));
 +                        return com.mojang.brigadier.Command.SINGLE_SUCCESS;
 +                    })
 +            )
 +            .executes((stack) -> {
-+                basicCommand.execute(stack.getSource(), new String[0]);
++                registration.commandHandler().execute(stack.getSource(), new String[0]);
 +                return com.mojang.brigadier.Command.SINGLE_SUCCESS;
 +            });
 +
-+        return this.register(pluginMeta, builder.build(), description, aliases);
++        PluginMeta pluginMeta = registration.pluginMeta();
++        if (pluginMeta == null) {
++            pluginMeta = requireNonNull(this.currentContext, "No lifecycle owner context is set").getPluginMeta();
++        }
++        return this.register(pluginMeta, builder.build(), registration.description(), registration.aliases());
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/PluginCommandNode.java b/src/main/java/io/papermc/paper/command/brigadier/PluginCommandNode.java

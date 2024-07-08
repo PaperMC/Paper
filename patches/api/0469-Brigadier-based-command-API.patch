@@ -502,16 +502,21 @@ index 0000000000000000000000000000000000000000..9df87708206e26167a2c4934deff7fc6
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/BasicCommand.java b/src/main/java/io/papermc/paper/command/brigadier/BasicCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0f6b921b4bcf983cf25188823f78a061eec5263d
+index 0000000000000000000000000000000000000000..2722a855f16d5f5c0104854dedadea3eb54b8bad
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/BasicCommand.java
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,121 @@
 +package io.papermc.paper.command.brigadier;
 +
++import io.papermc.paper.plugin.configuration.PluginMeta;
 +import java.util.Collection;
 +import java.util.Collections;
++import java.util.function.Consumer;
++import java.util.function.Predicate;
++import org.bukkit.command.CommandSender;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
 +
 +/**
 + * Implementing this interface allows for easily creating "Bukkit-style" {@code String[] args} commands.
@@ -540,6 +545,86 @@ index 0000000000000000000000000000000000000000..0f6b921b4bcf983cf25188823f78a061
 +    @ApiStatus.OverrideOnly
 +    default @NotNull Collection<String> suggest(final @NotNull CommandSourceStack commandSourceStack, final @NotNull String[] args) {
 +        return Collections.emptyList();
++    }
++
++    /**
++     * Registration builder for {@link BasicCommand} to be used in {@link Commands#register(Consumer)}.
++     * <p>
++     * The command handler and label always have to be specified, the rest will default to {@code null} or an empty collection.
++     * However, <b>it is highly recommended to add a root permission/requirement</b>, which is also used to limit the commands sent to players.
++     * <p>
++     * {@link PluginMeta} may be automatically infered via the registration context, such as during bootstrap,
++     * but will otherwise also have to be defined.
++     */
++    interface RegistrationBuilder {
++
++        /**
++         * Sets the owning plugin's meta. This is not required to be set during plugin bootstrap.
++         *
++         * @param pluginMeta the owning plugin's meta
++         * @return self
++         */
++        @NotNull RegistrationBuilder pluginMeta(@NotNull PluginMeta pluginMeta);
++
++        /**
++         * Sets the command label.
++         *
++         * @param label the label of the to-be-registered command
++         * @return self
++         */
++        @NotNull RegistrationBuilder label(@NotNull String label);
++
++        /**
++         * Sets the command handler.
++         *
++         * @param basicCommand the basic command instance to register
++         * @return self
++         */
++        @NotNull RegistrationBuilder commandHandler(@NotNull BasicCommand basicCommand);
++
++        /**
++         * Sets the root permission node. Null by default.
++         *
++         * @param permission the root permission node
++         * @see #requires(Predicate) for a more flexible permission predicate
++         * @return self
++         */
++        default @NotNull RegistrationBuilder permission(@Nullable String permission) {
++            return this.requires(permission == null ? s -> true : sender -> sender.hasPermission(permission));
++        }
++
++        /**
++         * Sets the root permission predicate. Is always true by default.
++         *
++         * @param requirement the root command permission predicate
++         * @see #permission(String) for a simple permission node
++         * @return self
++         */
++        @NotNull RegistrationBuilder requires(@NotNull Predicate<CommandSender> requirement);
++
++        /**
++         * Sets the help description for the root literal node. Null by default.
++         *
++         * @param description the help description for the root literal node
++         * @return self
++         */
++        @NotNull RegistrationBuilder description(@Nullable String description);
++
++        /**
++         * Sets the aliases to register the basic command under. Empty by default.
++         *
++         * @param aliases a collection of aliases to register the basic command under
++         * @return self
++         */
++        @NotNull RegistrationBuilder aliases(@NotNull String... aliases);
++
++        /**
++         * Sets the aliases to register the basic command under. Empty by default.
++         *
++         * @param aliases a collection of aliases to register the basic command under
++         * @return self
++         */
++        @NotNull RegistrationBuilder aliases(@NotNull Collection<String> aliases);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/CommandRegistrationFlag.java b/src/main/java/io/papermc/paper/command/brigadier/CommandRegistrationFlag.java
@@ -620,10 +705,10 @@ index 0000000000000000000000000000000000000000..54288dbe7185b875a74184f002ee4de4
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/Commands.java b/src/main/java/io/papermc/paper/command/brigadier/Commands.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ce60b618de10da7638f5aefa974aebe02600465c
+index 0000000000000000000000000000000000000000..9260cf56e62859b1d5b181d10fd1b75f95e1578f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/Commands.java
-@@ -0,0 +1,266 @@
+@@ -0,0 +1,292 @@
 +package io.papermc.paper.command.brigadier;
 +
 +import com.mojang.brigadier.CommandDispatcher;
@@ -639,6 +724,7 @@ index 0000000000000000000000000000000000000000..ce60b618de10da7638f5aefa974aebe0
 +import java.util.Collection;
 +import java.util.Collections;
 +import java.util.Set;
++import java.util.function.Consumer;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
@@ -838,7 +924,9 @@ index 0000000000000000000000000000000000000000..ce60b618de10da7638f5aefa974aebe0
 +     * @param label        the label of the to-be-registered command
 +     * @param basicCommand the basic command instance to register
 +     * @return successfully registered root command labels (including aliases and namespaced variants)
++     * @deprecated use {@link #register(Consumer)}, including its new permission field
 +     */
++    @Deprecated(forRemoval = true)
 +    default @Unmodifiable @NotNull Set<String> register(final @NotNull String label, final @NotNull BasicCommand basicCommand) {
 +        return this.register(label, null, Collections.emptyList(), basicCommand);
 +    }
@@ -850,7 +938,9 @@ index 0000000000000000000000000000000000000000..ce60b618de10da7638f5aefa974aebe0
 +     * @param description  the help description for the root literal node
 +     * @param basicCommand the basic command instance to register
 +     * @return successfully registered root command labels (including aliases and namespaced variants)
++     * @deprecated use {@link #register(Consumer)}, including its new permission field
 +     */
++    @Deprecated(forRemoval = true)
 +    default @Unmodifiable @NotNull Set<String> register(final @NotNull String label, final @Nullable String description, final @NotNull BasicCommand basicCommand) {
 +        return this.register(label, description, Collections.emptyList(), basicCommand);
 +    }
@@ -862,7 +952,9 @@ index 0000000000000000000000000000000000000000..ce60b618de10da7638f5aefa974aebe0
 +     * @param aliases      a collection of aliases to register the basic command under.
 +     * @param basicCommand the basic command instance to register
 +     * @return successfully registered root command labels (including aliases and namespaced variants)
++     * @deprecated use {@link #register(Consumer)}, including its new permission field
 +     */
++    @Deprecated(forRemoval = true)
 +    default @Unmodifiable @NotNull Set<String> register(final @NotNull String label, final @NotNull Collection<String> aliases, final @NotNull BasicCommand basicCommand) {
 +        return this.register(label, null, aliases, basicCommand);
 +    }
@@ -875,7 +967,9 @@ index 0000000000000000000000000000000000000000..ce60b618de10da7638f5aefa974aebe0
 +     * @param aliases      a collection of aliases to register the basic command under.
 +     * @param basicCommand the basic command instance to register
 +     * @return successfully registered root command labels (including aliases and namespaced variants)
++     * @deprecated use {@link #register(Consumer)}, including its new permission field
 +     */
++    @Deprecated(forRemoval = true)
 +    @Unmodifiable @NotNull Set<String> register(@NotNull String label, @Nullable String description, @NotNull Collection<String> aliases, @NotNull BasicCommand basicCommand);
 +
 +    /**
@@ -887,8 +981,25 @@ index 0000000000000000000000000000000000000000..ce60b618de10da7638f5aefa974aebe0
 +     * @param aliases      a collection of aliases to register the basic command under.
 +     * @param basicCommand the basic command instance to register
 +     * @return successfully registered root command labels (including aliases and namespaced variants)
++     * @deprecated use {@link #register(Consumer)}, including its new permission field
 +     */
-+    @Unmodifiable @NotNull Set<String> register(@NotNull PluginMeta pluginMeta, @NotNull String label, @Nullable String description, @NotNull Collection<String> aliases, @NotNull BasicCommand basicCommand);
++    @Deprecated(forRemoval = true)
++    default @Unmodifiable @NotNull Set<String> register(@NotNull PluginMeta pluginMeta, @NotNull String label, @Nullable String description, @NotNull Collection<String> aliases, @NotNull BasicCommand basicCommand) {
++        return this.register(registrationBuilder -> registrationBuilder.pluginMeta(pluginMeta)
++            .label(label)
++            .commandHandler(basicCommand)
++            .description(description)
++            .aliases(aliases));
++    }
++
++    /**
++     * Registers a command under the same logic as {@link Commands#register(PluginMeta, LiteralCommandNode, String, Collection)}
++     * but with {@link BasicCommand} and the builder parameters as a simplified handler interface.
++     *
++     * @param basicCommandRegistration the registration builder consumer
++     * @return successfully registered root command labels (including aliases and namespaced variants)
++     */
++    @Unmodifiable @NotNull Set<String> register(@NotNull Consumer<BasicCommand.RegistrationBuilder> basicCommandRegistration);
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/MessageComponentSerializer.java b/src/main/java/io/papermc/paper/command/brigadier/MessageComponentSerializer.java
 new file mode 100644
