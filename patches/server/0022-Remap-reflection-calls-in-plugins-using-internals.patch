@@ -331,10 +331,10 @@ index bdd9bc8a414719b9f1d6f01f90539ddb8603a878..fdb52ad85cfaa1d53aadcad72cec3d3c
          // Copied from SimplePluginManager#loadPlugins
 diff --git a/src/main/java/io/papermc/paper/pluginremap/reflect/PaperReflection.java b/src/main/java/io/papermc/paper/pluginremap/reflect/PaperReflection.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c653d1f5af8b407cfba715e6027dbb695046892a
+index 0000000000000000000000000000000000000000..795d79bcfc4177edfcb12cf9db392780c3f04aa7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/pluginremap/reflect/PaperReflection.java
-@@ -0,0 +1,212 @@
+@@ -0,0 +1,216 @@
 +package io.papermc.paper.pluginremap.reflect;
 +
 +import com.mojang.logging.LogUtils;
@@ -395,7 +395,7 @@ index 0000000000000000000000000000000000000000..c653d1f5af8b407cfba715e6027dbb69
 +    }
 +
 +    @Override
-+    protected String mapDeclaredMethodName(final Class<?> clazz, final String name, final Class<?>... parameterTypes) {
++    protected String mapDeclaredMethodName(final Class<?> clazz, final String name, final Class<?> @Nullable ... parameterTypes) {
 +        final @Nullable Map<String, String> mapping = this.strippedMethodMappings.get(clazz.getName());
 +        if (mapping == null) {
 +            return name;
@@ -404,7 +404,7 @@ index 0000000000000000000000000000000000000000..c653d1f5af8b407cfba715e6027dbb69
 +    }
 +
 +    @Override
-+    protected String mapMethodName(final Class<?> clazz, final String name, final Class<?>... parameterTypes) {
++    protected String mapMethodName(final Class<?> clazz, final String name, final Class<?> @Nullable ... parameterTypes) {
 +        final @Nullable String mapped = this.findMappedMethodName(clazz, name, parameterTypes);
 +        return mapped != null ? mapped : name;
 +    }
@@ -424,7 +424,7 @@ index 0000000000000000000000000000000000000000..c653d1f5af8b407cfba715e6027dbb69
 +        return mapped != null ? mapped : name;
 +    }
 +
-+    private @Nullable String findMappedMethodName(final Class<?> clazz, final String name, final Class<?>... parameterTypes) {
++    private @Nullable String findMappedMethodName(final Class<?> clazz, final String name, final Class<?> @Nullable ... parameterTypes) {
 +        final Map<String, String> map = this.strippedMethodMappings.get(clazz.getName());
 +        @Nullable String mapped = null;
 +        if (map != null) {
@@ -474,11 +474,15 @@ index 0000000000000000000000000000000000000000..c653d1f5af8b407cfba715e6027dbb69
 +        return mapped;
 +    }
 +
-+    private static String strippedMethodKey(final String methodName, final Class<?>... parameterTypes) {
++    private static String strippedMethodKey(final String methodName, final Class<?> @Nullable ... parameterTypes) {
 +        return methodName + parameterDescriptor(parameterTypes);
 +    }
 +
-+    private static String parameterDescriptor(final Class<?>... parameterTypes) {
++    private static String parameterDescriptor(final Class<?> @Nullable ... parameterTypes) {
++        if (parameterTypes == null) {
++            // Null parameterTypes is treated as an empty array
++            return "()";
++        }
 +        final StringBuilder builder = new StringBuilder();
 +        builder.append('(');
 +        for (final Class<?> parameterType : parameterTypes) {
