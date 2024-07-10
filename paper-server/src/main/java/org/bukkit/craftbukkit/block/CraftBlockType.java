@@ -12,9 +12,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.BlockAccessAir;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.BlockFalling;
 import net.minecraft.world.level.block.BlockFire;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.Fallable;
 import net.minecraft.world.level.block.state.BlockBase;
 import net.minecraft.world.level.block.state.IBlockData;
 import net.minecraft.world.phys.MovingObjectPositionBlock;
@@ -196,7 +196,7 @@ public class CraftBlockType<B extends BlockData> implements BlockType.Typed<B>, 
 
     @Override
     public boolean hasGravity() {
-        return block instanceof BlockFalling;
+        return block instanceof Fallable;
     }
 
     @Override

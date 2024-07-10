@@ -13,9 +13,9 @@ import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.BlockAccessAir;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.BlockFalling;
 import net.minecraft.world.level.block.BlockFire;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.Fallable;
 import net.minecraft.world.level.block.entity.TileEntityFurnace;
 import net.minecraft.world.level.block.state.BlockBase;
 import net.minecraft.world.level.block.state.IBlockData;
@@ -171,7 +171,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     @EnumSource(value = Material.class, names = "LEGACY_.*", mode = EnumSource.Mode.MATCH_NONE)
     public void hasGravity(Material material) {
         if (material.isBlock()) {
-            assertThat(material.hasGravity(), is(CraftMagicNumbers.getBlock(material) instanceof BlockFalling));
+            assertThat(material.hasGravity(), is(CraftMagicNumbers.getBlock(material) instanceof Fallable));
         } else {
             assertFalse(material.hasGravity());
         }
