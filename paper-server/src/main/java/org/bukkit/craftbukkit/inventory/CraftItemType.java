@@ -262,4 +262,12 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
         return this.item.getDescriptionId();
     }
     // Paper end - add Translatable
+
+    // Paper start - expand ItemRarity API
+    @Override
+    public org.bukkit.inventory.ItemRarity getItemRarity() {
+        final net.minecraft.world.item.Rarity rarity = this.item.components().get(DataComponents.RARITY);
+        return rarity == null ? null : org.bukkit.inventory.ItemRarity.valueOf(rarity.name());
+    }
+    // Paper end - expand ItemRarity API
 }
