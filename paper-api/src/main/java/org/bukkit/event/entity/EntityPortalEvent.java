@@ -15,6 +15,8 @@ import org.jetbrains.annotations.Nullable;
 public class EntityPortalEvent extends EntityTeleportEvent {
     private static final HandlerList handlers = new HandlerList();
     private int searchRadius = 128;
+    private boolean canCreatePortal = true;
+    private int creationRadius = 16;
 
     public EntityPortalEvent(@NotNull final Entity entity, @NotNull final Location from, @Nullable final Location to) {
         super(entity, from, to);
@@ -23,6 +25,13 @@ public class EntityPortalEvent extends EntityTeleportEvent {
     public EntityPortalEvent(@NotNull Entity entity, @NotNull Location from, @Nullable Location to, int searchRadius) {
         super(entity, from, to);
         this.searchRadius = searchRadius;
+    }
+
+    public EntityPortalEvent(@NotNull Entity entity, @NotNull Location from, @Nullable Location to, int searchRadius, boolean canCreatePortal, int creationRadius) {
+        super(entity, from, to);
+        this.searchRadius = searchRadius;
+        this.canCreatePortal = canCreatePortal;
+        this.creationRadius = creationRadius;
     }
 
     /**
@@ -42,6 +51,60 @@ public class EntityPortalEvent extends EntityTeleportEvent {
      */
     public int getSearchRadius() {
         return searchRadius;
+    }
+
+    /**
+     * Returns whether the server will attempt to create a destination portal or
+     * not.
+     *
+     * @return whether there should create be a destination portal created
+     */
+    public boolean getCanCreatePortal() {
+        return canCreatePortal;
+    }
+
+    /**
+     * Sets whether the server should attempt to create a destination portal or
+     * not.
+     *
+     * @param canCreatePortal Sets whether there should be a destination portal
+     * created
+     */
+    public void setCanCreatePortal(boolean canCreatePortal) {
+        this.canCreatePortal = canCreatePortal;
+    }
+
+    /**
+     * Sets the maximum radius the world is searched for a free space from the
+     * given location.
+     *
+     * If enough free space is found then the portal will be created there, if
+     * not it will force create with air-space at the target location.
+     *
+     * Does not apply to end portal target platforms which will always appear at
+     * the target location.
+     *
+     * @param creationRadius the radius in which to create a portal from the
+     * location
+     */
+    public void setCreationRadius(int creationRadius) {
+        this.creationRadius = creationRadius;
+    }
+
+    /**
+     * Gets the maximum radius the world is searched for a free space from the
+     * given location.
+     *
+     * If enough free space is found then the portal will be created there, if
+     * not it will force create with air-space at the target location.
+     *
+     * Does not apply to end portal target platforms which will always appear at
+     * the target location.
+     *
+     * @return the currently set creation radius
+     */
+    public int getCreationRadius() {
+        return creationRadius;
     }
 
     @NotNull
