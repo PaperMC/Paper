@@ -5,14 +5,23 @@ Subject: [PATCH] Revert to vanilla handling of LivingEntity#actuallyHurt
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 8072d31525d9c7890804bb879893f1a69820e32d..c54cb799730353ba1d44c110c85455eb1da6b1d1 100644
+index 8072d31525d9c7890804bb879893f1a69820e32d..7b019553d88a4294fad1107c5f28ba3fff985d63 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -1425,7 +1425,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+             }
+ 
+             this.noActionTime = 0;
+-            float f1 = amount;
++            float f1 = amount; final float originalAmount = f1; // Paper - revert to vanilla #hurt - OBFHELPER
+             boolean flag = amount > 0.0F && this.isDamageSourceBlocked(source); // Copied from below
+             float f2 = 0.0F;
+ 
 @@ -1479,6 +1479,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
                  if (!this.actuallyHurt(source, (float) event.getFinalDamage() - this.lastHurt, event)) {
                      return false;
                  }
-+                if (this instanceof ServerPlayer && event.getDamage() == 0) return false; // Paper - revert to vanilla damage - players are not affected by damage that is 0 - use raw damage here, as it is just the original amount but post plugin changes to it.
++                if (this instanceof ServerPlayer && event.getDamage() == 0 && originalAmount == 0) return false; // Paper - revert to vanilla damage - players are not affected by damage that is 0 - skip damage if the vanilla damage is 0 and was not modified by plugins in the event.
                  // CraftBukkit end
                  this.lastHurt = amount;
                  flag1 = false;
@@ -20,7 +29,7 @@ index 8072d31525d9c7890804bb879893f1a69820e32d..c54cb799730353ba1d44c110c85455eb
                  if (!this.actuallyHurt(source, (float) event.getFinalDamage(), event)) {
                      return false;
                  }
-+                if (this instanceof ServerPlayer && event.getDamage() == 0) return false; // Paper - revert to vanilla damage - players are not affected by damage that is 0 - use raw damage here, as it is just the original amount but post plugin changes to it.
++                if (this instanceof ServerPlayer && event.getDamage() == 0 && originalAmount == 0) return false; // Paper - revert to vanilla damage - players are not affected by damage that is 0 - skip damage if the vanilla damage is 0 and was not modified by plugins in the event.
                  this.lastHurt = amount;
                  this.invulnerableTime = this.invulnerableDuration; // CraftBukkit - restore use of maxNoDamageTicks
                  // this.actuallyHurt(damagesource, f);
