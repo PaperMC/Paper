@@ -20,6 +20,33 @@ Resetting the last sent position every time a new player is
 added to the tracker is just easier to do, so that is what
 this patch does.
 
+This patch also fixes entities appearing to disappear when
+teleporting to players by changing the initial position
+in the spawn packet to the entities current tracking position.
+When teleporting, the spawn packet will contain the old position
+which is most likely in an unloaded chunk - which means that the
+client will not tick the entity and thus not lerp the entity
+from its old position to its new position.
+
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundAddEntityPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundAddEntityPacket.java
+index 1a5e73fd97781f3903e5ef13aa0352c64fbc2cc1..4126d82e83810126eb4a41b4587dc993542f3793 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundAddEntityPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundAddEntityPacket.java
+@@ -42,9 +42,11 @@ public class ClientboundAddEntityPacket implements Packet<ClientGamePacketListen
+         this(
+             entity.getId(),
+             entity.getUUID(),
+-            entityTrackerEntry.getPositionBase().x(),
+-            entityTrackerEntry.getPositionBase().y(),
+-            entityTrackerEntry.getPositionBase().z(),
++            // Paper start - fix entity tracker desync
++            entity.trackingPosition().x(),
++            entity.trackingPosition().y(),
++            entity.trackingPosition().z(),
++            // Paper end - fix entity tracker desync
+             entityTrackerEntry.getLastSentXRot(),
+             entityTrackerEntry.getLastSentYRot(),
+             entity.getType(),
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
 index c96740a82eac9101f74edeb44edf4b64d1d633e0..8b6754525fafd1aaac3292cf69a855d6a42b9523 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
