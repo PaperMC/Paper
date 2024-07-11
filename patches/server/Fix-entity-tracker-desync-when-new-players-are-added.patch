@@ -20,6 +20,33 @@ Resetting the last sent position every time a new player is
 added to the tracker is just easier to do, so that is what
 this patch does.
 
+This patch also fixes entities appearing to disappear when
+teleporting to players by changing the initial position
+in the spawn packet to the entities current tracking position.
+When teleporting, the spawn packet will contain the old position
+which is most likely in an unloaded chunk - which means that the
+client will not tick the entity and thus not lerp the entity
+from its old position to its new position.
+
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundAddEntityPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundAddEntityPacket.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundAddEntityPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundAddEntityPacket.java
+@@ -0,0 +0,0 @@ public class ClientboundAddEntityPacket implements Packet<ClientGamePacketListen
+         this(
+             entity.getId(),
+             entity.getUUID(),
+-            entityTrackerEntry.getPositionBase().x(),
+-            entityTrackerEntry.getPositionBase().y(),
+-            entityTrackerEntry.getPositionBase().z(),
++            // Paper start - fix entity tracker desync
++            entity.trackingPosition().x(),
++            entity.trackingPosition().y(),
++            entity.trackingPosition().z(),
++            // Paper end - fix entity tracker desync
+             entityTrackerEntry.getLastSentXRot(),
+             entityTrackerEntry.getLastSentYRot(),
+             entity.getType(),
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
