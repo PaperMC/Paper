@@ -1,7 +1,11 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Spottedleaf <Spottedleaf@users.noreply.github.com>
 Date: Fri, 14 Jun 2024 11:57:26 -0700
-Subject: [PATCH] Chunk System + Starlight from Moonrise
+Subject: [PATCH] Moonrise optimisation patches
+
+Currently includes:
+ - Starlight + Chunk System
+ - Entity tracker optimisations
 
 See https://github.com/Tuinity/Moonrise
 
@@ -2396,6 +2400,221 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +
 +            return t;
++        }
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/moonrise/common/misc/NearbyPlayers.java b/src/main/java/ca/spottedleaf/moonrise/common/misc/NearbyPlayers.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/moonrise/common/misc/NearbyPlayers.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.moonrise.common.misc;
++
++import ca.spottedleaf.moonrise.common.list.ReferenceList;
++import ca.spottedleaf.moonrise.common.util.CoordinateUtils;
++import ca.spottedleaf.moonrise.common.util.MoonriseConstants;
++import ca.spottedleaf.moonrise.patches.chunk_system.ChunkSystem;
++import it.unimi.dsi.fastutil.longs.Long2ReferenceOpenHashMap;
++import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
++import net.minecraft.core.BlockPos;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.server.level.ServerPlayer;
++import net.minecraft.world.level.ChunkPos;
++
++public final class NearbyPlayers {
++
++    public static enum NearbyMapType {
++        GENERAL,
++        GENERAL_SMALL,
++        GENERAL_REALLY_SMALL,
++        TICK_VIEW_DISTANCE,
++        VIEW_DISTANCE,
++        SPAWN_RANGE,
++    }
++
++    private static final NearbyMapType[] MAP_TYPES = NearbyMapType.values();
++    public static final int TOTAL_MAP_TYPES = MAP_TYPES.length;
++
++    private static final int GENERAL_AREA_VIEW_DISTANCE = MoonriseConstants.MAX_VIEW_DISTANCE + 1;
++    private static final int GENERAL_SMALL_VIEW_DISTANCE = 10;
++    private static final int GENERAL_REALLY_SMALL_VIEW_DISTANCE = 3;
++
++    public static final int GENERAL_AREA_VIEW_DISTANCE_BLOCKS = (GENERAL_AREA_VIEW_DISTANCE << 4);
++    public static final int GENERAL_SMALL_AREA_VIEW_DISTANCE_BLOCKS = (GENERAL_SMALL_VIEW_DISTANCE << 4);
++    public static final int GENERAL_REALLY_SMALL_AREA_VIEW_DISTANCE_BLOCKS = (GENERAL_REALLY_SMALL_VIEW_DISTANCE << 4);
++
++    private final ServerLevel world;
++    private final Reference2ReferenceOpenHashMap<ServerPlayer, TrackedPlayer[]> players = new Reference2ReferenceOpenHashMap<>();
++    private final Long2ReferenceOpenHashMap<TrackedChunk> byChunk = new Long2ReferenceOpenHashMap<>();
++
++    public NearbyPlayers(final ServerLevel world) {
++        this.world = world;
++    }
++
++    public void addPlayer(final ServerPlayer player) {
++        final TrackedPlayer[] newTrackers = new TrackedPlayer[TOTAL_MAP_TYPES];
++        if (this.players.putIfAbsent(player, newTrackers) != null) {
++            throw new IllegalStateException("Already have player " + player);
++        }
++
++        final ChunkPos chunk = player.chunkPosition();
++
++        for (int i = 0; i < TOTAL_MAP_TYPES; ++i) {
++            // use 0 for default, will be updated by tickPlayer
++            (newTrackers[i] = new TrackedPlayer(player, MAP_TYPES[i])).add(chunk.x, chunk.z, 0);
++        }
++
++        // update view distances
++        this.tickPlayer(player);
++    }
++
++    public void removePlayer(final ServerPlayer player) {
++        final TrackedPlayer[] players = this.players.remove(player);
++        if (players == null) {
++            return; // May be called during teleportation before the player is actually placed
++        }
++
++        for (final TrackedPlayer tracker : players) {
++            tracker.remove();
++        }
++    }
++
++    public void tickPlayer(final ServerPlayer player) {
++        final TrackedPlayer[] players = this.players.get(player);
++        if (players == null) {
++            throw new IllegalStateException("Don't have player " + player);
++        }
++
++        final ChunkPos chunk = player.chunkPosition();
++
++        players[NearbyMapType.GENERAL.ordinal()].update(chunk.x, chunk.z, GENERAL_AREA_VIEW_DISTANCE);
++        players[NearbyMapType.GENERAL_SMALL.ordinal()].update(chunk.x, chunk.z, GENERAL_SMALL_VIEW_DISTANCE);
++        players[NearbyMapType.GENERAL_REALLY_SMALL.ordinal()].update(chunk.x, chunk.z, GENERAL_REALLY_SMALL_VIEW_DISTANCE);
++        players[NearbyMapType.TICK_VIEW_DISTANCE.ordinal()].update(chunk.x, chunk.z, ChunkSystem.getTickViewDistance(player));
++        players[NearbyMapType.VIEW_DISTANCE.ordinal()].update(chunk.x, chunk.z, ChunkSystem.getLoadViewDistance(player));
++    }
++
++    public TrackedChunk getChunk(final ChunkPos pos) {
++        return this.byChunk.get(CoordinateUtils.getChunkKey(pos));
++    }
++
++    public TrackedChunk getChunk(final BlockPos pos) {
++        return this.byChunk.get(CoordinateUtils.getChunkKey(pos));
++    }
++
++    public ReferenceList<ServerPlayer> getPlayers(final BlockPos pos, final NearbyMapType type) {
++        final TrackedChunk chunk = this.byChunk.get(CoordinateUtils.getChunkKey(pos));
++
++        return chunk == null ? null : chunk.players[type.ordinal()];
++    }
++
++    public ReferenceList<ServerPlayer> getPlayers(final ChunkPos pos, final NearbyMapType type) {
++        final TrackedChunk chunk = this.byChunk.get(CoordinateUtils.getChunkKey(pos));
++
++        return chunk == null ? null : chunk.players[type.ordinal()];
++    }
++
++    public ReferenceList<ServerPlayer> getPlayersByChunk(final int chunkX, final int chunkZ, final NearbyMapType type) {
++        final TrackedChunk chunk = this.byChunk.get(CoordinateUtils.getChunkKey(chunkX, chunkZ));
++
++        return chunk == null ? null : chunk.players[type.ordinal()];
++    }
++
++    public ReferenceList<ServerPlayer> getPlayersByBlock(final int blockX, final int blockZ, final NearbyMapType type) {
++        final TrackedChunk chunk = this.byChunk.get(CoordinateUtils.getChunkKey(blockX >> 4, blockZ >> 4));
++
++        return chunk == null ? null : chunk.players[type.ordinal()];
++    }
++
++    public static final class TrackedChunk {
++
++        private static final ServerPlayer[] EMPTY_PLAYERS_ARRAY = new ServerPlayer[0];
++
++        private final ReferenceList<ServerPlayer>[] players = new ReferenceList[TOTAL_MAP_TYPES];
++        private int nonEmptyLists;
++        private long updateCount;
++
++        public boolean isEmpty() {
++            return this.nonEmptyLists == 0;
++        }
++
++        public long getUpdateCount() {
++            return this.updateCount;
++        }
++
++        public ReferenceList<ServerPlayer> getPlayers(final NearbyMapType type) {
++            return this.players[type.ordinal()];
++        }
++
++        public void addPlayer(final ServerPlayer player, final NearbyMapType type) {
++            ++this.updateCount;
++
++            final int idx = type.ordinal();
++            final ReferenceList<ServerPlayer> list = this.players[idx];
++            if (list == null) {
++                ++this.nonEmptyLists;
++                (this.players[idx] = new ReferenceList<>(EMPTY_PLAYERS_ARRAY, 0)).add(player);
++                return;
++            }
++
++            if (!list.add(player)) {
++                throw new IllegalStateException("Already contains player " + player);
++            }
++        }
++
++        public void removePlayer(final ServerPlayer player, final NearbyMapType type) {
++            ++this.updateCount;
++
++            final int idx = type.ordinal();
++            final ReferenceList<ServerPlayer> list = this.players[idx];
++            if (list == null) {
++                throw new IllegalStateException("Does not contain player " + player);
++            }
++
++            if (!list.remove(player)) {
++                throw new IllegalStateException("Does not contain player " + player);
++            }
++
++            if (list.size() == 0) {
++                this.players[idx] = null;
++                --this.nonEmptyLists;
++            }
++        }
++    }
++
++    private final class TrackedPlayer extends SingleUserAreaMap<ServerPlayer> {
++
++        private final NearbyMapType type;
++
++        public TrackedPlayer(final ServerPlayer player, final NearbyMapType type) {
++            super(player);
++            this.type = type;
++        }
++
++        @Override
++        protected void addCallback(final ServerPlayer parameter, final int chunkX, final int chunkZ) {
++            final long chunkKey = CoordinateUtils.getChunkKey(chunkX, chunkZ);
++
++            NearbyPlayers.this.byChunk.computeIfAbsent(chunkKey, (final long keyInMap) -> {
++                return new TrackedChunk();
++            }).addPlayer(parameter, this.type);
++        }
++
++        @Override
++        protected void removeCallback(final ServerPlayer parameter, final int chunkX, final int chunkZ) {
++            final long chunkKey = CoordinateUtils.getChunkKey(chunkX, chunkZ);
++
++            final TrackedChunk chunk = NearbyPlayers.this.byChunk.get(chunkKey);
++            if (chunk == null) {
++                throw new IllegalStateException("Chunk should exist at " + new ChunkPos(chunkKey));
++            }
++
++            chunk.removePlayer(parameter, this.type);
++
++            if (chunk.isEmpty()) {
++                NearbyPlayers.this.byChunk.remove(chunkKey);
++            }
 +        }
 +    }
 +}
@@ -4939,6 +5158,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package ca.spottedleaf.moonrise.patches.chunk_system.level;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
++import ca.spottedleaf.moonrise.common.misc.NearbyPlayers;
 +import ca.spottedleaf.moonrise.patches.chunk_system.io.RegionFileIOThread;
 +import ca.spottedleaf.moonrise.patches.chunk_system.player.RegionizedPlayerChunkLoader;
 +import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler;
@@ -4985,6 +5205,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public long moonrise$getLastMidTickFailure();
 +
 +    public void moonrise$setLastMidTickFailure(final long time);
++
++    public NearbyPlayers moonrise$getNearbyPlayers();
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/level/chunk/ChunkSystemChunkHolder.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/level/chunk/ChunkSystemChunkHolder.java
 new file mode 100644
@@ -5984,6 +6206,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    protected abstract void onEmptySlices(final int chunkX, final int chunkZ);
 +
++    protected abstract void entitySectionChangeCallback(
++            final Entity entity,
++            final int oldSectionX, final int oldSectionY, final int oldSectionZ,
++            final int newSectionX, final int newSectionY, final int newSectionZ
++    );
++
++    protected abstract void addEntityCallback(final Entity entity);
++
++    protected abstract void removeEntityCallback(final Entity entity);
++
++    protected abstract void entityStartLoaded(final Entity entity);
++
++    protected abstract void entityEndLoaded(final Entity entity);
++
++    protected abstract void entityStartTicking(final Entity entity);
++
++    protected abstract void entityEndTicking(final Entity entity);
++
 +    private static Entity maskNonAccessible(final Entity entity) {
 +        if (entity == null) {
 +            return null;
@@ -6162,6 +6402,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    if (newVisibility.ordinal() > oldVisibility.ordinal()) {
 +                        // status upgrade
 +                        if (!oldVisibility.isAccessible() && newVisibility.isAccessible()) {
++                            EntityLookup.this.entityStartLoaded(entity);
 +                            synchronized (this.accessibleEntities) {
 +                                this.accessibleEntities.add(entity);
 +                            }
@@ -6171,6 +6412,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        }
 +
 +                        if (!oldVisibility.isTicking() && newVisibility.isTicking()) {
++                            EntityLookup.this.entityStartTicking(entity);
 +                            if (EntityLookup.this.worldCallback != null) {
 +                                EntityLookup.this.worldCallback.onTickingStart(entity);
 +                            }
@@ -6178,12 +6420,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    } else {
 +                        // status downgrade
 +                        if (oldVisibility.isTicking() && !newVisibility.isTicking()) {
++                            EntityLookup.this.entityEndTicking(entity);
 +                            if (EntityLookup.this.worldCallback != null) {
 +                                EntityLookup.this.worldCallback.onTickingEnd(entity);
 +                            }
 +                        }
 +
 +                        if (oldVisibility.isAccessible() && !newVisibility.isAccessible()) {
++                            EntityLookup.this.entityEndLoaded(entity);
 +                            synchronized (this.accessibleEntities) {
 +                                this.accessibleEntities.remove(entity);
 +                            }
@@ -6325,6 +6569,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        entity.setLevelCallback(new EntityCallback(entity));
 +
++        this.addEntityCallback(entity);
++
 +        this.entityStatusChange(entity, slices, Visibility.HIDDEN, getEntityStatus(entity), false, !fromDisk, false);
 +
 +        return true;
@@ -6431,6 +6677,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (old.isEmpty()) {
 +            this.onEmptySlices(sectionX, sectionZ);
 +        }
++
++        this.entitySectionChangeCallback(
++                entity,
++                sectionX, sectionY, sectionZ,
++                newSectionX, newSectionY, newSectionZ
++        );
 +
 +        return slices;
 +    }
@@ -6923,6 +7175,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                // no new section, so didn't change sections
 +                return;
 +            }
++
 +            final Visibility newVisibility = getEntityStatus(entity);
 +
 +            EntityLookup.this.entityStatusChange(entity, newSlices, oldVisibility, newVisibility, true, false, false);
@@ -6937,6 +7190,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            EntityLookup.this.removeEntity(entity);
 +
 +            EntityLookup.this.entityStatusChange(entity, null, tickingState, Visibility.HIDDEN, false, false, reason.shouldDestroy());
++
++            EntityLookup.this.removeEntityCallback(entity);
 +
 +            this.entity.setLevelCallback(NoOpCallback.INSTANCE);
 +        }
@@ -7021,6 +7276,43 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.removeChunk(chunkX, chunkZ);
 +    }
 +
++    @Override
++    protected void entitySectionChangeCallback(final Entity entity,
++                                               final int oldSectionX, final int oldSectionY, final int oldSectionZ,
++                                               final int newSectionX, final int newSectionY, final int newSectionZ) {
++
++    }
++
++    @Override
++    protected void addEntityCallback(final Entity entity) {
++
++    }
++
++    @Override
++    protected void removeEntityCallback(final Entity entity) {
++
++    }
++
++    @Override
++    protected void entityStartLoaded(final Entity entity) {
++
++    }
++
++    @Override
++    protected void entityEndLoaded(final Entity entity) {
++
++    }
++
++    @Override
++    protected void entityStartTicking(final Entity entity) {
++
++    }
++
++    @Override
++    protected void entityEndTicking(final Entity entity) {
++
++    }
++
 +    public void markTicking(final long pos) {
 +        if (this.tickingChunks.add(pos)) {
 +            final int chunkX = CoordinateUtils.getChunkX(pos);
@@ -7095,6 +7387,43 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.removeChunk(chunkX, chunkZ);
 +    }
 +
++    @Override
++    protected void entitySectionChangeCallback(final Entity entity,
++                                               final int oldSectionX, final int oldSectionY, final int oldSectionZ,
++                                               final int newSectionX, final int newSectionY, final int newSectionZ) {
++
++    }
++
++    @Override
++    protected void addEntityCallback(final Entity entity) {
++
++    }
++
++    @Override
++    protected void removeEntityCallback(final Entity entity) {
++
++    }
++
++    @Override
++    protected void entityStartLoaded(final Entity entity) {
++
++    }
++
++    @Override
++    protected void entityEndLoaded(final Entity entity) {
++
++    }
++
++    @Override
++    protected void entityStartTicking(final Entity entity) {
++
++    }
++
++    @Override
++    protected void entityEndTicking(final Entity entity) {
++
++    }
++
 +    protected static final class DefaultLevelCallback implements LevelCallback<Entity> {
 +
 +        @Override
@@ -7127,16 +7456,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.level.entity.server;
 +
++import ca.spottedleaf.moonrise.common.list.ReferenceList;
 +import ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel;
 +import ca.spottedleaf.moonrise.patches.chunk_system.level.entity.ChunkEntitySlices;
 +import ca.spottedleaf.moonrise.patches.chunk_system.level.entity.EntityLookup;
 +import net.minecraft.server.level.ServerLevel;
++import net.minecraft.server.level.ServerPlayer;
 +import net.minecraft.world.entity.Entity;
 +import net.minecraft.world.level.entity.LevelCallback;
 +
 +public final class ServerEntityLookup extends EntityLookup {
 +
++    private static final Entity[] EMPTY_ENTITY_ARRAY = new Entity[0];
++
 +    private final ServerLevel serverWorld;
++    public final ReferenceList<Entity> trackerEntities = new ReferenceList<>(EMPTY_ENTITY_ARRAY, 0); // Moonrise - entity tracker
++    public final ReferenceList<Entity> trackerUnloadedEntities = new ReferenceList<>(EMPTY_ENTITY_ARRAY, 0); // Moonrise - entity tracker
 +
 +    public ServerEntityLookup(final ServerLevel world, final LevelCallback<Entity> worldCallback) {
 +        super(world, worldCallback);
@@ -7173,6 +7508,56 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    protected void onEmptySlices(final int chunkX, final int chunkZ) {
 +        // entity slices unloading is managed by ticket levels in chunk system
++    }
++
++    @Override
++    protected void entitySectionChangeCallback(final Entity entity,
++                                               final int oldSectionX, final int oldSectionY, final int oldSectionZ,
++                                               final int newSectionX, final int newSectionY, final int newSectionZ) {
++        if (entity instanceof ServerPlayer player) {
++            ((ChunkSystemServerLevel)this.serverWorld).moonrise$getNearbyPlayers().tickPlayer(player);
++        }
++    }
++
++    @Override
++    protected void addEntityCallback(final Entity entity) {
++        if (entity instanceof ServerPlayer player) {
++            ((ChunkSystemServerLevel)this.serverWorld).moonrise$getNearbyPlayers().addPlayer(player);
++        }
++    }
++
++    @Override
++    protected void removeEntityCallback(final Entity entity) {
++        if (entity instanceof ServerPlayer player) {
++            ((ChunkSystemServerLevel)this.serverWorld).moonrise$getNearbyPlayers().removePlayer(player);
++        }
++        this.trackerUnloadedEntities.remove(entity); // Moonrise - entity tracker
++    }
++
++    @Override
++    protected void entityStartLoaded(final Entity entity) {
++        // Moonrise start - entity tracker
++        this.trackerEntities.add(entity);
++        this.trackerUnloadedEntities.remove(entity);
++        // Moonrise end - entity tracker
++    }
++
++    @Override
++    protected void entityEndLoaded(final Entity entity) {
++        // Moonrise start - entity tracker
++        this.trackerEntities.remove(entity);
++        this.trackerUnloadedEntities.add(entity);
++        // Moonrise end - entity tracker
++    }
++
++    @Override
++    protected void entityStartTicking(final Entity entity) {
++
++    }
++
++    @Override
++    protected void entityEndTicking(final Entity entity) {
++
 +    }
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/level/poi/ChunkSystemPoiManager.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/level/poi/ChunkSystemPoiManager.java
@@ -7688,6 +8073,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        final PlayerChunkLoaderData loader = ((ChunkSystemServerPlayer)player).moonrise$getChunkLoader();
 +        if (loader != null) {
 +            loader.update();
++            // update view distances for nearby players
++            ((ChunkSystemServerLevel)loader.world).moonrise$getNearbyPlayers().tickPlayer(player);
 +        }
 +    }
 +
@@ -17879,6 +18266,42 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public LevelChunk moonrise$getFullChunkIfLoaded(final int chunkX, final int chunkZ);
 +
 +}
+diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/entity_tracker/EntityTrackerEntity.java b/src/main/java/ca/spottedleaf/moonrise/patches/entity_tracker/EntityTrackerEntity.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/moonrise/patches/entity_tracker/EntityTrackerEntity.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.moonrise.patches.entity_tracker;
++
++import net.minecraft.server.level.ChunkMap;
++
++public interface EntityTrackerEntity {
++
++    public ChunkMap.TrackedEntity moonrise$getTrackedEntity();
++
++    public void moonrise$setTrackedEntity(final ChunkMap.TrackedEntity trackedEntity);
++
++}
+diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/entity_tracker/EntityTrackerTrackedEntity.java b/src/main/java/ca/spottedleaf/moonrise/patches/entity_tracker/EntityTrackerTrackedEntity.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/moonrise/patches/entity_tracker/EntityTrackerTrackedEntity.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.moonrise.patches.entity_tracker;
++
++import ca.spottedleaf.moonrise.common.misc.NearbyPlayers;
++
++public interface EntityTrackerTrackedEntity {
++
++    public void moonrise$tick(final NearbyPlayers.TrackedChunk chunk);
++
++    public void moonrise$removeNonTickThreadPlayers();
++
++    public void moonrise$clearPlayers();
++
++}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/starlight/blockstate/StarlightAbstractBlockState.java b/src/main/java/ca/spottedleaf/moonrise/patches/starlight/blockstate/StarlightAbstractBlockState.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -24538,8 +24961,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private static void dropChunk(ServerPlayer player, ChunkPos pos) {
 -        player.connection.chunkSender.dropChunk(player, pos);
 +        // Paper - rewrite chunk system
-+    }
-+
+     }
+ 
 +    // Paper start - rewrite chunk system
 +    @Override
 +    public CompletableFuture<Optional<CompoundTag>> read(final ChunkPos pos) {
@@ -24558,8 +24981,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +        }
 +        return super.read(pos);
-     }
- 
++    }
++
 +    @Override
 +    public CompletableFuture<Void> write(final ChunkPos pos, final CompoundTag tag) {
 +        if (!ca.spottedleaf.moonrise.patches.chunk_system.io.RegionFileIOThread.isRegionFileThread()) {
@@ -24608,6 +25031,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
      }
+@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     }
+ 
+     public void move(ServerPlayer player) {
+-        ObjectIterator objectiterator = this.entityMap.values().iterator();
+-
+-        while (objectiterator.hasNext()) {
+-            ChunkMap.TrackedEntity playerchunkmap_entitytracker = (ChunkMap.TrackedEntity) objectiterator.next();
+-
+-            if (playerchunkmap_entitytracker.entity == player) {
+-                playerchunkmap_entitytracker.updatePlayers(this.level.players());
+-            } else {
+-                playerchunkmap_entitytracker.updatePlayer(player);
+-            }
+-        }
++        // Paper - optimise entity tracker
+ 
+         SectionPos sectionposition = player.getLastSectionPos();
+         SectionPos sectionposition1 = SectionPos.of((EntityAccess) player);
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  this.playerMap.unIgnorePlayer(player);
              }
@@ -24692,16 +25134,69 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public void addEntity(Entity entity) {
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+ 
+                     entity.tracker = playerchunkmap_entitytracker; // Paper - Fast access to tracker
+                     this.entityMap.put(entity.getId(), playerchunkmap_entitytracker);
++                    // Paper start - optimise entity tracker
++                    if (((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity)entity).moonrise$getTrackedEntity() != null) {
++                        throw new IllegalStateException("Entity is already tracked");
++                    }
++                    ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity)entity).moonrise$setTrackedEntity(playerchunkmap_entitytracker);
++                    // Paper end - optimise entity tracker
+                     playerchunkmap_entitytracker.updatePlayers(this.level.players());
+                     if (entity instanceof ServerPlayer) {
+                         ServerPlayer entityplayer = (ServerPlayer) entity;
+@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             playerchunkmap_entitytracker1.broadcastRemoved();
+         }
+         entity.tracker = null; // Paper - We're no longer tracked
++        ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity)entity).moonrise$setTrackedEntity(null); // Paper - optimise entity tracker
      }
  
-     protected void tick() {
+-    protected void tick() {
 -        Iterator iterator = this.playerMap.getAllPlayers().iterator();
--
++    // Paper start - optimise entity tracker
++    private void newTrackerTick() {
++        final ca.spottedleaf.moonrise.common.misc.NearbyPlayers nearbyPlayers = ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getNearbyPlayers();
++        final ca.spottedleaf.moonrise.patches.chunk_system.level.entity.server.ServerEntityLookup entityLookup = (ca.spottedleaf.moonrise.patches.chunk_system.level.entity.server.ServerEntityLookup)((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getEntityLookup();;
+ 
 -        while (iterator.hasNext()) {
 -            ServerPlayer entityplayer = (ServerPlayer) iterator.next();
--
++        final ca.spottedleaf.moonrise.common.list.ReferenceList<net.minecraft.world.entity.Entity> trackerEntities = entityLookup.trackerEntities;
++        final Entity[] trackerEntitiesRaw = trackerEntities.getRawDataUnchecked();
++        for (int i = 0, len = trackerEntities.size(); i < len; ++i) {
++            final Entity entity = trackerEntitiesRaw[i];
++            final ChunkMap.TrackedEntity tracker = ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity)entity).moonrise$getTrackedEntity();
++            if (tracker == null) {
++                continue;
++            }
++            ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerTrackedEntity)tracker).moonrise$tick(nearbyPlayers.getChunk(entity.chunkPosition()));
++            tracker.serverEntity.sendChanges();
++        }
++
++        // process unloads
++        final ca.spottedleaf.moonrise.common.list.ReferenceList<net.minecraft.world.entity.Entity> unloadedEntities = entityLookup.trackerUnloadedEntities;
++        final Entity[] unloadedEntitiesRaw = java.util.Arrays.copyOf(unloadedEntities.getRawDataUnchecked(), unloadedEntities.size());
++        unloadedEntities.clear();
+ 
 -            this.updateChunkTracking(entityplayer);
--        }
++        for (final Entity entity : unloadedEntitiesRaw) {
++            final ChunkMap.TrackedEntity tracker = ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity)entity).moonrise$getTrackedEntity();
++            if (tracker == null) {
++                continue;
++            }
++            ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerTrackedEntity)tracker).moonrise$clearPlayers();
++        }
++    }
++    // Paper end - optimise entity tracker
++
++    protected void tick() {
++        // Paper start - optimise entity tracker
++        if (true) {
++            this.newTrackerTick();
++            return;
+         }
++        // Paper end - optimise entity tracker
 +        // Paper - rewrite chunk system
  
          List<ServerPlayer> list = Lists.newArrayList();
@@ -24744,6 +25239,100 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
          @Nullable
+@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         }
+     }
+ 
+-    public class TrackedEntity {
++    public class TrackedEntity implements ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerTrackedEntity { // Paper - optimise entity tracker
+ 
+         public final ServerEntity serverEntity;
+         final Entity entity;
+@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         SectionPos lastSectionPos;
+         public final Set<ServerPlayerConnection> seenBy = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<>(); // Paper - Perf: optimise map impl
+ 
++        // Paper start - optimise entity tracker
++        private long lastChunkUpdate = -1L;
++        private ca.spottedleaf.moonrise.common.misc.NearbyPlayers.TrackedChunk lastTrackedChunk;
++
++        @Override
++        public final void moonrise$tick(final ca.spottedleaf.moonrise.common.misc.NearbyPlayers.TrackedChunk chunk) {
++            if (chunk == null) {
++                this.moonrise$clearPlayers();
++                return;
++            }
++
++            final ca.spottedleaf.moonrise.common.list.ReferenceList<ServerPlayer> players = chunk.getPlayers(ca.spottedleaf.moonrise.common.misc.NearbyPlayers.NearbyMapType.VIEW_DISTANCE);
++
++            if (players == null) {
++                this.moonrise$clearPlayers();
++                return;
++            }
++
++            final long lastChunkUpdate = this.lastChunkUpdate;
++            final long currChunkUpdate = chunk.getUpdateCount();
++            final ca.spottedleaf.moonrise.common.misc.NearbyPlayers.TrackedChunk lastTrackedChunk = this.lastTrackedChunk;
++            this.lastChunkUpdate = currChunkUpdate;
++            this.lastTrackedChunk = chunk;
++
++            final ServerPlayer[] playersRaw = players.getRawDataUnchecked();
++
++            for (int i = 0, len = players.size(); i < len; ++i) {
++                final ServerPlayer player = playersRaw[i];
++                this.updatePlayer(player);
++            }
++
++            if (lastChunkUpdate != currChunkUpdate || lastTrackedChunk != chunk) {
++                // need to purge any players possible not in the chunk list
++                for (final ServerPlayerConnection conn : new java.util.ArrayList<>(this.seenBy)) {
++                    final ServerPlayer player = conn.getPlayer();
++                    if (!players.contains(player)) {
++                        this.removePlayer(player);
++                    }
++                }
++            }
++        }
++
++        @Override
++        public final void moonrise$removeNonTickThreadPlayers() {
++            boolean foundToRemove = false;
++            for (final ServerPlayerConnection conn : this.seenBy) {
++                if (!io.papermc.paper.util.TickThread.isTickThreadFor(conn.getPlayer())) {
++                    foundToRemove = true;
++                    break;
++                }
++            }
++
++            if (!foundToRemove) {
++                return;
++            }
++
++            for (final ServerPlayerConnection conn : new java.util.ArrayList<>(this.seenBy)) {
++                ServerPlayer player = conn.getPlayer();
++                if (!io.papermc.paper.util.TickThread.isTickThreadFor(player)) {
++                    this.removePlayer(player);
++                }
++            }
++        }
++
++        @Override
++        public final void moonrise$clearPlayers() {
++            this.lastChunkUpdate = -1;
++            this.lastTrackedChunk = null;
++            if (this.seenBy.isEmpty()) {
++                return;
++            }
++            for (final ServerPlayerConnection conn : new java.util.ArrayList<>(this.seenBy)) {
++                ServerPlayer player = conn.getPlayer();
++                this.removePlayer(player);
++            }
++        }
++        // Paper end - optimise entity tracker
++
+         public TrackedEntity(final Entity entity, final int i, final int j, final boolean flag) {
+             this.serverEntity = new ServerEntity(ChunkMap.this.level, entity, j, flag, this::broadcast, this.seenBy); // CraftBukkit
+             this.entity = entity;
 diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/DistanceManager.java
@@ -25922,6 +26511,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler chunkTaskScheduler;
 +    private long lastMidTickFailure;
 +    private long tickedBlocksOrFluids;
++    private final ca.spottedleaf.moonrise.common.misc.NearbyPlayers nearbyPlayers = new ca.spottedleaf.moonrise.common.misc.NearbyPlayers((ServerLevel)(Object)this);
 +
 +    @Override
 +    public final LevelChunk moonrise$getFullChunkIfLoaded(final int chunkX, final int chunkZ) {
@@ -26083,6 +26673,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public final void moonrise$setLastMidTickFailure(final long time) {
 +        this.lastMidTickFailure = time;
++    }
++
++    @Override
++    public final ca.spottedleaf.moonrise.common.misc.NearbyPlayers moonrise$getNearbyPlayers() {
++        return this.nearbyPlayers;
 +    }
 +    // Paper end - rewrite chunk system
  
@@ -26978,7 +27573,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  // CraftBukkit end
  
 -public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess, CommandSource, ScoreHolder {
-+public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess, CommandSource, ScoreHolder, ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity { // Paper - rewrite chunk system
++public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess, CommandSource, ScoreHolder, ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity, ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity { // Paper - rewrite chunk system // Paper - optimise entity tracker
  
      // CraftBukkit start
      private static final int CURRENT_LEVEL = 2;
@@ -27057,9 +27652,54 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return this.getIndirectPassengersStream().anyMatch((entity) -> entity instanceof Player);
 +    }
 +    // Paper end - rewrite chunk system
++    // Paper start - optimise entity tracker
++    private net.minecraft.server.level.ChunkMap.TrackedEntity trackedEntity;
++
++    @Override
++    public final net.minecraft.server.level.ChunkMap.TrackedEntity moonrise$getTrackedEntity() {
++        return this.trackedEntity;
++    }
++
++    @Override
++    public final void moonrise$setTrackedEntity(final net.minecraft.server.level.ChunkMap.TrackedEntity trackedEntity) {
++        this.trackedEntity = trackedEntity;
++    }
++
++    private static void collectIndirectPassengers(final List<Entity> into, final List<Entity> from) {
++        for (final Entity passenger : from) {
++            into.add(passenger);
++            collectIndirectPassengers(into, ((Entity)(Object)passenger).passengers);
++        }
++    }
++    // Paper end - optimise entity tracker
  
      public Entity(EntityType<?> type, Level world) {
          this.id = Entity.ENTITY_COUNTER.incrementAndGet();
+@@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     }
+ 
+     public Iterable<Entity> getIndirectPassengers() {
+-        // Paper start - Optimize indirect passenger iteration
+-        if (this.passengers.isEmpty()) { return ImmutableList.of(); }
+-        ImmutableList.Builder<Entity> indirectPassengers = ImmutableList.builder();
+-        for (Entity passenger : this.passengers) {
+-            indirectPassengers.add(passenger);
+-            indirectPassengers.addAll(passenger.getIndirectPassengers());
++        // Paper start - optimise entity tracker
++        final List<Entity> ret = new ArrayList<>();
++
++        if (this.passengers.isEmpty()) {
++            return ret;
+         }
+-        return indirectPassengers.build();
++
++        collectIndirectPassengers(ret, this.passengers);
++
++        return ret;
++        // Paper end - optimise entity tracker
+     }
+     private Iterable<Entity> getIndirectPassengers_old() {
+         // Paper end - Optimize indirect passenger iteration
 @@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          this.setPosRaw(x, y, z, false);
      }
