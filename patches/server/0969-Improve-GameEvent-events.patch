@@ -1,0 +1,113 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 9 Dec 2022 21:21:09 -0800
+Subject: [PATCH] Improve GameEvent events
+
+Adds EntityReceiveGameEvent and makes sure each event is called in the right spot
+
+diff --git a/src/main/java/net/minecraft/world/entity/animal/allay/Allay.java b/src/main/java/net/minecraft/world/entity/animal/allay/Allay.java
+index 9b57d2b766f2de2d3fb4a3b5ef4df8d6756a1942..b83d3bf72e8d45d3b0aa72f78e6d253bd40e0b16 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/allay/Allay.java
++++ b/src/main/java/net/minecraft/world/entity/animal/allay/Allay.java
+@@ -632,6 +632,12 @@ public class Allay extends PathfinderMob implements InventoryCarrier {
+         public TagKey<GameEvent> getListenableEvents() {
+             return GameEventTags.ALLAY_CAN_LISTEN;
+         }
++        // Paper start
++        @Override
++        public io.papermc.paper.event.ReceiveGameEvent createReceiveGameEvent(ServerLevel world, GameEvent event, GameEvent.Context emitter, Vec3 position) {
++            return VibrationListener.VibrationListenerConfig.createEntityEvent(event, emitter, Allay.this);
++        }
++        // Paper end
+     }
+ 
+     private class JukeboxListener implements GameEventListener {
+@@ -656,6 +662,14 @@ public class Allay extends PathfinderMob implements InventoryCarrier {
+ 
+         @Override
+         public boolean handleGameEvent(ServerLevel world, GameEvent event, GameEvent.Context emitter, Vec3 emitterPos) {
++            // Paper start
++            if (event == GameEvent.JUKEBOX_PLAY || event == GameEvent.JUKEBOX_STOP_PLAY) {
++                io.papermc.paper.event.ReceiveGameEvent entityEvent = VibrationListener.VibrationListenerConfig.createEntityEvent(event, emitter, Allay.this);
++                if (!entityEvent.callEvent()) {
++                    return false;
++                }
++            }
++            // Paper end
+             if (event == GameEvent.JUKEBOX_PLAY) {
+                 Allay.this.setJukeboxPlaying(BlockPos.containing(emitterPos), true);
+                 return true;
+diff --git a/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java b/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
+index b2b63d9df3c07696f47281e9be74f1799f50b93e..e1db8c4abfe6768f5b7294da7830c077d5922d55 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
++++ b/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
+@@ -677,4 +677,10 @@ public class Warden extends Monster implements VibrationListener.VibrationListen
+             }
+         };
+     }
++    // Paper start
++    @Override
++    public io.papermc.paper.event.ReceiveGameEvent createReceiveGameEvent(ServerLevel world, GameEvent event, GameEvent.Context emitter, Vec3 position) {
++        return VibrationListener.VibrationListenerConfig.createEntityEvent(event, emitter, this);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/SculkCatalystBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SculkCatalystBlockEntity.java
+index 902f2b39104bf059849228829bfe93b6dbc757d4..810d57349e0383d9fbb51f669df99816677e97a6 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/SculkCatalystBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/SculkCatalystBlockEntity.java
+@@ -55,6 +55,12 @@ public class SculkCatalystBlockEntity extends BlockEntity implements GameEventLi
+                 LivingEntity entityliving = (LivingEntity) entity;
+ 
+                 if (!entityliving.wasExperienceConsumed()) {
++                    // Paper start TODO (future) add a sub event to capture more info about this happening, xp amount, amount to spread, etc.
++                    io.papermc.paper.event.ReceiveGameEvent blockEvent = net.minecraft.world.level.gameevent.vibrations.VibrationListener.VibrationListenerConfig.createBlockEvent(world, event, emitter, this.blockPosSource.getPosition(world).orElseThrow());
++                    if (!blockEvent.callEvent()) {
++                        return false;
++                    }
++                    // Paper end
+                     int i = entityliving.getExperienceReward();
+ 
+                     if (entityliving.shouldDropExperience() && i > 0) {
+diff --git a/src/main/java/net/minecraft/world/level/gameevent/vibrations/VibrationListener.java b/src/main/java/net/minecraft/world/level/gameevent/vibrations/VibrationListener.java
+index 103e12ec589dcbe6dbad7432b50e0644c3a37b1b..8568533811e1c6bf4cfc17683ebb623f22e95770 100644
+--- a/src/main/java/net/minecraft/world/level/gameevent/vibrations/VibrationListener.java
++++ b/src/main/java/net/minecraft/world/level/gameevent/vibrations/VibrationListener.java
+@@ -181,11 +181,9 @@ public class VibrationListener implements GameEventListener {
+ 
+                 // CraftBukkit start
+                 boolean defaultCancel = !this.config.shouldListen(world, this, BlockPos.containing(emitterPos), event, emitter);
+-                Entity entity = emitter.sourceEntity();
+-                BlockReceiveGameEvent event1 = new BlockReceiveGameEvent(org.bukkit.GameEvent.getByKey(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.GAME_EVENT.getKey(event))), CraftBlock.at(world, BlockPos.containing(vec3d1)), (entity == null) ? null : entity.getBukkitEntity());
++                io.papermc.paper.event.ReceiveGameEvent event1 = this.config.createReceiveGameEvent(world, event, emitter, vec3d1); // Paper - TODO add special sub vibration events to control LOS check (GameEvent != Vibration)
+                 event1.setCancelled(defaultCancel);
+-                world.getCraftServer().getPluginManager().callEvent(event1);
+-                if (event1.isCancelled()) {
++                if (!event1.callEvent()) { // Paper
+                     // CraftBukkit end
+                     return false;
+                 } else if (VibrationListener.isOccluded(world, emitterPos, vec3d1)) {
+@@ -273,5 +271,23 @@ public class VibrationListener implements GameEventListener {
+         void onSignalReceive(ServerLevel world, GameEventListener listener, BlockPos pos, GameEvent event, @Nullable Entity entity, @Nullable Entity sourceEntity, float distance);
+ 
+         default void onSignalSchedule() {}
++
++        // Paper start - improve GameEvent events
++        default io.papermc.paper.event.ReceiveGameEvent createReceiveGameEvent(final ServerLevel world, final GameEvent event, final GameEvent.Context emitter, final Vec3 position) {
++            return createBlockEvent(world, event, emitter, position);
++        }
++
++        static io.papermc.paper.event.ReceiveGameEvent createBlockEvent(final ServerLevel world, final GameEvent event, final GameEvent.Context emitter, final Vec3 position) {
++            return new BlockReceiveGameEvent(convertEvent(event), CraftBlock.at(world, BlockPos.containing(position)), net.minecraft.Optionull.map(emitter.sourceEntity(), Entity::getBukkitEntity), net.minecraft.Optionull.map(emitter.affectedState(), net.minecraft.world.level.block.state.BlockState::createCraftBlockData));
++        }
++
++        static io.papermc.paper.event.ReceiveGameEvent createEntityEvent(final GameEvent event, final GameEvent.Context emitter, final Entity receiver) {
++            return new io.papermc.paper.event.entity.EntityReceiveGameEvent(receiver.getBukkitEntity(), convertEvent(event), net.minecraft.Optionull.map(emitter.sourceEntity(), Entity::getBukkitEntity), net.minecraft.Optionull.map(emitter.affectedState(), net.minecraft.world.level.block.state.BlockState::createCraftBlockData));
++        }
++
++        static org.bukkit.GameEvent convertEvent(GameEvent nms) {
++            return java.util.Objects.requireNonNull(org.bukkit.GameEvent.getByKey(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.GAME_EVENT.getKey(nms))));
++        }
++        // Paper end
+     }
+ }
