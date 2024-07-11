@@ -7,10 +7,10 @@ Subject: [PATCH] Detail more information in watchdog dumps
 - Dump player name, player uuid, position, and world for packet handling
 
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 63066dfde00569833546da01cd580434f8be6593..7fb162fa031fd76aa9a94f5fdaa3e32ceb9b9abc 100644
+index 90a2c61c42cba7e38f167eccdd7a951a947963c4..3e550f8e7cd4f4e16f499a8a2a4b95420270f07a 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
-@@ -607,7 +607,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -632,7 +632,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
              if (!(this.packetListener instanceof net.minecraft.server.network.ServerLoginPacketListenerImpl loginPacketListener)
                  || loginPacketListener.state != net.minecraft.server.network.ServerLoginPacketListenerImpl.State.VERIFYING
                  || Connection.joinAttemptsThisTick++ < MAX_PER_TICK) {
@@ -25,10 +25,10 @@ index 63066dfde00569833546da01cd580434f8be6593..7fb162fa031fd76aa9a94f5fdaa3e32c
          }
  
 diff --git a/src/main/java/net/minecraft/network/protocol/PacketUtils.java b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
-index e161ad0f53a21a68e8c78575ba5d3cdbdb11fca0..57e76b53e5e314c3e6b8856010f7a84188121582 100644
+index d0d36a57ec4896bcb74970f8fb24d8f3e17db133..e2c24813f59c2fd075c740ac1842a38f20ed8554 100644
 --- a/src/main/java/net/minecraft/network/protocol/PacketUtils.java
 +++ b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
-@@ -19,6 +19,24 @@ public class PacketUtils {
+@@ -20,6 +20,24 @@ public class PacketUtils {
  
      private static final Logger LOGGER = LogUtils.getLogger();
  
@@ -53,7 +53,7 @@ index e161ad0f53a21a68e8c78575ba5d3cdbdb11fca0..57e76b53e5e314c3e6b8856010f7a841
      public PacketUtils() {}
  
      public static <T extends PacketListener> void ensureRunningOnSameThread(Packet<T> packet, T listener, ServerLevel world) throws RunningOnDifferentThreadException {
-@@ -28,6 +46,8 @@ public class PacketUtils {
+@@ -29,6 +47,8 @@ public class PacketUtils {
      public static <T extends PacketListener> void ensureRunningOnSameThread(Packet<T> packet, T listener, BlockableEventLoop<?> engine) throws RunningOnDifferentThreadException {
          if (!engine.isSameThread()) {
              engine.executeIfPossible(() -> {
@@ -62,7 +62,7 @@ index e161ad0f53a21a68e8c78575ba5d3cdbdb11fca0..57e76b53e5e314c3e6b8856010f7a841
                  if (listener instanceof ServerCommonPacketListenerImpl serverCommonPacketListener && serverCommonPacketListener.processedDisconnect) return; // CraftBukkit - Don't handle sync packets for kicked players
                  if (listener.shouldHandleMessage(packet)) {
                      co.aikar.timings.Timing timing = co.aikar.timings.MinecraftTimings.getPacketTiming(packet); // Paper - timings
-@@ -47,6 +67,12 @@ public class PacketUtils {
+@@ -48,6 +68,12 @@ public class PacketUtils {
                  } else {
                      PacketUtils.LOGGER.debug("Ignoring packet due to disconnection: {}", packet);
                  }
@@ -76,10 +76,10 @@ index e161ad0f53a21a68e8c78575ba5d3cdbdb11fca0..57e76b53e5e314c3e6b8856010f7a841
              });
              throw RunningOnDifferentThreadException.RUNNING_ON_DIFFERENT_THREAD;
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index bdad61438e7fd89f5f0cac6632dd395fcf024361..019034eea40c1669ce3d774565ce71c078c78ba5 100644
+index dafc35584d86ed1c18e4f328cb92523952664f73..9456047974db6de9ed38265d5d1ab822225c484f 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -1245,7 +1245,26 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1203,7 +1203,26 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
  
      }
  
@@ -106,7 +106,7 @@ index bdad61438e7fd89f5f0cac6632dd395fcf024361..019034eea40c1669ce3d774565ce71c0
          ++TimingHistory.entityTicks; // Paper - timings
          // Spigot start
          co.aikar.timings.Timing timer; // Paper
-@@ -1285,7 +1304,13 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1243,7 +1262,13 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
              this.tickPassenger(entity, entity1);
          }
          // } finally { timer.stopTiming(); } // Paper - timings - move up
@@ -122,10 +122,10 @@ index bdad61438e7fd89f5f0cac6632dd395fcf024361..019034eea40c1669ce3d774565ce71c0
  
      private void tickPassenger(Entity vehicle, Entity passenger) {
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 030e20d1030c9e9c26b2bc456ff0b477a048cd03..644cbdc15cdedb18f5b0eb9d4a2249ba131f89e5 100644
+index 5608576f461ce9dec9827f9f581adc5d5757baf1..be9976a994dd04cf53048567576dd3484facf625 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -1073,8 +1073,43 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -1086,8 +1086,43 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          return this.onGround;
      }
  
@@ -169,7 +169,7 @@ index 030e20d1030c9e9c26b2bc456ff0b477a048cd03..644cbdc15cdedb18f5b0eb9d4a2249ba
          if (this.noPhysics) {
              this.setPos(this.getX() + movement.x, this.getY() + movement.y, this.getZ() + movement.z);
          } else {
-@@ -1244,6 +1279,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -1257,6 +1292,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
                  this.level().getProfiler().pop();
              }
          }
@@ -183,7 +183,7 @@ index 030e20d1030c9e9c26b2bc456ff0b477a048cd03..644cbdc15cdedb18f5b0eb9d4a2249ba
      }
  
      private boolean isStateClimbable(BlockState state) {
-@@ -4410,7 +4452,9 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4550,7 +4592,9 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      }
  
      public void setDeltaMovement(Vec3 velocity) {
@@ -193,7 +193,7 @@ index 030e20d1030c9e9c26b2bc456ff0b477a048cd03..644cbdc15cdedb18f5b0eb9d4a2249ba
      }
  
      public void addDeltaMovement(Vec3 velocity) {
-@@ -4513,7 +4557,9 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4656,7 +4700,9 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          }
          // Paper end - Fix MC-4
          if (this.position.x != x || this.position.y != y || this.position.z != z) {
@@ -204,10 +204,10 @@ index 030e20d1030c9e9c26b2bc456ff0b477a048cd03..644cbdc15cdedb18f5b0eb9d4a2249ba
              int j = Mth.floor(y);
              int k = Mth.floor(z);
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index 577f29519156f33b49ee319a64a52249630e28d8..6db566e3111ec08a99aa429624979cb83a85e272 100644
+index e5e41dc2d4f7a8c3fea704212507ca0b951664db..f947b542b21189ab8324d54d965364aa283d7cb7 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
-@@ -22,6 +22,78 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
+@@ -22,6 +22,78 @@ public class WatchdogThread extends Thread
      private volatile long lastTick;
      private volatile boolean stopping;
  
@@ -286,10 +286,10 @@ index 577f29519156f33b49ee319a64a52249630e28d8..6db566e3111ec08a99aa429624979cb8
      private WatchdogThread(long timeoutTime, boolean restart)
      {
          super( "Paper Watchdog Thread" );
-@@ -119,6 +191,7 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
+@@ -119,6 +191,7 @@ public class WatchdogThread extends Thread
                  log.log( Level.SEVERE, "------------------------------" );
                  log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Paper!):" ); // Paper
-                 io.papermc.paper.chunk.system.scheduling.ChunkTaskScheduler.dumpAllChunkLoadInfo(isLongTimeout); // Paper - rewrite chunk system
+                 ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.dumpAllChunkLoadInfo(MinecraftServer.getServer(), isLongTimeout); // Paper - rewrite chunk system
 +                this.dumpTickingInfo(); // Paper - log detailed tick information
                  WatchdogThread.dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( MinecraftServer.getServer().serverThread.getId(), Integer.MAX_VALUE ), log );
                  log.log( Level.SEVERE, "------------------------------" );
