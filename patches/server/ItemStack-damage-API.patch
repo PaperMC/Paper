@@ -28,7 +28,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if (player == null || !player.hasInfiniteMaterials() || force) { // Paper
                  if (amount > 0) {
                      int originalDamage = amount; // Paper - Expand PlayerItemDamageEvent
-                     amount = EnchantmentHelper.processDurabilityChange(world, this, amount);
+-                    amount = EnchantmentHelper.processDurabilityChange(world, this, amount);
++                    if (!force) amount = EnchantmentHelper.processDurabilityChange(world, this, amount); // Paper - itemstack damage API - do not consider enchantments when damaging from API
+                     // CraftBukkit start
+                     if (player instanceof ServerPlayer serverPlayer) { // Paper - Add EntityDamageItemEvent
+                         PlayerItemDamageEvent event = new PlayerItemDamageEvent(serverPlayer.getBukkitEntity(), CraftItemStack.asCraftMirror(this), amount, originalDamage); // Paper - Add EntityDamageItemEvent & Expand PlayerItemDamageEvent
 @@ -0,0 +0,0 @@ public final class ItemStack implements DataComponentHolder {
      }
  
@@ -42,10 +46,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          if (world instanceof ServerLevel worldserver) {
 @@ -0,0 +0,0 @@ public final class ItemStack implements DataComponentHolder {
+                     org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemBreakEvent((net.minecraft.world.entity.player.Player) entity, this);
                  }
                  // CraftBukkit end
-                 entity.onEquippedItemBroken(item, slot);
+-                entity.onEquippedItemBroken(item, slot);
 -            });
++                if (slot != null) entity.onEquippedItemBroken(item, slot); // Paper - itemstack damage API - do not process entity related callbacks when damaging from API
 +            }, force); // Paper
          }
  
