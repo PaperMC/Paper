@@ -9,15 +9,15 @@ diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/sr
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
+@@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
  
-     public void close(boolean save) { // Paper - rewrite chunk system
-         this.level.chunkTaskScheduler.chunkHolderManager.close(save, true); // Paper - rewrite chunk system
+     public void close(boolean save) throws IOException {
+         ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.close(save, true); // Paper - rewrite chunk system
 +        // Paper start - Write SavedData IO async
 +        try {
 +            this.dataStorage.close();
-+        } catch (IOException exception) {
-+            LOGGER.error("Failed to close persistent world data", exception);
++        } catch (final IOException e) {
++            LOGGER.error("Failed to close persistent world data", e);
 +        }
 +        // Paper end - Write SavedData IO async
      }
@@ -27,16 +27,7 @@ diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/mai
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
- 
-         try (co.aikar.timings.Timing ignored = this.timings.worldSave.startTiming()) {
-             if (doFull) {
--                this.saveLevelData();
-+                this.saveLevelData(true); // Paper - Write SavedData IO async
-             }
- 
-             this.timings.worldSaveChunks.startTiming(); // Paper
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
                  progressListener.progressStartNoAbort(Component.translatable("menu.savingLevel"));
              }
  
@@ -45,7 +36,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (progressListener != null) {
                  progressListener.progressStage(Component.translatable("menu.savingChunks"));
              }
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
          // CraftBukkit end
      }
  
