@@ -30816,7 +30816,7 @@ index bd20bea7f76a7307f1698fb2dfef37125032d166..141b748abe80402731cdaf14a3d36aa7
  
      // Paper start - Affects Spawning API
 diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
-index bff83fe413c7baef4ba56a3270ea4463a58c792f..ab9c66ef01e6f401a7815f994a8c48a6b70f4ad9 100644
+index bff83fe413c7baef4ba56a3270ea4463a58c792f..a248d859cbce48f4a34c4771a7acffc17d7edc84 100644
 --- a/src/main/java/net/minecraft/world/level/Explosion.java
 +++ b/src/main/java/net/minecraft/world/level/Explosion.java
 @@ -75,6 +75,247 @@ public class Explosion {
@@ -31067,7 +31067,7 @@ index bff83fe413c7baef4ba56a3270ea4463a58c792f..ab9c66ef01e6f401a7815f994a8c48a6
      public static DamageSource getDefaultDamageSource(Level world, @Nullable Entity source) {
          return world.damageSources().explosion(source, Explosion.getIndirectSourceEntityInternal(source));
      }
-@@ -167,68 +408,108 @@ public class Explosion {
+@@ -167,68 +408,107 @@ public class Explosion {
          }
          // CraftBukkit end
          this.level.gameEvent(this.source, (Holder) GameEvent.EXPLODE, new Vec3(this.x, this.y, this.z));
@@ -31176,13 +31176,12 @@ index bff83fe413c7baef4ba56a3270ea4463a58c792f..ab9c66ef01e6f401a7815f994a8c48a6
 -                                       set.add(blockposition.relative(direction.getOpposite()));
 +                            // Paper end - collision optimisations
 +                            BlockState iblockdata = cachedBlock.blockState; // Paper - optimise collisions
-+                            if (!iblockdata.isDestroyable()) break; // Paper - Protect Bedrock and End Portal/Frames from being destroyed
 +                            // Paper - collision optimisations
 +
 +                            // Paper start - collision optimisations
 +                            power -= cachedBlock.resistance;
 +
-+                            if (power > 0.0f && cachedBlock.shouldExplode == null) {
++                            if (power > 0.0f && cachedBlock.shouldExplode == null && iblockdata.isDestroyable()) { // Paper - Protect Bedrock and End Portal/Frames from being destroyed
 +                                // note: we expect shouldBlockExplode to be pure with respect to power, as Vanilla currently is.
 +                                // basically, it is unused, which allows us to cache the result
 +                                final boolean shouldExplode = this.damageCalculator.shouldBlockExplode((Explosion)(Object)this, this.level, cachedBlock.immutablePos, cachedBlock.blockState, power);
@@ -31224,7 +31223,7 @@ index bff83fe413c7baef4ba56a3270ea4463a58c792f..ab9c66ef01e6f401a7815f994a8c48a6
          float f2 = this.radius * 2.0F;
  
          i = Mth.floor(this.x - (double) f2 - 1.0D);
-@@ -241,6 +522,10 @@ public class Explosion {
+@@ -241,6 +521,10 @@ public class Explosion {
          Vec3 vec3d = new Vec3(this.x, this.y, this.z);
          Iterator iterator = list.iterator();
  
@@ -31235,7 +31234,7 @@ index bff83fe413c7baef4ba56a3270ea4463a58c792f..ab9c66ef01e6f401a7815f994a8c48a6
          while (iterator.hasNext()) {
              Entity entity = (Entity) iterator.next();
  
-@@ -257,6 +542,7 @@ public class Explosion {
+@@ -257,6 +541,7 @@ public class Explosion {
                          d8 /= d11;
                          d9 /= d11;
                          d10 /= d11;
@@ -31243,7 +31242,7 @@ index bff83fe413c7baef4ba56a3270ea4463a58c792f..ab9c66ef01e6f401a7815f994a8c48a6
                          if (this.damageCalculator.shouldDamageEntity(this, entity)) {
                              // CraftBukkit start
  
-@@ -272,6 +558,8 @@ public class Explosion {
+@@ -272,6 +557,8 @@ public class Explosion {
  
                              entity.lastDamageCancelled = false;
  
@@ -31252,7 +31251,7 @@ index bff83fe413c7baef4ba56a3270ea4463a58c792f..ab9c66ef01e6f401a7815f994a8c48a6
                              if (entity instanceof EnderDragon) {
                                  for (EnderDragonPart entityComplexPart : ((EnderDragon) entity).subEntities) {
                                      // Calculate damage separately for each EntityComplexPart
-@@ -280,16 +568,21 @@ public class Explosion {
+@@ -280,16 +567,21 @@ public class Explosion {
                                      }
                                  }
                              } else {
@@ -31277,7 +31276,7 @@ index bff83fe413c7baef4ba56a3270ea4463a58c792f..ab9c66ef01e6f401a7815f994a8c48a6
                          double d13;
  
                          if (entity instanceof LivingEntity) {
-@@ -327,7 +620,11 @@ public class Explosion {
+@@ -327,7 +619,11 @@ public class Explosion {
                  }
              }
          }
@@ -31290,7 +31289,7 @@ index bff83fe413c7baef4ba56a3270ea4463a58c792f..ab9c66ef01e6f401a7815f994a8c48a6
      }
  
      public void finalizeExplosion(boolean particles) {
-@@ -547,14 +844,14 @@ public class Explosion {
+@@ -547,14 +843,14 @@ public class Explosion {
          private BlockInteraction() {}
      }
      // Paper start - Optimize explosions
