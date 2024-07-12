@@ -11,10 +11,10 @@ the logic associated with damaging them
 public net.minecraft.world.entity.LivingEntity entityEventForEquipmentBreak(Lnet/minecraft/world/entity/EquipmentSlot;)B
 
 diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
-index d825c2e3808e44db9935dab4e7b528146c6d83c2..96a7e80e3efab1bf626fb7aff61e095ca09789d4 100644
+index d825c2e3808e44db9935dab4e7b528146c6d83c2..57510b85caf8914290ab0afb89cfb773158715b8 100644
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
 +++ b/src/main/java/net/minecraft/world/item/ItemStack.java
-@@ -647,8 +647,13 @@ public final class ItemStack implements DataComponentHolder {
+@@ -647,11 +647,16 @@ public final class ItemStack implements DataComponentHolder {
      }
  
      public void hurtAndBreak(int amount, ServerLevel world, @Nullable LivingEntity player, Consumer<Item> breakCallback) { // Paper - Add EntityDamageItemEvent
@@ -28,7 +28,11 @@ index d825c2e3808e44db9935dab4e7b528146c6d83c2..96a7e80e3efab1bf626fb7aff61e095c
 +            if (player == null || !player.hasInfiniteMaterials() || force) { // Paper
                  if (amount > 0) {
                      int originalDamage = amount; // Paper - Expand PlayerItemDamageEvent
-                     amount = EnchantmentHelper.processDurabilityChange(world, this, amount);
+-                    amount = EnchantmentHelper.processDurabilityChange(world, this, amount);
++                    if (!force) amount = EnchantmentHelper.processDurabilityChange(world, this, amount); // Paper - itemstack damage API - do not consider enchantments when damaging from API
+                     // CraftBukkit start
+                     if (player instanceof ServerPlayer serverPlayer) { // Paper - Add EntityDamageItemEvent
+                         PlayerItemDamageEvent event = new PlayerItemDamageEvent(serverPlayer.getBukkitEntity(), CraftItemStack.asCraftMirror(this), amount, originalDamage); // Paper - Add EntityDamageItemEvent & Expand PlayerItemDamageEvent
 @@ -699,6 +704,11 @@ public final class ItemStack implements DataComponentHolder {
      }
  
@@ -41,11 +45,13 @@ index d825c2e3808e44db9935dab4e7b528146c6d83c2..96a7e80e3efab1bf626fb7aff61e095c
          Level world = entity.level();
  
          if (world instanceof ServerLevel worldserver) {
-@@ -717,7 +727,7 @@ public final class ItemStack implements DataComponentHolder {
+@@ -716,8 +726,8 @@ public final class ItemStack implements DataComponentHolder {
+                     org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemBreakEvent((net.minecraft.world.entity.player.Player) entity, this);
                  }
                  // CraftBukkit end
-                 entity.onEquippedItemBroken(item, slot);
+-                entity.onEquippedItemBroken(item, slot);
 -            });
++                if (slot != null) entity.onEquippedItemBroken(item, slot); // Paper - itemstack damage API - do not process entity related callbacks when damaging from API
 +            }, force); // Paper
          }
  
