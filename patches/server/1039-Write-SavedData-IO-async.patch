@@ -6,37 +6,28 @@ Subject: [PATCH] Write SavedData IO async
 Co-Authored-By: Shane Freeder <theboyetronic@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index e2c67c011503c9c37b9d637c0268717baac13e32..fcecfda569d2a8d6b8a7e228831f822fb7327748 100644
+index 64ed296cfbe7e5d27286b8cee70454fd1d99ebb0..36fbbf45ae064a345bf4aafbb9ac527197326eb9 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -447,6 +447,13 @@ public class ServerChunkCache extends ChunkSource {
+@@ -370,6 +370,13 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
  
-     public void close(boolean save) { // Paper - rewrite chunk system
-         this.level.chunkTaskScheduler.chunkHolderManager.close(save, true); // Paper - rewrite chunk system
+     public void close(boolean save) throws IOException {
+         ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.close(save, true); // Paper - rewrite chunk system
 +        // Paper start - Write SavedData IO async
 +        try {
 +            this.dataStorage.close();
-+        } catch (IOException exception) {
-+            LOGGER.error("Failed to close persistent world data", exception);
++        } catch (final IOException e) {
++            LOGGER.error("Failed to close persistent world data", e);
 +        }
 +        // Paper end - Write SavedData IO async
      }
  
      // CraftBukkit start - modelled on below
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index aab652174a8175765cad548f7c61ce353ca74803..ca56a0b596976448da6bb2a0e82b3d5cd4133e12 100644
+index 9456047974db6de9ed38265d5d1ab822225c484f..4e5fc39f3839d4d626925bcef1c83415376195f4 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -1492,7 +1492,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
- 
-         try (co.aikar.timings.Timing ignored = this.timings.worldSave.startTiming()) {
-             if (doFull) {
--                this.saveLevelData();
-+                this.saveLevelData(true); // Paper - Write SavedData IO async
-             }
- 
-             this.timings.worldSaveChunks.startTiming(); // Paper
-@@ -1528,7 +1528,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1334,7 +1334,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
                  progressListener.progressStartNoAbort(Component.translatable("menu.savingLevel"));
              }
  
@@ -45,7 +36,7 @@ index aab652174a8175765cad548f7c61ce353ca74803..ca56a0b596976448da6bb2a0e82b3d5c
              if (progressListener != null) {
                  progressListener.progressStage(Component.translatable("menu.savingChunks"));
              }
-@@ -1551,12 +1551,12 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1365,12 +1365,12 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
          // CraftBukkit end
      }
  
@@ -61,7 +52,7 @@ index aab652174a8175765cad548f7c61ce353ca74803..ca56a0b596976448da6bb2a0e82b3d5c
  
      public <T extends Entity> List<? extends T> getEntities(EntityTypeTest<Entity, T> filter, Predicate<? super T> predicate) {
 diff --git a/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java b/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java
-index ffbb3bf9ff3fc968ef69d4f889b0baf7e8ab691b..954d468459fe167ede0e7fca5b9f99da565d59e1 100644
+index 0382b6597a130d746f8954a93a756a9d1ac81d50..cb39c629af1827078f35904a373d35a63fea17ff 100644
 --- a/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java
 +++ b/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java
 @@ -116,7 +116,13 @@ public class WorldUpgrader {
