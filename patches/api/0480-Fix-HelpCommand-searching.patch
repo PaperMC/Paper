@@ -5,27 +5,10 @@ Subject: [PATCH] Fix HelpCommand searching
 
 
 diff --git a/src/main/java/org/bukkit/command/defaults/HelpCommand.java b/src/main/java/org/bukkit/command/defaults/HelpCommand.java
-index a1699aa93c62f70238822c446326ed46ea71db14..599078b066ed760b287cb529c37380bd11326bb2 100644
+index a1699aa93c62f70238822c446326ed46ea71db14..c4f33220225141ca187b0d22c6d1e0ddbd7a8092 100644
 --- a/src/main/java/org/bukkit/command/defaults/HelpCommand.java
 +++ b/src/main/java/org/bukkit/command/defaults/HelpCommand.java
-@@ -82,7 +82,15 @@ public class HelpCommand extends BukkitCommand {
-             return true;
-         }
- 
--        ChatPaginator.ChatPage page = ChatPaginator.paginate(topic.getFullText(sender), pageNumber, pageWidth, pageHeight);
-+        // Paper start - Fix HelpCommand searching
-+        String topicText = topic.getFullText(sender);
-+        if (topicText.split("\n").length == 1) {
-+            sender.sendMessage(ChatColor.RED + "No help for " + command);
-+            return true;
-+        }
-+
-+        ChatPaginator.ChatPage page = ChatPaginator.paginate(topicText, pageNumber, pageWidth, pageHeight);
-+        // Paper end - Fix HelpCommand searching
- 
-         StringBuilder header = new StringBuilder();
-         header.append(ChatColor.YELLOW);
-@@ -146,7 +154,7 @@ public class HelpCommand extends BukkitCommand {
+@@ -146,7 +146,7 @@ public class HelpCommand extends BukkitCommand {
          for (HelpTopic topic : Bukkit.getServer().getHelpMap().getHelpTopics()) {
              String trimmedTopic = topic.getName().startsWith("/") ? topic.getName().substring(1) : topic.getName();
  
@@ -34,3 +17,25 @@ index a1699aa93c62f70238822c446326ed46ea71db14..599078b066ed760b287cb529c37380bd
                  continue;
              }
  
+diff --git a/src/main/java/org/bukkit/help/IndexHelpTopic.java b/src/main/java/org/bukkit/help/IndexHelpTopic.java
+index 88a812d66b7eea7389103b9c2776a8adcfc141c7..ea5d63e85abfa224c7fee025ad904cb56e74e4d7 100644
+--- a/src/main/java/org/bukkit/help/IndexHelpTopic.java
++++ b/src/main/java/org/bukkit/help/IndexHelpTopic.java
+@@ -49,10 +49,13 @@ public class IndexHelpTopic extends HelpTopic {
+         if (sender instanceof ConsoleCommandSender) {
+             return true;
+         }
+-        if (permission == null) {
+-            return true;
+-        }
+-        return sender.hasPermission(permission);
++        // Paper start - Fix HelpCommand searching
++        for (HelpTopic topic : allTopics)
++            if (topic.canSee(sender))
++                return true;
++
++        return false;
++        // Paper end - Fix HelpCommand searching
+     }
+ 
+     @Override
