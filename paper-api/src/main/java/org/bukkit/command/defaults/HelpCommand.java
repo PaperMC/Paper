@@ -143,6 +143,7 @@ public class HelpCommand extends BukkitCommand {
             searchString = searchString.substring(1);
         }
 
+        if (searchString.isEmpty()) return null; // Paper - prevent index out of bounds - nothing matches an empty search string, should have been special cased to defaultTopic earlier, just return null.
         for (HelpTopic topic : Bukkit.getServer().getHelpMap().getHelpTopics()) {
             String trimmedTopic = topic.getName().startsWith("/") ? topic.getName().substring(1) : topic.getName();
 

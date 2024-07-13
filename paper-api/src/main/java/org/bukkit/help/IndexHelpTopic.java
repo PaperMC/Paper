@@ -49,10 +49,15 @@ public class IndexHelpTopic extends HelpTopic {
         if (sender instanceof ConsoleCommandSender) {
             return true;
         }
-        if (permission == null) {
-            return true;
+        // Paper start - Fix HelpCommand searching - do not show index if no topic is visible to the sender
+        if (permission != null && !sender.hasPermission(permission)) return false; // old spigot permission check
+
+        for (HelpTopic topic : allTopics) {
+            if (topic.canSee(sender)) return true;
         }
-        return sender.hasPermission(permission);
+
+        return false;
+        // Paper end - Fix HelpCommand searching - do not show index if no topic is visible to the sender
     }
 
     @Override
