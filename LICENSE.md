@@ -64,4 +64,5 @@ Oliwier Miodun <naczs@blueflow.pl>
 aerulion <aerulion@gmail.com>
 Lukas Planz <lukas.planz@web.de>
 granny <contact@granny.dev>
+Tamion <70228790+notTamion@users.noreply.github.com>
 ```
