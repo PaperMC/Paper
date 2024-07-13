@@ -31308,7 +31308,7 @@ index bff83fe413c7baef4ba56a3270ea4463a58c792f..a248d859cbce48f4a34c4771a7acffc1
          }
  
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index e27d3547d1e19c137e05e6b8d075127a8bafb237..6559ca1b3025eae1837986d404369a9b80b988f7 100644
+index e27d3547d1e19c137e05e6b8d075127a8bafb237..a12ef61b42779e37d439585e479c7d73a5abf226 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -81,6 +81,7 @@ import net.minecraft.world.level.storage.LevelData;
@@ -31328,7 +31328,7 @@ index e27d3547d1e19c137e05e6b8d075127a8bafb237..6559ca1b3025eae1837986d404369a9b
  
      public static final Codec<ResourceKey<Level>> RESOURCE_KEY_CODEC = ResourceKey.codec(Registries.DIMENSION);
      public static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("overworld"));
-@@ -199,6 +200,439 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -199,6 +200,441 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
  
      public abstract ResourceKey<LevelStem> getTypeKey();
  
@@ -31694,6 +31694,8 @@ index e27d3547d1e19c137e05e6b8d075127a8bafb237..6559ca1b3025eae1837986d404369a9b
 +                final int newChunkZ = currZ >> 4;
 +
 +                if (((newChunkX ^ lastChunkX) | (newChunkZ ^ lastChunkZ)) != 0) {
++                    lastChunkX = newChunkX;
++                    lastChunkZ = newChunkZ;
 +                    lastChunk = (LevelChunk)chunkSource.getChunk(newChunkX, newChunkZ, ChunkStatus.FULL, false);
 +                }
 +
@@ -31768,7 +31770,7 @@ index e27d3547d1e19c137e05e6b8d075127a8bafb237..6559ca1b3025eae1837986d404369a9b
      protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator) { // Paper - create paper world config
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
          this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper - create paper world config
-@@ -281,6 +715,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -281,6 +717,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          this.timings = new co.aikar.timings.WorldTimingsHandler(this); // Paper - code below can generate new world and access timings
          this.entityLimiter = new org.spigotmc.TickLimiter(this.spigotConfig.entityMaxTickTime);
          this.tileLimiter = new org.spigotmc.TickLimiter(this.spigotConfig.tileMaxTickTime);
@@ -31780,7 +31782,7 @@ index e27d3547d1e19c137e05e6b8d075127a8bafb237..6559ca1b3025eae1837986d404369a9b
      }
  
      // Paper start - Cancel hit for vanished players
-@@ -549,7 +988,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -549,7 +990,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
                  this.setBlocksDirty(blockposition, iblockdata1, iblockdata2);
              }
  
@@ -31789,7 +31791,7 @@ index e27d3547d1e19c137e05e6b8d075127a8bafb237..6559ca1b3025eae1837986d404369a9b
                  this.sendBlockUpdated(blockposition, iblockdata1, iblockdata, i);
              }
  
-@@ -813,6 +1252,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -813,6 +1254,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          // Iterator<TickingBlockEntity> iterator = this.blockEntityTickers.iterator();
          boolean flag = this.tickRateManager().runsNormally();
  
@@ -31798,7 +31800,7 @@ index e27d3547d1e19c137e05e6b8d075127a8bafb237..6559ca1b3025eae1837986d404369a9b
          int tilesThisCycle = 0;
          var toRemove = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<TickingBlockEntity>(); // Paper - Fix MC-117075; use removeAll
          toRemove.add(null); // Paper - Fix MC-117075
-@@ -828,6 +1269,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -828,6 +1271,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
                  // Spigot end
              } else if (flag && this.shouldTickBlocksAt(tickingblockentity.getPos())) {
                  tickingblockentity.tick();
@@ -31810,7 +31812,7 @@ index e27d3547d1e19c137e05e6b8d075127a8bafb237..6559ca1b3025eae1837986d404369a9b
              }
          }
          this.blockEntityTickers.removeAll(toRemove); // Paper - Fix MC-117075
-@@ -850,12 +1296,20 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -850,12 +1298,20 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
              entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
              // Paper end - Prevent block entity and entity crashes
          }
@@ -31832,7 +31834,7 @@ index e27d3547d1e19c137e05e6b8d075127a8bafb237..6559ca1b3025eae1837986d404369a9b
      }
      // Paper end - Option to prevent armor stands from doing entity lookups
  
-@@ -949,7 +1403,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -949,7 +1405,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          }
          // Paper end - Perf: Optimize capturedTileEntities lookup
          // CraftBukkit end
@@ -31841,7 +31843,7 @@ index e27d3547d1e19c137e05e6b8d075127a8bafb237..6559ca1b3025eae1837986d404369a9b
      }
  
      public void setBlockEntity(BlockEntity blockEntity) {
-@@ -1039,28 +1493,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1039,28 +1495,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      @Override
      public List<Entity> getEntities(@Nullable Entity except, AABB box, Predicate<? super Entity> predicate) {
          this.getProfiler().incrementCounter("getEntities");
@@ -31875,7 +31877,7 @@ index e27d3547d1e19c137e05e6b8d075127a8bafb237..6559ca1b3025eae1837986d404369a9b
      }
  
      @Override
-@@ -1075,36 +1514,77 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1075,36 +1516,77 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          this.getEntities(filter, box, predicate, result, Integer.MAX_VALUE);
      }
  
