@@ -5,7 +5,7 @@ Subject: [PATCH] Fix HelpCommand searching
 
 
 diff --git a/src/main/java/org/bukkit/command/defaults/HelpCommand.java b/src/main/java/org/bukkit/command/defaults/HelpCommand.java
-index a1699aa93c62f70238822c446326ed46ea71db14..c4f33220225141ca187b0d22c6d1e0ddbd7a8092 100644
+index a1699aa93c62f70238822c446326ed46ea71db14..333fe43ec4ac18679db40be7e5e78eb6b0f82048 100644
 --- a/src/main/java/org/bukkit/command/defaults/HelpCommand.java
 +++ b/src/main/java/org/bukkit/command/defaults/HelpCommand.java
 @@ -146,7 +146,7 @@ public class HelpCommand extends BukkitCommand {
@@ -13,32 +13,30 @@ index a1699aa93c62f70238822c446326ed46ea71db14..c4f33220225141ca187b0d22c6d1e0dd
              String trimmedTopic = topic.getName().startsWith("/") ? topic.getName().substring(1) : topic.getName();
  
 -            if (trimmedTopic.length() < searchString.length()) {
-+            if (searchString.isEmpty() || trimmedTopic.length() < searchString.length()) { // Paper - Fix HelpCommand searching
++            if (searchString.isEmpty() || trimmedTopic.length() < searchString.length()) { // Paper - Fix HelpCommand searching - do not continue if string is empty
                  continue;
              }
  
 diff --git a/src/main/java/org/bukkit/help/IndexHelpTopic.java b/src/main/java/org/bukkit/help/IndexHelpTopic.java
-index 88a812d66b7eea7389103b9c2776a8adcfc141c7..7db7696cc30ed909f5bb384c64828a1455dd3416 100644
+index 88a812d66b7eea7389103b9c2776a8adcfc141c7..74795eb1a5dacaca61ed1c918074e79f2b3d9040 100644
 --- a/src/main/java/org/bukkit/help/IndexHelpTopic.java
 +++ b/src/main/java/org/bukkit/help/IndexHelpTopic.java
-@@ -49,10 +49,16 @@ public class IndexHelpTopic extends HelpTopic {
+@@ -49,10 +49,15 @@ public class IndexHelpTopic extends HelpTopic {
          if (sender instanceof ConsoleCommandSender) {
              return true;
          }
 -        if (permission == null) {
 -            return true;
--        }
--        return sender.hasPermission(permission);
-+        // Paper start - Fix HelpCommand searching
-+        if (permission != null && !sender.hasPermission(permission))
-+            return false;
++        // Paper start - Fix HelpCommand searching - do not show index if no topic is visible to the sender
++        if (permission != null && !sender.hasPermission(permission)) return false; // old spigot permission check
 +
-+        for (HelpTopic topic : allTopics)
-+            if (topic.canSee(sender))
-+                return true;
++        for (HelpTopic topic : allTopics) {
++            if (topic.canSee(sender)) return true;
+         }
+-        return sender.hasPermission(permission);
 +
 +        return false;
-+        // Paper end - Fix HelpCommand searching
++        // Paper end - Fix HelpCommand searching - do not show index if no topic is visible to the sender
      }
  
      @Override
