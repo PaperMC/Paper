@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukas Planz <lukas.planz@web.de>
+Date: Sat, 14 Oct 2023 14:28:18 +0200
+Subject: [PATCH] Add Grindstone experience reward API
+
+
+diff --git a/src/main/java/org/bukkit/event/inventory/PrepareGrindstoneEvent.java b/src/main/java/org/bukkit/event/inventory/PrepareGrindstoneEvent.java
+index a7e03600099b8d6a117b8f5455fee24eed03e3a3..793b2c381a9df61b49ebe9e55ad96f116cfcce87 100644
+--- a/src/main/java/org/bukkit/event/inventory/PrepareGrindstoneEvent.java
++++ b/src/main/java/org/bukkit/event/inventory/PrepareGrindstoneEvent.java
+@@ -13,10 +13,18 @@ import org.jetbrains.annotations.Nullable;
+ public class PrepareGrindstoneEvent extends com.destroystokyo.paper.event.inventory.PrepareGrindstoneEvent { // Paper
+ 
+     // Paper - move HandlerList to PrepareInventoryResultEvent
++    private int experienceReward;
+ 
+     public PrepareGrindstoneEvent(@NotNull InventoryView inventory, @Nullable ItemStack result) {
++        // Paper start
++        this(inventory, result, 0);
++    }
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public PrepareGrindstoneEvent(@NotNull InventoryView inventory, @Nullable ItemStack result, int experienceReward) {
+         super(inventory, result);
++        this.experienceReward = experienceReward;
+     }
++    // Paper end
+ 
+     @NotNull
+     @Override
+@@ -24,5 +32,27 @@ public class PrepareGrindstoneEvent extends com.destroystokyo.paper.event.invent
+         return (GrindstoneInventory) super.getInventory();
+     }
+ 
++    // Paper start
++    /**
++     * Gets the amount of experience the player will receive when extracting the item from the result slot.
++     *
++     * @return the experience reward for disenchanting
++     */
++    @org.jetbrains.annotations.Range(from = 0, to = Integer.MAX_VALUE)
++    public int getExperienceReward() {
++        return experienceReward;
++    }
++
++    /**
++     * Overwrites the experience that the player will receive when extracting the item from the result slot.
++     *
++     * @param experienceReward the experience reward to drop
++     * @throws IllegalArgumentException When the new experienceReward is negative
++     */
++    public void setExperienceReward(@org.jetbrains.annotations.Range(from = 0, to = Integer.MAX_VALUE) int experienceReward) {
++        com.google.common.base.Preconditions.checkArgument(experienceReward >= 0, "The new experience reward must not be negative");
++        this.experienceReward = experienceReward;
++    }
++    // Paper end
+     // Paper - move HandlerList to PrepareInventoryResultEvent
+ }

@@ -1,0 +1,136 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukas Planz <lukas.planz@web.de>
+Date: Sat, 14 Oct 2023 14:28:02 +0200
+Subject: [PATCH] Add Grindstone experience reward API
+
+
+diff --git a/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java b/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java
+index a21eadcdfbdc4be803c5793bc97996db3e706071..416c4daea3227cfd89ccdfd56a176a2d92d35c7f 100644
+--- a/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java
+@@ -52,6 +52,7 @@ public class GrindstoneMenu extends AbstractContainerMenu {
+     private final Container resultSlots;
+     final Container repairSlots;
+     private final ContainerLevelAccess access;
++    public int experienceReward = 0; // Paper
+ 
+     public GrindstoneMenu(int syncId, Inventory playerInventory) {
+         this(syncId, playerInventory, ContainerLevelAccess.NULL);
+@@ -97,8 +98,9 @@ public class GrindstoneMenu extends AbstractContainerMenu {
+             public void onTake(net.minecraft.world.entity.player.Player player, ItemStack stack) {
+                 context.execute((world, blockposition) -> {
+                     if (world instanceof ServerLevel) {
+-                        ExperienceOrb.award((ServerLevel) world, Vec3.atCenterOf(blockposition), this.getExperienceAmount(world), org.bukkit.entity.ExperienceOrb.SpawnReason.GRINDSTONE, player); // Paper
++                        ExperienceOrb.award((ServerLevel) world, Vec3.atCenterOf(blockposition), experienceReward, org.bukkit.entity.ExperienceOrb.SpawnReason.GRINDSTONE, player); // Paper // Paper - predetermined experience amount from event
+                     }
++                    experienceReward = 0; // Paper
+ 
+                     world.levelEvent(1042, blockposition, 0);
+                 });
+@@ -106,37 +108,7 @@ public class GrindstoneMenu extends AbstractContainerMenu {
+                 GrindstoneMenu.this.repairSlots.setItem(1, ItemStack.EMPTY);
+             }
+ 
+-            private int getExperienceAmount(Level world) {
+-                byte b0 = 0;
+-                int j = b0 + this.getExperienceFromItem(GrindstoneMenu.this.repairSlots.getItem(0));
+-
+-                j += this.getExperienceFromItem(GrindstoneMenu.this.repairSlots.getItem(1));
+-                if (j > 0) {
+-                    int k = (int) Math.ceil((double) j / 2.0D);
+-
+-                    return k + world.random.nextInt(k);
+-                } else {
+-                    return 0;
+-                }
+-            }
+-
+-            private int getExperienceFromItem(ItemStack stack) {
+-                int j = 0;
+-                Map<Enchantment, Integer> map = EnchantmentHelper.getEnchantments(stack);
+-                Iterator iterator = map.entrySet().iterator();
+-
+-                while (iterator.hasNext()) {
+-                    Entry<Enchantment, Integer> entry = (Entry) iterator.next();
+-                    Enchantment enchantment = (Enchantment) entry.getKey();
+-                    Integer integer = (Integer) entry.getValue();
+-
+-                    if (!enchantment.isCurse()) {
+-                        j += enchantment.getMinCost(integer);
+-                    }
+-                }
+-
+-                return j;
+-            }
++            // Paper - moved down into parent class, diff on change
+         });
+ 
+         int j;
+@@ -159,10 +131,44 @@ public class GrindstoneMenu extends AbstractContainerMenu {
+         super.slotsChanged(inventory);
+         if (inventory == this.repairSlots) {
+             this.createResult();
++            experienceReward = this.access.evaluate((level, blockPos) -> getExperienceAmount(level), 0); // Paper - calculate experience for event
+             org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareResultEvent(this, RESULT_SLOT); // Paper
+         }
+ 
+     }
++    // Paper start - extracted from anonymous Slot class above
++    private int getExperienceAmount(Level world) {
++        byte b0 = 0;
++        int j = b0 + this.getExperienceFromItem(GrindstoneMenu.this.repairSlots.getItem(0));
++
++        j += this.getExperienceFromItem(GrindstoneMenu.this.repairSlots.getItem(1));
++        if (j > 0) {
++            int k = (int) Math.ceil((double) j / 2.0D);
++
++            return k + world.random.nextInt(k);
++        } else {
++            return 0;
++        }
++    }
++
++    private int getExperienceFromItem(ItemStack stack) {
++        int j = 0;
++        Map<Enchantment, Integer> map = EnchantmentHelper.getEnchantments(stack);
++        Iterator iterator = map.entrySet().iterator();
++
++        while (iterator.hasNext()) {
++            Entry<Enchantment, Integer> entry = (Entry) iterator.next();
++            Enchantment enchantment = (Enchantment) entry.getKey();
++            Integer integer = (Integer) entry.getValue();
++
++            if (!enchantment.isCurse()) {
++                j += enchantment.getMinCost(integer);
++            }
++        }
++
++        return j;
++    }
++    // Paper end
+ 
+     private void createResult() {
+         ItemStack itemstack = this.repairSlots.getItem(0);
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 193ad79f57255b1ea4cf7930071b4f4988dc2b04..b1e040377d3737256392514ae8734d212e3bbb67 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1769,7 +1769,7 @@ public class CraftEventFactory {
+         if (view.getTopInventory() instanceof org.bukkit.inventory.AnvilInventory) {
+             event = new PrepareAnvilEvent(view, result);
+         } else if (view.getTopInventory() instanceof org.bukkit.inventory.GrindstoneInventory) {
+-            event = new PrepareGrindstoneEvent(view, result);
++            event = new PrepareGrindstoneEvent(view, result, ((net.minecraft.world.inventory.GrindstoneMenu) container).experienceReward);
+         } else if (view.getTopInventory() instanceof org.bukkit.inventory.SmithingInventory) {
+             event = new PrepareSmithingEvent(view, result);
+         } else {
+@@ -1777,6 +1777,9 @@ public class CraftEventFactory {
+         }
+         event.callEvent();
+         event.getInventory().setItem(resultSlot, event.getResult());
++        if (view.getTopInventory() instanceof org.bukkit.inventory.GrindstoneInventory) {
++            ((net.minecraft.world.inventory.GrindstoneMenu) container).experienceReward = ((PrepareGrindstoneEvent) event).getExperienceReward();
++        }
+         container.broadcastChanges();;
+     }
+     // Paper end
