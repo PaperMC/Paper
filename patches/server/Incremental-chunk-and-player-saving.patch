@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Shane Freeder <theboyetronic@gmail.com>
 Date: Sun, 9 Jun 2019 03:53:22 +0100
-Subject: [PATCH] incremental chunk and player saving
+Subject: [PATCH] Incremental chunk and player saving
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -34,7 +34,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        int playerSaveInterval = io.papermc.paper.configuration.GlobalConfiguration.get().playerAutoSave.rate;
 +        if (playerSaveInterval < 0) {
 +            playerSaveInterval = autosavePeriod;
-         }
++        }
 +        this.profiler.push("save");
 +        final boolean fullSave = autosavePeriod > 0 && this.tickCount % autosavePeriod == 0;
 +        try {
@@ -49,32 +49,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +        } finally {
 +            this.isSaving = false;
-+        }
+         }
 +        this.profiler.pop();
 +        // Paper end - Incremental chunk and player saving
          io.papermc.paper.util.CachedLists.reset(); // Paper
          // Paper start - move executeAll() into full server tick timing
          try (co.aikar.timings.Timing ignored = MinecraftTimings.processTasksTimer.startTiming()) {
-diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-+++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
-         } // Paper - Timings
-     }
- 
-+    // Paper start - Incremental chunk and player saving; duplicate save, but call incremental
-+    public void saveIncrementally() {
-+        this.runDistanceManagerUpdates();
-+        try (co.aikar.timings.Timing timed = level.timings.chunkSaveData.startTiming()) { // Paper - Timings
-+            this.chunkMap.saveIncrementally();
-+        } // Paper - Timings
-+    }
-+    // Paper end - Incremental chunk and player saving
-+
-     @Override
-     public void close() throws IOException {
-         // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
@@ -93,12 +73,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        try (co.aikar.timings.Timing ignored = this.timings.worldSave.startTiming()) {
 +            if (doFull) {
-+                this.saveLevelData();
++                this.saveLevelData(true);
 +            }
 +
-+            this.timings.worldSaveChunks.startTiming(); // Paper
-+            if (!this.noSave()) chunkproviderserver.saveIncrementally();
-+            this.timings.worldSaveChunks.stopTiming(); // Paper
++            // chunk autosave is already called by the ChunkSystem during unload processing (ChunkMap#processUnloads)
 +
 +            // Copied from save()
 +            // CraftBukkit start - moved from MinecraftServer.saveChunks
