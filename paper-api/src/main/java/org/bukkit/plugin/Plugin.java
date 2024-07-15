@@ -26,6 +26,19 @@ public interface Plugin extends TabExecutor, io.papermc.paper.plugin.lifecycle.e
     @NotNull
     public File getDataFolder();
 
+    // Paper start - add getDataPath()
+    /**
+     * Returns the path that the plugin data files are located in.
+     * The folder may not yet exist.
+     *
+     * @see #getDataFolder()
+     * @return The folder
+     */
+    default @NotNull java.nio.file.Path getDataPath() {
+        return getDataFolder().toPath();
+    }
+    // Paper end - add getDataPath()
+
     /**
      * Returns the plugin.yml file containing the details for this plugin
      *
