@@ -1403,10 +1403,10 @@ index 0000000000000000000000000000000000000000..990d1bb46e0f9719f4e9af928d80ac6f
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7509b17414f836e8b53fc62b02b386ba4e8c5ca9
+index 0000000000000000000000000000000000000000..7f0b89c018166d4cb5f149ad8202a92610b62dc5
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
-@@ -0,0 +1,551 @@
+@@ -0,0 +1,554 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.collect.HashBasedTable;
@@ -1591,12 +1591,15 @@ index 0000000000000000000000000000000000000000..7509b17414f836e8b53fc62b02b386ba
 +            @MergeMap
 +            public Reference2IntMap<MobCategory> spawnLimits = Util.make(new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length), map -> Arrays.stream(NaturalSpawner.SPAWNING_CATEGORIES).forEach(mobCategory -> map.put(mobCategory, -1)));
 +            @MergeMap
-+            public Map<MobCategory, DespawnRange> despawnRanges = Arrays.stream(MobCategory.values()).collect(Collectors.toMap(Function.identity(), category -> new DespawnRange(category.getNoDespawnDistance(), category.getDespawnDistance())));
++            public Map<MobCategory, DespawnRange> despawnRanges = Arrays.stream(MobCategory.values()).collect(Collectors.toMap(Function.identity(), category -> new DespawnRange(category.getDespawnDistance(), category.getNoDespawnDistance())));
 +            @MergeMap
 +            public Reference2IntMap<MobCategory> ticksPerSpawn = Util.make(new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length), map -> Arrays.stream(NaturalSpawner.SPAWNING_CATEGORIES).forEach(mobCategory -> map.put(mobCategory, -1)));
 +
 +            @ConfigSerializable
-+            public record DespawnRange(@Required int soft, @Required int hard) {
++            public record DespawnRange(@Required int xzLimit, @Required int yLimit, @Required int xzSoftLimit, @Required int ySoftLimit) {
++                public DespawnRange(int hard, int soft) {
++                    this(hard, hard, soft, soft);
++                }
 +            }
 +
 +            public WaterAnimalSpawnHeight wateranimalSpawnHeight;
@@ -2447,6 +2450,90 @@ index 0000000000000000000000000000000000000000..9c339ef178ebc3b0251095f320e4a7a3
 +        return MiniMessage.miniMessage().serialize(component);
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/configuration/serializer/DespawnRangeSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/DespawnRangeSerializer.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..04909c5b5d4b70538ad2bc8b29c6471acd4310f7
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/serializer/DespawnRangeSerializer.java
+@@ -0,0 +1,77 @@
++package io.papermc.paper.configuration.serializer;
++
++import io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DespawnRange;
++import net.minecraft.world.entity.MobCategory;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.spongepowered.configurate.ConfigurationNode;
++import org.spongepowered.configurate.serialize.SerializationException;
++import org.spongepowered.configurate.serialize.TypeSerializer;
++import java.lang.reflect.Type;
++
++public class DespawnRangeSerializer implements TypeSerializer<DespawnRange> {
++
++    @Override
++    public DespawnRange deserialize(final Type type, final ConfigurationNode node) throws SerializationException {
++        ConfigurationNode hard = node.node("hard");
++        ConfigurationNode soft = node.node("soft");
++
++        int xzLimit;
++        int xzSoftLimit;
++        int yLimit;
++        int ySoftLimit;
++
++        MobCategory category = MobCategory.valueOf(node.key().toString().toUpperCase());
++
++        if (hard.hasChild("horizontal") || hard.hasChild("vertical")) {
++            xzLimit = ifPresent(hard.node("horizontal"), category.getDespawnDistance());
++            yLimit = ifPresent(hard.node("vertical"), category.getDespawnDistance());
++        } else {
++            xzLimit = yLimit = ifPresent(hard, category.getDespawnDistance());
++        }
++
++        if (soft.hasChild("horizontal") || soft.hasChild("vertical")) {
++            xzSoftLimit = ifPresent(soft.node("horizontal"), category.getNoDespawnDistance());
++            ySoftLimit = ifPresent(soft.node("vertical"), category.getNoDespawnDistance());
++        } else {
++            xzSoftLimit = ySoftLimit = ifPresent(soft, category.getNoDespawnDistance());
++        }
++        return new DespawnRange(xzLimit, yLimit, xzSoftLimit, ySoftLimit);
++    }
++
++    @Override
++    public void serialize(final Type type, @Nullable final DespawnRange despawnRange, final ConfigurationNode node) throws SerializationException {
++        if (despawnRange == null) {
++            node.raw(null);
++            return;
++        }
++
++        ConfigurationNode hard = node.node("hard");
++        ConfigurationNode soft = node.node("soft");
++
++        int xzLimit = despawnRange.xzLimit();
++        int xzSoftLimit = despawnRange.xzSoftLimit();
++        int yLimit = despawnRange.yLimit();
++        int ySoftLimit = despawnRange.ySoftLimit();
++
++        if (xzLimit == yLimit) {
++            hard.set(xzLimit);
++        } else {
++            hard.node("horizontal").set(xzLimit);
++            hard.node("vertical").set(yLimit);
++        }
++        if (xzSoftLimit == ySoftLimit) {
++            soft.set(xzSoftLimit);
++        } else {
++            soft.node("horizontal").set(xzSoftLimit);
++            soft.node("vertical").set(ySoftLimit);
++        }
++    }
++
++    private int ifPresent(ConfigurationNode node, int or) {
++        if (node.virtual())
++            return or;
++        if (node.raw() instanceof Integer i)
++            return i;
++        throw new RuntimeException(new SerializationException(node, Integer.class, "Expected an integer, got \"" + node.raw() + "\" instead"));
++    }
++}
+\ No newline at end of file
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/EngineModeSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/EngineModeSerializer.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..27c0679d376bb31ab52131dfea74b3b580ca92b5
@@ -5054,7 +5141,7 @@ index 6d1d3f9cf7451494af7c57d8bb1cd0ed25ea63e2..f1302dfb68bf8e4e1f4d8b084ad81422
              world.serverLevelData.setDifficulty(config.difficulty);
              world.setSpawnSettings(config.spawnMonsters, config.spawnAnimals);
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 4b8602b168f9dd386aa72b4e5d189c441c93542e..1e3ca7ca98abfd5be233a7eeb6dad201776d2d6a 100644
+index 5f73afa688fd1c83af17e6f566862cd5e2603ff3..e2bfbedce18c4ecb01ffcc44d495e72b76806a92 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -142,6 +142,19 @@ public class Main {
