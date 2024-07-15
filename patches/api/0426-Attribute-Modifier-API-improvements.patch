@@ -1,11 +1,12 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: TonytheMacaroni <tonythemacaroni123@gmail.com>
 Date: Thu, 9 Nov 2023 20:35:35 -0500
-Subject: [PATCH] Add UUID attribute modifier API
+Subject: [PATCH] Attribute Modifier API improvements
 
+Co-authored-by: Malfrador <malfrador@gmail.com>
 
 diff --git a/src/main/java/org/bukkit/attribute/AttributeInstance.java b/src/main/java/org/bukkit/attribute/AttributeInstance.java
-index 5513174ea545bb5b4fdc028cbaa4c1bb763e2c6d..f1fa86ddf1f50a357c9e94cc61261d8c96a2da6f 100644
+index f08ee26cc4d479e1bfc5264b8cbe721315de91f2..f1fa86ddf1f50a357c9e94cc61261d8c96a2da6f 100644
 --- a/src/main/java/org/bukkit/attribute/AttributeInstance.java
 +++ b/src/main/java/org/bukkit/attribute/AttributeInstance.java
 @@ -39,6 +39,42 @@ public interface AttributeInstance {
@@ -51,11 +52,28 @@ index 5513174ea545bb5b4fdc028cbaa4c1bb763e2c6d..f1fa86ddf1f50a357c9e94cc61261d8c
      /**
       * Add a modifier to this instance.
       *
+@@ -46,6 +82,16 @@ public interface AttributeInstance {
+      */
+     void addModifier(@NotNull AttributeModifier modifier);
+ 
++    // Paper start - Transient modifier API
++    /**
++     * Add a transient modifier to this instance.
++     * Transient modifiers are not persisted (saved with the NBT data)
++     *
++     * @param modifier to add
++     */
++    void addTransientModifier(@NotNull AttributeModifier modifier);
++    // Paper end
++
+     /**
+      * Remove a modifier from this instance.
+      *
 diff --git a/src/main/java/org/bukkit/attribute/AttributeModifier.java b/src/main/java/org/bukkit/attribute/AttributeModifier.java
-index d66502c9df2592cd18694481e7e90a71a5c3a359..90f18f355a6a236a7e4273cc1258e7c8034b8276 100644
+index c6b8700d258b859d246118868167497397010292..3808f76d49e24c20156c013f68e00efa9351f1a3 100644
 --- a/src/main/java/org/bukkit/attribute/AttributeModifier.java
 +++ b/src/main/java/org/bukkit/attribute/AttributeModifier.java
-@@ -25,22 +25,22 @@ public class AttributeModifier implements ConfigurationSerializable, Keyed {
+@@ -25,26 +25,32 @@ public class AttributeModifier implements ConfigurationSerializable, Keyed {
      private final Operation operation;
      private final EquipmentSlotGroup slot;
  
@@ -82,7 +100,17 @@ index d66502c9df2592cd18694481e7e90a71a5c3a359..90f18f355a6a236a7e4273cc1258e7c8
      public AttributeModifier(@NotNull UUID uuid, @NotNull String name, double amount, @NotNull Operation operation, @NotNull EquipmentSlotGroup slot) {
          this(NamespacedKey.fromString(uuid.toString()), amount, operation, slot);
      }
-@@ -63,7 +63,7 @@ public class AttributeModifier implements ConfigurationSerializable, Keyed {
+ 
++    // Paper start - Add constructor without EquipmentSlotGroup
++    public AttributeModifier(@NotNull NamespacedKey key, double amount, @NotNull Operation operation) {
++        this(key, amount, operation, EquipmentSlotGroup.ANY);
++    }
++    // Paper end
++
+     public AttributeModifier(@NotNull NamespacedKey key, double amount, @NotNull Operation operation, @NotNull EquipmentSlotGroup slot) {
+         Preconditions.checkArgument(key != null, "Key cannot be null");
+         Preconditions.checkArgument(operation != null, "Operation cannot be null");
+@@ -63,7 +69,7 @@ public class AttributeModifier implements ConfigurationSerializable, Keyed {
       * @deprecated attributes are now identified by keys
       */
      @NotNull
