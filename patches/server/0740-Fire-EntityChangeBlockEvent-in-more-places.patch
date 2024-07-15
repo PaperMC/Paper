@@ -6,6 +6,32 @@ Subject: [PATCH] Fire EntityChangeBlockEvent in more places
 Co-authored-by: ChristopheG <61288881+chrisgdt@users.noreply.github.com>
 Co-authored-by: maxcom1 <46265094+maxcom1@users.noreply.github.com>
 
+diff --git a/src/main/java/net/minecraft/world/effect/WeavingMobEffect.java b/src/main/java/net/minecraft/world/effect/WeavingMobEffect.java
+index 6a84eaeddd0d7f050053c8aa0659d6811192aad4..785188e78efaab4ca2f516da648c24e35a187f94 100644
+--- a/src/main/java/net/minecraft/world/effect/WeavingMobEffect.java
++++ b/src/main/java/net/minecraft/world/effect/WeavingMobEffect.java
+@@ -25,11 +25,11 @@ class WeavingMobEffect extends MobEffect {
+     @Override
+     public void onMobRemoved(LivingEntity entity, int amplifier, Entity.RemovalReason reason) {
+         if (reason == Entity.RemovalReason.KILLED && (entity instanceof Player || entity.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING))) {
+-            this.spawnCobwebsRandomlyAround(entity.level(), entity.getRandom(), entity.getOnPos());
++            this.spawnCobwebsRandomlyAround(entity, entity.level(), entity.getRandom(), entity.getOnPos()); // Paper - Fire EntityChangeBlockEvent in more places
+         }
+     }
+ 
+-    private void spawnCobwebsRandomlyAround(Level world, RandomSource random, BlockPos pos) {
++    private void spawnCobwebsRandomlyAround(LivingEntity entity, Level world, RandomSource random, BlockPos pos) { // Paper - Fire EntityChangeBlockEvent in more places
+         Set<BlockPos> set = Sets.newHashSet();
+         int i = this.maxCobwebs.applyAsInt(random);
+ 
+@@ -46,6 +46,7 @@ class WeavingMobEffect extends MobEffect {
+         }
+ 
+         for (BlockPos blockPos3 : set) {
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, blockPos3, Blocks.COBWEB.defaultBlockState())) break; // Paper - Fire EntityChangeBlockEvent in more places
+             world.setBlock(blockPos3, Blocks.COBWEB.defaultBlockState(), 3);
+             world.levelEvent(3018, blockPos3, 0);
+         }
 diff --git a/src/main/java/net/minecraft/world/entity/LightningBolt.java b/src/main/java/net/minecraft/world/entity/LightningBolt.java
 index bf5015c4bb68e5c46313bab1e59c0a4d45053b73..0471d9c85af02133f99cca4e181b83b58a3f1abc 100644
 --- a/src/main/java/net/minecraft/world/entity/LightningBolt.java
@@ -285,7 +311,7 @@ index 804adb5ed92dfcf4c29c756dd95d7164150a9666..19fa8a9f935e9063497f8c0bd7909036
              generatoraccess.setBlock(blockposition, iblockdata1, 3);
              generatoraccess.gameEvent((Holder) GameEvent.BLOCK_CHANGE, blockposition, GameEvent.Context.of(entity, iblockdata1));
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
-index b18494d2a83473e9bc4197f86ff599de59043217..6fb7ec36f6f7a3021fac4b9e31fd333dfd5ea5e5 100644
+index ef8a0236ab4fb648c4bb2a8cfc90e3cefe8f9f1d..1a3d8755c8f6a7cfe06069e2082d8147aaaff097 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
 @@ -259,7 +259,13 @@ public class BeehiveBlockEntity extends BlockEntity {
