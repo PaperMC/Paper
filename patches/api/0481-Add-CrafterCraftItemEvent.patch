@@ -1,0 +1,119 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bjarne Koll <lynxplay101@gmail.com>
+Date: Mon, 15 Jul 2024 12:27:39 +0200
+Subject: [PATCH] Add CrafterCraftItemEvent
+
+Adds an event fired when the crafter crafts an item.
+The event only exposes the recipe and the potential result
+for event modifications.
+
+The patch may be expanded in the future for more crafter related
+event calls.
+
+diff --git a/src/main/java/io/papermc/paper/event/block/CrafterCraftEvent.java b/src/main/java/io/papermc/paper/event/block/CrafterCraftEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6aec8f56a55c97b13b4e401968f36e301ee021e5
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/block/CrafterCraftEvent.java
+@@ -0,0 +1,101 @@
++package io.papermc.paper.event.block;
++
++import com.google.common.base.Preconditions;
++import org.bukkit.block.Block;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.block.BlockEvent;
++import org.bukkit.inventory.ItemStack;
++import org.bukkit.inventory.Recipe;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * The crafter craft event is called when a crafter is crafting an item.
++ * <p>
++ * The crafter instance may be accessed via {@link #getBlock()}'s {@link Block#getState(boolean)}.
++ */
++public class CrafterCraftEvent extends BlockEvent implements Cancellable {
++
++    private final Recipe recipe;
++    private ItemStack result;
++    private boolean isCancelled;
++
++    @ApiStatus.Internal
++    public CrafterCraftEvent(
++        final @NotNull Block theBlock,
++        final @NotNull Recipe recipe,
++        final @NotNull ItemStack result
++    ) {
++        super(theBlock);
++        this.recipe = recipe;
++        this.result = result;
++    }
++
++    /**
++     * Yields the recipe crafted by the crafted.
++     *
++     * @return the recipe.
++     */
++    @NotNull
++    public Recipe getRecipe() {
++        return this.recipe;
++    }
++
++    /**
++     * Returns the resulting item the crafter is about to craft.
++     * <p>
++     * This method may yield a mutated itemstack if other event handlers called {@link #setResult(ItemStack)}.
++     * To retrieve the original result, see {@link #getRecipe()}'s {@link Recipe#getResult()}.
++     *
++     * @return a copy of the result. Modifying said item will not mutate this event or item the crafter crafts.
++     */
++    @NotNull
++    public ItemStack getResult() {
++        return this.result.clone();
++    }
++
++    /**
++     * Sets the itemstack the crafter crafted.
++     *
++     * @param itemStack the itemstack the crafter is crafting.
++     */
++    public void setResult(final @NotNull ItemStack itemStack) {
++        Preconditions.checkArgument(itemStack != null, "Cannot set crafter craft result to null");
++        this.result = itemStack.clone();
++    }
++
++    /**
++     * Sets if this event is cancelled.
++     * <p>
++     * Cancelling this event prevents the crafter from crafting, leaving its inventory untouched.
++     *
++     * @param cancel true if you wish to cancel this event
++     */
++    @Override
++    public void setCancelled(final boolean cancel) {
++        this.isCancelled = cancel;
++    }
++
++    /**
++     * Returns if the event is cancelled.
++     *
++     * @return {@code true} if the event is cancelled, {@code false} otherwise.
++     */
++    @Override
++    public boolean isCancelled() {
++        return this.isCancelled;
++    }
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++
++    @Override
++    public @NotNull HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++}
