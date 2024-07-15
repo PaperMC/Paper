@@ -10,7 +10,7 @@ hoping that at least then we don't swap chunks, and maybe recover
 them all.
 
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index ace99d55c8343fa1907545f47a03f069844b801d..26431a814f6472689484dcc7cd8183fe1676e17e 100644
+index 6d461849da76894244e6212a75da0c6e4fb459c3..ecf7ba97d397e15e4fcaf4c1e1f48bb7972e60dc 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
 @@ -72,6 +72,18 @@ import net.minecraft.world.ticks.ProtoChunkTicks;
@@ -32,28 +32,15 @@ index ace99d55c8343fa1907545f47a03f069844b801d..26431a814f6472689484dcc7cd8183fe
  
      public static final Codec<PalettedContainer<BlockState>> BLOCK_STATE_CODEC = PalettedContainer.codecRW(Block.BLOCK_STATE_REGISTRY, BlockState.CODEC, PalettedContainer.Strategy.SECTION_STATES, Blocks.AIR.defaultBlockState(), null); // Paper - Anti-Xray - Add preset block states
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -450,7 +462,7 @@ public class ChunkSerializer {
+@@ -384,7 +396,7 @@ public class ChunkSerializer {
          nbttagcompound.putInt("xPos", chunkcoordintpair.x);
          nbttagcompound.putInt("yPos", chunk.getMinSection());
          nbttagcompound.putInt("zPos", chunkcoordintpair.z);
--        nbttagcompound.putLong("LastUpdate", asyncsavedata != null ? asyncsavedata.worldTime : world.getGameTime()); // Paper - async chunk unloading
-+        nbttagcompound.putLong("LastUpdate", asyncsavedata != null ? asyncsavedata.worldTime : world.getGameTime()); // Paper - async chunk unloading // Paper - diff on change
+-        nbttagcompound.putLong("LastUpdate", asyncsavedata != null ? asyncsavedata.worldTime() : world.getGameTime()); // Paper - async chunk saving
++        nbttagcompound.putLong("LastUpdate", asyncsavedata != null ? asyncsavedata.worldTime() : world.getGameTime()); // Paper - async chunk saving // Paper - diff on change
          nbttagcompound.putLong("InhabitedTime", chunk.getInhabitedTime());
-         nbttagcompound.putString("Status", BuiltInRegistries.CHUNK_STATUS.getKey(chunk.getStatus()).toString());
+         nbttagcompound.putString("Status", BuiltInRegistries.CHUNK_STATUS.getKey(chunk.getPersistedStatus()).toString());
          BlendingData blendingdata = chunk.getBlendingData();
-diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
-index 554dede2ad0e45d3ee4ccc5510b7644f2e9e4250..7801fac96d728f951989fca36f6a4890a0638c36 100644
---- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
-+++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
-@@ -41,7 +41,7 @@ public class ChunkStorage implements AutoCloseable {
- 
-     public ChunkStorage(RegionStorageInfo storageKey, Path directory, DataFixer dataFixer, boolean dsync) {
-         this.fixerUpper = dataFixer;
--        this.regionFileCache = new RegionFileStorage(storageKey, directory, dsync); // Paper - rewrite chunk system; async chunk IO
-+        this.regionFileCache = new RegionFileStorage(storageKey, directory, dsync, true); // Paper - rewrite chunk system; async chunk IO & Attempt to recalculate regionfile header if it is corrupt
-     }
- 
-     public boolean isOldChunkAround(ChunkPos chunkPos, int checkRadius) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionBitmap.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionBitmap.java
 index a23dc2f8f4475de1ee35bf18a7a8a53233ccac12..226af44fd469053451a0403a95ffb446face9530 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionBitmap.java
@@ -87,13 +74,13 @@ index a23dc2f8f4475de1ee35bf18a7a8a53233ccac12..226af44fd469053451a0403a95ffb446
          this.used.set(start, start + size);
      }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-index cf43daa019b239464401784938d01af83f9da47c..1362a47943cf1a51a185a15094b1f74c94bf40ef 100644
+index e761b63eebc1e76b2bb1cb887d83d0b63ad6ec90..eb0389ad86300665b6e057bcfa1d7c068dc6c6ab 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-@@ -52,6 +52,354 @@ public class RegionFile implements AutoCloseable {
+@@ -51,6 +51,354 @@ public class RegionFile implements AutoCloseable {
+     private final IntBuffer timestamps;
      @VisibleForTesting
      protected final RegionBitmap usedSectors;
-     public final java.util.concurrent.locks.ReentrantLock fileLock = new java.util.concurrent.locks.ReentrantLock(); // Paper
 +    // Paper start - Attempt to recalculate regionfile header if it is corrupt
 +    private static long roundToSectors(long bytes) {
 +        long sectors = bytes >>> 12; // 4096 = 2^12
@@ -442,29 +429,18 @@ index cf43daa019b239464401784938d01af83f9da47c..1362a47943cf1a51a185a15094b1f74c
 +
 +    final boolean canRecalcHeader; // final forces compile fail on new constructor
 +    // Paper end - Attempt to recalculate regionfile header if it is corrupt
-     // Paper start - Cache chunk status
-     private final net.minecraft.world.level.chunk.status.ChunkStatus[] statuses = new net.minecraft.world.level.chunk.status.ChunkStatus[32 * 32];
  
-@@ -79,8 +427,18 @@ public class RegionFile implements AutoCloseable {
      public RegionFile(RegionStorageInfo storageKey, Path directory, Path path, boolean dsync) throws IOException {
          this(storageKey, directory, path, RegionFileVersion.getCompressionFormat(), dsync); // Paper - Configurable region compression format
-     }
-+    // Paper start - add can recalc flag
-+    public RegionFile(RegionStorageInfo storageKey, Path directory, Path path, boolean dsync, boolean canRecalcHeader) throws IOException {
-+        this(storageKey, directory, path, RegionFileVersion.getCompressionFormat(), dsync, canRecalcHeader);
-+    }
- 
-     public RegionFile(RegionStorageInfo storageKey, Path path, Path directory, RegionFileVersion compressionFormat, boolean dsync) throws IOException {
-+        this(storageKey, path, directory, compressionFormat, dsync, true);
-+    }
-+
-+    public RegionFile(RegionStorageInfo storageKey, Path path, Path directory, RegionFileVersion compressionFormat, boolean dsync, boolean canRecalcHeader) throws IOException {
-+        this.canRecalcHeader = canRecalcHeader;
-+        // Paper end - add can recalc flag
-         this.header = ByteBuffer.allocateDirect(8192);
-         this.usedSectors = new RegionBitmap();
-         this.info = storageKey;
-@@ -110,14 +468,16 @@ public class RegionFile implements AutoCloseable {
+@@ -67,6 +415,7 @@ public class RegionFile implements AutoCloseable {
+             throw new IllegalArgumentException("Expected directory, got " + String.valueOf(directory.toAbsolutePath()));
+         } else {
+             this.externalFileDir = directory;
++            this.canRecalcHeader = RegionFileStorage.isChunkDataFolder(this.externalFileDir); // Paper - add can recalc flag
+             this.offsets = this.header.asIntBuffer();
+             ((java.nio.Buffer) this.offsets).limit(1024); // CraftBukkit - decompile error
+             ((java.nio.Buffer) this.header).position(4096); // CraftBukkit - decompile error
+@@ -86,14 +435,16 @@ public class RegionFile implements AutoCloseable {
                      RegionFile.LOGGER.warn("Region file {} has truncated header: {}", path, i);
                  }
  
@@ -486,7 +462,7 @@ index cf43daa019b239464401784938d01af83f9da47c..1362a47943cf1a51a185a15094b1f74c
                          // Spigot start
                          if (j1 == 255) {
                              // We're maxed out, so we need to read the proper length from the section
-@@ -126,21 +486,66 @@ public class RegionFile implements AutoCloseable {
+@@ -102,21 +453,66 @@ public class RegionFile implements AutoCloseable {
                              j1 = (realLen.getInt(0) + 4) / 4096 + 1;
                          }
                          // Spigot end
@@ -557,7 +533,7 @@ index cf43daa019b239464401784938d01af83f9da47c..1362a47943cf1a51a185a15094b1f74c
              }
  
          }
-@@ -151,11 +556,36 @@ public class RegionFile implements AutoCloseable {
+@@ -127,11 +523,36 @@ public class RegionFile implements AutoCloseable {
      }
  
      private Path getExternalChunkPath(ChunkPos chunkPos) {
@@ -595,7 +571,7 @@ index cf43daa019b239464401784938d01af83f9da47c..1362a47943cf1a51a185a15094b1f74c
      @Nullable
      public synchronized DataInputStream getChunkDataInputStream(ChunkPos pos) throws IOException {
          int i = this.getOffset(pos);
-@@ -179,6 +609,11 @@ public class RegionFile implements AutoCloseable {
+@@ -155,6 +576,11 @@ public class RegionFile implements AutoCloseable {
              ((java.nio.Buffer) bytebuffer).flip(); // CraftBukkit - decompile error
              if (bytebuffer.remaining() < 5) {
                  RegionFile.LOGGER.error("Chunk {} header is truncated: expected {} but read {}", new Object[]{pos, l, bytebuffer.remaining()});
@@ -607,7 +583,7 @@ index cf43daa019b239464401784938d01af83f9da47c..1362a47943cf1a51a185a15094b1f74c
                  return null;
              } else {
                  int i1 = bytebuffer.getInt();
-@@ -186,6 +621,11 @@ public class RegionFile implements AutoCloseable {
+@@ -162,6 +588,11 @@ public class RegionFile implements AutoCloseable {
  
                  if (i1 == 0) {
                      RegionFile.LOGGER.warn("Chunk {} is allocated, but stream is missing", pos);
@@ -619,7 +595,7 @@ index cf43daa019b239464401784938d01af83f9da47c..1362a47943cf1a51a185a15094b1f74c
                      return null;
                  } else {
                      int j1 = i1 - 1;
-@@ -193,18 +633,45 @@ public class RegionFile implements AutoCloseable {
+@@ -169,18 +600,45 @@ public class RegionFile implements AutoCloseable {
                      if (RegionFile.isExternalStreamChunk(b0)) {
                          if (j1 != 0) {
                              RegionFile.LOGGER.warn("Chunk has both internal and external streams");
@@ -667,7 +643,7 @@ index cf43daa019b239464401784938d01af83f9da47c..1362a47943cf1a51a185a15094b1f74c
                      }
                  }
              }
-@@ -390,10 +857,15 @@ public class RegionFile implements AutoCloseable {
+@@ -366,10 +824,15 @@ public class RegionFile implements AutoCloseable {
      }
  
      private ByteBuffer createExternalStub() {
@@ -685,33 +661,20 @@ index cf43daa019b239464401784938d01af83f9da47c..1362a47943cf1a51a185a15094b1f74c
          return bytebuffer;
      }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index c33640859aab837c85f3e860fe2241a0e78bb09a..1090b7e36e3c1c105bc36135b82751c651f237d4 100644
+index 0615fd82b71efb9a397de01615050e6d906c2844..40689256711cc94a806ca1da346f4f62eda31526 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-@@ -25,6 +25,7 @@ public class RegionFileStorage implements AutoCloseable {
-     private final RegionStorageInfo info;
-     private final Path folder;
-     private final boolean sync;
-+    private final boolean isChunkData; // Paper
- 
-     // Paper start - cache regionfile does not exist state
-     static final int MAX_NON_EXISTING_CACHE = 1024 * 64;
-@@ -56,11 +57,42 @@ public class RegionFileStorage implements AutoCloseable {
-     // Paper end - cache regionfile does not exist state
- 
-     protected RegionFileStorage(RegionStorageInfo storageKey, Path directory, boolean dsync) { // Paper - protected constructor
-+        // Paper start - add isChunkData param
-+        this(storageKey, directory, dsync, false);
-+    }
-+    RegionFileStorage(RegionStorageInfo storageKey, Path directory, boolean dsync, boolean isChunkData) {
-+        this.isChunkData = isChunkData;
-+        // Paper end - add isChunkData param
-         this.folder = directory;
-         this.sync = dsync;
-         this.info = storageKey;
+@@ -105,11 +105,42 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+         return ret;
      }
- 
-+    // Paper start
+     // Paper end - rewrite chunk system
++    // Paper start - recalculate region file headers
++    private final boolean isChunkData;
++
++    public static boolean isChunkDataFolder(Path path) {
++        return path.toFile().getName().equalsIgnoreCase("region");
++    }
++
 +    @Nullable
 +    public static ChunkPos getRegionFileCoordinates(Path file) {
 +        String fileName = file.getFileName().toString();
@@ -735,43 +698,16 @@ index c33640859aab837c85f3e860fe2241a0e78bb09a..1090b7e36e3c1c105bc36135b82751c6
 +        }
 +    }
 +    // Paper end
-+
-     // Paper start
-     public synchronized RegionFile getRegionFileIfLoaded(ChunkPos chunkcoordintpair) {
-         return this.regionCache.getAndMoveToFirst(ChunkPos.asLong(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ()));
-@@ -101,7 +133,7 @@ public class RegionFileStorage implements AutoCloseable {
-             // Paper - only create directory if not existing only - moved down
-             Path path = this.folder;
-             int j = chunkcoordintpair.getRegionX();
--            Path path1 = path.resolve("r." + j + "." + chunkcoordintpair.getRegionZ() + ".mca");
-+            Path path1 = path.resolve("r." + j + "." + chunkcoordintpair.getRegionZ() + ".mca"); // Paper - diff on change
-             if (existingOnly && !java.nio.file.Files.exists(path1)) { // Paper start - cache regionfile does not exist state
-                 this.markNonExisting(regionPos);
-                 return null; // CraftBukkit
-@@ -110,7 +142,7 @@ public class RegionFileStorage implements AutoCloseable {
-             }
-             // Paper end - cache regionfile does not exist state
-             FileUtil.createDirectoriesSafe(this.folder); // Paper - only create directory if not existing only - moved from above
--            RegionFile regionfile1 = new RegionFile(this.info, path1, this.folder, this.sync);
-+            RegionFile regionfile1 = new RegionFile(this.info, path1, this.folder, this.sync, this.isChunkData); // Paper - allow for chunk regionfiles to regen header
  
-             this.regionCache.putAndMoveToFirst(i, regionfile1);
-             // Paper start
-@@ -167,6 +199,13 @@ public class RegionFileStorage implements AutoCloseable {
-         if (regionfile == null) {
-             return null;
-         }
-+        // Paper start - Add regionfile parameter
-+        return this.read(pos, regionfile);
-+    }
-+    public CompoundTag read(ChunkPos pos, RegionFile regionfile) throws IOException {
-+        // We add the regionfile parameter to avoid the potential deadlock (on fileLock) if we went back to obtain a regionfile
-+        // if we decide to re-read
-+        // Paper end
-         // CraftBukkit end
-         try { // Paper
-         DataInputStream datainputstream = regionfile.getChunkDataInputStream(pos);
-@@ -183,6 +222,20 @@ public class RegionFileStorage implements AutoCloseable {
+     protected RegionFileStorage(RegionStorageInfo storageKey, Path directory, boolean dsync) { // Paper - protected
+         this.folder = directory;
+         this.sync = dsync;
+         this.info = storageKey;
++        this.isChunkData = isChunkDataFolder(this.folder); // Paper - recalculate region file headers
+     }
+ 
+     public RegionFile getRegionFile(ChunkPos chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit // Paper - public
+@@ -203,6 +234,19 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
              try {
                  if (datainputstream != null) {
                      nbttagcompound = NbtIo.read((DataInput) datainputstream);
@@ -781,8 +717,7 @@ index c33640859aab837c85f3e860fe2241a0e78bb09a..1090b7e36e3c1c105bc36135b82751c6
 +                        if (!chunkPos.equals(pos)) {
 +                            net.minecraft.server.MinecraftServer.LOGGER.error("Attempting to read chunk data at " + pos + " but got chunk data for " + chunkPos + " instead! Attempting regionfile recalculation for regionfile " + regionfile.getPath().toAbsolutePath());
 +                            if (regionfile.recalculateHeader()) {
-+                                regionfile.fileLock.lock(); // otherwise we will unlock twice and only lock once.
-+                                return this.read(pos, regionfile);
++                                return this.read(pos);
 +                            }
 +                            net.minecraft.server.MinecraftServer.LOGGER.error("Can't recalculate regionfile header, regenerating chunk " + pos + " for " + regionfile.getPath().toAbsolutePath());
 +                            return null;
