@@ -72,6 +72,10 @@ dependencies {
     implementation("io.papermc:reflection-rewriter-runtime:$reflectionRewriterVersion")
     implementation("io.papermc:reflection-rewriter-proxy-generator:$reflectionRewriterVersion")
     // Paper end - Remap reflection
+    // Paper start - spark
+    implementation("me.lucko:spark-api:0.1-20240720.200737-2")
+    implementation("me.lucko:spark-paper:1.10.119-SNAPSHOT")
+    // Paper end - spark
 }
 
 paperweight {

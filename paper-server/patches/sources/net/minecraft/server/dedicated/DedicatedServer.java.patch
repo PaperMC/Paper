@@ -163,7 +163,7 @@
          DedicatedServer.LOGGER.info("Loading properties");
          DedicatedServerProperties dedicatedserverproperties = this.settings.getProperties();
  
-@@ -126,14 +213,49 @@
+@@ -126,14 +213,51 @@
              this.setPreventProxyConnections(dedicatedserverproperties.preventProxyConnections);
              this.setLocalIp(dedicatedserverproperties.serverIp);
          }
@@ -177,6 +177,7 @@
 +        this.paperConfigurations.initializeGlobalConfiguration(this.registryAccess());
 +        this.paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
 +        // Paper end - initialize global and world-defaults configuration
++        this.server.spark.enableEarlyIfRequested(); // Paper - spark
 +        // Paper start - fix converting txt to json file; convert old users earlier after PlayerList creation but before file load/save
 +        if (this.convertOldUsers()) {
 +            this.getProfileCache().save(false); // Paper
@@ -186,6 +187,7 @@
 +        org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash); // Paper - start watchdog thread
 +        thread.start(); // Paper - Enhance console tab completions for brigadier commands; start console thread after MinecraftServer.console & PaperConfig are initialized
 +        io.papermc.paper.command.PaperCommands.registerCommands(this); // Paper - setup /paper command
++        this.server.spark.registerCommandBeforePlugins(this.server); // Paper - spark
 +        com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics(); // Paper - start metrics
 +        com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // Paper - load version history now
  
@@ -214,7 +216,7 @@
          InetAddress inetaddress = null;
  
          if (!this.getLocalIp().isEmpty()) {
-@@ -143,34 +265,55 @@
+@@ -143,34 +267,55 @@
          if (this.getPort() < 0) {
              this.setPort(dedicatedserverproperties.serverPort);
          }
@@ -276,7 +278,7 @@
              this.debugSampleSubscriptionTracker = new DebugSampleSubscriptionTracker(this.getPlayerList());
              this.tickTimeLogger = new RemoteSampleLogger(TpsDebugDimensions.values().length, this.debugSampleSubscriptionTracker, RemoteDebugSampleType.TICK_TIME);
              long i = Util.getNanos();
-@@ -178,13 +321,13 @@
+@@ -178,13 +323,13 @@
              SkullBlockEntity.setup(this.services, this);
              GameProfileCache.setUsesAuthentication(this.usesAuthentication());
              DedicatedServer.LOGGER.info("Preparing level \"{}\"", this.getLevelIdName());
@@ -292,7 +294,7 @@
              }
  
              if (dedicatedserverproperties.enableQuery) {
-@@ -197,7 +340,7 @@
+@@ -197,7 +342,7 @@
                  this.rconThread = RconThread.create(this);
              }
  
@@ -301,7 +303,7 @@
                  Thread thread1 = new Thread(new ServerWatchdog(this));
  
                  thread1.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandlerWithName(DedicatedServer.LOGGER));
-@@ -215,6 +358,12 @@
+@@ -215,6 +360,12 @@
          }
      }
  
@@ -314,7 +316,7 @@
      @Override
      public boolean isSpawningMonsters() {
          return this.settings.getProperties().spawnMonsters && super.isSpawningMonsters();
-@@ -227,7 +376,7 @@
+@@ -227,7 +378,7 @@
  
      @Override
      public void forceDifficulty() {
@@ -323,7 +325,7 @@
      }
  
      @Override
-@@ -286,13 +435,14 @@
+@@ -286,13 +437,14 @@
          }
  
          if (this.rconThread != null) {
@@ -340,7 +342,7 @@
      }
  
      @Override
-@@ -302,19 +452,29 @@
+@@ -302,19 +454,29 @@
      }
  
      @Override
@@ -376,7 +378,7 @@
          }
  
      }
-@@ -383,7 +543,7 @@
+@@ -383,7 +545,7 @@
  
      @Override
      public boolean isUnderSpawnProtection(ServerLevel world, BlockPos pos, Player player) {
@@ -385,7 +387,7 @@
              return false;
          } else if (this.getPlayerList().getOps().isEmpty()) {
              return false;
-@@ -453,7 +613,11 @@
+@@ -453,7 +615,11 @@
      public boolean enforceSecureProfile() {
          DedicatedServerProperties dedicatedserverproperties = this.getProperties();
  
@@ -398,7 +400,7 @@
      }
  
      @Override
-@@ -541,16 +705,52 @@
+@@ -541,16 +707,52 @@
  
      @Override
      public String getPluginNames() {
@@ -455,7 +457,7 @@
      }
  
      public void storeUsingWhiteList(boolean useWhitelist) {
-@@ -660,4 +860,15 @@
+@@ -660,4 +862,15 @@
              }
          }
      }

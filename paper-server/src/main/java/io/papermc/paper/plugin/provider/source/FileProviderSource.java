@@ -1,6 +1,9 @@
 package io.papermc.paper.plugin.provider.source;
 
+import com.mojang.logging.LogUtils;
+import io.papermc.paper.SparksFly;
 import io.papermc.paper.plugin.PluginInitializerManager;
+import io.papermc.paper.plugin.configuration.PluginMeta;
 import io.papermc.paper.plugin.entrypoint.EntrypointHandler;
 import io.papermc.paper.plugin.provider.type.PluginFileType;
 import org.bukkit.plugin.InvalidPluginException;
@@ -17,12 +20,14 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.jar.JarFile;
+import org.slf4j.Logger;
 
 /**
  * Loads a plugin provider at the given plugin jar file path.
  */
 public class FileProviderSource implements ProviderSource<Path, Path> {
 
+    private static final Logger LOGGER = LogUtils.getClassLogger();
     private final Function<Path, String> contextChecker;
     private final boolean applyRemap;
 
@@ -80,6 +85,12 @@ public class FileProviderSource implements ProviderSource<Path, Path> {
             throw new RuntimeException(
                 new IllegalArgumentException(source + " does not contain a " + String.join(" or ", PluginFileType.getConfigTypes()) + "! Could not determine plugin type, cannot load a plugin from it!")
             );
+        }
+
+        final PluginMeta config = type.getConfig(file);
+        if ((config.getName().equals("spark") && config.getMainClass().equals("me.lucko.spark.bukkit.BukkitSparkPlugin")) && !SparksFly.isPluginPreferred()) {
+            LOGGER.info("The spark plugin will not be loaded as this server bundles the spark profiler.");
+            return;
         }
 
         type.register(entrypointHandler, file, context);

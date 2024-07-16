@@ -312,6 +312,7 @@ public final class CraftServer implements Server {
     public static Exception excessiveVelEx; // Paper - Velocity warnings
     private final io.papermc.paper.logging.SysoutCatcher sysoutCatcher = new io.papermc.paper.logging.SysoutCatcher(); // Paper
     private final io.papermc.paper.potion.PaperPotionBrewer potionBrewer; // Paper - Custom Potion Mixes
+    public final io.papermc.paper.SparksFly spark; // Paper - spark
 
     // Paper start - Folia region threading API
     private final io.papermc.paper.threadedregions.scheduler.FallbackRegionScheduler regionizedScheduler = new io.papermc.paper.threadedregions.scheduler.FallbackRegionScheduler();
@@ -489,6 +490,7 @@ public final class CraftServer implements Server {
         }
         this.potionBrewer = new io.papermc.paper.potion.PaperPotionBrewer(console); // Paper - custom potion mixes
         datapackManager = new io.papermc.paper.datapack.PaperDatapackManager(console.getPackRepository()); // Paper
+        this.spark = new io.papermc.paper.SparksFly(this); // Paper - spark
     }
 
     public boolean getCommandBlockOverride(String command) {
@@ -1115,6 +1117,7 @@ public final class CraftServer implements Server {
         this.reloadData();
         org.spigotmc.SpigotConfig.registerCommands(); // Spigot
         io.papermc.paper.command.PaperCommands.registerCommands(this.console); // Paper
+        this.spark.registerCommandBeforePlugins(this); // Paper - spark
         this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
         this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");
 
@@ -1143,6 +1146,7 @@ public final class CraftServer implements Server {
         this.loadPlugins();
         this.enablePlugins(PluginLoadOrder.STARTUP);
         this.enablePlugins(PluginLoadOrder.POSTWORLD);
+        this.spark.registerCommandAfterPlugins(this); // Paper - spark
         if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
         // Paper start - brigadier command API
         io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setValid(); // to clear invalid state for event fire below
