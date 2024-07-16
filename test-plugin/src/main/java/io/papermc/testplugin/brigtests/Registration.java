@@ -7,6 +7,8 @@ import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.RegistryArgumentExtractor;
 import io.papermc.paper.command.brigadier.argument.range.DoubleRangeProvider;
+import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
+import io.papermc.paper.math.FinePosition;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
@@ -58,6 +60,16 @@ public final class Registration {
                             return Command.SINGLE_SUCCESS;
                         })
                 ).build()
+            );
+            commands.register(Commands.literal("fine-pos")
+                  .then(
+                      Commands.argument("pos", ArgumentTypes.finePosition(false))
+                          .executes(ctx -> {
+                              final FinePositionResolver position = ctx.getArgument("pos", FinePositionResolver.class);
+                              ctx.getSource().getSender().sendPlainMessage("Position: " + position.resolve(ctx.getSource()));
+                              return Command.SINGLE_SUCCESS;
+                          })
+                  ).build()
             );
             // ensure plugin commands override
             commands.register(Commands.literal("tag")
