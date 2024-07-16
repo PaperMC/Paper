@@ -6,6 +6,32 @@ Subject: [PATCH] Fire EntityChangeBlockEvent in more places
 Co-authored-by: ChristopheG <61288881+chrisgdt@users.noreply.github.com>
 Co-authored-by: maxcom1 <46265094+maxcom1@users.noreply.github.com>
 
+diff --git a/src/main/java/net/minecraft/world/effect/WeavingMobEffect.java b/src/main/java/net/minecraft/world/effect/WeavingMobEffect.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/effect/WeavingMobEffect.java
++++ b/src/main/java/net/minecraft/world/effect/WeavingMobEffect.java
+@@ -0,0 +0,0 @@ class WeavingMobEffect extends MobEffect {
+     @Override
+     public void onMobRemoved(LivingEntity entity, int amplifier, Entity.RemovalReason reason) {
+         if (reason == Entity.RemovalReason.KILLED && (entity instanceof Player || entity.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING))) {
+-            this.spawnCobwebsRandomlyAround(entity.level(), entity.getRandom(), entity.getOnPos());
++            this.spawnCobwebsRandomlyAround(entity, entity.level(), entity.getRandom(), entity.getOnPos()); // Paper - Fire EntityChangeBlockEvent in more places
+         }
+     }
+ 
+-    private void spawnCobwebsRandomlyAround(Level world, RandomSource random, BlockPos pos) {
++    private void spawnCobwebsRandomlyAround(LivingEntity entity, Level world, RandomSource random, BlockPos pos) { // Paper - Fire EntityChangeBlockEvent in more places
+         Set<BlockPos> set = Sets.newHashSet();
+         int i = this.maxCobwebs.applyAsInt(random);
+ 
+@@ -0,0 +0,0 @@ class WeavingMobEffect extends MobEffect {
+         }
+ 
+         for (BlockPos blockPos3 : set) {
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entity, blockPos3, Blocks.COBWEB.defaultBlockState())) continue; // Paper - Fire EntityChangeBlockEvent in more places
+             world.setBlock(blockPos3, Blocks.COBWEB.defaultBlockState(), 3);
+             world.levelEvent(3018, blockPos3, 0);
+         }
 diff --git a/src/main/java/net/minecraft/world/entity/LightningBolt.java b/src/main/java/net/minecraft/world/entity/LightningBolt.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/LightningBolt.java
