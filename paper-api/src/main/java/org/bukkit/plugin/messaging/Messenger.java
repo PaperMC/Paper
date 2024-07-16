@@ -19,7 +19,7 @@ public interface Messenger {
     /**
      * Represents the largest size that an individual Plugin Message may be.
      */
-    public static final int MAX_MESSAGE_SIZE = 32766;
+    public static final int MAX_MESSAGE_SIZE = 1048576;
 
     /**
      * Represents the largest size that a Plugin Channel may be.
