@@ -206,6 +206,11 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
          */
         ENCHANTMENT,
         /**
+         * When a creature is spawned by a potion effect, for example:
+         * {@link org.bukkit.potion.PotionType#OOZING}, {@link org.bukkit.potion.PotionType#INFESTED}
+         */
+        POTION_EFFECT,
+        /**
          * When a creature is spawned by plugins
          */
         CUSTOM,
