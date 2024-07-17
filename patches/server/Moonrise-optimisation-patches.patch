@@ -25176,6 +25176,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return load ? this.syncLoad(chunkX, chunkZ, toStatus) : null;
 +    }
 +    // Paper end - rewrite chunk system
++    private ServerChunkCache.ChunkAndHolder[] iterationCopy; // Paper - chunk tick iteration optimisations
  
      public ServerChunkCache(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureTemplateManager structureTemplateManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, int simulationDistance, boolean dsync, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory) {
          this.level = world;
@@ -25210,13 +25211,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            }
 -            // Paper end - Perf: Optimise getChunkAt calls for loaded chunks
 -            ProfilerFiller gameprofilerfiller = this.level.getProfiler();
+-
+-            gameprofilerfiller.incrementCounter("getChunk");
+-            long k = ChunkPos.asLong(x, z);
 +        // Paper start - rewrite chunk system
 +        if (leastStatus == ChunkStatus.FULL) {
 +            final LevelChunk ret = this.fullChunks.get(ca.spottedleaf.moonrise.common.util.CoordinateUtils.getChunkKey(x, z));
  
--            gameprofilerfiller.incrementCounter("getChunk");
--            long k = ChunkPos.asLong(x, z);
--
 -            for (int l = 0; l < 4; ++l) {
 -                if (k == this.lastChunkPos[l] && leastStatus == this.lastChunkStatus[l]) {
 -                    ChunkAccess ichunkaccess = this.lastChunk[l];
@@ -25432,6 +25433,44 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          long j = i - this.lastInhabitedUpdate;
  
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
+ 
+             gameprofilerfiller.push("pollingChunks");
+             gameprofilerfiller.push("filteringLoadedChunks");
+-            List<ServerChunkCache.ChunkAndHolder> list = Lists.newArrayListWithCapacity(this.chunkMap.size());
+-            Iterator iterator = this.chunkMap.getChunks().iterator();
+-            if (this.level.getServer().tickRateManager().runsNormally()) this.level.timings.chunkTicks.startTiming(); // Paper
++            // Paper start - chunk tick iteration optimisations
++            List<ServerChunkCache.ChunkAndHolder> list;
++            {
++                final ca.spottedleaf.moonrise.common.list.ReferenceList<net.minecraft.server.level.ServerChunkCache.ChunkAndHolder> tickingChunks =
++                    ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel) this.level).moonrise$getTickingChunks();
+ 
+-            while (iterator.hasNext()) {
+-                ChunkHolder playerchunk = (ChunkHolder) iterator.next();
+-                LevelChunk chunk = playerchunk.getTickingChunk();
++                final ServerChunkCache.ChunkAndHolder[] raw = tickingChunks.getRawDataUnchecked();
++                final int size = tickingChunks.size();
+ 
+-                if (chunk != null) {
+-                    list.add(new ServerChunkCache.ChunkAndHolder(chunk, playerchunk));
++                if (this.iterationCopy == null || this.iterationCopy.length < size) {
++                    this.iterationCopy = new ServerChunkCache.ChunkAndHolder[raw.length];
+                 }
++                System.arraycopy(raw, 0, this.iterationCopy, 0, size);
++
++                list = it.unimi.dsi.fastutil.objects.ObjectArrayList.wrap(
++                    this.iterationCopy, size
++                );
+             }
++            // Paper end - chunk tick iteration optimisations
++            Iterator iterator = null; // Paper - chunk tick iteration optimisations
++            if (this.level.getServer().tickRateManager().runsNormally()) this.level.timings.chunkTicks.startTiming(); // Paper
++
++            // Paper - chunk tick iteration optimisations
+ 
+             if (this.level.tickRateManager().runsNormally()) {
+                 gameprofilerfiller.popPush("naturalSpawnCount");
+@@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
                      LevelChunk chunk1 = chunkproviderserver_a.chunk;
                      ChunkPos chunkcoordintpair = chunk1.getPos();
  
@@ -25454,6 +25493,34 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      }
                  }
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
+             }
+ 
+             gameprofilerfiller.popPush("broadcast");
+-            list.forEach((chunkproviderserver_a1) -> {
+-                this.level.timings.broadcastChunkUpdates.startTiming(); // Paper - timing
+-                chunkproviderserver_a1.holder.broadcastChanges(chunkproviderserver_a1.chunk);
+-                this.level.timings.broadcastChunkUpdates.stopTiming(); // Paper - timing
+-            });
++            // Paper start - chunk tick iteration optimisations
++            this.level.timings.broadcastChunkUpdates.startTiming(); // Paper - timing
++            {
++                final it.unimi.dsi.fastutil.objects.ObjectArrayList<net.minecraft.server.level.ServerChunkCache.ChunkAndHolder> chunks = (it.unimi.dsi.fastutil.objects.ObjectArrayList<net.minecraft.server.level.ServerChunkCache.ChunkAndHolder>)list;
++                final ServerChunkCache.ChunkAndHolder[] raw = chunks.elements();
++                final int size = chunks.size();
++
++                Objects.checkFromToIndex(0, size, raw.length);
++                for (int idx = 0; idx < size; ++idx) {
++                    final ServerChunkCache.ChunkAndHolder holder = raw[idx];
++                    raw[idx] = null;
++
++                    holder.holder().broadcastChanges(holder.chunk());
++                }
++            }
++            this.level.timings.broadcastChunkUpdates.stopTiming(); // Paper - timing
++            // Paper end - chunk tick iteration optimisations
+             gameprofilerfiller.pop();
+             gameprofilerfiller.pop();
+         }
      }
  
      private void getFullChunk(long pos, Consumer<LevelChunk> chunkConsumer) {
