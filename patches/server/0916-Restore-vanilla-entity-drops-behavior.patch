@@ -9,10 +9,10 @@ on dropping the item instead of generalizing it for all dropped
 items like CB does.
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 2f880e10c73b48c4989c7623ea6cf368f4afb53a..7f83f40c76eac2ce5b053dc651224c44701613ea 100644
+index f56fc6bc4da573cd73c72e3c61a96c4f1eebeb94..e45567e8112483d947e2ff12c01219b85b09b205 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -975,20 +975,20 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+@@ -976,20 +976,20 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
          if (this.isRemoved()) {
              return;
          }
@@ -23,7 +23,7 @@ index 2f880e10c73b48c4989c7623ea6cf368f4afb53a..7f83f40c76eac2ce5b053dc651224c44
          if (!keepInventory) {
              for (ItemStack item : this.getInventory().getContents()) {
                  if (!item.isEmpty() && !EnchantmentHelper.has(item, EnchantmentEffectComponents.PREVENT_EQUIPMENT_DROP)) {
--                    loot.add(CraftItemStack.asCraftMirror(item));
+-                    loot.add(CraftItemStack.asCraftMirror(item).markForInventoryDrop());
 +                    loot.add(new DefaultDrop(item, stack -> this.drop(stack, true, false, false))); // Paper - Restore vanilla drops behavior; drop function taken from Inventory#dropAll (don't fire drop event)
                  }
              }
@@ -37,7 +37,7 @@ index 2f880e10c73b48c4989c7623ea6cf368f4afb53a..7f83f40c76eac2ce5b053dc651224c44
          loot.addAll(this.drops);
          this.drops.clear(); // SPIGOT-5188: make sure to clear
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 24aacf9997c9ea0bd68ef3803f4a3ee4a920ab44..363fe1aff439983199f5137547cef9516fbab2a8 100644
+index c199de89f5a3a54684800a3aa9043c0f2a511c8f..f19522287c55c2439789e37a03a68daaa3b6901f 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -2563,6 +2563,25 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
@@ -152,10 +152,10 @@ index 5bcb9a53ebebeef4bd6ec2458df4b63002ebd804..2f398750bfee5758ad8b1367b6fc1436
              }
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index e079e8f4078078d737a9d554dbcd2568b1a1f9eb..1d958323eccd4cf5e369e99e32d2f1dec0959591 100644
+index 6ca59ba6a713e452d146182d143b99b07696af8b..be1fa84dfdec0e31f9e2ca47ad3719dd6678b49c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -966,18 +966,24 @@ public class CraftEventFactory {
+@@ -969,18 +969,24 @@ public class CraftEventFactory {
      }
  
      public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, DamageSource damageSource) {
@@ -184,7 +184,7 @@ index e079e8f4078078d737a9d554dbcd2568b1a1f9eb..1d958323eccd4cf5e369e99e32d2f1de
          populateFields(victim, event); // Paper - make cancellable
          CraftWorld world = (CraftWorld) entity.getWorld();
          Bukkit.getServer().getPluginManager().callEvent(event);
-@@ -991,20 +997,24 @@ public class CraftEventFactory {
+@@ -994,20 +1000,24 @@ public class CraftEventFactory {
          victim.expToDrop = event.getDroppedExp();
          lootCheck.run(); // Paper - advancement triggers before destroying items
  
@@ -213,7 +213,7 @@ index e079e8f4078078d737a9d554dbcd2568b1a1f9eb..1d958323eccd4cf5e369e99e32d2f1de
          event.setKeepInventory(keepInventory);
          event.setKeepLevel(victim.keepLevel); // SPIGOT-2222: pre-set keepLevel
          populateFields(victim, event); // Paper - make cancellable
-@@ -1022,10 +1032,14 @@ public class CraftEventFactory {
+@@ -1025,16 +1035,14 @@ public class CraftEventFactory {
          victim.expToDrop = event.getDroppedExp();
          victim.newExp = event.getNewExp();
  
@@ -225,8 +225,46 @@ index e079e8f4078078d737a9d554dbcd2568b1a1f9eb..1d958323eccd4cf5e369e99e32d2f1de
 +            // Paper end - Restore vanilla drops behavior
              if (stack == null || stack.getType() == Material.AIR) continue;
  
--            victim.drop(CraftItemStack.asNMSCopy(stack), true, false, false); // SPIGOT-7800, SPIGOT-7801: Vanilla Behaviour for dropped items
+-            if (stack instanceof CraftItemStack craftItemStack && craftItemStack.isForInventoryDrop()) {
+-                victim.drop(CraftItemStack.asNMSCopy(stack), true, false, false); // SPIGOT-7800, SPIGOT-7801: Vanilla Behaviour for Player Inventory dropped items
+-            } else {
+-                victim.forceDrops = true;
+-                victim.spawnAtLocation(CraftItemStack.asNMSCopy(stack)); // SPIGOT-7806: Vanilla Behaviour for items not related to Player Inventory dropped items
+-                victim.forceDrops = false;
+-            }
 +            drop.runConsumer(entity.getWorld(), entity.getLocation()); // Paper - Restore vanilla drops behavior
          }
  
          return event;
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+index c5a09f086d35f84c0a30266f78e06e2dfb5603e6..f33742ee06e8443a5f5adaaa987d7523dc193b5a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+@@ -130,27 +130,6 @@ public final class CraftItemStack extends ItemStack {
+         this.setItemMeta(itemMeta);
+     }
+ 
+-    /**
+-     * Gets if the item is marked as an inventory drop in death events.
+-     *
+-     * @return true if the item is marked as an inventory drop
+-     */
+-    @ApiStatus.Internal
+-    public boolean isForInventoryDrop() {
+-        return this.isForInventoryDrop;
+-    }
+-
+-    /**
+-     * Marks this item as an inventory drop in death events.
+-     *
+-     * @return the ItemStack marked as an inventory drop
+-     */
+-    @ApiStatus.Internal
+-    public ItemStack markForInventoryDrop() {
+-        this.isForInventoryDrop = true;
+-        return this;
+-    }
+-
+     @Override
+     public MaterialData getData() {
+         return this.handle != null ? CraftMagicNumbers.getMaterialData(this.handle.getItem()) : super.getData();
