@@ -22720,13 +22720,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    private CompletableFuture<?> sendSync;
 -    private CompletableFuture<?> saveSync;
 +    // Paper - rewrite chunk system
- 
-     private final ChunkMap chunkMap; // Paper
- 
-@@ -0,0 +0,0 @@ public class ChunkHolder extends GenerationChunkHolder {
-     }
-     // Paper end
- 
++
 +    // Paper start - rewrite chunk system
 +    private ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder newChunkHolder;
 +
@@ -22819,7 +22813,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return true;
 +    }
 +    // Paper end - rewrite chunk system
-+
+ 
      public ChunkHolder(ChunkPos pos, int level, LevelHeightAccessor world, LevelLightEngine lightingProvider, ChunkHolder.LevelChangeListener levelUpdateListener, ChunkHolder.PlayerProvider playersWatchingChunkProvider) {
          super(pos);
 -        this.fullChunkFuture = ChunkHolder.UNLOADED_LEVEL_CHUNK_FUTURE;
@@ -22843,23 +22837,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper - rewrite chunk system
          this.setTicketLevel(level);
          this.changedBlocksPerSection = new ShortSet[world.getSectionsCount()];
-         this.chunkMap = (ChunkMap)playersWatchingChunkProvider; // Paper
-@@ -0,0 +0,0 @@ public class ChunkHolder extends GenerationChunkHolder {
- 
-     // Paper start
-     public @Nullable ChunkAccess getAvailableChunkNow() {
--        // TODO can we just getStatusFuture(EMPTY)?
--        for (ChunkStatus curr = ChunkStatus.FULL, next = curr.getParent(); curr != next; curr = next, next = next.getParent()) {
--            ChunkAccess chunkAccess = this.getChunkIfPresentUnchecked(curr);
--            if (chunkAccess == null) {
--                continue;
--            }
--            return chunkAccess;
--        }
--        return null;
-+        return this.getChunkIfPresent(ChunkStatus.EMPTY); // Paper - rewrite chunk system
      }
-     // Paper end
+@@ -0,0 +0,0 @@ public class ChunkHolder extends GenerationChunkHolder {
      // CraftBukkit start
      public LevelChunk getFullChunkNow() {
          // Note: We use the oldTicketLevel for isLoaded checks.
@@ -22871,17 +22850,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ChunkHolder extends GenerationChunkHolder {
      // CraftBukkit end
  
-     public final CompletableFuture<ChunkResult<LevelChunk>> getTickingChunkFuture() { // Paper - final for inline
+     public CompletableFuture<ChunkResult<LevelChunk>> getTickingChunkFuture() {
 -        return this.tickingChunkFuture;
 +        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
      }
  
-     public final CompletableFuture<ChunkResult<LevelChunk>> getEntityTickingChunkFuture() { // Paper - final for inline
+     public CompletableFuture<ChunkResult<LevelChunk>> getEntityTickingChunkFuture() {
 -        return this.entityTickingChunkFuture;
 +        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
      }
  
-     public final CompletableFuture<ChunkResult<LevelChunk>> getFullChunkFuture() { // Paper - final for inline
+     public CompletableFuture<ChunkResult<LevelChunk>> getFullChunkFuture() {
 -        return this.fullChunkFuture;
 +        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
      }
@@ -22927,9 +22906,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
  
      }
- 
-@@ -0,0 +0,0 @@ public class ChunkHolder extends GenerationChunkHolder {
-     // Paper end
  
      public CompletableFuture<?> getSaveSyncFuture() {
 -        return this.saveSync;
@@ -22989,7 +22965,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ChunkHolder extends GenerationChunkHolder {
  
      @Override
-     public final int getTicketLevel() { // Paper - final for inline
+     public int getTicketLevel() {
 -        return this.ticketLevel;
 +        return this.newChunkHolder.getTicketLevel(); // Paper - rewrite chunk system
      }
@@ -23467,9 +23443,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                    // Paper end
 -                }
 -
--                // Paper start
--                holder.onChunkAdd();
--                // Paper end
 -                this.updatingChunkMap.put(pos, holder);
 -                this.modified = true;
 -            }
@@ -23547,7 +23520,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                }
 -
 -                this.updatingChunkMap.remove(j);
--                playerchunk.onChunkRemove(); // Paper
 -                this.pendingUnloads.put(j, playerchunk);
 -                this.modified = true;
 -                ++i;

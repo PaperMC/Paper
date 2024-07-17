@@ -4854,100 +4854,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private int ticketLevel;
      private int queueLevel;
 @@ -0,0 +0,0 @@ public class ChunkHolder extends GenerationChunkHolder {
-     private CompletableFuture<?> sendSync;
-     private CompletableFuture<?> saveSync;
- 
-+    private final ChunkMap chunkMap; // Paper
-+
-+    // Paper start
-+    public void onChunkAdd() {
-+
-+    }
-+
-+    public void onChunkRemove() {
-+
-+    }
-+    // Paper end
-+
-     public ChunkHolder(ChunkPos pos, int level, LevelHeightAccessor world, LevelLightEngine lightingProvider, ChunkHolder.LevelChangeListener levelUpdateListener, ChunkHolder.PlayerProvider playersWatchingChunkProvider) {
-         super(pos);
-         this.fullChunkFuture = ChunkHolder.UNLOADED_LEVEL_CHUNK_FUTURE;
-@@ -0,0 +0,0 @@ public class ChunkHolder extends GenerationChunkHolder {
-         this.queueLevel = this.oldTicketLevel;
-         this.setTicketLevel(level);
-         this.changedBlocksPerSection = new ShortSet[world.getSectionsCount()];
-+        this.chunkMap = (ChunkMap)playersWatchingChunkProvider; // Paper
-     }
- 
-+    // Paper start
-+    public @Nullable ChunkAccess getAvailableChunkNow() {
-+        // TODO can we just getStatusFuture(EMPTY)?
-+        for (ChunkStatus curr = ChunkStatus.FULL, next = curr.getParent(); curr != next; curr = next, next = next.getParent()) {
-+            ChunkAccess chunkAccess = this.getChunkIfPresentUnchecked(curr);
-+            if (chunkAccess == null) {
-+                continue;
-+            }
-+            return chunkAccess;
-+        }
-+        return null;
-+    }
-+    // Paper end
-     // CraftBukkit start
-     public LevelChunk getFullChunkNow() {
-         // Note: We use the oldTicketLevel for isLoaded checks.
-@@ -0,0 +0,0 @@ public class ChunkHolder extends GenerationChunkHolder {
-     }
-     // CraftBukkit end
- 
--    public CompletableFuture<ChunkResult<LevelChunk>> getTickingChunkFuture() {
-+    public final CompletableFuture<ChunkResult<LevelChunk>> getTickingChunkFuture() { // Paper - final for inline
-         return this.tickingChunkFuture;
-     }
- 
--    public CompletableFuture<ChunkResult<LevelChunk>> getEntityTickingChunkFuture() {
-+    public final CompletableFuture<ChunkResult<LevelChunk>> getEntityTickingChunkFuture() { // Paper - final for inline
-         return this.entityTickingChunkFuture;
-     }
- 
--    public CompletableFuture<ChunkResult<LevelChunk>> getFullChunkFuture() {
-+    public final CompletableFuture<ChunkResult<LevelChunk>> getFullChunkFuture() { // Paper - final for inline
-         return this.fullChunkFuture;
      }
  
      @Nullable
 -    public LevelChunk getTickingChunk() {
 +    public final LevelChunk getTickingChunk() { // Paper - final for inline
          return (LevelChunk) ((ChunkResult) this.getTickingChunkFuture().getNow(ChunkHolder.UNLOADED_LEVEL_CHUNK)).orElse(null); // CraftBukkit - decompile error
-     }
- 
-@@ -0,0 +0,0 @@ public class ChunkHolder extends GenerationChunkHolder {
- 
-     }
- 
-+    // Paper start
-+    public @Nullable ChunkStatus getChunkHolderStatus() {
-+        for (ChunkStatus curr = ChunkStatus.FULL, next = curr.getParent(); curr != next; curr = next, next = next.getParent()) {
-+            ChunkAccess chunkAccess = this.getChunkIfPresentUnchecked(curr);
-+            if (chunkAccess == null) {
-+                continue;
-+            }
-+            return curr;
-+        }
-+
-+        return null;
-+    }
-+    // Paper end
-+
-     public CompletableFuture<?> getSaveSyncFuture() {
-         return this.saveSync;
-     }
-@@ -0,0 +0,0 @@ public class ChunkHolder extends GenerationChunkHolder {
-     }
- 
-     @Override
--    public int getTicketLevel() {
-+    public final int getTicketLevel() { // Paper - final for inline
-         return this.ticketLevel;
      }
  
 @@ -0,0 +0,0 @@ public class ChunkHolder extends GenerationChunkHolder {
@@ -5102,12 +5014,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    // Paper end
                  }
  
-+                // Paper start
-+                holder.onChunkAdd();
-+                // Paper end
                  this.updatingChunkMap.put(pos, holder);
-                 this.modified = true;
-             }
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
  
      protected void saveAllChunks(boolean flush) {
@@ -5135,14 +5042,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      private void processUnloads(BooleanSupplier shouldKeepTicking) {
-@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                 }
- 
-                 this.updatingChunkMap.remove(j);
-+                playerchunk.onChunkRemove(); // Paper
-                 this.pendingUnloads.put(j, playerchunk);
-                 this.modified = true;
-                 ++i;
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          }
  
@@ -5834,21 +5733,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
      @Override
--    public ChunkAccess getChunk(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
-+    public final ChunkAccess getChunk(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) { // Paper - final for inline
+     public ChunkAccess getChunk(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
 +        // Paper end
          ChunkAccess ichunkaccess = this.getChunkSource().getChunk(chunkX, chunkZ, leastStatus, create);
  
          if (ichunkaccess == null && create) {
-@@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
-     }
- 
-     @Override
--    public boolean setBlock(BlockPos pos, BlockState state, int flags) {
-+    public final boolean setBlock(BlockPos pos, BlockState state, int flags) { // Paper - final for inline
-         return this.setBlock(pos, state, flags, 512);
-     }
- 
 @@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          if (this.isOutsideBuildHeight(pos)) {
              return Blocks.VOID_AIR.defaultBlockState();
