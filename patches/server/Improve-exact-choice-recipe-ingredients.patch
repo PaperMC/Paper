@@ -9,6 +9,7 @@ and shapeless recipes.
 == AT ==
 public net.minecraft.world.item.ItemStackLinkedSet TYPE_AND_TAG
 public net.minecraft.world.entity.player.StackedContents put(II)V
+public net.minecraft.world.entity.player.StackedContents take(II)I
 
 diff --git a/src/main/java/io/papermc/paper/inventory/recipe/RecipeBookExactChoiceRecipe.java b/src/main/java/io/papermc/paper/inventory/recipe/RecipeBookExactChoiceRecipe.java
 new file mode 100644
@@ -54,6 +55,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.inventory.recipe;
 +
++import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
++import it.unimi.dsi.fastutil.ints.Int2IntMap;
++import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 +import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 +import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 +import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -68,13 +72,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.world.entity.player.StackedContents;
 +import net.minecraft.world.item.ItemStack;
 +import net.minecraft.world.item.ItemStackLinkedSet;
++import net.minecraft.world.item.crafting.CraftingInput;
 +import net.minecraft.world.item.crafting.Ingredient;
 +import net.minecraft.world.item.crafting.Recipe;
 +
 +public final class StackedContentsExtraMap {
 +
 +    private final AtomicInteger idCounter = new AtomicInteger(BuiltInRegistries.ITEM.size()); // start at max vanilla stacked contents idx
-+    private final Object2IntMap<ItemStack> exactChoiceIds = new Object2IntOpenCustomHashMap<>(ItemStackLinkedSet.TYPE_AND_TAG);
++    public final Object2IntMap<ItemStack> exactChoiceIds = new Object2IntOpenCustomHashMap<>(ItemStackLinkedSet.TYPE_AND_TAG);
 +    private final Int2ObjectMap<ItemStack> idToExactChoice = new Int2ObjectOpenHashMap<>();
 +    private final StackedContents contents;
 +    public final Map<Ingredient, IntList> extraStackingIds = new IdentityHashMap<>();
@@ -120,6 +125,32 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return this.idToExactChoice.get(id);
 +    }
 +
++    public Int2IntMap regularRemoved = new Int2IntArrayMap();
++    public void accountInput(final CraftingInput input) {
++        // similar logic to the CraftingInput constructor
++        for (final ItemStack item : input.items()) {
++            if (!item.isEmpty()) {
++                if (this.accountStack(item, 1)) {
++                    // remove one of the items if it was added to the contents as a non-extra item
++                    final int plainStackIdx = StackedContents.getStackingIndex(item);
++                    if (this.contents.take(plainStackIdx, 1) == plainStackIdx) {
++                        this.regularRemoved.put(plainStackIdx, 1);
++                    }
++                }
++            }
++        }
++    }
++
++    public void resetExtras() {
++        // clear previous extra ids
++        for (final int extraId : this.exactChoiceIds.values()) {
++            this.contents.contents.remove(extraId);
++        }
++        for (final Int2IntMap.Entry entry : this.regularRemoved.int2IntEntrySet()) {
++            this.contents.put(entry.getIntKey(), entry.getIntValue());
++        }
++    }
++
 +    public boolean accountStack(final ItemStack stack, final int count) {
 +        if (!this.exactChoiceIds.isEmpty()) {
 +            final int id = this.exactChoiceIds.getInt(stack);
@@ -150,7 +181,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.inventory = entity.getInventory();
              if (this.testClearGrid() || entity.isCreative()) {
                  this.stackedContents.clear();
-+                this.stackedContents.initialize(recipe.value()); // Paper - Improve exact choice recipe ingredients
++                this.stackedContents.initializeExtras(recipe.value(), null); // Paper - Improve exact choice recipe ingredients
                  entity.getInventory().fillStackedContents(this.stackedContents);
                  this.menu.fillCraftSlotsStackedContents(this.stackedContents);
                  if (this.stackedContents.canCraft(recipe.value(), null)) {
@@ -233,8 +264,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 +    // Paper start - Improve exact choice recipe ingredients
-+    public void initialize(final Recipe<?> recipe) {
++    public void initializeExtras(final Recipe<?> recipe, @Nullable final net.minecraft.world.item.crafting.CraftingInput input) {
 +        this.extrasMap = new io.papermc.paper.inventory.recipe.StackedContentsExtraMap(this, recipe);
++        if (input != null) this.extrasMap.accountInput(input);
++    }
++
++    public void resetExtras() {
++        if (this.extrasMap != null && !this.contents.isEmpty()) {
++            this.extrasMap.resetExtras();
++        }
++        this.extrasMap = null;
 +    }
 +
 +    public static ItemStack fromStackingIndexWithExtras(final int itemId, @Nullable final StackedContents contents) {
@@ -387,8 +426,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (input.size() == 1 && this.ingredients.size() == 1) {
 +            return this.ingredients.getFirst().test(input.getItem(0));
 +        }
-+        input.stackedContents().initialize(this); // setup stacked contents for this recipe
-+        return input.stackedContents().canCraft(this, null);
++        input.stackedContents().initializeExtras(this, input); // setup stacked contents for this recipe
++        final boolean canCraft = input.stackedContents().canCraft(this, null);
++        input.stackedContents().resetExtras();
++        return canCraft;
 +        // Paper end - unwrap ternary & better exact choice recipes
      }
  
