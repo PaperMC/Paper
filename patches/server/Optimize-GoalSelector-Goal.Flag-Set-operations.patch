@@ -16,12 +16,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  public abstract class Goal {
 -    private final EnumSet<Goal.Flag> flags = EnumSet.noneOf(Goal.Flag.class);
 +    private final EnumSet<Goal.Flag> flags = EnumSet.noneOf(Goal.Flag.class); // Paper unused, but dummy to prevent plugins from crashing as hard. Theyll need to support paper in a special case if this is super important, but really doesn't seem like it would be.
-+    private final com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<net.minecraft.world.entity.ai.goal.Goal.Flag> goalTypes = new com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<>(Goal.Flag.class); // Paper - remove streams from pathfindergoalselector
++    private final ca.spottedleaf.moonrise.common.set.OptimizedSmallEnumSet<net.minecraft.world.entity.ai.goal.Goal.Flag> goalTypes = new ca.spottedleaf.moonrise.common.set.OptimizedSmallEnumSet<>(Goal.Flag.class); // Paper - remove streams from pathfindergoalselector
 +
 +    // Paper start - remove streams from pathfindergoalselector; make sure types are not empty
 +    public Goal() {
 +        if (this.goalTypes.size() == 0) {
-+            this.goalTypes.add(Flag.UNKNOWN_BEHAVIOR);
++            this.goalTypes.addUnchecked(Flag.UNKNOWN_BEHAVIOR);
 +        }
 +    }
 +    // Paper end - remove streams from pathfindergoalselector
@@ -36,9 +36,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        this.flags.addAll(controls);
 +        // Paper start - remove streams from pathfindergoalselector
 +        this.goalTypes.clear();
-+        this.goalTypes.addAll(controls);
++        this.goalTypes.addAllUnchecked(controls);
 +        if (this.goalTypes.size() == 0) {
-+            this.goalTypes.add(Flag.UNKNOWN_BEHAVIOR);
++            this.goalTypes.addUnchecked(Flag.UNKNOWN_BEHAVIOR);
 +        }
 +        // Paper end - remove streams from pathfindergoalselector
      }
@@ -51,7 +51,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    public EnumSet<Goal.Flag> getFlags() {
 -        return this.flags;
 +    // Paper start - remove streams from pathfindergoalselector
-+    public com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<Goal.Flag> getFlags() {
++    public ca.spottedleaf.moonrise.common.set.OptimizedSmallEnumSet<Goal.Flag> getFlags() {
 +        return this.goalTypes;
 +        // Paper end - remove streams from pathfindergoalselector
      }
@@ -67,7 +67,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final Supplier<ProfilerFiller> profiler;
 -    private final EnumSet<Goal.Flag> disabledFlags = EnumSet.noneOf(Goal.Flag.class);
 +    private static final Goal.Flag[] GOAL_FLAG_VALUES = Goal.Flag.values(); // Paper - remove streams from pathfindergoalselector
-+    private final com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<net.minecraft.world.entity.ai.goal.Goal.Flag> goalTypes = new com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<>(Goal.Flag.class); // Paper - remove streams from pathfindergoalselector
++    private final ca.spottedleaf.moonrise.common.set.OptimizedSmallEnumSet<net.minecraft.world.entity.ai.goal.Goal.Flag> goalTypes = new ca.spottedleaf.moonrise.common.set.OptimizedSmallEnumSet<>(Goal.Flag.class); // Paper - remove streams from pathfindergoalselector
      private int curRate;
  
      public GoalSelector(Supplier<ProfilerFiller> profiler) {
@@ -84,7 +84,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -
 -        return false;
 +    // Paper start
-+    private static boolean goalContainsAnyFlags(WrappedGoal goal, com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<Goal.Flag> controls) {
++    private static boolean goalContainsAnyFlags(WrappedGoal goal, ca.spottedleaf.moonrise.common.set.OptimizedSmallEnumSet<Goal.Flag> controls) {
 +        return goal.getFlags().hasCommonElements(controls);
      }
  
@@ -94,7 +94,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        int wrappedGoalSize = goal.getFlags().size();
 +        for (int i = 0; i < wrappedGoalSize; ++i) {
 +            final Goal.Flag flag = GOAL_FLAG_VALUES[Long.numberOfTrailingZeros(flagIterator)];
-+            flagIterator ^= io.papermc.paper.util.IntegerUtil.getTrailingBit(flagIterator);
++            flagIterator ^= ca.spottedleaf.concurrentutil.util.IntegerUtil.getTrailingBit(flagIterator);
 +            // Paper end
              if (!goalsByControl.getOrDefault(flag, NO_GOAL).canBeReplacedBy(goal)) {
                  return false;
@@ -123,7 +123,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                int wrappedGoalSize = wrappedGoal2.getFlags().size();
 +                for (int i = 0; i < wrappedGoalSize; ++i) {
 +                    final Goal.Flag flag = GOAL_FLAG_VALUES[Long.numberOfTrailingZeros(flagIterator)];
-+                    flagIterator ^= io.papermc.paper.util.IntegerUtil.getTrailingBit(flagIterator);
++                    flagIterator ^= ca.spottedleaf.concurrentutil.util.IntegerUtil.getTrailingBit(flagIterator);
 +                    // Paper end
                      WrappedGoal wrappedGoal3 = this.lockedFlags.getOrDefault(flag, NO_GOAL);
                      wrappedGoal3.stop();
@@ -133,12 +133,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public void disableControlFlag(Goal.Flag control) {
 -        this.disabledFlags.add(control);
-+        this.goalTypes.add(control); // Paper - remove streams from pathfindergoalselector
++        this.goalTypes.addUnchecked(control); // Paper - remove streams from pathfindergoalselector
      }
  
      public void enableControlFlag(Goal.Flag control) {
 -        this.disabledFlags.remove(control);
-+        this.goalTypes.remove(control); // Paper - remove streams from pathfindergoalselector
++        this.goalTypes.removeUnchecked(control); // Paper - remove streams from pathfindergoalselector
      }
  
      public void setControlFlag(Goal.Flag control, boolean enabled) {
@@ -152,7 +152,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
 -    public EnumSet<Goal.Flag> getFlags() {
 +    // Paper start - remove streams from pathfindergoalselector
-+    public com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<Goal.Flag> getFlags() {
++    public ca.spottedleaf.moonrise.common.set.OptimizedSmallEnumSet<Goal.Flag> getFlags() {
          return this.goal.getFlags();
 +        // Paper end - remove streams from pathfindergoalselector
      }

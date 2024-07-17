@@ -9,9 +9,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         return this.nearbyPlayers;
      }
  
+     // Paper start
 +    // Paper start - Optional per player mob spawns
 +    public void updatePlayerMobTypeMap(final Entity entity) {
 +        if (!this.level.paperConfig().entities.spawning.perPlayerMobSpawns) {
@@ -19,14 +19,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        final int index = entity.getType().getCategory().ordinal();
 +
-+        final com.destroystokyo.paper.util.maplist.ReferenceList<ServerPlayer> inRange =
-+            this.getNearbyPlayers().getPlayers(entity.chunkPosition(), io.papermc.paper.util.player.NearbyPlayers.NearbyMapType.TICK_VIEW_DISTANCE);
++        final ca.spottedleaf.moonrise.common.list.ReferenceList<ServerPlayer> inRange =
++            this.level.moonrise$getNearbyPlayers().getPlayers(entity.chunkPosition(), ca.spottedleaf.moonrise.common.misc.NearbyPlayers.NearbyMapType.TICK_VIEW_DISTANCE);
 +        if (inRange == null) {
 +            return;
 +        }
-+        final Object[] backingSet = inRange.getRawData();
++        final ServerPlayer[] backingSet = inRange.getRawDataUnchecked();
 +        for (int i = 0, len = inRange.size(); i < len; i++) {
-+            ++((ServerPlayer)backingSet[i]).mobCounts[index];
++            ++(backingSet[i].mobCounts[index]);
 +        }
 +    }
      public int getMobCountNear(final ServerPlayer player, final net.minecraft.world.entity.MobCategory mobCategory) {
@@ -123,12 +123,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +            if (world.paperConfig().entities.spawning.perPlayerMobSpawns) {
 +                int minDiff = Integer.MAX_VALUE;
-+                final com.destroystokyo.paper.util.maplist.ReferenceList<net.minecraft.server.level.ServerPlayer> inRange =
-+                    world.chunkSource.chunkMap.getNearbyPlayers().getPlayers(chunk.getPos(), io.papermc.paper.util.player.NearbyPlayers.NearbyMapType.TICK_VIEW_DISTANCE);
++                final ca.spottedleaf.moonrise.common.list.ReferenceList<net.minecraft.server.level.ServerPlayer> inRange =
++                    world.moonrise$getNearbyPlayers().getPlayers(chunk.getPos(), ca.spottedleaf.moonrise.common.misc.NearbyPlayers.NearbyMapType.TICK_VIEW_DISTANCE);
 +                if (inRange != null) {
-+                    final Object[] backingSet = inRange.getRawData();
++                    final net.minecraft.server.level.ServerPlayer[] backingSet = inRange.getRawDataUnchecked();
 +                    for (int k = 0, len = inRange.size(); k < len; k++) {
-+                        minDiff = Math.min(limit - world.getChunkSource().chunkMap.getMobCountNear((net.minecraft.server.level.ServerPlayer)backingSet[k], enumcreaturetype), minDiff);
++                        minDiff = Math.min(limit - world.getChunkSource().chunkMap.getMobCountNear(backingSet[k], enumcreaturetype), minDiff);
 +                    }
 +                }
 +                difference = (minDiff == Integer.MAX_VALUE) ? 0 : minDiff;
