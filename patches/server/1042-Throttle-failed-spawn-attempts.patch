@@ -1,0 +1,117 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: froobynooby <froobynooby@froobworld.com>
+Date: Wed, 17 Jul 2024 18:46:11 +0930
+Subject: [PATCH] Throttle failed spawn attempts
+
+This patch adds the option to use longer ticks-per-spawn for a given
+mob type in chunks where spawn attempts are consecutively failing.
+
+This behaviour is particularly useful on servers where players build
+mob farms. Mob farm designs often require making surrounding chunks
+spawnproof, which causes the server to waste CPU cycles trying to spawn mobs in
+vain. Throttling spawn attempts in suspected spawnproof chunks improves
+performance without noticeably advantaging or disadvantaging the mob farm.
+
+diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
+index 7509b17414f836e8b53fc62b02b386ba4e8c5ca9..fe202580ce199417bab4cf458a6445a23c3fd4cb 100644
+--- a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
++++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
+@@ -186,6 +186,15 @@ public class WorldConfiguration extends ConfigurationPart {
+             @MergeMap
+             public Reference2IntMap<MobCategory> ticksPerSpawn = Util.make(new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length), map -> Arrays.stream(NaturalSpawner.SPAWNING_CATEGORIES).forEach(mobCategory -> map.put(mobCategory, -1)));
+ 
++            public SpawningThrottle spawningThrottle;
++
++            public class SpawningThrottle extends ConfigurationPart {
++                public int failedAttemptsThreshold = 1200;
++
++                @MergeMap
++                public Reference2IntMap<MobCategory> throttledTicksPerSpawn = Util.make(new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length), map -> Arrays.stream(NaturalSpawner.SPAWNING_CATEGORIES).forEach(mobCategory -> map.put(mobCategory, -1)));
++            }
++
+             @ConfigSerializable
+             public record DespawnRange(@Required int soft, @Required int hard) {
+             }
+diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
+index ed8032495af9ce9c23419224814b8d27e4a97c17..7eece3f7d7b2ea732502b03697ac3d843ee5e2b4 100644
+--- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
++++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
+@@ -140,8 +140,14 @@ public final class NaturalSpawner {
+             boolean spawnThisTick = true;
+             int limit = enumcreaturetype.getMaxInstancesPerChunk();
+             SpawnCategory spawnCategory = CraftSpawnCategory.toBukkit(enumcreaturetype);
++            // Paper start - throttle failed spawn attempts
++            long ticksPerSpawn = world.ticksPerSpawnCategory.getLong(spawnCategory);
++            if (chunk.failedSpawnAttempts.getOrDefault(enumcreaturetype, 0L) > world.paperConfig().entities.spawning.spawningThrottle.failedAttemptsThreshold) {
++                ticksPerSpawn = Math.max(ticksPerSpawn, world.paperConfig().entities.spawning.spawningThrottle.throttledTicksPerSpawn.getOrDefault(enumcreaturetype, -1));
++            }
++            // Paper end - throttle failed spawn attempts
+             if (CraftSpawnCategory.isValidForLimits(spawnCategory)) {
+-                spawnThisTick = world.ticksPerSpawnCategory.getLong(spawnCategory) != 0 && worlddata.getGameTime() % world.ticksPerSpawnCategory.getLong(spawnCategory) == 0;
++                spawnThisTick = world.ticksPerSpawnCategory.getLong(spawnCategory) != 0 && worlddata.getGameTime() % ticksPerSpawn == 0; // Paper - throttle failed spawn attempts
+                 limit = world.getWorld().getSpawnLimit(spawnCategory);
+             }
+ 
+@@ -178,6 +184,13 @@ public final class NaturalSpawner {
+                     difference, world.paperConfig().entities.spawning.perPlayerMobSpawns ? world.getChunkSource().chunkMap::updatePlayerMobTypeMap : null);
+                 info.mobCategoryCounts.mergeInt(enumcreaturetype, spawnCount, Integer::sum);
+                 // Paper end - Optional per player mob spawns
++                // Paper start - throttle failed spawn attempts
++                if (spawnCount == 0) {
++                    chunk.failedSpawnAttempts.compute(enumcreaturetype, (k, v) -> (v == null ? 0 : v) + 1);
++                } else {
++                    chunk.failedSpawnAttempts.put(enumcreaturetype, 0L);
++                }
++                // Paper end - throttle failed spawn attempts
+             }
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
+index 75c8125e20b70433fe9d143a3193d821043327c3..03463c0aa67773d1a8800662d1e72fe6c428a633 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
+@@ -84,6 +84,7 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom
+     public final Map<BlockPos, BlockEntity> blockEntities = new Object2ObjectOpenHashMap();
+     protected final LevelHeightAccessor levelHeightAccessor;
+     protected final LevelChunkSection[] sections;
++    public final Map<net.minecraft.world.entity.MobCategory, Long> failedSpawnAttempts = new java.util.EnumMap<>(net.minecraft.world.entity.MobCategory.class); // Paper - throttle failed spawn attempts
+ 
+     // CraftBukkit start - SPIGOT-6814: move to IChunkAccess to account for 1.17 to 1.18 chunk upgrading.
+     private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
+index ecf7ba97d397e15e4fcaf4c1e1f48bb7972e60dc..0cc8985da7c1463f8e42d9b57880b44b50483bce 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
+@@ -302,6 +302,16 @@ public class ChunkSerializer {
+                 ((ChunkAccess) object1).addPackedPostProcess(nbttaglist2.getShort(i1), j1);
+             }
+         }
++        // Paper start - throttle failed spawn attempts
++        if (nbt.contains("Paper.FailedSpawnAttempts", Tag.TAG_COMPOUND)) {
++            CompoundTag failedSpawnAttemptsTag = nbt.getCompound("Paper.FailedSpawnAttempts");
++            for (net.minecraft.world.entity.MobCategory mobCategory : net.minecraft.world.level.NaturalSpawner.SPAWNING_CATEGORIES) {
++                if (failedSpawnAttemptsTag.contains(mobCategory.getSerializedName(), Tag.TAG_LONG)) {
++                    ((ChunkAccess) object1).failedSpawnAttempts.put(mobCategory, failedSpawnAttemptsTag.getLong(mobCategory.getSerializedName()));
++                }
++            }
++        }
++        // Paper end - throttle failed spawn attempts
+ 
+         ca.spottedleaf.moonrise.patches.starlight.util.SaveUtil.loadLightHook(world, chunkPos, nbt, (ChunkAccess)object1); // Paper - rewrite chunk system - note: it's ok to pass the raw value instead of wrapped
+ 
+@@ -545,6 +555,15 @@ public class ChunkSerializer {
+             nbttagcompound.put("ChunkBukkitValues", chunk.persistentDataContainer.toTagCompound());
+         }
+         // CraftBukkit end
++        // Paper start - throttle failed spawn attempts
++        if (!chunk.failedSpawnAttempts.isEmpty()) {
++            CompoundTag failedSpawnAttemptsTag = new CompoundTag();
++            for (final Entry<net.minecraft.world.entity.MobCategory, Long> entry : chunk.failedSpawnAttempts.entrySet()) {
++                failedSpawnAttemptsTag.putLong(entry.getKey().getSerializedName(), entry.getValue());
++            }
++            nbttagcompound.put("Paper.FailedSpawnAttempts", failedSpawnAttemptsTag);
++        }
++        // Paper end
+         ca.spottedleaf.moonrise.patches.starlight.util.SaveUtil.saveLightHook(world, chunk, nbttagcompound); // Paper - rewrite chunk system
+         return nbttagcompound;
+     }
