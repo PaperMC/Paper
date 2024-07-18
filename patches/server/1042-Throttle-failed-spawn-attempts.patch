@@ -12,28 +12,8 @@ spawnproof, which causes the server to waste CPU cycles trying to spawn mobs in
 vain. Throttling spawn attempts in suspected spawnproof chunks improves
 performance without noticeably advantaging or disadvantaging the mob farm.
 
-diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
-index 7509b17414f836e8b53fc62b02b386ba4e8c5ca9..fe202580ce199417bab4cf458a6445a23c3fd4cb 100644
---- a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
-+++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
-@@ -186,6 +186,15 @@ public class WorldConfiguration extends ConfigurationPart {
-             @MergeMap
-             public Reference2IntMap<MobCategory> ticksPerSpawn = Util.make(new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length), map -> Arrays.stream(NaturalSpawner.SPAWNING_CATEGORIES).forEach(mobCategory -> map.put(mobCategory, -1)));
- 
-+            public SpawningThrottle spawningThrottle;
-+
-+            public class SpawningThrottle extends ConfigurationPart {
-+                public int failedAttemptsThreshold = 1200;
-+
-+                @MergeMap
-+                public Reference2IntMap<MobCategory> throttledTicksPerSpawn = Util.make(new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length), map -> Arrays.stream(NaturalSpawner.SPAWNING_CATEGORIES).forEach(mobCategory -> map.put(mobCategory, -1)));
-+            }
-+
-             @ConfigSerializable
-             public record DespawnRange(@Required int soft, @Required int hard) {
-             }
 diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-index ed8032495af9ce9c23419224814b8d27e4a97c17..7eece3f7d7b2ea732502b03697ac3d843ee5e2b4 100644
+index ed8032495af9ce9c23419224814b8d27e4a97c17..f0fb8d3d28615374df813fcebfb1ef1be3934777 100644
 --- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 @@ -140,8 +140,14 @@ public final class NaturalSpawner {
@@ -42,7 +22,7 @@ index ed8032495af9ce9c23419224814b8d27e4a97c17..7eece3f7d7b2ea732502b03697ac3d84
              SpawnCategory spawnCategory = CraftSpawnCategory.toBukkit(enumcreaturetype);
 +            // Paper start - throttle failed spawn attempts
 +            long ticksPerSpawn = world.ticksPerSpawnCategory.getLong(spawnCategory);
-+            if (chunk.failedSpawnAttempts.getOrDefault(enumcreaturetype, 0L) > world.paperConfig().entities.spawning.spawningThrottle.failedAttemptsThreshold) {
++            if (world.paperConfig().entities.spawning.spawningThrottle.failedAttemptsThreshold.test(threshold -> chunk.failedSpawnAttempts.getOrDefault(enumcreaturetype, 0L) > threshold)) {
 +                ticksPerSpawn = Math.max(ticksPerSpawn, world.paperConfig().entities.spawning.spawningThrottle.throttledTicksPerSpawn.getOrDefault(enumcreaturetype, -1));
 +            }
 +            // Paper end - throttle failed spawn attempts
