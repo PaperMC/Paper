@@ -175,15 +175,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 @@ -0,0 +0,0 @@ public class CraftScheduler implements BukkitScheduler {
-                             msg,
+                 try {
+                     task.run();
+                 } catch (final Throwable throwable) {
++                    // Paper start
++                    final String logMessage = String.format(
++                        "Task #%s for %s generated an exception",
++                        task.getTaskId(),
++                        task.getOwner().getDescription().getFullName());
+                     task.getOwner().getLogger().log(
+                             Level.WARNING,
+-                            String.format(
+-                                "Task #%s for %s generated an exception",
+-                                task.getTaskId(),
+-                                task.getOwner().getDescription().getFullName()),
++                        logMessage,
                              throwable);
-                     }
 +                    org.bukkit.Bukkit.getServer().getPluginManager().callEvent(
-+                        new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerSchedulerException(msg, throwable, task)));
-                     // Paper end
++                        new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerSchedulerException(logMessage, throwable, task)));
++                    // Paper end
                  } finally {
                      this.currentTask = null;
-@@ -0,0 +0,0 @@ public class CraftScheduler implements BukkitScheduler {
+                 }
                  this.parsePending();
              } else {
                  this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass()));

@@ -23167,25 +23167,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      @FunctionalInterface
-@@ -0,0 +0,0 @@ public class ChunkHolder extends GenerationChunkHolder {
- 
-     // Paper start
-     public final boolean isEntityTickingReady() {
--        return this.isEntityTickingReady;
-+        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
-     }
- 
-     public final boolean isTickingReady() {
--        return this.isTickingReady;
-+        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
-     }
- 
-     public final boolean isFullChunkReady() {
--        return this.isFullChunkReady;
-+        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
-     }
-     // Paper end
- }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkLevel.java b/src/main/java/net/minecraft/server/level/ChunkLevel.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkLevel.java
@@ -24206,7 +24187,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public class ChunkDistanceManager extends DistanceManager implements ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkSystemDistanceManager { // Paper - public // Paper - rewrite chunk system
  
          protected ChunkDistanceManager(final Executor workerExecutor, final Executor mainThreadExecutor) {
-             super(workerExecutor, mainThreadExecutor, ChunkMap.this); // Paper
+             super(workerExecutor, mainThreadExecutor);
          }
  
 +        // Paper start - rewrite chunk system
@@ -24349,39 +24330,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private long ticketTickCounter;
 -    public int simulationDistance = 10;
 +    // Paper - rewrite chunk system
-     private final ChunkMap chunkMap; // Paper
  
-+    // Paper start - rewrite chunk system
-+    public ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkHolderManager getChunkHolderManager() {
-+        return ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.moonrise$getChunkMap().level).moonrise$getChunkTaskScheduler().chunkHolderManager;
-+    }
-+    // Paper end - rewrite chunk system
-+    // Paper start - chunk tick iteration optimisation
-+    private final ca.spottedleaf.moonrise.common.misc.PositionCountingAreaMap<ServerPlayer> spawnChunkTracker = new ca.spottedleaf.moonrise.common.misc.PositionCountingAreaMap<>();
-+
-+    @Override
-+    public final void moonrise$addPlayer(final ServerPlayer player, final SectionPos pos) {
-+        this.spawnChunkTracker.add(player, pos.x(), pos.z(), ca.spottedleaf.moonrise.patches.chunk_tick_iteration.ChunkTickConstants.PLAYER_SPAWN_TRACK_RANGE);
-+    }
-+
-+    @Override
-+    public final void moonrise$removePlayer(final ServerPlayer player, final SectionPos pos) {
-+        this.spawnChunkTracker.remove(player);
-+    }
-+
-+    @Override
-+    public final void moonrise$updatePlayer(final ServerPlayer player,
-+                                            final SectionPos oldPos, final SectionPos newPos,
-+                                            final boolean oldIgnore, final boolean newIgnore) {
-+        if (newIgnore) {
-+            this.spawnChunkTracker.remove(player);
-+        } else {
-+            this.spawnChunkTracker.addOrUpdate(player, newPos.x(), newPos.z(), ca.spottedleaf.moonrise.patches.chunk_tick_iteration.ChunkTickConstants.PLAYER_SPAWN_TRACK_RANGE);
-+        }
-+    }
-+    // Paper end - chunk tick iteration optimisation
-+
-     protected DistanceManager(Executor workerExecutor, Executor mainThreadExecutor, ChunkMap chunkMap) {
+     protected DistanceManager(Executor workerExecutor, Executor mainThreadExecutor) {
          Objects.requireNonNull(mainThreadExecutor);
          ProcessorHandle<Runnable> mailbox = ProcessorHandle.of("player ticket throttler", mainThreadExecutor::execute);
          ChunkTaskPriorityQueueSorter chunktaskqueuesorter = new ChunkTaskPriorityQueueSorter(ImmutableList.of(mailbox), workerExecutor, 4);
@@ -24391,10 +24341,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        this.ticketThrottlerReleaser = chunktaskqueuesorter.getReleaseProcessor(mailbox);
 -        this.mainThreadExecutor = mainThreadExecutor;
 +        // Paper - rewrite chunk system
-         this.chunkMap = chunkMap; // Paper
      }
  
-     protected void purgeStaleTickets() {
+-    protected void purgeStaleTickets() {
 -        ++this.ticketTickCounter;
 -        ObjectIterator<Entry<SortedArraySet<Ticket<?>>>> objectiterator = this.tickets.long2ObjectEntrySet().fastIterator();
 -
@@ -24405,22 +24354,49 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -
 -            while (iterator.hasNext()) {
 -                Ticket<?> ticket = (Ticket) iterator.next();
--
++    // Paper start - rewrite chunk system
++    public ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkHolderManager getChunkHolderManager() {
++        return ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.moonrise$getChunkMap().level).moonrise$getChunkTaskScheduler().chunkHolderManager;
++    }
++    // Paper end - rewrite chunk system
++    // Paper start - chunk tick iteration optimisation
++    private final ca.spottedleaf.moonrise.common.misc.PositionCountingAreaMap<ServerPlayer> spawnChunkTracker = new ca.spottedleaf.moonrise.common.misc.PositionCountingAreaMap<>();
+ 
 -                if (ticket.timedOut(this.ticketTickCounter)) {
 -                    iterator.remove();
 -                    flag = true;
 -                    this.tickingTicketsTracker.removeTicket(entry.getLongKey(), ticket);
 -                }
 -            }
--
++    @Override
++    public final void moonrise$addPlayer(final ServerPlayer player, final SectionPos pos) {
++        this.spawnChunkTracker.add(player, pos.x(), pos.z(), ca.spottedleaf.moonrise.patches.chunk_tick_iteration.ChunkTickConstants.PLAYER_SPAWN_TRACK_RANGE);
++    }
+ 
 -            if (flag) {
 -                this.ticketTracker.update(entry.getLongKey(), DistanceManager.getTicketLevelAt((SortedArraySet) entry.getValue()), false);
 -            }
--
++    @Override
++    public final void moonrise$removePlayer(final ServerPlayer player, final SectionPos pos) {
++        this.spawnChunkTracker.remove(player);
++    }
+ 
 -            if (((SortedArraySet) entry.getValue()).isEmpty()) {
 -                objectiterator.remove();
 -            }
--        }
++    @Override
++    public final void moonrise$updatePlayer(final ServerPlayer player,
++                                            final SectionPos oldPos, final SectionPos newPos,
++                                            final boolean oldIgnore, final boolean newIgnore) {
++        if (newIgnore) {
++            this.spawnChunkTracker.remove(player);
++        } else {
++            this.spawnChunkTracker.addOrUpdate(player, newPos.x(), newPos.z(), ca.spottedleaf.moonrise.patches.chunk_tick_iteration.ChunkTickConstants.PLAYER_SPAWN_TRACK_RANGE);
+         }
++    }
++    // Paper end - chunk tick iteration optimisation
++
++    protected void purgeStaleTickets() {
 +        this.getChunkHolderManager().tick(); // Paper - rewrite chunk system
  
      }

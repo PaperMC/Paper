@@ -4083,48 +4083,36 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.util;
 +
-+import com.google.common.collect.ImmutableList;
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
 +import io.papermc.paper.math.BlockPosition;
 +import io.papermc.paper.math.FinePosition;
 +import io.papermc.paper.math.Position;
-+import it.unimi.dsi.fastutil.objects.ObjectRBTreeSet;
-+import java.lang.ref.Cleaner;
-+import net.minecraft.core.BlockPos;
-+import net.minecraft.core.Direction;
-+import net.minecraft.core.Vec3i;
-+import net.minecraft.server.MinecraftServer;
-+import net.minecraft.server.level.ServerLevel;
-+import net.minecraft.world.entity.Entity;
-+import net.minecraft.world.level.ChunkPos;
-+import net.minecraft.world.level.ClipContext;
-+import net.minecraft.world.level.Level;
-+import net.minecraft.world.phys.Vec3;
-+import org.apache.commons.lang.exception.ExceptionUtils;
-+import org.bukkit.Location;
-+import org.bukkit.block.BlockFace;
-+import org.bukkit.craftbukkit.CraftWorld;
-+import org.bukkit.craftbukkit.util.Waitable;
-+import org.jetbrains.annotations.NotNull;
-+import org.spigotmc.AsyncCatcher;
-+
-+import javax.annotation.Nonnull;
-+import javax.annotation.Nullable;
 +import java.util.List;
-+import java.util.Queue;
 +import java.util.concurrent.CompletableFuture;
 +import java.util.concurrent.ExecutionException;
 +import java.util.concurrent.LinkedBlockingQueue;
 +import java.util.concurrent.ThreadPoolExecutor;
 +import java.util.concurrent.TimeUnit;
-+import java.util.concurrent.TimeoutException;
-+import java.util.concurrent.atomic.AtomicBoolean;
 +import java.util.function.BiConsumer;
 +import java.util.function.Consumer;
-+import java.util.function.Predicate;
 +import java.util.function.Supplier;
++import net.minecraft.core.BlockPos;
++import net.minecraft.core.Vec3i;
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.world.level.ChunkPos;
++import net.minecraft.world.level.Level;
++import net.minecraft.world.phys.Vec3;
++import org.bukkit.Location;
++import org.bukkit.craftbukkit.util.Waitable;
 +
 +public final class MCUtil {
++    public static final java.util.concurrent.Executor MAIN_EXECUTOR = (run) -> {
++        if (!isMainThread()) {
++            MinecraftServer.getServer().execute(run);
++        } else {
++            run.run();
++        }
++    };
 +    public static final ThreadPoolExecutor asyncExecutor = new ThreadPoolExecutor(
 +        0, 2, 60L, TimeUnit.SECONDS,
 +        new LinkedBlockingQueue<>(),
@@ -4133,79 +4121,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            .setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(MinecraftServer.LOGGER))
 +            .build()
 +    );
-+    public static final ThreadPoolExecutor cleanerExecutor = new ThreadPoolExecutor(
-+        1, 1, 0L, TimeUnit.SECONDS,
-+        new LinkedBlockingQueue<>(),
-+        new ThreadFactoryBuilder()
-+            .setNameFormat("Paper Object Cleaner")
-+            .setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(MinecraftServer.LOGGER))
-+            .build()
-+    );
 +
-+    public static final long INVALID_CHUNK_KEY = getCoordinateKey(Integer.MAX_VALUE, Integer.MAX_VALUE);
-+
-+
-+    public static Runnable once(Runnable run) {
-+        AtomicBoolean ran = new AtomicBoolean(false);
-+        return () -> {
-+            if (ran.compareAndSet(false, true)) {
-+                run.run();
-+            }
-+        };
-+    }
-+
-+    public static <T> Runnable once(List<T> list, Consumer<T> cb) {
-+        return once(() -> {
-+            list.forEach(cb);
-+        });
-+    }
-+
-+    private static Runnable makeCleanerCallback(Runnable run) {
-+        return once(() -> cleanerExecutor.execute(run));
-+    }
-+
-+    /**
-+     * DANGER WILL ROBINSON: Be sure you do not use a lambda that lives in the object being monitored, or leaky leaky!
-+     * @param obj
-+     * @param run
-+     * @return
-+     */
-+    public static Runnable registerCleaner(Object obj, Runnable run) {
-+        // Wrap callback in its own method above or the lambda will leak object
-+        Runnable cleaner = makeCleanerCallback(run);
-+        CleanerHolder.CLEANER.register(obj, cleaner);
-+        return cleaner;
-+    }
-+
-+    private static final class CleanerHolder {
-+        private static final Cleaner CLEANER = Cleaner.create();
-+    }
-+
-+    /**
-+     * DANGER WILL ROBINSON: Be sure you do not use a lambda that lives in the object being monitored, or leaky leaky!
-+     * @param obj
-+     * @param list
-+     * @param cleaner
-+     * @param <T>
-+     * @return
-+     */
-+    public static <T> Runnable registerListCleaner(Object obj, List<T> list, Consumer<T> cleaner) {
-+        return registerCleaner(obj, () -> {
-+            list.forEach(cleaner);
-+            list.clear();
-+        });
-+    }
-+
-+    /**
-+     * DANGER WILL ROBINSON: Be sure you do not use a lambda that lives in the object being monitored, or leaky leaky!
-+     * @param obj
-+     * @param resource
-+     * @param cleaner
-+     * @param <T>
-+     * @return
-+     */
-+    public static <T> Runnable registerCleaner(Object obj, T resource, java.util.function.Consumer<T> cleaner) {
-+        return registerCleaner(obj, () -> cleaner.accept(resource));
++    private MCUtil() {
 +    }
 +
 +    public static List<ChunkPos> getSpiralOutChunks(BlockPos blockposition, int radius) {
@@ -4231,115 +4148,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return list;
 +    }
 +
-+    public static int fastFloor(double x) {
-+        int truncated = (int)x;
-+        return x < (double)truncated ? truncated - 1 : truncated;
-+    }
-+
-+    public static int fastFloor(float x) {
-+        int truncated = (int)x;
-+        return x < (double)truncated ? truncated - 1 : truncated;
-+    }
-+
-+    public static float normalizeYaw(float f) {
-+        float f1 = f % 360.0F;
-+
-+        if (f1 >= 180.0F) {
-+            f1 -= 360.0F;
-+        }
-+
-+        if (f1 < -180.0F) {
-+            f1 += 360.0F;
-+        }
-+
-+        return f1;
-+    }
-+
-+    /**
-+     * Quickly generate a stack trace for current location
-+     *
-+     * @return Stacktrace
-+     */
-+    public static String stack() {
-+        return ExceptionUtils.getFullStackTrace(new Throwable());
-+    }
-+
-+    /**
-+     * Quickly generate a stack trace for current location with message
-+     *
-+     * @param str
-+     * @return Stacktrace
-+     */
-+    public static String stack(String str) {
-+        return ExceptionUtils.getFullStackTrace(new Throwable(str));
-+    }
-+
-+    public static long getCoordinateKey(final BlockPos blockPos) {
-+        return ((long)(blockPos.getZ() >> 4) << 32) | ((blockPos.getX() >> 4) & 0xFFFFFFFFL);
-+    }
-+
-+    public static long getCoordinateKey(final Entity entity) {
-+        return ((long)(MCUtil.fastFloor(entity.getZ()) >> 4) << 32) | ((MCUtil.fastFloor(entity.getX()) >> 4) & 0xFFFFFFFFL);
-+    }
-+
-+    public static long getCoordinateKey(final ChunkPos pair) {
-+        return ((long)pair.z << 32) | (pair.x & 0xFFFFFFFFL);
-+    }
-+
-+    public static long getCoordinateKey(final int x, final int z) {
-+        return ((long)z << 32) | (x & 0xFFFFFFFFL);
-+    }
-+
-+    public static int getCoordinateX(final long key) {
-+        return (int)key;
-+    }
-+
-+    public static int getCoordinateZ(final long key) {
-+        return (int)(key >>> 32);
-+    }
-+
-+    public static int getChunkCoordinate(final double coordinate) {
-+        return MCUtil.fastFloor(coordinate) >> 4;
-+    }
-+
-+    public static int getBlockCoordinate(final double coordinate) {
-+        return MCUtil.fastFloor(coordinate);
-+    }
-+
-+    public static long getBlockKey(final int x, final int y, final int z) {
-+        return ((long)x & 0x7FFFFFF) | (((long)z & 0x7FFFFFF) << 27) | ((long)y << 54);
-+    }
-+
-+    public static long getBlockKey(final BlockPos pos) {
-+        return ((long)pos.getX() & 0x7FFFFFF) | (((long)pos.getZ() & 0x7FFFFFF) << 27) | ((long)pos.getY() << 54);
-+    }
-+
-+    public static long getBlockKey(final Entity entity) {
-+        return getBlockKey(getBlockCoordinate(entity.getX()), getBlockCoordinate(entity.getY()), getBlockCoordinate(entity.getZ()));
-+    }
-+
-+    // assumes the sets have the same comparator, and if this comparator is null then assume T is Comparable
-+    public static <T> void mergeSortedSets(final java.util.function.Consumer<T> consumer, final java.util.Comparator<? super T> comparator, final java.util.SortedSet<T>...sets) {
-+        final ObjectRBTreeSet<T> all = new ObjectRBTreeSet<>(comparator);
-+        // note: this is done in log(n!) ~ nlogn time. It could be improved if it were to mimic what mergesort does.
-+        for (java.util.SortedSet<T> set : sets) {
-+            if (set != null) {
-+                all.addAll(set);
-+            }
-+        }
-+        all.forEach(consumer);
-+    }
-+
-+    private MCUtil() {}
-+
-+    public static final java.util.concurrent.Executor MAIN_EXECUTOR = (run) -> {
-+        if (!isMainThread()) {
-+            MinecraftServer.getServer().execute(run);
-+        } else {
-+            run.run();
-+        }
-+    };
-+
 +    public static <T> CompletableFuture<T> ensureMain(CompletableFuture<T> future) {
 +        return future.thenApplyAsync(r -> r, MAIN_EXECUTOR);
 +    }
@@ -4347,6 +4155,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public static <T> void thenOnMain(CompletableFuture<T> future, Consumer<T> consumer) {
 +        future.thenAcceptAsync(consumer, MAIN_EXECUTOR);
 +    }
++
 +    public static <T> void thenOnMain(CompletableFuture<T> future, BiConsumer<T, Throwable> consumer) {
 +        future.whenCompleteAsync(consumer, MAIN_EXECUTOR);
 +    }
@@ -4355,87 +4164,43 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return MinecraftServer.getServer().isSameThread();
 +    }
 +
-+    public static org.bukkit.scheduler.BukkitTask scheduleTask(int ticks, Runnable runnable) {
-+        return scheduleTask(ticks, runnable, null);
-+    }
-+
-+    public static org.bukkit.scheduler.BukkitTask scheduleTask(int ticks, Runnable runnable, String taskName) {
-+        return MinecraftServer.getServer().server.getScheduler().scheduleInternalTask(runnable, ticks, taskName);
-+    }
-+
-+    public static void processQueue() {
-+        Runnable runnable;
-+        Queue<Runnable> processQueue = getProcessQueue();
-+        while ((runnable = processQueue.poll()) != null) {
-+            try {
-+                runnable.run();
-+            } catch (Exception e) {
-+                MinecraftServer.LOGGER.error("Error executing task", e);
-+            }
-+        }
-+    }
-+    public static <T> T processQueueWhileWaiting(CompletableFuture <T> future) {
-+        try {
-+            if (isMainThread()) {
-+                while (!future.isDone()) {
-+                    try {
-+                        return future.get(1, TimeUnit.MILLISECONDS);
-+                    } catch (TimeoutException ignored) {
-+                        processQueue();
-+                    }
-+                }
-+            }
-+            return future.get();
-+        } catch (Exception e) {
-+            throw new RuntimeException(e);
-+        }
-+    }
-+
 +    public static void ensureMain(Runnable run) {
 +        ensureMain(null, run);
 +    }
++
 +    /**
-+     * Ensures the target code is running on the main thread
-+     * @param reason
-+     * @param run
++     * Ensures the target code is running on the main thread.
 +     */
 +    public static void ensureMain(String reason, Runnable run) {
 +        if (!isMainThread()) {
 +            if (reason != null) {
 +                MinecraftServer.LOGGER.warn("Asynchronous " + reason + "!", new IllegalStateException());
 +            }
-+            getProcessQueue().add(run);
++            MinecraftServer.getServer().processQueue.add(run);
 +            return;
 +        }
 +        run.run();
 +    }
 +
-+    private static Queue<Runnable> getProcessQueue() {
-+        return MinecraftServer.getServer().processQueue;
-+    }
-+
 +    public static <T> T ensureMain(Supplier<T> run) {
 +        return ensureMain(null, run);
 +    }
++
 +    /**
-+     * Ensures the target code is running on the main thread
-+     * @param reason
-+     * @param run
-+     * @param <T>
-+     * @return
++     * Ensures the target code is running on the main thread.
 +     */
 +    public static <T> T ensureMain(String reason, Supplier<T> run) {
 +        if (!isMainThread()) {
 +            if (reason != null) {
 +                MinecraftServer.LOGGER.warn("Asynchronous " + reason + "! Blocking thread until it returns ", new IllegalStateException());
 +            }
-+            Waitable<T> wait = new Waitable<T>() {
++            Waitable<T> wait = new Waitable<>() {
 +                @Override
 +                protected T evaluate() {
 +                    return run.get();
 +                }
 +            };
-+            getProcessQueue().add(wait);
++            MinecraftServer.getServer().processQueue.add(wait);
 +            try {
 +                return wait.get();
 +            } catch (InterruptedException | ExecutionException e) {
@@ -4446,104 +4211,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return run.get();
 +    }
 +
-+    /**
-+     * Calculates distance between 2 entities
-+     * @param e1
-+     * @param e2
-+     * @return
-+     */
-+    public static double distance(Entity e1, Entity e2) {
-+        return Math.sqrt(distanceSq(e1, e2));
-+    }
-+
-+
-+    /**
-+     * Calculates distance between 2 block positions
-+     * @param e1
-+     * @param e2
-+     * @return
-+     */
-+    public static double distance(BlockPos e1, BlockPos e2) {
-+        return Math.sqrt(distanceSq(e1, e2));
-+    }
-+
-+    /**
-+     * Gets the distance between 2 positions
-+     * @param x1
-+     * @param y1
-+     * @param z1
-+     * @param x2
-+     * @param y2
-+     * @param z2
-+     * @return
-+     */
 +    public static double distance(double x1, double y1, double z1, double x2, double y2, double z2) {
 +        return Math.sqrt(distanceSq(x1, y1, z1, x2, y2, z2));
 +    }
 +
-+    /**
-+     * Get's the distance squared between 2 entities
-+     * @param e1
-+     * @param e2
-+     * @return
-+     */
-+    public static double distanceSq(Entity e1, Entity e2) {
-+        return distanceSq(e1.getX(),e1.getY(),e1.getZ(), e2.getX(),e2.getY(),e2.getZ());
-+    }
-+
-+    /**
-+     * Gets the distance sqaured between 2 block positions
-+     * @param pos1
-+     * @param pos2
-+     * @return
-+     */
-+    public static double distanceSq(BlockPos pos1, BlockPos pos2) {
-+        return distanceSq(pos1.getX(), pos1.getY(), pos1.getZ(), pos2.getX(), pos2.getY(), pos2.getZ());
-+    }
-+
-+    /**
-+     * Gets the distance squared between 2 positions
-+     * @param x1
-+     * @param y1
-+     * @param z1
-+     * @param x2
-+     * @param y2
-+     * @param z2
-+     * @return
-+     */
 +    public static double distanceSq(double x1, double y1, double z1, double x2, double y2, double z2) {
 +        return (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2) + (z1 - z2) * (z1 - z2);
 +    }
 +
-+    /**
-+     * Converts a NMS World/BlockPosition to Bukkit Location
-+     * @param world
-+     * @param x
-+     * @param y
-+     * @param z
-+     * @return
-+     */
 +    public static Location toLocation(Level world, double x, double y, double z) {
 +        return new Location(world.getWorld(), x, y, z);
 +    }
 +
-+    /**
-+     * Converts a NMS World/BlockPosition to Bukkit Location
-+     * @param world
-+     * @param pos
-+     * @return
-+     */
 +    public static Location toLocation(Level world, BlockPos pos) {
 +        return new Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ());
-+    }
-+
-+    /**
-+     * Converts an NMS entity's current location to a Bukkit Location
-+     * @param entity
-+     * @return
-+     */
-+    public static Location toLocation(Entity entity) {
-+        return new Location(entity.getCommandSenderWorld().getWorld(), entity.getX(), entity.getY(), entity.getZ());
 +    }
 +
 +    public static BlockPos toBlockPosition(Location loc) {
@@ -4572,63 +4253,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return (modX == 0 || modX == 15 || modZ == 0 || modZ == 15);
 +    }
 +
-+    /**
-+     * Posts a task to be executed asynchronously
-+     * @param run
-+     */
 +    public static void scheduleAsyncTask(Runnable run) {
 +        asyncExecutor.execute(run);
-+    }
-+
-+    @Nonnull
-+    public static ServerLevel getNMSWorld(@Nonnull org.bukkit.World world) {
-+        return ((CraftWorld) world).getHandle();
-+    }
-+
-+    public static ServerLevel getNMSWorld(@Nonnull org.bukkit.entity.Entity entity) {
-+        return getNMSWorld(entity.getWorld());
-+    }
-+
-+    public static BlockFace toBukkitBlockFace(Direction enumDirection) {
-+        switch (enumDirection) {
-+            case DOWN:
-+                return BlockFace.DOWN;
-+            case UP:
-+                return BlockFace.UP;
-+            case NORTH:
-+                return BlockFace.NORTH;
-+            case SOUTH:
-+                return BlockFace.SOUTH;
-+            case WEST:
-+                return BlockFace.WEST;
-+            case EAST:
-+                return BlockFace.EAST;
-+            default:
-+                return null;
-+        }
-+    }
-+
-+    @NotNull
-+    public static <T> List<T> copyListAndAdd(@NotNull final List<T> original,
-+                                             @NotNull final T newElement) {
-+        return ImmutableList.<T>builderWithExpectedSize(original.size() + 1)
-+            .addAll(original)
-+            .add(newElement)
-+            .build();
-+    }
-+
-+    @NotNull
-+    public static <T> List<T> copyListAndRemoveIf(@NotNull final List<T> original,
-+                                                  @NotNull final Predicate<T> removalPredicate) {
-+        final ImmutableList.Builder<T> builder = ImmutableList.builderWithExpectedSize(original.size());
-+        for (int i = 0; i < original.size(); i++) {
-+            final T value = original.get(i);
-+            if (removalPredicate.test(value)) continue;
-+
-+            builder.add(value);
-+        }
-+
-+        return builder.build();
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/util/StackWalkerUtil.java b/src/main/java/io/papermc/paper/util/StackWalkerUtil.java
@@ -4678,15 +4304,6 @@ diff --git a/src/main/java/net/minecraft/nbt/CompoundTag.java b/src/main/java/ne
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/nbt/CompoundTag.java
 +++ b/src/main/java/net/minecraft/nbt/CompoundTag.java
-@@ -0,0 +0,0 @@ public class CompoundTag implements Tag {
-             return "TAG_Compound";
-         }
-     };
--    private final Map<String, Tag> tags;
-+    public final Map<String, Tag> tags; // Paper
- 
-     protected CompoundTag(Map<String, Tag> entries) {
-         this.tags = entries;
 @@ -0,0 +0,0 @@ public class CompoundTag implements Tag {
          this.tags.put(key, NbtUtils.createUUID(value));
      }
@@ -4944,25 +4561,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.entityTickingChunkFuture = ChunkHolder.UNLOADED_LEVEL_CHUNK_FUTURE;
          }
  
-@@ -0,0 +0,0 @@ public class ChunkHolder extends GenerationChunkHolder {
- 
-         List<ServerPlayer> getPlayers(ChunkPos chunkPos, boolean onlyOnWatchDistanceEdge);
-     }
-+
-+    // Paper start
-+    public final boolean isEntityTickingReady() {
-+        return this.isEntityTickingReady;
-+    }
-+
-+    public final boolean isTickingReady() {
-+        return this.isTickingReady;
-+    }
-+
-+    public final boolean isFullChunkReady() {
-+        return this.isFullChunkReady;
-+    }
-+    // Paper end
- }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
@@ -5135,34 +4733,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public class ChunkDistanceManager extends DistanceManager { // Paper - public
  
          protected ChunkDistanceManager(final Executor workerExecutor, final Executor mainThreadExecutor) {
--            super(workerExecutor, mainThreadExecutor);
-+            super(workerExecutor, mainThreadExecutor, ChunkMap.this); // Paper
-         }
- 
-         @Override
+             super(workerExecutor, mainThreadExecutor);
 diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/DistanceManager.java
 +++ b/src/main/java/net/minecraft/server/level/DistanceManager.java
-@@ -0,0 +0,0 @@ public abstract class DistanceManager {
-     final Executor mainThreadExecutor;
-     private long ticketTickCounter;
-     public int simulationDistance = 10;
-+    private final ChunkMap chunkMap; // Paper
- 
--    protected DistanceManager(Executor workerExecutor, Executor mainThreadExecutor) {
-+    protected DistanceManager(Executor workerExecutor, Executor mainThreadExecutor, ChunkMap chunkMap) {
-         Objects.requireNonNull(mainThreadExecutor);
-         ProcessorHandle<Runnable> mailbox = ProcessorHandle.of("player ticket throttler", mainThreadExecutor::execute);
-         ChunkTaskPriorityQueueSorter chunktaskqueuesorter = new ChunkTaskPriorityQueueSorter(ImmutableList.of(mailbox), workerExecutor, 4);
-@@ -0,0 +0,0 @@ public abstract class DistanceManager {
-         this.ticketThrottlerInput = chunktaskqueuesorter.getProcessor(mailbox, true);
-         this.ticketThrottlerReleaser = chunktaskqueuesorter.getReleaseProcessor(mailbox);
-         this.mainThreadExecutor = mainThreadExecutor;
-+        this.chunkMap = chunkMap; // Paper
-     }
- 
-     protected void purgeStaleTickets() {
 @@ -0,0 +0,0 @@ public abstract class DistanceManager {
      }
  
@@ -5451,10 +5026,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
      }
 +    // Paper start
-+    public void scheduleOnMain(Runnable r0) {
++    public void scheduleOnMain(Runnable runnable) {
 +        // postToMainThread does not work the same as older versions of mc
 +        // This method is actually used to create a TickTask, which can then be posted onto main
-+        this.tell(this.wrapRunnable(r0));
++        this.tell(this.wrapRunnable(runnable));
 +    }
 +    // Paper end
  
@@ -5488,44 +5063,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public float getBukkitYaw() {
-diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/entity/Mob.java
-+++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -0,0 +0,0 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
-         return this.target;
-     }
- 
-+    public org.bukkit.craftbukkit.entity.CraftMob getBukkitMob() { return (org.bukkit.craftbukkit.entity.CraftMob) super.getBukkitEntity(); } // Paper
-+
-     @Nullable
-     protected final LivingEntity getTargetFromBrain() {
-         return (LivingEntity) this.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null); // CraftBukkit - decompile error
-diff --git a/src/main/java/net/minecraft/world/entity/PathfinderMob.java b/src/main/java/net/minecraft/world/entity/PathfinderMob.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/entity/PathfinderMob.java
-+++ b/src/main/java/net/minecraft/world/entity/PathfinderMob.java
-@@ -0,0 +0,0 @@ public abstract class PathfinderMob extends Mob {
-         super(type, world);
-     }
- 
-+    public org.bukkit.craftbukkit.entity.CraftCreature getBukkitCreature() { return (org.bukkit.craftbukkit.entity.CraftCreature) super.getBukkitEntity(); } // Paper
-+
-     public float getWalkTargetValue(BlockPos pos) {
-         return this.getWalkTargetValue(pos, this.level());
-     }
-diff --git a/src/main/java/net/minecraft/world/entity/monster/Monster.java b/src/main/java/net/minecraft/world/entity/monster/Monster.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/entity/monster/Monster.java
-+++ b/src/main/java/net/minecraft/world/entity/monster/Monster.java
-@@ -0,0 +0,0 @@ import net.minecraft.world.level.ServerLevelAccessor;
- import net.minecraft.world.level.dimension.DimensionType;
- 
- public abstract class Monster extends PathfinderMob implements Enemy {
-+    public org.bukkit.craftbukkit.entity.CraftMonster getBukkitMonster() { return (org.bukkit.craftbukkit.entity.CraftMonster) super.getBukkitEntity(); } // Paper
-     protected Monster(EntityType<? extends Monster> type, Level world) {
-         super(type, world);
-         this.xpReward = 5;
 diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
@@ -5821,13 +5358,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
          }
  
-+        // Paper start
-+        protected boolean shapeExceedsCube = true;
-+        public final boolean shapeExceedsCube() {
-+            return this.shapeExceedsCube;
-+        }
-+        // Paper end
-+
++        protected boolean shapeExceedsCube = true; // Paper - moved from actual method to here
          public void initCache() {
              this.fluidState = ((Block) this.owner).getFluidState(this.asState());
              this.isRandomlyTicking = ((Block) this.owner).isRandomlyTicking(this.asState());
@@ -6189,265 +5720,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static net.minecraft.world.item.ItemStack asNMSCopy(ItemStack original) {
          if (original instanceof CraftItemStack) {
              CraftItemStack stack = (CraftItemStack) original;
-diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-+++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-@@ -0,0 +0,0 @@ import org.bukkit.scheduler.BukkitWorker;
-  */
- public class CraftScheduler implements BukkitScheduler {
- 
-+    static Plugin MINECRAFT = new MinecraftInternalPlugin();
-     /**
-      * The start ID for the counter.
-      */
-@@ -0,0 +0,0 @@ public class CraftScheduler implements BukkitScheduler {
-         this.runTaskTimer(plugin, (Object) task, delay, period);
-     }
- 
-+    public BukkitTask scheduleInternalTask(Runnable run, int delay, String taskName) {
-+        final CraftTask task = new CraftTask(run, nextId(), taskName);
-+        return handle(task, delay);
-+    }
-+
-     public BukkitTask runTaskTimer(Plugin plugin, Object runnable, long delay, long period) {
-         CraftScheduler.validate(plugin, runnable);
-         if (delay < 0L) {
-@@ -0,0 +0,0 @@ public class CraftScheduler implements BukkitScheduler {
-                     task.run();
-                     task.timings.stopTiming(); // Spigot
-                 } catch (final Throwable throwable) {
--                    task.getOwner().getLogger().log(
-+                    // Paper start
-+                    String msg = String.format(
-+                        "Task #%s for %s generated an exception",
-+                        task.getTaskId(),
-+                        task.getOwner().getDescription().getFullName());
-+                    if (task.getOwner() == MINECRAFT) {
-+                        net.minecraft.server.MinecraftServer.LOGGER.error(msg, throwable);
-+                    } else {
-+                        task.getOwner().getLogger().log(
-                             Level.WARNING,
--                            String.format(
--                                "Task #%s for %s generated an exception",
--                                task.getTaskId(),
--                                task.getOwner().getDescription().getFullName()),
-+                            msg,
-                             throwable);
-+                    }
-+                    // Paper end
-                 } finally {
-                     this.currentTask = null;
-                 }
-diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
-+++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
-@@ -0,0 +0,0 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
-     CraftTask(final Object task) {
-         this(null, task, CraftTask.NO_REPEATING, CraftTask.NO_REPEATING);
-     }
-+    // Paper start
-+    public String taskName = null;
-+    boolean internal = false;
-+    CraftTask(final Object task, int id, String taskName) {
-+        this.rTask = (Runnable) task;
-+        this.cTask = null;
-+        this.plugin = CraftScheduler.MINECRAFT;
-+        this.taskName = taskName;
-+        this.internal = true;
-+        this.id = id;
-+        this.period = CraftTask.NO_REPEATING;
-+        this.taskName = taskName;
-+        this.timings = null; // Will be changed in later patch
-+    }
-+    // Paper end
- 
-     CraftTask(final Plugin plugin, final Object task, final int id, final long period) {
-         this.plugin = plugin;
-diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/MinecraftInternalPlugin.java b/src/main/java/org/bukkit/craftbukkit/scheduler/MinecraftInternalPlugin.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
---- /dev/null
-+++ b/src/main/java/org/bukkit/craftbukkit/scheduler/MinecraftInternalPlugin.java
-@@ -0,0 +0,0 @@
-+package org.bukkit.craftbukkit.scheduler;
-+
-+
-+import org.bukkit.Server;
-+import org.bukkit.command.Command;
-+import org.bukkit.command.CommandSender;
-+import org.bukkit.configuration.file.FileConfiguration;
-+import org.bukkit.generator.BiomeProvider;
-+import org.bukkit.generator.ChunkGenerator;
-+import org.bukkit.plugin.PluginBase;
-+import org.bukkit.plugin.PluginDescriptionFile;
-+import org.bukkit.plugin.PluginLoader;
-+import org.bukkit.plugin.PluginLogger;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
-+
-+import java.io.File;
-+import java.io.InputStream;
-+import java.util.List;
-+
-+public class MinecraftInternalPlugin extends PluginBase {
-+    private boolean enabled = true;
-+
-+    private final String pluginName;
-+    private PluginDescriptionFile pdf;
-+
-+    public MinecraftInternalPlugin() {
-+        this.pluginName = "Minecraft";
-+        pdf = new PluginDescriptionFile(pluginName, "1.0", "nms");
-+    }
-+
-+    public void setEnabled(boolean enabled) {
-+        this.enabled = enabled;
-+    }
-+
-+    @Override
-+    public File getDataFolder() {
-+        throw new UnsupportedOperationException("Not supported.");
-+    }
-+
-+    @Override
-+    public PluginDescriptionFile getDescription() {
-+        return pdf;
-+    }
-+
-+    @Override
-+    public FileConfiguration getConfig() {
-+        throw new UnsupportedOperationException("Not supported.");
-+    }
-+
-+    @Override
-+    public InputStream getResource(String filename) {
-+        throw new UnsupportedOperationException("Not supported.");
-+    }
-+
-+    @Override
-+    public void saveConfig() {
-+        throw new UnsupportedOperationException("Not supported.");
-+    }
-+
-+    @Override
-+    public void saveDefaultConfig() {
-+        throw new UnsupportedOperationException("Not supported.");
-+    }
-+
-+    @Override
-+    public void saveResource(String resourcePath, boolean replace) {
-+        throw new UnsupportedOperationException("Not supported.");
-+    }
-+
-+    @Override
-+    public void reloadConfig() {
-+        throw new UnsupportedOperationException("Not supported.");
-+    }
-+
-+    @Override
-+    public PluginLogger getLogger() {
-+        throw new UnsupportedOperationException("Not supported.");
-+    }
-+
-+    @Override
-+    public PluginLoader getPluginLoader() {
-+        throw new UnsupportedOperationException("Not supported.");
-+    }
-+
-+    @Override
-+    public Server getServer() {
-+        throw new UnsupportedOperationException("Not supported.");
-+    }
-+
-+    @Override
-+    public boolean isEnabled() {
-+        return enabled;
-+    }
-+
-+    @Override
-+    public void onDisable() {
-+        throw new UnsupportedOperationException("Not supported.");
-+    }
-+
-+    @Override
-+    public void onLoad() {
-+        throw new UnsupportedOperationException("Not supported.");
-+    }
-+
-+    @Override
-+    public void onEnable() {
-+        throw new UnsupportedOperationException("Not supported.");
-+    }
-+
-+    @Override
-+    public boolean isNaggable() {
-+        throw new UnsupportedOperationException("Not supported.");
-+    }
-+
-+    @Override
-+    public void setNaggable(boolean canNag) {
-+        throw new UnsupportedOperationException("Not supported.");
-+    }
-+
-+    @Override
-+    public ChunkGenerator getDefaultWorldGenerator(String worldName, String id) {
-+        throw new UnsupportedOperationException("Not supported.");
-+    }
-+
-+    @Override
-+    public @Nullable BiomeProvider getDefaultBiomeProvider(@NotNull String worldName, @Nullable String id) {
-+        throw new UnsupportedOperationException("Not supported.");
-+    }
-+
-+    @Override
-+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-+        throw new UnsupportedOperationException("Not supported.");
-+    }
-+
-+    @Override
-+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-+        throw new UnsupportedOperationException("Not supported.");
-+    }
-+}
-diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-+++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -0,0 +0,0 @@ public final class CraftMagicNumbers implements UnsafeValues {
-     private static final Map<Item, Material> ITEM_MATERIAL = new HashMap<>();
-     private static final Map<Material, Item> MATERIAL_ITEM = new HashMap<>();
-     private static final Map<Material, Block> MATERIAL_BLOCK = new HashMap<>();
-+    // Paper start
-+    private static final Map<org.bukkit.entity.EntityType, net.minecraft.world.entity.EntityType<?>> ENTITY_TYPE_ENTITY_TYPES = new HashMap<>();
-+    private static final Map<net.minecraft.world.entity.EntityType<?>, org.bukkit.entity.EntityType> ENTITY_TYPES_ENTITY_TYPE = new HashMap<>();
- 
-     static {
-+        for (org.bukkit.entity.EntityType type : org.bukkit.entity.EntityType.values()) {
-+            if (type == org.bukkit.entity.EntityType.UNKNOWN) continue;
-+            ENTITY_TYPE_ENTITY_TYPES.put(type, BuiltInRegistries.ENTITY_TYPE.get(CraftNamespacedKey.toMinecraft(type.getKey())));
-+            ENTITY_TYPES_ENTITY_TYPE.put(BuiltInRegistries.ENTITY_TYPE.get(CraftNamespacedKey.toMinecraft(type.getKey())), type);
-+        }
-+        // Paper end
-         for (Block block : BuiltInRegistries.BLOCK) {
-             BLOCK_MATERIAL.put(block, Material.getMaterial(BuiltInRegistries.BLOCK.getKey(block).getPath().toUpperCase(Locale.ROOT)));
-         }
-@@ -0,0 +0,0 @@ public final class CraftMagicNumbers implements UnsafeValues {
-     public static ResourceLocation key(Material mat) {
-         return CraftNamespacedKey.toMinecraft(mat.getKey());
-     }
-+    // Paper start
-+    public static net.minecraft.world.entity.EntityType<?> getEntityTypes(org.bukkit.entity.EntityType type) {
-+        return ENTITY_TYPE_ENTITY_TYPES.get(type);
-+    }
-+    public static org.bukkit.entity.EntityType getEntityType(net.minecraft.world.entity.EntityType<?> entityTypes) {
-+        return ENTITY_TYPES_ENTITY_TYPE.get(entityTypes);
-+    }
-+    // Paper end
-     // ========================================================================
- 
-     public static byte toLegacyData(BlockState data) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/DelegatedGeneratorAccess.java b/src/main/java/org/bukkit/craftbukkit/util/DelegatedGeneratorAccess.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/DelegatedGeneratorAccess.java
@@ -6513,43 +5785,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public WorldBorder getWorldBorder() {
          throw new UnsupportedOperationException("Not supported yet.");
-diff --git a/src/main/java/org/bukkit/craftbukkit/util/UnsafeList.java b/src/main/java/org/bukkit/craftbukkit/util/UnsafeList.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/util/UnsafeList.java
-+++ b/src/main/java/org/bukkit/craftbukkit/util/UnsafeList.java
-@@ -0,0 +0,0 @@ public class UnsafeList<E> extends AbstractList<E> implements List<E>, RandomAcc
-         return this.indexOf(o) >= 0;
-     }
- 
-+    // Paper start
-+    protected transient int maxSize;
-+    public void setSize(int size) {
-+        if (this.maxSize < this.size) {
-+            this.maxSize = this.size;
-+        }
-+        this.size = size;
-+    }
-+
-+    public void completeReset() {
-+        if (this.data != null) {
-+            Arrays.fill(this.data, 0, Math.max(this.size, this.maxSize), null);
-+        }
-+        this.size = 0;
-+        this.maxSize = 0;
-+        if (this.iterPool != null) {
-+            for (Iterator temp : this.iterPool) {
-+                if (temp == null) {
-+                    continue;
-+                }
-+                ((Itr)temp).valid = false;
-+            }
-+        }
-+    }
-+    // Paper end
-+
-     @Override
-     public void clear() {
-         // Create new array to reset memory usage to initial capacity
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
@@ -6564,20 +5799,3 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          MONSTER,
          ANIMAL,
          RAIDER,
-diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/spigotmc/SpigotConfig.java
-+++ b/src/main/java/org/spigotmc/SpigotConfig.java
-@@ -0,0 +0,0 @@ public class SpigotConfig
-                 }
-             }
-         }
--
-+        // Paper start
-+        SpigotConfig.save();
-+    }
-+    public static void save() {
-+        // Paper end
-         try
-         {
-             SpigotConfig.config.save( SpigotConfig.CONFIG_FILE );
