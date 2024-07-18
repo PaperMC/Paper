@@ -361,6 +361,67 @@ index 0000000000000000000000000000000000000000..660b2ec6b63a4ceffee44ab11f54dfa7
 +        }
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/PaperBootstrap.java b/src/main/java/io/papermc/paper/PaperBootstrap.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d543b1b107ab8d3eeb1fc3c1cadf489928d2786e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/PaperBootstrap.java
+@@ -0,0 +1,55 @@
++package io.papermc.paper;
++
++import java.util.List;
++import joptsimple.OptionSet;
++import net.minecraft.SharedConstants;
++import net.minecraft.server.Main;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++public final class PaperBootstrap {
++    private static final Logger LOGGER = LoggerFactory.getLogger("bootstrap");
++
++    private PaperBootstrap() {
++    }
++
++    public static void boot(final OptionSet options) {
++        SharedConstants.tryDetectVersion();
++
++        getStartupVersionMessages().forEach(LOGGER::info);
++
++        Main.main(options);
++    }
++
++    private static List<String> getStartupVersionMessages() {
++        final String javaSpecVersion = System.getProperty("java.specification.version");
++        final String javaVmName = System.getProperty("java.vm.name");
++        final String javaVmVersion = System.getProperty("java.vm.version");
++        final String javaVendor = System.getProperty("java.vendor");
++        final String javaVendorVersion = System.getProperty("java.vendor.version");
++        final String osName = System.getProperty("os.name");
++        final String osVersion = System.getProperty("os.version");
++        final String osArch = System.getProperty("os.arch");
++
++        final ServerBuildInfo bi = ServerBuildInfo.buildInfo();
++        return List.of(
++            String.format(
++                "Running Java %s (%s %s; %s %s) on %s %s (%s)",
++                javaSpecVersion,
++                javaVmName,
++                javaVmVersion,
++                javaVendor,
++                javaVendorVersion,
++                osName,
++                osVersion,
++                osArch
++            ),
++            String.format(
++                "Loading %s %s for Minecraft %s",
++                bi.brandName(),
++                bi.asString(ServerBuildInfo.StringRepresentation.VERSION_FULL),
++                bi.minecraftVersionId()
++            )
++        );
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java b/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..790bad0494454ca12ee152e3de6da3da634d9b20
@@ -598,7 +659,7 @@ index acab477a4a026799319054c2eb4d0f2c99ab3d83..2a36e562967ec6174efe456e489c50ca
      public List<CraftPlayer> getOnlinePlayers() {
          return this.playerView;
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 1c8049bbc08be77673d375205bd42a346ff951b8..e37a7aceae6c69083ecf81af4f750c01a5e0eded 100644
+index 1c8049bbc08be77673d375205bd42a346ff951b8..1aa75b11ee3297e379baa111cf53e1cfcd8b016e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -15,6 +15,7 @@ import joptsimple.OptionSet;
@@ -609,7 +670,7 @@ index 1c8049bbc08be77673d375205bd42a346ff951b8..e37a7aceae6c69083ecf81af4f750c01
      public static boolean useJline = true;
      public static boolean useConsole = true;
  
-@@ -252,13 +253,26 @@ public class Main {
+@@ -252,15 +253,17 @@ public class Main {
                      deadline.add(Calendar.DAY_OF_YEAR, -14);
                      if (buildDate.before(deadline.getTime())) {
                          System.err.println("*** Error, this build is outdated ***");
@@ -621,22 +682,15 @@ index 1c8049bbc08be77673d375205bd42a346ff951b8..e37a7aceae6c69083ecf81af4f750c01
                  }
  
                  System.setProperty("library.jansi.version", "Paper"); // Paper - set meaningless jansi version to prevent git builds from crashing on Windows
-+                // Paper start - Log Java and OS versioning to help with debugging plugin issues
-+                java.lang.management.RuntimeMXBean runtimeMX = java.lang.management.ManagementFactory.getRuntimeMXBean();
-+                java.lang.management.OperatingSystemMXBean osMX = java.lang.management.ManagementFactory.getOperatingSystemMXBean();
-+                if (runtimeMX != null && osMX != null) {
-+                    String javaInfo = "Java " + runtimeMX.getSpecVersion() + " (" + runtimeMX.getVmName() + " " + runtimeMX.getVmVersion() + ")";
-+                    String osInfo = "Host: " + osMX.getName() + " " + osMX.getVersion() + " (" + osMX.getArch() + ")";
+-                System.out.println("Loading libraries, please wait...");
+-                net.minecraft.server.Main.main(options);
 +
-+                    System.out.println("System Info: " + javaInfo + " " + osInfo);
-+                } else {
-+                    System.out.println("Unable to read system info");
-+                }
-+                // Paper end - Log Java and OS versioning to help with debugging plugin issues
-+
-                 System.out.println("Loading libraries, please wait...");
-                 net.minecraft.server.Main.main(options);
++                //System.out.println("Loading libraries, please wait...");
++                //net.minecraft.server.Main.main(options);
++                io.papermc.paper.PaperBootstrap.boot(options);
              } catch (Throwable t) {
+                 t.printStackTrace();
+             }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 index 9576cabff99d154ef77595b074082adf9212698d..e091356ee1fa3ec09839de6ef5c450824ea40844 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
