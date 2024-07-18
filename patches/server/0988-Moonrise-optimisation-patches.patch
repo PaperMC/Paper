@@ -2188,7 +2188,7 @@ index 0000000000000000000000000000000000000000..5b092bca7027e37aeee8f4b852ad896d
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..997b05167c19472acb98edac32d4548cc65efa8e
+index 0000000000000000000000000000000000000000..a94ad978faee586d1bc73fc5a438b7bb1b5a3c8d
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java
 @@ -0,0 +1,819 @@
@@ -2196,6 +2196,7 @@ index 0000000000000000000000000000000000000000..997b05167c19472acb98edac32d4548c
 +
 +import ca.spottedleaf.moonrise.common.list.EntityList;
 +import ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity;
++import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 +import com.google.common.collect.ImmutableList;
 +import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
 +import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
@@ -2220,7 +2221,6 @@ index 0000000000000000000000000000000000000000..997b05167c19472acb98edac32d4548c
 +import java.util.Iterator;
 +import java.util.List;
 +import java.util.function.Predicate;
-+import org.bukkit.event.entity.EntityRemoveEvent;
 +
 +public final class ChunkEntitySlices {
 +
@@ -2341,12 +2341,12 @@ index 0000000000000000000000000000000000000000..997b05167c19472acb98edac32d4548c
 +                continue;
 +            }
 +            if (entity.shouldBeSaved()) {
-+                entity.setRemoved(Entity.RemovalReason.UNLOADED_TO_CHUNK, EntityRemoveEvent.Cause.UNLOAD);
++                entity.setRemoved(Entity.RemovalReason.UNLOADED_TO_CHUNK, EntityRemoveFromWorldEvent.Cause.UNLOAD);
 +                if (entity.isVehicle()) {
 +                    // we cannot assume that these entities are contained within this chunk, because entities can
 +                    // desync - so we need to remove them all
 +                    for (final Entity passenger : entity.getIndirectPassengers()) {
-+                        passenger.setRemoved(Entity.RemovalReason.UNLOADED_TO_CHUNK, EntityRemoveEvent.Cause.UNLOAD);
++                        passenger.setRemoved(Entity.RemovalReason.UNLOADED_TO_CHUNK, EntityRemoveFromWorldEvent.Cause.UNLOAD);
 +                    }
 +                }
 +            }
@@ -26903,7 +26903,7 @@ index 50040c497a819cd1229042ab3cb057d34a32cacc..15c5164d0ef41a978c16ee317fa73e97
 +    // Paper end - block counting
  }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 2e2101274f3afebbae783fa119f5cae8104de45d..4f4b7e738fe604808d837a38d23bf437bc1d5329 100644
+index d43cc073a30e40d01b84d5d10785d95e647e3171..2328c8c4e46765048215c93c8efb0004277bbf02 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -167,7 +167,7 @@ import org.bukkit.event.player.PlayerTeleportEvent;
@@ -27250,14 +27250,14 @@ index 2e2101274f3afebbae783fa119f5cae8104de45d..4f4b7e738fe604808d837a38d23bf437
 @@ -4528,6 +4729,12 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
  
      @Override
-     public final void setRemoved(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
+     public final void setRemoved(Entity.RemovalReason entity_removalreason, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause cause) { // Paper - EntityRemoveFromWorldEvent
 +        // Paper start - rewrite chunk system
 +        if (!((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel)this.level).moonrise$getEntityLookup().canRemoveEntity((Entity)(Object)this)) {
 +            LOGGER.warn("Entity " + this + " is currently prevented from being removed from the world since it is processing section status updates", new Throwable());
 +            return;
 +        }
 +        // Paper end - rewrite chunk system
-         CraftEventFactory.callEntityRemoveEvent(this, cause);
+         CraftEventFactory.callEntityRemoveEvent(this, entity_removalreason, cause); // Paper - EntityRemoveFromWorldEvent
          // CraftBukkit end
          final boolean alreadyRemoved = this.removalReason != null; // Paper - Folia schedulers
 @@ -4539,7 +4746,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
@@ -27533,7 +27533,7 @@ index 971fb29a2c3dc713cb8ab1d2eed054cc16f9c93c..a6c0e89cb645693034f8e90ac2de8f2d
          this(updateListener, true, ImmutableList.of());
      }
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
-index 2f398750bfee5758ad8b1367b6fc14364e4de776..c292f58ba4b29395484dbbf8591e455f449581d8 100644
+index e2462d46d3994ec4cf65c8fe4794c577e8eb54a6..a7296b5a9f0e5a2b41c2cddc6b4b794763d0b085 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
 +++ b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
 @@ -359,7 +359,7 @@ public class ArmorStand extends LivingEntity {
@@ -28722,7 +28722,7 @@ index e5abde76c354c3dd9940dd4e5ae3fe8b6a2b4680..347334130e99dbf938d570bd36440a96
          }
          this.blockEntityTickers.removeAll(toRemove); // Paper - Fix MC-117075
 @@ -850,12 +1340,20 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
-             entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
+             entity.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DISCARD); // Paper - EntityRemoveFromWorldEvent
              // Paper end - Prevent block entity and entity crashes
          }
 +        this.moonrise$midTickTasks(); // Paper - rewrite chunk system
@@ -29845,7 +29845,7 @@ index 0baa4adf2a4401f9c955352f27e6f99957d1dff4..3723c07183e7b894cccf4d01bedf1d0d
          this.chunkType = chunkType;
          this.heightmapsAfter = heightMapTypes;
 diff --git a/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java b/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
-index ae16cf5c803caae636860dd9b1a83abe479ca5a4..b993c4b2595e2879b25753c2e34530f3622c18fa 100644
+index 99077982cd61e2c4436d94a7283487c3e154cf65..fc288ff79a567ab8d2cd55e4ac6b277670e7d94f 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
 @@ -154,7 +154,7 @@ public class ChunkStatusTasks {

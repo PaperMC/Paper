@@ -16,11 +16,1508 @@ index 1e5b42fc3903b14537d232c8adbbaf79078d8d8e..e6cf145fa7a2968c70e9e467e3927fd3
          }
  
          public void onTrackingEnd(Entity entity) {
-@@ -2223,6 +2224,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -2223,6 +2224,15 @@ public class ServerLevel extends Level implements WorldGenLevel {
                  }
              }
              // CraftBukkit end
-+            new com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent(entity.getBukkitEntity(), ServerLevel.this.getWorld()).callEvent(); // Paper - fire while valid
++            // Paper start - fire if tracking ends without calling Entity#setRemoved
++            if (entity.getRemovalReason() == null) {
++                com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause cause;
++                if (entity.moonrise$getChunkStatus() == FullChunkStatus.INACCESSIBLE) cause = com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.INACCESSIBLE;
++                else cause = com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.UNKNOWN;
++
++                new com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent(entity.getBukkitEntity(), ServerLevel.this.getWorld(), cause).callEvent();
++            }
++            // Paper end
          }
  
          public void onSectionChange(Entity entity) {
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 8a91a44e46a2d49e2f4b9e9970c2b77f2e87767e..70827e926b470e6b9e1ea8903dca034034baa0b6 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -520,7 +520,7 @@ public abstract class PlayerList {
+                 PlayerList.LOGGER.debug("Removing player mount");
+                 entityplayer.stopRiding();
+                 entity.getPassengersAndSelf().forEach((entity1) -> {
+-                    entity1.setRemoved(Entity.RemovalReason.UNLOADED_WITH_PLAYER, EntityRemoveEvent.Cause.PLAYER_QUIT); // CraftBukkit - add Bukkit remove cause
++                    entity1.setRemoved(Entity.RemovalReason.UNLOADED_WITH_PLAYER, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.PLAYER_QUIT); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                 });
+             }
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/AreaEffectCloud.java b/src/main/java/net/minecraft/world/entity/AreaEffectCloud.java
+index 1859477e96709368683fe5707327e92f56fbfc8e..9976f49df5bd4a15f804e636e6f373632a8388c0 100644
+--- a/src/main/java/net/minecraft/world/entity/AreaEffectCloud.java
++++ b/src/main/java/net/minecraft/world/entity/AreaEffectCloud.java
+@@ -156,7 +156,7 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
+         super.inactiveTick();
+ 
+         if (this.tickCount >= this.waitTime + this.duration) {
+-            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             return;
+         }
+     }
+@@ -206,7 +206,7 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
+             }
+         } else {
+             if (this.tickCount >= this.waitTime + this.duration) {
+-                this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++                this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                 return;
+             }
+ 
+@@ -223,7 +223,7 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
+             if (this.radiusPerTick != 0.0F) {
+                 f += this.radiusPerTick;
+                 if (f < 0.5F) {
+-                    this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++                    this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                     return;
+                 }
+ 
+@@ -300,7 +300,7 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
+                                         if (this.radiusOnUse != 0.0F) {
+                                             f += this.radiusOnUse;
+                                             if (f < 0.5F) {
+-                                                this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++                                                this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                                                 return;
+                                             }
+ 
+@@ -310,7 +310,7 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
+                                         if (this.durationOnUse != 0) {
+                                             this.duration += this.durationOnUse;
+                                             if (this.duration <= 0) {
+-                                                this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++                                                this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                                                 return;
+                                             }
+                                         }
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index bd17157631a74f80e3b5ce50bb1f681abe1dd6a7..af29d8b283598aed1111169eb6d796399d1ae834 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -548,7 +548,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     }
+ 
+     public void kill() {
+-        this.remove(Entity.RemovalReason.KILLED, EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
++        this.remove(Entity.RemovalReason.KILLED, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         this.gameEvent(GameEvent.ENTITY_DIE);
+     }
+ 
+@@ -557,7 +557,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+         this.discard(null);
+     }
+ 
+-    public final void discard(EntityRemoveEvent.Cause cause) {
++    public final void discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause cause) { // Paper - EntityRemoveFromWorldEvent
+         this.remove(Entity.RemovalReason.DISCARDED, cause);
+         // CraftBukkit end
+     }
+@@ -591,7 +591,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+         this.setRemoved(reason, null);
+     }
+ 
+-    public void remove(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
++    public void remove(Entity.RemovalReason entity_removalreason, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause cause) {
+         this.setRemoved(entity_removalreason, cause);
+         // CraftBukkit end
+     }
+@@ -878,7 +878,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     }
+ 
+     protected void onBelowWorld() {
+-        this.discard(EntityRemoveEvent.Cause.OUT_OF_WORLD); // CraftBukkit - add Bukkit remove cause
++        this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.OUT_OF_WORLD); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+     }
+ 
+     public boolean isFree(double offsetX, double offsetY, double offsetZ) {
+@@ -3367,7 +3367,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     }
+ 
+     protected void removeAfterChangingDimensions() {
+-        this.setRemoved(Entity.RemovalReason.CHANGED_DIMENSION, null); // CraftBukkit - add Bukkit remove cause
++        this.setRemoved(Entity.RemovalReason.CHANGED_DIMENSION, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.CHANGED_DIMENSION); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         if (this instanceof Leashable leashable) {
+             this.level().getCraftServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.UNKNOWN)); // CraftBukkit
+             leashable.dropLeash(true, false);
+@@ -3529,7 +3529,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+             entity.restoreFrom(this);
+             entity.moveTo(destX, destY, destZ, yaw, f2);
+             entity.setYHeadRot(yaw);
+-            this.setRemoved(Entity.RemovalReason.CHANGED_DIMENSION, null); // CraftBukkit - add Bukkit remove cause
++            this.setRemoved(Entity.RemovalReason.CHANGED_DIMENSION, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.CHANGED_DIMENSION); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             // CraftBukkit start - Don't spawn the new entity if the current entity isn't spawned
+             if (this.inWorld) {
+                 world.addDuringTeleport(entity);
+@@ -4268,8 +4268,8 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     }
+ 
+     @Override
+-    public final void setRemoved(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
+-        CraftEventFactory.callEntityRemoveEvent(this, cause);
++    public final void setRemoved(Entity.RemovalReason entity_removalreason, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause cause) { // Paper - EntityRemoveFromWorldEvent
++        CraftEventFactory.callEntityRemoveEvent(this, entity_removalreason, cause); // Paper - EntityRemoveFromWorldEvent
+         // CraftBukkit end
+         if (this.removalReason == null) {
+             this.removalReason = entity_removalreason;
+diff --git a/src/main/java/net/minecraft/world/entity/ExperienceOrb.java b/src/main/java/net/minecraft/world/entity/ExperienceOrb.java
+index 56402312e44d12c859e2c4b39902d31b7cfd1573..789192579b5c0adfb1fbb84c200fdd351a3820f3 100644
+--- a/src/main/java/net/minecraft/world/entity/ExperienceOrb.java
++++ b/src/main/java/net/minecraft/world/entity/ExperienceOrb.java
+@@ -141,7 +141,7 @@ public class ExperienceOrb extends Entity {
+ 
+         ++this.age;
+         if (this.age >= 6000) {
+-            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         }
+ 
+     }
+@@ -210,7 +210,7 @@ public class ExperienceOrb extends Entity {
+     private void merge(ExperienceOrb other) {
+         this.count += other.count;
+         this.age = Math.min(this.age, other.age);
+-        other.discard(EntityRemoveEvent.Cause.MERGE); // CraftBukkit - add Bukkit remove cause
++        other.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.MERGE); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+     }
+ 
+     private void setUnderwaterMovement() {
+@@ -232,7 +232,7 @@ public class ExperienceOrb extends Entity {
+             this.markHurt();
+             this.health = (int) ((float) this.health - amount);
+             if (this.health <= 0) {
+-                this.discard(EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
++                this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             }
+ 
+             return true;
+@@ -269,7 +269,7 @@ public class ExperienceOrb extends Entity {
+ 
+                 --this.count;
+                 if (this.count == 0) {
+-                    this.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
++                    this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                 }
+             }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/LightningBolt.java b/src/main/java/net/minecraft/world/entity/LightningBolt.java
+index bf5015c4bb68e5c46313bab1e59c0a4d45053b73..d8b7f80107b61ba3c6591d13d40c03ee931c5425 100644
+--- a/src/main/java/net/minecraft/world/entity/LightningBolt.java
++++ b/src/main/java/net/minecraft/world/entity/LightningBolt.java
+@@ -125,7 +125,7 @@ public class LightningBolt extends Entity {
+                     }
+                 }
+ 
+-                this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++                this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             } else if (this.life < -this.random.nextInt(10)) {
+                 --this.flashes;
+                 this.life = 1;
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index fae7c493c9be741f019fc49f45a59976e6b01ed7..aa032189a910a3f4375a7b8d2e5b78e269c3dc8a 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -610,7 +610,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         ++this.deathTime;
+         if (this.deathTime >= 20 && !this.level().isClientSide() && !this.isRemoved()) {
+             this.level().broadcastEntityEvent(this, (byte) 60);
+-            this.remove(Entity.RemovalReason.KILLED, EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
++            this.remove(Entity.RemovalReason.KILLED, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         }
+ 
+     }
+@@ -747,7 +747,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+     }
+ 
+     @Override
+-    public void remove(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
++    public void remove(Entity.RemovalReason entity_removalreason, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause cause) { // Paper - EntityRemoveFromWorldEvent
+         // CraftBukkit end
+         if (entity_removalreason == Entity.RemovalReason.KILLED || entity_removalreason == Entity.RemovalReason.DISCARDED) {
+             this.triggerOnDeathMobEffects(entity_removalreason);
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index e81a25462239dbb3993f31ff927bd809aef0a124..cb46786972dad8f07a88c70c0fa9790f66880943 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -696,7 +696,7 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+             this.take(item, itemstack1.getCount());
+             itemstack.shrink(itemstack1.getCount());
+             if (itemstack.isEmpty()) {
+-                item.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
++                item.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             }
+         }
+ 
+@@ -860,7 +860,7 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+     @Override
+     public void checkDespawn() {
+         if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
+-            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
+             Player entityhuman = this.level().findNearbyPlayer(this, -1.0D, EntitySelector.PLAYER_AFFECTS_SPAWNING); // Paper - Affects Spawning API
+ 
+@@ -870,14 +870,14 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+                 int j = i * i;
+ 
+                 if (d0 > (double) j && this.removeWhenFarAway(d0)) {
+-                    this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++                    this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                 }
+ 
+                 int k = this.level().paperConfig().entities.spawning.despawnRanges.get(this.getType().getCategory()).soft(); // Paper - Configurable despawn distances
+                 int l = k * k;
+ 
+                 if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && d0 > (double) l && this.removeWhenFarAway(d0)) {
+-                    this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++                    this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                 } else if (d0 < (double) l) {
+                     this.noActionTime = 0;
+                 }
+@@ -1559,7 +1559,7 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+                     t0.startRiding(entity, true);
+                 }
+ 
+-                this.discard(EntityRemoveEvent.Cause.TRANSFORMATION); // CraftBukkit - add Bukkit remove cause
++                this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.TRANSFORMATION); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                 return t0;
+             }
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/warden/Digging.java b/src/main/java/net/minecraft/world/entity/ai/behavior/warden/Digging.java
+index 9e155ce2f19586fb12dad20ce138ea44ec4c88bb..ab05521df3e7f562b56fb8087f63bd2e1b1888aa 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/warden/Digging.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/warden/Digging.java
+@@ -41,7 +41,7 @@ public class Digging<E extends Warden> extends Behavior<E> {
+ 
+     protected void stop(ServerLevel worldserver, E e0, long i) {
+         if (e0.getRemovalReason() == null) {
+-            e0.remove(Entity.RemovalReason.DISCARDED, EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - Add bukkit remove cause
++            e0.remove(Entity.RemovalReason.DISCARDED, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - Add bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Bucketable.java b/src/main/java/net/minecraft/world/entity/animal/Bucketable.java
+index b586116d8cca1585f9c9e618ed4d0cb2ef2747be..15d5b8ccf29d93885fe25b914203b4cb160675cd 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Bucketable.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Bucketable.java
+@@ -123,7 +123,7 @@ public interface Bucketable {
+                 CriteriaTriggers.FILLED_BUCKET.trigger((ServerPlayer) player, itemstack1);
+             }
+ 
+-            entity.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
++            entity.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             return Optional.of(InteractionResult.sidedSuccess(world.isClientSide));
+         } else {
+             return Optional.empty();
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Dolphin.java b/src/main/java/net/minecraft/world/entity/animal/Dolphin.java
+index 08823651b0a81b15bc33f86c96d6cc1dc72770f4..7dc1d038b444c9f3ba68bc95682ab642c2b8db32 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Dolphin.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Dolphin.java
+@@ -233,7 +233,7 @@ public class Dolphin extends WaterAnimal {
+                 this.setItemSlot(EquipmentSlot.MAINHAND, itemstack);
+                 this.setGuaranteedDrop(EquipmentSlot.MAINHAND);
+                 this.take(item, itemstack.getCount());
+-                item.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
++                item.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             }
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Fox.java b/src/main/java/net/minecraft/world/entity/animal/Fox.java
+index de2a25db9465bc4ae3cbf7ff6d3af756df679f4a..9f6f9c0ac330fefde906ac8efddb5ffd81193953 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Fox.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Fox.java
+@@ -534,7 +534,7 @@ public class Fox extends Animal implements VariantHolder<Fox.Type> {
+             this.setItemSlot(EquipmentSlot.MAINHAND, itemstack.split(1));
+             this.setGuaranteedDrop(EquipmentSlot.MAINHAND);
+             this.take(item, itemstack.getCount());
+-            item.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
++            item.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             this.ticksSinceEaten = 0;
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/animal/MushroomCow.java b/src/main/java/net/minecraft/world/entity/animal/MushroomCow.java
+index aa125e3043b120935aaa015803f065f99eb8d050..514b961f94e9239b7879a98df789c8fa396d25bf 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/MushroomCow.java
++++ b/src/main/java/net/minecraft/world/entity/animal/MushroomCow.java
+@@ -190,7 +190,7 @@ public class MushroomCow extends Cow implements Shearable, VariantHolder<Mushroo
+                 }
+                 this.level().addFreshEntity(entitycow, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SHEARED);
+ 
+-                this.discard(EntityRemoveEvent.Cause.TRANSFORMATION); // CraftBukkit - from above and add Bukkit remove cause
++                this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.TRANSFORMATION); // CraftBukkit - from above and add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                 // CraftBukkit end
+ 
+                 for (int i = 0; i < 5; ++i) {
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Panda.java b/src/main/java/net/minecraft/world/entity/animal/Panda.java
+index 228cfb77e12ed5979e422dc5dbb5e8dcf363b509..fb3ec5f4148dd0d4bf8c52636d966e2f4205bdd8 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Panda.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Panda.java
+@@ -570,7 +570,7 @@ public class Panda extends Animal {
+             this.setItemSlot(EquipmentSlot.MAINHAND, itemstack);
+             this.setGuaranteedDrop(EquipmentSlot.MAINHAND);
+             this.take(item, itemstack.getCount());
+-            item.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
++            item.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Pig.java b/src/main/java/net/minecraft/world/entity/animal/Pig.java
+index 03d29d5114237f5700c188510a12f26507844c3d..3f8ee6870153a28b36ed9a8ff2022c377dffdfa4 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Pig.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Pig.java
+@@ -264,7 +264,7 @@ public class Pig extends Animal implements ItemSteerable, Saddleable {
+                 // CraftBukkit - added a reason for spawning this creature
+                 world.addFreshEntity(entitypigzombie, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.LIGHTNING);
+                 // CraftBukkit end
+-                this.discard(EntityRemoveEvent.Cause.TRANSFORMATION); // CraftBukkit - add Bukkit remove cause
++                this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.TRANSFORMATION); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             } else {
+                 super.thunderHit(world, lightning);
+             }
+diff --git a/src/main/java/net/minecraft/world/entity/animal/ShoulderRidingEntity.java b/src/main/java/net/minecraft/world/entity/animal/ShoulderRidingEntity.java
+index fdc7106d64949294cdfdfd60b51042bc9c6c767b..d335a34f8a867c5e394ca79b82eb086cf589aacf 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/ShoulderRidingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/animal/ShoulderRidingEntity.java
+@@ -24,7 +24,7 @@ public abstract class ShoulderRidingEntity extends TamableAnimal {
+         nbttagcompound.putString("id", this.getEncodeId());
+         this.saveWithoutId(nbttagcompound);
+         if (player.setEntityOnShoulder(nbttagcompound)) {
+-            this.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             return true;
+         } else {
+             return false;
+diff --git a/src/main/java/net/minecraft/world/entity/animal/frog/ShootTongue.java b/src/main/java/net/minecraft/world/entity/animal/frog/ShootTongue.java
+index 103cf941b33e0c2389c0cda73c19ccde36d20b71..5559640cafbb1a761f65a69cd87ed50db1fd5dbd 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/frog/ShootTongue.java
++++ b/src/main/java/net/minecraft/world/entity/animal/frog/ShootTongue.java
+@@ -88,7 +88,7 @@ public class ShootTongue extends Behavior<Frog> {
+             if (entity.isAlive()) {
+                 frog.doHurtTarget(entity);
+                 if (!entity.isAlive()) {
+-                    entity.remove(Entity.RemovalReason.KILLED, EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
++                    entity.remove(Entity.RemovalReason.KILLED, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                 }
+             }
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/animal/frog/Tadpole.java b/src/main/java/net/minecraft/world/entity/animal/frog/Tadpole.java
+index b06d39d3bd39a4dc4f273a359a89592d3b8cf184..14953e3d7339cc66d83adbebedca5981742a7dd0 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/frog/Tadpole.java
++++ b/src/main/java/net/minecraft/world/entity/animal/frog/Tadpole.java
+@@ -244,7 +244,7 @@ public class Tadpole extends AbstractFish {
+                 frog.fudgePositionAfterSizeChange(this.getDimensions(this.getPose()));
+                 this.playSound(SoundEvents.TADPOLE_GROW_UP, 0.15F, 1.0F);
+                 worldserver.addFreshEntityWithPassengers(frog, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.METAMORPHOSIS); // CraftBukkit - add SpawnReason
+-                this.discard(EntityRemoveEvent.Cause.TRANSFORMATION); // CraftBukkit - add Bukkit remove cause
++                this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.TRANSFORMATION); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             }
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonHorse.java b/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonHorse.java
+index c12086c50bb9b5923c179108e92674b2b26d27f2..215247e5b134efe31679cd7a110eab8c793e280b 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonHorse.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonHorse.java
+@@ -125,7 +125,7 @@ public class SkeletonHorse extends AbstractHorse {
+     public void aiStep() {
+         super.aiStep();
+         if (this.isTrap() && this.trapTime++ >= 18000) {
+-            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/TraderLlama.java b/src/main/java/net/minecraft/world/entity/animal/horse/TraderLlama.java
+index bbfc94237bbd546361cc4a7bde773c810e8c5d49..3fd77d5b23286416409ec2692fbff7a11729b3c5 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/TraderLlama.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/TraderLlama.java
+@@ -90,7 +90,7 @@ public class TraderLlama extends Llama {
+             this.despawnDelay = this.isLeashedToWanderingTrader() ? ((WanderingTrader) this.getLeashHolder()).getDespawnDelay() - 1 : this.despawnDelay - 1;
+             if (this.despawnDelay <= 0) {
+                 this.dropLeash(true, false);
+-                this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++                this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             }
+ 
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EndCrystal.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EndCrystal.java
+index 6f8d4584aae56fc7fbcbc38b1291ea415208fd5e..70bfeead1ecb23d68ea8c449a3f75cbb4061dbbd 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EndCrystal.java
++++ b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EndCrystal.java
+@@ -117,10 +117,10 @@ public class EndCrystal extends Entity {
+                         return false;
+                     }
+ 
+-                    this.remove(Entity.RemovalReason.KILLED, EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause
++                    this.remove(Entity.RemovalReason.KILLED, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                     this.level().explode(this, damagesource1, (ExplosionDamageCalculator) null, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.BLOCK);
+                 } else {
+-                    this.remove(Entity.RemovalReason.KILLED, EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
++                    this.remove(Entity.RemovalReason.KILLED, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                 }
+                 // CraftBukkit end
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+index 7432becf1c9a378a62e116153aebad4960c0c7bd..049e6891adb0466d3720ccd9a1a19e9d8e146a4f 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
++++ b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+@@ -636,7 +636,7 @@ public class EnderDragon extends Mob implements Enemy {
+ 
+     @Override
+     public void kill() {
+-        this.remove(Entity.RemovalReason.KILLED, EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
++        this.remove(Entity.RemovalReason.KILLED, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         this.gameEvent(GameEvent.ENTITY_DIE);
+         if (this.dragonFight != null) {
+             this.dragonFight.updateDragon(this);
+@@ -724,7 +724,7 @@ public class EnderDragon extends Mob implements Enemy {
+                 this.dragonFight.setDragonKilled(this);
+             }
+ 
+-            this.remove(Entity.RemovalReason.KILLED, EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
++            this.remove(Entity.RemovalReason.KILLED, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             this.gameEvent(GameEvent.ENTITY_DIE);
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonSittingFlamingPhase.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonSittingFlamingPhase.java
+index 3eaf64a6f66c6a844e30967e6b87432e559a59e7..32ab046a98ed888e98fc0174b7315c8c79b76ebd 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonSittingFlamingPhase.java
++++ b/src/main/java/net/minecraft/world/entity/boss/enderdragon/phases/DragonSittingFlamingPhase.java
+@@ -102,7 +102,7 @@ public class DragonSittingFlamingPhase extends AbstractDragonSittingPhase {
+     @Override
+     public void end() {
+         if (this.flame != null) {
+-            this.flame.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++            this.flame.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             this.flame = null;
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
+index d288bc209a0b0fdf2d73197a8e7d179e8e8c31e7..d91d7992f78da7d5997a0772683238784b710bb7 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
++++ b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
+@@ -543,7 +543,7 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
+     @Override
+     public void checkDespawn() {
+         if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
+-            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         } else {
+             this.noActionTime = 0;
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
+index af954b2c0c7106a231fb15172da3fa8e1d281d56..74036bb104bf23e07033fef8e2bed9455da9ca56 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
+@@ -534,7 +534,7 @@ public class ArmorStand extends LivingEntity {
+                                 } else {
+                                     this.brokenByPlayer(worldserver, source);
+                                     this.showBreakingParticles();
+-                                    this.discard(EntityRemoveEvent.Cause.DEATH); // CraftBukkit - SPIGOT-4890: remain as this.discard() since above damagesource method will call death event
++                                    this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DEATH); // CraftBukkit - SPIGOT-4890: remain as this.discard() since above damagesource method will call death event // Paper - EntityRemoveFromWorldEvent
+                                 }
+ 
+                                 return true;
+@@ -732,7 +732,7 @@ public class ArmorStand extends LivingEntity {
+ 
+     public void kill(DamageSource damageSource) {
+         org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, (damageSource == null ? this.damageSources().genericKill() : damageSource), this.drops); // CraftBukkit - call event
+-        this.remove(Entity.RemovalReason.KILLED, EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
++        this.remove(Entity.RemovalReason.KILLED, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         // CraftBukkit end
+         this.gameEvent(GameEvent.ENTITY_DIE);
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/BlockAttachedEntity.java b/src/main/java/net/minecraft/world/entity/decoration/BlockAttachedEntity.java
+index cf65d8ef8d69a24ceb44d2a5d84c83dfee322a1d..aacf03f4985c7fa5231d4c1d7850889b3c285ba9 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/BlockAttachedEntity.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/BlockAttachedEntity.java
+@@ -65,7 +65,7 @@ public abstract class BlockAttachedEntity extends Entity {
+                         return;
+                     }
+                     // CraftBukkit end
+-                    this.discard(EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
++                    this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                     this.dropItem((Entity) null);
+                 }
+             }
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java b/src/main/java/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java
+index 3c0af74ed65610b1d5e3b72fdcf28c5a3423f0da..cdc454055306b7a2e2a4be24207137b99b555d7d 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java
+@@ -131,7 +131,7 @@ public class LeashFenceKnotEntity extends BlockAttachedEntity {
+                     }
+                     // CraftBukkit start
+                     if (die) {
+-                        this.discard(EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
++                        this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                     }
+                     // CraftBukkit end
+                 }
+diff --git a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
+index c3a16691e8a843c02e0aea6469822cd8869ad593..88892ab16fe711e80220b5222db410e6504f22ff 100644
+--- a/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
++++ b/src/main/java/net/minecraft/world/entity/item/FallingBlockEntity.java
+@@ -142,7 +142,7 @@ public class FallingBlockEntity extends Entity {
+     @Override
+     public void tick() {
+         if (this.blockState.isAir()) {
+-            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         } else {
+             Block block = this.blockState.getBlock();
+ 
+@@ -155,7 +155,7 @@ public class FallingBlockEntity extends Entity {
+                     this.spawnAtLocation(block);
+                 }
+ 
+-                this.discard(EntityRemoveEvent.Cause.OUT_OF_WORLD);
++                this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.OUT_OF_WORLD); // Paper - EntityRemoveFromWorldEvent
+                 return;
+             }
+             // Paper end - Configurable falling blocks height nerf
+@@ -181,7 +181,7 @@ public class FallingBlockEntity extends Entity {
+                             this.spawnAtLocation((ItemLike) block);
+                         }
+ 
+-                        this.discard(EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
++                        this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                     }
+                 } else {
+                     BlockState iblockdata = this.level().getBlockState(blockposition);
+@@ -200,13 +200,13 @@ public class FallingBlockEntity extends Entity {
+ 
+                                 // CraftBukkit start
+                                 if (!CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, this.blockState)) {
+-                                    this.discard(EntityRemoveEvent.Cause.DESPAWN); // SPIGOT-6586 called before the event in previous versions
++                                    this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // SPIGOT-6586 called before the event in previous versions // Paper - EntityRemoveFromWorldEvent
+                                     return;
+                                 }
+                                 // CraftBukkit end
+                                 if (this.level().setBlock(blockposition, this.blockState, 3)) {
+                                     ((ServerLevel) this.level()).getChunkSource().chunkMap.broadcast(this, new ClientboundBlockUpdatePacket(blockposition, this.level().getBlockState(blockposition)));
+-                                    this.discard(EntityRemoveEvent.Cause.DESPAWN);
++                                    this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // Paper - EntityRemoveFromWorldEvent
+                                     if (block instanceof Fallable) {
+                                         ((Fallable) block).onLand(this.level(), blockposition, this.blockState, iblockdata, this);
+                                     }
+@@ -234,19 +234,19 @@ public class FallingBlockEntity extends Entity {
+                                         }
+                                     }
+                                 } else if (this.dropItem && this.level().getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
+-                                    this.discard(EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
++                                    this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                                     this.callOnBrokenAfterFall(block, blockposition);
+                                     this.spawnAtLocation((ItemLike) block);
+                                 }
+                             } else {
+-                                this.discard(EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
++                                this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                                 if (this.dropItem && this.level().getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
+                                     this.callOnBrokenAfterFall(block, blockposition);
+                                     this.spawnAtLocation((ItemLike) block);
+                                 }
+                             }
+                         } else {
+-                            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++                            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                             this.callOnBrokenAfterFall(block, blockposition);
+                         }
+                     }
+diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+index c4cd7cf1567cdf57bfe9f2d80cd4a613efe10dc7..a4a83400d01dc37446a13d7b85e648cb26819ee0 100644
+--- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
++++ b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+@@ -141,7 +141,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+     @Override
+     public void tick() {
+         if (this.getItem().isEmpty()) {
+-            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         } else {
+             super.tick();
+             // CraftBukkit start - Use wall time for pickup and despawn timers
+@@ -220,7 +220,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+                     return;
+                 }
+                 // CraftBukkit end
+-                this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++                this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             }
+ 
+         }
+@@ -243,7 +243,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+                 return;
+             }
+             // CraftBukkit end
+-            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         }
+     }
+     // Spigot end
+@@ -337,7 +337,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+         targetEntity.pickupDelay = Math.max(targetEntity.pickupDelay, sourceEntity.pickupDelay);
+         targetEntity.age = Math.min(targetEntity.age, sourceEntity.age);
+         if (sourceStack.isEmpty()) {
+-            sourceEntity.discard(EntityRemoveEvent.Cause.MERGE); // CraftBukkit - add Bukkit remove cause);
++            sourceEntity.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.MERGE); // CraftBukkit - add Bukkit remove cause); // Paper - EntityRemoveFromWorldEvent
+         }
+ 
+     }
+@@ -368,7 +368,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+             this.gameEvent(GameEvent.ENTITY_DAMAGE, source.getEntity());
+             if (this.health <= 0) {
+                 this.getItem().onDestroyed(this);
+-                this.discard(EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
++                this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             }
+ 
+             return true;
+@@ -475,7 +475,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+             if (this.pickupDelay == 0 && (this.target == null || this.target.equals(player.getUUID())) && player.getInventory().add(itemstack)) {
+                 player.take(this, i);
+                 if (itemstack.isEmpty()) {
+-                    this.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
++                    this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                     itemstack.setCount(i);
+                 }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
+index 15432b512fc0d0d38bf28499e2afa5e48fec7aaa..935610e9b384854102536a2befb0eac24c83d1e2 100644
+--- a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
++++ b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
+@@ -101,7 +101,7 @@ public class PrimedTnt extends Entity implements TraceableEntity {
+         this.move(MoverType.SELF, this.getDeltaMovement());
+         // Paper start - Configurable TNT height nerf
+         if (this.level().paperConfig().fixes.tntEntityHeightNerf.test(v -> this.getY() > v)) {
+-            this.discard(EntityRemoveEvent.Cause.OUT_OF_WORLD);
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.OUT_OF_WORLD); // Paper - EntityRemoveFromWorldEvent
+             return;
+         }
+         // Paper end - Configurable TNT height nerf
+@@ -119,7 +119,7 @@ public class PrimedTnt extends Entity implements TraceableEntity {
+             if (!this.level().isClientSide) {
+                 this.explode();
+             }
+-            this.discard(EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             // CraftBukkit end
+         } else {
+             this.updateInWaterStateAndDoFluidPushing();
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Creeper.java b/src/main/java/net/minecraft/world/entity/monster/Creeper.java
+index 976de2547f654bec58f53a4eff54df5176e815aa..f50dabeeaad9561cad15ed36ea7e49990d5f439e 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Creeper.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Creeper.java
+@@ -274,7 +274,7 @@ public class Creeper extends Monster implements PowerableMob {
+             this.level().explode(this, net.minecraft.world.level.Explosion.getDefaultDamageSource(this.level(), this).customCausingEntityDamager(this.entityIgniter), null, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.MOB); // CraftBukkit
+             this.spawnLingeringCloud();
+             this.triggerOnDeathMobEffects(Entity.RemovalReason.KILLED);
+-            this.discard(EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             // CraftBukkit start
+             } else {
+                 this.swell = 0;
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Endermite.java b/src/main/java/net/minecraft/world/entity/monster/Endermite.java
+index 9c78905762d9a484878fa9cf03a2ca3850e7e613..187f9109babae4aeb9e5aeaa61c9b7a32e48c6f7 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Endermite.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Endermite.java
+@@ -116,7 +116,7 @@ public class Endermite extends Monster {
+             }
+ 
+             if (this.life >= 2400) {
+-                this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++                this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             }
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Pillager.java b/src/main/java/net/minecraft/world/entity/monster/Pillager.java
+index 4b4dcee6abe7a6db43638d04665125eec560496e..c821afb569d419f30da629827aac155b0cea871a 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Pillager.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Pillager.java
+@@ -198,7 +198,7 @@ public class Pillager extends AbstractIllager implements CrossbowAttackMob, Inve
+             ItemStack itemstack1 = this.inventory.addItem(itemstack);
+ 
+             if (itemstack1.isEmpty()) {
+-                item.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
++                item.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             } else {
+                 itemstack.setCount(itemstack1.getCount());
+             }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
+index 9ff42b0ae2b82dc3092e38e1439d89b4ab554b17..1264e7b33e476c61489cbc10f3becc60eece3c36 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
+@@ -242,7 +242,7 @@ public class Silverfish extends Monster {
+                     // CraftBukkit end
+                     world.setBlock(blockposition, InfestedBlock.infestedStateByHost(iblockdata), 3);
+                     this.mob.spawnAnim();
+-                    this.mob.discard(EntityRemoveEvent.Cause.ENTER_BLOCK); // CraftBukkit - add Bukkit remove cause
++                    this.mob.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.ENTER_BLOCK); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                 }
+ 
+             }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Slime.java b/src/main/java/net/minecraft/world/entity/monster/Slime.java
+index b1f7ea02e533660322675e1bddb070f0a41084f2..10b100cb60c0c65b78ea857b6637625b4123ace6 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Slime.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Slime.java
+@@ -213,7 +213,7 @@ public class Slime extends Mob implements Enemy {
+     }
+ 
+     @Override
+-    public void remove(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
++    public void remove(Entity.RemovalReason entity_removalreason, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause cause) { // Paper - EntityRemoveFromWorldEvent
+         // CraftBukkit end
+         int i = this.getSize();
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinAi.java b/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinAi.java
+index 545e20e558d3bb934ec4bf32847c9fd83edfd85e..6e32e5dd277c95025cc92a9bbb5f267867644d32 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinAi.java
++++ b/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinAi.java
+@@ -245,7 +245,7 @@ public class PiglinAi {
+         if (drop.getItem().is(Items.GOLD_NUGGET) && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(piglin, drop, 0, false).isCancelled()) {
+             piglin.take(drop, drop.getItem().getCount());
+             itemstack = drop.getItem();
+-            drop.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
++            drop.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         } else if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(piglin, drop, drop.getItem().getCount() - 1, false).isCancelled()) {
+             piglin.take(drop, 1);
+             itemstack = PiglinAi.removeOneItemFromItemEntity(drop);
+@@ -282,7 +282,7 @@ public class PiglinAi {
+         ItemStack itemstack1 = itemstack.split(1);
+ 
+         if (itemstack.isEmpty()) {
+-            stack.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
++            stack.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         } else {
+             stack.setItem(itemstack);
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/npc/InventoryCarrier.java b/src/main/java/net/minecraft/world/entity/npc/InventoryCarrier.java
+index 7e1a533f545d35b2fc55805e26f574461fe7899f..704079decc6e92cf5e9f84c1cf9fb451ea5d90c3 100644
+--- a/src/main/java/net/minecraft/world/entity/npc/InventoryCarrier.java
++++ b/src/main/java/net/minecraft/world/entity/npc/InventoryCarrier.java
+@@ -41,7 +41,7 @@ public interface InventoryCarrier {
+ 
+             entity.take(item, i - itemstack1.getCount());
+             if (itemstack1.isEmpty()) {
+-                item.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
++                item.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             } else {
+                 itemstack.setCount(itemstack1.getCount());
+             }
+diff --git a/src/main/java/net/minecraft/world/entity/npc/Villager.java b/src/main/java/net/minecraft/world/entity/npc/Villager.java
+index 63c10be6eacd7108b8b4795d76bf624e0614440a..016adc00352a0401d316b9d584eca8fa12011cd1 100644
+--- a/src/main/java/net/minecraft/world/entity/npc/Villager.java
++++ b/src/main/java/net/minecraft/world/entity/npc/Villager.java
+@@ -866,7 +866,7 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
+                 world.addFreshEntityWithPassengers(entitywitch, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.LIGHTNING);
+                 // CraftBukkit end
+                 this.releaseAllPois();
+-                this.discard(EntityRemoveEvent.Cause.TRANSFORMATION); // CraftBukkit - add Bukkit remove cause
++                this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.TRANSFORMATION); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             } else {
+                 super.thunderHit(world, lightning);
+             }
+diff --git a/src/main/java/net/minecraft/world/entity/npc/WanderingTrader.java b/src/main/java/net/minecraft/world/entity/npc/WanderingTrader.java
+index 0f2e2e42e732e942664d70a72dd9c4e47c7e95b6..911ca85baa6b81eb61603ce64d09f5519451f0ac 100644
+--- a/src/main/java/net/minecraft/world/entity/npc/WanderingTrader.java
++++ b/src/main/java/net/minecraft/world/entity/npc/WanderingTrader.java
+@@ -261,7 +261,7 @@ public class WanderingTrader extends net.minecraft.world.entity.npc.AbstractVill
+ 
+     private void maybeDespawn() {
+         if (this.despawnDelay > 0 && !this.isTrading() && --this.despawnDelay == 0) {
+-            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index ba279ab6ec0ab41309607333b62a941e35dbf581..25f492450eb76813738d15320d75dbf4cc519572 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -1480,7 +1480,7 @@ public abstract class Player extends LivingEntity {
+     }
+ 
+     @Override
+-    public void remove(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
++    public void remove(Entity.RemovalReason entity_removalreason, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause cause) { // Paper - EntityRemoveFromWorldEvent
+         super.remove(entity_removalreason, cause);
+         // CraftBukkit end
+         this.inventoryMenu.removed(this);
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+index 230040bef7d2cf9a463cfd9cb3b1b1aa208a7119..dd7f74855d42d8cd18d9ce0274b5c9055b3f6a82 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+@@ -357,7 +357,7 @@ public abstract class AbstractArrow extends Projectile {
+     protected void tickDespawn() {
+         ++this.life;
+         if (this.life >= (pickup == Pickup.CREATIVE_ONLY ? this.level().paperConfig().entities.spawning.creativeArrowDespawnRate.value() : (pickup == Pickup.DISALLOWED ? this.level().paperConfig().entities.spawning.nonPlayerArrowDespawnRate.value() : ((this instanceof ThrownTrident) ? this.level().spigotConfig.tridentDespawnRate : this.level().spigotConfig.arrowDespawnRate)))) { // Spigot // Paper - Configurable non-player arrow despawn rate; TODO: Extract this to init?
+-            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         }
+ 
+     }
+@@ -404,7 +404,7 @@ public abstract class AbstractArrow extends Projectile {
+             }
+ 
+             if (this.piercingIgnoreEntityIds.size() >= this.getPierceLevel() + 1) {
+-                this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
++                this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                 return;
+             }
+ 
+@@ -477,7 +477,7 @@ public abstract class AbstractArrow extends Projectile {
+ 
+             this.playSound(this.soundEvent, 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
+             if (this.getPierceLevel() <= 0) {
+-                this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
++                this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             }
+         } else {
+             entity.setRemainingFireTicks(k);
+@@ -488,7 +488,7 @@ public abstract class AbstractArrow extends Projectile {
+                     this.spawnAtLocation(this.getPickupItem(), 0.1F);
+                 }
+ 
+-                this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
++                this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             }
+         }
+ 
+@@ -707,7 +707,7 @@ public abstract class AbstractArrow extends Projectile {
+             if ((this.pickup == AbstractArrow.Pickup.ALLOWED && player.getInventory().add(itemstack)) || (this.pickup == AbstractArrow.Pickup.CREATIVE_ONLY && player.getAbilities().instabuild)) {
+                 // CraftBukkit end
+                 player.take(this, 1);
+-                this.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
++                this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             }
+ 
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractHurtingProjectile.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractHurtingProjectile.java
+index beff021b589b0e34f1111b6fae92bcdd6f059de6..6cc639cfd5e929388d5df0ae40cad35bf51353d6 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/AbstractHurtingProjectile.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractHurtingProjectile.java
+@@ -77,7 +77,7 @@ public abstract class AbstractHurtingProjectile extends Projectile {
+         Entity entity = this.getOwner();
+ 
+         if (!this.level().isClientSide && (entity != null && entity.isRemoved() || !this.level().hasChunkAt(this.blockPosition()))) {
+-            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         } else {
+             super.tick();
+             if (this.shouldBurn()) {
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/DragonFireball.java b/src/main/java/net/minecraft/world/entity/projectile/DragonFireball.java
+index 3c77515f6b7f1ff89325afba214e9a8e5f536158..3d721282b1ffdea891c28f01525f8e7f7e887302 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/DragonFireball.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/DragonFireball.java
+@@ -65,7 +65,7 @@ public class DragonFireball extends AbstractHurtingProjectile {
+ 
+                 this.level().levelEvent(2006, this.blockPosition(), this.isSilent() ? -1 : 1);
+                 this.level().addFreshEntity(entityareaeffectcloud);
+-                this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
++                this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             }
+ 
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/EvokerFangs.java b/src/main/java/net/minecraft/world/entity/projectile/EvokerFangs.java
+index c75433bb0fcd4264148950467bf6b700296aca7b..932c2f8681e7a6a88bd1c66d8d498b24a3eb12a7 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/EvokerFangs.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/EvokerFangs.java
+@@ -124,7 +124,7 @@ public class EvokerFangs extends Entity implements TraceableEntity {
+             }
+ 
+             if (--this.lifeTicks < 0) {
+-                this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++                this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             }
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/EyeOfEnder.java b/src/main/java/net/minecraft/world/entity/projectile/EyeOfEnder.java
+index 8b0ccd1aa0f2f1d2326c6071f16e641afc101751..f2ed31407347e61c6d31eec8d4eb4f3a639734bd 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/EyeOfEnder.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/EyeOfEnder.java
+@@ -149,7 +149,7 @@ public class EyeOfEnder extends Entity implements ItemSupplier {
+             ++this.life;
+             if (this.life > 80 && !this.level().isClientSide) {
+                 this.playSound(SoundEvents.ENDER_EYE_DEATH, 1.0F, 1.0F);
+-                this.discard(this.surviveAfterDeath ? EntityRemoveEvent.Cause.DROP : EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++                this.discard(this.surviveAfterDeath ? com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DROP : com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                 if (this.surviveAfterDeath) {
+                     this.level().addFreshEntity(new ItemEntity(this.level(), this.getX(), this.getY(), this.getZ(), this.getItem()));
+                 } else {
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/FireworkRocketEntity.java b/src/main/java/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
+index cc99d67bc52c89b50171b6c808c6e3bf293999f5..66c139ee89b0c22b9a61cc07963855aae8987b69 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
+@@ -195,7 +195,7 @@ public class FireworkRocketEntity extends Projectile implements ItemSupplier {
+         this.level().broadcastEntityEvent(this, (byte) 17);
+         this.gameEvent(GameEvent.EXPLODE, this.getOwner());
+         this.dealExplosionDamage();
+-        this.discard(EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause
++        this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java b/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
+index ed43ad94ca007a54e3c32d5e17c141048eeb5835..41ddf812971638999a73fdc0bca3c5f4c1bee617 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
+@@ -170,12 +170,12 @@ public class FishingHook extends Projectile {
+         net.minecraft.world.entity.player.Player entityhuman = this.getPlayerOwner();
+ 
+         if (entityhuman == null) {
+-            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         } else if (this.level().isClientSide || !this.shouldStopFishing(entityhuman)) {
+             if (this.onGround()) {
+                 ++this.life;
+                 if (this.life >= 1200) {
+-                    this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++                    this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                     return;
+                 }
+             } else {
+@@ -276,7 +276,7 @@ public class FishingHook extends Projectile {
+         if (!player.isRemoved() && player.isAlive() && (flag || flag1) && this.distanceToSqr((Entity) player) <= 1024.0D) {
+             return false;
+         } else {
+-            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             return true;
+         }
+     }
+@@ -557,7 +557,7 @@ public class FishingHook extends Projectile {
+             }
+             // CraftBukkit end
+ 
+-            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             return i;
+         } else {
+             return 0;
+@@ -595,7 +595,7 @@ public class FishingHook extends Projectile {
+     }
+ 
+     @Override
+-    public void remove(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
++    public void remove(Entity.RemovalReason entity_removalreason, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause cause) { // Paper - EntityRemoveFromWorldEvent
+         // CraftBukkit end
+         this.updateOwnerInfo((FishingHook) null);
+         super.remove(entity_removalreason, cause); // CraftBukkit - add Bukkit remove cause
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/LargeFireball.java b/src/main/java/net/minecraft/world/entity/projectile/LargeFireball.java
+index 28a65f2a9ef441ae96a7a635e0695b14ce2ee367..575f24a3c4601fb8d77cb216552028ffc7ae6293 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/LargeFireball.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/LargeFireball.java
+@@ -47,7 +47,7 @@ public class LargeFireball extends Fireball {
+                 this.level().explode(this, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.MOB);
+             }
+             // CraftBukkit end
+-            this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/LlamaSpit.java b/src/main/java/net/minecraft/world/entity/projectile/LlamaSpit.java
+index 8575941fd238750c5d56843989a48bcbde2d8a88..3280d68bb5ebe446e9cc264678bc5a7c71ee0d2c 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/LlamaSpit.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/LlamaSpit.java
+@@ -53,9 +53,9 @@ public class LlamaSpit extends Projectile {
+         float f = 0.99F;
+ 
+         if (this.level().getBlockStates(this.getBoundingBox()).noneMatch(BlockBehaviour.BlockStateBase::isAir)) {
+-            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         } else if (this.isInWaterOrBubble()) {
+-            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         } else {
+             this.setDeltaMovement(vec3d.scale(0.9900000095367432D));
+             this.applyGravity();
+@@ -89,7 +89,7 @@ public class LlamaSpit extends Projectile {
+     protected void onHitBlock(BlockHitResult blockHitResult) {
+         super.onHitBlock(blockHitResult);
+         if (!this.level().isClientSide) {
+-            this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/ShulkerBullet.java b/src/main/java/net/minecraft/world/entity/projectile/ShulkerBullet.java
+index 7fde1807640d0b02d417f48f1f6758f8ae32e04b..27f20def170072dc2cec2e0368b4ff79bad45a04 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/ShulkerBullet.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/ShulkerBullet.java
+@@ -210,7 +210,7 @@ public class ShulkerBullet extends Projectile {
+     @Override
+     public void checkDespawn() {
+         if (this.level().getDifficulty() == Difficulty.PEACEFUL) {
+-            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         }
+ 
+     }
+@@ -341,7 +341,7 @@ public class ShulkerBullet extends Projectile {
+         this.destroy(null);
+     }
+ 
+-    private void destroy(EntityRemoveEvent.Cause cause) {
++    private void destroy(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause cause) { // Paper - EntityRemoveFromWorldEvent
+         this.discard(cause);
+         // CraftBukkit end
+         this.level().gameEvent((Holder) GameEvent.ENTITY_DAMAGE, this.position(), GameEvent.Context.of((Entity) this));
+@@ -350,7 +350,7 @@ public class ShulkerBullet extends Projectile {
+     @Override
+     protected void onHit(HitResult hitResult) {
+         super.onHit(hitResult);
+-        this.destroy(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
++        this.destroy(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+     }
+ 
+     @Override
+@@ -368,7 +368,7 @@ public class ShulkerBullet extends Projectile {
+         if (!this.level().isClientSide) {
+             this.playSound(SoundEvents.SHULKER_BULLET_HURT, 1.0F, 1.0F);
+             ((ServerLevel) this.level()).sendParticles(ParticleTypes.CRIT, this.getX(), this.getY(), this.getZ(), 15, 0.2D, 0.2D, 0.2D, 0.0D);
+-            this.destroy(EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
++            this.destroy(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         }
+ 
+         return true;
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/SmallFireball.java b/src/main/java/net/minecraft/world/entity/projectile/SmallFireball.java
+index 1711ad457e7d1233fd32edc3e9e3b9f1e3be9980..b86f8c60961c6465d8b05c83d89cc3ebc4415c68 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/SmallFireball.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/SmallFireball.java
+@@ -89,7 +89,7 @@ public class SmallFireball extends Fireball {
+     protected void onHit(HitResult hitResult) {
+         super.onHit(hitResult);
+         if (!this.level().isClientSide) {
+-            this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/Snowball.java b/src/main/java/net/minecraft/world/entity/projectile/Snowball.java
+index 2b4d206c0d31ba38d7b2af654bd420e85145d441..3f548b8ccf61b5f5c956583f7c6d75ca281101e4 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/Snowball.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/Snowball.java
+@@ -68,7 +68,7 @@ public class Snowball extends ThrowableItemProjectile {
+         super.onHit(hitResult);
+         if (!this.level().isClientSide) {
+             this.level().broadcastEntityEvent(this, (byte) 3);
+-            this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownEgg.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownEgg.java
+index 62850e899955732afdd255ea1e55fc84b7c6c96b..e2c4c5113069ba56774a84c398bc193f1b41a22c 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/ThrownEgg.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownEgg.java
+@@ -107,7 +107,7 @@ public class ThrownEgg extends ThrowableItemProjectile {
+             }
+ 
+             this.level().broadcastEntityEvent(this, (byte) 3);
+-            this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownEnderpearl.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownEnderpearl.java
+index f43dd56182ced23cf1cf65c149c532a611cc933a..8570ebb0bf42f4bdf9aa8f811a2d3cadf0f4780e 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/ThrownEnderpearl.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownEnderpearl.java
+@@ -73,7 +73,7 @@ public class ThrownEnderpearl extends ThrowableItemProjectile {
+                             // CraftBukkit start
+                             Entity tp = entity.changeDimension(new DimensionTransition(worldserver, this.position(), entity.getDeltaMovement(), entity.getYRot(), entity.getXRot(), DimensionTransition.DO_NOTHING, PlayerTeleportEvent.TeleportCause.ENDER_PEARL));
+                             if (tp == null) {
+-                                this.discard(EntityRemoveEvent.Cause.HIT);
++                                this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.HIT); // Paper - EntityRemoveFromWorldEvent
+                                 return;
+                             }
+                             // CraftBukkit end
+@@ -98,11 +98,11 @@ public class ThrownEnderpearl extends ThrowableItemProjectile {
+                         this.playSound(worldserver, this.position());
+                     }
+ 
+-                    this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
++                    this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                     return;
+                 }
+ 
+-                this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
++                this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                 return;
+             }
+         }
+@@ -128,7 +128,7 @@ public class ThrownEnderpearl extends ThrowableItemProjectile {
+         Entity entity = this.getOwner();
+ 
+         if (entity instanceof ServerPlayer && !entity.isAlive() && this.level().getGameRules().getBoolean(GameRules.RULE_ENDER_PEARLS_VANISH_ON_DEATH)) {
+-            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         } else {
+             super.tick();
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownExperienceBottle.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownExperienceBottle.java
+index 9963db38420b91ae817a18ff084311cb45c0edee..ac8d4a1cc047b76cdaa93931282fbf1c3b07c15b 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/ThrownExperienceBottle.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownExperienceBottle.java
+@@ -55,7 +55,7 @@ public class ThrownExperienceBottle extends ThrowableItemProjectile {
+             // CraftBukkit end
+ 
+             ExperienceOrb.award((ServerLevel) this.level(), this.position(), i);
+-            this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
+index be787a5b52e90796d4f06e17e564f4324807c3e6..f45600ad48224e37da14b7a6b589a3eaf95a1aca 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
+@@ -119,7 +119,7 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+             int i = potioncontents.potion().isPresent() && ((Potion) ((Holder) potioncontents.potion().get()).value()).hasInstantEffects() ? 2007 : 2002;
+ 
+             this.level().levelEvent(i, this.blockPosition(), potioncontents.getColor());
+-            this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownTrident.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownTrident.java
+index 46b67c38dccf911973e6a7643f06972019073eb2..6140f397acb5c70bd9eeb2c017918cd3a6cbccdf 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/ThrownTrident.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownTrident.java
+@@ -72,7 +72,7 @@ public class ThrownTrident extends AbstractArrow {
+                     this.spawnAtLocation(this.getPickupItem(), 0.1F);
+                 }
+ 
+-                this.discard(EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
++                this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             } else {
+                 this.setNoPhysics(true);
+                 Vec3 vec3d = entity.getEyePosition().subtract(this.position());
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/WitherSkull.java b/src/main/java/net/minecraft/world/entity/projectile/WitherSkull.java
+index 315610e95c91a0db096bf572789a40e746e72ebe..2ed2fe4ad3a25ae693c9946ba1f9bd67d316b4b8 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/WitherSkull.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/WitherSkull.java
+@@ -110,7 +110,7 @@ public class WitherSkull extends AbstractHurtingProjectile {
+                 this.level().explode(this, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.MOB);
+             }
+             // CraftBukkit end
+-            this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/windcharge/AbstractWindCharge.java b/src/main/java/net/minecraft/world/entity/projectile/windcharge/AbstractWindCharge.java
+index de2bc78415ab4efb651030be6560d9c9778a1d17..50d359df6059cbb41f02ff996e93db644ded91b6 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/windcharge/AbstractWindCharge.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/windcharge/AbstractWindCharge.java
+@@ -116,7 +116,7 @@ public abstract class AbstractWindCharge extends AbstractHurtingProjectile imple
+             Vec3 vec3d1 = blockHitResult.getLocation().add(vec3d);
+ 
+             this.explode(vec3d1);
+-            this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         }
+ 
+     }
+@@ -125,7 +125,7 @@ public abstract class AbstractWindCharge extends AbstractHurtingProjectile imple
+     protected void onHit(HitResult hitResult) {
+         super.onHit(hitResult);
+         if (!this.level().isClientSide) {
+-            this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         }
+ 
+     }
+@@ -160,7 +160,7 @@ public abstract class AbstractWindCharge extends AbstractHurtingProjectile imple
+     public void tick() {
+         if (!this.level().isClientSide && this.getBlockY() > this.level().getMaxBuildHeight() + 30) {
+             this.explode(this.position());
+-            this.discard(EntityRemoveEvent.Cause.OUT_OF_WORLD); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.OUT_OF_WORLD); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         } else {
+             super.tick();
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/raid/Raider.java b/src/main/java/net/minecraft/world/entity/raid/Raider.java
+index 6fb56c826f0eaf76ab7896f784084b4fb1b3d105..6b0231c8a8b640c671563fe75021dd2569afe876 100644
+--- a/src/main/java/net/minecraft/world/entity/raid/Raider.java
++++ b/src/main/java/net/minecraft/world/entity/raid/Raider.java
+@@ -236,7 +236,7 @@ public abstract class Raider extends PatrollingMonster {
+             this.onItemPickup(item);
+             this.setItemSlot(enumitemslot, itemstack);
+             this.take(item, itemstack.getCount());
+-            item.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
++            item.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             this.getCurrentRaid().setLeader(this.getWave(), this);
+             this.setPatrolLeader(true);
+         } else {
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecartContainer.java b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecartContainer.java
+index 67840327e934b631a85cf2d64911f5cfab4402b1..07059329125e35fdcff649601f594670843f32e2 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecartContainer.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecartContainer.java
+@@ -132,7 +132,7 @@ public abstract class AbstractMinecartContainer extends AbstractMinecart impleme
+     }
+ 
+     @Override
+-    public void remove(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
++    public void remove(Entity.RemovalReason entity_removalreason, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause cause) { // Paper - EntityRemoveFromWorldEvent
+         // CraftBukkit end
+         if (!this.level().isClientSide && entity_removalreason.shouldDestroy()) {
+             Containers.dropContents(this.level(), (Entity) this, (Container) this);
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/Boat.java b/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
+index 26dd7c9f48f15f66a326901259ee89f4ab911526..5cee57e22a66e4b7978bd5a234c30d02db2204fd 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
+@@ -896,7 +896,7 @@ public class Boat extends VehicleEntity implements Leashable, VariantHolder<Boat
+     }
+ 
+     @Override
+-    public void remove(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
++    public void remove(Entity.RemovalReason entity_removalreason, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause cause) { // Paper - EntityRemoveFromWorldEvent
+         // CraftBukkit end
+         if (!this.level().isClientSide && entity_removalreason.shouldDestroy() && this.isLeashed()) {
+             this.dropLeash(true, true);
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/ChestBoat.java b/src/main/java/net/minecraft/world/entity/vehicle/ChestBoat.java
+index 42f8e2d961f83c3e9ce384158b9dfc4014eb0a5f..a2b925d09601aa2e1021f29b9ba7f6f85e82189d 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/ChestBoat.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/ChestBoat.java
+@@ -92,7 +92,7 @@ public class ChestBoat extends Boat implements HasCustomInventoryScreen, Contain
+     }
+ 
+     @Override
+-    public void remove(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
++    public void remove(Entity.RemovalReason entity_removalreason, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause cause) { // Paper - EntityRemoveFromWorldEvent
+         // CraftBukkit end
+         if (!this.level().isClientSide && entity_removalreason.shouldDestroy()) {
+             Containers.dropContents(this.level(), (Entity) this, (Container) this);
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/MinecartTNT.java b/src/main/java/net/minecraft/world/entity/vehicle/MinecartTNT.java
+index b7036f8399e2500ba01736c6006b972f7ca4838e..e4f3f5671208ff9b40f41b2ad0d145f51e60101e 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/MinecartTNT.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/MinecartTNT.java
+@@ -56,7 +56,7 @@ public class MinecartTNT extends AbstractMinecart {
+         if (this.fuse > 0) {
+             // Paper start - Configurable TNT height nerf
+             if (this.level().paperConfig().fixes.tntEntityHeightNerf.test(v -> this.getY() > v)) {
+-                this.discard(EntityRemoveEvent.Cause.OUT_OF_WORLD);
++                this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.OUT_OF_WORLD); // Paper - EntityRemoveFromWorldEvent
+                 return;
+             }
+             // Paper end - Configurable TNT height nerf
+@@ -132,7 +132,7 @@ public class MinecartTNT extends AbstractMinecart {
+             }
+             this.level().explode(this, damageSource, (ExplosionDamageCalculator) null, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.TNT);
+             // CraftBukkit end
+-            this.discard(EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/VehicleEntity.java b/src/main/java/net/minecraft/world/entity/vehicle/VehicleEntity.java
+index 869caeca756e4d75157cb22566d915fafba4d708..d9d83633965046eb2e6c472948b57f31d3c195dc 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/VehicleEntity.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/VehicleEntity.java
+@@ -67,7 +67,7 @@ public abstract class VehicleEntity extends Entity {
+                             return true;
+                         }
+                         // CraftBukkit end
+-                        this.discard(EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
++                        this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                     }
+                 } else {
+                     // CraftBukkit start
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 622ecc1aeb9140d5c0d181fa472d123c42e5c5f4..23a3284433a98ba7e9c841a15fb20852494321b0 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -750,7 +750,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+             final String msg = String.format("Entity threw exception at %s:%s,%s,%s", entity.level().getWorld().getName(), entity.getX(), entity.getY(), entity.getZ());
+             MinecraftServer.LOGGER.error(msg, throwable);
+             getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, throwable))); // Paper - ServerExceptionEvent
+-            entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
++            entity.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DISCARD); // Paper - EntityRemoveFromWorldEvent
+             // Paper end - Prevent block entity and entity crashes
+         }
+     }
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
+index 4ee7a4e5637fe36eb50e8ec9186d72d1253bfd98..0f1821eed3263f931adec3e669148a3069487487 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
+@@ -192,7 +192,7 @@ public class BeehiveBlockEntity extends BlockEntity {
+                 this.level.gameEvent((Holder) GameEvent.BLOCK_CHANGE, blockposition, GameEvent.Context.of(entity, this.getBlockState()));
+             }
+ 
+-            entity.discard(EntityRemoveEvent.Cause.ENTER_BLOCK); // CraftBukkit - add Bukkit remove cause
++            entity.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.ENTER_BLOCK); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+             super.setChanged();
+         }
+     }
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
+index 6d948b6151c6194bdba1cd461960397615c4bc40..9b61b3360c7fddb6cc2322d9723db3326a14cd45 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
+@@ -406,7 +406,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+         if (itemstack1.isEmpty()) {
+             flag = true;
+             itemEntity.setItem(ItemStack.EMPTY);
+-            itemEntity.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
++            itemEntity.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         } else {
+             itemEntity.setItem(itemstack1);
+         }
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerData.java b/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerData.java
+index 055f4b87c01ee7ecf7d2a111b72cc5aa85d9fbe8..416198471d3f6873a6f7a95ab69cfccf54ff215b 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerData.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerData.java
+@@ -218,7 +218,7 @@ public class TrialSpawnerData {
+                     entityinsentient.dropPreservedEquipment();
+                 }
+ 
+-                entity.remove(Entity.RemovalReason.DISCARDED, org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - Add bukkit remove cause;
++                entity.remove(Entity.RemovalReason.DISCARDED, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // CraftBukkit - Add bukkit remove cause; // Paper - EntityRemoveFromWorldEvent
+             }
+         });
+         if (!logic.getOminousConfig().spawnPotentialsDefinition().isEmpty()) {
+diff --git a/src/main/java/net/minecraft/world/level/dimension/end/DragonRespawnAnimation.java b/src/main/java/net/minecraft/world/level/dimension/end/DragonRespawnAnimation.java
+index 7bbe93966fa00b7001da53bf2f22f4d942b7cc22..ee1988f3a7dccd16f423b8512bdcdbf0ee8d5c37 100644
+--- a/src/main/java/net/minecraft/world/level/dimension/end/DragonRespawnAnimation.java
++++ b/src/main/java/net/minecraft/world/level/dimension/end/DragonRespawnAnimation.java
+@@ -105,7 +105,7 @@ public enum DragonRespawnAnimation {
+                     entityendercrystal = (EndCrystal) iterator.next();
+                     entityendercrystal.setBeamTarget((BlockPos) null);
+                     world.explode(entityendercrystal, entityendercrystal.getX(), entityendercrystal.getY(), entityendercrystal.getZ(), 6.0F, Level.ExplosionInteraction.NONE);
+-                    entityendercrystal.discard(EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause
++                    entityendercrystal.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+                 }
+             } else if (tick >= 80) {
+                 world.levelEvent(3001, new BlockPos(0, 128, 0), 0);
+diff --git a/src/main/java/net/minecraft/world/level/entity/EntityAccess.java b/src/main/java/net/minecraft/world/level/entity/EntityAccess.java
+index d06d36867c6724bc5840ba7cd9287f49f6249d7b..671f78a5113aad9205a52c4110e18209e3ece3fe 100644
+--- a/src/main/java/net/minecraft/world/level/entity/EntityAccess.java
++++ b/src/main/java/net/minecraft/world/level/entity/EntityAccess.java
+@@ -28,7 +28,7 @@ public interface EntityAccess {
+     void setRemoved(Entity.RemovalReason reason);
+ 
+     // CraftBukkit start - add Bukkit remove cause
+-    default void setRemoved(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
++    default void setRemoved(Entity.RemovalReason entity_removalreason, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause cause) {
+         this.setRemoved(entity_removalreason);
+     }
+     // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
+index 219062cff8a05c765b092f1525043d9d9a1153ae..296b7f12cd0bad0ad20ac8c17f603aacd5b58b0b 100644
+--- a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
++++ b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
+@@ -284,7 +284,7 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+     }
+ 
+     private void unloadEntity(EntityAccess entity) {
+-        entity.setRemoved(Entity.RemovalReason.UNLOADED_TO_CHUNK, EntityRemoveEvent.Cause.UNLOAD); // CraftBukkit - add Bukkit remove cause
++        entity.setRemoved(Entity.RemovalReason.UNLOADED_TO_CHUNK, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.UNLOAD); // CraftBukkit - add Bukkit remove cause // Paper - EntityRemoveFromWorldEvent
+         entity.setLevelCallback(EntityInLevelCallback.NULL);
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractWindCharge.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractWindCharge.java
+index 59df9031e8b4466c8687671d745318e7ee83d271..7efbe24b9954367a7e102fcf1049d110bc14f25c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractWindCharge.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractWindCharge.java
+@@ -12,7 +12,7 @@ public abstract class CraftAbstractWindCharge extends CraftFireball implements A
+     @Override
+     public void explode() {
+         this.getHandle().explode(this.getHandle().position());
+-        this.getHandle().discard(EntityRemoveEvent.Cause.EXPLODE); // SPIGOT-7577 - explode doesn't discard the entity, this happens only in tick and onHitBlock
++        this.getHandle().discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.EXPLODE); // SPIGOT-7577 - explode doesn't discard the entity, this happens only in tick and onHitBlock // Paper - EntityRemoveFromWorldEvent
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index df6da730134da754d0ff23bd1b57c82486b9ab73..8f5aff9f9622a531136acfbae9bb2b8c573aa7f1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -45,7 +45,6 @@ import org.bukkit.entity.Player;
+ import org.bukkit.entity.Pose;
+ import org.bukkit.entity.SpawnCategory;
+ import org.bukkit.event.entity.EntityDamageEvent;
+-import org.bukkit.event.entity.EntityRemoveEvent;
+ import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
+ import org.bukkit.metadata.MetadataValue;
+ import org.bukkit.permissions.PermissibleBase;
+@@ -326,7 +325,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+     @Override
+     public void remove() {
+         this.entity.pluginRemoved = true;
+-        this.entity.discard(this.getHandle().generation ? null : EntityRemoveEvent.Cause.PLUGIN);
++        this.entity.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.PLUGIN); // Paper - EntityRemoveFromWorldEvent
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 3595ff3db5eb0b1da100692702e514cb870220ee..d9e81a9bd0c4d07ce3b1079d8e2ee6a961b374fa 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1865,19 +1865,32 @@ public class CraftEventFactory {
+         return event;
+     }
+ 
+-    public static void callEntityRemoveEvent(Entity entity, EntityRemoveEvent.Cause cause) {
+-        if (entity instanceof ServerPlayer) {
+-            return; // Don't call for player
+-        }
++    // Paper start - EntityRemoveFromWorldEvent
++    public static void callEntityRemoveEvent(Entity entity, Entity.RemovalReason removalReason, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause cause) {
++        if (entity.generation) return;
+ 
+         if (cause == null) {
+-            // Don't call if cause is null
+-            // This can happen when an entity changes dimension,
+-            // the entity gets removed during world gen or
+-            // the entity is removed before it is even spawned (when the spawn event is cancelled for example)
+-            return;
++            cause = switch (removalReason) {
++                case KILLED -> com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DEATH;
++                case DISCARDED -> com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DISCARD;
++                case UNLOADED_TO_CHUNK -> com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.UNLOAD;
++                case UNLOADED_WITH_PLAYER -> com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.PLAYER_QUIT;
++                case CHANGED_DIMENSION -> com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.CHANGED_DIMENSION;
++            };
++        }
++
++        EntityRemoveEvent.Cause legacyCause;
++        try {
++            legacyCause = EntityRemoveEvent.Cause.valueOf(cause.name());
++        } catch (IllegalArgumentException e) {
++            legacyCause = null;
++        }
++
++        if (!(entity instanceof ServerPlayer) && legacyCause != null) {
++            Bukkit.getPluginManager().callEvent(new EntityRemoveEvent(entity.getBukkitEntity(), legacyCause));
+         }
+ 
+-        Bukkit.getPluginManager().callEvent(new EntityRemoveEvent(entity.getBukkitEntity(), cause));
++        new com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent(entity.getBukkitEntity(), entity.level().getWorld(), cause).callEvent();
+     }
++    // Paper end - EntityRemoveFromWorldEvent
+ }
+diff --git a/src/test/java/org/bukkit/event/EntityRemoveEventTest.java b/src/test/java/org/bukkit/event/EntityRemoveEventTest.java
+index fa2c47a25ada4eb38a2077afac37bd595ed6157a..3a2528e5e8fab3129a2bfa66280e062fec95a04e 100644
+--- a/src/test/java/org/bukkit/event/EntityRemoveEventTest.java
++++ b/src/test/java/org/bukkit/event/EntityRemoveEventTest.java
+@@ -119,7 +119,7 @@ public class EntityRemoveEventTest extends AbstractTestingBase {
+ 
+             for (MethodNode methodNode : classNode.methods) {
+                 if (methodNode.name.equals("remove") && methodNode.desc.contains("Lnet/minecraft/world/entity/Entity$RemovalReason;")) {
+-                    if (methodNode.desc.contains("Lorg/bukkit/event/entity/EntityRemoveEvent$Cause;")) {
++                    if (methodNode.desc.contains("Lcom/destroystokyo/paper/event/entity/EntityRemoveFromWorldEvent$Cause;")) { // Paper - EntityRemoveFromWorldEvent
+                         bukkitCause = true;
+                     } else {
+                         minecraftCause = true;
+@@ -189,7 +189,7 @@ public class EntityRemoveEventTest extends AbstractTestingBase {
+             }
+         }
+ 
+-        if (desc.contains("Lorg/bukkit/event/entity/EntityRemoveEvent$Cause;")) {
++        if (desc.contains("Lcom/destroystokyo/paper/event/entity/EntityRemoveFromWorldEvent$Cause;")) { // Paper - EntityRemoveFromWorldEvent
+             return false;
+         }
+ 
