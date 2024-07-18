@@ -91,7 +91,7 @@ index 8183c26b4a5ad169a53702b8c45fd05cda934e80..36dec6cd78a0990ba3c09a4a748c259e
              }
  
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 68436413645e0e33f22cdee0ea101ca01b343d75..4f5ff6849e0ea7a4f2491e0dbede7699554239dc 100644
+index b4293991dddc9039c26106ac8c047e5aeec35a56..32b42d25631aecdd31db4954a8bbf38bcda98d6b 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -733,6 +733,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
@@ -171,19 +171,32 @@ index 15f273aa592828719de6e092d79a407dc8652dfe..b24e8255ab18eb5b2e4968aa62aa3d72
                  try {
                      filechannel.close();
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-index a3ccc2da0927cc49e5fcfbd863e648ad0f25cc0d..dc7872afbdd06eb976bee6aee56a40b44084c24a 100644
+index 6c0debe3f3b693ed90dd2a39f481cccd8e4f7634..cf9f04e005940f5dd7baf50435f3703fa7c2d4f0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-@@ -436,6 +436,8 @@ public class CraftScheduler implements BukkitScheduler {
-                             msg,
+@@ -416,20 +416,25 @@ public class CraftScheduler implements BukkitScheduler {
+                 try {
+                     task.run();
+                 } catch (final Throwable throwable) {
++                    // Paper start
++                    final String logMessage = String.format(
++                        "Task #%s for %s generated an exception",
++                        task.getTaskId(),
++                        task.getOwner().getDescription().getFullName());
+                     task.getOwner().getLogger().log(
+                             Level.WARNING,
+-                            String.format(
+-                                "Task #%s for %s generated an exception",
+-                                task.getTaskId(),
+-                                task.getOwner().getDescription().getFullName()),
++                        logMessage,
                              throwable);
-                     }
 +                    org.bukkit.Bukkit.getServer().getPluginManager().callEvent(
-+                        new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerSchedulerException(msg, throwable, task)));
-                     // Paper end
++                        new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerSchedulerException(logMessage, throwable, task)));
++                    // Paper end
                  } finally {
                      this.currentTask = null;
-@@ -443,7 +445,7 @@ public class CraftScheduler implements BukkitScheduler {
+                 }
                  this.parsePending();
              } else {
                  this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass()));

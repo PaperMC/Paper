@@ -22689,7 +22689,7 @@ index 0761d5bc5f2813bb4a9f664ac7a05b9744d0a778..7d2896918ff5fed37e5de5a22c37b0c7
      }
  
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 2f253f33b866ff74e959c41d9501264cf226f45e..932de172f1fd4c1b31cf8958f3d2d412c9be0af9 100644
+index 9a009a688c02e990723917766c51e1c0e71e338d..4db96543e2072e47040bb25a9d97ea6a69c4a43d 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -32,46 +32,125 @@ import net.minecraft.world.level.lighting.LevelLightEngine;
@@ -23167,25 +23167,6 @@ index 2f253f33b866ff74e959c41d9501264cf226f45e..932de172f1fd4c1b31cf8958f3d2d412
      }
  
      @FunctionalInterface
-@@ -471,15 +398,15 @@ public class ChunkHolder extends GenerationChunkHolder {
- 
-     // Paper start
-     public final boolean isEntityTickingReady() {
--        return this.isEntityTickingReady;
-+        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
-     }
- 
-     public final boolean isTickingReady() {
--        return this.isTickingReady;
-+        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
-     }
- 
-     public final boolean isFullChunkReady() {
--        return this.isFullChunkReady;
-+        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
-     }
-     // Paper end
- }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkLevel.java b/src/main/java/net/minecraft/server/level/ChunkLevel.java
 index d9ad32acdf46a43a649334a3b736aeb7b3af21d1..fae17a075d7efaf24d916877dd5968eb9652bb66 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkLevel.java
@@ -23204,7 +23185,7 @@ index d9ad32acdf46a43a649334a3b736aeb7b3af21d1..fae17a075d7efaf24d916877dd5968eb
      public static final int RADIUS_AROUND_FULL_CHUNK = FULL_CHUNK_STEP.accumulatedDependencies().getRadius();
      public static final int MAX_LEVEL = 33 + RADIUS_AROUND_FULL_CHUNK;
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 7f287127faf1d3a6b4b0f77800964b327ca9123f..edb36dee707433d4f9419aef6ac6cc0bec5f285e 100644
+index ee597f2393c88473a72da941169e0f99c13da6ea..f6c090513f9dcc75e04e8e5b347c27f8d4d713cc 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -122,10 +122,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -24206,7 +24187,7 @@ index 7f287127faf1d3a6b4b0f77800964b327ca9123f..edb36dee707433d4f9419aef6ac6cc0b
 +    public class ChunkDistanceManager extends DistanceManager implements ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkSystemDistanceManager { // Paper - public // Paper - rewrite chunk system
  
          protected ChunkDistanceManager(final Executor workerExecutor, final Executor mainThreadExecutor) {
-             super(workerExecutor, mainThreadExecutor, ChunkMap.this); // Paper
+             super(workerExecutor, mainThreadExecutor);
          }
  
 +        // Paper start - rewrite chunk system
@@ -24318,10 +24299,10 @@ index 7f287127faf1d3a6b4b0f77800964b327ca9123f..edb36dee707433d4f9419aef6ac6cc0b
              this.serverEntity = new ServerEntity(ChunkMap.this.level, entity, j, flag, this::broadcast, this.seenBy); // CraftBukkit
              this.entity = entity;
 diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
-index cbabbfbb9967ddf9a56f3be24a88e0fcd4415aa2..6d0e396e148557e401939860cd7af0baefaf9f19 100644
+index 56aa26bb8d0bfbd3c799163fa620259e6455c89b..2d2596f04f5addac38037a14a02c6e0622d0c485 100644
 --- a/src/main/java/net/minecraft/server/level/DistanceManager.java
 +++ b/src/main/java/net/minecraft/server/level/DistanceManager.java
-@@ -36,66 +36,60 @@ import net.minecraft.world.level.ChunkPos;
+@@ -36,64 +36,58 @@ import net.minecraft.world.level.ChunkPos;
  import net.minecraft.world.level.chunk.LevelChunk;
  import org.slf4j.Logger;
  
@@ -24349,39 +24330,8 @@ index cbabbfbb9967ddf9a56f3be24a88e0fcd4415aa2..6d0e396e148557e401939860cd7af0ba
      private long ticketTickCounter;
 -    public int simulationDistance = 10;
 +    // Paper - rewrite chunk system
-     private final ChunkMap chunkMap; // Paper
  
-+    // Paper start - rewrite chunk system
-+    public ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkHolderManager getChunkHolderManager() {
-+        return ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.moonrise$getChunkMap().level).moonrise$getChunkTaskScheduler().chunkHolderManager;
-+    }
-+    // Paper end - rewrite chunk system
-+    // Paper start - chunk tick iteration optimisation
-+    private final ca.spottedleaf.moonrise.common.misc.PositionCountingAreaMap<ServerPlayer> spawnChunkTracker = new ca.spottedleaf.moonrise.common.misc.PositionCountingAreaMap<>();
-+
-+    @Override
-+    public final void moonrise$addPlayer(final ServerPlayer player, final SectionPos pos) {
-+        this.spawnChunkTracker.add(player, pos.x(), pos.z(), ca.spottedleaf.moonrise.patches.chunk_tick_iteration.ChunkTickConstants.PLAYER_SPAWN_TRACK_RANGE);
-+    }
-+
-+    @Override
-+    public final void moonrise$removePlayer(final ServerPlayer player, final SectionPos pos) {
-+        this.spawnChunkTracker.remove(player);
-+    }
-+
-+    @Override
-+    public final void moonrise$updatePlayer(final ServerPlayer player,
-+                                            final SectionPos oldPos, final SectionPos newPos,
-+                                            final boolean oldIgnore, final boolean newIgnore) {
-+        if (newIgnore) {
-+            this.spawnChunkTracker.remove(player);
-+        } else {
-+            this.spawnChunkTracker.addOrUpdate(player, newPos.x(), newPos.z(), ca.spottedleaf.moonrise.patches.chunk_tick_iteration.ChunkTickConstants.PLAYER_SPAWN_TRACK_RANGE);
-+        }
-+    }
-+    // Paper end - chunk tick iteration optimisation
-+
-     protected DistanceManager(Executor workerExecutor, Executor mainThreadExecutor, ChunkMap chunkMap) {
+     protected DistanceManager(Executor workerExecutor, Executor mainThreadExecutor) {
          Objects.requireNonNull(mainThreadExecutor);
          ProcessorHandle<Runnable> mailbox = ProcessorHandle.of("player ticket throttler", mainThreadExecutor::execute);
          ChunkTaskPriorityQueueSorter chunktaskqueuesorter = new ChunkTaskPriorityQueueSorter(ImmutableList.of(mailbox), workerExecutor, 4);
@@ -24391,10 +24341,9 @@ index cbabbfbb9967ddf9a56f3be24a88e0fcd4415aa2..6d0e396e148557e401939860cd7af0ba
 -        this.ticketThrottlerReleaser = chunktaskqueuesorter.getReleaseProcessor(mailbox);
 -        this.mainThreadExecutor = mainThreadExecutor;
 +        // Paper - rewrite chunk system
-         this.chunkMap = chunkMap; // Paper
      }
  
-     protected void purgeStaleTickets() {
+-    protected void purgeStaleTickets() {
 -        ++this.ticketTickCounter;
 -        ObjectIterator<Entry<SortedArraySet<Ticket<?>>>> objectiterator = this.tickets.long2ObjectEntrySet().fastIterator();
 -
@@ -24405,27 +24354,54 @@ index cbabbfbb9967ddf9a56f3be24a88e0fcd4415aa2..6d0e396e148557e401939860cd7af0ba
 -
 -            while (iterator.hasNext()) {
 -                Ticket<?> ticket = (Ticket) iterator.next();
--
++    // Paper start - rewrite chunk system
++    public ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkHolderManager getChunkHolderManager() {
++        return ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.moonrise$getChunkMap().level).moonrise$getChunkTaskScheduler().chunkHolderManager;
++    }
++    // Paper end - rewrite chunk system
++    // Paper start - chunk tick iteration optimisation
++    private final ca.spottedleaf.moonrise.common.misc.PositionCountingAreaMap<ServerPlayer> spawnChunkTracker = new ca.spottedleaf.moonrise.common.misc.PositionCountingAreaMap<>();
+ 
 -                if (ticket.timedOut(this.ticketTickCounter)) {
 -                    iterator.remove();
 -                    flag = true;
 -                    this.tickingTicketsTracker.removeTicket(entry.getLongKey(), ticket);
 -                }
 -            }
--
++    @Override
++    public final void moonrise$addPlayer(final ServerPlayer player, final SectionPos pos) {
++        this.spawnChunkTracker.add(player, pos.x(), pos.z(), ca.spottedleaf.moonrise.patches.chunk_tick_iteration.ChunkTickConstants.PLAYER_SPAWN_TRACK_RANGE);
++    }
+ 
 -            if (flag) {
 -                this.ticketTracker.update(entry.getLongKey(), DistanceManager.getTicketLevelAt((SortedArraySet) entry.getValue()), false);
 -            }
--
++    @Override
++    public final void moonrise$removePlayer(final ServerPlayer player, final SectionPos pos) {
++        this.spawnChunkTracker.remove(player);
++    }
+ 
 -            if (((SortedArraySet) entry.getValue()).isEmpty()) {
 -                objectiterator.remove();
 -            }
--        }
++    @Override
++    public final void moonrise$updatePlayer(final ServerPlayer player,
++                                            final SectionPos oldPos, final SectionPos newPos,
++                                            final boolean oldIgnore, final boolean newIgnore) {
++        if (newIgnore) {
++            this.spawnChunkTracker.remove(player);
++        } else {
++            this.spawnChunkTracker.addOrUpdate(player, newPos.x(), newPos.z(), ca.spottedleaf.moonrise.patches.chunk_tick_iteration.ChunkTickConstants.PLAYER_SPAWN_TRACK_RANGE);
+         }
++    }
++    // Paper end - chunk tick iteration optimisation
++
++    protected void purgeStaleTickets() {
 +        this.getChunkHolderManager().tick(); // Paper - rewrite chunk system
  
      }
  
-@@ -112,86 +106,15 @@ public abstract class DistanceManager {
+@@ -110,86 +104,15 @@ public abstract class DistanceManager {
      protected abstract ChunkHolder updateChunkScheduling(long pos, int level, @Nullable ChunkHolder holder, int k);
  
      public boolean runAllUpdates(ChunkMap chunkLoadingManager) {
@@ -24515,7 +24491,7 @@ index cbabbfbb9967ddf9a56f3be24a88e0fcd4415aa2..6d0e396e148557e401939860cd7af0ba
      }
  
      public <T> void addTicket(TicketType<T> type, ChunkPos pos, int level, T argument) {
-@@ -210,13 +133,7 @@ public abstract class DistanceManager {
+@@ -208,13 +131,7 @@ public abstract class DistanceManager {
      }
  
      public <T> boolean addRegionTicketAtDistance(TicketType<T> tickettype, ChunkPos chunkcoordintpair, int i, T t0) {
@@ -24530,7 +24506,7 @@ index cbabbfbb9967ddf9a56f3be24a88e0fcd4415aa2..6d0e396e148557e401939860cd7af0ba
      }
  
      public <T> void removeRegionTicket(TicketType<T> type, ChunkPos pos, int radius, T argument) {
-@@ -225,32 +142,21 @@ public abstract class DistanceManager {
+@@ -223,32 +140,21 @@ public abstract class DistanceManager {
      }
  
      public <T> boolean removeRegionTicketAtDistance(TicketType<T> tickettype, ChunkPos chunkcoordintpair, int i, T t0) {
@@ -24569,7 +24545,7 @@ index cbabbfbb9967ddf9a56f3be24a88e0fcd4415aa2..6d0e396e148557e401939860cd7af0ba
  
      }
  
-@@ -261,9 +167,8 @@ public abstract class DistanceManager {
+@@ -259,9 +165,8 @@ public abstract class DistanceManager {
          ((ObjectSet) this.playersPerChunk.computeIfAbsent(i, (j) -> {
              return new ObjectOpenHashSet();
          })).add(player);
@@ -24581,7 +24557,7 @@ index cbabbfbb9967ddf9a56f3be24a88e0fcd4415aa2..6d0e396e148557e401939860cd7af0ba
      }
  
      public void removePlayer(SectionPos pos, ServerPlayer player) {
-@@ -275,151 +180,81 @@ public abstract class DistanceManager {
+@@ -273,151 +178,81 @@ public abstract class DistanceManager {
          if (objectset != null) objectset.remove(player); // Paper - some state corruption happens here, don't crash, clean up gracefully
          if (objectset == null || objectset.isEmpty()) { // Paper
              this.playersPerChunk.remove(i);
@@ -24756,7 +24732,7 @@ index cbabbfbb9967ddf9a56f3be24a88e0fcd4415aa2..6d0e396e148557e401939860cd7af0ba
      private class ChunkTicketTracker extends ChunkTracker {
  
          private static final int MAX_LEVEL = ChunkLevel.MAX_LEVEL + 1;
-@@ -465,7 +300,7 @@ public abstract class DistanceManager {
+@@ -463,7 +298,7 @@ public abstract class DistanceManager {
          public int runDistanceUpdates(int distance) {
              return this.runUpdates(distance);
          }
@@ -24765,7 +24741,7 @@ index cbabbfbb9967ddf9a56f3be24a88e0fcd4415aa2..6d0e396e148557e401939860cd7af0ba
  
      private class FixedPlayerDistanceChunkTracker extends ChunkTracker {
  
-@@ -545,6 +380,7 @@ public abstract class DistanceManager {
+@@ -543,6 +378,7 @@ public abstract class DistanceManager {
          }
      }
  
@@ -24773,7 +24749,7 @@ index cbabbfbb9967ddf9a56f3be24a88e0fcd4415aa2..6d0e396e148557e401939860cd7af0ba
      private class PlayerTicketTracker extends DistanceManager.FixedPlayerDistanceChunkTracker {
  
          private int viewDistance = 0;
-@@ -639,5 +475,5 @@ public abstract class DistanceManager {
+@@ -637,5 +473,5 @@ public abstract class DistanceManager {
          private boolean haveTicketFor(int distance) {
              return distance <= this.viewDistance;
          }
@@ -28951,7 +28927,7 @@ index d775ab8b0d37797f29e650842191d40691fb7afc..a7108b2be0746aa1f0e574d8c6f5ffad
  
      public void animateTick(BlockState state, Level world, BlockPos pos, RandomSource random) {}
 diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-index 6c4a339be29bb9c07b741a1ca12de2217c8687ba..0f289d8f9bda2fb2ca2cd2dfd667a975529b3e4c 100644
+index fe7dc02ea55c2bcd39d12bfd4d315f0b8c7014c3..ded6d148110fe3fbb6272ce44582a28472dd49a6 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 @@ -762,7 +762,7 @@ public abstract class BlockBehaviour implements FeatureElement {
@@ -29040,7 +29016,7 @@ index 6c4a339be29bb9c07b741a1ca12de2217c8687ba..0f289d8f9bda2fb2ca2cd2dfd667a975
          protected BlockStateBase(Block block, Reference2ObjectArrayMap<Property<?>, Comparable<?>> propertyMap, MapCodec<BlockState> codec) {
              super(block, propertyMap, codec);
              this.fluidState = Fluids.EMPTY.defaultFluidState();
-@@ -864,6 +934,43 @@ public abstract class BlockBehaviour implements FeatureElement {
+@@ -858,6 +928,43 @@ public abstract class BlockBehaviour implements FeatureElement {
              this.shapeExceedsCube = this.cache == null || this.cache.largeCollisionShape; // Paper - moved from actual method to here
  
              this.legacySolid = this.calculateSolid();

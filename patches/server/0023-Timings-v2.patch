@@ -1823,7 +1823,7 @@ index 807184636a99c17fe6ed8dd1cd07e1872d613657..68b9b4aba7dba31e4526165e6efb8c40
  
      public Player.Spigot spigot()
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-index 0f7c3a44acf3c59ae43605e573f9da7f7c594647..a3ccc2da0927cc49e5fcfbd863e648ad0f25cc0d 100644
+index c017ce2ca1bc535795c958a2e509af2adf88efa9..6c0debe3f3b693ed90dd2a39f481cccd8e4f7634 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 @@ -1,5 +1,6 @@
@@ -1833,17 +1833,7 @@ index 0f7c3a44acf3c59ae43605e573f9da7f7c594647..a3ccc2da0927cc49e5fcfbd863e648ad
  import com.google.common.base.Preconditions;
  import com.google.common.util.concurrent.ThreadFactoryBuilder;
  import java.util.ArrayList;
-@@ -196,7 +197,8 @@ public class CraftScheduler implements BukkitScheduler {
-     }
- 
-     public BukkitTask scheduleInternalTask(Runnable run, int delay, String taskName) {
--        final CraftTask task = new CraftTask(run, nextId(), taskName);
-+        final CraftTask task = new CraftTask(run, nextId(), "Internal - " + (taskName != null ? taskName : "Unknown"));
-+        task.internal = true;
-         return handle(task, delay);
-     }
- 
-@@ -277,7 +279,7 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -271,7 +272,7 @@ public class CraftScheduler implements BukkitScheduler {
                          }
                          return false;
                      }
@@ -1852,7 +1842,7 @@ index 0f7c3a44acf3c59ae43605e573f9da7f7c594647..a3ccc2da0927cc49e5fcfbd863e648ad
          this.handle(task, 0L);
          for (CraftTask taskPending = this.head.getNext(); taskPending != null; taskPending = taskPending.getNext()) {
              if (taskPending == task) {
-@@ -312,7 +314,7 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -306,7 +307,7 @@ public class CraftScheduler implements BukkitScheduler {
                              }
                          }
                      }
@@ -1861,7 +1851,7 @@ index 0f7c3a44acf3c59ae43605e573f9da7f7c594647..a3ccc2da0927cc49e5fcfbd863e648ad
          this.handle(task, 0L);
          for (CraftTask taskPending = this.head.getNext(); taskPending != null; taskPending = taskPending.getNext()) {
              if (taskPending == task) {
-@@ -419,9 +421,7 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -413,9 +414,7 @@ public class CraftScheduler implements BukkitScheduler {
              if (task.isSync()) {
                  this.currentTask = task;
                  try {
@@ -1869,9 +1859,9 @@ index 0f7c3a44acf3c59ae43605e573f9da7f7c594647..a3ccc2da0927cc49e5fcfbd863e648ad
                      task.run();
 -                    task.timings.stopTiming(); // Spigot
                  } catch (final Throwable throwable) {
-                     // Paper start
-                     String msg = String.format(
-@@ -455,8 +455,10 @@ public class CraftScheduler implements BukkitScheduler {
+                     task.getOwner().getLogger().log(
+                             Level.WARNING,
+@@ -442,8 +441,10 @@ public class CraftScheduler implements BukkitScheduler {
                  this.runners.remove(task.getTaskId());
              }
          }
@@ -1882,7 +1872,7 @@ index 0f7c3a44acf3c59ae43605e573f9da7f7c594647..a3ccc2da0927cc49e5fcfbd863e648ad
          this.debugHead = this.debugHead.getNextHead(currentTick);
      }
  
-@@ -493,6 +495,7 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -480,6 +481,7 @@ public class CraftScheduler implements BukkitScheduler {
      }
  
      private void parsePending() {
@@ -1890,7 +1880,7 @@ index 0f7c3a44acf3c59ae43605e573f9da7f7c594647..a3ccc2da0927cc49e5fcfbd863e648ad
          CraftTask head = this.head;
          CraftTask task = head.getNext();
          CraftTask lastTask = head;
-@@ -511,6 +514,7 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -498,6 +500,7 @@ public class CraftScheduler implements BukkitScheduler {
              task.setNext(null);
          }
          this.head = lastTask;
@@ -1899,7 +1889,7 @@ index 0f7c3a44acf3c59ae43605e573f9da7f7c594647..a3ccc2da0927cc49e5fcfbd863e648ad
  
      private boolean isReady(final int currentTick) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
-index d56abf283f38548faa790c57045033f7ade6f958..ea26d9464644b5217879b8c21b4da28e57708dcb 100644
+index e4d1eb4a0ce2c9874922585f6bb0d9ead433fde1..ba369f3dcfdf498e971dc4405d39657a9b6e97cc 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
 @@ -1,12 +1,15 @@
@@ -1936,16 +1926,7 @@ index d56abf283f38548faa790c57045033f7ade6f958..ea26d9464644b5217879b8c21b4da28e
      CraftTask() {
          this(null, null, CraftTask.NO_REPEATING, CraftTask.NO_REPEATING);
      }
-@@ -52,7 +55,7 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
-         this.id = id;
-         this.period = CraftTask.NO_REPEATING;
-         this.taskName = taskName;
--        this.timings = null; // Will be changed in later patch
-+        this.timings = MinecraftTimings.getInternalTaskName(taskName);
-     }
-     // Paper end
- 
-@@ -73,7 +76,7 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
+@@ -58,7 +61,7 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
          }
          this.id = id;
          this.period = period;
@@ -1954,7 +1935,7 @@ index d56abf283f38548faa790c57045033f7ade6f958..ea26d9464644b5217879b8c21b4da28e
      }
  
      @Override
-@@ -93,11 +96,13 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
+@@ -78,11 +81,13 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
  
      @Override
      public void run() {
@@ -1968,7 +1949,7 @@ index d56abf283f38548faa790c57045033f7ade6f958..ea26d9464644b5217879b8c21b4da28e
      }
  
      long getCreatedAt() {
-@@ -128,7 +133,7 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
+@@ -113,7 +118,7 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
          this.next = next;
      }
  
@@ -1977,7 +1958,7 @@ index d56abf283f38548faa790c57045033f7ade6f958..ea26d9464644b5217879b8c21b4da28e
          return (this.rTask != null) ? this.rTask.getClass() : ((this.cTask != null) ? this.cTask.getClass() : null);
      }
  
-@@ -152,9 +157,4 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
+@@ -137,9 +142,4 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
          return true;
      }
  
@@ -2004,12 +1985,12 @@ index f97eccb6a17c7876e1e002d798eb67bbe80571a0..76effc345d362047e64d064eb64a5222
 +    } // Paper
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index 10b5fcf6575255000e52166eb73b60f6a3f88e84..a356d4d19e4b7a3d08c80a137609d1ed9db7c1b1 100644
+index 7fdc5f5b8ce2401ac480dd5691d99b2d297c6168..3a0c10d2d3dfbd04be421225f639cbd31aa93e70 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -213,6 +213,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -196,6 +196,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
+         return CraftNamespacedKey.toMinecraft(mat.getKey());
      }
-     // Paper end
      // ========================================================================
 +    // Paper start
 +    @Override
@@ -2020,7 +2001,7 @@ index 10b5fcf6575255000e52166eb73b60f6a3f88e84..a356d4d19e4b7a3d08c80a137609d1ed
  
      public static byte toLegacyData(BlockState data) {
          return CraftLegacy.toLegacyData(data);
-@@ -453,6 +459,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -436,6 +442,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
      public DamageSource.Builder createDamageSourceBuilder(DamageType damageType) {
          return new CraftDamageSourceBuilder(damageType);
      }
