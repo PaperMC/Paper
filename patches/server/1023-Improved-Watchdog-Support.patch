@@ -71,7 +71,7 @@ index 589a8bf75be6ccc59f1e5dd5d8d9afed41c4772d..b24265573fdef5d9a964bcd76146f345
              cause = cause.getCause();
          }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index fb3dcce4e1888f96fdd260740d9d955962d879fc..25300f6011c213b67876552abcb12c290d586fe4 100644
+index fb3dcce4e1888f96fdd260740d9d955962d879fc..36e16726d62d378dd55a1d52cc2680532dd36316 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -307,7 +307,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -138,7 +138,7 @@ index fb3dcce4e1888f96fdd260740d9d955962d879fc..25300f6011c213b67876552abcb12c29
              if (!this.initServer()) {
                  throw new IllegalStateException("Failed to initialize server");
              }
-@@ -1197,6 +1216,18 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1197,6 +1216,19 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              this.status = this.buildServerStatus();
  
              // Spigot start
@@ -150,14 +150,15 @@ index fb3dcce4e1888f96fdd260740d9d955962d879fc..25300f6011c213b67876552abcb12c29
 +            // anything at 3+ won't be caught here but also will trip watchdog....
 +            // tasks are default scheduled at -1 + delay, and first tick will tick at 1
 +            String doneTime = String.format(java.util.Locale.ROOT, "%.3fs", (double) (Util.getNanos() - serverStartTime) / 1.0E9D);
-+            LOGGER.info("Done ({})! For help, type \"help\"", doneTime);
++            final long actualDoneTimeMs = System.currentTimeMillis() - org.bukkit.craftbukkit.Main.BOOT_TIME.toEpochMilli(); // Paper - Add total time
++            LOGGER.info("Done (world loading: {}, total: {})! For help, type \"help\"", doneTime, String.format("%.3fs", actualDoneTimeMs / 1000.00D)); // Paper - Add total time
 +            // Paper end
 +
 +            org.spigotmc.WatchdogThread.tick(); // Paper
              org.spigotmc.WatchdogThread.hasStarted = true; // Paper
              Arrays.fill( this.recentTps, 20 );
              // Paper start - further improve server tick loop
-@@ -1292,6 +1323,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1292,6 +1324,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                  JvmProfiler.INSTANCE.onServerTick(this.smoothedTickTimeMillis);
              }
          } catch (Throwable throwable) {
@@ -170,7 +171,7 @@ index fb3dcce4e1888f96fdd260740d9d955962d879fc..25300f6011c213b67876552abcb12c29
              MinecraftServer.LOGGER.error("Encountered an unexpected exception", throwable);
              CrashReport crashreport = MinecraftServer.constructOrExtractCrashReport(throwable);
  
-@@ -1316,15 +1353,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1316,15 +1354,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                      this.services.profileCache().clearExecutor();
                  }
  
@@ -190,7 +191,7 @@ index fb3dcce4e1888f96fdd260740d9d955962d879fc..25300f6011c213b67876552abcb12c29
              }
  
          }
-@@ -1447,6 +1484,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1447,6 +1485,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
      @Override
      public TickTask wrapRunnable(Runnable runnable) {
@@ -203,7 +204,7 @@ index fb3dcce4e1888f96fdd260740d9d955962d879fc..25300f6011c213b67876552abcb12c29
          return new TickTask(this.tickCount, runnable);
      }
  
-@@ -2266,7 +2309,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2266,7 +2310,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              this.worldData.setDataConfiguration(worlddataconfiguration);
              this.resources.managers.updateRegistryTags();
              this.potionBrewing = this.potionBrewing.reload(this.worldData.enabledFeatures()); // Paper - Custom Potion Mixes
@@ -253,7 +254,7 @@ index 7d2896918ff5fed37e5de5a22c37b0c7f32634a8..7d82cc6b847124cf4225428ba3103095
      }
  
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 369b3485f452ac157b3ebf88b4f1970605d302d2..5f20606cc2c79ad9a4c4d4d6c9e6a2a31a88b282 100644
+index ca9b909a783733f2af1e36f4ac2fd463362b9685..c38c688417f769a6022dd40d6652b00e14c4df94 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -604,7 +604,7 @@ public abstract class PlayerList {
@@ -266,7 +267,7 @@ index 369b3485f452ac157b3ebf88b4f1970605d302d2..5f20606cc2c79ad9a4c4d4d6c9e6a2a3
  
          // Paper start - Configurable player collision; Remove from collideRule team if needed
 diff --git a/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java b/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
-index 2510589400b3012b827efcab477c6483d9d55901..43487a9ee202c5b0e5a416519939111f77b3059c 100644
+index ca94a1aaccdcc9f28b5f7936b871216a75ab762a..f22fb84c7e7929d6c80c44b13179cf385d8a43f9 100644
 --- a/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
 +++ b/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
 @@ -150,6 +150,7 @@ public abstract class BlockableEventLoop<R extends Runnable> implements Profiler
@@ -278,7 +279,7 @@ index 2510589400b3012b827efcab477c6483d9d55901..43487a9ee202c5b0e5a416519939111f
          }
      }
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 9501a2527bb0db91dd5494ccb4066b9629993e59..211fa580238bbbecf29d9b39551f0cab5a3d3bcd 100644
+index 5c4eaa6bcf20b0fcec14bd5ef76ea6f29a8613a2..e2a0487089eb5a7bdc1433e4c75f69d8e9f9d5f9 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -1419,6 +1419,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
