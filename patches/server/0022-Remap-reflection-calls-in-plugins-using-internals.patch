@@ -260,7 +260,7 @@ index f9a2c55a354c877749db3f92956de802ae575788..39182cdd17473da0123dc7172dce507e
      }
  }
 diff --git a/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java b/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java
-index f576060c8fe872772bbafe2016fc9b83a3c095f1..f9d4b33050a6fe8c2dabe8e5eec075d95dc513e0 100644
+index f576060c8fe872772bbafe2016fc9b83a3c095f1..f871a329eb52da077f58d0ceaaabd3349f84cad0 100644
 --- a/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java
 +++ b/src/main/java/io/papermc/paper/plugin/loader/PaperClasspathBuilder.java
 @@ -2,12 +2,12 @@ package io.papermc.paper.plugin.loader;
@@ -292,7 +292,7 @@ index f576060c8fe872772bbafe2016fc9b83a3c095f1..f9d4b33050a6fe8c2dabe8e5eec075d9
  
          try {
 -            return new PaperPluginClassLoader(logger, source, jarFile, configuration, this.getClass().getClassLoader(), new URLClassLoader(urls, getClass().getClassLoader()));
-+            final URLClassLoader libraryLoader = MappingEnvironment.DISABLE_PLUGIN_REWRITING
++            final URLClassLoader libraryLoader = MappingEnvironment.DISABLE_PLUGIN_REMAPPING
 +                ? new URLClassLoader(urls, this.getClass().getClassLoader())
 +                : new BytecodeModifyingURLClassLoader(urls, this.getClass().getClassLoader());
 +            return new PaperPluginClassLoader(logger, source, jarFile, configuration, this.getClass().getClassLoader(), libraryLoader);
@@ -300,7 +300,7 @@ index f576060c8fe872772bbafe2016fc9b83a3c095f1..f9d4b33050a6fe8c2dabe8e5eec075d9
              throw new RuntimeException(exception);
          }
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProviderFactory.java b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProviderFactory.java
-index bdd9bc8a414719b9f1d6f01f90539ddb8603a878..fdb52ad85cfaa1d53aadcad72cec3d3c8c12c058 100644
+index bdd9bc8a414719b9f1d6f01f90539ddb8603a878..1bf0fa1530b8e5f94d726d0313b7a00f675b500c 100644
 --- a/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProviderFactory.java
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProviderFactory.java
 @@ -1,9 +1,12 @@
@@ -321,7 +321,7 @@ index bdd9bc8a414719b9f1d6f01f90539ddb8603a878..fdb52ad85cfaa1d53aadcad72cec3d3c
  class SpigotPluginProviderFactory implements PluginTypeFactory<SpigotPluginProvider, PluginDescriptionFile> {
  
 +    static {
-+        if (!MappingEnvironment.DISABLE_PLUGIN_REWRITING) {
++        if (!MappingEnvironment.DISABLE_PLUGIN_REMAPPING) {
 +			LibraryLoader.LIBRARY_LOADER_FACTORY = BytecodeModifyingURLClassLoader::new;
 +		}
 +    }
@@ -612,14 +612,14 @@ index 0000000000000000000000000000000000000000..5fa5868e82d1f00498d0c5771369e171
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/util/MappingEnvironment.java b/src/main/java/io/papermc/paper/util/MappingEnvironment.java
-index 8e4229634d41a42b3d93948eebb77def7c0c72b1..2458685e7612040cea9d638dd2d945da1399ed77 100644
+index 8e4229634d41a42b3d93948eebb77def7c0c72b1..fb6aa9e2575b22e3089ea7fb32e6abfa6bb07d18 100644
 --- a/src/main/java/io/papermc/paper/util/MappingEnvironment.java
 +++ b/src/main/java/io/papermc/paper/util/MappingEnvironment.java
 @@ -10,6 +10,8 @@ import org.checkerframework.framework.qual.DefaultQualifier;
  
  @DefaultQualifier(NonNull.class)
  public final class MappingEnvironment {
-+    public static final boolean DISABLE_PLUGIN_REWRITING = Boolean.getBoolean("paper.disable-plugin-rewriting");
++    public static final boolean DISABLE_PLUGIN_REMAPPING = Boolean.getBoolean("paper.disablePluginRemapping");
 +    public static final String LEGACY_CB_VERSION = "v1_21_R1";
      private static final @Nullable String MAPPINGS_HASH = readMappingsHash();
      private static final boolean REOBF = checkReobf();
@@ -649,7 +649,7 @@ index 242811578a786e3807a1a7019d472d5a68f87116..0b65fdf53124f3dd042b2363b1b8df8e
              return traceElements;
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
-index 421ddf6ca955215dff77655a7eda62eb9d90aa92..1cef3614e81e751c98b504c26da4718dc88746df 100644
+index 421ddf6ca955215dff77655a7eda62eb9d90aa92..5dafd7765e82a110803affebc9d7d1905b13d0c9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
 @@ -102,36 +102,26 @@ public class Commodore {
@@ -700,33 +700,45 @@ index 421ddf6ca955215dff77655a7eda62eb9d90aa92..1cef3614e81e751c98b504c26da4718d
      }
      // Paper end - Plugin rewrites
  
-@@ -214,7 +204,7 @@ public class Commodore {
+@@ -214,7 +204,12 @@ public class Commodore {
              visitor = new LimitedClassRemapper(cw, new SimpleRemapper(Commodore.ENUM_RENAMES));
          }
  
--        cr.accept(new ClassRemapper(new ClassVisitor(Opcodes.ASM9, visitor) {
-+        cr.accept(new ClassRemapper(new ClassVisitor(Opcodes.ASM9, io.papermc.paper.pluginremap.reflect.ReflectionRemapper.visitor(visitor)) { // Paper
++        // Paper start
++        if (!io.papermc.paper.util.MappingEnvironment.DISABLE_PLUGIN_REMAPPING) {
++            visitor = io.papermc.paper.pluginremap.reflect.ReflectionRemapper.visitor(visitor);
++        }
+         cr.accept(new ClassRemapper(new ClassVisitor(Opcodes.ASM9, visitor) {
++            // Paper end
              final Set<RerouteMethodData> rerouteMethodData = new HashSet<>();
              String className;
              boolean isInterface;
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index a6de88625aeb2c5ababd476e804e9b45b1185efe..7fdc5f5b8ce2401ac480dd5691d99b2d297c6168 100644
+index a6de88625aeb2c5ababd476e804e9b45b1185efe..37f3a9f939a947d2b5e1e81d83e74555a636e1eb 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -340,7 +340,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -74,6 +74,7 @@ import org.bukkit.potion.PotionType;
+ @SuppressWarnings("deprecation")
+ public final class CraftMagicNumbers implements UnsafeValues {
+     public static final UnsafeValues INSTANCE = new CraftMagicNumbers();
++    public static final boolean DISABLE_OLD_API_SUPPORT = Boolean.getBoolean("paper.disableOldApiSupport"); // Paper
+ 
+     private CraftMagicNumbers() {}
+ 
+@@ -340,7 +341,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
              throw new InvalidPluginException("Plugin API version " + pdf.getAPIVersion() + " is lower than the minimum allowed version. Please update or replace it.");
          }
  
 -        if (toCheck.isOlderThan(ApiVersion.FLATTENING)) {
-+        if (!io.papermc.paper.util.MappingEnvironment.DISABLE_PLUGIN_REWRITING && toCheck.isOlderThan(ApiVersion.FLATTENING)) { // Paper
++        if (!DISABLE_OLD_API_SUPPORT && toCheck.isOlderThan(ApiVersion.FLATTENING)) { // Paper
              CraftLegacy.init();
          }
  
-@@ -355,6 +355,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -355,6 +356,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
  
      @Override
      public byte[] processClass(PluginDescriptionFile pdf, String path, byte[] clazz) {
-+        if (io.papermc.paper.util.MappingEnvironment.DISABLE_PLUGIN_REWRITING) return clazz; // Paper
++        if (DISABLE_OLD_API_SUPPORT) return clazz; // Paper
          try {
              clazz = Commodore.convert(clazz, pdf.getName(), ApiVersion.getOrCreateVersion(pdf.getAPIVersion()), ((CraftServer) Bukkit.getServer()).activeCompatibilities);
          } catch (Exception ex) {
