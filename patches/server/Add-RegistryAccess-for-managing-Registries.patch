@@ -41,6 +41,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.bukkit.craftbukkit.block.CraftBlockType;
 +import org.bukkit.craftbukkit.damage.CraftDamageType;
 +import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
++import org.bukkit.craftbukkit.entity.CraftCat;
++import org.bukkit.craftbukkit.entity.CraftFrog;
++import org.bukkit.craftbukkit.entity.CraftVillager;
 +import org.bukkit.craftbukkit.entity.CraftWolf;
 +import org.bukkit.craftbukkit.generator.structure.CraftStructure;
 +import org.bukkit.craftbukkit.generator.structure.CraftStructureType;
@@ -48,15 +51,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.bukkit.craftbukkit.inventory.trim.CraftTrimMaterial;
 +import org.bukkit.craftbukkit.inventory.trim.CraftTrimPattern;
 +import org.bukkit.craftbukkit.legacy.FieldRename;
++import org.bukkit.craftbukkit.map.CraftMapCursor;
 +import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 +import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 +import org.bukkit.damage.DamageType;
++import org.bukkit.entity.Cat;
++import org.bukkit.entity.Frog;
++import org.bukkit.entity.Villager;
 +import org.bukkit.entity.Wolf;
 +import org.bukkit.entity.memory.MemoryKey;
 +import org.bukkit.generator.structure.StructureType;
 +import org.bukkit.inventory.ItemType;
 +import org.bukkit.inventory.meta.trim.TrimMaterial;
 +import org.bukkit.inventory.meta.trim.TrimPattern;
++import org.bukkit.map.MapCursor;
 +import org.bukkit.potion.PotionEffectType;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.checker.nullness.qual.Nullable;
@@ -80,6 +88,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            entry(Registries.STRUCTURE_TYPE, RegistryKey.STRUCTURE_TYPE, StructureType.class, CraftStructureType::new),
 +            entry(Registries.BLOCK, RegistryKey.BLOCK, BlockType.class, CraftBlockType::new),
 +            entry(Registries.ITEM, RegistryKey.ITEM, ItemType.class, CraftItemType::new),
++            entry(Registries.CAT_VARIANT, RegistryKey.CAT_VARIANT, Cat.Type.class, CraftCat.CraftType::new),
++            entry(Registries.FROG_VARIANT, RegistryKey.FROG_VARIANT, Frog.Variant.class, CraftFrog.CraftVariant::new),
++            entry(Registries.VILLAGER_PROFESSION, RegistryKey.VILLAGER_PROFESSION, Villager.Profession.class, CraftVillager.CraftProfession::new),
++            entry(Registries.VILLAGER_TYPE, RegistryKey.VILLAGER_TYPE, Villager.Type.class, CraftVillager.CraftType::new),
++            entry(Registries.MAP_DECORATION_TYPE, RegistryKey.MAP_DECORATION_TYPE, MapCursor.Type.class, CraftMapCursor.CraftType::new),
 +
 +            // data-drivens
 +            entry(Registries.STRUCTURE, RegistryKey.STRUCTURE, Structure.class, CraftStructure::new).delayed(),
@@ -95,17 +108,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            apiOnly(Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT, () -> org.bukkit.Registry.ART),
 +            apiOnly(Registries.ATTRIBUTE, RegistryKey.ATTRIBUTE, () -> org.bukkit.Registry.ATTRIBUTE),
 +            apiOnly(Registries.BANNER_PATTERN, RegistryKey.BANNER_PATTERN, () -> org.bukkit.Registry.BANNER_PATTERN),
-+            apiOnly(Registries.CAT_VARIANT, RegistryKey.CAT_VARIANT, () -> org.bukkit.Registry.CAT_VARIANT),
 +            apiOnly(Registries.ENTITY_TYPE, RegistryKey.ENTITY_TYPE, () -> org.bukkit.Registry.ENTITY_TYPE),
 +            apiOnly(Registries.PARTICLE_TYPE, RegistryKey.PARTICLE_TYPE, () -> org.bukkit.Registry.PARTICLE_TYPE),
 +            apiOnly(Registries.POTION, RegistryKey.POTION, () -> org.bukkit.Registry.POTION),
 +            apiOnly(Registries.SOUND_EVENT, RegistryKey.SOUND_EVENT, () -> org.bukkit.Registry.SOUNDS),
-+            apiOnly(Registries.VILLAGER_PROFESSION, RegistryKey.VILLAGER_PROFESSION, () -> org.bukkit.Registry.VILLAGER_PROFESSION),
-+            apiOnly(Registries.VILLAGER_TYPE, RegistryKey.VILLAGER_TYPE, () -> org.bukkit.Registry.VILLAGER_TYPE),
 +            apiOnly(Registries.MEMORY_MODULE_TYPE, RegistryKey.MEMORY_MODULE_TYPE, () -> (org.bukkit.Registry<MemoryKey<?>>) (org.bukkit.Registry) org.bukkit.Registry.MEMORY_MODULE_TYPE),
-+            apiOnly(Registries.FLUID, RegistryKey.FLUID, () -> org.bukkit.Registry.FLUID),
-+            apiOnly(Registries.FROG_VARIANT, RegistryKey.FROG_VARIANT, () -> org.bukkit.Registry.FROG_VARIANT),
-+            apiOnly(Registries.MAP_DECORATION_TYPE, RegistryKey.MAP_DECORATION_TYPE, () -> org.bukkit.Registry.MAP_DECORATION_TYPE)
++            apiOnly(Registries.FLUID, RegistryKey.FLUID, () -> org.bukkit.Registry.FLUID)
 +        );
 +        final Map<RegistryKey<?>, RegistryEntry<?, ?>> byRegistryKey = new IdentityHashMap<>(REGISTRY_ENTRIES.size());
 +        final Map<ResourceKey<?>, RegistryEntry<?, ?>> byResourceKey = new IdentityHashMap<>(REGISTRY_ENTRIES.size());
@@ -750,7 +758,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            return new CraftRegistry<>(Structure.class, registryHolder.registryOrThrow(Registries.STRUCTURE), CraftStructure::new, FieldRename.NONE);
 -        }
 -        if (bukkitClass == StructureType.class) {
--            return new CraftRegistry<>(StructureType.class, BuiltInRegistries.STRUCTURE_TYPE, CraftStructureType::new, FieldRename.NONE);
+-            return new CraftRegistry<>(StructureType.class, registryHolder.registryOrThrow(Registries.STRUCTURE_TYPE), CraftStructureType::new, FieldRename.NONE);
+-        }
+-        if (bukkitClass == Villager.Type.class) {
+-            return new CraftRegistry<>(Villager.Type.class, registryHolder.registryOrThrow(Registries.VILLAGER_TYPE), CraftVillager.CraftType::new, FieldRename.NONE);
+-        }
+-        if (bukkitClass == Villager.Profession.class) {
+-            return new CraftRegistry<>(Villager.Profession.class, registryHolder.registryOrThrow(Registries.VILLAGER_PROFESSION), CraftVillager.CraftProfession::new, FieldRename.NONE);
 -        }
 -        if (bukkitClass == TrimMaterial.class) {
 -            return new CraftRegistry<>(TrimMaterial.class, registryHolder.registryOrThrow(Registries.TRIM_MATERIAL), CraftTrimMaterial::new, FieldRename.NONE);
@@ -772,6 +786,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        }
 -        if (bukkitClass == ItemType.class) {
 -            return new CraftRegistry<>(ItemType.class, registryHolder.registryOrThrow(Registries.ITEM), CraftItemType::new, FieldRename.NONE);
+-        }
+-        if (bukkitClass == Frog.Variant.class) {
+-            return new CraftRegistry<>(Frog.Variant.class, registryHolder.registryOrThrow(Registries.FROG_VARIANT), CraftFrog.CraftVariant::new, FieldRename.NONE);
+-        }
+-        if (bukkitClass == Cat.Type.class) {
+-            return new CraftRegistry<>(Cat.Type.class, registryHolder.registryOrThrow(Registries.CAT_VARIANT), CraftCat.CraftType::new, FieldRename.NONE);
+-        }
+-        if (bukkitClass == MapCursor.Type.class) {
+-            return new CraftRegistry<>(MapCursor.Type.class, registryHolder.registryOrThrow(Registries.MAP_DECORATION_TYPE), CraftMapCursor.CraftType::new, FieldRename.NONE);
 -        }
 -
 -        return null;
@@ -829,6 +852,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private YamlConfiguration commandsConfiguration;
      private final Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
 @@ -0,0 +0,0 @@ public final class CraftServer implements Server {
+     }
+ 
+     private void loadCompatibilities() {
++        if (true) return; // Paper - Big nope
+         ConfigurationSection compatibilities = this.configuration.getConfigurationSection("settings.compatibility");
+         if (compatibilities == null) {
+             this.activeCompatibilities = Collections.emptySet();
+@@ -0,0 +0,0 @@ public final class CraftServer implements Server {
  
      @Override
      public <T extends Keyed> Registry<T> getRegistry(Class<T> aClass) {
@@ -842,7 +873,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/legacy/FieldRename.java
 +++ b/src/main/java/org/bukkit/craftbukkit/legacy/FieldRename.java
 @@ -0,0 +0,0 @@ public class FieldRename {
-         return Enum.valueOf(enumClass, FieldRename.rename(apiVersion, enumClass.getName().replace('.', '/'), name));
+         };
      }
  
 -    @RequireCompatibility("allow-old-keys-in-registry")
@@ -852,15 +883,56 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    }
 +    // Paper start - absolutely not, having this as an expectation for plugin developers opens a huge
 +    // can of worms in the future, especially if mojang comes back and reuses some old key
-+    // @RequireCompatibility("allow-old-keys-in-registry")
-+    // public static <T extends Keyed> T get(Registry<T> registry, NamespacedKey namespacedKey) {
-+    //     // We don't have version-specific changes, so just use current, and don't inject a version
-+    //     return CraftRegistry.get(registry, namespacedKey, ApiVersion.CURRENT);
-+    // }
++    //@RequireCompatibility("allow-old-keys-in-registry")
++    //public static <T extends Keyed> T get(Registry<T> registry, NamespacedKey namespacedKey) {
++    //    // We don't have version-specific changes, so just use current, and don't inject a version
++    //    return CraftRegistry.get(registry, namespacedKey, ApiVersion.CURRENT);
++    //}
 +    // Paper end
  
      // PatternType
      private static final FieldRenameData PATTERN_TYPE_DATA = FieldRenameData.Builder.newBuilder()
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
+@@ -0,0 +0,0 @@ public class Commodore {
+ 
+     public static byte[] convert(byte[] b, final String pluginName, final ApiVersion pluginVersion, final Set<String> activeCompatibilities) {
+         final boolean modern = pluginVersion.isNewerThanOrSameAs(ApiVersion.FLATTENING);
+-        final boolean enumCompatibility = pluginVersion.isOlderThanOrSameAs(ApiVersion.getOrCreateVersion("1.20.6")) && activeCompatibilities.contains("enum-compatibility-mode");
+         ClassReader cr = new ClassReader(b);
+         ClassWriter cw = new ClassWriter(0); // TODO 2024-06-22: Open PR to ASM to included interface in handle hash
+ 
+-        List<String> methodEnumSignatures = Commodore.getMethodSignatures(b);
+-        Multimap<String, String> enumLessToEnum = HashMultimap.create();
+-        for (String method : methodEnumSignatures) {
+-            enumLessToEnum.put(method.replace("Ljava/lang/Enum;", "Ljava/lang/Object;"), method);
+-        }
+-
+         ClassVisitor visitor = cw;
+-        if (enumCompatibility) {
+-            visitor = new LimitedClassRemapper(cw, new SimpleRemapper(Commodore.ENUM_RENAMES));
+-        }
+ 
+         cr.accept(new ClassRemapper(new ClassVisitor(Opcodes.ASM9, io.papermc.paper.pluginremap.reflect.ReflectionRemapper.visitor(visitor)) { // Paper
+             final Set<RerouteMethodData> rerouteMethodData = new HashSet<>();
+@@ -0,0 +0,0 @@ public class Commodore {
+ 
+             @Override
+             public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+-                if (enumCompatibility && (access & Opcodes.ACC_SYNTHETIC) != 0 && (access & Opcodes.ACC_BRIDGE) != 0 && desc.contains("Ljava/lang/Object;")) {
+-                    // SPIGOT-7820: Do not use object method if enum method is present
+-                    // The object method does only redirect to the enum method
+-                    Collection<String> result = enumLessToEnum.get(desc.replace("Ljava/lang/Enum;", "Ljava/lang/Object;") + " " + name);
+-                    if (result.size() == 2) {
+-                        name = name + "_BUKKIT_UNUSED";
+-                    }
+-                }
+-
+                 return new MethodVisitor(this.api, super.visitMethod(access, name, desc, signature, exceptions)) {
+                     // Paper start - Plugin rewrites
+                     @Override
 diff --git a/src/main/resources/META-INF/services/io.papermc.paper.registry.RegistryAccess b/src/main/resources/META-INF/services/io.papermc.paper.registry.RegistryAccess
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -878,6 +950,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      use-map-color-cache: true
 -    compatibility:
 -        allow-old-keys-in-registry: false
+-        enum-compatibility-mode: false
  spawn-limits:
      monsters: 70
      animals: 10
@@ -1106,6 +1179,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        register(PotionEffectType.class, Registries.MOB_EFFECT, CraftPotionEffectType.class, MobEffect.class);
 -        register(Structure.class, Registries.STRUCTURE, CraftStructure.class, net.minecraft.world.level.levelgen.structure.Structure.class);
 -        register(StructureType.class, Registries.STRUCTURE_TYPE, CraftStructureType.class, net.minecraft.world.level.levelgen.structure.StructureType.class);
+-        register(Villager.Type.class, Registries.VILLAGER_TYPE, CraftVillager.CraftType.class, VillagerType.class);
+-        register(Villager.Profession.class, Registries.VILLAGER_PROFESSION, CraftVillager.CraftProfession.class, VillagerProfession.class);
 -        register(TrimMaterial.class, Registries.TRIM_MATERIAL, CraftTrimMaterial.class, net.minecraft.world.item.armortrim.TrimMaterial.class);
 -        register(TrimPattern.class, Registries.TRIM_PATTERN, CraftTrimPattern.class, net.minecraft.world.item.armortrim.TrimPattern.class);
 -        register(DamageType.class, Registries.DAMAGE_TYPE, CraftDamageType.class, net.minecraft.world.damagesource.DamageType.class);
@@ -1113,6 +1188,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        register(Wolf.Variant.class, Registries.WOLF_VARIANT, CraftWolf.CraftVariant.class, WolfVariant.class);
 -        register(ItemType.class, Registries.ITEM, CraftItemType.class, net.minecraft.world.item.Item.class, true);
 -        register(BlockType.class, Registries.BLOCK, CraftBlockType.class, net.minecraft.world.level.block.Block.class, true);
+-        register(Frog.Variant.class, Registries.FROG_VARIANT, CraftFrog.CraftVariant.class, FrogVariant.class);
+-        register(Cat.Type.class, Registries.CAT_VARIANT, CraftCat.CraftType.class, CatVariant.class);
+-        register(MapCursor.Type.class, Registries.MAP_DECORATION_TYPE, CraftMapCursor.CraftType.class, MapDecorationType.class);
 +        // Order: RegistryKey, Bukkit class, Minecraft Registry key, CraftBukkit class, Minecraft class
 +        register(RegistryKey.ENCHANTMENT, Enchantment.class, Registries.ENCHANTMENT, CraftEnchantment.class, net.minecraft.world.item.enchantment.Enchantment.class);
 +        register(RegistryKey.GAME_EVENT, GameEvent.class, Registries.GAME_EVENT, CraftGameEvent.class, net.minecraft.world.level.gameevent.GameEvent.class);
@@ -1120,6 +1198,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        register(RegistryKey.MOB_EFFECT, PotionEffectType.class, Registries.MOB_EFFECT, CraftPotionEffectType.class, MobEffect.class);
 +        register(RegistryKey.STRUCTURE, Structure.class, Registries.STRUCTURE, CraftStructure.class, net.minecraft.world.level.levelgen.structure.Structure.class);
 +        register(RegistryKey.STRUCTURE_TYPE, StructureType.class, Registries.STRUCTURE_TYPE, CraftStructureType.class, net.minecraft.world.level.levelgen.structure.StructureType.class);
++        register(RegistryKey.VILLAGER_TYPE, Villager.Type.class, Registries.VILLAGER_TYPE, CraftVillager.CraftType.class, VillagerType.class);
++        register(RegistryKey.VILLAGER_PROFESSION, Villager.Profession.class, Registries.VILLAGER_PROFESSION, CraftVillager.CraftProfession.class, VillagerProfession.class);
 +        register(RegistryKey.TRIM_MATERIAL, TrimMaterial.class, Registries.TRIM_MATERIAL, CraftTrimMaterial.class, net.minecraft.world.item.armortrim.TrimMaterial.class);
 +        register(RegistryKey.TRIM_PATTERN, TrimPattern.class, Registries.TRIM_PATTERN, CraftTrimPattern.class, net.minecraft.world.item.armortrim.TrimPattern.class);
 +        register(RegistryKey.DAMAGE_TYPE, DamageType.class, Registries.DAMAGE_TYPE, CraftDamageType.class, net.minecraft.world.damagesource.DamageType.class);
@@ -1127,6 +1207,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        register(RegistryKey.WOLF_VARIANT, Wolf.Variant.class, Registries.WOLF_VARIANT, CraftWolf.CraftVariant.class, WolfVariant.class);
 +        register(RegistryKey.ITEM, ItemType.class, Registries.ITEM, CraftItemType.class, net.minecraft.world.item.Item.class, true);
 +        register(RegistryKey.BLOCK, BlockType.class, Registries.BLOCK, CraftBlockType.class, net.minecraft.world.level.block.Block.class, true);
++        register(RegistryKey.FROG_VARIANT, Frog.Variant.class, Registries.FROG_VARIANT, CraftFrog.CraftVariant.class, FrogVariant.class);
++        register(RegistryKey.CAT_VARIANT, Cat.Type.class, Registries.CAT_VARIANT, CraftCat.CraftType.class, CatVariant.class);
++        register(RegistryKey.MAP_DECORATION_TYPE, MapCursor.Type.class, Registries.MAP_DECORATION_TYPE, CraftMapCursor.CraftType.class, MapDecorationType.class);
  
      }
  
