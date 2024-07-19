@@ -4780,10 +4780,10 @@ index 0000000000000000000000000000000000000000..003a857e70ead858e8437e3c1bfaf22f
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..244674dc44d80ee5ce78d2ed2c6ab94fd5d3d07f
+index 0000000000000000000000000000000000000000..7249b78e21b12117480a18f2d07d0c978fe42e56
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java
-@@ -0,0 +1,1076 @@
+@@ -0,0 +1,1082 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.player;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -5216,7 +5216,13 @@ index 0000000000000000000000000000000000000000..244674dc44d80ee5ce78d2ed2c6ab94f
 +            // Note: drop isAlive() check so that chunks properly unload client-side when the player dies
 +            ((ChunkSystemChunkHolder)((ChunkSystemServerLevel)this.world).moonrise$getChunkTaskScheduler().chunkHolderManager
 +                .getChunkHolder(chunkX, chunkZ).vanillaChunkHolder).moonrise$removeReceivedChunk(this.player);
-+            this.player.connection.send(new ClientboundForgetLevelChunkPacket(new ChunkPos(chunkX, chunkZ)));
++            final ChunkPos chunkPos = new ChunkPos(chunkX, chunkZ);
++            this.player.connection.send(new ClientboundForgetLevelChunkPacket(chunkPos));
++            // Paper start - PlayerChunkUnloadEvent
++            if (io.papermc.paper.event.packet.PlayerChunkUnloadEvent.getHandlerList().getRegisteredListeners().length > 0) {
++                new io.papermc.paper.event.packet.PlayerChunkUnloadEvent(this.world.getWorld().getChunkAt(chunkPos.longKey), this.player.getBukkitEntity()).callEvent();
++            }
++            // Paper end - PlayerChunkUnloadEvent
 +        }
 +
 +        private final SingleUserAreaMap<PlayerChunkLoaderData> broadcastMap = new SingleUserAreaMap<>(this) {
