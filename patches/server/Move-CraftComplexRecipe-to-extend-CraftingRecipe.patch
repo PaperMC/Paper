@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bjarne Koll <git@lynxplay.dev>
+Date: Fri, 19 Jul 2024 17:27:38 +0200
+Subject: [PATCH] Move CraftComplexRecipe to extend CraftingRecipe
+
+A craft complex recipe wraps a CustomRecipe, which itself is a
+CraftingRecipe.
+As such, this complex recipe should also be a crafting recipe.
+
+diff --git a/src/main/java/net/minecraft/world/item/crafting/CustomRecipe.java b/src/main/java/net/minecraft/world/item/crafting/CustomRecipe.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/item/crafting/CustomRecipe.java
++++ b/src/main/java/net/minecraft/world/item/crafting/CustomRecipe.java
+@@ -0,0 +0,0 @@ public abstract class CustomRecipe implements CraftingRecipe {
+     // CraftBukkit start
+     @Override
+     public Recipe toBukkitRecipe(NamespacedKey id) {
+-        return new org.bukkit.craftbukkit.inventory.CraftComplexRecipe(id, this);
++        // Paper - make CraftComplexRecipe extend CraftingRecipe - start
++        final org.bukkit.craftbukkit.inventory.CraftComplexRecipe recipe = new org.bukkit.craftbukkit.inventory.CraftComplexRecipe(id, this);
++        recipe.setGroup(this.getGroup());
++        recipe.setCategory(org.bukkit.craftbukkit.inventory.CraftRecipe.getCategory(this.category()));
++        return recipe;
++        // Paper - make CraftComplexRecipe extend CraftingRecipe - end
+     }
+     // CraftBukkit end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftComplexRecipe.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftComplexRecipe.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftComplexRecipe.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftComplexRecipe.java
+@@ -0,0 +0,0 @@ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+ import org.bukkit.inventory.ComplexRecipe;
+ import org.bukkit.inventory.ItemStack;
+ 
+-public class CraftComplexRecipe implements CraftRecipe, ComplexRecipe {
++public class CraftComplexRecipe extends org.bukkit.inventory.CraftingRecipe implements CraftRecipe, ComplexRecipe { // Paper - make CraftComplexRecipe extend CraftingRecipe
+ 
+     private final NamespacedKey key;
+     private final CustomRecipe recipe;
+ 
+     public CraftComplexRecipe(NamespacedKey key, CustomRecipe recipe) {
++        // Paper - make CraftComplexRecipe extend CraftingRecipe - start
++        super();
++        super.key = key;
++        super.output = ItemStack.empty();
++        // Paper - make CraftComplexRecipe extend CraftingRecipe - end
+         this.key = key;
+         this.recipe = recipe;
+     }
