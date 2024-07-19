@@ -216,6 +216,34 @@ public class CraftEnchantment extends Enchantment implements Handleable<net.mine
     }
     // Paper end - more Enchantment API
 
+    // Paper start - even more Enchantment API
+    @Override
+    public net.kyori.adventure.text.Component description() {
+        return io.papermc.paper.adventure.PaperAdventure.asAdventure(this.handle.value().description());
+    }
+
+    @Override
+    public io.papermc.paper.registry.set.RegistryKeySet<org.bukkit.inventory.ItemType> getSupportedItems() {
+        return io.papermc.paper.registry.set.PaperRegistrySets.convertToApi(io.papermc.paper.registry.RegistryKey.ITEM, this.handle.value().getSupportedItems());
+    }
+
+    @Override
+    public io.papermc.paper.registry.set.RegistryKeySet<org.bukkit.inventory.ItemType> getPrimaryItems() {
+        final java.util.Optional<net.minecraft.core.HolderSet<net.minecraft.world.item.Item>> primaryItems = this.handle.value().definition().primaryItems();
+        return primaryItems.map(holders -> io.papermc.paper.registry.set.PaperRegistrySets.convertToApi(io.papermc.paper.registry.RegistryKey.ITEM, holders)).orElse(null);
+    }
+
+    @Override
+    public int getWeight() {
+        return this.handle.value().getWeight();
+    }
+
+    @Override
+    public io.papermc.paper.registry.set.RegistryKeySet<org.bukkit.enchantments.Enchantment> getExclusiveWith() {
+        return io.papermc.paper.registry.set.PaperRegistrySets.convertToApi(io.papermc.paper.registry.RegistryKey.ENCHANTMENT, this.handle.value().exclusiveSet());
+    }
+    // Paper end - even more Enchantment API
+
     @Override
     public String getTranslationKey() {
         return Util.makeDescriptionId("enchantment", this.handle.unwrapKey().get().location());
