@@ -71,7 +71,7 @@ index 589a8bf75be6ccc59f1e5dd5d8d9afed41c4772d..b24265573fdef5d9a964bcd76146f345
              cause = cause.getCause();
          }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index fb3dcce4e1888f96fdd260740d9d955962d879fc..939c14e7361770732ad51868e76c968012fc4774 100644
+index fb3dcce4e1888f96fdd260740d9d955962d879fc..6313726359a1c15ee1d4d93b872849a1535539e1 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -307,7 +307,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -138,27 +138,25 @@ index fb3dcce4e1888f96fdd260740d9d955962d879fc..939c14e7361770732ad51868e76c9680
              if (!this.initServer()) {
                  throw new IllegalStateException("Failed to initialize server");
              }
-@@ -1197,6 +1216,19 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1197,6 +1216,17 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              this.status = this.buildServerStatus();
  
              // Spigot start
-+            // Paper start - move done tracking
++            // Paper start - Improved Watchdog Support
 +            LOGGER.info("Running delayed init tasks");
 +            this.server.getScheduler().mainThreadHeartbeat(this.tickCount); // run all 1 tick delay tasks during init,
 +            // this is going to be the first thing the tick process does anyways, so move done and run it after
 +            // everything is init before watchdog tick.
 +            // anything at 3+ won't be caught here but also will trip watchdog....
 +            // tasks are default scheduled at -1 + delay, and first tick will tick at 1
-+            String doneTime = String.format(java.util.Locale.ROOT, "%.3fs", (double) (Util.getNanos() - serverStartTime) / 1.0E9D);
 +            final long actualDoneTimeMs = System.currentTimeMillis() - org.bukkit.craftbukkit.Main.BOOT_TIME.toEpochMilli(); // Paper - Add total time
-+            LOGGER.info("Done (tick thread startup: {}, total: {})! For help, type \"help\"", doneTime, String.format(java.util.Locale.ROOT, "%.3fs", actualDoneTimeMs / 1000.00D)); // Paper - Add total time
-+            // Paper end
-+
-+            org.spigotmc.WatchdogThread.tick(); // Paper
++            LOGGER.info("Done ({})! For help, type \"help\"", String.format(java.util.Locale.ROOT, "%.3fs", actualDoneTimeMs / 1000.00D)); // Paper - Add total time
++            org.spigotmc.WatchdogThread.tick();
++            // Paper end - Improved Watchdog Support
              org.spigotmc.WatchdogThread.hasStarted = true; // Paper
              Arrays.fill( this.recentTps, 20 );
              // Paper start - further improve server tick loop
-@@ -1292,6 +1324,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1292,6 +1322,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                  JvmProfiler.INSTANCE.onServerTick(this.smoothedTickTimeMillis);
              }
          } catch (Throwable throwable) {
@@ -171,7 +169,7 @@ index fb3dcce4e1888f96fdd260740d9d955962d879fc..939c14e7361770732ad51868e76c9680
              MinecraftServer.LOGGER.error("Encountered an unexpected exception", throwable);
              CrashReport crashreport = MinecraftServer.constructOrExtractCrashReport(throwable);
  
-@@ -1316,15 +1354,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1316,15 +1352,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                      this.services.profileCache().clearExecutor();
                  }
  
@@ -191,7 +189,7 @@ index fb3dcce4e1888f96fdd260740d9d955962d879fc..939c14e7361770732ad51868e76c9680
              }
  
          }
-@@ -1447,6 +1485,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1447,6 +1483,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
      @Override
      public TickTask wrapRunnable(Runnable runnable) {
@@ -204,7 +202,7 @@ index fb3dcce4e1888f96fdd260740d9d955962d879fc..939c14e7361770732ad51868e76c9680
          return new TickTask(this.tickCount, runnable);
      }
  
-@@ -2266,7 +2310,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2266,7 +2308,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              this.worldData.setDataConfiguration(worlddataconfiguration);
              this.resources.managers.updateRegistryTags();
              this.potionBrewing = this.potionBrewing.reload(this.worldData.enabledFeatures()); // Paper - Custom Potion Mixes
@@ -222,7 +220,7 @@ index fb3dcce4e1888f96fdd260740d9d955962d879fc..939c14e7361770732ad51868e76c9680
              this.functionManager.replaceLibrary(this.resources.managers.getFunctionLibrary());
              this.structureTemplateManager.onResourceManagerReload(this.resources.resourceManager);
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 7d2896918ff5fed37e5de5a22c37b0c7f32634a8..7d82cc6b847124cf4225428ba310309544928148 100644
+index 7d2896918ff5fed37e5de5a22c37b0c7f32634a8..d43b98bdfcb00603737a309c0fb7793d42289b8c 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -328,7 +328,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -230,7 +228,7 @@ index 7d2896918ff5fed37e5de5a22c37b0c7f32634a8..7d82cc6b847124cf4225428ba3103095
              String s = String.format(Locale.ROOT, "%.3fs", (double) j / 1.0E9D);
  
 -            DedicatedServer.LOGGER.info("Done ({})! For help, type \"help\"", s);
-+            //DedicatedServer.LOGGER.info("Done ({})! For help, type \"help\"", s); // Paper moved to after init
++            DedicatedServer.LOGGER.info("Done preparing level \"{}\" ({})", this.getLevelIdName(), s); // Paper - clarify startup log messages & add total time
              if (dedicatedserverproperties.announcePlayerAchievements != null) {
                  ((GameRules.BooleanValue) this.getGameRules().getRule(GameRules.RULE_ANNOUNCE_ADVANCEMENTS)).set(dedicatedserverproperties.announcePlayerAchievements, this.overworld()); // CraftBukkit - per-world
              }
