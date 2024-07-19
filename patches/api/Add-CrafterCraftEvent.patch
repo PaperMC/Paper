@@ -1,0 +1,97 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ploppyperson <nathat890@outlook.com>
+Date: Thu, 18 Jul 2024 16:37:58 +0200
+Subject: [PATCH] Add CrafterCraftEvent
+
+Ports the currently proposed CrafterCraftEvent
+from upstream.
+The type is experimental to account for spigot
+potentially changing some api contracts, however
+the event is required for a stable release and
+waiting on spigot's PR queue is not an option.
+
+See: https://hub.spigotmc.org/stash/projects/SPIGOT/repos/bukkit/pull-requests/1044/overview
+
+diff --git a/src/main/java/org/bukkit/event/block/CrafterCraftEvent.java b/src/main/java/org/bukkit/event/block/CrafterCraftEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/org/bukkit/event/block/CrafterCraftEvent.java
+@@ -0,0 +0,0 @@
++package org.bukkit.event.block;
++
++import org.bukkit.block.Block;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.inventory.CraftingRecipe;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Event called when a Crafter is about to craft an item
++ * @apiNote Currently still experimental as it is ported from an open, not merged, spigot PR.
++ * The event was pulled to allow protection plugins and the likes to properly manage crafters.
++ * The type remains experimental as upstream *may* change the event before pulling it, resulting in a breaking change.
++ */
++@org.jetbrains.annotations.ApiStatus.Experimental
++public class CrafterCraftEvent extends BlockEvent implements Cancellable {
++
++    private static final HandlerList handlers = new HandlerList();
++    private boolean cancelled;
++    private ItemStack result;
++    private final CraftingRecipe recipe;
++
++    @org.jetbrains.annotations.ApiStatus.Internal // Paper - internal constructor.
++    public CrafterCraftEvent(@NotNull Block theBlock, @NotNull CraftingRecipe recipe, @NotNull ItemStack result) {
++        super(theBlock);
++        this.result = result;
++        this.recipe = recipe;
++    }
++
++    /**
++     * Gets the result for the craft
++     * @return the result for the craft
++     */
++    @NotNull
++    public ItemStack getResult() {
++        return result.clone();
++    }
++
++    /**
++     * Sets the result of the craft
++     * @param result the result of the craft
++     */
++    public void setResult(@NotNull ItemStack result) {
++        this.result = result.clone();
++    }
++
++    /**
++     * The recipe that was used to craft this item
++     * @return the recipe that was used to craft this item
++     */
++    @NotNull
++    public CraftingRecipe getRecipe() {
++        return recipe;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return cancelled;
++    }
++
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
