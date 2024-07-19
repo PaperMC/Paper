@@ -7,37 +7,40 @@ A craft complex recipe wraps a CustomRecipe, which itself is a
 CraftingRecipe.
 As such, this complex recipe should also be a crafting recipe.
 
+diff --git a/src/main/java/net/minecraft/world/item/crafting/CustomRecipe.java b/src/main/java/net/minecraft/world/item/crafting/CustomRecipe.java
+index b57a2ba09f160409b5df9a2ae7ec159af3e4bf93..50aefbaf4da7f9c6b158c67a6eecfa7b1fabf3cb 100644
+--- a/src/main/java/net/minecraft/world/item/crafting/CustomRecipe.java
++++ b/src/main/java/net/minecraft/world/item/crafting/CustomRecipe.java
+@@ -34,7 +34,12 @@ public abstract class CustomRecipe implements CraftingRecipe {
+     // CraftBukkit start
+     @Override
+     public Recipe toBukkitRecipe(NamespacedKey id) {
+-        return new org.bukkit.craftbukkit.inventory.CraftComplexRecipe(id, this);
++        // Paper - make CraftComplexRecipe extend CraftingRecipe - start
++        final org.bukkit.craftbukkit.inventory.CraftComplexRecipe inventory = new org.bukkit.craftbukkit.inventory.CraftComplexRecipe(id, this);
++        inventory.setGroup(this.getGroup());
++        inventory.setCategory(org.bukkit.craftbukkit.inventory.CraftRecipe.getCategory(this.category()));
++        return inventory;
++        // Paper - make CraftComplexRecipe extend CraftingRecipe - end
+     }
+     // CraftBukkit end
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftComplexRecipe.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftComplexRecipe.java
-index dcaeaa3367351eb54e2cf8e62be19ecc125a4bb4..93426b40b9ce2c70f95a2cf81b0c15cc63abcb6a 100644
+index dcaeaa3367351eb54e2cf8e62be19ecc125a4bb4..81669c389e0eaaae9187fd02c9d151598cdf2c61 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftComplexRecipe.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftComplexRecipe.java
-@@ -9,13 +9,13 @@ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+@@ -9,12 +9,13 @@ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
  import org.bukkit.inventory.ComplexRecipe;
  import org.bukkit.inventory.ItemStack;
  
 -public class CraftComplexRecipe implements CraftRecipe, ComplexRecipe {
--
--    private final NamespacedKey key;
 +public class CraftComplexRecipe extends org.bukkit.inventory.CraftingRecipe implements CraftRecipe, ComplexRecipe { // Paper - make CraftComplexRecipe extend CraftingRecipe
-+    // Paper - make CraftComplexRecipe extend CraftingRecipe - move to parent
+ 
+     private final NamespacedKey key;
      private final CustomRecipe recipe;
  
      public CraftComplexRecipe(NamespacedKey key, CustomRecipe recipe) {
--        this.key = key;
 +        super(key, ItemStack.empty()); // Paper - make CraftComplexRecipe extend CraftingRecipe - super
-+        // Paper - make CraftComplexRecipe extend CraftingRecipe - move to parent
+         this.key = key;
          this.recipe = recipe;
      }
- 
-@@ -24,10 +24,7 @@ public class CraftComplexRecipe implements CraftRecipe, ComplexRecipe {
-         return CraftItemStack.asCraftMirror(this.recipe.getResultItem(RegistryAccess.EMPTY));
-     }
- 
--    @Override
--    public NamespacedKey getKey() {
--        return this.key;
--    }
-+    // Paper - make CraftComplexRecipe extend CraftingRecipe - move to parent
- 
-     @Override
-     public void addToCraftingManager() {
