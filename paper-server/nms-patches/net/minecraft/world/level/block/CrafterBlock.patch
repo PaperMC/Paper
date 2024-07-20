@@ -1,0 +1,68 @@
+--- a/net/minecraft/world/level/block/CrafterBlock.java
++++ b/net/minecraft/world/level/block/CrafterBlock.java
+@@ -39,6 +39,13 @@
+ import net.minecraft.world.phys.MovingObjectPositionBlock;
+ import net.minecraft.world.phys.Vec3D;
+ 
++// CraftBukkit start
++import net.minecraft.world.InventoryLargeChest;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.event.inventory.InventoryMoveItemEvent;
++import org.bukkit.inventory.Inventory;
++// CraftBukkit end
++
+ public class CrafterBlock extends BlockTileEntity {
+ 
+     public static final MapCodec<CrafterBlock> CODEC = simpleCodec(CrafterBlock::new);
+@@ -226,7 +233,25 @@
+         ItemStack itemstack1 = itemstack.copy();
+ 
+         if (iinventory != null && (iinventory instanceof CrafterBlockEntity || itemstack.getCount() > iinventory.getMaxStackSize(itemstack))) {
++            // CraftBukkit start - InventoryMoveItemEvent
++            CraftItemStack oitemstack = CraftItemStack.asCraftMirror(itemstack1);
++
++            Inventory destinationInventory;
++            // Have to special case large chests as they work oddly
++            if (iinventory instanceof InventoryLargeChest) {
++                destinationInventory = new org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest((InventoryLargeChest) iinventory);
++            } else {
++                destinationInventory = iinventory.getOwner().getInventory();
++            }
++
++            InventoryMoveItemEvent event = new InventoryMoveItemEvent(crafterblockentity.getOwner().getInventory(), oitemstack, destinationInventory, true);
++            worldserver.getCraftServer().getPluginManager().callEvent(event);
++            itemstack1 = CraftItemStack.asNMSCopy(event.getItem());
+             while (!itemstack1.isEmpty()) {
++                if (event.isCancelled()) {
++                    break;
++                }
++                // CraftBukkit end
+                 ItemStack itemstack2 = itemstack1.copyWithCount(1);
+                 ItemStack itemstack3 = TileEntityHopper.addItem(crafterblockentity, iinventory, itemstack2, enumdirection.getOpposite());
+ 
+@@ -237,7 +262,25 @@
+                 itemstack1.shrink(1);
+             }
+         } else if (iinventory != null) {
++            // CraftBukkit start - InventoryMoveItemEvent
++            CraftItemStack oitemstack = CraftItemStack.asCraftMirror(itemstack1);
++
++            Inventory destinationInventory;
++            // Have to special case large chests as they work oddly
++            if (iinventory instanceof InventoryLargeChest) {
++                destinationInventory = new org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest((InventoryLargeChest) iinventory);
++            } else {
++                destinationInventory = iinventory.getOwner().getInventory();
++            }
++
++            InventoryMoveItemEvent event = new InventoryMoveItemEvent(crafterblockentity.getOwner().getInventory(), oitemstack, destinationInventory, true);
++            worldserver.getCraftServer().getPluginManager().callEvent(event);
++            itemstack1 = CraftItemStack.asNMSCopy(event.getItem());
+             while (!itemstack1.isEmpty()) {
++                if (event.isCancelled()) {
++                    break;
++                }
++                // CraftBukkit end
+                 int i = itemstack1.getCount();
+ 
+                 itemstack1 = TileEntityHopper.addItem(crafterblockentity, iinventory, itemstack1, enumdirection.getOpposite());
