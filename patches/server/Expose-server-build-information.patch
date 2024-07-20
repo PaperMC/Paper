@@ -361,6 +361,67 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/PaperBootstrap.java b/src/main/java/io/papermc/paper/PaperBootstrap.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/PaperBootstrap.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper;
++
++import java.util.List;
++import joptsimple.OptionSet;
++import net.minecraft.SharedConstants;
++import net.minecraft.server.Main;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++public final class PaperBootstrap {
++    private static final Logger LOGGER = LoggerFactory.getLogger("bootstrap");
++
++    private PaperBootstrap() {
++    }
++
++    public static void boot(final OptionSet options) {
++        SharedConstants.tryDetectVersion();
++
++        getStartupVersionMessages().forEach(LOGGER::info);
++
++        Main.main(options);
++    }
++
++    private static List<String> getStartupVersionMessages() {
++        final String javaSpecVersion = System.getProperty("java.specification.version");
++        final String javaVmName = System.getProperty("java.vm.name");
++        final String javaVmVersion = System.getProperty("java.vm.version");
++        final String javaVendor = System.getProperty("java.vendor");
++        final String javaVendorVersion = System.getProperty("java.vendor.version");
++        final String osName = System.getProperty("os.name");
++        final String osVersion = System.getProperty("os.version");
++        final String osArch = System.getProperty("os.arch");
++
++        final ServerBuildInfo bi = ServerBuildInfo.buildInfo();
++        return List.of(
++            String.format(
++                "Running Java %s (%s %s; %s %s) on %s %s (%s)",
++                javaSpecVersion,
++                javaVmName,
++                javaVmVersion,
++                javaVendor,
++                javaVendorVersion,
++                osName,
++                osVersion,
++                osArch
++            ),
++            String.format(
++                "Loading %s %s for Minecraft %s",
++                bi.brandName(),
++                bi.asString(ServerBuildInfo.StringRepresentation.VERSION_FULL),
++                bi.minecraftVersionId()
++            )
++        );
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java b/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -621,22 +682,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  }
  
                  System.setProperty("library.jansi.version", "Paper"); // Paper - set meaningless jansi version to prevent git builds from crashing on Windows
-+                // Paper start - Log Java and OS versioning to help with debugging plugin issues
-+                java.lang.management.RuntimeMXBean runtimeMX = java.lang.management.ManagementFactory.getRuntimeMXBean();
-+                java.lang.management.OperatingSystemMXBean osMX = java.lang.management.ManagementFactory.getOperatingSystemMXBean();
-+                if (runtimeMX != null && osMX != null) {
-+                    String javaInfo = "Java " + runtimeMX.getSpecVersion() + " (" + runtimeMX.getVmName() + " " + runtimeMX.getVmVersion() + ")";
-+                    String osInfo = "Host: " + osMX.getName() + " " + osMX.getVersion() + " (" + osMX.getArch() + ")";
+-                System.out.println("Loading libraries, please wait...");
+-                net.minecraft.server.Main.main(options);
 +
-+                    System.out.println("System Info: " + javaInfo + " " + osInfo);
-+                } else {
-+                    System.out.println("Unable to read system info");
-+                }
-+                // Paper end - Log Java and OS versioning to help with debugging plugin issues
-+
-                 System.out.println("Loading libraries, please wait...");
-                 net.minecraft.server.Main.main(options);
++                //System.out.println("Loading libraries, please wait...");
++                //net.minecraft.server.Main.main(options);
++                io.papermc.paper.PaperBootstrap.boot(options);
              } catch (Throwable t) {
+                 t.printStackTrace();
+             }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
