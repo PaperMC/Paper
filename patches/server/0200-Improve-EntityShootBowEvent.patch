@@ -45,3 +45,31 @@ index 93e3454de0b0d62895f165b0772526f3eae1e333..c858556ea457931aa14e338e20672cb5
      }
  
      @Override
+diff --git a/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java b/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
+index 56595dd3a0b7df4b5f9819ade797212278c8fd40..76a3f2dcf0fff331185ddd7f75f4a9fdb20a32ee 100644
+--- a/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
++++ b/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
+@@ -64,15 +64,20 @@ public abstract class ProjectileWeaponItem extends Item {
+                 this.shootProjectile(shooter, iprojectile, i, speed, divergence, f6, target);
+                 // CraftBukkit start
+                 org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(shooter, stack, itemstack1, iprojectile, hand, speed, true);
+-                if (event.isCancelled()) {
+-                    event.getProjectile().remove();
++                // Paper start - Improve EntityShootBowEvent
++                if (event.isCancelled() || !event.shouldConsumeItem()) {
++                    if (shooter instanceof net.minecraft.server.level.ServerPlayer player)
++                        player.getInventory().add(itemstack1);
++                    if (event.isCancelled())
++                        event.getProjectile().remove();
++                    // Paper end - Improve EntityShootBowEvent
+                     return;
+                 }
+ 
+                 if (event.getProjectile() == iprojectile.getBukkitEntity()) {
+                     if (!world.addFreshEntity(iprojectile)) {
+                         if (shooter instanceof net.minecraft.server.level.ServerPlayer) {
+-                            ((net.minecraft.server.level.ServerPlayer) shooter).getBukkitEntity().updateInventory();
++                            ((net.minecraft.server.level.ServerPlayer) shooter).getInventory().add(itemstack1); // Paper - Improve EntityShootBowEvent
+                         }
+                         return;
+                     }
