@@ -416,6 +416,14 @@ public class ItemMetaTest extends AbstractTestingBase {
                     cleanStack.setItemMeta(meta);
                     return cleanStack;
                 }
+            },
+            new StackProvider(Material.SHIELD) {
+                @Override ItemStack operate(ItemStack cleanStack) {
+                    final CraftMetaShield meta = (CraftMetaShield) cleanStack.getItemMeta();
+                    meta.setBaseColor(DyeColor.ORANGE);
+                    cleanStack.setItemMeta(meta);
+                    return cleanStack;
+                }
             }
         );
 

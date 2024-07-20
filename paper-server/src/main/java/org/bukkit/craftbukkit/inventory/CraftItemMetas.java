@@ -24,6 +24,7 @@ import org.bukkit.inventory.meta.MapMeta;
 import org.bukkit.inventory.meta.MusicInstrumentMeta;
 import org.bukkit.inventory.meta.OminousBottleMeta;
 import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.inventory.meta.ShieldMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.inventory.meta.SpawnEggMeta;
 import org.bukkit.inventory.meta.SuspiciousStewMeta;
@@ -106,6 +107,10 @@ public final class CraftItemMetas {
     private static final ItemMetaData<BlockStateMeta> BLOCK_STATE_META_DATA = new ItemMetaData<>(BlockStateMeta.class,
             item -> new CraftMetaBlockState(item.getComponentsPatch(), CraftItemType.minecraftToBukkit(item.getItem())),
             (type, meta) -> new CraftMetaBlockState(meta, type.asMaterial()));
+
+    private static final ItemMetaData<ShieldMeta> SHIELD_META_DATA = new ItemMetaData<>(ShieldMeta.class,
+            item -> new CraftMetaShield(item.getComponentsPatch()),
+            (type, meta) -> new CraftMetaShield(meta));
 
     private static final ItemMetaData<TropicalFishBucketMeta> TROPICAL_FISH_BUCKET_META_DATA = new ItemMetaData<>(TropicalFishBucketMeta.class,
             item -> new CraftMetaTropicalFishBucket(item.getComponentsPatch()),
@@ -258,8 +263,8 @@ public final class CraftItemMetas {
                 || itemType == ItemType.COMMAND_BLOCK || itemType == ItemType.REPEATING_COMMAND_BLOCK
                 || itemType == ItemType.CHAIN_COMMAND_BLOCK || itemType == ItemType.BEACON
                 || itemType == ItemType.DAYLIGHT_DETECTOR || itemType == ItemType.HOPPER
-                || itemType == ItemType.COMPARATOR || itemType == ItemType.SHIELD
-                || itemType == ItemType.STRUCTURE_BLOCK || (itemType.hasBlockType() && Tag.SHULKER_BOXES.isTagged(itemType.getBlockType().asMaterial()))
+                || itemType == ItemType.COMPARATOR || itemType == ItemType.STRUCTURE_BLOCK
+                || (itemType.hasBlockType() && Tag.SHULKER_BOXES.isTagged(itemType.getBlockType().asMaterial()))
                 || itemType == ItemType.ENDER_CHEST || itemType == ItemType.BARREL
                 || itemType == ItemType.BELL || itemType == ItemType.BLAST_FURNACE
                 || itemType == ItemType.CAMPFIRE || itemType == ItemType.SOUL_CAMPFIRE
@@ -272,6 +277,9 @@ public final class CraftItemMetas {
                 || itemType == ItemType.SUSPICIOUS_GRAVEL || itemType == ItemType.CRAFTER
                 || itemType == ItemType.TRIAL_SPAWNER || itemType == ItemType.VAULT) {
             return asType(BLOCK_STATE_META_DATA);
+        }
+        if (itemType == ItemType.SHIELD) {
+            return asType(SHIELD_META_DATA);
         }
         if (itemType == ItemType.TROPICAL_FISH_BUCKET) {
             return asType(TROPICAL_FISH_BUCKET_META_DATA);

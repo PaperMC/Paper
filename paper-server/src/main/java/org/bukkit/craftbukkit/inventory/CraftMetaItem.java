@@ -1923,6 +1923,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                         CraftMetaMap.MAP_COLOR.TYPE,
                         CraftMetaMap.MAP_ID.TYPE,
                         CraftMetaPotion.POTION_CONTENTS.TYPE,
+                        CraftMetaShield.BASE_COLOR.TYPE,
                         CraftMetaSkull.SKULL_PROFILE.TYPE,
                         CraftMetaSkull.NOTE_BLOCK_SOUND.TYPE,
                         CraftMetaSpawnEgg.ENTITY_TAG.TYPE,

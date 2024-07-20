@@ -15,8 +15,10 @@ import net.minecraft.core.component.PatchedDataComponentMap;
 import net.minecraft.core.component.TypedDataComponent;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.item.EnumColor;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.block.entity.TileEntity;
+import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.block.BlockState;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
@@ -202,7 +204,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
 
     private static CraftBlockEntityState<?> getBlockState(Material material, NBTTagCompound blockEntityTag) {
         BlockPosition pos = BlockPosition.ZERO;
-        Material stateMaterial = (material != Material.SHIELD) ? material : shieldToBannerHack(); // Only actually used for jigsaws
+        Material stateMaterial = (material != Material.SHIELD) ? material : shieldToBannerHack(blockEntityTag); // Only actually used for jigsaws
         if (blockEntityTag != null) {
             if (material == Material.SHIELD) {
                 blockEntityTag.putString("id", "minecraft:banner");
@@ -223,14 +225,25 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
     public void setBlockState(BlockState blockState) {
         Preconditions.checkArgument(blockState != null, "blockState must not be null");
 
-        Material stateMaterial = (material != Material.SHIELD) ? material : shieldToBannerHack();
+        Material stateMaterial = (material != Material.SHIELD) ? material : shieldToBannerHack(null);
         Class<?> blockStateType = CraftBlockStates.getBlockStateType(stateMaterial);
-        Preconditions.checkArgument(blockStateType == blockState.getClass() && blockState instanceof CraftBlockEntityState, "Invalid blockState for " + material);
+        Preconditions.checkArgument(blockStateType == blockState.getClass() && blockState instanceof CraftBlockEntityState, "Invalid blockState for %s", material);
 
         this.blockEntityTag = (CraftBlockEntityState<?>) blockState;
     }
 
-    private static Material shieldToBannerHack() {
+    private static Material shieldToBannerHack(NBTTagCompound tag) {
+        if (tag != null) {
+            if (tag.contains("components", CraftMagicNumbers.NBT.TAG_COMPOUND)) {
+                NBTTagCompound components = tag.getCompound("components");
+                if (components.contains("minecraft:base_color", CraftMagicNumbers.NBT.TAG_STRING)) {
+                    DyeColor color = DyeColor.getByWoolData((byte) EnumColor.byName(components.getString("minecraft:base_color"), EnumColor.WHITE).getId());
+
+                    return CraftMetaShield.shieldToBannerHack(color);
+                }
+            }
+        }
+
         return Material.WHITE_BANNER;
     }
 }
