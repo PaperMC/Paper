@@ -5,7 +5,7 @@ Subject: [PATCH] Bundle spark
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 1a734293c9416f13324bb0edf8f950c9029f8bc4..568d0b65bb5010e0ab365cb47b624720807a1f63 100644
+index 1a734293c9416f13324bb0edf8f950c9029f8bc4..421f6b3dc8890d63d2e7aa774d0bf8f7e15890ab 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -61,6 +61,10 @@ dependencies {
@@ -13,23 +13,24 @@ index 1a734293c9416f13324bb0edf8f950c9029f8bc4..568d0b65bb5010e0ab365cb47b624720
      implementation("io.papermc:reflection-rewriter-proxy-generator:$reflectionRewriterVersion")
      // Paper end - Remap reflection
 +    // Paper start - spark
-+    implementation("me.lucko:spark-api:0.1-SNAPSHOT")
-+    implementation("me.lucko:spark-paper:1.10.83-SNAPSHOT")
++    implementation("me.lucko:spark-api:0.1-20240720.200737-2")
++    implementation("me.lucko:spark-paper:1.10.84-20240720.204128-1")
 +    // Paper end - spark
  }
  
  paperweight {
 diff --git a/src/main/java/io/papermc/paper/SparksFly.java b/src/main/java/io/papermc/paper/SparksFly.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d589ae2aa89f386d96e4ff51dbc9f2aae1703598
+index 0000000000000000000000000000000000000000..19ee43e1ca053574a0151b4c43b01972183657e6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/SparksFly.java
 @@ -0,0 +1,200 @@
 +package io.papermc.paper;
 +
 +import io.papermc.paper.configuration.GlobalConfiguration;
-+import io.papermc.paper.plugin.ClassLoaderStorage;
-+import io.papermc.paper.plugin.entrypoint.classloader.PaperSimplePluginClassLoader;
++import io.papermc.paper.plugin.entrypoint.classloader.group.PaperPluginClassLoaderStorage;
++import io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader;
++import io.papermc.paper.plugin.provider.classloader.PaperClassLoaderStorage;
 +import io.papermc.paper.util.MCUtil;
 +import java.util.List;
 +import java.util.logging.Level;
@@ -40,11 +41,11 @@ index 0000000000000000000000000000000000000000..d589ae2aa89f386d96e4ff51dbc9f2aa
 +import me.lucko.spark.paper.api.PaperSparkModule;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.format.TextColor;
++import net.minecraft.util.ExceptionCollector;
 +import org.bukkit.Server;
 +import org.bukkit.command.Command;
 +import org.bukkit.command.CommandSender;
 +import org.bukkit.craftbukkit.CraftServer;
-+import org.bukkit.plugin.java.PluginClassLoader;
 +
 +// It's like electricity.
 +public final class SparksFly {
@@ -87,24 +88,23 @@ index 0000000000000000000000000000000000000000..d589ae2aa89f386d96e4ff51dbc9f2aa
 +        }, new PaperClassLookup() {
 +            @Override
 +            public Class<?> lookup(final String className) throws Exception {
++                final ExceptionCollector<ClassNotFoundException> exceptions = new ExceptionCollector<>();
 +                try {
 +                    return Class.forName(className);
-+                } catch (final Exception e) {
-+                    for (final PaperSimplePluginClassLoader loader : ClassLoaderStorage.MODERN_LOADERS) {
-+                        final Class<?> loadedClass = loader.loadClass(className);
-+                        if (loadedClass != null) {
-+                            return loadedClass;
++                } catch (final ClassNotFoundException e) {
++                    exceptions.add(e);
++                    for (final ConfiguredPluginClassLoader loader : ((PaperPluginClassLoaderStorage) PaperClassLoaderStorage.instance()).getGlobalGroup().getClassLoaders()) {
++                        try {
++                            final Class<?> loadedClass = loader.loadClass(className, true, false, true);
++                            if (loadedClass != null) {
++                                return loadedClass;
++                            }
++                        } catch (final ClassNotFoundException exception) {
++                            exceptions.add(exception);
 +                        }
 +                    }
-+                    for (final PluginClassLoader loader : ClassLoaderStorage.LEGACY_LOADERS) {
-+                        final Class<?> loadedClass = loader.loadClass(className, true, false, true);
-+                        if (loadedClass != null) {
-+                            return loadedClass;
-+                        }
-+                    }
-+                    final ClassNotFoundException exception = new ClassNotFoundException("Could not find class " + className);
-+                    exception.addSuppressed(e);
-+                    throw exception;
++                    exceptions.throwIfPresent();
++                    return null;
 +                }
 +            }
 +        });
@@ -225,43 +225,6 @@ index 0000000000000000000000000000000000000000..d589ae2aa89f386d96e4ff51dbc9f2aa
 +        }
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/plugin/ClassLoaderStorage.java b/src/main/java/io/papermc/paper/plugin/ClassLoaderStorage.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..cb080d89b3be899de5007c799e6ef40809f2ef61
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/plugin/ClassLoaderStorage.java
-@@ -0,0 +1,11 @@
-+package io.papermc.paper.plugin;
-+
-+import io.papermc.paper.plugin.entrypoint.classloader.PaperSimplePluginClassLoader;
-+import java.util.HashSet;
-+import java.util.Set;
-+import org.bukkit.plugin.java.PluginClassLoader;
-+
-+public final class ClassLoaderStorage {
-+    public static final Set<PaperSimplePluginClassLoader> MODERN_LOADERS = new HashSet<>();
-+    public static final Set<PluginClassLoader> LEGACY_LOADERS = new HashSet<>();
-+}
-diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperSimplePluginClassLoader.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperSimplePluginClassLoader.java
-index 967465e542483e93a736129b5f5c6622cefd33fa..f8094525064b46fe78f5b5f32ea53b234b4d525d 100644
---- a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperSimplePluginClassLoader.java
-+++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperSimplePluginClassLoader.java
-@@ -1,5 +1,6 @@
- package io.papermc.paper.plugin.entrypoint.classloader;
- 
-+import io.papermc.paper.plugin.ClassLoaderStorage;
- import io.papermc.paper.plugin.configuration.PluginMeta;
- import io.papermc.paper.plugin.util.NamespaceChecker;
- import org.jetbrains.annotations.ApiStatus;
-@@ -40,6 +41,8 @@ public class PaperSimplePluginClassLoader extends URLClassLoader {
-         this.jarUrl = source.toUri().toURL();
-         this.configuration = configuration;
-         this.jar = file;
-+
-+        ClassLoaderStorage.MODERN_LOADERS.add(this); // Paper - spark
-     }
- 
-     @Override
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/source/FileProviderSource.java b/src/main/java/io/papermc/paper/plugin/provider/source/FileProviderSource.java
 index 6b8ed8a0baaf4a57d20e57cec3400af5561ddd79..48604e7f96adc9e226e034054c5e2bad0b024eb5 100644
 --- a/src/main/java/io/papermc/paper/plugin/provider/source/FileProviderSource.java
@@ -304,26 +267,6 @@ index 6b8ed8a0baaf4a57d20e57cec3400af5561ddd79..48604e7f96adc9e226e034054c5e2bad
          type.register(entrypointHandler, file, context);
      }
  
-diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java
-index 0fd1040ed376f19c6d5326767baaf3048ce1bfb4..a9fd3f34aca19b1cfada5b771b3d46a2cfca4c51 100644
---- a/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java
-+++ b/src/main/java/io/papermc/paper/plugin/provider/type/spigot/SpigotPluginProvider.java
-@@ -2,6 +2,7 @@ package io.papermc.paper.plugin.provider.type.spigot;
- 
- import com.destroystokyo.paper.util.SneakyThrow;
- import com.destroystokyo.paper.utils.PaperPluginLogger;
-+import io.papermc.paper.plugin.ClassLoaderStorage;
- import io.papermc.paper.plugin.manager.PaperPluginManagerImpl;
- import io.papermc.paper.plugin.provider.configuration.LoadOrderConfiguration;
- import io.papermc.paper.plugin.provider.entrypoint.DependencyContext;
-@@ -133,6 +134,7 @@ public class SpigotPluginProvider implements PluginProvider<JavaPlugin>, Provide
-             // We must provide a temporary context in order to properly handle dependencies on the plugin classloader constructor.
-             loader.dependencyContext = PaperPluginManagerImpl.getInstance();
- 
-+            ClassLoaderStorage.LEGACY_LOADERS.add(loader); // Paper - spark
- 
-             this.status = ProviderStatus.INITIALIZED;
-             return loader.getPlugin();
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 8160c35368fc2c52d6f4a42df27adb2ef6eb87f3..9325d6f95165a7cee00d7de736af723681cc16b4 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
