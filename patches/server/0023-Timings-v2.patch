@@ -699,20 +699,6 @@ index 0000000000000000000000000000000000000000..2f0d9b953802dee821cfde82d22b0567
 +        return Timings.ofSafe(((PrimaryLevelData) worldserver.getLevelData()).getLevelName() + " - Scheduled " + timingsType);
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/network/protocol/PacketUtils.java b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
-index f7197f1347251a37dd0f6d9ffa2f09bc3a4e1233..d0d36a57ec4896bcb74970f8fb24d8f3e17db133 100644
---- a/src/main/java/net/minecraft/network/protocol/PacketUtils.java
-+++ b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
-@@ -31,7 +31,8 @@ public class PacketUtils {
-             engine.executeIfPossible(() -> {
-                 if (listener instanceof ServerCommonPacketListenerImpl serverCommonPacketListener && serverCommonPacketListener.processedDisconnect) return; // CraftBukkit - Don't handle sync packets for kicked players
-                 if (listener.shouldHandleMessage(packet)) {
--                    try {
-+                    co.aikar.timings.Timing timing = co.aikar.timings.MinecraftTimings.getPacketTiming(packet); // Paper - timings
-+                    try (co.aikar.timings.Timing ignored = timing.startTiming()) { // Paper - timings
-                         packet.handle(listener);
-                     } catch (Exception exception) {
-                         if (exception instanceof ReportedException) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 5a4cdbc4b92a48c614564e4e421f05a9eb5b072b..d76dae9ce9022308b316080ac48b7030d674cc6b 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -892,7 +878,7 @@ index 5a4cdbc4b92a48c614564e4e421f05a9eb5b072b..d76dae9ce9022308b316080ac48b7030
          this.profiler.popPush("send chunks");
          iterator = this.playerList.getPlayers().iterator();
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index d38ecbc208c34509eaf77751ac45d9ef51a5dce8..b51c3f8c485496734ea58c15377a1215a334c765 100644
+index d38ecbc208c34509eaf77751ac45d9ef51a5dce8..1f8e693673f2579c9f2ca890e56074772377f5f4 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -65,10 +65,11 @@ import org.apache.logging.log4j.Level;
@@ -908,76 +894,24 @@ index d38ecbc208c34509eaf77751ac45d9ef51a5dce8..b51c3f8c485496734ea58c15377a1215
  import org.bukkit.event.server.RemoteServerCommandEvent;
  // CraftBukkit end
  
-@@ -439,7 +440,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -439,7 +440,6 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
      }
  
      public void handleConsoleInputs() {
 -        SpigotTimings.serverCommandTimer.startTiming(); // Spigot
-+        MinecraftTimings.serverCommandTimer.startTiming(); // Spigot
          while (!this.consoleInput.isEmpty()) {
              ConsoleInput servercommand = (ConsoleInput) this.consoleInput.remove(0);
  
-@@ -454,7 +455,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -454,7 +454,6 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
              // CraftBukkit end
          }
  
 -        SpigotTimings.serverCommandTimer.stopTiming(); // Spigot
-+        MinecraftTimings.serverCommandTimer.stopTiming(); // Spigot
      }
  
      @Override
-@@ -712,7 +713,9 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
-     }
- 
-     public String runCommand(RconConsoleSource rconConsoleSource, String s) {
-+        Waitable[] waitableArray = new Waitable[1]; // Paper
-         rconConsoleSource.prepareForCommand();
-+        final java.util.concurrent.atomic.AtomicReference<String> command = new java.util.concurrent.atomic.AtomicReference<>(s); // Paper
-         this.executeBlocking(() -> {
-             CommandSourceStack wrapper = rconConsoleSource.createCommandSourceStack();
-             RemoteServerCommandEvent event = new RemoteServerCommandEvent(rconConsoleSource.getBukkitSender(wrapper), s);
-@@ -720,9 +723,39 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
-             if (event.isCancelled()) {
-                 return;
-             }
-+            // Paper start
-+            command.set(event.getCommand());
-+            if (event.getCommand().toLowerCase(java.util.Locale.ROOT).startsWith("timings") && event.getCommand().toLowerCase(java.util.Locale.ROOT).matches("timings (report|paste|get|merged|seperate)")) {
-+                org.bukkit.command.BufferedCommandSender sender = new org.bukkit.command.BufferedCommandSender();
-+                Waitable<String> waitable = new Waitable<>() {
-+                    @Override
-+                    protected String evaluate() {
-+                        return sender.getBuffer();
-+                    }
-+                };
-+                waitableArray[0] = waitable;
-+                co.aikar.timings.Timings.generateReport(new co.aikar.timings.TimingsReportListener(sender, waitable));
-+            } else {
-+            // Paper end
-             ConsoleInput serverCommand = new ConsoleInput(event.getCommand(), wrapper);
-             this.server.dispatchServerCommand(event.getSender(), serverCommand);
-+            } // Paper
-         });
-+        // Paper start
-+        if (waitableArray[0] != null) {
-+            //noinspection unchecked
-+            Waitable<String> waitable = waitableArray[0];
-+            try {
-+                return waitable.get();
-+            } catch (java.util.concurrent.ExecutionException e) {
-+                throw new RuntimeException("Exception processing rcon command " + command.get(), e.getCause());
-+            } catch (InterruptedException e) {
-+                Thread.currentThread().interrupt(); // Maintain interrupted state
-+                throw new RuntimeException("Interrupted processing rcon command " + command.get(), e);
-+            }
-+
-+        }
-+        // Paper end
-         return rconConsoleSource.getCommandResponse();
-         // CraftBukkit end
-     }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 449608e60f3900778247101581ff598f1637499b..bb5115b3593c314f5edfb5947a3c35a489bf71af 100644
+index 449608e60f3900778247101581ff598f1637499b..f774aacc6cae7fb893756b4af02f5b2fa797d850 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -1,8 +1,10 @@
@@ -991,34 +925,8 @@ index 449608e60f3900778247101581ff598f1637499b..bb5115b3593c314f5edfb5947a3c35a4
  import com.google.common.collect.Lists;
  import com.google.common.collect.Queues;
  import com.google.common.collect.Sets;
-@@ -1296,6 +1298,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         List<ServerPlayer> list = Lists.newArrayList();
-         List<ServerPlayer> list1 = this.level.players();
-         ObjectIterator objectiterator = this.entityMap.values().iterator();
-+        level.timings.tracker1.startTiming(); // Paper
- 
-         ChunkMap.TrackedEntity playerchunkmap_entitytracker;
- 
-@@ -1320,14 +1323,17 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                 playerchunkmap_entitytracker.serverEntity.sendChanges();
-             }
-         }
-+        level.timings.tracker1.stopTiming(); // Paper
- 
-         if (!list.isEmpty()) {
-             objectiterator = this.entityMap.values().iterator();
- 
-+            level.timings.tracker2.startTiming(); // Paper
-             while (objectiterator.hasNext()) {
-                 playerchunkmap_entitytracker = (ChunkMap.TrackedEntity) objectiterator.next();
-                 playerchunkmap_entitytracker.updatePlayers(list);
-             }
-+            level.timings.tracker2.stopTiming(); // Paper
-         }
- 
-     }
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index cf94dd9ddcc1eabcf3fd336e70720f4ed3e52175..e0c8b89767087cba34fc3c3809db4c386dacb193 100644
+index cf94dd9ddcc1eabcf3fd336e70720f4ed3e52175..e48452401358996ff558a4788ebee51a1ec3ea13 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -195,13 +195,15 @@ public class ServerChunkCache extends ChunkSource {
@@ -1039,49 +947,17 @@ index cf94dd9ddcc1eabcf3fd336e70720f4ed3e52175..e0c8b89767087cba34fc3c3809db4c38
              ChunkResult<ChunkAccess> chunkresult = (ChunkResult) completablefuture.join();
              ChunkAccess ichunkaccess1 = (ChunkAccess) chunkresult.orElse(null); // CraftBukkit - decompile error
  
-@@ -366,7 +368,9 @@ public class ServerChunkCache extends ChunkSource {
- 
-     public void save(boolean flush) {
-         this.runDistanceManagerUpdates();
-+        try (co.aikar.timings.Timing timed = level.timings.chunkSaveData.startTiming()) { // Paper - Timings
-         this.chunkMap.saveAllChunks(flush);
-+        } // Paper - Timings
-     }
- 
-     @Override
-@@ -408,10 +412,10 @@ public class ServerChunkCache extends ChunkSource {
-         this.level.timings.doChunkMap.stopTiming(); // Spigot
+@@ -409,9 +411,7 @@ public class ServerChunkCache extends ChunkSource {
          this.level.getProfiler().popPush("chunks");
          if (tickChunks) {
-+            this.level.timings.chunks.startTiming(); // Paper - timings
              this.tickChunks();
 -            this.level.timings.tracker.startTiming(); // Spigot
-+            this.level.timings.chunks.stopTiming(); // Paper - timings
              this.chunkMap.tick();
 -            this.level.timings.tracker.stopTiming(); // Spigot
          }
  
          this.level.timings.doChunkUnload.startTiming(); // Spigot
-@@ -434,6 +438,7 @@ public class ServerChunkCache extends ChunkSource {
-             gameprofilerfiller.push("filteringLoadedChunks");
-             List<ServerChunkCache.ChunkAndHolder> list = Lists.newArrayListWithCapacity(this.chunkMap.size());
-             Iterator iterator = this.chunkMap.getChunks().iterator();
-+            if (this.level.getServer().tickRateManager().runsNormally()) this.level.timings.chunkTicks.startTiming(); // Paper
- 
-             while (iterator.hasNext()) {
-                 ChunkHolder playerchunk = (ChunkHolder) iterator.next();
-@@ -446,8 +451,10 @@ public class ServerChunkCache extends ChunkSource {
- 
-             if (this.level.tickRateManager().runsNormally()) {
-                 gameprofilerfiller.popPush("naturalSpawnCount");
-+                this.level.timings.countNaturalMobs.startTiming(); // Paper - timings
-                 int k = this.distanceManager.getNaturalSpawnChunkCount();
-                 NaturalSpawner.SpawnState spawnercreature_d = NaturalSpawner.createState(k, this.level.getAllEntities(), this::getFullChunk, new LocalMobCapCalculator(this.chunkMap));
-+                this.level.timings.countNaturalMobs.stopTiming(); // Paper - timings
- 
-                 this.lastSpawnState = spawnercreature_d;
-                 gameprofilerfiller.popPush("spawnAndTick");
-@@ -470,22 +477,25 @@ public class ServerChunkCache extends ChunkSource {
+@@ -470,9 +470,7 @@ public class ServerChunkCache extends ChunkSource {
                          }
  
                          if (this.level.shouldTickBlocksAt(chunkcoordintpair.toLong())) {
@@ -1091,24 +967,6 @@ index cf94dd9ddcc1eabcf3fd336e70720f4ed3e52175..e0c8b89767087cba34fc3c3809db4c38
                          }
                      }
                  }
-+                this.level.timings.chunkTicks.stopTiming(); // Paper
- 
-                 gameprofilerfiller.popPush("customSpawners");
-                 if (flag) {
-+                    try (co.aikar.timings.Timing ignored = this.level.timings.miscMobSpawning.startTiming()) { // Paper - timings
-                     this.level.tickCustomSpawners(this.spawnEnemies, this.spawnFriendlies);
-+                    } // Paper - timings
-                 }
-             }
- 
-             gameprofilerfiller.popPush("broadcast");
-             list.forEach((chunkproviderserver_a1) -> {
-+                this.level.timings.broadcastChunkUpdates.startTiming(); // Paper - timing
-                 chunkproviderserver_a1.holder.broadcastChanges(chunkproviderserver_a1.chunk);
-+                this.level.timings.broadcastChunkUpdates.stopTiming(); // Paper - timing
-             });
-             gameprofilerfiller.pop();
-             gameprofilerfiller.pop();
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
 index 4c39d9e0466240b5cd459ee649a22fe3a72bf9f0..eb98bb1bd76869fd76b34885223c8e57a04e0c51 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
