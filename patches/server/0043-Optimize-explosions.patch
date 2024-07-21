@@ -1,0 +1,133 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Wed, 2 Mar 2016 11:59:48 -0600
+Subject: [PATCH] Optimize explosions
+
+The process of determining an entity's exposure from explosions can be
+expensive when there are hundreds or more entities in range.
+
+This patch adds a per-tick cache that is used for storing and retrieving
+an entity's exposure during an explosion.
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 57ec168bac3727feb734e28cebc680328c1c4aec..4f1204661e345462c08cc66e3a8851033f186268 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1573,6 +1573,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+             this.profiler.pop();
+             this.profiler.pop();
++            worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
+         }
+ 
+         this.profiler.popPush("connection");
+diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
+index 35d541c549cb07508e68388b18f38a4ffd788176..23a0a8d9beb7ca400134fb6a65b3133baceeed83 100644
+--- a/src/main/java/net/minecraft/world/level/Explosion.java
++++ b/src/main/java/net/minecraft/world/level/Explosion.java
+@@ -279,7 +279,7 @@ public class Explosion {
+                             // CraftBukkit end
+                         }
+ 
+-                        double d12 = (1.0D - d7) * (double) Explosion.getSeenPercent(vec3d, entity) * (double) this.damageCalculator.getKnockbackMultiplier(entity);
++                        double d12 = (1.0D - d7) * this.getBlockDensity(vec3d, entity) * (double) this.damageCalculator.getKnockbackMultiplier(entity); // Paper - Optimize explosions
+                         double d13;
+ 
+                         if (entity instanceof LivingEntity) {
+@@ -536,4 +536,84 @@ public class Explosion {
+ 
+         private BlockInteraction() {}
+     }
++    // Paper start - Optimize explosions
++    private float getBlockDensity(Vec3 vec3d, Entity entity) {
++        if (!this.level.paperConfig().environment.optimizeExplosions) {
++            return getSeenPercent(vec3d, entity);
++        }
++        CacheKey key = new CacheKey(this, entity.getBoundingBox());
++        Float blockDensity = this.level.explosionDensityCache.get(key);
++        if (blockDensity == null) {
++            blockDensity = getSeenPercent(vec3d, entity);
++            this.level.explosionDensityCache.put(key, blockDensity);
++        }
++
++        return blockDensity;
++    }
++
++    static class CacheKey {
++        private final Level world;
++        private final double posX, posY, posZ;
++        private final double minX, minY, minZ;
++        private final double maxX, maxY, maxZ;
++
++        public CacheKey(Explosion explosion, AABB aabb) {
++            this.world = explosion.level;
++            this.posX = explosion.x;
++            this.posY = explosion.y;
++            this.posZ = explosion.z;
++            this.minX = aabb.minX;
++            this.minY = aabb.minY;
++            this.minZ = aabb.minZ;
++            this.maxX = aabb.maxX;
++            this.maxY = aabb.maxY;
++            this.maxZ = aabb.maxZ;
++        }
++
++        @Override
++        public boolean equals(Object o) {
++            if (this == o) return true;
++            if (o == null || getClass() != o.getClass()) return false;
++
++            CacheKey cacheKey = (CacheKey) o;
++
++            if (Double.compare(cacheKey.posX, posX) != 0) return false;
++            if (Double.compare(cacheKey.posY, posY) != 0) return false;
++            if (Double.compare(cacheKey.posZ, posZ) != 0) return false;
++            if (Double.compare(cacheKey.minX, minX) != 0) return false;
++            if (Double.compare(cacheKey.minY, minY) != 0) return false;
++            if (Double.compare(cacheKey.minZ, minZ) != 0) return false;
++            if (Double.compare(cacheKey.maxX, maxX) != 0) return false;
++            if (Double.compare(cacheKey.maxY, maxY) != 0) return false;
++            if (Double.compare(cacheKey.maxZ, maxZ) != 0) return false;
++            return world.equals(cacheKey.world);
++        }
++
++        @Override
++        public int hashCode() {
++            int result;
++            long temp;
++            result = world.hashCode();
++            temp = Double.doubleToLongBits(posX);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            temp = Double.doubleToLongBits(posY);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            temp = Double.doubleToLongBits(posZ);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            temp = Double.doubleToLongBits(minX);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            temp = Double.doubleToLongBits(minY);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            temp = Double.doubleToLongBits(minZ);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            temp = Double.doubleToLongBits(maxX);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            temp = Double.doubleToLongBits(maxY);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            temp = Double.doubleToLongBits(maxZ);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            return result;
++        }
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index e8b8475dd6fd7b89651f744da2cb9696c73ddc3e..a272aaff11ac077853c06f729a5d8b09f866e0f8 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -168,6 +168,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     private org.spigotmc.TickLimiter entityLimiter;
+     private org.spigotmc.TickLimiter tileLimiter;
+     private int tileTickPosition;
++    public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
+ 
+     public CraftWorld getWorld() {
+         return this.world;

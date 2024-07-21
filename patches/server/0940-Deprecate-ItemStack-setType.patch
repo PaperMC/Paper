@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Tue, 26 Mar 2024 21:42:23 -0400
+Subject: [PATCH] Deprecate ItemStack#setType
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+index a1a32a77bda0560a7b7f30a5d1c1837ee96997d3..9be7859ccb5283b2040ba68d72d6dbdafb4d6835 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+@@ -417,4 +417,24 @@ public final class CraftItemStack extends ItemStack {
+     static boolean hasItemMeta(net.minecraft.world.item.ItemStack item) {
+         return !(item == null || item.getComponentsPatch().isEmpty());
+     }
++    // Paper start - with type
++    @Override
++    public ItemStack withType(final Material type) {
++        if (type == Material.AIR) {
++            return CraftItemStack.asCraftMirror(null);
++        }
++
++        final net.minecraft.world.item.ItemStack copy = new net.minecraft.world.item.ItemStack(
++            CraftItemType.bukkitToMinecraft(type), this.getAmount()
++        );
++
++        if (this.handle != null) {
++            copy.applyComponents(this.handle.getComponentsPatch());
++        }
++
++        final CraftItemStack mirrored = CraftItemStack.asCraftMirror(copy);
++        mirrored.setItemMeta(mirrored.getItemMeta());
++        return mirrored;
++    }
++    // Paper end
+ }

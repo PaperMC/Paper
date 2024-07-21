@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 5 Jun 2018 23:00:29 -0400
+Subject: [PATCH] ItemStack#getMaxItemUseDuration
+
+Allows you to determine how long it takes to use a usable/consumable item
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+index 6c76aeddb34239a5acc204a17b2aa2d80e6b2c88..e8a455eb5e17bcfcae3f03664f2b47773fbdf37e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+@@ -7,14 +7,17 @@ import net.minecraft.core.Holder;
+ import net.minecraft.core.component.DataComponentPatch;
+ import net.minecraft.core.component.DataComponents;
+ import net.minecraft.world.item.Item;
++import net.minecraft.world.item.Items;
+ import net.minecraft.world.item.enchantment.EnchantmentHelper;
+ import net.minecraft.world.item.enchantment.ItemEnchantments;
+ import org.bukkit.Material;
+ import org.bukkit.configuration.serialization.DelegateDeserialization;
+ import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
++import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+ import org.bukkit.craftbukkit.util.CraftLegacy;
+ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+ import org.bukkit.enchantments.Enchantment;
++import org.bukkit.entity.LivingEntity;
+ import org.bukkit.inventory.ItemStack;
+ import org.bukkit.inventory.meta.ItemMeta;
+ import org.bukkit.material.MaterialData;
+@@ -210,6 +213,21 @@ public final class CraftItemStack extends ItemStack {
+         return (this.handle == null) ? Material.AIR.getMaxStackSize() : this.handle.getMaxStackSize();
+     }
+ 
++    // Paper start
++    @Override
++    public int getMaxItemUseDuration(final LivingEntity entity) {
++        if (handle == null) {
++            return 0;
++        }
++
++        // Make sure plugins calling the old method don't blow up
++        if (entity == null && handle.is(Items.CROSSBOW)) {
++            throw new UnsupportedOperationException("This item requires an entity to determine the max use duration");
++        }
++        return handle.getUseDuration(entity != null ? ((CraftLivingEntity) entity).getHandle() : null);
++    }
++    // Paper end
++
+     @Override
+     public void addUnsafeEnchantment(Enchantment ench, int level) {
+         Preconditions.checkArgument(ench != null, "Enchantment cannot be null");

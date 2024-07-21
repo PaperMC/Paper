@@ -714,7 +714,7 @@ index f7197f1347251a37dd0f6d9ffa2f09bc3a4e1233..d0d36a57ec4896bcb74970f8fb24d8f3
                      } catch (Exception exception) {
                          if (exception instanceof ReportedException) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index cde2e181bf1aaf92f1e96b00e03b7b001a06e6b3..a720743149f9d1f90eda3b7b928b9d25d8c8f553 100644
+index 5a4cdbc4b92a48c614564e4e421f05a9eb5b072b..d76dae9ce9022308b316080ac48b7030d674cc6b 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -196,7 +196,7 @@ import org.bukkit.craftbukkit.Main;
@@ -787,7 +787,7 @@ index cde2e181bf1aaf92f1e96b00e03b7b001a06e6b3..a720743149f9d1f90eda3b7b928b9d25
          ++this.tickCount;
          this.tickRateManager.tick();
          this.tickChildren(shouldKeepTicking);
-@@ -1339,15 +1360,18 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1339,14 +1360,17 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          if (this.autosavePeriod > 0 && this.ticksUntilAutosave <= 0) {
              this.ticksUntilAutosave = this.autosavePeriod;
              // CraftBukkit end
@@ -799,7 +799,6 @@ index cde2e181bf1aaf92f1e96b00e03b7b001a06e6b3..a720743149f9d1f90eda3b7b928b9d25
              MinecraftServer.LOGGER.debug("Autosave finished");
 -            SpigotTimings.worldSaveTimer.stopTiming(); // Spigot
          }
-         io.papermc.paper.util.CachedLists.reset(); // Paper
 +        // Paper start - move executeAll() into full server tick timing
 +        try (co.aikar.timings.Timing ignored = MinecraftTimings.processTasksTimer.startTiming()) {
 +            this.runAllTasks();
@@ -808,7 +807,7 @@ index cde2e181bf1aaf92f1e96b00e03b7b001a06e6b3..a720743149f9d1f90eda3b7b928b9d25
          this.profiler.push("tallying");
          long j = Util.getNanos() - i;
          int k = this.tickCount % 100;
-@@ -1359,8 +1383,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1358,8 +1382,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          this.logTickMethodTime(i);
          this.profiler.pop();
          org.spigotmc.WatchdogThread.tick(); // Spigot
@@ -818,7 +817,7 @@ index cde2e181bf1aaf92f1e96b00e03b7b001a06e6b3..a720743149f9d1f90eda3b7b928b9d25
      }
  
      private void logTickMethodTime(long tickStartTime) {
-@@ -1431,26 +1454,26 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1430,26 +1453,26 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          this.getPlayerList().getPlayers().forEach((entityplayer) -> {
              entityplayer.connection.suspendFlushing();
          });
@@ -852,7 +851,7 @@ index cde2e181bf1aaf92f1e96b00e03b7b001a06e6b3..a720743149f9d1f90eda3b7b928b9d25
          // Send time updates to everyone, it will get the right time from the world the player is in.
          if (this.tickCount % 20 == 0) {
              for (int i = 0; i < this.getPlayerList().players.size(); ++i) {
-@@ -1458,7 +1481,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1457,7 +1480,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                  entityplayer.connection.send(new ClientboundSetTimePacket(entityplayer.level().getGameTime(), entityplayer.getPlayerTime(), entityplayer.level().getGameRules().getBoolean(GameRules.RULE_DAYLIGHT))); // Add support for per player time
              }
          }
@@ -861,7 +860,7 @@ index cde2e181bf1aaf92f1e96b00e03b7b001a06e6b3..a720743149f9d1f90eda3b7b928b9d25
  
          while (iterator.hasNext()) {
              ServerLevel worldserver = (ServerLevel) iterator.next();
-@@ -1494,24 +1517,24 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1493,24 +1516,24 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
  
          this.profiler.popPush("connection");
@@ -978,7 +977,7 @@ index d38ecbc208c34509eaf77751ac45d9ef51a5dce8..b51c3f8c485496734ea58c15377a1215
          // CraftBukkit end
      }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index d3caadb3e884d7d0468daf5eff9abd6629ac4b49..a7de9d6bbbd0b3d60b1d49e116c388b1846f33e4 100644
+index 449608e60f3900778247101581ff598f1637499b..bb5115b3593c314f5edfb5947a3c35a489bf71af 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -1,8 +1,10 @@
@@ -992,7 +991,7 @@ index d3caadb3e884d7d0468daf5eff9abd6629ac4b49..a7de9d6bbbd0b3d60b1d49e116c388b1
  import com.google.common.collect.Lists;
  import com.google.common.collect.Queues;
  import com.google.common.collect.Sets;
-@@ -1336,6 +1338,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1296,6 +1298,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          List<ServerPlayer> list = Lists.newArrayList();
          List<ServerPlayer> list1 = this.level.players();
          ObjectIterator objectiterator = this.entityMap.values().iterator();
@@ -1000,7 +999,7 @@ index d3caadb3e884d7d0468daf5eff9abd6629ac4b49..a7de9d6bbbd0b3d60b1d49e116c388b1
  
          ChunkMap.TrackedEntity playerchunkmap_entitytracker;
  
-@@ -1360,14 +1363,17 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1320,14 +1323,17 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  playerchunkmap_entitytracker.serverEntity.sendChanges();
              }
          }
@@ -1019,10 +1018,10 @@ index d3caadb3e884d7d0468daf5eff9abd6629ac4b49..a7de9d6bbbd0b3d60b1d49e116c388b1
  
      }
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index e9f53f57c363a32106880ea9aad0ccf5a7342509..0ff45d4ce6ae0b7feac53c7a9f361f6454f8b7c3 100644
+index cf94dd9ddcc1eabcf3fd336e70720f4ed3e52175..e0c8b89767087cba34fc3c3809db4c386dacb193 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -197,13 +197,15 @@ public class ServerChunkCache extends ChunkSource {
+@@ -195,13 +195,15 @@ public class ServerChunkCache extends ChunkSource {
              }
  
              gameprofilerfiller.incrementCounter("getChunkCacheMiss");
@@ -1040,7 +1039,7 @@ index e9f53f57c363a32106880ea9aad0ccf5a7342509..0ff45d4ce6ae0b7feac53c7a9f361f64
              ChunkResult<ChunkAccess> chunkresult = (ChunkResult) completablefuture.join();
              ChunkAccess ichunkaccess1 = (ChunkAccess) chunkresult.orElse(null); // CraftBukkit - decompile error
  
-@@ -368,7 +370,9 @@ public class ServerChunkCache extends ChunkSource {
+@@ -366,7 +368,9 @@ public class ServerChunkCache extends ChunkSource {
  
      public void save(boolean flush) {
          this.runDistanceManagerUpdates();
@@ -1050,7 +1049,7 @@ index e9f53f57c363a32106880ea9aad0ccf5a7342509..0ff45d4ce6ae0b7feac53c7a9f361f64
      }
  
      @Override
-@@ -410,10 +414,10 @@ public class ServerChunkCache extends ChunkSource {
+@@ -408,10 +412,10 @@ public class ServerChunkCache extends ChunkSource {
          this.level.timings.doChunkMap.stopTiming(); // Spigot
          this.level.getProfiler().popPush("chunks");
          if (tickChunks) {
@@ -1063,7 +1062,7 @@ index e9f53f57c363a32106880ea9aad0ccf5a7342509..0ff45d4ce6ae0b7feac53c7a9f361f64
          }
  
          this.level.timings.doChunkUnload.startTiming(); // Spigot
-@@ -436,6 +440,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -434,6 +438,7 @@ public class ServerChunkCache extends ChunkSource {
              gameprofilerfiller.push("filteringLoadedChunks");
              List<ServerChunkCache.ChunkAndHolder> list = Lists.newArrayListWithCapacity(this.chunkMap.size());
              Iterator iterator = this.chunkMap.getChunks().iterator();
@@ -1071,7 +1070,7 @@ index e9f53f57c363a32106880ea9aad0ccf5a7342509..0ff45d4ce6ae0b7feac53c7a9f361f64
  
              while (iterator.hasNext()) {
                  ChunkHolder playerchunk = (ChunkHolder) iterator.next();
-@@ -448,8 +453,10 @@ public class ServerChunkCache extends ChunkSource {
+@@ -446,8 +451,10 @@ public class ServerChunkCache extends ChunkSource {
  
              if (this.level.tickRateManager().runsNormally()) {
                  gameprofilerfiller.popPush("naturalSpawnCount");
@@ -1082,7 +1081,7 @@ index e9f53f57c363a32106880ea9aad0ccf5a7342509..0ff45d4ce6ae0b7feac53c7a9f361f64
  
                  this.lastSpawnState = spawnercreature_d;
                  gameprofilerfiller.popPush("spawnAndTick");
-@@ -472,22 +479,25 @@ public class ServerChunkCache extends ChunkSource {
+@@ -470,22 +477,25 @@ public class ServerChunkCache extends ChunkSource {
                          }
  
                          if (this.level.shouldTickBlocksAt(chunkcoordintpair.toLong())) {
@@ -1111,7 +1110,7 @@ index e9f53f57c363a32106880ea9aad0ccf5a7342509..0ff45d4ce6ae0b7feac53c7a9f361f64
              gameprofilerfiller.pop();
              gameprofilerfiller.pop();
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index eea8bafd98e3a8d82b3216488537ab898cc4ae7a..9675d91e4e7ed46147c3f7a11dd65122fe998dc2 100644
+index 4c39d9e0466240b5cd459ee649a22fe3a72bf9f0..eb98bb1bd76869fd76b34885223c8e57a04e0c51 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -1,6 +1,8 @@
@@ -1301,7 +1300,7 @@ index 9dcfcea63f57f45a5584bb80c34fe445d65849e8..765c412cd0c5cd410c224b4bc55dbf43
  
      public UserWhiteList getWhiteList() {
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index b0843917caedc32f800c50cc54706ace9523f64f..63f45a77c8511e05954030cf117c5e4cda0a518f 100644
+index 06cbe7a7ea131a8bead857cbfbd27810a9093320..0a3ed94165430774c7037e78fd7bffc205c6f72f 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -140,7 +140,6 @@ import org.bukkit.command.CommandSender;
@@ -1460,7 +1459,7 @@ index 44d4aee059d74676bffb8b6bc6f6ad4dd96fcb33..97ad63aad3c559feb1e762af1e00fd55
          if (!this.level().isClientSide && this.isSensitiveToWater() && this.isInWaterRainOrBubble()) {
              this.hurt(this.damageSources().drown(), 1.0F);
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 55b30e1df4a05802977b0c3f3b518ef0676eae2d..1702cd6aa8b4fc29b8f2539604f6e203bf95d020 100644
+index 2bc1d0d3ea8a6e3327e9c11bd1f0666d210e9bbe..79d5423be919dfe4db75ad7dd0ce403ad0214462 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -93,7 +93,6 @@ import net.minecraft.network.protocol.game.ClientboundSetBorderWarningDistancePa
@@ -1591,7 +1590,7 @@ index 46a090123e205394791cdbde2af84c58ce55f7e1..47f5f3d58bb3bf85cf35f9baae77df7f
          };
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index d1699fcca66bcfbbe8fcc426802cb766cf1e580b..de55611daeb6d55f69c4cb72137eb7b050e727f7 100644
+index 7839e34cbd42e1b77c533b0dede42e0a19daf2a4..f2355612b497079f1de84e953c36720794da51d8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -376,7 +376,7 @@ public final class CraftServer implements Server {
@@ -1603,7 +1602,7 @@ index d1699fcca66bcfbbe8fcc426802cb766cf1e580b..de55611daeb6d55f69c4cb72137eb7b0
          this.overrideSpawnLimits();
          console.autosavePeriod = this.configuration.getInt("ticks-per.autosave");
          this.warningState = WarningState.value(this.configuration.getString("settings.deprecated-verbose"));
-@@ -2612,12 +2612,31 @@ public final class CraftServer implements Server {
+@@ -2620,12 +2620,31 @@ public final class CraftServer implements Server {
      private final org.bukkit.Server.Spigot spigot = new org.bukkit.Server.Spigot()
      {
  
@@ -1805,7 +1804,7 @@ index b0ffa23faf62629043dfd613315eaf9c5fcc2cfe..00000000000000000000000000000000
 -    }
 -}
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 859f3eb2d616156b0efaa70ee03e357e6f0760f3..a02e5c967d9dfcd507e1019d28ed3735945f9613 100644
+index 807184636a99c17fe6ed8dd1cd07e1872d613657..68b9b4aba7dba31e4526165e6efb8c40f9e841bc 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -2782,6 +2782,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -1824,7 +1823,7 @@ index 859f3eb2d616156b0efaa70ee03e357e6f0760f3..a02e5c967d9dfcd507e1019d28ed3735
  
      public Player.Spigot spigot()
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-index 0f7c3a44acf3c59ae43605e573f9da7f7c594647..a3ccc2da0927cc49e5fcfbd863e648ad0f25cc0d 100644
+index c017ce2ca1bc535795c958a2e509af2adf88efa9..6c0debe3f3b693ed90dd2a39f481cccd8e4f7634 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 @@ -1,5 +1,6 @@
@@ -1834,17 +1833,7 @@ index 0f7c3a44acf3c59ae43605e573f9da7f7c594647..a3ccc2da0927cc49e5fcfbd863e648ad
  import com.google.common.base.Preconditions;
  import com.google.common.util.concurrent.ThreadFactoryBuilder;
  import java.util.ArrayList;
-@@ -196,7 +197,8 @@ public class CraftScheduler implements BukkitScheduler {
-     }
- 
-     public BukkitTask scheduleInternalTask(Runnable run, int delay, String taskName) {
--        final CraftTask task = new CraftTask(run, nextId(), taskName);
-+        final CraftTask task = new CraftTask(run, nextId(), "Internal - " + (taskName != null ? taskName : "Unknown"));
-+        task.internal = true;
-         return handle(task, delay);
-     }
- 
-@@ -277,7 +279,7 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -271,7 +272,7 @@ public class CraftScheduler implements BukkitScheduler {
                          }
                          return false;
                      }
@@ -1853,7 +1842,7 @@ index 0f7c3a44acf3c59ae43605e573f9da7f7c594647..a3ccc2da0927cc49e5fcfbd863e648ad
          this.handle(task, 0L);
          for (CraftTask taskPending = this.head.getNext(); taskPending != null; taskPending = taskPending.getNext()) {
              if (taskPending == task) {
-@@ -312,7 +314,7 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -306,7 +307,7 @@ public class CraftScheduler implements BukkitScheduler {
                              }
                          }
                      }
@@ -1862,7 +1851,7 @@ index 0f7c3a44acf3c59ae43605e573f9da7f7c594647..a3ccc2da0927cc49e5fcfbd863e648ad
          this.handle(task, 0L);
          for (CraftTask taskPending = this.head.getNext(); taskPending != null; taskPending = taskPending.getNext()) {
              if (taskPending == task) {
-@@ -419,9 +421,7 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -413,9 +414,7 @@ public class CraftScheduler implements BukkitScheduler {
              if (task.isSync()) {
                  this.currentTask = task;
                  try {
@@ -1870,9 +1859,9 @@ index 0f7c3a44acf3c59ae43605e573f9da7f7c594647..a3ccc2da0927cc49e5fcfbd863e648ad
                      task.run();
 -                    task.timings.stopTiming(); // Spigot
                  } catch (final Throwable throwable) {
-                     // Paper start
-                     String msg = String.format(
-@@ -455,8 +455,10 @@ public class CraftScheduler implements BukkitScheduler {
+                     task.getOwner().getLogger().log(
+                             Level.WARNING,
+@@ -442,8 +441,10 @@ public class CraftScheduler implements BukkitScheduler {
                  this.runners.remove(task.getTaskId());
              }
          }
@@ -1883,7 +1872,7 @@ index 0f7c3a44acf3c59ae43605e573f9da7f7c594647..a3ccc2da0927cc49e5fcfbd863e648ad
          this.debugHead = this.debugHead.getNextHead(currentTick);
      }
  
-@@ -493,6 +495,7 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -480,6 +481,7 @@ public class CraftScheduler implements BukkitScheduler {
      }
  
      private void parsePending() {
@@ -1891,7 +1880,7 @@ index 0f7c3a44acf3c59ae43605e573f9da7f7c594647..a3ccc2da0927cc49e5fcfbd863e648ad
          CraftTask head = this.head;
          CraftTask task = head.getNext();
          CraftTask lastTask = head;
-@@ -511,6 +514,7 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -498,6 +500,7 @@ public class CraftScheduler implements BukkitScheduler {
              task.setNext(null);
          }
          this.head = lastTask;
@@ -1900,7 +1889,7 @@ index 0f7c3a44acf3c59ae43605e573f9da7f7c594647..a3ccc2da0927cc49e5fcfbd863e648ad
  
      private boolean isReady(final int currentTick) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
-index d56abf283f38548faa790c57045033f7ade6f958..ea26d9464644b5217879b8c21b4da28e57708dcb 100644
+index e4d1eb4a0ce2c9874922585f6bb0d9ead433fde1..ba369f3dcfdf498e971dc4405d39657a9b6e97cc 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
 @@ -1,12 +1,15 @@
@@ -1937,16 +1926,7 @@ index d56abf283f38548faa790c57045033f7ade6f958..ea26d9464644b5217879b8c21b4da28e
      CraftTask() {
          this(null, null, CraftTask.NO_REPEATING, CraftTask.NO_REPEATING);
      }
-@@ -52,7 +55,7 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
-         this.id = id;
-         this.period = CraftTask.NO_REPEATING;
-         this.taskName = taskName;
--        this.timings = null; // Will be changed in later patch
-+        this.timings = MinecraftTimings.getInternalTaskName(taskName);
-     }
-     // Paper end
- 
-@@ -73,7 +76,7 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
+@@ -58,7 +61,7 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
          }
          this.id = id;
          this.period = period;
@@ -1955,7 +1935,7 @@ index d56abf283f38548faa790c57045033f7ade6f958..ea26d9464644b5217879b8c21b4da28e
      }
  
      @Override
-@@ -93,11 +96,13 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
+@@ -78,11 +81,13 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
  
      @Override
      public void run() {
@@ -1969,7 +1949,7 @@ index d56abf283f38548faa790c57045033f7ade6f958..ea26d9464644b5217879b8c21b4da28e
      }
  
      long getCreatedAt() {
-@@ -128,7 +133,7 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
+@@ -113,7 +118,7 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
          this.next = next;
      }
  
@@ -1978,7 +1958,7 @@ index d56abf283f38548faa790c57045033f7ade6f958..ea26d9464644b5217879b8c21b4da28e
          return (this.rTask != null) ? this.rTask.getClass() : ((this.cTask != null) ? this.cTask.getClass() : null);
      }
  
-@@ -152,9 +157,4 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
+@@ -137,9 +142,4 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
          return true;
      }
  
@@ -2005,12 +1985,12 @@ index f97eccb6a17c7876e1e002d798eb67bbe80571a0..76effc345d362047e64d064eb64a5222
 +    } // Paper
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index 10b5fcf6575255000e52166eb73b60f6a3f88e84..a356d4d19e4b7a3d08c80a137609d1ed9db7c1b1 100644
+index fa2e43020fafc283a9c063d10a82280158c7f93d..9576cabff99d154ef77595b074082adf9212698d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -213,6 +213,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -197,6 +197,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
+         return CraftNamespacedKey.toMinecraft(mat.getKey());
      }
-     // Paper end
      // ========================================================================
 +    // Paper start
 +    @Override
@@ -2021,7 +2001,7 @@ index 10b5fcf6575255000e52166eb73b60f6a3f88e84..a356d4d19e4b7a3d08c80a137609d1ed
  
      public static byte toLegacyData(BlockState data) {
          return CraftLegacy.toLegacyData(data);
-@@ -453,6 +459,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -442,6 +448,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
      public DamageSource.Builder createDamageSourceBuilder(DamageType damageType) {
          return new CraftDamageSourceBuilder(damageType);
      }

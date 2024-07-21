@@ -1,0 +1,436 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 25 Jun 2023 23:10:14 -0700
+Subject: [PATCH] Improve exact choice recipe ingredients
+
+Fixes exact choices not working with recipe book clicks
+and shapeless recipes.
+
+== AT ==
+public net.minecraft.world.item.ItemStackLinkedSet TYPE_AND_TAG
+public net.minecraft.world.entity.player.StackedContents put(II)V
+public net.minecraft.world.entity.player.StackedContents take(II)I
+
+diff --git a/src/main/java/io/papermc/paper/inventory/recipe/RecipeBookExactChoiceRecipe.java b/src/main/java/io/papermc/paper/inventory/recipe/RecipeBookExactChoiceRecipe.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ef68600f6b59674ddea6c77f7e412902888e39b7
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/inventory/recipe/RecipeBookExactChoiceRecipe.java
+@@ -0,0 +1,30 @@
++package io.papermc.paper.inventory.recipe;
++
++import net.minecraft.world.Container;
++import net.minecraft.world.item.crafting.Ingredient;
++import net.minecraft.world.item.crafting.Recipe;
++
++public abstract class RecipeBookExactChoiceRecipe<C extends net.minecraft.world.item.crafting.RecipeInput> implements Recipe<C> {
++
++    private boolean hasExactIngredients;
++
++    protected final void checkExactIngredients() {
++        // skip any special recipes
++        if (this.isSpecial()) {
++            this.hasExactIngredients = false;
++            return;
++        }
++        for (final Ingredient ingredient : this.getIngredients()) {
++            if (!ingredient.isEmpty() && ingredient.exact) {
++                this.hasExactIngredients = true;
++                return;
++            }
++        }
++        this.hasExactIngredients = false;
++    }
++
++    @Override
++    public final boolean hasExactIngredients() {
++        return this.hasExactIngredients;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/inventory/recipe/StackedContentsExtraMap.java b/src/main/java/io/papermc/paper/inventory/recipe/StackedContentsExtraMap.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..568ba6aed2e74b8d84f4e82c1e785ef1587e2617
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/inventory/recipe/StackedContentsExtraMap.java
+@@ -0,0 +1,109 @@
++package io.papermc.paper.inventory.recipe;
++
++import it.unimi.dsi.fastutil.ints.Int2IntArrayMap;
++import it.unimi.dsi.fastutil.ints.Int2IntMap;
++import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
++import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
++import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
++import it.unimi.dsi.fastutil.ints.IntArrayList;
++import it.unimi.dsi.fastutil.ints.IntComparators;
++import it.unimi.dsi.fastutil.ints.IntList;
++import it.unimi.dsi.fastutil.objects.Object2IntMap;
++import it.unimi.dsi.fastutil.objects.Object2IntOpenCustomHashMap;
++import java.util.IdentityHashMap;
++import java.util.Map;
++import java.util.concurrent.atomic.AtomicInteger;
++import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.world.entity.player.StackedContents;
++import net.minecraft.world.item.ItemStack;
++import net.minecraft.world.item.ItemStackLinkedSet;
++import net.minecraft.world.item.crafting.CraftingInput;
++import net.minecraft.world.item.crafting.Ingredient;
++import net.minecraft.world.item.crafting.Recipe;
++
++public final class StackedContentsExtraMap {
++
++    private final AtomicInteger idCounter = new AtomicInteger(BuiltInRegistries.ITEM.size()); // start at max vanilla stacked contents idx
++    public final Object2IntMap<ItemStack> exactChoiceIds = new Object2IntOpenCustomHashMap<>(ItemStackLinkedSet.TYPE_AND_TAG);
++    private final Int2ObjectMap<ItemStack> idToExactChoice = new Int2ObjectOpenHashMap<>();
++    private final StackedContents contents;
++    public final Map<Ingredient, IntList> extraStackingIds = new IdentityHashMap<>();
++
++    public StackedContentsExtraMap(final StackedContents contents, final Recipe<?> recipe) {
++        this.exactChoiceIds.defaultReturnValue(-1);
++        this.contents = contents;
++        this.initialize(recipe);
++    }
++
++    private void initialize(final Recipe<?> recipe) {
++        if (recipe.hasExactIngredients()) {
++            for (final Ingredient ingredient : recipe.getIngredients()) {
++                if (!ingredient.isEmpty() && ingredient.exact) {
++                    final net.minecraft.world.item.ItemStack[] items = ingredient.getItems();
++                    final IntList idList = new IntArrayList(items.length);
++                    for (final ItemStack item : items) {
++                        idList.add(this.registerExact(item)); // I think not copying the stack here is safe because cb copies the stack when creating the ingredient
++                        if (item.getComponentsPatch().isEmpty()) {
++                            // add regular index if it's a plain itemstack but still registered as exact
++                            idList.add(StackedContents.getStackingIndex(item));
++                        }
++                    }
++                    idList.sort(IntComparators.NATURAL_COMPARATOR);
++                    this.extraStackingIds.put(ingredient, idList);
++                }
++            }
++        }
++    }
++
++    private int registerExact(final ItemStack exactChoice) {
++        final int existing = this.exactChoiceIds.getInt(exactChoice);
++        if (existing > -1) {
++            return existing;
++        }
++        final int id = this.idCounter.getAndIncrement();
++        this.exactChoiceIds.put(exactChoice, id);
++        this.idToExactChoice.put(id, exactChoice);
++        return id;
++    }
++
++    public ItemStack getById(int id) {
++        return this.idToExactChoice.get(id);
++    }
++
++    public Int2IntMap regularRemoved = new Int2IntArrayMap();
++    public void accountInput(final CraftingInput input) {
++        // similar logic to the CraftingInput constructor
++        for (final ItemStack item : input.items()) {
++            if (!item.isEmpty()) {
++                if (this.accountStack(item, 1)) {
++                    // remove one of the items if it was added to the contents as a non-extra item
++                    final int plainStackIdx = StackedContents.getStackingIndex(item);
++                    if (this.contents.take(plainStackIdx, 1) == plainStackIdx) {
++                        this.regularRemoved.put(plainStackIdx, 1);
++                    }
++                }
++            }
++        }
++    }
++
++    public void resetExtras() {
++        // clear previous extra ids
++        for (final int extraId : this.exactChoiceIds.values()) {
++            this.contents.contents.remove(extraId);
++        }
++        for (final Int2IntMap.Entry entry : this.regularRemoved.int2IntEntrySet()) {
++            this.contents.put(entry.getIntKey(), entry.getIntValue());
++        }
++    }
++
++    public boolean accountStack(final ItemStack stack, final int count) {
++        if (!this.exactChoiceIds.isEmpty()) {
++            final int id = this.exactChoiceIds.getInt(stack);
++            if (id >= 0) {
++                this.contents.put(id, count);
++                return true;
++            }
++        }
++        return false;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/inventory/recipe/package-info.java b/src/main/java/io/papermc/paper/inventory/recipe/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..413dfa52760db393ad6a8b5341200ee704a864fc
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/inventory/recipe/package-info.java
+@@ -0,0 +1,5 @@
++@DefaultQualifier(NonNull.class)
++package io.papermc.paper.inventory.recipe;
++
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
+diff --git a/src/main/java/net/minecraft/recipebook/ServerPlaceRecipe.java b/src/main/java/net/minecraft/recipebook/ServerPlaceRecipe.java
+index 0bd749af8014dd437229594ef6981a2ead803990..6d1f9c15dc99917a2ac966ea38ef1970f4f0289c 100644
+--- a/src/main/java/net/minecraft/recipebook/ServerPlaceRecipe.java
++++ b/src/main/java/net/minecraft/recipebook/ServerPlaceRecipe.java
+@@ -31,6 +31,7 @@ public class ServerPlaceRecipe<I extends RecipeInput, R extends Recipe<I>> imple
+             this.inventory = entity.getInventory();
+             if (this.testClearGrid() || entity.isCreative()) {
+                 this.stackedContents.clear();
++                this.stackedContents.initializeExtras(recipe.value(), null); // Paper - Improve exact choice recipe ingredients
+                 entity.getInventory().fillStackedContents(this.stackedContents);
+                 this.menu.fillCraftSlotsStackedContents(this.stackedContents);
+                 if (this.stackedContents.canCraft(recipe.value(), null)) {
+@@ -77,7 +78,7 @@ public class ServerPlaceRecipe<I extends RecipeInput, R extends Recipe<I>> imple
+             int l = k;
+ 
+             for (int m : intList) {
+-                ItemStack itemStack2 = StackedContents.fromStackingIndex(m);
++                ItemStack itemStack2 = StackedContents.fromStackingIndexWithExtras(m, this.stackedContents); // Paper - Improve exact choice recipe ingredients
+                 if (!itemStack2.isEmpty()) {
+                     int n = itemStack2.getMaxStackSize();
+                     if (n < l) {
+@@ -96,12 +97,22 @@ public class ServerPlaceRecipe<I extends RecipeInput, R extends Recipe<I>> imple
+     @Override
+     public void addItemToSlot(Integer input, int slot, int amount, int gridX, int gridY) {
+         Slot slot2 = this.menu.getSlot(slot);
+-        ItemStack itemStack = StackedContents.fromStackingIndex(input);
++        // Paper start - Improve exact choice recipe ingredients
++        ItemStack itemStack = null;
++        boolean isExact = false;
++        if (this.stackedContents.extrasMap != null && input >= net.minecraft.core.registries.BuiltInRegistries.ITEM.size()) {
++            itemStack = StackedContents.fromStackingIndexExtras(input, this.stackedContents.extrasMap).copy();
++            isExact = true;
++        }
++        if (itemStack == null) {
++            itemStack = StackedContents.fromStackingIndex(input);
++        }
++        // Paper end - Improve exact choice recipe ingredients
+         if (!itemStack.isEmpty()) {
+             int i = amount;
+ 
+             while (i > 0) {
+-                i = this.moveItemToGrid(slot2, itemStack, i);
++                i = this.moveItemToGrid(slot2, itemStack, i, isExact); // Paper - Improve exact choice recipe ingredients
+                 if (i == -1) {
+                     return;
+                 }
+@@ -133,8 +144,15 @@ public class ServerPlaceRecipe<I extends RecipeInput, R extends Recipe<I>> imple
+         return i;
+     }
+ 
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Improve exact choice recipe ingredients
++
+     protected int moveItemToGrid(Slot slot, ItemStack stack, int i) {
+-        int j = this.inventory.findSlotMatchingUnusedItem(stack);
++        // Paper start - Improve exact choice recipe ingredients
++        return this.moveItemToGrid(slot, stack, i, false);
++    }
++    protected int moveItemToGrid(Slot slot, ItemStack stack, int i, final boolean isExact) {
++        int j = isExact ? this.inventory.findSlotMatchingItem(stack) : this.inventory.findSlotMatchingUnusedItem(stack);
++        // Paper end - Improve exact choice recipe ingredients
+         if (j == -1) {
+             return -1;
+         } else {
+diff --git a/src/main/java/net/minecraft/world/entity/player/StackedContents.java b/src/main/java/net/minecraft/world/entity/player/StackedContents.java
+index fa5576e41baec4b52c7ebb877924eb91d3775a2d..fcabf630ce1e4949d00f485a5bff66dd1e54a277 100644
+--- a/src/main/java/net/minecraft/world/entity/player/StackedContents.java
++++ b/src/main/java/net/minecraft/world/entity/player/StackedContents.java
+@@ -22,8 +22,10 @@ import net.minecraft.world.item.crafting.RecipeHolder;
+ public class StackedContents {
+     private static final int EMPTY = 0;
+     public final Int2IntMap contents = new Int2IntOpenHashMap();
++    @Nullable public io.papermc.paper.inventory.recipe.StackedContentsExtraMap extrasMap = null; // Paper - Improve exact choice recipe ingredients
+ 
+     public void accountSimpleStack(ItemStack stack) {
++        if (this.extrasMap != null && !stack.getComponentsPatch().isEmpty() && this.extrasMap.accountStack(stack, Math.min(64, stack.getCount()))) return; // Paper - Improve exact choice recipe ingredients; max of 64 due to accountStack method below
+         if (!stack.isDamaged() && !stack.isEnchanted() && !stack.has(DataComponents.CUSTOM_NAME)) {
+             this.accountStack(stack);
+         }
+@@ -37,6 +39,7 @@ public class StackedContents {
+         if (!stack.isEmpty()) {
+             int i = getStackingIndex(stack);
+             int j = Math.min(maxCount, stack.getCount());
++            if (this.extrasMap != null && !stack.getComponentsPatch().isEmpty() && this.extrasMap.accountStack(stack, j)) return; // Paper - Improve exact choice recipe ingredients; if an exact ingredient, don't include it
+             this.put(i, j);
+         }
+     }
+@@ -83,6 +86,31 @@ public class StackedContents {
+         return itemId == 0 ? ItemStack.EMPTY : new ItemStack(Item.byId(itemId));
+     }
+ 
++    // Paper start - Improve exact choice recipe ingredients
++    public void initializeExtras(final Recipe<?> recipe, @Nullable final net.minecraft.world.item.crafting.CraftingInput input) {
++        this.extrasMap = new io.papermc.paper.inventory.recipe.StackedContentsExtraMap(this, recipe);
++        if (input != null) this.extrasMap.accountInput(input);
++    }
++
++    public void resetExtras() {
++        if (this.extrasMap != null && !this.contents.isEmpty()) {
++            this.extrasMap.resetExtras();
++        }
++        this.extrasMap = null;
++    }
++
++    public static ItemStack fromStackingIndexWithExtras(final int itemId, @Nullable final StackedContents contents) {
++        if (contents != null && contents.extrasMap != null && itemId >= BuiltInRegistries.ITEM.size()) {
++            return fromStackingIndexExtras(itemId, contents.extrasMap);
++        }
++        return fromStackingIndex(itemId);
++    }
++
++    public static ItemStack fromStackingIndexExtras(final int itemId, final io.papermc.paper.inventory.recipe.StackedContentsExtraMap extrasMap) {
++        return extrasMap.getById(itemId).copy();
++    }
++    // Paper end - Improve exact choice recipe ingredients
++
+     public void clear() {
+         this.contents.clear();
+     }
+@@ -106,7 +134,7 @@ public class StackedContents {
+             this.data = new BitSet(this.ingredientCount + this.itemCount + this.ingredientCount + this.ingredientCount * this.itemCount);
+ 
+             for (int i = 0; i < this.ingredients.size(); i++) {
+-                IntList intList = this.ingredients.get(i).getStackingIds();
++                IntList intList = this.getStackingIds(this.ingredients.get(i)); // Paper - Improve exact choice recipe ingredients
+ 
+                 for (int j = 0; j < this.itemCount; j++) {
+                     if (intList.contains(this.items[j])) {
+@@ -169,7 +197,7 @@ public class StackedContents {
+             IntCollection intCollection = new IntAVLTreeSet();
+ 
+             for (Ingredient ingredient : this.ingredients) {
+-                intCollection.addAll(ingredient.getStackingIds());
++                intCollection.addAll(this.getStackingIds(ingredient)); // Paper - Improve exact choice recipe ingredients
+             }
+ 
+             IntIterator intIterator = intCollection.iterator();
+@@ -298,7 +326,7 @@ public class StackedContents {
+             for (Ingredient ingredient : this.ingredients) {
+                 int j = 0;
+ 
+-                for (int k : ingredient.getStackingIds()) {
++                for (int k : this.getStackingIds(ingredient)) { // Paper - Improve exact choice recipe ingredients
+                     j = Math.max(j, StackedContents.this.contents.get(k));
+                 }
+ 
+@@ -309,5 +337,17 @@ public class StackedContents {
+ 
+             return i;
+         }
++
++        // Paper start - Improve exact choice recipe ingredients
++        private IntList getStackingIds(final Ingredient ingredient) {
++            if (StackedContents.this.extrasMap != null) {
++                final IntList ids = StackedContents.this.extrasMap.extraStackingIds.get(ingredient);
++                if (ids != null) {
++                    return ids;
++                }
++            }
++            return ingredient.getStackingIds();
++        }
++        // Paper end - Improve exact choice recipe ingredients
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/item/crafting/AbstractCookingRecipe.java b/src/main/java/net/minecraft/world/item/crafting/AbstractCookingRecipe.java
+index f3b6466089ee8be59747a16aac2cac84be30617d..45c80500201aabc1e8643427ebfb8818ab966750 100644
+--- a/src/main/java/net/minecraft/world/item/crafting/AbstractCookingRecipe.java
++++ b/src/main/java/net/minecraft/world/item/crafting/AbstractCookingRecipe.java
+@@ -5,7 +5,7 @@ import net.minecraft.core.NonNullList;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.level.Level;
+ 
+-public abstract class AbstractCookingRecipe implements Recipe<SingleRecipeInput> {
++public abstract class AbstractCookingRecipe extends io.papermc.paper.inventory.recipe.RecipeBookExactChoiceRecipe<SingleRecipeInput> implements Recipe<SingleRecipeInput> { // Paper - improve exact recipe choices
+     protected final RecipeType<?> type;
+     protected final CookingBookCategory category;
+     protected final String group;
+@@ -24,6 +24,7 @@ public abstract class AbstractCookingRecipe implements Recipe<SingleRecipeInput>
+         this.result = result;
+         this.experience = experience;
+         this.cookingTime = cookingTime;
++        this.checkExactIngredients(); // Paper - improve exact recipe choices
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/item/crafting/Recipe.java b/src/main/java/net/minecraft/world/item/crafting/Recipe.java
+index 3cab383e01c124349f3f96bcbcfe91356d51aa30..b57568d5e9c4c148a4b3c303c925a813fdd5dc67 100644
+--- a/src/main/java/net/minecraft/world/item/crafting/Recipe.java
++++ b/src/main/java/net/minecraft/world/item/crafting/Recipe.java
+@@ -73,4 +73,10 @@ public interface Recipe<T extends RecipeInput> {
+     }
+ 
+     org.bukkit.inventory.Recipe toBukkitRecipe(org.bukkit.NamespacedKey id); // CraftBukkit
++
++    // Paper start - improved exact choice recipes
++    default boolean hasExactIngredients() {
++        return false;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/world/item/crafting/ShapedRecipe.java b/src/main/java/net/minecraft/world/item/crafting/ShapedRecipe.java
+index 59372daacd6fef45373c0557ccebb6ff5f16f174..63cf2b66f51df68aa3f6d98c69368ce454869d64 100644
+--- a/src/main/java/net/minecraft/world/item/crafting/ShapedRecipe.java
++++ b/src/main/java/net/minecraft/world/item/crafting/ShapedRecipe.java
+@@ -17,7 +17,7 @@ import org.bukkit.craftbukkit.inventory.CraftShapedRecipe;
+ import org.bukkit.inventory.RecipeChoice;
+ // CraftBukkit end
+ 
+-public class ShapedRecipe implements CraftingRecipe {
++public class ShapedRecipe extends io.papermc.paper.inventory.recipe.RecipeBookExactChoiceRecipe<CraftingInput> implements CraftingRecipe { // Paper - improve exact recipe choices
+ 
+     final ShapedRecipePattern pattern;
+     final ItemStack result;
+@@ -31,6 +31,7 @@ public class ShapedRecipe implements CraftingRecipe {
+         this.pattern = raw;
+         this.result = result;
+         this.showNotification = showNotification;
++        this.checkExactIngredients(); // Paper - improve exact recipe choices
+     }
+ 
+     public ShapedRecipe(String group, CraftingBookCategory category, ShapedRecipePattern raw, ItemStack result) {
+diff --git a/src/main/java/net/minecraft/world/item/crafting/ShapelessRecipe.java b/src/main/java/net/minecraft/world/item/crafting/ShapelessRecipe.java
+index 62401d045245ec7e303ec526c09b5e6fa4c9f17b..213ee4aa988dd4c2a5a7be99b1d13f67338e5209 100644
+--- a/src/main/java/net/minecraft/world/item/crafting/ShapelessRecipe.java
++++ b/src/main/java/net/minecraft/world/item/crafting/ShapelessRecipe.java
+@@ -19,7 +19,7 @@ import org.bukkit.craftbukkit.inventory.CraftRecipe;
+ import org.bukkit.craftbukkit.inventory.CraftShapelessRecipe;
+ // CraftBukkit end
+ 
+-public class ShapelessRecipe implements CraftingRecipe {
++public class ShapelessRecipe extends io.papermc.paper.inventory.recipe.RecipeBookExactChoiceRecipe<CraftingInput> implements CraftingRecipe { // Paper - improve exact recipe choices
+ 
+     final String group;
+     final CraftingBookCategory category;
+@@ -31,6 +31,7 @@ public class ShapelessRecipe implements CraftingRecipe {
+         this.category = category;
+         this.result = result;
+         this.ingredients = ingredients;
++        this.checkExactIngredients(); // Paper - improve exact recipe choices
+     }
+ 
+     // CraftBukkit start
+@@ -75,7 +76,18 @@ public class ShapelessRecipe implements CraftingRecipe {
+     }
+ 
+     public boolean matches(CraftingInput input, Level world) {
+-        return input.ingredientCount() != this.ingredients.size() ? false : (input.size() == 1 && this.ingredients.size() == 1 ? ((Ingredient) this.ingredients.getFirst()).test(input.getItem(0)) : input.stackedContents().canCraft(this, (IntList) null));
++        // Paper start - unwrap ternary & better exact choice recipes
++        if (input.ingredientCount() != this.ingredients.size()) {
++            return false;
++        }
++        if (input.size() == 1 && this.ingredients.size() == 1) {
++            return this.ingredients.getFirst().test(input.getItem(0));
++        }
++        input.stackedContents().initializeExtras(this, input); // setup stacked contents for this recipe
++        final boolean canCraft = input.stackedContents().canCraft(this, null);
++        input.stackedContents().resetExtras();
++        return canCraft;
++        // Paper end - unwrap ternary & better exact choice recipes
+     }
+ 
+     public ItemStack assemble(CraftingInput input, HolderLookup.Provider lookup) {

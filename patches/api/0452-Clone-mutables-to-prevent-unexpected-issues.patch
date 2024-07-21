@@ -1,0 +1,151 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 16 Mar 2024 11:10:48 -0700
+Subject: [PATCH] Clone mutables to prevent unexpected issues
+
+There are lots of locations in the API where mutable
+types are not cloned, either on return or when passed
+as a parameter and assigned to a field, which can cause
+unexpected behaviors. Let this be a lesson to use
+immutable types for simple things Location, Vector, and
+others.
+
+diff --git a/src/main/java/org/bukkit/event/block/BlockCanBuildEvent.java b/src/main/java/org/bukkit/event/block/BlockCanBuildEvent.java
+index 08d09c2a92d8aa6adf6610cc05905d58a76fce1f..c74ac0cb004aa219ce2f761969a4bb46cb7c9160 100644
+--- a/src/main/java/org/bukkit/event/block/BlockCanBuildEvent.java
++++ b/src/main/java/org/bukkit/event/block/BlockCanBuildEvent.java
+@@ -102,7 +102,7 @@ public class BlockCanBuildEvent extends BlockEvent {
+      */
+     @NotNull
+     public BlockData getBlockData() {
+-        return blockData;
++        return blockData.clone(); // Paper - clone because mutation isn't used
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/event/entity/EntityChangeBlockEvent.java b/src/main/java/org/bukkit/event/entity/EntityChangeBlockEvent.java
+index 1a9575ad4c81aefa5ef0b927f6ac8f7064b55c49..24e1a49e48dd8f9eb2515b2ffe472a0c4d2bc09b 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityChangeBlockEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityChangeBlockEvent.java
+@@ -61,7 +61,7 @@ public class EntityChangeBlockEvent extends EntityEvent implements Cancellable {
+      */
+     @NotNull
+     public BlockData getBlockData() {
+-        return to;
++        return to.clone(); // Paper - clone because mutation isn't used
+     }
+ 
+     @NotNull
+diff --git a/src/main/java/org/bukkit/event/entity/EntityExplodeEvent.java b/src/main/java/org/bukkit/event/entity/EntityExplodeEvent.java
+index 50161d313cfcc9e61441589685c3d0e1f057dd86..e468e55d426b8f81f87c0a08451d02b3866c226f 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityExplodeEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityExplodeEvent.java
+@@ -72,7 +72,7 @@ public class EntityExplodeEvent extends EntityEvent implements Cancellable {
+      */
+     @NotNull
+     public Location getLocation() {
+-        return location;
++        return location.clone(); // Paper - clone to avoid changes
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/event/entity/EntityPortalEnterEvent.java b/src/main/java/org/bukkit/event/entity/EntityPortalEnterEvent.java
+index d3724db0a5a67cde15b05fecd32b2ca370cca998..8b2caf665b9e829ceefc89bf41b192f53f3d5773 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityPortalEnterEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityPortalEnterEvent.java
+@@ -35,7 +35,7 @@ public class EntityPortalEnterEvent extends EntityEvent implements org.bukkit.ev
+      */
+     @NotNull
+     public Location getLocation() {
+-        return location;
++        return location.clone(); // Paper - clone to avoid changes
+     }
+ 
+     // Paper start
+diff --git a/src/main/java/org/bukkit/event/entity/ItemDespawnEvent.java b/src/main/java/org/bukkit/event/entity/ItemDespawnEvent.java
+index 6fc66197eb2c5d59c70d8d028b7963748371edbe..2bb29fa449cd6c90b52d2786ed15b6154d591607 100644
+--- a/src/main/java/org/bukkit/event/entity/ItemDespawnEvent.java
++++ b/src/main/java/org/bukkit/event/entity/ItemDespawnEvent.java
+@@ -46,7 +46,7 @@ public class ItemDespawnEvent extends EntityEvent implements Cancellable {
+      */
+     @NotNull
+     public Location getLocation() {
+-        return location;
++        return location.clone(); // Paper - clone to avoid changes
+     }
+ 
+     @NotNull
+diff --git a/src/main/java/org/bukkit/event/vehicle/VehicleBlockCollisionEvent.java b/src/main/java/org/bukkit/event/vehicle/VehicleBlockCollisionEvent.java
+index d0a437bd8aeec18f800893f51ece06deb0c8972c..50fad23cf4d9f591b12a9eaebeb4e26f18e8528d 100644
+--- a/src/main/java/org/bukkit/event/vehicle/VehicleBlockCollisionEvent.java
++++ b/src/main/java/org/bukkit/event/vehicle/VehicleBlockCollisionEvent.java
+@@ -31,7 +31,7 @@ public class VehicleBlockCollisionEvent extends VehicleCollisionEvent {
+      */
+     @NotNull
+     public org.bukkit.util.Vector getVelocity() {
+-        return velocity;
++        return velocity.clone();
+     }
+     // Paper end
+ 
+diff --git a/src/main/java/org/bukkit/event/vehicle/VehicleMoveEvent.java b/src/main/java/org/bukkit/event/vehicle/VehicleMoveEvent.java
+index 7bfb84d3948c773e943374316ea25a19288ec7d0..fc4cf7b21b24fe38617fa150f697bc29da76754e 100644
+--- a/src/main/java/org/bukkit/event/vehicle/VehicleMoveEvent.java
++++ b/src/main/java/org/bukkit/event/vehicle/VehicleMoveEvent.java
+@@ -27,7 +27,7 @@ public class VehicleMoveEvent extends VehicleEvent {
+      */
+     @NotNull
+     public Location getFrom() {
+-        return from;
++        return from.clone(); // Paper - clone to avoid changes
+     }
+ 
+     /**
+@@ -37,7 +37,7 @@ public class VehicleMoveEvent extends VehicleEvent {
+      */
+     @NotNull
+     public Location getTo() {
+-        return to;
++        return to.clone(); // Paper - clone to avoid changes
+     }
+ 
+ 
+diff --git a/src/main/java/org/bukkit/event/world/GenericGameEvent.java b/src/main/java/org/bukkit/event/world/GenericGameEvent.java
+index 2a2a329877d8da45c2d6afecf78ce88d52635cad..fb975fefc74d8c9746cab4c02860f55654cf92f7 100644
+--- a/src/main/java/org/bukkit/event/world/GenericGameEvent.java
++++ b/src/main/java/org/bukkit/event/world/GenericGameEvent.java
+@@ -49,7 +49,7 @@ public class GenericGameEvent extends WorldEvent implements Cancellable {
+      */
+     @NotNull
+     public Location getLocation() {
+-        return location;
++        return location.clone(); // Paper - clone to avoid changes
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/event/world/SpawnChangeEvent.java b/src/main/java/org/bukkit/event/world/SpawnChangeEvent.java
+index 9ce93d00935446589cb2bb970cb540d109616e85..73997ae04ff39ac3984c59de32aaced9eb72ce16 100644
+--- a/src/main/java/org/bukkit/event/world/SpawnChangeEvent.java
++++ b/src/main/java/org/bukkit/event/world/SpawnChangeEvent.java
+@@ -25,7 +25,7 @@ public class SpawnChangeEvent extends WorldEvent {
+      */
+     @NotNull
+     public Location getPreviousLocation() {
+-        return previousLocation;
++        return previousLocation.clone(); // Paper - clone to avoid changes
+     }
+ 
+     @NotNull
+diff --git a/src/main/java/org/bukkit/event/world/StructureGrowEvent.java b/src/main/java/org/bukkit/event/world/StructureGrowEvent.java
+index 7af8d6e51c824cf0592b722b834f1d4986e3cc08..783e74bc382f0f6d24203fde7b811f588a674731 100644
+--- a/src/main/java/org/bukkit/event/world/StructureGrowEvent.java
++++ b/src/main/java/org/bukkit/event/world/StructureGrowEvent.java
+@@ -39,7 +39,7 @@ public class StructureGrowEvent extends WorldEvent implements Cancellable {
+      */
+     @NotNull
+     public Location getLocation() {
+-        return location;
++        return location.clone(); // Paper - clone to avoid changes
+     }
+ 
+     /**

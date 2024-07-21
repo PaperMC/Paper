@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Thu, 17 Sep 2020 00:36:05 +0100
+Subject: [PATCH] Extend block drop capture to capture all items added to the
+ world
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 9114ba1742a4fc8683848d431fa92046a85fe871..c60967b7833a23cff0305219b02b308d92448109 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1228,6 +1228,12 @@ public class ServerLevel extends Level implements WorldGenLevel {
+             // WorldServer.LOGGER.warn("Tried to add entity {} but it was marked as removed already", EntityTypes.getKey(entity.getType())); // CraftBukkit
+             return false;
+         } else {
++            // Paper start - capture all item additions to the world
++            if (captureDrops != null && entity instanceof net.minecraft.world.entity.item.ItemEntity) {
++                captureDrops.add((net.minecraft.world.entity.item.ItemEntity) entity);
++                return true;
++            }
++            // Paper end - capture all item additions to the world
+             // SPIGOT-6415: Don't call spawn event when reason is null. For example when an entity teleports to a new world.
+             if (spawnReason != null && !CraftEventFactory.doEntityAddEventCalling(this, entity, spawnReason)) {
+                 return false;
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+index d4bd44210d58b30696feeea48e1909472a546702..5de472df78940d1b8320f73d18b2edf3a796227e 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -437,10 +437,12 @@ public class ServerPlayerGameMode {
+                     // return true; // CraftBukkit
+                 }
+                 // CraftBukkit start
++                java.util.List<net.minecraft.world.entity.item.ItemEntity> itemsToDrop = this.level.captureDrops; // Paper - capture all item additions to the world
++                this.level.captureDrops = null; // Paper - capture all item additions to the world; Remove this earlier so that we can actually drop stuff
+                 if (event.isDropItems()) {
+-                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDropItemEvent(bblock, state, this.player, this.level.captureDrops);
++                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDropItemEvent(bblock, state, this.player, itemsToDrop); // Paper - capture all item additions to the world
+                 }
+-                this.level.captureDrops = null;
++                //this.level.captureDrops = null; // Paper - capture all item additions to the world; move up
+ 
+                 // Drop event experience
+                 if (flag && event != null) {

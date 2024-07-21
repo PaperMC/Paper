@@ -1,0 +1,65 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Tue, 18 May 2021 14:39:44 -0700
+Subject: [PATCH] Add command line option to load extra plugin jars not in the
+ plugins folder
+
+ex: java -jar paperclip.jar nogui -add-plugin=/path/to/plugin.jar -add-plugin=/path/to/another/plugin_jar.jar
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 1056badff06575ef13907afac60af734ffa2b863..acab477a4a026799319054c2eb4d0f2c99ab3d83 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -458,6 +458,35 @@ public final class CraftServer implements Server {
+         io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler.INSTANCE.enter(io.papermc.paper.plugin.entrypoint.Entrypoint.PLUGIN); // Paper - replace implementation
+     }
+ 
++    // Paper start
++    @Override
++    public File getPluginsFolder() {
++        return this.console.getPluginsFolder();
++    }
++
++    private List<File> extraPluginJars() {
++        @SuppressWarnings("unchecked")
++        final List<File> jars = (List<File>) this.console.options.valuesOf("add-plugin");
++        final List<File> list = new ArrayList<>();
++        for (final File file : jars) {
++            if (!file.exists()) {
++                net.minecraft.server.MinecraftServer.LOGGER.warn("File '{}' specified through 'add-plugin' argument does not exist, cannot load a plugin from it!", file.getAbsolutePath());
++                continue;
++            }
++            if (!file.isFile()) {
++                net.minecraft.server.MinecraftServer.LOGGER.warn("File '{}' specified through 'add-plugin' argument is not a file, cannot load a plugin from it!", file.getAbsolutePath());
++                continue;
++            }
++            if (!file.getName().endsWith(".jar")) {
++                net.minecraft.server.MinecraftServer.LOGGER.warn("File '{}' specified through 'add-plugin' argument is not a jar file, cannot load a plugin from it!", file.getAbsolutePath());
++                continue;
++            }
++            list.add(file);
++        }
++        return list;
++    }
++    // Paper end
++
+     public void enablePlugins(PluginLoadOrder type) {
+         if (type == PluginLoadOrder.STARTUP) {
+             this.helpMap.clear();
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index 26dfb02286e836cad0242c71f743265d55d9d032..1c8049bbc08be77673d375205bd42a346ff951b8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -160,6 +160,12 @@ public class Main {
+                         .ofType(File.class)
+                         .defaultsTo(new File("paper.yml"))
+                         .describedAs("Yml file");
++
++                acceptsAll(asList("add-plugin", "add-extra-plugin-jar"), "Specify paths to extra plugin jars to be loaded in addition to those in the plugins folder. This argument can be specified multiple times, once for each extra plugin jar path.")
++                        .withRequiredArg()
++                        .ofType(File.class)
++                        .defaultsTo(new File[] {})
++                        .describedAs("Jar file");
+                 // Paper end
+             }
+         };

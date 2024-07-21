@@ -1,0 +1,98 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sweepyoface <github@sweepy.pw>
+Date: Sat, 17 Jun 2017 18:48:21 -0400
+Subject: [PATCH] Add UnknownCommandEvent
+
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+
+diff --git a/src/main/java/net/minecraft/commands/CommandSourceStack.java b/src/main/java/net/minecraft/commands/CommandSourceStack.java
+index ec34e402104d7a696ea95e0b11ee70189b678ab9..d9fc3c25bef251df6a53ee47ec224b07240a931c 100644
+--- a/src/main/java/net/minecraft/commands/CommandSourceStack.java
++++ b/src/main/java/net/minecraft/commands/CommandSourceStack.java
+@@ -330,8 +330,13 @@ public class CommandSourceStack implements ExecutionCommandSource<CommandSourceS
+     }
+ 
+     public void sendFailure(Component message) {
++        // Paper start - Add UnknownCommandEvent
++        this.sendFailure(message, true);
++    }
++    public void sendFailure(Component message, boolean withStyle) {
++        // Paper end - Add UnknownCommandEvent
+         if (this.source.acceptsFailure() && !this.silent) {
+-            this.source.sendSystemMessage(Component.empty().append(message).withStyle(ChatFormatting.RED));
++            this.source.sendSystemMessage(withStyle ? Component.empty().append(message).withStyle(ChatFormatting.RED) : message); // Paper - Add UnknownCommandEvent
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
+index f94c0106b44d614483184e372c01c1504cb886b0..72756ef14b8ec8afd80313b9f6aaf76722cb18cf 100644
+--- a/src/main/java/net/minecraft/commands/Commands.java
++++ b/src/main/java/net/minecraft/commands/Commands.java
+@@ -329,7 +329,7 @@ public class Commands {
+         commandlistenerwrapper.getServer().getProfiler().push(() -> {
+             return "/" + s;
+         });
+-        ContextChain<CommandSourceStack> contextchain = Commands.finishParsing(parseresults, s, commandlistenerwrapper, label); // CraftBukkit
++        ContextChain contextchain = this.finishParsing(parseresults, s, commandlistenerwrapper, label); // CraftBukkit // Paper - Add UnknownCommandEvent
+ 
+         try {
+             if (contextchain != null) {
+@@ -363,14 +363,18 @@ public class Commands {
+     }
+ 
+     @Nullable
+-    private static ContextChain<CommandSourceStack> finishParsing(ParseResults<CommandSourceStack> parseresults, String s, CommandSourceStack commandlistenerwrapper, String label) { // CraftBukkit
++    private ContextChain<CommandSourceStack> finishParsing(ParseResults<CommandSourceStack> parseresults, String s, CommandSourceStack commandlistenerwrapper, String label) { // CraftBukkit // Paper - Add UnknownCommandEvent
+         try {
+             Commands.validateParseResults(parseresults);
+             return (ContextChain) ContextChain.tryFlatten(parseresults.getContext().build(s)).orElseThrow(() -> {
+                 return CommandSyntaxException.BUILT_IN_EXCEPTIONS.dispatcherUnknownCommand().createWithContext(parseresults.getReader());
+             });
+         } catch (CommandSyntaxException commandsyntaxexception) {
+-            commandlistenerwrapper.sendFailure(ComponentUtils.fromMessage(commandsyntaxexception.getRawMessage()));
++            // Paper start - Add UnknownCommandEvent
++            final net.kyori.adventure.text.TextComponent.Builder builder = net.kyori.adventure.text.Component.text();
++            // commandlistenerwrapper.sendFailure(ComponentUtils.fromMessage(commandsyntaxexception.getRawMessage()));
++            builder.color(net.kyori.adventure.text.format.NamedTextColor.RED).append(io.papermc.paper.brigadier.PaperBrigadier.componentFromMessage(commandsyntaxexception.getRawMessage()));
++            // Paper end - Add UnknownCommandEvent
+             if (commandsyntaxexception.getInput() != null && commandsyntaxexception.getCursor() >= 0) {
+                 int i = Math.min(commandsyntaxexception.getInput().length(), commandsyntaxexception.getCursor());
+                 MutableComponent ichatmutablecomponent = Component.empty().withStyle(ChatFormatting.GRAY).withStyle((chatmodifier) -> {
+@@ -389,7 +393,17 @@ public class Commands {
+                 }
+ 
+                 ichatmutablecomponent.append((Component) Component.translatable("command.context.here").withStyle(ChatFormatting.RED, ChatFormatting.ITALIC));
+-                commandlistenerwrapper.sendFailure(ichatmutablecomponent);
++                // Paper start - Add UnknownCommandEvent
++                // commandlistenerwrapper.sendFailure(ichatmutablecomponent);
++                builder
++                    .append(net.kyori.adventure.text.Component.newline())
++                    .append(io.papermc.paper.adventure.PaperAdventure.asAdventure(ichatmutablecomponent));
++            }
++            org.bukkit.event.command.UnknownCommandEvent event = new org.bukkit.event.command.UnknownCommandEvent(commandlistenerwrapper.getBukkitSender(), s, org.spigotmc.SpigotConfig.unknownCommandMessage.isEmpty() ? null : builder.build());
++            org.bukkit.Bukkit.getServer().getPluginManager().callEvent(event);
++            if (event.message() != null) {
++                commandlistenerwrapper.sendFailure(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.message()), false);
++                // Paper end - Add UnknownCommandEvent
+             }
+ 
+             return null;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 5ab2836f14e1a7482e7136004507d66c4abb4bdd..4280bd6288ce9522d041ec2dc2105d3908514a2f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -947,7 +947,13 @@ public final class CraftServer implements Server {
+ 
+         // Spigot start
+         if (!org.spigotmc.SpigotConfig.unknownCommandMessage.isEmpty()) {
+-            sender.sendMessage(org.spigotmc.SpigotConfig.unknownCommandMessage);
++            // Paper start
++            org.bukkit.event.command.UnknownCommandEvent event = new org.bukkit.event.command.UnknownCommandEvent(sender, commandLine, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.unknownCommandMessage));
++            this.getPluginManager().callEvent(event);
++            if (event.message() != null) {
++                sender.sendMessage(event.message());
++            }
++            // Paper end
+         }
+         // Spigot end
+ 

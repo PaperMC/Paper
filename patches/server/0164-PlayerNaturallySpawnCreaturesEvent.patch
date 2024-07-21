@@ -1,0 +1,73 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 14 Jan 2018 17:36:02 -0500
+Subject: [PATCH] PlayerNaturallySpawnCreaturesEvent
+
+This event can be used for when you want to exclude a certain player
+from triggering monster spawns on a server.
+
+Also a highly more effecient way to blanket block spawns in a world
+
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index d60c70d59d0a6ef21224c597c9015cb3f51dabb8..63bcd7698fdb86366441dacedbb616771f6b1a3d 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -1037,7 +1037,9 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         chunkRange = (chunkRange > this.level.spigotConfig.viewDistance) ? (byte) this.level.spigotConfig.viewDistance : chunkRange;
+         chunkRange = (chunkRange > 8) ? 8 : chunkRange;
+ 
+-        double blockRange = (reducedRange) ? Math.pow(chunkRange << 4, 2) : 16384.0D;
++        final int finalChunkRange = chunkRange; // Paper for lambda below
++        //double blockRange = (reducedRange) ? Math.pow(chunkRange << 4, 2) : 16384.0D; // Paper - use from event
++        double blockRange = 16384.0D; // Paper
+         // Spigot end
+         if (!this.distanceManager.hasPlayersNearby(chunkcoordintpair.toLong())) {
+             return false;
+@@ -1052,6 +1054,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                 }
+ 
+                 entityplayer = (ServerPlayer) iterator.next();
++                // Paper start - PlayerNaturallySpawnCreaturesEvent
++                com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent event;
++                blockRange = 16384.0D;
++                if (reducedRange) {
++                    event = entityplayer.playerNaturallySpawnedEvent;
++                    if (event == null || event.isCancelled()) return false;
++                    blockRange = (double) ((event.getSpawnRadius() << 4) * (event.getSpawnRadius() << 4));
++                }
++                // Paper end - PlayerNaturallySpawnCreaturesEvent
+             } while (!this.playerIsCloseEnoughForSpawning(entityplayer, chunkcoordintpair, blockRange)); // Spigot
+ 
+             return true;
+diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+index e0c8b89767087cba34fc3c3809db4c386dacb193..a939bad7da9c852827a2d67d9ace5d0df4911a31 100644
+--- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
++++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+@@ -461,6 +461,15 @@ public class ServerChunkCache extends ChunkSource {
+                 boolean flag = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && !this.level.players().isEmpty(); // CraftBukkit
+ 
+                 Util.shuffle(list, this.level.random);
++                // Paper start - PlayerNaturallySpawnCreaturesEvent
++                int chunkRange = level.spigotConfig.mobSpawnRange;
++                chunkRange = (chunkRange > level.spigotConfig.viewDistance) ? (byte) level.spigotConfig.viewDistance : chunkRange;
++                chunkRange = Math.min(chunkRange, 8);
++                for (ServerPlayer entityPlayer : this.level.players()) {
++                    entityPlayer.playerNaturallySpawnedEvent = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(entityPlayer.getBukkitEntity(), (byte) chunkRange);
++                    entityPlayer.playerNaturallySpawnedEvent.callEvent();
++                }
++                // Paper end - PlayerNaturallySpawnCreaturesEvent
+                 int l = this.level.getGameRules().getInt(GameRules.RULE_RANDOMTICKING);
+                 boolean flag1 = this.level.ticksPerSpawnCategory.getLong(org.bukkit.entity.SpawnCategory.ANIMAL) != 0L && this.level.getLevelData().getGameTime() % this.level.ticksPerSpawnCategory.getLong(org.bukkit.entity.SpawnCategory.ANIMAL) == 0L; // CraftBukkit
+                 Iterator iterator1 = list.iterator();
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index a049a54ee70839706787f8de661ca6e6b1f54071..db72318d822b876eb937f0f0f7f2b2139fb77df7 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -286,6 +286,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+     public String kickLeaveMessage = null; // SPIGOT-3034: Forward leave message to PlayerQuitEvent
+     // CraftBukkit end
+     public boolean isRealPlayer; // Paper
++    public com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
+ 
+     public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile, ClientInformation clientOptions) {
+         super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile);

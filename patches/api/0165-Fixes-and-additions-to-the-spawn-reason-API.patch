@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 24 Mar 2019 00:21:23 -0400
+Subject: [PATCH] Fixes and additions to the spawn reason API
+
+Expose an entities spawn reason on the entity.
+Pre existing entities will return NATURAL if it was a non
+persistenting Living Entity, SPAWNER for spawners,
+or DEFAULT since data was not stored.
+
+Additionally, add missing spawn reasons.
+
+Co-authored-by: Aurora <aurora@relanet.eu>
+Co-authored-by: Jakub Zacek <dawon@dawon.eu>
+
+diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
+index 99e1f17fddf9cebe7057998d1635804c55f18312..c3387a88a16cfd9157ade5d8a06eae2540a97288 100644
+--- a/src/main/java/org/bukkit/entity/Entity.java
++++ b/src/main/java/org/bukkit/entity/Entity.java
+@@ -857,5 +857,11 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
+         // TODO remove impl here
+         return getLocation().getChunk();
+     }
++
++    /**
++     * @return The {@link org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason} that initially spawned this entity. <!-- Paper - added "initially" to clarify that the SpawnReason doesn't change after the Entity was initially spawned" -->
++     */
++    @NotNull
++    org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason getEntitySpawnReason();
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/event/entity/CreatureSpawnEvent.java b/src/main/java/org/bukkit/event/entity/CreatureSpawnEvent.java
+index 1e2bb345d19ebe03589d85bdab13021b6fa2ed98..6ff1988092de06f9d751cd40da521c2ed6e2e4bd 100644
+--- a/src/main/java/org/bukkit/event/entity/CreatureSpawnEvent.java
++++ b/src/main/java/org/bukkit/event/entity/CreatureSpawnEvent.java
+@@ -206,6 +206,12 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
+          * When a creature is spawned by an enchantment
+          */
+         ENCHANTMENT,
++        // Paper start - Fixes and additions to the SpawnReason API
++        /**
++         * When an entity spawns from an ominous item spawner
++         */
++        OMINOUS_ITEM_SPAWNER,
++        // Paper end - Fixes and additions to the SpawnReason API
+         /**
+          * When a creature is spawned by a potion effect, for example:
+          * {@link org.bukkit.potion.PotionType#OOZING}, {@link org.bukkit.potion.PotionType#INFESTED}

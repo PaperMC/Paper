@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tamion <70228790+notTamion@users.noreply.github.com>
+Date: Sat, 13 Jul 2024 18:00:37 +0200
+Subject: [PATCH] Fix HelpCommand searching
+
+Prevent index out of bounds exception when finding possible matches in
+the help topics.
+A general empty string is caught and directed to the defaultTopic by
+getHelpTopic(). #findPossibleMatches hence should not concern itself
+with possible empty strings anymore.
+
+diff --git a/src/main/java/org/bukkit/command/defaults/HelpCommand.java b/src/main/java/org/bukkit/command/defaults/HelpCommand.java
+index a1699aa93c62f70238822c446326ed46ea71db14..9c63d9dedb08f88eb14cff26ee44d6d101935177 100644
+--- a/src/main/java/org/bukkit/command/defaults/HelpCommand.java
++++ b/src/main/java/org/bukkit/command/defaults/HelpCommand.java
+@@ -143,6 +143,7 @@ public class HelpCommand extends BukkitCommand {
+             searchString = searchString.substring(1);
+         }
+ 
++        if (searchString.isEmpty()) return null; // Paper - prevent index out of bounds - nothing matches an empty search string, should have been special cased to defaultTopic earlier, just return null.
+         for (HelpTopic topic : Bukkit.getServer().getHelpMap().getHelpTopics()) {
+             String trimmedTopic = topic.getName().startsWith("/") ? topic.getName().substring(1) : topic.getName();
+ 
+diff --git a/src/main/java/org/bukkit/help/IndexHelpTopic.java b/src/main/java/org/bukkit/help/IndexHelpTopic.java
+index 88a812d66b7eea7389103b9c2776a8adcfc141c7..74795eb1a5dacaca61ed1c918074e79f2b3d9040 100644
+--- a/src/main/java/org/bukkit/help/IndexHelpTopic.java
++++ b/src/main/java/org/bukkit/help/IndexHelpTopic.java
+@@ -49,10 +49,15 @@ public class IndexHelpTopic extends HelpTopic {
+         if (sender instanceof ConsoleCommandSender) {
+             return true;
+         }
+-        if (permission == null) {
+-            return true;
++        // Paper start - Fix HelpCommand searching - do not show index if no topic is visible to the sender
++        if (permission != null && !sender.hasPermission(permission)) return false; // old spigot permission check
++
++        for (HelpTopic topic : allTopics) {
++            if (topic.canSee(sender)) return true;
+         }
+-        return sender.hasPermission(permission);
++
++        return false;
++        // Paper end - Fix HelpCommand searching - do not show index if no topic is visible to the sender
+     }
+ 
+     @Override

@@ -8,18 +8,18 @@ our own relocation. Also lets us rewrite NMS calls for when we're
 debugging in an IDE pre-relocate.
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
-index acfb0269e15aba638b87b1e2f483ef96c9552693..8e29fae1be2b4d0b04e7788de7a3802aacae4588 100644
+index 4afaab8978d4c4d9b0e9339f1bea9a9a9963d20d..421ddf6ca955215dff77655a7eda62eb9d90aa92 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
-@@ -8,6 +8,7 @@ import java.util.ArrayList;
- import java.util.Arrays;
+@@ -11,6 +11,7 @@ import java.util.Arrays;
+ import java.util.Collection;
  import java.util.Collections;
  import java.util.Enumeration;
 +import java.util.HashMap;
  import java.util.HashSet;
  import java.util.List;
  import java.util.Map;
-@@ -17,6 +18,7 @@ import java.util.jar.JarEntry;
+@@ -20,6 +21,7 @@ import java.util.jar.JarEntry;
  import java.util.jar.JarFile;
  import java.util.jar.JarOutputStream;
  import java.util.zip.ZipEntry;
@@ -27,9 +27,9 @@ index acfb0269e15aba638b87b1e2f483ef96c9552693..8e29fae1be2b4d0b04e7788de7a3802a
  import joptsimple.OptionParser;
  import joptsimple.OptionSet;
  import joptsimple.OptionSpec;
-@@ -83,6 +85,40 @@ public class Commodore {
-     private static final Map<String, RerouteMethodData> MATERIAL_METHOD_REROUTE = Commodore.createReroutes(MaterialRerouting.class);
+@@ -99,6 +101,40 @@ public class Commodore {
      private static final Map<String, RerouteMethodData> METHOD_REROUTE = Commodore.createReroutes(MethodRerouting.class);
+     private static final Map<String, RerouteMethodData> ENUM_METHOD_REROUTE = Commodore.createReroutes(EnumEvil.class);
  
 +    // Paper start - Plugin rewrites
 +    private static final Map<String, String> SEARCH_AND_REMOVE = initReplacementsMap();
@@ -68,9 +68,9 @@ index acfb0269e15aba638b87b1e2f483ef96c9552693..8e29fae1be2b4d0b04e7788de7a3802a
      public static void main(String[] args) {
          OptionParser parser = new OptionParser();
          OptionSpec<File> inputFlag = parser.acceptsAll(Arrays.asList("i", "input")).withRequiredArg().ofType(File.class).required();
-@@ -213,9 +249,49 @@ public class Commodore {
-             @Override
-             public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+@@ -252,9 +288,49 @@ public class Commodore {
+                 }
+ 
                  return new MethodVisitor(this.api, super.visitMethod(access, name, desc, signature, exceptions)) {
 +                    // Paper start - Plugin rewrites
 +                    @Override
@@ -118,7 +118,7 @@ index acfb0269e15aba638b87b1e2f483ef96c9552693..8e29fae1be2b4d0b04e7788de7a3802a
                          name = FieldRename.rename(pluginVersion, owner, name);
  
                          if (modern) {
-@@ -331,6 +407,13 @@ public class Commodore {
+@@ -374,6 +450,13 @@ public class Commodore {
                              return;
                          }
  
@@ -132,7 +132,7 @@ index acfb0269e15aba638b87b1e2f483ef96c9552693..8e29fae1be2b4d0b04e7788de7a3802a
                          if (modern) {
                              if (owner.equals("org/bukkit/Material") || (instantiatedMethodType != null && instantiatedMethodType.getDescriptor().startsWith("(Lorg/bukkit/Material;)"))) {
                                  switch (name) {
-@@ -427,6 +510,13 @@ public class Commodore {
+@@ -470,6 +553,13 @@ public class Commodore {
  
                      @Override
                      public void visitLdcInsn(Object value) {
@@ -146,7 +146,7 @@ index acfb0269e15aba638b87b1e2f483ef96c9552693..8e29fae1be2b4d0b04e7788de7a3802a
                          if (value instanceof String && ((String) value).equals("com.mysql.jdbc.Driver")) {
                              super.visitLdcInsn("com.mysql.cj.jdbc.Driver");
                              return;
-@@ -437,6 +527,14 @@ public class Commodore {
+@@ -480,6 +570,14 @@ public class Commodore {
  
                      @Override
                      public void visitInvokeDynamicInsn(String name, String descriptor, Handle bootstrapMethodHandle, Object... bootstrapMethodArguments) {
@@ -161,7 +161,7 @@ index acfb0269e15aba638b87b1e2f483ef96c9552693..8e29fae1be2b4d0b04e7788de7a3802a
                          if (bootstrapMethodHandle.getOwner().equals("java/lang/invoke/LambdaMetafactory")
                                  && bootstrapMethodHandle.getName().equals("metafactory") && bootstrapMethodArguments.length == 3) {
                              Type samMethodType = (Type) bootstrapMethodArguments[0];
-@@ -453,7 +551,7 @@ public class Commodore {
+@@ -496,7 +594,7 @@ public class Commodore {
                                  methodArgs.add(new Handle(newOpcode, newOwner, newName, newDescription, newItf));
                                  methodArgs.add(newInstantiated);
  
@@ -170,7 +170,7 @@ index acfb0269e15aba638b87b1e2f483ef96c9552693..8e29fae1be2b4d0b04e7788de7a3802a
                              }, implMethod.getTag(), implMethod.getOwner(), implMethod.getName(), implMethod.getDesc(), implMethod.isInterface(), samMethodType, instantiatedMethodType);
                              return;
                          }
-@@ -504,6 +602,12 @@ public class Commodore {
+@@ -547,6 +645,12 @@ public class Commodore {
  
              @Override
              public FieldVisitor visitField(int access, String name, String descriptor, String signature, Object value) {
