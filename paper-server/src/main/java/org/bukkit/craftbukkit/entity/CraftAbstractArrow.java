@@ -173,4 +173,16 @@ public class CraftAbstractArrow extends AbstractProjectile implements AbstractAr
         this.getHandle().setSoundEvent(org.bukkit.craftbukkit.CraftSound.bukkitToMinecraft(sound));
     }
     // Paper end
+
+    // Paper start - Fix PickupStatus getting reset - Copy of CraftProjectile#setShooter, calling setOwner(Entity,boolean)
+    @Override
+    public void setShooter(org.bukkit.projectiles.ProjectileSource shooter, boolean resetPickupStatus) {
+        if (shooter instanceof CraftEntity craftEntity) {
+            this.getHandle().setOwner(craftEntity.getHandle(), resetPickupStatus);
+        } else {
+            this.getHandle().setOwner(null, resetPickupStatus);
+        }
+        this.getHandle().projectileSource = shooter;
+    }
+    // Paper end - Fix PickupStatus getting reset
 }
