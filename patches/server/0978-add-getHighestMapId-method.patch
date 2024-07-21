@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: chmodsayshello <chmodsayshello@hotmail.com>
+Date: Mon, 12 Jun 2023 18:56:48 +0200
+Subject: [PATCH] add getHighestMapId method
+
+
+diff --git a/src/main/java/net/minecraft/world/level/saveddata/maps/MapIndex.java b/src/main/java/net/minecraft/world/level/saveddata/maps/MapIndex.java
+index 9b2948b5150c8f039ca667a50765109721b93947..9f69db46239d3e8055d5793a6a9ba62d321b5e4f 100644
+--- a/src/main/java/net/minecraft/world/level/saveddata/maps/MapIndex.java
++++ b/src/main/java/net/minecraft/world/level/saveddata/maps/MapIndex.java
+@@ -40,4 +40,10 @@ public class MapIndex extends SavedData {
+         this.setDirty();
+         return i;
+     }
++
++    // Paper start - get value without writing
++    public int getCurrentValueForMap() {
++        return this.usedAuxIds.getInt("map");
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index ffa27c9c02dc4d12411fc089de3af8e8e12ba06e..2a32560d0e09dc9a93e17b7d13b612ef4a4bd803 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -2971,5 +2971,11 @@ public final class CraftServer implements Server {
+         return this.potionBrewer;
+     }
+ 
++    @Override
++    public int getHighestMapId(){
++        // Paper - all map IDs are meant for the overworld, this line is more or less copied from NMS
++        // Paper - for additional info, view getFreeMapId() in ServerLevel.java and getFreeAuxValueForMap() in MapIndex.java
++        return (this.getServer().overworld().getDataStorage().computeIfAbsent(net.minecraft.world.level.saveddata.maps.MapIndex::load, net.minecraft.world.level.saveddata.maps.MapIndex::new, "idcounts")).getCurrentValueForMap();
++    }
+     // Paper end
+ }
