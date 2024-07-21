@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 24 Mar 2019 01:01:32 -0400
+Subject: [PATCH] Only count Natural Spawned mobs towards natural spawn mob
+ limit
+
+This resolves the super common complaint about mobs not spawning.
+
+This was ultimately a flaw in the vanilla count algorithim that allows
+spawners and other misc mobs to count against the mob limit, which are
+not bounded, and can prevent the entire world from spawning new.
+
+I believe Bukkits changes around persistence may of actually made it
+worse than vanilla.
+
+This should fully solve all of the issues around it so that only natural
+influences natural spawns.
+
+diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
+index 029835914c3c88811684e90b29bfed83191b3b3f..f22e1d76586980edb2dc962b4d55ad7a542b61a7 100644
+--- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
++++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
+@@ -88,6 +88,13 @@ public final class NaturalSpawner {
+             MobCategory enumcreaturetype = entity.getType().getCategory();
+ 
+             if (enumcreaturetype != MobCategory.MISC) {
++                // Paper start - Only count natural spawns
++                if (!entity.level().paperConfig().entities.spawning.countAllMobsForSpawning &&
++                    !(entity.spawnReason == org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL ||
++                        entity.spawnReason == org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CHUNK_GEN)) {
++                    continue;
++                }
++                // Paper end
+                 BlockPos blockposition = entity.blockPosition();
+ 
+                 chunkSource.query(ChunkPos.asLong(blockposition), (chunk) -> {
