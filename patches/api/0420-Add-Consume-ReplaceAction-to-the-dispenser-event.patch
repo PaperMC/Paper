@@ -1,0 +1,192 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 12 Dec 2022 18:26:18 -0800
+Subject: [PATCH] Add Consume/ReplaceAction to the dispenser event
+
+
+diff --git a/src/main/java/org/bukkit/event/block/BlockDispenseArmorEvent.java b/src/main/java/org/bukkit/event/block/BlockDispenseArmorEvent.java
+index 57b831979c26d7b6a0325e009b3ba627b3b29a2a..c0cd85b5cb1c85a64ac7523c79702c950952d4aa 100644
+--- a/src/main/java/org/bukkit/event/block/BlockDispenseArmorEvent.java
++++ b/src/main/java/org/bukkit/event/block/BlockDispenseArmorEvent.java
+@@ -18,7 +18,7 @@ public class BlockDispenseArmorEvent extends BlockDispenseEvent {
+     private final LivingEntity target;
+ 
+     public BlockDispenseArmorEvent(@NotNull Block block, @NotNull ItemStack dispensed, @NotNull LivingEntity target) {
+-        super(block, dispensed, new Vector(0, 0, 0));
++        super(block, dispensed, new Vector(0, 0, 0), ConsumeAction.CONSUME_IF_EQUAL); // Paper
+         this.target = target;
+     }
+ 
+diff --git a/src/main/java/org/bukkit/event/block/BlockDispenseEvent.java b/src/main/java/org/bukkit/event/block/BlockDispenseEvent.java
+index 14d1eb5d93fd5a87473a0b8df240cf09f1752360..be7e61ecfa0230f4fb6e2c5099341795290b6182 100644
+--- a/src/main/java/org/bukkit/event/block/BlockDispenseEvent.java
++++ b/src/main/java/org/bukkit/event/block/BlockDispenseEvent.java
+@@ -18,11 +18,24 @@ public class BlockDispenseEvent extends BlockEvent implements Cancellable {
+     private boolean cancelled = false;
+     private ItemStack item;
+     private Vector velocity;
++    private ConsumeAction consumeAction; // Paper
++    private ReplaceAction replaceAction; // Paper
+ 
++    @Deprecated(forRemoval = true) // Paper
+     public BlockDispenseEvent(@NotNull final Block block, @NotNull final ItemStack dispensed, @NotNull final Vector velocity) {
++        // Paper start
++        this(block, dispensed, velocity, ConsumeAction.CONSUME_IF_EQUAL);
++    }
++    public BlockDispenseEvent(@NotNull final Block block, @NotNull final ItemStack dispensed, @NotNull final Vector velocity, final @NotNull ConsumeAction consumeAction) {
++        this(block, dispensed, velocity, consumeAction, ReplaceAction.NONE);
++    }
++    public BlockDispenseEvent(@NotNull final Block block, @NotNull final ItemStack dispensed, @NotNull final Vector velocity, final @NotNull ConsumeAction consumeAction, final @NotNull ReplaceAction replaceAction) {
++        // Paper end
+         super(block);
+         this.item = dispensed;
+         this.velocity = velocity;
++        this.consumeAction = consumeAction; // Paper
++        this.replaceAction = replaceAction; // Paper
+     }
+ 
+     /**
+@@ -88,4 +101,120 @@ public class BlockDispenseEvent extends BlockEvent implements Cancellable {
+     public static HandlerList getHandlerList() {
+         return handlers;
+     }
++    // Paper start
++    /**
++     * Gets the consume action for this event. Note that this doesn't
++     * override {@link #isCancelled()}. If the event is cancelled
++     * nothing will happen.
++     *
++     * @return the ConsumeAction
++     */
++    public @NotNull ConsumeAction getConsumeAction() {
++        return this.consumeAction;
++    }
++
++    /**
++     * Sets the ConsumeAction for this event. Note that this doesn't
++     * override {@link #setCancelled(boolean)}. If the event is cancelled
++     * this has no effect.
++     *
++     * @param consumeAction the ConsumeAction
++     */
++    public void setConsumeAction(final @NotNull ConsumeAction consumeAction) {
++        this.consumeAction = consumeAction;
++    }
++
++    /**
++     * Gets the ReplaceAction for this event. Note that this doesn't override
++     * {@link #isCancelled()}. If the event is cancelled nothing
++     * will happen.
++     *
++     * @return the ReplaceAction
++     */
++    public @NotNull ReplaceAction getReplaceAction() {
++        return this.replaceAction;
++    }
++
++    /**
++     * Sets the ReplaceAction for this event. Note that this doesn't
++     * override {@link #setCancelled(boolean)}. If the event is cancelled
++     * this has no effect.
++     *
++     * @param replaceAction the ReplaceAction
++     * @see ReplaceAction#NONE
++     * @see ReplaceAction#replace(ItemStack)
++     * @see ReplaceAction#forceReplace(ItemStack)
++     */
++    public void setReplaceAction(@NotNull ReplaceAction replaceAction) {
++        this.replaceAction = replaceAction;
++    }
++
++    /**
++     * Action to take on the source stack.
++     */
++    public enum ConsumeAction {
++        /**
++         * An item from the source stack will be consumed only if {@link #getItem()}
++         * doesn't change. Any change (name, lore, count, type, etc.) will cause
++         * that new item to be dispensed, but no item will be consumed from the dispenser.
++         */
++        CONSUME_IF_EQUAL,
++        /**
++         * This will consume the item if the type of dispenser action is the same for the item
++         * in {@link #setItem(ItemStack)}. This is like if you changed a water bucket to a lava bucket, the
++         * action is the same, so the item will be consumed.
++         */
++        CONSUME_IF_SAME_DISPENSE_TYPE,
++        /**
++         * This will always consume the item regardless of changes from {@link #setItem(ItemStack)}.
++         */
++        CONSUME_ALWAYS,
++        /**
++         * Never consume an item from the source stack.
++         */
++        NEVER_CONSUME;
++    }
++
++    /**
++     * Actions which, if the dispense type doesn't change, will set the replacement
++     * stack in the slot from which the dispensed item was taken. Note that this replacement
++     * will only happen if any {@link #setItem(ItemStack)} calls don't change the dispense action
++     * (unless you use {@link #forceReplace(ItemStack)}).
++     */
++    public sealed interface ReplaceAction permits BlockDispenseEventReplaceActionImpl {
++
++        ReplaceAction NONE = BlockDispenseEventReplaceActionImpl.NONE;
++
++        /**
++         * Creates a ReplaceAction where the stack being pulled from will be replaced
++         * with the provided stack. This replacement will only happen if the source
++         * stack will be empty as a result of an item being dispensed. If there are still
++         * items in the source stack, the replacement will try to be added to the dispenser
++         * inventory and if that is full, it will be dispensed onto the ground.
++         *
++         * @param stack the replacement stack
++         * @return a new ReplaceAction
++         */
++        static @NotNull ReplaceAction replace(final @NotNull ItemStack stack) {
++            return new BlockDispenseEventReplaceActionImpl(java.util.Objects.requireNonNull(stack), false);
++        }
++
++        /**
++         * Creates a ReplaceAction where the stack being pulled from will be replaced
++         * with the provided stack. This replacement will be forced with no regard
++         * to the stack size of the stack still in the dispenser.
++         *
++         * @param stack the replacement stack
++         * @return a new ReplaceAction
++         */
++        static @NotNull ReplaceAction forceReplace(final @NotNull ItemStack stack) {
++            return new BlockDispenseEventReplaceActionImpl(java.util.Objects.requireNonNull(stack), true);
++        }
++
++        // TODO javadocs
++        boolean force();
++
++        @NotNull java.util.Optional<ItemStack> replacement();
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/event/block/BlockDispenseEventReplaceActionImpl.java b/src/main/java/org/bukkit/event/block/BlockDispenseEventReplaceActionImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2de20b66406a72e496f0baaf9ec3acb7b38c6048
+--- /dev/null
++++ b/src/main/java/org/bukkit/event/block/BlockDispenseEventReplaceActionImpl.java
+@@ -0,0 +1,17 @@
++package org.bukkit.event.block;
++
++import java.util.Optional;
++import org.bukkit.inventory.ItemStack;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jetbrains.annotations.NotNull;
++
++@DefaultQualifier(NonNull.class)
++record BlockDispenseEventReplaceActionImpl(@NotNull Optional<ItemStack> replacement, boolean force) implements BlockDispenseEvent.ReplaceAction {
++
++    static final BlockDispenseEvent.ReplaceAction NONE = new BlockDispenseEventReplaceActionImpl(Optional.empty(), false);
++
++    BlockDispenseEventReplaceActionImpl(final ItemStack stack, final boolean force) {
++        this(Optional.of(stack), force);
++    }
++}

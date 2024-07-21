@@ -1,0 +1,79 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 12 Dec 2022 18:26:31 -0800
+Subject: [PATCH] Add Consume/ReplaceAction to the dispenser event
+
+
+diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+index 7ebe73921d197da4f992ddb92cbd4ac7211bd6cf..0a2f565fb741252f9869cd4747e31e05aef4d360 100644
+--- a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
++++ b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+@@ -690,7 +690,7 @@ public interface DispenseItemBehavior {
+                         org.bukkit.block.Block bukkitBlock = worldserver.getWorld().getBlockAt(pointer.getPos().getX(), pointer.getPos().getY(), pointer.getPos().getZ());
+                         CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack);
+ 
+-                        BlockDispenseEvent event = new BlockDispenseEvent(bukkitBlock, craftItem.clone(), new org.bukkit.util.Vector(blockposition.getX(), blockposition.getY(), blockposition.getZ()));
++                        BlockDispenseEvent event = new BlockDispenseEvent(bukkitBlock, craftItem.clone(), new org.bukkit.util.Vector(blockposition.getX(), blockposition.getY(), blockposition.getZ()), BlockDispenseEvent.ConsumeAction.CONSUME_IF_SAME_DISPENSE_TYPE, BlockDispenseEvent.ReplaceAction.replace(CraftItemStack.asCraftMirror(new ItemStack(item)))); // Paper - expand dispenser event API
+                         if (!DispenserBlock.eventFired) {
+                             worldserver.getCraftServer().getPluginManager().callEvent(event);
+                         }
+@@ -704,20 +704,37 @@ public interface DispenseItemBehavior {
+                             ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
+                             DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
+                             if (idispensebehavior != DispenseItemBehavior.NOOP && idispensebehavior != this) {
++                                // Paper start - consume if set to here
++                                if (event.getConsumeAction() == BlockDispenseEvent.ConsumeAction.CONSUME_ALWAYS) {
++                                    stack.shrink(1);
++                                }
++                                // Paper end
+                                 idispensebehavior.dispense(pointer, eventStack);
+-                                return stack;
++                                return this.getReplacement(event, stack, true); // Paper
+                             }
++                            // Paper start
++                            if (event.getConsumeAction() == BlockDispenseEvent.ConsumeAction.CONSUME_IF_SAME_DISPENSE_TYPE) {
++                                stack.shrink(1);
++                            }
++                        } else if (event.getConsumeAction() == BlockDispenseEvent.ConsumeAction.CONSUME_IF_EQUAL || event.getConsumeAction() == BlockDispenseEvent.ConsumeAction.CONSUME_IF_SAME_DISPENSE_TYPE) {
++                            stack.shrink(1);
++                            // Paper end
+                         }
+ 
+                         itemstack1 = ((BucketPickup) block).pickupBlock(worldserver, blockposition, iblockdata); // From above
+                         // CraftBukkit end
+ 
+-                        stack.shrink(1);
++                        // Paper start
++                        if (event.getConsumeAction() == BlockDispenseEvent.ConsumeAction.CONSUME_ALWAYS) {
++                            stack.shrink(1);
++                        }
++                        ItemStack replacement = this.getReplacement(event, new ItemStack(item), false);
++                        // Paper end
+                         if (stack.isEmpty()) {
+-                            return new ItemStack(item);
++                            return replacement; // Paper
+                         } else {
+-                            if (((DispenserBlockEntity) pointer.getEntity()).addItem(new ItemStack(item)) < 0) {
+-                                this.defaultDispenseItemBehavior.dispense(pointer, new ItemStack(item));
++                            if (((DispenserBlockEntity) pointer.getEntity()).addItem(replacement) < 0) { // Paper
++                                this.defaultDispenseItemBehavior.dispense(pointer, replacement); // Paper
+                             }
+ 
+                             return stack;
+@@ -1155,4 +1172,16 @@ public interface DispenseItemBehavior {
+     static void setEntityPokingOutOfBlock(BlockSource pointer, Entity entity, Direction direction) {
+         entity.setPos(pointer.x() + (double) direction.getStepX() * (0.5000099999997474D - (double) entity.getBbWidth() / 2.0D), pointer.y() + (double) direction.getStepY() * (0.5000099999997474D - (double) entity.getBbHeight() / 2.0D) - (double) entity.getBbHeight() / 2.0D, pointer.z() + (double) direction.getStepZ() * (0.5000099999997474D - (double) entity.getBbWidth() / 2.0D));
+     }
++    // Paper start
++    default ItemStack getReplacement(@javax.annotation.Nullable BlockDispenseEvent event, ItemStack fallbackStack, boolean onlyForce) {
++        if (event != null && event.getReplaceAction().replacement().isPresent()) {
++            if (event.getReplaceAction().force()) {
++                return CraftItemStack.asNMSCopy(event.getReplaceAction().replacement().get());
++            } else if (!onlyForce) {
++                return CraftItemStack.asNMSCopy(event.getReplaceAction().replacement().get());
++            }
++        }
++        return fallbackStack;
++    }
++    // Paper end
+ }
