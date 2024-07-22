@@ -4,6 +4,19 @@ Date: Wed, 7 Oct 2020 12:04:01 -0400
 Subject: [PATCH] Add EntityLoadCrossbowEvent
 
 
+diff --git a/src/main/java/net/minecraft/world/item/BowItem.java b/src/main/java/net/minecraft/world/item/BowItem.java
+index 09ef7a082cf19487b85437e36007838e3266c3b3..d50eda1d9a76436e53e2467dd3d2578c82d3fef1 100644
+--- a/src/main/java/net/minecraft/world/item/BowItem.java
++++ b/src/main/java/net/minecraft/world/item/BowItem.java
+@@ -30,7 +30,7 @@ public class BowItem extends ProjectileWeaponItem {
+                 int i = this.getUseDuration(stack, user) - remainingUseTicks;
+                 float f = getPowerForTime(i);
+                 if (!((double)f < 0.1)) {
+-                    List<ItemStack> list = draw(stack, itemStack, player, true); // Paper start - Improve EntityShootBowEvent
++                    List<ItemStack> list = draw(stack, itemStack, player, true, true); // Paper start - Improve EntityShootBowEvent
+                     if (world instanceof ServerLevel serverLevel && !list.isEmpty()) {
+                         this.shoot(serverLevel, player, player.getUsedItemHand(), stack, list, f * 3.0F, 1.0F, f == 1.0F, null);
+                     }
 diff --git a/src/main/java/net/minecraft/world/item/CrossbowItem.java b/src/main/java/net/minecraft/world/item/CrossbowItem.java
 index f64cdfac1fc1333845ea4ea5efb7922f0ae39619..c39fa953accd6cf35672f452052cca42fe6f29d0 100644
 --- a/src/main/java/net/minecraft/world/item/CrossbowItem.java
@@ -42,27 +55,28 @@ index f64cdfac1fc1333845ea4ea5efb7922f0ae39619..c39fa953accd6cf35672f452052cca42
              crossbow.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.of(list));
              return true;
 diff --git a/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java b/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
-index 76a3f2dcf0fff331185ddd7f75f4a9fdb20a32ee..754bb3d8527c9c9138ee747a997dea3b7eead0c9 100644
+index 20907d6f46d5402669a230bed472b132be64d4d9..0caa8268798861854064a3eb6c75ef220c4c766f 100644
 --- a/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
 +++ b/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
-@@ -119,6 +119,11 @@ public abstract class ProjectileWeaponItem extends Item {
+@@ -122,7 +122,11 @@ public abstract class ProjectileWeaponItem extends Item {
+         return draw(stack, projectileStack, shooter, true);
      }
  
-     protected static List<ItemStack> draw(ItemStack stack, ItemStack projectileStack, LivingEntity shooter) {
-+        // Paper start
-+        return draw(stack, projectileStack, shooter, true);
-+    }
+-    protected static List<ItemStack> draw(ItemStack stack, ItemStack projectileStack, LivingEntity shooter, boolean simulate) {
 +    protected static List<ItemStack> draw(ItemStack stack, ItemStack projectileStack, LivingEntity shooter, boolean consume) {
-+        // Paper end
++        return draw(stack, projectileStack, shooter, consume, false);
++    }
++
++    protected static List<ItemStack> draw(ItemStack stack, ItemStack projectileStack, LivingEntity shooter, boolean consume, boolean simulate) {
+         // Paper end - Improve EntityShootBowEvent
          if (projectileStack.isEmpty()) {
              return List.of();
-         } else {
-@@ -138,7 +143,7 @@ public abstract class ProjectileWeaponItem extends Item {
+@@ -143,7 +147,7 @@ public abstract class ProjectileWeaponItem extends Item {
              ItemStack itemstack2 = projectileStack.copy();
  
              for (int k = 0; k < j; ++k) {
--                ItemStack itemstack3 = ProjectileWeaponItem.useAmmo(stack, k == 0 ? projectileStack : itemstack2, shooter, k > 0);
-+                ItemStack itemstack3 = ProjectileWeaponItem.useAmmo(stack, k == 0 ? projectileStack : itemstack2, shooter, k > 0 || !consume); // Paper
+-                ItemStack itemstack3 = ProjectileWeaponItem.useAmmo(stack, k == 0 && !simulate ? projectileStack : itemstack2, shooter, k > 0); // Paper - Improve EntityShootBowEvent
++                ItemStack itemstack3 = ProjectileWeaponItem.useAmmo(stack, k == 0 && !simulate ? projectileStack : itemstack2, shooter, k > 0 || !consume); // Paper - Improve EntityShootBowEvent
  
                  if (!itemstack3.isEmpty()) {
                      list.add(itemstack3);

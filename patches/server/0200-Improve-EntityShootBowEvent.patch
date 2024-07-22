@@ -45,31 +45,60 @@ index 93e3454de0b0d62895f165b0772526f3eae1e333..c858556ea457931aa14e338e20672cb5
      }
  
      @Override
+diff --git a/src/main/java/net/minecraft/world/item/BowItem.java b/src/main/java/net/minecraft/world/item/BowItem.java
+index 6eb5c0f23d9dc61e69ad5ad493c89602a9dcd4b5..09ef7a082cf19487b85437e36007838e3266c3b3 100644
+--- a/src/main/java/net/minecraft/world/item/BowItem.java
++++ b/src/main/java/net/minecraft/world/item/BowItem.java
+@@ -30,7 +30,7 @@ public class BowItem extends ProjectileWeaponItem {
+                 int i = this.getUseDuration(stack, user) - remainingUseTicks;
+                 float f = getPowerForTime(i);
+                 if (!((double)f < 0.1)) {
+-                    List<ItemStack> list = draw(stack, itemStack, player);
++                    List<ItemStack> list = draw(stack, itemStack, player, true); // Paper start - Improve EntityShootBowEvent
+                     if (world instanceof ServerLevel serverLevel && !list.isEmpty()) {
+                         this.shoot(serverLevel, player, player.getUsedItemHand(), stack, list, f * 3.0F, 1.0F, f == 1.0F, null);
+                     }
 diff --git a/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java b/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
-index 56595dd3a0b7df4b5f9819ade797212278c8fd40..76a3f2dcf0fff331185ddd7f75f4a9fdb20a32ee 100644
+index 56595dd3a0b7df4b5f9819ade797212278c8fd40..20907d6f46d5402669a230bed472b132be64d4d9 100644
 --- a/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
 +++ b/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
-@@ -64,15 +64,20 @@ public abstract class ProjectileWeaponItem extends Item {
-                 this.shootProjectile(shooter, iprojectile, i, speed, divergence, f6, target);
-                 // CraftBukkit start
-                 org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(shooter, stack, itemstack1, iprojectile, hand, speed, true);
--                if (event.isCancelled()) {
--                    event.getProjectile().remove();
-+                // Paper start - Improve EntityShootBowEvent
-+                if (event.isCancelled() || !event.shouldConsumeItem()) {
-+                    if (shooter instanceof net.minecraft.server.level.ServerPlayer player)
-+                        player.getInventory().add(itemstack1);
-+                    if (event.isCancelled())
-+                        event.getProjectile().remove();
-+                    // Paper end - Improve EntityShootBowEvent
+@@ -69,6 +69,8 @@ public abstract class ProjectileWeaponItem extends Item {
                      return;
                  }
  
++                if (!event.shouldConsumeItem() && iprojectile instanceof AbstractArrow arrow && this instanceof BowItem) arrow.pickup = AbstractArrow.Pickup.CREATIVE_ONLY; // Paper - Improve EntityShootBowEvent
++
                  if (event.getProjectile() == iprojectile.getBukkitEntity()) {
                      if (!world.addFreshEntity(iprojectile)) {
                          if (shooter instanceof net.minecraft.server.level.ServerPlayer) {
--                            ((net.minecraft.server.level.ServerPlayer) shooter).getBukkitEntity().updateInventory();
-+                            ((net.minecraft.server.level.ServerPlayer) shooter).getInventory().add(itemstack1); // Paper - Improve EntityShootBowEvent
-                         }
+@@ -77,6 +79,8 @@ public abstract class ProjectileWeaponItem extends Item {
                          return;
                      }
+                 }
++
++                if (this instanceof BowItem && event.shouldConsumeItem()) ProjectileWeaponItem.draw(stack, shooter.getProjectile(stack), shooter); // Paper - Improve EntityShootBowEvent
+                 // CraftBukkit end
+                 stack.hurtAndBreak(this.getDurabilityUse(itemstack1), shooter, LivingEntity.getSlotForHand(hand));
+                 if (stack.isEmpty()) {
+@@ -114,6 +118,12 @@ public abstract class ProjectileWeaponItem extends Item {
+     }
+ 
+     protected static List<ItemStack> draw(ItemStack stack, ItemStack projectileStack, LivingEntity shooter) {
++        // Paper start - Improve EntityShootBowEvent
++        return draw(stack, projectileStack, shooter, true);
++    }
++
++    protected static List<ItemStack> draw(ItemStack stack, ItemStack projectileStack, LivingEntity shooter, boolean simulate) {
++        // Paper end - Improve EntityShootBowEvent
+         if (projectileStack.isEmpty()) {
+             return List.of();
+         } else {
+@@ -133,7 +143,7 @@ public abstract class ProjectileWeaponItem extends Item {
+             ItemStack itemstack2 = projectileStack.copy();
+ 
+             for (int k = 0; k < j; ++k) {
+-                ItemStack itemstack3 = ProjectileWeaponItem.useAmmo(stack, k == 0 ? projectileStack : itemstack2, shooter, k > 0);
++                ItemStack itemstack3 = ProjectileWeaponItem.useAmmo(stack, k == 0 && !simulate ? projectileStack : itemstack2, shooter, k > 0); // Paper - Improve EntityShootBowEvent
+ 
+                 if (!itemstack3.isEmpty()) {
+                     list.add(itemstack3);
