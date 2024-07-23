@@ -272,4 +272,14 @@ public interface AbstractArrow extends Projectile {
      */
     void setHitSound(@NotNull org.bukkit.Sound sound);
     // Paper end - more projectile API
+
+    // Paper start - Fix PickupStatus getting reset
+    /**
+     * Set the shooter of this projectile.
+     *
+     * @param source the {@link org.bukkit.projectiles.ProjectileSource} that shot this projectile
+     * @param resetPickupStatus whether the {@link org.bukkit.entity.AbstractArrow.PickupStatus} should be reset
+     */
+    void setShooter(@Nullable org.bukkit.projectiles.ProjectileSource source, boolean resetPickupStatus);
+    // Paper end - Fix PickupStatus getting reset
 }
