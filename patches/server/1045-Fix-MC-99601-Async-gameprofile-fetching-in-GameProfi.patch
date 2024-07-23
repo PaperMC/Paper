@@ -96,7 +96,7 @@ index 4c8ac6136d010a5a5b93eb339ce2125b13b98a40..a060b122d6fd7319fac105eb3d77a9ca
      }
  }
 diff --git a/src/main/java/net/minecraft/server/commands/BanPlayerCommands.java b/src/main/java/net/minecraft/server/commands/BanPlayerCommands.java
-index be436480873ac914d67dac36061ac087b7389ab1..524108fa8d304dfe81b02fff3f053b6ea1c219c5 100644
+index be436480873ac914d67dac36061ac087b7389ab1..c4cba7c5e4e0b30706e78ba97ac7f4f43f9ea545 100644
 --- a/src/main/java/net/minecraft/server/commands/BanPlayerCommands.java
 +++ b/src/main/java/net/minecraft/server/commands/BanPlayerCommands.java
 @@ -24,15 +24,37 @@ public class BanPlayerCommands {
@@ -106,13 +106,13 @@ index be436480873ac914d67dac36061ac087b7389ab1..524108fa8d304dfe81b02fff3f053b6e
 -                        .executes(context -> banPlayers(context.getSource(), GameProfileArgument.getGameProfiles(context, "targets"), null))
 +                        // Paper start - Fix MC-99601 - Async GameProfileArgument
 +                        .executes(context -> {
-+                            GameProfileArgument.getGameProfilesAsync(context, "targets").thenAccept(gameProfiles -> net.minecraft.server.MinecraftServer.getServer().execute(() -> {
++                            GameProfileArgument.getGameProfilesAsync(context, "targets").thenAcceptAsync(gameProfiles -> {
 +                                try {
 +                                    banPlayers(context.getSource(), gameProfiles, null);
 +                                } catch (CommandSyntaxException e) {
 +                                    context.getSource().handleError(e, context.isForked(), null);
 +                                }
-+                            }));
++                            }, net.minecraft.server.MinecraftServer.getServer());
 +                            return 1;
 +                        })
 +                        // Paper end
@@ -126,7 +126,7 @@ index be436480873ac914d67dac36061ac087b7389ab1..524108fa8d304dfe81b02fff3f053b6e
 -                                        )
 +                                    // Paper start - Fix MC-99601 - Async GameProfileArgument
 +                                    context -> {
-+                                        GameProfileArgument.getGameProfilesAsync(context, "targets").thenAccept(gameProfiles -> net.minecraft.server.MinecraftServer.getServer().execute(() -> {
++                                        GameProfileArgument.getGameProfilesAsync(context, "targets").thenAcceptAsync(gameProfiles -> {
 +                                            try {
 +                                                banPlayers(
 +                                                    context.getSource(),
@@ -136,7 +136,7 @@ index be436480873ac914d67dac36061ac087b7389ab1..524108fa8d304dfe81b02fff3f053b6e
 +                                            } catch (CommandSyntaxException e) {
 +                                                context.getSource().handleError(e, context.isForked(), null);
 +                                            }
-+                                        }));
++                                        }, net.minecraft.server.MinecraftServer.getServer());
 +                                        return 1;
 +                                    }
 +                                    // Paper end
@@ -144,7 +144,7 @@ index be436480873ac914d67dac36061ac087b7389ab1..524108fa8d304dfe81b02fff3f053b6e
                          )
                  )
 diff --git a/src/main/java/net/minecraft/server/commands/DeOpCommands.java b/src/main/java/net/minecraft/server/commands/DeOpCommands.java
-index d98447e58233745665f0833196226077d972cc2a..361aefca191bd855abd4ae7c7e2b1eace4beb2f3 100644
+index d98447e58233745665f0833196226077d972cc2a..52571a5218f770562bea22fd8b6069a3a3c4f955 100644
 --- a/src/main/java/net/minecraft/server/commands/DeOpCommands.java
 +++ b/src/main/java/net/minecraft/server/commands/DeOpCommands.java
 @@ -22,7 +22,18 @@ public class DeOpCommands {
@@ -154,13 +154,13 @@ index d98447e58233745665f0833196226077d972cc2a..361aefca191bd855abd4ae7c7e2b1eac
 -                        .executes(context -> deopPlayers(context.getSource(), GameProfileArgument.getGameProfiles(context, "targets")))
 +                        // Paper start - Fix MC-99601 - Async GameProfileArgument
 +                        .executes(context -> {
-+                            GameProfileArgument.getGameProfilesAsync(context, "targets").thenAccept(gameProfiles -> net.minecraft.server.MinecraftServer.getServer().execute(() -> {
++                            GameProfileArgument.getGameProfilesAsync(context, "targets").thenAcceptAsync(gameProfiles -> {
 +                                try {
 +                                    deopPlayers(context.getSource(), gameProfiles);
 +                                } catch (CommandSyntaxException e) {
 +                                    context.getSource().handleError(e, context.isForked(), null);
 +                                }
-+                            }));
++                            }, net.minecraft.server.MinecraftServer.getServer());
 +                            return 1;
 +                        })
 +                        // Paper end
@@ -168,7 +168,7 @@ index d98447e58233745665f0833196226077d972cc2a..361aefca191bd855abd4ae7c7e2b1eac
          );
      }
 diff --git a/src/main/java/net/minecraft/server/commands/OpCommand.java b/src/main/java/net/minecraft/server/commands/OpCommand.java
-index e7b444a10b244828827b3c66c53465206ea8e0ec..58f0fca4d562b68f3b3bc4d2cf84298cd71e5aee 100644
+index e7b444a10b244828827b3c66c53465206ea8e0ec..74a371bb0a83fe56f76f550962e896539bc046ae 100644
 --- a/src/main/java/net/minecraft/server/commands/OpCommand.java
 +++ b/src/main/java/net/minecraft/server/commands/OpCommand.java
 @@ -33,7 +33,18 @@ public class OpCommand {
@@ -178,13 +178,13 @@ index e7b444a10b244828827b3c66c53465206ea8e0ec..58f0fca4d562b68f3b3bc4d2cf84298c
 -                        .executes(context -> opPlayers(context.getSource(), GameProfileArgument.getGameProfiles(context, "targets")))
 +                        // Paper start - Fix MC-99601 - Async GameProfileArgument
 +                        .executes(context -> {
-+                            GameProfileArgument.getGameProfilesAsync(context, "targets").thenAccept(gameProfiles -> net.minecraft.server.MinecraftServer.getServer().execute(() -> {
++                            GameProfileArgument.getGameProfilesAsync(context, "targets").thenAcceptAsync(gameProfiles -> {
 +                                try {
 +                                    opPlayers(context.getSource(), gameProfiles);
 +                                } catch (CommandSyntaxException e) {
 +                                    context.getSource().handleError(e, context.isForked(), null);
 +                                }
-+                            }));
++                            }, net.minecraft.server.MinecraftServer.getServer());
 +                            return 1;
 +                        })
 +                        // Paper end
@@ -192,7 +192,7 @@ index e7b444a10b244828827b3c66c53465206ea8e0ec..58f0fca4d562b68f3b3bc4d2cf84298c
          );
      }
 diff --git a/src/main/java/net/minecraft/server/commands/PardonCommand.java b/src/main/java/net/minecraft/server/commands/PardonCommand.java
-index dbecfb51518b328b0e1eff5627b882a722e5c0a1..953cca617e4213e9bf3e0ba7bfcb8141c25578ab 100644
+index dbecfb51518b328b0e1eff5627b882a722e5c0a1..d0ad22cf492779da737698ffa1ac5af1682da8df 100644
 --- a/src/main/java/net/minecraft/server/commands/PardonCommand.java
 +++ b/src/main/java/net/minecraft/server/commands/PardonCommand.java
 @@ -26,7 +26,18 @@ public class PardonCommand {
@@ -202,13 +202,13 @@ index dbecfb51518b328b0e1eff5627b882a722e5c0a1..953cca617e4213e9bf3e0ba7bfcb8141
 -                        .executes(context -> pardonPlayers(context.getSource(), GameProfileArgument.getGameProfiles(context, "targets")))
 +                        // Paper start - Fix MC-99601 - Async GameProfileArgument
 +                        .executes(context -> {
-+                            GameProfileArgument.getGameProfilesAsync(context, "targets").thenAccept(gameProfiles -> net.minecraft.server.MinecraftServer.getServer().execute(() -> {
++                            GameProfileArgument.getGameProfilesAsync(context, "targets").thenAcceptAsync(gameProfiles -> {
 +                                try {
 +                                    pardonPlayers(context.getSource(), gameProfiles);
 +                                } catch (CommandSyntaxException e) {
 +                                    context.getSource().handleError(e, context.isForked(), null);
 +                                }
-+                            }));
++                            }, net.minecraft.server.MinecraftServer.getServer());
 +                            return 1;
 +                        })
 +                        // Paper end
@@ -216,7 +216,7 @@ index dbecfb51518b328b0e1eff5627b882a722e5c0a1..953cca617e4213e9bf3e0ba7bfcb8141
          );
      }
 diff --git a/src/main/java/net/minecraft/server/commands/WhitelistCommand.java b/src/main/java/net/minecraft/server/commands/WhitelistCommand.java
-index bd14c15d21b77c0c86e2f9e439ab58906c44c919..cd1909434e0c5f12d4ed7f907b6d86e3753c7f5f 100644
+index bd14c15d21b77c0c86e2f9e439ab58906c44c919..18d608c0c479dc35e97a4134d64791f6797de452 100644
 --- a/src/main/java/net/minecraft/server/commands/WhitelistCommand.java
 +++ b/src/main/java/net/minecraft/server/commands/WhitelistCommand.java
 @@ -51,7 +51,18 @@ public class WhitelistCommand {
@@ -226,13 +226,13 @@ index bd14c15d21b77c0c86e2f9e439ab58906c44c919..cd1909434e0c5f12d4ed7f907b6d86e3
 -                                .executes(context -> addPlayers(context.getSource(), GameProfileArgument.getGameProfiles(context, "targets")))
 +                                // Paper start - Fix MC-99601 - Async GameProfileArgument
 +                                .executes(context -> {
-+                                    GameProfileArgument.getGameProfilesAsync(context, "targets").thenAccept(gameProfiles -> net.minecraft.server.MinecraftServer.getServer().execute(() -> {
++                                    GameProfileArgument.getGameProfilesAsync(context, "targets").thenAcceptAsync(gameProfiles -> {
 +                                        try {
 +                                            addPlayers(context.getSource(), gameProfiles);
 +                                        } catch (CommandSyntaxException e) {
 +                                            context.getSource().handleError(e, context.isForked(), null);
 +                                        }
-+                                    }));
++                                    }, net.minecraft.server.MinecraftServer.getServer());
 +                                    return 1;
 +                                })
 +                                // Paper end
@@ -246,13 +246,13 @@ index bd14c15d21b77c0c86e2f9e439ab58906c44c919..cd1909434e0c5f12d4ed7f907b6d86e3
 -                                .executes(context -> removePlayers(context.getSource(), GameProfileArgument.getGameProfiles(context, "targets")))
 +                                // Paper start - Fix MC-99601 - Async GameProfileArgument
 +                                .executes(context -> {
-+                                    GameProfileArgument.getGameProfilesAsync(context, "targets").thenAccept(gameProfiles -> net.minecraft.server.MinecraftServer.getServer().execute(() -> {
++                                    GameProfileArgument.getGameProfilesAsync(context, "targets").thenAcceptAsync(gameProfiles -> {
 +                                        try {
 +                                            removePlayers(context.getSource(), gameProfiles);
 +                                        } catch (CommandSyntaxException e) {
 +                                            context.getSource().handleError(e, context.isForked(), null);
 +                                        }
-+                                    }));
++                                    }, net.minecraft.server.MinecraftServer.getServer());
 +                                    return 1;
 +                                })
 +                                // Paper end
