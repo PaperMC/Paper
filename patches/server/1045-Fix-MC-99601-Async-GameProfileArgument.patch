@@ -1,0 +1,260 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: EpicPlayerA10 <adasko.lesiak@gmail.com>
+Date: Tue, 23 Jul 2024 16:17:06 +0200
+Subject: [PATCH] Fix MC-99601: Async GameProfileArgument
+
+Fixes lag when fetching gameprofile in commands, like `/whitelist`, `/ban`, `/op` etc. Add async gameprofile fetching in GameProfileArgument
+
+See https://bugs.mojang.com/browse/MC-99601
+
+diff --git a/src/main/java/net/minecraft/commands/arguments/GameProfileArgument.java b/src/main/java/net/minecraft/commands/arguments/GameProfileArgument.java
+index 4c8ac6136d010a5a5b93eb339ce2125b13b98a40..a060b122d6fd7319fac105eb3d77a9ca1020612c 100644
+--- a/src/main/java/net/minecraft/commands/arguments/GameProfileArgument.java
++++ b/src/main/java/net/minecraft/commands/arguments/GameProfileArgument.java
+@@ -30,6 +30,18 @@ public class GameProfileArgument implements ArgumentType<GameProfileArgument.Res
+         return context.getArgument(name, GameProfileArgument.Result.class).getNames(context.getSource());
+     }
+ 
++    // Paper start - Fix MC-99601 - Async GameProfileArgument
++    public static CompletableFuture<Collection<GameProfile>> getGameProfilesAsync(CommandContext<CommandSourceStack> context, String name) throws CommandSyntaxException {
++        return context.getArgument(name, GameProfileArgument.Result.class).getNamesAsync(context.getSource())
++            .whenComplete((gameProfiles, ex) -> {
++                // Catch error and handle it
++                // CompletionException -> RuntimeException -> CommandSyntaxException
++                if (ex != null && ex.getCause() instanceof RuntimeException && ex.getCause().getCause() instanceof CommandSyntaxException commandSyntaxException) {
++                    context.getSource().handleError(commandSyntaxException, context.isForked(), null);
++                }
++            });
++    }
++    // Paper end
+     public static GameProfileArgument gameProfile() {
+         return new GameProfileArgument();
+     }
+@@ -51,10 +63,7 @@ public class GameProfileArgument implements ArgumentType<GameProfileArgument.Res
+             }
+ 
+             String string = stringReader.getString().substring(i, stringReader.getCursor());
+-            return source -> {
+-                Optional<GameProfile> optional = source.getServer().getProfileCache().get(string);
+-                return Collections.singleton(optional.orElseThrow(ERROR_UNKNOWN_PLAYER::create));
+-            };
++            return new PlayerResult(string); // Paper - Fix MC-99601 - Async GameProfileArgument
+         }
+     }
+ 
+@@ -82,9 +91,38 @@ public class GameProfileArgument implements ArgumentType<GameProfileArgument.Res
+         return EXAMPLES;
+     }
+ 
+-    @FunctionalInterface
++    //@FunctionalInterface // Paper - Fix MC-99601 - Async GameProfileArgument
+     public interface Result {
+         Collection<GameProfile> getNames(CommandSourceStack source) throws CommandSyntaxException;
++        // Paper start - Fix MC-99601 - Async GameProfileArgument
++        CompletableFuture<Collection<GameProfile>> getNamesAsync(CommandSourceStack source) throws CommandSyntaxException;
++    }
++
++    public static class PlayerResult implements GameProfileArgument.Result {
++        private final String playerName;
++
++        public PlayerResult(String playerName) {
++            this.playerName = playerName;
++        }
++
++        @Override
++        public Collection<GameProfile> getNames(final CommandSourceStack source) throws CommandSyntaxException {
++            Optional<GameProfile> optional = source.getServer().getProfileCache().get(this.playerName);
++            return Collections.singleton(optional.orElseThrow(ERROR_UNKNOWN_PLAYER::create));
++        }
++
++        @Override
++        public CompletableFuture<Collection<GameProfile>> getNamesAsync(final CommandSourceStack source) {
++            CompletableFuture<Optional<GameProfile>> future = source.getServer().getProfileCache().getAsync(this.playerName);
++            return future.thenApply(optionalProfile -> {
++                try {
++                    return Collections.singleton(optionalProfile.orElseThrow(ERROR_UNKNOWN_PLAYER::create));
++                } catch (CommandSyntaxException e) {
++                    throw new RuntimeException(e);
++                }
++            });
++        }
++        // Paper end
+     }
+ 
+     public static class SelectorResult implements GameProfileArgument.Result {
+@@ -109,5 +147,11 @@ public class GameProfileArgument implements ArgumentType<GameProfileArgument.Res
+                 return list2;
+             }
+         }
++        // Paper start - Fix MC-99601 - Async GameProfileArgument
++        @Override
++        public CompletableFuture<Collection<GameProfile>> getNamesAsync(final CommandSourceStack source) throws CommandSyntaxException {
++            return CompletableFuture.completedFuture(this.getNames(source));
++        }
++        // Paper end
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/commands/BanPlayerCommands.java b/src/main/java/net/minecraft/server/commands/BanPlayerCommands.java
+index be436480873ac914d67dac36061ac087b7389ab1..524108fa8d304dfe81b02fff3f053b6ea1c219c5 100644
+--- a/src/main/java/net/minecraft/server/commands/BanPlayerCommands.java
++++ b/src/main/java/net/minecraft/server/commands/BanPlayerCommands.java
+@@ -24,15 +24,37 @@ public class BanPlayerCommands {
+                 .requires(source -> source.hasPermission(3))
+                 .then(
+                     Commands.argument("targets", GameProfileArgument.gameProfile())
+-                        .executes(context -> banPlayers(context.getSource(), GameProfileArgument.getGameProfiles(context, "targets"), null))
++                        // Paper start - Fix MC-99601 - Async GameProfileArgument
++                        .executes(context -> {
++                            GameProfileArgument.getGameProfilesAsync(context, "targets").thenAccept(gameProfiles -> net.minecraft.server.MinecraftServer.getServer().execute(() -> {
++                                try {
++                                    banPlayers(context.getSource(), gameProfiles, null);
++                                } catch (CommandSyntaxException e) {
++                                    context.getSource().handleError(e, context.isForked(), null);
++                                }
++                            }));
++                            return 1;
++                        })
++                        // Paper end
+                         .then(
+                             Commands.argument("reason", MessageArgument.message())
+                                 .executes(
+-                                    context -> banPlayers(
+-                                            context.getSource(),
+-                                            GameProfileArgument.getGameProfiles(context, "targets"),
+-                                            MessageArgument.getMessage(context, "reason")
+-                                        )
++                                    // Paper start - Fix MC-99601 - Async GameProfileArgument
++                                    context -> {
++                                        GameProfileArgument.getGameProfilesAsync(context, "targets").thenAccept(gameProfiles -> net.minecraft.server.MinecraftServer.getServer().execute(() -> {
++                                            try {
++                                                banPlayers(
++                                                    context.getSource(),
++                                                    gameProfiles,
++                                                    MessageArgument.getMessage(context, "reason")
++                                                );
++                                            } catch (CommandSyntaxException e) {
++                                                context.getSource().handleError(e, context.isForked(), null);
++                                            }
++                                        }));
++                                        return 1;
++                                    }
++                                    // Paper end
+                                 )
+                         )
+                 )
+diff --git a/src/main/java/net/minecraft/server/commands/DeOpCommands.java b/src/main/java/net/minecraft/server/commands/DeOpCommands.java
+index d98447e58233745665f0833196226077d972cc2a..361aefca191bd855abd4ae7c7e2b1eace4beb2f3 100644
+--- a/src/main/java/net/minecraft/server/commands/DeOpCommands.java
++++ b/src/main/java/net/minecraft/server/commands/DeOpCommands.java
+@@ -22,7 +22,18 @@ public class DeOpCommands {
+                 .then(
+                     Commands.argument("targets", GameProfileArgument.gameProfile())
+                         .suggests((context, builder) -> SharedSuggestionProvider.suggest(context.getSource().getServer().getPlayerList().getOpNames(), builder))
+-                        .executes(context -> deopPlayers(context.getSource(), GameProfileArgument.getGameProfiles(context, "targets")))
++                        // Paper start - Fix MC-99601 - Async GameProfileArgument
++                        .executes(context -> {
++                            GameProfileArgument.getGameProfilesAsync(context, "targets").thenAccept(gameProfiles -> net.minecraft.server.MinecraftServer.getServer().execute(() -> {
++                                try {
++                                    deopPlayers(context.getSource(), gameProfiles);
++                                } catch (CommandSyntaxException e) {
++                                    context.getSource().handleError(e, context.isForked(), null);
++                                }
++                            }));
++                            return 1;
++                        })
++                        // Paper end
+                 )
+         );
+     }
+diff --git a/src/main/java/net/minecraft/server/commands/OpCommand.java b/src/main/java/net/minecraft/server/commands/OpCommand.java
+index e7b444a10b244828827b3c66c53465206ea8e0ec..58f0fca4d562b68f3b3bc4d2cf84298cd71e5aee 100644
+--- a/src/main/java/net/minecraft/server/commands/OpCommand.java
++++ b/src/main/java/net/minecraft/server/commands/OpCommand.java
+@@ -33,7 +33,18 @@ public class OpCommand {
+                                 );
+                             }
+                         )
+-                        .executes(context -> opPlayers(context.getSource(), GameProfileArgument.getGameProfiles(context, "targets")))
++                        // Paper start - Fix MC-99601 - Async GameProfileArgument
++                        .executes(context -> {
++                            GameProfileArgument.getGameProfilesAsync(context, "targets").thenAccept(gameProfiles -> net.minecraft.server.MinecraftServer.getServer().execute(() -> {
++                                try {
++                                    opPlayers(context.getSource(), gameProfiles);
++                                } catch (CommandSyntaxException e) {
++                                    context.getSource().handleError(e, context.isForked(), null);
++                                }
++                            }));
++                            return 1;
++                        })
++                        // Paper end
+                 )
+         );
+     }
+diff --git a/src/main/java/net/minecraft/server/commands/PardonCommand.java b/src/main/java/net/minecraft/server/commands/PardonCommand.java
+index dbecfb51518b328b0e1eff5627b882a722e5c0a1..953cca617e4213e9bf3e0ba7bfcb8141c25578ab 100644
+--- a/src/main/java/net/minecraft/server/commands/PardonCommand.java
++++ b/src/main/java/net/minecraft/server/commands/PardonCommand.java
+@@ -26,7 +26,18 @@ public class PardonCommand {
+                                     context.getSource().getServer().getPlayerList().getBans().getUserList(), builder
+                                 )
+                         )
+-                        .executes(context -> pardonPlayers(context.getSource(), GameProfileArgument.getGameProfiles(context, "targets")))
++                        // Paper start - Fix MC-99601 - Async GameProfileArgument
++                        .executes(context -> {
++                            GameProfileArgument.getGameProfilesAsync(context, "targets").thenAccept(gameProfiles -> net.minecraft.server.MinecraftServer.getServer().execute(() -> {
++                                try {
++                                    pardonPlayers(context.getSource(), gameProfiles);
++                                } catch (CommandSyntaxException e) {
++                                    context.getSource().handleError(e, context.isForked(), null);
++                                }
++                            }));
++                            return 1;
++                        })
++                        // Paper end
+                 )
+         );
+     }
+diff --git a/src/main/java/net/minecraft/server/commands/WhitelistCommand.java b/src/main/java/net/minecraft/server/commands/WhitelistCommand.java
+index bd14c15d21b77c0c86e2f9e439ab58906c44c919..cd1909434e0c5f12d4ed7f907b6d86e3753c7f5f 100644
+--- a/src/main/java/net/minecraft/server/commands/WhitelistCommand.java
++++ b/src/main/java/net/minecraft/server/commands/WhitelistCommand.java
+@@ -51,7 +51,18 @@ public class WhitelistCommand {
+                                         );
+                                     }
+                                 )
+-                                .executes(context -> addPlayers(context.getSource(), GameProfileArgument.getGameProfiles(context, "targets")))
++                                // Paper start - Fix MC-99601 - Async GameProfileArgument
++                                .executes(context -> {
++                                    GameProfileArgument.getGameProfilesAsync(context, "targets").thenAccept(gameProfiles -> net.minecraft.server.MinecraftServer.getServer().execute(() -> {
++                                        try {
++                                            addPlayers(context.getSource(), gameProfiles);
++                                        } catch (CommandSyntaxException e) {
++                                            context.getSource().handleError(e, context.isForked(), null);
++                                        }
++                                    }));
++                                    return 1;
++                                })
++                                // Paper end
+                         )
+                 )
+                 .then(
+@@ -63,7 +74,18 @@ public class WhitelistCommand {
+                                             context.getSource().getServer().getPlayerList().getWhiteListNames(), builder
+                                         )
+                                 )
+-                                .executes(context -> removePlayers(context.getSource(), GameProfileArgument.getGameProfiles(context, "targets")))
++                                // Paper start - Fix MC-99601 - Async GameProfileArgument
++                                .executes(context -> {
++                                    GameProfileArgument.getGameProfilesAsync(context, "targets").thenAccept(gameProfiles -> net.minecraft.server.MinecraftServer.getServer().execute(() -> {
++                                        try {
++                                            removePlayers(context.getSource(), gameProfiles);
++                                        } catch (CommandSyntaxException e) {
++                                            context.getSource().handleError(e, context.isForked(), null);
++                                        }
++                                    }));
++                                    return 1;
++                                })
++                                // Paper end
+                         )
+                 )
+                 .then(Commands.literal("reload").executes(context -> reload(context.getSource())))
