@@ -1,30 +1,30 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Tamion <70228790+notTamion@users.noreply.github.com>
 Date: Sun, 21 Jul 2024 19:11:22 +0200
-Subject: [PATCH] Fix PickupRule reset when deflected
+Subject: [PATCH] Fix PickupStatus getting reset
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
-index ddf47dab1ab92c45e3eea09239d418a9798ed59e..0b7140912cddad649dfc827af78236895b9cc784 100644
+index ddf47dab1ab92c45e3eea09239d418a9798ed59e..ce01ff5c260f013ff384d6ee54fbaddf872692c9 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
 @@ -668,7 +668,14 @@ public abstract class AbstractArrow extends Projectile {
  
      @Override
      public void setOwner(@Nullable Entity entity) {
-+        // Paper start - Fix PickupRule reset when deflected
++        // Paper start - Fix PickupStatus getting reset
 +        this.setOwner(entity, true);
 +    }
 +
-+    public void setOwner(@Nullable Entity entity, boolean updatePickup) {
++    public void setOwner(@Nullable Entity entity, boolean resetPickup) {
          super.setOwner(entity);
-+        if (!updatePickup) return;
-+        // Paper end - Fix PickupRule reset when deflected
++        if (!resetPickup) return;
++        // Paper end - Fix PickupStatus getting reset
          Entity entity1 = entity;
          byte b0 = 0;
  
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
-index 5f7d152f41eb85f17bcded4bc8099b998e5a338b..ba4854bc6c8a4c81b173d6f7a37919fcd049af71 100644
+index 5f7d152f41eb85f17bcded4bc8099b998e5a338b..a01c0d9ae53d1b748c5da914069bd672cb1215c7 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
 @@ -237,7 +237,13 @@ public abstract class Projectile extends Entity implements TraceableEntity {
@@ -32,13 +32,13 @@ index 5f7d152f41eb85f17bcded4bc8099b998e5a338b..ba4854bc6c8a4c81b173d6f7a37919fc
          if (!this.level().isClientSide) {
              deflection.deflect(this, deflector, this.random);
 -            this.setOwner(owner);
-+            // Paper start - Fix PickupRule reset when deflected
++            // Paper start - Fix PickupStatus getting reset
 +            if (this instanceof AbstractArrow arrow) {
 +                arrow.setOwner(owner, false);
 +            } else {
 +                this.setOwner(owner);
 +            }
-+            // Paper end - Fix PickupRule reset when deflected
++            // Paper end - Fix PickupStatus getting reset
              this.onDeflection(deflector, fromAttack);
          }
  
