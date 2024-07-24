@@ -55,18 +55,17 @@ index 30544783d959fbdf4b6fd53c10bd3806e718a066..b1cd6a76792ef45180645179de6ae362
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftVault.java b/src/main/java/org/bukkit/craftbukkit/block/CraftVault.java
-index bfee498287c8358cbc8c9c2b7289d861cb90f0ad..807a557c9dc5e699ed59991d4cc2b90edfa30b41 100644
+index bfee498287c8358cbc8c9c2b7289d861cb90f0ad..a4156f39b28e82ab4987f429e6603835329fd51e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftVault.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftVault.java
-@@ -1,9 +1,25 @@
+@@ -1,9 +1,24 @@
  package org.bukkit.craftbukkit.block;
  
 +import com.google.common.base.Preconditions;
++import com.google.common.collect.ImmutableSet;
 +import java.util.Collection;
-+import java.util.List;
 +import java.util.Optional;
 +import java.util.UUID;
-+import com.google.common.collect.ImmutableSet;
 +import net.minecraft.resources.ResourceKey;
  import net.minecraft.world.level.block.entity.vault.VaultBlockEntity;
 +import net.minecraft.world.level.block.entity.vault.VaultConfig;
@@ -84,7 +83,7 @@ index bfee498287c8358cbc8c9c2b7289d861cb90f0ad..807a557c9dc5e699ed59991d4cc2b90e
  
  public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implements Vault {
  
-@@ -24,4 +40,111 @@ public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implemen
+@@ -24,4 +39,111 @@ public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implemen
      public CraftVault copy(Location location) {
          return new CraftVault(this, location);
      }
@@ -154,7 +153,7 @@ index bfee498287c8358cbc8c9c2b7289d861cb90f0ad..807a557c9dc5e699ed59991d4cc2b90e
 +        VaultConfig config = this.getSnapshot().getConfig();
 +        Preconditions.checkArgument(deactivationRange >= config.activationRange(), "DeactivationRange must be greater or equal to ActivationRange");
 +
-+        config = new VaultConfig(config.lootTable(), config.activationRange(), getDeactivationRange(), config.keyItem(), config.overrideLootTableToDisplay());
++        config = new VaultConfig(config.lootTable(), config.activationRange(), deactivationRange, config.keyItem(), config.overrideLootTableToDisplay());
 +        this.getSnapshot().setConfig(config);
 +    }
 +
@@ -162,7 +161,7 @@ index bfee498287c8358cbc8c9c2b7289d861cb90f0ad..807a557c9dc5e699ed59991d4cc2b90e
 +    public Collection<Player> getRewardedPlayers() {
 +        ImmutableSet.Builder<Player> players = ImmutableSet.builder();
 +
-+        for (UUID uuid : this.getSnapshot().getServerData().getRewardedPlayers()) {
++        for (UUID uuid : this.getTileEntity().getServerData().getRewardedPlayers()) {
 +            Player player = Bukkit.getPlayer(uuid);
 +            if (player != null) {
 +                players.add(player);
@@ -175,22 +174,22 @@ index bfee498287c8358cbc8c9c2b7289d861cb90f0ad..807a557c9dc5e699ed59991d4cc2b90e
 +    public boolean hasRewardedPlayer(final Player player) {
 +        Preconditions.checkArgument(player != null, "Player cannot be null");
 +
-+        return this.getSnapshot().getServerData().hasRewardedPlayer(((CraftPlayer) player).getHandle());
++        return this.getTileEntity().getServerData().hasRewardedPlayer(((CraftPlayer) player).getHandle());
 +    }
 +
 +    @Override
 +    public void addToRewardedPlayers(Player player) {
 +        Preconditions.checkArgument(player != null, "Player cannot be null");
 +
-+        this.getSnapshot().getServerData().addToRewardedPlayers(((CraftPlayer) player).getHandle());
++        this.getTileEntity().getServerData().addToRewardedPlayers(((CraftPlayer) player).getHandle());
 +    }
 +
 +    @Override
 +    public void removeFromRewardedPlayers(Player player) {
 +        Preconditions.checkArgument(player != null, "Player cannot be null");
 +
-+        this.getSnapshot().getServerData().getRewardedPlayers().remove(((CraftPlayer) player).getHandle());
-+        this.getSnapshot().getServerData().markChanged();
++        this.getTileEntity().getServerData().getRewardedPlayers().remove(((CraftPlayer) player).getHandle());
++        this.getTileEntity().getServerData().markChanged();
 +    }
 +
 +    // Paper end - Vault API
