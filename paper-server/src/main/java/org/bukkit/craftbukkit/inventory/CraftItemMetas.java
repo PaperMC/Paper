@@ -258,7 +258,7 @@ public final class CraftItemMetas {
         if (itemType == ItemType.FURNACE || itemType == ItemType.CHEST
                 || itemType == ItemType.TRAPPED_CHEST || itemType == ItemType.JUKEBOX
                 || itemType == ItemType.DISPENSER || itemType == ItemType.DROPPER
-                || (itemType.hasBlockType() && Tag.SIGNS.isTagged(itemType.getBlockType().asMaterial())) || itemType == ItemType.SPAWNER
+                || (itemType.hasBlockType() && Tag.ALL_SIGNS.isTagged(itemType.getBlockType().asMaterial())) || itemType == ItemType.SPAWNER
                 || itemType == ItemType.BREWING_STAND || itemType == ItemType.ENCHANTING_TABLE
                 || itemType == ItemType.COMMAND_BLOCK || itemType == ItemType.REPEATING_COMMAND_BLOCK
                 || itemType == ItemType.CHAIN_COMMAND_BLOCK || itemType == ItemType.BEACON
