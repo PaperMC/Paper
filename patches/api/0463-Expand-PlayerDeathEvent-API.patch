@@ -1,0 +1,118 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jakub Zacek <dawon@dawon.eu>
+Date: Tue, 13 Feb 2024 18:58:54 +0100
+Subject: [PATCH] Expand PlayerDeathEvent API
+
+
+diff --git a/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java b/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
+index 66e9d65a8dd05bed05d0ab46ec64206a6dae0507..9be6b982a52f95c5dfd8be53f00168c3461598b0 100644
+--- a/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
++++ b/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
+@@ -17,24 +17,28 @@ public class PlayerDeathEvent extends EntityDeathEvent {
+     private boolean keepLevel = false;
+     private boolean keepInventory = false;
+     private boolean doExpDrop; // Paper - shouldDropExperience API
++    // Paper start - Expand PlayerDeathEvent API
++    private net.kyori.adventure.text.Component deathScreenMessage;
++    private boolean displayDeathMessage;
++    // Paper end - Expand PlayerDeathEvent API
+     // Paper start - adventure
+     @org.jetbrains.annotations.ApiStatus.Internal
+-    public PlayerDeathEvent(final @NotNull Player player, final @NotNull List<ItemStack> drops, final int droppedExp, final @Nullable net.kyori.adventure.text.Component deathMessage) {
+-        this(player, drops, droppedExp, 0, deathMessage);
++    public PlayerDeathEvent(final @NotNull Player player, final @NotNull List<ItemStack> drops, final int droppedExp, final @Nullable net.kyori.adventure.text.Component deathMessage, boolean displayDeathMessage) { // Paper - Expand PlayerDeathEvent API
++        this(player, drops, droppedExp, 0, deathMessage, displayDeathMessage); // Paper - Expand PlayerDeathEvent API
+     }
+ 
+     @org.jetbrains.annotations.ApiStatus.Internal
+-    public PlayerDeathEvent(final @NotNull Player player, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final @Nullable net.kyori.adventure.text.Component deathMessage) {
+-        this(player, drops, droppedExp, newExp, 0, 0, deathMessage);
++    public PlayerDeathEvent(final @NotNull Player player, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final @Nullable net.kyori.adventure.text.Component deathMessage, boolean displayDeathMessage) { // Paper - Expand PlayerDeathEvent API
++        this(player, drops, droppedExp, newExp, 0, 0, deathMessage, displayDeathMessage); // Paper - Expand PlayerDeathEvent API
+     }
+ 
+     @org.jetbrains.annotations.ApiStatus.Internal
+-    public PlayerDeathEvent(final @NotNull Player player, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, final @Nullable net.kyori.adventure.text.Component deathMessage) {
++    public PlayerDeathEvent(final @NotNull Player player, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, final @Nullable net.kyori.adventure.text.Component deathMessage, boolean displayDeathMessage) { // Paper - Expand PlayerDeathEvent API
+         // Paper start - shouldDropExperience API
+-        this(player, drops, droppedExp, newExp, newTotalExp, newLevel, deathMessage, true);
++        this(player, drops, droppedExp, newExp, newTotalExp, newLevel, deathMessage, true, displayDeathMessage); // Paper - Expand PlayerDeathEvent API
+     }
+     @org.jetbrains.annotations.ApiStatus.Internal
+-    public PlayerDeathEvent(final @NotNull Player player, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, final @Nullable net.kyori.adventure.text.Component deathMessage, final boolean doExpDrop) {
++    public PlayerDeathEvent(final @NotNull Player player, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, final @Nullable net.kyori.adventure.text.Component deathMessage, final boolean doExpDrop, boolean displayDeathMessage) { // Paper - death screen api
+         // Paper end - shouldDropExperience API
+         super(player, drops, droppedExp);
+         this.newExp = newExp;
+@@ -42,9 +46,12 @@ public class PlayerDeathEvent extends EntityDeathEvent {
+         this.newLevel = newLevel;
+         this.deathMessage = deathMessage;
+         this.doExpDrop = doExpDrop; // Paper - shouldDropExperience API
++        this.deathScreenMessage = deathMessage; // Paper - Expand PlayerDeathEvent API
++        this.displayDeathMessage = displayDeathMessage; // Paper - Expand PlayerDeathEvent API
+     }
+     // Paper end - adventure
+ 
++    @Deprecated // Paper
+     public PlayerDeathEvent(@NotNull final Player player, @NotNull final List<ItemStack> drops, final int droppedExp, @Nullable final String deathMessage) {
+         this(player, drops, droppedExp, 0, deathMessage);
+     }
+@@ -69,6 +76,8 @@ public class PlayerDeathEvent extends EntityDeathEvent {
+         this.newLevel = newLevel;
+         this.deathMessage = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserializeOrNull(deathMessage); // Paper
+         this.doExpDrop = doExpDrop; // Paper - shouldDropExperience API
++        this.deathScreenMessage = this.deathMessage; // Paper - Expand PlayerDeathEvent API
++        this.displayDeathMessage = true; // Paper - Expand PlayerDeathEvent API
+     }
+ 
+     @Deprecated // Paper
+@@ -160,6 +169,49 @@ public class PlayerDeathEvent extends EntityDeathEvent {
+         return this.deathMessage;
+     }
+     // Paper end - adventure
++    // Paper start - Expand PlayerDeathEvent API
++    /**
++     * Set the death message that will appear on the death screen of the dying player.
++     * <p>
++     * If set to null, no message will be shown to the dying player.
++     * <p>
++     * If the message exceeds 256 characters it will be truncated.
++     *
++     * @param deathScreenMessage Message to appear on the death screen to the dying player.
++     */
++    public void deathScreenMessage(@Nullable net.kyori.adventure.text.Component deathScreenMessage) {
++        this.deathScreenMessage = deathScreenMessage;
++    }
++
++    /**
++     * Get the death message that will appear on the death screen of the dying player.
++     * By default, it is the same value as {@link #deathMessage()}.
++     *
++     * @return Message to appear on the death screen to the dying player.
++     */
++    public @Nullable net.kyori.adventure.text.Component deathScreenMessage() {
++        return this.deathScreenMessage;
++    }
++
++    /**
++     * Returns whether the death message in this event should be displayed according to
++     * `showDeathMessages` game rule.
++     *
++     * @return whether the death message in this event should be displayed
++     */
++    public boolean shouldDisplayDeathMessage() {
++        return displayDeathMessage;
++    }
++
++    /**
++     * Sets whether the death message in this event should be shown.
++     *
++     * @param displayDeathMessage whether the death message in this event should be shown.
++     */
++    public void setDisplayDeathMessage(boolean displayDeathMessage) {
++        this.displayDeathMessage = displayDeathMessage;
++    }
++    // Paper end - Expand PlayerDeathEvent API
+ 
+     /**
+      * Set the death message that will appear to everyone on the server.
