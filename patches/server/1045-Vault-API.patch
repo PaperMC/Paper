@@ -5,7 +5,7 @@ Subject: [PATCH] Vault API
 
 
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/vault/VaultServerData.java b/src/main/java/net/minecraft/world/level/block/entity/vault/VaultServerData.java
-index 30544783d959fbdf4b6fd53c10bd3806e718a066..b1cd6a76792ef45180645179de6ae3621de75989 100644
+index 30544783d959fbdf4b6fd53c10bd3806e718a066..5b245cca7c9e7a141b2c1b7f145930b67bf75171 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/vault/VaultServerData.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/vault/VaultServerData.java
 @@ -19,12 +19,12 @@ public class VaultServerData {
@@ -45,7 +45,32 @@ index 30544783d959fbdf4b6fd53c10bd3806e718a066..b1cd6a76792ef45180645179de6ae362
  
      @VisibleForTesting
      public void addToRewardedPlayers(Player player) {
-@@ -120,7 +122,7 @@ public class VaultServerData {
+@@ -83,7 +85,8 @@ public class VaultServerData {
+         this.markChanged();
+     }
+ 
+-    List<ItemStack> getItemsToEject() {
++    // Paper start - Vault API
++    public List<ItemStack> getItemsToEject() {
+         return this.itemsToEject;
+     }
+ 
+@@ -92,12 +95,13 @@ public class VaultServerData {
+         this.markChanged();
+     }
+ 
+-    void setItemsToEject(List<ItemStack> itemsToEject) {
++    public void setItemsToEject(List<ItemStack> itemsToEject) {
+         this.itemsToEject.clear();
+         this.itemsToEject.addAll(itemsToEject);
+         this.totalEjectionsNeeded = this.itemsToEject.size();
+         this.markChanged();
+     }
++    // Paper end - Vault API
+ 
+     ItemStack getNextItemToEject() {
+         return this.itemsToEject.isEmpty() ? ItemStack.EMPTY : Objects.requireNonNullElse(this.itemsToEject.get(this.itemsToEject.size() - 1), ItemStack.EMPTY);
+@@ -120,7 +124,7 @@ public class VaultServerData {
          this.rewardedPlayers.addAll(data.rewardedPlayers);
      }
  
@@ -55,15 +80,16 @@ index 30544783d959fbdf4b6fd53c10bd3806e718a066..b1cd6a76792ef45180645179de6ae362
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftVault.java b/src/main/java/org/bukkit/craftbukkit/block/CraftVault.java
-index bfee498287c8358cbc8c9c2b7289d861cb90f0ad..a4156f39b28e82ab4987f429e6603835329fd51e 100644
+index bfee498287c8358cbc8c9c2b7289d861cb90f0ad..5d537c4b3580afda8c81d606d3672cf6d90fc125 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftVault.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftVault.java
-@@ -1,9 +1,24 @@
+@@ -1,9 +1,25 @@
  package org.bukkit.craftbukkit.block;
  
 +import com.google.common.base.Preconditions;
 +import com.google.common.collect.ImmutableSet;
 +import java.util.Collection;
++import java.util.List;
 +import java.util.Optional;
 +import java.util.UUID;
 +import net.minecraft.resources.ResourceKey;
@@ -83,13 +109,11 @@ index bfee498287c8358cbc8c9c2b7289d861cb90f0ad..a4156f39b28e82ab4987f429e6603835
  
  public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implements Vault {
  
-@@ -24,4 +39,111 @@ public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implemen
-     public CraftVault copy(Location location) {
-         return new CraftVault(this, location);
+@@ -15,6 +31,122 @@ public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implemen
+         super(state, location);
      }
-+
+ 
 +    // Paper start - Vault API
-+
 +    @Override
 +    public LootTable getLootTable() {
 +        return CraftLootTable.minecraftToBukkit(getSnapshot().getConfig().lootTable());
@@ -192,7 +216,26 @@ index bfee498287c8358cbc8c9c2b7289d861cb90f0ad..a4156f39b28e82ab4987f429e6603835
 +        this.getTileEntity().getServerData().markChanged();
 +    }
 +
++    @Override
++    public List<ItemStack> getItemsToEject() {
++        return this.getTileEntity().getServerData().getItemsToEject().stream().map(i -> i.asBukkitCopy()).toList();
++    }
++
++    @Override
++    public void setItemsToEject(final List<ItemStack> itemsToEject) {
++        Preconditions.checkArgument(itemsToEject != null, "ItemsToEject cannot be null");
++
++        this.getTileEntity().getServerData().setItemsToEject(itemsToEject.stream().map(CraftItemStack::asNMSCopy).toList());
++    }
 +    // Paper end - Vault API
++
+     @Override
+     public CraftVault copy() {
+         return new CraftVault(this, null);
+@@ -24,4 +156,5 @@ public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implemen
+     public CraftVault copy(Location location) {
+         return new CraftVault(this, location);
+     }
 +
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/data/type/CraftVault.java b/src/main/java/org/bukkit/craftbukkit/block/data/type/CraftVault.java
