@@ -1,11 +1,59 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: TonytheMacaroni <tonythemacaroni123@gmail.com>
 Date: Wed, 6 Sep 2023 19:24:53 -0400
-Subject: [PATCH] Add predicate for blocks when raytracing
+Subject: [PATCH] Additional raytrace API
 
 
+diff --git a/src/main/java/io/papermc/paper/raytrace/BlockCollisionMode.java b/src/main/java/io/papermc/paper/raytrace/BlockCollisionMode.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a2dd14244b17201a04b2ae1412339a874cb01269
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/raytrace/BlockCollisionMode.java
+@@ -0,0 +1,25 @@
++package io.papermc.paper.raytrace;
++
++/**
++ * Determines the collision behavior when blocks get hit during ray tracing.
++ */
++public enum BlockCollisionMode {
++
++    /**
++     * Use the collision shape.
++     */
++    COLLIDER,
++    /**
++     * Use the outline shape.
++     */
++    OUTLINE,
++    /**
++     * Use the visual shape.
++     */
++    VISUAL,
++    /**
++     * Use the shape of a full block, but only consider blocks tagged with {@link org.bukkit.Tag#FALL_DAMAGE_RESETTING}.
++     */
++    FALL_DAMAGE_RESETTING
++
++}
+diff --git a/src/main/java/org/bukkit/FluidCollisionMode.java b/src/main/java/org/bukkit/FluidCollisionMode.java
+index ae28958941d7a7e66ce3e1215260d3624d4c8122..f960e2998cc591e63cd6a2f6603cd4d8d1366861 100644
+--- a/src/main/java/org/bukkit/FluidCollisionMode.java
++++ b/src/main/java/org/bukkit/FluidCollisionMode.java
+@@ -13,6 +13,12 @@ public enum FluidCollisionMode {
+      * Only collide with source fluid blocks.
+      */
+     SOURCE_ONLY,
++    // Paper start - Additional raytrace API
++    /**
++     * Collide only with water.
++     */
++    WATER,
++    // Paper end - Additional raytrace API
+     /**
+      * Collide with all fluids.
+      */
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index 907906e15c9250fea385e49f10d3c248236fd004..02184b68cc126b278985fd966e3c8e4ade18c464 100644
+index 54aee8522a1506b7c6ae48acece59858a162c920..bfe5ccc228e8f97694a43142be0530b3899c7f29 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
 @@ -1649,6 +1649,27 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
@@ -36,21 +84,14 @@ index 907906e15c9250fea385e49f10d3c248236fd004..02184b68cc126b278985fd966e3c8e4a
      /**
       * Performs a ray trace that checks for block collisions using the blocks'
       * precise collision shapes.
-@@ -1712,6 +1733,34 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+@@ -1705,6 +1726,45 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      @Nullable
      public RayTraceResult rayTraceBlocks(@NotNull Location start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks);
  
-+    // Paper start
++    // Paper start - Additional raytrace API
 +    /**
 +     * Performs a ray trace that checks for block collisions using the blocks'
 +     * precise collision shapes.
-+     * <p>
-+     * If collisions with passable blocks are ignored, fluid collisions are
-+     * ignored as well regardless of the fluid collision mode.
-+     * <p>
-+     * Portal blocks are only considered passable if the ray starts within
-+     * them. Apart from that collisions with portal blocks will be considered
-+     * even if collisions with passable blocks are otherwise ignored.
 +     * <p>
 +     * This may cause loading of chunks! Some implementations may impose
 +     * artificial restrictions on the maximum distance.
@@ -66,12 +107,30 @@ index 907906e15c9250fea385e49f10d3c248236fd004..02184b68cc126b278985fd966e3c8e4a
 +     * @return the ray trace hit result, or <code>null</code> if there is no hit
 +     */
 +    @Nullable RayTraceResult rayTraceBlocks(io.papermc.paper.math.@NotNull Position start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, @Nullable Predicate<? super Block> canCollide);
-+    // Paper end
++
++    /**
++     * Performs a ray trace that checks for block collisions using the blocks'
++     * precise shape.
++     * <p>
++     * This may cause loading of chunks! Some implementations may impose
++     * artificial restrictions on the maximum distance.
++     *
++     * @param start the start position
++     * @param direction the ray direction
++     * @param maxDistance the maximum distance
++     * @param fluidCollisionMode the fluid collision mode
++     * @param blockCollisionMode the block collision mode
++     * @param canCollide predicate for blocks the ray can potentially collide
++     *     with, or <code>null</code> to consider all blocks
++     * @return the ray trace hit result, or <code>null</code> if there is no hit
++     */
++    @Nullable RayTraceResult rayTraceBlocks(io.papermc.paper.math.@NotNull Position start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, @NotNull io.papermc.paper.raytrace.BlockCollisionMode blockCollisionMode, @Nullable Predicate<? super Block> canCollide);
++    // Paper end - Additional raytrace API
 +
      /**
       * Performs a ray trace that checks for both block and entity collisions.
       * <p>
-@@ -1745,6 +1794,42 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+@@ -1731,6 +1791,61 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      @Nullable
      public RayTraceResult rayTrace(@NotNull Location start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, @Nullable Predicate<? super Entity> filter);
  
@@ -82,13 +141,6 @@ index 907906e15c9250fea385e49f10d3c248236fd004..02184b68cc126b278985fd966e3c8e4a
 +     * Block collisions use the blocks' precise collision shapes. The
 +     * <code>raySize</code> parameter is only taken into account for entity
 +     * collision checks.
-+     * <p>
-+     * If collisions with passable blocks are ignored, fluid collisions are
-+     * ignored as well regardless of the fluid collision mode.
-+     * <p>
-+     * Portal blocks are only considered passable if the ray starts within them.
-+     * Apart from that collisions with portal blocks will be considered even if
-+     * collisions with passable blocks are otherwise ignored.
 +     * <p>
 +     * This may cause loading of chunks! Some implementations may impose
 +     * artificial restrictions on the maximum distance.
@@ -109,6 +161,32 @@ index 907906e15c9250fea385e49f10d3c248236fd004..02184b68cc126b278985fd966e3c8e4a
 +     *     entity, or <code>null</code> if there is no hit
 +     */
 +    @Nullable RayTraceResult rayTrace(io.papermc.paper.math.@NotNull Position start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, @Nullable Predicate<? super Entity> filter, @Nullable Predicate<? super Block> canCollide);
++
++    /**
++     * Performs a ray trace that checks for both block and entity collisions.
++     * <p>
++     * Block collisions use the blocks' precise shape. The
++     * <code>raySize</code> parameter is only taken into account for entity
++     * collision checks.
++     * <p>
++     * This may cause loading of chunks! Some implementations may impose
++     * artificial restrictions on the maximum distance.
++     *
++     * @param start the start position
++     * @param direction the ray direction
++     * @param maxDistance the maximum distance
++     * @param fluidCollisionMode the fluid collision mode
++     * @param blockCollisionMode the block collision mode
++     * @param raySize entity bounding boxes will be uniformly expanded (or
++     *     shrinked) by this value before doing collision checks
++     * @param filter only entities that fulfill this predicate are considered,
++     *     or <code>null</code> to consider all entities
++     * @param canCollide predicate for blocks the ray can potentially collide
++     *     with, or <code>null</code> to consider all blocks
++     * @return the closest ray trace hit result with either a block or an
++     *     entity, or <code>null</code> if there is no hit
++     */
++    @Nullable RayTraceResult rayTrace(io.papermc.paper.math.@NotNull Position start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, @NotNull io.papermc.paper.raytrace.BlockCollisionMode blockCollisionMode, double raySize, @Nullable Predicate<? super Entity> filter, @Nullable Predicate<? super Block> canCollide);
 +    // Paper end
 +
      /**
