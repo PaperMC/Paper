@@ -1,42 +1,22 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Newwind <support@newwindserver.com>
-Date: Sat, 25 Jul 2024 13:00:37 +0200
+Date: Thu, 25 Jul 2024 13:00:37 +0200
 Subject: [PATCH] Increase max interaction range
 
 In 1.20.5, mojang, failing to consider network latency, lowered the max interaction range from 6 blocks to 4.
 This causes hits from high latency players in specific scenarios such as the target sprinting away to not register.
 this patch increases the expansion to 3 blocks, meaning the max interaction range is 6 blocks, as it was in 1.20.4
 
-diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-index d20969e18..1bc3247de 100644
---- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-+++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-@@ -3,6 +3,7 @@ package io.papermc.paper.configuration;
- import co.aikar.timings.MinecraftTimings;
- import com.mojang.logging.LogUtils;
- import io.papermc.paper.configuration.constraint.Constraints;
-+import io.papermc.paper.configuration.type.number.DoubleOr;
- import io.papermc.paper.configuration.type.number.IntOr;
- import net.kyori.adventure.text.Component;
- import net.kyori.adventure.text.format.NamedTextColor;
-@@ -343,6 +344,7 @@ public class GlobalConfiguration extends ConfigurationPart {
-         public boolean useDimensionTypeForCustomSpawners = false;
-         public boolean strictAdvancementDimensionCheck = false;
-         public IntOr.Default compressionLevel = IntOr.Default.USE_DEFAULT;
-+        public DoubleOr.Default maxInteractRangeExpand = DoubleOr.Default.USE_DEFAULT;
-     }
- 
-     public BlockUpdates blockUpdates;
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index ee2ffb9fd..f2a11852c 100644
+index 7796e191747be545e744564a2b0b65790f69114d..624b80c796e9c95040d71d1595d11f98e2899cf3 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -2703,7 +2703,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
              AABB axisalignedbb = entity.getBoundingBox();
  
--            if (this.player.canInteractWithEntity(axisalignedbb, 3.0D)) { // Paper - increase max entity interaction range
-+            if (this.player.canInteractWithEntity(axisalignedbb, io.papermc.paper.configuration.GlobalConfiguration.get().misc.maxInteractRangeExpand.or(1.0D))) { // Paper - configurable max entity interaction range
+-            if (this.player.canInteractWithEntity(axisalignedbb, 1.0D)) {
++            if (this.player.canInteractWithEntity(axisalignedbb, io.papermc.paper.configuration.GlobalConfiguration.get().misc.clientInteractionLeniencyDistance.or(1.0D))) { // Paper - configurable lenience value for interact range
                  packet.dispatch(new ServerboundInteractPacket.Handler() {
                      private void performInteraction(InteractionHand enumhand, ServerGamePacketListenerImpl.EntityInteraction playerconnection_a, PlayerInteractEntityEvent event) { // CraftBukkit
                          ItemStack itemstack = ServerGamePacketListenerImpl.this.player.getItemInHand(enumhand);
