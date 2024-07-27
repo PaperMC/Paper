@@ -64,7 +64,9 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @param prop The property.
      * @param value The value to set the property to.
      * @return True if the property was successfully set.
+     * @deprecated use {@link InventoryView} and its children.
      */
+    @Deprecated(forRemoval = true, since = "1.21")
     public boolean setWindowProperty(@NotNull InventoryView.Property prop, int value);
 
     /**

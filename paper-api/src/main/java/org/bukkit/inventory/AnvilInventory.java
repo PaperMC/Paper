@@ -1,5 +1,6 @@
 package org.bukkit.inventory;
 
+import org.bukkit.inventory.view.AnvilView;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -12,7 +13,9 @@ public interface AnvilInventory extends Inventory {
      * the default item name.
      *
      * @return the rename text
+     * @deprecated use {@link AnvilView#getRenameText()}.
      */
+    @Deprecated(forRemoval = true, since = "1.21")
     @Nullable
     String getRenameText();
 
@@ -20,28 +23,36 @@ public interface AnvilInventory extends Inventory {
      * Get the item cost (in amount) to complete the current repair.
      *
      * @return the amount
+     * @deprecated use {@link AnvilView#getRepairItemCost()}.
      */
+    @Deprecated(forRemoval = true, since = "1.21")
     int getRepairCostAmount();
 
     /**
      * Set the item cost (in amount) to complete the current repair.
      *
      * @param amount the amount
+     * @deprecated use {@link AnvilView#setRepairItemCost(int)}.
      */
+    @Deprecated(forRemoval = true, since = "1.21")
     void setRepairCostAmount(int amount);
 
     /**
      * Get the experience cost (in levels) to complete the current repair.
      *
      * @return the experience cost
+     * @deprecated use {@link AnvilView#getRepairCost()}.
      */
+    @Deprecated(forRemoval = true, since = "1.21")
     int getRepairCost();
 
     /**
      * Set the experience cost (in levels) to complete the current repair.
      *
      * @param levels the experience cost
+     * @deprecated use {@link AnvilView#setRepairCost(int)}.
      */
+    @Deprecated(forRemoval = true, since = "1.21")
     void setRepairCost(int levels);
 
     /**
@@ -53,7 +64,9 @@ public interface AnvilInventory extends Inventory {
      * maximum repair cost.
      *
      * @return the maximum experience cost
+     * @deprecated use {@link AnvilView#getMaximumRepairCost()}.
      */
+    @Deprecated(forRemoval = true, since = "1.21")
     int getMaximumRepairCost();
 
     /**
@@ -61,6 +74,8 @@ public interface AnvilInventory extends Inventory {
      * repair. The default value set by vanilla Minecraft is 40.
      *
      * @param levels the maximum experience cost
+     * @deprecated use {@link AnvilView#setMaximumRepairCost(int)}.
      */
+    @Deprecated(forRemoval = true, since = "1.21")
     void setMaximumRepairCost(int levels);
 }

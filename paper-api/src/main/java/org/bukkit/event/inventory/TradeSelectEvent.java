@@ -1,9 +1,9 @@
 package org.bukkit.event.inventory;
 
 import org.bukkit.event.HandlerList;
-import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.MerchantInventory;
+import org.bukkit.inventory.view.MerchantView;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -19,7 +19,7 @@ public class TradeSelectEvent extends InventoryInteractEvent {
     //
     private final int index;
 
-    public TradeSelectEvent(@NotNull InventoryView transaction, int newIndex) {
+    public TradeSelectEvent(@NotNull MerchantView transaction, int newIndex) {
         super(transaction);
         this.index = newIndex;
     }
@@ -47,6 +47,12 @@ public class TradeSelectEvent extends InventoryInteractEvent {
     @NotNull
     public Merchant getMerchant() {
         return getInventory().getMerchant();
+    }
+
+    @NotNull
+    @Override
+    public MerchantView getView() {
+        return (MerchantView) super.getView();
     }
 
     @NotNull
