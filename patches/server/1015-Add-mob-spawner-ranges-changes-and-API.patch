@@ -1,0 +1,119 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DavidTs93 <david.ts93@gmail.com>
+Date: Fri, 7 Apr 2023 19:28:43 +0300
+Subject: [PATCH] Add mob spawner ranges changes and API
+
+
+diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
+index 019d3bbd78fb0b06861979d223915fedb6c99442..daf1747955e175d1e37d631fcbd574575a667433 100644
+--- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
++++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
+@@ -307,6 +307,18 @@ public class GlobalConfiguration extends ConfigurationPart {
+                 executor.setMaximumPoolSize(_chatExecutorMaxSize);
+             }
+         }
++
++        public DefaultMobSpawnerValues defaultMobSpawnerValues;
++
++        public class DefaultMobSpawnerValues extends ConfigurationPart {
++            public Range range;
++            
++            public class Range extends ConfigurationPart {
++                public int horizontal = 4;
++                public int vertical = 1;
++            }
++        }
++
+         public int maxJoinsPerTick = 5;
+         public boolean fixEntityPositionDesync = true;
+         public boolean loadPermissionsYmlBeforePlugins = true;
+diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+index 633500aefd515df5dadda3802b94079f75a03fa0..c557a0d51699c9ecfeee3fa2b3564910f0483032 100644
+--- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
++++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
+ import java.util.Optional;
+ import java.util.function.Function;
+ import javax.annotation.Nullable;
++
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.particles.ParticleTypes;
+ import net.minecraft.core.registries.BuiltInRegistries;
+@@ -28,6 +29,7 @@ import org.slf4j.Logger;
+ 
+ public abstract class BaseSpawner {
+ 
++    private static final String SPAWN_RANGE_VERTICAL_TAG = "Paper.VerticalSpawnRange"; // Paper
+     public static final String SPAWN_DATA_TAG = "SpawnData";
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private static final int EVENT_SPAWN = 1;
+@@ -44,7 +46,8 @@ public abstract class BaseSpawner {
+     private Entity displayEntity;
+     public int maxNearbyEntities = 6;
+     public int requiredPlayerRange = 16;
+-    public int spawnRange = 4;
++    public int spawnRange = io.papermc.paper.configuration.GlobalConfiguration.get().misc.defaultMobSpawnerValues.range.horizontal; // Paper
++    public int verticalSpawnRange = io.papermc.paper.configuration.GlobalConfiguration.get().misc.defaultMobSpawnerValues.range.vertical; // Paper
+     private int tickDelay = 0; // Paper
+ 
+     public BaseSpawner() {}
+@@ -110,7 +113,7 @@ public abstract class BaseSpawner {
+                     ListTag nbttaglist = nbttagcompound.getList("Pos", 6);
+                     int j = nbttaglist.size();
+                     double d0 = j >= 1 ? nbttaglist.getDouble(0) : (double) pos.getX() + (randomsource.nextDouble() - randomsource.nextDouble()) * (double) this.spawnRange + 0.5D;
+-                    double d1 = j >= 2 ? nbttaglist.getDouble(1) : (double) (pos.getY() + randomsource.nextInt(3) - 1);
++                    double d1 = j >= 2 ? nbttaglist.getDouble(1) : (double) (pos.getY() + verticalSpawnRange == 0 ? 0 : (verticalSpawnRange < 0 ? randomsource.nextIntBetweenInclusive(verticalSpawnRange, -verticalSpawnRange) : randomsource.nextIntBetweenInclusive(-verticalSpawnRange, verticalSpawnRange))); // Paper
+                     double d2 = j >= 3 ? nbttaglist.getDouble(2) : (double) pos.getZ() + (randomsource.nextDouble() - randomsource.nextDouble()) * (double) this.spawnRange + 0.5D;
+ 
+                     if (world.noCollision(((EntityType) optional.get()).getAABB(d0, d1, d2))) {
+@@ -161,7 +164,7 @@ public abstract class BaseSpawner {
+                             return;
+                         }
+ 
+-                        int k = world.getEntitiesOfClass(entity.getClass(), (new AABB((double) pos.getX(), (double) pos.getY(), (double) pos.getZ(), (double) (pos.getX() + 1), (double) (pos.getY() + 1), (double) (pos.getZ() + 1))).inflate((double) this.spawnRange)).size();
++                        int k = world.getEntitiesOfClass(entity.getClass(), (new AABB((double) pos.getX(), (double) pos.getY(), (double) pos.getZ(), (double) (pos.getX() + 1), (double) (pos.getY() + 1), (double) (pos.getZ() + 1))).inflate((double) this.spawnRange, (double) verticalSpawnRange, (double) spawnRange)).size(); // Paper
+ 
+                         if (k >= this.maxNearbyEntities) {
+                             this.delay(world, pos);
+@@ -284,6 +287,12 @@ public abstract class BaseSpawner {
+         if (nbt.contains("SpawnRange", 99)) {
+             this.spawnRange = nbt.getShort("SpawnRange");
+         }
++    
++        // Paper start
++        if (nbt.contains(SPAWN_RANGE_VERTICAL_TAG, 99)) {
++            this.verticalSpawnRange = nbt.getShort(SPAWN_RANGE_VERTICAL_TAG);
++        }
++        // Paper end
+ 
+         this.displayEntity = null;
+     }
+@@ -307,6 +316,7 @@ public abstract class BaseSpawner {
+         nbt.putShort("MaxNearbyEntities", (short) this.maxNearbyEntities);
+         nbt.putShort("RequiredPlayerRange", (short) this.requiredPlayerRange);
+         nbt.putShort("SpawnRange", (short) this.spawnRange);
++        nbt.putShort(SPAWN_RANGE_VERTICAL_TAG, (short) this.verticalSpawnRange); // Paper
+         if (this.nextSpawnData != null) {
+             nbt.put("SpawnData", (Tag) SpawnData.CODEC.encodeStart(NbtOps.INSTANCE, this.nextSpawnData).result().orElseThrow(() -> {
+                 return new IllegalStateException("Invalid SpawnData");
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
+index e2d0937f8609c1f65eff94a1cdae8c80b6347cc3..c2b47d6f9ee58e12b1d5003c2b599ab668079ae7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
+@@ -136,6 +136,16 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<SpawnerBlockEnti
+     }
+ 
+     // Paper start
++    @Override
++    public int getVerticalSpawnRange() {
++        return this.getSnapshot().getSpawner().verticalSpawnRange;
++    }
++    
++    @Override
++    public void setVerticalSpawnRange(int verticalSpawnRange) {
++        this.getSnapshot().getSpawner().verticalSpawnRange = verticalSpawnRange;
++    }
++
+     @Override
+     public boolean isActivated() {
+         this.requirePlaced();
