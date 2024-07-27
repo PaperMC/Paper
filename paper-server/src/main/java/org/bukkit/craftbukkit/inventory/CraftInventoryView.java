@@ -15,14 +15,14 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 
-public class CraftInventoryView extends CraftAbstractInventoryView {
-    private final Container container;
+public class CraftInventoryView<T extends Container> extends CraftAbstractInventoryView {
+    protected final T container;
     private final CraftHumanEntity player;
     private final CraftInventory viewing;
     private final String originalTitle;
     private String title;
 
-    public CraftInventoryView(HumanEntity player, Inventory viewing, Container container) {
+    public CraftInventoryView(HumanEntity player, Inventory viewing, T container) {
         // TODO: Should we make sure it really IS a CraftHumanEntity first? And a CraftInventory?
         this.player = (CraftHumanEntity) player;
         this.viewing = (CraftInventory) viewing;

@@ -1,19 +1,16 @@
 --- a/net/minecraft/world/inventory/ContainerEnchantTable.java
 +++ b/net/minecraft/world/inventory/ContainerEnchantTable.java
-@@ -31,6 +31,22 @@
+@@ -31,6 +31,19 @@
  import net.minecraft.world.level.block.BlockEnchantmentTable;
  import net.minecraft.world.level.block.Blocks;
  
 +// CraftBukkit start
 +import java.util.Map;
-+import net.minecraft.world.item.enchantment.Enchantment;
 +import org.bukkit.Location;
-+import org.bukkit.NamespacedKey;
 +import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
 +import org.bukkit.craftbukkit.inventory.CraftInventoryEnchanting;
-+import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
-+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
++import org.bukkit.craftbukkit.inventory.view.CraftEnchantmentView;
 +import org.bukkit.enchantments.EnchantmentOffer;
 +import org.bukkit.event.enchantment.EnchantItemEvent;
 +import org.bukkit.event.enchantment.PrepareItemEnchantEvent;
@@ -23,18 +20,18 @@
  public class ContainerEnchantTable extends Container {
  
      static final MinecraftKey EMPTY_SLOT_LAPIS_LAZULI = MinecraftKey.withDefaultNamespace("item/empty_slot_lapis_lazuli");
-@@ -41,6 +57,10 @@
+@@ -41,6 +54,10 @@
      public final int[] costs;
      public final int[] enchantClue;
      public final int[] levelClue;
 +    // CraftBukkit start
-+    private CraftInventoryView bukkitEntity = null;
++    private CraftEnchantmentView bukkitEntity = null;
 +    private Player player;
 +    // CraftBukkit end
  
      public ContainerEnchantTable(int i, PlayerInventory playerinventory) {
          this(i, playerinventory, ContainerAccess.NULL);
-@@ -54,6 +74,13 @@
+@@ -54,6 +71,13 @@
                  super.setChanged();
                  ContainerEnchantTable.this.slotsChanged(this);
              }
@@ -48,7 +45,7 @@
          };
          this.random = RandomSource.create();
          this.enchantmentSeed = ContainerProperty.standalone();
-@@ -61,13 +88,13 @@
+@@ -61,13 +85,13 @@
          this.enchantClue = new int[]{-1, -1, -1};
          this.levelClue = new int[]{-1, -1, -1};
          this.access = containeraccess;
@@ -64,7 +61,7 @@
              @Override
              public boolean mayPlace(ItemStack itemstack) {
                  return itemstack.is(Items.LAPIS_LAZULI);
-@@ -101,6 +128,9 @@
+@@ -101,6 +125,9 @@
          this.addDataSlot(ContainerProperty.shared(this.levelClue, 0));
          this.addDataSlot(ContainerProperty.shared(this.levelClue, 1));
          this.addDataSlot(ContainerProperty.shared(this.levelClue, 2));
@@ -74,7 +71,7 @@
      }
  
      @Override
-@@ -108,7 +138,7 @@
+@@ -108,7 +135,7 @@
          if (iinventory == this.enchantSlots) {
              ItemStack itemstack = iinventory.getItem(0);
  
@@ -83,7 +80,7 @@
                  this.access.execute((world, blockposition) -> {
                      Registry<Holder<Enchantment>> registry = world.registryAccess().registryOrThrow(Registries.ENCHANTMENT).asHolderIdMap();
                      int i = 0;
-@@ -148,6 +178,41 @@
+@@ -148,6 +175,41 @@
                          }
                      }
  
@@ -125,7 +122,7 @@
                      this.broadcastChanges();
                  });
              } else {
-@@ -175,21 +240,46 @@
+@@ -175,21 +237,46 @@
                      ItemStack itemstack2 = itemstack;
                      List<WeightedRandomEnchant> list = this.getEnchantmentList(world.registryAccess(), itemstack, i, this.costs[i]);
  
@@ -178,7 +175,7 @@
                          itemstack1.consume(j, entityhuman);
                          if (itemstack1.isEmpty()) {
                              this.enchantSlots.setItem(1, ItemStack.EMPTY);
-@@ -256,6 +346,7 @@
+@@ -256,6 +343,7 @@
  
      @Override
      public boolean stillValid(EntityHuman entityhuman) {
@@ -186,20 +183,20 @@
          return stillValid(this.access, entityhuman, Blocks.ENCHANTING_TABLE);
      }
  
-@@ -306,4 +397,17 @@
+@@ -306,4 +394,17 @@
  
          return itemstack;
      }
 +
 +    // CraftBukkit start
 +    @Override
-+    public CraftInventoryView getBukkitView() {
++    public CraftEnchantmentView getBukkitView() {
 +        if (bukkitEntity != null) {
 +            return bukkitEntity;
 +        }
 +
 +        CraftInventoryEnchanting inventory = new CraftInventoryEnchanting(this.enchantSlots);
-+        bukkitEntity = new CraftInventoryView(this.player, inventory, this);
++        bukkitEntity = new CraftEnchantmentView(this.player, inventory, this);
 +        return bukkitEntity;
 +    }
 +    // CraftBukkit end
