@@ -88,7 +88,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see PatternType
      */
-    Registry<PatternType> BANNER_PATTERN = new SimpleRegistry<>(PatternType.class);
+    Registry<PatternType> BANNER_PATTERN = Objects.requireNonNull(Bukkit.getRegistry(PatternType.class), "No registry present for Pattern Type. This is a bug.");
     /**
      * Server biomes.
      *

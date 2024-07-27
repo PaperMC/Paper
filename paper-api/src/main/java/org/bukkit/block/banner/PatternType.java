@@ -1,79 +1,64 @@
 package org.bukkit.block.banner;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
+import java.util.Locale;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
+import org.bukkit.util.OldEnum;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public enum PatternType implements Keyed {
-    BASE("b", "base"),
-    SQUARE_BOTTOM_LEFT("bl", "square_bottom_left"),
-    SQUARE_BOTTOM_RIGHT("br", "square_bottom_right"),
-    SQUARE_TOP_LEFT("tl", "square_top_left"),
-    SQUARE_TOP_RIGHT("tr", "square_top_right"),
-    STRIPE_BOTTOM("bs", "stripe_bottom"),
-    STRIPE_TOP("ts", "stripe_top"),
-    STRIPE_LEFT("ls", "stripe_left"),
-    STRIPE_RIGHT("rs", "stripe_right"),
-    STRIPE_CENTER("cs", "stripe_center"),
-    STRIPE_MIDDLE("ms", "stripe_middle"),
-    STRIPE_DOWNRIGHT("drs", "stripe_downright"),
-    STRIPE_DOWNLEFT("dls", "stripe_downleft"),
-    SMALL_STRIPES("ss", "small_stripes"),
-    CROSS("cr", "cross"),
-    STRAIGHT_CROSS("sc", "straight_cross"),
-    TRIANGLE_BOTTOM("bt", "triangle_bottom"),
-    TRIANGLE_TOP("tt", "triangle_top"),
-    TRIANGLES_BOTTOM("bts", "triangles_bottom"),
-    TRIANGLES_TOP("tts", "triangles_top"),
-    DIAGONAL_LEFT("ld", "diagonal_left"),
-    DIAGONAL_UP_RIGHT("rd", "diagonal_up_right"),
-    DIAGONAL_UP_LEFT("lud", "diagonal_up_left"),
-    DIAGONAL_RIGHT("rud", "diagonal_right"),
-    CIRCLE("mc", "circle"),
-    RHOMBUS("mr", "rhombus"),
-    HALF_VERTICAL("vh", "half_vertical"),
-    HALF_HORIZONTAL("hh", "half_horizontal"),
-    HALF_VERTICAL_RIGHT("vhr", "half_vertical_right"),
-    HALF_HORIZONTAL_BOTTOM("hhb", "half_horizontal_bottom"),
-    BORDER("bo", "border"),
-    CURLY_BORDER("cbo", "curly_border"),
-    CREEPER("cre", "creeper"),
-    GRADIENT("gra", "gradient"),
-    GRADIENT_UP("gru", "gradient_up"),
-    BRICKS("bri", "bricks"),
-    SKULL("sku", "skull"),
-    FLOWER("flo", "flower"),
-    MOJANG("moj", "mojang"),
-    GLOBE("glb", "globe"),
-    PIGLIN("pig", "piglin"),
-    FLOW("flw", "flow"),
-    GUSTER("gus", "guster");
-
-    private final String identifier;
-    private final NamespacedKey key;
-    private static final Map<String, PatternType> byString = new HashMap<String, PatternType>();
-
-    static {
-        for (PatternType p : values()) {
-            byString.put(p.identifier, p);
-        }
-    }
-
-    private PatternType(/*@NotNull*/ String identifier, String key) {
-        this.identifier = identifier;
-        this.key = NamespacedKey.minecraft(key);
-    }
+public interface PatternType extends OldEnum<PatternType>, Keyed {
+    PatternType BASE = getType("base");
+    PatternType SQUARE_BOTTOM_LEFT = getType("square_bottom_left");
+    PatternType SQUARE_BOTTOM_RIGHT = getType("square_bottom_right");
+    PatternType SQUARE_TOP_LEFT = getType("square_top_left");
+    PatternType SQUARE_TOP_RIGHT = getType("square_top_right");
+    PatternType STRIPE_BOTTOM = getType("stripe_bottom");
+    PatternType STRIPE_TOP = getType("stripe_top");
+    PatternType STRIPE_LEFT = getType("stripe_left");
+    PatternType STRIPE_RIGHT = getType("stripe_right");
+    PatternType STRIPE_CENTER = getType("stripe_center");
+    PatternType STRIPE_MIDDLE = getType("stripe_middle");
+    PatternType STRIPE_DOWNRIGHT = getType("stripe_downright");
+    PatternType STRIPE_DOWNLEFT = getType("stripe_downleft");
+    PatternType SMALL_STRIPES = getType("small_stripes");
+    PatternType CROSS = getType("cross");
+    PatternType STRAIGHT_CROSS = getType("straight_cross");
+    PatternType TRIANGLE_BOTTOM = getType("triangle_bottom");
+    PatternType TRIANGLE_TOP = getType("triangle_top");
+    PatternType TRIANGLES_BOTTOM = getType("triangles_bottom");
+    PatternType TRIANGLES_TOP = getType("triangles_top");
+    PatternType DIAGONAL_LEFT = getType("diagonal_left");
+    PatternType DIAGONAL_UP_RIGHT = getType("diagonal_up_right");
+    PatternType DIAGONAL_UP_LEFT = getType("diagonal_up_left");
+    PatternType DIAGONAL_RIGHT = getType("diagonal_right");
+    PatternType CIRCLE = getType("circle");
+    PatternType RHOMBUS = getType("rhombus");
+    PatternType HALF_VERTICAL = getType("half_vertical");
+    PatternType HALF_HORIZONTAL = getType("half_horizontal");
+    PatternType HALF_VERTICAL_RIGHT = getType("half_vertical_right");
+    PatternType HALF_HORIZONTAL_BOTTOM = getType("half_horizontal_bottom");
+    PatternType BORDER = getType("border");
+    PatternType CURLY_BORDER = getType("curly_border");
+    PatternType CREEPER = getType("creeper");
+    PatternType GRADIENT = getType("gradient");
+    PatternType GRADIENT_UP = getType("gradient_up");
+    PatternType BRICKS = getType("bricks");
+    PatternType SKULL = getType("skull");
+    PatternType FLOWER = getType("flower");
+    PatternType MOJANG = getType("mojang");
+    PatternType GLOBE = getType("globe");
+    PatternType PIGLIN = getType("piglin");
+    PatternType FLOW = getType("flow");
+    PatternType GUSTER = getType("guster");
 
     @Override
     @NotNull
-    public NamespacedKey getKey() {
-        return key;
-    }
+    public NamespacedKey getKey();
 
     /**
      * Returns the identifier used to represent
@@ -85,9 +70,7 @@ public enum PatternType implements Keyed {
      */
     @NotNull
     @Deprecated(forRemoval = true)
-    public String getIdentifier() {
-        return identifier;
-    }
+    public String getIdentifier();
 
     /**
      * Returns the pattern type which matches the passed
@@ -102,6 +85,48 @@ public enum PatternType implements Keyed {
     @Nullable
     @Deprecated(forRemoval = true)
     public static PatternType getByIdentifier(@Nullable String identifier) {
-        return byString.get(identifier);
+        if (identifier == null) {
+            return null;
+        }
+
+        for (PatternType type : Registry.BANNER_PATTERN) {
+            if (identifier.equals(type.getIdentifier())) {
+                return type;
+            }
+        }
+
+        return null;
+    }
+
+    @NotNull
+    private static PatternType getType(@NotNull String key) {
+        NamespacedKey namespacedKey = NamespacedKey.minecraft(key);
+        PatternType type = Registry.BANNER_PATTERN.get(namespacedKey);
+
+        Preconditions.checkNotNull(type, "No Banner Pattern found for %s. This is a bug.", namespacedKey);
+        return type;
+    }
+
+    /**
+     * @param name of the pattern type.
+     * @return the pattern type with the given name.
+     * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
+     */
+    @NotNull
+    @Deprecated(since = "1.21")
+    static PatternType valueOf(@NotNull String name) {
+        PatternType type = Registry.BANNER_PATTERN.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+        Preconditions.checkArgument(type != null, "No pattern type found with the name %s", name);
+        return type;
+    }
+
+    /**
+     * @return an array of all known pattern types.
+     * @deprecated use {@link Registry#iterator()}.
+     */
+    @NotNull
+    @Deprecated(since = "1.21")
+    static PatternType[] values() {
+        return Lists.newArrayList(Registry.BANNER_PATTERN).toArray(new PatternType[0]);
     }
 }
