@@ -27,6 +27,6 @@ public class CraftCrafterView extends CraftInventoryView<CrafterMenu> implements
     public void setSlotDisabled(final int slot, final boolean disabled) {
         Preconditions.checkArgument(slot >= 0 && slot < 9, "Invalid slot index %s for Crafter", slot);
 
-        container.setSlotState(slot, disabled);
+        container.setSlotState(slot, !disabled);
     }
 }
