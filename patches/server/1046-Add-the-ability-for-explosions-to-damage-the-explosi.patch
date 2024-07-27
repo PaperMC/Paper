@@ -9,6 +9,28 @@ to damage the explosion cause (not the default behavior, and previously impossib
 as far as I know). This is done by overloading existing methods with an extra shouldDamageSource
 parameter.
 
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 2766ec28f028c0bd672009928bf64c1a6e5d07d6..2448e2551e59c0a5dc0fe75b39b008b6cf6f0287 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1816,9 +1816,16 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
+         return this.chunkSource;
+     }
+ 
++    // Paper start - Add the ability for explosions to damage the explosion cause
+     @Override
+     public Explosion explode(@Nullable Entity entity, @Nullable DamageSource damageSource, @Nullable ExplosionDamageCalculator behavior, double x, double y, double z, float power, boolean createFire, Level.ExplosionInteraction explosionSourceType, ParticleOptions particle, ParticleOptions emitterParticle, Holder<SoundEvent> soundEvent) {
+-        Explosion explosion = this.explode(entity, damageSource, behavior, x, y, z, power, createFire, explosionSourceType, false, particle, emitterParticle, soundEvent);
++        return this.explode(entity, damageSource, behavior, x, y, z, power, createFire, explosionSourceType, particle, emitterParticle, soundEvent);
++    }
++    // Paper end - Add the ability for explosions to damage the explosion cause
++
++    @Override
++    public Explosion explode(@Nullable Entity entity, @Nullable DamageSource damageSource, @Nullable ExplosionDamageCalculator behavior, double x, double y, double z, float power, boolean createFire, Level.ExplosionInteraction explosionSourceType, ParticleOptions particle, ParticleOptions emitterParticle, Holder<SoundEvent> soundEvent, boolean shouldDamageSource) { // Paper - Add the ability for explosions to damage the explosion cause
++        Explosion explosion = this.explode(entity, damageSource, behavior, x, y, z, power, createFire, explosionSourceType, false, particle, emitterParticle, soundEvent, shouldDamageSource); // Paper - Add the ability for explosions to damage the explosion cause
+         // CraftBukkit start
+         if (explosion.wasCanceled) {
+             return explosion;
 diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
 index 6c66ee69beb55e5c5755bbf4d13c256541ce4468..2482a989b2b0ebcfb30a41cfdc4d579abc4bd70b 100644
 --- a/src/main/java/net/minecraft/world/level/Explosion.java
