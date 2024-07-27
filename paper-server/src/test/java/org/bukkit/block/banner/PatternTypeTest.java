@@ -18,7 +18,7 @@ public class PatternTypeTest extends AbstractTestingBase {
         for (EnumBannerPatternType nms : MinecraftServer.getDefaultRegistryAccess().registryOrThrow(Registries.BANNER_PATTERN)) {
             PatternType bukkit = Registry.BANNER_PATTERN.get(CraftNamespacedKey.fromMinecraft(nms.assetId()));
 
-            assertNotNull(bukkit, "No Bukkit banner for " + nms + " " + nms.toString());
+            assertNotNull(bukkit, "No Bukkit banner pattern for " + nms + " " + nms);
         }
     }
 
@@ -35,7 +35,7 @@ public class PatternTypeTest extends AbstractTestingBase {
                 }
             }
 
-            assertNotNull(found, "No NMS banner for " + bukkit + " " + bukkit.getKey());
+            assertNotNull(found, "No NMS banner pattern for " + bukkit + " " + bukkit.getKey());
         }
     }
 }

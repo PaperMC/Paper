@@ -83,7 +83,8 @@ public class Commodore {
             "org/bukkit/entity/Villager$Profession", "NOP",
             "org/bukkit/entity/Frog$Variant", "NOP",
             "org/bukkit/entity/Cat$Type", "NOP",
-            "org/bukkit/map/MapCursor$Type", "NOP"
+            "org/bukkit/map/MapCursor$Type", "NOP",
+            "org/bukkit/block/banner/PatternType", "NOP"
     );
 
     private static Map<String, RerouteMethodData> createReroutes(Class<?> clazz) {
