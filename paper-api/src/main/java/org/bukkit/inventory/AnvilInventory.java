@@ -23,7 +23,7 @@ public interface AnvilInventory extends Inventory {
      * Get the item cost (in amount) to complete the current repair.
      *
      * @return the amount
-     * @deprecated use {@link AnvilView#getRepairItemCost()}.
+     * @deprecated use {@link AnvilView#getRepairCost()}.
      */
     @Deprecated(forRemoval = true, since = "1.21")
     int getRepairCostAmount();
@@ -32,7 +32,7 @@ public interface AnvilInventory extends Inventory {
      * Set the item cost (in amount) to complete the current repair.
      *
      * @param amount the amount
-     * @deprecated use {@link AnvilView#setRepairItemCost(int)}.
+     * @deprecated use {@link AnvilView#setRepairCost(int)}.
      */
     @Deprecated(forRemoval = true, since = "1.21")
     void setRepairCostAmount(int amount);
