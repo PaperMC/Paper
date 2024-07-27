@@ -1,0 +1,129 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Slqmy <90862990+Slqmy@users.noreply.github.com>
+Date: Sat, 27 Jul 2024 14:12:05 +0100
+Subject: [PATCH] Add the ability for explosions to damage the explosion cause
+
+
+diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
+index 6c66ee69beb55e5c5755bbf4d13c256541ce4468..2482a989b2b0ebcfb30a41cfdc4d579abc4bd70b 100644
+--- a/src/main/java/net/minecraft/world/level/Explosion.java
++++ b/src/main/java/net/minecraft/world/level/Explosion.java
+@@ -401,7 +401,13 @@ public class Explosion {
+         return new Vec3(this.x, this.y, this.z);
+     }
+ 
++    // Paper start - Add the option for explosions to damage the explosion cause
+     public void explode() {
++        this.explode(false);
++    }
++    // Paper end - Add the option for explosions to damage the explosion cause
++
++    public void explode(boolean shouldDamageSource) { // Paper - Add the option for explosions to damage the explosion cause
+         // CraftBukkit start
+         if (this.radius < 0.1F) {
+             return;
+@@ -517,7 +523,7 @@ public class Explosion {
+         int i1 = Mth.floor(this.y + (double) f2 + 1.0D);
+         int j1 = Mth.floor(this.z - (double) f2 - 1.0D);
+         int k1 = Mth.floor(this.z + (double) f2 + 1.0D);
+-        List<Entity> list = this.level.getEntities(this.source, new AABB((double) i, (double) l, (double) j1, (double) j, (double) i1, (double) k1), (com.google.common.base.Predicate<Entity>) entity -> entity.isAlive() && !entity.isSpectator()); // Paper - Fix lag from explosions processing dead entities
++        List<Entity> list = this.level.getEntities(shouldDamageSource ? null : this.source, new AABB((double) i, (double) l, (double) j1, (double) j, (double) i1, (double) k1), (com.google.common.base.Predicate<Entity>) entity -> entity.isAlive() && !entity.isSpectator()); // Paper - Fix lag from explosions processing dead entities // Paper - Add the option for explosions to damage the explosion cause
+         Vec3 vec3d = new Vec3(this.x, this.y, this.z);
+         Iterator iterator = list.iterator();
+ 
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index e2a0487089eb5a7bdc1433e4c75f69d8e9f9d5f9..c54f816410eef0281f7b5145048d5e1b7d5dcbe5 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -1476,7 +1476,33 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+         return this.explode(entity, damageSource, behavior, x, y, z, power, createFire, explosionSourceType, true, particle, emitterParticle, soundEvent);
+     }
+ 
++    // Paper start - Add the ability for explosions to damage the explosion cause
++    public Explosion explode(@Nullable Entity entity, double x, double y, double z, float power, boolean createFire, Level.ExplosionInteraction explosionSourceType, boolean shouldDamageSource) {
++        return this.explode(entity, Explosion.getDefaultDamageSource(this, entity), (ExplosionDamageCalculator) null, x, y, z, power, createFire, explosionSourceType, ParticleTypes.EXPLOSION, ParticleTypes.EXPLOSION_EMITTER, SoundEvents.GENERIC_EXPLODE, shouldDamageSource);
++    }
++
++    public Explosion explode(@Nullable Entity entity, @Nullable DamageSource damageSource, @Nullable ExplosionDamageCalculator behavior, Vec3 pos, float power, boolean createFire, Level.ExplosionInteraction explosionSourceType, boolean shouldDamageSource) {
++        return this.explode(entity, damageSource, behavior, pos.x(), pos.y(), pos.z(), power, createFire, explosionSourceType, ParticleTypes.EXPLOSION, ParticleTypes.EXPLOSION_EMITTER, SoundEvents.GENERIC_EXPLODE, shouldDamageSource);
++    }
++
++    public Explosion explode(@Nullable Entity entity, @Nullable DamageSource damageSource, @Nullable ExplosionDamageCalculator behavior, double x, double y, double z, float power, boolean createFire, Level.ExplosionInteraction explosionSourceType, boolean shouldDamageSource) {
++        return this.explode(entity, damageSource, behavior, x, y, z, power, createFire, explosionSourceType, ParticleTypes.EXPLOSION, ParticleTypes.EXPLOSION_EMITTER, SoundEvents.GENERIC_EXPLODE, shouldDamageSource);
++    }
++
++    public Explosion explode(@Nullable Entity entity, double x, double y, double z, float power, Level.ExplosionInteraction explosionSourceType, boolean shouldDamageSource) {
++        return this.explode(entity, Explosion.getDefaultDamageSource(this, entity), (ExplosionDamageCalculator) null, x, y, z, power, false, explosionSourceType, ParticleTypes.EXPLOSION, ParticleTypes.EXPLOSION_EMITTER, SoundEvents.GENERIC_EXPLODE, shouldDamageSource);
++    }
++
++    public Explosion explode(@Nullable Entity entity, @Nullable DamageSource damageSource, @Nullable ExplosionDamageCalculator behavior, double x, double y, double z, float power, boolean createFire, Level.ExplosionInteraction explosionSourceType, ParticleOptions particle, ParticleOptions emitterParticle, Holder<SoundEvent> soundEvent, boolean shouldDamageSource) {
++        return this.explode(entity, damageSource, behavior, x, y, z, power, createFire, explosionSourceType, true, particle, emitterParticle, soundEvent, shouldDamageSource);
++    }
++
+     public Explosion explode(@Nullable Entity entity, @Nullable DamageSource damageSource, @Nullable ExplosionDamageCalculator behavior, double x, double y, double z, float power, boolean createFire, Level.ExplosionInteraction explosionSourceType, boolean particles, ParticleOptions particle, ParticleOptions emitterParticle, Holder<SoundEvent> soundEvent) {
++        return this.explode(entity, damageSource, behavior, x, y, z, power, createFire, explosionSourceType, particles, particle, emitterParticle, soundEvent, false);
++    }
++    // Paper end - Add the ability for explosions to damage the explosion cause
++
++    public Explosion explode(@Nullable Entity entity, @Nullable DamageSource damageSource, @Nullable ExplosionDamageCalculator behavior, double x, double y, double z, float power, boolean createFire, Level.ExplosionInteraction explosionSourceType, boolean particles, ParticleOptions particle, ParticleOptions emitterParticle, Holder<SoundEvent> soundEvent, boolean shouldDamageSource) { // Paper - Add the ability for explosions to damage the explosion cause
+         Explosion.BlockInteraction explosion_effect;
+ 
+         switch (explosionSourceType.ordinal()) {
+@@ -1507,7 +1533,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+         Explosion.BlockInteraction explosion_effect1 = explosion_effect;
+         Explosion explosion = new Explosion(this, entity, damageSource, behavior, x, y, z, power, createFire, explosion_effect1, particle, emitterParticle, soundEvent);
+ 
+-        explosion.explode();
++        explosion.explode(shouldDamageSource); // Paper - Add the ability for explosions to damage the explosion cause
+         explosion.finalizeExplosion(particles);
+         return explosion;
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 362ca138a5cd5ad19f1300015c2571794adc3649..b5261834534405327251157ffff51cdb1295ef90 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -891,7 +891,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+     }
+ 
+     @Override
+-    public boolean createExplosion(double x, double y, double z, float power, boolean setFire, boolean breakBlocks, Entity source) {
++    public boolean createExplosion(double x, double y, double z, float power, boolean setFire, boolean breakBlocks, Entity source, boolean shouldDamageSource) { // Paper - Add the option for explosions to damage the explosion cause
+         net.minecraft.world.level.Level.ExplosionInteraction explosionType;
+         if (!breakBlocks) {
+             explosionType = net.minecraft.world.level.Level.ExplosionInteraction.NONE; // Don't break blocks
+@@ -901,7 +901,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+             explosionType = net.minecraft.world.level.Level.ExplosionInteraction.MOB; // Respect mobGriefing gamerule
+         }
+ 
+-        return !this.world.explode(source == null ? null : ((CraftEntity) source).getHandle(), x, y, z, power, setFire, explosionType).wasCanceled;
++        return !this.world.explode(source == null ? null : ((CraftEntity) source).getHandle(), x, y, z, power, setFire, explosionType, shouldDamageSource).wasCanceled; // Paper - Add the option for explosions to damage the explosion cause
+     }
+     // Paper start
+     @Override
+@@ -933,6 +933,26 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         return this.createExplosion(loc.getX(), loc.getY(), loc.getZ(), power, setFire, breakBlocks, source);
+     }
+ 
++    // Paper start - Add the option for explosions to damage the explosion cause
++    @Override
++    public boolean createExplosion(Location loc, float power, boolean setFire, boolean breakBlocks, Entity source, boolean shouldDamageSource) {
++        Preconditions.checkArgument(loc != null, "Location is null");
++        Preconditions.checkArgument(this.equals(loc.getWorld()), "Location not in world");
++
++        return this.createExplosion(loc.getX(), loc.getY(), loc.getZ(), power, setFire, breakBlocks, source);
++    }
++
++    @Override
++    public boolean createExplosion(Entity source, Location loc, float power, boolean setFire, boolean breakBlocks, boolean shouldDamageSource) {
++        return !world.explode(source != null ? ((org.bukkit.craftbukkit.entity.CraftEntity) source).getHandle() : null, loc.getX(), loc.getY(), loc.getZ(), power, setFire, breakBlocks ? net.minecraft.world.level.Level.ExplosionInteraction.MOB : net.minecraft.world.level.Level.ExplosionInteraction.NONE, shouldDamageSource).wasCanceled;
++    }
++
++    @Override
++    public boolean createExplosion(double x, double y, double z, float power, boolean setFire, boolean breakBlocks, Entity source) {
++        return this.createExplosion(x, y, z, power, setFire, breakBlocks, source, false);
++    }
++    // Paper end - Add the option for explosions to damage the explosion cause
++
+     @Override
+     public Environment getEnvironment() {
+         return this.environment;
