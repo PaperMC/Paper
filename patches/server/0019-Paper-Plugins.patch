@@ -1732,7 +1732,7 @@ index 0000000000000000000000000000000000000000..2412155ddfd559023f42ff534b8f06a5
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/BootstrapMetaDependencyTree.java b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/BootstrapMetaDependencyTree.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..74bf07be300d4893402614c9e9d9ac97dc574ac7
+index 0000000000000000000000000000000000000000..a32ed562f7fda4c2aeec5d1cc6188f21657edad0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/entrypoint/dependency/BootstrapMetaDependencyTree.java
 @@ -0,0 +1,44 @@
@@ -1758,7 +1758,7 @@ index 0000000000000000000000000000000000000000..74bf07be300d4893402614c9e9d9ac97
 +            throw new IllegalStateException("Only paper plugins can have a bootstrapper!");
 +        }
 +        // Build a validated provider's dependencies into the graph
-+        for (String dependency : paperPluginMeta.getBoostrapDependencies().keySet()) {
++        for (String dependency : paperPluginMeta.getBootstrapDependencies().keySet()) {
 +            this.graph.putEdge(identifier, dependency);
 +        }
 +    }
@@ -1770,7 +1770,7 @@ index 0000000000000000000000000000000000000000..74bf07be300d4893402614c9e9d9ac97
 +        }
 +
 +        // Build a validated provider's dependencies into the graph
-+        for (String dependency : paperPluginMeta.getBoostrapDependencies().keySet()) {
++        for (String dependency : paperPluginMeta.getBootstrapDependencies().keySet()) {
 +            this.graph.removeEdge(identifier, dependency);
 +        }
 +    }
@@ -4874,7 +4874,7 @@ index 0000000000000000000000000000000000000000..e3430f535e8e9c3b8b44bf2daece8c47
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java b/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c685871155c8dff1d57ff151d7a5ec70350e5390
+index 0000000000000000000000000000000000000000..d3b3a8baca013909fa9c6204d964d7d7efeb2719
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/configuration/PaperPluginMeta.java
 @@ -0,0 +1,271 @@
@@ -5087,7 +5087,7 @@ index 0000000000000000000000000000000000000000..c685871155c8dff1d57ff151d7a5ec70
 +        return this.dependencies.getOrDefault(PluginDependencyLifeCycle.SERVER, Map.of());
 +    }
 +
-+    public Map<String, DependencyConfiguration> getBoostrapDependencies() {
++    public Map<String, DependencyConfiguration> getBootstrapDependencies() {
 +        return this.dependencies.getOrDefault(PluginDependencyLifeCycle.BOOTSTRAP, Map.of());
 +    }
 +
@@ -6020,7 +6020,7 @@ index 0000000000000000000000000000000000000000..32f230d66f6953520b59ccbf3079c5a6
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperBootstrapOrderConfiguration.java b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperBootstrapOrderConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e34656fb0573ff6d826eb4d4dcfd517e01589206
+index 0000000000000000000000000000000000000000..7750741b6a4a774986d833919510770b593ec7b9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperBootstrapOrderConfiguration.java
 @@ -0,0 +1,50 @@
@@ -6045,7 +6045,7 @@ index 0000000000000000000000000000000000000000..e34656fb0573ff6d826eb4d4dcfd517e
 +    public PaperBootstrapOrderConfiguration(PaperPluginMeta paperPluginMeta) {
 +        this.paperPluginMeta = paperPluginMeta;
 +
-+        for (Map.Entry<String, DependencyConfiguration> configuration : paperPluginMeta.getBoostrapDependencies().entrySet()) {
++        for (Map.Entry<String, DependencyConfiguration> configuration : paperPluginMeta.getBootstrapDependencies().entrySet()) {
 +            String name = configuration.getKey();
 +            DependencyConfiguration dependencyConfiguration = configuration.getValue();
 +
@@ -6126,7 +6126,7 @@ index 0000000000000000000000000000000000000000..b7e8a5ba375a558e0442aa9facf96954
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f2bc4d0b55d4c9877a442529e0b144656497dae6
+index 0000000000000000000000000000000000000000..55a6898e95704cddafda1ca5dc0951c7102fe10b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/provider/type/paper/PaperPluginParent.java
 @@ -0,0 +1,264 @@
@@ -6229,7 +6229,7 @@ index 0000000000000000000000000000000000000000..f2bc4d0b55d4c9877a442529e0b14465
 +        @Override
 +        public List<String> validateDependencies(@NotNull DependencyContext context) {
 +            List<String> missingDependencies = new ArrayList<>();
-+            for (Map.Entry<String, DependencyConfiguration> configuration : this.getMeta().getBoostrapDependencies().entrySet()) {
++            for (Map.Entry<String, DependencyConfiguration> configuration : this.getMeta().getBootstrapDependencies().entrySet()) {
 +                String dependency = configuration.getKey();
 +                if (configuration.getValue().required() && !context.hasDependency(dependency)) {
 +                    missingDependencies.add(dependency);
