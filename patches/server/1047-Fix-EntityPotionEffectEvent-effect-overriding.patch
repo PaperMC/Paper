@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TonytheMacaroni <tonythemacaroni123@gmail.com>
+Date: Sun, 28 Jul 2024 17:45:03 -0400
+Subject: [PATCH] Fix EntityPotionEffectEvent effect overriding
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index fe435d4a387bb28be6831cec0c8bb0a7c8b603a4..715d7dcda5a149ae26b4982122db5ee297ee421f 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -1159,10 +1159,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+             boolean flag = false;
+ 
+             // CraftBukkit start
+-            boolean override = false;
+-            if (mobeffect1 != null) {
+-                override = new MobEffectInstance(mobeffect1).update(mobeffect);
+-            }
++            boolean override = false; // Paper start - properly override effects
+ 
+             if (fireEvent) { // Paper - Don't fire sync event during generation
+             EntityPotionEffectEvent event = CraftEventFactory.callEntityPotionEffectChangeEvent(this, mobeffect1, mobeffect, cause, override);
+@@ -1179,8 +1176,12 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                 flag = true;
+                 mobeffect.onEffectAdded(this);
+                 // CraftBukkit start
+-            } else if (override) { // Paper - Don't fire sync event during generation
+-                mobeffect1.update(mobeffect);
++                // Paper start - properly override effects
++            } else if (override) {
++                forceAddEffect(mobeffect, entity);
++                flag = true;
++            } else if (mobeffect1.update(mobeffect)) { // Paper - Don't fire sync event during generation
++                // Paper end - properly override effects
+                 this.onEffectUpdated(mobeffect1, true, entity);
+                 // CraftBukkit end
+                 flag = true;
