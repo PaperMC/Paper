@@ -25193,7 +25193,7 @@ index 3dc1daa3c6a04d3ff1a2353773b465fc380994a2..3575782f13a7f3c52e64dc5046803305
      }
  }
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 60f678c26fb5144386d8697ddfd5b6d841563b6f..17fafa62f21e505f9f77cf486f7f766a404f7c31 100644
+index 60f678c26fb5144386d8697ddfd5b6d841563b6f..9ccb3ffc375298fda4dca97803e65e39df8493eb 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -46,7 +46,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
@@ -25490,7 +25490,7 @@ index 60f678c26fb5144386d8697ddfd5b6d841563b6f..17fafa62f21e505f9f77cf486f7f766a
          try (co.aikar.timings.Timing timed = level.timings.chunkSaveData.startTiming()) { // Paper - Timings
          this.chunkMap.saveAllChunks(flush);
          } // Paper - Timings
-@@ -361,12 +368,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -361,16 +368,12 @@ public class ServerChunkCache extends ChunkSource {
      }
  
      public void close(boolean save) throws IOException {
@@ -25504,7 +25504,12 @@ index 60f678c26fb5144386d8697ddfd5b6d841563b6f..17fafa62f21e505f9f77cf486f7f766a
      }
  
      // CraftBukkit start - modelled on below
-@@ -394,6 +396,7 @@ public class ServerChunkCache extends ChunkSource {
+     public void purgeUnload() {
++        if (true) return; // Paper - rewrite chunk system
+         this.level.getProfiler().push("purge");
+         this.distanceManager.purgeStaleTickets();
+         this.runDistanceManagerUpdates();
+@@ -394,6 +397,7 @@ public class ServerChunkCache extends ChunkSource {
          this.level.getProfiler().popPush("chunks");
          if (tickChunks) {
              this.level.timings.chunks.startTiming(); // Paper - timings
@@ -25512,7 +25517,7 @@ index 60f678c26fb5144386d8697ddfd5b6d841563b6f..17fafa62f21e505f9f77cf486f7f766a
              this.tickChunks();
              this.level.timings.chunks.stopTiming(); // Paper - timings
              this.chunkMap.tick();
-@@ -408,6 +411,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -408,6 +412,7 @@ public class ServerChunkCache extends ChunkSource {
      }
  
      private void tickChunks() {
@@ -25520,7 +25525,7 @@ index 60f678c26fb5144386d8697ddfd5b6d841563b6f..17fafa62f21e505f9f77cf486f7f766a
          long i = this.level.getGameTime();
          long j = i - this.lastInhabitedUpdate;
  
-@@ -417,18 +421,29 @@ public class ServerChunkCache extends ChunkSource {
+@@ -417,18 +422,29 @@ public class ServerChunkCache extends ChunkSource {
  
              gameprofilerfiller.push("pollingChunks");
              gameprofilerfiller.push("filteringLoadedChunks");
@@ -25558,7 +25563,7 @@ index 60f678c26fb5144386d8697ddfd5b6d841563b6f..17fafa62f21e505f9f77cf486f7f766a
  
              if (this.level.tickRateManager().runsNormally()) {
                  gameprofilerfiller.popPush("naturalSpawnCount");
-@@ -460,14 +475,19 @@ public class ServerChunkCache extends ChunkSource {
+@@ -460,14 +476,19 @@ public class ServerChunkCache extends ChunkSource {
                      LevelChunk chunk1 = chunkproviderserver_a.chunk;
                      ChunkPos chunkcoordintpair = chunk1.getPos();
  
@@ -25580,7 +25585,7 @@ index 60f678c26fb5144386d8697ddfd5b6d841563b6f..17fafa62f21e505f9f77cf486f7f766a
                          }
                      }
                  }
-@@ -482,22 +502,35 @@ public class ServerChunkCache extends ChunkSource {
+@@ -482,22 +503,35 @@ public class ServerChunkCache extends ChunkSource {
              }
  
              gameprofilerfiller.popPush("broadcast");
@@ -25625,7 +25630,7 @@ index 60f678c26fb5144386d8697ddfd5b6d841563b6f..17fafa62f21e505f9f77cf486f7f766a
  
      }
  
-@@ -591,6 +624,12 @@ public class ServerChunkCache extends ChunkSource {
+@@ -591,6 +625,12 @@ public class ServerChunkCache extends ChunkSource {
          this.chunkMap.setServerViewDistance(watchDistance);
      }
  
@@ -25638,7 +25643,7 @@ index 60f678c26fb5144386d8697ddfd5b6d841563b6f..17fafa62f21e505f9f77cf486f7f766a
      public void setSimulationDistance(int simulationDistance) {
          this.distanceManager.updateSimulationDistance(simulationDistance);
      }
-@@ -669,21 +708,19 @@ public class ServerChunkCache extends ChunkSource {
+@@ -669,21 +709,19 @@ public class ServerChunkCache extends ChunkSource {
          @Override
          // CraftBukkit start - process pending Chunk loadCallback() and unloadCallback() after each run task
          public boolean pollTask() {
