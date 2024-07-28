@@ -17,6 +17,19 @@ index 6ad7c34513034c87059f8a0790aea3231dd0d2a9..188b1844ca6ee5a97f7a588121255417
              if (biomeProvider == null && gen != null) {
                  biomeProvider = gen.getDefaultBiomeProvider(worldInfo);
              }
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 3c947dc0aea06d66a00aeca51355ea41e8d98f88..60a77bd04489ee592ec61d3d739cb3062c1eefbb 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -369,7 +369,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         this.serverLevelData.setWorld(this);
+ 
+         if (biomeProvider != null) {
+-            BiomeSource worldChunkManager = new CustomWorldChunkManager(this.getWorld(), biomeProvider, this.server.registryAccess().registryOrThrow(Registries.BIOME));
++            BiomeSource worldChunkManager = new CustomWorldChunkManager(this.getWorld(), biomeProvider, this.server.registryAccess().registryOrThrow(Registries.BIOME), chunkgenerator.getBiomeSource()); // Paper - add vanillaBiomeProvider
+             if (chunkgenerator instanceof NoiseBasedChunkGenerator cga) {
+                 chunkgenerator = new NoiseBasedChunkGenerator(worldChunkManager, cga.settings);
+             } else if (chunkgenerator instanceof FlatLevelSource cpf) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 index 9707b24da58fdc56732d6372038055e8676e9e0d..05dbcff299d42dc05e3a8db0265fb607197731e7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
@@ -31,10 +44,10 @@ index 9707b24da58fdc56732d6372038055e8676e9e0d..05dbcff299d42dc05e3a8db0265fb607
              biomeProvider = generator.getDefaultBiomeProvider(worldInfo);
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 0c2734c1d06b6c5dff383f9c6139c0389f220a76..8670f660d599b2265b4b7e56102b7cfc0c58bd72 100644
+index 0c2734c1d06b6c5dff383f9c6139c0389f220a76..110a5d92d6154bc39c1916006a5cb74798092445 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -212,6 +212,35 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -212,6 +212,39 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      public int getPlayerCount() {
          return world.players().size();
      }
@@ -44,21 +57,25 @@ index 0c2734c1d06b6c5dff383f9c6139c0389f220a76..8670f660d599b2265b4b7e56102b7cfc
 +        net.minecraft.server.level.ServerChunkCache serverCache = this.getHandle().chunkSource;
 +
 +        final net.minecraft.world.level.chunk.ChunkGenerator gen = serverCache.getGenerator();
-+        final net.minecraft.world.level.biome.BiomeSource biomeSource;
++        net.minecraft.world.level.biome.BiomeSource biomeSource;
 +        if (gen instanceof org.bukkit.craftbukkit.generator.CustomChunkGenerator custom) {
 +            biomeSource = custom.getDelegate().getBiomeSource();
 +        } else {
 +            biomeSource = gen.getBiomeSource();
 +        }
++        if (biomeSource instanceof org.bukkit.craftbukkit.generator.CustomWorldChunkManager customBiomeSource) {
++            biomeSource = customBiomeSource.vanillaBiomeSource;
++        }
++        final net.minecraft.world.level.biome.BiomeSource finalBiomeSource = biomeSource;
 +        final net.minecraft.world.level.biome.Climate.Sampler sampler = serverCache.randomState().sampler();
 +
-+        final List<Biome> possibleBiomes = biomeSource.possibleBiomes().stream()
++        final List<Biome> possibleBiomes = finalBiomeSource.possibleBiomes().stream()
 +            .map(CraftBiome::minecraftHolderToBukkit)
 +            .toList();
 +        return new BiomeProvider() {
 +            @Override
 +            public Biome getBiome(final org.bukkit.generator.WorldInfo worldInfo, final int x, final int y, final int z) {
-+                return CraftBiome.minecraftHolderToBukkit(biomeSource.getNoiseBiome(x >> 2, y >> 2, z >> 2, sampler));
++                return CraftBiome.minecraftHolderToBukkit(finalBiomeSource.getNoiseBiome(x >> 2, y >> 2, z >> 2, sampler));
 +            }
 +
 +            @Override
@@ -141,3 +158,20 @@ index 5d655d6cd3e23e0287069f8bdf77601487e862fd..cf57c6e9ce63f7b1d95d91ead2453409
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CustomWorldChunkManager.java b/src/main/java/org/bukkit/craftbukkit/generator/CustomWorldChunkManager.java
+index 0063c4c17d05a77adf81164fb9307a29860cbe12..0bac128d6faff0063b03f595b82deea78d1ae161 100644
+--- a/src/main/java/org/bukkit/craftbukkit/generator/CustomWorldChunkManager.java
++++ b/src/main/java/org/bukkit/craftbukkit/generator/CustomWorldChunkManager.java
+@@ -31,7 +31,11 @@ public class CustomWorldChunkManager extends BiomeSource {
+         return biomeBases;
+     }
+ 
+-    public CustomWorldChunkManager(WorldInfo worldInfo, BiomeProvider biomeProvider, Registry<net.minecraft.world.level.biome.Biome> registry) {
++    // Paper start - add vanillaBiomeProvider
++    public final BiomeSource vanillaBiomeSource;
++    public CustomWorldChunkManager(WorldInfo worldInfo, BiomeProvider biomeProvider, Registry<net.minecraft.world.level.biome.Biome> registry, BiomeSource vanillaBiomeSource) {
++        this.vanillaBiomeSource = vanillaBiomeSource;
++        // Paper end - add vanillaBiomeProvider
+         this.worldInfo = worldInfo;
+         this.biomeProvider = biomeProvider;
+         this.registry = registry;
