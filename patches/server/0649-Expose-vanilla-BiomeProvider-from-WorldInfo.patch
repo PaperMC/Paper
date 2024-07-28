@@ -31,10 +31,10 @@ index 9707b24da58fdc56732d6372038055e8676e9e0d..05dbcff299d42dc05e3a8db0265fb607
              biomeProvider = generator.getDefaultBiomeProvider(worldInfo);
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 0c2734c1d06b6c5dff383f9c6139c0389f220a76..da556cdbd7eecfd0743924d9ab79142c41f08d0a 100644
+index 0c2734c1d06b6c5dff383f9c6139c0389f220a76..8670f660d599b2265b4b7e56102b7cfc0c58bd72 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -212,6 +212,29 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -212,6 +212,35 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      public int getPlayerCount() {
          return world.players().size();
      }
@@ -43,16 +43,22 @@ index 0c2734c1d06b6c5dff383f9c6139c0389f220a76..da556cdbd7eecfd0743924d9ab79142c
 +    public BiomeProvider vanillaBiomeProvider() {
 +        net.minecraft.server.level.ServerChunkCache serverCache = this.getHandle().chunkSource;
 +
-+        final net.minecraft.world.level.biome.BiomeSource biomeSource = serverCache.getGenerator().getBiomeSource();
++        final net.minecraft.world.level.chunk.ChunkGenerator gen = serverCache.getGenerator();
++        final net.minecraft.world.level.biome.BiomeSource biomeSource;
++        if (gen instanceof org.bukkit.craftbukkit.generator.CustomChunkGenerator custom) {
++            biomeSource = custom.getDelegate().getBiomeSource();
++        } else {
++            biomeSource = gen.getBiomeSource();
++        }
 +        final net.minecraft.world.level.biome.Climate.Sampler sampler = serverCache.randomState().sampler();
 +
 +        final List<Biome> possibleBiomes = biomeSource.possibleBiomes().stream()
-+            .map(biome -> org.bukkit.craftbukkit.block.CraftBiome.minecraftHolderToBukkit(biome))
++            .map(CraftBiome::minecraftHolderToBukkit)
 +            .toList();
 +        return new BiomeProvider() {
 +            @Override
 +            public Biome getBiome(final org.bukkit.generator.WorldInfo worldInfo, final int x, final int y, final int z) {
-+                return org.bukkit.craftbukkit.block.CraftBiome.minecraftHolderToBukkit(biomeSource.getNoiseBiome(x >> 2, y >> 2, z >> 2, sampler));
++                return CraftBiome.minecraftHolderToBukkit(biomeSource.getNoiseBiome(x >> 2, y >> 2, z >> 2, sampler));
 +            }
 +
 +            @Override
