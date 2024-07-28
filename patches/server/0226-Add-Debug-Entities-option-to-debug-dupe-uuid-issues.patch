@@ -4,27 +4,6 @@ Date: Sat, 21 Jul 2018 08:25:40 -0400
 Subject: [PATCH] Add Debug Entities option to debug dupe uuid issues
 
 
-diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 63bcd7698fdb86366441dacedbb616771f6b1a3d..a58a68220e077ce23c20cf61d63f51183df1dfc9 100644
---- a/src/main/java/net/minecraft/server/level/ChunkMap.java
-+++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -1254,6 +1254,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-                 } else {
-                     ChunkMap.TrackedEntity playerchunkmap_entitytracker = new ChunkMap.TrackedEntity(entity, i, j, entitytypes.trackDeltas());
- 
-+                    entity.tracker = playerchunkmap_entitytracker; // Paper - Fast access to tracker
-                     this.entityMap.put(entity.getId(), playerchunkmap_entitytracker);
-                     playerchunkmap_entitytracker.updatePlayers(this.level.players());
-                     if (entity instanceof ServerPlayer) {
-@@ -1294,7 +1295,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         if (playerchunkmap_entitytracker1 != null) {
-             playerchunkmap_entitytracker1.broadcastRemoved();
-         }
--
-+        entity.tracker = null; // Paper - We're no longer tracked
-     }
- 
-     protected void tick() {
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
 index 4f777c9d8c3052f68bc0465c8a7386b8fb486c83..e9d08662c065d04a67918f0aa2cd4fde5798f2a6 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
@@ -42,18 +21,6 @@ index 4f777c9d8c3052f68bc0465c8a7386b8fb486c83..e9d08662c065d04a67918f0aa2cd4fde
          if (entity.isRemoved()) {
              // WorldServer.LOGGER.warn("Tried to add entity {} but it was marked as removed already", EntityTypes.getKey(entity.getType())); // CraftBukkit
              return false;
-diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index f431c5a17bfc3bdf2a464470af4ec5e226b0d13e..131eda47e7a9f90a4057607870acbcb8fecfbf0b 100644
---- a/src/main/java/net/minecraft/world/entity/Entity.java
-+++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -250,6 +250,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
- 
-     private CraftEntity bukkitEntity;
- 
-+    public @org.jetbrains.annotations.Nullable net.minecraft.server.level.ChunkMap.TrackedEntity tracker; // Paper
-     public CraftEntity getBukkitEntity() {
-         if (this.bukkitEntity == null) {
-             this.bukkitEntity = CraftEntity.getEntity(this.level.getCraftServer(), this);
 diff --git a/src/main/java/net/minecraft/world/level/entity/EntityLookup.java b/src/main/java/net/minecraft/world/level/entity/EntityLookup.java
 index 38df704dca30ef08f4d0831dc1cc48c6d6f71a4d..ed6aea7a38ef6e80c300ff9b012dcdbc390ad2c7 100644
 --- a/src/main/java/net/minecraft/world/level/entity/EntityLookup.java
