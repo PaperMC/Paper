@@ -1508,10 +1508,10 @@ index 0000000000000000000000000000000000000000..c59bbd90fdf04db837366218b312e7fb
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitBrigForwardingMap.java b/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitBrigForwardingMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f0cc27640bb3db275295a298d608c9d9f88df617
+index 0000000000000000000000000000000000000000..46213c0d7ea777f829d6da6ea4ebe2620d5dce8c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitBrigForwardingMap.java
-@@ -0,0 +1,332 @@
+@@ -0,0 +1,338 @@
 +package io.papermc.paper.command.brigadier.bukkit;
 +
 +import com.google.common.collect.Iterators;
@@ -1534,6 +1534,7 @@ index 0000000000000000000000000000000000000000..f0cc27640bb3db275295a298d608c9d9
 +import java.util.function.Consumer;
 +import java.util.stream.Stream;
 +import org.bukkit.command.Command;
++import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
@@ -1604,12 +1605,17 @@ index 0000000000000000000000000000000000000000..f0cc27640bb3db275295a298d608c9d9
 +        return PaperBrigadier.wrapNode(node);
 +    }
 +
++    @SuppressWarnings({"unchecked", "rawtypes"})
 +    @Nullable
 +    @Override
 +    public Command put(String key, Command value) {
 +        Command old = this.get(key);
 +        this.getDispatcher().getRoot().removeCommand(key); // Override previous command
-+        this.getDispatcher().getRoot().addChild(BukkitCommandNode.of(key, value));
++        if (value instanceof VanillaCommandWrapper wrapper) {
++            this.getDispatcher().getRoot().addChild((CommandNode) wrapper.vanillaCommand);
++        } else {
++            this.getDispatcher().getRoot().addChild(BukkitCommandNode.of(key, value));
++        }
 +        return old;
 +    }
 +
