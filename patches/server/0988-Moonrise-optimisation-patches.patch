@@ -343,10 +343,63 @@ index da323a1105347d5cf4b946df10ded78a953236f2..0abba00741b39b69a7f167e5d2670f25
  
      private ChunkSystem() {}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/common/util/TickThread.java b/src/main/java/ca/spottedleaf/moonrise/common/util/TickThread.java
-index 7deb341b7e2b4592ae3f88733d6cacf6e58764e4..b3bac1beeb0b4be8e110a61acf46740d556801ef 100644
+index 7deb341b7e2b4592ae3f88733d6cacf6e58764e4..11b7f15755dde766140c29bedca456c80d53293f 100644
 --- a/src/main/java/ca/spottedleaf/moonrise/common/util/TickThread.java
 +++ b/src/main/java/ca/spottedleaf/moonrise/common/util/TickThread.java
-@@ -90,7 +90,7 @@ public class TickThread extends Thread {
+@@ -1,9 +1,9 @@
+ package ca.spottedleaf.moonrise.common.util;
+ 
+ import net.minecraft.core.BlockPos;
+-import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.level.ChunkPos;
++import net.minecraft.world.level.Level;
+ import net.minecraft.world.phys.AABB;
+ import net.minecraft.world.phys.Vec3;
+ import org.slf4j.Logger;
+@@ -26,21 +26,21 @@ public class TickThread extends Thread {
+         }
+     }
+ 
+-    public static void ensureTickThread(final ServerLevel world, final BlockPos pos, final String reason) {
++    public static void ensureTickThread(final Level world, final BlockPos pos, final String reason) {
+         if (!isTickThreadFor(world, pos)) {
+             LOGGER.error("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable());
+             throw new IllegalStateException(reason);
+         }
+     }
+ 
+-    public static void ensureTickThread(final ServerLevel world, final ChunkPos pos, final String reason) {
++    public static void ensureTickThread(final Level world, final ChunkPos pos, final String reason) {
+         if (!isTickThreadFor(world, pos)) {
+             LOGGER.error("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable());
+             throw new IllegalStateException(reason);
+         }
+     }
+ 
+-    public static void ensureTickThread(final ServerLevel world, final int chunkX, final int chunkZ, final String reason) {
++    public static void ensureTickThread(final Level world, final int chunkX, final int chunkZ, final String reason) {
+         if (!isTickThreadFor(world, chunkX, chunkZ)) {
+             LOGGER.error("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable());
+             throw new IllegalStateException(reason);
+@@ -54,14 +54,14 @@ public class TickThread extends Thread {
+         }
+     }
+ 
+-    public static void ensureTickThread(final ServerLevel world, final AABB aabb, final String reason) {
++    public static void ensureTickThread(final Level world, final AABB aabb, final String reason) {
+         if (!isTickThreadFor(world, aabb)) {
+             LOGGER.error("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable());
+             throw new IllegalStateException(reason);
+         }
+     }
+ 
+-    public static void ensureTickThread(final ServerLevel world, final double blockX, final double blockZ, final String reason) {
++    public static void ensureTickThread(final Level world, final double blockX, final double blockZ, final String reason) {
+         if (!isTickThreadFor(world, blockX, blockZ)) {
+             LOGGER.error("Thread " + Thread.currentThread().getName() + " failed main thread check: " + reason, new Throwable());
+             throw new IllegalStateException(reason);
+@@ -90,46 +90,46 @@ public class TickThread extends Thread {
      }
  
      public static boolean isTickThread() {
@@ -355,6 +408,54 @@ index 7deb341b7e2b4592ae3f88733d6cacf6e58764e4..b3bac1beeb0b4be8e110a61acf46740d
      }
  
      public static boolean isShutdownThread() {
+         return false;
+     }
+ 
+-    public static boolean isTickThreadFor(final ServerLevel world, final BlockPos pos) {
++    public static boolean isTickThreadFor(final Level world, final BlockPos pos) {
+         return isTickThread();
+     }
+ 
+-    public static boolean isTickThreadFor(final ServerLevel world, final ChunkPos pos) {
++    public static boolean isTickThreadFor(final Level world, final ChunkPos pos) {
+         return isTickThread();
+     }
+ 
+-    public static boolean isTickThreadFor(final ServerLevel world, final Vec3 pos) {
++    public static boolean isTickThreadFor(final Level world, final Vec3 pos) {
+         return isTickThread();
+     }
+ 
+-    public static boolean isTickThreadFor(final ServerLevel world, final int chunkX, final int chunkZ) {
++    public static boolean isTickThreadFor(final Level world, final int chunkX, final int chunkZ) {
+         return isTickThread();
+     }
+ 
+-    public static boolean isTickThreadFor(final ServerLevel world, final AABB aabb) {
++    public static boolean isTickThreadFor(final Level world, final AABB aabb) {
+         return isTickThread();
+     }
+ 
+-    public static boolean isTickThreadFor(final ServerLevel world, final double blockX, final double blockZ) {
++    public static boolean isTickThreadFor(final Level world, final double blockX, final double blockZ) {
+         return isTickThread();
+     }
+ 
+-    public static boolean isTickThreadFor(final ServerLevel world, final Vec3 position, final Vec3 deltaMovement, final int buffer) {
++    public static boolean isTickThreadFor(final Level world, final Vec3 position, final Vec3 deltaMovement, final int buffer) {
+         return isTickThread();
+     }
+ 
+-    public static boolean isTickThreadFor(final ServerLevel world, final int fromChunkX, final int fromChunkZ, final int toChunkX, final int toChunkZ) {
++    public static boolean isTickThreadFor(final Level world, final int fromChunkX, final int fromChunkZ, final int toChunkX, final int toChunkZ) {
+         return isTickThread();
+     }
+ 
+-    public static boolean isTickThreadFor(final ServerLevel world, final int chunkX, final int chunkZ, final int radius) {
++    public static boolean isTickThreadFor(final Level world, final int chunkX, final int chunkZ, final int radius) {
+         return isTickThread();
+     }
+ 
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/block_counting/BlockCountingBitStorage.java b/src/main/java/ca/spottedleaf/moonrise/patches/block_counting/BlockCountingBitStorage.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..aef4fc0d3c272febe675d1ac846b88e58b4e7533
@@ -7453,10 +7554,10 @@ index 0000000000000000000000000000000000000000..58d3d1a47e9f2423c467bb329c2d5f4b
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b1456c1ddf24b625c6caf41a9379d8c011e1c36c
+index 0000000000000000000000000000000000000000..8671a90e969d16c7a57ddc38fedb7cf01815f64c
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java
-@@ -0,0 +1,1038 @@
+@@ -0,0 +1,1041 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -7844,7 +7945,9 @@ index 0000000000000000000000000000000000000000..b1456c1ddf24b625c6caf41a9379d8c0
 +    public void scheduleTickingState(final int chunkX, final int chunkZ, final FullChunkStatus toStatus,
 +                                     final boolean addTicket, final PrioritisedExecutor.Priority priority,
 +                                     final Consumer<LevelChunk> onComplete) {
-+        if (!TickThread.isTickThread()) {
++        final int radius = toStatus.ordinal() - 1; // 0 -> BORDER, 1 -> TICKING, 2 -> ENTITY_TICKING
++
++        if (!TickThread.isTickThreadFor(this.world, chunkX, chunkZ, Math.max(0, radius))) {
 +            this.scheduleChunkTask(chunkX, chunkZ, () -> {
 +                ChunkTaskScheduler.this.scheduleTickingState(chunkX, chunkZ, toStatus, addTicket, priority, onComplete);
 +            }, priority);
@@ -7871,7 +7974,7 @@ index 0000000000000000000000000000000000000000..b1456c1ddf24b625c6caf41a9379d8c0
 +            this.chunkHolderManager.processTicketUpdates();
 +        }
 +
-+        final Consumer<LevelChunk> loadCallback = (final LevelChunk chunk) -> {
++        final Consumer<LevelChunk> loadCallback = onComplete == null && !addTicket ? null : (final LevelChunk chunk) -> {
 +            try {
 +                if (onComplete != null) {
 +                    onComplete.accept(chunk);
@@ -7902,7 +8005,6 @@ index 0000000000000000000000000000000000000000..b1456c1ddf24b625c6caf41a9379d8c0
 +                        scheduled = true;
 +                        chunk = null;
 +
-+                        final int radius = toStatus.ordinal() - 1; // 0 -> BORDER, 1 -> TICKING, 2 -> ENTITY_TICKING
 +                        for (int dz = -radius; dz <= radius; ++dz) {
 +                            for (int dx = -radius; dx <= radius; ++dx) {
 +                                final NewChunkHolder neighbour =
@@ -7914,7 +8016,9 @@ index 0000000000000000000000000000000000000000..b1456c1ddf24b625c6caf41a9379d8c0
 +                        }
 +
 +                        // ticket level should schedule for us
-+                        chunkHolder.addFullStatusConsumer(toStatus, loadCallback);
++                        if (loadCallback != null) {
++                            chunkHolder.addFullStatusConsumer(toStatus, loadCallback);
++                        }
 +                    }
 +                }
 +            } finally {
@@ -7924,7 +8028,7 @@ index 0000000000000000000000000000000000000000..b1456c1ddf24b625c6caf41a9379d8c0
 +            this.chunkHolderManager.ticketLockArea.unlock(ticketLock);
 +        }
 +
-+        if (!scheduled) {
++        if (loadCallback != null && !scheduled) {
 +            // couldn't schedule
 +            try {
 +                loadCallback.accept(chunk);
@@ -8035,7 +8139,7 @@ index 0000000000000000000000000000000000000000..b1456c1ddf24b625c6caf41a9379d8c0
 +
 +    public void scheduleChunkLoad(final int chunkX, final int chunkZ, final ChunkStatus toStatus, final boolean addTicket,
 +                                  final PrioritisedExecutor.Priority priority, final Consumer<ChunkAccess> onComplete) {
-+        if (!TickThread.isTickThread()) {
++        if (!TickThread.isTickThreadFor(this.world, chunkX, chunkZ)) {
 +            this.scheduleChunkTask(chunkX, chunkZ, () -> {
 +                ChunkTaskScheduler.this.scheduleChunkLoad(chunkX, chunkZ, toStatus, addTicket, priority, onComplete);
 +            }, priority);
@@ -8307,7 +8411,7 @@ index 0000000000000000000000000000000000000000..b1456c1ddf24b625c6caf41a9379d8c0
 +    }
 +
 +    public PrioritisedExecutor.PrioritisedTask scheduleChunkTask(final int chunkX, final int chunkZ, final Runnable run) {
-+        return this.mainThreadExecutor.queueRunnable(run);
++        return this.scheduleChunkTask(chunkX, chunkZ, run, PrioritisedExecutor.Priority.NORMAL);
 +    }
 +
 +    public PrioritisedExecutor.PrioritisedTask scheduleChunkTask(final int chunkX, final int chunkZ, final Runnable run,
