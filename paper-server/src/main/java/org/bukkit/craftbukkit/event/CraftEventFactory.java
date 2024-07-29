@@ -61,6 +61,8 @@ import net.minecraft.world.inventory.RecipeBookType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.ItemActionContext;
+import net.minecraft.world.item.crafting.RecipeCrafting;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.ChunkCoordIntPair;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.GeneratorAccess;
@@ -156,6 +158,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.event.block.BlockShearEntityEvent;
 import org.bukkit.event.block.BlockSpreadEvent;
+import org.bukkit.event.block.CrafterCraftEvent;
 import org.bukkit.event.block.EntityBlockFormEvent;
 import org.bukkit.event.block.FluidLevelChangeEvent;
 import org.bukkit.event.block.MoistureChangeEvent;
@@ -256,6 +259,7 @@ import org.bukkit.event.weather.LightningStrikeEvent;
 import org.bukkit.event.world.EntitiesLoadEvent;
 import org.bukkit.event.world.EntitiesUnloadEvent;
 import org.bukkit.event.world.LootGenerateEvent;
+import org.bukkit.inventory.CraftingRecipe;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.Recipe;
@@ -1284,6 +1288,16 @@ public class CraftEventFactory {
         org.bukkit.inventory.ItemStack bitem = event.getInventory().getResult();
 
         return CraftItemStack.asNMSCopy(bitem);
+    }
+
+    public static CrafterCraftEvent callCrafterCraftEvent(BlockPosition pos, World world, InventoryCrafting inventoryCrafting, ItemStack result, RecipeHolder<RecipeCrafting> holder) {
+        CraftBlock block = CraftBlock.at(world, pos);
+        CraftItemStack itemStack = CraftItemStack.asCraftMirror(result);
+        CraftingRecipe craftingRecipe = (CraftingRecipe) holder.toBukkitRecipe();
+
+        CrafterCraftEvent crafterCraftEvent = new CrafterCraftEvent(block, craftingRecipe, itemStack);
+        Bukkit.getPluginManager().callEvent(crafterCraftEvent);
+        return crafterCraftEvent;
     }
 
     public static ProjectileLaunchEvent callProjectileLaunchEvent(Entity entity) {

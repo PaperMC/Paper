@@ -1,12 +1,14 @@
 --- a/net/minecraft/world/level/block/CrafterBlock.java
 +++ b/net/minecraft/world/level/block/CrafterBlock.java
-@@ -39,6 +39,13 @@
+@@ -39,6 +39,15 @@
  import net.minecraft.world.phys.MovingObjectPositionBlock;
  import net.minecraft.world.phys.Vec3D;
  
 +// CraftBukkit start
 +import net.minecraft.world.InventoryLargeChest;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.event.block.CrafterCraftEvent;
 +import org.bukkit.event.inventory.InventoryMoveItemEvent;
 +import org.bukkit.inventory.Inventory;
 +// CraftBukkit end
@@ -14,7 +16,21 @@
  public class CrafterBlock extends BlockTileEntity {
  
      public static final MapCodec<CrafterBlock> CODEC = simpleCodec(CrafterBlock::new);
-@@ -226,7 +233,25 @@
+@@ -188,6 +197,13 @@
+                 RecipeHolder<RecipeCrafting> recipeholder = (RecipeHolder) optional.get();
+                 ItemStack itemstack = ((RecipeCrafting) recipeholder.value()).assemble(craftinginput, worldserver.registryAccess());
+ 
++                // CraftBukkit start
++                CrafterCraftEvent event = CraftEventFactory.callCrafterCraftEvent(blockposition, worldserver, crafterblockentity, itemstack, recipeholder);
++                if (event.isCancelled()) {
++                    return;
++                }
++                itemstack = CraftItemStack.asNMSCopy(event.getResult());
++                // CraftBukkit end
+                 if (itemstack.isEmpty()) {
+                     worldserver.levelEvent(1050, blockposition, 0);
+                 } else {
+@@ -226,7 +242,25 @@
          ItemStack itemstack1 = itemstack.copy();
  
          if (iinventory != null && (iinventory instanceof CrafterBlockEntity || itemstack.getCount() > iinventory.getMaxStackSize(itemstack))) {
@@ -40,7 +56,7 @@
                  ItemStack itemstack2 = itemstack1.copyWithCount(1);
                  ItemStack itemstack3 = TileEntityHopper.addItem(crafterblockentity, iinventory, itemstack2, enumdirection.getOpposite());
  
-@@ -237,7 +262,25 @@
+@@ -237,7 +271,25 @@
                  itemstack1.shrink(1);
              }
          } else if (iinventory != null) {
