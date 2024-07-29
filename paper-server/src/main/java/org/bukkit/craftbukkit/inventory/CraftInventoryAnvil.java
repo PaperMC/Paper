@@ -16,16 +16,16 @@ public class CraftInventoryAnvil extends CraftResultInventory implements AnvilIn
 
     private final Location location;
     private String renameText;
-    private int costAmount;
-    private int repairAmount;
+    private int repairCost;
+    private int repairCostAmount;
     private int maximumRepairCost;
 
     public CraftInventoryAnvil(Location location, IInventory inventory, IInventory resultInventory) {
         super(inventory, resultInventory);
         this.location = location;
         this.renameText = null;
-        this.costAmount = DEFAULT_REPAIR_COST_AMOUNT;
-        this.repairAmount = DEFAULT_REPAIR_COST;
+        this.repairCost = DEFAULT_REPAIR_COST;
+        this.repairCostAmount = DEFAULT_REPAIR_COST_AMOUNT;
         this.maximumRepairCost = DEFAULT_MAXIMUM_REPAIR_COST;
     }
 
@@ -42,25 +42,25 @@ public class CraftInventoryAnvil extends CraftResultInventory implements AnvilIn
 
     @Override
     public int getRepairCostAmount() {
-        syncWithArbitraryViewValue((cav) -> this.costAmount = cav.getRepairItemCountCost());
-        return this.repairAmount;
+        syncWithArbitraryViewValue((cav) -> this.repairCostAmount = cav.getRepairItemCountCost());
+        return this.repairCostAmount;
     }
 
     @Override
     public void setRepairCostAmount(int amount) {
-        this.repairAmount = amount;
+        this.repairCostAmount = amount;
         syncViews((cav) -> cav.setRepairItemCountCost(amount));
     }
 
     @Override
     public int getRepairCost() {
-        syncWithArbitraryViewValue((cav) -> this.repairAmount = cav.getRepairCost());
-        return this.costAmount;
+        syncWithArbitraryViewValue((cav) -> this.repairCost = cav.getRepairCost());
+        return this.repairCost;
     }
 
     @Override
     public void setRepairCost(int i) {
-        this.costAmount = i;
+        this.repairCost = i;
         syncViews((cav) -> cav.setRepairCost(i));
     }
 
@@ -78,11 +78,11 @@ public class CraftInventoryAnvil extends CraftResultInventory implements AnvilIn
     }
 
     public boolean isRepairCostSet() {
-        return this.costAmount != DEFAULT_REPAIR_COST;
+        return this.repairCost != DEFAULT_REPAIR_COST;
     }
 
     public boolean isRepairCostAmountSet() {
-        return this.repairAmount != DEFAULT_REPAIR_COST_AMOUNT;
+        return this.repairCostAmount != DEFAULT_REPAIR_COST_AMOUNT;
     }
 
     public boolean isMaximumRepairCostSet() {
