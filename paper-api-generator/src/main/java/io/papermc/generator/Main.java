@@ -44,8 +44,8 @@ public final class Main {
         LayeredRegistryAccess<RegistryLayer> layers = RegistryLayer.createRegistryAccess();
         layers = WorldLoader.loadAndReplaceLayer(resourceManager, layers, RegistryLayer.WORLDGEN, RegistryDataLoader.WORLDGEN_REGISTRIES);
         REGISTRY_ACCESS = layers.compositeAccess().freeze();
-        final ReloadableServerResources datapack = ReloadableServerResources.loadResources(resourceManager, layers, FeatureFlags.REGISTRY.allFlags(), Commands.CommandSelection.DEDICATED, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
-        datapack.updateRegistryTags();
+        final ReloadableServerResources dataPack = ReloadableServerResources.loadResources(resourceManager, layers, FeatureFlags.REGISTRY.allFlags(), Commands.CommandSelection.DEDICATED, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
+        dataPack.updateRegistryTags();
 
         EXPERIMENTAL_TAGS = TagCollector.grabExperimental(resourceManager);
     }
@@ -60,18 +60,18 @@ public final class Main {
         // generate(Paths.get(args[1]), Generators.SERVER);
     }
 
-    private static void generate(Path output, SourceGenerator[] generators) {
+    private static void generate(Path outputDirectory, SourceGenerator[] generators) {
         try {
-            if (Files.exists(output)) {
-                PathUtils.deleteDirectory(output);
+            if (Files.exists(outputDirectory)) {
+                PathUtils.deleteDirectory(outputDirectory);
             }
-            Files.createDirectories(output);
+            Files.createDirectories(outputDirectory);
 
             for (final SourceGenerator generator : generators) {
-                generator.writeToFile(output);
+                generator.writeToFile(outputDirectory);
             }
 
-            LOGGER.info("Files written to {}", output.toAbsolutePath());
+            LOGGER.info("Files written to {}", outputDirectory.toAbsolutePath());
         } catch (final Exception ex) {
             throw new RuntimeException(ex);
         }

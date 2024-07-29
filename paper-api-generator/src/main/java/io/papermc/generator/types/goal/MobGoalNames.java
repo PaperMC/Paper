@@ -271,16 +271,16 @@ public class MobGoalNames {
         name = name.replace("PathfinderGoal", "");
         name = name.replace("TargetGoal", "");
         name = name.replace("Goal", "");
-        StringBuilder sb = new StringBuilder();
+        StringBuilder convertedName = new StringBuilder();
         for (char c : name.toCharArray()) {
             if (c >= 'A' && c <= 'Z') {
-                sb.append("_");
-                sb.append(Character.toLowerCase(c));
+                convertedName.append("_");
+                convertedName.append(Character.toLowerCase(c));
             } else {
-                sb.append(c);
+                convertedName.append(c);
             }
         }
-        name = sb.toString();
+        name = convertedName.toString();
         name = name.replaceFirst("_", "");
 
         if (flag && !deobfuscationMap.containsKey(name.toLowerCase(Locale.ROOT)) && !ignored.contains(name)) {
@@ -308,9 +308,9 @@ public class MobGoalNames {
     public static <T extends Mob> Class<T> getEntity(Class<? extends Goal> goalClass) {
         //noinspection unchecked
         return (Class<T>) entityClassCache.computeIfAbsent(goalClass, key -> {
-            for (Constructor<?> ctor : key.getDeclaredConstructors()) {
-                for (int i = 0; i < ctor.getParameterCount(); i++) {
-                    Class<?> param = ctor.getParameterTypes()[i];
+            for (Constructor<?> constructor : key.getDeclaredConstructors()) {
+                for (int i = 0; i < constructor.getParameterCount(); i++) {
+                    Class<?> param = constructor.getParameterTypes()[i];
                     if (net.minecraft.world.entity.Mob.class.isAssignableFrom(param)) {
                         //noinspection unchecked
                         return toBukkitClass((Class<? extends net.minecraft.world.entity.Mob>) param);
