@@ -58,6 +58,38 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          // Many servers tend to restart at a fixed time at xx:00 which causes an uneven distribution of requests on the
          // bStats backend. To circumvent this problem, we introduce some randomness into the initial and second delay.
+diff --git a/src/main/java/io/papermc/paper/util/LogManagerShutdownThread.java b/src/main/java/io/papermc/paper/util/LogManagerShutdownThread.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/LogManagerShutdownThread.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.util;
++
++public class LogManagerShutdownThread extends Thread {
++
++    static LogManagerShutdownThread INSTANCE = new LogManagerShutdownThread();
++    public static final void hook() {
++        if (INSTANCE == null) {
++            throw new IllegalStateException("Cannot re-hook after being unhooked");
++        }
++        Runtime.getRuntime().addShutdownHook(INSTANCE);
++    }
++
++    public static final void unhook() {
++        Runtime.getRuntime().removeShutdownHook(INSTANCE);
++        INSTANCE = null;
++    }
++
++    private LogManagerShutdownThread() {
++        super("Log4j2 Shutdown Thread");
++    }
++
++    @Override
++    public void run() {
++        org.apache.logging.log4j.LogManager.shutdown();
++    }
++}
 diff --git a/src/main/java/net/minecraft/CrashReport.java b/src/main/java/net/minecraft/CrashReport.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/CrashReport.java
@@ -70,6 +102,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          while (cause instanceof CompletionException && cause.getCause() != null) {
              cause = cause.getCause();
          }
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -0,0 +0,0 @@ public class Main {
+ 
+     @DontObfuscate
+     public static void main(final OptionSet optionset) { // CraftBukkit - replaces main(String[] astring)
++        io.papermc.paper.util.LogManagerShutdownThread.hook(); // Paper
+         SharedConstants.tryDetectVersion();
+         /* CraftBukkit start - Replace everything
+         OptionParser optionparser = new OptionParser();
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -93,6 +137,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
          Thread thread = new ca.spottedleaf.moonrise.common.util.TickThread(() -> { // Paper - rewrite chunk system
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         }
+         */
+         // Paper end
++        io.papermc.paper.util.LogManagerShutdownThread.unhook(); // Paper
+         Runtime.getRuntime().addShutdownHook(new org.bukkit.craftbukkit.util.ServerShutdownThread(this));
+         // CraftBukkit end
+         this.paperConfigurations = services.paperConfigurations(); // Paper - add paper configuration files
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      // CraftBukkit start
      private boolean hasStopped = false;
