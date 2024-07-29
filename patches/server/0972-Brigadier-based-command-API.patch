@@ -1071,10 +1071,10 @@ index 0000000000000000000000000000000000000000..72966584089d3fee9778f572727c9b7f
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/VanillaArgumentProviderImpl.java b/src/main/java/io/papermc/paper/command/brigadier/argument/VanillaArgumentProviderImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1b389cd0e77c24874b2a825608b612e3fc4f3dd6
+index 0000000000000000000000000000000000000000..38fb7d13abfcb55fe4a132b9b27e0c91f8c3d891
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/argument/VanillaArgumentProviderImpl.java
-@@ -0,0 +1,354 @@
+@@ -0,0 +1,366 @@
 +package io.papermc.paper.command.brigadier.argument;
 +
 +import com.destroystokyo.paper.profile.CraftPlayerProfile;
@@ -1094,15 +1094,16 @@ index 0000000000000000000000000000000000000000..1b389cd0e77c24874b2a825608b612e3
 +import io.papermc.paper.command.brigadier.argument.range.IntegerRangeProvider;
 +import io.papermc.paper.command.brigadier.argument.range.RangeProvider;
 +import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolver;
++import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
 +import io.papermc.paper.command.brigadier.argument.resolvers.PlayerProfileListResolver;
 +import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
 +import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 +import io.papermc.paper.entity.LookAnchor;
-+import io.papermc.paper.math.Position;
 +import io.papermc.paper.registry.PaperRegistries;
 +import io.papermc.paper.registry.RegistryAccess;
 +import io.papermc.paper.registry.RegistryKey;
 +import io.papermc.paper.registry.TypedKey;
++import io.papermc.paper.util.MCUtil;
 +import java.util.Collection;
 +import java.util.Collections;
 +import java.util.List;
@@ -1137,6 +1138,7 @@ index 0000000000000000000000000000000000000000..1b389cd0e77c24874b2a825608b612e3
 +import net.minecraft.commands.arguments.UuidArgument;
 +import net.minecraft.commands.arguments.blocks.BlockStateArgument;
 +import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
++import net.minecraft.commands.arguments.coordinates.Vec3Argument;
 +import net.minecraft.commands.arguments.item.ItemArgument;
 +import net.minecraft.commands.arguments.item.ItemPredicateArgument;
 +import net.minecraft.core.BlockPos;
@@ -1146,6 +1148,7 @@ index 0000000000000000000000000000000000000000..1b389cd0e77c24874b2a825608b612e3
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.server.level.ServerPlayer;
 +import net.minecraft.world.level.Level;
++import net.minecraft.world.phys.Vec3;
 +import org.bukkit.GameMode;
 +import org.bukkit.HeightMap;
 +import org.bukkit.Keyed;
@@ -1217,7 +1220,16 @@ index 0000000000000000000000000000000000000000..1b389cd0e77c24874b2a825608b612e3
 +        return this.wrap(BlockPosArgument.blockPos(), (result) -> sourceStack -> {
 +            final BlockPos pos = result.getBlockPos((CommandSourceStack) sourceStack);
 +
-+            return Position.block(pos.getX(), pos.getY(), pos.getZ());
++            return MCUtil.toPosition(pos);
++        });
++    }
++
++    @Override
++    public ArgumentType<FinePositionResolver> finePosition(final boolean centerIntegers) {
++        return this.wrap(Vec3Argument.vec3(centerIntegers), (result) -> sourceStack -> {
++            final Vec3 vec3 = result.getPosition((CommandSourceStack) sourceStack);
++
++            return MCUtil.toPosition(vec3);
 +        });
 +    }
 +
@@ -1310,7 +1322,7 @@ index 0000000000000000000000000000000000000000..1b389cd0e77c24874b2a825608b612e3
 +        return this.wrap(DimensionArgument.dimension(), dimensionLocation -> {
 +            // based on DimensionArgument#getDimension
 +            final ResourceKey<Level> resourceKey = ResourceKey.create(Registries.DIMENSION, dimensionLocation);
-+            @Nullable final ServerLevel serverLevel = MinecraftServer.getServer().getLevel(resourceKey);
++            final @Nullable ServerLevel serverLevel = MinecraftServer.getServer().getLevel(resourceKey);
 +            if (serverLevel == null) {
 +                throw DimensionArgument.ERROR_INVALID_VALUE.create(dimensionLocation);
 +            } else {

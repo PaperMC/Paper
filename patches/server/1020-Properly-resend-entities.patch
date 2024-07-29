@@ -102,7 +102,7 @@ index a8debfad8c8e66099f8a9aedc6f1971a8576dade..7796e191747be545e744564a2b0b6579
                              }
  
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 1aa8b914e79c0d48094cc22df60ee9750ec3ccd6..369b3485f452ac157b3ebf88b4f1970605d302d2 100644
+index e597a7ef6e702c7e3703e1ba29a7b919d1c20877..ca9b909a783733f2af1e36f4ac2fd463362b9685 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -393,7 +393,7 @@ public abstract class PlayerList {
@@ -115,10 +115,10 @@ index 1aa8b914e79c0d48094cc22df60ee9750ec3ccd6..369b3485f452ac157b3ebf88b4f19706
          this.sendLevelInfo(player, worldserver1);
  
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 1a3932aad22be42997c52ac91e19aad06a868526..5608576f461ce9dec9827f9f581adc5d5757baf1 100644
+index 6b4a7930efabd29f00690a79e8080faaa9767190..935f88542a10360ec21dfced9272313fcf1354ab 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -685,13 +685,44 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -684,13 +684,45 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
  
      // CraftBukkit start
      public void refreshEntityData(ServerPlayer to) {
@@ -135,12 +135,13 @@ index 1a3932aad22be42997c52ac91e19aad06a868526..5608576f461ce9dec9827f9f581adc5d
 +    // This method should only be used if the data of an entity could have become desynced
 +    // due to interactions on the client.
 +    public void resendPossiblyDesyncedEntityData(net.minecraft.server.level.ServerPlayer player) {
-+        if (this.tracker == null) {
-+            return;
-+        }
-+
 +        if (player.getBukkitEntity().canSee(this.getBukkitEntity())) {
-+            final net.minecraft.server.level.ServerEntity serverEntity = this.tracker.serverEntity;
++            ServerLevel world = (net.minecraft.server.level.ServerLevel)this.level();
++            net.minecraft.server.level.ChunkMap.TrackedEntity tracker = world == null ? null : world.getChunkSource().chunkMap.entityMap.get(this.getId());
++            if (tracker == null) {
++                return;
++            }
++            final net.minecraft.server.level.ServerEntity serverEntity = tracker.serverEntity;
 +            final List<net.minecraft.network.protocol.Packet<? super net.minecraft.network.protocol.game.ClientGamePacketListener>> list = new java.util.ArrayList<>();
 +            serverEntity.sendPairingData(player, list::add);
 +            player.connection.send(new net.minecraft.network.protocol.game.ClientboundBundlePacket(list));
@@ -196,7 +197,7 @@ index b586116d8cca1585f9c9e618ed4d0cb2ef2747be..acf38ef6d8de8b15cf2b09eb7bda390c
              }
              entity.playSound(((Bucketable) entity).getPickupSound(), 1.0F, 1.0F);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index b8eb9166e44da8745a056bf68f2f9316ce25d7a7..2cde808bfa797256409879505ba205a71f381981 100644
+index 9ca1fee03bfa557f1df7388c6043c9ec6d02a79a..cd789c235acf740ec29c30b180e7fbe1a140caa9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 @@ -1012,7 +1012,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
