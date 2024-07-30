@@ -699,6 +699,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 +import com.mojang.brigadier.tree.CommandNode;
 +import com.mojang.brigadier.tree.LiteralCommandNode;
++import io.papermc.paper.command.brigadier.bukkit.BukkitCommandNode;
 +import io.papermc.paper.plugin.configuration.PluginMeta;
 +import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
 +import io.papermc.paper.plugin.lifecycle.event.registrar.PaperRegistrar;
@@ -839,9 +840,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return this.registerIntoDispatcher(new PluginCommandNode(aliasLiteral, plugin, redirect, description), override);
 +    }
 +
-+    private boolean registerIntoDispatcher(final PluginCommandNode node, final boolean override) {
-+        final boolean hasChild = this.getDispatcher().getRoot().getChild(node.getLiteral()) != null;
-+        if (!hasChild || override) { // Avoid merging behavior. Maybe something to look into in the future
++    private boolean registerIntoDispatcher(final PluginCommandNode node, boolean override) {
++        final @Nullable CommandNode<CommandSourceStack> existingChild = this.getDispatcher().getRoot().getChild(node.getLiteral());
++        if (existingChild != null && !(existingChild instanceof PluginCommandNode) && !(existingChild instanceof BukkitCommandNode)) {
++            override = true; // override vanilla commands
++        }
++        if (existingChild == null || override) { // Avoid merging behavior. Maybe something to look into in the future
 +            if (override) {
 +                this.getDispatcher().getRoot().removeCommand(node.getLiteral());
 +            }
