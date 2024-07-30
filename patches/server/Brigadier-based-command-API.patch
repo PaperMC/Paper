@@ -1517,10 +1517,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import com.google.common.collect.Iterators;
 +import com.mojang.brigadier.CommandDispatcher;
 +import com.mojang.brigadier.tree.CommandNode;
-+import com.mojang.brigadier.tree.LiteralCommandNode;
 +import io.papermc.paper.command.brigadier.CommandSourceStack;
 +import io.papermc.paper.command.brigadier.PaperBrigadier;
 +import io.papermc.paper.command.brigadier.PaperCommands;
++import io.papermc.paper.command.brigadier.PluginVanillaCommandWrapper;
 +import java.util.AbstractCollection;
 +import java.util.AbstractSet;
 +import java.util.ArrayList;
@@ -1604,12 +1604,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return PaperBrigadier.wrapNode(node);
 +    }
 +
++    @SuppressWarnings({"unchecked", "rawtypes"})
 +    @Nullable
 +    @Override
 +    public Command put(String key, Command value) {
 +        Command old = this.get(key);
 +        this.getDispatcher().getRoot().removeCommand(key); // Override previous command
-+        this.getDispatcher().getRoot().addChild(BukkitCommandNode.of(key, value));
++        if (value instanceof PluginVanillaCommandWrapper wrapper && wrapper.getName().equals(key)) {
++            // Don't break when some plugin tries to remove and add back a plugin command registered with modern API...
++            this.getDispatcher().getRoot().addChild((CommandNode) wrapper.vanillaCommand);
++        } else {
++            this.getDispatcher().getRoot().addChild(BukkitCommandNode.of(key, value));
++        }
 +        return old;
 +    }
 +
