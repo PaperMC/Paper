@@ -3326,10 +3326,18 @@ index 49c037e961c5ca5ba8d6a870cb32ffe8719adc91..2772c19f58a35713d61aab24f6f0d6f5
      }
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 7f8864da8a6f9c2410191851add1ba566b8c171c..bec1fdabbc3727c1f7297b2d23914a5179f4adcb 100644
+index 7f8864da8a6f9c2410191851add1ba566b8c171c..f996db782ce79eb1cb874cbfaa08af7364f53187 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -644,8 +644,10 @@ public final class CraftServer implements Server {
+@@ -15,6 +15,7 @@ import com.mojang.brigadier.tree.CommandNode;
+ import com.mojang.brigadier.tree.LiteralCommandNode;
+ import com.mojang.serialization.Dynamic;
+ import com.mojang.serialization.Lifecycle;
++import io.papermc.paper.adventure.PaperAdventure;
+ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+ import java.awt.image.BufferedImage;
+ import java.io.ByteArrayOutputStream;
+@@ -644,8 +645,10 @@ public final class CraftServer implements Server {
      }
  
      @Override
@@ -3340,7 +3348,24 @@ index 7f8864da8a6f9c2410191851add1ba566b8c171c..bec1fdabbc3727c1f7297b2d23914a51
      }
  
      @Override
-@@ -1621,7 +1623,15 @@ public final class CraftServer implements Server {
+@@ -1333,6 +1336,16 @@ public final class CraftServer implements Server {
+         return null;
+     }
+ 
++    // Paper start - adventure
++    @Override
++    public World getWorld(net.kyori.adventure.key.Key worldKey) {
++        ServerLevel worldServer = console.getLevel(ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, PaperAdventure.asVanilla(worldKey)));
++        if (worldServer == null) return null;
++        return worldServer.getWorld();
++    }
++    // Paper end - adventure
++
++
+     public void addWorld(World world) {
+         // Check if a World already exists with the UID.
+         if (this.getWorld(world.getUID()) != null) {
+@@ -1621,7 +1634,15 @@ public final class CraftServer implements Server {
          return this.configuration.getInt("settings.spawn-radius", -1);
      }
  
@@ -3356,7 +3381,7 @@ index 7f8864da8a6f9c2410191851add1ba566b8c171c..bec1fdabbc3727c1f7297b2d23914a51
      public String getShutdownMessage() {
          return this.configuration.getString("settings.shutdown-message");
      }
-@@ -1795,7 +1805,20 @@ public final class CraftServer implements Server {
+@@ -1795,7 +1816,20 @@ public final class CraftServer implements Server {
      }
  
      @Override
@@ -3377,7 +3402,7 @@ index 7f8864da8a6f9c2410191851add1ba566b8c171c..bec1fdabbc3727c1f7297b2d23914a51
          Set<CommandSender> recipients = new HashSet<>();
          for (Permissible permissible : this.getPluginManager().getPermissionSubscriptions(permission)) {
              if (permissible instanceof CommandSender && permissible.hasPermission(permission)) {
-@@ -1803,14 +1826,14 @@ public final class CraftServer implements Server {
+@@ -1803,14 +1837,14 @@ public final class CraftServer implements Server {
              }
          }
  
@@ -3394,7 +3419,7 @@ index 7f8864da8a6f9c2410191851add1ba566b8c171c..bec1fdabbc3727c1f7297b2d23914a51
  
          for (CommandSender recipient : recipients) {
              recipient.sendMessage(message);
-@@ -2072,6 +2095,14 @@ public final class CraftServer implements Server {
+@@ -2072,6 +2106,14 @@ public final class CraftServer implements Server {
          return CraftInventoryCreator.INSTANCE.createInventory(owner, type);
      }
  
@@ -3409,7 +3434,7 @@ index 7f8864da8a6f9c2410191851add1ba566b8c171c..bec1fdabbc3727c1f7297b2d23914a51
      @Override
      public Inventory createInventory(InventoryHolder owner, InventoryType type, String title) {
          Preconditions.checkArgument(type != null, "InventoryType cannot be null");
-@@ -2086,13 +2117,28 @@ public final class CraftServer implements Server {
+@@ -2086,13 +2128,28 @@ public final class CraftServer implements Server {
          return CraftInventoryCreator.INSTANCE.createInventory(owner, size);
      }
  
@@ -3428,17 +3453,17 @@ index 7f8864da8a6f9c2410191851add1ba566b8c171c..bec1fdabbc3727c1f7297b2d23914a51
      }
  
 +    // Paper start
-+    @Override
+     @Override
 +    public Merchant createMerchant(net.kyori.adventure.text.Component title) {
 +        return new org.bukkit.craftbukkit.inventory.CraftMerchantCustom(title == null ? InventoryType.MERCHANT.defaultTitle() : title);
 +    }
 +    // Paper end
-     @Override
++    @Override
 +    @Deprecated // Paper
      public Merchant createMerchant(String title) {
          return new CraftMerchantCustom(title == null ? InventoryType.MERCHANT.getDefaultTitle() : title);
      }
-@@ -2157,6 +2203,17 @@ public final class CraftServer implements Server {
+@@ -2157,6 +2214,17 @@ public final class CraftServer implements Server {
          return Thread.currentThread().equals(this.console.serverThread) || this.console.hasStopped() || !org.spigotmc.AsyncCatcher.enabled; // All bets are off if we have shut down (e.g. due to watchdog)
      }
  
@@ -3456,7 +3481,7 @@ index 7f8864da8a6f9c2410191851add1ba566b8c171c..bec1fdabbc3727c1f7297b2d23914a51
      @Override
      public String getMotd() {
          return this.console.getMotd();
-@@ -2606,4 +2663,57 @@ public final class CraftServer implements Server {
+@@ -2606,4 +2674,57 @@ public final class CraftServer implements Server {
      public double[] getTPS() {
          return new double[]{0, 0, 0}; // TODO
      }
