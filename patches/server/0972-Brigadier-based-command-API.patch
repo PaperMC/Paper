@@ -686,10 +686,10 @@ index 0000000000000000000000000000000000000000..1b1642f306771f029e6214a2e2ebebb6
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java b/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a3e128bde0fa4ab0ecab4172f02288a29b9fddc7
+index 0000000000000000000000000000000000000000..da50ca4c6524e4f99ea4de2157d7ef900178d0f1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java
-@@ -0,0 +1,194 @@
+@@ -0,0 +1,198 @@
 +package io.papermc.paper.command.brigadier;
 +
 +import com.google.common.base.Preconditions;
@@ -699,6 +699,7 @@ index 0000000000000000000000000000000000000000..a3e128bde0fa4ab0ecab4172f02288a2
 +import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 +import com.mojang.brigadier.tree.CommandNode;
 +import com.mojang.brigadier.tree.LiteralCommandNode;
++import io.papermc.paper.command.brigadier.bukkit.BukkitCommandNode;
 +import io.papermc.paper.plugin.configuration.PluginMeta;
 +import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
 +import io.papermc.paper.plugin.lifecycle.event.registrar.PaperRegistrar;
@@ -839,9 +840,12 @@ index 0000000000000000000000000000000000000000..a3e128bde0fa4ab0ecab4172f02288a2
 +        return this.registerIntoDispatcher(new PluginCommandNode(aliasLiteral, plugin, redirect, description), override);
 +    }
 +
-+    private boolean registerIntoDispatcher(final PluginCommandNode node, final boolean override) {
-+        final boolean hasChild = this.getDispatcher().getRoot().getChild(node.getLiteral()) != null;
-+        if (!hasChild || override) { // Avoid merging behavior. Maybe something to look into in the future
++    private boolean registerIntoDispatcher(final PluginCommandNode node, boolean override) {
++        final @Nullable CommandNode<CommandSourceStack> existingChild = this.getDispatcher().getRoot().getChild(node.getLiteral());
++        if (existingChild != null && !(existingChild instanceof PluginCommandNode) && !(existingChild instanceof BukkitCommandNode)) {
++            override = true; // override vanilla commands
++        }
++        if (existingChild == null || override) { // Avoid merging behavior. Maybe something to look into in the future
 +            if (override) {
 +                this.getDispatcher().getRoot().removeCommand(node.getLiteral());
 +            }
