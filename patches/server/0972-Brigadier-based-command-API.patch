@@ -1508,19 +1508,19 @@ index 0000000000000000000000000000000000000000..c59bbd90fdf04db837366218b312e7fb
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitBrigForwardingMap.java b/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitBrigForwardingMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f0cc27640bb3db275295a298d608c9d9f88df617
+index 0000000000000000000000000000000000000000..5eef7ae5197bd395fbd6800530ffe34d147651ff
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitBrigForwardingMap.java
-@@ -0,0 +1,332 @@
+@@ -0,0 +1,338 @@
 +package io.papermc.paper.command.brigadier.bukkit;
 +
 +import com.google.common.collect.Iterators;
 +import com.mojang.brigadier.CommandDispatcher;
 +import com.mojang.brigadier.tree.CommandNode;
-+import com.mojang.brigadier.tree.LiteralCommandNode;
 +import io.papermc.paper.command.brigadier.CommandSourceStack;
 +import io.papermc.paper.command.brigadier.PaperBrigadier;
 +import io.papermc.paper.command.brigadier.PaperCommands;
++import io.papermc.paper.command.brigadier.PluginVanillaCommandWrapper;
 +import java.util.AbstractCollection;
 +import java.util.AbstractSet;
 +import java.util.ArrayList;
@@ -1604,12 +1604,18 @@ index 0000000000000000000000000000000000000000..f0cc27640bb3db275295a298d608c9d9
 +        return PaperBrigadier.wrapNode(node);
 +    }
 +
++    @SuppressWarnings({"unchecked", "rawtypes"})
 +    @Nullable
 +    @Override
 +    public Command put(String key, Command value) {
 +        Command old = this.get(key);
 +        this.getDispatcher().getRoot().removeCommand(key); // Override previous command
-+        this.getDispatcher().getRoot().addChild(BukkitCommandNode.of(key, value));
++        if (value instanceof PluginVanillaCommandWrapper wrapper && wrapper.getName().equals(key)) {
++            // Don't break when some plugin tries to remove and add back a plugin command registered with modern API...
++            this.getDispatcher().getRoot().addChild((CommandNode) wrapper.vanillaCommand);
++        } else {
++            this.getDispatcher().getRoot().addChild(BukkitCommandNode.of(key, value));
++        }
 +        return old;
 +    }
 +
