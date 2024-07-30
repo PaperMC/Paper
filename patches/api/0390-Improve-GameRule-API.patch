@@ -1,0 +1,126 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 1 Jan 2022 15:54:09 -0800
+Subject: [PATCH] Improve GameRule API
+
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 92a1462261029e804da73da2743bbd68e57841e9..32fee5995a0279a3fa70d501aee458f2a1e10309 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -2397,6 +2397,19 @@ public final class Bukkit {
+         return server.isStopping();
+     }
+ 
++    /**
++     * Get the default value for a given {@link GameRule}. This value is not
++     * guaranteed to match the current value.
++     *
++     * @param rule the rule to return a default value for
++     * @param <T> the type of GameRule
++     * @return the default value
++     * @see GameRule#getDefaultValue()
++     */
++    public static <T> @NotNull T getGameRuleDefault(@NotNull GameRule<T> rule) {
++        return server.getGameRuleDefault(rule);
++    }
++
+     /**
+      * Returns the {@link com.destroystokyo.paper.entity.ai.MobGoals} manager
+      *
+diff --git a/src/main/java/org/bukkit/GameRule.java b/src/main/java/org/bukkit/GameRule.java
+index 38a1b02c006af766b0c10ee65e9fc28f5a922774..883cb5965eb8308c7c2785c683b24b4a5a0bbef7 100644
+--- a/src/main/java/org/bukkit/GameRule.java
++++ b/src/main/java/org/bukkit/GameRule.java
+@@ -290,6 +290,35 @@ public final class GameRule<T> implements net.kyori.adventure.translation.Transl
+     }
+ 
+     // Paper start
++    /**
++     * Get the default value this {@link GameRule}.
++     *
++     * @return the default value
++     */
++    public @NotNull T getDefaultValue() {
++        return Bukkit.getGameRuleDefault(this);
++    }
++
++    /**
++     * Get the current value for this {@link GameRule} and a given {@link World}.
++     *
++     * @param world the world to set the {@link GameRule} on
++     * @return the current value
++     */
++    public @NotNull T getValue(@NotNull World world) {
++        return world.getGameRuleValue(this);
++    }
++
++    /**
++     * Set this {@link GameRule}'s new value.
++     *
++     * @param newValue the new value
++     * @return true if the value was successfully set
++     */
++    public boolean setValue(@NotNull World world, @NotNull T newValue) {
++        return world.setGameRule(this, newValue);
++    }
++
+     @Override
+     public @NotNull String translationKey() {
+         return "gamerule." + this.name;
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 56e261efa654e4a6872ccea28f0461df13845d13..a8909e8cd01e2470aeb8d204ac4ba88bd76965ac 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -2084,6 +2084,17 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      */
+     boolean isStopping();
+ 
++    /**
++     * Get the default value for a given {@link GameRule}. This value is not
++     * guaranteed to match the current value.
++     *
++     * @param rule the rule to return a default value for
++     * @param <T> the type of GameRule
++     * @return the default value
++     * @see GameRule#getDefaultValue()
++     */
++    <T> @NotNull T getGameRuleDefault(@NotNull GameRule<T> rule);
++
+     /**
+      * Returns the {@link com.destroystokyo.paper.entity.ai.MobGoals} manager
+      *
+diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
+index e8c0c853eb52d1473c20231660355f77b1f7e016..3a5b158db6915679f80c3d856c63abaf03bf8a97 100644
+--- a/src/main/java/org/bukkit/World.java
++++ b/src/main/java/org/bukkit/World.java
+@@ -3310,8 +3310,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+      * @param rule the GameRule to check
+      * @param <T> the GameRule's type
+      * @return the current value
++     * @see GameRule#getValue(World)
+      */
+-    @Nullable
++    @NotNull // Paper - make not null
+     public <T> T getGameRuleValue(@NotNull GameRule<T> rule);
+ 
+     /**
+@@ -3321,8 +3322,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+      * @param rule the rule to return a default value for
+      * @param <T> the type of GameRule
+      * @return the default value
++     * @see GameRule#getDefaultValue()
+      */
+-    @Nullable
++    @NotNull // Paper - make not null
+     public <T> T getGameRuleDefault(@NotNull GameRule<T> rule);
+ 
+     /**
+@@ -3332,6 +3334,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+      * @param newValue the new value
+      * @param <T> the value type of the GameRule
+      * @return true if the value was successfully set
++     * @see GameRule#setValue(World, Object)
+      */
+     public <T> boolean setGameRule(@NotNull GameRule<T> rule, @NotNull T newValue);
+ 
