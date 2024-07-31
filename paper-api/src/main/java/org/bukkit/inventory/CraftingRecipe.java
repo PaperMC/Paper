@@ -5,6 +5,7 @@ import org.bukkit.Keyed;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.recipe.CraftingBookCategory;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -18,7 +19,6 @@ public abstract class CraftingRecipe implements Recipe, Keyed {
 
     protected CraftingRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result) {
         Preconditions.checkArgument(key != null, "key cannot be null");
-        Preconditions.checkArgument(result.getType() != Material.AIR, "Recipe must have non-AIR result.");
         this.key = key;
         this.output = new ItemStack(result);
     }
@@ -65,7 +65,7 @@ public abstract class CraftingRecipe implements Recipe, Keyed {
 
     /**
      * Gets the category which this recipe will appear in the recipe book under.
-     *
+     * <br>
      * Defaults to {@link CraftingBookCategory#MISC} if not set.
      *
      * @return recipe book category
@@ -77,7 +77,7 @@ public abstract class CraftingRecipe implements Recipe, Keyed {
 
     /**
      * Sets the category which this recipe will appear in the recipe book under.
-     *
+     * <br>
      * Defaults to {@link CraftingBookCategory#MISC} if not set.
      *
      * @param category recipe book category
@@ -85,5 +85,21 @@ public abstract class CraftingRecipe implements Recipe, Keyed {
     public void setCategory(@NotNull CraftingBookCategory category) {
         Preconditions.checkArgument(category != null, "category cannot be null");
         this.category = category;
+    }
+
+    /**
+     * Checks an ItemStack to be used in constructors related to CraftingRecipe
+     * is not empty.
+     *
+     * @param result an ItemStack
+     * @return the same result ItemStack
+     * @throws IllegalArgumentException if the {@code result} is an empty item
+     * (AIR)
+     */
+    @ApiStatus.Internal
+    @NotNull
+    protected static ItemStack checkResult(@NotNull ItemStack result) {
+        Preconditions.checkArgument(result.getType() != Material.AIR, "Recipe must have non-AIR result.");
+        return result;
     }
 }

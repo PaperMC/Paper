@@ -32,7 +32,7 @@ public class ShapedRecipe extends CraftingRecipe {
      */
     @Deprecated
     public ShapedRecipe(@NotNull ItemStack result) {
-        super(NamespacedKey.randomKey(), result);
+        this(NamespacedKey.randomKey(), result);
     }
 
     /**
@@ -42,6 +42,7 @@ public class ShapedRecipe extends CraftingRecipe {
      *
      * @param key the unique recipe key
      * @param result The item you want the recipe to create.
+     * @exception IllegalArgumentException if the {@code result} is an empty item (AIR)
      * @see ShapedRecipe#shape(String...)
      * @see ShapedRecipe#setIngredient(char, Material)
      * @see ShapedRecipe#setIngredient(char, Material, int)
@@ -49,7 +50,7 @@ public class ShapedRecipe extends CraftingRecipe {
      * @see ShapedRecipe#setIngredient(char, RecipeChoice)
      */
     public ShapedRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result) {
-        super(key, result);
+        super(key, checkResult(result));
     }
 
     /**
