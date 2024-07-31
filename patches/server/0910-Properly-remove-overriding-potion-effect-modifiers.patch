@@ -1,0 +1,193 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bjarne Koll <lynxplay101@gmail.com>
+Date: Tue, 19 Oct 2021 17:24:47 +0200
+Subject: [PATCH] Properly remove overriding potion effect modifiers
+
+As of minecraft 1.15.2's first pre-release potion effects no longer
+completely replace weaker once of the same potion effect type but rather
+build a list of overriding potion effects to preserve and eventually
+re-apply weaker potion effects that last longer than more powerful but
+more shortlived overriding potion effects of the same type.
+
+This replacement of such overriding potion effects simply removes the
+attribute modifier added by the potion effect based on a single uuid
+defined by each potion effect type.
+After the removal, a new attribute modified is added that holds the
+updated modifications based on the lower amplifier of the weaker potion
+effect.
+As the removal of the stronger potion effect is purely based on the
+single uuid of each individual potion effect type the amplifier of the
+old effect is not needed to properly remove the effect and is sadly not
+passed to the removal logic in the first place.
+
+This however fails for the absorption potion effect type, as it cannot
+make use of the attribute modifier system and the single uuid concept
+used by other potion effect types.
+Hence, prior to this commit, it simply calculates the amount of
+absorption hearts granted by the amplifier of the potion effect and
+removes these.
+As the server however only provides the amplifier (more specifically the
+new potion effect) to the update method once an overriding absorption
+effect is replaced, the removal only removes the amount of absorption
+hearts.
+
+This patch combats this faulty behaviour by now properly passing the old
+and new mob effect (and their respective amplifier) through the update
+logic of the living entity and mob effects.
+While this prevents the absorption effect from leaving the player with
+absorption hearts after the effect completely expires, it did allow the
+effect to re-generate absorption hearts that were lost due to damage
+when replacing the overriding effect with the lower potion effect.
+
+The patch introduces MobEffect#updateAttributeModifiers which is
+responsible for performing the previously described logic of removing
+and applying attribute modifiers.
+This method is then leveraged by the absorption mob effect to correctly
+calculate the difference between the old and new amplifiers.
+
+Resolves: https://bugs.mojang.com/browse/MC-182497
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index c8057f98e16ba6e19640e0b250e5201e0f4f57db..ad6c37168a54d77a569a5f8a5a5e07820d10e771 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -1774,6 +1774,13 @@ public class ServerPlayer extends Player {
+     @Override
+     protected void onEffectUpdated(MobEffectInstance effect, boolean reapplyEffect, @Nullable Entity source) {
+         super.onEffectUpdated(effect, reapplyEffect, source);
++        // Paper start - properly remove old overridden potion effect
++    }
++
++    @Override
++    protected void onEffectUpdated(MobEffectInstance effect, @Nullable MobEffectInstance oldEffect, boolean reapplyEffect, @Nullable Entity source) {
++        super.onEffectUpdated(effect, oldEffect, reapplyEffect, source);
++        // Paper end - properly remove old overridden potion effect
+         this.connection.send(new ClientboundUpdateMobEffectPacket(this.getId(), effect));
+         CriteriaTriggers.EFFECTS_CHANGED.trigger(this, source);
+     }
+diff --git a/src/main/java/net/minecraft/world/effect/AbsoptionMobEffect.java b/src/main/java/net/minecraft/world/effect/AbsoptionMobEffect.java
+index 8378ec06edd0a62b5e8c26ea1be9d8813f7c4c0a..e95ecdc30ac2da435e445507fc82d73dae494e1a 100644
+--- a/src/main/java/net/minecraft/world/effect/AbsoptionMobEffect.java
++++ b/src/main/java/net/minecraft/world/effect/AbsoptionMobEffect.java
+@@ -10,13 +10,35 @@ public class AbsoptionMobEffect extends MobEffect {
+ 
+     @Override
+     public void removeAttributeModifiers(LivingEntity entity, AttributeMap attributes, int amplifier) {
+-        entity.setAbsorptionAmount(entity.getAbsorptionAmount() - (float)(4 * (amplifier + 1)));
++        entity.setAbsorptionAmount(entity.getAbsorptionAmount() - calculateGrantedAbsorptionHearts(amplifier)); // Paper - properly remove old overridden potion effect
+         super.removeAttributeModifiers(entity, attributes, amplifier);
+     }
+ 
+     @Override
+     public void addAttributeModifiers(LivingEntity entity, AttributeMap attributes, int amplifier) {
+-        entity.setAbsorptionAmount(entity.getAbsorptionAmount() + (float)(4 * (amplifier + 1)));
++        entity.setAbsorptionAmount(entity.getAbsorptionAmount() + calculateGrantedAbsorptionHearts(amplifier)); // Paper - properly remove old overridden potion effect
+         super.addAttributeModifiers(entity, attributes, amplifier);
+     }
++
++    // Paper start - properly remove old overridden potion effect
++    // This method was added notably to
++    //   a) Remove duplication of code
++    //   b) Cause an error on diff if the absorption removal/addition logic above is changed during a minecraft update.
++    public float calculateGrantedAbsorptionHearts(final int amplifier) {
++        return 4 * (amplifier + 1);
++    }
++
++    @Override
++    public void updateAttributeModifiers(final LivingEntity entity, final int oldAmplifier, final int newAmplifier) {
++        super.removeAttributeModifiers(entity, entity.getAttributes(), oldAmplifier);
++
++        final float currentAbsorptionAmount = entity.getAbsorptionAmount();
++        final float updatedAbsorptionAmount = newAmplifier >= oldAmplifier
++            ? calculateGrantedAbsorptionHearts(newAmplifier) // Always max out absorption if the effect is stronger as this is not a downgrade but a new effect
++            : Math.min(currentAbsorptionAmount, calculateGrantedAbsorptionHearts(newAmplifier)); // Do not replenish lost absorption hearts when moving to weaker potion effect
++        entity.setAbsorptionAmount(updatedAbsorptionAmount);
++
++        super.addAttributeModifiers(entity, entity.getAttributes(), newAmplifier);
++    }
++    // Paper end - properly remove old overridden potion effect
+ }
+diff --git a/src/main/java/net/minecraft/world/effect/MobEffect.java b/src/main/java/net/minecraft/world/effect/MobEffect.java
+index 17ffab92f4ae2c06fa9f9249a474d4b6c9c55090..5decd532c25258c61632228eecbd1704dd7964fd 100644
+--- a/src/main/java/net/minecraft/world/effect/MobEffect.java
++++ b/src/main/java/net/minecraft/world/effect/MobEffect.java
+@@ -209,6 +209,13 @@ public class MobEffect {
+ 
+     }
+ 
++    // Paper start - properly remove old overridden potion effect - moved here from LivingEntity#onEffectUpdated
++    public void updateAttributeModifiers(final LivingEntity entity, final int oldAmplifier, final int newAmplifier) {
++        this.removeAttributeModifiers(entity, entity.getAttributes(), oldAmplifier);
++        this.addAttributeModifiers(entity, entity.getAttributes(), newAmplifier);
++    }
++    // Paper end - properly remove old overridden potion effect
++
+     public double getAttributeModifierValue(int amplifier, AttributeModifier modifier) {
+         return modifier.getAmount() * (double) (amplifier + 1);
+     }
+diff --git a/src/main/java/net/minecraft/world/effect/MobEffectInstance.java b/src/main/java/net/minecraft/world/effect/MobEffectInstance.java
+index 2faf634994f355ef1bf07fc70f1a0f4451db5fcc..71cf5f9f4a074d5c5fd58cb9fb76dafc827edba7 100644
+--- a/src/main/java/net/minecraft/world/effect/MobEffectInstance.java
++++ b/src/main/java/net/minecraft/world/effect/MobEffectInstance.java
+@@ -154,6 +154,11 @@ public class MobEffectInstance implements Comparable<MobEffectInstance> {
+     }
+ 
+     public boolean tick(LivingEntity entity, Runnable overwriteCallback) {
++        // Paper start - properly remove old overridden potion effect
++        return this.tick(entity, (newEffect, oldEffect) -> overwriteCallback.run());
++    }
++    public boolean tick(LivingEntity entity, java.util.function.BiConsumer<MobEffectInstance, MobEffectInstance> overwriteCallback) { // Paper - bi consumer will be fed the new (currently hidden) effect as the first parameter and the old current`effect as the second.
++        // Paper end - properly remove old overridden potion effect
+         if (this.duration > 0) {
+             if (this.effect.isDurationEffectTick(this.duration, this.amplifier)) {
+                 this.applyEffect(entity);
+@@ -161,9 +166,11 @@ public class MobEffectInstance implements Comparable<MobEffectInstance> {
+ 
+             this.tickDownDuration();
+             if (this.duration == 0 && this.hiddenEffect != null) {
++                final MobEffectInstance preOverwriteOriginalEffect = new MobEffectInstance(this); // Paper - properly remove old overridden potion effect - store current effect state
++
+                 this.setDetailsFrom(this.hiddenEffect);
+                 this.hiddenEffect = this.hiddenEffect.hiddenEffect;
+-                overwriteCallback.run();
++                overwriteCallback.accept(this, preOverwriteOriginalEffect); // Paper - properly remove old overridden potion effect
+             }
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index e8dc99752d06ca40f17f3ad2c829b2447b703d7c..92a6ef6e4927b8384f277a47c7dc2e84dedc29e3 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -891,8 +891,10 @@ public abstract class LivingEntity extends Entity {
+                 MobEffect mobeffectlist = (MobEffect) iterator.next();
+                 MobEffectInstance mobeffect = (MobEffectInstance) this.activeEffects.get(mobeffectlist);
+ 
+-                if (!mobeffect.tick(this, () -> {
+-                    this.onEffectUpdated(mobeffect, true, (Entity) null);
++                // Paper start - properly remove old overridden potion effect
++                if (!mobeffect.tick(this, (newEffect, oldEffect) -> {
++                    this.onEffectUpdated(newEffect, oldEffect, true, (Entity) null);
++                // Paper end - properly remove old overridden potion effect
+                 })) {
+                     if (!this.level.isClientSide) {
+                         // CraftBukkit start
+@@ -1229,12 +1231,17 @@ public abstract class LivingEntity extends Entity {
+     }
+ 
+     protected void onEffectUpdated(MobEffectInstance effect, boolean reapplyEffect, @Nullable Entity source) {
++        // Paper start - properly remove old overridden potion effect
++        this.onEffectUpdated(effect, null, reapplyEffect, source);
++    }
++
++    protected void onEffectUpdated(MobEffectInstance effect, @Nullable MobEffectInstance oldEffect, boolean reapplyEffect, @Nullable Entity source) {
++        // Paper end - properly remove old overridden potion effect
+         this.effectsDirty = true;
+         if (reapplyEffect && !this.level.isClientSide) {
+             MobEffect mobeffectlist = effect.getEffect();
+ 
+-            mobeffectlist.removeAttributeModifiers(this, this.getAttributes(), effect.getAmplifier());
+-            mobeffectlist.addAttributeModifiers(this, this.getAttributes(), effect.getAmplifier());
++            mobeffectlist.updateAttributeModifiers(this, (oldEffect != null ? oldEffect : effect).getAmplifier(), effect.getAmplifier()); // Paper - properly remove old overridden potion effect
+         }
+ 
+     }
