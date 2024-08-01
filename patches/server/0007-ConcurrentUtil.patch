@@ -4111,10 +4111,10 @@ index 0000000000000000000000000000000000000000..7ffe4379b06c03c56abbcbdee3bb7208
 +}
 diff --git a/src/main/java/ca/spottedleaf/concurrentutil/map/ConcurrentLong2ReferenceChainedHashTable.java b/src/main/java/ca/spottedleaf/concurrentutil/map/ConcurrentLong2ReferenceChainedHashTable.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6abee91e0d83c6a172e890bbda304a512cf790a1
+index 0000000000000000000000000000000000000000..d701998b376579ec652fb94823befa3cc0bc4090
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/concurrentutil/map/ConcurrentLong2ReferenceChainedHashTable.java
-@@ -0,0 +1,1681 @@
+@@ -0,0 +1,1684 @@
 +package ca.spottedleaf.concurrentutil.map;
 +
 +import ca.spottedleaf.concurrentutil.function.BiLong1Function;
@@ -4123,7 +4123,6 @@ index 0000000000000000000000000000000000000000..6abee91e0d83c6a172e890bbda304a51
 +import ca.spottedleaf.concurrentutil.util.IntegerUtil;
 +import ca.spottedleaf.concurrentutil.util.ThrowUtil;
 +import ca.spottedleaf.concurrentutil.util.Validate;
-+
 +import java.lang.invoke.VarHandle;
 +import java.util.Arrays;
 +import java.util.Iterator;
@@ -5573,23 +5572,27 @@ index 0000000000000000000000000000000000000000..6abee91e0d83c6a172e890bbda304a51
 +                this.currentTable = null;
 +                return null;
 +            }
-+            final TableEntry<V>[] newTable = resizeChain.table;
-+            if (newTable == null) {
++
++            final ResizeChain<V> prevChain = resizeChain.prev;
++            this.resizeChain = prevChain;
++            if (prevChain == null) {
 +                this.currentTable = null;
 +                return null;
 +            }
 +
-+            // the increment is a multiple of table.length, so we can undo the increments on idx by taking the
-+            // mod
++            final TableEntry<V>[] newTable = prevChain.table;
++
++            // we recover the original index by modding by the new table length, as the increments applied to the index
++            // are a multiple of the new table's length
 +            int newIdx = index & (newTable.length - 1);
 +
-+            final ResizeChain<V> newChain = this.resizeChain = resizeChain.prev;
-+            final TableEntry<V>[] prevTable = newChain.table;
++            // the increment is always the previous table's length
++            final ResizeChain<V> nextPrevChain = prevChain.prev;
 +            final int increment;
-+            if (prevTable == null) {
++            if (nextPrevChain == null) {
 +                increment = 1;
 +            } else {
-+                increment = prevTable.length;
++                increment = nextPrevChain.table.length;
 +            }
 +
 +            // done with the upper table, so we can skip the resize node
@@ -5706,8 +5709,8 @@ index 0000000000000000000000000000000000000000..6abee91e0d83c6a172e890bbda304a51
 +
 +            protected ResizeChain(final TableEntry<V>[] table, final ResizeChain<V> prev, final ResizeChain<V> next) {
 +                this.table = table;
-+                this.next = next;
 +                this.prev = prev;
++                this.next = next;
 +            }
 +        }
 +    }
