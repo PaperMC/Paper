@@ -1,0 +1,299 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: A248 <theanandbeh@gmail.com>
+Date: Sat, 26 Nov 2022 16:57:46 -0500
+Subject: [PATCH] Implement CraftScheduler getAsyncExecutor API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 07eac5439164a7345476c55277538a152359630a..9b9148cfe51bdac872b96f9c7d5af4b7fe7e4305 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -999,27 +999,7 @@ public final class CraftServer implements Server {
+         this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
+         this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");
+ 
+-        int pollCount = 0;
+-
+-        // Wait for at most 2.5 seconds for plugins to close their threads
+-        while (pollCount < 50 && this.getScheduler().getActiveWorkers().size() > 0) {
+-            try {
+-                Thread.sleep(50);
+-            } catch (InterruptedException e) {}
+-            pollCount++;
+-        }
+-
+-        List<BukkitWorker> overdueWorkers = this.getScheduler().getActiveWorkers();
+-        for (BukkitWorker worker : overdueWorkers) {
+-            Plugin plugin = worker.getOwner();
+-            this.getLogger().log(Level.SEVERE, String.format(
+-                "Nag author(s): '%s' of '%s' about the following: %s",
+-                plugin.getDescription().getAuthors(),
+-                plugin.getDescription().getFullName(),
+-                "This plugin is not properly shutting down its async tasks when it is being reloaded.  This may cause conflicts with the newly loaded version of the plugin"
+-            ));
+-            if (console.isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread(worker.getThread(), "still running"); // Paper
+-        }
++        waitForAsyncTasksToShutdown(true); // Paper - extract to method
+         this.loadPlugins();
+         this.enablePlugins(PluginLoadOrder.STARTUP);
+         this.enablePlugins(PluginLoadOrder.POSTWORLD);
+@@ -1028,31 +1008,53 @@ public final class CraftServer implements Server {
+     }
+ 
+     // Paper start
+-    public void waitForAsyncTasksShutdown() {
++    private void waitForAsyncTasksToShutdown(boolean reload) {
++
++        // Wait for plugins to close their threads
+         int pollCount = 0;
+ 
+-        // Wait for at most 5 seconds for plugins to close their threads
+-        while (pollCount < 10*5 && getScheduler().getActiveWorkers().size() > 0) {
++        // During reload, wait for at most 2.5 seconds, in shutdown, 5 seconds
++        long sleepTime = (reload) ? 50 : 100;
++
++        while (pollCount < 50 && !getScheduler().isAllFinished()) {
+             try {
+-                Thread.sleep(100);
++                Thread.sleep(sleepTime);
+             } catch (InterruptedException e) {}
+             pollCount++;
+         }
+ 
+-        List<BukkitWorker> overdueWorkers = getScheduler().getActiveWorkers();
++        List<BukkitWorker> overdueWorkers = this.getScheduler().getActiveWorkers();
+         for (BukkitWorker worker : overdueWorkers) {
+             Plugin plugin = worker.getOwner();
+-            String author = "<NoAuthorGiven>";
+-            if (plugin.getDescription().getAuthors().size() > 0) {
+-                author = plugin.getDescription().getAuthors().get(0);
++            warnNotShuttingDownAsyncTasks(plugin, reload);
++            if (reload && console.isDebugging()) {
++                io.papermc.paper.util.TraceUtil.dumpTraceForThread(worker.getThread(), "still running");
+             }
+-            getLogger().log(Level.SEVERE, String.format(
+-                "Nag author: '%s' of '%s' about the following: %s",
+-                author,
+-                plugin.getDescription().getName(),
+-                "This plugin is not properly shutting down its async tasks when it is being shut down. This task may throw errors during the final shutdown logs and might not complete before process dies."
+-            ));
+         }
++        for (Plugin plugin : getScheduler().getUnfinishedFromExecutors()) {
++            warnNotShuttingDownAsyncTasks(plugin, reload);
++        }
++    }
++
++    private void warnNotShuttingDownAsyncTasks(Plugin plugin, boolean reload) {
++        String message;
++        if (reload) {
++            message = "This plugin is not properly shutting down its async tasks when it is being reloaded. "
++                    + "This may cause conflicts with the newly loaded version of the plugin";
++        } else {
++            message = "This plugin is not properly shutting down its async tasks when it is being shut down. "
++                    + "This task may throw errors during the final shutdown logs and might not complete before process dies.";
++        }
++        getLogger().log(Level.SEVERE, String.format(
++            "Nag author(s): '%s' of '%s' about the following: %s",
++            plugin.getDescription().getAuthors(),
++            plugin.getDescription().getFullName(),
++            message
++        ));
++    }
++
++    public void waitForAsyncTasksShutdown() {
++        waitForAsyncTasksToShutdown(false);
+     }
+     // Paper end
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java
+index 9c1aff17aabd062640e3f451a2ef8c50a7c62f10..bb8b39ba644ce2ccfb6d1046bfc5d3d4d90a4cd7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java
++++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java
+@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
+ 
+ public class CraftAsyncScheduler extends CraftScheduler {
+ 
+-    private final ThreadPoolExecutor executor = new ThreadPoolExecutor(
++    final ThreadPoolExecutor executor = new ThreadPoolExecutor(
+             4, Integer.MAX_VALUE,30L, TimeUnit.SECONDS, new SynchronousQueue<>(),
+             new ThreadFactoryBuilder().setNameFormat("Craft Scheduler Thread - %1$d").setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(net.minecraft.server.MinecraftServer.LOGGER)).build()); // Paper
+     private final Executor management = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
+@@ -119,4 +119,39 @@ public class CraftAsyncScheduler extends CraftScheduler {
+     static boolean isValid(CraftTask runningTask) {
+         return runningTask.getPeriod() >= CraftTask.NO_REPEATING;
+     }
++
++    /*
++     * Plugin executors
++     */
++
++    private final java.util.concurrent.ConcurrentMap<String, PluginExecutor> pluginExecutors = new java.util.concurrent.ConcurrentHashMap<>();
++
++    @Override
++    public Executor getAsyncExecutor(Plugin plugin) {
++        org.apache.commons.lang.Validate.notNull(plugin, "Plugin cannot be null");
++        if (!plugin.isEnabled()) {
++            throw new org.bukkit.plugin.IllegalPluginAccessException("Plugin attempted to create executor while disabled");
++        }
++        return pluginExecutors.computeIfAbsent(plugin.getName(), (name) -> new PluginExecutor(plugin, this));
++    }
++
++    @Override
++    public java.util.Set<Plugin> getUnfinishedFromExecutors() {
++        java.util.Set<Plugin> unfinished = new java.util.HashSet<>();
++        for (PluginExecutor executor : pluginExecutors.values()) {
++            if (!executor.isFinished()) {
++                unfinished.add(executor.getPlugin());
++            }
++        }
++        return unfinished;
++    }
++
++    boolean isPluginExecutorsFinished() {
++        for (PluginExecutor executor : pluginExecutors.values()) {
++            if (!executor.isFinished()) {
++                return false;
++            }
++        }
++        return true;
++    }
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
+index cdefb2025eedea7e204d70d568adaf1c1ec4c03c..8ea323afb43f7ba4f26bf83351457d743790f2f3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
++++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
+@@ -120,7 +120,7 @@ public class CraftScheduler implements BukkitScheduler {
+ 
+ 
+     // Paper start
+-    private final CraftScheduler asyncScheduler;
++    final CraftAsyncScheduler asyncScheduler;
+     private final boolean isAsyncScheduler;
+     public CraftScheduler() {
+         this(false);
+@@ -129,7 +129,7 @@ public class CraftScheduler implements BukkitScheduler {
+     public CraftScheduler(boolean isAsync) {
+         this.isAsyncScheduler = isAsync;
+         if (isAsync) {
+-            this.asyncScheduler = this;
++            this.asyncScheduler = (CraftAsyncScheduler) this;
+         } else {
+             this.asyncScheduler = new CraftAsyncScheduler();
+         }
+@@ -553,7 +553,7 @@ public class CraftScheduler implements BukkitScheduler {
+         }
+     }
+ 
+-    private int nextId() {
++    int nextId() { // Paper - private -> package private
+         Validate.isTrue(this.runners.size() < Integer.MAX_VALUE, "There are already " + Integer.MAX_VALUE + " tasks scheduled! Cannot schedule more.");
+         int id;
+         do {
+@@ -656,7 +656,7 @@ public class CraftScheduler implements BukkitScheduler {
+         throw new UnsupportedOperationException("Use BukkitRunnable#runTaskTimerAsynchronously(Plugin, long, long)");
+     }
+ 
+-    // Paper start - add getMainThreadExecutor
++    // Paper start
+     @Override
+     public Executor getMainThreadExecutor(Plugin plugin) {
+         Validate.notNull(plugin, "Plugin cannot be null");
+@@ -665,5 +665,18 @@ public class CraftScheduler implements BukkitScheduler {
+             this.runTask(plugin, command);
+         };
+     }
++
++    @Override
++    public Executor getAsyncExecutor(Plugin plugin) {
++    	return this.asyncScheduler.getAsyncExecutor(plugin);
++    }
++
++    public Iterable<Plugin> getUnfinishedFromExecutors() {
++    	return this.asyncScheduler.getUnfinishedFromExecutors();
++    }
++
++    public boolean isAllFinished() {
++        return getActiveWorkers().isEmpty() && this.asyncScheduler.isPluginExecutorsFinished();
++    }
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/PluginExecutor.java b/src/main/java/org/bukkit/craftbukkit/scheduler/PluginExecutor.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b0b51e89b6385bff0fa1d3e32f0b5a2fbb37213f
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/scheduler/PluginExecutor.java
+@@ -0,0 +1,74 @@
++package org.bukkit.craftbukkit.scheduler;
++
++import java.util.Set;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.Executor;
++import java.util.concurrent.RejectedExecutionException;
++import java.util.logging.Level;
++
++import org.bukkit.plugin.Plugin;
++
++class PluginExecutor implements Executor {
++
++    private final Plugin plugin;
++    private final CraftScheduler scheduler;
++    private final Set<PluginRunnableWrapper> runnables = ConcurrentHashMap.newKeySet();
++
++    PluginExecutor(Plugin plugin, CraftScheduler scheduler) {
++        this.plugin = plugin;
++        this.scheduler = scheduler;
++    }
++
++    Plugin getPlugin() {
++        return plugin;
++    }
++
++    boolean isFinished() {
++        return runnables.isEmpty();
++    }
++
++    @Override
++    public void execute(Runnable command) {
++        if (!plugin.isEnabled()) {
++            throw new RejectedExecutionException("Plugin attempted to use async executor while disabled");
++        }
++        int id = scheduler.nextId();
++        PluginRunnableWrapper pluginRunnableWrapper = new PluginRunnableWrapper(command, id);
++        runnables.add(pluginRunnableWrapper);
++        scheduler.asyncScheduler.executor.execute(pluginRunnableWrapper);
++    }
++
++    private class PluginRunnableWrapper implements Runnable {
++
++        private final Runnable command;
++        private final int id;
++
++        PluginRunnableWrapper(Runnable command, int id) {
++            this.command = command;
++            this.id = id;
++        }
++
++        @Override
++        public void run() {
++            Plugin plugin = getPlugin();
++            try {
++                command.run();
++            } catch (Throwable thrown) {
++                plugin.getLogger().log(
++                        Level.WARNING,
++                        String.format("Plugin %s generated an exception while executing PluginExecutor task %s",
++                                plugin.getDescription().getFullName(),
++                                id),
++                        thrown);
++            } finally {
++                runnables.remove(this);
++            }
++        }
++    }
++
++    @Override
++    public String toString() {
++        return "PluginExecutor [plugin=" + plugin + ", scheduler=" + scheduler + "]";
++    }
++
++}
