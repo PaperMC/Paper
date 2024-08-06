@@ -110,8 +110,10 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         } else {
             material = Material.AIR;
         }
-        blockEntityTag = getBlockState(material, internalTag);
-        internalTag = null;
+        if (internalTag != null) {
+            blockEntityTag = getBlockState(material, internalTag);
+            internalTag = null;
+        }
     }
 
     @Override
