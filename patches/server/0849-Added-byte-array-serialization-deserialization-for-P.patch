@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nex <nex@bits.team>
+Date: Thu, 24 Feb 2022 16:28:07 +0100
+Subject: [PATCH] Added byte array serialization/deserialization for
+ PersistentDataContainers
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java b/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
+index 390d5843233d26b76f90651f49a2a1d68c0aa67f..3351962e85438ed05215ce0d159799ed4707afde 100644
+--- a/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
++++ b/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
+@@ -168,5 +168,26 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+ 
+         return this.customDataTags.containsKey(key.toString());
+     }
++
++    @Override
++    public byte[] serializeToBytes() throws java.io.IOException {
++        net.minecraft.nbt.CompoundTag root = this.toTagCompound();
++        java.io.ByteArrayOutputStream byteArrayOutput = new java.io.ByteArrayOutputStream();
++        try (java.io.DataOutputStream dataOutput = new java.io.DataOutputStream(byteArrayOutput)) {
++            net.minecraft.nbt.NbtIo.write(root, dataOutput);
++            return byteArrayOutput.toByteArray();
++        }
++    }
++
++    @Override
++    public void readFromBytes(byte[] bytes, boolean clear) throws java.io.IOException {
++        if (clear) {
++            this.clear();
++        }
++        try (java.io.DataInputStream dataInput = new java.io.DataInputStream(new java.io.ByteArrayInputStream(bytes))) {
++            net.minecraft.nbt.CompoundTag compound = net.minecraft.nbt.NbtIo.read(dataInput);
++            this.putAll(compound);
++        }
++    }
+     // Paper end
+ }
