@@ -100,7 +100,7 @@ public final class TrimMaterialKeys {
     }
 
     /**
-     * Creates a key for {@link TrimMaterial} in a registry.
+     * Creates a key for {@link TrimMaterial} in the registry {@code minecraft:trim_material}.
      *
      * @param key the value's key in the registry
      * @return a new typed key
