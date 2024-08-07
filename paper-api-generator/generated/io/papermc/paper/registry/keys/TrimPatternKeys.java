@@ -156,7 +156,7 @@ public final class TrimPatternKeys {
     }
 
     /**
-     * Creates a key for {@link TrimPattern} in a registry.
+     * Creates a key for {@link TrimPattern} in the registry {@code minecraft:trim_pattern}.
      *
      * @param key the value's key in the registry
      * @return a new typed key

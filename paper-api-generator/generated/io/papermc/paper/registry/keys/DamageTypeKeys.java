@@ -359,7 +359,7 @@ public final class DamageTypeKeys {
     }
 
     /**
-     * Creates a key for {@link DamageType} in a registry.
+     * Creates a key for {@link DamageType} in the registry {@code minecraft:damage_type}.
      *
      * @param key the value's key in the registry
      * @return a new typed key

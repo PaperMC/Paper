@@ -93,7 +93,7 @@ public final class WolfVariantKeys {
     }
 
     /**
-     * Creates a key for {@link Wolf.Variant} in a registry.
+     * Creates a key for {@link Wolf.Variant} in the registry {@code minecraft:wolf_variant}.
      *
      * @param key the value's key in the registry
      * @return a new typed key

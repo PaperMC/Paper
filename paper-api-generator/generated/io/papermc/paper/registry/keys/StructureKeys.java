@@ -268,7 +268,7 @@ public final class StructureKeys {
     }
 
     /**
-     * Creates a key for {@link Structure} in a registry.
+     * Creates a key for {@link Structure} in the registry {@code minecraft:worldgen/structure}.
      *
      * @param key the value's key in the registry
      * @return a new typed key
