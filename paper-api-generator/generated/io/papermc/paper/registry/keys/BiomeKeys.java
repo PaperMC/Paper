@@ -478,7 +478,7 @@ public final class BiomeKeys {
     }
 
     /**
-     * Creates a key for {@link Biome} in a registry.
+     * Creates a key for {@link Biome} in the registry {@code minecraft:worldgen/biome}.
      *
      * @param key the value's key in the registry
      * @return a new typed key

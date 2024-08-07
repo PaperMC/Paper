@@ -132,8 +132,7 @@ public class MobGoalGenerator extends SimpleGenerator {
 
     @Override
     protected JavaFile.Builder file(JavaFile.Builder builder) {
-        return builder
-            .skipJavaLangImports(true);
+        return builder;
     }
 
     record DeprecatedEntry(Class<?> entity, String entryName, @Nullable String removalVersion,

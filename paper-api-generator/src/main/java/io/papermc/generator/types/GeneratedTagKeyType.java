@@ -15,15 +15,11 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.tag.TagKey;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.Registry;
-import net.minecraft.core.RegistrySetBuilder;
-import net.minecraft.data.registries.VanillaRegistries;
 import net.minecraft.resources.ResourceKey;
 import org.bukkit.MinecraftExperimental;
 
@@ -38,11 +34,6 @@ import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
 
 public class GeneratedTagKeyType<T, A> extends SimpleGenerator {
-
-    private static final Map<ResourceKey<? extends Registry<?>>, RegistrySetBuilder.RegistryBootstrap<?>> VANILLA_REGISTRY_ENTRIES = VanillaRegistries.BUILDER.entries.stream()
-        .collect(Collectors.toMap(RegistrySetBuilder.RegistryStub::key, RegistrySetBuilder.RegistryStub::bootstrap));
-
-    private static final Map<ResourceKey<? extends Registry<?>>, RegistrySetBuilder.RegistryBootstrap<?>> EXPERIMENTAL_REGISTRY_ENTRIES = Collections.emptyMap(); // Update for Experimental API
 
     private static final Map<RegistryKey<?>, String> REGISTRY_KEY_FIELD_NAMES;
     static {
@@ -91,7 +82,7 @@ public class GeneratedTagKeyType<T, A> extends SimpleGenerator {
             .returns(returnType.annotated(NOT_NULL));
         if (this.publicCreateKeyMethod) {
             create.addAnnotation(EXPERIMENTAL_API_ANNOTATION); // TODO remove once not experimental
-            create.addJavadoc(CREATE_JAVADOC, this.apiType, this.registryKey.registry().toString());
+            create.addJavadoc(CREATE_JAVADOC, this.apiType, this.registryKey.location().toString());
         }
         return create;
     }
@@ -102,8 +93,8 @@ public class GeneratedTagKeyType<T, A> extends SimpleGenerator {
             .addJavadoc(Javadocs.getVersionDependentClassHeader("{@link $T#$L}"), RegistryKey.class, REGISTRY_KEY_FIELD_NAMES.get(this.apiRegistryKey))
             .addAnnotations(Annotations.CLASS_HEADER)
             .addMethod(MethodSpec.constructorBuilder()
-                           .addModifiers(PRIVATE)
-                           .build()
+                .addModifiers(PRIVATE)
+                .build()
             );
     }
 
@@ -117,8 +108,7 @@ public class GeneratedTagKeyType<T, A> extends SimpleGenerator {
         final Registry<T> registry = Main.REGISTRY_ACCESS.registryOrThrow(this.registryKey);
 
         final AtomicBoolean allExperimental = new AtomicBoolean(true);
-        registry.getTags().forEach(pair -> {
-            final net.minecraft.tags.TagKey<T> nmsTagKey = pair.getFirst();
+        registry.getTagNames().sorted(Formatting.alphabeticKeyOrder(nmsTagKey -> nmsTagKey.location().getPath())).forEach(nmsTagKey -> {
             final String fieldName = Formatting.formatKeyAsField(nmsTagKey.location().getPath());
             final FieldSpec.Builder fieldBuilder = FieldSpec.builder(tagKey, fieldName, PUBLIC, STATIC, FINAL)
                 .initializer("$N(key($S))", createMethod.build(), nmsTagKey.location().getPath())
@@ -142,8 +132,6 @@ public class GeneratedTagKeyType<T, A> extends SimpleGenerator {
     @Override
     protected JavaFile.Builder file(final JavaFile.Builder builder) {
         return builder
-            .skipJavaLangImports(true)
-            .addStaticImport(Key.class, "key")
-            .indent("    ");
+            .addStaticImport(Key.class, "key");
     }
 }
