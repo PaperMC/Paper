@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Newwind <support@newwindserver.com>
+Date: Sat, 13 Jul 2024 18:00:37 +0200
+Subject: [PATCH] Fix fetching biomes during world generation
+
+getBiome() on LevelReader calls getNoiseBiome(), which itself calls getChunk() in order to get the biome cached inside the chunk.
+However, calling getChunk() on WorldGenRegion will cause a crash if the chunk isn't found: "Requested chunk unavailable during world generation"
+This means that features which attempt to fetch biomes during generation (LakeFeature/SnowAndFreezeFeature)
+can cause the server to crash.
+This patch ensures that these features are fetching biomes in a way that doesn't call getChunk()
+
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/feature/LakeFeature.java b/src/main/java/net/minecraft/world/level/levelgen/feature/LakeFeature.java
+index 830558f0e..a7fd3eaf4 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/feature/LakeFeature.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/feature/LakeFeature.java
+@@ -134,7 +134,7 @@ public class LakeFeature extends Feature<LakeFeature.Configuration> {
+                     for (int ac = 0; ac < 16; ac++) {
+                         int ad = 4;
+                         BlockPos blockPos4 = blockPos.offset(ab, 4, ac);
+-                        if (worldGenLevel.getBiome(blockPos4).value().shouldFreeze(worldGenLevel, blockPos4, false)
++                        if (worldGenLevel.getUncachedNoiseBiome(blockPos4.getX(), blockPos4.getY(), blockPos4.getZ()).value().shouldFreeze(worldGenLevel, blockPos4, false)
+                             && this.canReplaceBlock(worldGenLevel.getBlockState(blockPos4))) {
+                             worldGenLevel.setBlock(blockPos4, Blocks.ICE.defaultBlockState(), 2);
+                         }
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/feature/SnowAndFreezeFeature.java b/src/main/java/net/minecraft/world/level/levelgen/feature/SnowAndFreezeFeature.java
+index 3018026b7..e30ca86e2 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/feature/SnowAndFreezeFeature.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/feature/SnowAndFreezeFeature.java
+@@ -30,7 +30,7 @@ public class SnowAndFreezeFeature extends Feature<NoneFeatureConfiguration> {
+                 int m = worldGenLevel.getHeight(Heightmap.Types.MOTION_BLOCKING, k, l);
+                 mutableBlockPos.set(k, m, l);
+                 mutableBlockPos2.set(mutableBlockPos).move(Direction.DOWN, 1);
+-                Biome biome = worldGenLevel.getBiome(mutableBlockPos).value();
++                Biome biome = worldGenLevel.getUncachedNoiseBiome(mutableBlockPos.getX(), mutableBlockPos.getY(), mutableBlockPos.getZ()).value();
+                 if (biome.shouldFreeze(worldGenLevel, mutableBlockPos2, false)) {
+                     worldGenLevel.setBlock(mutableBlockPos2, Blocks.ICE.defaultBlockState(), 2);
+                 }
