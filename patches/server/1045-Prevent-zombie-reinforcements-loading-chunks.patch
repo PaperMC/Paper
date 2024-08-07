@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Newwind <support@newwindserver.com>
+Date: Sat, 27 Jul 2024 11:09:37 +0200
+Subject: [PATCH] Prevent zombie reinforcements loading chunks
+
+When a zombie calls reinforcements it tries to spawn them in a random location within a 40 block radius of the zombie,
+before spawning, it checks isSpawnPositionOk() for the position which loads the block to check if a mob can spawn on said block.
+This patch ensures the chunk at the random location is loaded before trying to spawn the reinforcement zombie in it. 
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Zombie.java b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+index 228000463..7cb98b312 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Zombie.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+@@ -344,6 +344,12 @@ public class Zombie extends Monster {
+                     BlockPos blockposition = new BlockPos(i1, j1, k1);
+                     EntityType<?> entitytypes = entityzombie.getType();
+ 
++                    // Paper start - Prevent reinforcement checks from loading chunks
++                    if (this.level().getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4) == null) {
++                        continue;
++                    }
++                    // Paper end - Prevent reinforcement checks from loading chunks
++
+                     if (SpawnPlacements.isSpawnPositionOk(entitytypes, this.level(), blockposition) && SpawnPlacements.checkSpawnRules(entitytypes, worldserver, MobSpawnType.REINFORCEMENT, blockposition, this.level().random)) {
+                         entityzombie.setPos((double) i1, (double) j1, (double) k1);
+                         if (!this.level().hasNearbyAlivePlayerThatAffectsSpawning((double) i1, (double) j1, (double) k1, 7.0D) && this.level().isUnobstructed(entityzombie) && this.level().noCollision((Entity) entityzombie) && !this.level().containsAnyLiquid(entityzombie.getBoundingBox())) { // Paper - Affects Spawning API
