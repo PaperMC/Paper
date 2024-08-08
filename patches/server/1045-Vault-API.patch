@@ -49,15 +49,16 @@ index 85527fa85fa2d172ec7f142ce042c87bd2533029..4dd001d1ec9e178f348753fc08991455
          return this.stateUpdatingResumesAt;
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftVault.java b/src/main/java/org/bukkit/craftbukkit/block/CraftVault.java
-index bfee498287c8358cbc8c9c2b7289d861cb90f0ad..1d437f6bc11dfb0505607d5ecf0cb31766177ef1 100644
+index bfee498287c8358cbc8c9c2b7289d861cb90f0ad..d6fecfee5ce3245e6ae4b2cfd05083ad76d82cab 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftVault.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftVault.java
-@@ -1,9 +1,25 @@
+@@ -1,9 +1,27 @@
  package org.bukkit.craftbukkit.block;
  
 +import com.google.common.base.Preconditions;
 +import com.google.common.collect.ImmutableSet;
 +import java.util.List;
++import java.util.Objects;
 +import java.util.Optional;
 +import java.util.Set;
 +import java.util.UUID;
@@ -74,11 +75,12 @@ index bfee498287c8358cbc8c9c2b7289d861cb90f0ad..1d437f6bc11dfb0505607d5ecf0cb317
 +import org.bukkit.entity.Player;
 +import org.bukkit.inventory.ItemStack;
 +import org.bukkit.loot.LootTable;
++import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
  
  public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implements Vault {
  
-@@ -15,6 +31,147 @@ public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implemen
+@@ -15,6 +33,154 @@ public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implemen
          super(state, location);
      }
  
@@ -165,6 +167,8 @@ index bfee498287c8358cbc8c9c2b7289d861cb90f0ad..1d437f6bc11dfb0505607d5ecf0cb317
 +
 +    @Override
 +    public Set<UUID> getRewardedPlayerUUIDs() {
++        requirePlaced();
++
 +        return ImmutableSet.copyOf(this.getTileEntity().getServerData().getRewardedPlayers());
 +    }
 +
@@ -192,6 +196,7 @@ index bfee498287c8358cbc8c9c2b7289d861cb90f0ad..1d437f6bc11dfb0505607d5ecf0cb317
 +    @Override
 +    public void addToRewardedPlayers(final UUID uniqueId) {
 +        Preconditions.checkArgument(uniqueId != null, "UUID cannot be null");
++        requirePlaced();
 +
 +        this.getTileEntity().getServerData().addToRewardedPlayers(uniqueId);
 +    }
@@ -206,20 +211,24 @@ index bfee498287c8358cbc8c9c2b7289d861cb90f0ad..1d437f6bc11dfb0505607d5ecf0cb317
 +    @Override
 +    public void removeFromRewardedPlayers(final UUID uniqueId) {
 +        Preconditions.checkArgument(uniqueId != null, "UUID cannot be null");
++        requirePlaced();
 +
 +        this.getTileEntity().getServerData().removeFromRewardedPlayers(uniqueId);
 +    }
 +
 +    @Override
 +    public List<ItemStack> getItemsToEject() {
++        requirePlaced();
++
 +        return this.getTileEntity().getServerData().getItemsToEject().stream().map(net.minecraft.world.item.ItemStack::asBukkitCopy).toList();
 +    }
 +
 +    @Override
-+    public void setItemsToEject(final List<ItemStack> itemsToEject) {
++    public void setItemsToEject(final List<@NotNull ItemStack> itemsToEject) {
 +        Preconditions.checkArgument(itemsToEject != null, "ItemsToEject cannot be null");
++        requirePlaced();
 +
-+        this.getTileEntity().getServerData().setItemsToEject(itemsToEject.stream().map(CraftItemStack::asNMSCopy).toList());
++        this.getTileEntity().getServerData().setItemsToEject(itemsToEject.stream().filter(i -> !i.isEmpty()).map(CraftItemStack::asNMSCopy).toList());
 +    }
 +    // Paper end - Vault API
 +
