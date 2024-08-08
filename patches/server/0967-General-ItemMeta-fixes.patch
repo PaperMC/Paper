@@ -1345,7 +1345,7 @@ index 90c554dcbfe2bcca3f742379499f1e8e8665c512..14acdd2bd02de7e99b7f237151633ed7
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPotion.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPotion.java
-index 7f9182809f6e67ff571db0f365bc7e05f600775a..52d0fb3e08c93892ca401f721359cfac8d96e2c9 100644
+index 7f9182809f6e67ff571db0f365bc7e05f600775a..cae26785e72106f4a95de8344aeea6d27c395563 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPotion.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPotion.java
 @@ -37,7 +37,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
@@ -1384,29 +1384,36 @@ index 7f9182809f6e67ff571db0f365bc7e05f600775a..52d0fb3e08c93892ca401f721359cfac
  
          List<MobEffectInstance> effectList = new ArrayList<>();
          if (this.customEffects != null) {
-@@ -189,25 +189,24 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
+@@ -189,25 +189,27 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
      public boolean addCustomEffect(PotionEffect effect, boolean overwrite) {
          Preconditions.checkArgument(effect != null, "Potion effect cannot be null");
  
 -        int index = this.indexOfEffect(effect.getType());
 -        if (index != -1) {
 -            if (overwrite) {
+-                PotionEffect old = this.customEffects.get(index);
+-                if (old.getAmplifier() == effect.getAmplifier() && old.getDuration() == effect.getDuration() && old.isAmbient() == effect.isAmbient()) {
+-                    return false;
 +        // Paper start - support multiple effects of the same type
-+        if (overwrite) {
-+            int index = this.indexOfEffect(effect.getType());
-+            if (index != -1) {
-+        // Paper end - support multiple effects of the same type
-                 PotionEffect old = this.customEffects.get(index);
-                 if (old.getAmplifier() == effect.getAmplifier() && old.getDuration() == effect.getDuration() && old.isAmbient() == effect.isAmbient()) {
-                     return false;
++        if (overwrite && hasCustomEffects()) {
++            int index = -1;
++            for (int i = this.customEffects.size() - 1; i >= 0; i--) {
++                PotionEffect eff = this.customEffects.get(i);
++                if (eff.getType().equals(effect.getType())) {
++                    this.customEffects.remove(i);
++                    index = i;
                  }
-                 this.customEffects.set(index, effect);
+-                this.customEffects.set(index, effect);
++            }
++            if (index != -1) {
++                this.customEffects.add(index, effect);
                  return true;
 -            } else {
 -                return false;
              }
 -        } else {
-+        } // Paper - support multiple effects of the same type
++        }
++        // Paper end - support multiple effects of the same type
              if (this.customEffects == null) {
                  this.customEffects = new ArrayList<>();
              }
@@ -1416,7 +1423,7 @@ index 7f9182809f6e67ff571db0f365bc7e05f600775a..52d0fb3e08c93892ca401f721359cfac
      }
  
      @Override
-@@ -280,12 +279,12 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
+@@ -280,12 +282,12 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
  
      @Override
      public Color getColor() {
