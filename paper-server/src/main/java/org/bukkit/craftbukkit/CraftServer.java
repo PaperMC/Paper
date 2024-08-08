@@ -2505,7 +2505,7 @@ public final class CraftServer implements Server {
 
         try {
             StringReader reader = new StringReader(selector);
-            nms = arg.parse(reader, true).findEntities(VanillaCommandWrapper.getListener(sender));
+            nms = arg.parse(reader, true, true).findEntities(VanillaCommandWrapper.getListener(sender));
             Preconditions.checkArgument(!reader.canRead(), "Spurious trailing data in selector: %s", selector);
         } catch (CommandSyntaxException ex) {
             throw new IllegalArgumentException("Could not parse selector: " + selector, ex);
