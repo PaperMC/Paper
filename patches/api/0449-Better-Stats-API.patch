@@ -1,0 +1,832 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 20 May 2021 01:10:54 -0700
+Subject: [PATCH] Better Stats API
+
+
+diff --git a/src/main/java/io/papermc/paper/event/player/PlayerRequestStatisticsEvent.java b/src/main/java/io/papermc/paper/event/player/PlayerRequestStatisticsEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ce1b6ae06c411f0e346e3ccf5760ec5aa86e43e3
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/PlayerRequestStatisticsEvent.java
+@@ -0,0 +1,56 @@
++package io.papermc.paper.event.player;
++
++import io.papermc.paper.statistic.Statistic;
++import it.unimi.dsi.fastutil.objects.Object2IntMap;
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.player.PlayerEvent;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Called when the player requests their statistics.
++ */
++public class PlayerRequestStatisticsEvent extends PlayerEvent implements Cancellable {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private final Object2IntMap<Statistic<?>> statisticMap;
++    private boolean cancelled;
++
++    public PlayerRequestStatisticsEvent(@NotNull Player who, @NotNull Object2IntMap<Statistic<?>> statisticMap) {
++        super(who);
++        this.statisticMap = statisticMap;
++    }
++
++    /**
++     * Gets the statistic map to be sent to the player.
++     *
++     * @return the mutable statistic map
++     */
++    @NotNull
++    public Object2IntMap<Statistic<?>> getStatisticMap() {
++        return statisticMap;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/statistic/CustomStatistic.java b/src/main/java/io/papermc/paper/statistic/CustomStatistic.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..abf3a7c06c90ed399e8f6da7eedfb9e6d257e544
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/statistic/CustomStatistic.java
+@@ -0,0 +1,102 @@
++package io.papermc.paper.statistic;
++
++import net.kyori.adventure.translation.Translatable;
++import org.bukkit.Keyed;
++import org.bukkit.NamespacedKey;
++import org.bukkit.Registry;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Custom statistic types.
++ */
++@ApiStatus.NonExtendable
++public interface CustomStatistic extends Keyed, Translatable {
++
++    CustomStatistic LEAVE_GAME = get("leave_game");
++    CustomStatistic PLAY_TIME = get("play_time");
++    CustomStatistic TOTAL_WORLD_TIME = get("total_world_time");
++    CustomStatistic TIME_SINCE_DEATH = get("time_since_death");
++    CustomStatistic TIME_SINCE_REST = get("time_since_rest");
++    CustomStatistic SNEAK_TIME = get("sneak_time");
++    CustomStatistic WALK_ONE_CM = get("walk_one_cm");
++    CustomStatistic CROUCH_ONE_CM = get("crouch_one_cm");
++    CustomStatistic SPRINT_ONE_CM = get("sprint_one_cm");
++    CustomStatistic WALK_ON_WATER_ONE_CM = get("walk_on_water_one_cm");
++    CustomStatistic FALL_ONE_CM = get("fall_one_cm");
++    CustomStatistic CLIMB_ONE_CM = get("climb_one_cm");
++    CustomStatistic FLY_ONE_CM = get("fly_one_cm");
++    CustomStatistic WALK_UNDER_WATER_ONE_CM = get("walk_under_water_one_cm");
++    CustomStatistic MINECART_ONE_CM = get("minecart_one_cm");
++    CustomStatistic BOAT_ONE_CM = get("boat_one_cm");
++    CustomStatistic PIG_ONE_CM = get("pig_one_cm");
++    CustomStatistic HORSE_ONE_CM = get("horse_one_cm");
++    CustomStatistic AVIATE_ONE_CM = get("aviate_one_cm");
++    CustomStatistic SWIM_ONE_CM = get("swim_one_cm");
++    CustomStatistic STRIDER_ONE_CM = get("strider_one_cm");
++    CustomStatistic JUMP = get("jump");
++    CustomStatistic DROP = get("drop");
++    CustomStatistic DAMAGE_DEALT = get("damage_dealt");
++    CustomStatistic DAMAGE_DEALT_ABSORBED = get("damage_dealt_absorbed");
++    CustomStatistic DAMAGE_DEALT_RESISTED = get("damage_dealt_resisted");
++    CustomStatistic DAMAGE_TAKEN = get("damage_taken");
++    CustomStatistic DAMAGE_BLOCKED_BY_SHIELD = get("damage_blocked_by_shield");
++    CustomStatistic DAMAGE_ABSORBED = get("damage_absorbed");
++    CustomStatistic DAMAGE_RESISTED = get("damage_resisted");
++    CustomStatistic DEATHS = get("deaths");
++    CustomStatistic MOB_KILLS = get("mob_kills");
++    CustomStatistic ANIMALS_BRED = get("animals_bred");
++    CustomStatistic PLAYER_KILLS = get("player_kills");
++    CustomStatistic FISH_CAUGHT = get("fish_caught");
++    CustomStatistic TALKED_TO_VILLAGER = get("talked_to_villager");
++    CustomStatistic TRADED_WITH_VILLAGER = get("traded_with_villager");
++    CustomStatistic EAT_CAKE_SLICE = get("eat_cake_slice");
++    CustomStatistic FILL_CAULDRON = get("fill_cauldron");
++    CustomStatistic USE_CAULDRON = get("use_cauldron");
++    CustomStatistic CLEAN_ARMOR = get("clean_armor");
++    CustomStatistic CLEAN_BANNER = get("clean_banner");
++    CustomStatistic CLEAN_SHULKER_BOX = get("clean_shulker_box");
++    CustomStatistic INTERACT_WITH_BREWINGSTAND = get("interact_with_brewingstand");
++    CustomStatistic INTERACT_WITH_BEACON = get("interact_with_beacon");
++    CustomStatistic INSPECT_DROPPER = get("inspect_dropper");
++    CustomStatistic INSPECT_HOPPER = get("inspect_hopper");
++    CustomStatistic INSPECT_DISPENSER = get("inspect_dispenser");
++    CustomStatistic PLAY_NOTEBLOCK = get("play_noteblock");
++    CustomStatistic TUNE_NOTEBLOCK = get("tune_noteblock");
++    CustomStatistic POT_FLOWER = get("pot_flower");
++    CustomStatistic TRIGGER_TRAPPED_CHEST = get("trigger_trapped_chest");
++    CustomStatistic OPEN_ENDERCHEST = get("open_enderchest");
++    CustomStatistic ENCHANT_ITEM = get("enchant_item");
++    CustomStatistic PLAY_RECORD = get("play_record");
++    CustomStatistic INTERACT_WITH_FURNACE = get("interact_with_furnace");
++    CustomStatistic INTERACT_WITH_CRAFTING_TABLE = get("interact_with_crafting_table");
++    CustomStatistic OPEN_CHEST = get("open_chest");
++    CustomStatistic SLEEP_IN_BED = get("sleep_in_bed");
++    CustomStatistic OPEN_SHULKER_BOX = get("open_shulker_box");
++    CustomStatistic OPEN_BARREL = get("open_barrel");
++    CustomStatistic INTERACT_WITH_BLAST_FURNACE = get("interact_with_blast_furnace");
++    CustomStatistic INTERACT_WITH_SMOKER = get("interact_with_smoker");
++    CustomStatistic INTERACT_WITH_LECTERN = get("interact_with_lectern");
++    CustomStatistic INTERACT_WITH_CAMPFIRE = get("interact_with_campfire");
++    CustomStatistic INTERACT_WITH_CARTOGRAPHY_TABLE = get("interact_with_cartography_table");
++    CustomStatistic INTERACT_WITH_LOOM = get("interact_with_loom");
++    CustomStatistic INTERACT_WITH_STONECUTTER = get("interact_with_stonecutter");
++    CustomStatistic BELL_RING = get("bell_ring");
++    CustomStatistic RAID_TRIGGER = get("raid_trigger");
++    CustomStatistic RAID_WIN = get("raid_win");
++    CustomStatistic INTERACT_WITH_ANVIL = get("interact_with_anvil");
++    CustomStatistic INTERACT_WITH_GRINDSTONE = get("interact_with_grindstone");
++    CustomStatistic TARGET_HIT = get("target_hit");
++    CustomStatistic INTERACT_WITH_SMITHING_TABLE = get("interact_with_smithing_table");
++
++    private static CustomStatistic get(final String key) {
++        return Registry.CUSTOM_STATISTIC.get(NamespacedKey.minecraft(key));
++    }
++
++    /**
++     * Gets the actual statistic for this custom stat.
++     *
++     * @return the actual statistic
++     */
++    @NotNull Statistic<CustomStatistic> statistic();
++}
+diff --git a/src/main/java/io/papermc/paper/statistic/Statistic.java b/src/main/java/io/papermc/paper/statistic/Statistic.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3cf244593dceb8e457e7faab72b26f31b3f2cd28
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/statistic/Statistic.java
+@@ -0,0 +1,40 @@
++package io.papermc.paper.statistic;
++
++import org.bukkit.Keyed;
++import org.bukkit.scoreboard.Criteria;
++import org.bukkit.scoreboard.RenderType;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Represents an individual statistic
++ *
++ * @param <S> stat (one of {@link org.bukkit.entity.EntityType}, {@link org.bukkit.Material} or {@link CustomStatistic}).
++ */
++@ApiStatus.NonExtendable
++public interface Statistic<S extends Keyed> extends Criteria {
++
++    /**
++     * Gets the statistic.
++     *
++     * @return the stat
++     */
++    @NotNull S value();
++
++    /**
++     * Get the stat type.
++     *
++     * @return the stat type
++     */
++    @NotNull StatisticType<S> type();
++
++    @Override
++    default boolean isReadOnly() {
++        return false;
++    }
++
++    @Override
++    default @NotNull RenderType getDefaultRenderType() {
++        return RenderType.INTEGER;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/statistic/StatisticType.java b/src/main/java/io/papermc/paper/statistic/StatisticType.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c3ffd55c3cabe66a9a2e9a1872c25000c06f7042
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/statistic/StatisticType.java
+@@ -0,0 +1,60 @@
++package io.papermc.paper.statistic;
++
++import java.util.HashMap;
++import java.util.Map;
++import net.kyori.adventure.translation.Translatable;
++import org.bukkit.Keyed;
++import org.bukkit.Material;
++import org.bukkit.NamespacedKey;
++import org.bukkit.Registry;
++import org.bukkit.entity.EntityType;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++
++@ApiStatus.NonExtendable
++public interface StatisticType<S extends Keyed> extends Keyed, Translatable {
++
++    Map<NamespacedKey, StatisticType<?>> STATISTIC_TYPE_MAP = new HashMap<>();
++
++    StatisticType<Material> BLOCK_MINED = get("mined");
++    StatisticType<Material> ITEM_CRAFTED = get("crafted");
++    StatisticType<Material> ITEM_USED = get("used");
++    StatisticType<Material> ITEM_BROKEN = get("broken");
++    StatisticType<Material> ITEM_PICKED_UP = get("picked_up");
++    StatisticType<Material> ITEM_DROPPED = get("dropped");
++    StatisticType<EntityType> ENTITY_KILLED = get("killed");
++    StatisticType<EntityType> ENTITY_KILLED_BY = get("killed_by");
++    StatisticType<CustomStatistic> CUSTOM = get("custom");
++
++    @SuppressWarnings("unchecked")
++    private static <S extends Keyed> StatisticType<S> get(final String key) {
++        return (StatisticType<S>) Registry.STATISTIC_TYPE.get(NamespacedKey.minecraft(key));
++    }
++
++    /**
++     * Creates or gets the statistic from this type for the specified value.
++     *
++     * @param value what you want the stat of
++     * @return the statistic for that thing
++     * @throws IllegalArgumentException if the thing is not valid for this {@link StatisticType}
++     */
++    @NotNull Statistic<S> of(@NotNull S value);
++
++    /**
++     * Gets the registry associated with this stat type.
++     *
++     * @return the registry
++     */
++    @NotNull Registry<S> registry();
++
++    /**
++     * {@inheritDoc}
++     * <p>
++     * {@link StatisticType#CUSTOM} does <b>NOT</b> have a
++     * translation key.
++     * @throws IllegalArgumentException if used with {@link StatisticType#CUSTOM}
++     * @see CustomStatistic#translationKey()
++     */
++    @Override
++    @NotNull String translationKey();
++}
+diff --git a/src/main/java/org/bukkit/OfflinePlayer.java b/src/main/java/org/bukkit/OfflinePlayer.java
+index bce07d84cafca677bb6fad78c21b82097f06430c..f3b41836057dacea93c5b084f97c1587148cfacf 100644
+--- a/src/main/java/org/bukkit/OfflinePlayer.java
++++ b/src/main/java/org/bukkit/OfflinePlayer.java
+@@ -270,6 +270,79 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @return last seen time
+      */
+     public long getLastSeen();
++
++    /**
++     * Decrements the given stat for this player.
++     * <p>
++     * This is equivalent to the following code: {@code decrementStatistic(Statistic, 1)}
++     *
++     * @param statistic the stat to decrement
++     * @throws IllegalArgumentException if the stat is invalid OR decreasing the stat value would put the stat below 0
++     */
++    default void decrementStatistic(@NotNull io.papermc.paper.statistic.Statistic<?> statistic) {
++        this.decrementStatistic(statistic, 1);
++    }
++
++    /**
++     * Increments the given stat for this player.
++     * <p>
++     * This is equivalent to the following code: {@code incrementStatistic(Statistic, 1)}
++     *
++     * @param statistic the stat to increment
++     * @throws IllegalArgumentException if the stat is invalid
++     */
++    default void incrementStatistic(@NotNull io.papermc.paper.statistic.Statistic<?> statistic) {
++        this.incrementStatistic(statistic, 1);
++    }
++
++    /**
++     * Decrements the given stat for this player.
++     *
++     * @param statistic the stat to decrement
++     * @param amount the value to decrement by
++     * @throws IllegalArgumentException if the stat is invalid, the amount is nonpositive, or the stat
++     * would have a negative value after decrementing it
++     */
++    default void decrementStatistic(@NotNull io.papermc.paper.statistic.Statistic<?> statistic, int amount) {
++        this.incrementStatistic(statistic, -amount);
++    }
++
++    /**
++     * Increments the given stat for this player.
++     *
++     * @param statistic the stat to increment
++     * @param amount the amount to increment by
++     * @throws IllegalArgumentException if the stat is invalid or the amount is nonpositive
++     */
++    public void incrementStatistic(@NotNull io.papermc.paper.statistic.Statistic<?> statistic, int amount);
++
++    /**
++     * Sets the given stat for this player.
++     *
++     * @param statistic the stat to set
++     * @param newAmount the value to set the stat to
++     * @throws IllegalArgumentException if the stat is invalid or the amount is negative
++     */
++    public void setStatistic(@NotNull io.papermc.paper.statistic.Statistic<?> statistic, int newAmount);
++
++    /**
++     * Gets the given stat for this player.
++     *
++     * @param statistic the stat to get
++     * @return the amount for the stat
++     * @throws IllegalArgumentException if the stat is invalid
++     */
++    public int getStatistic(@NotNull io.papermc.paper.statistic.Statistic<?> statistic);
++
++    /**
++     * Get the formatted value for this stat. This is how the stat might
++     * appear in the client's statistic window
++     *
++     * @param statistic the stat to get the formatted value for
++     * @return the formatted value
++     * @throws IllegalArgumentException if the stat is invalid
++     */
++    public @NotNull String getFormattedValue(@NotNull io.papermc.paper.statistic.Statistic<?> statistic);
+     // Paper end
+ 
+     /**
+@@ -282,7 +355,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if statistic is null
+      * @throws IllegalArgumentException if the statistic requires an
+      *     additional parameter
++     * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic)}
+      */
++    @Deprecated // Paper
+     public void incrementStatistic(@NotNull Statistic statistic) throws IllegalArgumentException;
+ 
+     /**
+@@ -295,7 +370,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if statistic is null
+      * @throws IllegalArgumentException if the statistic requires an
+      *     additional parameter
++     * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistic.Statistic)}
+      */
++    @Deprecated // Paper
+     public void decrementStatistic(@NotNull Statistic statistic) throws IllegalArgumentException;
+ 
+     /**
+@@ -307,7 +384,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if amount is negative
+      * @throws IllegalArgumentException if the statistic requires an
+      *     additional parameter
++     * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic, int)}
+      */
++    @Deprecated // Paper
+     public void incrementStatistic(@NotNull Statistic statistic, int amount) throws IllegalArgumentException;
+ 
+     /**
+@@ -319,7 +398,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if amount is negative
+      * @throws IllegalArgumentException if the statistic requires an
+      *     additional parameter
++     * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistic.Statistic, int)}
+      */
++    @Deprecated // Paper
+     public void decrementStatistic(@NotNull Statistic statistic, int amount) throws IllegalArgumentException;
+ 
+     /**
+@@ -331,7 +412,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if newValue is negative
+      * @throws IllegalArgumentException if the statistic requires an
+      *     additional parameter
++     * @deprecated use {@link #setStatistic(io.papermc.paper.statistic.Statistic, int)}
+      */
++    @Deprecated // Paper
+     public void setStatistic(@NotNull Statistic statistic, int newValue) throws IllegalArgumentException;
+ 
+     /**
+@@ -342,7 +425,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if statistic is null
+      * @throws IllegalArgumentException if the statistic requires an
+      *     additional parameter
++     * @deprecated use {@link #getStatistic(io.papermc.paper.statistic.Statistic)}
+      */
++    @Deprecated // Paper
+     public int getStatistic(@NotNull Statistic statistic) throws IllegalArgumentException;
+ 
+     /**
+@@ -357,7 +442,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if material is null
+      * @throws IllegalArgumentException if the given parameter is not valid
+      *     for the statistic
++     * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic)}
+      */
++    @Deprecated // Paper
+     public void incrementStatistic(@NotNull Statistic statistic, @NotNull Material material) throws IllegalArgumentException;
+ 
+     /**
+@@ -372,7 +459,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if material is null
+      * @throws IllegalArgumentException if the given parameter is not valid
+      *     for the statistic
++     * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistic.Statistic)}
+      */
++    @Deprecated // Paper
+     public void decrementStatistic(@NotNull Statistic statistic, @NotNull Material material) throws IllegalArgumentException;
+ 
+     /**
+@@ -385,7 +474,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if material is null
+      * @throws IllegalArgumentException if the given parameter is not valid
+      *     for the statistic
++     * @deprecated use {@link #getStatistic(io.papermc.paper.statistic.Statistic)}
+      */
++    @Deprecated // Paper
+     public int getStatistic(@NotNull Statistic statistic, @NotNull Material material) throws IllegalArgumentException;
+ 
+     /**
+@@ -399,7 +490,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if amount is negative
+      * @throws IllegalArgumentException if the given parameter is not valid
+      *     for the statistic
++     * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic, int)}
+      */
++    @Deprecated // Paper
+     public void incrementStatistic(@NotNull Statistic statistic, @NotNull Material material, int amount) throws IllegalArgumentException;
+ 
+     /**
+@@ -413,7 +506,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if amount is negative
+      * @throws IllegalArgumentException if the given parameter is not valid
+      *     for the statistic
++     * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistic.Statistic, int)}
+      */
++    @Deprecated // Paper
+     public void decrementStatistic(@NotNull Statistic statistic, @NotNull Material material, int amount) throws IllegalArgumentException;
+ 
+     /**
+@@ -427,7 +522,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if newValue is negative
+      * @throws IllegalArgumentException if the given parameter is not valid
+      *     for the statistic
++     * @deprecated use {@link #setStatistic(io.papermc.paper.statistic.Statistic, int)}
+      */
++    @Deprecated // Paper
+     public void setStatistic(@NotNull Statistic statistic, @NotNull Material material, int newValue) throws IllegalArgumentException;
+ 
+     /**
+@@ -442,7 +539,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if entityType is null
+      * @throws IllegalArgumentException if the given parameter is not valid
+      *     for the statistic
++     * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic)}
+      */
++    @Deprecated // Paper
+     public void incrementStatistic(@NotNull Statistic statistic, @NotNull EntityType entityType) throws IllegalArgumentException;
+ 
+     /**
+@@ -457,7 +556,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if entityType is null
+      * @throws IllegalArgumentException if the given parameter is not valid
+      *     for the statistic
++     * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistic.Statistic)}
+      */
++    @Deprecated // Paper
+     public void decrementStatistic(@NotNull Statistic statistic, @NotNull EntityType entityType) throws IllegalArgumentException;
+ 
+     /**
+@@ -470,7 +571,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if entityType is null
+      * @throws IllegalArgumentException if the given parameter is not valid
+      *     for the statistic
++     * @deprecated use {@link #getStatistic(io.papermc.paper.statistic.Statistic)}
+      */
++    @Deprecated // Paper
+     public int getStatistic(@NotNull Statistic statistic, @NotNull EntityType entityType) throws IllegalArgumentException;
+ 
+     /**
+@@ -484,7 +587,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if amount is negative
+      * @throws IllegalArgumentException if the given parameter is not valid
+      *     for the statistic
++     * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic, int)}
+      */
++    @Deprecated // Paper
+     public void incrementStatistic(@NotNull Statistic statistic, @NotNull EntityType entityType, int amount) throws IllegalArgumentException;
+ 
+     /**
+@@ -498,7 +603,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if amount is negative
+      * @throws IllegalArgumentException if the given parameter is not valid
+      *     for the statistic
++     * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistic.Statistic, int)}
+      */
++    @Deprecated // Paper
+     public void decrementStatistic(@NotNull Statistic statistic, @NotNull EntityType entityType, int amount);
+ 
+     /**
+@@ -512,7 +619,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+      * @throws IllegalArgumentException if newValue is negative
+      * @throws IllegalArgumentException if the given parameter is not valid
+      *     for the statistic
++     * @deprecated use {@link #setStatistic(io.papermc.paper.statistic.Statistic, int)}
+      */
++    @Deprecated // Paper
+     public void setStatistic(@NotNull Statistic statistic, @NotNull EntityType entityType, int newValue);
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
+index 800d23bb249e19d5cf924e7ba36684068624da02..f13315d196f2fda14ddeb5590b875ef6b4be890c 100644
+--- a/src/main/java/org/bukkit/Registry.java
++++ b/src/main/java/org/bukkit/Registry.java
+@@ -173,7 +173,9 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+      * Server statistics.
+      *
+      * @see Statistic
++     * @deprecated use {@link #CUSTOM_STATISTIC} and {@link #STATISTIC_TYPE}
+      */
++    @Deprecated(forRemoval = true) // Paper
+     Registry<Statistic> STATISTIC = new SimpleRegistry<>(Statistic.class);
+     /**
+      * Server structures.
+@@ -296,6 +298,20 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+             return StreamSupport.stream(this.spliterator(), false);
+         }
+     };
++    /**
++     * Custom statistics
++     *
++     * @see io.papermc.paper.statistic.CustomStatistic
++     */
++    Registry<io.papermc.paper.statistic.CustomStatistic> CUSTOM_STATISTIC = java.util.Objects.requireNonNull(org.bukkit.Bukkit.getRegistry(io.papermc.paper.statistic.CustomStatistic.class));
++
++    /**
++     * Statistic types
++     *
++     * @see io.papermc.paper.statistic.StatisticType
++     */
++    @SuppressWarnings({"unchecked", "rawtypes"})
++    Registry<io.papermc.paper.statistic.StatisticType<?>> STATISTIC_TYPE = java.util.Objects.requireNonNull(org.bukkit.Bukkit.getRegistry((Class<io.papermc.paper.statistic.StatisticType<?>>) (Class) io.papermc.paper.statistic.StatisticType.class));
+     // Paper end
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/Statistic.java b/src/main/java/org/bukkit/Statistic.java
+index 4ce888688d04eb0c4b2261a6474df870e7d2bb00..c2fe6c8e518a8a1b85c2582ae3887e3e09eccb36 100644
+--- a/src/main/java/org/bukkit/Statistic.java
++++ b/src/main/java/org/bukkit/Statistic.java
+@@ -5,7 +5,9 @@ import org.jetbrains.annotations.NotNull;
+ 
+ /**
+  * Represents a countable statistic, which is tracked by the server.
++ * @deprecated use {@link io.papermc.paper.statistic.StatisticType} and {@link io.papermc.paper.statistic.Statistic}
+  */
++@Deprecated(forRemoval = true) // Paper
+ public enum Statistic implements Keyed {
+     DAMAGE_DEALT,
+     DAMAGE_TAKEN,
+@@ -152,7 +154,9 @@ public enum Statistic implements Keyed {
+     /**
+      * The type of statistic.
+      *
++     * @deprecated use {@link io.papermc.paper.statistic.StatisticType}
+      */
++    @Deprecated(forRemoval = true) // Paper
+     public enum Type {
+         /**
+          * Statistics of this type do not require a qualifier.
+@@ -174,4 +178,65 @@ public enum Statistic implements Keyed {
+          */
+         ENTITY;
+     }
++    // Paper start - add legacy conversion methods
++    @Deprecated(forRemoval = true)
++    public static Statistic toLegacy(final io.papermc.paper.statistic.Statistic<?> stat) {
++        if (stat.type() == io.papermc.paper.statistic.StatisticType.CUSTOM && stat.value() instanceof final io.papermc.paper.statistic.CustomStatistic customStatistic) {
++            if (customStatistic == io.papermc.paper.statistic.CustomStatistic.PLAY_TIME) { // special case cause upstream is wrong
++                return org.bukkit.Statistic.PLAY_ONE_MINUTE;
++            } else {
++                return java.util.Objects.requireNonNull(org.bukkit.Registry.STATISTIC.get(customStatistic.getKey()), "Couldn't convert " + stat + " to a legacy stat");
++            }
++        } else if (stat.type() == io.papermc.paper.statistic.StatisticType.BLOCK_MINED) {
++            return Statistic.MINE_BLOCK;
++        } else if (stat.type() == io.papermc.paper.statistic.StatisticType.ITEM_BROKEN) {
++            return Statistic.BREAK_ITEM;
++        } else if (stat.type() == io.papermc.paper.statistic.StatisticType.ITEM_CRAFTED) {
++            return Statistic.CRAFT_ITEM;
++        } else if (stat.type() == io.papermc.paper.statistic.StatisticType.ITEM_DROPPED) {
++            return Statistic.DROP;
++        } else if (stat.type() == io.papermc.paper.statistic.StatisticType.ITEM_USED) {
++            return Statistic.USE_ITEM;
++        } else if (stat.type() == io.papermc.paper.statistic.StatisticType.ITEM_PICKED_UP) {
++            return Statistic.PICKUP;
++        } else if (stat.type() == io.papermc.paper.statistic.StatisticType.ENTITY_KILLED) {
++            return Statistic.KILL_ENTITY;
++        } else if (stat.type() == io.papermc.paper.statistic.StatisticType.ENTITY_KILLED_BY) {
++            return Statistic.ENTITY_KILLED_BY;
++        }
++        throw new IllegalArgumentException("Couldn't convert " + stat + " to a legacy stat");
++    }
++
++    @Deprecated(forRemoval = true)
++    public io.papermc.paper.statistic.Statistic<?> toModern(@org.jetbrains.annotations.Nullable org.bukkit.entity.EntityType entityType, @org.jetbrains.annotations.Nullable Material material) {
++        com.google.common.base.Preconditions.checkArgument(entityType == null || material == null, "No stat has an entity type and material value at the same time");
++        com.google.common.base.Preconditions.checkArgument(this.type != Type.UNTYPED || (entityType == null && material == null), "no value needed for untyped stats");
++        com.google.common.base.Preconditions.checkArgument(this.type != Type.ENTITY || entityType != null);
++        com.google.common.base.Preconditions.checkArgument(this.type != Type.BLOCK || material != null && material.isBlock());
++        com.google.common.base.Preconditions.checkArgument(this.type != Type.ITEM || material != null && material.isItem());
++        return switch (this.type) {
++            case UNTYPED -> {
++                if (this == PLAY_ONE_MINUTE) { // special case cause upstream is wrong
++                    yield io.papermc.paper.statistic.CustomStatistic.PLAY_TIME.statistic();
++                } else {
++                    yield java.util.Objects.requireNonNull(Registry.CUSTOM_STATISTIC.get(this.key), "Couldn't convert " + this + " to a modern stat").statistic();
++                }
++            }
++            case BLOCK -> io.papermc.paper.statistic.StatisticType.BLOCK_MINED.of(material);
++            case ITEM -> switch (this) {
++                case DROP -> io.papermc.paper.statistic.StatisticType.ITEM_DROPPED.of(material);
++                case BREAK_ITEM -> io.papermc.paper.statistic.StatisticType.ITEM_BROKEN.of(material);
++                case CRAFT_ITEM -> io.papermc.paper.statistic.StatisticType.ITEM_CRAFTED.of(material);
++                case USE_ITEM -> io.papermc.paper.statistic.StatisticType.ITEM_USED.of(material);
++                case PICKUP -> io.papermc.paper.statistic.StatisticType.ITEM_PICKED_UP.of(material);
++                default -> throw new IllegalArgumentException("Couldn't convert " + this + ", mat: " + material + " to a modern stat");
++            };
++            case ENTITY -> switch (this) {
++                case KILL_ENTITY -> io.papermc.paper.statistic.StatisticType.ENTITY_KILLED.of(entityType);
++                case ENTITY_KILLED_BY -> io.papermc.paper.statistic.StatisticType.ENTITY_KILLED_BY.of(entityType);
++                default -> throw new IllegalArgumentException("Couldn't convert " + this + ", entity_type: " + entityType + " to a modern stat");
++            };
++        };
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/event/player/PlayerStatisticIncrementEvent.java b/src/main/java/org/bukkit/event/player/PlayerStatisticIncrementEvent.java
+index f971844bf490c7a7bfbe305d33df739ed2197a37..ef36f8f1fe2b793870c6ca82eaf48612deb1e59d 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerStatisticIncrementEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerStatisticIncrementEvent.java
+@@ -18,48 +18,75 @@ import org.jetbrains.annotations.Nullable;
+  */
+ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancellable {
+     private static final HandlerList handlers = new HandlerList();
+-    protected final Statistic statistic;
++    private final io.papermc.paper.statistic.Statistic<?> statistic; // Paper
+     private final int initialValue;
+     private final int newValue;
+     private boolean isCancelled = false;
++    @Deprecated(forRemoval = true) // Paper
+     private final EntityType entityType;
++    @Deprecated(forRemoval = true) // Paper
+     private final Material material;
+ 
++    @Deprecated(forRemoval = true) // Paper
+     public PlayerStatisticIncrementEvent(@NotNull Player player, @NotNull Statistic statistic, int initialValue, int newValue) {
+         super(player);
+-        this.statistic = statistic;
++        this.statistic = statistic.toModern(null, null); // Paper
+         this.initialValue = initialValue;
+         this.newValue = newValue;
+         this.entityType = null;
+         this.material = null;
+     }
+ 
++    @Deprecated(forRemoval = true) // Paper
+     public PlayerStatisticIncrementEvent(@NotNull Player player, @NotNull Statistic statistic, int initialValue, int newValue, @NotNull EntityType entityType) {
+         super(player);
+-        this.statistic = statistic;
++        this.statistic = statistic.toModern(entityType, null); // Paper
+         this.initialValue = initialValue;
+         this.newValue = newValue;
+         this.entityType = entityType;
+         this.material = null;
+     }
+ 
++    @Deprecated(forRemoval = true) // Paper
+     public PlayerStatisticIncrementEvent(@NotNull Player player, @NotNull Statistic statistic, int initialValue, int newValue, @NotNull Material material) {
+         super(player);
+-        this.statistic = statistic;
++        this.statistic = statistic.toModern(null, material); // Paper
+         this.initialValue = initialValue;
+         this.newValue = newValue;
+         this.entityType = null;
+         this.material = material;
+     }
++    // Paper start
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public PlayerStatisticIncrementEvent(@NotNull Player player, @NotNull io.papermc.paper.statistic.Statistic<?> statistic, int initialValue, int newValue) {
++        super(player);
++        this.statistic = statistic;
++        this.initialValue = initialValue;
++        this.newValue = newValue;
++        this.entityType = statistic.value() instanceof EntityType entityType ? entityType : null;
++        this.material = statistic.value() instanceof Material material ? material : null;
++    }
++
++    /**
++     * Gets the statistic that is being incremented.
++     *
++     * @return the incremented statistic
++     */
++    public @NotNull io.papermc.paper.statistic.Statistic<?> getStat() {
++        return this.statistic;
++    }
++    // Paper end
+ 
+     /**
+      * Gets the statistic that is being incremented.
+      *
+      * @return the incremented statistic
++     * @deprecated use {@link #getStat()}
+      */
+     @NotNull
++    @Deprecated(forRemoval = true) // Paper
+     public Statistic getStatistic() {
+-        return statistic;
++        return Statistic.toLegacy(this.statistic); // Paper
+     }
+ 
+     /**
+@@ -85,8 +112,10 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
+      * entity statistic otherwise returns null.
+      *
+      * @return the EntityType of the statistic
++     * @deprecated use {@link #getStat()}
+      */
+     @Nullable
++    @Deprecated(forRemoval = true) // Paper
+     public EntityType getEntityType() {
+         return entityType;
+     }
+@@ -96,8 +125,10 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
+      * or item statistic otherwise returns null.
+      *
+      * @return the Material of the statistic
++     * @deprecated use {@link #getStat()}
+      */
+     @Nullable
++    @Deprecated(forRemoval = true) // Paper
+     public Material getMaterial() {
+         return material;
+     }
+diff --git a/src/main/java/org/bukkit/scoreboard/Criteria.java b/src/main/java/org/bukkit/scoreboard/Criteria.java
+index 3bc3abaf093d13e22b6ac2ee59ab584c92b4666a..56cf36b696062490de2adb68c796c5bb74732b0c 100644
+--- a/src/main/java/org/bukkit/scoreboard/Criteria.java
++++ b/src/main/java/org/bukkit/scoreboard/Criteria.java
+@@ -12,8 +12,8 @@ import org.jetbrains.annotations.NotNull;
+  * Represents a scoreboard criteria, either custom or built-in to the Minecraft server, used to
+  * keep track of and manually or automatically change scores on a scoreboard.
+  * <p>
+- * While this class outlines constants for standard criteria, see {@link #statistic(Statistic)}
+- * (and its overloads) to create instances for statistically-backed criteria.
++ * While this class outlines constants for standard criteria, see {@link io.papermc.paper.statistic.Statistic}
++ * for statistically-backed criteria.
+  */
+ public interface Criteria {
+ 
+@@ -241,8 +241,10 @@ public interface Criteria {
+      * {@link Material#isBlock()} is false
+      * @throws IllegalArgumentException if {@link Statistic#getType()} is {@link Type#ITEM}, but
+      * {@link Material#isItem()} is false
++     * @deprecated use {@link io.papermc.paper.statistic.Statistic}
+      */
+     @NotNull
++    @Deprecated // Paper
+     public static Criteria statistic(@NotNull Statistic statistic, @NotNull Material material) {
+         Preconditions.checkArgument(statistic != null, "statistic must not be null");
+         Preconditions.checkArgument(material != null, "material must not be null");
+@@ -298,8 +300,10 @@ public interface Criteria {
+      * @param entityType the relevant entity type
+      * @return the criteria
+      * @throws IllegalArgumentException if {@link Statistic#getType()} is not {@link Type#ENTITY}
++     * @deprecated use {@link io.papermc.paper.statistic.Statistic}
+      */
+     @NotNull
++    @Deprecated(forRemoval = true) // Paper
+     public static Criteria statistic(@NotNull Statistic statistic, @NotNull EntityType entityType) {
+         Preconditions.checkArgument(statistic != null, "statistic must not be null");
+         Preconditions.checkArgument(entityType != null, "entityType must not be null");
+@@ -331,8 +335,10 @@ public interface Criteria {
+      *
+      * @param statistic the statistic for which to get a criteria
+      * @return the criteria
++     * @deprecated Use {@link io.papermc.paper.statistic.Statistic}
+      */
+     @NotNull
++    @Deprecated(forRemoval = true) // Paper
+     public static Criteria statistic(@NotNull Statistic statistic) {
+         Preconditions.checkArgument(statistic != null, "statistic must not be null");
+         return Bukkit.getScoreboardCriteria(org.bukkit.Bukkit.getUnsafe().getStatisticCriteriaKey(statistic)); // Paper
