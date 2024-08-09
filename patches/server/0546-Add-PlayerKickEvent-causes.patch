@@ -218,7 +218,7 @@ index 24bf661e76fb421a8be565d9ea68edf7205254d2..feb529adf2168025c785ab92d95a3246
          if (this.cserver.getServer().isRunning()) {
              this.cserver.getPluginManager().callEvent(event);
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index ada5016ee354e799a8241a0706ea04e236efd1eb..70b215dfbe53bd475192ca1d021032c8fba97228 100644
+index b908e292d7b2fbff6cc5058ea32648dbde52fa19..c07d6a05737da570e7dc52e73b45e7550dcc61d0 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -349,7 +349,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
@@ -284,19 +284,10 @@ index ada5016ee354e799a8241a0706ea04e236efd1eb..70b215dfbe53bd475192ca1d021032c8
              return;
          }
          this.player.getInventory().pickSlot(packet.getSlot()); // Paper - Diff above if changed
-@@ -1088,7 +1088,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-                 int byteLength = testString.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
-                 if (byteLength > 256 * 4) {
-                     ServerGamePacketListenerImpl.LOGGER.warn(this.player.getScoreboardName() + " tried to send a book with with a page too large!");
--                    this.disconnect(Component.literal("Book too large!"));
-+                    this.disconnect(Component.literal("Book too large!"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_ACTION); // Paper - kick event cause
-                     return;
-                 }
-                 byteTotal += byteLength;
-@@ -1111,14 +1111,14 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1106,14 +1106,14 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
              if (byteTotal > byteAllowed) {
-                 ServerGamePacketListenerImpl.LOGGER.warn(this.player.getScoreboardName() + " tried to send too large of a book. Book Size: " + byteTotal + " - Allowed:  "+ byteAllowed + " - Pages: " + pageList.size());
+                 ServerGamePacketListenerImpl.LOGGER.warn("{} tried to send a book too large. Book size: {} - Allowed: {} - Pages: {}", this.player.getScoreboardName(), byteTotal, byteAllowed, pageList.size());
 -                this.disconnect(Component.literal("Book too large!"));
 +                this.disconnect(Component.literal("Book too large!"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_ACTION); // Paper - kick event cause
                  return;
@@ -310,7 +301,7 @@ index ada5016ee354e799a8241a0706ea04e236efd1eb..70b215dfbe53bd475192ca1d021032c8
              return;
          }
          this.lastBookTick = MinecraftServer.currentTick;
-@@ -1230,7 +1230,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1225,7 +1225,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
      public void handleMovePlayer(ServerboundMovePlayerPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
          if (ServerGamePacketListenerImpl.containsInvalidValues(packet.getX(0.0D), packet.getY(0.0D), packet.getZ(0.0D), packet.getYRot(0.0F), packet.getXRot(0.0F))) {
@@ -319,7 +310,7 @@ index ada5016ee354e799a8241a0706ea04e236efd1eb..70b215dfbe53bd475192ca1d021032c8
          } else {
              ServerLevel worldserver = this.player.serverLevel();
  
-@@ -1668,7 +1668,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1663,7 +1663,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                          this.dropCount++;
                          if (this.dropCount >= 20) {
                              ServerGamePacketListenerImpl.LOGGER.warn(this.player.getScoreboardName() + " dropped their items too quickly!");
@@ -328,7 +319,7 @@ index ada5016ee354e799a8241a0706ea04e236efd1eb..70b215dfbe53bd475192ca1d021032c8
                              return;
                          }
                      }
-@@ -1956,7 +1956,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1951,7 +1951,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
              this.player.resetLastActionTime();
          } else {
              ServerGamePacketListenerImpl.LOGGER.warn("{} tried to set an invalid carried item", this.player.getName().getString());
@@ -337,7 +328,7 @@ index ada5016ee354e799a8241a0706ea04e236efd1eb..70b215dfbe53bd475192ca1d021032c8
          }
      }
  
-@@ -2154,7 +2154,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2149,7 +2149,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
      private void tryHandleChat(String s, Runnable runnable, boolean sync) { // CraftBukkit
          if (ServerGamePacketListenerImpl.isChatMessageIllegal(s)) {
@@ -346,7 +337,7 @@ index ada5016ee354e799a8241a0706ea04e236efd1eb..70b215dfbe53bd475192ca1d021032c8
          } else if (this.player.isRemoved() || this.player.getChatVisibility() == ChatVisiblity.HIDDEN) { // CraftBukkit - dead men tell no tales
              this.send(new ClientboundSystemChatPacket(Component.translatable("chat.disabled.options").withStyle(ChatFormatting.RED), false));
          } else {
-@@ -2177,7 +2177,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2172,7 +2172,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
              if (optional.isEmpty()) {
                  ServerGamePacketListenerImpl.LOGGER.warn("Failed to validate message acknowledgements from {}", this.player.getName().getString());
@@ -355,7 +346,7 @@ index ada5016ee354e799a8241a0706ea04e236efd1eb..70b215dfbe53bd475192ca1d021032c8
              }
  
              return optional;
-@@ -2363,7 +2363,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2358,7 +2358,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          // this.chatSpamTickCount += 20;
          if (this.chatSpamTickCount.addAndGet(20) > 200 && !this.server.getPlayerList().isOp(this.player.getGameProfile()) && !this.server.isSingleplayerOwner(this.player.getGameProfile())) {
              // CraftBukkit end
@@ -364,7 +355,7 @@ index ada5016ee354e799a8241a0706ea04e236efd1eb..70b215dfbe53bd475192ca1d021032c8
          }
  
      }
-@@ -2375,7 +2375,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2370,7 +2370,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          synchronized (this.lastSeenMessages) {
              if (!this.lastSeenMessages.applyOffset(packet.offset())) {
                  ServerGamePacketListenerImpl.LOGGER.warn("Failed to validate message acknowledgements from {}", this.player.getName().getString());
@@ -373,7 +364,7 @@ index ada5016ee354e799a8241a0706ea04e236efd1eb..70b215dfbe53bd475192ca1d021032c8
              }
  
          }
-@@ -2523,7 +2523,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2518,7 +2518,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
              }
  
              if (i > 4096) {
@@ -382,7 +373,7 @@ index ada5016ee354e799a8241a0706ea04e236efd1eb..70b215dfbe53bd475192ca1d021032c8
              }
  
          }
-@@ -2581,7 +2581,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2576,7 +2576,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          // Spigot Start
          if ( entity == this.player && !this.player.isSpectator() )
          {
@@ -391,7 +382,7 @@ index ada5016ee354e799a8241a0706ea04e236efd1eb..70b215dfbe53bd475192ca1d021032c8
              return;
          }
          // Spigot End
-@@ -2695,7 +2695,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2690,7 +2690,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                              }
                          }
  
@@ -400,7 +391,7 @@ index ada5016ee354e799a8241a0706ea04e236efd1eb..70b215dfbe53bd475192ca1d021032c8
                          ServerGamePacketListenerImpl.LOGGER.warn("Player {} tried to attack an invalid entity", ServerGamePacketListenerImpl.this.player.getName().getString());
                      }
                  });
-@@ -3092,7 +3092,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -3087,7 +3087,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          // Paper start - auto recipe limit
          if (!org.bukkit.Bukkit.isPrimaryThread()) {
              if (this.recipeSpamPackets.addAndGet(io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.recipeSpamIncrement) > io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.recipeSpamLimit) {
@@ -409,7 +400,7 @@ index ada5016ee354e799a8241a0706ea04e236efd1eb..70b215dfbe53bd475192ca1d021032c8
                  return;
              }
          }
-@@ -3334,7 +3334,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -3329,7 +3329,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
          if (!Objects.equals(profilepublickey_a, profilepublickey_a1)) {
              if (profilepublickey_a != null && profilepublickey_a1.expiresAt().isBefore(profilepublickey_a.expiresAt())) {
@@ -418,7 +409,7 @@ index ada5016ee354e799a8241a0706ea04e236efd1eb..70b215dfbe53bd475192ca1d021032c8
              } else {
                  try {
                      SignatureValidator signaturevalidator = this.server.getProfileKeySignatureValidator();
-@@ -3347,7 +3347,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -3342,7 +3342,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                      this.resetPlayerChatState(remotechatsession_a.validate(this.player.getGameProfile(), signaturevalidator));
                  } catch (ProfilePublicKey.ValidationException profilepublickey_b) {
                      ServerGamePacketListenerImpl.LOGGER.error("Failed to validate profile key: {}", profilepublickey_b.getMessage());
