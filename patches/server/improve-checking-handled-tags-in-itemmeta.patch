@@ -107,6 +107,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            (item, extras) -> new CraftMetaBlockState(item.getComponentsPatch(), CraftItemType.minecraftToBukkit(item.getItem()), extras),
              (type, meta) -> new CraftMetaBlockState(meta, type.asMaterial()));
  
+     private static final ItemMetaData<ShieldMeta> SHIELD_META_DATA = new ItemMetaData<>(ShieldMeta.class,
+-            item -> new CraftMetaShield(item.getComponentsPatch()),
++            (item, extras) -> new CraftMetaShield(item.getComponentsPatch(), extras),
+             (type, meta) -> new CraftMetaShield(meta));
+ 
      private static final ItemMetaData<TropicalFishBucketMeta> TROPICAL_FISH_BUCKET_META_DATA = new ItemMetaData<>(TropicalFishBucketMeta.class,
 -            item -> new CraftMetaTropicalFishBucket(item.getComponentsPatch()),
 +            (item, extras) -> new CraftMetaTropicalFishBucket(item.getComponentsPatch(), extras),
@@ -521,6 +526,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                        CraftMetaMap.MAP_COLOR.TYPE,
 -                        CraftMetaMap.MAP_ID.TYPE,
 -                        CraftMetaPotion.POTION_CONTENTS.TYPE,
+-                        CraftMetaShield.BASE_COLOR.TYPE,
 -                        CraftMetaSkull.SKULL_PROFILE.TYPE,
 -                        CraftMetaSkull.NOTE_BLOCK_SOUND.TYPE,
 -                        CraftMetaSpawnEgg.ENTITY_TAG.TYPE,
@@ -579,7 +585,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                map.put(CraftMetaArmor.class, Set.of(CraftMetaArmor.TRIM.TYPE));
 +                map.put(CraftMetaArmorStand.class, Set.of(CraftMetaArmorStand.ENTITY_TAG.TYPE));
 +                map.put(CraftMetaAxolotlBucket.class, Set.of(CraftMetaAxolotlBucket.ENTITY_TAG.TYPE, CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG.TYPE));
-+                map.put(CraftMetaBanner.class, Set.of(/*CraftMetaBlockState.BLOCK_ENTITY_TAG.NBT, */CraftMetaBanner.PATTERNS.TYPE)); // banner uses same tag as block state
++                map.put(CraftMetaBanner.class, Set.of(CraftMetaBanner.PATTERNS.TYPE)); // banner uses same tag as block state
++                map.put(CraftMetaShield.class, Set.of(CraftMetaShield.BASE_COLOR.TYPE, CraftMetaBanner.PATTERNS.TYPE));
 +                map.put(CraftMetaBlockState.class, Set.of(CraftMetaBlockState.BLOCK_ENTITY_TAG.TYPE));
 +                map.put(CraftMetaBook.class, Set.of(CraftMetaBook.BOOK_CONTENT.TYPE));
 +                map.put(CraftMetaBookSigned.class, Set.of(CraftMetaBookSigned.BOOK_CONTENT.TYPE));
@@ -706,6 +713,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          getOrEmpty(tag, CraftMetaPotion.POTION_CONTENTS).ifPresent((potionContents) -> {
              potionContents.potion().ifPresent((potion) -> {
                  this.type = CraftPotionType.minecraftHolderToBukkit(potion);
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaShield.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaShield.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaShield.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaShield.java
+@@ -0,0 +0,0 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
+         }
+     }
+ 
+-    CraftMetaShield(DataComponentPatch tag) {
+-        super(tag);
++    CraftMetaShield(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper - improve checking handled tags in item meta
++        super(tag, extraHandledDcts); // Paper - improve checking handled tags in item meta
+ 
+         getOrEmpty(tag, CraftMetaShield.BASE_COLOR).ifPresent((color) -> {
+             this.banner = CraftMetaShield.getBlockState(DyeColor.getByWoolData((byte) color.getId()));
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
