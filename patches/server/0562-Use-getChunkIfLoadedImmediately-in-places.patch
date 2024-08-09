@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Mon, 8 Jul 2019 00:13:36 -0700
+Subject: [PATCH] Use getChunkIfLoadedImmediately in places
+
+This prevents us from hitting chunk loads for chunks at or less-than
+ticket level 33 (yes getChunkIfLoaded will actually perform a chunk
+load in that case).
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 055650b315d53b56798ded7af2054c3e8e3ee319..c72687fb23e8d01639cce7d79e3f97805d51e01f 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -231,7 +231,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+     public boolean hasEntityMoveEvent; // Paper - Add EntityMoveEvent
+ 
+     public LevelChunk getChunkIfLoaded(int x, int z) {
+-        return this.chunkSource.getChunk(x, z, false);
++        return this.chunkSource.getChunkAtIfLoadedImmediately(x, z); // Paper - Use getChunkIfLoadedImmediately
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 144d243e0d6ba3ae3f0b0bf457fa516e2b4f416f..20a14b4163807b806bf2ce5a88d3c35098bed929 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -180,6 +180,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         return (CraftServer) Bukkit.getServer();
+     }
+ 
++    // Paper start - Use getChunkIfLoadedImmediately
++    @Override
++    public boolean hasChunk(int chunkX, int chunkZ) {
++        return this.getChunkIfLoaded(chunkX, chunkZ) != null;
++    }
++    // Paper end - Use getChunkIfLoadedImmediately
++
+     public abstract ResourceKey<LevelStem> getTypeKey();
+ 
+     protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator) { // Paper - create paper world config
+diff --git a/src/main/java/net/minecraft/world/level/gameevent/GameEventDispatcher.java b/src/main/java/net/minecraft/world/level/gameevent/GameEventDispatcher.java
+index 13b34e89bd3e55df1bb1d4d0cf013bafae43f502..df6c97be1b278c97a20390be5d3e60f429383702 100644
+--- a/src/main/java/net/minecraft/world/level/gameevent/GameEventDispatcher.java
++++ b/src/main/java/net/minecraft/world/level/gameevent/GameEventDispatcher.java
+@@ -56,7 +56,7 @@ public class GameEventDispatcher {
+ 
+         for (int l1 = j; l1 <= i1; ++l1) {
+             for (int i2 = l; i2 <= k1; ++i2) {
+-                LevelChunk chunk = this.level.getChunkSource().getChunkNow(l1, i2);
++                LevelChunk chunk = (LevelChunk) this.level.getChunkIfLoadedImmediately(l1, i2); // Paper - Use getChunkIfLoadedImmediately
+ 
+                 if (chunk != null) {
+                     for (int j2 = k; j2 <= j1; ++j2) {

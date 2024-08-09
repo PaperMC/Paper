@@ -8,7 +8,7 @@ Adds a new event for all crafting stations that generate a result slot item
 Anvil, Grindstone and Smithing now extend this event
 
 diff --git a/src/main/java/net/minecraft/world/inventory/AnvilMenu.java b/src/main/java/net/minecraft/world/inventory/AnvilMenu.java
-index c6ec9fc6ccde2a5c086a2bfe32686954c074c31d..7198dc9ffc9a37dab3654e12aa497c442a9993c5 100644
+index ffda2c984c5683edb38a56f04c53b0ea339e08fc..d685511104ac552dfc9ae2111e1bfb60fa812102 100644
 --- a/src/main/java/net/minecraft/world/inventory/AnvilMenu.java
 +++ b/src/main/java/net/minecraft/world/inventory/AnvilMenu.java
 @@ -327,6 +327,7 @@ public class AnvilMenu extends ItemCombinerMenu {
@@ -56,7 +56,7 @@ index 62432c347b86fc79ab529a7dde66bef32d0424dd..be840717e180b6b5abd14db6cc926334
  
      }
 diff --git a/src/main/java/net/minecraft/world/inventory/LoomMenu.java b/src/main/java/net/minecraft/world/inventory/LoomMenu.java
-index fb7027985c6442fc50573e96031a05a3c64f4426..4bd720a97da27c4fd97788d4c504c0174f0f6c25 100644
+index 69ed0753c224cb7746762b4b94c4d79d608951b8..2de558dd205a1078fdcac1bce256d059b9bf5d5f 100644
 --- a/src/main/java/net/minecraft/world/inventory/LoomMenu.java
 +++ b/src/main/java/net/minecraft/world/inventory/LoomMenu.java
 @@ -249,7 +249,8 @@ public class LoomMenu extends AbstractContainerMenu {
@@ -82,7 +82,7 @@ index 0735705def4f9505b7f16df2497cc78bbf5a8373..86e51fcce767d265ee0d3beb611be211
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java b/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
-index 04d9793a83c724350f74616558f650082f9805d9..bb29107cb15e2ec644a14cabb3cf91f4bde5471d 100644
+index 30ea1f9e97db86a2ad7baeea4f5a76c821874daa..5b4f03128499b0c1a4b8c5f5ccd17e4bdb391e81 100644
 --- a/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
 +++ b/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
 @@ -182,6 +182,7 @@ public class StonecutterMenu extends AbstractContainerMenu {
@@ -94,13 +94,13 @@ index 04d9793a83c724350f74616558f650082f9805d9..bb29107cb15e2ec644a14cabb3cf91f4
  
      private static SingleRecipeInput createRecipeInput(Container inventory) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index ec364ab90df6276c1976e876337636f4bb06d097..3159e52006ad348bfce4905dcb0987222e4894a5 100644
+index 1177a9310f686f3b4d75a713cdac75c5628e8bbb..838ad7bc8a7488adf52d462e1a3f2faa275bebd0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -1666,6 +1666,12 @@ public class CraftEventFactory {
+@@ -1679,6 +1679,12 @@ public class CraftEventFactory {
      }
  
-     public static PrepareAnvilEvent callPrepareAnvilEvent(InventoryView view, ItemStack item) {
+     public static PrepareAnvilEvent callPrepareAnvilEvent(AnvilView view, ItemStack item) {
 +        // Paper start - Add PrepareResultEvent
 +        if (true) {
 +            view.getTopInventory().setItem(net.minecraft.world.inventory.AnvilMenu.RESULT_SLOT, CraftItemStack.asCraftMirror(item));
@@ -110,7 +110,7 @@ index ec364ab90df6276c1976e876337636f4bb06d097..3159e52006ad348bfce4905dcb098722
          PrepareAnvilEvent event = new PrepareAnvilEvent(view, CraftItemStack.asCraftMirror(item).clone());
          event.getView().getPlayer().getServer().getPluginManager().callEvent(event);
          event.getInventory().setItem(2, event.getResult());
-@@ -1673,6 +1679,12 @@ public class CraftEventFactory {
+@@ -1686,6 +1692,12 @@ public class CraftEventFactory {
      }
  
      public static PrepareGrindstoneEvent callPrepareGrindstoneEvent(InventoryView view, ItemStack item) {
@@ -123,7 +123,7 @@ index ec364ab90df6276c1976e876337636f4bb06d097..3159e52006ad348bfce4905dcb098722
          PrepareGrindstoneEvent event = new PrepareGrindstoneEvent(view, CraftItemStack.asCraftMirror(item).clone());
          event.getView().getPlayer().getServer().getPluginManager().callEvent(event);
          event.getInventory().setItem(2, event.getResult());
-@@ -1680,12 +1692,39 @@ public class CraftEventFactory {
+@@ -1693,12 +1705,39 @@ public class CraftEventFactory {
      }
  
      public static PrepareSmithingEvent callPrepareSmithingEvent(InventoryView view, ItemStack item) {
@@ -145,8 +145,8 @@ index ec364ab90df6276c1976e876337636f4bb06d097..3159e52006ad348bfce4905dcb098722
 +        InventoryView view = container.getBukkitView();
 +        org.bukkit.inventory.ItemStack origItem = view.getTopInventory().getItem(resultSlot);
 +        CraftItemStack result = origItem != null ? CraftItemStack.asCraftCopy(origItem) : null;
-+        if (view.getTopInventory() instanceof org.bukkit.inventory.AnvilInventory) {
-+            event = new PrepareAnvilEvent(view, result);
++        if (view.getTopInventory() instanceof org.bukkit.inventory.AnvilInventory && view instanceof AnvilView anvilView) {
++            event = new PrepareAnvilEvent(anvilView, result);
 +        } else if (view.getTopInventory() instanceof org.bukkit.inventory.GrindstoneInventory) {
 +            event = new PrepareGrindstoneEvent(view, result);
 +        } else if (view.getTopInventory() instanceof org.bukkit.inventory.SmithingInventory) {
