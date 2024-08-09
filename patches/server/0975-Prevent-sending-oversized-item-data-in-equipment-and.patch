@@ -7,18 +7,18 @@ Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/src/main/java/io/papermc/paper/util/DataSanitizationUtil.java b/src/main/java/io/papermc/paper/util/DataSanitizationUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e9436f8a73ee0a02096d66e14d73edaae28d5a41
+index 0000000000000000000000000000000000000000..8be7e1fa0652ccd9cbb809d81254e5aa1a97b776
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/DataSanitizationUtil.java
-@@ -0,0 +1,100 @@
+@@ -0,0 +1,98 @@
 +package io.papermc.paper.util;
 +
-+import java.util.ArrayList;
 +import java.util.List;
 +import java.util.concurrent.atomic.AtomicBoolean;
 +import java.util.function.UnaryOperator;
 +import net.minecraft.network.RegistryFriendlyByteBuf;
 +import net.minecraft.network.codec.StreamCodec;
++import net.minecraft.util.Mth;
 +import net.minecraft.world.item.ItemStack;
 +import net.minecraft.world.item.Items;
 +import net.minecraft.world.item.component.BundleContents;
@@ -48,26 +48,25 @@ index 0000000000000000000000000000000000000000..e9436f8a73ee0a02096d66e14d73edaa
 +        if (projectiles.isEmpty()) {
 +            return projectiles;
 +        }
-+        final List<ItemStack> items = projectiles.getItems();
-+        final List<ItemStack> sanitized = new ArrayList<>();
-+        for (int i = 0; i < Math.min(items.size(), 3); i++) {
-+            // we want to preserve item type as vanilla client can change visuals based on type
-+            sanitized.add(new ItemStack(items.get(i).getItemHolder()));
-+        }
-+        return ChargedProjectiles.of(sanitized);
++
++        return ChargedProjectiles.of(List.of(
++            new ItemStack(projectiles.contains(Items.FIREWORK_ROCKET) ? Items.FIREWORK_ROCKET : Items.ARROW)
++        ));
 +    }
 +
 +    private static BundleContents sanitizeBundleContents(final BundleContents contents) {
++        if (contents.isEmpty()) {
++            return contents;
++        }
++
 +        // Bundles change their texture based on their fullness.
-+        int sizeUsed = 0;
-+        for (final ItemStack item : contents.items()) {
-+            final int scale = 64 / item.getMaxStackSize();
-+            sizeUsed += scale * item.getCount();
++        int sizeUsed = Mth.mulAndTruncate(contents.weight(), 64);
++        if (sizeUsed == 0) {
++            // When the max stack size is above 64 the bundle fullness might be too small, so avoid empty item in that case.
++            sizeUsed++;
 +        }
 +        // Now we add a single fake item that uses the same amount of slots as all other items.
-+        final List<ItemStack> items = new ArrayList<>();
-+        items.add(new ItemStack(Items.PAPER, sizeUsed));
-+        return new BundleContents(items);
++        return new BundleContents(List.of(new ItemStack(Items.PAPER, sizeUsed)));
 +    }
 +
 +    private static <B, A> StreamCodec<B, A> codec(final StreamCodec<B, A> delegate, final UnaryOperator<A> sanitizer) {
@@ -109,7 +108,6 @@ index 0000000000000000000000000000000000000000..e9436f8a73ee0a02096d66e14d73edaa
 +
 +    private DataSanitizationUtil() {
 +    }
-+
 +}
 diff --git a/src/main/java/net/minecraft/core/component/DataComponents.java b/src/main/java/net/minecraft/core/component/DataComponents.java
 index c9aef759c1485da753e820f9b509117ca50a31e4..60757f8df706cba92350d73503b73913cff3bcfc 100644
