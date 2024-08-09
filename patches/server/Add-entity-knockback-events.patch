@@ -80,7 +80,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper start - knockback events
 +            Vec3 finalVelocity = new Vec3(vec3d.x / 2.0D - vec3d1.x, this.onGround() ? Math.min(0.4D, vec3d.y / 2.0D + d0) : vec3d.y, vec3d.z / 2.0D - vec3d1.z);
 +            Vec3 diff = finalVelocity.subtract(vec3d);
-+            io.papermc.paper.event.entity.EntityKnockbackEvent event = CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity) this.getBukkitEntity(), attacker, cause, d0, diff);
++            io.papermc.paper.event.entity.EntityKnockbackEvent event = CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity) this.getBukkitEntity(), attacker, attacker, cause, d0, diff);
 +            // Paper end - knockback events
              if (event.isCancelled()) {
                  return;
@@ -266,7 +266,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                            // want the vector to be the relative velocity will the event provides the absolute velocity
 -                            vec3d1 = (event.isCancelled()) ? Vec3.ZERO : new Vec3(event.getFinalKnockback().getX(), event.getFinalKnockback().getY(), event.getFinalKnockback().getZ()).subtract(entity.getDeltaMovement());
 +                            // Paper start - knockback events
-+                            io.papermc.paper.event.entity.EntityKnockbackEvent event = CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity) entity.getBukkitEntity(), this.damageSource.getEntity() != null ? this.damageSource.getEntity() : this.source, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.EXPLOSION, d13, vec3d1);
++                            io.papermc.paper.event.entity.EntityKnockbackEvent event = CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity) entity.getBukkitEntity(), this.source, this.damageSource.getEntity() != null ? this.damageSource.getEntity() : this.source, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.EXPLOSION, d13, vec3d1);
 +                            vec3d1 = event.isCancelled() ? Vec3.ZERO : org.bukkit.craftbukkit.util.CraftVector.toNMS(event.getKnockback());
 +                            // Paper end - knockback events
                          }
@@ -282,33 +282,33 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -    public static EntityKnockbackEvent callEntityKnockbackEvent(CraftLivingEntity entity, Entity attacker, EntityKnockbackEvent.KnockbackCause cause, double force, Vec3 raw, double x, double y, double z) {
 -        Vector bukkitRaw = new Vector(-raw.x, raw.y, -raw.z); // Due to how the knockback calculation works, we need to invert x and z.
--
--        EntityKnockbackEvent event;
 +    // Paper start - replace knockback events
-+    public static io.papermc.paper.event.entity.EntityKnockbackEvent callEntityKnockbackEvent(CraftLivingEntity entity, Entity attacker, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause cause, double force, Vec3 knockback) {
++    public static io.papermc.paper.event.entity.EntityKnockbackEvent callEntityKnockbackEvent(CraftLivingEntity entity, Entity pusher, Entity attacker, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause cause, double force, Vec3 knockback) {
 +        Vector apiKnockback = CraftVector.toBukkit(knockback);
 +
 +        final Vector currentVelocity = entity.getVelocity();
 +        final Vector legacyFinalKnockback = currentVelocity.clone().add(apiKnockback);
 +        final org.bukkit.event.entity.EntityKnockbackEvent.KnockbackCause legacyCause = org.bukkit.event.entity.EntityKnockbackEvent.KnockbackCause.valueOf(cause.name());
 +        EntityKnockbackEvent legacyEvent;
-         if (attacker != null) {
--            event = new EntityKnockbackByEntityEvent(entity, attacker.getBukkitEntity(), cause, force, new Vector(-raw.x, raw.y, -raw.z), new Vector(x, y, z));
-+            legacyEvent = new EntityKnockbackByEntityEvent(entity, attacker.getBukkitEntity(), legacyCause, force, apiKnockback, legacyFinalKnockback);
-         } else {
--            event = new EntityKnockbackEvent(entity, cause, force, new Vector(-raw.x, raw.y, -raw.z), new Vector(x, y, z));
++        if (pusher != null) {
++            legacyEvent = new EntityKnockbackByEntityEvent(entity, pusher.getBukkitEntity(), legacyCause, force, apiKnockback, legacyFinalKnockback);
++        } else {
 +            legacyEvent = new EntityKnockbackEvent(entity, legacyCause, force, apiKnockback, legacyFinalKnockback);
-         }
++        }
 +        legacyEvent.callEvent();
  
--        Bukkit.getPluginManager().callEvent(event);
+-        EntityKnockbackEvent event;
 +        final io.papermc.paper.event.entity.EntityKnockbackEvent event;
 +        apiKnockback = legacyEvent.getFinalKnockback().subtract(currentVelocity);
-+        if (attacker != null) {
+         if (attacker != null) {
+-            event = new EntityKnockbackByEntityEvent(entity, attacker.getBukkitEntity(), cause, force, new Vector(-raw.x, raw.y, -raw.z), new Vector(x, y, z));
 +            event = new com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent(entity, attacker.getBukkitEntity(), cause, (float) force, apiKnockback);
-+        } else {
+         } else {
+-            event = new EntityKnockbackEvent(entity, cause, force, new Vector(-raw.x, raw.y, -raw.z), new Vector(x, y, z));
 +            event = new io.papermc.paper.event.entity.EntityKnockbackEvent(entity, cause, apiKnockback);
-+        }
+         }
+-
+-        Bukkit.getPluginManager().callEvent(event);
 +        event.setCancelled(legacyEvent.isCancelled());
 +        event.callEvent();
          return event;
