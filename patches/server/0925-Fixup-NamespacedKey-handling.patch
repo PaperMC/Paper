@@ -143,6 +143,28 @@ index 478059eb3ad76b41e6a20e9b489a2a4fb19e7c7c..3599ef1675b6091e9b67fb5241886460
          });
      }
  
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaShield.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaShield.java
+index c8eec04685456d89cb41466cddcc3975d0ceeb29..c10609472c1b86c3abb19a62bef4c9ce436307ea 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaShield.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaShield.java
+@@ -17,6 +17,7 @@ import org.bukkit.block.BlockState;
+ import org.bukkit.block.banner.Pattern;
+ import org.bukkit.block.banner.PatternType;
+ import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.CraftRegistry;
+ import org.bukkit.craftbukkit.block.CraftBlockStates;
+ import org.bukkit.craftbukkit.block.banner.CraftPatternType;
+ import org.bukkit.inventory.meta.BlockStateMeta;
+@@ -53,7 +54,8 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
+             for (int i = 0; i < Math.min(patterns.size(), 20); i++) {
+                 BannerPatternLayers.Layer p = patterns.get(i);
+                 DyeColor color = DyeColor.getByWoolData((byte) p.color().getId());
+-                PatternType pattern = CraftPatternType.minecraftHolderToBukkit(p.pattern());
++                PatternType pattern = CraftRegistry.unwrapAndConvertHolder(io.papermc.paper.registry.RegistryKey.BANNER_PATTERN, p.pattern()).orElse(null); // Paper - fix upstream not being correct
++                if (pattern == null) continue; // Paper - just delete the pattern because upstream is not doing this right
+ 
+                 if (color != null && pattern != null) {
+                     this.addPattern(new Pattern(color, pattern));
 diff --git a/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionType.java b/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionType.java
 index 82a50b06c08b632f77d73745e1fa9bd22dfd950a..f1d8ed4a2b8959873b02d57f6a40323a841f3d7f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionType.java
