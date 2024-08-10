@@ -129,16 +129,17 @@ index 0000000000000000000000000000000000000000..3a0bca9f95d6f1ad2e160620bb47f702
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/DataComponentTypes.java b/src/main/java/io/papermc/paper/datacomponent/DataComponentTypes.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c3f53e5afe92c39dfce7075153d419f1b03020ac
+index 0000000000000000000000000000000000000000..4a99e023e4593dc0ccc05b9af292b44d056f534e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/DataComponentTypes.java
-@@ -0,0 +1,321 @@
+@@ -0,0 +1,324 @@
 +package io.papermc.paper.datacomponent;
 +
 +import io.papermc.paper.datacomponent.item.BannerPatternLayers;
 +import io.papermc.paper.datacomponent.item.BlockItemDataProperties;
 +import io.papermc.paper.datacomponent.item.BundleContents;
 +import io.papermc.paper.datacomponent.item.ChargedProjectiles;
++import io.papermc.paper.datacomponent.item.CustomModelData;
 +import io.papermc.paper.datacomponent.item.DyedItemColor;
 +import io.papermc.paper.datacomponent.item.Fireworks;
 +import io.papermc.paper.datacomponent.item.FoodProperties;
@@ -149,8 +150,10 @@ index 0000000000000000000000000000000000000000..c3f53e5afe92c39dfce7075153d419f1
 +import io.papermc.paper.datacomponent.item.ItemEnchantments;
 +import io.papermc.paper.datacomponent.item.ItemLore;
 +import io.papermc.paper.datacomponent.item.JukeboxPlayable;
++import io.papermc.paper.datacomponent.item.LockCode;
 +import io.papermc.paper.datacomponent.item.LodestoneTracker;
 +import io.papermc.paper.datacomponent.item.MapDecorations;
++import io.papermc.paper.datacomponent.item.MapId;
 +import io.papermc.paper.datacomponent.item.MapItemColor;
 +import io.papermc.paper.item.MapPostProcessing;
 +import io.papermc.paper.datacomponent.item.PotDecorations;
@@ -265,7 +268,7 @@ index 0000000000000000000000000000000000000000..c3f53e5afe92c39dfce7075153d419f1
 +    /**
 +     * Controls the minecraft:custom_model_data property in the item model.
 +     */
-+    public static final DataComponentType.Valued<Integer> CUSTOM_MODEL_DATA = valued("custom_model_data");
++    public static final DataComponentType.Valued<CustomModelData> CUSTOM_MODEL_DATA = valued("custom_model_data");
 +    /**
 +     * If set, disables 'additional' tooltip part which comes from the item type
 +     * (e.g. content of a shulker).
@@ -331,7 +334,7 @@ index 0000000000000000000000000000000000000000..c3f53e5afe92c39dfce7075153d419f1
 +    /**
 +     * References the shared map state holding map contents and markers for a Filled Map.
 +     */
-+    public static final DataComponentType.Valued<Integer> MAP_ID = valued("map_id");
++    public static final DataComponentType.Valued<MapId> MAP_ID = valued("map_id");
 +    /**
 +     * Holds a list of markers to be placed on a Filled Map (used for Explorer Maps).
 +     */
@@ -436,7 +439,7 @@ index 0000000000000000000000000000000000000000..c3f53e5afe92c39dfce7075153d419f1
 +     * An item with a custom name of the same value must be used
 +     * to open this container.
 +     */
-+    public static final DataComponentType.Valued<String> LOCK = valued("lock");
++    public static final DataComponentType.Valued<LockCode> LOCK = valued("lock");
 +    /**
 +     * Holds the unresolved loot table and seed of a container-like block.
 +     */
@@ -683,10 +686,10 @@ index 0000000000000000000000000000000000000000..dd34facf9f9ea1d674f65ff2e5f56386
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/ComponentTypesBridge.java b/src/main/java/io/papermc/paper/datacomponent/item/ComponentTypesBridge.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d061ed57d046f9e42b116e55e392a1a9ecc9d655
+index 0000000000000000000000000000000000000000..eb15b4b4ffc06e66244c483dd9b65a71f9135bd6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/ComponentTypesBridge.java
-@@ -0,0 +1,87 @@
+@@ -0,0 +1,93 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import com.destroystokyo.paper.profile.PlayerProfile;
@@ -773,6 +776,36 @@ index 0000000000000000000000000000000000000000..d061ed57d046f9e42b116e55e392a1a9
 +    Tool.Rule rule(RegistryKeySet<BlockType> blocks, @Nullable Float speed, TriState correctForDrops);
 +
 +    ItemAdventurePredicate.Builder itemAdventurePredicate();
++
++    CustomModelData customModelData(int id);
++
++    MapId mapId(int id);
++
++    LockCode lockCode(String code);
++}
+diff --git a/src/main/java/io/papermc/paper/datacomponent/item/CustomModelData.java b/src/main/java/io/papermc/paper/datacomponent/item/CustomModelData.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..62034531489927adeebebc23caddf69f1260be99
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datacomponent/item/CustomModelData.java
+@@ -0,0 +1,18 @@
++package io.papermc.paper.datacomponent.item;
++
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++
++@ApiStatus.NonExtendable
++public interface CustomModelData {
++
++    @Contract(value = "_ -> new", pure = true)
++    static @NonNull CustomModelData customModelData(int id) {
++        return ComponentTypesBridge.bridge().customModelData(id);
++    }
++
++    @Contract(pure = true)
++    int data();
++
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/DyedItemColor.java b/src/main/java/io/papermc/paper/datacomponent/item/DyedItemColor.java
 new file mode 100644
@@ -1429,6 +1462,30 @@ index 0000000000000000000000000000000000000000..5beb84a0c5c2275e721cab21483e29c3
 +        @NonNull Builder jukeboxSong(@NonNull JukeboxSong song);
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/datacomponent/item/LockCode.java b/src/main/java/io/papermc/paper/datacomponent/item/LockCode.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b734afd9c9114a6770a5689077966ff4f20a9a0c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datacomponent/item/LockCode.java
+@@ -0,0 +1,18 @@
++package io.papermc.paper.datacomponent.item;
++
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++
++@ApiStatus.NonExtendable
++public interface LockCode {
++
++    @Contract(value = "_ -> new", pure = true)
++    static @NonNull LockCode lockCode(@NonNull String code) {
++        return ComponentTypesBridge.bridge().lockCode(code);
++    }
++
++    @Contract(pure = true)
++    @NonNull String key();
++
++}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/LodestoneTracker.java b/src/main/java/io/papermc/paper/datacomponent/item/LodestoneTracker.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..749249dca2fcdaf506820ea95a05720b980e25cc
@@ -1618,6 +1675,38 @@ index 0000000000000000000000000000000000000000..571b97d22f7a6360c8fa0bde22914f7f
 +        @Contract(value = "_ -> this", mutates = "this")
 +        MapDecorations.@NonNull Builder putAll(@NonNull Map<@NonNull String, @NonNull DecorationEntry> entries);
 +    }
++}
+diff --git a/src/main/java/io/papermc/paper/datacomponent/item/MapId.java b/src/main/java/io/papermc/paper/datacomponent/item/MapId.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0fe06c6be3f8a848417f1c0844a34082f4168f3d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datacomponent/item/MapId.java
+@@ -0,0 +1,26 @@
++package io.papermc.paper.datacomponent.item;
++
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++
++/**
++ * References the shared map state holding map contents and markers for a Filled Map.
++ */
++@ApiStatus.NonExtendable
++public interface MapId {
++
++    @Contract(value = "_ -> new", pure = true)
++    static @NonNull MapId mapId(int id) {
++        return ComponentTypesBridge.bridge().mapId(id);
++    }
++
++    /**
++     * The map id.
++     *
++     * @return id
++     */
++    @Contract(pure = true)
++    int id();
++
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/MapItemColor.java b/src/main/java/io/papermc/paper/datacomponent/item/MapItemColor.java
 new file mode 100644

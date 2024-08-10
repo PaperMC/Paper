@@ -66,10 +66,10 @@ index 0000000000000000000000000000000000000000..08c717590a34584c359408c49c69379c
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/ComponentAdapters.java b/src/main/java/io/papermc/paper/datacomponent/ComponentAdapters.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7ae8148930197339b976366eaaca850b49af1993
+index 0000000000000000000000000000000000000000..04742f12afc523aa1748f94b4bad8536074fff87
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/ComponentAdapters.java
-@@ -0,0 +1,169 @@
+@@ -0,0 +1,172 @@
 +package io.papermc.paper.datacomponent;
 +
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -78,6 +78,7 @@ index 0000000000000000000000000000000000000000..7ae8148930197339b976366eaaca850b
 +import io.papermc.paper.datacomponent.item.PaperBlockItemDataProperties;
 +import io.papermc.paper.datacomponent.item.PaperBundleContents;
 +import io.papermc.paper.datacomponent.item.PaperChargedProjectiles;
++import io.papermc.paper.datacomponent.item.PaperCustomModelData;
 +import io.papermc.paper.datacomponent.item.PaperDyedItemColor;
 +import io.papermc.paper.datacomponent.item.PaperFireworks;
 +import io.papermc.paper.datacomponent.item.PaperFoodProperties;
@@ -89,8 +90,10 @@ index 0000000000000000000000000000000000000000..7ae8148930197339b976366eaaca850b
 +import io.papermc.paper.datacomponent.item.PaperItemLore;
 +import io.papermc.paper.datacomponent.item.PaperItemTool;
 +import io.papermc.paper.datacomponent.item.PaperJukeboxPlayable;
++import io.papermc.paper.datacomponent.item.PaperLockCode;
 +import io.papermc.paper.datacomponent.item.PaperLodestoneTracker;
 +import io.papermc.paper.datacomponent.item.PaperMapDecorations;
++import io.papermc.paper.datacomponent.item.PaperMapId;
 +import io.papermc.paper.datacomponent.item.PaperMapItemColor;
 +import io.papermc.paper.datacomponent.item.PaperPotDecorations;
 +import io.papermc.paper.datacomponent.item.PaperPotionContents;
@@ -162,7 +165,7 @@ index 0000000000000000000000000000000000000000..7ae8148930197339b976366eaaca850b
 +        register(DataComponents.CAN_PLACE_ON, PaperItemAdventurePredicate::new);
 +        register(DataComponents.CAN_BREAK, PaperItemAdventurePredicate::new);
 +        register(DataComponents.ATTRIBUTE_MODIFIERS, PaperItemAttributeModifiers::new);
-+        register(DataComponents.CUSTOM_MODEL_DATA, CustomModelData::value, CustomModelData::new);
++        register(DataComponents.CUSTOM_MODEL_DATA, PaperCustomModelData::new);
 +        registerUntyped(DataComponents.HIDE_ADDITIONAL_TOOLTIP);
 +        registerUntyped(DataComponents.HIDE_TOOLTIP);
 +        registerIdentity(DataComponents.REPAIR_COST);
@@ -175,7 +178,7 @@ index 0000000000000000000000000000000000000000..7ae8148930197339b976366eaaca850b
 +        register(DataComponents.STORED_ENCHANTMENTS, PaperItemEnchantments::new);
 +        register(DataComponents.DYED_COLOR, PaperDyedItemColor::new);
 +        register(DataComponents.MAP_COLOR, PaperMapItemColor::new);
-+        register(DataComponents.MAP_ID, MapId::id, MapId::new);
++        register(DataComponents.MAP_ID, PaperMapId::new);
 +        register(DataComponents.MAP_DECORATIONS, PaperMapDecorations::new);
 +        register(DataComponents.MAP_POST_PROCESSING, nms -> io.papermc.paper.item.MapPostProcessing.valueOf(nms.name()), api -> MapPostProcessing.valueOf(api.name()));
 +        register(DataComponents.CHARGED_PROJECTILES, PaperChargedProjectiles::new);
@@ -204,7 +207,7 @@ index 0000000000000000000000000000000000000000..7ae8148930197339b976366eaaca850b
 +        register(DataComponents.CONTAINER, PaperItemContainerContents::new);
 +        register(DataComponents.BLOCK_STATE, PaperBlockItemDataProperties::new);
 +        // bees
-+        register(DataComponents.LOCK, LockCode::key, LockCode::new);
++        register(DataComponents.LOCK, PaperLockCode::new);
 +        register(DataComponents.CONTAINER_LOOT, PaperSeededContainerLoot::new);
 +
 +        // TODO: REMOVE THIS... we want to build the PR... so lets just make things UNTYPED!
@@ -396,10 +399,10 @@ index 0000000000000000000000000000000000000000..74e883d50477b3b4dabdcb674d95e92e
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/ComponentTypesBridgesImpl.java b/src/main/java/io/papermc/paper/datacomponent/item/ComponentTypesBridgesImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3efab440526a1bb715d786bb41d6ecc133119c6a
+index 0000000000000000000000000000000000000000..96f3c4287bdf791afd92d03149b8eabf06936297
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/ComponentTypesBridgesImpl.java
-@@ -0,0 +1,170 @@
+@@ -0,0 +1,184 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import com.destroystokyo.paper.profile.PlayerProfile;
@@ -569,6 +572,20 @@ index 0000000000000000000000000000000000000000..3efab440526a1bb715d786bb41d6ecc1
 +        return new PaperBlockItemDataProperties.BuilderImpl();
 +    }
 +
++    @Override
++    public MapId mapId(final int id) {
++        return new PaperMapId(new net.minecraft.world.level.saveddata.maps.MapId(id));
++    }
++
++    @Override
++    public LockCode lockCode(final String code) {
++        return new PaperLockCode(new net.minecraft.world.LockCode(code));
++    }
++
++    @Override
++    public CustomModelData customModelData(final int id) {
++        return new PaperCustomModelData(new net.minecraft.world.item.component.CustomModelData(id));
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperBannerPatternLayers.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperBannerPatternLayers.java
 new file mode 100644
@@ -821,6 +838,34 @@ index 0000000000000000000000000000000000000000..db00e0d68dba2b844377248c8e70b5e2
 +            return new PaperChargedProjectiles(net.minecraft.world.item.component.ChargedProjectiles.of(this.items));
 +        }
 +    }
++}
+diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperCustomModelData.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperCustomModelData.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fdc8b35d7611f4f4788f51cc55fd5dcbdbc1a282
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperCustomModelData.java
+@@ -0,0 +1,22 @@
++package io.papermc.paper.datacomponent.item;
++
++import org.bukkit.craftbukkit.util.Handleable;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public record PaperCustomModelData(
++    net.minecraft.world.item.component.CustomModelData impl
++) implements CustomModelData, Handleable<net.minecraft.world.item.component.CustomModelData> {
++
++    @Override
++    public net.minecraft.world.item.component.CustomModelData getHandle() {
++        return this.impl;
++    }
++
++    @Override
++    public int data() {
++        return this.impl.value();
++    }
++
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperDyedItemColor.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperDyedItemColor.java
 new file mode 100644
@@ -1822,6 +1867,34 @@ index 0000000000000000000000000000000000000000..1afafbc43cbf1a0ce07b43ceeefdeaf9
 +        }
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperLockCode.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperLockCode.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..485bf8e0c7a24cc5714815f95e9818143ae226db
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperLockCode.java
+@@ -0,0 +1,22 @@
++package io.papermc.paper.datacomponent.item;
++
++import org.bukkit.craftbukkit.util.Handleable;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public record PaperLockCode(
++    net.minecraft.world.LockCode impl
++) implements LockCode, Handleable<net.minecraft.world.LockCode> {
++
++    @Override
++    public net.minecraft.world.LockCode getHandle() {
++        return this.impl;
++    }
++
++    @Override
++    public String key() {
++        return this.impl.key();
++    }
++
++}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperLodestoneTracker.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperLodestoneTracker.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..104796a363d42c3dea7519e58b1ddafba29c4c00
@@ -1989,6 +2062,34 @@ index 0000000000000000000000000000000000000000..1970e41d600719be4352a9c73c04623c
 +            return new PaperMapDecorations(new net.minecraft.world.item.component.MapDecorations(Collections.unmodifiableMap(this.entries)));
 +        }
 +    }
++}
+diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperMapId.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperMapId.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..cdfbcd69420306dcb69aa12f0999ce431ff26992
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperMapId.java
+@@ -0,0 +1,22 @@
++package io.papermc.paper.datacomponent.item;
++
++import org.bukkit.craftbukkit.util.Handleable;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public record PaperMapId(
++    net.minecraft.world.level.saveddata.maps.MapId impl
++) implements MapId, Handleable<net.minecraft.world.level.saveddata.maps.MapId> {
++
++    @Override
++    public net.minecraft.world.level.saveddata.maps.MapId getHandle() {
++        return this.impl;
++    }
++
++    @Override
++    public int id() {
++        return this.impl.id();
++    }
++
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperMapItemColor.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperMapItemColor.java
 new file mode 100644
@@ -3247,15 +3348,16 @@ index 0000000000000000000000000000000000000000..06476cdd7f8290846e86bdd3837488ca
 +}
 diff --git a/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java b/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ac0a278ca07282397639b4dfc246b770798f10e9
+index 0000000000000000000000000000000000000000..491397cc89683c75c9e711c40044222b0a53681f
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java
-@@ -0,0 +1,385 @@
+@@ -0,0 +1,387 @@
 +package io.papermc.paper.item;
 +
 +import io.papermc.paper.datacomponent.DataComponentType;
 +import io.papermc.paper.datacomponent.DataComponentTypes;
 +import io.papermc.paper.datacomponent.item.ChargedProjectiles;
++import io.papermc.paper.datacomponent.item.CustomModelData;
 +import io.papermc.paper.datacomponent.item.DyedItemColor;
 +import io.papermc.paper.datacomponent.item.Fireworks;
 +import io.papermc.paper.datacomponent.item.FoodProperties;
@@ -3264,6 +3366,7 @@ index 0000000000000000000000000000000000000000..ac0a278ca07282397639b4dfc246b770
 +import io.papermc.paper.datacomponent.item.ItemEnchantments;
 +import io.papermc.paper.datacomponent.item.ItemLore;
 +import io.papermc.paper.datacomponent.item.JukeboxPlayable;
++import io.papermc.paper.datacomponent.item.MapId;
 +import io.papermc.paper.datacomponent.item.MapItemColor;
 +import io.papermc.paper.datacomponent.item.PotDecorations;
 +import io.papermc.paper.datacomponent.item.Tool;
@@ -3424,7 +3527,7 @@ index 0000000000000000000000000000000000000000..ac0a278ca07282397639b4dfc246b770
 +
 +    @Test
 +    void testCustomModelData() {
-+        testWithMeta(new ItemStack(Material.STONE), DataComponentTypes.CUSTOM_MODEL_DATA, 1, ItemMeta.class, ItemMeta::getCustomModelData, ItemMeta::setCustomModelData);
++        testWithMeta(new ItemStack(Material.STONE), DataComponentTypes.CUSTOM_MODEL_DATA, CustomModelData.customModelData(1), CustomModelData::data, ItemMeta.class, ItemMeta::getCustomModelData, ItemMeta::setCustomModelData);
 +    }
 +
 +    @Test
@@ -3544,7 +3647,7 @@ index 0000000000000000000000000000000000000000..ac0a278ca07282397639b4dfc246b770
 +
 +    @Test
 +    void testMapId() {
-+        testWithMeta(new ItemStack(Material.FILLED_MAP), DataComponentTypes.MAP_ID, 1, MapMeta.class, MapMeta::getMapId, MapMeta::setMapId);
++        testWithMeta(new ItemStack(Material.FILLED_MAP), DataComponentTypes.MAP_ID, MapId.mapId(1), MapId::id, MapMeta.class, MapMeta::getMapId, MapMeta::setMapId);
 +    }
 +
 +    @Test
