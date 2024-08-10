@@ -7,8 +7,8 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.entity.Wolf;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Vanilla keys for {@link RegistryKey#WOLF_VARIANT}.
@@ -93,13 +93,13 @@ public final class WolfVariantKeys {
     }
 
     /**
-     * Creates a key for {@link Wolf.Variant} in a registry.
+     * Creates a key for {@link Wolf.Variant} in the registry {@code minecraft:wolf_variant}.
      *
      * @param key the value's key in the registry
      * @return a new typed key
      */
     @ApiStatus.Experimental
-    public static @NotNull TypedKey<Wolf.Variant> create(final @NotNull Key key) {
+    public static @NonNull TypedKey<Wolf.Variant> create(final @NonNull Key key) {
         return TypedKey.create(RegistryKey.WOLF_VARIANT, key);
     }
 }

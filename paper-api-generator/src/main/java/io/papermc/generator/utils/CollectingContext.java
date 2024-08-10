@@ -2,7 +2,6 @@ package io.papermc.generator.utils;
 
 import com.mojang.serialization.Lifecycle;
 import io.papermc.generator.Main;
-import java.util.List;
 import java.util.Set;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;

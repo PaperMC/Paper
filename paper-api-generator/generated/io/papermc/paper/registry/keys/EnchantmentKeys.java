@@ -7,8 +7,8 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.enchantments.Enchantment;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Vanilla keys for {@link RegistryKey#ENCHANTMENT}.
@@ -323,7 +323,7 @@ public final class EnchantmentKeys {
     private EnchantmentKeys() {
     }
 
-    private static @NotNull TypedKey<Enchantment> create(final @NotNull Key key) {
+    private static @NonNull TypedKey<Enchantment> create(final @NonNull Key key) {
         return TypedKey.create(RegistryKey.ENCHANTMENT, key);
     }
 }

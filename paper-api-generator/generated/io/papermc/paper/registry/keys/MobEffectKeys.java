@@ -7,8 +7,8 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.potion.PotionEffectType;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Vanilla keys for {@link RegistryKey#MOB_EFFECT}.
@@ -302,7 +302,7 @@ public final class MobEffectKeys {
     private MobEffectKeys() {
     }
 
-    private static @NotNull TypedKey<PotionEffectType> create(final @NotNull Key key) {
+    private static @NonNull TypedKey<PotionEffectType> create(final @NonNull Key key) {
         return TypedKey.create(RegistryKey.MOB_EFFECT, key);
     }
 }

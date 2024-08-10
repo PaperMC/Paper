@@ -7,8 +7,8 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.generator.structure.Structure;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Vanilla keys for {@link RegistryKey#STRUCTURE}.
@@ -268,13 +268,13 @@ public final class StructureKeys {
     }
 
     /**
-     * Creates a key for {@link Structure} in a registry.
+     * Creates a key for {@link Structure} in the registry {@code minecraft:worldgen/structure}.
      *
      * @param key the value's key in the registry
      * @return a new typed key
      */
     @ApiStatus.Experimental
-    public static @NotNull TypedKey<Structure> create(final @NotNull Key key) {
+    public static @NonNull TypedKey<Structure> create(final @NonNull Key key) {
         return TypedKey.create(RegistryKey.STRUCTURE, key);
     }
 }

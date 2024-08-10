@@ -31,8 +31,6 @@ import net.minecraft.core.RegistrySetBuilder;
 import net.minecraft.data.registries.VanillaRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.flag.FeatureElement;
-import net.minecraft.world.flag.FeatureFlags;
-import org.bukkit.MinecraftExperimental;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.checkerframework.framework.qual.DefaultQualifier;
@@ -72,7 +70,7 @@ public class GeneratedKeyType<T, A> extends SimpleGenerator {
     }
 
     private static final String CREATE_JAVADOC = """
-        Creates a key for {@link $T} in a registry.
+        Creates a key for {@link $T} in the registry {@code $L}.
         
         @param key the value's key in the registry
         @return a new typed key
@@ -102,7 +100,7 @@ public class GeneratedKeyType<T, A> extends SimpleGenerator {
             .returns(returnType.annotated(NOT_NULL));
         if (this.publicCreateKeyMethod) {
             create.addAnnotation(EXPERIMENTAL_API_ANNOTATION); // TODO remove once not experimental
-            create.addJavadoc(CREATE_JAVADOC, this.apiType);
+            create.addJavadoc(CREATE_JAVADOC, this.apiType, this.registryKey.location().toString());
         }
         return create;
     }
@@ -190,8 +188,6 @@ public class GeneratedKeyType<T, A> extends SimpleGenerator {
     @Override
     protected JavaFile.Builder file(final JavaFile.Builder builder) {
         return builder
-            .skipJavaLangImports(true)
-            .addStaticImport(Key.class, "key")
-            .indent("    ");
+            .addStaticImport(Key.class, "key");
     }
 }
