@@ -7,8 +7,8 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.inventory.ItemType;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Vanilla keys for {@link RegistryKey#ITEM}.
@@ -1065,7 +1065,7 @@ public final class ItemTypeTagKeys {
      * @return a new tag key
      */
     @ApiStatus.Experimental
-    public static @NotNull TagKey<ItemType> create(final @NotNull Key key) {
+    public static @NonNull TagKey<ItemType> create(final @NonNull Key key) {
         return TagKey.create(RegistryKey.ITEM, key);
     }
 }

@@ -7,8 +7,8 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.block.Biome;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Vanilla keys for {@link RegistryKey#BIOME}.
@@ -484,7 +484,7 @@ public final class BiomeKeys {
      * @return a new typed key
      */
     @ApiStatus.Experimental
-    public static @NotNull TypedKey<Biome> create(final @NotNull Key key) {
+    public static @NonNull TypedKey<Biome> create(final @NonNull Key key) {
         return TypedKey.create(RegistryKey.BIOME, key);
     }
 }

@@ -7,8 +7,8 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.inventory.ItemType;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Vanilla keys for {@link RegistryKey#ITEM}.
@@ -9360,7 +9360,7 @@ public final class ItemTypeKeys {
     private ItemTypeKeys() {
     }
 
-    private static @NotNull TypedKey<ItemType> create(final @NotNull Key key) {
+    private static @NonNull TypedKey<ItemType> create(final @NonNull Key key) {
         return TypedKey.create(RegistryKey.ITEM, key);
     }
 }
