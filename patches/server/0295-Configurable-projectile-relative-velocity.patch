@@ -25,15 +25,22 @@ P3) Solutions for 1) and especially 2) might not be future-proof, while this
 server-internal fix makes this change future-proof.
 
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
-index 30eb86b52f00cfa61af4f93aca50ffc3547c95e8..7863625d49baa13ea87f2ee295b16706071fb960 100644
+index 30eb86b52f00cfa61af4f93aca50ffc3547c95e8..19452d1e591afc06675d57bbebae963517ab7217 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
-@@ -183,7 +183,7 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+@@ -182,8 +182,14 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+ 
          this.shoot((double) f5, (double) f6, (double) f7, speed, divergence);
          Vec3 vec3d = shooter.getKnownMovement();
- 
--        this.setDeltaMovement(this.getDeltaMovement().add(vec3d.x, shooter.onGround() ? 0.0D : vec3d.y, vec3d.z));
-+        if (!shooter.level().paperConfig().misc.disableRelativeProjectileVelocity) this.setDeltaMovement(this.getDeltaMovement().add(vec3d.x, shooter.onGround() ? 0.0D : vec3d.y, vec3d.z)); // Paper - allow disabling relative velocity
+-
++        // Paper start - allow disabling relative velocity
++        if (vec3d.lengthSqr() > 4D * 4D) {
++            vec3d = vec3d.normalize().scale(2D);
++        }
++        if (!shooter.level().paperConfig().misc.disableRelativeProjectileVelocity) {
+         this.setDeltaMovement(this.getDeltaMovement().add(vec3d.x, shooter.onGround() ? 0.0D : vec3d.y, vec3d.z));
++        }
++        // Paper end - allow disabling relative velocity
      }
  
      // CraftBukkit start - call projectile hit event
