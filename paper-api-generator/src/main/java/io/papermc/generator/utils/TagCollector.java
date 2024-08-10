@@ -4,7 +4,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.mojang.logging.LogUtils;
 import io.papermc.generator.Main;
-import io.papermc.generator.utils.Formatting;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -19,7 +18,6 @@ import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.repository.BuiltInPackSource;
 import net.minecraft.server.packs.resources.MultiPackResourceManager;
 import net.minecraft.tags.TagKey;
-import net.minecraft.tags.TagManager;
 import org.slf4j.Logger;
 
 // collect all the tags by grabbing the json from the data-packs
@@ -50,9 +48,9 @@ public final class TagCollector {
                 }
 
                 result.put(entry.value().getTagNames()
-                               .filter(tagKey -> tagKey.location().getPath().equals(path))
-                               .findFirst()
-                               .orElseThrow(), packId);
+                    .filter(tagKey -> tagKey.location().getPath().equals(path))
+                    .findFirst()
+                    .orElseThrow(), packId);
             });
         });
         return Collections.unmodifiableMap(result);

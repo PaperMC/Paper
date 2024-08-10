@@ -7,8 +7,8 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.inventory.meta.trim.TrimPattern;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Vanilla keys for {@link RegistryKey#TRIM_PATTERN}.
@@ -156,13 +156,13 @@ public final class TrimPatternKeys {
     }
 
     /**
-     * Creates a key for {@link TrimPattern} in a registry.
+     * Creates a key for {@link TrimPattern} in the registry {@code minecraft:trim_pattern}.
      *
      * @param key the value's key in the registry
      * @return a new typed key
      */
     @ApiStatus.Experimental
-    public static @NotNull TypedKey<TrimPattern> create(final @NotNull Key key) {
+    public static @NonNull TypedKey<TrimPattern> create(final @NonNull Key key) {
         return TypedKey.create(RegistryKey.TRIM_PATTERN, key);
     }
 }

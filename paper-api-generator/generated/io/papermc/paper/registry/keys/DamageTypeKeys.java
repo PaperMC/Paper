@@ -7,8 +7,8 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.damage.DamageType;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Vanilla keys for {@link RegistryKey#DAMAGE_TYPE}.
@@ -359,13 +359,13 @@ public final class DamageTypeKeys {
     }
 
     /**
-     * Creates a key for {@link DamageType} in a registry.
+     * Creates a key for {@link DamageType} in the registry {@code minecraft:damage_type}.
      *
      * @param key the value's key in the registry
      * @return a new typed key
      */
     @ApiStatus.Experimental
-    public static @NotNull TypedKey<DamageType> create(final @NotNull Key key) {
+    public static @NonNull TypedKey<DamageType> create(final @NonNull Key key) {
         return TypedKey.create(RegistryKey.DAMAGE_TYPE, key);
     }
 }

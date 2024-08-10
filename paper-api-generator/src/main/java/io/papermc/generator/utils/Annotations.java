@@ -7,8 +7,8 @@ import java.util.List;
 import io.papermc.paper.generated.GeneratedFrom;
 import net.minecraft.SharedConstants;
 import org.bukkit.MinecraftExperimental;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class Annotations {
@@ -26,10 +26,10 @@ public final class Annotations {
         return annotationSpecs;
     }
 
-    public static AnnotationSpec deprecatedVersioned(final @Nullable String version, boolean forRemoval) {
-        AnnotationSpec.Builder annotationSpec = AnnotationSpec.builder(Deprecated.class);
+    public static AnnotationSpec deprecatedVersioned(final @Nullable String version, final boolean forRemoval) {
+        final AnnotationSpec.Builder annotationSpec = AnnotationSpec.builder(Deprecated.class);
         if (forRemoval) {
-            annotationSpec.addMember("forRemoval", "$L", forRemoval);
+            annotationSpec.addMember("forRemoval", "$L", true);
         }
         if (version != null) {
             annotationSpec.addMember("since", "$S", version);
@@ -46,7 +46,7 @@ public final class Annotations {
 
     @ApiStatus.Experimental
     public static final AnnotationSpec EXPERIMENTAL_API_ANNOTATION = AnnotationSpec.builder(ApiStatus.Experimental.class).build();
-    public static final AnnotationSpec NOT_NULL = AnnotationSpec.builder(NotNull.class).build();
+    public static final AnnotationSpec NOT_NULL = AnnotationSpec.builder(NonNull.class).build();
     private static final AnnotationSpec SUPPRESS_WARNINGS = AnnotationSpec.builder(SuppressWarnings.class)
         .addMember("value", "$S", "unused")
         .addMember("value", "$S", "SpellCheckingInspection")

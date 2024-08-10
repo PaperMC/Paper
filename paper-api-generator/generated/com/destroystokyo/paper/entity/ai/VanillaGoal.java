@@ -51,7 +51,7 @@ import org.bukkit.entity.WanderingTrader;
 import org.bukkit.entity.Wither;
 import org.bukkit.entity.Wolf;
 import org.bukkit.entity.Zombie;
-import org.jetbrains.annotations.NotNull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * Vanilla keys for Mob Goals.
@@ -436,8 +436,8 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<Zombie> ZOMBIE_ATTACK_TURTLE_EGG = create("zombie_attack_turtle_egg", Zombie.class);
 
-    private static <T extends Mob> @NotNull GoalKey<T> create(final @NotNull String key,
-            final @NotNull Class<T> type) {
+    private static <T extends Mob> @NonNull GoalKey<T> create(final @NonNull String key,
+            final @NonNull Class<T> type) {
         return GoalKey.of(type, NamespacedKey.minecraft(key));
     }
 }
