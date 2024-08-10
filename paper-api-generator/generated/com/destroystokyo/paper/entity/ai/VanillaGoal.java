@@ -66,7 +66,7 @@ import org.jetbrains.annotations.NotNull;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21")
+@GeneratedFrom("1.21.1")
 public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<AbstractHorse> RANDOM_STAND = create("random_stand", AbstractHorse.class);
 

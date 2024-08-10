@@ -23,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21")
+@GeneratedFrom("1.21.1")
 @ApiStatus.Experimental
 public final class WolfVariantKeys {
     /**
