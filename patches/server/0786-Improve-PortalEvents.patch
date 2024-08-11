@@ -4,6 +4,19 @@ Date: Thu, 15 Dec 2022 10:33:39 -0800
 Subject: [PATCH] Improve PortalEvents
 
 
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 7604aef2e03e7d688e7b6504283ed631488ec2d6..6868025551065e0c9418b9e1387579b6bd35923b 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -1341,7 +1341,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+                 }
+                 // CraftBukkit start
+                 Location enter = this.getBukkitEntity().getLocation();
+-                Location exit = (worldserver == null) ? null : CraftLocation.toBukkit(teleportTarget.pos(), worldserver.getWorld(), teleportTarget.yRot(), teleportTarget.xRot());
++                Location exit =/* (worldserver == null) ? null : // Paper - always non-null */CraftLocation.toBukkit(teleportTarget.pos(), worldserver.getWorld(), teleportTarget.yRot(), teleportTarget.xRot());
+                 PlayerTeleportEvent tpEvent = new PlayerTeleportEvent(this.getBukkitEntity(), enter, exit, teleportTarget.cause());
+                 Bukkit.getServer().getPluginManager().callEvent(tpEvent);
+                 if (tpEvent.isCancelled() || tpEvent.getTo() == null) {
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
 index 3c410f22c92a64b50d77b22c4b3027d51bcd7e05..1c4ec9049d84adbeb26b7abda82836f8ce0ff0ba 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
@@ -41,7 +54,7 @@ index 11486419dd98a013c7387d3d73f322a95a18c574..3f5bb5c9ceb5b31fcc9ef0a7a6157e1e
  
              if (!world.isClientSide && tileentity instanceof TheEndGatewayBlockEntity) {
 diff --git a/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java b/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java
-index cff3e9869340f1ffb7093431cbe1ac5e67792a4e..01333f69b622141b2eb53441c6cbd69e4a059d55 100644
+index cff3e9869340f1ffb7093431cbe1ac5e67792a4e..6937d334b70791c094f6b752373225cfb64ee7ac 100644
 --- a/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java
 @@ -66,8 +66,9 @@ public class EndPortalBlock extends BaseEntityBlock implements Portal {
@@ -55,8 +68,17 @@ index cff3e9869340f1ffb7093431cbe1ac5e67792a4e..01333f69b622141b2eb53441c6cbd69e
              // CraftBukkit end
              if (!world.isClientSide && world.dimension() == Level.END && entity instanceof ServerPlayer) {
                  ServerPlayer entityplayer = (ServerPlayer) entity;
+@@ -89,7 +90,7 @@ public class EndPortalBlock extends BaseEntityBlock implements Portal {
+         ServerLevel worldserver1 = world.getServer().getLevel(resourcekey);
+ 
+         if (worldserver1 == null) {
+-            return new DimensionTransition(PlayerTeleportEvent.TeleportCause.END_PORTAL); // CraftBukkit- always fire event in case plugins wish to change it
++            return null; // Paper - keep previous behavior of not firing PlayerTeleportEvent if the target world doesn't exist
+         } else {
+             boolean flag = resourcekey == Level.END;
+             BlockPos blockposition1 = flag ? ServerLevel.END_SPAWN_POINT : worldserver1.getSharedSpawnPos();
 diff --git a/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java b/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java
-index a530276b0123dee5680d7e09ad3d2f0414909c91..ddab7de1d376e9e486e2f920174397ea8804aa29 100644
+index a530276b0123dee5680d7e09ad3d2f0414909c91..1722188fbfccd233625db540ddcaf646762fd023 100644
 --- a/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java
 @@ -110,8 +110,9 @@ public class NetherPortalBlock extends Block implements Portal {
@@ -70,3 +92,27 @@ index a530276b0123dee5680d7e09ad3d2f0414909c91..ddab7de1d376e9e486e2f920174397ea
              // CraftBukkit end
              entity.setAsInsidePortal(this, pos);
          }
+@@ -143,7 +144,7 @@ public class NetherPortalBlock extends Block implements Portal {
+         // Paper end - Add EntityPortalReadyEvent
+ 
+         if (worldserver1 == null) {
+-            return new DimensionTransition(PlayerTeleportEvent.TeleportCause.NETHER_PORTAL); // always fire event in case plugins wish to change it
++            return null; // Paper - keep previous behavior of not firing PlayerTeleportEvent if the target world doesn't exist
+         } else {
+             boolean flag = worldserver1.getTypeKey() == LevelStem.NETHER;
+             // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/level/portal/DimensionTransition.java b/src/main/java/net/minecraft/world/level/portal/DimensionTransition.java
+index 788f79dc38012595b385ee6a449daa0bccf0079a..36c8735312c885eb153f4ffdf0f2a5495e9c9f65 100644
+--- a/src/main/java/net/minecraft/world/level/portal/DimensionTransition.java
++++ b/src/main/java/net/minecraft/world/level/portal/DimensionTransition.java
+@@ -15,9 +15,7 @@ public record DimensionTransition(ServerLevel newLevel, Vec3 pos, Vec3 speed, fl
+         this(newLevel, pos, speed, yRot, xRot, missingRespawnBlock, postDimensionTransition, PlayerTeleportEvent.TeleportCause.UNKNOWN);
+     }
+ 
+-    public DimensionTransition(PlayerTeleportEvent.TeleportCause cause) {
+-        this(null, Vec3.ZERO, Vec3.ZERO, 0.0F, 0.0F, false, DO_NOTHING, cause);
+-    }
++    // Paper - remove unused constructor (for safety)
+     // CraftBukkit end
+ 
+     public static final DimensionTransition.PostDimensionTransition DO_NOTHING = (entity) -> {
