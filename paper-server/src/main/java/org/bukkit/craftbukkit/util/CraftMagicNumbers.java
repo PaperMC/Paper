@@ -528,6 +528,36 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
+    public com.google.gson.JsonObject serializeItemAsJson(ItemStack itemStack) {
+        Preconditions.checkNotNull(itemStack, "Cannot serialize empty ItemStack");
+        Preconditions.checkArgument(!itemStack.isEmpty(), "Cannot serialize empty ItemStack");
+
+        net.minecraft.core.RegistryAccess.Frozen reg = net.minecraft.server.MinecraftServer.getServer().registryAccess();
+        com.mojang.serialization.DynamicOps<com.google.gson.JsonElement> ops = reg.createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE);
+        com.google.gson.JsonObject item;
+        // Serialize as SNBT to preserve exact NBT types; vanilla codecs already can handle such deserialization.
+        net.minecraft.world.item.component.CustomData.SERIALIZE_CUSTOM_AS_SNBT.set(true);
+        try {
+            item = net.minecraft.world.item.ItemStack.CODEC.encodeStart(ops, CraftItemStack.unwrap(itemStack)).getOrThrow().getAsJsonObject();
+        } finally {
+            net.minecraft.world.item.component.CustomData.SERIALIZE_CUSTOM_AS_SNBT.set(false);
+        }
+        item.addProperty("DataVersion", this.getDataVersion());
+        return item;
+    }
+
+    @Override
+    public ItemStack deserializeItemFromJson(com.google.gson.JsonObject data) throws IllegalArgumentException {
+        Preconditions.checkNotNull(data, "null cannot be deserialized");
+
+        final int dataVersion = data.get("DataVersion").getAsInt();
+        final int currentVersion = org.bukkit.craftbukkit.util.CraftMagicNumbers.INSTANCE.getDataVersion();
+        data = (com.google.gson.JsonObject) MinecraftServer.getServer().fixerUpper.update(References.ITEM_STACK, new Dynamic<>(com.mojang.serialization.JsonOps.INSTANCE, data), dataVersion, currentVersion).getValue();
+        com.mojang.serialization.DynamicOps<com.google.gson.JsonElement> ops = MinecraftServer.getServer().registryAccess().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE);
+        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.CODEC.parse(ops, data).getOrThrow(IllegalArgumentException::new));
+    }
+
+    @Override
     public byte[] serializeEntity(org.bukkit.entity.Entity entity) {
         Preconditions.checkNotNull(entity, "null cannot be serialized");
         Preconditions.checkArgument(entity instanceof org.bukkit.craftbukkit.entity.CraftEntity, "only CraftEntities can be serialized");

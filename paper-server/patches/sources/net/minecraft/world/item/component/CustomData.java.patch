@@ -1,0 +1,21 @@
+--- a/net/minecraft/world/item/component/CustomData.java
++++ b/net/minecraft/world/item/component/CustomData.java
+@@ -34,7 +34,17 @@
+     private static final Logger LOGGER = LogUtils.getLogger();
+     public static final CustomData EMPTY = new CustomData(new CompoundTag());
+     private static final String TYPE_TAG = "id";
+-    public static final Codec<CustomData> CODEC = Codec.withAlternative(CompoundTag.CODEC, TagParser.AS_CODEC)
++    // Paper start - Item serialization as json
++    public static ThreadLocal<Boolean> SERIALIZE_CUSTOM_AS_SNBT = ThreadLocal.withInitial(() -> false);
++    public static final Codec<CustomData> CODEC = Codec.either(CompoundTag.CODEC, TagParser.AS_CODEC)
++        .xmap(com.mojang.datafixers.util.Either::unwrap, data -> { // Both will be used for deserialization, but we decide which one to use for serialization
++            if (!SERIALIZE_CUSTOM_AS_SNBT.get()) {
++                return com.mojang.datafixers.util.Either.left(data); // First codec
++            } else {
++                return com.mojang.datafixers.util.Either.right(data); // Second codec
++            }
++        })
++        // Paper end - Item serialization as json
+         .xmap(CustomData::new, component -> component.tag);
+     public static final Codec<CustomData> CODEC_WITH_ID = CODEC.validate(
+         component -> component.getUnsafe().contains("id", 8) ? DataResult.success(component) : DataResult.error(() -> "Missing id for entity in: " + component)
