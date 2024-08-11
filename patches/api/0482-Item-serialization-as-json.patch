@@ -4,11 +4,74 @@ Date: Sun, 11 Aug 2024 03:01:52 +0300
 Subject: [PATCH] Item serialization as json
 
 
+diff --git a/src/main/java/io/papermc/paper/util/adapters/ItemStackAdapter.java b/src/main/java/io/papermc/paper/util/adapters/ItemStackAdapter.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..59a37114d4347a2bfec073380622f0e6dec88e01
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/adapters/ItemStackAdapter.java
+@@ -0,0 +1,57 @@
++package io.papermc.paper.util.adapters;
++
++import com.google.gson.Gson;
++import com.google.gson.JsonElement;
++import com.google.gson.JsonObject;
++import com.google.gson.TypeAdapter;
++import com.google.gson.stream.JsonReader;
++import com.google.gson.stream.JsonWriter;
++import org.bukkit.inventory.ItemStack;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import java.io.IOException;
++
++/**
++ * A Gson TypeAdapter for ItemStacks.
++ */
++public final class ItemStackAdapter extends TypeAdapter<@Nullable ItemStack> {
++    private static final TypeAdapter<JsonElement> ELEMENT_ADAPTER = new Gson().getAdapter(JsonElement.class);
++    private static final ItemStackAdapter INSTANCE = new ItemStackAdapter();
++
++    /**
++     * Get the ItemStackAdapter instance.
++     * @return the ItemStackAdapter instance
++     */
++    public static @NonNull TypeAdapter<@Nullable ItemStack> itemStackAdapter() {
++        return INSTANCE;
++    }
++
++    private ItemStackAdapter() {
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public void write(final @NonNull JsonWriter out, final @Nullable ItemStack value) throws IOException {
++        if (value == null || value.isEmpty()) {
++            out.nullValue();
++            return;
++        }
++        JsonObject jsonObject = value.serializeAsJson();
++        ELEMENT_ADAPTER.write(out, jsonObject);
++    }
++
++    /**
++     * {@inheritDoc}
++     */
++    @Override
++    public @NonNull ItemStack read(final @NonNull JsonReader in) throws IOException {
++        JsonElement element = ELEMENT_ADAPTER.read(in);
++        if (element.isJsonNull()) {
++            return ItemStack.empty();
++        } else {
++            return ItemStack.deserializeJson(element.getAsJsonObject());
++        }
++    }
++}
 diff --git a/src/main/java/org/bukkit/inventory/ItemFactory.java b/src/main/java/org/bukkit/inventory/ItemFactory.java
-index bd0e55562f1cabef3078573182e0cf9fbc844585..50757db3094576fe7c2db51d98237f451d7a7189 100644
+index bd0e55562f1cabef3078573182e0cf9fbc844585..26eb6e69c73b7da8a622067484adce07511b68f6 100644
 --- a/src/main/java/org/bukkit/inventory/ItemFactory.java
 +++ b/src/main/java/org/bukkit/inventory/ItemFactory.java
-@@ -149,6 +149,19 @@ public interface ItemFactory {
+@@ -149,6 +149,21 @@ public interface ItemFactory {
      @NotNull
      ItemStack createItemStack(@NotNull String input) throws IllegalArgumentException;
  
@@ -21,6 +84,8 @@ index bd0e55562f1cabef3078573182e0cf9fbc844585..50757db3094576fe7c2db51d98237f45
 +     * @param data object representing an item in Json format
 +     * @return ItemStack migrated to this version of Minecraft if needed.
 +     * @throws IllegalArgumentException if the json object is not a valid item
++     * @see ItemStack#serializeAsJson()
++     * @see io.papermc.paper.util.adapters.ItemStackAdapter#itemStackAdapter()
 +     */
 +    @NotNull ItemStack createItemStack(@NotNull com.google.gson.JsonObject data) throws IllegalArgumentException;
 +    // Paper end - Item serialization to json
@@ -29,10 +94,10 @@ index bd0e55562f1cabef3078573182e0cf9fbc844585..50757db3094576fe7c2db51d98237f45
       * Gets a {@link Material} representing the spawn egg for the provided
       * {@link EntityType}. <br>
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index b3abe3bde05d4a360e31e490bff8a859dc2bd4a6..bf1b56bdbce897578fe7d66ec1894a793a71372e 100644
+index b3abe3bde05d4a360e31e490bff8a859dc2bd4a6..b19cabfe2efb28cbc406e1a6f92c35f77d8d998e 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
-@@ -730,6 +730,31 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -730,6 +730,35 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
          return org.bukkit.Bukkit.getUnsafe().serializeItem(this);
      }
  
@@ -45,6 +110,8 @@ index b3abe3bde05d4a360e31e490bff8a859dc2bd4a6..bf1b56bdbce897578fe7d66ec1894a79
 +     * @param object object representing an item in Json format
 +     * @return ItemStack migrated to this version of Minecraft if needed.
 +     * @throws IllegalArgumentException if the json object is not a valid item
++     * @see #serializeAsJson()
++     * @see io.papermc.paper.util.adapters.ItemStackAdapter#itemStackAdapter()
 +     */
 +    @NotNull
 +    public static ItemStack deserializeJson(@NotNull com.google.gson.JsonObject object) throws IllegalArgumentException {
@@ -55,6 +122,8 @@ index b3abe3bde05d4a360e31e490bff8a859dc2bd4a6..bf1b56bdbce897578fe7d66ec1894a79
 +     * Serializes this itemstack to vanilla compatible json format. It is safe for data migrations as it will
 +     * use the built in data converter instead of bukkits dangerous serialization system.
 +     * @return json object representing this item.
++     * @see #deserializeJson(com.google.gson.JsonObject)
++     * @see io.papermc.paper.util.adapters.ItemStackAdapter#itemStackAdapter()
 +     */
 +    @NotNull
 +    public com.google.gson.JsonObject serializeAsJson() {
