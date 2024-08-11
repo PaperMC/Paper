@@ -5,10 +5,10 @@ Subject: [PATCH] Add API for CanPlaceOn and CanDestroy NBT values
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index d5c45cc09b9d60c1650507ad6fedb27246291063..64e9a101cca95d94942f61aaa839629d648868b0 100644
+index d5c45cc09b9d60c1650507ad6fedb27246291063..5c45946f54e4b16440c15a9165ef85be43e53c84 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-@@ -2183,4 +2183,123 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -2183,4 +2183,117 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
      }
      // Paper end
  
@@ -36,11 +36,9 @@ index d5c45cc09b9d60c1650507ad6fedb27246291063..64e9a101cca95d94942f61aaa839629d
 +    }
 +
 +    private static List<net.minecraft.advancements.critereon.BlockPredicate> convertFromLegacyMaterial(final Collection<Material> materials) {
-+        return Collections.singletonList(
-+            net.minecraft.advancements.critereon.BlockPredicate.Builder.block()
-+                .of(materials.stream().map(org.bukkit.craftbukkit.block.CraftBlockType::bukkitToMinecraft).toList())
-+                .build()
-+        );
++        return materials.stream().map(m -> {
++            return net.minecraft.advancements.critereon.BlockPredicate.Builder.block().of(CraftBlockType.bukkitToMinecraft(m)).build();
++        }).toList();
 +    }
 +
 +    private static Set<Material> convertToLegacyMaterial(final List<net.minecraft.advancements.critereon.BlockPredicate> predicates) {
@@ -75,17 +73,13 @@ index d5c45cc09b9d60c1650507ad6fedb27246291063..64e9a101cca95d94942f61aaa839629d
 +    }
 +
 +    private static List<net.minecraft.advancements.critereon.BlockPredicate> convertFromLegacyNamespaced(final Collection<com.destroystokyo.paper.Namespaced> namespaceds) {
-+        final List<Material> blocks = new ArrayList<>();
 +        final List<net.minecraft.advancements.critereon.BlockPredicate> predicates = new ArrayList<>();
 +        for (final com.destroystokyo.paper.Namespaced namespaced : namespaceds) {
 +            if (namespaced instanceof final org.bukkit.NamespacedKey key) {
-+                blocks.add(Objects.requireNonNull(org.bukkit.Registry.MATERIAL.get(key)));
++                predicates.add(net.minecraft.advancements.critereon.BlockPredicate.Builder.block().of(CraftBlockType.bukkitToMinecraft(Objects.requireNonNull(org.bukkit.Registry.MATERIAL.get(key)))).build());
 +            } else if (namespaced instanceof final com.destroystokyo.paper.NamespacedTag tag) {
-+                predicates.add(net.minecraft.advancements.critereon.BlockPredicate.Builder.block().of(net.minecraft.tags.TagKey.create(Registries.BLOCK, new net.minecraft.resources.ResourceLocation(tag.getNamespace(), tag.getKey()))).build());
++                predicates.add(net.minecraft.advancements.critereon.BlockPredicate.Builder.block().of(net.minecraft.tags.TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(tag.getNamespace(), tag.getKey()))).build());
 +            }
-+        }
-+        if (!blocks.isEmpty()) {
-+            predicates.addAll(convertFromLegacyMaterial(blocks));
 +        }
 +        return predicates;
 +    }
@@ -131,4 +125,31 @@ index d5c45cc09b9d60c1650507ad6fedb27246291063..64e9a101cca95d94942f61aaa839629d
 +        return true;
 +    }
 +    // Paper end - Add an API for can-place-on/can-break adventure mode predicates
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/legacy/MaterialRerouting.java b/src/main/java/org/bukkit/craftbukkit/legacy/MaterialRerouting.java
+index d7c8f26b21276d9ff1d5c7c9738cc1126ce7d4b9..1d88afa9749f0ff94ace299ec0cb88147a91d497 100644
+--- a/src/main/java/org/bukkit/craftbukkit/legacy/MaterialRerouting.java
++++ b/src/main/java/org/bukkit/craftbukkit/legacy/MaterialRerouting.java
+@@ -690,4 +690,22 @@ public class MaterialRerouting {
+         return ItemStack.of(material, amount);
+     }
+     // Paper end
++
++    // Paper start - methods added post 1.13, no-op
++    public static Set<Material> getCanDestroy(final ItemMeta meta) {
++        return meta.getCanDestroy();
++    }
++
++    public static void setCanDestroy(final ItemMeta meta, final Set<Material> materials) {
++        meta.setCanDestroy(materials);
++    }
++
++    public static Set<Material> getCanPlaceOn(final ItemMeta meta) {
++        return meta.getCanPlaceOn();
++    }
++
++    public static void setCanPlaceOn(final ItemMeta meta, final Set<Material> materials) {
++        meta.setCanPlaceOn(materials);
++    }
++    // Paper end
  }
