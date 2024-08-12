@@ -496,18 +496,25 @@ public class StandardMessenger implements Messenger {
         if (channel.equals("bungeecord:main")) {
             return "BungeeCord";
         }
+        // Paper start - improve error message
         if (channel.length() > Messenger.MAX_CHANNEL_SIZE) {
-            throw new ChannelNameTooLongException(channel);
+            throw new ChannelNameTooLongException(channel.length(), shortened(channel));
         }
         if (channel.indexOf(':') == -1) {
-            throw new IllegalArgumentException("Channel must contain : separator (attempted to use " + channel + ")");
+            throw new IllegalArgumentException("Channel must contain : separator (attempted to use " + shortened(channel) + ")");
         }
         if (!channel.toLowerCase(Locale.ROOT).equals(channel)) {
             // TODO: use NamespacedKey validation here
-            throw new IllegalArgumentException("Channel must be entirely lowercase (attempted to use " + channel + ")");
+            throw new IllegalArgumentException("Channel must be entirely lowercase (attempted to use " + shortened(channel) + ")");
         }
         return channel;
     }
+
+    private static String shortened(String channel) {
+        channel = org.apache.commons.lang3.StringUtils.normalizeSpace(channel);
+        return channel.length() > 32 ? channel.substring(0, 32) + "..." : channel;
+    }
+    // Paper end - improve error message
 
     /**
      * Validates the input of a Plugin Message, ensuring the arguments are all
