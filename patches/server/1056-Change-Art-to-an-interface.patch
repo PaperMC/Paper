@@ -1,0 +1,210 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 11 Aug 2024 17:12:52 -0700
+Subject: [PATCH] Change Art to an interface
+
+
+diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistries.java b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
+index 0110ce4b1037ec4cdb9769c03326741ee50733d2..fd7e9b03f89ac91f54653b6251f17b8a7da2d50c 100644
+--- a/src/main/java/io/papermc/paper/registry/PaperRegistries.java
++++ b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
+@@ -15,12 +15,14 @@ import net.minecraft.core.registries.Registries;
+ import net.minecraft.resources.ResourceKey;
+ import net.minecraft.world.item.enchantment.Enchantment;
+ import net.minecraft.world.level.levelgen.structure.Structure;
++import org.bukkit.Art;
+ import org.bukkit.GameEvent;
+ import org.bukkit.JukeboxSong;
+ import org.bukkit.Keyed;
+ import org.bukkit.MusicInstrument;
+ import org.bukkit.block.BlockType;
+ import org.bukkit.block.banner.PatternType;
++import org.bukkit.craftbukkit.CraftArt;
+ import org.bukkit.craftbukkit.CraftGameEvent;
+ import org.bukkit.craftbukkit.CraftJukeboxSong;
+ import org.bukkit.craftbukkit.CraftMusicInstrument;
+@@ -90,11 +92,11 @@ public final class PaperRegistries {
+             entry(Registries.WOLF_VARIANT, RegistryKey.WOLF_VARIANT, Wolf.Variant.class, CraftWolf.CraftVariant::new).delayed(),
+             writable(Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT, Enchantment.class, CraftEnchantment::new, PaperEnchantmentRegistryEntry.PaperBuilder::new).withSerializationUpdater(FieldRename.ENCHANTMENT_RENAME).delayed(),
+             entry(Registries.JUKEBOX_SONG, RegistryKey.JUKEBOX_SONG, JukeboxSong.class, CraftJukeboxSong::new).delayed(),
++            entry(Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT, Art.class, CraftArt::new).delayed(),
+             entry(Registries.BANNER_PATTERN, RegistryKey.BANNER_PATTERN, PatternType.class, CraftPatternType::new).delayed(),
+ 
+             // api-only
+             apiOnly(Registries.BIOME, RegistryKey.BIOME, () -> org.bukkit.Registry.BIOME),
+-            apiOnly(Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT, () -> org.bukkit.Registry.ART),
+             apiOnly(Registries.ATTRIBUTE, RegistryKey.ATTRIBUTE, () -> org.bukkit.Registry.ATTRIBUTE),
+             apiOnly(Registries.ENTITY_TYPE, RegistryKey.ENTITY_TYPE, () -> org.bukkit.Registry.ENTITY_TYPE),
+             apiOnly(Registries.PARTICLE_TYPE, RegistryKey.PARTICLE_TYPE, () -> org.bukkit.Registry.PARTICLE_TYPE),
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftArt.java b/src/main/java/org/bukkit/craftbukkit/CraftArt.java
+index a4f3edb43a5fdd37ca9ea1fce8790ff7c018bae0..3241ffc7742cbaabd5cc2562b3115fc61587e04c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftArt.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftArt.java
+@@ -8,17 +8,97 @@ import org.bukkit.Art;
+ import org.bukkit.Registry;
+ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+ 
+-public class CraftArt {
++// Paper start - implement Art interface
++public class CraftArt implements Art, org.bukkit.craftbukkit.util.Handleable<PaintingVariant> {
+ 
+-    public static Art minecraftToBukkit(PaintingVariant minecraft) {
+-        Preconditions.checkArgument(minecraft != null);
++    private static int count = 0;
+ 
+-        net.minecraft.core.Registry<PaintingVariant> registry = CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT);
+-        Art bukkit = Registry.ART.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().location()));
++    private final org.bukkit.NamespacedKey key;
++    private final PaintingVariant paintingVariant;
++    private final String name;
++    private final int ordinal;
+ 
+-        Preconditions.checkArgument(bukkit != null);
++    public CraftArt(final org.bukkit.NamespacedKey key, final PaintingVariant paintingVariant) {
++        this.key = key;
++        this.paintingVariant = paintingVariant;
++        // For backwards compatibility, minecraft values will still return the uppercase name without the namespace,
++        // in case plugins use for example the name as key in a config file to receive painting variant specific values.
++        // Custom pattern types will return the key with namespace. For a plugin this should look than like a new pattern type
++        // (which can always be added in new minecraft versions and the plugin should therefore handle it accordingly).
++        if (org.bukkit.NamespacedKey.MINECRAFT.equals(key.getNamespace())) {
++            this.name = key.getKey().toUpperCase(java.util.Locale.ROOT);
++        } else {
++            this.name = key.toString();
++        }
++        this.ordinal = count++;
++    }
++
++    @Override
++    public int getBlockWidth() {
++        return this.paintingVariant.width();
++    }
++
++    @Override
++    public int getBlockHeight() {
++        return this.paintingVariant.height();
++    }
++
++    @Override
++    public int getId() {
++        return this.ordinal;
++    }
++
++    @Override
++    public org.bukkit.NamespacedKey getKey() {
++        return this.key;
++    }
++
++    @Override
++    public int compareTo(final Art other) {
++        return this.ordinal - other.ordinal();
++    }
++
++    @Override
++    public String name() {
++        return this.name;
++    }
+ 
+-        return bukkit;
++    @Override
++    public int ordinal() {
++        return this.ordinal;
++    }
++
++    @Override
++    public String toString() {
++        return this.name();
++    }
++
++    @Override
++    public boolean equals(Object other) {
++        if (this == other) {
++            return true;
++        }
++
++        if (!(other instanceof CraftArt)) {
++            return false;
++        }
++
++        return getKey().equals(((Art) other).getKey());
++    }
++
++    @Override
++    public int hashCode() {
++        return getKey().hashCode();
++    }
++
++    @Override
++    public PaintingVariant getHandle() {
++        return this.paintingVariant;
++    }
++    // Paper end - implement Art interface
++
++    public static Art minecraftToBukkit(PaintingVariant minecraft) {
++        return CraftRegistry.minecraftToBukkit(minecraft, Registries.PAINTING_VARIANT, Registry.ART); // Paper
+     }
+ 
+     public static Art minecraftHolderToBukkit(Holder<PaintingVariant> minecraft) {
+@@ -26,10 +106,7 @@ public class CraftArt {
+     }
+ 
+     public static PaintingVariant bukkitToMinecraft(Art bukkit) {
+-        Preconditions.checkArgument(bukkit != null);
+-
+-        return CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT)
+-                .getOptional(CraftNamespacedKey.toMinecraft(bukkit.getKey())).orElseThrow();
++        return CraftRegistry.bukkitToMinecraft(bukkit); // Paper
+     }
+ 
+     public static Holder<PaintingVariant> bukkitToMinecraftHolder(Art bukkit) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/legacy/enums/EnumEvil.java b/src/main/java/org/bukkit/craftbukkit/legacy/enums/EnumEvil.java
+index bee74a3727737e22dce06f14da44d0fab5f510db..34b15b52eacdacef47ada411a79757fe89c9ce92 100644
+--- a/src/main/java/org/bukkit/craftbukkit/legacy/enums/EnumEvil.java
++++ b/src/main/java/org/bukkit/craftbukkit/legacy/enums/EnumEvil.java
+@@ -50,6 +50,7 @@ public class EnumEvil {
+         REGISTRIES.put(Cat.Type.class, new LegacyRegistryData(Registry.CAT_VARIANT, Cat.Type::valueOf));
+         REGISTRIES.put(MapCursor.Type.class, new LegacyRegistryData(Registry.MAP_DECORATION_TYPE, MapCursor.Type::valueOf));
+         REGISTRIES.put(PatternType.class, new LegacyRegistryData(Registry.BANNER_PATTERN, PatternType::valueOf));
++        REGISTRIES.put(org.bukkit.Art.class, new LegacyRegistryData(Registry.ART, org.bukkit.Art::valueOf)); // Paper
+     }
+ 
+     public static LegacyRegistryData getRegistryData(Class<?> clazz) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
+index cae5c865388aca8041233ca52b25ecf68cd37494..ddca7643ccc25241dc1032dc831bbc6cf5ac302e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
+@@ -86,7 +86,8 @@ public class Commodore {
+             "org/bukkit/entity/Frog$Variant", "NOP",
+             "org/bukkit/entity/Cat$Type", "NOP",
+             "org/bukkit/map/MapCursor$Type", "NOP",
+-            "org/bukkit/block/banner/PatternType", "NOP"
++            "org/bukkit/block/banner/PatternType", "NOP",
++            "org/bukkit/Art", "NOP"
+     );
+ 
+     private static Map<String, RerouteMethodData> createReroutes(Class<?> clazz) {
+diff --git a/src/test/java/org/bukkit/ArtTest.java b/src/test/java/org/bukkit/ArtTest.java
+index ea288c3ff30656569abd60a2839c470cb5d953f2..f6c5a03d4f41fc16aaa830ef96c66522fee0cf4a 100644
+--- a/src/test/java/org/bukkit/ArtTest.java
++++ b/src/test/java/org/bukkit/ArtTest.java
+@@ -57,7 +57,7 @@ public class ArtTest extends AbstractTestingBase {
+ 
+     @Test
+     public void testCraftArtToBukkit() {
+-        Map<Art, Holder<PaintingVariant>> cache = new EnumMap(Art.class);
++        Map<Art, Holder<PaintingVariant>> cache = new java.util.HashMap<>(); // Paper
+         for (Holder<PaintingVariant> enumArt : CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT).asHolderIdMap()) {
+             Art art = CraftArt.minecraftHolderToBukkit(enumArt);
+             assertNotNull(art, "Could not CraftArt.NotchToBukkit " + enumArt);
+diff --git a/src/test/java/org/bukkit/support/provider/RegistriesArgumentProvider.java b/src/test/java/org/bukkit/support/provider/RegistriesArgumentProvider.java
+index c1f886c906a9f9313d97a223f719095fa2624c57..fda9c72be62de9abc8228226f06edbe9fada444e 100644
+--- a/src/test/java/org/bukkit/support/provider/RegistriesArgumentProvider.java
++++ b/src/test/java/org/bukkit/support/provider/RegistriesArgumentProvider.java
+@@ -80,6 +80,7 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
+         register(RegistryKey.CAT_VARIANT, Cat.Type.class, Registries.CAT_VARIANT, CraftCat.CraftType.class, CatVariant.class);
+         register(RegistryKey.MAP_DECORATION_TYPE, MapCursor.Type.class, Registries.MAP_DECORATION_TYPE, CraftMapCursor.CraftType.class, MapDecorationType.class);
+         register(RegistryKey.BANNER_PATTERN, PatternType.class, Registries.BANNER_PATTERN, CraftPatternType.class, BannerPattern.class);
++        register(RegistryKey.PAINTING_VARIANT, org.bukkit.Art.class, Registries.PAINTING_VARIANT, org.bukkit.craftbukkit.CraftArt.class, net.minecraft.world.entity.decoration.PaintingVariant.class); // Paper
+     }
+ 
+     private static void register(RegistryKey registryKey, Class bukkit, ResourceKey registry, Class craft, Class minecraft) { // Paper
