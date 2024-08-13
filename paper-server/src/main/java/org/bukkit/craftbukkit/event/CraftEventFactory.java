@@ -145,6 +145,7 @@ import org.bukkit.event.block.BellResonateEvent;
 import org.bukkit.event.block.BellRingEvent;
 import org.bukkit.event.block.BlockDamageAbortEvent;
 import org.bukkit.event.block.BlockDamageEvent;
+import org.bukkit.event.block.BlockDispenseLootEvent;
 import org.bukkit.event.block.BlockDropItemEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockFadeEvent;
@@ -164,6 +165,7 @@ import org.bukkit.event.block.FluidLevelChangeEvent;
 import org.bukkit.event.block.MoistureChangeEvent;
 import org.bukkit.event.block.NotePlayEvent;
 import org.bukkit.event.block.TNTPrimeEvent;
+import org.bukkit.event.block.VaultDisplayItemEvent;
 import org.bukkit.event.entity.AreaEffectCloudApplyEvent;
 import org.bukkit.event.entity.ArrowBodyCountChangeEvent;
 import org.bukkit.event.entity.BatToggleSleepEvent;
@@ -1604,6 +1606,20 @@ public class CraftEventFactory {
 
         TrialSpawnerSpawnEvent event = new TrialSpawnerSpawnEvent(entity, (org.bukkit.block.TrialSpawner) state);
         entity.getServer().getPluginManager().callEvent(event);
+        return event;
+    }
+
+    public static BlockDispenseLootEvent callBlockDispenseLootEvent(WorldServer worldServer, BlockPosition blockPosition, EntityHuman player, List<ItemStack> rewardLoot) {
+        List<org.bukkit.inventory.ItemStack> craftItemStacks = rewardLoot.stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList());
+
+        BlockDispenseLootEvent event = new BlockDispenseLootEvent((player == null) ? null : (Player) player.getBukkitEntity(), CraftBlock.at(worldServer, blockPosition), craftItemStacks);
+        Bukkit.getPluginManager().callEvent(event);
+        return event;
+    }
+
+    public static VaultDisplayItemEvent callVaultDisplayItemEvent(WorldServer worldServer, BlockPosition blockPosition, ItemStack displayitemStack) {
+        VaultDisplayItemEvent event = new VaultDisplayItemEvent(CraftBlock.at(worldServer, blockPosition), CraftItemStack.asBukkitCopy(displayitemStack));
+        Bukkit.getPluginManager().callEvent(event);
         return event;
     }
 
