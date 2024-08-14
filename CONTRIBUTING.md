@@ -56,7 +56,6 @@ split into different directories which target certain parts of the code. These
 directories are:
 
 - `Paper-API` - Modifications to `Spigot-API`/`Bukkit`;
-- `Paper-MojangAPI` - An API for [Mojang's Brigadier](https://github.com/Mojang/brigadier);
 - `Paper-Server` - Modifications to `Spigot`/`CraftBukkit`.
 
 Because the entire structure is based on patches and git, a basic understanding
