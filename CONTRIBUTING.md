@@ -97,7 +97,9 @@ Your commit will be converted into a patch that you can then PR into Paper.
 
 ## Modifying Patches
 
-Modifying previous patches is a bit more complex:
+Modifying previous patches is a bit more complex.
+Similar to adding patches, the methods to modify a patch are applied inside
+the `Paper-Server` and/or `Paper-API` folders.
 
 ### Method 1
 
@@ -113,7 +115,7 @@ edit it using `git rebase`.
 1. If you have changes you are working on, type `git stash` to store them for
 later;
    - You can type `git stash pop` to get them back at any point.
-1. Type `git rebase -i base`, in either `Paper-API` or `Paper-Server`;
+1. Type `git rebase -i base`;
    - It should show something like
    [this](https://gist.github.com/zachbr/21e92993cb99f62ffd7905d7b02f3159) in
    the text editor you get.
@@ -147,7 +149,7 @@ messing with your HEADs.
 
 1. Make your change while at HEAD;
 1. Make a temporary commit. You don't need to make a message for this;
-1. Type `git rebase -i base` in either `Paper-API` or `Paper-Server`, move (cut) your temporary commit and
+1. Type `git rebase -i base`, move (cut) your temporary commit and
 move it under the line of the patch you wish to modify;
 1. Change the `pick` to the appropriate action:
    1. `f`/`fixup`: Merge your changes into the patch without touching the
@@ -168,7 +170,7 @@ move it under the line of the patch you wish to modify;
   assist you too.
    - Alternatively, if you only know the name of the patch, you can do
   `git commit -a --fixup "Subject of Patch name"`.
-1. Rebase with autosquash: `git rebase -i --autosquash base` in either `Paper-API` or `Paper-Server`.
+1. Rebase with autosquash: `git rebase -i --autosquash base`.
 This will automatically move your fixup commit to the right place, and you just
 need to "save" the changes.
 1. Type `./gradlew rebuildPatches` in the root directory;
