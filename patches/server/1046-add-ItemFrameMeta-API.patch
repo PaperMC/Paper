@@ -1,0 +1,314 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TehBrian <tehbrian@proton.me>
+Date: Thu, 15 Aug 2024 17:06:38 -0400
+Subject: [PATCH] add ItemFrameMeta API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemMetas.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemMetas.java
+index 0930d827e96e0b41296d7723238e6735106fd3d5..0f5f8f8af07403587ea74bc13f3ee2806cc5b09c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemMetas.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemMetas.java
+@@ -155,6 +155,12 @@ public final class CraftItemMetas {
+             (item, extras) -> new CraftMetaOminousBottle(item.getComponentsPatch(), extras),
+             (type, meta) -> meta instanceof CraftMetaOminousBottle musicInstrument ? musicInstrument : new CraftMetaOminousBottle(meta));
+ 
++    // Paper start - add ItemFrameMeta API
++    private static final ItemMetaData<io.papermc.paper.inventory.meta.ItemFrameMeta> ITEM_FRAME_META_DATA = new ItemMetaData<>(io.papermc.paper.inventory.meta.ItemFrameMeta.class,
++            (item, extras) -> new CraftMetaItemFrame(item.getComponentsPatch(), extras),
++            (type, meta) -> meta instanceof CraftMetaItemFrame itemFrame ? itemFrame : new CraftMetaItemFrame(meta));
++    // Paper end - add ItemFrameMeta API
++
+     // We use if instead of a set, since the result gets cached in CraftItemType,
+     // which would result in dead memory once all ItemTypes have cached the data.
+     public static <I extends ItemMeta> ItemMetaData<I> getItemMetaData(CraftItemType<?> itemType) {
+@@ -263,11 +269,15 @@ public final class CraftItemMetas {
+         if (itemType == ItemType.SUSPICIOUS_STEW) {
+             return CraftItemMetas.asType(CraftItemMetas.SUSPICIOUS_STEW_META_DATA);
+         }
++        // Paper start - add ItemFrameMeta API
+         if (itemType == ItemType.COD_BUCKET || itemType == ItemType.PUFFERFISH_BUCKET || itemType == ItemType.TADPOLE_BUCKET // Paper
+-                || itemType == ItemType.SALMON_BUCKET || itemType == ItemType.ITEM_FRAME
+-                || itemType == ItemType.GLOW_ITEM_FRAME || itemType == ItemType.PAINTING) {
++                || itemType == ItemType.SALMON_BUCKET || itemType == ItemType.PAINTING) {
+             return CraftItemMetas.asType(CraftItemMetas.ENTITY_TAG_META_DATA);
+         }
++        if (itemType == ItemType.ITEM_FRAME || itemType == ItemType.GLOW_ITEM_FRAME) {
++            return CraftItemMetas.asType(CraftItemMetas.ITEM_FRAME_META_DATA);
++        }
++        // Paper end - add ItemFrameMeta API
+         if (itemType == ItemType.COMPASS) {
+             return CraftItemMetas.asType(CraftItemMetas.COMPASS_META_DATA);
+         }
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
+index da474a5b963d8e6769d120e9091e60ed0a468a9f..c113001a2353ec1234a18c3291504f48389482be 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
+@@ -20,8 +20,10 @@ public class CraftMetaEntityTag extends CraftMetaItem {
+             Material.PUFFERFISH_BUCKET,
+             Material.SALMON_BUCKET,
+             Material.TADPOLE_BUCKET, // Paper
+-            Material.ITEM_FRAME,
+-            Material.GLOW_ITEM_FRAME,
++            // Paper start - add ItemFrameMeta API
++            // Material.ITEM_FRAME,
++            // Material.GLOW_ITEM_FRAME,
++            // Paper end - add ItemFrameMeta API
+             Material.PAINTING
+     );
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+index 5c45946f54e4b16440c15a9165ef85be43e53c84..07ad086bfa77a4b3bcaa188ea65ceb7250da9c04 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+@@ -2132,6 +2132,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+                 map.put(CraftMetaEnchantedBook.class, Set.of(CraftMetaEnchantedBook.STORED_ENCHANTMENTS.TYPE));
+                 map.put(CraftMetaEntityTag.class, Set.of(CraftMetaEntityTag.ENTITY_TAG.TYPE));
+                 map.put(CraftMetaFirework.class, Set.of(CraftMetaFirework.FIREWORKS.TYPE));
++                map.put(CraftMetaItemFrame.class, Set.of(CraftMetaItemFrame.ENTITY_TAG.TYPE)); // Paper - add ItemFrameMeta API
+                 map.put(CraftMetaKnowledgeBook.class, Set.of(CraftMetaKnowledgeBook.BOOK_RECIPES.TYPE));
+                 map.put(CraftMetaLeatherArmor.class, Set.of(CraftMetaLeatherArmor.COLOR.TYPE));
+                 map.put(CraftMetaMap.class, Set.of(CraftMetaMap.MAP_COLOR.TYPE, CraftMetaMap.MAP_POST_PROCESSING.TYPE, CraftMetaMap.MAP_ID.TYPE));
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItemFrame.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItemFrame.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..01695bfe1e2e0909cfcfc0cd9892b5a83dccd1b6
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItemFrame.java
+@@ -0,0 +1,197 @@
++// Paper start - add ItemFrameMeta API
++package org.bukkit.craftbukkit.inventory;
++
++import com.google.common.collect.ImmutableMap;
++import com.google.common.collect.Sets;
++import io.papermc.paper.inventory.meta.ItemFrameMeta;
++import java.util.Map;
++import java.util.Set;
++import net.minecraft.core.component.DataComponentPatch;
++import net.minecraft.core.component.DataComponentType;
++import net.minecraft.core.component.DataComponents;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.Tag;
++import net.minecraft.world.item.component.CustomData;
++import org.bukkit.Material;
++import org.bukkit.configuration.serialization.DelegateDeserialization;
++
++@DelegateDeserialization(SerializableMeta.class)
++public class CraftMetaItemFrame extends CraftMetaItem implements ItemFrameMeta {
++
++    private static final Set<Material> ENTITY_TAGGABLE_MATERIALS = Sets.newHashSet(
++        Material.ITEM_FRAME,
++        Material.GLOW_ITEM_FRAME
++    );
++
++    static final ItemMetaKeyType<CustomData> ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.ENTITY_DATA, "EntityTag", "entity-tag");
++    CompoundTag entityTag;
++
++    static final ItemMetaKey FIXED = new ItemMetaKey("Fixed", "fixed");
++    static final ItemMetaKey INVISIBLE = new ItemMetaKey("Invisible", "invisible");
++    private Boolean fixed = null;
++    private Boolean invisible = null;
++
++    CraftMetaItemFrame(CraftMetaItem meta) {
++        super(meta);
++
++        if (meta instanceof CraftMetaItemFrame itemFrame) {
++            this.entityTag = itemFrame.entityTag;
++            this.fixed = itemFrame.fixed;
++            this.invisible = itemFrame.invisible;
++        }
++    }
++
++    CraftMetaItemFrame(DataComponentPatch tag, final Set<DataComponentType<?>> extraHandledDcts) {
++        super(tag, extraHandledDcts);
++
++        getOrEmpty(tag, CraftMetaItemFrame.ENTITY_TAG).ifPresent((nbt) -> {
++            this.entityTag = nbt.copyTag();
++
++            if (entityTag.contains(FIXED.NBT)) {
++                this.fixed = entityTag.getBoolean(FIXED.NBT);
++            }
++
++            if (entityTag.contains(INVISIBLE.NBT)) {
++                this.invisible = entityTag.getBoolean(INVISIBLE.NBT);
++            }
++        });
++    }
++
++    CraftMetaItemFrame(Map<String, Object> map) {
++        super(map);
++
++        this.fixed = SerializableMeta.getBoolean(map, FIXED.BUKKIT);
++        this.invisible = SerializableMeta.getBoolean(map, INVISIBLE.BUKKIT);
++    }
++
++    @Override
++    void deserializeInternal(CompoundTag tag, Object context) {
++        super.deserializeInternal(tag, context);
++
++        if (tag.contains(CraftMetaItemFrame.ENTITY_TAG.NBT)) {
++            this.entityTag = tag.getCompound(CraftMetaItemFrame.ENTITY_TAG.NBT);
++        }
++    }
++
++    @Override
++    void serializeInternal(Map<String, Tag> internalTags) {
++        if (this.entityTag != null && !this.entityTag.isEmpty()) {
++            internalTags.put(CraftMetaItemFrame.ENTITY_TAG.NBT, this.entityTag);
++        }
++    }
++
++    @Override
++    protected void applyToItem(CraftMetaItem.Applicator tag) {
++        super.applyToItem(tag);
++
++        if (!isItemFrameEmpty() && this.entityTag == null) {
++            this.entityTag = new CompoundTag();
++        }
++
++        if (this.fixed != null) {
++            this.entityTag.putBoolean(FIXED.NBT, this.fixed);
++        }
++
++        if (this.invisible != null) {
++            this.entityTag.putBoolean(INVISIBLE.NBT, this.invisible);
++        }
++
++        if (this.entityTag != null) {
++            tag.put(CraftMetaItemFrame.ENTITY_TAG, CustomData.of(this.entityTag));
++        }
++    }
++
++    @Override
++    boolean applicableTo(Material type) {
++        return CraftMetaItemFrame.ENTITY_TAGGABLE_MATERIALS.contains(type);
++    }
++
++    @Override
++    boolean isEmpty() {
++        return super.isEmpty() && this.isItemFrameEmpty();
++    }
++
++    boolean isItemFrameEmpty() {
++        return !(this.fixed != null || this.invisible != null || this.entityTag != null);
++    }
++
++    @Override
++    boolean equalsCommon(CraftMetaItem meta) {
++        if (!super.equalsCommon(meta)) {
++            return false;
++        }
++        if (meta instanceof CraftMetaItemFrame that) {
++            return java.util.Objects.equals(this.entityTag, that.entityTag) &&
++                this.fixed == that.fixed &&
++                this.invisible == that.invisible;
++        }
++        return true;
++    }
++
++    @Override
++    boolean notUncommon(CraftMetaItem meta) {
++        return super.notUncommon(meta) && (meta instanceof CraftMetaItemFrame || this.isItemFrameEmpty());
++    }
++
++    @Override
++    int applyHash() {
++        final int original;
++        int hash = original = super.applyHash();
++
++        if (this.entityTag != null) {
++            hash = 73 * hash + this.entityTag.hashCode();
++        }
++
++        hash = 61 * hash + (this.fixed != null ? Boolean.hashCode(this.isFixed()) : 0);
++        hash = 61 * hash + (this.invisible != null ? Boolean.hashCode(this.isInvisible()) : 0);
++
++        return original != hash ? CraftMetaArmorStand.class.hashCode() ^ hash : hash;
++    }
++
++    @Override
++    ImmutableMap.Builder<String, Object> serialize(ImmutableMap.Builder<String, Object> builder) {
++        super.serialize(builder);
++
++        if (this.fixed != null) {
++            builder.put(FIXED.BUKKIT, this.fixed);
++        }
++
++        if (this.invisible != null) {
++            builder.put(INVISIBLE.BUKKIT, this.invisible);
++        }
++
++        return builder;
++    }
++
++    @Override
++    public CraftMetaItemFrame clone() {
++        CraftMetaItemFrame clone = (CraftMetaItemFrame) super.clone();
++
++        if (this.entityTag != null) {
++            clone.entityTag = this.entityTag.copy();
++        }
++
++        return clone;
++    }
++
++    @Override
++    public boolean isFixed() {
++        return this.fixed != null && this.fixed;
++    }
++
++    @Override
++    public void setFixed(boolean fixed) {
++        this.fixed = fixed;
++    }
++
++    @Override
++    public boolean isInvisible() {
++        return this.invisible != null && this.invisible;
++    }
++
++    @Override
++    public void setInvisible(boolean invisible) {
++        this.invisible = invisible;
++    }
++}
++// Paper end - add ItemFrameMeta API
+diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
+index 1a582ee78334835df79f93cc9fd3669c347d8b3a..144071b0a4bffb80011b86a508c9f2ef043cc4ac 100644
+--- a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
++++ b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
+@@ -211,6 +211,7 @@ public class ItemMetaTest extends AbstractTestingBase {
+     // Paper start - check entity tag metas
+     private static final java.util.Set<Class<?>> ENTITY_TAG_METAS = java.util.Set.of(
+         CraftMetaEntityTag.class,
++        CraftMetaItemFrame.class,
+         CraftMetaTropicalFishBucket.class,
+         CraftMetaAxolotlBucket.class
+     );
+@@ -398,15 +399,26 @@ public class ItemMetaTest extends AbstractTestingBase {
+                     return cleanStack;
+                 }
+             },
+-            new StackProvider(Material.ITEM_FRAME) {
++            new StackProvider(Material.COD_BUCKET) { // Paper - add ItemFrameMeta API
+                 @Override ItemStack operate(ItemStack cleanStack) {
+                     final CraftMetaEntityTag meta = ((CraftMetaEntityTag) cleanStack.getItemMeta());
+                     meta.entityTag = new CompoundTag();
+-                    meta.entityTag.putBoolean("Invisible", true);
++                    meta.entityTag.putBoolean("NoAI", true); // Paper - add ItemFrameMeta API
++                    cleanStack.setItemMeta(meta);
++                    return cleanStack;
++                }
++            },
++            // Paper start - add ItemFrameMeta API
++            new StackProvider(Material.ITEM_FRAME) {
++                @Override ItemStack operate(ItemStack cleanStack) {
++                    final CraftMetaItemFrame meta = ((CraftMetaItemFrame) cleanStack.getItemMeta());
++                    meta.setFixed(true);
++                    meta.setInvisible(true);
+                     cleanStack.setItemMeta(meta);
+                     return cleanStack;
+                 }
+             },
++            // Paper end - add ItemFrameMeta API
+             new StackProvider(Material.COMPASS) {
+                 @Override ItemStack operate(ItemStack cleanStack) {
+                     final CraftMetaCompass meta = ((CraftMetaCompass) cleanStack.getItemMeta());
