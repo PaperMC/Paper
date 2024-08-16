@@ -4,40 +4,6 @@ Date: Sat, 6 Jan 2024 14:31:00 +0100
 Subject: [PATCH] Fixup NamespacedKey handling
 
 
-diff --git a/src/main/java/net/minecraft/world/inventory/LoomMenu.java b/src/main/java/net/minecraft/world/inventory/LoomMenu.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/inventory/LoomMenu.java
-+++ b/src/main/java/net/minecraft/world/inventory/LoomMenu.java
-@@ -0,0 +0,0 @@ public class LoomMenu extends AbstractContainerMenu {
-         return stillValid(this.access, player, Blocks.LOOM);
-     }
- 
-+    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger(); // Paper - handle custom banner pattern, skip the event
-+    private static boolean PRINTED_PATTERN_TYPE_NAG = false; // Paper - handle custom banner pattern, skip the event
-+
-     @Override
-     public boolean clickMenuButton(net.minecraft.world.entity.player.Player player, int id) {
-         if (id >= 0 && id < this.selectablePatterns.size()) {
-+            // Paper start - handle custom banner pattern, skip the event (todo remove once this is supported)
-+            java.util.Optional<org.bukkit.block.banner.PatternType> patternType = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.BANNER_PATTERN, this.selectablePatterns.get(id));
-+            if (patternType.isEmpty()) {
-+                if (!PRINTED_PATTERN_TYPE_NAG) {
-+                    LOGGER.warn("A datapack added a custom banner pattern, those are not supported yet in the API, skipping the PlayerLoomPatternSelectEvent for {}.", player.getScoreboardName());
-+                    PRINTED_PATTERN_TYPE_NAG = true;
-+                }
-+                this.selectedBannerPatternIndex.set(id);
-+                this.setupResultSlot((Holder) this.selectablePatterns.get(id));
-+                return true;
-+            }
-+            // Paper end - handle custom banner pattern
-+
-             // Paper start - Add PlayerLoomPatternSelectEvent
-             int selectablePatternIndex = id;
--            io.papermc.paper.event.player.PlayerLoomPatternSelectEvent event = new io.papermc.paper.event.player.PlayerLoomPatternSelectEvent((Player) player.getBukkitEntity(), ((CraftInventoryLoom) getBukkitView().getTopInventory()), org.bukkit.craftbukkit.block.banner.CraftPatternType.minecraftHolderToBukkit((this.selectablePatterns.get(selectablePatternIndex))));
-+            io.papermc.paper.event.player.PlayerLoomPatternSelectEvent event = new io.papermc.paper.event.player.PlayerLoomPatternSelectEvent((Player) player.getBukkitEntity(), ((CraftInventoryLoom) getBukkitView().getTopInventory()), patternType.get());
-             if (!event.callEvent()) {
-                 player.containerMenu.sendAllDataToRemote();
-                 return false;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java b/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
@@ -93,14 +59,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              for (int i = 0; i < banner.getPatterns().layers().size(); i++) {
                  BannerPatternLayers.Layer p = banner.getPatterns().layers().get(i);
 -                this.patterns.add(new Pattern(DyeColor.getByWoolData((byte) p.color().getId()), CraftPatternType.minecraftHolderToBukkit(p.pattern())));
-+                // Paper start - fix upstream not handling custom banner pattern
++                // Paper start - fix upstream not handling inlined banner pattern
 +                java.util.Optional<org.bukkit.block.banner.PatternType> type = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.BANNER_PATTERN, p.pattern());
 +                if (type.isEmpty()) continue;
 +                this.patterns.add(new Pattern(DyeColor.getByWoolData((byte) p.color().getId()), type.get()));
-+                // Paper end
++                // Paper end - fix upstream not handling inlined banner pattern
              }
          }
      }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPainting.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPainting.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPainting.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPainting.java
+@@ -0,0 +0,0 @@ public class CraftPainting extends CraftHanging implements Painting {
+ 
+     @Override
+     public Art getArt() {
+-        return CraftArt.minecraftHolderToBukkit(this.getHandle().getVariant());
++        return org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.ART, this.getHandle().getVariant()).orElseThrow(() -> new IllegalStateException("Inlined/custom painting variants are not supported yet in the API!")); // Paper
+     }
+ 
+     @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
@@ -126,7 +105,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  BannerPatternLayers.Layer p = patterns.get(i);
                  DyeColor color = DyeColor.getByWoolData((byte) p.color().getId());
 -                PatternType pattern = CraftPatternType.minecraftHolderToBukkit(p.pattern());
-+                PatternType pattern = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.BANNER_PATTERN, p.pattern()).orElse(null); // Paper - fix upstream not handling custom banner pattern
++                PatternType pattern = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.BANNER_PATTERN, p.pattern()).orElse(null); // Paper - fix upstream not handling inlined banner pattern
  
                  if (color != null && pattern != null) {
                      this.patterns.add(new Pattern(color, pattern));
@@ -139,7 +118,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          getOrEmpty(tag, CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT).ifPresent((instrument) -> {
 -            this.instrument = CraftMusicInstrument.minecraftHolderToBukkit(instrument);
-+            this.instrument = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.INSTRUMENT, instrument).orElse(null); // Paper - fix upstream not handling custom instruments
++            this.instrument = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.INSTRUMENT, instrument).orElse(null); // Paper - fix upstream not handling inlined instrument
          });
      }
  
