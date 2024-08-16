@@ -66,7 +66,7 @@ import org.junit.jupiter.api.Test;
 
 public class ItemMetaTest extends AbstractTestingBase {
 
-    static final int MAX_FIREWORK_POWER = 127; // Please update ItemStackFireworkTest if/when this gets changed.
+    static final int MAX_FIREWORK_POWER = 255; // Please update ItemStackFireworkTest if/when this gets changed.
 
     @Test
     public void testPowerLimitExact() {
