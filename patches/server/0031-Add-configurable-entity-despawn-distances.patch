@@ -5,10 +5,10 @@ Subject: [PATCH] Add configurable entity despawn distances
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 0593d828c911c94c9833bf12b9c294e5dac1f4e8..cd5281b61f833701131cc6a6bade7bff96515541 100644
+index 0593d828c911c94c9833bf12b9c294e5dac1f4e8..50d2e57fa6fdfe761133d15a5dff090a66d2118b 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -863,20 +863,27 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+@@ -863,20 +863,29 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
              Player entityhuman = this.level().getNearestPlayer(this, -1.0D);
  
              if (entityhuman != null) {
@@ -26,12 +26,14 @@ index 0593d828c911c94c9833bf12b9c294e5dac1f4e8..cd5281b61f833701131cc6a6bade7bff
  
 -                int k = this.getType().getCategory().getNoDespawnDistance();
 -                int l = k * k;
-+                int xzLimitSquared = despawnRanges.xzLimit() * despawnRanges.xzLimit();
-+                int xzSoftLimitSquared = despawnRanges.xzSoftLimit() * despawnRanges.xzSoftLimit();
-+                int yLimit = despawnRanges.yLimit();
-+                int ySoftLimit = despawnRanges.ySoftLimit();
++                MobCategory category = this.getType().getCategory();
  
 -                if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && d0 > (double) l && this.removeWhenFarAway(d0)) {
++                int xzLimitSquared = (int) Math.pow(despawnRanges.xzLimit().or(category.getDespawnDistance()), 2);
++                int xzSoftLimitSquared = (int) Math.pow(despawnRanges.xzSoftLimit().or(category.getNoDespawnDistance()), 2);
++                int yLimit = despawnRanges.yLimit().or(category.getDespawnDistance());
++                int ySoftLimit = despawnRanges.ySoftLimit().or(category.getNoDespawnDistance());
++
 +                if ((xzDistanceSquared > xzLimitSquared || yDistance > yLimit) && this.removeWhenFarAway(xzDistanceSquared)) {
                      this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
 -                } else if (d0 < (double) l) {
