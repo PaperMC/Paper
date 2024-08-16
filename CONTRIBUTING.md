@@ -56,7 +56,6 @@ split into different directories which target certain parts of the code. These
 directories are:
 
 - `Paper-API` - Modifications to `Spigot-API`/`Bukkit`;
-- `Paper-MojangAPI` - An API for [Mojang's Brigadier](https://github.com/Mojang/brigadier);
 - `Paper-Server` - Modifications to `Spigot`/`CraftBukkit`.
 
 Because the entire structure is based on patches and git, a basic understanding
@@ -97,7 +96,9 @@ Your commit will be converted into a patch that you can then PR into Paper.
 
 ## Modifying Patches
 
-Modifying previous patches is a bit more complex:
+Modifying previous patches is a bit more complex.
+Similar to adding patches, the methods to modify a patch are applied inside
+the `Paper-Server` and/or `Paper-API` folders.
 
 ### Method 1
 
