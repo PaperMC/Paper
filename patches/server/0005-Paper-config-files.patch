@@ -1411,7 +1411,7 @@ index 0000000000000000000000000000000000000000..990d1bb46e0f9719f4e9af928d80ac6f
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9e5783004276ad3d1951f80ebb9f5b55fbac3631
+index 0000000000000000000000000000000000000000..b5f1c369f727161fba8ae6a820cf1f901953d6f8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 @@ -0,0 +1,556 @@
@@ -1604,9 +1604,9 @@ index 0000000000000000000000000000000000000000..9e5783004276ad3d1951f80ebb9f5b55
 +            @MergeMap
 +            public Reference2IntMap<MobCategory> ticksPerSpawn = Util.make(new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length), map -> Arrays.stream(NaturalSpawner.SPAWNING_CATEGORIES).forEach(mobCategory -> map.put(mobCategory, -1)));
 +
-+            public record DespawnRange(@Required int xzLimit, @Required int yLimit, @Required int xzSoftLimit, @Required int ySoftLimit) {
++            public record DespawnRange(@Required int xzLimit, @Required int yLimit, @Required int xzSoftLimit, @Required int ySoftLimit, @Required boolean longSyntax, @Required boolean softLongSyntax) {
 +                public DespawnRange(int hard, int soft) {
-+                    this(hard, hard, soft, soft);
++                    this(hard, hard, soft, soft, false, false);
 +                }
 +            }
 +
@@ -2462,10 +2462,10 @@ index 0000000000000000000000000000000000000000..9c339ef178ebc3b0251095f320e4a7a3
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/DespawnRangeSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/DespawnRangeSerializer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0e3a7e28f79bc29ee051463d32ea25b864ca6b81
+index 0000000000000000000000000000000000000000..35b27ce8857338d846e00d49bb2645f97785a0e9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/serializer/DespawnRangeSerializer.java
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,86 @@
 +package io.papermc.paper.configuration.serializer;
 +
 +import io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DespawnRange;
@@ -2487,23 +2487,31 @@ index 0000000000000000000000000000000000000000..0e3a7e28f79bc29ee051463d32ea25b8
 +        int xzSoftLimit;
 +        int yLimit;
 +        int ySoftLimit;
++        boolean longSyntax = false;
++        boolean softLongSyntax = false;
 +
 +        MobCategory category = MobCategory.valueOf(node.key().toString().toUpperCase());
 +
-+        if (hard.hasChild("horizontal") || hard.hasChild("vertical")) {
++        if (hard.hasChild("horizontal") && hard.hasChild("vertical")) {
 +            xzLimit = ifPresent(hard.node("horizontal"), category.getDespawnDistance());
 +            yLimit = ifPresent(hard.node("vertical"), category.getDespawnDistance());
++            longSyntax = true;
++        } else if (hard.hasChild("horizontal") || hard.hasChild("vertical")) {
++            throw new RuntimeException(new SerializationException(node, DespawnRange.class, "Expected both horizontal and vertical despawn ranges to be defined"));
 +        } else {
 +            xzLimit = yLimit = ifPresent(hard, category.getDespawnDistance());
 +        }
 +
-+        if (soft.hasChild("horizontal") || soft.hasChild("vertical")) {
++        if (soft.hasChild("horizontal") && soft.hasChild("vertical")) {
 +            xzSoftLimit = ifPresent(soft.node("horizontal"), category.getNoDespawnDistance());
 +            ySoftLimit = ifPresent(soft.node("vertical"), category.getNoDespawnDistance());
++            softLongSyntax = true;
++        } else if (soft.hasChild("horizontal") || soft.hasChild("vertical")) {
++            throw new RuntimeException(new SerializationException(node, DespawnRange.class, "Expected both horizontal and vertical despawn ranges to be defined"));
 +        } else {
 +            xzSoftLimit = ySoftLimit = ifPresent(soft, category.getNoDespawnDistance());
 +        }
-+        return new DespawnRange(xzLimit, yLimit, xzSoftLimit, ySoftLimit);
++        return new DespawnRange(xzLimit, yLimit, xzSoftLimit, ySoftLimit, longSyntax, softLongSyntax);
 +    }
 +
 +    @Override
@@ -2521,17 +2529,17 @@ index 0000000000000000000000000000000000000000..0e3a7e28f79bc29ee051463d32ea25b8
 +        int yLimit = despawnRange.yLimit();
 +        int ySoftLimit = despawnRange.ySoftLimit();
 +
-+        if (xzLimit == yLimit) {
-+            hard.set(xzLimit);
-+        } else {
++        if (despawnRange.longSyntax()) {
 +            hard.node("horizontal").set(xzLimit);
 +            hard.node("vertical").set(yLimit);
-+        }
-+        if (xzSoftLimit == ySoftLimit) {
-+            soft.set(xzSoftLimit);
 +        } else {
++            hard.set(xzLimit);
++        }
++        if (despawnRange.softLongSyntax()) {
 +            soft.node("horizontal").set(xzSoftLimit);
 +            soft.node("vertical").set(ySoftLimit);
++        } else {
++            soft.set(xzSoftLimit);
 +        }
 +    }
 +
