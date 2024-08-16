@@ -5,10 +5,8 @@ Subject: [PATCH] Optimise collision checking in player move packet handling
 
 Move collision logic to just the hasNewCollision call instead of getCubes + hasNewCollision
 
-CHECK ME
-
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 7796e191747be545e744564a2b0b65790f69114d..2b94b2dc3f29e7005b1a30c83f4a68e1263780b4 100644
+index 60ff21c8df4168f14da04a12073bde47cd4693c4..750f216400a473ed6895273c99ff89960bb56833 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -572,7 +572,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
@@ -89,7 +87,7 @@ index 7796e191747be545e744564a2b0b65790f69114d..2b94b2dc3f29e7005b1a30c83f4a68e1
      }
  
      @Override
-@@ -1387,7 +1421,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1382,7 +1416,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                                  }
                              }
  
@@ -98,7 +96,7 @@ index 7796e191747be545e744564a2b0b65790f69114d..2b94b2dc3f29e7005b1a30c83f4a68e1
  
                              d6 = d0 - this.lastGoodX; // Paper - diff on change, used for checking large move vectors above
                              d7 = d1 - this.lastGoodY; // Paper - diff on change, used for checking large move vectors above
-@@ -1429,6 +1463,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1424,6 +1458,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
                              this.player.move(MoverType.PLAYER, new Vec3(d6, d7, d8));
                              this.player.onGround = packet.isOnGround(); // CraftBukkit - SPIGOT-5810, SPIGOT-5835, SPIGOT-6828: reset by this.player.move
@@ -106,7 +104,7 @@ index 7796e191747be545e744564a2b0b65790f69114d..2b94b2dc3f29e7005b1a30c83f4a68e1
                              // Paper start - prevent position desync
                              if (this.awaitingPositionFromClient != null) {
                                  return; // ... thanks Mojang for letting move calls teleport across dimensions.
-@@ -1459,7 +1494,17 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1454,7 +1489,17 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                              }
  
                              // Paper start - Add fail move event
@@ -125,7 +123,7 @@ index 7796e191747be545e744564a2b0b65790f69114d..2b94b2dc3f29e7005b1a30c83f4a68e1
                              if (teleportBack) {
                                  io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.CLIPPED_INTO_BLOCK,
                                      toX, toY, toZ, toYaw, toPitch, false);
-@@ -1570,7 +1615,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1565,7 +1610,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
      private boolean updateAwaitingTeleport() {
          if (this.awaitingPositionFromClient != null) {
@@ -134,7 +132,7 @@ index 7796e191747be545e744564a2b0b65790f69114d..2b94b2dc3f29e7005b1a30c83f4a68e1
                  this.awaitingTeleportTime = this.tickCount;
                  this.teleport(this.awaitingPositionFromClient.x, this.awaitingPositionFromClient.y, this.awaitingPositionFromClient.z, this.player.getYRot(), this.player.getXRot());
              }
-@@ -1583,6 +1628,33 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1578,6 +1623,33 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          }
      }
  
@@ -142,22 +140,22 @@ index 7796e191747be545e744564a2b0b65790f69114d..2b94b2dc3f29e7005b1a30c83f4a68e1
 +    private boolean hasNewCollision(final ServerLevel world, final Entity entity, final AABB oldBox, final AABB newBox) {
 +        final List<AABB> collisionsBB = new java.util.ArrayList<>();
 +        final List<VoxelShape> collisionsVoxel = new java.util.ArrayList<>();
-+        io.papermc.paper.util.CollisionUtil.getCollisions(
++        ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.getCollisions(
 +            world, entity, newBox, collisionsVoxel, collisionsBB,
-+            io.papermc.paper.util.CollisionUtil.COLLISION_FLAG_COLLIDE_WITH_UNLOADED_CHUNKS | io.papermc.paper.util.CollisionUtil.COLLISION_FLAG_CHECK_BORDER,
++            ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_FLAG_COLLIDE_WITH_UNLOADED_CHUNKS | ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_FLAG_CHECK_BORDER,
 +            null, null
 +        );
 +
 +        for (int i = 0, len = collisionsBB.size(); i < len; ++i) {
 +            final AABB box = collisionsBB.get(i);
-+            if (!io.papermc.paper.util.CollisionUtil.voxelShapeIntersect(box, oldBox)) {
++            if (!ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.voxelShapeIntersect(box, oldBox)) {
 +                return true;
 +            }
 +        }
 +
 +        for (int i = 0, len = collisionsVoxel.size(); i < len; ++i) {
 +            final VoxelShape voxel = collisionsVoxel.get(i);
-+            if (!io.papermc.paper.util.CollisionUtil.voxelShapeIntersectNoEmpty(voxel, oldBox)) {
++            if (!ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.voxelShapeIntersectNoEmpty(voxel, oldBox)) {
 +                return true;
 +            }
 +        }
