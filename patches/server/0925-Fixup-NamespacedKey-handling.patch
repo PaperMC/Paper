@@ -4,40 +4,6 @@ Date: Sat, 6 Jan 2024 14:31:00 +0100
 Subject: [PATCH] Fixup NamespacedKey handling
 
 
-diff --git a/src/main/java/net/minecraft/world/inventory/LoomMenu.java b/src/main/java/net/minecraft/world/inventory/LoomMenu.java
-index 7d7b4e53682107a1a75a7aa205be1e6bfdc8c551..0e954dfe82ed263cbe63dbf49ff49e83f38228b8 100644
---- a/src/main/java/net/minecraft/world/inventory/LoomMenu.java
-+++ b/src/main/java/net/minecraft/world/inventory/LoomMenu.java
-@@ -171,12 +171,28 @@ public class LoomMenu extends AbstractContainerMenu {
-         return stillValid(this.access, player, Blocks.LOOM);
-     }
- 
-+    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger(); // Paper - handle custom banner pattern, skip the event
-+    private static boolean PRINTED_PATTERN_TYPE_NAG = false; // Paper - handle custom banner pattern, skip the event
-+
-     @Override
-     public boolean clickMenuButton(net.minecraft.world.entity.player.Player player, int id) {
-         if (id >= 0 && id < this.selectablePatterns.size()) {
-+            // Paper start - handle custom banner pattern, skip the event (todo remove once this is supported)
-+            java.util.Optional<org.bukkit.block.banner.PatternType> patternType = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.BANNER_PATTERN, this.selectablePatterns.get(id));
-+            if (patternType.isEmpty()) {
-+                if (!PRINTED_PATTERN_TYPE_NAG) {
-+                    LOGGER.warn("A datapack added a custom banner pattern, those are not supported yet in the API, skipping the PlayerLoomPatternSelectEvent for {}.", player.getScoreboardName());
-+                    PRINTED_PATTERN_TYPE_NAG = true;
-+                }
-+                this.selectedBannerPatternIndex.set(id);
-+                this.setupResultSlot((Holder) this.selectablePatterns.get(id));
-+                return true;
-+            }
-+            // Paper end - handle custom banner pattern
-+
-             // Paper start - Add PlayerLoomPatternSelectEvent
-             int selectablePatternIndex = id;
--            io.papermc.paper.event.player.PlayerLoomPatternSelectEvent event = new io.papermc.paper.event.player.PlayerLoomPatternSelectEvent((Player) player.getBukkitEntity(), ((CraftInventoryLoom) getBukkitView().getTopInventory()), org.bukkit.craftbukkit.block.banner.CraftPatternType.minecraftHolderToBukkit((this.selectablePatterns.get(selectablePatternIndex))));
-+            io.papermc.paper.event.player.PlayerLoomPatternSelectEvent event = new io.papermc.paper.event.player.PlayerLoomPatternSelectEvent((Player) player.getBukkitEntity(), ((CraftInventoryLoom) getBukkitView().getTopInventory()), patternType.get());
-             if (!event.callEvent()) {
-                 player.containerMenu.sendAllDataToRemote();
-                 return false;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java b/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
 index e34deaf398dc6722c3128bdd6b9bc16da2d33bf7..f028daa4f23a1f1868c9922991259739cadc5da2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
@@ -85,7 +51,7 @@ index cc97638e038ea64ad180ebfded2528aa07d1809e..10e4318782107644f67818109784fff6
          // Now also convert from when keys where saved
          return CraftRegistry.get(Registry.ATTRIBUTE, key, ApiVersion.CURRENT);
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBanner.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBanner.java
-index afed8bdb9bd6a135e9b5f7bd9bfc61964cb240f7..26088d4039599e7bd1ad8017d845e7b1c15be9e1 100644
+index afed8bdb9bd6a135e9b5f7bd9bfc61964cb240f7..bb2d1dddca6bfe719b28df136e80a7c5a339a5ce 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBanner.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBanner.java
 @@ -38,7 +38,11 @@ public class CraftBanner extends CraftBlockEntityState<BannerBlockEntity> implem
@@ -93,14 +59,27 @@ index afed8bdb9bd6a135e9b5f7bd9bfc61964cb240f7..26088d4039599e7bd1ad8017d845e7b1
              for (int i = 0; i < banner.getPatterns().layers().size(); i++) {
                  BannerPatternLayers.Layer p = banner.getPatterns().layers().get(i);
 -                this.patterns.add(new Pattern(DyeColor.getByWoolData((byte) p.color().getId()), CraftPatternType.minecraftHolderToBukkit(p.pattern())));
-+                // Paper start - fix upstream not handling custom banner pattern
++                // Paper start - fix upstream not handling inlined banner pattern
 +                java.util.Optional<org.bukkit.block.banner.PatternType> type = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.BANNER_PATTERN, p.pattern());
 +                if (type.isEmpty()) continue;
 +                this.patterns.add(new Pattern(DyeColor.getByWoolData((byte) p.color().getId()), type.get()));
-+                // Paper end
++                // Paper end - fix upstream not handling inlined banner pattern
              }
          }
      }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPainting.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPainting.java
+index bcac1359c667ef1ee46384f9c7a5adf4010d2b08..98a4463c9f194f33f4f85d95a0b9fa061cf6faaf 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPainting.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPainting.java
+@@ -16,7 +16,7 @@ public class CraftPainting extends CraftHanging implements Painting {
+ 
+     @Override
+     public Art getArt() {
+-        return CraftArt.minecraftHolderToBukkit(this.getHandle().getVariant());
++        return org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.ART, this.getHandle().getVariant()).orElseThrow(() -> new IllegalStateException("Inlined/custom painting variants are not supported yet in the API!")); // Paper
+     }
+ 
+     @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
 index 2c57fd269484ed79814d974877585f9f7e6393d3..865977ce17fbb8793a1eefd71079729e83f5cfaf 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
@@ -118,7 +97,7 @@ index 2c57fd269484ed79814d974877585f9f7e6393d3..865977ce17fbb8793a1eefd71079729e
              this.trim = new ArmorTrim(trimMaterial, trimPattern);
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
-index 1c1a2d66d1ebcbe2ded732e759d0f9d471d43b56..c56fb1eeea79176c4dbb1e9c0a8023f86220fe6a 100644
+index 1c1a2d66d1ebcbe2ded732e759d0f9d471d43b56..eb44c19f6af624df458981e46c73a64358d6e1ce 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
 @@ -42,7 +42,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
@@ -126,12 +105,12 @@ index 1c1a2d66d1ebcbe2ded732e759d0f9d471d43b56..c56fb1eeea79176c4dbb1e9c0a8023f8
                  BannerPatternLayers.Layer p = patterns.get(i);
                  DyeColor color = DyeColor.getByWoolData((byte) p.color().getId());
 -                PatternType pattern = CraftPatternType.minecraftHolderToBukkit(p.pattern());
-+                PatternType pattern = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.BANNER_PATTERN, p.pattern()).orElse(null); // Paper - fix upstream not handling custom banner pattern
++                PatternType pattern = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.BANNER_PATTERN, p.pattern()).orElse(null); // Paper - fix upstream not handling inlined banner pattern
  
                  if (color != null && pattern != null) {
                      this.patterns.add(new Pattern(color, pattern));
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
-index 478059eb3ad76b41e6a20e9b489a2a4fb19e7c7c..3599ef1675b6091e9b67fb5241886460f106f9b4 100644
+index 478059eb3ad76b41e6a20e9b489a2a4fb19e7c7c..76a3e4893cbdba903a712d6db1d30b9c644795be 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
 @@ -30,7 +30,7 @@ public class CraftMetaMusicInstrument extends CraftMetaItem implements MusicInst
@@ -139,7 +118,7 @@ index 478059eb3ad76b41e6a20e9b489a2a4fb19e7c7c..3599ef1675b6091e9b67fb5241886460
  
          getOrEmpty(tag, CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT).ifPresent((instrument) -> {
 -            this.instrument = CraftMusicInstrument.minecraftHolderToBukkit(instrument);
-+            this.instrument = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.INSTRUMENT, instrument).orElse(null); // Paper - fix upstream not handling custom instruments
++            this.instrument = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.INSTRUMENT, instrument).orElse(null); // Paper - fix upstream not handling inlined instrument
          });
      }
  
