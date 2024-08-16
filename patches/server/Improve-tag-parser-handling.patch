@@ -109,6 +109,63 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
  }
+diff --git a/src/main/java/net/minecraft/network/chat/ComponentUtils.java b/src/main/java/net/minecraft/network/chat/ComponentUtils.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/network/chat/ComponentUtils.java
++++ b/src/main/java/net/minecraft/network/chat/ComponentUtils.java
+@@ -0,0 +0,0 @@ public class ComponentUtils {
+         }
+     }
+ 
++    @io.papermc.paper.annotation.DoNotUse // Paper - validate separators - right now this method is only used for separator evaluation. Error on build if this changes to re-evaluate.
+     public static Optional<MutableComponent> updateForEntity(@Nullable CommandSourceStack source, Optional<Component> text, @Nullable Entity sender, int depth) throws CommandSyntaxException {
+         return text.isPresent() ? Optional.of(updateForEntity(source, text.get(), sender, depth)) : Optional.empty();
+     }
+ 
++    // Paper start - validate separator
++    public static Optional<MutableComponent> updateSeparatorForEntity(@Nullable CommandSourceStack source, Optional<Component> text, @Nullable Entity sender, int depth) throws CommandSyntaxException {
++        if (text.isEmpty() || !isValidSelector(text.get())) return Optional.empty();
++        return Optional.of(updateForEntity(source, text.get(), sender, depth));
++    }
++    public static boolean isValidSelector(final Component component) {
++        final ComponentContents contents = component.getContents();
++
++        if (contents instanceof net.minecraft.network.chat.contents.NbtContents || contents instanceof net.minecraft.network.chat.contents.SelectorContents) return false;
++        if (contents instanceof final net.minecraft.network.chat.contents.TranslatableContents translatableContents) {
++            for (final Object arg : translatableContents.getArgs()) {
++                if (arg instanceof final Component argumentAsComponent && !isValidSelector(argumentAsComponent)) return false;
++            }
++        }
++
++        return true;
++    }
++    // Paper end - validate separator
++
+     public static MutableComponent updateForEntity(@Nullable CommandSourceStack source, Component text, @Nullable Entity sender, int depth) throws CommandSyntaxException {
+         if (depth > 100) {
+             return text.copy();
+diff --git a/src/main/java/net/minecraft/network/chat/contents/NbtContents.java b/src/main/java/net/minecraft/network/chat/contents/NbtContents.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/network/chat/contents/NbtContents.java
++++ b/src/main/java/net/minecraft/network/chat/contents/NbtContents.java
+@@ -0,0 +0,0 @@ public class NbtContents implements ComponentContents {
+             }).map(Tag::getAsString);
+             if (this.interpreting) {
+                 Component component = DataFixUtils.orElse(
+-                    ComponentUtils.updateForEntity(source, this.separator, sender, depth), ComponentUtils.DEFAULT_NO_STYLE_SEPARATOR
++                    ComponentUtils.updateSeparatorForEntity(source, this.separator, sender, depth), ComponentUtils.DEFAULT_NO_STYLE_SEPARATOR // Paper - validate separator
+                 );
+                 return stream.flatMap(text -> {
+                     try {
+@@ -0,0 +0,0 @@ public class NbtContents implements ComponentContents {
+                     }
+                 }).reduce((accumulator, current) -> accumulator.append(component).append(current)).orElseGet(Component::empty);
+             } else {
+-                return ComponentUtils.updateForEntity(source, this.separator, sender, depth)
++                return ComponentUtils.updateSeparatorForEntity(source, this.separator, sender, depth) // Paper - validate separator
+                     .map(
+                         text -> stream.map(Component::literal)
+                                 .reduce((accumulator, current) -> accumulator.append(text).append(current))
 diff --git a/src/main/java/net/minecraft/network/chat/contents/SelectorContents.java b/src/main/java/net/minecraft/network/chat/contents/SelectorContents.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/chat/contents/SelectorContents.java
@@ -122,6 +179,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
          return entitySelector;
+@@ -0,0 +0,0 @@ public class SelectorContents implements ComponentContents {
+     @Override
+     public MutableComponent resolve(@Nullable CommandSourceStack source, @Nullable Entity sender, int depth) throws CommandSyntaxException {
+         if (source != null && this.selector != null) {
+-            Optional<? extends Component> optional = ComponentUtils.updateForEntity(source, this.separator, sender, depth);
++            Optional<? extends Component> optional = ComponentUtils.updateSeparatorForEntity(source, this.separator, sender, depth); // Paper - validate separator
+             return ComponentUtils.formatList(this.selector.findEntities(source), optional, Entity::getDisplayName);
+         } else {
+             return Component.empty();
 diff --git a/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java b/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
