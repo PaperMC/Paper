@@ -86,8 +86,8 @@ public interface FireworkMeta extends ItemMeta {
      * Sets the approximate power of the firework. Each level of power is half
      * a second of flight time.
      *
-     * @param power the power of the firework, from 0-127
-     * @throws IllegalArgumentException if {@literal height<0 or height>127}
+     * @param power the power of the firework, from 0-255
+     * @throws IllegalArgumentException if {@literal power<0 or power>255}
      */
     void setPower(int power) throws IllegalArgumentException;
 
