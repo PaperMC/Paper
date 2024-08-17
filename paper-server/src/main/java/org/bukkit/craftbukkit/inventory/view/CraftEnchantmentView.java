@@ -26,6 +26,13 @@ public class CraftEnchantmentView extends CraftInventoryView<EnchantmentMenu, En
         return this.container.getEnchantmentSeed();
     }
 
+    // Paper start - add enchantment seed update API
+    @Override
+    public void setEnchantmentSeed(int seed) {
+        this.container.setEnchantmentSeed(seed);
+    }
+    // Paper end - add enchantment seed update API
+
     @NotNull
     @Override
     public EnchantmentOffer[] getOffers() {
