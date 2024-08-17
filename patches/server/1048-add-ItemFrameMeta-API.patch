@@ -70,14 +70,14 @@ index 5c45946f54e4b16440c15a9165ef85be43e53c84..07ad086bfa77a4b3bcaa188ea65ceb72
                  map.put(CraftMetaMap.class, Set.of(CraftMetaMap.MAP_COLOR.TYPE, CraftMetaMap.MAP_POST_PROCESSING.TYPE, CraftMetaMap.MAP_ID.TYPE));
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItemFrame.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItemFrame.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b59e7fa357281c6282cf2c7a41c2a6c7c05b06ec
+index 0000000000000000000000000000000000000000..b13444c63c37e5c9f4ff969ad473f9280a961332
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItemFrame.java
-@@ -0,0 +1,203 @@
+@@ -0,0 +1,206 @@
 +// Paper start - add ItemFrameMeta API
 +package org.bukkit.craftbukkit.inventory;
 +
-+import com.google.common.collect.ImmutableMap;
++import com.google.common.collect.ImmutableMap.Builder;
 +import com.google.common.collect.Sets;
 +import io.papermc.paper.inventory.meta.ItemFrameMeta;
 +import java.io.ByteArrayInputStream;
@@ -85,6 +85,7 @@ index 0000000000000000000000000000000000000000..b59e7fa357281c6282cf2c7a41c2a6c7
 +import java.io.IOException;
 +import java.util.Base64;
 +import java.util.Map;
++import java.util.Objects;
 +import java.util.Set;
 +import java.util.logging.Level;
 +import java.util.logging.Logger;
@@ -157,14 +158,17 @@ index 0000000000000000000000000000000000000000..b59e7fa357281c6282cf2c7a41c2a6c7
 +
 +        if (tag.contains(CraftMetaItemFrame.ENTITY_TAG.NBT)) {
 +            this.entityTag = tag.getCompound(CraftMetaItemFrame.ENTITY_TAG.NBT);
++
++            // fix up legacy item frame metas that did not include entity ID.
++            if (!this.entityTag.contains(ENTITY_ID.NBT)) {
++                this.entityTag.putString(ENTITY_ID.NBT, "minecraft:item_frame");
++            }
 +        }
 +    }
 +
 +    @Override
 +    void serializeInternal(Map<String, Tag> internalTags) {
-+        if (this.entityTag != null && !this.entityTag.isEmpty()) {
-+            internalTags.put(CraftMetaItemFrame.ENTITY_TAG.NBT, this.entityTag);
-+        }
++        // correctly serialised as entity tag.
 +    }
 +
 +    @Override
@@ -196,7 +200,7 @@ index 0000000000000000000000000000000000000000..b59e7fa357281c6282cf2c7a41c2a6c7
 +            return false;
 +        }
 +        if (meta instanceof CraftMetaItemFrame that) {
-+            return java.util.Objects.equals(this.entityTag, that.entityTag);
++            return Objects.equals(this.entityTag, that.entityTag);
 +        }
 +        return true;
 +    }
@@ -215,25 +219,24 @@ index 0000000000000000000000000000000000000000..b59e7fa357281c6282cf2c7a41c2a6c7
 +            hash = 73 * hash + this.entityTag.hashCode();
 +        }
 +
-+        return original != hash ? CraftMetaArmorStand.class.hashCode() ^ hash : hash;
++        return original != hash ? CraftMetaItemFrame.class.hashCode() ^ hash : hash;
 +    }
 +
 +    @Override
-+    ImmutableMap.Builder<String, Object> serialize(ImmutableMap.Builder<String, Object> builder) {
++    Builder<String, Object> serialize(Builder<String, Object> builder) {
 +        super.serialize(builder);
 +
-+        if (this.entityTag == null) {
-+            return builder;
-+        } else {
++        if (this.entityTag != null) {
 +            ByteArrayOutputStream buf = new ByteArrayOutputStream();
 +            try {
-+                NbtIo.writeCompressed(entityTag, buf);
++                NbtIo.writeCompressed(this.entityTag, buf);
 +            } catch (IOException ex) {
-+                Logger.getLogger(CraftMetaItem.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
++                Logger.getLogger(CraftMetaItem.class.getName()).log(Level.SEVERE, null, ex);
 +            }
 +            builder.put(ENTITY_TAG.BUKKIT, Base64.getEncoder().encodeToString(buf.toByteArray()));
-+            return builder;
 +        }
++
++        return builder;
 +    }
 +
 +    @Override
@@ -256,12 +259,12 @@ index 0000000000000000000000000000000000000000..b59e7fa357281c6282cf2c7a41c2a6c7
 +
 +    @Override
 +    public boolean isFixed() {
-+        return this.entityTag != null && this.entityTag.getBoolean(FIXED.NBT);
++        return this.entityTag != null && this.entityTag.contains(FIXED.NBT) && this.entityTag.getBoolean(FIXED.NBT);
 +    }
 +
 +    @Override
 +    public boolean isInvisible() {
-+        return this.entityTag != null && this.entityTag.getBoolean(INVISIBLE.NBT);
++        return this.entityTag != null && this.entityTag.contains(INVISIBLE.NBT) && this.entityTag.getBoolean(INVISIBLE.NBT);
 +    }
 +
 +    @Override
