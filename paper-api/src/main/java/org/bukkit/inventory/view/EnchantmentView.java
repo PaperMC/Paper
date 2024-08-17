@@ -22,6 +22,15 @@ public interface EnchantmentView extends InventoryView {
      */
     int getEnchantmentSeed();
 
+    // Paper start - add enchantment seed update API
+    /**
+     * Sets the random enchantment seed used in this view. Loses its effect once the view is closed.
+     *
+     * @param seed the random seed to use
+     */
+    void setEnchantmentSeed(int seed);
+    // Paper end - add enchantment seed update API
+
     /**
      * Gets the offers of this EnchantmentView
      *
