@@ -5,9 +5,32 @@ Subject: [PATCH] Add configurable entity despawn distances
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 0593d828c911c94c9833bf12b9c294e5dac1f4e8..50d2e57fa6fdfe761133d15a5dff090a66d2118b 100644
+index 0593d828c911c94c9833bf12b9c294e5dac1f4e8..1f282c142cef9df88478704bb03751a891a7e37b 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -13,6 +13,8 @@ import java.util.Optional;
+ import java.util.Set;
+ import java.util.function.Predicate;
+ import javax.annotation.Nullable;
++
++import io.papermc.paper.configuration.WorldConfiguration;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.NonNullList;
+ import net.minecraft.core.Vec3i;
+@@ -89,13 +91,11 @@ import net.minecraft.world.phys.AABB;
+ import org.bukkit.craftbukkit.event.CraftEventFactory;
+ import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+ import org.bukkit.event.entity.CreatureSpawnEvent;
+-import org.bukkit.event.entity.EntityCombustByEntityEvent;
+ import org.bukkit.event.entity.EntityRemoveEvent;
+ import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
+ import org.bukkit.event.entity.EntityTargetEvent;
+ import org.bukkit.event.entity.EntityTransformEvent;
+ import org.bukkit.event.entity.EntityUnleashEvent;
+-import org.bukkit.event.entity.EntityUnleashEvent.UnleashReason;
+ // CraftBukkit end
+ 
+ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashable, Targeting {
 @@ -863,20 +863,29 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
              Player entityhuman = this.level().getNearestPlayer(this, -1.0D);
  
@@ -16,31 +39,31 @@ index 0593d828c911c94c9833bf12b9c294e5dac1f4e8..50d2e57fa6fdfe761133d15a5dff090a
 -                int i = this.getType().getCategory().getDespawnDistance();
 -                int j = i * i;
 +                // Paper start - Configurable despawn distances
-+                io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DespawnRange despawnRanges = this.level().paperConfig().entities.spawning.despawnRanges.get(this.getType().getCategory());
++                final WorldConfiguration.Entities.Spawning.DespawnRangePair despawnRangePair = this.level().paperConfig().entities.spawning.despawnRanges.get(this.getType().getCategory());
  
 -                if (d0 > (double) j && this.removeWhenFarAway(d0)) {
 -                    this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
 -                }
-+                double xzDistanceSquared = entityhuman.distanceToSqr(this.getX(), entityhuman.getY(), this.getZ());
-+                double yDistance = Math.abs(entityhuman.getY() - this.getY());
++                final double horizonalDistanceSquared = entityhuman.distanceToSqr(this.getX(), entityhuman.getY(), this.getZ());
++                final double verticalDistance = Math.abs(entityhuman.getY() - this.getY());
++
++                MobCategory category = this.getType().getCategory();
  
 -                int k = this.getType().getCategory().getNoDespawnDistance();
 -                int l = k * k;
-+                MobCategory category = this.getType().getCategory();
++                final int hardHorizonalLimitSquared = (int) Math.pow(despawnRangePair.hard().horizontalLimit().or(category.getDespawnDistance()), 2);
++                final int softHorizonalLimitSquared = (int) Math.pow(despawnRangePair.soft().horizontalLimit().or(category.getNoDespawnDistance()), 2);
++                final int hardVerticalLimit = despawnRangePair.hard().verticalLimit().or(category.getDespawnDistance());
++                final int softVerticalLimit = despawnRangePair.soft().verticalLimit().or(category.getNoDespawnDistance());
  
 -                if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && d0 > (double) l && this.removeWhenFarAway(d0)) {
-+                int xzLimitSquared = (int) Math.pow(despawnRanges.xzLimit().or(category.getDespawnDistance()), 2);
-+                int xzSoftLimitSquared = (int) Math.pow(despawnRanges.xzSoftLimit().or(category.getNoDespawnDistance()), 2);
-+                int yLimit = despawnRanges.yLimit().or(category.getDespawnDistance());
-+                int ySoftLimit = despawnRanges.ySoftLimit().or(category.getNoDespawnDistance());
-+
-+                if ((xzDistanceSquared > xzLimitSquared || yDistance > yLimit) && this.removeWhenFarAway(xzDistanceSquared)) {
++                if ((horizonalDistanceSquared > hardHorizonalLimitSquared || verticalDistance > hardVerticalLimit) && this.removeWhenFarAway(horizonalDistanceSquared)) {
                      this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
 -                } else if (d0 < (double) l) {
 +                }
 +
-+                if (xzDistanceSquared > xzSoftLimitSquared || yDistance > ySoftLimit) {
-+                    if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && this.removeWhenFarAway(xzDistanceSquared)) {
++                if (horizonalDistanceSquared > softHorizonalLimitSquared || verticalDistance > softVerticalLimit) {
++                    if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && this.removeWhenFarAway(horizonalDistanceSquared)) {
 +                        this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
 +                    }
 +                } else {
