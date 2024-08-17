@@ -672,6 +672,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
      }
 @@ -0,0 +0,0 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+         }
+ 
+         Iterable<?> effects = SerializableMeta.getObject(Iterable.class, map, CraftMetaFirework.EXPLOSIONS.BUKKIT, true);
+-        this.safelyAddEffects(effects);
++        this.safelyAddEffects(effects, false); // Paper - limit firework effects
+     }
+ 
+     static FireworkEffect getEffect(FireworkExplosion explosion) {
+@@ -0,0 +0,0 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
                  .with(CraftMetaFirework.getEffectType(explosion.shape()));
  
          IntList colors = explosion.colors();
@@ -694,15 +703,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
          return effect.build();
-@@ -0,0 +0,0 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
-         }
- 
-         Iterable<?> effects = SerializableMeta.getObject(Iterable.class, map, CraftMetaFirework.EXPLOSIONS.BUKKIT, true);
--        this.safelyAddEffects(effects);
-+        this.safelyAddEffects(effects, false); // Paper - limit firework effects
-     }
- 
-     @Override
 @@ -0,0 +0,0 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
          return !(this.effects == null || this.effects.isEmpty());
      }
@@ -736,11 +736,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return !(this.effects != null || this.hasPower()); // Paper - empty effects list should stay on the item
      }
  
-     boolean hasPower() {
+-    boolean hasPower() {
++    public boolean hasPower() { // Paper - add hasPower to API
+         return this.power != null;
+     }
+ 
 @@ -0,0 +0,0 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
          if (meta instanceof CraftMetaFirework that) {
  
-             return (this.hasPower() ? that.hasPower() && this.power == that.power : !that.hasPower())
+             return (Objects.equals(this.power, that.power))
 -                    && (this.hasEffects() ? that.hasEffects() && this.effects.equals(that.effects) : !that.hasEffects());
 +                    && (this.effects != null ? that.effects != null && this.effects.equals(that.effects) : that.effects == null); // Paper
          }
@@ -793,14 +797,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
 @@ -0,0 +0,0 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
+ 
      @Override
-     public void setPower(int power) {
-         Preconditions.checkArgument(power >= 0, "power cannot be less than zero: %s", power);
--        Preconditions.checkArgument(power < 0x80, "power cannot be more than 127: %s", power);
-+        Preconditions.checkArgument(power <= 0xFF, "power cannot be more than 255: %s", power); // Paper - set correct limit
-         this.power = power;
+     public int getPower() {
+-        return this.hasPower() ? this.power : 1;
++        return this.hasPower() ? this.power : 0; // Paper - 0 is correct
      }
- }
+ 
+     @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
@@ -1857,19 +1861,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          itemMeta.applyToItem(compound);
  
          assertEquals(itemMeta, new CraftMetaItem(compound.build(), null)); // Paper
-diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
-+++ b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
-@@ -0,0 +0,0 @@ import org.junit.jupiter.api.Test;
- 
- public class ItemMetaTest extends AbstractTestingBase {
- 
--    static final int MAX_FIREWORK_POWER = 127; // Please update ItemStackFireworkTest if/when this gets changed.
-+    static final int MAX_FIREWORK_POWER = 255; // Please update ItemStackFireworkTest if/when this gets changed. // Paper - it changed
- 
-     @Test
-     public void testPowerLimitExact() {
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/PersistentDataContainerTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/PersistentDataContainerTest.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/test/java/org/bukkit/craftbukkit/inventory/PersistentDataContainerTest.java
