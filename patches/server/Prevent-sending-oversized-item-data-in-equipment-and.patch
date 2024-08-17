@@ -13,17 +13,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.util;
 +
-+import java.util.ArrayList;
 +import java.util.List;
 +import java.util.concurrent.atomic.AtomicBoolean;
 +import java.util.function.UnaryOperator;
++import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 +import net.minecraft.network.RegistryFriendlyByteBuf;
 +import net.minecraft.network.codec.StreamCodec;
++import net.minecraft.util.Mth;
 +import net.minecraft.world.item.ItemStack;
 +import net.minecraft.world.item.Items;
 +import net.minecraft.world.item.component.BundleContents;
 +import net.minecraft.world.item.component.ChargedProjectiles;
 +import net.minecraft.world.item.component.ItemContainerContents;
++import org.apache.commons.lang3.math.Fraction;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +
@@ -48,26 +50,33 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (projectiles.isEmpty()) {
 +            return projectiles;
 +        }
-+        final List<ItemStack> items = projectiles.getItems();
-+        final List<ItemStack> sanitized = new ArrayList<>();
-+        for (int i = 0; i < Math.min(items.size(), 3); i++) {
-+            // we want to preserve item type as vanilla client can change visuals based on type
-+            sanitized.add(new ItemStack(items.get(i).getItemHolder()));
-+        }
-+        return ChargedProjectiles.of(sanitized);
++
++        return ChargedProjectiles.of(List.of(
++            new ItemStack(projectiles.contains(Items.FIREWORK_ROCKET) ? Items.FIREWORK_ROCKET : Items.ARROW)
++        ));
 +    }
 +
 +    private static BundleContents sanitizeBundleContents(final BundleContents contents) {
++        if (contents.isEmpty()) {
++            return contents;
++        }
++
 +        // Bundles change their texture based on their fullness.
-+        int sizeUsed = 0;
-+        for (final ItemStack item : contents.items()) {
-+            final int scale = 64 / item.getMaxStackSize();
-+            sizeUsed += scale * item.getCount();
++        // A bundles content weight may be anywhere from 0 to, basically, infinity.
++        // A weight of 1 is the usual maximum case
++        int sizeUsed = Mth.mulAndTruncate(contents.weight(), 64);
++        // Early out, *most* bundles should not be overfilled above a weight of one.
++        if (sizeUsed <= 64) return new BundleContents(List.of(new ItemStack(Items.PAPER, Math.max(1, sizeUsed))));
++
++        final List<ItemStack> sanitizedRepresentation = new ObjectArrayList<>(sizeUsed / 64 + 1);
++        while (sizeUsed > 0) {
++            final int stackCount = Math.min(64, sizeUsed);
++            sanitizedRepresentation.add(new ItemStack(Items.PAPER, stackCount));
++            sizeUsed -= stackCount;
 +        }
 +        // Now we add a single fake item that uses the same amount of slots as all other items.
-+        final List<ItemStack> items = new ArrayList<>();
-+        items.add(new ItemStack(Items.PAPER, sizeUsed));
-+        return new BundleContents(items);
++        // Ensure that potentially overstacked bundles are not represented by empty (count=0) itemstacks.
++        return new BundleContents(sanitizedRepresentation);
 +    }
 +
 +    private static <B, A> StreamCodec<B, A> codec(final StreamCodec<B, A> delegate, final UnaryOperator<A> sanitizer) {
@@ -109,7 +118,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private DataSanitizationUtil() {
 +    }
-+
 +}
 diff --git a/src/main/java/net/minecraft/core/component/DataComponents.java b/src/main/java/net/minecraft/core/component/DataComponents.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
