@@ -885,6 +885,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.configuration.transformation.world.versioned.V30_RenameFilterNbtFromSpawnEgg;
 +import io.papermc.paper.configuration.transformation.world.versioned.V31_SpawnLoadedRangeToGameRule;
 +import io.papermc.paper.configuration.type.BooleanOrDefault;
++import io.papermc.paper.configuration.type.DespawnRange;
 +import io.papermc.paper.configuration.type.Duration;
 +import io.papermc.paper.configuration.type.DurationOrDisabled;
 +import io.papermc.paper.configuration.type.EngineMode;
@@ -1095,6 +1096,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    .register(new TypeToken<Reference2IntMap<?>>() {}, new FastutilMapSerializer.SomethingToPrimitive<Reference2IntMap<?>>(Reference2IntOpenHashMap::new, Integer.TYPE))
 +                    .register(new TypeToken<Reference2LongMap<?>>() {}, new FastutilMapSerializer.SomethingToPrimitive<Reference2LongMap<?>>(Reference2LongOpenHashMap::new, Long.TYPE))
 +                    .register(new TypeToken<Table<?, ?, ?>>() {}, new TableSerializer())
++                    .register(DespawnRange.class, DespawnRange.SERIALIZER)
 +                    .register(StringRepresentableSerializer::isValidFor, new StringRepresentableSerializer())
 +                    .register(IntOr.Default.SERIALIZER)
 +                    .register(IntOr.Disabled.SERIALIZER)
@@ -1429,6 +1431,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.configuration.serializer.NbtPathSerializer;
 +import io.papermc.paper.configuration.transformation.world.FeatureSeedsGeneration;
 +import io.papermc.paper.configuration.type.BooleanOrDefault;
++import io.papermc.paper.configuration.type.DespawnRange;
 +import io.papermc.paper.configuration.type.Duration;
 +import io.papermc.paper.configuration.type.DurationOrDisabled;
 +import io.papermc.paper.configuration.type.EngineMode;
@@ -1603,12 +1606,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            @MergeMap
 +            public Reference2IntMap<MobCategory> spawnLimits = Util.make(new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length), map -> Arrays.stream(NaturalSpawner.SPAWNING_CATEGORIES).forEach(mobCategory -> map.put(mobCategory, -1)));
 +            @MergeMap
-+            public Map<MobCategory, DespawnRange> despawnRanges = Arrays.stream(MobCategory.values()).collect(Collectors.toMap(Function.identity(), category -> new DespawnRange(category.getNoDespawnDistance(), category.getDespawnDistance())));
++            public Map<MobCategory, DespawnRangePair> despawnRanges = Arrays.stream(MobCategory.values()).collect(Collectors.toMap(Function.identity(), category -> DespawnRangePair.createDefault()));
 +            @MergeMap
 +            public Reference2IntMap<MobCategory> ticksPerSpawn = Util.make(new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length), map -> Arrays.stream(NaturalSpawner.SPAWNING_CATEGORIES).forEach(mobCategory -> map.put(mobCategory, -1)));
 +
 +            @ConfigSerializable
-+            public record DespawnRange(@Required int soft, @Required int hard) {
++            public record DespawnRangePair(@Required DespawnRange hard, @Required DespawnRange soft) {
++                public static DespawnRangePair createDefault() {
++                    return new DespawnRangePair(
++                        new DespawnRange(IntOr.Default.USE_DEFAULT),
++                        new DespawnRange(IntOr.Default.USE_DEFAULT)
++                    );
++                }
 +            }
 +
 +            public WaterAnimalSpawnHeight wateranimalSpawnHeight;
@@ -2933,7 +2942,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return serializer.deserialize(type, node);
 +        } catch (SerializationException ex) {
 +            ex.initPath(node::path);
-+            LOGGER.error("Could not deserialize {} {} into {} at {}", mapPart, node.raw(), type, path);
++            LOGGER.error("Could not deserialize {} {} into {} at {}: {}", mapPart, node.raw(), type, path, ex.rawMessage());
 +        }
 +        return null;
 +    }
@@ -2994,7 +3003,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return true;
 +        } catch (SerializationException ex) {
 +            ex.initPath(node::path);
-+            LOGGER.error("Could not serialize {} {} from {} at {}", mapPart, object, type, path);
++            LOGGER.error("Could not serialize {} {} from {} at {}: {}", mapPart, object, type, path, ex.rawMessage());
 +        }
 +        return false;
 +    }
@@ -4186,6 +4195,70 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                return value.toString();
 +            } else {
 +                return DEFAULT_VALUE;
++            }
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/configuration/type/DespawnRange.java b/src/main/java/io/papermc/paper/configuration/type/DespawnRange.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/type/DespawnRange.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.configuration.type;
++
++import io.papermc.paper.configuration.type.number.IntOr;
++import java.lang.reflect.Type;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.spongepowered.configurate.ConfigurationNode;
++import org.spongepowered.configurate.objectmapping.meta.Required;
++import org.spongepowered.configurate.serialize.SerializationException;
++import org.spongepowered.configurate.serialize.TypeSerializer;
++
++public record DespawnRange(
++    @Required IntOr.Default horizontalLimit,
++    @Required IntOr.Default verticalLimit,
++    @Required boolean wasDefinedViaLongSyntax
++) {
++
++    public DespawnRange(final IntOr.Default generalLimit) {
++        this(generalLimit, generalLimit, false);
++    }
++
++    public static final TypeSerializer<DespawnRange> SERIALIZER = new Serializer();
++
++    static final class Serializer implements TypeSerializer<DespawnRange> {
++
++        public static final String HORIZONTAL = "horizontal";
++        public static final String VERTICAL = "vertical";
++
++        @Override
++        public DespawnRange deserialize(final Type type, final ConfigurationNode node) throws SerializationException {
++            if (node.hasChild(HORIZONTAL) && node.hasChild(VERTICAL)) {
++                return new DespawnRange(
++                    node.node(HORIZONTAL).require(IntOr.Default.class),
++                    node.node(VERTICAL).require(IntOr.Default.class),
++                    true
++                );
++            } else if (node.hasChild(HORIZONTAL) || node.hasChild(VERTICAL)) {
++                throw new SerializationException(node, DespawnRange.class, "Expected both horizontal and vertical despawn ranges to be defined");
++            } else {
++                return new DespawnRange(node.require(IntOr.Default.class));
++            }
++        }
++
++        @Override
++        public void serialize(final Type type, final @Nullable DespawnRange despawnRange, final ConfigurationNode node) throws SerializationException {
++            if (despawnRange == null) {
++                node.raw(null);
++                return;
++            }
++
++            if (despawnRange.wasDefinedViaLongSyntax()) {
++                node.node(HORIZONTAL).set(despawnRange.horizontalLimit());
++                node.node(VERTICAL).set(despawnRange.verticalLimit());
++            } else {
++                node.set(despawnRange.verticalLimit());
 +            }
 +        }
 +    }
