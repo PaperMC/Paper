@@ -74,23 +74,25 @@ index e33b1b6fd50a4eea57500cc00dba20d6edcab75d..01a9660de65688b7c1a4f9dafcb65077
      public CraftBoat(CraftServer server, net.minecraft.world.entity.vehicle.Boat entity) {
          super(server, entity);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-index d2bb0831394c03b620b2cbd8306cb82b621f34f7..89bcad54d916bcf8264169e017d5b8b7a8fc4ec6 100644
+index d2bb0831394c03b620b2cbd8306cb82b621f34f7..b9d8ecd13edf11c9f6c99dd3cfb92edeb6a8e576 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-@@ -751,46 +751,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+@@ -751,46 +751,23 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
          return super.teleport(location, cause);
      }
  
--    @Override
--    public boolean isLeashed() {
++    // Paper start - Leashable API; implement and throw (overridden in CraftMob)
+     @Override
+     public boolean isLeashed() {
 -        if (!(this.getHandle() instanceof Mob)) {
 -            return false;
 -        }
 -        return ((Mob) this.getHandle()).getLeashHolder() != null;
--    }
--
--    @Override
--    public Entity getLeashHolder() throws IllegalStateException {
++        return false;
+     }
+ 
+     @Override
+     public Entity getLeashHolder() throws IllegalStateException {
 -        Preconditions.checkState(this.isLeashed(), "Entity not leashed");
 -        return ((Mob) this.getHandle()).getLeashHolder().getBukkitEntity();
 -    }
@@ -101,9 +103,10 @@ index d2bb0831394c03b620b2cbd8306cb82b621f34f7..89bcad54d916bcf8264169e017d5b8b7
 -        }
 -        ((Mob) this.getHandle()).dropLeash(true, false);
 -        return true;
--    }
--
--    @Override
++        throw new IllegalStateException("Entity not leashed");
+     }
+ 
+     @Override
 -    public boolean setLeashHolder(Entity holder) {
 -        if (this.getHandle().generation || (this.getHandle() instanceof WitherBoss) || !(this.getHandle() instanceof Mob)) {
 -            return false;
@@ -120,13 +123,16 @@ index d2bb0831394c03b620b2cbd8306cb82b621f34f7..89bcad54d916bcf8264169e017d5b8b7
 -        this.unleash();
 -        ((Mob) this.getHandle()).setLeashedTo(((CraftEntity) holder).getHandle(), true);
 -        return true;
--    }
-+    // Paper - Leashable API; moved to PaperLeashable
++    public boolean setLeashHolder(final Entity holder) {
++        return false;
+     }
++    // Paper end - Leashable API; implement and throw (overridden in CraftMob)
++
  
      @Override
      public boolean isGliding() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
-index deb66c04abefb4a88521483db1612e494bd27164..2f731c23593495613243efdd42484d260cfb374e 100644
+index deb66c04abefb4a88521483db1612e494bd27164..7c298b6d07031ae3827a82ab43a9f58c354769e3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
 @@ -11,7 +11,7 @@ import org.bukkit.entity.LivingEntity;
@@ -138,25 +144,3 @@ index deb66c04abefb4a88521483db1612e494bd27164..2f731c23593495613243efdd42484d26
      public CraftMob(CraftServer server, net.minecraft.world.entity.Mob entity) {
          super(server, entity);
           paperPathfinder = new com.destroystokyo.paper.entity.PaperPathfinder(entity); // Paper - Mob Pathfinding API
-@@ -175,4 +175,21 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob {
-         return getHandle().getExperienceReward((ServerLevel) this.getHandle().level(), null);
-     }
-     // Paper end
-+
-+    // Paper start - Leashable API; redirection needed for some reason leashable methods are on LivingEntity and not Mob
-+    @Override
-+    public boolean isLeashed() {
-+        return io.papermc.paper.entity.PaperLeashable.super.isLeashed();
-+    }
-+
-+    @Override
-+    public org.bukkit.entity.Entity getLeashHolder() throws IllegalStateException {
-+        return io.papermc.paper.entity.PaperLeashable.super.getLeashHolder();
-+    }
-+
-+    @Override
-+    public boolean setLeashHolder(org.bukkit.entity.Entity holder) {
-+        return io.papermc.paper.entity.PaperLeashable.super.setLeashHolder(holder);
-+    }
-+    // Paper end - Leashable API
- }
