@@ -95,6 +95,23 @@ index b46572f6e3b52f498b395d3b8c5def2aa799ff03..e87360e21e6eb7b0161c34a3ac6cb83d
          }
  
          return flag1;
+diff --git a/src/main/java/net/minecraft/world/entity/TamableAnimal.java b/src/main/java/net/minecraft/world/entity/TamableAnimal.java
+index f9232c8f43bf120634fb6d6761267ef93ee4ed8d..378b767909d3fffc4d6a46edce4904e328c12a45 100644
+--- a/src/main/java/net/minecraft/world/entity/TamableAnimal.java
++++ b/src/main/java/net/minecraft/world/entity/TamableAnimal.java
+@@ -98,7 +98,11 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
+     public boolean handleLeashAtDistance(Entity leashHolder, float distance) {
+         if (this.isInSittingPose()) {
+             if (distance > (float) this.level().paperConfig().misc.maxLeashDistance) { // Paper - Configurable max leash distance
+-                this.dropLeash(true, true);
++                // Paper start - Expand EntityUnleashEvent
++                org.bukkit.event.entity.EntityUnleashEvent event = new org.bukkit.event.entity.EntityUnleashEvent(this.getBukkitEntity(), org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.DISTANCE, true);
++                if (!event.callEvent()) return false;
++                this.dropLeash(true, event.isDropLeash());
++                // Paper end - Expand EntityUnleashEvent
+             }
+ 
+             return false;
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java b/src/main/java/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java
 index 3c0af74ed65610b1d5e3b72fdcf28c5a3423f0da..01173fc7177d78588978e087e63efda0b0527c2f 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java
