@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Isaac - The456 <the456@the456gamer.dev>
+Date: Mon, 19 Aug 2024 12:14:38 +0100
+Subject: [PATCH] verify returned suggestion type
+
+since generic types get erased at runtime, java doesn't actually know what is in the returned. List
+convert it to a String array, which only accepts the one type, which throws the ArrayStoreException when failed. additionally, since this occurs in BukkitCommandNode, the plugin/commands class is not in the stacktrace.
+
+diff --git a/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitCommandNode.java b/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitCommandNode.java
+index 0c3c82b28e581286b798ee58ca4193efc2faff4a..e38b5fb5d20cbd1cc7435395f9694bf0d08684a3 100644
+--- a/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitCommandNode.java
++++ b/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitCommandNode.java
+@@ -116,9 +116,10 @@ public class BukkitCommandNode extends LiteralCommandNode<CommandSourceStack> {
+             Location pos = context.getSource().getLocation();
+             try {
+                 results = this.command.tabComplete(sender, this.literal, args, pos.clone());
+-            } catch (CommandException ex) {
++                results.toArray(new String[0]);
++            } catch (CommandException | ArrayStoreException ex) {
+                 sender.sendMessage(ChatColor.RED + "An internal error occurred while attempting to tab-complete this command");
+-                Bukkit.getServer().getLogger().log(Level.SEVERE, "Exception when " + sender.getName() + " attempted to tab complete " + builder.getRemaining(), ex);
++                Bukkit.getServer().getLogger().log(Level.SEVERE, "Exception when " + sender.getName() + " attempted to tab complete " + builder.getRemaining() + "from command "+this.command.getClass(), ex);
+             }
+ 
+             if (sender instanceof final Player player) {
