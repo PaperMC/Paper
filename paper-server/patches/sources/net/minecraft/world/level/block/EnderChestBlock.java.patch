@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/EnderChestBlock.java
 +++ b/net/minecraft/world/level/block/EnderChestBlock.java
-@@ -78,7 +78,7 @@
+@@ -78,14 +78,16 @@
          PlayerEnderChestContainer playerEnderChestContainer = player.getEnderChestInventory();
          if (playerEnderChestContainer != null && world.getBlockEntity(pos) instanceof EnderChestBlockEntity enderChestBlockEntity) {
              BlockPos blockPos = pos.above();
@@ -8,4 +8,18 @@
 +            if (world.getBlockState(blockPos).isRedstoneConductor(world, blockPos)) { // Paper - diff on change; make sure that EnderChest#isBlocked uses the same logic
                  return InteractionResult.SUCCESS;
              } else {
-                 if (world instanceof ServerLevel serverLevel) {
+-                if (world instanceof ServerLevel serverLevel) {
+-                    playerEnderChestContainer.setActiveChest(enderChestBlockEntity);
+-                    player.openMenu(
+-                        new SimpleMenuProvider((i, inventory, playerx) -> ChestMenu.threeRows(i, inventory, playerEnderChestContainer), CONTAINER_TITLE)
+-                    );
++                // Paper start - Fix InventoryOpenEvent cancellation - moved up;
++                playerEnderChestContainer.setActiveChest(enderChestBlockEntity); // Needs to happen before ChestMenu.threeRows as it is required for opening animations
++                if (world instanceof ServerLevel serverLevel && player.openMenu(
++                    new SimpleMenuProvider((i, inventory, playerx) -> ChestMenu.threeRows(i, inventory, playerEnderChestContainer), CONTAINER_TITLE)
++                ).isPresent()) {
++                // Paper end - Fix InventoryOpenEvent cancellation - moved up;
++                    // Paper - Fix InventoryOpenEvent cancellation - moved up;
+                     player.awardStat(Stats.OPEN_ENDERCHEST);
+                     PiglinAi.angerNearbyPiglins(serverLevel, player, true);
+                 }

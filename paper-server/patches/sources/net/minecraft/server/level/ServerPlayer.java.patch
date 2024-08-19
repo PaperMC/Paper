@@ -530,12 +530,10 @@
              if (this.experienceLevel != this.lastRecordedLevel) {
                  this.lastRecordedLevel = this.experienceLevel;
                  this.updateScoreForCriteria(ObjectiveCriteria.LEVEL, Mth.ceil((float) this.lastRecordedLevel));
-@@ -863,8 +1081,22 @@
- 
-             if (this.tickCount % 20 == 0) {
+@@ -865,6 +1083,20 @@
                  CriteriaTriggers.LOCATION.trigger(this);
-+            }
-+
+             }
+ 
 +            // CraftBukkit start - initialize oldLevel, fire PlayerLevelChangeEvent, and tick client-sided world border
 +            if (this.oldLevel == -1) {
 +                this.oldLevel = this.experienceLevel;
@@ -544,8 +542,8 @@
 +            if (this.oldLevel != this.experienceLevel) {
 +                CraftEventFactory.callPlayerLevelChangeEvent(this.getBukkitEntity(), this.oldLevel, this.experienceLevel);
 +                this.oldLevel = this.experienceLevel;
-             }
- 
++            }
++
 +            if (this.getBukkitEntity().hasClientWorldBorder()) {
 +                ((CraftWorldBorder) this.getBukkitEntity().getWorldBorder()).getHandle().tick();
 +            }
@@ -1169,7 +1167,7 @@
      }
  
      @Override
-@@ -1396,13 +1896,40 @@
+@@ -1396,13 +1896,44 @@
          if (factory == null) {
              return OptionalInt.empty();
          } else {
@@ -1202,6 +1200,10 @@
 +                    } else if (factory instanceof ChestBlock.DoubleInventory) {
 +                        // SPIGOT-5355 - double chests too :(
 +                        ((ChestBlock.DoubleInventory) factory).inventorylargechest.stopOpen(this);
++                        // Paper start - Fix InventoryOpenEvent cancellation
++                    } else if (!this.enderChestInventory.isActiveChest(null)) {
++                        this.enderChestInventory.stopOpen(this);
++                        // Paper end - Fix InventoryOpenEvent cancellation
 +                    }
 +                    return OptionalInt.empty();
 +                }
@@ -1210,7 +1212,7 @@
              if (container == null) {
                  if (this.isSpectator()) {
                      this.displayClientMessage(Component.translatable("container.spectatorCantOpen").withStyle(ChatFormatting.RED), true);
-@@ -1410,9 +1937,11 @@
+@@ -1410,9 +1941,11 @@
  
                  return OptionalInt.empty();
              } else {
@@ -1224,7 +1226,7 @@
                  return OptionalInt.of(this.containerCounter);
              }
          }
-@@ -1425,15 +1954,26 @@
+@@ -1425,15 +1958,26 @@
  
      @Override
      public void openHorseInventory(AbstractHorse horse, Container inventory) {
@@ -1254,7 +1256,7 @@
          this.initMenu(this.containerMenu);
      }
  
-@@ -1456,9 +1996,28 @@
+@@ -1456,9 +2000,28 @@
  
      @Override
      public void closeContainer() {
@@ -1283,7 +1285,7 @@
  
      @Override
      public void doCloseContainer() {
-@@ -1485,19 +2044,19 @@
+@@ -1485,19 +2048,19 @@
                  i = Math.round((float) Math.sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ) * 100.0F);
                  if (i > 0) {
                      this.awardStat(Stats.SWIM_ONE_CM, i);
@@ -1306,7 +1308,7 @@
                  }
              } else if (this.onClimbable()) {
                  if (deltaY > 0.0D) {
-@@ -1508,13 +2067,13 @@
+@@ -1508,13 +2071,13 @@
                  if (i > 0) {
                      if (this.isSprinting()) {
                          this.awardStat(Stats.SPRINT_ONE_CM, i);
@@ -1323,7 +1325,7 @@
                      }
                  }
              } else if (this.isFallFlying()) {
-@@ -1557,7 +2116,7 @@
+@@ -1557,7 +2120,7 @@
      @Override
      public void awardStat(Stat<?> stat, int amount) {
          this.stats.increment(this, stat, amount);
@@ -1332,7 +1334,7 @@
              scoreaccess.add(amount);
          });
      }
-@@ -1565,7 +2124,7 @@
+@@ -1565,7 +2128,7 @@
      @Override
      public void resetStat(Stat<?> stat) {
          this.stats.setValue(this, stat, 0);
@@ -1341,7 +1343,7 @@
      }
  
      @Override
-@@ -1597,9 +2156,9 @@
+@@ -1597,9 +2160,9 @@
          super.jumpFromGround();
          this.awardStat(Stats.JUMP);
          if (this.isSprinting()) {
@@ -1353,7 +1355,7 @@
          }
  
      }
-@@ -1613,6 +2172,13 @@
+@@ -1613,6 +2176,13 @@
      public void disconnect() {
          this.disconnected = true;
          this.ejectPassengers();
@@ -1367,7 +1369,7 @@
          if (this.isSleeping()) {
              this.stopSleepInBed(true, false);
          }
-@@ -1625,6 +2191,7 @@
+@@ -1625,6 +2195,7 @@
  
      public void resetSentInfo() {
          this.lastSentHealth = -1.0E8F;
@@ -1375,7 +1377,7 @@
      }
  
      @Override
-@@ -1661,7 +2228,7 @@
+@@ -1661,7 +2232,7 @@
          this.onUpdateAbilities();
          if (alive) {
              this.getAttributes().assignBaseValues(oldPlayer.getAttributes());
@@ -1384,7 +1386,7 @@
              this.setHealth(oldPlayer.getHealth());
              this.foodData = oldPlayer.foodData;
              Iterator iterator = oldPlayer.getActiveEffects().iterator();
-@@ -1669,7 +2236,7 @@
+@@ -1669,7 +2240,7 @@
              while (iterator.hasNext()) {
                  MobEffectInstance mobeffect = (MobEffectInstance) iterator.next();
  
@@ -1393,7 +1395,7 @@
              }
  
              this.getInventory().replaceWith(oldPlayer.getInventory());
-@@ -1680,7 +2247,7 @@
+@@ -1680,7 +2251,7 @@
              this.portalProcess = oldPlayer.portalProcess;
          } else {
              this.getAttributes().assignBaseValues(oldPlayer.getAttributes());
@@ -1402,7 +1404,7 @@
              if (this.serverLevel().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY) || oldPlayer.isSpectator()) {
                  this.getInventory().replaceWith(oldPlayer.getInventory());
                  this.experienceLevel = oldPlayer.experienceLevel;
-@@ -1696,7 +2263,7 @@
+@@ -1696,7 +2267,7 @@
          this.lastSentExp = -1;
          this.lastSentHealth = -1.0F;
          this.lastSentFood = -1;
@@ -1411,7 +1413,7 @@
          this.seenCredits = oldPlayer.seenCredits;
          this.enteredNetherPosition = oldPlayer.enteredNetherPosition;
          this.chunkTrackingView = oldPlayer.chunkTrackingView;
-@@ -1752,19 +2319,19 @@
+@@ -1752,19 +2323,19 @@
      }
  
      @Override
@@ -1435,7 +1437,7 @@
          }
  
          return flag1;
-@@ -1799,10 +2366,18 @@
+@@ -1799,10 +2370,18 @@
      }
  
      public boolean setGameMode(GameType gameMode) {
@@ -1456,7 +1458,7 @@
          } else {
              this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, (float) gameMode.getId()));
              if (gameMode == GameType.SPECTATOR) {
-@@ -1818,7 +2393,7 @@
+@@ -1818,7 +2397,7 @@
  
              this.onUpdateAbilities();
              this.updateEffectVisibility();
@@ -1465,7 +1467,7 @@
          }
      }
  
-@@ -1861,8 +2436,13 @@
+@@ -1861,8 +2440,13 @@
      }
  
      public void sendChatMessage(OutgoingChatMessage message, boolean filterMaskEnabled, ChatType.Bound params) {
@@ -1480,7 +1482,7 @@
          }
  
      }
-@@ -1878,7 +2458,36 @@
+@@ -1878,7 +2462,36 @@
      }
  
      public void updateOptions(ClientInformation clientOptions) {
@@ -1517,7 +1519,7 @@
          this.requestedViewDistance = clientOptions.viewDistance();
          this.chatVisibility = clientOptions.chatVisibility();
          this.canChatColor = clientOptions.chatColors();
-@@ -1957,12 +2566,27 @@
+@@ -1957,12 +2570,27 @@
  
          this.camera = (Entity) (entity == null ? this : entity);
          if (entity1 != this.camera) {
@@ -1546,7 +1548,7 @@
              }
  
              if (entity != null) {
-@@ -1999,11 +2623,11 @@
+@@ -1999,11 +2627,11 @@
  
      @Nullable
      public Component getTabListDisplayName() {
@@ -1560,7 +1562,7 @@
      }
  
      @Override
-@@ -2045,12 +2669,44 @@
+@@ -2045,12 +2673,44 @@
          this.setRespawnPosition(player.getRespawnDimension(), player.getRespawnPosition(), player.getRespawnAngle(), player.isRespawnForced(), false);
      }
  
@@ -1607,7 +1609,7 @@
              }
  
              this.respawnPosition = pos;
-@@ -2064,6 +2720,7 @@
+@@ -2064,6 +2724,7 @@
              this.respawnForced = false;
          }
  
@@ -1615,7 +1617,7 @@
      }
  
      public SectionPos getLastSectionPos() {
-@@ -2088,18 +2745,44 @@
+@@ -2088,18 +2749,44 @@
      }
  
      @Override
@@ -1664,7 +1666,7 @@
                  }
  
                  this.awardStat(Stats.DROP);
-@@ -2115,6 +2798,11 @@
+@@ -2115,6 +2802,11 @@
              return null;
          } else {
              double d0 = this.getEyeY() - 0.30000001192092896D;
@@ -1676,7 +1678,7 @@
              ItemEntity entityitem = new ItemEntity(this.level(), this.getX(), d0, this.getZ(), stack);
  
              entityitem.setPickUpDelay(40);
-@@ -2166,6 +2854,16 @@
+@@ -2166,6 +2858,16 @@
      }
  
      public void loadGameTypes(@Nullable CompoundTag nbt) {
@@ -1693,7 +1695,7 @@
          this.gameMode.setGameModeForPlayer(this.calculateGameModeForNewPlayer(ServerPlayer.readPlayerMode(nbt, "playerGameType")), ServerPlayer.readPlayerMode(nbt, "previousPlayerGameType"));
      }
  
-@@ -2275,9 +2973,15 @@
+@@ -2275,9 +2977,15 @@
  
      @Override
      public void stopRiding() {
@@ -1710,7 +1712,7 @@
          if (entity instanceof LivingEntity entityliving) {
              Iterator iterator = entityliving.getActiveEffects().iterator();
  
-@@ -2375,10 +3079,12 @@
+@@ -2375,16 +3083,161 @@
          return TicketType.ENDER_PEARL.timeout();
      }
  
@@ -1726,10 +1728,11 @@
          }
  
          private static float calculateLookAtYaw(Vec3 respawnPos, BlockPos currentPos) {
-@@ -2387,4 +3093,147 @@
+             Vec3 vec3d1 = Vec3.atBottomCenterOf(currentPos).subtract(respawnPos).normalize();
+ 
              return (float) Mth.wrapDegrees(Mth.atan2(vec3d1.z, vec3d1.x) * 57.2957763671875D - 90.0D);
-         }
-     }
++        }
++    }
 +
 +    // CraftBukkit start - Add per-player time and weather.
 +    public long timeOffset = 0;
@@ -1742,8 +1745,8 @@
 +        } else {
 +            // Adds timeOffset to the beginning of this day.
 +            return this.level().getDayTime() - (this.level().getDayTime() % 24000) + this.timeOffset;
-+        }
-+    }
+         }
+     }
 +
 +    public WeatherType weather = null;
 +
