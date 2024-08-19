@@ -22,18 +22,19 @@ index ed61767a64cdce37dc7c226ebd0d693a60de24a9..f634a830a2b58a419e84f969bd53eeae
          ServerboundEditBookPacket::new
      );
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index ce06a41d98bafc878918507404bd5d6cabc45776..aff0f55623365130f079818af9d6a2e448cfe342 100644
+index ce06a41d98bafc878918507404bd5d6cabc45776..d8f940016b68f488b5061d2826607c0db7e8f852 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1043,6 +1043,43 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1043,6 +1043,44 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
      @Override
      public void handleEditBook(ServerboundEditBookPacket packet) {
 +        // Paper start - Book size limits
-+        if (!this.cserver.isPrimaryThread()) {
++        final io.papermc.paper.configuration.type.number.IntOr.Disabled pageMax = io.papermc.paper.configuration.GlobalConfiguration.get().itemValidation.bookSize.pageMax;
++        if (!this.cserver.isPrimaryThread() && pageMax.enabled()) {
 +            final List<String> pageList = packet.pages();
 +            long byteTotal = 0;
-+            final int maxBookPageSize = io.papermc.paper.configuration.GlobalConfiguration.get().itemValidation.bookSize.pageMax;
++            final int maxBookPageSize = pageMax.intValue();
 +            final double multiplier = Math.clamp(io.papermc.paper.configuration.GlobalConfiguration.get().itemValidation.bookSize.totalMultiplier, 0.3D, 1D);
 +            long byteAllowed = maxBookPageSize;
 +            for (final String page : pageList) {
