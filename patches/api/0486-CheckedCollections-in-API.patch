@@ -1,0 +1,439 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Isaac - The456 <the456@the456gamer.dev>
+Date: Mon, 19 Aug 2024 16:16:40 +0100
+Subject: [PATCH] CheckedCollections in API
+
+Ensure that API users cannot add unexpected types to lists through runtime type erasure.
+
+diff --git a/src/main/java/com/destroystokyo/paper/event/server/PaperServerListPingEvent.java b/src/main/java/com/destroystokyo/paper/event/server/PaperServerListPingEvent.java
+index acff2ff570f8419ffa4dfefe890795c63d75325d..9b2c67a3c2b812ccce6ce6ca7e8f3e3dc154ad99 100644
+--- a/src/main/java/com/destroystokyo/paper/event/server/PaperServerListPingEvent.java
++++ b/src/main/java/com/destroystokyo/paper/event/server/PaperServerListPingEvent.java
+@@ -38,7 +38,7 @@ public class PaperServerListPingEvent extends ServerListPingEvent implements Can
+ 
+     private int numPlayers;
+     private boolean hidePlayers;
+-    @NotNull private final List<ListedPlayerInfo> listedPlayers = new ArrayList<>();
++    @NotNull private final List<ListedPlayerInfo> listedPlayers = java.util.Collections.checkedList(new ArrayList<>(), ListedPlayerInfo.class); // Paper - checked list
+     @NotNull private final TransformingRandomAccessList<ListedPlayerInfo, PlayerProfile> playerSample = new TransformingRandomAccessList<>(
+         listedPlayers,
+         info -> new UncheckedPlayerProfile(info.name(), info.id()),
+diff --git a/src/main/java/io/papermc/paper/event/block/BlockBreakBlockEvent.java b/src/main/java/io/papermc/paper/event/block/BlockBreakBlockEvent.java
+index 4f7535daf0d9967fadb0c6f8afbd3993eace410d..150dfe97742440dcd5891ad73fc44bf9de5eff24 100644
+--- a/src/main/java/io/papermc/paper/event/block/BlockBreakBlockEvent.java
++++ b/src/main/java/io/papermc/paper/event/block/BlockBreakBlockEvent.java
+@@ -25,7 +25,7 @@ public class BlockBreakBlockEvent extends BlockExpEvent {
+     public BlockBreakBlockEvent(@NotNull Block block, @NotNull Block source, @NotNull List<ItemStack> drops) {
+         super(block, 0);
+         this.source = source;
+-        this.drops = drops;
++        this.drops = java.util.Collections.checkedList(drops, ItemStack.class); // Paper - Checked list
+     }
+ 
+     /**
+diff --git a/src/main/java/io/papermc/paper/event/block/PlayerShearBlockEvent.java b/src/main/java/io/papermc/paper/event/block/PlayerShearBlockEvent.java
+index 9bb4a79320eac7d662d9d04765664b6a7e955a4f..4df2cbb503281c22553436e48f41ef628760a805 100644
+--- a/src/main/java/io/papermc/paper/event/block/PlayerShearBlockEvent.java
++++ b/src/main/java/io/papermc/paper/event/block/PlayerShearBlockEvent.java
+@@ -37,7 +37,7 @@ public class PlayerShearBlockEvent extends PlayerEvent implements Cancellable {
+         this.block = block;
+         this.item = item;
+         this.hand = hand;
+-        this.drops = drops;
++        this.drops = java.util.Collections.checkedList(drops, ItemStack.class); // Paper - Checked list
+     }
+ 
+     /**
+diff --git a/src/main/java/io/papermc/paper/event/entity/WaterBottleSplashEvent.java b/src/main/java/io/papermc/paper/event/entity/WaterBottleSplashEvent.java
+index 0c7725980d5a2f3652e53f75329ad405389f431a..304eb30ccce1e7d85f07e4ce4e265134ccf33190 100644
+--- a/src/main/java/io/papermc/paper/event/entity/WaterBottleSplashEvent.java
++++ b/src/main/java/io/papermc/paper/event/entity/WaterBottleSplashEvent.java
+@@ -35,8 +35,8 @@ public class WaterBottleSplashEvent extends PotionSplashEvent {
+         final @NotNull Set<LivingEntity> extinguish
+     ) {
+         super(potion, hitEntity, hitBlock, hitFace, affectedEntities);
+-        this.rehydrate = rehydrate;
+-        this.extinguish = extinguish;
++        this.rehydrate = java.util.Collections.checkedSet(rehydrate, LivingEntity.class); // Paper start - Checked set
++        this.extinguish = java.util.Collections.checkedSet(extinguish, LivingEntity.class); // Paper end - Checked set
+     }
+ 
+     /**
+diff --git a/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java b/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
+index a0fd845bc9b2540c398fe1dbbf821803a7017a28..32a9bdd20b1a17753e4b7b4c4c2256eacf4f3698 100644
+--- a/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
++++ b/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
+@@ -30,7 +30,7 @@ public abstract class AbstractChatEvent extends PlayerEvent implements Cancellab
+ 
+     AbstractChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage, final @NotNull SignedMessage signedMessage) {
+         super(player, async);
+-        this.viewers = viewers;
++        this.viewers = java.util.Collections.checkedSet(viewers, Audience.class); // paper - checked set
+         this.renderer = renderer;
+         this.message = message;
+         this.originalMessage = originalMessage;
+diff --git a/src/main/java/org/bukkit/event/block/BellResonateEvent.java b/src/main/java/org/bukkit/event/block/BellResonateEvent.java
+index df76314cd4b40dfbe51f4f55730ecc1603087fcd..d0d719656e50a2ff700f77b3aeec25f9aef180f0 100644
+--- a/src/main/java/org/bukkit/event/block/BellResonateEvent.java
++++ b/src/main/java/org/bukkit/event/block/BellResonateEvent.java
+@@ -17,7 +17,7 @@ public class BellResonateEvent extends BlockEvent {
+ 
+     public BellResonateEvent(@NotNull Block theBlock, @NotNull List<LivingEntity> resonatedEntities) {
+         super(theBlock);
+-        this.resonatedEntities = resonatedEntities;
++        this.resonatedEntities = java.util.Collections.checkedList(resonatedEntities, LivingEntity.class); // Paper - Checked list
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/event/block/BlockDispenseLootEvent.java b/src/main/java/org/bukkit/event/block/BlockDispenseLootEvent.java
+index 6dea23ddd916da7d7fa16e1f6622a87681d17f12..0c763e6001a887186defb33f5fd4e296c1a513ac 100644
+--- a/src/main/java/org/bukkit/event/block/BlockDispenseLootEvent.java
++++ b/src/main/java/org/bukkit/event/block/BlockDispenseLootEvent.java
+@@ -24,14 +24,17 @@ public class BlockDispenseLootEvent extends BlockEvent implements Cancellable {
+ 
+     private static final HandlerList handlers = new HandlerList();
+     private final Player player;
+-    private List<ItemStack> dispensedLoot;
++    private final List<ItemStack> dispensedLoot; // Paper - checked list + ensure mutability
+     private boolean cancelled;
+ 
+     public BlockDispenseLootEvent(@Nullable Player player, @NotNull Block theBlock, @NotNull List<ItemStack> dispensedLoot) {
+         super(theBlock);
+         this.player = player;
+         this.block = theBlock;
+-        this.dispensedLoot = dispensedLoot;
++        // Paper start - checked list + ensure mutability
++        this.dispensedLoot = java.util.Collections.checkedList(new ArrayList<>(dispensedLoot.size()), ItemStack.class);
++        this.dispensedLoot.addAll(dispensedLoot);
++        // Paper end - checked list + ensure mutability
+     }
+ 
+     /**
+@@ -50,7 +53,13 @@ public class BlockDispenseLootEvent extends BlockEvent implements Cancellable {
+      * @param dispensedLoot new loot to dispense
+      */
+     public void setDispensedLoot(@Nullable List<ItemStack> dispensedLoot) {
+-        this.dispensedLoot = (dispensedLoot == null) ? new ArrayList<>() : dispensedLoot;
++        // Paper start - checked list + ensure mutability
++        // this.dispensedLoot = (dispensedLoot == null) ? new ArrayList<>() : dispensedLoot;
++        this.dispensedLoot.clear();
++        if (dispensedLoot != null) {
++            this.dispensedLoot.addAll(dispensedLoot);
++        }
++        // Paper end - checked list + ensure mutability
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/event/block/BlockDropItemEvent.java b/src/main/java/org/bukkit/event/block/BlockDropItemEvent.java
+index 4c5ee91de162b202c2db8bf68259ad41a430125d..9099fb4e270f6c02f8b757a09879341506d36614 100644
+--- a/src/main/java/org/bukkit/event/block/BlockDropItemEvent.java
++++ b/src/main/java/org/bukkit/event/block/BlockDropItemEvent.java
+@@ -40,7 +40,7 @@ public class BlockDropItemEvent extends BlockEvent implements Cancellable {
+         super(block);
+         this.blockState = blockState;
+         this.player = player;
+-        this.items = items;
++        this.items = java.util.Collections.checkedList(items, Item.class); // Paper - checked list
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/event/block/BlockExplodeEvent.java b/src/main/java/org/bukkit/event/block/BlockExplodeEvent.java
+index 254d549f956053af4264ca3a52d34a97ede4273d..82572e1d47196012489e9c5f59855e8f745f4c72 100644
+--- a/src/main/java/org/bukkit/event/block/BlockExplodeEvent.java
++++ b/src/main/java/org/bukkit/event/block/BlockExplodeEvent.java
+@@ -29,7 +29,7 @@ public class BlockExplodeEvent extends BlockEvent implements Cancellable {
+     public BlockExplodeEvent(@NotNull final Block what, @NotNull final BlockState blockState, @NotNull final List<Block> blocks, final float yield, @NotNull final ExplosionResult result) {
+         super(what);
+         this.blockState = blockState;
+-        this.blocks = blocks;
++        this.blocks = java.util.Collections.checkedList(blocks, Block.class); // Paper - Checked list
+         this.yield = yield;
+         this.cancel = false;
+         this.result = result;
+diff --git a/src/main/java/org/bukkit/event/block/BlockFertilizeEvent.java b/src/main/java/org/bukkit/event/block/BlockFertilizeEvent.java
+index 695309b4b7ef269ba2496408a5f874f61cd6c445..b5572d5b102afe1a74b1a535fd4211a2ada1e665 100644
+--- a/src/main/java/org/bukkit/event/block/BlockFertilizeEvent.java
++++ b/src/main/java/org/bukkit/event/block/BlockFertilizeEvent.java
+@@ -26,7 +26,7 @@ public class BlockFertilizeEvent extends BlockEvent implements Cancellable {
+     public BlockFertilizeEvent(@NotNull Block theBlock, @Nullable Player player, @NotNull List<BlockState> blocks) {
+         super(theBlock);
+         this.player = player;
+-        this.blocks = blocks;
++        this.blocks = java.util.Collections.checkedList(blocks, BlockState.class); // Paper - checked list
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/event/block/BlockShearEntityEvent.java b/src/main/java/org/bukkit/event/block/BlockShearEntityEvent.java
+index 610768bd329b8612627d361fd9a773a7b91ff108..84ecdc24042800d45c1a48e06ddc99588da4e8d1 100644
+--- a/src/main/java/org/bukkit/event/block/BlockShearEntityEvent.java
++++ b/src/main/java/org/bukkit/event/block/BlockShearEntityEvent.java
+@@ -84,7 +84,10 @@ public class BlockShearEntityEvent extends BlockEvent implements Cancellable {
+      * @param drops the shear drops
+      */
+     public void setDrops(final java.util.@NotNull List<org.bukkit.inventory.ItemStack> drops) {
+-        this.drops = java.util.List.copyOf(drops);
++        // Paper start - Checked list setter
++        this.drops = java.util.Collections.checkedList(new java.util.ArrayList<>(drops.size()), org.bukkit.inventory.ItemStack.class);
++        this.drops.addAll(drops);
++        // Paper end - checked list setter
+     }
+     // Paper end - custom shear drops
+ }
+diff --git a/src/main/java/org/bukkit/event/block/SpongeAbsorbEvent.java b/src/main/java/org/bukkit/event/block/SpongeAbsorbEvent.java
+index 7029cfcd00ed5d9c7f06898ec2b81238ec775a70..d5271bbb52a5a9c3d1cfcfb998f595dee4632e3a 100644
+--- a/src/main/java/org/bukkit/event/block/SpongeAbsorbEvent.java
++++ b/src/main/java/org/bukkit/event/block/SpongeAbsorbEvent.java
+@@ -25,7 +25,7 @@ public class SpongeAbsorbEvent extends BlockEvent implements Cancellable {
+ 
+     public SpongeAbsorbEvent(@NotNull Block block, @NotNull List<BlockState> waterblocks) {
+         super(block);
+-        this.blocks = waterblocks;
++        this.blocks = java.util.Collections.checkedList(waterblocks, BlockState.class); // Paper - checked list
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/event/entity/AreaEffectCloudApplyEvent.java b/src/main/java/org/bukkit/event/entity/AreaEffectCloudApplyEvent.java
+index 9cee218b9ee14688356f16b1f58512186286e7e9..ddfb3cf96570044f3c4b332b38eef6d2498c5019 100644
+--- a/src/main/java/org/bukkit/event/entity/AreaEffectCloudApplyEvent.java
++++ b/src/main/java/org/bukkit/event/entity/AreaEffectCloudApplyEvent.java
+@@ -18,7 +18,7 @@ public class AreaEffectCloudApplyEvent extends EntityEvent implements Cancellabl
+ 
+     public AreaEffectCloudApplyEvent(@NotNull final AreaEffectCloud entity, @NotNull final List<LivingEntity> affectedEntities) {
+         super(entity);
+-        this.affectedEntities = affectedEntities;
++        this.affectedEntities = java.util.Collections.checkedList(affectedEntities, LivingEntity.class); // Paper - checked list
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/event/entity/EntityDeathEvent.java b/src/main/java/org/bukkit/event/entity/EntityDeathEvent.java
+index 81a3067ff5ae22943b66051f4613ab9fe095720c..bc33d3dd333a1583e62a936be44fd20a0e35b547 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityDeathEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityDeathEvent.java
+@@ -33,7 +33,7 @@ public class EntityDeathEvent extends EntityEvent implements org.bukkit.event.Ca
+     public EntityDeathEvent(@NotNull final LivingEntity what, @NotNull DamageSource damageSource, @NotNull final List<ItemStack> drops, final int droppedExp) {
+         super(what);
+         this.damageSource = damageSource;
+-        this.drops = drops;
++        this.drops = java.util.Collections.checkedList(drops, ItemStack.class); // Paper - checked list
+         this.dropExp = droppedExp;
+     }
+ 
+diff --git a/src/main/java/org/bukkit/event/entity/EntityExplodeEvent.java b/src/main/java/org/bukkit/event/entity/EntityExplodeEvent.java
+index e468e55d426b8f81f87c0a08451d02b3866c226f..940b09216310d5d05182c51a8ce6fe52c536c126 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityExplodeEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityExplodeEvent.java
+@@ -25,7 +25,7 @@ public class EntityExplodeEvent extends EntityEvent implements Cancellable {
+     public EntityExplodeEvent(@NotNull final Entity what, @NotNull final Location location, @NotNull final List<Block> blocks, final float yield, @NotNull final ExplosionResult result) {
+         super(what);
+         this.location = location;
+-        this.blocks = blocks;
++        this.blocks = java.util.Collections.checkedList(blocks, Block.class); // Paper - Checked list
+         this.yield = yield;
+         this.cancel = false;
+         this.result = result;
+diff --git a/src/main/java/org/bukkit/event/entity/PiglinBarterEvent.java b/src/main/java/org/bukkit/event/entity/PiglinBarterEvent.java
+index bd67b7cba78b9bbdd82a5a40048e658a979e3108..7a238553136119eb796105de05ce25b8f74ce58b 100644
+--- a/src/main/java/org/bukkit/event/entity/PiglinBarterEvent.java
++++ b/src/main/java/org/bukkit/event/entity/PiglinBarterEvent.java
+@@ -23,7 +23,7 @@ public class PiglinBarterEvent extends EntityEvent implements Cancellable {
+         super(what);
+ 
+         this.input = input;
+-        this.outcome = outcome;
++        this.outcome = java.util.Collections.checkedList(new java.util.ArrayList<>(outcome), ItemStack.class); // Paper - checked list + enforce mutability
+     }
+ 
+     @NotNull
+diff --git a/src/main/java/org/bukkit/event/inventory/BrewEvent.java b/src/main/java/org/bukkit/event/inventory/BrewEvent.java
+index f37cc5dee0bf678444be12c4acc61182d3d72fe0..fdf48f18a0989aad12535a23e6d3c0ef99e5d7d3 100644
+--- a/src/main/java/org/bukkit/event/inventory/BrewEvent.java
++++ b/src/main/java/org/bukkit/event/inventory/BrewEvent.java
+@@ -23,7 +23,7 @@ public class BrewEvent extends BlockEvent implements Cancellable {
+     public BrewEvent(@NotNull Block brewer, @NotNull BrewerInventory contents, @NotNull List<ItemStack> results, int fuelLevel) {
+         super(brewer);
+         this.contents = contents;
+-        this.results = results;
++        this.results = java.util.Collections.checkedList(results, ItemStack.class); // Paper - checked list
+         this.fuelLevel = fuelLevel;
+     }
+ 
+diff --git a/src/main/java/org/bukkit/event/player/AsyncPlayerChatEvent.java b/src/main/java/org/bukkit/event/player/AsyncPlayerChatEvent.java
+index 399afcd19fcb6acd24857ed6ab48cf0d105a01a3..71dc8927d1624bf7a6d7a28fd3b4322935645ab8 100644
+--- a/src/main/java/org/bukkit/event/player/AsyncPlayerChatEvent.java
++++ b/src/main/java/org/bukkit/event/player/AsyncPlayerChatEvent.java
+@@ -44,7 +44,7 @@ public class AsyncPlayerChatEvent extends PlayerEvent implements Cancellable {
+     public AsyncPlayerChatEvent(final boolean async, @NotNull final Player who, @NotNull final String message, @NotNull final Set<Player> players) {
+         super(who, async);
+         this.message = message;
+-        recipients = players;
++        recipients = java.util.Collections.checkedSet(players, Player.class); // Paper - checked set
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/event/player/PlayerChatEvent.java b/src/main/java/org/bukkit/event/player/PlayerChatEvent.java
+index 2c021bc2ff18f0b3af5feb9dafc8ccebd604f8b5..d5bc87294874daee61ea0743f3cffed4b1416b7b 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerChatEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerChatEvent.java
+@@ -34,7 +34,7 @@ public class PlayerChatEvent extends PlayerEvent implements Cancellable {
+         super(player);
+         this.message = message;
+         this.format = format;
+-        this.recipients = recipients;
++        this.recipients = java.util.Collections.checkedSet(recipients, Player.class); // Paper - checked set
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/event/player/PlayerCommandPreprocessEvent.java b/src/main/java/org/bukkit/event/player/PlayerCommandPreprocessEvent.java
+index 48a00fb50fe32c732a578d5179b3bb43ffd68b69..f6f20bc445dfe6df580dde5d19ad758f4b66a308 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerCommandPreprocessEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerCommandPreprocessEvent.java
+@@ -59,7 +59,7 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
+ 
+     public PlayerCommandPreprocessEvent(@NotNull final Player player, @NotNull final String message, @NotNull final Set<Player> recipients) {
+         super(player);
+-        this.recipients = recipients;
++        this.recipients = java.util.Collections.checkedSet(recipients, Player.class); // Paper - checked set
+         this.message = message;
+     }
+ 
+diff --git a/src/main/java/org/bukkit/event/player/PlayerCommandSendEvent.java b/src/main/java/org/bukkit/event/player/PlayerCommandSendEvent.java
+index 762825997f1c6249de4ba5a0618d94bd1ec9ef33..bc266f51f25d5942e78399187134537f66dad271 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerCommandSendEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerCommandSendEvent.java
+@@ -21,7 +21,7 @@ public class PlayerCommandSendEvent extends PlayerEvent {
+ 
+     public PlayerCommandSendEvent(@NotNull final Player player, @NotNull final Collection<String> commands) {
+         super(player);
+-        this.commands = commands;
++        this.commands = java.util.Collections.checkedCollection(commands, String.class); // Paper - checked collection
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/event/player/PlayerHarvestBlockEvent.java b/src/main/java/org/bukkit/event/player/PlayerHarvestBlockEvent.java
+index 5cd4b1311b6b13497c6c0b43af1b878e607cc5f4..7817d8570130da0e78b71bf39cdeac4a4db7e503 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerHarvestBlockEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerHarvestBlockEvent.java
+@@ -31,7 +31,7 @@ public class PlayerHarvestBlockEvent extends PlayerEvent implements Cancellable
+         super(player);
+         this.harvestedBlock = harvestedBlock;
+         this.hand = hand;
+-        this.itemsHarvested = itemsHarvested;
++        this.itemsHarvested = java.util.Collections.checkedList(itemsHarvested, ItemStack.class); // Paper - checked list
+     }
+ 
+     @Deprecated
+diff --git a/src/main/java/org/bukkit/event/player/PlayerShearEntityEvent.java b/src/main/java/org/bukkit/event/player/PlayerShearEntityEvent.java
+index 63f6799c2543ba67ce9fe6484002062d7a754fd0..e5d596be3d42e28926f848d35f730de3a4a81675 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerShearEntityEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerShearEntityEvent.java
+@@ -102,7 +102,10 @@ public class PlayerShearEntityEvent extends PlayerEvent implements Cancellable {
+      * @param drops the shear drops
+      */
+     public void setDrops(final java.util.@NotNull List<org.bukkit.inventory.ItemStack> drops) {
+-        this.drops = java.util.List.copyOf(drops);
++        // Paper start - Checked list setter
++        this.drops = java.util.Collections.checkedList(new java.util.ArrayList<>(drops.size()), org.bukkit.inventory.ItemStack.class);
++        this.drops.addAll(drops);
++        // Paper end - checked list setter
+     }
+     // Paper end - custom shear drops
+ }
+diff --git a/src/main/java/org/bukkit/event/server/BroadcastMessageEvent.java b/src/main/java/org/bukkit/event/server/BroadcastMessageEvent.java
+index 25c0fe98489d903fdf77cbdd181c95593bd7f727..c6ab1cb206307f64d588fbe111e99c5ed52eeee0 100644
+--- a/src/main/java/org/bukkit/event/server/BroadcastMessageEvent.java
++++ b/src/main/java/org/bukkit/event/server/BroadcastMessageEvent.java
+@@ -32,7 +32,7 @@ public class BroadcastMessageEvent extends ServerEvent implements Cancellable {
+         // Paper start
+         super(isAsync);
+         this.message = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message);
+-        this.recipients = recipients;
++        this.recipients = java.util.Collections.checkedSet(recipients, CommandSender.class); // Paper - checked set
+     }
+ 
+     @Deprecated
+@@ -44,7 +44,7 @@ public class BroadcastMessageEvent extends ServerEvent implements Cancellable {
+         // Paper end
+         super(isAsync);
+         this.message = message;
+-        this.recipients = recipients;
++        this.recipients = java.util.Collections.checkedSet(recipients, CommandSender.class); // Paper - checked set
+     }
+     // Paper start
+     /**
+diff --git a/src/main/java/org/bukkit/event/server/TabCompleteEvent.java b/src/main/java/org/bukkit/event/server/TabCompleteEvent.java
+index c71c122ccc4775d030688f7b8df0b4feb49136f4..0c8a588c0d0cb2e95bd631a65f6b898ff9b3122e 100644
+--- a/src/main/java/org/bukkit/event/server/TabCompleteEvent.java
++++ b/src/main/java/org/bukkit/event/server/TabCompleteEvent.java
+@@ -27,7 +27,7 @@ public class TabCompleteEvent extends Event implements Cancellable {
+     //
+     private final CommandSender sender;
+     private final String buffer;
+-    private List<String> completions;
++    private final List<String> completions; // paper - checked list
+     private boolean cancelled;
+ 
+     public TabCompleteEvent(@NotNull CommandSender sender, @NotNull String buffer, @NotNull List<String> completions) {
+@@ -44,7 +44,10 @@ public class TabCompleteEvent extends Event implements Cancellable {
+ 
+         this.sender = sender;
+         this.buffer = buffer;
+-        this.completions = new java.util.ArrayList<>(completions); // Paper - Completions must be mutable
++         // Paper start - Checked list
++        this.completions = java.util.Collections.checkedList(new java.util.ArrayList<>(completions.size()), String.class); // Paper - Completions must be mutable
++        this.completions.addAll(completions);
++        // Paper end - checked list
+     }
+ 
+     /**
+@@ -106,7 +109,11 @@ public class TabCompleteEvent extends Event implements Cancellable {
+      */
+     public void setCompletions(@NotNull List<String> completions) {
+         Preconditions.checkArgument(completions != null);
+-        this.completions = new java.util.ArrayList<>(completions); // Paper - completions must be mutable
++        // Paper Start - checked list
++        // this.completions = new java.util.ArrayList<>(completions); // Paper - completions must be mutable
++        this.completions.clear();
++        this.completions.addAll(completions);
++        // Paper End - checked list
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/event/world/LootGenerateEvent.java b/src/main/java/org/bukkit/event/world/LootGenerateEvent.java
+index e051dc8b94893a0aa729996695aae91de57f3acd..37f661cc661341b4c5a5206feb72d0bcc12d9a6b 100644
+--- a/src/main/java/org/bukkit/event/world/LootGenerateEvent.java
++++ b/src/main/java/org/bukkit/event/world/LootGenerateEvent.java
+@@ -40,7 +40,7 @@ public class LootGenerateEvent extends WorldEvent implements Cancellable {
+         this.inventoryHolder = inventoryHolder;
+         this.lootTable = lootTable;
+         this.lootContext = lootContext;
+-        this.loot = items;
++        this.loot = java.util.Collections.checkedList(items, ItemStack.class); // Paper - checked list
+         this.plugin = plugin;
+     }
+ 
+diff --git a/src/main/java/org/bukkit/event/world/PortalCreateEvent.java b/src/main/java/org/bukkit/event/world/PortalCreateEvent.java
+index 579f017474ff22f0991ca884c35cdde7e14a94dc..7ab1c28ec4feaf5df5b1fbc8189d3a9b288a8479 100644
+--- a/src/main/java/org/bukkit/event/world/PortalCreateEvent.java
++++ b/src/main/java/org/bukkit/event/world/PortalCreateEvent.java
+@@ -34,6 +34,8 @@ public class PortalCreateEvent extends WorldEvent implements Cancellable {
+ 
+     /**
+      * Gets an array list of all the blocks associated with the created portal
++     * <br>
++     * While the returned list is mutable, any changes are ignored.
+      *
+      * @return array list of all the blocks associated with the created portal
+      */
+diff --git a/src/main/java/org/bukkit/event/world/StructureGrowEvent.java b/src/main/java/org/bukkit/event/world/StructureGrowEvent.java
+index 783e74bc382f0f6d24203fde7b811f588a674731..df15466e0596eeb338bc9bca5bde751025e2bef8 100644
+--- a/src/main/java/org/bukkit/event/world/StructureGrowEvent.java
++++ b/src/main/java/org/bukkit/event/world/StructureGrowEvent.java
+@@ -29,7 +29,7 @@ public class StructureGrowEvent extends WorldEvent implements Cancellable {
+         this.species = species;
+         this.bonemeal = bonemeal;
+         this.player = player;
+-        this.blocks = blocks;
++        this.blocks = java.util.Collections.checkedList(blocks, BlockState.class); // Paper - checked list
+     }
+ 
+     /**
