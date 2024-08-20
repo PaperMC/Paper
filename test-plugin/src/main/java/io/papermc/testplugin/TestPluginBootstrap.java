@@ -13,7 +13,7 @@ import io.papermc.paper.registry.keys.tags.ItemTypeTagKeys;
 import io.papermc.paper.registry.tag.TagKey;
 import io.papermc.paper.tag.PreFlattenTagRegistrar;
 import io.papermc.paper.tag.TagEntry;
-import java.util.List;
+import java.util.Set;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.enchantments.Enchantment;
@@ -25,8 +25,8 @@ import static net.kyori.adventure.text.Component.text;
 
 public class TestPluginBootstrap implements PluginBootstrap {
 
-    private static final TypedKey<Enchantment> CUSTOM_ENCHANT = TypedKey.create(RegistryKey.ENCHANTMENT, Key.key("test", "enchant"));
-    private static final TagKey<ItemType> AXE_PICKAXE = TagKey.create(RegistryKey.ITEM, Key.key("test", "axe_pickaxe"));
+    public static final TypedKey<Enchantment> CUSTOM_ENCHANT = TypedKey.create(RegistryKey.ENCHANTMENT, Key.key("test", "enchant"));
+    public static final TagKey<ItemType> AXE_PICKAXE = TagKey.create(RegistryKey.ITEM, Key.key("test", "axe_pickaxe"));
 
     @Override
     public void bootstrap(@NotNull BootstrapContext context) {
@@ -47,18 +47,18 @@ public class TestPluginBootstrap implements PluginBootstrap {
         });
 
         manager.registerEventHandler(LifecycleEvents.TAGS.preFlatten(RegistryKey.ITEM), event -> {
-            final PreFlattenTagRegistrar registrar = event.registrar();
-            registrar.setTag(AXE_PICKAXE.key(), List.of(
-                TagEntry.tagEntry(ItemTypeTagKeys.PICKAXES.key(), true),
-                TagEntry.tagEntry(ItemTypeTagKeys.AXES.key(), true)
+            final PreFlattenTagRegistrar<ItemType> registrar = event.registrar();
+            registrar.setTag(AXE_PICKAXE, Set.of(
+                TagEntry.tagEntry(ItemTypeTagKeys.PICKAXES, true),
+                TagEntry.tagEntry(ItemTypeTagKeys.AXES, true)
             ));
         });
 
         manager.registerEventHandler(LifecycleEvents.TAGS.preFlatten(RegistryKey.ENCHANTMENT), event -> {
-            final PreFlattenTagRegistrar registrar = event.registrar();
+            final PreFlattenTagRegistrar<Enchantment> registrar = event.registrar();
             registrar.addToTag(
-                EnchantmentTagKeys.IN_ENCHANTING_TABLE.key(),
-                TagEntry.valueEntry(CUSTOM_ENCHANT.key(), true)
+                EnchantmentTagKeys.IN_ENCHANTING_TABLE,
+                Set.of(TagEntry.valueEntry(CUSTOM_ENCHANT, true))
             );
         });
     }
