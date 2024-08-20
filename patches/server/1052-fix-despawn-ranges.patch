@@ -1,0 +1,167 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 20 Aug 2024 16:41:15 -0700
+Subject: [PATCH] fix despawn ranges
+
+
+diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
+index 95e96fe8aa93efbbb2e0a7dd98377fdc4fe0e6dd..07a226301848709292b2294127f60844073519c9 100644
+--- a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
++++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
+@@ -185,6 +185,7 @@ public class WorldConfiguration extends ConfigurationPart {
+             public Reference2IntMap<MobCategory> spawnLimits = Util.make(new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length), map -> Arrays.stream(NaturalSpawner.SPAWNING_CATEGORIES).forEach(mobCategory -> map.put(mobCategory, -1)));
+             @MergeMap
+             public Map<MobCategory, DespawnRangePair> despawnRanges = Arrays.stream(MobCategory.values()).collect(Collectors.toMap(Function.identity(), category -> DespawnRangePair.createDefault()));
++            public DespawnRange.Shape despawnRangeShape = DespawnRange.Shape.ELLIPSOID;
+             @MergeMap
+             public Reference2IntMap<MobCategory> ticksPerSpawn = Util.make(new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length), map -> Arrays.stream(NaturalSpawner.SPAWNING_CATEGORIES).forEach(mobCategory -> map.put(mobCategory, -1)));
+ 
+diff --git a/src/main/java/io/papermc/paper/configuration/type/DespawnRange.java b/src/main/java/io/papermc/paper/configuration/type/DespawnRange.java
+index 8f55258ecc8bfd2ab4e08f31562f7b3bde5c766b..ffb87ab79bd5bd4f9c629e9f1e57232338b0e613 100644
+--- a/src/main/java/io/papermc/paper/configuration/type/DespawnRange.java
++++ b/src/main/java/io/papermc/paper/configuration/type/DespawnRange.java
+@@ -2,23 +2,76 @@ package io.papermc.paper.configuration.type;
+ 
+ import io.papermc.paper.configuration.type.number.IntOr;
+ import java.lang.reflect.Type;
++import net.minecraft.world.entity.player.Player;
++import net.minecraft.world.phys.Vec3;
+ import org.checkerframework.checker.nullness.qual.Nullable;
+ import org.spongepowered.configurate.ConfigurationNode;
+-import org.spongepowered.configurate.objectmapping.meta.Required;
+ import org.spongepowered.configurate.serialize.SerializationException;
+ import org.spongepowered.configurate.serialize.TypeSerializer;
+ 
+-public record DespawnRange(
+-    @Required IntOr.Default horizontalLimit,
+-    @Required IntOr.Default verticalLimit,
+-    @Required boolean wasDefinedViaLongSyntax
+-) {
++/*
++(x/a)^2 + (y/b)^2 + (z/c)^2 < 1
++a == c
++ac = horizontal limit
++b = vertical limit
++x^2/ac^2 + y^2/b^2 + z^2/ac^2 < 1
++(x^2 + z^2)/ac^2 + y^2/b^2 < 1
++x^2 + z^2 + (y^2 * (ac^2/b^2)) < ac^2
++ */
++public final class DespawnRange {
++
++    public static final TypeSerializer<DespawnRange> SERIALIZER = new Serializer();
++
++    private final IntOr.Default horizontalLimit;
++    private final IntOr.Default verticalLimit;
++    private final boolean wasDefinedViaLongSyntax;
++    private boolean cached = false;
++    private double cachedHorizontalLimitSquared; // ac^2
++    private double cachedValue; // (ac^2/b^2)
+ 
+     public DespawnRange(final IntOr.Default generalLimit) {
+         this(generalLimit, generalLimit, false);
+     }
+ 
+-    public static final TypeSerializer<DespawnRange> SERIALIZER = new Serializer();
++    public DespawnRange(final IntOr.Default horizontalLimit, final IntOr.Default verticalLimit, final boolean wasDefinedViaLongSyntax) {
++        this.horizontalLimit = horizontalLimit;
++        this.verticalLimit = verticalLimit;
++        this.wasDefinedViaLongSyntax = wasDefinedViaLongSyntax;
++    }
++
++    private void cacheValues(int defaultDistance) {
++        this.cachedHorizontalLimitSquared = Math.pow(this.horizontalLimit.or(defaultDistance), 2);
++        this.cachedValue = this.cachedHorizontalLimitSquared / Math.pow(this.verticalLimit.or(defaultDistance), 2);
++        this.cached = true;
++    }
++
++    public boolean shouldDespawn(Shape shape, final Vec3 origin, final Player nearestPlayer, final double distanceSquared, final int defaultDistance) {
++        final double dy = Math.abs(nearestPlayer.getY() - origin.y());
++        final double dySqr = Math.pow(dy, 2);
++        if (!this.cached) {
++            this.cacheValues(defaultDistance);
++        }
++        if (shape == Shape.ELLIPSOID) {
++            if (!this.horizontalLimit.isDefined() && !this.verticalLimit.isDefined()) {
++                return distanceSquared > defaultDistance * defaultDistance;
++            }
++            final double dxSqr = Math.pow(Math.abs(nearestPlayer.getX() - origin.x()), 2);
++            final double dzSqr = Math.pow(Math.abs(nearestPlayer.getZ() - origin.z()), 2);
++            return dxSqr + dzSqr + (dySqr * this.cachedValue) > this.cachedHorizontalLimitSquared;
++        } else {
++            final double horizontalDistanceSquared = distanceSquared - dySqr;
++            final double horizontalLimitSquared = this.cachedHorizontalLimitSquared;
++            return horizontalDistanceSquared > horizontalLimitSquared || dy > this.verticalLimit.or(defaultDistance);
++        }
++    }
++
++    public boolean wasDefinedViaLongSyntax() {
++        return this.wasDefinedViaLongSyntax;
++    }
++
++    public enum Shape {
++        CYLINDER, ELLIPSOID
++    }
+ 
+     static final class Serializer implements TypeSerializer<DespawnRange> {
+ 
+@@ -48,10 +101,10 @@ public record DespawnRange(
+             }
+ 
+             if (despawnRange.wasDefinedViaLongSyntax()) {
+-                node.node(HORIZONTAL).set(despawnRange.horizontalLimit());
+-                node.node(VERTICAL).set(despawnRange.verticalLimit());
++                node.node(HORIZONTAL).set(despawnRange.horizontalLimit);
++                node.node(VERTICAL).set(despawnRange.verticalLimit);
+             } else {
+-                node.set(despawnRange.verticalLimit());
++                node.set(despawnRange.verticalLimit);
+             }
+         }
+     }
+diff --git a/src/main/java/io/papermc/paper/configuration/type/number/IntOr.java b/src/main/java/io/papermc/paper/configuration/type/number/IntOr.java
+index 09f16e5dde565801b153bd6705637c5f71427c8a..73a7b664923121daedac8f01a26253438da68119 100644
+--- a/src/main/java/io/papermc/paper/configuration/type/number/IntOr.java
++++ b/src/main/java/io/papermc/paper/configuration/type/number/IntOr.java
+@@ -19,6 +19,10 @@ public interface IntOr {
+ 
+     OptionalInt value();
+ 
++    default boolean isDefined() {
++        return this.value().isPresent();
++    }
++
+     default int intValue() {
+         return this.value().orElseThrow();
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index f36a814bfd90af6457171512c131601b19905737..bb5aaaed90ab078e0a83e2c67431fd7941f23f0f 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -882,22 +882,16 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+ 
+             if (entityhuman != null) {
+                 // Paper start - Configurable despawn distances
+-                // Read configration data and square it for later comparison
+                 final MobCategory category = this.getType().getCategory();
+                 final io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DespawnRangePair despawnRangePair = this.level().paperConfig().entities.spawning.despawnRanges.get(this.getType().getCategory());
+-                final int hardHorizontalLimitSquared = (int) Math.pow(despawnRangePair.hard().horizontalLimit().or(category.getDespawnDistance()), 2);
+-                final int softHorizontalLimitSquared = (int) Math.pow(despawnRangePair.soft().horizontalLimit().or(category.getNoDespawnDistance()), 2);
+-                final int hardVerticalLimit = despawnRangePair.hard().verticalLimit().or(category.getDespawnDistance());
+-                final int softVerticalLimit = despawnRangePair.soft().verticalLimit().or(category.getNoDespawnDistance());
+-                // Compute vertical/horizontal distances
+-                final double horizontalDistanceSquared = entityhuman.distanceToSqr(this.getX(), entityhuman.getY(), this.getZ());
+-                final double verticalDistance = Math.abs(entityhuman.getY() - this.getY());
++                final io.papermc.paper.configuration.type.DespawnRange.Shape shape = this.level().paperConfig().entities.spawning.despawnRangeShape;
++                final double distanceSquared = entityhuman.distanceToSqr(this);
+                 // Despawn if hard/soft limit is exceeded
+-                if ((horizontalDistanceSquared > hardHorizontalLimitSquared || verticalDistance > hardVerticalLimit) && this.removeWhenFarAway(horizontalDistanceSquared)) {
++                if (despawnRangePair.hard().shouldDespawn(shape, this.position(), entityhuman, distanceSquared, category.getDespawnDistance()) && this.removeWhenFarAway(distanceSquared)) {
+                     this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+                 }
+-                if (horizontalDistanceSquared > softHorizontalLimitSquared || verticalDistance > softVerticalLimit) {
+-                    if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && this.removeWhenFarAway(horizontalDistanceSquared)) {
++                if (despawnRangePair.soft().shouldDespawn(shape, this.position(), entityhuman, distanceSquared, category.getNoDespawnDistance())) {
++                    if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && this.removeWhenFarAway(distanceSquared)) {
+                         this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+                     }
+                 } else {
