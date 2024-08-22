@@ -1,0 +1,22 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Newwind <support@newwindserver.com>
+Date: Thu, 22 Aug 2024 23:45:37 +0200
+Subject: [PATCH] Fix incorrect timestamp in region file header recalculation
+
+Timestamps in a region file's header are meant to be unix seconds, stored as ints.
+In the header recalculation patch, timestamps can be accidentally set to (int)System.currentTimeMillis() without dividing by 1000 first,
+causing an invalid timestamp to be saved. This patch fixes the issue by saving the correct timestamp (unix seconds, rounded to int)
+
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
+index eb0389ad8..1e0439cf3 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
+@@ -381,7 +381,7 @@ public class RegionFile implements AutoCloseable {
+             // simply destroy the timestamp header, it's not used
+ 
+             for (int i = 0; i < 32 * 32; ++i) {
+-                this.timestamps.put(i, calculatedOffsets[i] != 0 ? (int)System.currentTimeMillis() : 0); // write a valid timestamp for valid chunks, I do not want to find out whatever dumb program actually checks this
++                this.timestamps.put(i, calculatedOffsets[i] != 0 ? RegionFile.getTimestamp() : 0); // write a valid timestamp for valid chunks, I do not want to find out whatever dumb program actually checks this
+             }
+ 
+             // write new header
