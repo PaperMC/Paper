@@ -94,6 +94,7 @@ import org.bukkit.block.data.type.SculkShrieker;
 import org.bukkit.block.data.type.SculkVein;
 import org.bukkit.block.data.type.SeaPickle;
 import org.bukkit.block.data.type.Sign;
+import org.bukkit.block.data.type.Skull;
 import org.bukkit.block.data.type.Slab;
 import org.bukkit.block.data.type.SmallDripleaf;
 import org.bukkit.block.data.type.Snow;
@@ -110,6 +111,7 @@ import org.bukkit.block.data.type.TurtleEgg;
 import org.bukkit.block.data.type.Wall;
 import org.bukkit.block.data.type.WallHangingSign;
 import org.bukkit.block.data.type.WallSign;
+import org.bukkit.block.data.type.WallSkull;
 import org.bukkit.inventory.ItemType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -1247,61 +1249,61 @@ public interface BlockType extends Keyed, Translatable {
      */
     BlockType.Typed<Switch> BAMBOO_BUTTON = getBlockType("bamboo_button");
     /**
-     * BlockData: {@link Rotatable}
+     * BlockData: {@link Skull}
      */
-    BlockType.Typed<Rotatable> SKELETON_SKULL = getBlockType("skeleton_skull");
+    BlockType.Typed<Skull> SKELETON_SKULL = getBlockType("skeleton_skull");
     /**
-     * BlockData: {@link Directional}
+     * BlockData: {@link WallSkull}
      */
-    BlockType.Typed<Directional> SKELETON_WALL_SKULL = getBlockType("skeleton_wall_skull");
+    BlockType.Typed<WallSkull> SKELETON_WALL_SKULL = getBlockType("skeleton_wall_skull");
     /**
-     * BlockData: {@link Rotatable}
+     * BlockData: {@link Skull}
      */
-    BlockType.Typed<Rotatable> WITHER_SKELETON_SKULL = getBlockType("wither_skeleton_skull");
+    BlockType.Typed<Skull> WITHER_SKELETON_SKULL = getBlockType("wither_skeleton_skull");
     /**
-     * BlockData: {@link Directional}
+     * BlockData: {@link WallSkull}
      */
-    BlockType.Typed<Directional> WITHER_SKELETON_WALL_SKULL = getBlockType("wither_skeleton_wall_skull");
+    BlockType.Typed<WallSkull> WITHER_SKELETON_WALL_SKULL = getBlockType("wither_skeleton_wall_skull");
     /**
-     * BlockData: {@link Rotatable}
+     * BlockData: {@link Skull}
      */
-    BlockType.Typed<Rotatable> ZOMBIE_HEAD = getBlockType("zombie_head");
+    BlockType.Typed<Skull> ZOMBIE_HEAD = getBlockType("zombie_head");
     /**
-     * BlockData: {@link Directional}
+     * BlockData: {@link WallSkull}
      */
-    BlockType.Typed<Directional> ZOMBIE_WALL_HEAD = getBlockType("zombie_wall_head");
+    BlockType.Typed<WallSkull> ZOMBIE_WALL_HEAD = getBlockType("zombie_wall_head");
     /**
-     * BlockData: {@link Rotatable}
+     * BlockData: {@link Skull}
      */
-    BlockType.Typed<Rotatable> PLAYER_HEAD = getBlockType("player_head");
+    BlockType.Typed<Skull> PLAYER_HEAD = getBlockType("player_head");
     /**
-     * BlockData: {@link Directional}
+     * BlockData: {@link WallSkull}
      */
-    BlockType.Typed<Directional> PLAYER_WALL_HEAD = getBlockType("player_wall_head");
+    BlockType.Typed<WallSkull> PLAYER_WALL_HEAD = getBlockType("player_wall_head");
     /**
-     * BlockData: {@link Rotatable}
+     * BlockData: {@link Skull}
      */
-    BlockType.Typed<Rotatable> CREEPER_HEAD = getBlockType("creeper_head");
+    BlockType.Typed<Skull> CREEPER_HEAD = getBlockType("creeper_head");
     /**
-     * BlockData: {@link Directional}
+     * BlockData: {@link WallSkull}
      */
-    BlockType.Typed<Directional> CREEPER_WALL_HEAD = getBlockType("creeper_wall_head");
+    BlockType.Typed<WallSkull> CREEPER_WALL_HEAD = getBlockType("creeper_wall_head");
     /**
-     * BlockData: {@link Rotatable}
+     * BlockData: {@link Skull}
      */
-    BlockType.Typed<Rotatable> DRAGON_HEAD = getBlockType("dragon_head");
+    BlockType.Typed<Skull> DRAGON_HEAD = getBlockType("dragon_head");
     /**
-     * BlockData: {@link Directional}
+     * BlockData: {@link WallSkull}
      */
-    BlockType.Typed<Directional> DRAGON_WALL_HEAD = getBlockType("dragon_wall_head");
+    BlockType.Typed<WallSkull> DRAGON_WALL_HEAD = getBlockType("dragon_wall_head");
     /**
-     * BlockData: {@link Rotatable}
+     * BlockData: {@link Skull}
      */
-    BlockType.Typed<Rotatable> PIGLIN_HEAD = getBlockType("piglin_head");
+    BlockType.Typed<Skull> PIGLIN_HEAD = getBlockType("piglin_head");
     /**
-     * BlockData: {@link Directional}
+     * BlockData: {@link WallSkull}
      */
-    BlockType.Typed<Directional> PIGLIN_WALL_HEAD = getBlockType("piglin_wall_head");
+    BlockType.Typed<WallSkull> PIGLIN_WALL_HEAD = getBlockType("piglin_wall_head");
     /**
      * BlockData: {@link Directional}
      */
