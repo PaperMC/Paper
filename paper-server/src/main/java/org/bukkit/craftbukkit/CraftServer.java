@@ -2492,7 +2492,10 @@ public final class CraftServer implements Server {
         Preconditions.checkArgument(key != null, "NamespacedKey key cannot be null");
 
         ReloadableServerRegistries.b registry = getServer().reloadableRegistries();
-        return new CraftLootTable(key, registry.getLootTable(CraftLootTable.bukkitKeyToMinecraft(key)));
+        return registry.lookup().lookup(Registries.LOOT_TABLE)
+                .flatMap((lookup) -> lookup.get(CraftLootTable.bukkitKeyToMinecraft(key)))
+                .map((holder) -> new CraftLootTable(key, holder.value()))
+                .orElse(null);
     }
 
     @Override
