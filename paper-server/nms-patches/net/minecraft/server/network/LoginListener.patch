@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/network/LoginListener.java
 +++ b/net/minecraft/server/network/LoginListener.java
-@@ -44,8 +44,33 @@
+@@ -44,8 +44,38 @@
  import org.apache.commons.lang3.Validate;
  import org.slf4j.Logger;
  
@@ -26,16 +26,21 @@
 +    public EnumProtocol getProtocol() {
 +        return EnumProtocol.LOGIN;
 +    }
- 
++
 +    @Override
 +    public void sendPacket(Packet<?> packet) {
 +        this.connection.send(packet);
++    }
+ 
++    @Override
++    public void kickPlayer(IChatBaseComponent reason) {
++        disconnect(reason);
 +    }
 +    // CraftBukkit end
      private static final AtomicInteger UNIQUE_THREAD_ID = new AtomicInteger(0);
      static final Logger LOGGER = LogUtils.getLogger();
      private static final int MAX_TICKS_BEFORE_LOGIN = 600;
-@@ -60,6 +85,7 @@
+@@ -60,6 +90,7 @@
      private GameProfile authenticatedProfile;
      private final String serverId;
      private final boolean transferred;
@@ -43,7 +48,7 @@
  
      public LoginListener(MinecraftServer minecraftserver, NetworkManager networkmanager, boolean flag) {
          this.state = LoginListener.EnumProtocolState.HELLO;
-@@ -76,6 +102,12 @@
+@@ -76,6 +107,12 @@
              this.verifyLoginAndFinishConnectionSetup((GameProfile) Objects.requireNonNull(this.authenticatedProfile));
          }
  
@@ -56,7 +61,7 @@
          if (this.state == LoginListener.EnumProtocolState.WAITING_FOR_DUPE_DISCONNECT && !this.isPlayerAlreadyInWorld((GameProfile) Objects.requireNonNull(this.authenticatedProfile))) {
              this.finishLoginAndWaitForClient(this.authenticatedProfile);
          }
-@@ -86,6 +118,13 @@
+@@ -86,6 +123,13 @@
  
      }
  
@@ -70,7 +75,7 @@
      @Override
      public boolean isAcceptingMessages() {
          return this.connection.isConnected();
-@@ -131,7 +170,27 @@
+@@ -131,7 +175,27 @@
                  this.state = LoginListener.EnumProtocolState.KEY;
                  this.connection.send(new PacketLoginOutEncryptionBegin("", this.server.getKeyPair().getPublic().getEncoded(), this.challenge, true));
              } else {
@@ -99,7 +104,7 @@
              }
  
          }
-@@ -144,10 +203,24 @@
+@@ -144,10 +208,24 @@
  
      private void verifyLoginAndFinishConnectionSetup(GameProfile gameprofile) {
          PlayerList playerlist = this.server.getPlayerList();
@@ -127,7 +132,7 @@
          } else {
              if (this.server.getCompressionThreshold() >= 0 && !this.connection.isMemoryConnection()) {
                  this.connection.send(new PacketLoginOutSetCompression(this.server.getCompressionThreshold()), PacketSendListener.thenRun(() -> {
-@@ -155,7 +228,7 @@
+@@ -155,7 +233,7 @@
                  }));
              }
  
@@ -136,7 +141,7 @@
  
              if (flag) {
                  this.state = LoginListener.EnumProtocolState.WAITING_FOR_DUPE_DISCONNECT;
-@@ -205,6 +278,12 @@
+@@ -205,6 +283,12 @@
                      if (profileresult != null) {
                          GameProfile gameprofile = profileresult.profile();
  
@@ -149,7 +154,7 @@
                          LoginListener.LOGGER.info("UUID of player {} is {}", gameprofile.getName(), gameprofile.getId());
                          LoginListener.this.startClientVerification(gameprofile);
                      } else if (LoginListener.this.server.isSingleplayer()) {
-@@ -222,6 +301,11 @@
+@@ -222,6 +306,11 @@
                          LoginListener.this.disconnect(IChatBaseComponent.translatable("multiplayer.disconnect.authservers_down"));
                          LoginListener.LOGGER.error("Couldn't verify username because servers are unavailable");
                      }
@@ -161,7 +166,7 @@
                  }
  
              }
-@@ -238,6 +322,43 @@
+@@ -238,6 +327,43 @@
          thread.start();
      }
  
@@ -205,7 +210,7 @@
      @Override
      public void handleCustomQueryPacket(ServerboundCustomQueryAnswerPacket serverboundcustomqueryanswerpacket) {
          this.disconnect(ServerCommonPacketListenerImpl.DISCONNECT_UNEXPECTED_QUERY);
-@@ -245,10 +366,11 @@
+@@ -245,10 +371,11 @@
  
      @Override
      public void handleLoginAcknowledgement(ServerboundLoginAcknowledgedPacket serverboundloginacknowledgedpacket) {
@@ -218,7 +223,7 @@
  
          this.connection.setupInboundProtocol(ConfigurationProtocols.SERVERBOUND, serverconfigurationpacketlistenerimpl);
          serverconfigurationpacketlistenerimpl.startConfiguration();
-@@ -264,12 +386,18 @@
+@@ -264,12 +391,18 @@
  
      @Override
      public void handleCookieResponse(ServerboundCookieResponsePacket serverboundcookieresponsepacket) {

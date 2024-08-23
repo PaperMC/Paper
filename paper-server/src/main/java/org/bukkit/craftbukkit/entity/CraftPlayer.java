@@ -274,6 +274,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         EnumProtocol getProtocol();
 
         void sendPacket(Packet<?> packet);
+
+        void kickPlayer(IChatBaseComponent reason);
     }
 
     public record CookieFuture(MinecraftKey key, CompletableFuture<byte[]> future) {
@@ -477,9 +479,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void kickPlayer(String message) {
-        if (getHandle().connection == null) return;
-
-        getHandle().connection.disconnect(CraftChatMessage.fromStringOrEmpty(message, true));
+        getHandle().transferCookieConnection.kickPlayer(CraftChatMessage.fromStringOrEmpty(message, true));
     }
 
     @Override
