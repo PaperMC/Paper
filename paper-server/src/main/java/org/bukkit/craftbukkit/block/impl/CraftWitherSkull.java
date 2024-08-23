@@ -3,7 +3,7 @@
  */
 package org.bukkit.craftbukkit.block.impl;
 
-public final class CraftWitherSkull extends org.bukkit.craftbukkit.block.data.CraftBlockData implements org.bukkit.block.data.Rotatable {
+public final class CraftWitherSkull extends org.bukkit.craftbukkit.block.data.CraftBlockData implements org.bukkit.block.data.type.Skull, org.bukkit.block.data.Powerable, org.bukkit.block.data.Rotatable {
 
     public CraftWitherSkull() {
         super();
@@ -11,6 +11,20 @@ public final class CraftWitherSkull extends org.bukkit.craftbukkit.block.data.Cr
 
     public CraftWitherSkull(net.minecraft.world.level.block.state.IBlockData state) {
         super(state);
+    }
+
+    // org.bukkit.craftbukkit.block.data.CraftPowerable
+
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean POWERED = getBoolean(net.minecraft.world.level.block.BlockWitherSkull.class, "powered");
+
+    @Override
+    public boolean isPowered() {
+        return get(POWERED);
+    }
+
+    @Override
+    public void setPowered(boolean powered) {
+        set(POWERED, powered);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftRotatable

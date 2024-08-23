@@ -3,7 +3,7 @@
  */
 package org.bukkit.craftbukkit.block.impl;
 
-public final class CraftSkullPlayerWall extends org.bukkit.craftbukkit.block.data.CraftBlockData implements org.bukkit.block.data.Directional {
+public final class CraftSkullPlayerWall extends org.bukkit.craftbukkit.block.data.CraftBlockData implements org.bukkit.block.data.type.WallSkull, org.bukkit.block.data.Directional, org.bukkit.block.data.Powerable {
 
     public CraftSkullPlayerWall() {
         super();
@@ -30,5 +30,19 @@ public final class CraftSkullPlayerWall extends org.bukkit.craftbukkit.block.dat
     @Override
     public java.util.Set<org.bukkit.block.BlockFace> getFaces() {
         return getValues(FACING, org.bukkit.block.BlockFace.class);
+    }
+
+    // org.bukkit.craftbukkit.block.data.CraftPowerable
+
+    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean POWERED = getBoolean(net.minecraft.world.level.block.BlockSkullPlayerWall.class, "powered");
+
+    @Override
+    public boolean isPowered() {
+        return get(POWERED);
+    }
+
+    @Override
+    public void setPowered(boolean powered) {
+        set(POWERED, powered);
     }
 }
