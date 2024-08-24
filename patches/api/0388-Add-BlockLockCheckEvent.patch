@@ -23,10 +23,10 @@ index 0000000000000000000000000000000000000000..f309961e0e96b6baacc4fe6d80dabd6c
 +}
 diff --git a/src/main/java/io/papermc/paper/event/block/BlockLockCheckEvent.java b/src/main/java/io/papermc/paper/event/block/BlockLockCheckEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4c335212f6a5ad4a304c3c0f66ffd7e0974c0572
+index 0000000000000000000000000000000000000000..5e2c8ad26dea2c8a84ae10f7da8cb836e78d7b68
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/block/BlockLockCheckEvent.java
-@@ -0,0 +1,186 @@
+@@ -0,0 +1,187 @@
 +package io.papermc.paper.event.block;
 +
 +import com.google.common.base.Preconditions;
@@ -34,6 +34,7 @@ index 0000000000000000000000000000000000000000..4c335212f6a5ad4a304c3c0f66ffd7e0
 +import net.kyori.adventure.sound.Sound;
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.block.Block;
++import org.bukkit.block.BlockState;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.block.BlockEvent;
@@ -53,7 +54,6 @@ index 0000000000000000000000000000000000000000..4c335212f6a5ad4a304c3c0f66ffd7e0
 +
 +    private static final HandlerList HANDLER_LIST = new HandlerList();
 +
-+    private final LockableTileState state;
 +    private final Player player;
 +    private Component lockedMessage;
 +    private Sound lockedSound;
@@ -61,9 +61,8 @@ index 0000000000000000000000000000000000000000..4c335212f6a5ad4a304c3c0f66ffd7e0
 +    private Result result = Result.DEFAULT;
 +
 +    @ApiStatus.Internal
-+    public BlockLockCheckEvent(final @NotNull Block block, final @NotNull LockableTileState state, final @NotNull Player player, final @NotNull Component lockedMessage, final @NotNull Sound lockedSound) {
++    public BlockLockCheckEvent(final @NotNull Block block, final @NotNull Player player, final @NotNull Component lockedMessage, final @NotNull Sound lockedSound) {
 +        super(block);
-+        this.state = state;
 +        this.player = player;
 +        this.lockedMessage = lockedMessage;
 +        this.lockedSound = lockedSound;
@@ -76,7 +75,9 @@ index 0000000000000000000000000000000000000000..4c335212f6a5ad4a304c3c0f66ffd7e0
 +     * @return the snapshot block state.
 +     */
 +    public @NotNull LockableTileState getBlockState() {
-+        return this.state;
++        final BlockState blockState = this.getBlock().getState();
++        Preconditions.checkState(blockState instanceof LockableTileState, "Block state of lock-checked block is no longer a lockable tile state!");
++        return (LockableTileState) blockState;
 +    }
 +
 +    /**

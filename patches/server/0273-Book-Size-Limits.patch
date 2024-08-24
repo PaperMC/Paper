@@ -5,49 +5,63 @@ Subject: [PATCH] Book Size Limits
 
 Puts some limits on the size of books.
 
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ServerboundEditBookPacket.java b/src/main/java/net/minecraft/network/protocol/game/ServerboundEditBookPacket.java
+index ed61767a64cdce37dc7c226ebd0d693a60de24a9..f634a830a2b58a419e84f969bd53eeae4f4513bb 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ServerboundEditBookPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ServerboundEditBookPacket.java
+@@ -16,9 +16,9 @@ public record ServerboundEditBookPacket(int slot, List<String> pages, Optional<S
+     public static final StreamCodec<FriendlyByteBuf, ServerboundEditBookPacket> STREAM_CODEC = StreamCodec.composite(
+         ByteBufCodecs.VAR_INT,
+         ServerboundEditBookPacket::slot,
+-        ByteBufCodecs.stringUtf8(8192).apply(ByteBufCodecs.list(200)),
++        ByteBufCodecs.stringUtf8(net.minecraft.world.item.component.WritableBookContent.PAGE_EDIT_LENGTH).apply(ByteBufCodecs.list(net.minecraft.world.item.component.WritableBookContent.MAX_PAGES)), // Paper - limit books
+         ServerboundEditBookPacket::pages,
+-        ByteBufCodecs.stringUtf8(128).apply(ByteBufCodecs::optional),
++        ByteBufCodecs.stringUtf8(net.minecraft.world.item.component.WrittenBookContent.TITLE_MAX_LENGTH).apply(ByteBufCodecs::optional), // Paper - limit books
+         ServerboundEditBookPacket::title,
+         ServerboundEditBookPacket::new
+     );
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index e880b41e1824f986d04a0a32cc735d77f25cf987..3b3384fcbcb66a87dd50dece6bdac558491f66f0 100644
+index e880b41e1824f986d04a0a32cc735d77f25cf987..987bb9caa952a09615b0a819fc682b354be2b07c 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1040,6 +1040,45 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1040,6 +1040,43 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
      @Override
      public void handleEditBook(ServerboundEditBookPacket packet) {
 +        // Paper start - Book size limits
 +        if (!this.cserver.isPrimaryThread()) {
-+            List<String> pageList = packet.pages();
++            final List<String> pageList = packet.pages();
 +            long byteTotal = 0;
-+            int maxBookPageSize = io.papermc.paper.configuration.GlobalConfiguration.get().itemValidation.bookSize.pageMax;
-+            double multiplier = Math.max(0.3D, Math.min(1D, io.papermc.paper.configuration.GlobalConfiguration.get().itemValidation.bookSize.totalMultiplier));
++            final int maxBookPageSize = io.papermc.paper.configuration.GlobalConfiguration.get().itemValidation.bookSize.pageMax;
++            final double multiplier = Math.clamp(io.papermc.paper.configuration.GlobalConfiguration.get().itemValidation.bookSize.totalMultiplier, 0.3D, 1D);
 +            long byteAllowed = maxBookPageSize;
-+            for (String testString : pageList) {
-+                int byteLength = testString.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
-+                if (byteLength > 256 * 4) {
-+                    ServerGamePacketListenerImpl.LOGGER.warn(this.player.getScoreboardName() + " tried to send a book with with a page too large!");
-+                    server.scheduleOnMain(() -> this.disconnect("Book too large!"));
-+                    return;
-+                }
++            for (final String page : pageList) {
++                final int byteLength = page.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
 +                byteTotal += byteLength;
-+                int length = testString.length();
-+                int multibytes = 0;
++                final int length = page.length();
++                int multiByteCharacters = 0;
 +                if (byteLength != length) {
-+                    for (char c : testString.toCharArray()) {
++                    // Count the number of multi byte characters
++                    for (final char c : page.toCharArray()) {
 +                        if (c > 127) {
-+                            multibytes++;
++                            multiByteCharacters++;
 +                        }
 +                    }
 +                }
-+                byteAllowed += (maxBookPageSize * Math.min(1, Math.max(0.1D, (double) length / 255D))) * multiplier;
 +
-+                if (multibytes > 1) {
-+                    // penalize MB
-+                    byteAllowed -= multibytes;
++                // Allow pages with fewer characters to consume less of the allowed byte quota
++                byteAllowed += maxBookPageSize * Math.clamp((double) length / 255D, 0.1D, 1) * multiplier;
++
++                if (multiByteCharacters > 1) {
++                    // Penalize multibyte characters
++                    byteAllowed -= multiByteCharacters;
 +                }
 +            }
 +
 +            if (byteTotal > byteAllowed) {
-+                ServerGamePacketListenerImpl.LOGGER.warn(this.player.getScoreboardName() + " tried to send too large of a book. Book Size: " + byteTotal + " - Allowed:  "+ byteAllowed + " - Pages: " + pageList.size());
-+                server.scheduleOnMain(() -> this.disconnect("Book too large!"));
++                ServerGamePacketListenerImpl.LOGGER.warn("{} tried to send a book too large. Book size: {} - Allowed: {} - Pages: {}", this.player.getScoreboardName(), byteTotal, byteAllowed, pageList.size());
++                this.disconnect(Component.literal("Book too large!"));
 +                return;
 +            }
 +        }
