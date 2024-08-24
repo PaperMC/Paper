@@ -13,6 +13,9 @@ recipes and ingredient slots.
 Also fixes some issues regarding mutability of both ItemStack
 and implementations of RecipeChoice.
 
+Also adds some validation regarding Materials passed to RecipeChoice
+being items.
+
 diff --git a/src/main/java/org/bukkit/inventory/CookingRecipe.java b/src/main/java/org/bukkit/inventory/CookingRecipe.java
 index f7fa79393aef40027446b78bac8e9490cfafd8bc..07906ca1a9b39fcc6774870daa498402f7f37917 100644
 --- a/src/main/java/org/bukkit/inventory/CookingRecipe.java
@@ -126,7 +129,7 @@ index 39f9766a03d420340d79841197f75c8b1dd49f4a..4e59f5176fd6cf92457ad750081c253a
          }
      }
 diff --git a/src/main/java/org/bukkit/inventory/RecipeChoice.java b/src/main/java/org/bukkit/inventory/RecipeChoice.java
-index 91bfeffcdbe47208c7d0ddbe013cd0f11fddfa32..e7796054f3f65f5bea7f93c75320195f6c2f0561 100644
+index 91bfeffcdbe47208c7d0ddbe013cd0f11fddfa32..bf951cf213feb113179d570ce2dd0c2b354baa5f 100644
 --- a/src/main/java/org/bukkit/inventory/RecipeChoice.java
 +++ b/src/main/java/org/bukkit/inventory/RecipeChoice.java
 @@ -22,6 +22,19 @@ import org.jetbrains.annotations.NotNull;
@@ -163,7 +166,26 @@ index 91bfeffcdbe47208c7d0ddbe013cd0f11fddfa32..e7796054f3f65f5bea7f93c75320195f
      /**
       * Represents a choice of multiple matching Materials.
       */
-@@ -152,6 +172,16 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
+@@ -62,6 +82,10 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
+         public MaterialChoice(@NotNull Tag<Material> choices) {
+             Preconditions.checkArgument(choices != null, "choices");
+             this.choices = new ArrayList<>(choices.getValues());
++
++            for (Material choice : this.choices) {
++                Preconditions.checkArgument(choice.isItem(), "Cannot have non-item choice %s", choice);
++            }
+         }
+ 
+         public MaterialChoice(@NotNull List<Material> choices) {
+@@ -78,6 +102,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
+                 }
+ 
+                 Preconditions.checkArgument(!choice.isAir(), "Cannot have empty/air choice");
++                Preconditions.checkArgument(choice.isItem(), "Cannot have non-item choice %s", choice);
+                 this.choices.add(choice);
+             }
+         }
+@@ -152,6 +177,16 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
          public String toString() {
              return "MaterialChoice{" + "choices=" + choices + '}';
          }
@@ -180,7 +202,7 @@ index 91bfeffcdbe47208c7d0ddbe013cd0f11fddfa32..e7796054f3f65f5bea7f93c75320195f
      }
  
      /**
-@@ -197,7 +227,12 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
+@@ -197,7 +232,12 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
          public ExactChoice clone() {
              try {
                  ExactChoice clone = (ExactChoice) super.clone();
@@ -194,7 +216,7 @@ index 91bfeffcdbe47208c7d0ddbe013cd0f11fddfa32..e7796054f3f65f5bea7f93c75320195f
                  return clone;
              } catch (CloneNotSupportedException ex) {
                  throw new AssertionError(ex);
-@@ -244,5 +279,15 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
+@@ -244,5 +284,15 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
          public String toString() {
              return "ExactChoice{" + "choices=" + choices + '}';
          }
