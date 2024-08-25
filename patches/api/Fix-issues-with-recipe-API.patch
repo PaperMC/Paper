@@ -13,6 +13,9 @@ recipes and ingredient slots.
 Also fixes some issues regarding mutability of both ItemStack
 and implementations of RecipeChoice.
 
+Also adds some validation regarding Materials passed to RecipeChoice
+being items.
+
 diff --git a/src/main/java/org/bukkit/inventory/CookingRecipe.java b/src/main/java/org/bukkit/inventory/CookingRecipe.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/inventory/CookingRecipe.java
@@ -163,6 +166,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      /**
       * Represents a choice of multiple matching Materials.
       */
+@@ -0,0 +0,0 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
+          * @param choices the tag
+          */
+         public MaterialChoice(@NotNull Tag<Material> choices) {
+-            Preconditions.checkArgument(choices != null, "choices");
+-            this.choices = new ArrayList<>(choices.getValues());
++            this(new ArrayList<>(java.util.Objects.requireNonNull(choices, "Cannot create a material choice with null tag").getValues())); // Paper - delegate to list ctor to make sure all checks are called
+         }
+ 
+         public MaterialChoice(@NotNull List<Material> choices) {
+@@ -0,0 +0,0 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
+                 }
+ 
+                 Preconditions.checkArgument(!choice.isAir(), "Cannot have empty/air choice");
++                Preconditions.checkArgument(choice.isItem(), "Cannot have non-item choice %s", choice); // Paper - validate material choice input to items
+                 this.choices.add(choice);
+             }
+         }
 @@ -0,0 +0,0 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
          public String toString() {
              return "MaterialChoice{" + "choices=" + choices + '}';
