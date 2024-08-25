@@ -5,7 +5,7 @@ Subject: [PATCH] Expand EntityUnleashEvent
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 44efb857aa839bbc0eca608661f22750bb059f4f..1ca18b0c4af08c998636bb3938a3dfdfb1d80cf0 100644
+index 7d131f3b3f5739468aa3115e97ed28b6bfeca33d..da184893d617311a43f9ce176a965f8417a2876d 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -2574,12 +2574,15 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
@@ -26,12 +26,14 @@ index 44efb857aa839bbc0eca608661f22750bb059f4f..1ca18b0c4af08c998636bb3938a3dfdf
                      this.gameEvent(GameEvent.ENTITY_INTERACT, player);
                  }
  
-@@ -3450,8 +3453,11 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -3449,9 +3452,12 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+ 
      protected void removeAfterChangingDimensions() {
          this.setRemoved(Entity.RemovalReason.CHANGED_DIMENSION, null); // CraftBukkit - add Bukkit remove cause
-         if (this instanceof Leashable leashable) {
+-        if (this instanceof Leashable leashable) {
 -            this.level().getCraftServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.UNKNOWN)); // CraftBukkit
 -            leashable.dropLeash(true, false);
++        if (this instanceof Leashable leashable && leashable.isLeashed()) { // Paper - only call if it is leashed
 +            // Paper start - Expand EntityUnleashEvent
 +            final EntityUnleashEvent event = new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.UNKNOWN, false); // CraftBukkit
 +            event.callEvent();
@@ -41,7 +43,7 @@ index 44efb857aa839bbc0eca608661f22750bb059f4f..1ca18b0c4af08c998636bb3938a3dfdf
  
      }
 diff --git a/src/main/java/net/minecraft/world/entity/Leashable.java b/src/main/java/net/minecraft/world/entity/Leashable.java
-index 30d7dd9646ba9d6a9396dc140a61eb2cac07dfc6..bc03f1fe2a311bf61449879751360c6775dde6ac 100644
+index 5c51dd5229689cba459655d488aee59bd159a414..e7535f15be3cc1537aafee53779ccfb4f21d1f38 100644
 --- a/src/main/java/net/minecraft/world/entity/Leashable.java
 +++ b/src/main/java/net/minecraft/world/entity/Leashable.java
 @@ -166,8 +166,11 @@ public interface Leashable {
@@ -95,6 +97,23 @@ index b46572f6e3b52f498b395d3b8c5def2aa799ff03..e87360e21e6eb7b0161c34a3ac6cb83d
          }
  
          return flag1;
+diff --git a/src/main/java/net/minecraft/world/entity/TamableAnimal.java b/src/main/java/net/minecraft/world/entity/TamableAnimal.java
+index bf2c9134c7d9d5926add36b55e3cfea79e8c8243..7b7bc1a205dfacbe5709011b6b6799e75af9e4cc 100644
+--- a/src/main/java/net/minecraft/world/entity/TamableAnimal.java
++++ b/src/main/java/net/minecraft/world/entity/TamableAnimal.java
+@@ -98,7 +98,11 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
+     public boolean handleLeashAtDistance(Entity leashHolder, float distance) {
+         if (this.isInSittingPose()) {
+             if (distance > (float) this.level().paperConfig().misc.maxLeashDistance.or(Leashable.LEASH_TOO_FAR_DIST)) { // Paper - Configurable max leash distance
+-                this.dropLeash(true, true);
++                // Paper start - Expand EntityUnleashEvent
++                org.bukkit.event.entity.EntityUnleashEvent event = new org.bukkit.event.entity.EntityUnleashEvent(this.getBukkitEntity(), org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.DISTANCE, true);
++                if (!event.callEvent()) return false;
++                this.dropLeash(true, event.isDropLeash());
++                // Paper end - Expand EntityUnleashEvent
+             }
+ 
+             return false;
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java b/src/main/java/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java
 index 3c0af74ed65610b1d5e3b72fdcf28c5a3423f0da..01173fc7177d78588978e087e63efda0b0527c2f 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java
