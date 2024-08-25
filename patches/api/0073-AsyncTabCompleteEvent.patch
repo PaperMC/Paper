@@ -11,6 +11,8 @@ and avoid going to main for tab completions.
 Especially useful if you need to query a database in order to obtain the results for tab
 completion, such as offline players.
 
+Also Enforces mutability of the existing TabCompleteEvent.
+
 Co-authored-by: Aikar <aikar@aikar.co>
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java b/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java
@@ -534,10 +536,10 @@ index 0000000000000000000000000000000000000000..6f560a51277ccbd46a9142cfa057d276
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/event/server/TabCompleteEvent.java b/src/main/java/org/bukkit/event/server/TabCompleteEvent.java
-index 270e6d8ad4358baa256cee5f16cff281f063ce3b..b43c3cb5c88eada186d6f81712c244aaa18fb53e 100644
+index 270e6d8ad4358baa256cee5f16cff281f063ce3b..6465e290c090d82986352d5ab7ba5dc65bd3dc17 100644
 --- a/src/main/java/org/bukkit/event/server/TabCompleteEvent.java
 +++ b/src/main/java/org/bukkit/event/server/TabCompleteEvent.java
-@@ -29,6 +29,13 @@ public class TabCompleteEvent extends Event implements Cancellable {
+@@ -29,13 +29,20 @@ public class TabCompleteEvent extends Event implements Cancellable {
      private boolean cancelled;
  
      public TabCompleteEvent(@NotNull CommandSender sender, @NotNull String buffer, @NotNull List<String> completions) {
@@ -551,6 +553,14 @@ index 270e6d8ad4358baa256cee5f16cff281f063ce3b..b43c3cb5c88eada186d6f81712c244aa
          Preconditions.checkArgument(sender != null, "sender");
          Preconditions.checkArgument(buffer != null, "buffer");
          Preconditions.checkArgument(completions != null, "completions");
+ 
+         this.sender = sender;
+         this.buffer = buffer;
+-        this.completions = completions;
++        this.completions = new java.util.ArrayList<>(completions); // Paper - Completions must be mutable
+     }
+ 
+     /**
 @@ -69,14 +76,35 @@ public class TabCompleteEvent extends Event implements Cancellable {
          return completions;
      }
@@ -584,7 +594,7 @@ index 270e6d8ad4358baa256cee5f16cff281f063ce3b..b43c3cb5c88eada186d6f81712c244aa
      public void setCompletions(@NotNull List<String> completions) {
          Preconditions.checkArgument(completions != null);
 -        this.completions = completions;
-+        this.completions = new java.util.ArrayList<>(completions); // Paper
++        this.completions = new java.util.ArrayList<>(completions); // Paper - completions must be mutable
      }
  
      @Override
