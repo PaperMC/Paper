@@ -3,11 +3,9 @@ From: DerEchtePilz <81232921+DerEchtePilz@users.noreply.github.com>
 Date: Tue, 20 Aug 2024 12:38:55 +0200
 Subject: [PATCH] Fix issues with CompassMeta
 
-adds a clearLodestone method to reset the compass
-to a normal compass.
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCompass.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCompass.java
-index 6362df65424e53098701b8d54c74b5905648b78a..7e6df5a97dafa895db4a9c300268f80467c210ee 100644
+index 6362df65424e53098701b8d54c74b5905648b78a..c6d618b42197487ab9b590579b27de67ceb0eab2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCompass.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCompass.java
 @@ -31,11 +31,7 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
@@ -108,12 +106,12 @@ index 6362df65424e53098701b8d54c74b5905648b78a..7e6df5a97dafa895db4a9c300268f804
      }
  
      @Override
-@@ -113,58 +102,62 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
+@@ -113,58 +102,67 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
  
      @Override
      public boolean hasLodestone() {
 -        return this.lodestoneWorld != null;
-+        return this.tracker != null;
++        return this.tracker != null && this.tracker.target().isPresent();
      }
  
      @Override
@@ -168,20 +166,25 @@ index 6362df65424e53098701b8d54c74b5905648b78a..7e6df5a97dafa895db4a9c300268f804
 -        this.tracked = tracked;
 +        final Optional<GlobalPos> trackedPos = this.tracker != null ? this.tracker.target() : Optional.empty(); // Paper - use LodestoneTracker type
 +        this.tracker = new LodestoneTracker(trackedPos, tracked); // Paper - use LodestoneTracker type
-     }
- 
-+    // Paper start - Add a method to reset Lodestone compasses back to normal ones
++    }
++
++    // Paper start - Add more lodestone compass methods
++    @Override
++    public boolean isLodestoneCompass() {
++        return this.tracker != null;
++    }
++
 +    @Override
 +    public void clearLodestone() {
 +        this.tracker = null;
-+    }
-+    // Paper end - Add a method to reset Lodestone compasses back to normal ones
-+
+     }
++    // Paper end - Add more lodestone compass methods
+ 
      @Override
      int applyHash() {
          final int original;
          int hash = original = super.applyHash();
-         if (this.hasLodestone()) {
+-        if (this.hasLodestone()) {
 -            hash = 73 * hash + this.lodestoneWorld.hashCode();
 -            hash = 73 * hash + this.lodestoneX;
 -            hash = 73 * hash + this.lodestoneY;
@@ -189,11 +192,12 @@ index 6362df65424e53098701b8d54c74b5905648b78a..7e6df5a97dafa895db4a9c300268f804
 -        }
 -        if (this.hasLodestoneTracked()) {
 -            hash = 73 * hash + (this.isLodestoneTracked() ? 1231 : 1237);
++        if (this.isLodestoneCompass()) {
 +            hash = 73 * hash + this.tracker.hashCode(); // Paper - use LodestoneTracker type
          }
  
          return original != hash ? CraftMetaCompass.class.hashCode() ^ hash : hash;
-@@ -178,10 +171,7 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
+@@ -178,10 +176,7 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
          if (meta instanceof CraftMetaCompass) {
              CraftMetaCompass that = (CraftMetaCompass) meta;
  
@@ -205,10 +209,11 @@ index 6362df65424e53098701b8d54c74b5905648b78a..7e6df5a97dafa895db4a9c300268f804
          }
          return true;
      }
-@@ -196,13 +186,15 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
+@@ -195,14 +190,16 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
+     Builder<String, Object> serialize(Builder<String, Object> builder) {
          super.serialize(builder);
  
-         if (this.hasLodestone()) {
+-        if (this.hasLodestone()) {
 -            builder.put(CraftMetaCompass.LODESTONE_POS_WORLD.BUKKIT, this.lodestoneWorld.location().toString());
 -            builder.put(CraftMetaCompass.LODESTONE_POS_X.BUKKIT, this.lodestoneX);
 -            builder.put(CraftMetaCompass.LODESTONE_POS_Y.BUKKIT, this.lodestoneY);
@@ -216,6 +221,7 @@ index 6362df65424e53098701b8d54c74b5905648b78a..7e6df5a97dafa895db4a9c300268f804
 -        }
 -        if (this.hasLodestoneTracked()) {
 -            builder.put(CraftMetaCompass.LODESTONE_TRACKED.BUKKIT, this.tracked);
++        if (this.isLodestoneCompass()) {
 +            // Paper start - use LodestoneTracker type
 +            if (this.tracker.target().isPresent()) {
 +                builder.put(CraftMetaCompass.LODESTONE_POS_WORLD.BUKKIT, this.tracker.target().get().dimension().location().toString());
