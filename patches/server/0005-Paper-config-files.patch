@@ -1418,10 +1418,10 @@ index 0000000000000000000000000000000000000000..990d1bb46e0f9719f4e9af928d80ac6f
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..95e96fe8aa93efbbb2e0a7dd98377fdc4fe0e6dd
+index 0000000000000000000000000000000000000000..2f2850d1bc1e27dea3c38ac26908cf130da2e051
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
-@@ -0,0 +1,561 @@
+@@ -0,0 +1,573 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.collect.HashBasedTable;
@@ -1483,6 +1483,7 @@ index 0000000000000000000000000000000000000000..95e96fe8aa93efbbb2e0a7dd98377fdc
 +import org.spongepowered.configurate.objectmapping.meta.PostProcess;
 +import org.spongepowered.configurate.objectmapping.meta.Required;
 +import org.spongepowered.configurate.objectmapping.meta.Setting;
++import org.spongepowered.configurate.serialize.SerializationException;
 +
 +@SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
 +public class WorldConfiguration extends ConfigurationPart {
@@ -1609,6 +1610,7 @@ index 0000000000000000000000000000000000000000..95e96fe8aa93efbbb2e0a7dd98377fdc
 +            public Reference2IntMap<MobCategory> spawnLimits = Util.make(new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length), map -> Arrays.stream(NaturalSpawner.SPAWNING_CATEGORIES).forEach(mobCategory -> map.put(mobCategory, -1)));
 +            @MergeMap
 +            public Map<MobCategory, DespawnRangePair> despawnRanges = Arrays.stream(MobCategory.values()).collect(Collectors.toMap(Function.identity(), category -> DespawnRangePair.createDefault()));
++            public DespawnRange.Shape despawnRangeShape = DespawnRange.Shape.ELLIPSOID;
 +            @MergeMap
 +            public Reference2IntMap<MobCategory> ticksPerSpawn = Util.make(new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length), map -> Arrays.stream(NaturalSpawner.SPAWNING_CATEGORIES).forEach(mobCategory -> map.put(mobCategory, -1)));
 +
@@ -1619,6 +1621,16 @@ index 0000000000000000000000000000000000000000..95e96fe8aa93efbbb2e0a7dd98377fdc
 +                        new DespawnRange(IntOr.Default.USE_DEFAULT),
 +                        new DespawnRange(IntOr.Default.USE_DEFAULT)
 +                    );
++                }
++            }
++
++            @PostProcess
++            public void precomputeDespawnDistances() throws SerializationException {
++                for (Map.Entry<MobCategory, DespawnRangePair> entry : this.despawnRanges.entrySet()) {
++                    final MobCategory category = entry.getKey();
++                    final DespawnRangePair range = entry.getValue();
++                    range.hard().preComputed(category.getDespawnDistance(), category.getSerializedName());
++                    range.soft().preComputed(category.getNoDespawnDistance(), category.getSerializedName());
 +                }
 +            }
 +
@@ -4203,31 +4215,82 @@ index 0000000000000000000000000000000000000000..a3eaa47cfcfc4fd2a607f9b375230fad
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/type/DespawnRange.java b/src/main/java/io/papermc/paper/configuration/type/DespawnRange.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8f55258ecc8bfd2ab4e08f31562f7b3bde5c766b
+index 0000000000000000000000000000000000000000..8a792a000e924b3ddc572edc788598811e9ef71c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/type/DespawnRange.java
-@@ -0,0 +1,58 @@
+@@ -0,0 +1,109 @@
 +package io.papermc.paper.configuration.type;
 +
 +import io.papermc.paper.configuration.type.number.IntOr;
 +import java.lang.reflect.Type;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.spongepowered.configurate.ConfigurationNode;
-+import org.spongepowered.configurate.objectmapping.meta.Required;
 +import org.spongepowered.configurate.serialize.SerializationException;
 +import org.spongepowered.configurate.serialize.TypeSerializer;
 +
-+public record DespawnRange(
-+    @Required IntOr.Default horizontalLimit,
-+    @Required IntOr.Default verticalLimit,
-+    @Required boolean wasDefinedViaLongSyntax
-+) {
++/*
++(x/a)^2 + (y/b)^2 + (z/c)^2 < 1
++a == c
++ac = horizontal limit
++b = vertical limit
++x^2/ac^2 + y^2/b^2 + z^2/ac^2 < 1
++(x^2 + z^2)/ac^2 + y^2/b^2 < 1
++x^2 + z^2 + (y^2 * (ac^2/b^2)) < ac^2
++ */
++public final class DespawnRange {
++
++    public static final TypeSerializer<DespawnRange> SERIALIZER = new Serializer();
++
++    private final IntOr.Default horizontalLimit;
++    private final IntOr.Default verticalLimit;
++    private final boolean wasDefinedViaLongSyntax;
++
++    // cached values
++    private double preComputedHorizontalLimitSquared; // ac^2
++    private double preComputedHorizontalLimitSquaredOverVerticalLimitSquared; // ac^2/b^2
++    private int preComputedVanillaDefaultLimit;
 +
 +    public DespawnRange(final IntOr.Default generalLimit) {
 +        this(generalLimit, generalLimit, false);
 +    }
 +
-+    public static final TypeSerializer<DespawnRange> SERIALIZER = new Serializer();
++    public DespawnRange(final IntOr.Default horizontalLimit, final IntOr.Default verticalLimit, final boolean wasDefinedViaLongSyntax) {
++        this.horizontalLimit = horizontalLimit;
++        this.verticalLimit = verticalLimit;
++        this.wasDefinedViaLongSyntax = wasDefinedViaLongSyntax;
++    }
++
++    public void preComputed(int defaultDistanceLimit, String identifier) throws SerializationException {
++        if (this.verticalLimit.or(defaultDistanceLimit) <= 0) {
++            throw new SerializationException("Vertical limit must be greater than 0 for " + identifier);
++        }
++        if (this.horizontalLimit.or(defaultDistanceLimit) <= 0) {
++            throw new SerializationException("Horizontal limit must be greater than 0 for " + identifier);
++        }
++        this.preComputedVanillaDefaultLimit = defaultDistanceLimit;
++        this.preComputedHorizontalLimitSquared = Math.pow(this.horizontalLimit.or(defaultDistanceLimit), 2);
++        if (!this.horizontalLimit.isDefined() && !this.verticalLimit.isDefined()) {
++            this.preComputedHorizontalLimitSquaredOverVerticalLimitSquared = 1.0;
++        } else {
++            this.preComputedHorizontalLimitSquaredOverVerticalLimitSquared = this.preComputedHorizontalLimitSquared / Math.pow(this.verticalLimit.or(defaultDistanceLimit), 2);
++        }
++    }
++
++    public boolean shouldDespawn(final Shape shape, final double dxSqr, final double dySqr, final double dzSqr, final double dy) {
++        if (shape == Shape.ELLIPSOID) {
++            return dxSqr + dzSqr + (dySqr * this.preComputedHorizontalLimitSquaredOverVerticalLimitSquared) > this.preComputedHorizontalLimitSquared;
++        } else {
++            return dxSqr + dzSqr > this.preComputedHorizontalLimitSquared || dy > this.verticalLimit.or(this.preComputedVanillaDefaultLimit);
++        }
++    }
++
++    public boolean wasDefinedViaLongSyntax() {
++        return this.wasDefinedViaLongSyntax;
++    }
++
++    public enum Shape {
++        CYLINDER, ELLIPSOID
++    }
 +
 +    static final class Serializer implements TypeSerializer<DespawnRange> {
 +
@@ -4257,10 +4320,10 @@ index 0000000000000000000000000000000000000000..8f55258ecc8bfd2ab4e08f31562f7b3b
 +            }
 +
 +            if (despawnRange.wasDefinedViaLongSyntax()) {
-+                node.node(HORIZONTAL).set(despawnRange.horizontalLimit());
-+                node.node(VERTICAL).set(despawnRange.verticalLimit());
++                node.node(HORIZONTAL).set(despawnRange.horizontalLimit);
++                node.node(VERTICAL).set(despawnRange.verticalLimit);
 +            } else {
-+                node.set(despawnRange.verticalLimit());
++                node.set(despawnRange.verticalLimit);
 +            }
 +        }
 +    }
@@ -4829,10 +4892,10 @@ index 0000000000000000000000000000000000000000..5833c06b0707906ab7d10786ecd115f2
 +
 diff --git a/src/main/java/io/papermc/paper/configuration/type/number/IntOr.java b/src/main/java/io/papermc/paper/configuration/type/number/IntOr.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..09f16e5dde565801b153bd6705637c5f71427c8a
+index 0000000000000000000000000000000000000000..73a7b664923121daedac8f01a26253438da68119
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/type/number/IntOr.java
-@@ -0,0 +1,81 @@
+@@ -0,0 +1,85 @@
 +package io.papermc.paper.configuration.type.number;
 +
 +import com.google.common.base.Preconditions;
@@ -4853,6 +4916,10 @@ index 0000000000000000000000000000000000000000..09f16e5dde565801b153bd6705637c5f
 +    }
 +
 +    OptionalInt value();
++
++    default boolean isDefined() {
++        return this.value().isPresent();
++    }
 +
 +    default int intValue() {
 +        return this.value().orElseThrow();

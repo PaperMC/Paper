@@ -5,10 +5,10 @@ Subject: [PATCH] Add configurable entity despawn distances
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 0593d828c911c94c9833bf12b9c294e5dac1f4e8..e672b04e9e123caecec30645df8858d6eda4c931 100644
+index 0593d828c911c94c9833bf12b9c294e5dac1f4e8..02c8c52930640114592148fd5509ad8fffee5435 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -863,20 +863,27 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+@@ -863,20 +863,24 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
              Player entityhuman = this.level().getNearestPlayer(this, -1.0D);
  
              if (entityhuman != null) {
@@ -18,18 +18,15 @@ index 0593d828c911c94c9833bf12b9c294e5dac1f4e8..e672b04e9e123caecec30645df8858d6
 -
 -                if (d0 > (double) j && this.removeWhenFarAway(d0)) {
 +                // Paper start - Configurable despawn distances
-+                // Read configration data and square it for later comparison
-+                final MobCategory category = this.getType().getCategory();
 +                final io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DespawnRangePair despawnRangePair = this.level().paperConfig().entities.spawning.despawnRanges.get(this.getType().getCategory());
-+                final int hardHorizontalLimitSquared = (int) Math.pow(despawnRangePair.hard().horizontalLimit().or(category.getDespawnDistance()), 2);
-+                final int softHorizontalLimitSquared = (int) Math.pow(despawnRangePair.soft().horizontalLimit().or(category.getNoDespawnDistance()), 2);
-+                final int hardVerticalLimit = despawnRangePair.hard().verticalLimit().or(category.getDespawnDistance());
-+                final int softVerticalLimit = despawnRangePair.soft().verticalLimit().or(category.getNoDespawnDistance());
-+                // Compute vertical/horizontal distances
-+                final double horizontalDistanceSquared = entityhuman.distanceToSqr(this.getX(), entityhuman.getY(), this.getZ());
-+                final double verticalDistance = Math.abs(entityhuman.getY() - this.getY());
++                final io.papermc.paper.configuration.type.DespawnRange.Shape shape = this.level().paperConfig().entities.spawning.despawnRangeShape;
++                final double dy = Math.abs(entityhuman.getY() - this.getY());
++                final double dySqr = Math.pow(dy, 2);
++                final double dxSqr = Math.pow(entityhuman.getX() - this.getX(), 2);
++                final double dzSqr = Math.pow(entityhuman.getZ() - this.getZ(), 2);
++                final double distanceSquared = dxSqr + dzSqr + dySqr;
 +                // Despawn if hard/soft limit is exceeded
-+                if ((horizontalDistanceSquared > hardHorizontalLimitSquared || verticalDistance > hardVerticalLimit) && this.removeWhenFarAway(horizontalDistanceSquared)) {
++                if (despawnRangePair.hard().shouldDespawn(shape, dxSqr, dySqr, dzSqr, dy) && this.removeWhenFarAway(distanceSquared)) {
                      this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
                  }
 -
@@ -39,8 +36,8 @@ index 0593d828c911c94c9833bf12b9c294e5dac1f4e8..e672b04e9e123caecec30645df8858d6
 -                if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && d0 > (double) l && this.removeWhenFarAway(d0)) {
 -                    this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
 -                } else if (d0 < (double) l) {
-+                if (horizontalDistanceSquared > softHorizontalLimitSquared || verticalDistance > softVerticalLimit) {
-+                    if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && this.removeWhenFarAway(horizontalDistanceSquared)) {
++                if (despawnRangePair.soft().shouldDespawn(shape, dxSqr, dySqr, dzSqr, dy)) {
++                    if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && this.removeWhenFarAway(distanceSquared)) {
 +                        this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
 +                    }
 +                } else {
