@@ -596,7 +596,7 @@ index 6517ec4933b0eae761fceb117ea1db175755d0b1..299f2f4f143f753f3cd8a020c8e6ae46
          return true;
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCompass.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCompass.java
-index 69a112b3a9726966aecbe687d905fd1a11cfa1e3..c6d618b42197487ab9b590579b27de67ceb0eab2 100644
+index 69a112b3a9726966aecbe687d905fd1a11cfa1e3..ab424926c282fb03eabd1eebd2b7980899ef28e3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCompass.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaCompass.java
 @@ -31,11 +31,7 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
@@ -697,12 +697,12 @@ index 69a112b3a9726966aecbe687d905fd1a11cfa1e3..c6d618b42197487ab9b590579b27de67
      }
  
      @Override
-@@ -113,58 +102,67 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
+@@ -113,58 +102,69 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
  
      @Override
      public boolean hasLodestone() {
 -        return this.lodestoneWorld != null;
-+        return this.tracker != null && this.tracker.target().isPresent();
++        return this.tracker != null && this.tracker.target().isPresent(); // Paper - use LodestoneTracker type
      }
  
      @Override
@@ -733,12 +733,14 @@ index 69a112b3a9726966aecbe687d905fd1a11cfa1e3..c6d618b42197487ab9b590579b27de67
 -            this.lodestoneX = lodestone.getBlockX();
 -            this.lodestoneY = lodestone.getBlockY();
 -            this.lodestoneZ = lodestone.getBlockZ();
++            // Paper start - use LodestoneTracker type
 +            GlobalPos pos = GlobalPos.of(
 +                ((CraftWorld) lodestone.getWorld()).getHandle().dimension(),
 +                io.papermc.paper.util.MCUtil.toBlockPosition(lodestone)
 +            );
-+            boolean tracked = this.tracker == null || this.tracker.tracked(); // Paper - use LodestoneTracker type
-+            this.tracker = new LodestoneTracker(Optional.of(pos), tracked); // Paper - use LodestoneTracker type
++            boolean tracked = this.tracker == null || this.tracker.tracked();
++            this.tracker = new LodestoneTracker(Optional.of(pos), tracked);
++            // Paper end - use LodestoneTracker type
          }
      }
  
@@ -788,7 +790,7 @@ index 69a112b3a9726966aecbe687d905fd1a11cfa1e3..c6d618b42197487ab9b590579b27de67
          }
  
          return original != hash ? CraftMetaCompass.class.hashCode() ^ hash : hash;
-@@ -178,10 +176,7 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
+@@ -178,10 +178,7 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
          if (meta instanceof CraftMetaCompass) {
              CraftMetaCompass that = (CraftMetaCompass) meta;
  
@@ -800,7 +802,7 @@ index 69a112b3a9726966aecbe687d905fd1a11cfa1e3..c6d618b42197487ab9b590579b27de67
          }
          return true;
      }
-@@ -195,14 +190,16 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
+@@ -195,14 +192,16 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
      Builder<String, Object> serialize(Builder<String, Object> builder) {
          super.serialize(builder);
  
@@ -812,7 +814,7 @@ index 69a112b3a9726966aecbe687d905fd1a11cfa1e3..c6d618b42197487ab9b590579b27de67
 -        }
 -        if (this.hasLodestoneTracked()) {
 -            builder.put(CraftMetaCompass.LODESTONE_TRACKED.BUKKIT, this.tracked);
-+        if (this.isLodestoneCompass()) {
++        if (this.isLodestoneCompass()) { // Paper - use LodestoneTracker type
 +            // Paper start - use LodestoneTracker type
 +            if (this.tracker.target().isPresent()) {
 +                builder.put(CraftMetaCompass.LODESTONE_POS_WORLD.BUKKIT, this.tracker.target().get().dimension().location().toString());
