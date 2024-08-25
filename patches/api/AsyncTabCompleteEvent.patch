@@ -11,6 +11,8 @@ and avoid going to main for tab completions.
 Especially useful if you need to query a database in order to obtain the results for tab
 completion, such as offline players.
 
+Also Enforces mutability of the existing TabCompleteEvent.
+
 Co-authored-by: Aikar <aikar@aikar.co>
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java b/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java
@@ -551,6 +553,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          Preconditions.checkArgument(sender != null, "sender");
          Preconditions.checkArgument(buffer != null, "buffer");
          Preconditions.checkArgument(completions != null, "completions");
+ 
+         this.sender = sender;
+         this.buffer = buffer;
+-        this.completions = completions;
++        this.completions = new java.util.ArrayList<>(completions); // Paper - Completions must be mutable
+     }
+ 
+     /**
 @@ -0,0 +0,0 @@ public class TabCompleteEvent extends Event implements Cancellable {
          return completions;
      }
@@ -584,7 +594,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void setCompletions(@NotNull List<String> completions) {
          Preconditions.checkArgument(completions != null);
 -        this.completions = completions;
-+        this.completions = new java.util.ArrayList<>(completions); // Paper
++        this.completions = new java.util.ArrayList<>(completions); // Paper - completions must be mutable
      }
  
      @Override
