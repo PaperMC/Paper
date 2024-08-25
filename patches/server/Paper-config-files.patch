@@ -1031,6 +1031,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            .register(MapSerializer.TYPE, new MapSerializer(false))
 +            .register(new EnumValueSerializer())
 +            .register(new ComponentSerializer())
++            .register(IntOr.Default.SERIALIZER)
++            .register(IntOr.Disabled.SERIALIZER)
++            .register(DoubleOr.Default.SERIALIZER)
++            .register(DoubleOr.Disabled.SERIALIZER)
++            .register(BooleanOrDefault.SERIALIZER)
++            .register(Duration.SERIALIZER)
++            .register(DurationOrDisabled.SERIALIZER)
++            .register(NbtPathSerializer.SERIALIZER)
 +        );
 +    }
 +
@@ -1054,9 +1062,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            .header(GLOBAL_HEADER)
 +            .serializers(builder -> builder
 +                .register(new PacketClassSerializer())
-+                .register(IntOr.Disabled.SERIALIZER)
-+                .register(IntOr.Default.SERIALIZER)
-+                .register(DoubleOr.Default.SERIALIZER)
 +            );
 +    }
 +
@@ -1100,14 +1105,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    .register(new TypeToken<Table<?, ?, ?>>() {}, new TableSerializer())
 +                    .register(DespawnRange.class, DespawnRange.SERIALIZER)
 +                    .register(StringRepresentableSerializer::isValidFor, new StringRepresentableSerializer())
-+                    .register(IntOr.Default.SERIALIZER)
-+                    .register(IntOr.Disabled.SERIALIZER)
-+                    .register(DoubleOr.Default.SERIALIZER)
-+                    .register(BooleanOrDefault.SERIALIZER)
-+                    .register(Duration.SERIALIZER)
-+                    .register(DurationOrDisabled.SERIALIZER)
 +                    .register(EngineMode.SERIALIZER)
-+                    .register(NbtPathSerializer.SERIALIZER)
 +                    .register(FallbackValueSerializer.create(contextMap.require(SPIGOT_WORLD_CONFIG_CONTEXT_KEY).get(), MinecraftServer::getServer))
 +                    .register(new RegistryValueSerializer<>(new TypeToken<EntityType<?>>() {}, access, Registries.ENTITY_TYPE, true))
 +                    .register(new RegistryValueSerializer<>(Item.class, access, Registries.ITEM, true))
@@ -1985,7 +1983,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        public boolean showSignClickCommandFailureMsgsToPlayer = false;
 +        public RedstoneImplementation redstoneImplementation = RedstoneImplementation.VANILLA;
 +        public boolean disableEndCredits = false;
-+        public double maxLeashDistance = Leashable.LEASH_TOO_FAR_DIST;
++        public DoubleOr.Default maxLeashDistance = DoubleOr.Default.USE_DEFAULT;
 +        public boolean disableSprintInterruptionOnAttack = false;
 +        public int shieldBlockingDelay = 5;
 +        public boolean disableRelativeProjectileVelocity = false;
@@ -4835,6 +4833,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import com.google.common.base.Preconditions;
 +import java.util.OptionalDouble;
++import java.util.function.DoublePredicate;
 +import java.util.function.Function;
 +import java.util.function.Predicate;
 +import org.spongepowered.configurate.serialize.ScalarSerializer;
@@ -4855,6 +4854,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        private static final String DEFAULT_VALUE = "default";
 +        public static final Default USE_DEFAULT = new Default(OptionalDouble.empty());
 +        public static final ScalarSerializer<Default> SERIALIZER = new Serializer<>(Default.class, Default::new, DEFAULT_VALUE, USE_DEFAULT);
++    }
++
++    record Disabled(OptionalDouble value) implements DoubleOr {
++        private static final String DISABLED_VALUE = "disabled";
++        public static final Disabled DISABLED = new Disabled(OptionalDouble.empty());
++        public static final ScalarSerializer<Disabled> SERIALIZER = new Serializer<>(Disabled.class, Disabled::new, DISABLED_VALUE, DISABLED);
++
++        public boolean test(DoublePredicate predicate) {
++            return this.value.isPresent() && predicate.test(this.value.getAsDouble());
++        }
++
++        public boolean enabled() {
++            return this.value.isPresent();
++        }
 +    }
 +
 +    final class Serializer<T extends DoubleOr> extends OptionalNumSerializer<T, OptionalDouble> {

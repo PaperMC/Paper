@@ -27,11 +27,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  }
  
 @@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+ 
      protected void removeAfterChangingDimensions() {
          this.setRemoved(Entity.RemovalReason.CHANGED_DIMENSION, null); // CraftBukkit - add Bukkit remove cause
-         if (this instanceof Leashable leashable) {
+-        if (this instanceof Leashable leashable) {
 -            this.level().getCraftServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.UNKNOWN)); // CraftBukkit
 -            leashable.dropLeash(true, false);
++        if (this instanceof Leashable leashable && leashable.isLeashed()) { // Paper - only call if it is leashed
 +            // Paper start - Expand EntityUnleashEvent
 +            final EntityUnleashEvent event = new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.UNKNOWN, false); // CraftBukkit
 +            event.callEvent();
@@ -95,6 +97,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
          return flag1;
+diff --git a/src/main/java/net/minecraft/world/entity/TamableAnimal.java b/src/main/java/net/minecraft/world/entity/TamableAnimal.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/TamableAnimal.java
++++ b/src/main/java/net/minecraft/world/entity/TamableAnimal.java
+@@ -0,0 +0,0 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
+     public boolean handleLeashAtDistance(Entity leashHolder, float distance) {
+         if (this.isInSittingPose()) {
+             if (distance > (float) this.level().paperConfig().misc.maxLeashDistance.or(Leashable.LEASH_TOO_FAR_DIST)) { // Paper - Configurable max leash distance
+-                this.dropLeash(true, true);
++                // Paper start - Expand EntityUnleashEvent
++                org.bukkit.event.entity.EntityUnleashEvent event = new org.bukkit.event.entity.EntityUnleashEvent(this.getBukkitEntity(), org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.DISTANCE, true);
++                if (!event.callEvent()) return false;
++                this.dropLeash(true, event.isDropLeash());
++                // Paper end - Expand EntityUnleashEvent
+             }
+ 
+             return false;
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java b/src/main/java/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java
