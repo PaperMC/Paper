@@ -3,9 +3,16 @@ From: DerEchtePilz <81232921+DerEchtePilz@users.noreply.github.com>
 Date: Sun, 18 Aug 2024 13:05:31 +0200
 Subject: [PATCH] Properly destroy placed blocks on the end platform
 
+The craftbukkit provided implementation of LevelAccessor,
+BlockStateListPopulator, does not support destroyBlock calls, simply
+ignoring them.
+
+This causes the destroyBlock calls during the generation of the end
+platform to be lost. The patch moves the destroy calls and executes them
+on the actual world access.
 
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/feature/EndPlatformFeature.java b/src/main/java/net/minecraft/world/level/levelgen/feature/EndPlatformFeature.java
-index 0bc659a8427b89b5e3211220c55b52eec6a20494..367f9b0e1f0314ef2722dbfc9e8cd1b699b13afa 100644
+index 0bc659a8427b89b5e3211220c55b52eec6a20494..15d0de7b623d874972c67ac34da2718220b6bdf5 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/feature/EndPlatformFeature.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/feature/EndPlatformFeature.java
 @@ -44,7 +44,7 @@ public class EndPlatformFeature extends Feature<NoneFeatureConfiguration> {
@@ -13,7 +20,7 @@ index 0bc659a8427b89b5e3211220c55b52eec6a20494..367f9b0e1f0314ef2722dbfc9e8cd1b6
                      if (!blockList.getBlockState(blockposition_mutableblockposition1).is(block)) {
                          if (flag) {
 -                            blockList.destroyBlock(blockposition_mutableblockposition1, true, (Entity) null);
-+                            // blockList.destroyBlock(blockposition_mutableblockposition1, true, (Entity) null); // Paper - moved down
++                            // blockList.destroyBlock(blockposition_mutableblockposition1, true, (Entity) null); // Paper - moved down - cb implementation of LevelAccessor does not support destoryBlock
                          }
  
                          blockList.setBlock(blockposition_mutableblockposition1, block.defaultBlockState(), 3);
