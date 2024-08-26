@@ -1065,6 +1065,15 @@
      public Optional<BlockPos> getLastClimbablePos() {
          return this.lastClimbablePos;
      }
+@@ -1718,7 +2152,7 @@
+ 
+     @Override
+     public boolean isAlive() {
+-        return !this.isRemoved() && this.getHealth() > 0.0F;
++        return !this.isRemoved() && this.getHealth() > 0.0F && !this.dead; // Paper - Check this.dead
+     }
+ 
+     public boolean isLookingAtMe(LivingEntity entity, double d0, boolean flag, boolean visualShape, double... checkedYs) {
 @@ -1757,9 +2191,14 @@
          int i = this.calculateFallDamage(fallDistance, damageMultiplier);
  
@@ -1165,7 +1174,7 @@
 +                    int i = (LivingEntity.this.getEffect(MobEffects.DAMAGE_RESISTANCE).getAmplifier() + 1) * 5;
 +                    int j = 25 - i;
 +                    float f1 = f.floatValue() * (float) j;
- 
++
 +                    return -(f - Math.max(f1 / 25.0F, 0.0F));
 +                }
 +                return -0.0;
@@ -1236,7 +1245,7 @@
 +                float armorDamage = (float) (event.getDamage() + event.getDamage(DamageModifier.BLOCKING) + event.getDamage(DamageModifier.HARD_HAT));
 +                this.hurtArmor(damagesource, armorDamage);
 +            }
-+
+ 
 +            // Apply blocking code // PAIL: steal from above
 +            if (event.getDamage(DamageModifier.BLOCKING) < 0) {
 +                this.hurtCurrentlyUsedShield((float) -event.getDamage(DamageModifier.BLOCKING));
@@ -1317,26 +1326,27 @@
      }
  
      public CombatTracker getCombatTracker() {
-@@ -1935,8 +2546,18 @@
+@@ -1935,9 +2546,19 @@
      }
  
      public final void setArrowCount(int stuckArrowCount) {
 -        this.entityData.set(LivingEntity.DATA_ARROW_COUNT_ID, stuckArrowCount);
 +        // CraftBukkit start
 +        this.setArrowCount(stuckArrowCount, false);
-+    }
-+
+     }
+ 
 +    public final void setArrowCount(int i, boolean flag) {
 +        ArrowBodyCountChangeEvent event = CraftEventFactory.callArrowBodyCountChangeEvent(this, this.getArrowCount(), i, flag);
 +        if (event.isCancelled()) {
 +            return;
 +        }
 +        this.entityData.set(LivingEntity.DATA_ARROW_COUNT_ID, event.getNewAmount());
-     }
++    }
 +    // CraftBukkit end
- 
++
      public final int getStingerCount() {
          return (Integer) this.entityData.get(LivingEntity.DATA_STINGER_COUNT_ID);
+     }
 @@ -1999,7 +2620,7 @@
                      this.playSound(soundeffect, this.getSoundVolume(), (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
                  }
@@ -1346,19 +1356,19 @@
                      this.setHealth(0.0F);
                      this.die(this.damageSources().generic());
                  }
-@@ -2181,6 +2802,12 @@
-     public abstract Iterable<ItemStack> getArmorSlots();
+@@ -2182,6 +2803,12 @@
  
      public abstract ItemStack getItemBySlot(EquipmentSlot slot);
-+
+ 
 +    // CraftBukkit start
 +    public void setItemSlot(EquipmentSlot enumitemslot, ItemStack itemstack, boolean silent) {
 +        this.setItemSlot(enumitemslot, itemstack);
 +    }
 +    // CraftBukkit end
- 
++
      public abstract void setItemSlot(EquipmentSlot slot, ItemStack stack);
  
+     public Iterable<ItemStack> getHandSlots() {
 @@ -2292,17 +2919,29 @@
          return this.hasEffect(MobEffects.JUMP) ? 0.1F * ((float) this.getEffect(MobEffects.JUMP).getAmplifier() + 1.0F) : 0.0F;
      }
@@ -1461,8 +1471,7 @@
 -        while (this.yBodyRot - this.yBodyRotO < -180.0F) {
 -            this.yBodyRotO -= 360.0F;
 -        }
-+        this.xRotO += Math.round((this.getXRot() - this.xRotO) / 360.0F) * 360.0F;
- 
+-
 -        while (this.yBodyRot - this.yBodyRotO >= 180.0F) {
 -            this.yBodyRotO += 360.0F;
 -        }
@@ -1474,7 +1483,8 @@
 -        while (this.getXRot() - this.xRotO >= 180.0F) {
 -            this.xRotO += 360.0F;
 -        }
--
++        this.xRotO += Math.round((this.getXRot() - this.xRotO) / 360.0F) * 360.0F;
+ 
 -        while (this.yHeadRot - this.yHeadRotO < -180.0F) {
 -            this.yHeadRotO -= 360.0F;
 -        }
