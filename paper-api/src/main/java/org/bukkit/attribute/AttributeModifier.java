@@ -1,6 +1,7 @@
 package org.bukkit.attribute;
 
 import com.google.common.base.Preconditions;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -65,7 +66,7 @@ public class AttributeModifier implements ConfigurationSerializable, Keyed {
     @NotNull
     @Deprecated
     public UUID getUniqueId() {
-        return UUID.fromString(getKey().toString());
+        return UUID.nameUUIDFromBytes(getKey().toString().getBytes(StandardCharsets.UTF_8));
     }
 
     @NotNull
