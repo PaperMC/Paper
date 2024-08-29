@@ -268,10 +268,10 @@ index 0000000000000000000000000000000000000000..94056d61a304ee012ae1828a33412516
 +}
 diff --git a/src/main/java/io/papermc/paper/threadedregions/scheduler/FoliaAsyncScheduler.java b/src/main/java/io/papermc/paper/threadedregions/scheduler/FoliaAsyncScheduler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..374abffb9f1ce1a308822aed13038e77fe9ca08b
+index 0000000000000000000000000000000000000000..66f65192c06e4549cdd1e31db72644f215344cd0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/threadedregions/scheduler/FoliaAsyncScheduler.java
-@@ -0,0 +1,328 @@
+@@ -0,0 +1,319 @@
 +package io.papermc.paper.threadedregions.scheduler;
 +
 +import ca.spottedleaf.concurrentutil.util.Validate;
@@ -363,15 +363,12 @@ index 0000000000000000000000000000000000000000..374abffb9f1ce1a308822aed13038e77
 +        Validate.notNull(plugin, "Plugin may not be null");
 +        Validate.notNull(task, "Task may not be null");
 +        Validate.notNull(unit, "Time unit may not be null");
-+        if (delay < 0L) {
-+            throw new IllegalArgumentException("Delay may not be < 0");
-+        }
 +
 +        if (!plugin.isEnabled()) {
 +            throw new IllegalPluginAccessException("Plugin attempted to register task while disabled");
 +        }
 +
-+        return this.scheduleTimerTask(plugin, task, delay, -1L, unit);
++        return this.scheduleTimerTask(plugin, task, Math.max(1L, delay), -1L, unit);
 +    }
 +
 +    @Override
@@ -380,18 +377,12 @@ index 0000000000000000000000000000000000000000..374abffb9f1ce1a308822aed13038e77
 +        Validate.notNull(plugin, "Plugin may not be null");
 +        Validate.notNull(task, "Task may not be null");
 +        Validate.notNull(unit, "Time unit may not be null");
-+        if (initialDelay < 0L) {
-+            throw new IllegalArgumentException("Initial delay may not be < 0");
-+        }
-+        if (period <= 0L) {
-+            throw new IllegalArgumentException("Period may not be <= 0");
-+        }
 +
 +        if (!plugin.isEnabled()) {
 +            throw new IllegalPluginAccessException("Plugin attempted to register task while disabled");
 +        }
 +
-+        return this.scheduleTimerTask(plugin, task, initialDelay, period, unit);
++        return this.scheduleTimerTask(plugin, task, Math.max(1L, initialDelay), Math.max(1L, period), unit);
 +    }
 +
 +    private AsyncScheduledTask scheduleTimerTask(final Plugin plugin, final Consumer<ScheduledTask> task, final long initialDelay,
@@ -602,10 +593,10 @@ index 0000000000000000000000000000000000000000..374abffb9f1ce1a308822aed13038e77
 +}
 diff --git a/src/main/java/io/papermc/paper/threadedregions/scheduler/FoliaEntityScheduler.java b/src/main/java/io/papermc/paper/threadedregions/scheduler/FoliaEntityScheduler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..011754962896e32f51ed4606dcbea18a430a2bc1
+index 0000000000000000000000000000000000000000..abaaa7387d657dcc0f3cd68daa012a565ac7eec1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/threadedregions/scheduler/FoliaEntityScheduler.java
-@@ -0,0 +1,268 @@
+@@ -0,0 +1,259 @@
 +package io.papermc.paper.threadedregions.scheduler;
 +
 +import ca.spottedleaf.concurrentutil.util.ConcurrentUtil;
@@ -664,9 +655,6 @@ index 0000000000000000000000000000000000000000..011754962896e32f51ed4606dcbea18a
 +                                              final long delayTicks) {
 +        Validate.notNull(plugin, "Plugin may not be null");
 +        Validate.notNull(task, "Task may not be null");
-+        if (delayTicks <= 0) {
-+            throw new IllegalArgumentException("Delay ticks may not be <= 0");
-+        }
 +
 +        if (!plugin.isEnabled()) {
 +            throw new IllegalPluginAccessException("Plugin attempted to register task while disabled");
@@ -674,7 +662,7 @@ index 0000000000000000000000000000000000000000..011754962896e32f51ed4606dcbea18a
 +
 +        final EntityScheduledTask ret = new EntityScheduledTask(plugin, -1, task, retired);
 +
-+        if (!this.scheduleInternal(ret, delayTicks)) {
++        if (!this.scheduleInternal(ret, Math.max(1L, delayTicks))) {
 +            return null;
 +        }
 +
@@ -691,20 +679,14 @@ index 0000000000000000000000000000000000000000..011754962896e32f51ed4606dcbea18a
 +                                                  final Runnable retired, final long initialDelayTicks, final long periodTicks) {
 +        Validate.notNull(plugin, "Plugin may not be null");
 +        Validate.notNull(task, "Task may not be null");
-+        if (initialDelayTicks <= 0) {
-+            throw new IllegalArgumentException("Initial delay ticks may not be <= 0");
-+        }
-+        if (periodTicks <= 0) {
-+            throw new IllegalArgumentException("Period ticks may not be <= 0");
-+        }
 +
 +        if (!plugin.isEnabled()) {
 +            throw new IllegalPluginAccessException("Plugin attempted to register task while disabled");
 +        }
 +
-+        final EntityScheduledTask ret = new EntityScheduledTask(plugin, periodTicks, task, retired);
++        final EntityScheduledTask ret = new EntityScheduledTask(plugin, Math.max(1L, periodTicks), task, retired);
 +
-+        if (!this.scheduleInternal(ret, initialDelayTicks)) {
++        if (!this.scheduleInternal(ret, Math.max(1L, initialDelayTicks))) {
 +            return null;
 +        }
 +
@@ -876,10 +858,10 @@ index 0000000000000000000000000000000000000000..011754962896e32f51ed4606dcbea18a
 +}
 diff --git a/src/main/java/io/papermc/paper/threadedregions/scheduler/FoliaGlobalRegionScheduler.java b/src/main/java/io/papermc/paper/threadedregions/scheduler/FoliaGlobalRegionScheduler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d306f911757a4d556c82c0070d4837db87afc497
+index 0000000000000000000000000000000000000000..7bdd2fcbc44e5f08cd9cad8fb85c1209d5f77140
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/threadedregions/scheduler/FoliaGlobalRegionScheduler.java
-@@ -0,0 +1,267 @@
+@@ -0,0 +1,258 @@
 +package io.papermc.paper.threadedregions.scheduler;
 +
 +import ca.spottedleaf.concurrentutil.util.ConcurrentUtil;
@@ -939,9 +921,6 @@ index 0000000000000000000000000000000000000000..d306f911757a4d556c82c0070d4837db
 +    public ScheduledTask runDelayed(final Plugin plugin, final Consumer<ScheduledTask> task, final long delayTicks) {
 +        Validate.notNull(plugin, "Plugin may not be null");
 +        Validate.notNull(task, "Task may not be null");
-+        if (delayTicks <= 0) {
-+            throw new IllegalArgumentException("Delay ticks may not be <= 0");
-+        }
 +
 +        if (!plugin.isEnabled()) {
 +            throw new IllegalPluginAccessException("Plugin attempted to register task while disabled");
@@ -949,7 +928,7 @@ index 0000000000000000000000000000000000000000..d306f911757a4d556c82c0070d4837db
 +
 +        final GlobalScheduledTask ret = new GlobalScheduledTask(plugin, -1, task);
 +
-+        this.scheduleInternal(ret, delayTicks);
++        this.scheduleInternal(ret, Math.max(1L, delayTicks));
 +
 +        if (!plugin.isEnabled()) {
 +            // handle race condition where plugin is disabled asynchronously
@@ -963,20 +942,14 @@ index 0000000000000000000000000000000000000000..d306f911757a4d556c82c0070d4837db
 +    public ScheduledTask runAtFixedRate(final Plugin plugin, final Consumer<ScheduledTask> task, final long initialDelayTicks, final long periodTicks) {
 +        Validate.notNull(plugin, "Plugin may not be null");
 +        Validate.notNull(task, "Task may not be null");
-+        if (initialDelayTicks <= 0) {
-+            throw new IllegalArgumentException("Initial delay ticks may not be <= 0");
-+        }
-+        if (periodTicks <= 0) {
-+            throw new IllegalArgumentException("Period ticks may not be <= 0");
-+        }
 +
 +        if (!plugin.isEnabled()) {
 +            throw new IllegalPluginAccessException("Plugin attempted to register task while disabled");
 +        }
 +
-+        final GlobalScheduledTask ret = new GlobalScheduledTask(plugin, periodTicks, task);
++        final GlobalScheduledTask ret = new GlobalScheduledTask(plugin, Math.max(1L, periodTicks), task);
 +
-+        this.scheduleInternal(ret, initialDelayTicks);
++        this.scheduleInternal(ret, Math.max(1L, initialDelayTicks));
 +
 +        if (!plugin.isEnabled()) {
 +            // handle race condition where plugin is disabled asynchronously
@@ -1173,7 +1146,7 @@ index a72b278826be1d0da79ca619ea9a9a437fa9c54b..2dfa9c4c0c2ef489649944eed89d8c77
          this.profiler.push("commandFunctions");
          MinecraftTimings.commandFunctionsTimer.startTiming(); // Spigot // Paper
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 944c727fd7770fe4c06af67304005664a7ab9e8a..f9dcbf7d51680e8dfdda1350e0632dec675f3d44 100644
+index d210df131bac0604eb44e7a772ec48089c043746..b8e79cf272f0a87b0fc0c0f61d325ec780b0f6b5 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -640,6 +640,7 @@ public abstract class PlayerList {
@@ -1185,7 +1158,7 @@ index 944c727fd7770fe4c06af67304005664a7ab9e8a..f9dcbf7d51680e8dfdda1350e0632dec
          this.players.remove(entityplayer);
          this.playersByName.remove(entityplayer.getScoreboardName().toLowerCase(java.util.Locale.ROOT)); // Spigot
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 3dd70063ab5434e5f57da6ae084316aa6570b7d5..0c145c6c53e486bc44cf83579b18add60777f47d 100644
+index 8e252b930247293e0fbcf350111403ee716cfffa..f81a576084ccceb2b02e8d8cd57442efc7ff1e9f 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -254,11 +254,23 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
@@ -1251,7 +1224,7 @@ index 3dd70063ab5434e5f57da6ae084316aa6570b7d5..0c145c6c53e486bc44cf83579b18add6
      public void setLevelCallback(EntityInLevelCallback changeListener) {
          this.levelCallback = changeListener;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index ed6210d2490f8584c21537eaa380d990fb73e03d..3e78a420ea183f4044873bb1fd89e9b9749032b8 100644
+index 085e7ebd5e34b6f7c41b2847641bad9d03fb9d96..161e3e440e90dcc23a8b82b1f1856a095e5a9a7f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -310,6 +310,76 @@ public final class CraftServer implements Server {
