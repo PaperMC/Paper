@@ -1,0 +1,21 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Newwind <support@newwindserver.com>
+Date: Thu, 29 Aug 2024 19:01:37 +0200
+Subject: [PATCH] Fix horse armor desync
+
+When cancelling the equipping of horse armor using PlayerInteractEntityEvent, the horse will still appear to equip the armor clientside until you reload the world.
+This patch updates the horse's equipment if interacting with them is cancelled, fixing the issue.
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 4320af392..ff7854cdf 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2807,7 +2807,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                                 // Refresh the current entity metadata
+                                 entity.refreshEntityData(ServerGamePacketListenerImpl.this.player);
+                                 // SPIGOT-7136 - Allays
+-                                if (entity instanceof Allay) {
++                                if (entity instanceof Allay || entity instanceof net.minecraft.world.entity.animal.horse.AbstractHorse) { // Paper - Fix horse armor desync
+                                     ServerGamePacketListenerImpl.this.send(new ClientboundSetEquipmentPacket(entity.getId(), Arrays.stream(net.minecraft.world.entity.EquipmentSlot.values()).map((slot) -> Pair.of(slot, ((LivingEntity) entity).getItemBySlot(slot).copy())).collect(Collectors.toList()), true)); // Paper - sanitize
+                                     ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote();
+                                 }
