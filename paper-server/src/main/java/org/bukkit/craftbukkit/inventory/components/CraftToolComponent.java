@@ -195,8 +195,8 @@ public final class CraftToolComponent implements ToolComponent {
         }
 
         public CraftToolRule(Map<String, Object> map) {
-            Float speed = SerializableMeta.getObject(Float.class, map, "speed", false);
-            Boolean correct = SerializableMeta.getObject(Boolean.class, map, "correct-for-drops", false);
+            Float speed = SerializableMeta.getObject(Float.class, map, "speed", true);
+            Boolean correct = SerializableMeta.getObject(Boolean.class, map, "correct-for-drops", true);
 
             HolderSet<Block> blocks = null;
             Object blocksObject = SerializableMeta.getObject(Object.class, map, "blocks", false);
