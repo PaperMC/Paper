@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -19,6 +20,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import net.minecraft.SystemUtils;
 import net.minecraft.server.dedicated.DedicatedServer;
+import net.minecraft.world.item.component.ResolvableProfile;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.serialization.SerializableAs;
@@ -26,6 +28,7 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.configuration.ConfigSerializationUtil;
 import org.bukkit.profile.PlayerProfile;
 import org.bukkit.profile.PlayerTextures;
+import org.jetbrains.annotations.ApiStatus;
 
 @SerializableAs("PlayerProfile")
 public final class CraftPlayerProfile implements PlayerProfile {
@@ -38,6 +41,15 @@ public final class CraftPlayerProfile implements PlayerProfile {
                 || gameProfile.getProperties().containsKey(CraftPlayerTextures.PROPERTY_NAME);
         Preconditions.checkArgument(isValidSkullProfile, "The skull profile is missing a name or textures!");
         return gameProfile;
+    }
+
+    @Nonnull
+    public static ResolvableProfile validateSkullProfile(@Nonnull ResolvableProfile resolvableProfile) {
+        // The ResolvableProfile needs to contain either both a uuid and textures, or a name.
+        boolean isValidSkullProfile = (resolvableProfile.name().isPresent())
+                || (resolvableProfile.id().isPresent() && resolvableProfile.properties().containsKey(CraftPlayerTextures.PROPERTY_NAME));
+        Preconditions.checkArgument(isValidSkullProfile, "The skull profile is missing a name or textures!");
+        return resolvableProfile;
     }
 
     @Nullable
@@ -53,15 +65,21 @@ public final class CraftPlayerProfile implements PlayerProfile {
 
     public CraftPlayerProfile(UUID uniqueId, String name) {
         Preconditions.checkArgument((uniqueId != null) || !StringUtils.isBlank(name), "uniqueId is null or name is blank");
-        this.uniqueId = (uniqueId == null) ? SystemUtils.NIL_UUID : uniqueId;
-        this.name = (name == null) ? "" : name;
+        this.uniqueId = uniqueId;
+        this.name = name;
+    }
+
+    @ApiStatus.Internal
+    public CraftPlayerProfile(@Nonnull ResolvableProfile resolvableProfile) {
+        this(resolvableProfile.id().orElse(null), resolvableProfile.name().orElse(null));
+        this.properties.putAll(resolvableProfile.properties());
     }
 
     // The Map of properties of the given GameProfile is not immutable. This captures a snapshot of the properties of
     // the given GameProfile at the time this CraftPlayerProfile is created.
     public CraftPlayerProfile(@Nonnull GameProfile gameProfile) {
         this(gameProfile.getId(), gameProfile.getName());
-        properties.putAll(gameProfile.getProperties());
+        this.properties.putAll(gameProfile.getProperties());
     }
 
     private CraftPlayerProfile(@Nonnull CraftPlayerProfile other) {
@@ -72,12 +90,12 @@ public final class CraftPlayerProfile implements PlayerProfile {
 
     @Override
     public UUID getUniqueId() {
-        return (uniqueId.equals(SystemUtils.NIL_UUID)) ? null : uniqueId;
+        return (Objects.equals(uniqueId, SystemUtils.NIL_UUID)) ? null : uniqueId;
     }
 
     @Override
     public String getName() {
-        return (name.isEmpty()) ? null : name;
+        return (StringUtils.isBlank(name)) ? null : name;
     }
 
     @Nullable
@@ -146,6 +164,14 @@ public final class CraftPlayerProfile implements PlayerProfile {
     }
 
     // This always returns a new GameProfile instance to ensure that property changes to the original or previously
+    // built ResolvableProfile don't affect the use of this profile in other contexts.
+    @Nonnull
+    public ResolvableProfile buildResolvableProfile() {
+        rebuildDirtyProperties();
+        return new ResolvableProfile(Optional.ofNullable(this.name), Optional.ofNullable(this.uniqueId), this.properties);
+    }
+
+    // This always returns a new GameProfile instance to ensure that property changes to the original or previously
     // built GameProfiles don't affect the use of this profile in other contexts.
     @Nonnull
     public GameProfile buildGameProfile() {
@@ -184,8 +210,7 @@ public final class CraftPlayerProfile implements PlayerProfile {
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-        if (!(obj instanceof CraftPlayerProfile)) return false;
-        CraftPlayerProfile other = (CraftPlayerProfile) obj;
+        if (!(obj instanceof CraftPlayerProfile other)) return false;
         if (!Objects.equals(uniqueId, other.uniqueId)) return false;
         if (!Objects.equals(name, other.name)) return false;
 
@@ -238,18 +263,16 @@ public final class CraftPlayerProfile implements PlayerProfile {
     @Override
     public Map<String, Object> serialize() {
         Map<String, Object> map = new LinkedHashMap<>();
-        if (getUniqueId() != null) {
-            map.put("uniqueId", getUniqueId().toString());
+        if (this.uniqueId != null) {
+            map.put("uniqueId", this.uniqueId.toString());
         }
-        if (getName() != null) {
+        if (this.name != null) {
             map.put("name", getName());
         }
         rebuildDirtyProperties();
-        if (!properties.isEmpty()) {
+        if (!this.properties.isEmpty()) {
             List<Object> propertiesData = new ArrayList<>();
-            properties.forEach((propertyName, property) -> {
-                propertiesData.add(CraftProfileProperty.serialize(property));
-            });
+            this.properties.forEach((propertyName, property) -> propertiesData.add(CraftProfileProperty.serialize(property)));
             map.put("properties", propertiesData);
         }
         return map;
@@ -264,7 +287,7 @@ public final class CraftPlayerProfile implements PlayerProfile {
 
         if (map.containsKey("properties")) {
             for (Object propertyData : (List<?>) map.get("properties")) {
-                Preconditions.checkArgument(propertyData instanceof Map, "Propertu data (%s) is not a valid Map", propertyData);
+                Preconditions.checkArgument(propertyData instanceof Map, "Property data (%s) is not a valid Map", propertyData);
                 Property property = CraftProfileProperty.deserialize((Map<?, ?>) propertyData);
                 profile.properties.put(property.name(), property);
             }

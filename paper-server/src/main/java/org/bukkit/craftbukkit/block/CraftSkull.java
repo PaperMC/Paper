@@ -27,7 +27,7 @@ import org.jetbrains.annotations.Nullable;
 public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implements Skull {
 
     private static final int MAX_OWNER_LENGTH = 16;
-    private GameProfile profile;
+    private ResolvableProfile profile;
 
     public CraftSkull(World world, TileEntitySkull tileEntity) {
         super(world, tileEntity);
@@ -43,7 +43,7 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
 
         ResolvableProfile owner = skull.getOwnerProfile();
         if (owner != null) {
-            profile = owner.gameProfile();
+            profile = owner;
         }
     }
 
@@ -54,7 +54,7 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
 
     @Override
     public String getOwner() {
-        return hasOwner() ? profile.getName() : null;
+        return hasOwner() ? profile.name().orElse(null) : null;
     }
 
     @Override
@@ -68,19 +68,19 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
             return false;
         }
 
-        this.profile = profile;
+        this.profile = new ResolvableProfile(profile);
         return true;
     }
 
     @Override
     public OfflinePlayer getOwningPlayer() {
-        if (profile != null) {
-            if (!profile.getId().equals(SystemUtils.NIL_UUID)) {
-                return Bukkit.getOfflinePlayer(profile.getId());
+        if (hasOwner()) {
+            if (profile.id().filter(u -> !u.equals(SystemUtils.NIL_UUID)).isPresent()) {
+                return Bukkit.getOfflinePlayer(profile.id().get());
             }
 
-            if (!profile.getName().isEmpty()) {
-                return Bukkit.getOfflinePlayer(profile.getName());
+            if (profile.name().filter(s -> !s.isEmpty()).isPresent()) {
+                return Bukkit.getOfflinePlayer(profile.name().get());
             }
         }
 
@@ -91,10 +91,10 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
     public void setOwningPlayer(OfflinePlayer player) {
         Preconditions.checkNotNull(player, "player");
 
-        if (player instanceof CraftPlayer) {
-            this.profile = ((CraftPlayer) player).getProfile();
+        if (player instanceof CraftPlayer craftPlayer) {
+            this.profile = new ResolvableProfile(craftPlayer.getProfile());
         } else {
-            this.profile = new GameProfile(player.getUniqueId(), player.getName());
+            this.profile = new ResolvableProfile(new GameProfile(player.getUniqueId(), (player.getName() == null) ? "" : player.getName()));
         }
     }
 
@@ -112,7 +112,7 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
         if (profile == null) {
             this.profile = null;
         } else {
-            this.profile = CraftPlayerProfile.validateSkullProfile(((CraftPlayerProfile) profile).buildGameProfile());
+            this.profile = new ResolvableProfile(CraftPlayerProfile.validateSkullProfile(((CraftPlayerProfile) profile).buildGameProfile()));
         }
     }
 
@@ -134,7 +134,7 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
     @Override
     public BlockFace getRotation() {
         BlockData blockData = getBlockData();
-        return (blockData instanceof Rotatable) ? ((Rotatable) blockData).getRotation() : ((Directional) blockData).getFacing();
+        return (blockData instanceof Rotatable rotatable) ? rotatable.getRotation() : ((Directional) blockData).getFacing();
     }
 
     @Override
@@ -187,7 +187,7 @@ public class CraftSkull extends CraftBlockEntityState<TileEntitySkull> implement
         super.applyTo(skull);
 
         if (getSkullType() == SkullType.PLAYER) {
-            skull.setOwner((profile != null) ? new ResolvableProfile(profile) : null);
+            skull.setOwner(hasOwner() ? profile : null);
         }
     }
 
