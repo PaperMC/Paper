@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Janet Blackquill <uhhadd@gmail.com>
+Date: Sun, 7 Apr 2024 16:52:42 -0400
+Subject: [PATCH] Add CartographyItemEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index e0983cfdfddaf59b29d2b8106c3c34b14191cfa8..a106587df34ac463bb2aee661b789ee38cf14e20 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -3108,6 +3108,19 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                             }
+                         }
+ 
++                        // Paper start - cartography item event
++                        if (packet.getSlotNum() == net.minecraft.world.inventory.CartographyTableMenu.RESULT_SLOT && top instanceof org.bukkit.inventory.CartographyInventory cartographyInventory) {
++                            org.bukkit.inventory.ItemStack result = cartographyInventory.getResult();
++                            if (result != null && !result.isEmpty()) {
++                                if (click == ClickType.NUMBER_KEY) {
++                                    event = new io.papermc.paper.event.player.CartographyItemEvent(inventory, type, packet.getSlotNum(), click, action, packet.getButtonNum());
++                                } else {
++                                    event = new io.papermc.paper.event.player.CartographyItemEvent(inventory, type, packet.getSlotNum(), click, action);
++                                }
++                            }
++                        }
++                        // Paper end - cartography item event
++
+                         event.setCancelled(cancelled);
+                         AbstractContainerMenu oldContainer = this.player.containerMenu; // SPIGOT-1224
+                         this.cserver.getPluginManager().callEvent(event);
+diff --git a/src/main/java/net/minecraft/world/inventory/CartographyTableMenu.java b/src/main/java/net/minecraft/world/inventory/CartographyTableMenu.java
+index ab98637bf967ac19f0bc06e8cb7f18a8b13ec809..a90e2c56c54797b2fec40eb3865835c5f640a544 100644
+--- a/src/main/java/net/minecraft/world/inventory/CartographyTableMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/CartographyTableMenu.java
+@@ -71,7 +71,7 @@ public class CartographyTableMenu extends AbstractContainerMenu {
+         this.resultContainer = new ResultContainer(this.createBlockHolder(context)) { // Paper - Add missing InventoryHolders
+             @Override
+             public void setChanged() {
+-                CartographyTableMenu.this.slotsChanged(this);
++                // CartographyTableMenu.this.slotsChanged(this); // Paper - Add CatographyItemEvent - do not recompute results if the result slot changes - allows to set the result slot via api
+                 super.setChanged();
+             }
+ 

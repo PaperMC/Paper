@@ -1,0 +1,72 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 16 Nov 2018 23:08:50 -0500
+Subject: [PATCH] Book size limits
+
+Puts some limits on the size of books.
+
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ServerboundEditBookPacket.java b/src/main/java/net/minecraft/network/protocol/game/ServerboundEditBookPacket.java
+index ed61767a64cdce37dc7c226ebd0d693a60de24a9..f634a830a2b58a419e84f969bd53eeae4f4513bb 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ServerboundEditBookPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ServerboundEditBookPacket.java
+@@ -16,9 +16,9 @@ public record ServerboundEditBookPacket(int slot, List<String> pages, Optional<S
+     public static final StreamCodec<FriendlyByteBuf, ServerboundEditBookPacket> STREAM_CODEC = StreamCodec.composite(
+         ByteBufCodecs.VAR_INT,
+         ServerboundEditBookPacket::slot,
+-        ByteBufCodecs.stringUtf8(8192).apply(ByteBufCodecs.list(200)),
++        ByteBufCodecs.stringUtf8(net.minecraft.world.item.component.WritableBookContent.PAGE_EDIT_LENGTH).apply(ByteBufCodecs.list(net.minecraft.world.item.component.WritableBookContent.MAX_PAGES)), // Paper - limit books
+         ServerboundEditBookPacket::pages,
+-        ByteBufCodecs.stringUtf8(128).apply(ByteBufCodecs::optional),
++        ByteBufCodecs.stringUtf8(net.minecraft.world.item.component.WrittenBookContent.TITLE_MAX_LENGTH).apply(ByteBufCodecs::optional), // Paper - limit books
+         ServerboundEditBookPacket::title,
+         ServerboundEditBookPacket::new
+     );
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 4942aa857ecc5762c9b0b1662eefaeae4daab80d..577f0e290f66afd2ded18714fb8b5f62a7a9aa71 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1043,6 +1043,44 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+     @Override
+     public void handleEditBook(ServerboundEditBookPacket packet) {
++        // Paper start - Book size limits
++        final io.papermc.paper.configuration.type.number.IntOr.Disabled pageMax = io.papermc.paper.configuration.GlobalConfiguration.get().itemValidation.bookSize.pageMax;
++        if (!this.cserver.isPrimaryThread() && pageMax.enabled()) {
++            final List<String> pageList = packet.pages();
++            long byteTotal = 0;
++            final int maxBookPageSize = pageMax.intValue();
++            final double multiplier = Math.clamp(io.papermc.paper.configuration.GlobalConfiguration.get().itemValidation.bookSize.totalMultiplier, 0.3D, 1D);
++            long byteAllowed = maxBookPageSize;
++            for (final String page : pageList) {
++                final int byteLength = page.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
++                byteTotal += byteLength;
++                final int length = page.length();
++                int multiByteCharacters = 0;
++                if (byteLength != length) {
++                    // Count the number of multi byte characters
++                    for (final char c : page.toCharArray()) {
++                        if (c > 127) {
++                            multiByteCharacters++;
++                        }
++                    }
++                }
++
++                // Allow pages with fewer characters to consume less of the allowed byte quota
++                byteAllowed += maxBookPageSize * Math.clamp((double) length / 255D, 0.1D, 1) * multiplier;
++
++                if (multiByteCharacters > 1) {
++                    // Penalize multibyte characters
++                    byteAllowed -= multiByteCharacters;
++                }
++            }
++
++            if (byteTotal > byteAllowed) {
++                ServerGamePacketListenerImpl.LOGGER.warn("{} tried to send a book too large. Book size: {} - Allowed: {} - Pages: {}", this.player.getScoreboardName(), byteTotal, byteAllowed, pageList.size());
++                this.disconnect(Component.literal("Book too large!"));
++                return;
++            }
++        }
++        // Paper end - Book size limits
+         // CraftBukkit start
+         if (this.lastBookTick + 20 > MinecraftServer.currentTick) {
+             this.disconnect(Component.literal("Book edited too quickly!"));

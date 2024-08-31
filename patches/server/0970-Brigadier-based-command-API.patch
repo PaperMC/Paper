@@ -1,0 +1,2860 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Mon, 1 Aug 2022 22:50:34 -0400
+Subject: [PATCH] Brigadier based command API
+
+== AT ==
+public net.minecraft.commands.arguments.blocks.BlockInput tag
+public net.minecraft.commands.arguments.DimensionArgument ERROR_INVALID_VALUE
+public net.minecraft.server.ReloadableServerResources registryLookup
+public net.minecraft.server.ReloadableServerResources
+
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+
+diff --git a/src/main/java/com/mojang/brigadier/CommandDispatcher.java b/src/main/java/com/mojang/brigadier/CommandDispatcher.java
+index 4b4f812eb13d5f03bcf3f8724d8aa8dbbc724e8b..a4d5d7017e0be79844b996de85a63cad5f8488bc 100644
+--- a/src/main/java/com/mojang/brigadier/CommandDispatcher.java
++++ b/src/main/java/com/mojang/brigadier/CommandDispatcher.java
+@@ -459,7 +459,7 @@ public class CommandDispatcher<S> {
+     }
+ 
+     private String getSmartUsage(final CommandNode<S> node, final S source, final boolean optional, final boolean deep) {
+-        if (!node.canUse(source)) {
++        if (source != null && !node.canUse(source)) { // Paper
+             return null;
+         }
+ 
+@@ -473,7 +473,7 @@ public class CommandDispatcher<S> {
+                 final String redirect = node.getRedirect() == this.root ? "..." : "-> " + node.getRedirect().getUsageText();
+                 return self + CommandDispatcher.ARGUMENT_SEPARATOR + redirect;
+             } else {
+-                final Collection<CommandNode<S>> children = node.getChildren().stream().filter(c -> c.canUse(source)).collect(Collectors.toList());
++                final Collection<CommandNode<S>> children = node.getChildren().stream().filter(c -> source == null || c.canUse(source)).collect(Collectors.toList()); // Paper
+                 if (children.size() == 1) {
+                     final String usage = this.getSmartUsage(children.iterator().next(), source, childOptional, childOptional);
+                     if (usage != null) {
+diff --git a/src/main/java/com/mojang/brigadier/tree/CommandNode.java b/src/main/java/com/mojang/brigadier/tree/CommandNode.java
+index 1f4963bf4681a771130abc1da179819626ecfc1f..03ce8a2abb6dceaa922dcce7f3adbc228bbde4bc 100644
+--- a/src/main/java/com/mojang/brigadier/tree/CommandNode.java
++++ b/src/main/java/com/mojang/brigadier/tree/CommandNode.java
+@@ -35,6 +35,8 @@ public abstract class CommandNode<S> implements Comparable<CommandNode<S>> {
+     private final boolean forks;
+     private Command<S> command;
+     public CommandNode<CommandSourceStack> clientNode; // Paper - Brigadier API
++    public CommandNode<io.papermc.paper.command.brigadier.CommandSourceStack> unwrappedCached = null; // Paper - Brigadier Command API
++    public CommandNode<io.papermc.paper.command.brigadier.CommandSourceStack> wrappedCached = null; // Paper - Brigadier Command API
+     // CraftBukkit start
+     public void removeCommand(String name) {
+         this.children.remove(name);
+@@ -203,4 +205,11 @@ public abstract class CommandNode<S> implements Comparable<CommandNode<S>> {
+     }
+ 
+     public abstract Collection<String> getExamples();
++    // Paper start - Brigadier Command API
++    public void clearAll() {
++        this.children.clear();
++        this.literals.clear();
++        this.arguments.clear();
++    }
++    // Paper end - Brigadier Command API
+ }
+diff --git a/src/main/java/io/papermc/paper/brigadier/NullCommandSender.java b/src/main/java/io/papermc/paper/brigadier/NullCommandSender.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..367ef7e0769537e8c13c7fd818a1249e15a28a65
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/brigadier/NullCommandSender.java
+@@ -0,0 +1,151 @@
++package io.papermc.paper.brigadier;
++
++import java.util.Set;
++import java.util.UUID;
++import net.kyori.adventure.text.Component;
++import net.md_5.bungee.api.chat.BaseComponent;
++import org.bukkit.Bukkit;
++import org.bukkit.Server;
++import org.bukkit.command.CommandSender;
++import org.bukkit.permissions.PermissibleBase;
++import org.bukkit.permissions.Permission;
++import org.bukkit.permissions.PermissionAttachment;
++import org.bukkit.permissions.PermissionAttachmentInfo;
++import org.bukkit.plugin.Plugin;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++@DefaultQualifier(NonNull.class)
++public final class NullCommandSender implements CommandSender {
++
++    public static final CommandSender INSTANCE = new NullCommandSender();
++
++    private NullCommandSender() {
++    }
++
++    @Override
++    public void sendMessage(final String message) {
++    }
++
++    @Override
++    public void sendMessage(final String... messages) {
++    }
++
++    @Override
++    public void sendMessage(@Nullable final UUID sender, final String message) {
++    }
++
++    @Override
++    public void sendMessage(@Nullable final UUID sender, final String... messages) {
++    }
++
++    @SuppressWarnings("ConstantValue")
++    @Override
++    public Server getServer() {
++        final @Nullable Server server = Bukkit.getServer();
++        if (server == null) {
++            throw new UnsupportedOperationException("The server has not been created yet, you cannot access it at this time from the 'null' CommandSender");
++        }
++        return server;
++    }
++
++    @Override
++    public String getName() {
++        return "";
++    }
++
++    private final Spigot spigot = new Spigot();
++    @Override
++    public Spigot spigot() {
++        return this.spigot;
++    }
++
++    public final class Spigot extends CommandSender.Spigot {
++
++        @Override
++        public void sendMessage(@NotNull final BaseComponent component) {
++        }
++
++        @Override
++        public void sendMessage(@NonNull final @NotNull BaseComponent... components) {
++        }
++
++        @Override
++        public void sendMessage(@Nullable final UUID sender, @NotNull final BaseComponent component) {
++        }
++
++        @Override
++        public void sendMessage(@Nullable final UUID sender, @NonNull final @NotNull BaseComponent... components) {
++        }
++    }
++
++    @Override
++    public Component name() {
++        return Component.empty();
++    }
++
++    @Override
++    public boolean isPermissionSet(final String name) {
++        return false;
++    }
++
++    @Override
++    public boolean isPermissionSet(final Permission perm) {
++        return false;
++    }
++
++    @Override
++    public boolean hasPermission(final String name) {
++        return true;
++    }
++
++    @Override
++    public boolean hasPermission(final Permission perm) {
++        return true;
++    }
++
++    @Override
++    public PermissionAttachment addAttachment(final Plugin plugin, final String name, final boolean value) {
++        throw new UnsupportedOperationException("Cannot add attachments to the 'null' CommandSender");
++    }
++
++    @Override
++    public PermissionAttachment addAttachment(final Plugin plugin) {
++        throw new UnsupportedOperationException("Cannot add attachments to the 'null' CommandSender");
++    }
++
++    @Override
++    public @Nullable PermissionAttachment addAttachment(final Plugin plugin, final String name, final boolean value, final int ticks) {
++        throw new UnsupportedOperationException("Cannot add attachments to the 'null' CommandSender");
++    }
++
++    @Override
++    public @Nullable PermissionAttachment addAttachment(final Plugin plugin, final int ticks) {
++        throw new UnsupportedOperationException("Cannot add attachments to the 'null' CommandSender");
++    }
++
++    @Override
++    public void removeAttachment(final PermissionAttachment attachment) {
++        throw new UnsupportedOperationException("Cannot add attachments to the 'null' CommandSender");
++    }
++
++    @Override
++    public void recalculatePermissions() {
++    }
++
++    @Override
++    public Set<PermissionAttachmentInfo> getEffectivePermissions() {
++        throw new UnsupportedOperationException("Cannot remove attachments from the 'null' CommandSender");
++    }
++
++    @Override
++    public boolean isOp() {
++        return true;
++    }
++
++    @Override
++    public void setOp(final boolean value) {
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/brigadier/PaperBrigadierProviderImpl.java b/src/main/java/io/papermc/paper/brigadier/PaperBrigadierProviderImpl.java
+deleted file mode 100644
+index dd6012b6a097575b2d1471be5069eccee4537c0a..0000000000000000000000000000000000000000
+--- a/src/main/java/io/papermc/paper/brigadier/PaperBrigadierProviderImpl.java
++++ /dev/null
+@@ -1,30 +0,0 @@
+-package io.papermc.paper.brigadier;
+-
+-import com.mojang.brigadier.Message;
+-import io.papermc.paper.adventure.PaperAdventure;
+-import net.kyori.adventure.text.Component;
+-import net.kyori.adventure.text.ComponentLike;
+-import net.minecraft.network.chat.ComponentUtils;
+-import org.checkerframework.checker.nullness.qual.NonNull;
+-
+-import static java.util.Objects.requireNonNull;
+-
+-public enum PaperBrigadierProviderImpl implements PaperBrigadierProvider {
+-    INSTANCE;
+-
+-    PaperBrigadierProviderImpl() {
+-        PaperBrigadierProvider.initialize(this);
+-    }
+-
+-    @Override
+-    public @NonNull Message message(final @NonNull ComponentLike componentLike) {
+-        requireNonNull(componentLike, "componentLike");
+-        return PaperAdventure.asVanilla(componentLike.asComponent());
+-    }
+-
+-    @Override
+-    public @NonNull Component componentFromMessage(final @NonNull Message message) {
+-        requireNonNull(message, "message");
+-        return PaperAdventure.asAdventure(ComponentUtils.fromMessage(message));
+-    }
+-}
+diff --git a/src/main/java/io/papermc/paper/command/brigadier/ApiMirrorRootNode.java b/src/main/java/io/papermc/paper/command/brigadier/ApiMirrorRootNode.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..23525592d880f340745a28c956fa38d3e4057231
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/brigadier/ApiMirrorRootNode.java
+@@ -0,0 +1,253 @@
++package io.papermc.paper.command.brigadier;
++
++import com.google.common.collect.Collections2;
++import com.mojang.brigadier.CommandDispatcher;
++import com.mojang.brigadier.arguments.ArgumentType;
++import com.mojang.brigadier.arguments.BoolArgumentType;
++import com.mojang.brigadier.arguments.DoubleArgumentType;
++import com.mojang.brigadier.arguments.FloatArgumentType;
++import com.mojang.brigadier.arguments.IntegerArgumentType;
++import com.mojang.brigadier.arguments.LongArgumentType;
++import com.mojang.brigadier.arguments.StringArgumentType;
++import com.mojang.brigadier.context.CommandContext;
++import com.mojang.brigadier.suggestion.SuggestionProvider;
++import com.mojang.brigadier.suggestion.SuggestionsBuilder;
++import com.mojang.brigadier.tree.ArgumentCommandNode;
++import com.mojang.brigadier.tree.CommandNode;
++import com.mojang.brigadier.tree.LiteralCommandNode;
++import com.mojang.brigadier.tree.RootCommandNode;
++import io.papermc.paper.command.brigadier.argument.CustomArgumentType;
++import io.papermc.paper.command.brigadier.argument.VanillaArgumentProviderImpl;
++import io.papermc.paper.command.brigadier.argument.WrappedArgumentCommandNode;
++import java.lang.reflect.Method;
++import java.util.Collection;
++import java.util.Set;
++import net.minecraft.commands.synchronization.ArgumentTypeInfos;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * This root command node is responsible for wrapping around vanilla's dispatcher.
++ * <p>
++ * The reason for this is conversion is we do NOT want there to be NMS types
++ * in the api. This allows us to reconstruct the nodes to be more api friendly, while
++ * we can then unwrap it when needed and convert them to NMS types.
++ * <p>
++ * Command nodes such as vanilla (those without a proper "api node")
++ * will be assigned a {@link ShadowBrigNode}.
++ * This prevents certain parts of it (children) from being accessed by the api.
++ */
++public abstract class ApiMirrorRootNode extends RootCommandNode<CommandSourceStack> {
++
++    /**
++     * Represents argument types that are allowed to exist in the api.
++     * These typically represent primitives that don't need to be wrapped
++     * by NMS.
++     */
++    private static final Set<Class<? extends ArgumentType<?>>> ARGUMENT_WHITELIST = Set.of(
++        BoolArgumentType.class,
++        DoubleArgumentType.class,
++        FloatArgumentType.class,
++        IntegerArgumentType.class,
++        LongArgumentType.class,
++        StringArgumentType.class
++    );
++
++    public static void validatePrimitiveType(ArgumentType<?> type) {
++        if (ARGUMENT_WHITELIST.contains(type.getClass())) {
++            if (!ArgumentTypeInfos.isClassRecognized(type.getClass())) {
++                throw new IllegalArgumentException("This whitelisted primitive argument type is not recognized by the server!");
++            }
++        } else if (!(type instanceof VanillaArgumentProviderImpl.NativeWrapperArgumentType<?,?> nativeWrapperArgumentType) || !ArgumentTypeInfos.isClassRecognized(nativeWrapperArgumentType.nativeNmsArgumentType().getClass())) {
++            throw new IllegalArgumentException("Custom argument type was passed, this was not a recognized type to send to the client! You must only pass vanilla arguments or primitive brig args in the wrapper!");
++        }
++    }
++
++    public abstract CommandDispatcher<net.minecraft.commands.CommandSourceStack> getDispatcher();
++
++    /**
++     * This logic is responsible for unwrapping an API node to be supported by NMS.
++     * See the method implementation for detailed steps.
++     *
++     * @param maybeWrappedNode api provided node / node to be "wrapped"
++     * @return wrapped node
++     */
++    @SuppressWarnings({"rawtypes", "unchecked"})
++    private @NotNull CommandNode<CommandSourceStack> unwrapNode(final CommandNode<CommandSourceStack> maybeWrappedNode) {
++        /*
++        If the type is a shadow node we can assume that the type that it represents is an already supported NMS node.
++        This is because these are typically minecraft command nodes.
++         */
++        if (maybeWrappedNode instanceof final ShadowBrigNode shadowBrigNode) {
++            return (CommandNode) shadowBrigNode.getHandle();
++        }
++
++        /*
++        This node already has had an unwrapped node created, so we can assume that it's safe to reuse that cached copy.
++         */
++        if (maybeWrappedNode.unwrappedCached != null) {
++            return maybeWrappedNode.unwrappedCached;
++        }
++
++        // convert the pure brig node into one compatible with the nms dispatcher
++        return this.convertFromPureBrigNode(maybeWrappedNode);
++    }
++
++    private @NotNull CommandNode<CommandSourceStack> convertFromPureBrigNode(final CommandNode<CommandSourceStack> pureNode) {
++        /*
++        Logic for converting a node.
++         */
++        final CommandNode<CommandSourceStack> converted;
++        if (pureNode instanceof final LiteralCommandNode<CommandSourceStack> node) {
++            /*
++            Remap the literal node, we only have to account
++            for the redirect in this case.
++             */
++            converted = this.simpleUnwrap(node);
++        } else if (pureNode instanceof final ArgumentCommandNode<CommandSourceStack, ?> pureArgumentNode) {
++            final ArgumentType<?> pureArgumentType = pureArgumentNode.getType();
++            /*
++            Check to see if this argument type is a wrapped type, if so we know that
++            we can unwrap the node to get an NMS type.
++             */
++            if (pureArgumentType instanceof final CustomArgumentType<?, ?> customArgumentType) {
++                final SuggestionProvider<?> suggestionProvider;
++                try {
++                    final Method listSuggestions = customArgumentType.getClass().getMethod("listSuggestions", CommandContext.class, SuggestionsBuilder.class);
++                    if (listSuggestions.getDeclaringClass() != CustomArgumentType.class) {
++                        suggestionProvider = customArgumentType::listSuggestions;
++                    } else {
++                        suggestionProvider = null;
++                    }
++                } catch (final NoSuchMethodException ex) {
++                    throw new IllegalStateException("Could not determine if the custom argument type " + customArgumentType + " overrides listSuggestions", ex);
++                }
++
++                converted = this.unwrapArgumentWrapper(pureArgumentNode, customArgumentType, customArgumentType.getNativeType(), suggestionProvider);
++            } else if (pureArgumentType instanceof final VanillaArgumentProviderImpl.NativeWrapperArgumentType<?,?> nativeWrapperArgumentType) {
++                converted = this.unwrapArgumentWrapper(pureArgumentNode, nativeWrapperArgumentType, nativeWrapperArgumentType, null); // "null" for suggestion provider so it uses the argument type's suggestion provider
++
++            /*
++            If it's not a wrapped type, it either has to be a primitive or an already
++            defined NMS type.
++            This method allows us to check if this is recognized by vanilla.
++             */
++            } else if (ArgumentTypeInfos.isClassRecognized(pureArgumentType.getClass())) {
++                // Allow any type of argument, as long as it's recognized by the client (but in most cases, this should be API only types)
++                // Previously we only allowed whitelisted types.
++                converted = this.simpleUnwrap(pureArgumentNode);
++            } else {
++                // Unknown argument type was passed
++                throw new IllegalArgumentException("Custom unknown argument type was passed, should be wrapped inside an CustomArgumentType.");
++            }
++        } else {
++            throw new IllegalArgumentException("Unknown command node passed. Don't know how to unwrap this.");
++        }
++
++        // Store unwrapped node before unwrapping children to avoid infinite recursion in cyclic redirects.
++        converted.wrappedCached = pureNode;
++        pureNode.unwrappedCached = converted;
++
++        /*
++        Add the children to the node, unwrapping each child in the process.
++         */
++        for (final CommandNode<CommandSourceStack> child : pureNode.getChildren()) {
++            converted.addChild(this.unwrapNode(child));
++        }
++
++        return converted;
++    }
++
++    /**
++     * This logic is responsible for rewrapping a node.
++     * If a node was unwrapped in the past, it should have a wrapped type
++     * stored in its cache.
++     * <p>
++     * However, if it doesn't seem to have a wrapped version we will return
++     * a {@link ShadowBrigNode} instead. This supports being unwrapped/wrapped while
++     * preventing the API from accessing it unsafely.
++     *
++     * @param unwrapped argument node
++     * @return wrapped node
++     */
++    private @Nullable CommandNode<CommandSourceStack> wrapNode(@Nullable final CommandNode<net.minecraft.commands.CommandSourceStack> unwrapped) {
++        if (unwrapped == null) {
++            return null;
++        }
++
++        /*
++        This was most likely created by API and has a wrapped variant,
++        so we can return this safely.
++         */
++        if (unwrapped.wrappedCached != null) {
++            return unwrapped.wrappedCached;
++        }
++
++        /*
++        We don't know the type of this, or where this came from.
++        Return a shadow, where we will allow the api to handle this but have
++        restrictive access.
++         */
++        CommandNode<CommandSourceStack> shadow = new ShadowBrigNode(unwrapped);
++        unwrapped.wrappedCached = shadow;
++        return shadow;
++    }
++
++    /**
++     * Nodes added to this dispatcher must be unwrapped
++     * in order to be added to the NMS dispatcher.
++     *
++     * @param node node to add
++     */
++    @SuppressWarnings({"rawtypes", "unchecked"})
++    @Override
++    public void addChild(CommandNode<CommandSourceStack> node) {
++        CommandNode convertedNode = this.unwrapNode(node);
++        this.getDispatcher().getRoot().addChild(convertedNode);
++    }
++
++    /**
++     * Gets the children for the vanilla dispatcher,
++     * ensuring that all are wrapped.
++     *
++     * @return wrapped children
++     */
++    @Override
++    public Collection<CommandNode<CommandSourceStack>> getChildren() {
++        return Collections2.transform(this.getDispatcher().getRoot().getChildren(), this::wrapNode);
++    }
++
++    @Override
++    public CommandNode<CommandSourceStack> getChild(String name) {
++        return this.wrapNode(this.getDispatcher().getRoot().getChild(name));
++    }
++
++    // These are needed for bukkit... we should NOT allow this
++    @Override
++    public void removeCommand(String name) {
++        this.getDispatcher().getRoot().removeCommand(name);
++    }
++
++    @Override
++    public void clearAll() {
++        this.getDispatcher().getRoot().clearAll();
++    }
++
++    @SuppressWarnings({"rawtypes", "unchecked"})
++    private CommandNode<CommandSourceStack> unwrapArgumentWrapper(final ArgumentCommandNode pureNode, final ArgumentType pureArgumentType, final ArgumentType possiblyWrappedNativeArgumentType, @Nullable SuggestionProvider argumentTypeSuggestionProvider) {
++        validatePrimitiveType(possiblyWrappedNativeArgumentType);
++        final CommandNode redirectNode = pureNode.getRedirect() == null ? null : this.unwrapNode(pureNode.getRedirect());
++        // If there is already a custom suggestion provider, ignore the suggestion provider from the argument type
++        final SuggestionProvider suggestionProvider = pureNode.getCustomSuggestions() != null ? pureNode.getCustomSuggestions() : argumentTypeSuggestionProvider;
++
++        final ArgumentType nativeArgumentType = possiblyWrappedNativeArgumentType instanceof final VanillaArgumentProviderImpl.NativeWrapperArgumentType<?,?> nativeWrapperArgumentType ? nativeWrapperArgumentType.nativeNmsArgumentType() : possiblyWrappedNativeArgumentType;
++        return new WrappedArgumentCommandNode<>(pureNode.getName(), pureArgumentType, nativeArgumentType, pureNode.getCommand(), pureNode.getRequirement(), redirectNode, pureNode.getRedirectModifier(), pureNode.isFork(), suggestionProvider);
++    }
++
++    private CommandNode<CommandSourceStack> simpleUnwrap(final CommandNode<CommandSourceStack> node) {
++        return node.createBuilder()
++            .redirect(node.getRedirect() == null ? null : this.unwrapNode(node.getRedirect()))
++            .build();
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/command/brigadier/MessageComponentSerializerImpl.java b/src/main/java/io/papermc/paper/command/brigadier/MessageComponentSerializerImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0b33c6cf2366568641e6f2fd7f74fb74f6ea0145
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/brigadier/MessageComponentSerializerImpl.java
+@@ -0,0 +1,20 @@
++package io.papermc.paper.command.brigadier;
++
++import com.mojang.brigadier.Message;
++import io.papermc.paper.adventure.PaperAdventure;
++import net.kyori.adventure.text.Component;
++import net.minecraft.network.chat.ComponentUtils;
++import org.jetbrains.annotations.NotNull;
++
++public final class MessageComponentSerializerImpl implements MessageComponentSerializer {
++
++    @Override
++    public @NotNull Component deserialize(@NotNull Message input) {
++        return PaperAdventure.asAdventure(ComponentUtils.fromMessage(input));
++    }
++
++    @Override
++    public @NotNull Message serialize(@NotNull Component component) {
++        return PaperAdventure.asVanilla(component);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/command/brigadier/PaperBrigadier.java b/src/main/java/io/papermc/paper/command/brigadier/PaperBrigadier.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4acf7c3bcfbe61431bfbfa3c8addb33f671eb498
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/brigadier/PaperBrigadier.java
+@@ -0,0 +1,73 @@
++package io.papermc.paper.command.brigadier;
++
++import com.mojang.brigadier.CommandDispatcher;
++import com.mojang.brigadier.tree.CommandNode;
++import com.mojang.brigadier.tree.LiteralCommandNode;
++import io.papermc.paper.command.brigadier.bukkit.BukkitBrigForwardingMap;
++import io.papermc.paper.command.brigadier.bukkit.BukkitCommandNode;
++import net.minecraft.commands.CommandSource;
++import net.minecraft.commands.Commands;
++import net.minecraft.network.chat.CommonComponents;
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.world.phys.Vec2;
++import net.minecraft.world.phys.Vec3;
++import org.bukkit.Bukkit;
++import org.bukkit.Server;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandMap;
++import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
++
++import java.util.Map;
++
++public final class PaperBrigadier {
++
++    @SuppressWarnings("DataFlowIssue")
++    static final net.minecraft.commands.CommandSourceStack DUMMY = new net.minecraft.commands.CommandSourceStack(
++        CommandSource.NULL,
++        Vec3.ZERO,
++        Vec2.ZERO,
++        null,
++        4,
++        "",
++        CommonComponents.EMPTY,
++        null,
++        null
++    );
++
++    @SuppressWarnings({"unchecked", "rawtypes"})
++    public static Command wrapNode(CommandNode node) {
++        if (!(node instanceof LiteralCommandNode)) {
++            throw new IllegalArgumentException("Unsure how to wrap a " + node);
++        }
++
++        if (!(node instanceof PluginCommandNode pluginCommandNode)) {
++            return new VanillaCommandWrapper(null, node);
++        }
++        CommandNode<CommandSourceStack> argumentCommandNode = node;
++        if (argumentCommandNode.getRedirect() != null) {
++            argumentCommandNode = argumentCommandNode.getRedirect();
++        }
++
++        Map<CommandNode<CommandSourceStack>, String> map = PaperCommands.INSTANCE.getDispatcherInternal().getSmartUsage(argumentCommandNode, DUMMY);
++        String usage = map.isEmpty() ? pluginCommandNode.getUsageText() :  pluginCommandNode.getUsageText() + " " + String.join("\n" + pluginCommandNode.getUsageText() + " ", map.values());
++        return new PluginVanillaCommandWrapper(pluginCommandNode.getName(), pluginCommandNode.getDescription(), usage, pluginCommandNode.getAliases(), node, pluginCommandNode.getPlugin());
++    }
++
++    /*
++    Previously, Bukkit used one command dispatcher and ignored minecraft's reloading logic.
++
++    In order to allow for legacy commands to be properly added, we will iterate through previous bukkit commands
++    in the old dispatcher and re-register them.
++     */
++    @SuppressWarnings({"unchecked", "rawtypes"})
++    public static void moveBukkitCommands(Commands before, Commands after) {
++        CommandDispatcher erasedDispatcher = before.getDispatcher();
++
++        for (Object node : erasedDispatcher.getRoot().getChildren()) {
++            if (node instanceof CommandNode<?> commandNode && commandNode.getCommand() instanceof BukkitCommandNode.BukkitBrigCommand) {
++                after.getDispatcher().getRoot().removeCommand(((CommandNode<?>) node).getName()); // Remove already existing commands
++                after.getDispatcher().getRoot().addChild((CommandNode<net.minecraft.commands.CommandSourceStack>) node);
++            }
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/command/brigadier/PaperCommandSourceStack.java b/src/main/java/io/papermc/paper/command/brigadier/PaperCommandSourceStack.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1b1642f306771f029e6214a2e2ebebb6ae6abc3e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/brigadier/PaperCommandSourceStack.java
+@@ -0,0 +1,63 @@
++package io.papermc.paper.command.brigadier;
++
++import com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource;
++import net.minecraft.world.level.Level;
++import net.minecraft.world.phys.Vec2;
++import net.minecraft.world.phys.Vec3;
++import org.bukkit.Location;
++import org.bukkit.command.CommandSender;
++import org.bukkit.entity.Entity;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++public interface PaperCommandSourceStack extends CommandSourceStack, BukkitBrigadierCommandSource {
++
++    net.minecraft.commands.CommandSourceStack getHandle();
++
++    @Override
++    default @NotNull Location getLocation() {
++        Vec2 rot = this.getHandle().getRotation();
++        Vec3 pos = this.getHandle().getPosition();
++        Level level = this.getHandle().getLevel();
++
++        return new Location(level.getWorld(), pos.x, pos.y, pos.z, rot.y, rot.x);
++    }
++
++    @Override
++    @NotNull
++    default CommandSender getSender() {
++        return this.getHandle().getBukkitSender();
++    }
++
++    @Override
++    @Nullable
++    default Entity getExecutor() {
++        net.minecraft.world.entity.Entity nmsEntity = this.getHandle().getEntity();
++        if (nmsEntity == null) {
++            return null;
++        }
++
++        return nmsEntity.getBukkitEntity();
++    }
++
++    // OLD METHODS
++    @Override
++    default org.bukkit.entity.Entity getBukkitEntity() {
++        return this.getExecutor();
++    }
++
++    @Override
++    default org.bukkit.World getBukkitWorld() {
++        return this.getLocation().getWorld();
++    }
++
++    @Override
++    default org.bukkit.Location getBukkitLocation() {
++        return this.getLocation();
++    }
++
++    @Override
++    default CommandSender getBukkitSender() {
++        return this.getSender();
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java b/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..95d3b42cbe2184b0a04d941f27f7a6e643ef59be
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/brigadier/PaperCommands.java
+@@ -0,0 +1,204 @@
++package io.papermc.paper.command.brigadier;
++
++import com.google.common.base.Preconditions;
++import com.mojang.brigadier.CommandDispatcher;
++import com.mojang.brigadier.arguments.StringArgumentType;
++import com.mojang.brigadier.builder.LiteralArgumentBuilder;
++import com.mojang.brigadier.suggestion.SuggestionsBuilder;
++import com.mojang.brigadier.tree.CommandNode;
++import com.mojang.brigadier.tree.LiteralCommandNode;
++import io.papermc.paper.command.brigadier.bukkit.BukkitCommandNode;
++import io.papermc.paper.plugin.configuration.PluginMeta;
++import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
++import io.papermc.paper.plugin.lifecycle.event.registrar.PaperRegistrar;
++import java.util.ArrayList;
++import java.util.Collection;
++import java.util.Collections;
++import java.util.HashSet;
++import java.util.List;
++import java.util.Locale;
++import java.util.Set;
++import net.minecraft.commands.CommandBuildContext;
++import org.apache.commons.lang3.ArrayUtils;
++import org.apache.commons.lang3.StringUtils;
++import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Unmodifiable;
++
++import static java.util.Objects.requireNonNull;
++
++@DefaultQualifier(NonNull.class)
++public class PaperCommands implements Commands, PaperRegistrar<LifecycleEventOwner> {
++
++    public static final PaperCommands INSTANCE = new PaperCommands();
++
++    private @Nullable LifecycleEventOwner currentContext;
++    private @MonotonicNonNull CommandDispatcher<CommandSourceStack> dispatcher;
++    private @MonotonicNonNull CommandBuildContext buildContext;
++    private boolean invalid = false;
++
++    @Override
++    public void setCurrentContext(final @Nullable LifecycleEventOwner context) {
++        this.currentContext = context;
++    }
++
++    public void setDispatcher(final net.minecraft.commands.Commands commands, final CommandBuildContext commandBuildContext) {
++        this.invalid = false;
++        this.dispatcher = new CommandDispatcher<>(new ApiMirrorRootNode() {
++            @Override
++            public CommandDispatcher<net.minecraft.commands.CommandSourceStack> getDispatcher() {
++                return commands.getDispatcher();
++            }
++        });
++        this.buildContext = commandBuildContext;
++    }
++
++    public void setValid() {
++        this.invalid = false;
++    }
++
++    @Override
++    public void invalidate() {
++        this.invalid = true;
++    }
++
++    // use this method internally as it bypasses the valid check
++    public CommandDispatcher<CommandSourceStack> getDispatcherInternal() {
++        Preconditions.checkState(this.dispatcher != null, "the dispatcher hasn't been set yet");
++        return this.dispatcher;
++    }
++
++    public CommandBuildContext getBuildContext() {
++        Preconditions.checkState(this.buildContext != null, "the build context hasn't been set yet");
++        return this.buildContext;
++    }
++
++    @Override
++    public CommandDispatcher<CommandSourceStack> getDispatcher() {
++        Preconditions.checkState(!this.invalid && this.dispatcher != null, "cannot access the dispatcher in this context");
++        return this.dispatcher;
++    }
++
++    @Override
++    public @Unmodifiable Set<String> register(final LiteralCommandNode<CommandSourceStack> node, final @Nullable String description, final Collection<String> aliases) {
++        return this.register(requireNonNull(this.currentContext, "No lifecycle owner context is set").getPluginMeta(), node, description, aliases);
++    }
++
++    @Override
++    public @Unmodifiable Set<String> register(final PluginMeta pluginMeta, final LiteralCommandNode<CommandSourceStack> node, final @Nullable String description, final Collection<String> aliases) {
++        return this.registerWithFlags(pluginMeta, node, description, aliases, Set.of());
++    }
++
++    @Override
++    public @Unmodifiable Set<String> registerWithFlags(@NotNull final PluginMeta pluginMeta, @NotNull final LiteralCommandNode<CommandSourceStack> node, @org.jetbrains.annotations.Nullable final String description, @NotNull final Collection<String> aliases, @NotNull final Set<CommandRegistrationFlag> flags) {
++        final boolean hasFlattenRedirectFlag = flags.contains(CommandRegistrationFlag.FLATTEN_ALIASES);
++        final String identifier = pluginMeta.getName().toLowerCase(Locale.ROOT);
++        final String literal = node.getLiteral();
++        final PluginCommandNode pluginLiteral = new PluginCommandNode(identifier + ":" + literal, pluginMeta, node, description);  // Treat the keyed version of the command as the root
++
++        final Set<String> registeredLabels = new HashSet<>(aliases.size() * 2 + 2);
++
++        if (this.registerIntoDispatcher(pluginLiteral, true)) {
++            registeredLabels.add(pluginLiteral.getLiteral());
++        }
++        if (this.registerRedirect(literal, pluginMeta, pluginLiteral, description, true, hasFlattenRedirectFlag)) { // Plugin commands should override vanilla commands
++            registeredLabels.add(literal);
++        }
++
++        // Add aliases
++        final List<String> registeredAliases = new ArrayList<>(aliases.size() * 2);
++        for (final String alias : aliases) {
++            if (this.registerRedirect(alias, pluginMeta, pluginLiteral, description, false, hasFlattenRedirectFlag)) {
++                registeredAliases.add(alias);
++            }
++            if (this.registerRedirect(identifier + ":" + alias, pluginMeta, pluginLiteral, description, false, hasFlattenRedirectFlag)) {
++                registeredAliases.add(identifier + ":" + alias);
++            }
++        }
++
++        if (!registeredAliases.isEmpty()) {
++            pluginLiteral.setAliases(registeredAliases);
++        }
++
++        registeredLabels.addAll(registeredAliases);
++        return registeredLabels.isEmpty() ? Collections.emptySet() : Collections.unmodifiableSet(registeredLabels);
++    }
++
++    private boolean registerRedirect(final String aliasLiteral, final PluginMeta plugin, final PluginCommandNode redirectTo, final @Nullable String description, final boolean override, boolean hasFlattenRedirectFlag) {
++        final LiteralCommandNode<CommandSourceStack> redirect;
++        if (redirectTo.getChildren().isEmpty() || hasFlattenRedirectFlag) {
++            redirect = Commands.literal(aliasLiteral)
++                .executes(redirectTo.getCommand())
++                .requires(redirectTo.getRequirement())
++                .build();
++
++            for (final CommandNode<CommandSourceStack> child : redirectTo.getChildren()) {
++                redirect.addChild(child);
++            }
++        } else {
++            redirect = Commands.literal(aliasLiteral)
++                .executes(redirectTo.getCommand())
++                .redirect(redirectTo)
++                .requires(redirectTo.getRequirement())
++                .build();
++        }
++
++        return this.registerIntoDispatcher(new PluginCommandNode(aliasLiteral, plugin, redirect, description), override);
++    }
++
++    private boolean registerIntoDispatcher(final PluginCommandNode node, boolean override) {
++        final @Nullable CommandNode<CommandSourceStack> existingChild = this.getDispatcher().getRoot().getChild(node.getLiteral());
++        if (existingChild != null && !(existingChild instanceof PluginCommandNode) && !(existingChild instanceof BukkitCommandNode)) {
++            override = true; // override vanilla commands
++        }
++        if (existingChild == null || override) { // Avoid merging behavior. Maybe something to look into in the future
++            if (override) {
++                this.getDispatcher().getRoot().removeCommand(node.getLiteral());
++            }
++            this.getDispatcher().getRoot().addChild(node);
++            return true;
++        }
++
++        return false;
++    }
++
++    @Override
++    public @Unmodifiable Set<String> register(final String label, final @Nullable String description, final Collection<String> aliases, final BasicCommand basicCommand) {
++        return this.register(requireNonNull(this.currentContext, "No lifecycle owner context is set").getPluginMeta(), label, description, aliases, basicCommand);
++    }
++
++    @Override
++    public @Unmodifiable Set<String> register(final PluginMeta pluginMeta, final String label, final @Nullable String description, final Collection<String> aliases, final BasicCommand basicCommand) {
++        final LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal(label)
++            .requires(stack -> basicCommand.canUse(stack.getSender()))
++            .then(
++                Commands.argument("args", StringArgumentType.greedyString())
++                    .suggests((context, suggestionsBuilder) -> {
++                        String[] args = StringUtils.split(suggestionsBuilder.getRemaining());
++                        if (suggestionsBuilder.getRemaining().endsWith(" ")) {
++                            // if there is trailing whitespace, we should add an empty argument to signify
++                            // that there may be more, but no characters have been typed yet
++                            args = ArrayUtils.add(args, "");
++                        }
++                        final SuggestionsBuilder offsetSuggestionsBuilder = suggestionsBuilder.createOffset(suggestionsBuilder.getInput().lastIndexOf(' ') + 1);
++
++                        final Collection<String> suggestions = basicCommand.suggest(context.getSource(), args);
++                        suggestions.forEach(offsetSuggestionsBuilder::suggest);
++                        return offsetSuggestionsBuilder.buildFuture();
++                    })
++                    .executes((stack) -> {
++                        basicCommand.execute(stack.getSource(), StringUtils.split(stack.getArgument("args", String.class), ' '));
++                        return com.mojang.brigadier.Command.SINGLE_SUCCESS;
++                    })
++            )
++            .executes((stack) -> {
++                basicCommand.execute(stack.getSource(), new String[0]);
++                return com.mojang.brigadier.Command.SINGLE_SUCCESS;
++            });
++
++        return this.register(pluginMeta, builder.build(), description, aliases);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/command/brigadier/PluginCommandNode.java b/src/main/java/io/papermc/paper/command/brigadier/PluginCommandNode.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3a9f58873b83f10ba354ae4968c4ab0632662439
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/brigadier/PluginCommandNode.java
+@@ -0,0 +1,50 @@
++package io.papermc.paper.command.brigadier;
++
++import com.mojang.brigadier.tree.CommandNode;
++import com.mojang.brigadier.tree.LiteralCommandNode;
++import java.util.Collections;
++import java.util.List;
++import java.util.Objects;
++import io.papermc.paper.plugin.configuration.PluginMeta;
++import org.bukkit.Bukkit;
++import org.bukkit.plugin.Plugin;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++public class PluginCommandNode extends LiteralCommandNode<CommandSourceStack> {
++
++    private final PluginMeta plugin;
++    private final String description;
++    private List<String> aliases = Collections.emptyList();
++
++    public PluginCommandNode(final @NotNull String literal, final @NotNull PluginMeta plugin, final @NotNull LiteralCommandNode<CommandSourceStack> rootLiteral, final @Nullable String description) {
++        super(
++            literal, rootLiteral.getCommand(), rootLiteral.getRequirement(),
++            rootLiteral.getRedirect(), rootLiteral.getRedirectModifier(), rootLiteral.isFork()
++        );
++        this.plugin = plugin;
++        this.description = description;
++
++        for (CommandNode<CommandSourceStack> argument : rootLiteral.getChildren()) {
++            this.addChild(argument);
++        }
++    }
++
++    @NotNull
++    public Plugin getPlugin() {
++        return Objects.requireNonNull(Bukkit.getPluginManager().getPlugin(this.plugin.getName()));
++    }
++
++    @NotNull
++    public String getDescription() {
++        return this.description;
++    }
++
++    public void setAliases(List<String> aliases) {
++        this.aliases = aliases;
++    }
++
++    public List<String> getAliases() {
++        return this.aliases;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/command/brigadier/PluginVanillaCommandWrapper.java b/src/main/java/io/papermc/paper/command/brigadier/PluginVanillaCommandWrapper.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..cf8359af60601d7917e77fd06a00b64992a85953
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/brigadier/PluginVanillaCommandWrapper.java
+@@ -0,0 +1,46 @@
++package io.papermc.paper.command.brigadier;
++
++import com.mojang.brigadier.tree.CommandNode;
++import net.minecraft.commands.CommandSourceStack;
++import net.minecraft.commands.Commands;
++import org.bukkit.command.Command;
++import org.bukkit.command.PluginIdentifiableCommand;
++import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
++import org.bukkit.plugin.Plugin;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.List;
++
++// Exists to that /help can show the plugin
++public class PluginVanillaCommandWrapper extends VanillaCommandWrapper implements PluginIdentifiableCommand {
++
++    private final Plugin plugin;
++    private final List<String> alises;
++
++    public PluginVanillaCommandWrapper(String name, String description, String usageMessage, List<String> aliases, CommandNode<CommandSourceStack> vanillaCommand, Plugin plugin) {
++        super(name, description, usageMessage, aliases, vanillaCommand);
++        this.plugin = plugin;
++        this.alises = aliases;
++    }
++
++    @Override
++    public @NotNull List<String> getAliases() {
++        return this.alises;
++    }
++
++    @Override
++    public @NotNull Command setAliases(@NotNull List<String> aliases) {
++        return this;
++    }
++
++    @Override
++    public @NotNull Plugin getPlugin() {
++        return this.plugin;
++    }
++
++    // Show in help menu!
++    @Override
++    public boolean isRegistered() {
++        return true;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/command/brigadier/ShadowBrigNode.java b/src/main/java/io/papermc/paper/command/brigadier/ShadowBrigNode.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..895addef908e09d527e4bc9210599e8827c53807
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/brigadier/ShadowBrigNode.java
+@@ -0,0 +1,35 @@
++package io.papermc.paper.command.brigadier;
++
++import com.mojang.brigadier.tree.CommandNode;
++import com.mojang.brigadier.tree.LiteralCommandNode;
++
++import java.util.Collection;
++
++public class ShadowBrigNode extends LiteralCommandNode<CommandSourceStack> {
++
++    private final CommandNode<net.minecraft.commands.CommandSourceStack> handle;
++
++    public ShadowBrigNode(CommandNode<net.minecraft.commands.CommandSourceStack> node) {
++        super(node.getName(), context -> 0, (s) -> false, node.getRedirect() == null ? null : new ShadowBrigNode(node.getRedirect()), null, node.isFork());
++        this.handle = node;
++    }
++
++    @Override
++    public Collection<CommandNode<CommandSourceStack>> getChildren() {
++        throw new UnsupportedOperationException("Cannot retrieve children from this node.");
++    }
++
++    @Override
++    public CommandNode<CommandSourceStack> getChild(String name) {
++        throw new UnsupportedOperationException("Cannot retrieve children from this node.");
++    }
++
++    @Override
++    public void addChild(CommandNode<CommandSourceStack> node) {
++        throw new UnsupportedOperationException("Cannot modify children for this node.");
++    }
++
++    public CommandNode<net.minecraft.commands.CommandSourceStack> getHandle() {
++        return this.handle;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/SignedMessageResolverImpl.java b/src/main/java/io/papermc/paper/command/brigadier/argument/SignedMessageResolverImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..72966584089d3fee9778f572727c9b7f4a4d4302
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/brigadier/argument/SignedMessageResolverImpl.java
+@@ -0,0 +1,30 @@
++package io.papermc.paper.command.brigadier.argument;
++
++import com.mojang.brigadier.context.CommandContext;
++import com.mojang.brigadier.exceptions.CommandSyntaxException;
++import net.kyori.adventure.chat.SignedMessage;
++import net.minecraft.commands.CommandSourceStack;
++import net.minecraft.commands.arguments.MessageArgument;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.concurrent.CompletableFuture;
++
++public record SignedMessageResolverImpl(MessageArgument.Message message) implements SignedMessageResolver {
++
++    @Override
++    public String content() {
++        return this.message.text();
++    }
++
++    @Override
++    public @NotNull CompletableFuture<SignedMessage> resolveSignedMessage(final String argumentName, final CommandContext erased) throws CommandSyntaxException {
++        final CommandContext<CommandSourceStack> type = erased;
++        final CompletableFuture<SignedMessage> future = new CompletableFuture<>();
++
++        final MessageArgument.Message response = type.getArgument(argumentName, SignedMessageResolverImpl.class).message;
++        MessageArgument.resolveChatMessage(response, type, argumentName, (message) -> {
++            future.complete(message.adventureView());
++        });
++        return future;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/VanillaArgumentProviderImpl.java b/src/main/java/io/papermc/paper/command/brigadier/argument/VanillaArgumentProviderImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..38fb7d13abfcb55fe4a132b9b27e0c91f8c3d891
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/brigadier/argument/VanillaArgumentProviderImpl.java
+@@ -0,0 +1,366 @@
++package io.papermc.paper.command.brigadier.argument;
++
++import com.destroystokyo.paper.profile.CraftPlayerProfile;
++import com.google.common.collect.Collections2;
++import com.google.common.collect.Lists;
++import com.google.common.collect.Range;
++import com.mojang.brigadier.StringReader;
++import com.mojang.brigadier.arguments.ArgumentType;
++import com.mojang.brigadier.context.CommandContext;
++import com.mojang.brigadier.exceptions.CommandSyntaxException;
++import com.mojang.brigadier.suggestion.Suggestions;
++import com.mojang.brigadier.suggestion.SuggestionsBuilder;
++import io.papermc.paper.adventure.PaperAdventure;
++import io.papermc.paper.command.brigadier.PaperCommands;
++import io.papermc.paper.command.brigadier.argument.predicate.ItemStackPredicate;
++import io.papermc.paper.command.brigadier.argument.range.DoubleRangeProvider;
++import io.papermc.paper.command.brigadier.argument.range.IntegerRangeProvider;
++import io.papermc.paper.command.brigadier.argument.range.RangeProvider;
++import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolver;
++import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
++import io.papermc.paper.command.brigadier.argument.resolvers.PlayerProfileListResolver;
++import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
++import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
++import io.papermc.paper.entity.LookAnchor;
++import io.papermc.paper.registry.PaperRegistries;
++import io.papermc.paper.registry.RegistryAccess;
++import io.papermc.paper.registry.RegistryKey;
++import io.papermc.paper.registry.TypedKey;
++import io.papermc.paper.util.MCUtil;
++import java.util.Collection;
++import java.util.Collections;
++import java.util.List;
++import java.util.UUID;
++import java.util.concurrent.CompletableFuture;
++import java.util.function.Function;
++import net.kyori.adventure.key.Key;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.format.Style;
++import net.minecraft.advancements.critereon.MinMaxBounds;
++import net.minecraft.commands.CommandSourceStack;
++import net.minecraft.commands.arguments.ColorArgument;
++import net.minecraft.commands.arguments.ComponentArgument;
++import net.minecraft.commands.arguments.DimensionArgument;
++import net.minecraft.commands.arguments.EntityAnchorArgument;
++import net.minecraft.commands.arguments.EntityArgument;
++import net.minecraft.commands.arguments.GameModeArgument;
++import net.minecraft.commands.arguments.GameProfileArgument;
++import net.minecraft.commands.arguments.HeightmapTypeArgument;
++import net.minecraft.commands.arguments.MessageArgument;
++import net.minecraft.commands.arguments.ObjectiveCriteriaArgument;
++import net.minecraft.commands.arguments.RangeArgument;
++import net.minecraft.commands.arguments.ResourceArgument;
++import net.minecraft.commands.arguments.ResourceKeyArgument;
++import net.minecraft.commands.arguments.ResourceLocationArgument;
++import net.minecraft.commands.arguments.ScoreboardSlotArgument;
++import net.minecraft.commands.arguments.StyleArgument;
++import net.minecraft.commands.arguments.TemplateMirrorArgument;
++import net.minecraft.commands.arguments.TemplateRotationArgument;
++import net.minecraft.commands.arguments.TimeArgument;
++import net.minecraft.commands.arguments.UuidArgument;
++import net.minecraft.commands.arguments.blocks.BlockStateArgument;
++import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
++import net.minecraft.commands.arguments.coordinates.Vec3Argument;
++import net.minecraft.commands.arguments.item.ItemArgument;
++import net.minecraft.commands.arguments.item.ItemPredicateArgument;
++import net.minecraft.core.BlockPos;
++import net.minecraft.core.registries.Registries;
++import net.minecraft.resources.ResourceKey;
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.server.level.ServerPlayer;
++import net.minecraft.world.level.Level;
++import net.minecraft.world.phys.Vec3;
++import org.bukkit.GameMode;
++import org.bukkit.HeightMap;
++import org.bukkit.Keyed;
++import org.bukkit.NamespacedKey;
++import org.bukkit.World;
++import org.bukkit.block.BlockState;
++import org.bukkit.block.structure.Mirror;
++import org.bukkit.block.structure.StructureRotation;
++import org.bukkit.craftbukkit.CraftHeightMap;
++import org.bukkit.craftbukkit.CraftRegistry;
++import org.bukkit.craftbukkit.block.CraftBlockStates;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.scoreboard.CraftCriteria;
++import org.bukkit.craftbukkit.scoreboard.CraftScoreboardTranslations;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
++import org.bukkit.inventory.ItemStack;
++import org.bukkit.scoreboard.Criteria;
++import org.bukkit.scoreboard.DisplaySlot;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++import static java.util.Objects.requireNonNull;
++
++@DefaultQualifier(NonNull.class)
++public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
++
++    @Override
++    public ArgumentType<EntitySelectorArgumentResolver> entity() {
++        return this.wrap(EntityArgument.entity(), (result) -> sourceStack -> {
++            return List.of(result.findSingleEntity((CommandSourceStack) sourceStack).getBukkitEntity());
++        });
++    }
++
++    @Override
++    public ArgumentType<EntitySelectorArgumentResolver> entities() {
++        return this.wrap(EntityArgument.entities(), (result) -> sourceStack -> {
++            return Lists.transform(result.findEntities((CommandSourceStack) sourceStack), net.minecraft.world.entity.Entity::getBukkitEntity);
++        });
++    }
++
++    @Override
++    public ArgumentType<PlayerSelectorArgumentResolver> player() {
++        return this.wrap(EntityArgument.player(), (result) -> sourceStack -> {
++            return List.of(result.findSinglePlayer((CommandSourceStack) sourceStack).getBukkitEntity());
++        });
++    }
++
++    @Override
++    public ArgumentType<PlayerSelectorArgumentResolver> players() {
++        return this.wrap(EntityArgument.players(), (result) -> sourceStack -> {
++            return Lists.transform(result.findPlayers((CommandSourceStack) sourceStack), ServerPlayer::getBukkitEntity);
++        });
++    }
++
++    @Override
++    public ArgumentType<PlayerProfileListResolver> playerProfiles() {
++        return this.wrap(GameProfileArgument.gameProfile(), result -> {
++            if (result instanceof GameProfileArgument.SelectorResult) {
++                return sourceStack -> Collections.unmodifiableCollection(Collections2.transform(result.getNames((CommandSourceStack) sourceStack), CraftPlayerProfile::new));
++            } else {
++                return sourceStack -> Collections.unmodifiableCollection(Collections2.transform(result.getNames((CommandSourceStack) sourceStack), CraftPlayerProfile::new));
++            }
++        });
++    }
++
++    @Override
++    public ArgumentType<BlockPositionResolver> blockPosition() {
++        return this.wrap(BlockPosArgument.blockPos(), (result) -> sourceStack -> {
++            final BlockPos pos = result.getBlockPos((CommandSourceStack) sourceStack);
++
++            return MCUtil.toPosition(pos);
++        });
++    }
++
++    @Override
++    public ArgumentType<FinePositionResolver> finePosition(final boolean centerIntegers) {
++        return this.wrap(Vec3Argument.vec3(centerIntegers), (result) -> sourceStack -> {
++            final Vec3 vec3 = result.getPosition((CommandSourceStack) sourceStack);
++
++            return MCUtil.toPosition(vec3);
++        });
++    }
++
++    @Override
++    public ArgumentType<BlockState> blockState() {
++        return this.wrap(BlockStateArgument.block(PaperCommands.INSTANCE.getBuildContext()), (result) -> {
++            return CraftBlockStates.getBlockState(CraftRegistry.getMinecraftRegistry(), BlockPos.ZERO, result.getState(), result.tag);
++        });
++    }
++
++    @Override
++    public ArgumentType<ItemStack> itemStack() {
++        return this.wrap(ItemArgument.item(PaperCommands.INSTANCE.getBuildContext()), (result) -> {
++            return CraftItemStack.asBukkitCopy(result.createItemStack(1, true));
++        });
++    }
++
++    @Override
++    public ArgumentType<ItemStackPredicate> itemStackPredicate() {
++        return this.wrap(ItemPredicateArgument.itemPredicate(PaperCommands.INSTANCE.getBuildContext()), type -> itemStack -> type.test(CraftItemStack.asNMSCopy(itemStack)));
++    }
++
++    @Override
++    public ArgumentType<NamedTextColor> namedColor() {
++        return this.wrap(ColorArgument.color(), result ->
++            requireNonNull(
++                NamedTextColor.namedColor(
++                    requireNonNull(result.getColor(), () -> result + " didn't have a color")
++                ),
++                () -> result.getColor() + " didn't map to an adventure named color"
++            )
++        );
++    }
++
++    @Override
++    public ArgumentType<Component> component() {
++        return this.wrap(ComponentArgument.textComponent(PaperCommands.INSTANCE.getBuildContext()), PaperAdventure::asAdventure);
++    }
++
++    @Override
++    public ArgumentType<Style> style() {
++        return this.wrap(StyleArgument.style(PaperCommands.INSTANCE.getBuildContext()), PaperAdventure::asAdventure);
++    }
++
++    @Override
++    public ArgumentType<SignedMessageResolver> signedMessage() {
++        return this.wrap(MessageArgument.message(), SignedMessageResolverImpl::new);
++    }
++
++    @Override
++    public ArgumentType<DisplaySlot> scoreboardDisplaySlot() {
++        return this.wrap(ScoreboardSlotArgument.displaySlot(), CraftScoreboardTranslations::toBukkitSlot);
++    }
++
++    @Override
++    public ArgumentType<NamespacedKey> namespacedKey() {
++        return this.wrap(ResourceLocationArgument.id(), CraftNamespacedKey::fromMinecraft);
++    }
++
++    @Override
++    public ArgumentType<Key> key() {
++        return this.wrap(ResourceLocationArgument.id(), CraftNamespacedKey::fromMinecraft);
++    }
++
++    @Override
++    public ArgumentType<IntegerRangeProvider> integerRange() {
++        return this.wrap(RangeArgument.intRange(), type -> VanillaArgumentProviderImpl.convertToRange(type, integerRange -> () -> integerRange));
++    }
++
++    @Override
++    public ArgumentType<DoubleRangeProvider> doubleRange() {
++        return this.wrap(RangeArgument.floatRange(), type -> VanillaArgumentProviderImpl.convertToRange(type, doubleRange -> () -> doubleRange));
++    }
++
++    private static <C extends Number & Comparable<C>, T extends RangeProvider<C>> T convertToRange(final MinMaxBounds<C> bounds, final Function<Range<C>, T> converter) {
++        if (bounds.isAny()) {
++            return converter.apply(Range.all());
++        } else if (bounds.min().isPresent() && bounds.max().isPresent()) {
++            return converter.apply(Range.closed(bounds.min().get(), bounds.max().get()));
++        } else if (bounds.max().isPresent()) {
++            return converter.apply(Range.atMost(bounds.max().get()));
++        } else if (bounds.min().isPresent()) {
++            return converter.apply(Range.atLeast(bounds.min().get()));
++        }
++        throw new IllegalStateException("This is a bug: " + bounds);
++    }
++
++    @Override
++    public ArgumentType<World> world() {
++        return this.wrap(DimensionArgument.dimension(), dimensionLocation -> {
++            // based on DimensionArgument#getDimension
++            final ResourceKey<Level> resourceKey = ResourceKey.create(Registries.DIMENSION, dimensionLocation);
++            final @Nullable ServerLevel serverLevel = MinecraftServer.getServer().getLevel(resourceKey);
++            if (serverLevel == null) {
++                throw DimensionArgument.ERROR_INVALID_VALUE.create(dimensionLocation);
++            } else {
++                return serverLevel.getWorld();
++            }
++        });
++    }
++
++    @Override
++    public ArgumentType<GameMode> gameMode() {
++        return this.wrap(GameModeArgument.gameMode(), type -> requireNonNull(GameMode.getByValue(type.getId())));
++    }
++
++    @Override
++    public ArgumentType<HeightMap> heightMap() {
++        return this.wrap(HeightmapTypeArgument.heightmap(), CraftHeightMap::fromNMS);
++    }
++
++    @Override
++    public ArgumentType<UUID> uuid() {
++        return this.wrap(UuidArgument.uuid());
++    }
++
++    @Override
++    public ArgumentType<Criteria> objectiveCriteria() {
++        return this.wrap(ObjectiveCriteriaArgument.criteria(), CraftCriteria::getFromNMS);
++    }
++
++    @Override
++    public ArgumentType<LookAnchor> entityAnchor() {
++        return this.wrap(EntityAnchorArgument.anchor(), type -> LookAnchor.valueOf(type.name()));
++    }
++
++    @Override
++    public ArgumentType<Integer> time(final int minTicks) {
++        return this.wrap(TimeArgument.time(minTicks));
++    }
++
++    @Override
++    public ArgumentType<Mirror> templateMirror() {
++        return this.wrap(TemplateMirrorArgument.templateMirror(), mirror -> Mirror.valueOf(mirror.name()));
++    }
++
++    @Override
++    public ArgumentType<StructureRotation> templateRotation() {
++        return this.wrap(TemplateRotationArgument.templateRotation(), mirror -> StructureRotation.valueOf(mirror.name()));
++    }
++
++    @Override
++    public <T> ArgumentType<TypedKey<T>> resourceKey(final RegistryKey<T> registryKey) {
++        return this.wrap(
++            ResourceKeyArgument.key(PaperRegistries.registryToNms(registryKey)),
++            nmsRegistryKey -> TypedKey.create(registryKey, CraftNamespacedKey.fromMinecraft(nmsRegistryKey.location()))
++        );
++    }
++
++    @Override
++    public <T> ArgumentType<T> resource(final RegistryKey<T> registryKey) {
++        return this.resourceRaw(registryKey);
++    }
++
++    @SuppressWarnings({"unchecked", "rawtypes", "UnnecessaryLocalVariable"})
++    private <T, K extends Keyed> ArgumentType<T> resourceRaw(final RegistryKey registryKeyRaw) { // TODO remove Keyed
++        final RegistryKey<K> registryKey = registryKeyRaw;
++        return (ArgumentType<T>) this.wrap(
++            ResourceArgument.resource(PaperCommands.INSTANCE.getBuildContext(), PaperRegistries.registryToNms(registryKey)),
++            resource -> requireNonNull(
++                RegistryAccess.registryAccess()
++                    .getRegistry(registryKey)
++                    .get(CraftNamespacedKey.fromMinecraft(resource.key().location()))
++            )
++        );
++    }
++
++    private <T> ArgumentType<T> wrap(final ArgumentType<T> base) {
++        return this.wrap(base, identity -> identity);
++    }
++
++    private <B, C> ArgumentType<C> wrap(final ArgumentType<B> base, final ResultConverter<B, C> converter) {
++        return new NativeWrapperArgumentType<>(base, converter);
++    }
++
++    @FunctionalInterface
++    interface ResultConverter<T, R> {
++
++        R convert(T type) throws CommandSyntaxException;
++    }
++
++    public static final class NativeWrapperArgumentType<M, P> implements ArgumentType<P> {
++
++        private final ArgumentType<M> nmsBase;
++        private final ResultConverter<M, P> converter;
++
++        private NativeWrapperArgumentType(final ArgumentType<M> nmsBase, final ResultConverter<M, P> converter) {
++            this.nmsBase = nmsBase;
++            this.converter = converter;
++        }
++
++        public ArgumentType<M> nativeNmsArgumentType() {
++            return this.nmsBase;
++        }
++
++        @Override
++        public P parse(final StringReader reader) throws CommandSyntaxException {
++            return this.converter.convert(this.nmsBase.parse(reader));
++        }
++
++        @Override
++        public <S> CompletableFuture<Suggestions> listSuggestions(final CommandContext<S> context, final SuggestionsBuilder builder) {
++            return this.nmsBase.listSuggestions(context, builder);
++        }
++
++        @Override
++        public Collection<String> getExamples() {
++            return this.nmsBase.getExamples();
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/WrappedArgumentCommandNode.java b/src/main/java/io/papermc/paper/command/brigadier/argument/WrappedArgumentCommandNode.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c59bbd90fdf04db837366218b312e7fb80366707
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/brigadier/argument/WrappedArgumentCommandNode.java
+@@ -0,0 +1,55 @@
++package io.papermc.paper.command.brigadier.argument;
++
++import com.mojang.brigadier.Command;
++import com.mojang.brigadier.RedirectModifier;
++import com.mojang.brigadier.StringReader;
++import com.mojang.brigadier.arguments.ArgumentType;
++import com.mojang.brigadier.context.CommandContextBuilder;
++import com.mojang.brigadier.context.ParsedArgument;
++import com.mojang.brigadier.exceptions.CommandSyntaxException;
++import com.mojang.brigadier.suggestion.SuggestionProvider;
++import com.mojang.brigadier.tree.ArgumentCommandNode;
++import com.mojang.brigadier.tree.CommandNode;
++import io.papermc.paper.command.brigadier.CommandSourceStack;
++import net.minecraft.commands.synchronization.ArgumentTypeInfos;
++
++import java.util.function.Predicate;
++
++/*
++Basically this converts the argument to a different type when parsing.
++ */
++public class WrappedArgumentCommandNode<NMS, API> extends ArgumentCommandNode<CommandSourceStack, NMS> {
++
++    private final ArgumentType<API> pureArgumentType;
++
++    public WrappedArgumentCommandNode(
++        final String name,
++        final ArgumentType<API> pureArgumentType,
++        final ArgumentType<NMS> nmsNativeType,
++        final Command<CommandSourceStack> command,
++        final Predicate<CommandSourceStack> requirement,
++        final CommandNode<CommandSourceStack> redirect,
++        final RedirectModifier<CommandSourceStack> modifier,
++        final boolean forks,
++        final SuggestionProvider<CommandSourceStack> customSuggestions
++    ) {
++        super(name, nmsNativeType, command, requirement, redirect, modifier, forks, customSuggestions);
++        if (!ArgumentTypeInfos.isClassRecognized(nmsNativeType.getClass())) {
++            // Is this argument an NMS argument?
++            throw new IllegalArgumentException("Unexpected argument type was passed: " + nmsNativeType.getClass() + ". This should be an NMS type!");
++        }
++
++        this.pureArgumentType = pureArgumentType;
++    }
++
++    // See ArgumentCommandNode#parse
++    @Override
++    public void parse(final StringReader reader, final CommandContextBuilder<CommandSourceStack> contextBuilder) throws CommandSyntaxException {
++        final int start = reader.getCursor();
++        final API result = this.pureArgumentType.parse(reader); // Use the api argument parser
++        final ParsedArgument<CommandSourceStack, API> parsed = new ParsedArgument<>(start, reader.getCursor(), result); // Return an API parsed argument instead.
++
++        contextBuilder.withArgument(this.getName(), parsed);
++        contextBuilder.withNode(this, parsed.getRange());
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitBrigForwardingMap.java b/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitBrigForwardingMap.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5eef7ae5197bd395fbd6800530ffe34d147651ff
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitBrigForwardingMap.java
+@@ -0,0 +1,338 @@
++package io.papermc.paper.command.brigadier.bukkit;
++
++import com.google.common.collect.Iterators;
++import com.mojang.brigadier.CommandDispatcher;
++import com.mojang.brigadier.tree.CommandNode;
++import io.papermc.paper.command.brigadier.CommandSourceStack;
++import io.papermc.paper.command.brigadier.PaperBrigadier;
++import io.papermc.paper.command.brigadier.PaperCommands;
++import io.papermc.paper.command.brigadier.PluginVanillaCommandWrapper;
++import java.util.AbstractCollection;
++import java.util.AbstractSet;
++import java.util.ArrayList;
++import java.util.Collection;
++import java.util.HashMap;
++import java.util.Iterator;
++import java.util.Map;
++import java.util.Objects;
++import java.util.Set;
++import java.util.Spliterator;
++import java.util.function.Consumer;
++import java.util.stream.Stream;
++import org.bukkit.command.Command;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/*
++This map is supposed to act as a legacy bridge for the command map and the command dispatcher.
++ */
++public class BukkitBrigForwardingMap extends HashMap<String, Command> {
++
++    public static BukkitBrigForwardingMap INSTANCE = new BukkitBrigForwardingMap();
++
++    private final EntrySet entrySet = new EntrySet();
++    private final KeySet keySet = new KeySet();
++    private final Values values = new Values();
++
++    // Previous dispatcher used to get commands to migrate to another dispatcher
++
++    public CommandDispatcher<CommandSourceStack> getDispatcher() {
++        return PaperCommands.INSTANCE.getDispatcherInternal();
++    }
++
++    @Override
++    public int size() {
++        return this.getDispatcher().getRoot().getChildren().size();
++    }
++
++    @Override
++    public boolean isEmpty() {
++        return this.size() != 0;
++    }
++
++    @Override
++    public boolean containsKey(Object key) {
++        if (!(key instanceof String stringKey)) {
++            return false;
++        }
++
++        // Do any children match?
++        return this.getDispatcher().getRoot().getChild(stringKey) != null;
++    }
++
++    @Override
++    public boolean containsValue(@Nullable final Object value) {
++        if (!(value instanceof Command)) {
++            return false;
++        }
++
++        for (CommandNode<CommandSourceStack> child : this.getDispatcher().getRoot().getChildren()) {
++            // If child is a bukkit command node, we can convert it!
++            if (child instanceof BukkitCommandNode bukkitCommandNode) {
++                return bukkitCommandNode.getBukkitCommand().equals(value);
++            }
++        }
++
++        return false;
++    }
++
++    @Override
++    public Command get(Object key) {
++        CommandNode<?> node = this.getDispatcher().getRoot().getChild((String) key);
++        if (node == null) {
++            return null;
++        }
++
++        if (node instanceof BukkitCommandNode bukkitCommandNode) {
++            return bukkitCommandNode.getBukkitCommand();
++        }
++
++        return PaperBrigadier.wrapNode(node);
++    }
++
++    @SuppressWarnings({"unchecked", "rawtypes"})
++    @Nullable
++    @Override
++    public Command put(String key, Command value) {
++        Command old = this.get(key);
++        this.getDispatcher().getRoot().removeCommand(key); // Override previous command
++        if (value instanceof PluginVanillaCommandWrapper wrapper && wrapper.getName().equals(key)) {
++            // Don't break when some plugin tries to remove and add back a plugin command registered with modern API...
++            this.getDispatcher().getRoot().addChild((CommandNode) wrapper.vanillaCommand);
++        } else {
++            this.getDispatcher().getRoot().addChild(BukkitCommandNode.of(key, value));
++        }
++        return old;
++    }
++
++    @Override
++    public Command remove(Object key) {
++        if (!(key instanceof String string)) {
++            return null;
++        }
++
++        Command old = this.get(key);
++         if (old != null) {
++             this.getDispatcher().getRoot().removeCommand(string);
++         }
++
++        return old;
++    }
++
++    @Override
++    public boolean remove(Object key, Object value) {
++        Command old = this.get(key);
++        if (Objects.equals(old, value)) {
++            this.remove(key);
++            return true;
++        }
++
++        return false;
++    }
++
++    @Override
++    public void putAll(@NotNull Map<? extends String, ? extends Command> m) {
++        for (Entry<? extends String, ? extends Command> entry : m.entrySet()) {
++            this.put(entry.getKey(), entry.getValue());
++        }
++    }
++
++    @Override
++    public void clear() {
++        this.getDispatcher().getRoot().clearAll();
++    }
++
++    @NotNull
++    @Override
++    public Set<String> keySet() {
++        return this.keySet;
++    }
++
++    @NotNull
++    @Override
++    public Collection<Command> values() {
++        return this.values;
++    }
++
++    @NotNull
++    @Override
++    public Set<Entry<String, Command>> entrySet() {
++        return this.entrySet;
++    }
++
++    final class Values extends AbstractCollection<Command> {
++
++        @Override
++        public Iterator<Command> iterator() {
++            // AVOID CME since commands can modify multiple commands now through alises, which means it may appear in the iterator even if removed.
++            // Oh well!
++            Iterator<CommandNode<CommandSourceStack>> iterator = new ArrayList<>(BukkitBrigForwardingMap.this.getDispatcher().getRoot().getChildren()).iterator();
++
++            return new Iterator<>() {
++
++                private CommandNode<CommandSourceStack> lastFetched;
++
++                @Override
++                public void remove() {
++                    if (this.lastFetched == null) {
++                        throw new IllegalStateException("next not yet called");
++                    }
++
++                    BukkitBrigForwardingMap.this.remove(this.lastFetched.getName());
++                    iterator.remove();
++                }
++
++                @Override
++                public boolean hasNext() {
++                    return iterator.hasNext();
++                }
++
++                @Override
++                public Command next() {
++                    CommandNode<CommandSourceStack> next = iterator.next();
++                    this.lastFetched = next;
++                    if (next instanceof BukkitCommandNode bukkitCommandNode) {
++                        return bukkitCommandNode.getBukkitCommand();
++                    } else {
++                        return PaperBrigadier.wrapNode(next);
++                    }
++                }
++            };
++        }
++
++        @Override
++        public int size() {
++            return BukkitBrigForwardingMap.this.getDispatcher().getRoot().getChildren().size();
++        }
++
++        @Override
++        public void clear() {
++            BukkitBrigForwardingMap.this.clear();
++        }
++    }
++
++
++    final class KeySet extends AbstractSet<String> {
++
++        @Override
++        public int size() {
++            return BukkitBrigForwardingMap.this.size();
++        }
++
++        @Override
++        public void clear() {
++            BukkitBrigForwardingMap.this.clear();
++        }
++
++        @Override
++        public Iterator<String> iterator() {
++            return Iterators.transform(BukkitBrigForwardingMap.this.values.iterator(), Command::getName); // Wrap around the values iterator for consistancy
++        }
++
++        @Override
++        public boolean contains(Object o) {
++            return BukkitBrigForwardingMap.this.containsKey(o);
++        }
++
++        @Override
++        public boolean remove(Object o) {
++            return BukkitBrigForwardingMap.this.remove(o) != null;
++        }
++
++        @Override
++        public Spliterator<String> spliterator() {
++            return this.entryStream().spliterator();
++        }
++
++        @Override
++        public void forEach(Consumer<? super String> action) {
++            this.entryStream().forEach(action);
++        }
++
++        private Stream<String> entryStream() {
++            return BukkitBrigForwardingMap.this.getDispatcher().getRoot().getChildren().stream().map(CommandNode::getName);
++        }
++    }
++
++    final class EntrySet extends AbstractSet<Entry<String, Command>> {
++        @Override
++        public int size() {
++            return BukkitBrigForwardingMap.this.size();
++        }
++
++
++        @Override
++        public void clear() {
++            BukkitBrigForwardingMap.this.clear();
++        }
++
++        @Override
++        public Iterator<Entry<String, Command>> iterator() {
++            return this.entryStream().iterator();
++        }
++
++        @Override
++        public boolean contains(Object o) {
++            if (!(o instanceof Map.Entry<?, ?> entry)) {
++                return false;
++            }
++
++            Object key = entry.getKey();
++            Command candidate = get(key);
++            return candidate != null && candidate.equals(entry.getValue());
++        }
++
++        @Override
++        public boolean remove(Object o) {
++            if (o instanceof Map.Entry<?, ?> e) {
++                Object key = e.getKey();
++                Object value = e.getValue();
++                return BukkitBrigForwardingMap.this.remove(key, value);
++            }
++            return false;
++        }
++
++        @Override
++        public Spliterator<Entry<String, Command>> spliterator() {
++            return this.entryStream().spliterator();
++        }
++
++        @Override
++        public void forEach(Consumer<? super Entry<String, Command>> action) {
++            this.entryStream().forEach(action);
++        }
++
++        private Stream<Map.Entry<String, Command>> entryStream() {
++            return BukkitBrigForwardingMap.this.getDispatcher().getRoot().getChildren().stream().map(BukkitBrigForwardingMap.this::nodeToEntry);
++        }
++    }
++
++    private Map.Entry<String, Command> nodeToEntry(CommandNode<?> node) {
++        if (node instanceof BukkitCommandNode bukkitCommandNode) {
++            return this.mutableEntry(bukkitCommandNode.getName(), bukkitCommandNode.getBukkitCommand());
++        } else {
++            Command wrapped = PaperBrigadier.wrapNode(node);
++            return this.mutableEntry(node.getName(), wrapped);
++        }
++    }
++
++    private Map.Entry<String, Command> mutableEntry(String key, Command command) {
++        return new Entry<>() {
++            @Override
++            public String getKey() {
++                return key;
++            }
++
++            @Override
++            public Command getValue() {
++                return command;
++            }
++
++            @Override
++            public Command setValue(Command value) {
++                return BukkitBrigForwardingMap.this.put(key, value);
++            }
++        };
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitCommandNode.java b/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitCommandNode.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0c3c82b28e581286b798ee58ca4193efc2faff4a
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitCommandNode.java
+@@ -0,0 +1,148 @@
++package io.papermc.paper.command.brigadier.bukkit;
++
++import co.aikar.timings.Timing;
++import com.mojang.brigadier.arguments.StringArgumentType;
++import com.mojang.brigadier.builder.RequiredArgumentBuilder;
++import com.mojang.brigadier.context.CommandContext;
++import com.mojang.brigadier.exceptions.CommandSyntaxException;
++import com.mojang.brigadier.suggestion.SuggestionProvider;
++import com.mojang.brigadier.suggestion.Suggestions;
++import com.mojang.brigadier.suggestion.SuggestionsBuilder;
++import com.mojang.brigadier.tree.LiteralCommandNode;
++import io.papermc.paper.command.brigadier.CommandSourceStack;
++import java.util.ArrayList;
++import java.util.Collections;
++import net.minecraft.commands.CommandSource;
++import org.bukkit.Bukkit;
++import org.bukkit.ChatColor;
++import org.bukkit.Location;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandException;
++import org.bukkit.command.CommandSender;
++
++import java.util.Arrays;
++import java.util.List;
++import java.util.concurrent.CompletableFuture;
++import java.util.logging.Level;
++import org.bukkit.entity.Entity;
++import org.bukkit.entity.Player;
++import org.bukkit.event.server.TabCompleteEvent;
++
++public class BukkitCommandNode extends LiteralCommandNode<CommandSourceStack> {
++
++    private final Command command;
++
++    private BukkitCommandNode(String literal, Command command, BukkitBrigCommand bukkitBrigCommand) {
++        super(
++            literal, bukkitBrigCommand, source -> {
++                // If the source is null, assume it's true.
++                // As bukkit doesn't really map the command sender well in all cases
++                if (source instanceof net.minecraft.commands.CommandSourceStack commandSourceStack && commandSourceStack.source == CommandSource.NULL) {
++                    return true;
++                } else {
++                    return command.testPermissionSilent(source.getSender());
++                }
++            },
++            null, null, false
++        );
++        this.command = command;
++    }
++
++    public static BukkitCommandNode of(String name, Command command) {
++        BukkitBrigCommand bukkitBrigCommand = new BukkitBrigCommand(command, name);
++        BukkitCommandNode commandNode = new BukkitCommandNode(name, command, bukkitBrigCommand);
++        commandNode.addChild(
++            RequiredArgumentBuilder.<CommandSourceStack, String>argument("args", StringArgumentType.greedyString())
++                .suggests(new BukkitBrigSuggestionProvider(command, name))
++                .executes(bukkitBrigCommand).build()
++        );
++
++        return commandNode;
++    }
++
++    public Command getBukkitCommand() {
++        return this.command;
++    }
++
++    public static class BukkitBrigCommand implements com.mojang.brigadier.Command<CommandSourceStack> {
++
++        private final org.bukkit.command.Command command;
++        private final String literal;
++
++        BukkitBrigCommand(org.bukkit.command.Command command, String literal) {
++            this.command = command;
++            this.literal = literal;
++        }
++
++        @Override
++        public int run(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
++            CommandSender sender = context.getSource().getSender();
++
++            // Plugins do weird things to workaround normal registration
++            if (this.command.timings == null) {
++                this.command.timings = co.aikar.timings.TimingsManager.getCommandTiming(null, this.command);
++            }
++
++            String content = context.getRange().get(context.getInput());
++            String[] args = org.apache.commons.lang3.StringUtils.split(content, ' '); // fix adjacent spaces (from console/plugins) causing empty array elements
++
++            try (Timing ignored = this.command.timings.startTiming()) {
++                // Note: we don't return the result of target.execute as thats success / failure, we return handled (true) or not handled (false)
++                this.command.execute(sender, this.literal, Arrays.copyOfRange(args, 1, args.length));
++            }
++
++            // return true as command was handled
++            return 1;
++        }
++    }
++
++    static class BukkitBrigSuggestionProvider implements SuggestionProvider<CommandSourceStack> {
++
++        private final org.bukkit.command.Command command;
++        private final String literal;
++
++        BukkitBrigSuggestionProvider(org.bukkit.command.Command command, String literal) {
++            this.command = command;
++            this.literal = literal;
++        }
++
++        @Override
++        public CompletableFuture<Suggestions> getSuggestions(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) throws CommandSyntaxException {
++            // Paper start
++            org.bukkit.command.CommandSender sender = context.getSource().getSender();
++            String[] args = builder.getRemaining().split(" ", -1); // We need the command included -- Set limit to -1, allow for trailing spaces
++
++            List<String> results = null;
++            Location pos = context.getSource().getLocation();
++            try {
++                results = this.command.tabComplete(sender, this.literal, args, pos.clone());
++            } catch (CommandException ex) {
++                sender.sendMessage(ChatColor.RED + "An internal error occurred while attempting to tab-complete this command");
++                Bukkit.getServer().getLogger().log(Level.SEVERE, "Exception when " + sender.getName() + " attempted to tab complete " + builder.getRemaining(), ex);
++            }
++
++            if (sender instanceof final Player player) {
++                TabCompleteEvent tabEvent = new org.bukkit.event.server.TabCompleteEvent(player, builder.getInput(), results != null ? results : new ArrayList<>(), true, pos); // Paper - AsyncTabCompleteEvent
++                if (!tabEvent.callEvent()) {
++                    results = null;
++                } else {
++                    results = tabEvent.getCompletions();
++                }
++            }
++            // Paper end
++            if (results == null) {
++                return builder.buildFuture();
++            }
++
++            // Defaults to sub nodes, but we have just one giant args node, so offset accordingly
++            builder = builder.createOffset(builder.getInput().lastIndexOf(' ') + 1);
++
++            for (String s : results) {
++                builder.suggest(s);
++            }
++
++            return builder.buildFuture();
++        }
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java
+index d0ef7fa0b3e5935d48f894596be6672b0016948a..cca76f2d1623952017a83fdb027f77a601c79b3e 100644
+--- a/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java
+@@ -9,6 +9,7 @@ import io.papermc.paper.plugin.lifecycle.event.registrar.RegistrarEventImpl;
+ import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent;
+ import io.papermc.paper.plugin.lifecycle.event.types.AbstractLifecycleEventType;
+ import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEventType;
++import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+ import io.papermc.paper.plugin.lifecycle.event.types.OwnerAwareLifecycleEvent;
+ import java.util.ArrayList;
+ import java.util.List;
+@@ -26,6 +27,7 @@ public class LifecycleEventRunner {
+ 
+     private static final Logger LOGGER = LogUtils.getClassLogger();
+     private static final Supplier<Set<LifecycleEventType<?, ?, ?>>> BLOCKS_RELOADING = Suppliers.memoize(() -> Set.of( // lazy due to cyclic initialization
++        LifecycleEvents.COMMANDS
+     ));
+     public static final LifecycleEventRunner INSTANCE = new LifecycleEventRunner();
+ 
+diff --git a/src/main/java/net/minecraft/commands/CommandSource.java b/src/main/java/net/minecraft/commands/CommandSource.java
+index 5ba0ef6eda157c4e61d1de99c6b017ceb34430ec..bc5fc57018e347caa5ca453430a45669e086bb22 100644
+--- a/src/main/java/net/minecraft/commands/CommandSource.java
++++ b/src/main/java/net/minecraft/commands/CommandSource.java
+@@ -26,7 +26,7 @@ public interface CommandSource {
+         // CraftBukkit start
+         @Override
+         public org.bukkit.command.CommandSender getBukkitSender(CommandSourceStack wrapper) {
+-            throw new UnsupportedOperationException("Not supported yet.");
++            return io.papermc.paper.brigadier.NullCommandSender.INSTANCE; // Paper - expose a no-op CommandSender
+         }
+         // CraftBukkit end
+     };
+diff --git a/src/main/java/net/minecraft/commands/CommandSourceStack.java b/src/main/java/net/minecraft/commands/CommandSourceStack.java
+index 3c0d2332207ba638faaaa4280bce18c334a01271..4017b82e72fefd6685e9250a936686fd8a0891f1 100644
+--- a/src/main/java/net/minecraft/commands/CommandSourceStack.java
++++ b/src/main/java/net/minecraft/commands/CommandSourceStack.java
+@@ -45,8 +45,7 @@ import net.minecraft.world.phys.Vec2;
+ import net.minecraft.world.phys.Vec3;
+ import com.mojang.brigadier.tree.CommandNode; // CraftBukkit
+ 
+-public class CommandSourceStack implements ExecutionCommandSource<CommandSourceStack>, SharedSuggestionProvider, com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource { // Paper - Brigadier API
+-
++public class CommandSourceStack implements ExecutionCommandSource<CommandSourceStack>, SharedSuggestionProvider, io.papermc.paper.command.brigadier.PaperCommandSourceStack { // Paper - Brigadier API
+     public static final SimpleCommandExceptionType ERROR_NOT_PLAYER = new SimpleCommandExceptionType(Component.translatable("permissions.requires.player"));
+     public static final SimpleCommandExceptionType ERROR_NOT_ENTITY = new SimpleCommandExceptionType(Component.translatable("permissions.requires.entity"));
+     public final CommandSource source;
+@@ -170,26 +169,6 @@ public class CommandSourceStack implements ExecutionCommandSource<CommandSourceS
+         return this.textName;
+     }
+ 
+-    // Paper start - Brigadier API
+-    @Override
+-    public org.bukkit.entity.Entity getBukkitEntity() {
+-        return getEntity() != null ? getEntity().getBukkitEntity() : null;
+-    }
+-
+-    @Override
+-    public org.bukkit.World getBukkitWorld() {
+-        return getLevel() != null ? getLevel().getWorld() : null;
+-    }
+-
+-    @Override
+-    public org.bukkit.Location getBukkitLocation() {
+-        Vec3 pos = getPosition();
+-        org.bukkit.World world = getBukkitWorld();
+-        Vec2 rot = getRotation();
+-        return world != null && pos != null ? new org.bukkit.Location(world, pos.x, pos.y, pos.z, rot != null ? rot.y : 0, rot != null ? rot.x : 0) : null;
+-    }
+-    // Paper end - Brigadier API
+-
+     @Override
+     public boolean hasPermission(int level) {
+         // CraftBukkit start
+@@ -457,6 +436,12 @@ public class CommandSourceStack implements ExecutionCommandSource<CommandSourceS
+         return this.silent;
+     }
+ 
++    // Paper start
++    @Override
++    public CommandSourceStack getHandle() {
++        return this;
++    }
++    // Paper end
+     // CraftBukkit start
+     public org.bukkit.command.CommandSender getBukkitSender() {
+         return this.source.getBukkitSender(this);
+diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
+index 7b86e064564d3a285e3971fd08ea6168bac0720e..e8dcbe7c6d6ed20ad19d2ba1893ad16d917b9993 100644
+--- a/src/main/java/net/minecraft/commands/Commands.java
++++ b/src/main/java/net/minecraft/commands/Commands.java
+@@ -155,7 +155,7 @@ public class Commands {
+     private final com.mojang.brigadier.CommandDispatcher<CommandSourceStack> dispatcher = new com.mojang.brigadier.CommandDispatcher();
+ 
+     public Commands(Commands.CommandSelection environment, CommandBuildContext commandRegistryAccess) {
+-        this(); // CraftBukkit
++        // Paper
+         AdvancementCommands.register(this.dispatcher);
+         AttributeCommand.register(this.dispatcher, commandRegistryAccess);
+         ExecuteCommand.register(this.dispatcher, commandRegistryAccess);
+@@ -263,11 +263,24 @@ public class Commands {
+             }
+         }
+         // Paper end - Vanilla command permission fixes
+-        // CraftBukkit start
+-    }
+-
+-    public Commands() {
+-        // CraftBukkkit end
++        // Paper start - Brigadier Command API
++        // Create legacy minecraft namespace commands
++        for (final CommandNode<CommandSourceStack> node : new java.util.ArrayList<>(this.dispatcher.getRoot().getChildren())) {
++            // The brigadier dispatcher is not able to resolve nested redirects.
++            // E.g. registering the alias minecraft:tp cannot redirect to tp, as tp itself redirects to teleport.
++            // Instead, target the first none redirecting node.
++            CommandNode<CommandSourceStack> flattenedAliasTarget = node;
++            while (flattenedAliasTarget.getRedirect() != null) flattenedAliasTarget = flattenedAliasTarget.getRedirect();
++
++            this.dispatcher.register(
++                com.mojang.brigadier.builder.LiteralArgumentBuilder.<CommandSourceStack>literal("minecraft:" + node.getName())
++                    .executes(flattenedAliasTarget.getCommand())
++                    .requires(flattenedAliasTarget.getRequirement())
++                    .redirect(flattenedAliasTarget)
++            );
++        }
++        // Paper end - Brigadier Command API
++        // Paper - remove public constructor, no longer needed
+         this.dispatcher.setConsumer(ExecutionCommandSource.resultConsumer());
+     }
+ 
+@@ -323,6 +336,11 @@ public class Commands {
+     }
+ 
+     public void performCommand(ParseResults<CommandSourceStack> parseresults, String s, String label) { // CraftBukkit
++        // Paper start
++        this.performCommand(parseresults, s, label, false);
++    }
++    public void performCommand(ParseResults<CommandSourceStack> parseresults, String s, String label, boolean throwCommandError) {
++        // Paper end
+         CommandSourceStack commandlistenerwrapper = (CommandSourceStack) parseresults.getContext().getSource();
+ 
+         commandlistenerwrapper.getServer().getProfiler().push(() -> {
+@@ -337,10 +355,11 @@ public class Commands {
+                 });
+             }
+         } catch (Exception exception) {
++            if (throwCommandError) throw exception;
+             MutableComponent ichatmutablecomponent = Component.literal(exception.getMessage() == null ? exception.getClass().getName() : exception.getMessage());
+ 
++            Commands.LOGGER.error("Command exception: /{}", s, exception); // Paper - always show execution exception in console log
+             if (commandlistenerwrapper.getServer().isDebugging() || Commands.LOGGER.isDebugEnabled()) { // Paper - Debugging
+-                Commands.LOGGER.error("Command exception: /{}", s, exception);
+                 StackTraceElement[] astacktraceelement = exception.getStackTrace();
+ 
+                 for (int i = 0; i < Math.min(astacktraceelement.length, 3); ++i) {
+@@ -475,7 +494,7 @@ public class Commands {
+         Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = Maps.newIdentityHashMap(); // Use identity to prevent aliasing issues
+         RootCommandNode vanillaRoot = new RootCommandNode();
+ 
+-        RootCommandNode<CommandSourceStack> vanilla = player.server.vanillaCommandDispatcher.getDispatcher().getRoot();
++        RootCommandNode<CommandSourceStack> vanilla = player.server.getCommands().getDispatcher().getRoot(); // Paper
+         map.put(vanilla, vanillaRoot);
+         this.fillUsableCommands(vanilla, vanillaRoot, player.createCommandSourceStack(), (Map) map);
+ 
+@@ -513,6 +532,7 @@ public class Commands {
+     }
+ 
+     private void fillUsableCommands(CommandNode<CommandSourceStack> tree, CommandNode<SharedSuggestionProvider> result, CommandSourceStack source, Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> resultNodes) {
++        resultNodes.keySet().removeIf((node) -> !org.spigotmc.SpigotConfig.sendNamespaced && node.getName().contains( ":" )); // Paper - Remove namedspaced from result nodes to prevent redirect trimming ~ see comment below
+         Iterator iterator = tree.getChildren().iterator();
+ 
+         while (iterator.hasNext()) {
+@@ -526,6 +546,42 @@ public class Commands {
+ 
+             if (commandnode2.canUse(source)) {
+                 ArgumentBuilder argumentbuilder = commandnode2.createBuilder(); // CraftBukkit - decompile error
++                // Paper start
++                /*
++                Because of how commands can be yeeted right left and center due to bad bukkit practices
++                we need to be able to ensure that ALL commands are registered (even redirects).
++
++                What this will do is IF the redirect seems to be "dead" it will create a builder and essentially populate (flatten)
++                all the children from the dead redirect to the node.
++
++                So, if minecraft:msg redirects to msg but the original msg node has been overriden minecraft:msg will now act as msg and will explicilty inherit its children.
++
++                The only way to fix this is to either:
++                - Send EVERYTHING flattened, don't use redirects
++                - Don't allow command nodes to be deleted
++                - Do this :)
++                 */
++
++                // Is there an invalid command redirect?
++                if (argumentbuilder.getRedirect() != null && (CommandNode) resultNodes.get(argumentbuilder.getRedirect()) == null) {
++                    // Create the argument builder with the same values as the specified node, but with a different literal and populated children
++
++                    CommandNode<CommandSourceStack> redirect = argumentbuilder.getRedirect();
++                    // Diff copied from LiteralCommand#createBuilder
++                    final com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack> builder = com.mojang.brigadier.builder.LiteralArgumentBuilder.literal(commandnode2.getName());
++                    builder.requires(redirect.getRequirement());
++                    // builder.forward(redirect.getRedirect(), redirect.getRedirectModifier(), redirect.isFork()); We don't want to migrate the forward, since it's invalid.
++                    if (redirect.getCommand() != null) {
++                        builder.executes(redirect.getCommand());
++                    }
++                    // Diff copied from LiteralCommand#createBuilder
++                    for (CommandNode<CommandSourceStack> child : redirect.getChildren()) {
++                        builder.then(child);
++                    }
++
++                    argumentbuilder = builder;
++                }
++                // Paper end
+ 
+                 argumentbuilder.requires((icompletionprovider) -> {
+                     return true;
+diff --git a/src/main/java/net/minecraft/commands/arguments/MessageArgument.java b/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
+index 55484826fc5ddd04ae024e25a0251796d7fa9c28..237e4f7b24908e9ade9a483eb7ae05fa3b7931d8 100644
+--- a/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
++++ b/src/main/java/net/minecraft/commands/arguments/MessageArgument.java
+@@ -40,6 +40,11 @@ public class MessageArgument implements SignedArgument<MessageArgument.Message>
+ 
+     public static void resolveChatMessage(CommandContext<CommandSourceStack> context, String name, Consumer<PlayerChatMessage> callback) throws CommandSyntaxException {
+         MessageArgument.Message message = context.getArgument(name, MessageArgument.Message.class);
++    // Paper start
++        resolveChatMessage(message, context, name, callback);
++    }
++    public static void resolveChatMessage(MessageArgument.Message message, CommandContext<CommandSourceStack> context, String name, Consumer<PlayerChatMessage> callback) throws CommandSyntaxException {
++    // Paper end
+         CommandSourceStack commandSourceStack = context.getSource();
+         Component component = message.resolveComponent(commandSourceStack);
+         CommandSigningContext commandSigningContext = commandSourceStack.getSigningContext();
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index e055769071841d56ec7e2a64fc519d1f8b48ff42..c97fb8eec949c693d4e822d8cf2e666a0858f20c 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -306,7 +306,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public static int currentTick; // Paper - improve tick loop
+     public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
+     public int autosavePeriod;
+-    public Commands vanillaCommandDispatcher;
++    // Paper - don't store the vanilla dispatcher
+     private boolean forceTicks;
+     // CraftBukkit end
+     // Spigot start
+@@ -393,7 +393,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         // CraftBukkit start
+         this.options = options;
+         this.worldLoader = worldLoader;
+-        this.vanillaCommandDispatcher = worldstem.dataPackResources().commands; // CraftBukkit
+         // Paper start - Handled by TerminalConsoleAppender
+         // Try to see if we're actually running in a terminal, disable jline if not
+         /*
+@@ -678,6 +677,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+         this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
+         if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
++        io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setValid(); // Paper - reset invalid state for event fire below
++        io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.COMMANDS, io.papermc.paper.command.brigadier.PaperCommands.INSTANCE, org.bukkit.plugin.Plugin.class, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL); // Paper - call commands event for regular plugins
++        ((org.bukkit.craftbukkit.help.SimpleHelpMap) this.server.getHelpMap()).initializeCommands();
+         this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
+         this.connection.acceptConnections();
+     }
+@@ -2181,9 +2183,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 return new MinecraftServer.ReloadableResources(resourcemanager, datapackresources);
+             });
+         }).thenAcceptAsync((minecraftserver_reloadableresources) -> {
++            io.papermc.paper.command.brigadier.PaperBrigadier.moveBukkitCommands(this.resources.managers().getCommands(), minecraftserver_reloadableresources.managers().commands); // Paper
+             this.resources.close();
+             this.resources = minecraftserver_reloadableresources;
+-            this.server.syncCommands(); // SPIGOT-5884: Lost on reload
+             this.packRepository.setSelected(dataPacks);
+             WorldDataConfiguration worlddataconfiguration = new WorldDataConfiguration(MinecraftServer.getSelectedPacks(this.packRepository, true), this.worldData.enabledFeatures());
+ 
+@@ -2194,8 +2196,17 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             this.getPlayerList().reloadResources();
+             this.functionManager.replaceLibrary(this.resources.managers.getFunctionLibrary());
+             this.structureTemplateManager.onResourceManagerReload(this.resources.resourceManager);
+-            org.bukkit.craftbukkit.block.data.CraftBlockData.reloadCache(); // Paper - cache block data strings; they can be defined by datapacks so refresh it here
+-            new io.papermc.paper.event.server.ServerResourcesReloadedEvent(cause).callEvent(); // Paper - Add ServerResourcesReloadedEvent; fire after everything has been reloaded
++            org.bukkit.craftbukkit.block.data.CraftBlockData.reloadCache(); // Paper - cache block data strings, they can be defined by datapacks so refresh it here
++            // Paper start - brigadier command API
++            io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setValid(); // reset invalid state for event fire below
++            io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.COMMANDS, io.papermc.paper.command.brigadier.PaperCommands.INSTANCE, org.bukkit.plugin.Plugin.class, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.RELOAD); // call commands event for regular plugins
++            final org.bukkit.craftbukkit.help.SimpleHelpMap helpMap = (org.bukkit.craftbukkit.help.SimpleHelpMap) this.server.getHelpMap();
++            helpMap.clear();
++            helpMap.initializeGeneralTopics();
++            helpMap.initializeCommands();
++            this.server.syncCommands(); // Refresh commands after event
++            // Paper end
++            new io.papermc.paper.event.server.ServerResourcesReloadedEvent(cause).callEvent(); // Paper - fire after everything has been reloaded
+         }, this);
+ 
+         if (this.isSameThread()) {
+diff --git a/src/main/java/net/minecraft/server/ReloadableServerResources.java b/src/main/java/net/minecraft/server/ReloadableServerResources.java
+index 84b4bfe8363adc015821e9cabedfabed98c0336c..6de563b7adea957a7ead1c00c4900060fa5df277 100644
+--- a/src/main/java/net/minecraft/server/ReloadableServerResources.java
++++ b/src/main/java/net/minecraft/server/ReloadableServerResources.java
+@@ -48,6 +48,7 @@ public class ReloadableServerResources {
+         this.recipes = new RecipeManager(this.registryLookup);
+         this.tagManager = new TagManager(dynamicRegistryManager);
+         this.commands = new Commands(environment, CommandBuildContext.simple(this.registryLookup, enabledFeatures));
++        io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setDispatcher(this.commands, CommandBuildContext.simple(this.registryLookup, enabledFeatures)); // Paper - Brigadier Command API
+         this.advancements = new ServerAdvancementManager(this.registryLookup);
+         this.functionLibrary = new ServerFunctionLibrary(functionPermissionLevel, this.commands.getDispatcher());
+     }
+@@ -91,6 +92,14 @@ public class ReloadableServerResources {
+                     ReloadableServerResources reloadableServerResources = new ReloadableServerResources(
+                         reloadedDynamicRegistries.compositeAccess(), enabledFeatures, environment, functionPermissionLevel
+                     );
++                    // Paper start - call commands event for bootstraps
++                    //noinspection ConstantValue
++                    io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(
++                        io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.COMMANDS,
++                        io.papermc.paper.command.brigadier.PaperCommands.INSTANCE,
++                        io.papermc.paper.plugin.bootstrap.BootstrapContext.class,
++                        MinecraftServer.getServer() == null ? io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL : io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.RELOAD);
++                    // Paper end - call commands event
+                     return SimpleReloadInstance.create(
+                             manager, reloadableServerResources.listeners(), prepareExecutor, applyExecutor, DATA_RELOAD_INITIAL_TASK, LOGGER.isDebugEnabled()
+                         )
+diff --git a/src/main/java/net/minecraft/server/ServerFunctionManager.java b/src/main/java/net/minecraft/server/ServerFunctionManager.java
+index ec29e95d796305b8d44c2075629a8147a05f48c1..9cd4f7c6910727c849ac7f5d675dc6105c4bbba2 100644
+--- a/src/main/java/net/minecraft/server/ServerFunctionManager.java
++++ b/src/main/java/net/minecraft/server/ServerFunctionManager.java
+@@ -36,7 +36,7 @@ public class ServerFunctionManager {
+     }
+ 
+     public CommandDispatcher<CommandSourceStack> getDispatcher() {
+-        return this.server.vanillaCommandDispatcher.getDispatcher(); // CraftBukkit
++        return this.server.getCommands().getDispatcher(); // CraftBukkit // Paper - Don't override command dispatcher
+     }
+ 
+     public void tick() {
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index b4af03c4bdd1ce0861f36c3b75fc7e89d701c46a..0761d5bc5f2813bb4a9f664ac7a05b9744d0a778 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -237,7 +237,6 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         io.papermc.paper.command.PaperCommands.registerCommands(this); // Paper - setup /paper command
+         com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics(); // Paper - start metrics
+         com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // Paper - load version history now
+-        io.papermc.paper.brigadier.PaperBrigadierProviderImpl.INSTANCE.getClass(); // Paper - init PaperBrigadierProvider
+ 
+         this.setPvpAllowed(dedicatedserverproperties.pvp);
+         this.setFlightAllowed(dedicatedserverproperties.allowFlight);
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index e1576a2fa906d2337480c250f390dcaeb22a0420..e952366acb16c4bc57832222c4695abeb399e1cf 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2407,33 +2407,20 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         }
+     }
+ 
++    @Deprecated // Paper
+     public void handleCommand(String s) { // Paper - private -> public
+-        org.spigotmc.AsyncCatcher.catchOp("Command Dispatched Async: " + s); // Paper - Add async catcher
+-        co.aikar.timings.MinecraftTimings.playerCommandTimer.startTiming(); // Paper
+-        if ( org.spigotmc.SpigotConfig.logCommands ) // Spigot
+-        this.LOGGER.info(this.player.getScoreboardName() + " issued server command: " + s);
+-
+-        CraftPlayer player = this.getCraftPlayer();
+-
+-        PlayerCommandPreprocessEvent event = new PlayerCommandPreprocessEvent(player, s, new LazyPlayerSet(this.server));
+-        this.cserver.getPluginManager().callEvent(event);
+-
+-        if (event.isCancelled()) {
+-            co.aikar.timings.MinecraftTimings.playerCommandTimer.stopTiming(); // Paper
+-            return;
+-        }
+-
+-        try {
+-            if (this.cserver.dispatchCommand(event.getPlayer(), event.getMessage().substring(1))) {
+-                return;
+-            }
+-        } catch (org.bukkit.command.CommandException ex) {
+-            player.sendMessage(org.bukkit.ChatColor.RED + "An internal error occurred while attempting to perform this command");
+-            java.util.logging.Logger.getLogger(ServerGamePacketListenerImpl.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+-            return;
+-        } finally {
+-            co.aikar.timings.MinecraftTimings.playerCommandTimer.stopTiming(); // Paper
++        // Paper start - Remove all this old duplicated logic
++        if (s.startsWith("/")) {
++            s = s.substring(1);
+         }
++        /*
++        It should be noted that this represents the "legacy" command execution path.
++        Api can call commands even if there is no additional context provided.
++        This method should ONLY be used if you need to execute a command WITHOUT
++        an actual player's input.
++        */
++        this.performUnsignedChatCommand(s);
++        // Paper end
+     }
+     // CraftBukkit end
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 121e9cf395f16ba8422f77a73f3f3fbe0ae9b225..d8b842bfd1507ace84943ff1f9ddc6ea153e54db 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -272,11 +272,11 @@ public final class CraftServer implements Server {
+     private final Logger logger = Logger.getLogger("Minecraft");
+     private final ServicesManager servicesManager = new SimpleServicesManager();
+     private final CraftScheduler scheduler = new CraftScheduler();
+-    private final CraftCommandMap commandMap = new CraftCommandMap(this);
++    private final CraftCommandMap commandMap; // Paper - Move down
+     private final SimpleHelpMap helpMap = new SimpleHelpMap(this);
+     private final StandardMessenger messenger = new StandardMessenger();
+-    private final SimplePluginManager pluginManager = new SimplePluginManager(this, commandMap);
+-    public final io.papermc.paper.plugin.manager.PaperPluginManagerImpl paperPluginManager = new io.papermc.paper.plugin.manager.PaperPluginManagerImpl(this, this.commandMap, pluginManager); {this.pluginManager.paperPluginManager = this.paperPluginManager;} // Paper
++    private final SimplePluginManager pluginManager; // Paper - Move down
++    public final io.papermc.paper.plugin.manager.PaperPluginManagerImpl paperPluginManager; // Paper
+     private final StructureManager structureManager;
+     protected final DedicatedServer console;
+     protected final DedicatedPlayerList playerList;
+@@ -404,6 +404,12 @@ public final class CraftServer implements Server {
+         this.serverLinks = new CraftServerLinks(console);
+ 
+         Bukkit.setServer(this);
++        // Paper start
++        this.commandMap = new CraftCommandMap(this);
++        this.pluginManager = new SimplePluginManager(this, commandMap);
++        this.paperPluginManager = new io.papermc.paper.plugin.manager.PaperPluginManagerImpl(this, this.commandMap, pluginManager);
++        this.pluginManager.paperPluginManager = this.paperPluginManager;
++         // Paper end
+ 
+         CraftRegistry.setMinecraftRegistry(console.registryAccess());
+ 
+@@ -602,48 +608,11 @@ public final class CraftServer implements Server {
+     }
+ 
+     private void setVanillaCommands(boolean first) { // Spigot
+-        Commands dispatcher = this.console.vanillaCommandDispatcher;
+-
+-        // Build a list of all Vanilla commands and create wrappers
+-        for (CommandNode<CommandSourceStack> cmd : dispatcher.getDispatcher().getRoot().getChildren()) {
+-            // Spigot start
+-            VanillaCommandWrapper wrapper = new VanillaCommandWrapper(dispatcher, cmd);
+-            if (org.spigotmc.SpigotConfig.replaceCommands.contains( wrapper.getName() ) ) {
+-                if (first) {
+-                    this.commandMap.register("minecraft", wrapper);
+-                }
+-            } else if (!first) {
+-                this.commandMap.register("minecraft", wrapper);
+-            }
+-            // Spigot end
+-        }
++        // Paper - Replace implementation
+     }
+ 
+     public void syncCommands() {
+-        // Clear existing commands
+-        Commands dispatcher = this.console.resources.managers().commands = new Commands();
+-
+-        // Register all commands, vanilla ones will be using the old dispatcher references
+-        for (Map.Entry<String, Command> entry : this.commandMap.getKnownCommands().entrySet()) {
+-            String label = entry.getKey();
+-            Command command = entry.getValue();
+-
+-            if (command instanceof VanillaCommandWrapper) {
+-                LiteralCommandNode<CommandSourceStack> node = (LiteralCommandNode<CommandSourceStack>) ((VanillaCommandWrapper) command).vanillaCommand;
+-                if (!node.getLiteral().equals(label)) {
+-                    LiteralCommandNode<CommandSourceStack> clone = new LiteralCommandNode(label, node.getCommand(), node.getRequirement(), node.getRedirect(), node.getRedirectModifier(), node.isFork());
+-
+-                    for (CommandNode<CommandSourceStack> child : node.getChildren()) {
+-                        clone.addChild(child);
+-                    }
+-                    node = clone;
+-                }
+-
+-                dispatcher.getDispatcher().getRoot().addChild(node);
+-            } else {
+-                new BukkitCommandWrapper(this, entry.getValue()).register(dispatcher.getDispatcher(), label);
+-            }
+-        }
++        Commands dispatcher = this.getHandle().getServer().getCommands(); // Paper - We now register directly to the dispatcher.
+ 
+         // Refresh commands
+         for (ServerPlayer player : this.getHandle().players) {
+@@ -1030,17 +999,31 @@ public final class CraftServer implements Server {
+             return true;
+         }
+ 
+-        // Spigot start
+-        if (!org.spigotmc.SpigotConfig.unknownCommandMessage.isEmpty()) {
+-            // Paper start
+-            org.bukkit.event.command.UnknownCommandEvent event = new org.bukkit.event.command.UnknownCommandEvent(sender, commandLine, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.unknownCommandMessage));
+-            this.getPluginManager().callEvent(event);
+-            if (event.message() != null) {
+-                sender.sendMessage(event.message());
+-            }
+-            // Paper end
++        return this.dispatchCommand(VanillaCommandWrapper.getListener(sender), commandLine);
++    }
++
++    public boolean dispatchCommand(CommandSourceStack sourceStack, String commandLine) {
++        net.minecraft.commands.Commands commands = this.getHandle().getServer().getCommands();
++        com.mojang.brigadier.CommandDispatcher<CommandSourceStack> dispatcher = commands.getDispatcher();
++        com.mojang.brigadier.ParseResults<CommandSourceStack> results = dispatcher.parse(commandLine, sourceStack);
++
++        CommandSender sender = sourceStack.getBukkitSender();
++        String[] args = org.apache.commons.lang3.StringUtils.split(commandLine, ' '); // Paper - fix adjacent spaces (from console/plugins) causing empty array elements
++        Command target = this.commandMap.getCommand(args[0].toLowerCase(java.util.Locale.ENGLISH));
++
++        try {
++            commands.performCommand(results, commandLine, commandLine, true);
++        } catch (CommandException ex) {
++            this.pluginManager.callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args))); // Paper
++            //target.timings.stopTiming(); // Spigot // Paper
++            throw ex;
++        } catch (Throwable ex) {
++            //target.timings.stopTiming(); // Spigot // Paper
++            String msg = "Unhandled exception executing '" + commandLine + "' in " + target;
++            this.pluginManager.callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args))); // Paper
++            throw new CommandException(msg, ex);
+         }
+-        // Spigot end
++        // Paper end
+ 
+         return false;
+     }
+@@ -1049,7 +1032,7 @@ public final class CraftServer implements Server {
+     public void reload() {
+         // Paper start - lifecycle events
+         if (io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.blocksPluginReloading()) {
+-            throw new IllegalStateException("A lifecycle event handler has been registered which makes reloading plugins not possible");
++            throw new IllegalStateException(org.bukkit.command.defaults.ReloadCommand.RELOADING_DISABLED_MESSAGE);
+         }
+         // Paper end - lifecycle events
+         org.spigotmc.WatchdogThread.hasStarted = false; // Paper - Disable watchdog early timeout on reload
+@@ -1103,8 +1086,9 @@ public final class CraftServer implements Server {
+         }
+ 
+         Plugin[] pluginClone = pluginManager.getPlugins().clone(); // Paper
++        this.commandMap.clearCommands(); // Paper - Move command reloading up
+         this.pluginManager.clearPlugins();
+-        this.commandMap.clearCommands();
++        // Paper - move up
+         // Paper start
+         for (Plugin plugin : pluginClone) {
+             entityMetadata.removeAll(plugin);
+@@ -1144,6 +1128,12 @@ public final class CraftServer implements Server {
+         this.enablePlugins(PluginLoadOrder.STARTUP);
+         this.enablePlugins(PluginLoadOrder.POSTWORLD);
+         if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
++        // Paper start - brigadier command API
++        io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setValid(); // to clear invalid state for event fire below
++        io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.COMMANDS, io.papermc.paper.command.brigadier.PaperCommands.INSTANCE, org.bukkit.plugin.Plugin.class, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.RELOAD); // call commands event for regular plugins
++        this.helpMap.initializeCommands();
++        this.syncCommands(); // Refresh commands after event
++        // Paper end - brigadier command API
+         this.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.RELOAD));
+         org.spigotmc.WatchdogThread.hasStarted = true; // Paper - Disable watchdog early timeout on reload
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java b/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java
+index 21b6f90cf5bd7087d1a0f512289d971f2c3e1afa..a3c02200da9e793de79a74fe7e0cd72634150f64 100644
+--- a/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java
++++ b/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java
+@@ -20,6 +20,7 @@ import org.bukkit.command.CommandException;
+ import org.bukkit.command.CommandSender;
+ import org.bukkit.craftbukkit.CraftServer;
+ 
++@Deprecated(forRemoval = true) // Paper - Don't use
+ public class BukkitCommandWrapper implements com.mojang.brigadier.Command<CommandSourceStack>, Predicate<CommandSourceStack>, SuggestionProvider<CommandSourceStack>, com.destroystokyo.paper.brigadier.BukkitBrigadierCommand<CommandSourceStack> { // Paper
+ 
+     private final CraftServer server;
+diff --git a/src/main/java/org/bukkit/craftbukkit/command/CraftCommandMap.java b/src/main/java/org/bukkit/craftbukkit/command/CraftCommandMap.java
+index 4b1ac1fe7ea07f419ae2818251900e7ba434ee16..90ed57a7fbcd0625b64084347460e9864216f610 100644
+--- a/src/main/java/org/bukkit/craftbukkit/command/CraftCommandMap.java
++++ b/src/main/java/org/bukkit/craftbukkit/command/CraftCommandMap.java
+@@ -8,7 +8,7 @@ import org.bukkit.command.SimpleCommandMap;
+ public class CraftCommandMap extends SimpleCommandMap {
+ 
+     public CraftCommandMap(Server server) {
+-        super(server);
++        super(server, io.papermc.paper.command.brigadier.bukkit.BukkitBrigForwardingMap.INSTANCE);
+     }
+ 
+     public Map<String, Command> getKnownCommands() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java b/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java
+index 2ee33c55890fa659f6d251e486264c85d9e89802..d7a41421784cf9066518310e00031e26d9817171 100644
+--- a/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java
++++ b/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java
+@@ -23,14 +23,26 @@ import org.bukkit.craftbukkit.entity.CraftMinecartCommand;
+ import org.bukkit.entity.Entity;
+ import org.bukkit.entity.minecart.CommandMinecart;
+ 
+-public final class VanillaCommandWrapper extends BukkitCommand {
++public class VanillaCommandWrapper extends BukkitCommand { // Paper
+ 
+-    private final Commands dispatcher;
++    //private final Commands dispatcher; // Paper
+     public final CommandNode<CommandSourceStack> vanillaCommand;
+ 
++    // Paper start
++    public VanillaCommandWrapper(String name, String description, String usageMessage, List<String> aliases, CommandNode<CommandSourceStack> vanillaCommand) {
++        super(name, description, usageMessage, aliases);
++        //this.dispatcher = dispatcher; // Paper
++        this.vanillaCommand = vanillaCommand;
++    }
++
++    Commands commands() {
++        return net.minecraft.server.MinecraftServer.getServer().getCommands();
++    }
++
++    // Paper end
+     public VanillaCommandWrapper(Commands dispatcher, CommandNode<CommandSourceStack> vanillaCommand) {
+         super(vanillaCommand.getName(), "A Mojang provided command.", vanillaCommand.getUsageText(), Collections.EMPTY_LIST);
+-        this.dispatcher = dispatcher;
++        // this.dispatcher = dispatcher; // Paper
+         this.vanillaCommand = vanillaCommand;
+         this.setPermission(VanillaCommandWrapper.getPermission(vanillaCommand));
+     }
+@@ -40,7 +52,7 @@ public final class VanillaCommandWrapper extends BukkitCommand {
+         if (!this.testPermission(sender)) return true;
+ 
+         CommandSourceStack icommandlistener = VanillaCommandWrapper.getListener(sender);
+-        this.dispatcher.performPrefixedCommand(icommandlistener, this.toDispatcher(args, this.getName()), this.toDispatcher(args, commandLabel));
++        this.commands().performPrefixedCommand(icommandlistener, this.toDispatcher(args, this.getName()), this.toDispatcher(args, commandLabel)); // Paper
+         return true;
+     }
+ 
+@@ -51,10 +63,10 @@ public final class VanillaCommandWrapper extends BukkitCommand {
+         Preconditions.checkArgument(alias != null, "Alias cannot be null");
+ 
+         CommandSourceStack icommandlistener = VanillaCommandWrapper.getListener(sender);
+-        ParseResults<CommandSourceStack> parsed = this.dispatcher.getDispatcher().parse(this.toDispatcher(args, this.getName()), icommandlistener);
++        ParseResults<CommandSourceStack> parsed = this.commands().getDispatcher().parse(this.toDispatcher(args, this.getName()), icommandlistener); // Paper
+ 
+         List<String> results = new ArrayList<>();
+-        this.dispatcher.getDispatcher().getCompletionSuggestions(parsed).thenAccept((suggestions) -> {
++        this.commands().getDispatcher().getCompletionSuggestions(parsed).thenAccept((suggestions) -> { // Paper
+             suggestions.getList().forEach((s) -> results.add(s.getText()));
+         });
+ 
+@@ -111,4 +123,15 @@ public final class VanillaCommandWrapper extends BukkitCommand {
+     private String toDispatcher(String[] args, String name) {
+         return name + ((args.length > 0) ? " " + Joiner.on(' ').join(args) : "");
+     }
++    // Paper start
++    @Override
++    public boolean canBeOverriden() {
++        return true;
++    }
++
++    @Override
++    public boolean isRegistered() {
++        return true;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/help/SimpleHelpMap.java b/src/main/java/org/bukkit/craftbukkit/help/SimpleHelpMap.java
+index 05d3aecd4abaab6a94effcb1ab35c1b82410865f..97141968f36b3ef88bd6e520c2ccc37c97e4adb1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/help/SimpleHelpMap.java
++++ b/src/main/java/org/bukkit/craftbukkit/help/SimpleHelpMap.java
+@@ -200,15 +200,18 @@ public class SimpleHelpMap implements HelpMap {
+     }
+ 
+     private String getCommandPluginName(Command command) {
++        // Paper start - Move up
++        if (command instanceof PluginIdentifiableCommand) {
++            return ((PluginIdentifiableCommand) command).getPlugin().getName();
++        }
++        // Paper end
+         if (command instanceof VanillaCommandWrapper) {
+             return "Minecraft";
+         }
+         if (command instanceof BukkitCommand) {
+             return "Bukkit";
+         }
+-        if (command instanceof PluginIdentifiableCommand) {
+-            return ((PluginIdentifiableCommand) command).getPlugin().getName();
+-        }
++        // Paper - Move PluginIdentifiableCommand instanceof check to allow brig commands
+         return null;
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftCriteria.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftCriteria.java
+index 8464531a4ee400834d25c23b1eb723f49be8689e..4a0b1587180381123eb843819cd10630e49c7a02 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftCriteria.java
++++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftCriteria.java
+@@ -53,7 +53,13 @@ public final class CraftCriteria implements Criteria {
+         return RenderType.values()[this.criteria.getDefaultRenderType().ordinal()];
+     }
+ 
+-    static CraftCriteria getFromNMS(Objective objective) {
++    // Paper start
++    public static CraftCriteria getFromNMS(ObjectiveCriteria criteria) {
++        return java.util.Objects.requireNonNullElseGet(CraftCriteria.DEFAULTS.get(criteria.getName()), () -> new CraftCriteria(criteria));
++    }
++    // Paper end
++
++    public static CraftCriteria getFromNMS(Objective objective) {
+         return java.util.Objects.requireNonNullElseGet(CraftCriteria.DEFAULTS.get(objective.getCriteria().getName()), () -> new CraftCriteria(objective.getCriteria())); // Paper
+     }
+ 
+diff --git a/src/main/resources/META-INF/services/io.papermc.paper.command.brigadier.CommandBuilderProvider b/src/main/resources/META-INF/services/io.papermc.paper.command.brigadier.CommandBuilderProvider
+new file mode 100644
+index 0000000000000000000000000000000000000000..2f0b1f0ed9ca3605cd24a75466973e1a0a745ee5
+--- /dev/null
++++ b/src/main/resources/META-INF/services/io.papermc.paper.command.brigadier.CommandBuilderProvider
+@@ -0,0 +1 @@
++io.papermc.paper.command.brigadier.CommandBuilderImpl$ProviderImpl
+diff --git a/src/main/resources/META-INF/services/io.papermc.paper.command.brigadier.MessageComponentSerializer b/src/main/resources/META-INF/services/io.papermc.paper.command.brigadier.MessageComponentSerializer
+new file mode 100644
+index 0000000000000000000000000000000000000000..2428b577b9bf0eac6947f5d919cbb51f7aca3d50
+--- /dev/null
++++ b/src/main/resources/META-INF/services/io.papermc.paper.command.brigadier.MessageComponentSerializer
+@@ -0,0 +1 @@
++io.papermc.paper.command.brigadier.MessageComponentSerializerImpl
+diff --git a/src/main/resources/META-INF/services/io.papermc.paper.command.brigadier.argument.VanillaArgumentProvider b/src/main/resources/META-INF/services/io.papermc.paper.command.brigadier.argument.VanillaArgumentProvider
+new file mode 100644
+index 0000000000000000000000000000000000000000..b2fdb8351c2abb55283850a929d2a87aa6ecb80f
+--- /dev/null
++++ b/src/main/resources/META-INF/services/io.papermc.paper.command.brigadier.argument.VanillaArgumentProvider
+@@ -0,0 +1 @@
++io.papermc.paper.command.brigadier.argument.VanillaArgumentProviderImpl
+diff --git a/src/test/java/io/papermc/paper/command/brigadier/BukkitCommandConversionTest.java b/src/test/java/io/papermc/paper/command/brigadier/BukkitCommandConversionTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6475510ea1084a003fb2c8645cb4538b3f48e1c7
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/command/brigadier/BukkitCommandConversionTest.java
+@@ -0,0 +1,113 @@
++package io.papermc.paper.command.brigadier;
++
++import com.mojang.brigadier.CommandDispatcher;
++import com.mojang.brigadier.ResultConsumer;
++import com.mojang.brigadier.context.CommandContext;
++import com.mojang.brigadier.exceptions.CommandSyntaxException;
++import com.mojang.brigadier.suggestion.Suggestions;
++import com.mojang.brigadier.tree.CommandNode;
++import io.papermc.paper.command.brigadier.bukkit.BukkitBrigForwardingMap;
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.world.flag.FeatureFlags;
++import org.apache.logging.log4j.core.util.Assert;
++import org.bukkit.Bukkit;
++import org.bukkit.Location;
++import org.bukkit.World;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandMap;
++import org.bukkit.command.CommandSender;
++import org.bukkit.command.SimpleCommandMap;
++import org.bukkit.craftbukkit.command.CraftCommandMap;
++import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
++import org.bukkit.entity.Entity;
++import org.bukkit.plugin.PluginManager;
++import org.bukkit.support.AbstractTestingBase;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++import org.junit.jupiter.api.Assertions;
++import org.junit.jupiter.api.Test;
++import org.mockito.Mockito;
++
++import java.util.List;
++import java.util.Map;
++import java.util.logging.Logger;
++
++public class BukkitCommandConversionTest extends AbstractTestingBase {
++
++    private CommandSender getSender() {
++        return Mockito.mock(CommandSender.class);
++    }
++
++    @Test
++    public void test() throws CommandSyntaxException {
++        CommandSender sender = this.getSender();
++        CommandSourceStack object = Mockito.mock(CommandSourceStack.class);
++        Mockito.when(object.getLocation()).thenReturn(new Location(null, 0, 0, 0));;
++
++        CommandDispatcher dispatcher = DATA_PACK.commands.getDispatcher();
++        dispatcher.setConsumer((context, success, result) -> {});
++        CommandMap commandMap = new SimpleCommandMap(Bukkit.getServer(), new BukkitBrigForwardingMap());
++        Map<String, Command> stringCommandMap = commandMap.getKnownCommands();
++        // All commands should be mirrored -- or equal
++        int commandMapSize = stringCommandMap.values().size();
++        ExampleCommand exampleCommand = new ExampleCommand();
++
++        Assertions.assertEquals(commandMapSize, dispatcher.getRoot().getChildren().size());
++
++        // Register a new command
++        commandMap.register("test", exampleCommand);
++        Assertions.assertEquals(commandMapSize + (3 * 2), stringCommandMap.values().size()); // Make sure commands are accounted for, including those with namespaced keys
++
++        // Test Registration
++        for (String alias : exampleCommand.getAliases()) {
++            Assertions.assertEquals(stringCommandMap.get(alias), exampleCommand);
++            Assertions.assertEquals(stringCommandMap.get("test:" + alias), exampleCommand);
++        }
++        // Test command instance equality
++        Assertions.assertEquals(stringCommandMap.get(exampleCommand.getName()), exampleCommand);
++        Assertions.assertEquals(stringCommandMap.get("test:" + exampleCommand.getName()), exampleCommand);
++
++        // Test command map execution
++        commandMap.dispatch(sender, "main-example example");
++        Assertions.assertEquals(exampleCommand.invocations, 1);
++        Assertions.assertEquals(commandMap.tabComplete(sender, "main-example 1 2"), List.of("complete"));
++
++        // Test dispatcher execution
++        dispatcher.execute("main-example example", object);
++        Assertions.assertEquals(exampleCommand.invocations, 2);
++
++        dispatcher.execute("test:example2 example", object);
++        Assertions.assertEquals(exampleCommand.invocations, 3);
++
++        Suggestions suggestions = (Suggestions) dispatcher.getCompletionSuggestions(dispatcher.parse("main-example 1 2", object)).join();
++        Assertions.assertEquals(suggestions.getList().get(0).getText(), "complete");
++
++
++        // Test command map removal
++        commandMap.getKnownCommands().remove("test");
++        Assertions.assertNull(commandMap.getCommand("test"));
++        Assertions.assertNull(dispatcher.getRoot().getChild("test"));
++    }
++
++    private static class ExampleCommand extends Command {
++
++        int invocations;
++
++        protected ExampleCommand() {
++            super("main-example", "This is an example.", "", List.of("example", "example2"));
++        }
++
++        @Override
++        public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
++            Assertions.assertEquals(args[0], "example");
++            this.invocations++;
++            return true;
++        }
++
++        @Override
++        public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
++            Assertions.assertEquals(args.length, 2);
++            return List.of("complete");
++        }
++    }
++}
+diff --git a/src/test/java/org/bukkit/support/DummyServer.java b/src/test/java/org/bukkit/support/DummyServer.java
+index cce9e2226ef554c10e1df1dbaa1791656d5d0799..6e9ee1b56b4151c31c373e58172055e02fd7875a 100644
+--- a/src/test/java/org/bukkit/support/DummyServer.java
++++ b/src/test/java/org/bukkit/support/DummyServer.java
+@@ -100,7 +100,7 @@ public final class DummyServer {
+             final Thread currentThread = Thread.currentThread();
+             when(instance.isPrimaryThread()).thenAnswer(ignored -> Thread.currentThread().equals(currentThread));
+ 
+-            final org.bukkit.plugin.PluginManager pluginManager = new  io.papermc.paper.plugin.manager.PaperPluginManagerImpl(instance, new org.bukkit.command.SimpleCommandMap(instance), null);
++            final org.bukkit.plugin.PluginManager pluginManager = new  io.papermc.paper.plugin.manager.PaperPluginManagerImpl(instance, new org.bukkit.command.SimpleCommandMap(instance, new java.util.HashMap<>()), null); // Paper
+             when(instance.getPluginManager()).thenReturn(pluginManager);
+             // paper end - testing additions
+ 

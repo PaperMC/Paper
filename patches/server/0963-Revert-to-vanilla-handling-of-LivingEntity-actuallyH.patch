@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 27 Apr 2024 09:44:53 -0700
+Subject: [PATCH] Revert to vanilla handling of LivingEntity#actuallyHurt
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 5954476f7cbec585f142ee209e91d5b70bb7a8a6..43f1ac121a234085bf168c075f82594c67f72b2c 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -1425,7 +1425,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+             }
+ 
+             this.noActionTime = 0;
+-            float f1 = amount;
++            float f1 = amount; final float originalAmount = f1; // Paper - revert to vanilla #hurt - OBFHELPER
+             boolean flag = amount > 0.0F && this.isDamageSourceBlocked(source); // Copied from below
+             float f2 = 0.0F;
+ 
+@@ -1479,6 +1479,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                 if (!this.actuallyHurt(source, (float) event.getFinalDamage() - this.lastHurt, event)) {
+                     return false;
+                 }
++                if (this instanceof ServerPlayer && event.getDamage() == 0 && originalAmount == 0) return false; // Paper - revert to vanilla damage - players are not affected by damage that is 0 - skip damage if the vanilla damage is 0 and was not modified by plugins in the event.
+                 // CraftBukkit end
+                 this.lastHurt = amount;
+                 flag1 = false;
+@@ -1487,6 +1488,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                 if (!this.actuallyHurt(source, (float) event.getFinalDamage(), event)) {
+                     return false;
+                 }
++                if (this instanceof ServerPlayer && event.getDamage() == 0 && originalAmount == 0) return false; // Paper - revert to vanilla damage - players are not affected by damage that is 0 - skip damage if the vanilla damage is 0 and was not modified by plugins in the event.
+                 this.lastHurt = amount;
+                 this.invulnerableTime = this.invulnerableDuration; // CraftBukkit - restore use of maxNoDamageTicks
+                 // this.actuallyHurt(damagesource, f);
+@@ -2411,12 +2413,12 @@ public abstract class LivingEntity extends Entity implements Attackable {
+ 
+                     return true;
+                 } else {
+-                    return originalDamage > 0;
++                    return true; // Paper - return false ONLY if event was cancelled
+                 }
+                 // CraftBukkit end
+             }
+         }
+-        return false; // CraftBukkit
++        return true; // CraftBukkit // Paper - return false ONLY if event was cancelled
+     }
+ 
+     public CombatTracker getCombatTracker() {

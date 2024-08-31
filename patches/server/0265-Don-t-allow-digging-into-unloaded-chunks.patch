@@ -1,0 +1,77 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Sun, 11 Nov 2018 21:01:09 +0000
+Subject: [PATCH] Don't allow digging into unloaded chunks
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+index a5b0efd6142075ca1ecb604afbc1d0162199e7a4..da9e864520150acd8027545672aa476be414bb4d 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -124,8 +124,8 @@ public class ServerPlayerGameMode {
+         BlockState iblockdata;
+ 
+         if (this.hasDelayedDestroy) {
+-            iblockdata = this.level.getBlockState(this.delayedDestroyPos);
+-            if (iblockdata.isAir()) {
++            iblockdata = this.level.getBlockStateIfLoaded(this.delayedDestroyPos); // Paper - Don't allow digging into unloaded chunks
++            if (iblockdata == null || iblockdata.isAir()) { // Paper - Don't allow digging into unloaded chunks
+                 this.hasDelayedDestroy = false;
+             } else {
+                 float f = this.incrementDestroyProgress(iblockdata, this.delayedDestroyPos, this.delayedTickStart);
+@@ -136,7 +136,13 @@ public class ServerPlayerGameMode {
+                 }
+             }
+         } else if (this.isDestroyingBlock) {
+-            iblockdata = this.level.getBlockState(this.destroyPos);
++            // Paper start - Don't allow digging into unloaded chunks; don't want to do same logic as above, return instead
++            iblockdata = this.level.getBlockStateIfLoaded(this.destroyPos);
++            if (iblockdata == null) {
++                this.isDestroyingBlock = false;
++                return;
++            }
++            // Paper end - Don't allow digging into unloaded chunks
+             if (iblockdata.isAir()) {
+                 this.level.destroyBlockProgress(this.player.getId(), this.destroyPos, -1);
+                 this.lastSentState = -1;
+@@ -165,6 +171,7 @@ public class ServerPlayerGameMode {
+ 
+     public void handleBlockBreakAction(BlockPos pos, ServerboundPlayerActionPacket.Action action, Direction direction, int worldHeight, int sequence) {
+         if (!this.player.canInteractWithBlock(pos, 1.0D)) {
++            if (true) return; // Paper - Don't allow digging into unloaded chunks; Don't notify if unreasonably far away
+             this.debugLogging(pos, false, sequence, "too far");
+         } else if (pos.getY() >= worldHeight) {
+             this.player.connection.send(new ClientboundBlockUpdatePacket(pos, this.level.getBlockState(pos)));
+@@ -307,10 +314,12 @@ public class ServerPlayerGameMode {
+                 this.debugLogging(pos, true, sequence, "stopped destroying");
+             } else if (action == ServerboundPlayerActionPacket.Action.ABORT_DESTROY_BLOCK) {
+                 this.isDestroyingBlock = false;
+-                if (!Objects.equals(this.destroyPos, pos)) {
++                if (!Objects.equals(this.destroyPos, pos) && !BlockPos.ZERO.equals(this.destroyPos)) { // Paper
+                     ServerPlayerGameMode.LOGGER.debug("Mismatch in destroy block pos: {} {}", this.destroyPos, pos); // CraftBukkit - SPIGOT-5457 sent by client when interact event cancelled
+-                    this.level.destroyBlockProgress(this.player.getId(), this.destroyPos, -1);
+-                    this.debugLogging(pos, true, sequence, "aborted mismatched destroying");
++                    BlockState type = this.level.getBlockStateIfLoaded(this.destroyPos); // Paper - don't load unloaded chunks for stale records here
++                    if (type != null) this.level.destroyBlockProgress(this.player.getId(), this.destroyPos, -1);
++                    if (type != null) this.debugLogging(pos, true, sequence, "aborted mismatched destroying");
++                    this.destroyPos = BlockPos.ZERO; // Paper
+                 }
+ 
+                 this.level.destroyBlockProgress(this.player.getId(), pos, -1);
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 6cf68d7173bc23c39261856f11cbd42de387bd60..4942aa857ecc5762c9b0b1662eefaeae4daab80d 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1595,6 +1595,12 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+             case START_DESTROY_BLOCK:
+             case ABORT_DESTROY_BLOCK:
+             case STOP_DESTROY_BLOCK:
++                // Paper start - Don't allow digging into unloaded chunks
++                if (this.player.level().getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4) == null) {
++                    this.player.connection.ackBlockChangesUpTo(packet.getSequence());
++                    return;
++                }
++                // Paper end - Don't allow digging into unloaded chunks
+                 this.player.gameMode.handleBlockBreakAction(blockposition, packetplayinblockdig_enumplayerdigtype, packet.getDirection(), this.player.level().getMaxBuildHeight(), packet.getSequence());
+                 this.player.connection.ackBlockChangesUpTo(packet.getSequence());
+                 return;

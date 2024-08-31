@@ -1,0 +1,183 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Corey Shupe <coreyshupe101@gmail.com>
+Date: Wed, 11 Jan 2023 16:40:39 -0500
+Subject: [PATCH] Add Listing API for Player
+
+
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
+index 6247a21c9c391abf1f6db3482c659593e4f29355..9ccca41bf23efadba5329cc584bbcdcacbe09a92 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
+@@ -37,6 +37,17 @@ public class ClientboundPlayerInfoUpdatePacket implements Packet<ClientGamePacke
+         this.actions = EnumSet.of(action);
+         this.entries = List.of(new ClientboundPlayerInfoUpdatePacket.Entry(player));
+     }
++    // Paper start - Add Listing API for Player
++    public ClientboundPlayerInfoUpdatePacket(EnumSet<ClientboundPlayerInfoUpdatePacket.Action> actions, List<ClientboundPlayerInfoUpdatePacket.Entry> entries) {
++        this.actions = actions;
++        this.entries = entries;
++    }
++
++    public ClientboundPlayerInfoUpdatePacket(EnumSet<ClientboundPlayerInfoUpdatePacket.Action> actions, ClientboundPlayerInfoUpdatePacket.Entry entry) {
++        this.actions = actions;
++        this.entries = List.of(entry);
++    }
++    // Paper end - Add Listing API for Player
+ 
+     public static ClientboundPlayerInfoUpdatePacket createPlayerInitializing(Collection<ServerPlayer> players) {
+         EnumSet<ClientboundPlayerInfoUpdatePacket.Action> enumSet = EnumSet.of(
+@@ -50,6 +61,28 @@ public class ClientboundPlayerInfoUpdatePacket implements Packet<ClientGamePacke
+         return new ClientboundPlayerInfoUpdatePacket(enumSet, players);
+     }
+ 
++    // Paper start - Add Listing API for Player
++    public static ClientboundPlayerInfoUpdatePacket createPlayerInitializing(Collection<ServerPlayer> players, ServerPlayer forPlayer) {
++        final EnumSet<ClientboundPlayerInfoUpdatePacket.Action> enumSet = EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER, ClientboundPlayerInfoUpdatePacket.Action.INITIALIZE_CHAT, ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LISTED, ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LATENCY, ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME);
++        final List<ClientboundPlayerInfoUpdatePacket.Entry> entries = new java.util.ArrayList<>(players.size());
++        final org.bukkit.craftbukkit.entity.CraftPlayer bukkitEntity = forPlayer.getBukkitEntity();
++        for (final ServerPlayer player : players) {
++            entries.add(new ClientboundPlayerInfoUpdatePacket.Entry(player, bukkitEntity.isListed(player.getBukkitEntity())));
++        }
++        return new ClientboundPlayerInfoUpdatePacket(enumSet, entries);
++    }
++
++    public static ClientboundPlayerInfoUpdatePacket createSinglePlayerInitializing(ServerPlayer player, boolean listed) {
++        final EnumSet<ClientboundPlayerInfoUpdatePacket.Action> enumSet = EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER, ClientboundPlayerInfoUpdatePacket.Action.INITIALIZE_CHAT, ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LISTED, ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LATENCY, ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME);
++        final List<ClientboundPlayerInfoUpdatePacket.Entry> entries = List.of(new Entry(player, listed));
++        return new ClientboundPlayerInfoUpdatePacket(enumSet, entries);
++    }
++
++    public static ClientboundPlayerInfoUpdatePacket updateListed(UUID playerInfoId, boolean listed) {
++        EnumSet<ClientboundPlayerInfoUpdatePacket.Action> enumSet = EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LISTED);
++        return new ClientboundPlayerInfoUpdatePacket(enumSet, new ClientboundPlayerInfoUpdatePacket.Entry(playerInfoId, listed));
++    }
++    // Paper end - Add Listing API for Player
+     private ClientboundPlayerInfoUpdatePacket(RegistryFriendlyByteBuf buf) {
+         this.actions = buf.readEnumSet(ClientboundPlayerInfoUpdatePacket.Action.class);
+         this.entries = buf.readList(buf2 -> {
+@@ -158,16 +191,24 @@ public class ClientboundPlayerInfoUpdatePacket implements Packet<ClientGamePacke
+         @Nullable RemoteChatSession.Data chatSession
+     ) {
+         Entry(ServerPlayer player) {
++            // Paper start - Add Listing API for Player
++            this(player, true);
++        }
++        Entry(ServerPlayer player, boolean listed) {
+             this(
+                 player.getUUID(),
+                 player.getGameProfile(),
+-                true,
++                listed,
+                 player.connection.latency(),
+                 player.gameMode.getGameModeForPlayer(),
+                 player.getTabListDisplayName(),
+                 Optionull.map(player.getChatSession(), RemoteChatSession::asData)
+             );
+         }
++        Entry(UUID profileId, boolean listed) {
++            this(profileId, null, listed, 0, GameType.DEFAULT_MODE, null, null);
++        }
++        // Paper end - Add Listing API for Player
+     }
+ 
+     static class EntryBuilder {
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 1eed5ebf96f8e8889d5af346d45a401b282bab21..4b597ed9a71908ecec3b6da5b6a4a735cf22498b 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -359,14 +359,22 @@ public abstract class PlayerList {
+         // CraftBukkit end
+ 
+         // CraftBukkit start - sendAll above replaced with this loop
+-        ClientboundPlayerInfoUpdatePacket packet = ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(player));
++        ClientboundPlayerInfoUpdatePacket packet = ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(player)); // Paper - Add Listing API for Player
+ 
+         final List<ServerPlayer> onlinePlayers = Lists.newArrayListWithExpectedSize(this.players.size() - 1); // Paper - Use single player info update packet on join
+         for (int i = 0; i < this.players.size(); ++i) {
+             ServerPlayer entityplayer1 = (ServerPlayer) this.players.get(i);
+ 
+             if (entityplayer1.getBukkitEntity().canSee(bukkitPlayer)) {
++                // Paper start - Add Listing API for Player
++                if (entityplayer1.getBukkitEntity().isListed(bukkitPlayer)) {
++                // Paper end - Add Listing API for Player
+                 entityplayer1.connection.send(packet);
++                // Paper start - Add Listing API for Player
++                } else {
++                    entityplayer1.connection.send(ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(player, false));
++                }
++                // Paper end - Add Listing API for Player
+             }
+ 
+             if (entityplayer1 == player || !bukkitPlayer.canSee(entityplayer1.getBukkitEntity())) { // Paper - Use single player info update packet on join; Don't include joining player
+@@ -377,7 +385,7 @@ public abstract class PlayerList {
+         }
+         // Paper start - Use single player info update packet on join
+         if (!onlinePlayers.isEmpty()) {
+-            player.connection.send(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(onlinePlayers));
++            player.connection.send(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(onlinePlayers, player)); // Paper - Add Listing API for Player
+         }
+         // Paper end - Use single player info update packet on join
+         player.sentListPacket = true;
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index e14522b159d36c3f4cb18f285d16d262e6ca1035..b250efdcfbdfc211a63060146e3e5a22527b7117 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -201,6 +201,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     private final ConversationTracker conversationTracker = new ConversationTracker();
+     private final Set<String> channels = new HashSet<String>();
+     private final Map<UUID, Set<WeakReference<Plugin>>> invertedVisibilityEntities = new HashMap<>();
++    private final Set<UUID> unlistedEntities = new HashSet<>(); // Paper - Add Listing API for Player
+     private static final WeakHashMap<Plugin, WeakReference<Plugin>> pluginWeakReferences = new WeakHashMap<>();
+     private int hash = 0;
+     private double health = 20;
+@@ -2092,7 +2093,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+                 otherPlayer.setUUID(uuidOverride);
+             }
+             // Paper end
+-            this.getHandle().connection.send(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(otherPlayer)));
++            this.getHandle().connection.send(ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(List.of(otherPlayer), this.getHandle())); // Paper - Add Listing API for Player
+             if (original != null) otherPlayer.setUUID(original); // Paper - uuid override
+         }
+ 
+@@ -2196,6 +2197,41 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         return (entity != null) ? this.canSee(entity) : false; // If we can't find it, we can't see it
+     }
+ 
++    // Paper start - Add Listing API for Player
++    @Override
++    public boolean isListed(Player other) {
++        return !this.unlistedEntities.contains(other.getUniqueId());
++    }
++
++    @Override
++    public boolean unlistPlayer(@NotNull Player other) {
++        Preconditions.checkNotNull(other, "hidden entity cannot be null");
++        if (this.getHandle().connection == null) return false;
++        if (!this.canSee(other)) return false;
++
++        if (unlistedEntities.add(other.getUniqueId())) {
++            this.getHandle().connection.send(ClientboundPlayerInfoUpdatePacket.updateListed(other.getUniqueId(), false));
++            return true;
++        } else {
++            return false;
++        }
++    }
++
++    @Override
++    public boolean listPlayer(@NotNull Player other) {
++        Preconditions.checkNotNull(other, "hidden entity cannot be null");
++        if (this.getHandle().connection == null) return false;
++        if (!this.canSee(other)) throw new IllegalStateException("Player cannot see other player");
++
++        if (this.unlistedEntities.remove(other.getUniqueId())) {
++            this.getHandle().connection.send(ClientboundPlayerInfoUpdatePacket.updateListed(other.getUniqueId(), true));
++            return true;
++        } else {
++            return false;
++        }
++    }
++    // Paper end - Add Listing API for Player
++
+     @Override
+     public Map<String, Object> serialize() {
+         Map<String, Object> result = new LinkedHashMap<String, Object>();
