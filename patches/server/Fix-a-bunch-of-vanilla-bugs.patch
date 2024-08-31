@@ -52,6 +52,9 @@ https://bugs.mojang.com/browse/MC-200092
 https://bugs.mojang.com/browse/MC-158900
   Fix error when joining after tempban expired
 
+https://bugs.mojang.com/browse/MC-99075
+  Fix inventory desync within spawn protected area
+
 == AT ==
 public net/minecraft/world/entity/Mob leashInfoTag
 
@@ -123,6 +126,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.player.onUpdateAbilities();
              this.player.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, this.player), this.player); // CraftBukkit
              this.level.updateSleepingPlayerList();
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                             } else if (enuminteractionresult.shouldSwing() && !this.player.gameMode.interactResult) { // Paper - Call interact event
+                                 this.player.swing(enumhand, true);
+                             }
+-                        }
++                        } else { this.player.containerMenu.sendAllDataToRemote(); } // Paper - Fix inventory desync; MC-99075
+                     } else {
+                         MutableComponent ichatmutablecomponent1 = Component.translatable("build.tooHigh", i - 1).withStyle(ChatFormatting.RED);
+ 
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
