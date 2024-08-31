@@ -52,6 +52,9 @@ https://bugs.mojang.com/browse/MC-200092
 https://bugs.mojang.com/browse/MC-158900
   Fix error when joining after tempban expired
 
+https://bugs.mojang.com/browse/MC-99075
+  Fix inventory desync within spawn protected area
+
 == AT ==
 public net/minecraft/world/entity/Mob leashInfoTag
 
@@ -123,6 +126,19 @@ index 6abecaac8407b992d208a9108e11fd4954a4106f..03d89f326d320c5d778c3d1e2db7d6b8
              this.player.onUpdateAbilities();
              this.player.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, this.player), this.player); // CraftBukkit
              this.level.updateSleepingPlayerList();
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index ca32e5aa6e77ca1bab886e7b6a778ec931ac4e4c..28808ffc6e486f7dc01be370c9eb249dc1f7ea46 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1814,7 +1814,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                             } else if (enuminteractionresult.shouldSwing() && !this.player.gameMode.interactResult) { // Paper - Call interact event
+                                 this.player.swing(enumhand, true);
+                             }
+-                        }
++                        } else { this.player.containerMenu.sendAllDataToRemote(); } // Paper - Fix inventory desync; MC-99075
+                     } else {
+                         MutableComponent ichatmutablecomponent1 = Component.translatable("build.tooHigh", i - 1).withStyle(ChatFormatting.RED);
+ 
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
 index be842c81ae6c6ec64a233f126d7221a37d66439c..b54e8da2209d99696e12c65a23323a68b7da272b 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
