@@ -47,7 +47,7 @@ public final class CraftPlayerProfile implements PlayerProfile {
     public static ResolvableProfile validateSkullProfile(@Nonnull ResolvableProfile resolvableProfile) {
         // The ResolvableProfile needs to contain either both a uuid and textures, or a name.
         boolean isValidSkullProfile = (resolvableProfile.name().isPresent())
-                || (resolvableProfile.id().isPresent() && resolvableProfile.properties().containsKey(CraftPlayerTextures.PROPERTY_NAME));
+                || (resolvableProfile.id().isPresent() || resolvableProfile.properties().containsKey(CraftPlayerTextures.PROPERTY_NAME));
         Preconditions.checkArgument(isValidSkullProfile, "The skull profile is missing a name or textures!");
         return resolvableProfile;
     }
@@ -63,15 +63,22 @@ public final class CraftPlayerProfile implements PlayerProfile {
     private final PropertyMap properties = new PropertyMap();
     private final CraftPlayerTextures textures = new CraftPlayerTextures(this);
 
-    public CraftPlayerProfile(UUID uniqueId, String name) {
-        Preconditions.checkArgument((uniqueId != null) || !StringUtils.isBlank(name), "uniqueId is null or name is blank");
+    private CraftPlayerProfile(UUID uniqueId, String name, boolean applyPreconditions) {
+        if (applyPreconditions) {
+            Preconditions.checkArgument((uniqueId != null) || !StringUtils.isBlank(name), "uniqueId is null or name is blank");
+        }
         this.uniqueId = uniqueId;
         this.name = name;
     }
 
+    public CraftPlayerProfile(UUID uniqueId, String name) {
+        this(uniqueId, name, true);
+    }
+
+    // The ResolvableProfile used in Components can have just the properties then need ignore all checks internally
     @ApiStatus.Internal
     public CraftPlayerProfile(@Nonnull ResolvableProfile resolvableProfile) {
-        this(resolvableProfile.id().orElse(null), resolvableProfile.name().orElse(null));
+        this(resolvableProfile.id().orElse(null), resolvableProfile.name().orElse(null), false);
         this.properties.putAll(resolvableProfile.properties());
     }
 
