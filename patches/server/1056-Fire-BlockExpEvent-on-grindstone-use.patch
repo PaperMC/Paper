@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nathan <nathanmaestas21@cnm.edu>
+Date: Sat, 31 Aug 2024 18:09:55 -0600
+Subject: [PATCH] Fire BlockExpEvent on grindstone use
+
+
+diff --git a/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java b/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java
+index 1678f6c8b2c7db761783e53043169bf12bc2cb29..1c1e094f783875e306c439d72e97122b1c0c8041 100644
+--- a/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java
+@@ -24,6 +24,10 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryGrindstone;
+ import org.bukkit.craftbukkit.inventory.CraftInventoryView;
+ import org.bukkit.entity.Player;
+ // CraftBukkit end
++// Paper start - Fire BlockExpEvent on grindstone use
++import org.bukkit.event.block.BlockExpEvent;
++import org.bukkit.craftbukkit.block.CraftBlock;
++// Paper end - Fire BlockExpEvent on grindstone use
+ 
+ public class GrindstoneMenu extends AbstractContainerMenu {
+ 
+@@ -98,7 +102,16 @@ public class GrindstoneMenu extends AbstractContainerMenu {
+             public void onTake(net.minecraft.world.entity.player.Player player, ItemStack stack) {
+                 context.execute((world, blockposition) -> {
+                     if (world instanceof ServerLevel) {
+-                        ExperienceOrb.award((ServerLevel) world, Vec3.atCenterOf(blockposition), this.getExperienceAmount(world), org.bukkit.entity.ExperienceOrb.SpawnReason.GRINDSTONE, player); // Paper
++                        // Paper start - Fire BlockExpEvent on grindstone use
++                        //ExperienceOrb.award((ServerLevel) world, Vec3.atCenterOf(blockposition), this.getExperienceAmount(world), org.bukkit.entity.ExperienceOrb.SpawnReason.GRINDSTONE, player); // Paper old
++                        int exp = this.getExperienceAmount(world);
++                        BlockExpEvent event = new BlockExpEvent(CraftBlock.at(world, blockposition), exp);
++                        world.getCraftServer().getPluginManager().callEvent(event);
++                        exp = event.getExpToDrop();
++                        if (exp > 0) {
++                            ExperienceOrb.award((ServerLevel) world, Vec3.atCenterOf(blockposition), exp, org.bukkit.entity.ExperienceOrb.SpawnReason.GRINDSTONE, player);
++                        }
++                        // Paper end - Fire BlockExpEvent on grindstone use
+                     }
+ 
+                     world.levelEvent(1042, blockposition, 0);
