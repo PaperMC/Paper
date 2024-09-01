@@ -39,7 +39,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.world.level.chunk.status.ChunkStatus;
 +import net.minecraft.world.level.chunk.LevelChunkSection;
 +
-+public class LevelHelper {
++class LevelHelper {
 +
 +    static int doRedstoneEvent(ServerLevel level, BlockPos pos, int prevPower, int newPower) {
 +        BlockRedstoneEvent event = new BlockRedstoneEvent(CraftBlock.at(level, pos), prevPower, newPower);
@@ -546,6 +546,402 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +}
+diff --git a/src/main/java/alternate/current/wire/UpdateOrder.java b/src/main/java/alternate/current/wire/UpdateOrder.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/alternate/current/wire/UpdateOrder.java
+@@ -0,0 +0,0 @@
++package alternate.current.wire;
++
++import java.util.Locale;
++import java.util.function.Consumer;
++
++import alternate.current.wire.WireHandler.Directions;
++import alternate.current.wire.WireHandler.NodeProvider;
++
++public enum UpdateOrder {
++
++    HORIZONTAL_FIRST_OUTWARD(
++        new int[][] {
++            new int[] { Directions.WEST , Directions.EAST , Directions.NORTH, Directions.SOUTH, Directions.DOWN, Directions.UP },
++            new int[] { Directions.NORTH, Directions.SOUTH, Directions.EAST , Directions.WEST , Directions.DOWN, Directions.UP },
++            new int[] { Directions.EAST , Directions.WEST , Directions.SOUTH, Directions.NORTH, Directions.DOWN, Directions.UP },
++            new int[] { Directions.SOUTH, Directions.NORTH, Directions.WEST , Directions.EAST , Directions.DOWN, Directions.UP }
++            
++        },
++        new int[][] {
++            new int[] { Directions.WEST , Directions.EAST , Directions.NORTH, Directions.SOUTH },
++            new int[] { Directions.NORTH, Directions.SOUTH, Directions.EAST , Directions.WEST  },
++            new int[] { Directions.EAST , Directions.WEST , Directions.SOUTH, Directions.NORTH },
++            new int[] { Directions.SOUTH, Directions.NORTH, Directions.WEST , Directions.EAST  }
++        }
++    ) {
++
++        @Override
++        public void forEachNeighbor(NodeProvider nodes, Node source, int forward, Consumer<Node> action) {
++            /*
++             * This iteration order is designed to be an extension of the Vanilla shape
++             * update order, and is determined as follows:
++             * <br>
++             * 1. Each neighbor is identified by the step(s) you must take, starting at the
++             * source, to reach it. Each step is 1 block, thus the position of a neighbor is
++             * encoded by the direction(s) of the step(s), e.g. (right), (down), (up, left),
++             * etc.
++             * <br>
++             * 2. Neighbors are iterated over in pairs that lie on opposite sides of the
++             * source.
++             * <br>
++             * 3. Neighbors are iterated over in order of their distance from the source,
++             * moving outward. This means they are iterated over in 3 groups: direct
++             * neighbors first, then diagonal neighbors, and last are the far neighbors that
++             * are 2 blocks directly out.
++             * <br>
++             * 4. The order within each group is determined using the following basic order:
++             * { front, back, right, left, down, up }. This order was chosen because it
++             * converts to the following order of absolute directions when west is said to
++             * be 'forward': { west, east, north, south, down, up } - this is the order of
++             * shape updates.
++             */
++
++            int rightward = (forward + 1) & 0b11;
++            int backward  = (forward + 2) & 0b11;
++            int leftward  = (forward + 3) & 0b11;
++            int downward  = Directions.DOWN;
++            int upward    = Directions.UP;
++
++            Node front = nodes.getNeighbor(source, forward);
++            Node right = nodes.getNeighbor(source, rightward);
++            Node back  = nodes.getNeighbor(source, backward);
++            Node left  = nodes.getNeighbor(source, leftward);
++            Node below = nodes.getNeighbor(source, downward);
++            Node above = nodes.getNeighbor(source, upward);
++
++            // direct neighbors (6)
++            action.accept(front);
++            action.accept(back);
++            action.accept(right);
++            action.accept(left);
++            action.accept(below);
++            action.accept(above);
++
++            // diagonal neighbors (12)
++            action.accept(nodes.getNeighbor(front, rightward));
++            action.accept(nodes.getNeighbor(back, leftward));
++            action.accept(nodes.getNeighbor(front, leftward));
++            action.accept(nodes.getNeighbor(back, rightward));
++            action.accept(nodes.getNeighbor(front, downward));
++            action.accept(nodes.getNeighbor(back, upward));
++            action.accept(nodes.getNeighbor(front, upward));
++            action.accept(nodes.getNeighbor(back, downward));
++            action.accept(nodes.getNeighbor(right, downward));
++            action.accept(nodes.getNeighbor(left, upward));
++            action.accept(nodes.getNeighbor(right, upward));
++            action.accept(nodes.getNeighbor(left, downward));
++
++            // far neighbors (6)
++            action.accept(nodes.getNeighbor(front, forward));
++            action.accept(nodes.getNeighbor(back, backward));
++            action.accept(nodes.getNeighbor(right, rightward));
++            action.accept(nodes.getNeighbor(left, leftward));
++            action.accept(nodes.getNeighbor(below, downward));
++            action.accept(nodes.getNeighbor(above, upward));
++        }
++    },
++    HORIZONTAL_FIRST_INWARD(
++        new int[][] {
++            new int[] { Directions.WEST , Directions.EAST , Directions.NORTH, Directions.SOUTH, Directions.DOWN, Directions.UP },
++            new int[] { Directions.NORTH, Directions.SOUTH, Directions.EAST , Directions.WEST , Directions.DOWN, Directions.UP },
++            new int[] { Directions.EAST , Directions.WEST , Directions.SOUTH, Directions.NORTH, Directions.DOWN, Directions.UP },
++            new int[] { Directions.SOUTH, Directions.NORTH, Directions.WEST , Directions.EAST , Directions.DOWN, Directions.UP }
++        },
++        new int[][] {
++            new int[] { Directions.WEST , Directions.EAST , Directions.NORTH, Directions.SOUTH },
++            new int[] { Directions.NORTH, Directions.SOUTH, Directions.EAST , Directions.WEST  },
++            new int[] { Directions.EAST , Directions.WEST , Directions.SOUTH, Directions.NORTH },
++            new int[] { Directions.SOUTH, Directions.NORTH, Directions.WEST , Directions.EAST  }
++        }
++    ) {
++
++        @Override
++        public void forEachNeighbor(NodeProvider nodes, Node source, int forward, Consumer<Node> action) {
++            /*
++             * This iteration order is designed to be an inversion of the above update
++             * order, and is determined as follows:
++             * <br>
++             * 1. Each neighbor is identified by the step(s) you must take, starting at the
++             * source, to reach it. Each step is 1 block, thus the position of a neighbor is
++             * encoded by the direction(s) of the step(s), e.g. (right), (down), (up, left),
++             * etc.
++             * <br>
++             * 2. Neighbors are iterated over in pairs that lie on opposite sides of the
++             * source.
++             * <br>
++             * 3. Neighbors are iterated over in order of their distance from the source,
++             * moving inward. This means they are iterated over in 3 groups: neighbors that
++             * are 2 blocks directly out first, then diagonal neighbors, and last are direct
++             * neighbors.
++             * <br>
++             * 4. The order within each group is determined using the following basic order:
++             * { front, back, right, left, down, up }. This order was chosen because it
++             * converts to the following order of absolute directions when west is said to
++             * be 'forward': { west, east, north, south, down, up } - this is the order of
++             * shape updates.
++             */
++
++            int rightward = (forward + 1) & 0b11;
++            int backward  = (forward + 2) & 0b11;
++            int leftward  = (forward + 3) & 0b11;
++            int downward  = Directions.DOWN;
++            int upward    = Directions.UP;
++
++            Node front = nodes.getNeighbor(source, forward);
++            Node right = nodes.getNeighbor(source, rightward);
++            Node back  = nodes.getNeighbor(source, backward);
++            Node left  = nodes.getNeighbor(source, leftward);
++            Node below = nodes.getNeighbor(source, downward);
++            Node above = nodes.getNeighbor(source, upward);
++
++            // far neighbors (6)
++            action.accept(nodes.getNeighbor(front, forward));
++            action.accept(nodes.getNeighbor(back, backward));
++            action.accept(nodes.getNeighbor(right, rightward));
++            action.accept(nodes.getNeighbor(left, leftward));
++            action.accept(nodes.getNeighbor(below, downward));
++            action.accept(nodes.getNeighbor(above, upward));
++
++            // diagonal neighbors (12)
++            action.accept(nodes.getNeighbor(front, rightward));
++            action.accept(nodes.getNeighbor(back, leftward));
++            action.accept(nodes.getNeighbor(front, leftward));
++            action.accept(nodes.getNeighbor(back, rightward));
++            action.accept(nodes.getNeighbor(front, downward));
++            action.accept(nodes.getNeighbor(back, upward));
++            action.accept(nodes.getNeighbor(front, upward));
++            action.accept(nodes.getNeighbor(back, downward));
++            action.accept(nodes.getNeighbor(right, downward));
++            action.accept(nodes.getNeighbor(left, upward));
++            action.accept(nodes.getNeighbor(right, upward));
++            action.accept(nodes.getNeighbor(left, downward));
++
++            
++            // direct neighbors (6)
++            action.accept(front);
++            action.accept(back);
++            action.accept(right);
++            action.accept(left);
++            action.accept(below);
++            action.accept(above);
++        }
++    },
++    VERTICAL_FIRST_OUTWARD(
++        new int[][] {
++            new int[] { Directions.DOWN, Directions.UP, Directions.WEST , Directions.EAST , Directions.NORTH, Directions.SOUTH },
++            new int[] { Directions.DOWN, Directions.UP, Directions.NORTH, Directions.SOUTH, Directions.EAST , Directions.WEST  },
++            new int[] { Directions.DOWN, Directions.UP, Directions.EAST , Directions.WEST , Directions.SOUTH, Directions.NORTH },
++            new int[] { Directions.DOWN, Directions.UP, Directions.SOUTH, Directions.NORTH, Directions.WEST , Directions.EAST  }
++        },
++        new int[][] {
++            new int[] { Directions.WEST , Directions.EAST , Directions.NORTH, Directions.SOUTH },
++            new int[] { Directions.NORTH, Directions.SOUTH, Directions.EAST , Directions.WEST  },
++            new int[] { Directions.EAST , Directions.WEST , Directions.SOUTH, Directions.NORTH },
++            new int[] { Directions.SOUTH, Directions.NORTH, Directions.WEST , Directions.EAST  }
++        }
++    ) {
++
++        @Override
++        public void forEachNeighbor(NodeProvider nodes, Node source, int forward, Consumer<Node> action) {
++            /*
++             * This iteration order is designed to be the opposite of the Vanilla shape
++             * update order, and is determined as follows:
++             * <br>
++             * 1. Each neighbor is identified by the step(s) you must take, starting at the
++             * source, to reach it. Each step is 1 block, thus the position of a neighbor is
++             * encoded by the direction(s) of the step(s), e.g. (right), (down), (up, left),
++             * etc.
++             * <br>
++             * 2. Neighbors are iterated over in pairs that lie on opposite sides of the
++             * source.
++             * <br>
++             * 3. Neighbors are iterated over in order of their distance from the source,
++             * moving outward. This means they are iterated over in 3 groups: direct
++             * neighbors first, then diagonal neighbors, and last are the far neighbors that
++             * are 2 blocks directly out.
++             * <br>
++             * 4. The order within each group is determined using the following basic order:
++             * { down, up, front, back, right, left }. This order was chosen because it
++             * converts to the following order of absolute directions when west is said to
++             * be 'forward': { down, up west, east, north, south } - this is the order of
++             * shape updates, with the vertical directions moved to the front.
++             */
++
++            int rightward = (forward + 1) & 0b11;
++            int backward  = (forward + 2) & 0b11;
++            int leftward  = (forward + 3) & 0b11;
++            int downward  = Directions.DOWN;
++            int upward    = Directions.UP;
++
++            Node front = nodes.getNeighbor(source, forward);
++            Node right = nodes.getNeighbor(source, rightward);
++            Node back  = nodes.getNeighbor(source, backward);
++            Node left  = nodes.getNeighbor(source, leftward);
++            Node below = nodes.getNeighbor(source, downward);
++            Node above = nodes.getNeighbor(source, upward);
++
++            // direct neighbors (6)
++            action.accept(below);
++            action.accept(above);
++            action.accept(front);
++            action.accept(back);
++            action.accept(right);
++            action.accept(left);
++
++            // diagonal neighbors (12)
++            action.accept(nodes.getNeighbor(below, forward));
++            action.accept(nodes.getNeighbor(above, backward));
++            action.accept(nodes.getNeighbor(below, backward));
++            action.accept(nodes.getNeighbor(above, forward));
++            action.accept(nodes.getNeighbor(below, rightward));
++            action.accept(nodes.getNeighbor(above, leftward));
++            action.accept(nodes.getNeighbor(below, leftward));
++            action.accept(nodes.getNeighbor(above, rightward));
++            action.accept(nodes.getNeighbor(front, rightward));
++            action.accept(nodes.getNeighbor(back, leftward));
++            action.accept(nodes.getNeighbor(front, leftward));
++            action.accept(nodes.getNeighbor(back, rightward));
++
++            // far neighbors (6)
++            action.accept(nodes.getNeighbor(below, downward));
++            action.accept(nodes.getNeighbor(above, upward));
++            action.accept(nodes.getNeighbor(front, forward));
++            action.accept(nodes.getNeighbor(back, backward));
++            action.accept(nodes.getNeighbor(right, rightward));
++            action.accept(nodes.getNeighbor(left, leftward));
++        }
++    },
++    VERTICAL_FIRST_INWARD(
++        new int[][] {
++            new int[] { Directions.DOWN, Directions.UP, Directions.WEST , Directions.EAST , Directions.NORTH, Directions.SOUTH },
++            new int[] { Directions.DOWN, Directions.UP, Directions.NORTH, Directions.SOUTH, Directions.EAST , Directions.WEST  },
++            new int[] { Directions.DOWN, Directions.UP, Directions.EAST , Directions.WEST , Directions.SOUTH, Directions.NORTH },
++            new int[] { Directions.DOWN, Directions.UP, Directions.SOUTH, Directions.NORTH, Directions.WEST , Directions.EAST  }
++        },
++        new int[][] {
++            new int[] { Directions.WEST , Directions.EAST , Directions.NORTH, Directions.SOUTH },
++            new int[] { Directions.NORTH, Directions.SOUTH, Directions.EAST , Directions.WEST  },
++            new int[] { Directions.EAST , Directions.WEST , Directions.SOUTH, Directions.NORTH },
++            new int[] { Directions.SOUTH, Directions.NORTH, Directions.WEST , Directions.EAST  }
++        }
++    ) {
++
++        @Override
++        public void forEachNeighbor(NodeProvider nodes, Node source, int forward, Consumer<Node> action) {
++            /*
++             * This iteration order is designed to be an inversion of the above update
++             * order, and is determined as follows:
++             * <br>
++             * 1. Each neighbor is identified by the step(s) you must take, starting at the
++             * source, to reach it. Each step is 1 block, thus the position of a neighbor is
++             * encoded by the direction(s) of the step(s), e.g. (right), (down), (up, left),
++             * etc.
++             * <br>
++             * 2. Neighbors are iterated over in pairs that lie on opposite sides of the
++             * source.
++             * <br>
++             * 3. Neighbors are iterated over in order of their distance from the source,
++             * moving inward. This means they are iterated over in 3 groups: neighbors that
++             * are 2 blocks directly out first, then diagonal neighbors, and last are direct
++             * neighbors.
++             * <br>
++             * 4. The order within each group is determined using the following basic order:
++             * { down, up, front, back, right, left }. This order was chosen because it
++             * converts to the following order of absolute directions when west is said to
++             * be 'forward': { down, up west, east, north, south } - this is the order of
++             * shape updates, with the vertical directions moved to the front.
++             */
++
++            int rightward = (forward + 1) & 0b11;
++            int backward  = (forward + 2) & 0b11;
++            int leftward  = (forward + 3) & 0b11;
++            int downward  = Directions.DOWN;
++            int upward    = Directions.UP;
++
++            Node front = nodes.getNeighbor(source, forward);
++            Node right = nodes.getNeighbor(source, rightward);
++            Node back  = nodes.getNeighbor(source, backward);
++            Node left  = nodes.getNeighbor(source, leftward);
++            Node below = nodes.getNeighbor(source, downward);
++            Node above = nodes.getNeighbor(source, upward);
++
++            // far neighbors (6)
++            action.accept(nodes.getNeighbor(below, downward));
++            action.accept(nodes.getNeighbor(above, upward));
++            action.accept(nodes.getNeighbor(front, forward));
++            action.accept(nodes.getNeighbor(back, backward));
++            action.accept(nodes.getNeighbor(right, rightward));
++            action.accept(nodes.getNeighbor(left, leftward));
++
++            // diagonal neighbors (12)
++            action.accept(nodes.getNeighbor(below, forward));
++            action.accept(nodes.getNeighbor(above, backward));
++            action.accept(nodes.getNeighbor(below, backward));
++            action.accept(nodes.getNeighbor(above, forward));
++            action.accept(nodes.getNeighbor(below, rightward));
++            action.accept(nodes.getNeighbor(above, leftward));
++            action.accept(nodes.getNeighbor(below, leftward));
++            action.accept(nodes.getNeighbor(above, rightward));
++            action.accept(nodes.getNeighbor(front, rightward));
++            action.accept(nodes.getNeighbor(back, leftward));
++            action.accept(nodes.getNeighbor(front, leftward));
++            action.accept(nodes.getNeighbor(back, rightward));
++
++            // direct neighbors (6)
++            action.accept(below);
++            action.accept(above);
++            action.accept(front);
++            action.accept(back);
++            action.accept(right);
++            action.accept(left);
++        }
++    };
++
++    private final int[][] directNeighbors;
++    private final int[][] cardinalNeighbors;
++
++    private UpdateOrder(int[][] directNeighbors, int[][] cardinalNeighbors) {
++        this.directNeighbors = directNeighbors;
++        this.cardinalNeighbors = cardinalNeighbors;
++    }
++
++    public String id() {
++        return name().toLowerCase(Locale.ENGLISH);
++    }
++
++    public static UpdateOrder byId(String id) {
++        return valueOf(id.toUpperCase(Locale.ENGLISH));
++    }
++
++    public int[] directNeighbors(int forward) {
++        return directNeighbors[forward];
++    }
++
++    public int[] cardinalNeighbors(int forward) {
++        return cardinalNeighbors[forward];
++    }
++
++    /**
++     * Iterate over all neighboring nodes of the given source node. The iteration
++     * order is built from relative directions around the source, depending on the
++     * given 'forward' direction. This is an effort to eliminate any directional
++     * biases that would be emerge in rotationally symmetric circuits if the update
++     * order was built from absolute directions around the source.
++     * <br>
++     * Each update order must include the source's direct neighbors, but further
++     * neighbors may not be included.
++     */
++    public abstract void forEachNeighbor(NodeProvider nodes, Node source, int forward, Consumer<Node> action);
++
++}
 diff --git a/src/main/java/alternate/current/wire/WireConnection.java b/src/main/java/alternate/current/wire/WireConnection.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -642,24 +1038,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +            if (neighbor.isWire()) {
 +                add(neighbor.asWire(), iDir, true, true);
++            } else {
++                boolean sideIsConductor = neighbor.isConductor();
 +
-+                continue;
-+            }
++                if (!sideIsConductor) {
++                    Node node = nodes.getNeighbor(neighbor, Directions.DOWN);
 +
-+            boolean sideIsConductor = neighbor.isConductor();
-+
-+            if (!sideIsConductor) {
-+                Node node = nodes.getNeighbor(neighbor, Directions.DOWN);
-+
-+                if (node.isWire()) {
-+                    add(node.asWire(), iDir, belowIsConductor, true);
++                    if (node.isWire()) {
++                        add(node.asWire(), iDir, belowIsConductor, true);
++                    }
 +                }
-+            }
-+            if (!aboveIsConductor) {
-+                Node node = nodes.getNeighbor(neighbor, Directions.UP);
++                if (!aboveIsConductor) {
++                    Node node = nodes.getNeighbor(neighbor, Directions.UP);
 +
-+                if (node.isWire()) {
-+                    add(node.asWire(), iDir, true, sideIsConductor);
++                    if (node.isWire()) {
++                        add(node.asWire(), iDir, true, sideIsConductor);
++                    }
 +                }
 +            }
 +        }
@@ -716,8 +1110,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * Iterate over all connections. Use this method if the iteration order is
 +     * important.
 +     */
-+    void forEach(Consumer<WireConnection> consumer, int iFlowDir) {
-+        for (int iDir : WireHandler.CARDINAL_UPDATE_ORDERS[iFlowDir]) {
++    void forEach(Consumer<WireConnection> consumer, UpdateOrder updateOrder, int iFlowDir) {
++    	for (int iDir : updateOrder.cardinalNeighbors(iFlowDir)) {
 +            for (WireConnection c = heads[iDir]; c != null && c.iDir == iDir; c = c.next) {
 +                consumer.accept(c);
 +            }
@@ -747,6 +1141,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.world.level.block.Block;
 +import net.minecraft.world.level.block.Blocks;
 +import net.minecraft.world.level.block.state.BlockState;
++import net.minecraft.world.level.redstone.InstantNeighborUpdater;
++import net.minecraft.world.level.redstone.NeighborUpdater;
 +import net.minecraft.world.level.redstone.Redstone;
 +
 +/**
@@ -960,36 +1356,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        -1,               // 0b1111: west/north/east/south -> x
 +    };
 +    /**
-+     * Update orders of all directions. Given that the index encodes the direction
-+     * that is to be considered 'forward', the resulting update order is
-+     * { front, back, right, left, down, up }.
++     * Update order of shape updates, matching that of Vanilla.
 +     */
-+    static final int[][] FULL_UPDATE_ORDERS = {
-+        { Directions.WEST , Directions.EAST , Directions.NORTH, Directions.SOUTH, Directions.DOWN, Directions.UP },
-+        { Directions.NORTH, Directions.SOUTH, Directions.EAST , Directions.WEST , Directions.DOWN, Directions.UP },
-+        { Directions.EAST , Directions.WEST , Directions.SOUTH, Directions.NORTH, Directions.DOWN, Directions.UP },
-+        { Directions.SOUTH, Directions.NORTH, Directions.WEST , Directions.EAST , Directions.DOWN, Directions.UP }
-+    };
-+    /**
-+     * The default update order of all directions. It is equivalent to the order of
-+     * shape updates in vanilla Minecraft.
-+     */
-+    static final int[] DEFAULT_FULL_UPDATE_ORDER = FULL_UPDATE_ORDERS[0];
-+    /**
-+     * Update orders of cardinal directions. Given that the index encodes the
-+     * direction that is to be considered 'forward', the resulting update order is
-+     * { front, back, right, left }.
-+     */
-+    static final int[][] CARDINAL_UPDATE_ORDERS = {
-+        { Directions.WEST , Directions.EAST , Directions.NORTH, Directions.SOUTH },
-+        { Directions.NORTH, Directions.SOUTH, Directions.EAST , Directions.WEST  },
-+        { Directions.EAST , Directions.WEST , Directions.SOUTH, Directions.NORTH },
-+        { Directions.SOUTH, Directions.NORTH, Directions.WEST , Directions.EAST  }
-+    };
-+    /**
-+     * The default update order of all cardinal directions.
-+     */
-+    static final int[] DEFAULT_CARDINAL_UPDATE_ORDER = CARDINAL_UPDATE_ORDERS[0];
++    static final int[] SHAPE_UPDATE_ORDER = { Directions.WEST, Directions.EAST, Directions.NORTH, Directions.SOUTH, Directions.DOWN, Directions.UP };
 +
 +    private static final int POWER_MIN = Redstone.SIGNAL_MIN;
 +    private static final int POWER_MAX = Redstone.SIGNAL_MAX;
@@ -1008,6 +1377,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    /** Queue of updates to wires and neighboring blocks. */
 +    private final Queue<Node> updates;
 +
++    private final NeighborUpdater neighborUpdater;
++
 +    // Rather than creating new nodes every time a network is updated we keep
 +    // a cache of nodes that can be re-used.
 +    private Node[] nodeCache;
@@ -1015,6 +1386,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    /** Is this WireHandler currently working through the update queue? */
 +    private boolean updating;
++    /** The update order currently in use. */
++    private UpdateOrder updateOrder;
 +
 +    public WireHandler(ServerLevel level) {
 +        this.level = level;
@@ -1022,6 +1395,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.nodes = new Long2ObjectOpenHashMap<>();
 +        this.search = new SimpleQueue();
 +        this.updates = new PriorityQueue();
++
++        this.neighborUpdater = new InstantNeighborUpdater(this.level);
 +
 +        this.nodeCache = new Node[16];
 +        this.fillNodeCache(0, 16);
@@ -1162,80 +1537,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    /**
-+     * Iterate over all neighboring nodes of the given wire. The iteration order is
-+     * designed to be an extension of the default block update order, and is
-+     * determined as follows:
-+     * <br>
-+     * 1. The direction of power flow through the wire is to be considered
-+     * 'forward'. The iteration order depends on the neighbors' relative positions
-+     * to the wire.
-+     * <br>
-+     * 2. Each neighbor is identified by the step(s) you must take, starting at the
-+     * wire, to reach it. Each step is 1 block, thus the position of a neighbor is
-+     * encoded by the direction(s) of the step(s), e.g. (right), (down), (up, left),
-+     * etc.
-+     * <br>
-+     * 3. Neighbors are iterated over in pairs that lie on opposite sides of the
-+     * wire.
-+     * <br>
-+     * 4. Neighbors are iterated over in order of their distance from the wire. This
-+     * means they are iterated over in 3 groups: direct neighbors first, then
-+     * diagonal neighbors, and last are the far neighbors that are 2 blocks directly
-+     * out.
-+     * <br>
-+     * 5. The order within each group is determined using the following basic order:
-+     * { front, back, right, left, down, up }. This order was chosen because it
-+     * converts to the following order of absolute directions when west is said to
-+     * be 'forward': { west, east, north, south, down, up } - this is the order of
-+     * shape updates.
-+     */
-+    private void forEachNeighbor(WireNode wire, Consumer<Node> consumer) {
-+        int forward   = wire.iFlowDir;
-+        int rightward = (forward + 1) & 0b11;
-+        int backward  = (forward + 2) & 0b11;
-+        int leftward  = (forward + 3) & 0b11;
-+        int downward  = Directions.DOWN;
-+        int upward    = Directions.UP;
-+
-+        Node front = getNeighbor(wire, forward);
-+        Node right = getNeighbor(wire, rightward);
-+        Node back  = getNeighbor(wire, backward);
-+        Node left  = getNeighbor(wire, leftward);
-+        Node below = getNeighbor(wire, downward);
-+        Node above = getNeighbor(wire, upward);
-+
-+        // direct neighbors (6)
-+        consumer.accept(front);
-+        consumer.accept(back);
-+        consumer.accept(right);
-+        consumer.accept(left);
-+        consumer.accept(below);
-+        consumer.accept(above);
-+
-+        // diagonal neighbors (12)
-+        consumer.accept(getNeighbor(front, rightward));
-+        consumer.accept(getNeighbor(back, leftward));
-+        consumer.accept(getNeighbor(front, leftward));
-+        consumer.accept(getNeighbor(back, rightward));
-+        consumer.accept(getNeighbor(front, downward));
-+        consumer.accept(getNeighbor(back, upward));
-+        consumer.accept(getNeighbor(front, upward));
-+        consumer.accept(getNeighbor(back, downward));
-+        consumer.accept(getNeighbor(right, downward));
-+        consumer.accept(getNeighbor(left, upward));
-+        consumer.accept(getNeighbor(right, upward));
-+        consumer.accept(getNeighbor(left, downward));
-+
-+        // far neighbors (6)
-+        consumer.accept(getNeighbor(front, forward));
-+        consumer.accept(getNeighbor(back, backward));
-+        consumer.accept(getNeighbor(right, rightward));
-+        consumer.accept(getNeighbor(left, leftward));
-+        consumer.accept(getNeighbor(below, downward));
-+        consumer.accept(getNeighbor(above, upward));
-+    }
-+
-+    /**
 +     * This method should be called whenever a wire receives a block update.
 +     */
 +    public void onWireUpdated(BlockPos pos) {
@@ -1309,6 +1610,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                node.invalid = true;
 +            }
 +        }
++
++        updateOrder = UpdateOrder.values()[level.paperConfig().misc.alternateCurrentUpdateOrder.ordinal()];
 +    }
 +
 +    /**
@@ -1354,7 +1657,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return;
 +        }
 +
-+        for (int iDir : FULL_UPDATE_ORDERS[wire.iFlowDir]) {
++        for (int iDir : updateOrder.directNeighbors(wire.iFlowDir)) {
 +            Node neighbor = getNeighbor(wire, iDir);
 +
 +            if (neighbor.isConductor() || neighbor.isSignalSource()) {
@@ -1670,7 +1973,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                if (needsUpdate(neighbor)) {
 +                    search(neighbor, false, connection.iDir);
 +                }
-+            }, wire.iFlowDir);
++            }, updateOrder, wire.iFlowDir);
 +        }
 +    }
 +
@@ -1784,7 +2087,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if (neighbor.offerPower(power, iDir)) {
 +                queueWire(neighbor);
 +            }
-+        }, wire.iFlowDir);
++        }, updateOrder, wire.iFlowDir);
 +    }
 +
 +    /**
@@ -1794,10 +2097,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        BlockPos wirePos = wire.pos;
 +        BlockState wireState = wire.state;
 +
-+        for (int iDir : DEFAULT_FULL_UPDATE_ORDER) {
++        for (int iDir : SHAPE_UPDATE_ORDER) {
 +            Node neighbor = getNeighbor(wire, iDir);
 +
-+            if (!neighbor.isWire()) {
++            // Shape updates to redstone wire are very expensive, and should never happen
++            // as a result of power changes anyway, while shape updates to air do nothing.
++            // The current block state at this position *could* be wrong, but if you somehow
++            // manage to place a block where air used to be during the execution of a shape
++            // update I am very impressed and you deserve to have some broken behavior.
++            if (!neighbor.isWire() && !neighbor.state.isAir()) {
 +                int iOpp = Directions.iOpposite(iDir);
 +                Direction opp = Directions.ALL[iOpp];
 +
@@ -1807,24 +2115,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    private void updateShape(Node node, Direction dir, BlockPos neighborPos, BlockState neighborState) {
-+        BlockPos pos = node.pos;
-+        BlockState state = level.getBlockState(pos);
-+
-+        // Shape updates to redstone wire are very expensive, and should never happen
-+        // as a result of power changes anyway.
-+        if (!state.isAir() && !state.is(Blocks.REDSTONE_WIRE)) {
-+            BlockState newState = state.updateShape(dir, neighborState, level, pos, neighborPos);
-+            Block.updateOrDestroy(state, newState, level, pos, Block.UPDATE_CLIENTS);
-+        }
++        neighborUpdater.shapeUpdate(dir, neighborState, node.pos, neighborPos, Block.UPDATE_CLIENTS, 512);
 +    }
 +
 +    /**
 +     * Queue block updates to nodes around the given wire.
 +     */
 +    private void queueNeighbors(WireNode wire) {
-+        forEachNeighbor(wire, neighbor -> {
-+            queueNeighbor(neighbor, wire);
-+        });
++        updateOrder.forEachNeighbor(this::getNeighbor, wire, wire.iFlowDir, neighbor -> queueNeighbor(neighbor, wire));
 +    }
 +
 +    /**
@@ -1832,7 +2130,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     */
 +    private void queueNeighbor(Node node, WireNode neighborWire) {
 +        // Updates to wires are queued when power is transmitted.
-+        if (!node.isWire()) {
++        // While this check makes sure wires in the network are not given block
++        // updates, it also prevents block updates to wires in neighboring networks.
++        // While this should not make a difference in theory, in practice, it is
++        // possible to force a network into an invalid state without updating it, even
++        // if it is relatively obscure.
++        // While I was willing to make this compromise in return for some significant
++        // performance gains in certain setups, if you are not, you can add all the
++        // positions of the network to a set and filter out block updates to wires in
++        // the network that way.
++        // Block updates to air do nothing, so those are skipped as well.
++        // The current block state at this position *could* be wrong, but if you somehow
++        // manage to place a block where air used to be during the execution of a block
++        // update I am very impressed and you deserve to have some broken behavior.
++        if (!node.isWire() && !node.state.isAir()) {
 +            node.neighborWire = neighborWire;
 +            updates.offer(node);
 +        }
@@ -1856,21 +2167,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * Emit a block update to the given node.
 +     */
 +    private void updateBlock(Node node, BlockPos neighborPos, Block neighborBlock) {
-+        BlockPos pos = node.pos;
-+        BlockState state = level.getBlockState(pos);
-+
-+        // While this check makes sure wires in the network are not given block
-+        // updates, it also prevents block updates to wires in neighboring networks.
-+        // While this should not make a difference in theory, in practice, it is
-+        // possible to force a network into an invalid state without updating it, even
-+        // if it is relatively obscure.
-+        // While I was willing to make this compromise in return for some significant
-+        // performance gains in certain setups, if you are not, you can add all the
-+        // positions of the network to a set and filter out block updates to wires in
-+        // the network that way.
-+        if (!state.isAir() && !state.is(Blocks.REDSTONE_WIRE)) {
-+            state.handleNeighborChanged(level, pos, neighborBlock, neighborPos, false);
-+        }
++        neighborUpdater.neighborChanged(node.pos, neighborBlock, neighborPos);
 +    }
 +
 +    @FunctionalInterface
