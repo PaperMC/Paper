@@ -73,7 +73,7 @@
              @Override
              public boolean mayPlace(ItemStack stack) {
                  return stack.isDamageableItem() || EnchantmentHelper.hasAnyEnchantments(stack);
-@@ -68,10 +95,10 @@
+@@ -68,10 +95,14 @@
              }
  
              @Override
@@ -82,11 +82,15 @@
                  context.execute((world, blockposition) -> {
                      if (world instanceof ServerLevel) {
 -                        ExperienceOrb.award((ServerLevel) world, Vec3.atCenterOf(blockposition), this.getExperienceAmount(world));
-+                        ExperienceOrb.award((ServerLevel) world, Vec3.atCenterOf(blockposition), this.getExperienceAmount(world), org.bukkit.entity.ExperienceOrb.SpawnReason.GRINDSTONE, player); // Paper
++                        // Paper start - Fire BlockExpEvent on grindstone use
++                        org.bukkit.event.block.BlockExpEvent event = new org.bukkit.event.block.BlockExpEvent(org.bukkit.craftbukkit.block.CraftBlock.at(world, blockposition), this.getExperienceAmount(world));
++                        event.callEvent();
++                        ExperienceOrb.award((ServerLevel) world, Vec3.atCenterOf(blockposition), event.getExpToDrop(), org.bukkit.entity.ExperienceOrb.SpawnReason.GRINDSTONE, player);
++                        // Paper end - Fire BlockExpEvent on grindstone use
                      }
  
                      world.levelEvent(1042, blockposition, 0);
-@@ -113,6 +140,7 @@
+@@ -113,6 +144,7 @@
              }
          });
          this.addStandardInventorySlots(playerInventory, 8, 84);
@@ -94,7 +98,7 @@
      }
  
      @Override
-@@ -120,12 +148,14 @@
+@@ -120,12 +152,14 @@
          super.slotsChanged(inventory);
          if (inventory == this.repairSlots) {
              this.createResult();
@@ -110,7 +114,7 @@
          this.broadcastChanges();
      }
  
-@@ -218,7 +248,7 @@
+@@ -218,7 +252,7 @@
      }
  
      @Override
@@ -119,7 +123,7 @@
          super.removed(player);
          this.access.execute((world, blockposition) -> {
              this.clearContainer(player, this.repairSlots);
-@@ -226,12 +256,13 @@
+@@ -226,12 +260,13 @@
      }
  
      @Override
