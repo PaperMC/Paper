@@ -30,7 +30,7 @@ index c5d5648f4ca603ef2b1df723b58f9caf4dd3c722..6ee39b534b8d992655bc0cef3c299d12
      }
  
 diff --git a/src/main/java/io/papermc/paper/console/BrigadierCommandCompleter.java b/src/main/java/io/papermc/paper/console/BrigadierCommandCompleter.java
-index 7a4f4c0a0fdcabd2bc4aa26dc9d76fc150b8435c..e0d19c113a7aa54ac1b5fc133980ccacceddda39 100644
+index 7a4f4c0a0fdcabd2bc4aa26dc9d76fc150b8435c..2fe00debd08c0f5fdb254edff62a79ced6fb09c2 100644
 --- a/src/main/java/io/papermc/paper/console/BrigadierCommandCompleter.java
 +++ b/src/main/java/io/papermc/paper/console/BrigadierCommandCompleter.java
 @@ -1,5 +1,6 @@
@@ -105,7 +105,7 @@ index 7a4f4c0a0fdcabd2bc4aa26dc9d76fc150b8435c..e0d19c113a7aa54ac1b5fc133980ccac
 +        if (suggestion.getTooltip() != null) {
 +            tooltip = PaperAdventure.asAdventure(ComponentUtils.fromMessage(suggestion.getTooltip()));
 +        }
-+        return toCandidate(context.line.substring(context.suggestionStart, suggestion.getRange().getStart()) + suggestion.getText(), tooltip); // TODO support mid-word completions without deleting the rest of the command
++        return toCandidate(context.line.substring(context.suggestionStart, suggestion.getRange().getStart()) + suggestion.getText(), tooltip);
 +    }
 +
      private static @NonNull Candidate toCandidate(final @NonNull Completion completion) {
@@ -150,12 +150,13 @@ index 7a4f4c0a0fdcabd2bc4aa26dc9d76fc150b8435c..e0d19c113a7aa54ac1b5fc133980ccac
  }
 diff --git a/src/main/java/io/papermc/paper/console/BrigadierCompletionMatcher.java b/src/main/java/io/papermc/paper/console/BrigadierCompletionMatcher.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ccdaddc504cb97d1bfdd0829a15628b324c6dce0
+index 0000000000000000000000000000000000000000..1e8028a43db0ff1d5b22d06ef12c1c32d992c09c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/console/BrigadierCompletionMatcher.java
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,27 @@
 +package io.papermc.paper.console;
 +
++import com.google.common.collect.Iterables;
 +import java.util.HashMap;
 +import java.util.List;
 +import java.util.Map;
@@ -172,7 +173,7 @@ index 0000000000000000000000000000000000000000..ccdaddc504cb97d1bfdd0829a15628b3
 +        this.matchers.addFirst(m -> {
 +            final Map<String, List<Candidate>> candidates = new HashMap<>();
 +            for (final Map.Entry<String, List<Candidate>> entry : m.entrySet()) {
-+                if (entry.getValue().stream().allMatch(BrigadierCommandCompleter.PaperCandidate.class::isInstance)) {
++                if (Iterables.all(entry.getValue(), BrigadierCommandCompleter.PaperCandidate.class::isInstance)) {
 +                    candidates.put(entry.getKey(), entry.getValue());
 +                }
 +            }
@@ -182,10 +183,10 @@ index 0000000000000000000000000000000000000000..ccdaddc504cb97d1bfdd0829a15628b3
 +}
 diff --git a/src/main/java/io/papermc/paper/console/BrigadierConsoleParser.java b/src/main/java/io/papermc/paper/console/BrigadierConsoleParser.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6691cf8fa4ea8046a7afacb28f26aa6e9d1a24d8
+index 0000000000000000000000000000000000000000..6e211580b1bc6e2c5ec6f2641b0cf91862985db1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/console/BrigadierConsoleParser.java
-@@ -0,0 +1,84 @@
+@@ -0,0 +1,80 @@
 +package io.papermc.paper.console;
 +
 +import com.mojang.brigadier.ImmutableStringReader;
@@ -206,7 +207,6 @@ index 0000000000000000000000000000000000000000..6691cf8fa4ea8046a7afacb28f26aa6e
 +public class BrigadierConsoleParser implements Parser {
 +
 +    private final DedicatedServer server;
-+    // private final Parser delegate = new DefaultParser();
 +
 +    public BrigadierConsoleParser(DedicatedServer server) {
 +        this.server = server;
@@ -261,10 +261,7 @@ index 0000000000000000000000000000000000000000..6691cf8fa4ea8046a7afacb28f26aa6e
 +            wordIdx = currentWordIdx;
 +            inWordCursor = 0;
 +        }
-+        // final ParsedLine parsed = this.delegate.parse(line, cursor, context);
-+        final BrigadierParsedLine brigadierParsedLine = new BrigadierParsedLine(words.get(wordIdx), inWordCursor, wordIdx, words, line, cursor);
-+        // return parsed;
-+        return brigadierParsedLine;
++        return new BrigadierParsedLine(words.get(wordIdx), inWordCursor, wordIdx, words, line, cursor);
 +    }
 +
 +    record BrigadierParsedLine(String word, int wordCursor, int wordIndex, List<String> words, String line, int cursor) implements ParsedLine {
