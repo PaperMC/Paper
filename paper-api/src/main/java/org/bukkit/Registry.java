@@ -27,6 +27,7 @@ import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.generator.structure.StructureType;
 import org.bukkit.inventory.ItemType;
+import org.bukkit.inventory.MenuType;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.loot.LootTables;
@@ -173,6 +174,13 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see Material
      */
     Registry<Material> MATERIAL = new SimpleRegistry<>(Material.class, (mat) -> !mat.isLegacy());
+    /**
+     * Server menus.
+     *
+     * @see MenuType
+     */
+    @ApiStatus.Experimental
+    Registry<MenuType> MENU = Objects.requireNonNull(Bukkit.getRegistry(MenuType.class), "No registry present for MenuType. This is a bug.");
     /**
      * Server mob effects.
      *
