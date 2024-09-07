@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
  * @deprecated only for backwards compatibility.
  */
 @ApiStatus.Internal
-@Deprecated(since = "1.21")
+@Deprecated(since = "1.21", forRemoval = true) @ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
 public interface OldEnum<T extends OldEnum<T>> extends Comparable<T> {
 
     /**
@@ -20,7 +20,7 @@ public interface OldEnum<T extends OldEnum<T>> extends Comparable<T> {
      * @deprecated only for backwards compatibility, old enums can not be
      * compared.
      */
-    @Deprecated(since = "1.21")
+    @Deprecated(since = "1.21", forRemoval = true) @ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     @Override
     int compareTo(@NotNull T other);
 
@@ -29,7 +29,7 @@ public interface OldEnum<T extends OldEnum<T>> extends Comparable<T> {
      * @deprecated only for backwards compatibility.
      */
     @NotNull
-    @Deprecated(since = "1.21")
+    @Deprecated(since = "1.21", forRemoval = true) @ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     String name();
 
     /**
@@ -37,6 +37,6 @@ public interface OldEnum<T extends OldEnum<T>> extends Comparable<T> {
      * @deprecated only for backwards compatibility, it is not guaranteed that
      * an old enum always has the same ordinal.
      */
-    @Deprecated(since = "1.21")
+    @Deprecated(since = "1.21", forRemoval = true) @ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     int ordinal();
 }

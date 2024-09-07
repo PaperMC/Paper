@@ -93,7 +93,7 @@ public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.transl
      *
      * @deprecated Biome is no longer an enum, custom biomes will have their own biome instance.
      */
-    @Deprecated(since = "1.21.3")
+    @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     Biome CUSTOM = Bukkit.getUnsafe().getCustomBiome();
 
     @NotNull
@@ -107,7 +107,7 @@ public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.transl
      * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
      */
     @NotNull
-    @Deprecated(since = "1.21.3")
+    @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Biome valueOf(@NotNull String name) {
         if ("CUSTOM".equals(name)) {
             return Biome.CUSTOM;
@@ -123,7 +123,7 @@ public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.transl
      * @deprecated use {@link Registry#iterator()}.
      */
     @NotNull
-    @Deprecated(since = "1.21.3")
+    @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Biome[] values() {
         return Lists.newArrayList(Registry.BIOME).toArray(new Biome[0]);
     }

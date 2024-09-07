@@ -75,7 +75,7 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
          * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
          */
         @NotNull
-        @Deprecated(since = "1.21")
+        @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Type valueOf(@NotNull String name) {
             Type type = Registry.CAT_VARIANT.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
             Preconditions.checkArgument(type != null, "No cat type found with the name %s", name);
@@ -87,7 +87,7 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
          * @deprecated use {@link Registry#iterator()}.
          */
         @NotNull
-        @Deprecated(since = "1.21")
+        @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Type[] values() {
             return Lists.newArrayList(Registry.CAT_VARIANT).toArray(new Type[0]);
         }

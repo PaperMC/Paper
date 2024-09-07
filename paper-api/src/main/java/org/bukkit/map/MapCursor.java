@@ -373,7 +373,7 @@ public final class MapCursor {
          * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
          */
         @NotNull
-        @Deprecated(since = "1.21")
+        @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Type valueOf(@NotNull String name) {
             Type type = Registry.MAP_DECORATION_TYPE.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
             Preconditions.checkArgument(type != null, "No Type found with the name %s", name);
@@ -385,7 +385,7 @@ public final class MapCursor {
          * @deprecated use {@link Registry#iterator()}.
          */
         @NotNull
-        @Deprecated(since = "1.21")
+        @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Type[] values() {
             return Lists.newArrayList(Registry.MAP_DECORATION_TYPE).toArray(new Type[0]);
         }

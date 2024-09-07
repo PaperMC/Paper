@@ -156,7 +156,7 @@ public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.
      * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
      */
     @NotNull
-    @Deprecated(since = "1.21.3")
+    @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Attribute valueOf(@NotNull String name) {
         Attribute attribute = Bukkit.getUnsafe().get(Registry.ATTRIBUTE, NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
         Preconditions.checkArgument(attribute != null, "No attribute found with the name %s", name);
@@ -168,7 +168,7 @@ public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.
      * @deprecated use {@link Registry#iterator()}.
      */
     @NotNull
-    @Deprecated(since = "1.21.3")
+    @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Attribute[] values() {
         return Lists.newArrayList(Registry.ATTRIBUTE).toArray(new Attribute[0]);
     }

@@ -190,7 +190,7 @@ public interface Villager extends AbstractVillager {
          * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
          */
         @NotNull
-        @Deprecated(since = "1.21")
+        @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Type valueOf(@NotNull String name) {
             Type type = Registry.VILLAGER_TYPE.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
             Preconditions.checkArgument(type != null, "No villager type found with the name %s", name);
@@ -202,7 +202,7 @@ public interface Villager extends AbstractVillager {
          * @deprecated use {@link Registry#iterator()}.
          */
         @NotNull
-        @Deprecated(since = "1.21")
+        @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Type[] values() {
             return Lists.newArrayList(Registry.VILLAGER_TYPE).toArray(new Type[0]);
         }
@@ -297,7 +297,7 @@ public interface Villager extends AbstractVillager {
          * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
          */
         @NotNull
-        @Deprecated(since = "1.21")
+        @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Profession valueOf(@NotNull String name) {
             Profession profession = Registry.VILLAGER_PROFESSION.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
             Preconditions.checkArgument(profession != null, "No villager profession found with the name %s", name);
@@ -309,7 +309,7 @@ public interface Villager extends AbstractVillager {
          * @deprecated use {@link Registry#iterator()}.
          */
         @NotNull
-        @Deprecated(since = "1.21")
+        @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Profession[] values() {
             return Lists.newArrayList(Registry.VILLAGER_PROFESSION).toArray(new Profession[0]);
         }

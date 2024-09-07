@@ -159,7 +159,7 @@ public interface Art extends OldEnum<Art>, Keyed {
      * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
      */
     @NotNull
-    @Deprecated(since = "1.21.3")
+    @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Art valueOf(@NotNull String name) {
         Art art = Bukkit.getUnsafe().get(Registry.ART, NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
         Preconditions.checkArgument(art != null, "No art found with the name %s", name);
@@ -171,7 +171,7 @@ public interface Art extends OldEnum<Art>, Keyed {
      * @deprecated use {@link Registry#iterator()}.
      */
     @NotNull
-    @Deprecated(since = "1.21.3")
+    @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Art[] values() {
         return Lists.newArrayList(Registry.ART).toArray(new Art[0]);
     }

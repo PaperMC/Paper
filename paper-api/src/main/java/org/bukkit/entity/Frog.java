@@ -74,7 +74,7 @@ public interface Frog extends Animals {
          * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
          */
         @NotNull
-        @Deprecated(since = "1.21")
+        @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Variant valueOf(@NotNull String name) {
             Variant variant = Registry.FROG_VARIANT.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
             Preconditions.checkArgument(variant != null, "No frog variant found with the name %s", name);
@@ -86,7 +86,7 @@ public interface Frog extends Animals {
          * @deprecated use {@link Registry#iterator()}.
          */
         @NotNull
-        @Deprecated(since = "1.21")
+        @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Variant[] values() {
             return Lists.newArrayList(Registry.FROG_VARIANT).toArray(new Variant[0]);
         }
