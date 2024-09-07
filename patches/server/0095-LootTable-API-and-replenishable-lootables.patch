@@ -261,7 +261,7 @@ index 0000000000000000000000000000000000000000..9e7c22ef49f1699df298f7121d50d27b
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/PaperLootableInventoryData.java b/src/main/java/com/destroystokyo/paper/loottable/PaperLootableInventoryData.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fea92d280c6817cee1f18379d5ed51a3a22ee344
+index 0000000000000000000000000000000000000000..cd61276a45894a02cbefc41a63c27e2cf6361d1e
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/loottable/PaperLootableInventoryData.java
 @@ -0,0 +1,249 @@
@@ -295,7 +295,7 @@ index 0000000000000000000000000000000000000000..fea92d280c6817cee1f18379d5ed51a3
 +    private int numRefills = 0;
 +    private @Nullable Map<UUID, Long> lootedPlayers;
 +
-+    long getLastFill() {
++    public long getLastFill() {
 +        return this.lastFill;
 +    }
 +
@@ -515,7 +515,7 @@ index 0000000000000000000000000000000000000000..fea92d280c6817cee1f18379d5ed51a3
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/RandomizableContainer.java b/src/main/java/net/minecraft/world/RandomizableContainer.java
-index 9715f1b63aeea39bde9258275f51e3e8508ca6e4..597cd5dbb4bb415a9b4d874c1c5dd621be1d6fc8 100644
+index 9715f1b63aeea39bde9258275f51e3e8508ca6e4..084935138b1484f3d96e99f4e5655a6c04931907 100644
 --- a/src/main/java/net/minecraft/world/RandomizableContainer.java
 +++ b/src/main/java/net/minecraft/world/RandomizableContainer.java
 @@ -28,7 +28,7 @@ public interface RandomizableContainer extends Container {
@@ -543,7 +543,7 @@ index 9715f1b63aeea39bde9258275f51e3e8508ca6e4..597cd5dbb4bb415a9b4d874c1c5dd621
          } else {
              return false;
          }
-@@ -69,12 +70,13 @@ public interface RandomizableContainer extends Container {
+@@ -69,26 +70,44 @@ public interface RandomizableContainer extends Container {
              return false;
          } else {
              nbt.putString("LootTable", resourceKey.location().toString());
@@ -558,12 +558,25 @@ index 9715f1b63aeea39bde9258275f51e3e8508ca6e4..597cd5dbb4bb415a9b4d874c1c5dd621
          }
      }
  
-@@ -82,13 +84,17 @@ public interface RandomizableContainer extends Container {
+     default void unpackLootTable(@Nullable Player player) {
++        // Paper start - LootTable API
++        this.unpackLootTable(player, false);
++    }
++    default void unpackLootTable(@Nullable final Player player, final boolean forceClearLootTable) {
++        // Paper end - LootTable API
          Level level = this.getLevel();
          BlockPos blockPos = this.getBlockPos();
          ResourceKey<LootTable> resourceKey = this.getLootTable();
 -        if (resourceKey != null && level != null && level.getServer() != null) {
-+        if (resourceKey != null && level != null && level.getServer() != null && (this.lootableData() == null || this.lootableData().shouldReplenish(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.CONTAINER, player))) { // Paper - LootTable API
++        // Paper start - LootTable API
++        lootReplenish: if (resourceKey != null && level != null && level.getServer() != null) {
++            if (this.lootableData() != null && !this.lootableData().shouldReplenish(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.CONTAINER, player)) {
++                if (forceClearLootTable) {
++                    this.setLootTable(null);
++                }
++                break lootReplenish;
++            }
++            // Paper end - LootTable API
              LootTable lootTable = level.getServer().reloadableRegistries().getLootTable(resourceKey);
              if (player instanceof ServerPlayer) {
                  CriteriaTriggers.GENERATE_LOOT.trigger((ServerPlayer)player, resourceKey);
@@ -571,14 +584,14 @@ index 9715f1b63aeea39bde9258275f51e3e8508ca6e4..597cd5dbb4bb415a9b4d874c1c5dd621
  
 -            this.setLootTable(null);
 +            // Paper start - LootTable API
-+            if (this.lootableData() == null || this.lootableData().shouldClearLootTable(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.CONTAINER, player)) {
++            if (forceClearLootTable || this.lootableData() == null || this.lootableData().shouldClearLootTable(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.CONTAINER, player)) {
 +                this.setLootTable(null);
 +            }
 +            // Paper end - LootTable API
              LootParams.Builder builder = new LootParams.Builder((ServerLevel)level).withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(blockPos));
              if (player != null) {
                  builder.withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player);
-@@ -97,4 +103,16 @@ public interface RandomizableContainer extends Container {
+@@ -97,4 +116,16 @@ public interface RandomizableContainer extends Container {
              lootTable.fill(this, builder.create(LootContextParamSets.CHEST), this.getLootTableSeed());
          }
      }
@@ -712,6 +725,49 @@ index 3ee99193de5deb6a38d6ded561fe8f2fbf711327..ccc7367ab2740bea0f2b907223a0920b
 +    }
 +    // Paper end - LootTable API
  }
+diff --git a/src/main/java/net/minecraft/world/level/block/ShulkerBoxBlock.java b/src/main/java/net/minecraft/world/level/block/ShulkerBoxBlock.java
+index d85da0661096a3587917c6636728bfd2e3eb90a2..6323c96d9b0cd14f89609b38da37d7fcc12d211b 100644
+--- a/src/main/java/net/minecraft/world/level/block/ShulkerBoxBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/ShulkerBoxBlock.java
+@@ -148,7 +148,7 @@ public class ShulkerBoxBlock extends BaseEntityBlock {
+                 itemEntity.setDefaultPickUpDelay();
+                 world.addFreshEntity(itemEntity);
+             } else {
+-                shulkerBoxBlockEntity.unpackLootTable(player);
++                shulkerBoxBlockEntity.unpackLootTable(player, true); // Paper - force clear loot table so replenish data isn't persisted in the stack
+             }
+         }
+ 
+@@ -158,7 +158,15 @@ public class ShulkerBoxBlock extends BaseEntityBlock {
+     @Override
+     protected List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+         BlockEntity blockEntity = builder.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
++        Runnable reAdd = null; // Paper
+         if (blockEntity instanceof ShulkerBoxBlockEntity shulkerBoxBlockEntity) {
++            // Paper start - clear loot table if it was already used
++            if (shulkerBoxBlockEntity.lootableData().getLastFill() != -1 || !builder.getLevel().paperConfig().lootables.retainUnlootedShulkerBoxLootTableOnNonPlayerBreak) {
++                net.minecraft.resources.ResourceKey<net.minecraft.world.level.storage.loot.LootTable> lootTableResourceKey = shulkerBoxBlockEntity.getLootTable();
++                reAdd = () -> shulkerBoxBlockEntity.setLootTable(lootTableResourceKey);
++                shulkerBoxBlockEntity.setLootTable(null);
++            }
++            // Paper end
+             builder = builder.withDynamicDrop(CONTENTS, lootConsumer -> {
+                 for (int i = 0; i < shulkerBoxBlockEntity.getContainerSize(); i++) {
+                     lootConsumer.accept(shulkerBoxBlockEntity.getItem(i));
+@@ -166,7 +174,13 @@ public class ShulkerBoxBlock extends BaseEntityBlock {
+             });
+         }
+ 
++        // Paper start - re-set loot table if it was cleared
++        try {
+         return super.getDrops(state, builder);
++        } finally {
++            if (reAdd != null) reAdd.run();
++        }
++        // Paper end - re-set loot table if it was cleared
+     }
+ 
+     @Override
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
 index c2493c15d8fe4587d6ee2db100cc13303b66b39b..13c9a68b604d4c7c6e09e72b3cea7ab2214b06ab 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
