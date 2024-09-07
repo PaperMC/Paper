@@ -657,6 +657,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
+    public void setRiptiding(boolean riptiding) {
+        getHandle().setLivingEntityFlag(EntityLiving.LIVING_ENTITY_FLAG_SPIN_ATTACK, riptiding);
+    }
+
+    @Override
     public boolean isSleeping() {
         return getHandle().isSleeping();
     }

@@ -161,6 +161,14 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     @Override
+    public void startRiptideAttack(int duration, float damage, ItemStack attackItem) {
+        Preconditions.checkArgument(duration > 0, "Duration must be greater than 0");
+        Preconditions.checkArgument(damage >= 0, "Damage must not be negative");
+
+        getHandle().startAutoSpinAttack(duration, damage, CraftItemStack.asNMSCopy(attackItem));
+    }
+
+    @Override
     public Location getBedLocation() {
         Preconditions.checkState(isSleeping(), "Not sleeping");
 

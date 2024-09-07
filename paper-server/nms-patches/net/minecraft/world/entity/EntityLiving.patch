@@ -33,6 +33,15 @@
  public abstract class EntityLiving extends Entity implements Attackable {
  
      private static final Logger LOGGER = LogUtils.getLogger();
+@@ -157,7 +183,7 @@
+     private static final double MAX_LINE_OF_SIGHT_TEST_RANGE = 128.0D;
+     protected static final int LIVING_ENTITY_FLAG_IS_USING = 1;
+     protected static final int LIVING_ENTITY_FLAG_OFF_HAND = 2;
+-    protected static final int LIVING_ENTITY_FLAG_SPIN_ATTACK = 4;
++    public static final int LIVING_ENTITY_FLAG_SPIN_ATTACK = 4;
+     protected static final DataWatcherObject<Byte> DATA_LIVING_ENTITY_FLAGS = DataWatcher.defineId(EntityLiving.class, DataWatcherRegistry.BYTE);
+     public static final DataWatcherObject<Float> DATA_HEALTH_ID = DataWatcher.defineId(EntityLiving.class, DataWatcherRegistry.FLOAT);
+     private static final DataWatcherObject<List<ParticleParam>> DATA_EFFECT_PARTICLES = DataWatcher.defineId(EntityLiving.class, DataWatcherRegistry.PARTICLES);
 @@ -249,6 +275,19 @@
      protected boolean skipDropExperience;
      private final Reference2ObjectMap<Enchantment, Set<EnchantmentLocationBasedEffect>> activeLocationDependentEnchantments;
@@ -1008,7 +1017,7 @@
              this.setSharedFlag(7, flag);
          }
  
-@@ -3141,14 +3634,21 @@
+@@ -3141,13 +3634,20 @@
  
      @Override
      public boolean isPickable() {
@@ -1020,18 +1029,26 @@
      public boolean isPushable() {
 -        return this.isAlive() && !this.isSpectator() && !this.onClimbable();
 +        return this.isAlive() && !this.isSpectator() && !this.onClimbable() && this.collides; // CraftBukkit
-     }
- 
++    }
++
 +    // CraftBukkit start - collidable API
 +    @Override
 +    public boolean canCollideWithBukkit(Entity entity) {
 +        return isPushable() && this.collides != this.collidableExemptions.contains(entity.getUUID());
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      @Override
      public float getYHeadRot() {
-         return this.yHeadRot;
+@@ -3245,7 +3745,7 @@
+ 
+     }
+ 
+-    protected void setLivingEntityFlag(int i, boolean flag) {
++    public void setLivingEntityFlag(int i, boolean flag) {
+         int j = (Byte) this.entityData.get(EntityLiving.DATA_LIVING_ENTITY_FLAGS);
+ 
+         if (flag) {
 @@ -3346,7 +3846,26 @@
              } else {
                  if (!this.useItem.isEmpty() && this.isUsingItem()) {
