@@ -120,6 +120,8 @@ public class CraftMerchantRecipe extends MerchantRecipe {
         if (ingredients.size() > 1) {
             net.minecraft.world.item.ItemStack costB = CraftItemStack.asNMSCopy(ingredients.get(1));
             handle.costB = Optional.of(new ItemCost(costB.getItemHolder(), costB.getCount(), DataComponentPredicate.allOf(costB.getComponents()), costB));
+        } else {
+            handle.costB = Optional.empty();
         }
         return handle;
     }
