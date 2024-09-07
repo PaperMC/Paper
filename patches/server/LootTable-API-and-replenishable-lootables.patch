@@ -295,7 +295,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private int numRefills = 0;
 +    private @Nullable Map<UUID, Long> lootedPlayers;
 +
-+    long getLastFill() {
++    public long getLastFill() {
 +        return this.lastFill;
 +    }
 +
@@ -558,12 +558,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
      }
  
-@@ -0,0 +0,0 @@ public interface RandomizableContainer extends Container {
+     default void unpackLootTable(@Nullable Player player) {
++        // Paper start - LootTable API
++        this.unpackLootTable(player, false);
++    }
++    default void unpackLootTable(@Nullable final Player player, final boolean forceClearLootTable) {
++        // Paper end - LootTable API
          Level level = this.getLevel();
          BlockPos blockPos = this.getBlockPos();
          ResourceKey<LootTable> resourceKey = this.getLootTable();
 -        if (resourceKey != null && level != null && level.getServer() != null) {
-+        if (resourceKey != null && level != null && level.getServer() != null && (this.lootableData() == null || this.lootableData().shouldReplenish(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.CONTAINER, player))) { // Paper - LootTable API
++        // Paper start - LootTable API
++        lootReplenish: if (resourceKey != null && level != null && level.getServer() != null) {
++            if (this.lootableData() != null && !this.lootableData().shouldReplenish(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.CONTAINER, player)) {
++                if (forceClearLootTable) {
++                    this.setLootTable(null);
++                }
++                break lootReplenish;
++            }
++            // Paper end - LootTable API
              LootTable lootTable = level.getServer().reloadableRegistries().getLootTable(resourceKey);
              if (player instanceof ServerPlayer) {
                  CriteriaTriggers.GENERATE_LOOT.trigger((ServerPlayer)player, resourceKey);
@@ -571,7 +584,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -            this.setLootTable(null);
 +            // Paper start - LootTable API
-+            if (this.lootableData() == null || this.lootableData().shouldClearLootTable(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.CONTAINER, player)) {
++            if (forceClearLootTable || this.lootableData() == null || this.lootableData().shouldClearLootTable(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.CONTAINER, player)) {
 +                this.setLootTable(null);
 +            }
 +            // Paper end - LootTable API
@@ -712,6 +725,49 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - LootTable API
  }
+diff --git a/src/main/java/net/minecraft/world/level/block/ShulkerBoxBlock.java b/src/main/java/net/minecraft/world/level/block/ShulkerBoxBlock.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/block/ShulkerBoxBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/ShulkerBoxBlock.java
+@@ -0,0 +0,0 @@ public class ShulkerBoxBlock extends BaseEntityBlock {
+                 itemEntity.setDefaultPickUpDelay();
+                 world.addFreshEntity(itemEntity);
+             } else {
+-                shulkerBoxBlockEntity.unpackLootTable(player);
++                shulkerBoxBlockEntity.unpackLootTable(player, true); // Paper - force clear loot table so replenish data isn't persisted in the stack
+             }
+         }
+ 
+@@ -0,0 +0,0 @@ public class ShulkerBoxBlock extends BaseEntityBlock {
+     @Override
+     protected List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+         BlockEntity blockEntity = builder.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
++        Runnable reAdd = null; // Paper
+         if (blockEntity instanceof ShulkerBoxBlockEntity shulkerBoxBlockEntity) {
++            // Paper start - clear loot table if it was already used
++            if (shulkerBoxBlockEntity.lootableData().getLastFill() != -1 || !builder.getLevel().paperConfig().lootables.retainUnlootedShulkerBoxLootTableOnNonPlayerBreak) {
++                net.minecraft.resources.ResourceKey<net.minecraft.world.level.storage.loot.LootTable> lootTableResourceKey = shulkerBoxBlockEntity.getLootTable();
++                reAdd = () -> shulkerBoxBlockEntity.setLootTable(lootTableResourceKey);
++                shulkerBoxBlockEntity.setLootTable(null);
++            }
++            // Paper end
+             builder = builder.withDynamicDrop(CONTENTS, lootConsumer -> {
+                 for (int i = 0; i < shulkerBoxBlockEntity.getContainerSize(); i++) {
+                     lootConsumer.accept(shulkerBoxBlockEntity.getItem(i));
+@@ -0,0 +0,0 @@ public class ShulkerBoxBlock extends BaseEntityBlock {
+             });
+         }
+ 
++        // Paper start - re-set loot table if it was cleared
++        try {
+         return super.getDrops(state, builder);
++        } finally {
++            if (reAdd != null) reAdd.run();
++        }
++        // Paper end - re-set loot table if it was cleared
+     }
+ 
+     @Override
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
