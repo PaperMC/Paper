@@ -30,6 +30,7 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
+import org.bukkit.inventory.MenuType;
 
 public class CraftContainer extends Container {
 
@@ -98,7 +99,8 @@ public class CraftContainer extends Container {
     }
 
     public static Containers getNotchInventoryType(Inventory inventory) {
-        switch (inventory.getType()) {
+        final InventoryType type = inventory.getType();
+        switch (type) {
             case PLAYER:
             case CHEST:
             case ENDER_CHEST:
@@ -120,52 +122,13 @@ public class CraftContainer extends Container {
                     default:
                         throw new IllegalArgumentException("Unsupported custom inventory size " + inventory.getSize());
                 }
-            case WORKBENCH:
-                return Containers.CRAFTING;
-            case FURNACE:
-                return Containers.FURNACE;
-            case DISPENSER:
-                return Containers.GENERIC_3x3;
-            case ENCHANTING:
-                return Containers.ENCHANTMENT;
-            case BREWING:
-                return Containers.BREWING_STAND;
-            case BEACON:
-                return Containers.BEACON;
-            case ANVIL:
-                return Containers.ANVIL;
-            case HOPPER:
-                return Containers.HOPPER;
-            case DROPPER:
-                return Containers.GENERIC_3x3;
-            case SHULKER_BOX:
-                return Containers.SHULKER_BOX;
-            case BLAST_FURNACE:
-                return Containers.BLAST_FURNACE;
-            case LECTERN:
-                return Containers.LECTERN;
-            case SMOKER:
-                return Containers.SMOKER;
-            case LOOM:
-                return Containers.LOOM;
-            case CARTOGRAPHY:
-                return Containers.CARTOGRAPHY_TABLE;
-            case GRINDSTONE:
-                return Containers.GRINDSTONE;
-            case STONECUTTER:
-                return Containers.STONECUTTER;
-            case SMITHING:
-            case SMITHING_NEW:
-                return Containers.SMITHING;
-            case CREATIVE:
-            case CRAFTING:
-            case MERCHANT:
-                throw new IllegalArgumentException("Can't open a " + inventory.getType() + " inventory!");
-            case CRAFTER:
-                return Containers.CRAFTER_3x3;
             default:
-                // TODO: If it reaches the default case, should we throw an error?
-                return Containers.GENERIC_9x3;
+                final MenuType menu = type.getMenuType();
+                if (menu == null) {
+                    return Containers.GENERIC_9x3;
+                } else {
+                    return ((CraftMenuType<?>) menu).getHandle();
+                }
         }
     }
 
