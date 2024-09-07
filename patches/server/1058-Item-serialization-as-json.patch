@@ -27,12 +27,12 @@ index 6b7245cf05ea4b6ce05462eb3164bce7f5d76a03..ac1914438307e8a7cc3a3b6352e88a06
          .xmap(CustomData::new, component -> component.tag);
      public static final Codec<CustomData> CODEC_WITH_ID = CODEC.validate(
          component -> component.getUnsafe().contains("id", 8) ? DataResult.success(component) : DataResult.error(() -> "Missing id for entity in: " + component)
-diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-index 317af98f8bd166a5a534f74e6ba177be9afb6a8f..f801698c436eac960b2944323d399746795b2b0a 100644
---- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-+++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-@@ -164,6 +164,37 @@ public final class CraftItemFactory implements ItemFactory {
-         }
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 28dbe30a98a6730839949bc9a6a90b78619ff84d..23e235c82134de0cbe87bbcabe55f12c7f00f0ec 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -296,6 +296,38 @@ public final class CraftMagicNumbers implements UnsafeValues {
+         return new File(MinecraftServer.getServer().getWorldPath(LevelResource.DATAPACK_DIR).toFile(), "bukkit");
      }
  
 +    // Paper start - Item serialization to json
@@ -47,9 +47,10 @@ index 317af98f8bd166a5a534f74e6ba177be9afb6a8f..f801698c436eac960b2944323d399746
 +        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.CODEC.parse(ops, data).getOrThrow(IllegalArgumentException::new));
 +    }
 +
-+    public static com.google.gson.JsonObject serializeAsJson(net.minecraft.world.item.ItemStack handle) {
-+        Preconditions.checkNotNull(handle, "Cannot serialize empty ItemStack");
-+        Preconditions.checkArgument(!handle.isEmpty(), "Cannot serialize empty ItemStack");
++    @Override
++    public com.google.gson.JsonObject serializeAsJson(ItemStack itemStack) {
++        Preconditions.checkNotNull(itemStack, "Cannot serialize empty ItemStack");
++        Preconditions.checkArgument(!itemStack.isEmpty(), "Cannot serialize empty ItemStack");
 +
 +        net.minecraft.core.RegistryAccess.Frozen reg = net.minecraft.server.MinecraftServer.getServer().registryAccess();
 +        com.mojang.serialization.DynamicOps<com.google.gson.JsonElement> ops = reg.createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE);
@@ -57,7 +58,7 @@ index 317af98f8bd166a5a534f74e6ba177be9afb6a8f..f801698c436eac960b2944323d399746
 +        // Serialize as SNBT to preserve exact NBT types; vanilla codecs already can handle such deserialization.
 +        net.minecraft.world.item.component.CustomData.SERIALIZE_CUSTOM_AS_SNBT.set(true);
 +        try {
-+            item = net.minecraft.world.item.ItemStack.CODEC.encodeStart(ops, handle).getOrThrow().getAsJsonObject();
++            item = net.minecraft.world.item.ItemStack.CODEC.encodeStart(ops, CraftItemStack.unwrap(itemStack)).getOrThrow().getAsJsonObject();
 +        } finally {
 +            net.minecraft.world.item.component.CustomData.SERIALIZE_CUSTOM_AS_SNBT.set(false);
 +        }
@@ -67,23 +68,5 @@ index 317af98f8bd166a5a534f74e6ba177be9afb6a8f..f801698c436eac960b2944323d399746
 +    // Paper end - Item serialization to json
 +
      @Override
-     public Material getSpawnEgg(EntityType type) {
-         if (type == EntityType.UNKNOWN) {
-diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index 40fb5b5e00f6bc82e67d318b8b3d1e7606973f52..e5f9f85962d26e93c3e90f50fbd4e87f23c1d2c0 100644
---- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-+++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-@@ -341,6 +341,13 @@ public final class CraftItemStack extends ItemStack {
-         return (item != null && item.isEnchanted()) ? item.get(DataComponents.ENCHANTMENTS) : null;
-     }
- 
-+    // Paper start - Item serialization to json
-+    @Override
-+    public com.google.gson.JsonObject serializeAsJson() {
-+        return CraftItemFactory.serializeAsJson(this.handle);
-+    }
-+    // Paper end - Item serialization to json
-+
-     @Override
-     public CraftItemStack clone() {
-         return new org.bukkit.craftbukkit.inventory.CraftItemStack(this.handle != null ? this.handle.copy() : null); // Paper
+     public Advancement loadAdvancement(NamespacedKey key, String advancement) {
+         Preconditions.checkArgument(Bukkit.getAdvancement(key) == null, "Advancement %s already exists", key);

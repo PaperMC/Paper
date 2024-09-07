@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: masmc05 <masmc05@gmail.com>
+Date: Sun, 11 Aug 2024 03:01:52 +0300
+Subject: [PATCH] Item serialization as json
+
+
+diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
+index 330e3013eda204aa9b33d5e1c3104e0b595abdbc..157fd4d90105c6e60ebfe5584e9d5034bbbd1ce9 100644
+--- a/src/main/java/org/bukkit/UnsafeValues.java
++++ b/src/main/java/org/bukkit/UnsafeValues.java
+@@ -259,6 +259,29 @@ public interface UnsafeValues {
+     void setBiomeKey(RegionAccessor accessor, int x, int y, int z, NamespacedKey biomeKey);
+     // Paper end - namespaced key biome methods
+ 
++    // Paper start - Item serialization to json
++    /**
++     * Creates an itemstack from a json object.
++     *
++     * This expects that the DataVersion was stored on the root of the Json Object, as saved from
++     * the {@link #serializeAsJson(ItemStack)} API returned.
++     * @param data object representing an item in Json format
++     * @return ItemStack migrated to this version of Minecraft if needed.
++     * @throws IllegalArgumentException if the json object is not a valid item
++     * @see #serializeAsJson(ItemStack)
++     */
++    @NotNull ItemStack createItemStack(@NotNull com.google.gson.JsonObject data) throws IllegalArgumentException;
++
++    /**
++     * Serializes this itemstack to vanilla compatible json format. It is safe for data migrations as it will
++     * use the built in data converter instead of bukkits dangerous serialization system.
++     * @return json object representing this item.
++     * @see #createItemStack(com.google.gson.JsonObject)
++     */
++    @NotNull
++    com.google.gson.JsonObject serializeAsJson(ItemStack itemStack);
++    // Paper end - Item serialization to json
++
+     String getStatisticCriteriaKey(@NotNull org.bukkit.Statistic statistic); // Paper - fix custom stats criteria creation
+ 
+     // Paper start - spawn egg color visibility
+diff --git a/src/main/java/org/bukkit/inventory/ItemFactory.java b/src/main/java/org/bukkit/inventory/ItemFactory.java
+index bd0e55562f1cabef3078573182e0cf9fbc844585..fcbfc97eb5eeeccd45e25b61cd05127ab940b424 100644
+--- a/src/main/java/org/bukkit/inventory/ItemFactory.java
++++ b/src/main/java/org/bukkit/inventory/ItemFactory.java
+@@ -149,6 +149,7 @@ public interface ItemFactory {
+     @NotNull
+     ItemStack createItemStack(@NotNull String input) throws IllegalArgumentException;
+ 
++
+     /**
+      * Gets a {@link Material} representing the spawn egg for the provided
+      * {@link EntityType}. <br>
