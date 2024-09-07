@@ -6,10 +6,10 @@ Subject: [PATCH] Add FeatureFlag API
 
 diff --git a/src/main/java/io/papermc/paper/world/flag/FeatureDependant.java b/src/main/java/io/papermc/paper/world/flag/FeatureDependant.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..820c98fabce1d28c58eec2a1d504067053ca42b5
+index 0000000000000000000000000000000000000000..914dc0b655630dd835bb115a144206d7e3a02337
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/flag/FeatureDependant.java
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,26 @@
 +package io.papermc.paper.world.flag;
 +
 +import java.util.Set;
@@ -25,16 +25,6 @@ index 0000000000000000000000000000000000000000..820c98fabce1d28c58eec2a1d5040670
 +@ApiStatus.Experimental
 +@ApiStatus.NonExtendable
 +public interface FeatureDependant {
-+
-+    /**
-+     * Checks if this is enabled based on the loaded feature flags.
-+     *
-+     * @return true if enabled
-+     */
-+    default boolean isEnabled(final @NonNull FeatureFlagSetHolder featureFlagSetHolder) {
-+        final Set<FeatureFlag> flags = featureFlagSetHolder.getFeatureFlags();
-+        return flags.containsAll(this.requiredFeatures());
-+    }
 +
 +    /**
 +     * Gets the set of required feature flags for this
@@ -73,10 +63,10 @@ index 0000000000000000000000000000000000000000..f64cbee35fd3c6fe7b5f7391f6d11816
 +}
 diff --git a/src/main/java/io/papermc/paper/world/flag/FeatureFlagSetHolder.java b/src/main/java/io/papermc/paper/world/flag/FeatureFlagSetHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b8dea1d321438e1c41b7cc2fc58ccf5616b01dd2
+index 0000000000000000000000000000000000000000..2d7bbc9b157ccbb02731ecf3ec6680681c9c0da8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/flag/FeatureFlagSetHolder.java
-@@ -0,0 +1,23 @@
+@@ -0,0 +1,32 @@
 +package io.papermc.paper.world.flag;
 +
 +import java.util.Set;
@@ -94,6 +84,15 @@ index 0000000000000000000000000000000000000000..b8dea1d321438e1c41b7cc2fc58ccf56
 +public interface FeatureFlagSetHolder {
 +
 +    /**
++     * Checks if this is enabled based on the loaded feature flags.
++     *
++     * @return true if enabled
++     */
++    default boolean isEnabled(final @NonNull FeatureDependant featureDependant) {
++        return this.getFeatureFlags().containsAll(featureDependant.requiredFeatures());
++    }
++
++    /**
 +     * Get all {@link FeatureFlag FeatureFlags} enabled in this world.
 +     *
 +     * @return all enabled {@link FeatureFlag FeatureFlags}
@@ -101,7 +100,7 @@ index 0000000000000000000000000000000000000000..b8dea1d321438e1c41b7cc2fc58ccf56
 +    @Unmodifiable @NonNull Set<FeatureFlag> getFeatureFlags();
 +}
 diff --git a/src/main/java/org/bukkit/FeatureFlag.java b/src/main/java/org/bukkit/FeatureFlag.java
-index 026b1832bcd163ab89668c991bf002e608e36aef..d80bcf44441cffa0af3759bdebc2dcf48f58ee98 100644
+index 026b1832bcd163ab89668c991bf002e608e36aef..d690ecf6eac753fab9d09514cfadae4c6a73e146 100644
 --- a/src/main/java/org/bukkit/FeatureFlag.java
 +++ b/src/main/java/org/bukkit/FeatureFlag.java
 @@ -1,37 +1,57 @@
@@ -109,9 +108,9 @@ index 026b1832bcd163ab89668c991bf002e608e36aef..d80bcf44441cffa0af3759bdebc2dcf4
  
 +// Paper start - overhaul FeatureFlag API
 +import com.google.common.base.Preconditions;
-+import java.util.Collections;
-+import java.util.Map;
++import java.util.List;
 +import net.kyori.adventure.key.Key;
++import net.kyori.adventure.util.Index;
 +import org.intellij.lang.annotations.Subst;
 +// Paper end - overhaul FeatureFlag API
  import org.jetbrains.annotations.ApiStatus;
@@ -126,41 +125,30 @@ index 026b1832bcd163ab89668c991bf002e608e36aef..d80bcf44441cffa0af3759bdebc2dcf4
  public interface FeatureFlag extends Keyed {
  
 -    public static final FeatureFlag VANILLA = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("vanilla"));
--
--    @ApiStatus.Experimental // Paper - add missing annotation
--    public static final FeatureFlag BUNDLE = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("bundle"));
 +    // Paper start - overhaul FeatureFlag API
 +    /**
-+     * A map of all feature flags.
-+     */
-+    Map<Key, FeatureFlag> ALL_FLAGS = Collections.unmodifiableMap(FeatureFlagImpl.ALL_FLAGS);
- 
-     /**
--     * <strong>AVAILABLE BETWEEN VERSIONS:</strong> 1.19 - 1.19.4
--     *
--     * @deprecated not available since 1.20
 +     * The {@code vanilla} feature flag.
-      */
--    @Deprecated
--    public static final FeatureFlag UPDATE_1_20 = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("update_1_20"));
++     */
 +    FeatureFlag VANILLA = create("vanilla");
  
 +    /**
 +     * The {@code bundle} feature flag.
 +     */
      @ApiStatus.Experimental // Paper - add missing annotation
--    public static final FeatureFlag TRADE_REBALANCE = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("trade_rebalance"));
+-    public static final FeatureFlag BUNDLE = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("bundle"));
 +    FeatureFlag BUNDLE = create("bundle");
  
      /**
--     * <strong>AVAILABLE BETWEEN VERSIONS:</strong> 1.20.5 - 1.20.6
+-     * <strong>AVAILABLE BETWEEN VERSIONS:</strong> 1.19 - 1.19.4
 -     *
--     * @deprecated not available since 1.21
+-     * @deprecated not available since 1.20
 +     * The {@code trade_rebalance} feature flag.
       */
 -    @Deprecated
--    public static final FeatureFlag UPDATE_121 = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("update_1_21"));
-+    @ApiStatus.Experimental // Paper - add missing annotation
+-    public static final FeatureFlag UPDATE_1_20 = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("update_1_20"));
+-
+     @ApiStatus.Experimental // Paper - add missing annotation
+-    public static final FeatureFlag TRADE_REBALANCE = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("trade_rebalance"));
 +    FeatureFlag TRADE_REBALANCE = create("trade_rebalance");
 +
 +    @Deprecated(since = "1.20")
@@ -168,10 +156,20 @@ index 026b1832bcd163ab89668c991bf002e608e36aef..d80bcf44441cffa0af3759bdebc2dcf4
 +
 +    @Deprecated(since = "1.21")
 +    FeatureFlag UPDATE_121 = deprecated("update_1_21");
+ 
+     /**
+-     * <strong>AVAILABLE BETWEEN VERSIONS:</strong> 1.20.5 - 1.20.6
+-     *
+-     * @deprecated not available since 1.21
++     * An index of all feature flags.
+      */
+-    @Deprecated
+-    public static final FeatureFlag UPDATE_121 = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("update_1_21"));
++    Index<Key, FeatureFlag> ALL_FLAGS = Index.create(FeatureFlag::key, List.copyOf(FeatureFlagImpl.ALL_FLAGS));
 +
 +    private static FeatureFlag create(@Subst("vanilla") final String name) {
 +        final FeatureFlag flag = new FeatureFlagImpl(NamespacedKey.minecraft(name));
-+        Preconditions.checkState(FeatureFlagImpl.ALL_FLAGS.put(flag.key(), flag) == null, "Tried to add duplicate feature flag: " + name);
++        Preconditions.checkState(FeatureFlagImpl.ALL_FLAGS.add(flag), "Tried to add duplicate feature flag: " + name);
 +        return flag;
 +    }
 +
@@ -182,15 +180,14 @@ index 026b1832bcd163ab89668c991bf002e608e36aef..d80bcf44441cffa0af3759bdebc2dcf4
  }
 diff --git a/src/main/java/org/bukkit/FeatureFlagImpl.java b/src/main/java/org/bukkit/FeatureFlagImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..750f86dc94ffbf0dc2855534a8e3048c39111491
+index 0000000000000000000000000000000000000000..a33517dbd69021fde8246836720b6247800ee43c
 --- /dev/null
 +++ b/src/main/java/org/bukkit/FeatureFlagImpl.java
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,29 @@
 +package org.bukkit;
 +
-+import java.util.HashMap;
-+import java.util.Map;
-+import net.kyori.adventure.key.Key;
++import java.util.HashSet;
++import java.util.Set;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.framework.qual.DefaultQualifier;
 +import org.jetbrains.annotations.ApiStatus;
@@ -199,7 +196,7 @@ index 0000000000000000000000000000000000000000..750f86dc94ffbf0dc2855534a8e3048c
 +@DefaultQualifier(NonNull.class)
 +record FeatureFlagImpl(NamespacedKey key) implements FeatureFlag {
 +
-+    static final Map<Key, FeatureFlag> ALL_FLAGS = new HashMap<>();
++    static final Set<FeatureFlag> ALL_FLAGS = new HashSet<>();
 +
 +    @Override
 +    public NamespacedKey getKey() {
