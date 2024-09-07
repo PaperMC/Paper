@@ -287,6 +287,15 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     public void wakeup(boolean setSpawnLocation);
 
     /**
+     * Make the player start a riptide spin attack.
+     *
+     * @param duration spin attack duration in ticks.
+     * @param attackStrength damage value inflicted upon entities hit by spin attack.
+     * @param attackItem item used to attack.
+     */
+    public void startRiptideAttack(int duration, float attackStrength, @Nullable ItemStack attackItem);
+
+    /**
      * Gets the location of the bed the player is currently sleeping in
      *
      * @return location

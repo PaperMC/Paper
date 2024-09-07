@@ -510,11 +510,21 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     public void setSwimming(boolean swimming);
 
     /**
-     * Checks to see if an entity is currently using the Riptide enchantment.
+     * Checks to see if an entity is currently riptiding.
      *
      * @return True if this entity is currently riptiding.
      */
     public boolean isRiptiding();
+
+    /**
+     * Makes entity start or stop riptiding.
+     * <p>
+     * Note: This does not damage attackable entities.
+     *
+     * @param riptiding whether the entity should start riptiding.
+     * @see HumanEntity#startRiptideAttack(int, float, ItemStack)
+     */
+    public void setRiptiding(boolean riptiding);
 
     /**
      * Returns whether this entity is slumbering.
