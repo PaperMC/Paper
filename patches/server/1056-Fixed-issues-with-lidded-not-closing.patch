@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jakush <James_Sulc@outlook.cz>
+Date: Sat, 7 Sep 2024 15:24:46 +0200
+Subject: [PATCH] Fixed issues with lidded not closing
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index fcccf989c25f0a259b160c4ff7873f7009e64d14..2751d7391386a50824c05f6323ce395251e7afe3 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -178,10 +178,14 @@ import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.LevelReader;
+ import net.minecraft.world.level.block.Blocks;
+ import net.minecraft.world.level.block.CommandBlock;
++import net.minecraft.world.level.block.entity.BarrelBlockEntity;
+ import net.minecraft.world.level.block.entity.BlockEntity;
++import net.minecraft.world.level.block.entity.ChestBlockEntity;
+ import net.minecraft.world.level.block.entity.CommandBlockEntity;
+ import net.minecraft.world.level.block.entity.CrafterBlockEntity;
++import net.minecraft.world.level.block.entity.EnderChestBlockEntity;
+ import net.minecraft.world.level.block.entity.JigsawBlockEntity;
++import net.minecraft.world.level.block.entity.ShulkerBoxBlockEntity;
+ import net.minecraft.world.level.block.entity.SignBlockEntity;
+ import net.minecraft.world.level.block.entity.StructureBlockEntity;
+ import net.minecraft.world.level.block.state.BlockBehaviour;
+@@ -1943,6 +1947,20 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+                             if (enuminteractionresult.consumesAction()) {
+                                 CriteriaTriggers.ANY_BLOCK_USE.trigger(this.player, movingobjectpositionblock.getBlockPos(), itemstack.copy());
++
++                                // Paper start - Fixed issues with lidded not closing
++                                BlockEntity entity = worldserver.getBlockEntity(blockposition);
++                                if (entity != null) {
++                                    switch (entity) {
++                                        case BarrelBlockEntity barrelBlock -> barrelBlock.openersCounter.opened = true;
++                                        case ChestBlockEntity chestBlock -> chestBlock.openersCounter.opened = true;
++                                        case EnderChestBlockEntity enderChestBlock -> enderChestBlock.openersCounter.opened = true;
++                                        case ShulkerBoxBlockEntity shulkerBoxBlock -> shulkerBoxBlock.opened = true;
++                                        default -> {
++                                        }
++                                    }
++                                }
++                                // Paper end - Fixed issues with lidded not closing
+                             }
+ 
+                             if (enumdirection == Direction.UP && !enuminteractionresult.consumesAction() && blockposition.getY() >= i - 1 && ServerGamePacketListenerImpl.wasBlockPlacementAttempt(this.player, itemstack)) {
