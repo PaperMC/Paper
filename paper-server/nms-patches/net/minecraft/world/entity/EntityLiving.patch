@@ -1049,14 +1049,14 @@
          int j = (Byte) this.entityData.get(EntityLiving.DATA_LIVING_ENTITY_FLAGS);
  
          if (flag) {
-@@ -3346,7 +3846,26 @@
+@@ -3346,7 +3846,29 @@
              } else {
                  if (!this.useItem.isEmpty() && this.isUsingItem()) {
                      this.triggerItemUseEffects(this.useItem, 16);
 -                    ItemStack itemstack = this.useItem.finishUsingItem(this.level(), this);
 +                    // CraftBukkit start - fire PlayerItemConsumeEvent
 +                    ItemStack itemstack;
-+                    if (this instanceof EntityPlayer) {
++                    if (this instanceof EntityPlayer entityPlayer) {
 +                        org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitCopy(this.useItem);
 +                        org.bukkit.inventory.EquipmentSlot hand = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(enumhand);
 +                        PlayerItemConsumeEvent event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem, hand);
@@ -1064,8 +1064,11 @@
 +
 +                        if (event.isCancelled()) {
 +                            // Update client
-+                            ((EntityPlayer) this).getBukkitEntity().updateInventory();
-+                            ((EntityPlayer) this).getBukkitEntity().updateScaledHealth();
++                            if (this.useItem.getItem() instanceof net.minecraft.world.item.ItemSuspiciousStew itemSuspiciousStew) {
++                                itemSuspiciousStew.cancelUsingItem(entityPlayer, this.useItem);
++                            }
++                            entityPlayer.getBukkitEntity().updateInventory();
++                            entityPlayer.getBukkitEntity().updateScaledHealth();
 +                            return;
 +                        }
 +
@@ -1077,7 +1080,7 @@
  
                      if (itemstack != this.useItem) {
                          this.setItemInHand(enumhand, itemstack);
-@@ -3424,6 +3943,12 @@
+@@ -3424,6 +3946,12 @@
      }
  
      public boolean randomTeleport(double d0, double d1, double d2, boolean flag) {
@@ -1090,7 +1093,7 @@
          double d3 = this.getX();
          double d4 = this.getY();
          double d5 = this.getZ();
-@@ -3448,16 +3973,41 @@
+@@ -3448,16 +3976,41 @@
              }
  
              if (flag2) {
@@ -1135,7 +1138,7 @@
          } else {
              if (flag) {
                  world.broadcastEntityEvent(this, (byte) 46);
-@@ -3469,7 +4019,7 @@
+@@ -3469,7 +4022,7 @@
                  entitycreature.getNavigation().stop();
              }
  
@@ -1144,7 +1147,7 @@
          }
      }
  
-@@ -3562,7 +4112,7 @@
+@@ -3562,7 +4115,7 @@
      }
  
      public void stopSleeping() {
@@ -1153,7 +1156,7 @@
          World world = this.level();
  
          java.util.Objects.requireNonNull(world);
-@@ -3596,7 +4146,7 @@
+@@ -3596,7 +4149,7 @@
  
      @Nullable
      public EnumDirection getBedOrientation() {
@@ -1162,7 +1165,7 @@
  
          return blockposition != null ? BlockBed.getBedOrientation(this.level(), blockposition) : null;
      }
-@@ -3633,7 +4183,7 @@
+@@ -3633,7 +4186,7 @@
                  FoodInfo.b foodinfo_b = (FoodInfo.b) iterator.next();
  
                  if (this.random.nextFloat() < foodinfo_b.probability()) {
