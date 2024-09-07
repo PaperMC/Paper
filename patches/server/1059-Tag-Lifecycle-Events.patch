@@ -8,29 +8,12 @@ public net/minecraft/tags/TagEntry id
 public net/minecraft/tags/TagEntry tag
 public net/minecraft/tags/TagEntry required
 
-diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/AbstractLifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/AbstractLifecycleEventType.java
-index 9359a36d26970742da3a7abb0050158cd6c64e8e..30f47879f87fc991c651416546c2f068209545f2 100644
---- a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/AbstractLifecycleEventType.java
-+++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/AbstractLifecycleEventType.java
-@@ -33,6 +33,8 @@ public abstract class AbstractLifecycleEventType<O extends LifecycleEventOwner,
-         }
-     }
- 
-+    public abstract boolean hasHandlers();
-+
-     public abstract void forEachHandler(E event, Consumer<RegisteredHandler<O, E>> consumer, Predicate<RegisteredHandler<O, E>> predicate);
- 
-     public abstract void removeMatching(Predicate<RegisteredHandler<O, E>> predicate);
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProviderImpl.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProviderImpl.java
-index af0cb3298d9c737417c6e54b360f8dc50a5caf04..05ceb6a0556c5e958237cd8e17525343dc3e8458 100644
+index 7e84e0acd50ef04fa1ee2577f49e51c63f5ba5c3..05ceb6a0556c5e958237cd8e17525343dc3e8458 100644
 --- a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProviderImpl.java
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProviderImpl.java
-@@ -10,9 +10,11 @@ import org.checkerframework.framework.qual.DefaultQualifier;
- public final class LifecycleEventTypeProviderImpl implements LifecycleEventTypeProvider {
- 
-     public static LifecycleEventTypeProviderImpl instance() {
--        return (LifecycleEventTypeProviderImpl) LifecycleEventTypeProvider.PROVIDER;
-+        return (LifecycleEventTypeProviderImpl) LifecycleEventTypeProvider.provider();
+@@ -13,6 +13,8 @@ public final class LifecycleEventTypeProviderImpl implements LifecycleEventTypeP
+         return (LifecycleEventTypeProviderImpl) LifecycleEventTypeProvider.provider();
      }
  
 +    private final PaperTagEventTypeProvider provider = new PaperTagEventTypeProvider();
@@ -48,22 +31,6 @@ index af0cb3298d9c737417c6e54b360f8dc50a5caf04..05ceb6a0556c5e958237cd8e17525343
 +        return this.provider;
 +    }
  }
-diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/MonitorableLifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/MonitorableLifecycleEventType.java
-index c71912f0050ce0cc6e416948a354c8a66da606a8..abb969cf6ed967fe7720c56d3b3157bd1b74700d 100644
---- a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/MonitorableLifecycleEventType.java
-+++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/MonitorableLifecycleEventType.java
-@@ -23,6 +23,11 @@ public class MonitorableLifecycleEventType<O extends LifecycleEventOwner, E exte
-         super(name, ownerType);
-     }
- 
-+    @Override
-+    public boolean hasHandlers() {
-+        return !this.handlers.isEmpty();
-+    }
-+
-     @Override
-     public MonitorLifecycleEventHandlerConfigurationImpl<O, E> newHandler(final LifecycleEventHandler<? super E> handler) {
-         return new MonitorLifecycleEventHandlerConfigurationImpl<>(handler, this);
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/PaperTagEventTypeProvider.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/PaperTagEventTypeProvider.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..1cf4a3caa8d630e95eb569eef2cd577bba1a97a9
@@ -94,192 +61,16 @@ index 0000000000000000000000000000000000000000..1cf4a3caa8d630e95eb569eef2cd577b
 +        return PaperTagListenerManager.INSTANCE.getPostFlattenType(registryKey);
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/PrioritizableLifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/PrioritizableLifecycleEventType.java
-index 76f92a6fc84c0315f3973dc4e92649b66babc3d5..2ed622a61ddc37b11888867770b513909b9a2ecc 100644
---- a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/PrioritizableLifecycleEventType.java
-+++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/PrioritizableLifecycleEventType.java
-@@ -40,6 +40,11 @@ public abstract class PrioritizableLifecycleEventType<
-         super(name, ownerType);
-     }
- 
-+    @Override
-+    public boolean hasHandlers() {
-+        return !this.handlers.isEmpty();
-+    }
-+
-     @Override
-     protected void register(final O owner, final AbstractLifecycleEventHandlerConfiguration<O, E> config) {
-         Preconditions.checkArgument(config instanceof PrioritizedLifecycleEventHandlerConfigurationImpl<?, ?>, "Configuration must be a PrioritizedLifecycleEventHandlerConfiguration");
-diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistryListenerManager.java b/src/main/java/io/papermc/paper/registry/PaperRegistryListenerManager.java
-index a7f2b264d4f37f5293ae72195b4c78faf35351c9..b1b74b73e77ac7414a6d1ab4a19f792a93162751 100644
---- a/src/main/java/io/papermc/paper/registry/PaperRegistryListenerManager.java
-+++ b/src/main/java/io/papermc/paper/registry/PaperRegistryListenerManager.java
-@@ -31,7 +31,7 @@ import net.minecraft.resources.ResourceLocation;
- import org.checkerframework.checker.nullness.qual.Nullable;
- import org.intellij.lang.annotations.Subst;
- 
--public final class PaperRegistryListenerManager {
-+public class PaperRegistryListenerManager {
- 
-     public static final PaperRegistryListenerManager INSTANCE = new PaperRegistryListenerManager();
- 
-@@ -97,7 +97,7 @@ public final class PaperRegistryListenerManager {
-     ) {
-         Preconditions.checkState(LaunchEntryPointHandler.INSTANCE.hasEntered(Entrypoint.BOOTSTRAPPER), registry.key() + " tried to run modification listeners before bootstrappers have been called"); // verify that bootstrappers have been called
-         final @Nullable RegistryEntryInfo<M, T> entry = PaperRegistries.getEntry(registry.key());
--        if (!RegistryEntry.Modifiable.isModifiable(entry) || !this.valueAddHooks.hasHooks(entry.apiKey())) {
-+        if (!RegistryEntry.Modifiable.isModifiable(entry) || !this.valueAddHooks.hasHandlers(entry.apiKey())) {
-             return registerMethod.register((WritableRegistry<M>) registry, key, nms, registrationInfo);
-         }
-         final RegistryEntry.Modifiable<M, T, B> modifiableEntry = RegistryEntry.Modifiable.asModifiable(entry);
-@@ -114,7 +114,7 @@ public final class PaperRegistryListenerManager {
-         final RegistrationInfo registrationInfo,
-         final Conversions conversions
-     ) {
--        if (!RegistryEntry.Modifiable.isModifiable(entry) || !this.valueAddHooks.hasHooks(entry.apiKey())) {
-+        if (!RegistryEntry.Modifiable.isModifiable(entry) || !this.valueAddHooks.hasHandlers(entry.apiKey())) {
-             registry.register(key, builder.build(), registrationInfo);
-             return;
-         }
-@@ -158,7 +158,7 @@ public final class PaperRegistryListenerManager {
- 
-     public <M, T extends org.bukkit.Keyed, B extends PaperRegistryBuilder<M, T>> void runFreezeListeners(final ResourceKey<? extends Registry<M>> resourceKey, final Conversions conversions) {
-         final @Nullable RegistryEntryInfo<M, T> entry = PaperRegistries.getEntry(resourceKey);
--        if (!RegistryEntry.Addable.isAddable(entry) || !this.freezeHooks.hasHooks(entry.apiKey())) {
-+        if (!RegistryEntry.Addable.isAddable(entry) || !this.freezeHooks.hasHandlers(entry.apiKey())) {
-             return;
-         }
-         final RegistryEntry.Addable<M, T, B> writableEntry = RegistryEntry.Addable.asAddable(entry);
-@@ -171,13 +171,13 @@ public final class PaperRegistryListenerManager {
-         if (!RegistryEntry.Modifiable.isModifiable(PaperRegistries.getEntry(type.registryKey()))) {
-             throw new IllegalArgumentException(type.registryKey() + " does not support RegistryEntryAddEvent");
-         }
--        return this.valueAddHooks.getOrCreate(type, RegistryEntryAddEventTypeImpl::new);
-+        return this.valueAddHooks.getOrCreate(type.registryKey(), RegistryEntryAddEventTypeImpl::new);
-     }
- 
-     public <T, B extends RegistryBuilder<T>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryFreezeEvent<T, B>> getRegistryFreezeEventType(final RegistryEventProvider<T, B> type) {
-         if (!RegistryEntry.Addable.isAddable(PaperRegistries.getEntry(type.registryKey()))) {
-             throw new IllegalArgumentException(type.registryKey() + " does not support RegistryFreezeEvent");
-         }
--        return this.freezeHooks.getOrCreate(type, RegistryLifecycleEventType::new);
-+        return this.freezeHooks.getOrCreate(type.registryKey(), RegistryLifecycleEventType::new);
-     }
- }
-diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEventMap.java b/src/main/java/io/papermc/paper/registry/event/RegistryEventMap.java
-index f5ea23173dcbe491742c3dd051c147ef397307a0..60f6bd9f07e3ac7749088cf57154052588752b71 100644
---- a/src/main/java/io/papermc/paper/registry/event/RegistryEventMap.java
-+++ b/src/main/java/io/papermc/paper/registry/event/RegistryEventMap.java
-@@ -1,9 +1,10 @@
- package io.papermc.paper.registry.event;
- 
- import io.papermc.paper.plugin.bootstrap.BootstrapContext;
-+import io.papermc.paper.plugin.lifecycle.event.LifecycleEvent;
- import io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner;
-+import io.papermc.paper.plugin.lifecycle.event.types.AbstractLifecycleEventType;
- import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEventType;
--import io.papermc.paper.registry.RegistryBuilder;
- import io.papermc.paper.registry.RegistryKey;
- import java.util.HashMap;
- import java.util.Map;
-@@ -12,7 +13,7 @@ import java.util.function.BiFunction;
- 
- public final class RegistryEventMap {
- 
--    private final Map<RegistryKey<?>, LifecycleEventType<BootstrapContext, ? extends RegistryEvent<?>, ?>> hooks = new HashMap<>();
-+    private final Map<RegistryKey<?>, LifecycleEventType<BootstrapContext, ? extends LifecycleEvent, ?>> hooks = new HashMap<>();
-     private final String name;
- 
-     public RegistryEventMap(final String name) {
-@@ -20,25 +21,26 @@ public final class RegistryEventMap {
-     }
- 
-     @SuppressWarnings("unchecked")
--    public <T, B extends RegistryBuilder<T>, E extends RegistryEvent<T>, ET extends LifecycleEventType<BootstrapContext, E, ?>> ET getOrCreate(final RegistryEventProvider<T, B> type, final BiFunction<? super RegistryEventProvider<T, B>, ? super String, ET> eventTypeCreator) {
-+    public <T, E extends LifecycleEvent, ET extends LifecycleEventType<BootstrapContext, E, ?>> ET getOrCreate(final RegistryKey<T> registryKey, final BiFunction<? super RegistryKey<T>, ? super String, ET> eventTypeCreator) {
-         final ET registerHook;
--        if (this.hooks.containsKey(type.registryKey())) {
--            registerHook = (ET) this.hooks.get(type.registryKey());
-+        if (this.hooks.containsKey(registryKey)) {
-+            registerHook = (ET) this.hooks.get(registryKey);
-         } else {
--            registerHook = eventTypeCreator.apply(type, this.name);
-+            registerHook = eventTypeCreator.apply(registryKey, this.name);
-             LifecycleEventRunner.INSTANCE.addEventType(registerHook);
--            this.hooks.put(type.registryKey(), registerHook);
-+            this.hooks.put(registryKey, registerHook);
-         }
-         return registerHook;
-     }
- 
-     @SuppressWarnings("unchecked")
--    public <T, E extends RegistryEvent<T>> LifecycleEventType<BootstrapContext, E, ?> getHook(final RegistryKey<T> registryKey) {
-+    public <T, E extends LifecycleEvent> LifecycleEventType<BootstrapContext, E, ?> getHook(final RegistryKey<T> registryKey) {
-         return (LifecycleEventType<BootstrapContext, E, ?>) Objects.requireNonNull(this.hooks.get(registryKey), "No hook for " + registryKey);
-     }
- 
--    public boolean hasHooks(final RegistryKey<?> registryKey) {
--        return this.hooks.containsKey(registryKey);
-+    public boolean hasHandlers(final RegistryKey<?> registryKey) {
-+        final AbstractLifecycleEventType<?, ?, ?> type = ((AbstractLifecycleEventType<?, ?, ?>) this.hooks.get(registryKey));
-+        return type != null && type.hasHandlers();
-     }
- 
- }
-diff --git a/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddEventTypeImpl.java b/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddEventTypeImpl.java
-index 5d709ed04e1078b631f5b9c74ca35f042251e14f..5e26175ac2aa951dee3ec764beef54a8916eaaf8 100644
---- a/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddEventTypeImpl.java
-+++ b/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddEventTypeImpl.java
-@@ -4,6 +4,7 @@ import io.papermc.paper.plugin.bootstrap.BootstrapContext;
- import io.papermc.paper.plugin.lifecycle.event.handler.LifecycleEventHandler;
- import io.papermc.paper.plugin.lifecycle.event.types.PrioritizableLifecycleEventType;
- import io.papermc.paper.registry.RegistryBuilder;
-+import io.papermc.paper.registry.RegistryKey;
- import io.papermc.paper.registry.event.RegistryEntryAddEvent;
- import io.papermc.paper.registry.event.RegistryEventProvider;
- import java.util.function.Consumer;
-@@ -11,8 +12,8 @@ import java.util.function.Predicate;
- 
- public class RegistryEntryAddEventTypeImpl<T, B extends RegistryBuilder<T>> extends PrioritizableLifecycleEventType<BootstrapContext, RegistryEntryAddEvent<T, B>, RegistryEntryAddConfiguration<T>> implements RegistryEntryAddEventType<T, B> {
- 
--    public RegistryEntryAddEventTypeImpl(final RegistryEventProvider<T, B> type, final String eventName) {
--        super(type.registryKey() + " / " + eventName, BootstrapContext.class);
-+    public RegistryEntryAddEventTypeImpl(final RegistryKey<T> registryKey, final String eventName) {
-+        super(registryKey + " / " + eventName, BootstrapContext.class);
-     }
- 
-     @Override
-diff --git a/src/main/java/io/papermc/paper/registry/event/type/RegistryLifecycleEventType.java b/src/main/java/io/papermc/paper/registry/event/type/RegistryLifecycleEventType.java
-index dcc0f6b337840a78d38abdf2eb3f4bbd1676f58f..0c7cb29aa001923e36b9f4dae3b15fe4e518557e 100644
---- a/src/main/java/io/papermc/paper/registry/event/type/RegistryLifecycleEventType.java
-+++ b/src/main/java/io/papermc/paper/registry/event/type/RegistryLifecycleEventType.java
-@@ -3,12 +3,13 @@ package io.papermc.paper.registry.event.type;
- import io.papermc.paper.plugin.bootstrap.BootstrapContext;
- import io.papermc.paper.plugin.lifecycle.event.types.PrioritizableLifecycleEventType;
- import io.papermc.paper.registry.RegistryBuilder;
-+import io.papermc.paper.registry.RegistryKey;
- import io.papermc.paper.registry.event.RegistryEvent;
- import io.papermc.paper.registry.event.RegistryEventProvider;
- 
- public final class RegistryLifecycleEventType<T, B extends RegistryBuilder<T>, E extends RegistryEvent<T>> extends PrioritizableLifecycleEventType.Simple<BootstrapContext, E> {
- 
--    public RegistryLifecycleEventType(final RegistryEventProvider<T, B> type, final String eventName) {
--        super(type.registryKey() + " / " + eventName, BootstrapContext.class);
-+    public RegistryLifecycleEventType(final RegistryKey<T> registryKey, final String eventName) {
-+        super(registryKey + " / " + eventName, BootstrapContext.class);
-     }
- }
 diff --git a/src/main/java/io/papermc/paper/tag/PaperPostFlattenTagRegistrar.java b/src/main/java/io/papermc/paper/tag/PaperPostFlattenTagRegistrar.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..013fef5b95eee817ed1d9b28c6f1ecde5a331e56
+index 0000000000000000000000000000000000000000..6dc4d9115d18e3d713546885d0d9ace1ec5d53e1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/tag/PaperPostFlattenTagRegistrar.java
-@@ -0,0 +1,130 @@
+@@ -0,0 +1,118 @@
 +package io.papermc.paper.tag;
 +
 +import com.google.common.collect.Collections2;
 +import com.google.common.collect.ImmutableMap;
-+import com.google.common.collect.Lists;
 +import io.papermc.paper.adventure.PaperAdventure;
 +import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 +import io.papermc.paper.plugin.lifecycle.event.registrar.PaperRegistrar;
@@ -287,7 +78,6 @@ index 0000000000000000000000000000000000000000..013fef5b95eee817ed1d9b28c6f1ecde
 +import io.papermc.paper.registry.TypedKey;
 +import io.papermc.paper.registry.tag.TagKey;
 +import java.util.ArrayList;
-+import java.util.Arrays;
 +import java.util.Collection;
 +import java.util.Collections;
 +import java.util.List;
@@ -295,7 +85,6 @@ index 0000000000000000000000000000000000000000..013fef5b95eee817ed1d9b28c6f1ecde
 +import java.util.NoSuchElementException;
 +import java.util.Optional;
 +import java.util.function.Function;
-+import net.kyori.adventure.util.MonkeyBars;
 +import net.minecraft.resources.ResourceLocation;
 +import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 +import org.checkerframework.checker.nullness.qual.NonNull;
@@ -381,15 +170,6 @@ index 0000000000000000000000000000000000000000..013fef5b95eee817ed1d9b28c6f1ecde
 +        return this.convert(this.getNmsTag(tagKey, false));
 +    }
 +
-+    // @SafeVarargs
-+    // @Override
-+    // public final void addToTag(final TagKey<T> tagKey, final TypedKey<T> first, final TypedKey<T> ... rest) {
-+    //     final ArrayList<TypedKey<T>> list = Lists.newArrayListWithCapacity(rest.length + 1);
-+    //     list.add(first);
-+    //     Collections.addAll(list, rest);
-+    //     this.addToTag(tagKey, list);
-+    // }
-+
 +    @Override
 +    public void addToTag(final TagKey<T> tagKey, final Collection<TypedKey<T>> values) {
 +        final Collection<M> nmsTag = new ArrayList<>(this.getNmsTag(tagKey, true));
@@ -407,10 +187,10 @@ index 0000000000000000000000000000000000000000..013fef5b95eee817ed1d9b28c6f1ecde
 +}
 diff --git a/src/main/java/io/papermc/paper/tag/PaperPreFlattenTagRegistrar.java b/src/main/java/io/papermc/paper/tag/PaperPreFlattenTagRegistrar.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..46b6839c462951b135fd9cd5bcbed478a32a7485
+index 0000000000000000000000000000000000000000..11eeb489f5b17e8fcbdb15469559e32bbfe853e7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/tag/PaperPreFlattenTagRegistrar.java
-@@ -0,0 +1,137 @@
+@@ -0,0 +1,128 @@
 +package io.papermc.paper.tag;
 +
 +import com.google.common.base.Preconditions;
@@ -435,7 +215,6 @@ index 0000000000000000000000000000000000000000..46b6839c462951b135fd9cd5bcbed478
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.jetbrains.annotations.Contract;
 +
 +@SuppressWarnings("BoundedWildcard")
 +@DefaultQualifier(NonNull.class)
@@ -524,14 +303,6 @@ index 0000000000000000000000000000000000000000..46b6839c462951b135fd9cd5bcbed478
 +    public List<TagEntry<T>> getTag(final TagKey<T> tagKey) {
 +        return convert(this.getNmsTag(tagKey, false));
 +    }
-+
-+    // @Contract(mutates = "this")
-+    // public final void addToTag(@NonNull TagKey<T> tagKey, @NonNull TagEntry<T> first, @NonNull TagEntry<T> @NonNull ... rest) {
-+    //     final List<TagEntry<T>> entries = new ArrayList<>(rest.length + 1);
-+    //     entries.add(first);
-+    //     Collections.addAll(entries, rest);
-+    //     this.addToTag(tagKey, entries);
-+    // }
 +
 +    @Override
 +    public void addToTag(final TagKey<T> tagKey, final Collection<TagEntry<T>> entries) {
@@ -688,26 +459,6 @@ index 0000000000000000000000000000000000000000..d6d4bfc6f45d646afeace422a038c670
 +    RegistryKey<A> apiRegistryKey
 +) {
 +}
-diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index 581bd217304e0f9e0b2113c335694805dfb4e2a1..3013b90bbb42bd23901266fb8e9b6111077b6847 100644
---- a/src/main/java/net/minecraft/server/Main.java
-+++ b/src/main/java/net/minecraft/server/Main.java
-@@ -304,6 +304,7 @@ public class Main {
-                 }).get();
-             } catch (Exception exception) {
-                 Main.LOGGER.warn("Failed to load datapacks, can't proceed with server load. You can either fix your datapacks or reset to vanilla with --safeMode", exception);
-+                org.apache.logging.log4j.LogManager.shutdown(); // Paper - ensure shutdown logging on exceptions
-                 return;
-             }
- 
-@@ -360,6 +361,7 @@ public class Main {
-             */ // CraftBukkit end
-         } catch (Exception exception1) {
-             Main.LOGGER.error(LogUtils.FATAL_MARKER, "Failed to start the minecraft server", exception1);
-+            org.apache.logging.log4j.LogManager.shutdown(); // Paper - ensure shutdown logging on exceptions
-         }
- 
-     }
 diff --git a/src/main/java/net/minecraft/server/ServerFunctionLibrary.java b/src/main/java/net/minecraft/server/ServerFunctionLibrary.java
 index 8ae2ca2435d84fee930d2931e45ad440245cbe0f..9fff5ca1e9707e4e6be5ecb92be936332d24bb96 100644
 --- a/src/main/java/net/minecraft/server/ServerFunctionLibrary.java
@@ -784,15 +535,3 @@ index 7116362d798d7c28a4880c873a60507afa4673e6..209ffb234fb29c0a313e79499cf9f1d3
      }
  
      public static record LoadResult<T>(ResourceKey<? extends Registry<T>> key, Map<ResourceLocation, Collection<Holder<T>>> tags) {
-diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index c1e88c31910e96ef07cece05046c0b55e708b52d..75cf79d2b3bc156e83aead46ed08bfc8908e966a 100644
---- a/src/main/java/org/bukkit/craftbukkit/Main.java
-+++ b/src/main/java/org/bukkit/craftbukkit/Main.java
-@@ -281,6 +281,7 @@ public class Main {
-                 io.papermc.paper.PaperBootstrap.boot(options);
-             } catch (Throwable t) {
-                 t.printStackTrace();
-+                org.apache.logging.log4j.LogManager.shutdown(); // Paper - ensure shutdown logging on exceptions
-             }
-         }
-     }

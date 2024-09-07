@@ -5,22 +5,10 @@ Subject: [PATCH] Tag Lifecycle Events
 
 
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProvider.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProvider.java
-index 1588f6943a909bed053a952e650e043c44028c2d..ca4f7a7b59369f4c682d026d041a3d38884e430b 100644
+index 69aaa377204bf52ce3f14f5dad275b31b2252498..ca4f7a7b59369f4c682d026d041a3d38884e430b 100644
 --- a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProvider.java
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProvider.java
-@@ -8,11 +8,15 @@ import org.jetbrains.annotations.ApiStatus;
- @ApiStatus.Internal
- interface LifecycleEventTypeProvider {
- 
--    LifecycleEventTypeProvider PROVIDER = ServiceLoader.load(LifecycleEventTypeProvider.class)
--        .findFirst()
--        .orElseThrow();
-+    static LifecycleEventTypeProvider provider() {
-+        return ServiceLoader.load(LifecycleEventTypeProvider.class)
-+            .findFirst()
-+            .orElseThrow();
-+    }
- 
+@@ -17,4 +17,6 @@ interface LifecycleEventTypeProvider {
      <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Monitorable<O, E> monitor(String name, Class<? extends O> ownerType);
  
      <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Prioritizable<O, E> prioritized(String name, Class<? extends O> ownerType);
@@ -28,7 +16,7 @@ index 1588f6943a909bed053a952e650e043c44028c2d..ca4f7a7b59369f4c682d026d041a3d38
 +    TagEventTypeProvider tagProvider();
  }
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEvents.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEvents.java
-index 1fab48593c567fe05b085ac6e12dc22556cf0b92..c7252d6f8124846e59da2c59de7e90a9b46b4279 100644
+index dae4935d8e9f46c52f700927a43a9202dac13df6..c7252d6f8124846e59da2c59de7e90a9b46b4279 100644
 --- a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEvents.java
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEvents.java
 @@ -6,6 +6,8 @@ import io.papermc.paper.plugin.lifecycle.event.LifecycleEvent;
@@ -40,7 +28,7 @@ index 1fab48593c567fe05b085ac6e12dc22556cf0b92..c7252d6f8124846e59da2c59de7e90a9
  import org.bukkit.plugin.Plugin;
  import org.jetbrains.annotations.ApiStatus;
  
-@@ -24,35 +26,41 @@ public final class LifecycleEvents {
+@@ -24,6 +26,12 @@ public final class LifecycleEvents {
       */
      public static final LifecycleEventType.Prioritizable<LifecycleEventOwner, ReloadableRegistrarEvent<Commands>> COMMANDS = prioritized("commands", LifecycleEventOwner.class);
  
@@ -52,44 +40,7 @@ index 1fab48593c567fe05b085ac6e12dc22556cf0b92..c7252d6f8124846e59da2c59de7e90a9
 +
      //<editor-fold desc="helper methods" defaultstate="collapsed">
      @ApiStatus.Internal
--    private static <E extends LifecycleEvent> LifecycleEventType.Monitorable<Plugin, E> plugin(final String name) {
-+    static <E extends LifecycleEvent> LifecycleEventType.Monitorable<Plugin, E> plugin(final String name) {
-         return monitor(name, Plugin.class);
-     }
- 
-     @ApiStatus.Internal
--    private static <E extends LifecycleEvent> LifecycleEventType.Prioritizable<Plugin, E> pluginPrioritized(final String name) {
-+    static <E extends LifecycleEvent> LifecycleEventType.Prioritizable<Plugin, E> pluginPrioritized(final String name) {
-         return prioritized(name, Plugin.class);
-     }
- 
-     @ApiStatus.Internal
--    private static <E extends LifecycleEvent> LifecycleEventType.Monitorable<BootstrapContext, E> bootstrap(final String name) {
-+    static <E extends LifecycleEvent> LifecycleEventType.Monitorable<BootstrapContext, E> bootstrap(final String name) {
-         return monitor(name, BootstrapContext.class);
-     }
- 
-     @ApiStatus.Internal
--    private static <E extends LifecycleEvent> LifecycleEventType.Prioritizable<BootstrapContext, E> bootstrapPrioritized(final String name) {
-+    static <E extends LifecycleEvent> LifecycleEventType.Prioritizable<BootstrapContext, E> bootstrapPrioritized(final String name) {
-         return prioritized(name, BootstrapContext.class);
-     }
- 
-     @ApiStatus.Internal
--    private static <O extends LifecycleEventOwner, E extends LifecycleEvent, O2 extends O> LifecycleEventType.Monitorable<O, E> monitor(final String name, final Class<O2> ownerType) {
--        return LifecycleEventTypeProvider.PROVIDER.monitor(name, ownerType);
-+    static <O extends LifecycleEventOwner, E extends LifecycleEvent, O2 extends O> LifecycleEventType.Monitorable<O, E> monitor(final String name, final Class<O2> ownerType) {
-+        return LifecycleEventTypeProvider.provider().monitor(name, ownerType);
-     }
- 
-     @ApiStatus.Internal
--    private static <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Prioritizable<O, E> prioritized(final String name, final Class<? extends O> ownerType) {
--        return LifecycleEventTypeProvider.PROVIDER.prioritized(name, ownerType);
-+    static <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Prioritizable<O, E> prioritized(final String name, final Class<? extends O> ownerType) {
-+        return LifecycleEventTypeProvider.provider().prioritized(name, ownerType);
-     }
-     //</editor-fold>
- 
+     static <E extends LifecycleEvent> LifecycleEventType.Monitorable<Plugin, E> plugin(final String name) {
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/TagEventTypeProvider.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/TagEventTypeProvider.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..61c5f6cc6986193eab596ee55e1a414afcf4fbd1
@@ -136,26 +87,12 @@ index 0000000000000000000000000000000000000000..61c5f6cc6986193eab596ee55e1a414a
 +     */
 +    <T> LifecycleEventType.@NonNull Prioritizable<BootstrapContext, ReloadableRegistrarEvent<PostFlattenTagRegistrar<T>>> postFlatten(@NonNull RegistryKey<T> registryKey);
 +}
-diff --git a/src/main/java/io/papermc/paper/registry/tag/TagKeyImpl.java b/src/main/java/io/papermc/paper/registry/tag/TagKeyImpl.java
-index 11d19e339c7c62f2eb4467277552c27e4e83069c..5fde17e97eddcd1d01ee39694c9159d0ff2a09e3 100644
---- a/src/main/java/io/papermc/paper/registry/tag/TagKeyImpl.java
-+++ b/src/main/java/io/papermc/paper/registry/tag/TagKeyImpl.java
-@@ -9,4 +9,9 @@ import org.jetbrains.annotations.ApiStatus;
- @ApiStatus.Internal
- @DefaultQualifier(NonNull.class)
- record TagKeyImpl<T>(RegistryKey<T> registryKey, Key key) implements TagKey<T> {
-+
-+    @Override
-+    public String toString() {
-+        return "#" + this.key + " (in " + this.registryKey + ")";
-+    }
- }
 diff --git a/src/main/java/io/papermc/paper/tag/PostFlattenTagRegistrar.java b/src/main/java/io/papermc/paper/tag/PostFlattenTagRegistrar.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2cecd9b9056299cfa6bb3ac4c26d246c20b9da1b
+index 0000000000000000000000000000000000000000..32d79dac18c402c3d95edb642eef1563eddf5e9e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/tag/PostFlattenTagRegistrar.java
-@@ -0,0 +1,114 @@
+@@ -0,0 +1,103 @@
 +package io.papermc.paper.tag;
 +
 +import io.papermc.paper.plugin.lifecycle.event.registrar.Registrar;
@@ -238,17 +175,6 @@ index 0000000000000000000000000000000000000000..2cecd9b9056299cfa6bb3ac4c26d246c
 +    @Contract(value = "_ -> new", pure = true)
 +    @Unmodifiable @NonNull Collection<TypedKey<T>> getTag(@NonNull TagKey<T> tagKey);
 +
-+    // /**
-+    //  * Adds values to the given tag. If the tag does not exist, it will be created.
-+    //  *
-+    //  * @param tagKey the key of the tag to add to
-+    //  * @param first the first value to add
-+    //  * @param rest the rest of the values to add
-+    //  * @see #setTag(TagKey, Collection)
-+    //  */
-+    // @Contract(mutates = "this")
-+    // void addToTag(@NonNull TagKey<T> tagKey, @NonNull TypedKey<T> first, @NonNull TypedKey<T> @NonNull ... rest);
-+
 +    /**
 +     * Adds values to the given tag. If the tag does not exist, it will be created.
 +     *
@@ -272,15 +198,14 @@ index 0000000000000000000000000000000000000000..2cecd9b9056299cfa6bb3ac4c26d246c
 +}
 diff --git a/src/main/java/io/papermc/paper/tag/PreFlattenTagRegistrar.java b/src/main/java/io/papermc/paper/tag/PreFlattenTagRegistrar.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2f6e57af8fcc0ff2d9f256bd91a9da75ef5b9a34
+index 0000000000000000000000000000000000000000..b49d169812bb3b29bc24286177d4af5d849f682d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/tag/PreFlattenTagRegistrar.java
-@@ -0,0 +1,114 @@
+@@ -0,0 +1,102 @@
 +package io.papermc.paper.tag;
 +
 +import io.papermc.paper.plugin.lifecycle.event.registrar.Registrar;
 +import io.papermc.paper.registry.RegistryKey;
-+import io.papermc.paper.registry.TypedKey;
 +import io.papermc.paper.registry.tag.TagKey;
 +import java.util.Collection;
 +import java.util.List;
@@ -357,17 +282,6 @@ index 0000000000000000000000000000000000000000..2f6e57af8fcc0ff2d9f256bd91a9da75
 +     */
 +    @Contract(value = "_ -> new", pure = true)
 +    @Unmodifiable @NonNull List<TagEntry<T>> getTag(@NonNull TagKey<T> tagKey);
-+
-+    // /**
-+    //  * Adds entries to the given tag. If the tag does not exist, it will be created.
-+    //  *
-+    //  * @param tagKey the key of the tag to add to
-+    //  * @param first the first entry to add
-+    //  * @param rest the rest of the entries to add
-+    //  * @see #setTag(TagKey, Collection)
-+    //  */
-+    // @Contract(mutates = "this")
-+    // void addToTag(@NonNull TagKey<T> tagKey, @NonNull TagEntry<T> first, @NonNull TagEntry<T> @NonNull ... rest);
 +
 +    /**
 +     * Adds entries to the given tag. If the tag does not exist, it will be created.
