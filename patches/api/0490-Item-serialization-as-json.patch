@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: masmc05 <masmc05@gmail.com>
+Date: Sun, 11 Aug 2024 03:01:52 +0300
+Subject: [PATCH] Item serialization as json
+
+
+diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
+index c80e0ef587a001ee6de3f5c182cc9696d58bafeb..10c87b7c19ed3eab28fdce5f225df3767292ee0a 100644
+--- a/src/main/java/org/bukkit/UnsafeValues.java
++++ b/src/main/java/org/bukkit/UnsafeValues.java
+@@ -174,6 +174,36 @@ public interface UnsafeValues {
+ 
+     ItemStack deserializeItem(byte[] data);
+ 
++    /**
++     * Serializes this itemstack to json format.
++     * It is safe for data migrations as it will use the built-in data converter instead of bukkit's
++     * dangerous serialization system.
++     * <p>
++     * The emitted json object's format will inherently change across versions and hence should not be used for
++     * non-development purposes like plugin configurations or end-user input.
++     *
++     * @return json object representing this item.
++     * @see #deserializeItemFromJson(com.google.gson.JsonObject)
++     * @throws IllegalArgumentException if the passed itemstack is {@link ItemStack#empty()}.
++     */
++    @NotNull
++    com.google.gson.JsonObject serializeItemAsJson(@NotNull ItemStack itemStack);
++
++    /**
++     * Creates an itemstack from a json object.
++     * <p>
++     * This method expects a json object in the format emitted by {@link #serializeItemAsJson(ItemStack)}.
++     * <p>
++     * The emitted json object's format will inherently change across versions and hence should not be used for
++     * non-development purposes like plugin configurations or end-user input.
++     *
++     * @param data object representing an item in Json format
++     * @return the deserialize item stack, migrated to the latest data version if needed.
++     * @throws IllegalArgumentException if the json object is not a valid item
++     * @see #serializeItemAsJson(ItemStack)
++     */
++    @NotNull ItemStack deserializeItemFromJson(@NotNull com.google.gson.JsonObject data) throws IllegalArgumentException;
++
+     byte[] serializeEntity(org.bukkit.entity.Entity entity);
+ 
+     default org.bukkit.entity.Entity deserializeEntity(byte[] data, World world) {
