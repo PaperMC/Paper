@@ -6,10 +6,10 @@ Subject: [PATCH] Add FeatureFlag API
 
 diff --git a/src/main/java/io/papermc/paper/world/flag/FeatureDependant.java b/src/main/java/io/papermc/paper/world/flag/FeatureDependant.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..914dc0b655630dd835bb115a144206d7e3a02337
+index 0000000000000000000000000000000000000000..0fda065100c17ee00060df16467c0f7f98984ea7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/flag/FeatureDependant.java
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,27 @@
 +package io.papermc.paper.world.flag;
 +
 +import java.util.Set;
@@ -21,8 +21,9 @@ index 0000000000000000000000000000000000000000..914dc0b655630dd835bb115a144206d7
 +/**
 + * Implemented by types in built-in registries that are controlled by {@link FeatureFlag FeatureFlags}.
 + * Types in data-driven registries that are controlled by feature flags just will not exist in that registry.
++ * @apiNote When a type that currently implements this interface transitions to being data-drive, this
++ * interface will be removed from that type in the following major version.
 + */
-+@ApiStatus.Experimental
 +@ApiStatus.NonExtendable
 +public interface FeatureDependant {
 +
@@ -63,10 +64,10 @@ index 0000000000000000000000000000000000000000..f64cbee35fd3c6fe7b5f7391f6d11816
 +}
 diff --git a/src/main/java/io/papermc/paper/world/flag/FeatureFlagSetHolder.java b/src/main/java/io/papermc/paper/world/flag/FeatureFlagSetHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2d7bbc9b157ccbb02731ecf3ec6680681c9c0da8
+index 0000000000000000000000000000000000000000..c4432ee20872eeb127852159cf89ed00809fb00e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/flag/FeatureFlagSetHolder.java
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,31 @@
 +package io.papermc.paper.world.flag;
 +
 +import java.util.Set;
@@ -79,7 +80,6 @@ index 0000000000000000000000000000000000000000..2d7bbc9b157ccbb02731ecf3ec668068
 + * Implemented by types that hold {@link FeatureFlag FeatureFlags} like
 + * {@link org.bukkit.generator.WorldInfo} and {@link org.bukkit.RegionAccessor}.
 + */
-+@ApiStatus.Experimental
 +@ApiStatus.NonExtendable
 +public interface FeatureFlagSetHolder {
 +
@@ -100,10 +100,10 @@ index 0000000000000000000000000000000000000000..2d7bbc9b157ccbb02731ecf3ec668068
 +    @Unmodifiable @NonNull Set<FeatureFlag> getFeatureFlags();
 +}
 diff --git a/src/main/java/org/bukkit/FeatureFlag.java b/src/main/java/org/bukkit/FeatureFlag.java
-index 026b1832bcd163ab89668c991bf002e608e36aef..d690ecf6eac753fab9d09514cfadae4c6a73e146 100644
+index 026b1832bcd163ab89668c991bf002e608e36aef..8fab13dc12c8fd6181479ab6e31e2498a8a91ee5 100644
 --- a/src/main/java/org/bukkit/FeatureFlag.java
 +++ b/src/main/java/org/bukkit/FeatureFlag.java
-@@ -1,37 +1,57 @@
+@@ -1,37 +1,56 @@
  package org.bukkit;
  
 +// Paper start - overhaul FeatureFlag API
@@ -121,7 +121,7 @@ index 026b1832bcd163ab89668c991bf002e608e36aef..d690ecf6eac753fab9d09514cfadae4c
 - * Flags which are unavailable in the current version will be null and/or
 - * removed.
   */
- @ApiStatus.Experimental
+-@ApiStatus.Experimental
  public interface FeatureFlag extends Keyed {
  
 -    public static final FeatureFlag VANILLA = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("vanilla"));
@@ -253,19 +253,6 @@ index 8f430a4067fc722ebfbca846cccded4fb0a3a4e5..4aa79016eb5f7edf930c82d30ff25078
  
      /**
       * Typed represents a subtype of {@link BlockType}s that have a known block
-diff --git a/src/main/java/org/bukkit/enchantments/Enchantment.java b/src/main/java/org/bukkit/enchantments/Enchantment.java
-index f38321c437b19125d57d25419e3cb564e3928d89..daf4eeed2881858f734c19471ad5dbc4e1f42def 100644
---- a/src/main/java/org/bukkit/enchantments/Enchantment.java
-+++ b/src/main/java/org/bukkit/enchantments/Enchantment.java
-@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
- /**
-  * The various type of enchantments that may be added to armour or weapons
-  */
--public abstract class Enchantment implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
-+public abstract class Enchantment implements Keyed, Translatable, net.kyori.adventure.translation.Translatable, io.papermc.paper.world.flag.FeatureDependant { // Paper - Adventure translations & feature flag API
-     /**
-      * Provides protection against environmental damage
-      */
 diff --git a/src/main/java/org/bukkit/entity/EntityType.java b/src/main/java/org/bukkit/entity/EntityType.java
 index ba605ad75d4ed920c0dc4527529998041a58676b..a78e1c431a6ea46ba7c44880e25a871f473bef41 100644
 --- a/src/main/java/org/bukkit/entity/EntityType.java

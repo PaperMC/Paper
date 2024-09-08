@@ -310,18 +310,20 @@ index 0000000000000000000000000000000000000000..c3e6b96013f6dd0b784bd867196552d9
 +io.papermc.paper.world.flag.PaperFeatureFlagProviderImpl
 diff --git a/src/test/java/io/papermc/paper/world/flag/FeatureFlagTest.java b/src/test/java/io/papermc/paper/world/flag/FeatureFlagTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..174efed9d0352066a146acb4ec0554d46f81df21
+index 0000000000000000000000000000000000000000..1fd830b148468e1db84e0e27d54c4fd6449fa9d8
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/world/flag/FeatureFlagTest.java
-@@ -0,0 +1,79 @@
+@@ -0,0 +1,99 @@
 +package io.papermc.paper.world.flag;
 +
 +import io.papermc.paper.adventure.PaperAdventure;
 +import io.papermc.paper.registry.PaperRegistries;
 +import io.papermc.paper.registry.RegistryAccess;
 +import io.papermc.paper.registry.RegistryKey;
++import io.papermc.paper.registry.entry.RegistryEntry;
 +import java.util.HashSet;
 +import java.util.Set;
++import java.util.stream.Stream;
 +import net.kyori.adventure.key.Key;
 +import net.minecraft.core.registries.Registries;
 +import net.minecraft.resources.ResourceKey;
@@ -338,6 +340,7 @@ index 0000000000000000000000000000000000000000..174efed9d0352066a146acb4ec0554d4
 +
 +import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 +import static org.junit.jupiter.api.Assertions.assertEquals;
++import static org.junit.jupiter.api.Assertions.assertFalse;
 +import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 +import static org.junit.jupiter.api.Assertions.assertNotNull;
 +import static org.junit.jupiter.api.Assertions.fail;
@@ -385,11 +388,28 @@ index 0000000000000000000000000000000000000000..174efed9d0352066a146acb4ec0554d4
 +
 +    @MethodSource("featureFilteredRegistries")
 +    @ParameterizedTest
-+    <T extends Keyed> void testFeatureDependent(final RegistryKey<T> registryKey) {
++    <T extends Keyed> void testApiImplementsFeatureDependant(final RegistryKey<T> registryKey) {
 +        final org.bukkit.Registry<T> registry = RegistryAccess.registryAccess().getRegistry(registryKey);
 +        final T anyElement = registry.iterator().next();
 +        assertInstanceOf(FeatureDependant.class, anyElement, "Registry " + registryKey + " doesn't have feature dependent elements");
 +        final FeatureDependant dependant = ((FeatureDependant) anyElement);
 +        assertDoesNotThrow(dependant::requiredFeatures, "Failed to get required features for " + anyElement + " in " + registryKey);
++    }
++
++    static Stream<RegistryKey<?>> nonFeatureFilteredRegistries() {
++        return AbstractTestingBase.REGISTRY_CUSTOM.registries().filter(r -> {
++            final RegistryEntry<?, ?> entry = PaperRegistries.getEntry(r.key());
++            // has an API registry and isn't a filtered registry
++            return entry != null && !FeatureElement.FILTERED_REGISTRIES.contains(r.key());
++        }).map(r -> PaperRegistries.getEntry(r.key()).apiKey());
++    }
++
++
++    @MethodSource("nonFeatureFilteredRegistries")
++    @ParameterizedTest
++    <T extends Keyed> void testApiDoesntImplementFeatureDependant(final RegistryKey<T> registryKey) {
++        final org.bukkit.Registry<T> registry = RegistryAccess.registryAccess().getRegistry(registryKey);
++        final T anyElement = registry.iterator().next();
++        assertFalse(anyElement instanceof FeatureDependant, "Registry " + registryKey + " has feature dependent elements");
 +    }
 +}
