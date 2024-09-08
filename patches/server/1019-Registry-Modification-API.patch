@@ -97,7 +97,7 @@ index 0000000000000000000000000000000000000000..528c6ee1739d92f766f3904acd7fc573
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistryListenerManager.java b/src/main/java/io/papermc/paper/registry/PaperRegistryListenerManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b1b74b73e77ac7414a6d1ab4a19f792a93162751
+index 0000000000000000000000000000000000000000..69e946173407eb05b18a2b19b0d45cbb3213570b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/PaperRegistryListenerManager.java
 @@ -0,0 +1,183 @@
@@ -138,8 +138,8 @@ index 0000000000000000000000000000000000000000..b1b74b73e77ac7414a6d1ab4a19f792a
 +
 +    public static final PaperRegistryListenerManager INSTANCE = new PaperRegistryListenerManager();
 +
-+    public final RegistryEventMap valueAddHooks = new RegistryEventMap("value add");
-+    public final RegistryEventMap freezeHooks = new RegistryEventMap("freeze");
++    public final RegistryEventMap valueAddEventTypes = new RegistryEventMap("value add");
++    public final RegistryEventMap freezeEventTypes = new RegistryEventMap("freeze");
 +
 +    private PaperRegistryListenerManager() {
 +    }
@@ -200,7 +200,7 @@ index 0000000000000000000000000000000000000000..b1b74b73e77ac7414a6d1ab4a19f792a
 +    ) {
 +        Preconditions.checkState(LaunchEntryPointHandler.INSTANCE.hasEntered(Entrypoint.BOOTSTRAPPER), registry.key() + " tried to run modification listeners before bootstrappers have been called"); // verify that bootstrappers have been called
 +        final @Nullable RegistryEntryInfo<M, T> entry = PaperRegistries.getEntry(registry.key());
-+        if (!RegistryEntry.Modifiable.isModifiable(entry) || !this.valueAddHooks.hasHandlers(entry.apiKey())) {
++        if (!RegistryEntry.Modifiable.isModifiable(entry) || !this.valueAddEventTypes.hasHandlers(entry.apiKey())) {
 +            return registerMethod.register((WritableRegistry<M>) registry, key, nms, registrationInfo);
 +        }
 +        final RegistryEntry.Modifiable<M, T, B> modifiableEntry = RegistryEntry.Modifiable.asModifiable(entry);
@@ -217,7 +217,7 @@ index 0000000000000000000000000000000000000000..b1b74b73e77ac7414a6d1ab4a19f792a
 +        final RegistrationInfo registrationInfo,
 +        final Conversions conversions
 +    ) {
-+        if (!RegistryEntry.Modifiable.isModifiable(entry) || !this.valueAddHooks.hasHandlers(entry.apiKey())) {
++        if (!RegistryEntry.Modifiable.isModifiable(entry) || !this.valueAddEventTypes.hasHandlers(entry.apiKey())) {
 +            registry.register(key, builder.build(), registrationInfo);
 +            return;
 +        }
@@ -237,7 +237,7 @@ index 0000000000000000000000000000000000000000..b1b74b73e77ac7414a6d1ab4a19f792a
 +        @Subst("namespace:key") final ResourceLocation beingAdded = key.location();
 +        @SuppressWarnings("PatternValidation") final TypedKey<T> typedKey = TypedKey.create(entry.apiKey(), Key.key(beingAdded.getNamespace(), beingAdded.getPath()));
 +        final RegistryEntryAddEventImpl<T, B> event = entry.createEntryAddEvent(typedKey, builder, conversions);
-+        LifecycleEventRunner.INSTANCE.callEvent(this.valueAddHooks.getHook(entry.apiKey()), event);
++        LifecycleEventRunner.INSTANCE.callEvent(this.valueAddEventTypes.getEventType(entry.apiKey()), event);
 +        if (oldNms != null) {
 +            ((MappedRegistry<M>) registry).clearIntrusiveHolder(oldNms);
 +        }
@@ -261,27 +261,27 @@ index 0000000000000000000000000000000000000000..b1b74b73e77ac7414a6d1ab4a19f792a
 +
 +    public <M, T extends org.bukkit.Keyed, B extends PaperRegistryBuilder<M, T>> void runFreezeListeners(final ResourceKey<? extends Registry<M>> resourceKey, final Conversions conversions) {
 +        final @Nullable RegistryEntryInfo<M, T> entry = PaperRegistries.getEntry(resourceKey);
-+        if (!RegistryEntry.Addable.isAddable(entry) || !this.freezeHooks.hasHandlers(entry.apiKey())) {
++        if (!RegistryEntry.Addable.isAddable(entry) || !this.freezeEventTypes.hasHandlers(entry.apiKey())) {
 +            return;
 +        }
 +        final RegistryEntry.Addable<M, T, B> writableEntry = RegistryEntry.Addable.asAddable(entry);
 +        final WritableCraftRegistry<M, T, B> writableRegistry = PaperRegistryAccess.instance().getWritableRegistry(entry.apiKey());
 +        final RegistryFreezeEventImpl<T, B> event = writableEntry.createFreezeEvent(writableRegistry, conversions);
-+        LifecycleEventRunner.INSTANCE.callEvent(this.freezeHooks.getHook(entry.apiKey()), event);
++        LifecycleEventRunner.INSTANCE.callEvent(this.freezeEventTypes.getEventType(entry.apiKey()), event);
 +    }
 +
 +    public <T, B extends RegistryBuilder<T>> RegistryEntryAddEventType<T, B> getRegistryValueAddEventType(final RegistryEventProvider<T, B> type) {
 +        if (!RegistryEntry.Modifiable.isModifiable(PaperRegistries.getEntry(type.registryKey()))) {
 +            throw new IllegalArgumentException(type.registryKey() + " does not support RegistryEntryAddEvent");
 +        }
-+        return this.valueAddHooks.getOrCreate(type.registryKey(), RegistryEntryAddEventTypeImpl::new);
++        return this.valueAddEventTypes.getOrCreate(type.registryKey(), RegistryEntryAddEventTypeImpl::new);
 +    }
 +
 +    public <T, B extends RegistryBuilder<T>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryFreezeEvent<T, B>> getRegistryFreezeEventType(final RegistryEventProvider<T, B> type) {
 +        if (!RegistryEntry.Addable.isAddable(PaperRegistries.getEntry(type.registryKey()))) {
 +            throw new IllegalArgumentException(type.registryKey() + " does not support RegistryFreezeEvent");
 +        }
-+        return this.freezeHooks.getOrCreate(type.registryKey(), RegistryLifecycleEventType::new);
++        return this.freezeEventTypes.getOrCreate(type.registryKey(), RegistryLifecycleEventType::new);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/WritableCraftRegistry.java b/src/main/java/io/papermc/paper/registry/WritableCraftRegistry.java
@@ -695,7 +695,7 @@ index 0000000000000000000000000000000000000000..cc9c8fd313f530777af80ad79e03903f
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEventMap.java b/src/main/java/io/papermc/paper/registry/event/RegistryEventMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..60f6bd9f07e3ac7749088cf57154052588752b71
+index 0000000000000000000000000000000000000000..5e09cebc3893ab788f7b1d169c5ac48a3e45afc1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/event/RegistryEventMap.java
 @@ -0,0 +1,46 @@
@@ -714,7 +714,7 @@ index 0000000000000000000000000000000000000000..60f6bd9f07e3ac7749088cf571540525
 +
 +public final class RegistryEventMap {
 +
-+    private final Map<RegistryKey<?>, LifecycleEventType<BootstrapContext, ? extends LifecycleEvent, ?>> hooks = new HashMap<>();
++    private final Map<RegistryKey<?>, LifecycleEventType<BootstrapContext, ? extends LifecycleEvent, ?>> eventTypes = new HashMap<>();
 +    private final String name;
 +
 +    public RegistryEventMap(final String name) {
@@ -723,24 +723,24 @@ index 0000000000000000000000000000000000000000..60f6bd9f07e3ac7749088cf571540525
 +
 +    @SuppressWarnings("unchecked")
 +    public <T, E extends LifecycleEvent, ET extends LifecycleEventType<BootstrapContext, E, ?>> ET getOrCreate(final RegistryKey<T> registryKey, final BiFunction<? super RegistryKey<T>, ? super String, ET> eventTypeCreator) {
-+        final ET registerHook;
-+        if (this.hooks.containsKey(registryKey)) {
-+            registerHook = (ET) this.hooks.get(registryKey);
++        final ET eventType;
++        if (this.eventTypes.containsKey(registryKey)) {
++            eventType = (ET) this.eventTypes.get(registryKey);
 +        } else {
-+            registerHook = eventTypeCreator.apply(registryKey, this.name);
-+            LifecycleEventRunner.INSTANCE.addEventType(registerHook);
-+            this.hooks.put(registryKey, registerHook);
++            eventType = eventTypeCreator.apply(registryKey, this.name);
++            LifecycleEventRunner.INSTANCE.addEventType(eventType);
++            this.eventTypes.put(registryKey, eventType);
 +        }
-+        return registerHook;
++        return eventType;
 +    }
 +
 +    @SuppressWarnings("unchecked")
-+    public <T, E extends LifecycleEvent> LifecycleEventType<BootstrapContext, E, ?> getHook(final RegistryKey<T> registryKey) {
-+        return (LifecycleEventType<BootstrapContext, E, ?>) Objects.requireNonNull(this.hooks.get(registryKey), "No hook for " + registryKey);
++    public <T, E extends LifecycleEvent> LifecycleEventType<BootstrapContext, E, ?> getEventType(final RegistryKey<T> registryKey) {
++        return (LifecycleEventType<BootstrapContext, E, ?>) Objects.requireNonNull(this.eventTypes.get(registryKey), "No hook for " + registryKey);
 +    }
 +
 +    public boolean hasHandlers(final RegistryKey<?> registryKey) {
-+        final AbstractLifecycleEventType<?, ?, ?> type = ((AbstractLifecycleEventType<?, ?, ?>) this.hooks.get(registryKey));
++        final AbstractLifecycleEventType<?, ?, ?> type = ((AbstractLifecycleEventType<?, ?, ?>) this.eventTypes.get(registryKey));
 +        return type != null && type.hasHandlers();
 +    }
 +
