@@ -429,10 +429,10 @@ index 0000000000000000000000000000000000000000..6d530c52aaf0dc2cdfe3bd56af557274
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/AbstractLifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/AbstractLifecycleEventType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9359a36d26970742da3a7abb0050158cd6c64e8e
+index 0000000000000000000000000000000000000000..30f47879f87fc991c651416546c2f068209545f2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/AbstractLifecycleEventType.java
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,56 @@
 +package io.papermc.paper.plugin.lifecycle.event.types;
 +
 +import io.papermc.paper.plugin.lifecycle.event.LifecycleEvent;
@@ -468,6 +468,8 @@ index 0000000000000000000000000000000000000000..9359a36d26970742da3a7abb0050158c
 +        }
 +    }
 +
++    public abstract boolean hasHandlers();
++
 +    public abstract void forEachHandler(E event, Consumer<RegisteredHandler<O, E>> consumer, Predicate<RegisteredHandler<O, E>> predicate);
 +
 +    public abstract void removeMatching(Predicate<RegisteredHandler<O, E>> predicate);
@@ -489,7 +491,7 @@ index 0000000000000000000000000000000000000000..9359a36d26970742da3a7abb0050158c
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProviderImpl.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProviderImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..af0cb3298d9c737417c6e54b360f8dc50a5caf04
+index 0000000000000000000000000000000000000000..7e84e0acd50ef04fa1ee2577f49e51c63f5ba5c3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProviderImpl.java
 @@ -0,0 +1,25 @@
@@ -505,7 +507,7 @@ index 0000000000000000000000000000000000000000..af0cb3298d9c737417c6e54b360f8dc5
 +public final class LifecycleEventTypeProviderImpl implements LifecycleEventTypeProvider {
 +
 +    public static LifecycleEventTypeProviderImpl instance() {
-+        return (LifecycleEventTypeProviderImpl) LifecycleEventTypeProvider.PROVIDER;
++        return (LifecycleEventTypeProviderImpl) LifecycleEventTypeProvider.provider();
 +    }
 +
 +    @Override
@@ -520,10 +522,10 @@ index 0000000000000000000000000000000000000000..af0cb3298d9c737417c6e54b360f8dc5
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/MonitorableLifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/MonitorableLifecycleEventType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c71912f0050ce0cc6e416948a354c8a66da606a8
+index 0000000000000000000000000000000000000000..abb969cf6ed967fe7720c56d3b3157bd1b74700d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/MonitorableLifecycleEventType.java
-@@ -0,0 +1,58 @@
+@@ -0,0 +1,63 @@
 +package io.papermc.paper.plugin.lifecycle.event.types;
 +
 +import io.papermc.paper.plugin.lifecycle.event.LifecycleEvent;
@@ -547,6 +549,11 @@ index 0000000000000000000000000000000000000000..c71912f0050ce0cc6e416948a354c8a6
 +
 +    public MonitorableLifecycleEventType(final String name, final Class<? extends O> ownerType) {
 +        super(name, ownerType);
++    }
++
++    @Override
++    public boolean hasHandlers() {
++        return !this.handlers.isEmpty();
 +    }
 +
 +    @Override
@@ -605,10 +612,10 @@ index 0000000000000000000000000000000000000000..3e7e7474f301c0725fa2bcd6e19e476f
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/PrioritizableLifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/PrioritizableLifecycleEventType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..76f92a6fc84c0315f3973dc4e92649b66babc3d5
+index 0000000000000000000000000000000000000000..2ed622a61ddc37b11888867770b513909b9a2ecc
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/PrioritizableLifecycleEventType.java
-@@ -0,0 +1,74 @@
+@@ -0,0 +1,79 @@
 +package io.papermc.paper.plugin.lifecycle.event.types;
 +
 +import com.google.common.base.Preconditions;
@@ -649,6 +656,11 @@ index 0000000000000000000000000000000000000000..76f92a6fc84c0315f3973dc4e92649b6
 +
 +    public PrioritizableLifecycleEventType(final String name, final Class<? extends O> ownerType) {
 +        super(name, ownerType);
++    }
++
++    @Override
++    public boolean hasHandlers() {
++        return !this.handlers.isEmpty();
 +    }
 +
 +    @Override
