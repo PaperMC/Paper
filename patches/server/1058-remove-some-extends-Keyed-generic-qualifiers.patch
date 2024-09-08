@@ -1,0 +1,437 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 27 Aug 2024 22:07:29 -0700
+Subject: [PATCH] remove some extends Keyed generic qualifiers
+
+
+diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/VanillaArgumentProviderImpl.java b/src/main/java/io/papermc/paper/command/brigadier/argument/VanillaArgumentProviderImpl.java
+index 38fb7d13abfcb55fe4a132b9b27e0c91f8c3d891..ca713fbf5561ea1432c66119561874761a5c9373 100644
+--- a/src/main/java/io/papermc/paper/command/brigadier/argument/VanillaArgumentProviderImpl.java
++++ b/src/main/java/io/papermc/paper/command/brigadier/argument/VanillaArgumentProviderImpl.java
+@@ -304,13 +304,7 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
+ 
+     @Override
+     public <T> ArgumentType<T> resource(final RegistryKey<T> registryKey) {
+-        return this.resourceRaw(registryKey);
+-    }
+-
+-    @SuppressWarnings({"unchecked", "rawtypes", "UnnecessaryLocalVariable"})
+-    private <T, K extends Keyed> ArgumentType<T> resourceRaw(final RegistryKey registryKeyRaw) { // TODO remove Keyed
+-        final RegistryKey<K> registryKey = registryKeyRaw;
+-        return (ArgumentType<T>) this.wrap(
++        return this.wrap(
+             ResourceArgument.resource(PaperCommands.INSTANCE.getBuildContext(), PaperRegistries.registryToNms(registryKey)),
+             resource -> requireNonNull(
+                 RegistryAccess.registryAccess()
+diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistries.java b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
+index 6ec9d9b9acf557aa2ebf39d38a14225b0205fae1..1149ee93289ed4ae993972e8a68299f160eb1a60 100644
+--- a/src/main/java/io/papermc/paper/registry/PaperRegistries.java
++++ b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
+@@ -114,12 +114,12 @@ public final class PaperRegistries {
+     }
+ 
+     @SuppressWarnings("unchecked")
+-    public static <M, T extends Keyed> @Nullable RegistryEntry<M, T> getEntry(final ResourceKey<? extends Registry<M>> resourceKey) {
++    public static <M, T> @Nullable RegistryEntry<M, T> getEntry(final ResourceKey<? extends Registry<M>> resourceKey) {
+         return (RegistryEntry<M, T>) BY_RESOURCE_KEY.get(resourceKey);
+     }
+ 
+     @SuppressWarnings("unchecked")
+-    public static <M, T extends Keyed> @Nullable RegistryEntry<M, T> getEntry(final RegistryKey<? super T> registryKey) {
++    public static <M, T> @Nullable RegistryEntry<M, T> getEntry(final RegistryKey<? super T> registryKey) {
+         return (RegistryEntry<M, T>) BY_REGISTRY_KEY.get(registryKey);
+     }
+ 
+diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistryAccess.java b/src/main/java/io/papermc/paper/registry/PaperRegistryAccess.java
+index f05ebf453406a924da3de6fb250f4793a1b3c612..324cca4d7e276fe11c9d6f93a0a4fa3405419171 100644
+--- a/src/main/java/io/papermc/paper/registry/PaperRegistryAccess.java
++++ b/src/main/java/io/papermc/paper/registry/PaperRegistryAccess.java
+@@ -67,7 +67,7 @@ public class PaperRegistryAccess implements RegistryAccess {
+ 
+     @SuppressWarnings("unchecked")
+     @Override
+-    public <T extends Keyed> Registry<T> getRegistry(final RegistryKey<T> key) {
++    public <T> Registry<T> getRegistry(final RegistryKey<T> key) {
+         if (PaperRegistries.getEntry(key) == null) {
+             throw new NoSuchElementException(key + " is not a valid registry key");
+         }
+@@ -80,7 +80,7 @@ public class PaperRegistryAccess implements RegistryAccess {
+         return possiblyUnwrap(registryHolder.get());
+     }
+ 
+-    public <M, T extends Keyed, B extends PaperRegistryBuilder<M, T>> WritableCraftRegistry<M, T, B> getWritableRegistry(final RegistryKey<T> key) {
++    public <M, T, B extends PaperRegistryBuilder<M, T>> WritableCraftRegistry<M, T, B> getWritableRegistry(final RegistryKey<T> key) {
+         final Registry<T> registry = this.getRegistry(key);
+         if (registry instanceof WritableCraftRegistry<?, T, ?>) {
+             return (WritableCraftRegistry<M, T, B>) registry;
+@@ -88,7 +88,7 @@ public class PaperRegistryAccess implements RegistryAccess {
+         throw new IllegalArgumentException(key + " does not point to a writable registry");
+     }
+ 
+-    private static <T extends Keyed> Registry<T> possiblyUnwrap(final Registry<T> registry) {
++    private static <T> Registry<T> possiblyUnwrap(final Registry<T> registry) {
+         if (registry instanceof final DelayedRegistry<T, ?> delayedRegistry) { // if not coming from legacy, unwrap the delayed registry
+             return delayedRegistry.delegate();
+         }
+@@ -104,7 +104,7 @@ public class PaperRegistryAccess implements RegistryAccess {
+     }
+ 
+     @SuppressWarnings("unchecked") // this method should be called right after any new MappedRegistry instances are created to later be used by the server.
+-    private <M, B extends Keyed, R extends Registry<B>> void registerRegistry(final ResourceKey<? extends net.minecraft.core.Registry<M>> resourceKey, final net.minecraft.core.Registry<M> registry, final boolean replace) {
++    private <M, B, R extends Registry<B>> void registerRegistry(final ResourceKey<? extends net.minecraft.core.Registry<M>> resourceKey, final net.minecraft.core.Registry<M> registry, final boolean replace) {
+         final @Nullable RegistryEntry<M, B> entry = PaperRegistries.getEntry(resourceKey);
+         if (entry == null) { // skip registries that don't have API entries
+             return;
+diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistryListenerManager.java b/src/main/java/io/papermc/paper/registry/PaperRegistryListenerManager.java
+index a7f2b264d4f37f5293ae72195b4c78faf35351c9..8529fe4cb36f02f4d2459c03e183a2e8b5e2f859 100644
+--- a/src/main/java/io/papermc/paper/registry/PaperRegistryListenerManager.java
++++ b/src/main/java/io/papermc/paper/registry/PaperRegistryListenerManager.java
+@@ -86,8 +86,7 @@ public final class PaperRegistryListenerManager {
+         this.registerWithListeners(registry, key, nms, registrationInfo, WritableRegistry::register, conversions);
+     }
+ 
+-    // TODO remove Keyed
+-    public <M, T extends org.bukkit.Keyed, B extends PaperRegistryBuilder<M, T>, R> R registerWithListeners(
++    public <M, T, B extends PaperRegistryBuilder<M, T>, R> R registerWithListeners(
+         final Registry<M> registry,
+         final ResourceKey<M> key,
+         final M nms,
+@@ -106,7 +105,7 @@ public final class PaperRegistryListenerManager {
+         return this.registerWithListeners(registry, modifiableEntry, key, nms, builder, registrationInfo, registerMethod, conversions);
+     }
+ 
+-    <M, T extends org.bukkit.Keyed, B extends PaperRegistryBuilder<M, T>> void registerWithListeners( // TODO remove Keyed
++    <M, T, B extends PaperRegistryBuilder<M, T>> void registerWithListeners(
+         final WritableRegistry<M> registry,
+         final RegistryEntryInfo<M, T> entry,
+         final ResourceKey<M> key,
+@@ -121,7 +120,7 @@ public final class PaperRegistryListenerManager {
+         this.registerWithListeners(registry, RegistryEntry.Modifiable.asModifiable(entry), key, null, builder, registrationInfo, WritableRegistry::register, conversions);
+     }
+ 
+-    public <M, T extends org.bukkit.Keyed, B extends PaperRegistryBuilder<M, T>, R> R registerWithListeners( // TODO remove Keyed
++    public <M, T, B extends PaperRegistryBuilder<M, T>, R> R registerWithListeners(
+         final Registry<M> registry,
+         final RegistryEntry.Modifiable<M, T, B> entry,
+         final ResourceKey<M> key,
+@@ -156,7 +155,7 @@ public final class PaperRegistryListenerManager {
+         R register(WritableRegistry<M> writableRegistry, ResourceKey<M> key, M value, RegistrationInfo registrationInfo);
+     }
+ 
+-    public <M, T extends org.bukkit.Keyed, B extends PaperRegistryBuilder<M, T>> void runFreezeListeners(final ResourceKey<? extends Registry<M>> resourceKey, final Conversions conversions) {
++    public <M, T, B extends PaperRegistryBuilder<M, T>> void runFreezeListeners(final ResourceKey<? extends Registry<M>> resourceKey, final Conversions conversions) {
+         final @Nullable RegistryEntryInfo<M, T> entry = PaperRegistries.getEntry(resourceKey);
+         if (!RegistryEntry.Addable.isAddable(entry) || !this.freezeHooks.hasHooks(entry.apiKey())) {
+             return;
+diff --git a/src/main/java/io/papermc/paper/registry/RegistryHolder.java b/src/main/java/io/papermc/paper/registry/RegistryHolder.java
+index a31bdd9f02fe75a87fceb2ebe8c36b3232a561cc..8724eaf02a57452953f085e8b1becccddf7a2781 100644
+--- a/src/main/java/io/papermc/paper/registry/RegistryHolder.java
++++ b/src/main/java/io/papermc/paper/registry/RegistryHolder.java
+@@ -10,11 +10,11 @@ import org.checkerframework.checker.nullness.qual.NonNull;
+ import org.checkerframework.framework.qual.DefaultQualifier;
+ 
+ @DefaultQualifier(NonNull.class)
+-public interface RegistryHolder<B extends Keyed> {
++public interface RegistryHolder<B> {
+ 
+     Registry<B> get();
+ 
+-    final class Memoized<B extends Keyed, R extends Registry<B>> implements RegistryHolder<B> {
++    final class Memoized<B, R extends Registry<B>> implements RegistryHolder<B> {
+ 
+         private final Supplier<R> memoizedSupplier;
+ 
+@@ -27,7 +27,7 @@ public interface RegistryHolder<B extends Keyed> {
+         }
+     }
+ 
+-    final class Delayed<B extends Keyed, R extends Registry<B>> implements RegistryHolder<B> {
++    final class Delayed<B, R extends Registry<B>> implements RegistryHolder<B> {
+ 
+         private final DelayedRegistry<B, R> delayedRegistry = new DelayedRegistry<>();
+ 
+diff --git a/src/main/java/io/papermc/paper/registry/WritableCraftRegistry.java b/src/main/java/io/papermc/paper/registry/WritableCraftRegistry.java
+index 78317c7ab42a666f19634593a8f3b696700764c8..bb71763a5374c91e4dbcaa5e283aed2b73cf0eda 100644
+--- a/src/main/java/io/papermc/paper/registry/WritableCraftRegistry.java
++++ b/src/main/java/io/papermc/paper/registry/WritableCraftRegistry.java
+@@ -17,7 +17,7 @@ import org.bukkit.craftbukkit.CraftRegistry;
+ import org.bukkit.craftbukkit.util.ApiVersion;
+ import org.checkerframework.checker.nullness.qual.Nullable;
+ 
+-public class WritableCraftRegistry<M, T extends Keyed, B extends PaperRegistryBuilder<M, T>> extends CraftRegistry<T, M> {
++public class WritableCraftRegistry<M, T, B extends PaperRegistryBuilder<M, T>> extends CraftRegistry<T, M> {
+ 
+     private static final RegistrationInfo FROM_PLUGIN = new RegistrationInfo(Optional.empty(), Lifecycle.experimental());
+ 
+diff --git a/src/main/java/io/papermc/paper/registry/entry/AddableRegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/AddableRegistryEntry.java
+index aeec9b3ae2911f041d000b3db72f37974020ba60..a982ae85d54f63c6ca3a14c885516d4090c52e75 100644
+--- a/src/main/java/io/papermc/paper/registry/entry/AddableRegistryEntry.java
++++ b/src/main/java/io/papermc/paper/registry/entry/AddableRegistryEntry.java
+@@ -13,7 +13,7 @@ import net.minecraft.resources.ResourceKey;
+ import org.bukkit.Keyed;
+ import org.bukkit.NamespacedKey;
+ 
+-public class AddableRegistryEntry<M, T extends Keyed, B extends PaperRegistryBuilder<M, T>> extends CraftRegistryEntry<M, T> implements RegistryEntry.Addable<M, T, B> {
++public class AddableRegistryEntry<M, T, B extends PaperRegistryBuilder<M, T>> extends CraftRegistryEntry<M, T> implements RegistryEntry.Addable<M, T, B> {
+ 
+     private final PaperRegistryBuilder.Filler<M, T, B> builderFiller;
+ 
+diff --git a/src/main/java/io/papermc/paper/registry/entry/ApiRegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/ApiRegistryEntry.java
+index 2295b0d145cbaabef5d29482c817575dcbe2ba54..17617defef16f56a65a03c35b2e00d97f274baa0 100644
+--- a/src/main/java/io/papermc/paper/registry/entry/ApiRegistryEntry.java
++++ b/src/main/java/io/papermc/paper/registry/entry/ApiRegistryEntry.java
+@@ -7,7 +7,7 @@ import net.minecraft.core.Registry;
+ import net.minecraft.resources.ResourceKey;
+ import org.bukkit.Keyed;
+ 
+-public class ApiRegistryEntry<M, B extends Keyed> extends BaseRegistryEntry<M, B> {
++public class ApiRegistryEntry<M, B> extends BaseRegistryEntry<M, B> {
+ 
+     private final Supplier<org.bukkit.Registry<B>> registrySupplier;
+ 
+diff --git a/src/main/java/io/papermc/paper/registry/entry/BaseRegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/BaseRegistryEntry.java
+index ceb217dbbb84e8bd51365dd47bf91971e364d298..88a8e2170fa82213df8f52ec1b5f7d3821b92e96 100644
+--- a/src/main/java/io/papermc/paper/registry/entry/BaseRegistryEntry.java
++++ b/src/main/java/io/papermc/paper/registry/entry/BaseRegistryEntry.java
+@@ -5,7 +5,7 @@ import net.minecraft.core.Registry;
+ import net.minecraft.resources.ResourceKey;
+ import org.bukkit.Keyed;
+ 
+-public abstract class BaseRegistryEntry<M, B extends Keyed> implements RegistryEntry<M, B> { // TODO remove Keyed
++public abstract class BaseRegistryEntry<M, B> implements RegistryEntry<M, B> {
+ 
+     private final ResourceKey<? extends Registry<M>> minecraftRegistryKey;
+     private final RegistryKey<B> apiRegistryKey;
+diff --git a/src/main/java/io/papermc/paper/registry/entry/CraftRegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/CraftRegistryEntry.java
+index 568984894a5463ccfa68bb6944b409ab0a2d7ad7..93ea40ea78e6d00ef60844447ee25b6f3db83859 100644
+--- a/src/main/java/io/papermc/paper/registry/entry/CraftRegistryEntry.java
++++ b/src/main/java/io/papermc/paper/registry/entry/CraftRegistryEntry.java
+@@ -13,7 +13,7 @@ import org.checkerframework.checker.nullness.qual.NonNull;
+ import org.checkerframework.framework.qual.DefaultQualifier;
+ 
+ @DefaultQualifier(NonNull.class)
+-public class CraftRegistryEntry<M, B extends Keyed> extends BaseRegistryEntry<M, B> { // TODO remove Keyed
++public class CraftRegistryEntry<M, B> extends BaseRegistryEntry<M, B> {
+ 
+     private static final BiFunction<NamespacedKey, ApiVersion, NamespacedKey> EMPTY = (namespacedKey, apiVersion) -> namespacedKey;
+ 
+diff --git a/src/main/java/io/papermc/paper/registry/entry/ModifiableRegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/ModifiableRegistryEntry.java
+index 515a995e3862f8e7cb93d149315ea32e04a08716..e6ddd4b58908b112a1b2d4284dec17b0932522c3 100644
+--- a/src/main/java/io/papermc/paper/registry/entry/ModifiableRegistryEntry.java
++++ b/src/main/java/io/papermc/paper/registry/entry/ModifiableRegistryEntry.java
+@@ -10,7 +10,7 @@ import net.minecraft.resources.ResourceKey;
+ import org.bukkit.Keyed;
+ import org.bukkit.NamespacedKey;
+ 
+-public class ModifiableRegistryEntry<M, T extends Keyed, B extends PaperRegistryBuilder<M, T>> extends CraftRegistryEntry<M, T> implements RegistryEntry.Modifiable<M, T, B> {
++public class ModifiableRegistryEntry<M, T, B extends PaperRegistryBuilder<M, T>> extends CraftRegistryEntry<M, T> implements RegistryEntry.Modifiable<M, T, B> {
+ 
+     protected final PaperRegistryBuilder.Filler<M, T, B> builderFiller;
+ 
+diff --git a/src/main/java/io/papermc/paper/registry/entry/RegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/RegistryEntry.java
+index f2e919705301cb23ed1938ca3c1976378249172c..93e1ca735e662c4a988b32229e39e654cfe31576 100644
+--- a/src/main/java/io/papermc/paper/registry/entry/RegistryEntry.java
++++ b/src/main/java/io/papermc/paper/registry/entry/RegistryEntry.java
+@@ -21,7 +21,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
+ import org.checkerframework.framework.qual.DefaultQualifier;
+ 
+ @DefaultQualifier(NonNull.class)
+-public interface RegistryEntry<M, B extends Keyed> extends RegistryEntryInfo<M, B> { // TODO remove Keyed
++public interface RegistryEntry<M, B> extends RegistryEntryInfo<M, B> {
+ 
+     RegistryHolder<B> createRegistryHolder(Registry<M> nmsRegistry);
+ 
+@@ -53,7 +53,7 @@ public interface RegistryEntry<M, B extends Keyed> extends RegistryEntryInfo<M,
+             return entry instanceof RegistryEntry.Modifiable<?, ?, ?> || (entry instanceof final DelayedRegistryEntry<?, ?> delayed && delayed.delegate() instanceof RegistryEntry.Modifiable<?, ?, ?>);
+         }
+ 
+-        static <M, T extends Keyed, B extends PaperRegistryBuilder<M, T>> Modifiable<M, T, B> asModifiable(final RegistryEntryInfo<M, T> entry) { // TODO remove Keyed
++        static <M, T, B extends PaperRegistryBuilder<M, T>> Modifiable<M, T, B> asModifiable(final RegistryEntryInfo<M, T> entry) {
+             return (Modifiable<M, T, B>) possiblyUnwrap(entry);
+         }
+ 
+@@ -65,7 +65,7 @@ public interface RegistryEntry<M, B extends Keyed> extends RegistryEntryInfo<M,
+     /**
+      * Can only add new values to the registry, not modify any values.
+      */
+-    interface Addable<M, T extends Keyed, B extends PaperRegistryBuilder<M, T>> extends BuilderHolder<M, T, B> { // TODO remove Keyed
++    interface Addable<M, T, B extends PaperRegistryBuilder<M, T>> extends BuilderHolder<M, T, B> {
+ 
+         default RegistryFreezeEventImpl<T, B> createFreezeEvent(final WritableCraftRegistry<M, T, B> writableRegistry, final Conversions conversions) {
+             return new RegistryFreezeEventImpl<>(this.apiKey(), writableRegistry.createApiWritableRegistry(conversions), conversions);
+@@ -75,7 +75,7 @@ public interface RegistryEntry<M, B extends Keyed> extends RegistryEntryInfo<M,
+             return entry instanceof RegistryEntry.Addable<?, ?, ?> || (entry instanceof final DelayedRegistryEntry<?, ?> delayed && delayed.delegate() instanceof RegistryEntry.Addable<?, ?, ?>);
+         }
+ 
+-        static <M, T extends Keyed, B extends PaperRegistryBuilder<M, T>> Addable<M, T, B> asAddable(final RegistryEntryInfo<M, T> entry) {
++        static <M, T, B extends PaperRegistryBuilder<M, T>> Addable<M, T, B> asAddable(final RegistryEntryInfo<M, T> entry) {
+             return (Addable<M, T, B>) possiblyUnwrap(entry);
+         }
+     }
+@@ -83,22 +83,22 @@ public interface RegistryEntry<M, B extends Keyed> extends RegistryEntryInfo<M,
+     /**
+      * Can mutate values and add new values.
+      */
+-    interface Writable<M, T extends Keyed, B extends PaperRegistryBuilder<M, T>> extends Modifiable<M, T, B>, Addable<M, T, B> { // TODO remove Keyed
++    interface Writable<M, T, B extends PaperRegistryBuilder<M, T>> extends Modifiable<M, T, B>, Addable<M, T, B> {
+ 
+         static boolean isWritable(final @Nullable RegistryEntryInfo<?, ?> entry) {
+             return entry instanceof RegistryEntry.Writable<?, ?, ?> || (entry instanceof final DelayedRegistryEntry<?, ?> delayed && delayed.delegate() instanceof RegistryEntry.Writable<?, ?, ?>);
+         }
+ 
+-        static <M, T extends Keyed, B extends PaperRegistryBuilder<M, T>> Writable<M, T, B> asWritable(final RegistryEntryInfo<M, T> entry) { // TODO remove Keyed
++        static <M, T, B extends PaperRegistryBuilder<M, T>> Writable<M, T, B> asWritable(final RegistryEntryInfo<M, T> entry) {
+             return (Writable<M, T, B>) possiblyUnwrap(entry);
+         }
+     }
+ 
+-    private static <M, B extends Keyed> RegistryEntryInfo<M, B> possiblyUnwrap(final RegistryEntryInfo<M, B> entry) {
++    private static <M, B> RegistryEntryInfo<M, B> possiblyUnwrap(final RegistryEntryInfo<M, B> entry) {
+         return entry instanceof final DelayedRegistryEntry<M, B> delayed ? delayed.delegate() : entry;
+     }
+ 
+-    static <M, B extends Keyed> RegistryEntry<M, B> entry(
++    static <M, B> RegistryEntry<M, B> entry(
+         final ResourceKey<? extends Registry<M>> mcKey,
+         final RegistryKey<B> apiKey,
+         final Class<?> classToPreload,
+@@ -107,7 +107,7 @@ public interface RegistryEntry<M, B extends Keyed> extends RegistryEntryInfo<M,
+         return new CraftRegistryEntry<>(mcKey, apiKey, classToPreload, minecraftToBukkit);
+     }
+ 
+-    static <M, B extends Keyed> RegistryEntry<M, B> apiOnly(
++    static <M, B> RegistryEntry<M, B> apiOnly(
+         final ResourceKey<? extends Registry<M>> mcKey,
+         final RegistryKey<B> apiKey,
+         final Supplier<org.bukkit.Registry<B>> apiRegistrySupplier
+@@ -115,7 +115,7 @@ public interface RegistryEntry<M, B extends Keyed> extends RegistryEntryInfo<M,
+         return new ApiRegistryEntry<>(mcKey, apiKey, apiRegistrySupplier);
+     }
+ 
+-    static <M, T extends Keyed, B extends PaperRegistryBuilder<M, T>> RegistryEntry<M, T> modifiable(
++    static <M, T, B extends PaperRegistryBuilder<M, T>> RegistryEntry<M, T> modifiable(
+         final ResourceKey<? extends Registry<M>> mcKey,
+         final RegistryKey<T> apiKey,
+         final Class<?> toPreload,
+@@ -125,7 +125,7 @@ public interface RegistryEntry<M, B extends Keyed> extends RegistryEntryInfo<M,
+         return new ModifiableRegistryEntry<>(mcKey, apiKey, toPreload, minecraftToBukkit, filler);
+     }
+ 
+-    static <M, T extends Keyed, B extends PaperRegistryBuilder<M, T>> RegistryEntry<M, T> writable(
++    static <M, T, B extends PaperRegistryBuilder<M, T>> RegistryEntry<M, T> writable(
+         final ResourceKey<? extends Registry<M>> mcKey,
+         final RegistryKey<T> apiKey,
+         final Class<?> toPreload,
+diff --git a/src/main/java/io/papermc/paper/registry/entry/WritableRegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/WritableRegistryEntry.java
+index 562accce731630327d116afd1c9d559df7e386bd..ff2c1d8332dca8ea474eb0d1acc58c7aebfa9bce 100644
+--- a/src/main/java/io/papermc/paper/registry/entry/WritableRegistryEntry.java
++++ b/src/main/java/io/papermc/paper/registry/entry/WritableRegistryEntry.java
+@@ -8,7 +8,7 @@ import net.minecraft.resources.ResourceKey;
+ import org.bukkit.Keyed;
+ import org.bukkit.NamespacedKey;
+ 
+-public class WritableRegistryEntry<M, T extends Keyed, B extends PaperRegistryBuilder<M, T>> extends AddableRegistryEntry<M, T, B> implements RegistryEntry.Writable<M, T, B> { // TODO remove Keyed
++public class WritableRegistryEntry<M, T, B extends PaperRegistryBuilder<M, T>> extends AddableRegistryEntry<M, T, B> implements RegistryEntry.Writable<M, T, B> {
+ 
+     protected WritableRegistryEntry(
+         final ResourceKey<? extends Registry<M>> mcKey,
+diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEventImpl.java b/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEventImpl.java
+index cc9c8fd313f530777af80ad79e03903f3f8f9829..613cfbc6cf2d33c8f2077b1c5ce17a3702678294 100644
+--- a/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEventImpl.java
++++ b/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEventImpl.java
+@@ -22,7 +22,7 @@ public record RegistryEntryAddEventImpl<T, B extends RegistryBuilder<T>>(
+ ) implements RegistryEntryAddEvent<T, B>, PaperLifecycleEvent {
+ 
+     @Override
+-    public @NonNull <V extends Keyed> Tag<V> getOrCreateTag(final TagKey<V> tagKey) {
++    public @NonNull <V> Tag<V> getOrCreateTag(final TagKey<V> tagKey) {
+         final RegistryOps.RegistryInfo<Object> registryInfo = this.conversions.lookup().lookup(PaperRegistries.registryToNms(tagKey.registryKey())).orElseThrow();
+         final HolderSet.Named<?> tagSet = registryInfo.getter().getOrThrow(PaperRegistries.toNms(tagKey));
+         return new NamedRegistryKeySetImpl<>(tagKey, tagSet);
+diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEventImpl.java b/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEventImpl.java
+index 63957d2509e68ccc6eb2fd9ecaa35bfad7b71b81..aba718d563f53115aa64d445f9d61f9245ee0e9e 100644
+--- a/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEventImpl.java
++++ b/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEventImpl.java
+@@ -20,7 +20,7 @@ public record RegistryFreezeEventImpl<T, B extends RegistryBuilder<T>>(
+ ) implements RegistryFreezeEvent<T, B>, PaperLifecycleEvent {
+ 
+     @Override
+-    public @NonNull <V extends Keyed> Tag<V> getOrCreateTag(final TagKey<V> tagKey) {
++    public @NonNull <V> Tag<V> getOrCreateTag(final TagKey<V> tagKey) {
+         final RegistryOps.RegistryInfo<Object> registryInfo = this.conversions.lookup().lookup(PaperRegistries.registryToNms(tagKey.registryKey())).orElseThrow();
+         final HolderSet.Named<?> tagSet = registryInfo.getter().getOrThrow(PaperRegistries.toNms(tagKey));
+         return new NamedRegistryKeySetImpl<>(tagKey, tagSet);
+diff --git a/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistry.java b/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistry.java
+index e5880f76cdb8ebf01fcefdf77ba9b95674b997a8..b2f2aa25751b002d909fed3e911ffa95380ae9ca 100644
+--- a/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistry.java
++++ b/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistry.java
+@@ -16,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
+  * This is to support the now-deprecated fields in {@link Registry} for
+  * data-driven registries.
+  */
+-public final class DelayedRegistry<T extends Keyed, R extends Registry<T>> implements Registry<T> {
++public final class DelayedRegistry<T, R extends Registry<T>> implements Registry<T> {
+ 
+     private @MonotonicNonNull Supplier<? extends R> delegate;
+ 
+diff --git a/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistryEntry.java b/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistryEntry.java
+index 110b8d559f49f9e4f181b47663962a139a273a72..dfae528518f25dab7825795d82f183fb07b3ba96 100644
+--- a/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistryEntry.java
++++ b/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistryEntry.java
+@@ -7,7 +7,7 @@ import net.minecraft.core.Registry;
+ import net.minecraft.resources.ResourceKey;
+ import org.bukkit.Keyed;
+ 
+-public record DelayedRegistryEntry<M, T extends Keyed>(RegistryEntry<M, T> delegate) implements RegistryEntry<M, T> {
++public record DelayedRegistryEntry<M, T>(RegistryEntry<M, T> delegate) implements RegistryEntry<M, T> {
+ 
+     @Override
+     public ResourceKey<? extends Registry<M>> mcKey() {
+diff --git a/src/main/java/io/papermc/paper/registry/set/NamedRegistryKeySetImpl.java b/src/main/java/io/papermc/paper/registry/set/NamedRegistryKeySetImpl.java
+index e8c2c18a1ed5cd587266bd415170610781531a12..f48b45421eb4e6420a69a9eb048e29a3871963ab 100644
+--- a/src/main/java/io/papermc/paper/registry/set/NamedRegistryKeySetImpl.java
++++ b/src/main/java/io/papermc/paper/registry/set/NamedRegistryKeySetImpl.java
+@@ -23,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Unmodifiable;
+ 
+ @DefaultQualifier(NonNull.class)
+-public record NamedRegistryKeySetImpl<T extends Keyed, M>( // TODO remove Keyed
++public record NamedRegistryKeySetImpl<T, M>(
+     TagKey<T> tagKey,
+     HolderSet.Named<M> namedSet
+ ) implements Tag<T>, org.bukkit.Tag<T> {
+diff --git a/src/main/java/io/papermc/paper/registry/set/PaperRegistrySets.java b/src/main/java/io/papermc/paper/registry/set/PaperRegistrySets.java
+index f09ce9c8547ef05153847245746473dd9a8acbe6..0ecd651b32fc6c0d954f37999b67a9ea1128a957 100644
+--- a/src/main/java/io/papermc/paper/registry/set/PaperRegistrySets.java
++++ b/src/main/java/io/papermc/paper/registry/set/PaperRegistrySets.java
+@@ -17,7 +17,7 @@ import org.checkerframework.framework.qual.DefaultQualifier;
+ @DefaultQualifier(NonNull.class)
+ public final class PaperRegistrySets {
+ 
+-    public static <A extends Keyed, M> HolderSet<M> convertToNms(final ResourceKey<? extends Registry<M>> resourceKey, final RegistryOps.RegistryInfoLookup lookup, final RegistryKeySet<A> registryKeySet) { // TODO remove Keyed
++    public static <A, M> HolderSet<M> convertToNms(final ResourceKey<? extends Registry<M>> resourceKey, final RegistryOps.RegistryInfoLookup lookup, final RegistryKeySet<A> registryKeySet) {
+         if (registryKeySet instanceof NamedRegistryKeySetImpl<A, ?>) {
+             return ((NamedRegistryKeySetImpl<A, M>) registryKeySet).namedSet();
+         } else {
+@@ -28,7 +28,7 @@ public final class PaperRegistrySets {
+         }
+     }
+ 
+-    public static <A extends Keyed, M> RegistryKeySet<A> convertToApi(final RegistryKey<A> registryKey, final HolderSet<M> holders) { // TODO remove Keyed
++    public static <A, M> RegistryKeySet<A> convertToApi(final RegistryKey<A> registryKey, final HolderSet<M> holders) {
+         if (holders instanceof final HolderSet.Named<M> named) {
+             return new NamedRegistryKeySetImpl<>(PaperRegistries.fromNms(named.key()), named);
+         } else {
+diff --git a/src/main/java/org/bukkit/craftbukkit/legacy/MaterialRerouting.java b/src/main/java/org/bukkit/craftbukkit/legacy/MaterialRerouting.java
+index db8d8e2a07296d62c3097f02b03319e2e1ba9394..d050f41a75f5a79568e1bdab0ce685fe25bab57b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/legacy/MaterialRerouting.java
++++ b/src/main/java/org/bukkit/craftbukkit/legacy/MaterialRerouting.java
+@@ -551,7 +551,7 @@ public class MaterialRerouting {
+         return server.createBlockData(MaterialRerouting.transformToBlockType(material), data);
+     }
+ 
+-    public static <T extends Keyed> boolean isTagged(Tag<T> tag, T item) {
++    public static <T> boolean isTagged(Tag<T> tag, T item) {
+         if (tag instanceof CraftBlockTag) {
+             return tag.isTagged((T) MaterialRerouting.transformToBlockType((Material) item));
+         } else if (tag instanceof CraftItemTag) {

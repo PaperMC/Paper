@@ -1,0 +1,150 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 20 Dec 2023 02:03:10 -0800
+Subject: [PATCH] Remove Keyed from Registry generic qualifier
+
+Keyed is no longer viable for future/current registry types.
+
+diff --git a/src/main/java/org/bukkit/Art.java b/src/main/java/org/bukkit/Art.java
+index dbbd997d4693f1d9f551bae2ed1d7906c9f39c12..808633907b21528d9d0af1f13cbd1fb4b783c2e1 100644
+--- a/src/main/java/org/bukkit/Art.java
++++ b/src/main/java/org/bukkit/Art.java
+@@ -105,7 +105,7 @@ public enum Art implements Keyed {
+ 
+     // Paper start - deprecate getKey
+     /**
+-     * @deprecated use {@link Registry#getKey(Keyed)} and {@link Registry#ART}. Painting variants
++     * @deprecated use {@link Registry#getKey(Object)} and {@link Registry#ART}. Painting variants
+      * can exist without a key.
+      */
+     @Deprecated(since = "1.21")
+diff --git a/src/main/java/org/bukkit/MusicInstrument.java b/src/main/java/org/bukkit/MusicInstrument.java
+index 98fdfc8978fea1937e31a7427433a1927d42ec7d..2a46d9d24afcffa26fa3ad398abddd0ed32351b8 100644
+--- a/src/main/java/org/bukkit/MusicInstrument.java
++++ b/src/main/java/org/bukkit/MusicInstrument.java
+@@ -55,7 +55,7 @@ public abstract class MusicInstrument implements Keyed, net.kyori.adventure.tran
+ 
+     // Paper start - deprecate getKey
+     /**
+-     * @deprecated use {@link Registry#getKey(Keyed)} and {@link Registry#INSTRUMENT}. MusicInstruments
++     * @deprecated use {@link Registry#getKey(Object)} and {@link Registry#INSTRUMENT}. MusicInstruments
+      * can exist without a key.
+      */
+     @Deprecated(forRemoval = true, since = "1.20.5")
+diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
+index 20015393f91af405c99db2635a471fb6ff19e4bf..3a222cad7310f19b02471b04f1f24c8ef283655f 100644
+--- a/src/main/java/org/bukkit/Registry.java
++++ b/src/main/java/org/bukkit/Registry.java
+@@ -43,7 +43,7 @@ import org.jetbrains.annotations.Nullable;
+  *
+  * @param <T> type of item in the registry
+  */
+-public interface Registry<T extends Keyed> extends Iterable<T> {
++public interface Registry<T> extends Iterable<T> { // Paper - improve Registry
+ 
+     /**
+      * Server advancements.
+@@ -421,7 +421,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+      * @param value the value to get the key of in this registry
+      * @return the key for the value
+      * @throws java.util.NoSuchElementException if the value doesn't exist in this registry
+-     * @see #getKey(Keyed)
++     * @see #getKey(Object)
+      */
+     default @NotNull NamespacedKey getKeyOrThrow(final @NotNull T value) {
+         Preconditions.checkArgument(value != null, "value cannot be null");
+@@ -441,13 +441,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+      *
+      * @param value the value to get the key of in this registry
+      * @return the key for the value or null if not in the registry
+-     * @see #getKeyOrThrow(Keyed)
++     * @see #getKeyOrThrow(Object)
+      */
+     default @Nullable NamespacedKey getKey(final @NotNull T value) {
+         Preconditions.checkArgument(value != null, "value cannot be null");
+-        //noinspection ConstantValue (it might not be in the future...)
+-        if (value instanceof Keyed) {
+-            return value.getKey();
++        if (value instanceof final Keyed keyed) {
++            return keyed.getKey();
+         }
+         return null;
+     }
+diff --git a/src/main/java/org/bukkit/Sound.java b/src/main/java/org/bukkit/Sound.java
+index 7a35120c82b88774de777d3c3176ef553a8e9244..f67749a4e1072a3d604cfc9d0d9e84fd02796a64 100644
+--- a/src/main/java/org/bukkit/Sound.java
++++ b/src/main/java/org/bukkit/Sound.java
+@@ -1638,7 +1638,7 @@ public enum Sound implements Keyed, net.kyori.adventure.sound.Sound.Type { // Pa
+ 
+     // Paper start - deprecate getKey
+     /**
+-     * @deprecated use {@link Registry#getKey(Keyed)} and {@link Registry#SOUNDS}. Sounds
++     * @deprecated use {@link Registry#getKey(Object)} and {@link Registry#SOUNDS}. Sounds
+      * can exist without a key.
+      */
+     @Deprecated(since = "1.20.5")
+diff --git a/src/main/java/org/bukkit/Tag.java b/src/main/java/org/bukkit/Tag.java
+index 8bfec649f7c6dda956bc388a21b489f3565ff384..0ab13cbf60bf07b6868b2cd11da6007e06474339 100644
+--- a/src/main/java/org/bukkit/Tag.java
++++ b/src/main/java/org/bukkit/Tag.java
+@@ -17,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
+  *
+  * @param <T> the type of things grouped by this tag
+  */
+-public interface Tag<T extends Keyed> extends Keyed {
++public interface Tag<T> extends Keyed {
+ 
+     /**
+      * Key for the built in block registry.
+diff --git a/src/main/java/org/bukkit/block/banner/PatternType.java b/src/main/java/org/bukkit/block/banner/PatternType.java
+index e2afb2582a27b94a922754115dbb6b4ca35e0154..1ac45205c16fb0bdebea610bd88b48b757cceafc 100644
+--- a/src/main/java/org/bukkit/block/banner/PatternType.java
++++ b/src/main/java/org/bukkit/block/banner/PatternType.java
+@@ -58,7 +58,7 @@ public interface PatternType extends OldEnum<PatternType>, Keyed {
+ 
+     // Paper start - deprecate getKey
+     /**
+-     * @deprecated use {@link Registry#getKey(Keyed)} and {@link Registry#BANNER_PATTERN}. PatternTypes
++     * @deprecated use {@link Registry#getKey(Object)} and {@link Registry#BANNER_PATTERN}. PatternTypes
+      * can exist without a key.
+      */
+     @Deprecated(since = "1.20.5")
+diff --git a/src/main/java/org/bukkit/generator/structure/Structure.java b/src/main/java/org/bukkit/generator/structure/Structure.java
+index 978054ee364f9a3330525b9b50da5325ebb6ef57..0bb73cf7b1c2ef2e3cf0d1d9121e8b2c5a133c0d 100644
+--- a/src/main/java/org/bukkit/generator/structure/Structure.java
++++ b/src/main/java/org/bukkit/generator/structure/Structure.java
+@@ -62,7 +62,7 @@ public abstract class Structure implements Keyed {
+     public abstract StructureType getStructureType();
+     // Paper start - deprecate getKey
+     /**
+-     * @deprecated use {@link Registry#getKey(Keyed)} and {@link Registry#STRUCTURE}. Structures
++     * @deprecated use {@link Registry#getKey(Object)} and {@link Registry#STRUCTURE}. Structures
+      * can exist without a key.
+      */
+     @Override
+diff --git a/src/main/java/org/bukkit/inventory/meta/trim/TrimMaterial.java b/src/main/java/org/bukkit/inventory/meta/trim/TrimMaterial.java
+index 74816d6da4d7c8d2fa8a7b93fdc4bf29c8d12803..f3ce71ddf57c03c050f4832a36dff2c2714a94ac 100644
+--- a/src/main/java/org/bukkit/inventory/meta/trim/TrimMaterial.java
++++ b/src/main/java/org/bukkit/inventory/meta/trim/TrimMaterial.java
+@@ -71,7 +71,7 @@ public interface TrimMaterial extends Keyed, Translatable {
+ 
+     // Paper start - Registry#getKey
+     /**
+-     * @deprecated use {@link Registry#getKey(Keyed)} and {@link Registry#TRIM_MATERIAL}. TrimMaterials
++     * @deprecated use {@link Registry#getKey(Object)} and {@link Registry#TRIM_MATERIAL}. TrimMaterials
+      * can exist without a key.
+      */
+     @Deprecated(forRemoval = true, since = "1.20.4")
+diff --git a/src/main/java/org/bukkit/inventory/meta/trim/TrimPattern.java b/src/main/java/org/bukkit/inventory/meta/trim/TrimPattern.java
+index 087e99ed281c0b282d91345067bfca80762faa0b..e0c89036e2da05e837a214f7b485ae5de6587729 100644
+--- a/src/main/java/org/bukkit/inventory/meta/trim/TrimPattern.java
++++ b/src/main/java/org/bukkit/inventory/meta/trim/TrimPattern.java
+@@ -103,7 +103,7 @@ public interface TrimPattern extends Keyed, Translatable {
+ 
+     // Paper start - Registry#getKey
+     /**
+-     * @deprecated use {@link Registry#getKey(Keyed)} and {@link Registry#TRIM_PATTERN}. TrimPatterns
++     * @deprecated use {@link Registry#getKey(Object)} and {@link Registry#TRIM_PATTERN}. TrimPatterns
+      * can exist without a key.
+      */
+     @Deprecated(forRemoval = true, since = "1.20.4")
