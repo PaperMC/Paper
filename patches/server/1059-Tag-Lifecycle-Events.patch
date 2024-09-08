@@ -63,7 +63,7 @@ index 0000000000000000000000000000000000000000..1cf4a3caa8d630e95eb569eef2cd577b
 +}
 diff --git a/src/main/java/io/papermc/paper/tag/PaperPostFlattenTagRegistrar.java b/src/main/java/io/papermc/paper/tag/PaperPostFlattenTagRegistrar.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6dc4d9115d18e3d713546885d0d9ace1ec5d53e1
+index 0000000000000000000000000000000000000000..cc37618cbbad7f21d65c7753f4dd4416042d2146
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/tag/PaperPostFlattenTagRegistrar.java
 @@ -0,0 +1,118 @@
@@ -121,7 +121,7 @@ index 0000000000000000000000000000000000000000..6dc4d9115d18e3d713546885d0d9ace1
 +
 +    @Override
 +    public Map<TagKey<T>, Collection<TypedKey<T>>> getAllTags() {
-+        final ImmutableMap.Builder<TagKey<T>, Collection<TypedKey<T>>> tags = ImmutableMap.builder();
++        final ImmutableMap.Builder<TagKey<T>, Collection<TypedKey<T>>> tags = ImmutableMap.builderWithExpectedSize(this.tags.size());
 +        for (final Map.Entry<ResourceLocation, Collection<M>> entry : this.tags.entrySet()) {
 +            final TagKey<T> key = TagKey.create(this.registryKey, CraftNamespacedKey.fromMinecraft(entry.getKey()));
 +            tags.put(key, this.convert(entry.getValue()));
@@ -187,7 +187,7 @@ index 0000000000000000000000000000000000000000..6dc4d9115d18e3d713546885d0d9ace1
 +}
 diff --git a/src/main/java/io/papermc/paper/tag/PaperPreFlattenTagRegistrar.java b/src/main/java/io/papermc/paper/tag/PaperPreFlattenTagRegistrar.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..11eeb489f5b17e8fcbdb15469559e32bbfe853e7
+index 0000000000000000000000000000000000000000..44111b55eaa6d1cc93e2c556b23bb5c97953caac
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/tag/PaperPreFlattenTagRegistrar.java
 @@ -0,0 +1,128 @@
@@ -245,7 +245,7 @@ index 0000000000000000000000000000000000000000..11eeb489f5b17e8fcbdb15469559e32b
 +
 +    @Override
 +    public Map<TagKey<T>, Collection<TagEntry<T>>> getAllTags() {
-+        final ImmutableMap.Builder<TagKey<T>, Collection<io.papermc.paper.tag.TagEntry<T>>> builder = ImmutableMap.builder();
++        final ImmutableMap.Builder<TagKey<T>, Collection<io.papermc.paper.tag.TagEntry<T>>> builder = ImmutableMap.builderWithExpectedSize(this.tags.size());
 +        for (final Map.Entry<ResourceLocation, List<TagLoader.EntryWithSource>> entry : this.tags.entrySet()) {
 +            final TagKey<T> key = TagKey.create(this.registryKey, CraftNamespacedKey.fromMinecraft(entry.getKey()));
 +            builder.put(key, convert(entry.getValue()));
@@ -506,7 +506,7 @@ index b47afb0ce8d9517ac7ee9c651c160f99d70f8a98..0bde4f7ae7d1897c630513261d1d5fb7
  
      public static record EntryWithSource(TagEntry entry, String source) {
 diff --git a/src/main/java/net/minecraft/tags/TagManager.java b/src/main/java/net/minecraft/tags/TagManager.java
-index 7116362d798d7c28a4880c873a60507afa4673e6..209ffb234fb29c0a313e79499cf9f1d316296169 100644
+index 7116362d798d7c28a4880c873a60507afa4673e6..2188274de5d1fe1aa5419be6247da6a3a2414a3b 100644
 --- a/src/main/java/net/minecraft/tags/TagManager.java
 +++ b/src/main/java/net/minecraft/tags/TagManager.java
 @@ -39,7 +39,7 @@ public class TagManager implements PreparableReloadListener {
@@ -514,7 +514,7 @@ index 7116362d798d7c28a4880c873a60507afa4673e6..209ffb234fb29c0a313e79499cf9f1d3
          List<? extends CompletableFuture<? extends TagManager.LoadResult<?>>> list = this.registryAccess
              .registries()
 -            .map(registry -> this.createLoader(manager, prepareExecutor, (RegistryAccess.RegistryEntry<?>)registry))
-+            .map(registry -> this.createLoader(manager, prepareExecutor, (net.minecraft.core.RegistryAccess.RegistryEntry<?>)registry, applyExecutor instanceof net.minecraft.server.MinecraftServer ? io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL : io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.RELOAD)) // Paper - add registrar event cause
++            .map(registry -> this.createLoader(manager, prepareExecutor, (RegistryAccess.RegistryEntry<?>)registry, applyExecutor instanceof net.minecraft.server.MinecraftServer ? io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL : io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.RELOAD)) // Paper - add registrar event cause
              .toList();
          return CompletableFuture.allOf(list.toArray(CompletableFuture[]::new))
              .thenCompose(synchronizer::wait)
