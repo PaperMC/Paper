@@ -28,27 +28,15 @@ index 6b7245cf05ea4b6ce05462eb3164bce7f5d76a03..ac1914438307e8a7cc3a3b6352e88a06
      public static final Codec<CustomData> CODEC_WITH_ID = CODEC.validate(
          component -> component.getUnsafe().contains("id", 8) ? DataResult.success(component) : DataResult.error(() -> "Missing id for entity in: " + component)
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index 28dbe30a98a6730839949bc9a6a90b78619ff84d..23e235c82134de0cbe87bbcabe55f12c7f00f0ec 100644
+index 7d32c032b63b9c4674489b30c845fe2de8275808..f78744b6d6075f584d9a88612661854f3f04aed1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -296,6 +296,38 @@ public final class CraftMagicNumbers implements UnsafeValues {
-         return new File(MinecraftServer.getServer().getWorldPath(LevelResource.DATAPACK_DIR).toFile(), "bukkit");
+@@ -505,6 +505,39 @@ public final class CraftMagicNumbers implements UnsafeValues {
+         return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.parse(MinecraftServer.getServer().registryAccess(), compound).orElseThrow());
      }
  
-+    // Paper start - Item serialization to json
 +    @Override
-+    public ItemStack createItemStack(com.google.gson.JsonObject data) throws IllegalArgumentException {
-+        Preconditions.checkNotNull(data, "null cannot be deserialized");
-+
-+        final int dataVersion = data.get("DataVersion").getAsInt();
-+        final int currentVersion = org.bukkit.craftbukkit.util.CraftMagicNumbers.INSTANCE.getDataVersion();
-+        data = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertJson(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.ITEM_STACK, data, false, dataVersion, currentVersion);
-+        com.mojang.serialization.DynamicOps<com.google.gson.JsonElement> ops = MinecraftServer.getServer().registryAccess().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE);
-+        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.CODEC.parse(ops, data).getOrThrow(IllegalArgumentException::new));
-+    }
-+
-+    @Override
-+    public com.google.gson.JsonObject serializeAsJson(ItemStack itemStack) {
++    public com.google.gson.JsonObject serializeItemAsJson(ItemStack itemStack) {
 +        Preconditions.checkNotNull(itemStack, "Cannot serialize empty ItemStack");
 +        Preconditions.checkArgument(!itemStack.isEmpty(), "Cannot serialize empty ItemStack");
 +
@@ -62,11 +50,24 @@ index 28dbe30a98a6730839949bc9a6a90b78619ff84d..23e235c82134de0cbe87bbcabe55f12c
 +        } finally {
 +            net.minecraft.world.item.component.CustomData.SERIALIZE_CUSTOM_AS_SNBT.set(false);
 +        }
-+        item.addProperty("DataVersion", org.bukkit.craftbukkit.util.CraftMagicNumbers.INSTANCE.getDataVersion());
++        item.addProperty("DataVersion", this.getDataVersion());
 +        return item;
 +    }
-+    // Paper end - Item serialization to json
++
++    @Override
++    public ItemStack deserializeItemFromJson(com.google.gson.JsonObject data) throws IllegalArgumentException {
++        Preconditions.checkNotNull(data, "null cannot be deserialized");
++
++        final int dataVersion = data.get("DataVersion").getAsInt();
++        final int currentVersion = org.bukkit.craftbukkit.util.CraftMagicNumbers.INSTANCE.getDataVersion();
++        data = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertJson(
++            ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.ITEM_STACK,
++            data, false, dataVersion, currentVersion
++        );
++        com.mojang.serialization.DynamicOps<com.google.gson.JsonElement> ops = MinecraftServer.getServer().registryAccess().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE);
++        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.CODEC.parse(ops, data).getOrThrow(IllegalArgumentException::new));
++    }
 +
      @Override
-     public Advancement loadAdvancement(NamespacedKey key, String advancement) {
-         Preconditions.checkArgument(Bukkit.getAdvancement(key) == null, "Advancement %s already exists", key);
+     public byte[] serializeEntity(org.bukkit.entity.Entity entity) {
+         Preconditions.checkNotNull(entity, "null cannot be serialized");
