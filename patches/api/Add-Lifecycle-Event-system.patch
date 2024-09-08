@@ -455,15 +455,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import io.papermc.paper.plugin.lifecycle.event.LifecycleEvent;
 +import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
++import java.util.Optional;
 +import java.util.ServiceLoader;
 +import org.jetbrains.annotations.ApiStatus;
 +
 +@ApiStatus.Internal
 +interface LifecycleEventTypeProvider {
 +
-+    LifecycleEventTypeProvider PROVIDER = ServiceLoader.load(LifecycleEventTypeProvider.class)
-+        .findFirst()
-+        .orElseThrow();
++    Optional<LifecycleEventTypeProvider> INSTANCE = ServiceLoader.load(LifecycleEventTypeProvider.class)
++        .findFirst();
++
++    static LifecycleEventTypeProvider provider() {
++        return INSTANCE.orElseThrow();
++    }
 +
 +    <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Monitorable<O, E> monitor(String name, Class<? extends O> ownerType);
 +
@@ -494,33 +498,33 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    //<editor-fold desc="helper methods" defaultstate="collapsed">
 +    @ApiStatus.Internal
-+    private static <E extends LifecycleEvent> LifecycleEventType.Monitorable<Plugin, E> plugin(final String name) {
++    static <E extends LifecycleEvent> LifecycleEventType.Monitorable<Plugin, E> plugin(final String name) {
 +        return monitor(name, Plugin.class);
 +    }
 +
 +    @ApiStatus.Internal
-+    private static <E extends LifecycleEvent> LifecycleEventType.Prioritizable<Plugin, E> pluginPrioritized(final String name) {
++    static <E extends LifecycleEvent> LifecycleEventType.Prioritizable<Plugin, E> pluginPrioritized(final String name) {
 +        return prioritized(name, Plugin.class);
 +    }
 +
 +    @ApiStatus.Internal
-+    private static <E extends LifecycleEvent> LifecycleEventType.Monitorable<BootstrapContext, E> bootstrap(final String name) {
++    static <E extends LifecycleEvent> LifecycleEventType.Monitorable<BootstrapContext, E> bootstrap(final String name) {
 +        return monitor(name, BootstrapContext.class);
 +    }
 +
 +    @ApiStatus.Internal
-+    private static <E extends LifecycleEvent> LifecycleEventType.Prioritizable<BootstrapContext, E> bootstrapPrioritized(final String name) {
++    static <E extends LifecycleEvent> LifecycleEventType.Prioritizable<BootstrapContext, E> bootstrapPrioritized(final String name) {
 +        return prioritized(name, BootstrapContext.class);
 +    }
 +
 +    @ApiStatus.Internal
-+    private static <O extends LifecycleEventOwner, E extends LifecycleEvent, O2 extends O> LifecycleEventType.Monitorable<O, E> monitor(final String name, final Class<O2> ownerType) {
-+        return LifecycleEventTypeProvider.PROVIDER.monitor(name, ownerType);
++    static <O extends LifecycleEventOwner, E extends LifecycleEvent, O2 extends O> LifecycleEventType.Monitorable<O, E> monitor(final String name, final Class<O2> ownerType) {
++        return LifecycleEventTypeProvider.provider().monitor(name, ownerType);
 +    }
 +
 +    @ApiStatus.Internal
-+    private static <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Prioritizable<O, E> prioritized(final String name, final Class<? extends O> ownerType) {
-+        return LifecycleEventTypeProvider.PROVIDER.prioritized(name, ownerType);
++    static <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Prioritizable<O, E> prioritized(final String name, final Class<? extends O> ownerType) {
++        return LifecycleEventTypeProvider.provider().prioritized(name, ownerType);
 +    }
 +    //</editor-fold>
 +
