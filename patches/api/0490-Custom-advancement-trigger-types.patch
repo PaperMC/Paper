@@ -1,0 +1,247 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 23 Sep 2024 14:49:16 -0700
+Subject: [PATCH] Custom advancement trigger types
+
+
+diff --git a/src/main/java/io/papermc/paper/advancement/CriteriaTrigger.java b/src/main/java/io/papermc/paper/advancement/CriteriaTrigger.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c6107335a0ecdee5e624699dbe5759f2b1cb9239
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/advancement/CriteriaTrigger.java
+@@ -0,0 +1,26 @@
++package io.papermc.paper.advancement;
++
++import java.util.function.Predicate;
++import org.bukkit.Keyed;
++import org.bukkit.entity.Player;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.ApiStatus;
++
++/**
++ * Trigger type for advancements.
++ *
++ * @param <I> the type of the instance for the trigger
++ */
++@ApiStatus.NonExtendable
++@ApiStatus.Experimental
++public interface CriteriaTrigger<I> extends Keyed {
++
++    /**
++     * Activates the trigger for a specific player and predicate against the trigger instance.
++     *
++     * @param player the player to activate the trigger for
++     * @param instancePredicate the predicate to test the trigger instance against
++     * @apiNote Only works for custom triggers registered via {@link io.papermc.paper.registry.event.RegistryEvents#TRIGGER_TYPE}
++     */
++    void trigger(@NonNull Player player, @NonNull Predicate<? super I> instancePredicate);
++}
+diff --git a/src/main/java/io/papermc/paper/registry/RegistryKey.java b/src/main/java/io/papermc/paper/registry/RegistryKey.java
+index ccbe3fa2e01a80abb801d14891dce34ed179b5ee..47b25c63b5e0012a2dddb28d8492d6b1310a60ed 100644
+--- a/src/main/java/io/papermc/paper/registry/RegistryKey.java
++++ b/src/main/java/io/papermc/paper/registry/RegistryKey.java
+@@ -1,5 +1,6 @@
+ package io.papermc.paper.registry;
+ 
++import io.papermc.paper.advancement.CriteriaTrigger;
+ import net.kyori.adventure.key.Keyed;
+ import org.bukkit.Art;
+ import org.bukkit.Fluid;
+@@ -83,6 +84,9 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
+     @ApiStatus.Experimental // Paper - already required for registry builders
+     RegistryKey<ItemType> ITEM = create("item");
+ 
++    @ApiStatus.Experimental
++    RegistryKey<CriteriaTrigger<?>> TRIGGER_TYPE = create("trigger_type");
++
+ 
+     /* ********************** *
+      * Data-driven Registries *
+diff --git a/src/main/java/io/papermc/paper/registry/data/CriteriaTriggerRegistryEntry.java b/src/main/java/io/papermc/paper/registry/data/CriteriaTriggerRegistryEntry.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f051cdd36eb99149b7876de1d39da3539a45f95f
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/data/CriteriaTriggerRegistryEntry.java
+@@ -0,0 +1,52 @@
++package io.papermc.paper.registry.data;
++
++import com.google.gson.JsonElement;
++import io.papermc.paper.advancement.CriteriaTrigger;
++import io.papermc.paper.registry.RegistryBuilder;
++import java.util.function.Function;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++
++/**
++ * A data-centric version-specific registry entry for the {@link CriteriaTrigger} type.
++ *
++ * @param <I> the type of the instance for the trigger
++ */
++@ApiStatus.Experimental
++@ApiStatus.NonExtendable
++public interface CriteriaTriggerRegistryEntry<I> {
++
++    /**
++     * Provides the deserializer for the trigger instance.
++     *
++     * @return the deserializer for the trigger instance
++     */
++    @Contract(pure = true)
++    @NonNull Function<@NonNull JsonElement, @NonNull I> deserializer();
++
++    /**
++     * A mutable builder for {@link CriteriaTriggerRegistryEntry} which plugins may change
++     * in applicable registry events.
++     * <p>
++     * The following values are required for each builder:
++     * <ul>
++     *     <li>{@link #deserializer(Function)}</li>
++     * </ul>
++     *
++     * @param <I> the type of the instance for the trigger
++     */
++    @ApiStatus.Experimental
++    @ApiStatus.NonExtendable
++    interface Builder<I> extends CriteriaTriggerRegistryEntry<I>, RegistryBuilder<CriteriaTrigger<I>> {
++
++        /**
++         * Sets the deserializer for the trigger instance.
++         *
++         * @param deserializer the deserializer for the trigger instance
++         * @return this builder instance
++         */
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull Builder<I> deserializer(@NonNull Function<@NonNull JsonElement, @NonNull I> deserializer);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEvent.java b/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEvent.java
+index a5d7385eae9dfb88b52aed0e42c09a10ef807385..b2be49db812158cbb54d11fc12701e7782019995 100644
+--- a/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEvent.java
++++ b/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEvent.java
+@@ -18,7 +18,7 @@ import org.jetbrains.annotations.ApiStatus;
+  */
+ @ApiStatus.Experimental
+ @ApiStatus.NonExtendable
+-public interface RegistryEntryAddEvent<T, B extends RegistryBuilder<T>> extends RegistryEvent<T> {
++public interface RegistryEntryAddEvent<T, B extends RegistryBuilder<? extends T>> extends RegistryEvent<T> {
+ 
+     /**
+      * Gets the builder for the entry being added to the registry.
+diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEventProvider.java b/src/main/java/io/papermc/paper/registry/event/RegistryEventProvider.java
+index 477ed0fd5acc923d429980529876f0dd7dd3a52a..e23315201219da378e9543482a82194be379aff4 100644
+--- a/src/main/java/io/papermc/paper/registry/event/RegistryEventProvider.java
++++ b/src/main/java/io/papermc/paper/registry/event/RegistryEventProvider.java
+@@ -2,8 +2,6 @@ package io.papermc.paper.registry.event;
+ 
+ import io.papermc.paper.plugin.bootstrap.BootstrapContext;
+ import io.papermc.paper.plugin.lifecycle.event.handler.LifecycleEventHandler;
+-import io.papermc.paper.plugin.lifecycle.event.handler.configuration.LifecycleEventHandlerConfiguration;
+-import io.papermc.paper.plugin.lifecycle.event.handler.configuration.PrioritizedLifecycleEventHandlerConfiguration;
+ import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEventType;
+ import io.papermc.paper.registry.RegistryBuilder;
+ import io.papermc.paper.registry.RegistryKey;
+@@ -25,7 +23,7 @@ import org.jetbrains.annotations.ApiStatus;
+  */
+ @ApiStatus.Experimental
+ @ApiStatus.NonExtendable
+-public interface RegistryEventProvider<T, B extends RegistryBuilder<T>> {
++public interface RegistryEventProvider<T, B extends RegistryBuilder<? extends T>> {
+ 
+     /**
+      * Gets the event type for {@link RegistryEntryAddEvent} which is fired just before
+diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEventProviderImpl.java b/src/main/java/io/papermc/paper/registry/event/RegistryEventProviderImpl.java
+index cfe47c8bd0888db6d00867acfefc8db42ef314aa..f9cdf7aa710e49cbb2cced49175aceb6094bca58 100644
+--- a/src/main/java/io/papermc/paper/registry/event/RegistryEventProviderImpl.java
++++ b/src/main/java/io/papermc/paper/registry/event/RegistryEventProviderImpl.java
+@@ -11,9 +11,9 @@ import org.jetbrains.annotations.ApiStatus;
+ 
+ @ApiStatus.Internal
+ @DefaultQualifier(NonNull.class)
+-record RegistryEventProviderImpl<T, B extends RegistryBuilder<T>>(RegistryKey<T> registryKey) implements RegistryEventProvider<T, B> {
++record RegistryEventProviderImpl<T, B extends RegistryBuilder<? extends T>>(RegistryKey<T> registryKey) implements RegistryEventProvider<T, B> {
+ 
+-    static <T, B extends RegistryBuilder<T>> RegistryEventProvider<T, B> create(final RegistryKey<T> registryKey) {
++    static <T, B extends RegistryBuilder<? extends T>> RegistryEventProvider<T, B> create(final RegistryKey<T> registryKey) {
+         return new RegistryEventProviderImpl<>(registryKey);
+     }
+ 
+diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEventTypeProvider.java b/src/main/java/io/papermc/paper/registry/event/RegistryEventTypeProvider.java
+index d807bd2f42c98e37a96cf110ad77820dfffc8398..5eb93ea0085607a96384e33044755d86f644d29e 100644
+--- a/src/main/java/io/papermc/paper/registry/event/RegistryEventTypeProvider.java
++++ b/src/main/java/io/papermc/paper/registry/event/RegistryEventTypeProvider.java
+@@ -18,7 +18,7 @@ interface RegistryEventTypeProvider {
+         return PROVIDER.orElseThrow(() -> new IllegalStateException("Could not find a %s service implementation".formatted(RegistryEventTypeProvider.class.getSimpleName())));
+     }
+ 
+-    <T, B extends RegistryBuilder<T>> RegistryEntryAddEventType<T, B> registryEntryAdd(RegistryEventProvider<T, B> type);
++    <T, B extends RegistryBuilder<? extends T>> RegistryEntryAddEventType<T, B> registryEntryAdd(RegistryEventProvider<T, B> type);
+ 
+-    <T, B extends RegistryBuilder<T>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryFreezeEvent<T, B>> registryFreeze(RegistryEventProvider<T, B> type);
++    <T, B extends RegistryBuilder<? extends T>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryFreezeEvent<T, B>> registryFreeze(RegistryEventProvider<T, B> type);
+ }
+diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEvents.java b/src/main/java/io/papermc/paper/registry/event/RegistryEvents.java
+index b32ae215e976bcfcdd86b03037de61b3d896f57c..a176f89f40db1369158ecc4ea9f0cebbbd6bb01c 100644
+--- a/src/main/java/io/papermc/paper/registry/event/RegistryEvents.java
++++ b/src/main/java/io/papermc/paper/registry/event/RegistryEvents.java
+@@ -1,6 +1,8 @@
+ package io.papermc.paper.registry.event;
+ 
++import io.papermc.paper.advancement.CriteriaTrigger;
+ import io.papermc.paper.registry.RegistryKey;
++import io.papermc.paper.registry.data.CriteriaTriggerRegistryEntry;
+ import io.papermc.paper.registry.data.EnchantmentRegistryEntry;
+ import io.papermc.paper.registry.data.GameEventRegistryEntry;
+ import org.bukkit.GameEvent;
+@@ -18,6 +20,7 @@ public final class RegistryEvents {
+ 
+     public static final RegistryEventProvider<GameEvent, GameEventRegistryEntry.Builder> GAME_EVENT = create(RegistryKey.GAME_EVENT);
+     public static final RegistryEventProvider<Enchantment, EnchantmentRegistryEntry.Builder> ENCHANTMENT = create(RegistryKey.ENCHANTMENT);
++    public static final RegistryEventProvider<CriteriaTrigger<?>, CriteriaTriggerRegistryEntry.Builder<?>> TRIGGER_TYPE = create(RegistryKey.TRIGGER_TYPE);
+ 
+     private RegistryEvents() {
+     }
+diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEvent.java b/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEvent.java
+index 12ec7e794a5047a30354a485acd40fa0f3438eea..a3b0ca85ca30803330dd4346cc433e2e45115738 100644
+--- a/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEvent.java
++++ b/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEvent.java
+@@ -17,7 +17,7 @@ import org.jetbrains.annotations.ApiStatus;
+  */
+ @ApiStatus.Experimental
+ @ApiStatus.NonExtendable
+-public interface RegistryFreezeEvent<T, B extends RegistryBuilder<T>> extends RegistryEvent<T> {
++public interface RegistryFreezeEvent<T, B extends RegistryBuilder<? extends T>> extends RegistryEvent<T> {
+ 
+     /**
+      * Get the writable registry.
+diff --git a/src/main/java/io/papermc/paper/registry/event/WritableRegistry.java b/src/main/java/io/papermc/paper/registry/event/WritableRegistry.java
+index 6de377275097f065c38dd59c6db9704018ac81fc..a1ddf54c06e624ad10212fae7deca2e8935c0675 100644
+--- a/src/main/java/io/papermc/paper/registry/event/WritableRegistry.java
++++ b/src/main/java/io/papermc/paper/registry/event/WritableRegistry.java
+@@ -14,7 +14,7 @@ import org.jetbrains.annotations.ApiStatus;
+  */
+ @ApiStatus.NonExtendable
+ @ApiStatus.Experimental
+-public interface WritableRegistry<T, B extends RegistryBuilder<T>> {
++public interface WritableRegistry<T, B extends RegistryBuilder<? extends T>> {
+ 
+     /**
+      * Register a new value with the specified key. This will
+@@ -23,5 +23,5 @@ public interface WritableRegistry<T, B extends RegistryBuilder<T>> {
+      * @param key the entry's key (must be unique from others)
+      * @param value a consumer for the entry's builder
+      */
+-    void register(@NonNull TypedKey<T> key, @NonNull Consumer<? super B> value);
++    <VB extends B> void register(@NonNull TypedKey<? extends T> key, @NonNull Consumer<? super VB> value);
+ }
+diff --git a/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddEventType.java b/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddEventType.java
+index f4d4ebf6cbed1b4a9955ceb2d0586782181d97e5..abd066b998dc752869b1e8e762ed09a077554998 100644
+--- a/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddEventType.java
++++ b/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddEventType.java
+@@ -14,5 +14,5 @@ import org.jetbrains.annotations.ApiStatus;
+  */
+ @ApiStatus.Experimental
+ @ApiStatus.NonExtendable
+-public interface RegistryEntryAddEventType<T, B extends RegistryBuilder<T>> extends LifecycleEventType<BootstrapContext, RegistryEntryAddEvent<T, B>, RegistryEntryAddConfiguration<T>> {
++public interface RegistryEntryAddEventType<T, B extends RegistryBuilder<? extends T>> extends LifecycleEventType<BootstrapContext, RegistryEntryAddEvent<T, B>, RegistryEntryAddConfiguration<T>> {
+ }
