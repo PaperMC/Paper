@@ -115,6 +115,14 @@ public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState
         return nbt;
     }
 
+    // gets the packet data of the TileEntity represented by this block state
+    public NBTTagCompound getUpdateNBT() {
+        // update snapshot
+        applyTo(snapshot);
+
+        return snapshot.getUpdateTag(getRegistryAccess());
+    }
+
     // copies the data of the given tile entity to this block state
     protected void load(T tileEntity) {
         if (tileEntity != null && tileEntity != snapshot) {
@@ -156,8 +164,7 @@ public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState
 
     @Nullable
     public Packet<PacketListenerPlayOut> getUpdatePacket(@NotNull Location location) {
-        T vanillaTileEntitiy = (T) TileEntity.loadStatic(CraftLocation.toBlockPosition(location), getHandle(), getSnapshotNBT(), getRegistryAccess());
-        return PacketPlayOutTileEntityData.create(vanillaTileEntitiy);
+        return new PacketPlayOutTileEntityData(CraftLocation.toBlockPosition(location), snapshot.getType(), getUpdateNBT());
     }
 
     @Override
