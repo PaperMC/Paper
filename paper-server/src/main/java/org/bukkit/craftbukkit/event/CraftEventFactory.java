@@ -1365,9 +1365,9 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static void callPlayerItemBreakEvent(EntityHuman human, ItemStack brokenItem) {
+    public static void callPlayerItemBreakEvent(EntityPlayer human, ItemStack brokenItem) {
         CraftItemStack item = CraftItemStack.asCraftMirror(brokenItem);
-        PlayerItemBreakEvent event = new PlayerItemBreakEvent((Player) human.getBukkitEntity(), item);
+        PlayerItemBreakEvent event = new PlayerItemBreakEvent(human.getBukkitEntity(), item);
         Bukkit.getPluginManager().callEvent(event);
     }
 
