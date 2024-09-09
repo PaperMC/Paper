@@ -37,7 +37,7 @@ index b65d816bb9feb18ecf74e10e9728c302e5657587..62ec627e80b87a92a2a51ba9fc3626a6
          loot.addAll(this.drops);
          this.drops.clear(); // SPIGOT-5188: make sure to clear
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index f163cb3c75e90b96b3794a7e0c5b803268814c8c..57e7938bc605f320ed5303fcbc617b4d32ba42b8 100644
+index f163cb3c75e90b96b3794a7e0c5b803268814c8c..e88c88b6f87dddda8e8e3ed215a8f2c166afa3ef 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -2562,6 +2562,25 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
@@ -52,9 +52,9 @@ index f163cb3c75e90b96b3794a7e0c5b803268814c8c..57e7938bc605f320ed5303fcbc617b4d
 +            this(stack.getItem(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(stack), dropConsumer);
 +        }
 +
-+        public void runConsumer(final org.bukkit.World fallbackWorld, final Location fallbackLoc) {
++        public void runConsumer(final java.util.function.Consumer<org.bukkit.inventory.ItemStack> fallback) {
 +            if (this.dropConsumer == null || org.bukkit.craftbukkit.inventory.CraftItemType.bukkitToMinecraft(this.stack.getType()) != this.item) {
-+                fallbackWorld.dropItem(fallbackLoc, this.stack);
++                fallback.accept(this.stack);
 +            } else {
 +                this.dropConsumer.accept(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(this.stack));
 +            }
@@ -197,7 +197,7 @@ index 2690c471b819f8308f6db44150025dfa323d4e0c..0d6cdb6b0dfd84f619a5e43150165b46
              if (stack == null || stack.getType() == Material.AIR || stack.getAmount() == 0) continue;
  
 -            world.dropItem(entity.getLocation(), stack); // Paper - note: dropItem already clones due to this being bukkit -> NMS
-+            drop.runConsumer(world, entity.getLocation()); // Paper - Restore vanilla drops behavior
++            drop.runConsumer(s -> world.dropItem(entity.getLocation(), s)); // Paper - Restore vanilla drops behavior
              if (stack instanceof CraftItemStack) stack.setAmount(0); // Paper - destroy this item - if this ever leaks due to game bugs, ensure it doesn't dupe, but don't nuke bukkit stacks of manually added items
          }
  
@@ -232,7 +232,7 @@ index 2690c471b819f8308f6db44150025dfa323d4e0c..0d6cdb6b0dfd84f619a5e43150165b46
 -                victim.spawnAtLocation(CraftItemStack.asNMSCopy(stack)); // SPIGOT-7806: Vanilla Behaviour for items not related to Player Inventory dropped items
 -                victim.forceDrops = false;
 -            }
-+            drop.runConsumer(entity.getWorld(), entity.getLocation()); // Paper - Restore vanilla drops behavior
++            drop.runConsumer(s -> victim.drop(CraftItemStack.unwrap(s), true, false, false)); // Paper - Restore vanilla drops behavior
          }
  
          return event;
