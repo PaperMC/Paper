@@ -55,6 +55,9 @@ https://bugs.mojang.com/browse/MC-158900
 https://bugs.mojang.com/browse/MC-99075
   Fix inventory desync within spawn protected area
 
+https://bugs.mojang.com/browse/MC-273635
+  Fix TrialSpawner forgets assigned mob when placed by player
+
 == AT ==
 public net/minecraft/world/entity/Mob leashInfoTag
 
@@ -347,6 +350,57 @@ index e124f040386e130aebd7135434c4f06d130d28f6..f8d432ef21e59796da4b11c9748ba151
          super.setRemoved();
      }
  
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerData.java b/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerData.java
+index 055f4b87c01ee7ecf7d2a111b72cc5aa85d9fbe8..6684ded7135f943f8cea954b417f596369215357 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerData.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerData.java
+@@ -100,13 +100,13 @@ public class TrialSpawnerData {
+         this.ejectingLootTable = rewardLootTable;
+     }
+ 
+-    public void reset() {
++    public void reset(TrialSpawner logic) { // Paper - Fix TrialSpawner forgets assigned mob; MC-273635
+         this.detectedPlayers.clear();
+         this.totalMobsSpawned = 0;
+         this.nextMobSpawnsAt = 0L;
+         this.cooldownEndsAt = 0L;
+         this.currentMobs.clear();
+-        this.nextSpawnData = Optional.empty();
++        if (!logic.getConfig().spawnPotentialsDefinition().isEmpty()) this.nextSpawnData = Optional.empty(); // Paper - Fix TrialSpawner forgets assigned mob; MC-273635
+     }
+ 
+     public boolean hasMobToSpawn(TrialSpawner logic, RandomSource random) {
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerState.java b/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerState.java
+index ffabcfaef8defe932473dee515f05220921904e0..005aea8a747e9cbbc352b8b57c64b84ec71ad321 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerState.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerState.java
+@@ -68,7 +68,7 @@ public enum TrialSpawnerState implements StringRepresentable {
+             case INACTIVE -> trialSpawnerData.getOrCreateDisplayEntity(logic, world, WAITING_FOR_PLAYERS) == null ? this : WAITING_FOR_PLAYERS;
+             case WAITING_FOR_PLAYERS -> {
+                 if (!logic.canSpawnInLevel(world)) {
+-                    trialSpawnerData.reset();
++                    trialSpawnerData.reset(logic); // Paper - Fix TrialSpawner forgets assigned mob; MC-273635
+                     yield this;
+                 } else if (!trialSpawnerData.hasMobToSpawn(logic, world.random)) {
+                     yield INACTIVE;
+@@ -79,7 +79,7 @@ public enum TrialSpawnerState implements StringRepresentable {
+             }
+             case ACTIVE -> {
+                 if (!logic.canSpawnInLevel(world)) {
+-                    trialSpawnerData.reset();
++                    trialSpawnerData.reset(logic); // Paper - Fix TrialSpawner forgets assigned mob; MC-273635
+                     yield WAITING_FOR_PLAYERS;
+                 } else if (!trialSpawnerData.hasMobToSpawn(logic, world.random)) {
+                     yield INACTIVE;
+@@ -145,7 +145,7 @@ public enum TrialSpawnerState implements StringRepresentable {
+                     yield ACTIVE;
+                 } else if (trialSpawnerData.isCooldownFinished(world)) {
+                     logic.removeOminous(world, pos);
+-                    trialSpawnerData.reset();
++                    trialSpawnerData.reset(logic); // Paper - Fix TrialSpawner forgets assigned mob; MC-273635
+                     yield WAITING_FOR_PLAYERS;
+                 } else {
+                     yield this;
 diff --git a/src/main/java/net/minecraft/world/level/portal/DimensionTransition.java b/src/main/java/net/minecraft/world/level/portal/DimensionTransition.java
 index 1595a379875abc718659f6b1ce7c64c6383b1bc8..788f79dc38012595b385ee6a449daa0bccf0079a 100644
 --- a/src/main/java/net/minecraft/world/level/portal/DimensionTransition.java
