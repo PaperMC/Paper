@@ -37,7 +37,7 @@ index 0110ce4b1037ec4cdb9769c03326741ee50733d2..fd7e9b03f89ac91f54653b6251f17b8a
              apiOnly(Registries.ENTITY_TYPE, RegistryKey.ENTITY_TYPE, () -> org.bukkit.Registry.ENTITY_TYPE),
              apiOnly(Registries.PARTICLE_TYPE, RegistryKey.PARTICLE_TYPE, () -> org.bukkit.Registry.PARTICLE_TYPE),
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftArt.java b/src/main/java/org/bukkit/craftbukkit/CraftArt.java
-index a4f3edb43a5fdd37ca9ea1fce8790ff7c018bae0..3241ffc7742cbaabd5cc2562b3115fc61587e04c 100644
+index a4f3edb43a5fdd37ca9ea1fce8790ff7c018bae0..35ecf33b67f9e9958667e599d2ef0fd5e927a587 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftArt.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftArt.java
 @@ -8,17 +8,97 @@ import org.bukkit.Art;
@@ -65,7 +65,7 @@ index a4f3edb43a5fdd37ca9ea1fce8790ff7c018bae0..3241ffc7742cbaabd5cc2562b3115fc6
 +        this.paintingVariant = paintingVariant;
 +        // For backwards compatibility, minecraft values will still return the uppercase name without the namespace,
 +        // in case plugins use for example the name as key in a config file to receive painting variant specific values.
-+        // Custom pattern types will return the key with namespace. For a plugin this should look than like a new pattern type
++        // Custom painting variants will return the key with namespace. For a plugin this should look than like a new painting variant
 +        // (which can always be added in new minecraft versions and the plugin should therefore handle it accordingly).
 +        if (org.bukkit.NamespacedKey.MINECRAFT.equals(key.getNamespace())) {
 +            this.name = key.getKey().toUpperCase(java.util.Locale.ROOT);
@@ -196,6 +196,25 @@ index ea288c3ff30656569abd60a2839c470cb5d953f2..f6c5a03d4f41fc16aaa830ef96c66522
          for (Holder<PaintingVariant> enumArt : CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT).asHolderIdMap()) {
              Art art = CraftArt.minecraftHolderToBukkit(enumArt);
              assertNotNull(art, "Could not CraftArt.NotchToBukkit " + enumArt);
+diff --git a/src/test/java/org/bukkit/registry/RegistryConstantsTest.java b/src/test/java/org/bukkit/registry/RegistryConstantsTest.java
+index 7d9dbed7281099b78d7f898885b37cdcfe8b099f..253e72777db93ae91c1822493244c50f238e6db3 100644
+--- a/src/test/java/org/bukkit/registry/RegistryConstantsTest.java
++++ b/src/test/java/org/bukkit/registry/RegistryConstantsTest.java
+@@ -39,6 +39,14 @@ public class RegistryConstantsTest extends AbstractTestingBase {
+         this.testMissingConstants(TrimPattern.class, Registries.TRIM_PATTERN);
+     }
+ 
++    // Paper start - add test for Art
++    @Test
++    public void testArt() {
++        this.testExcessConstants(org.bukkit.Art.class, org.bukkit.Registry.ART); // Paper - remap fix
++        this.testMissingConstants(org.bukkit.Art.class, Registries.PAINTING_VARIANT);
++    }
++    // Paper end - add test for Art
++
+     private <T extends Keyed> void testExcessConstants(Class<T> clazz, org.bukkit.Registry<T> registry) { // Paper - remap fix
+         List<NamespacedKey> excessKeys = new ArrayList<>();
+ 
 diff --git a/src/test/java/org/bukkit/support/provider/RegistriesArgumentProvider.java b/src/test/java/org/bukkit/support/provider/RegistriesArgumentProvider.java
 index c1f886c906a9f9313d97a223f719095fa2624c57..fda9c72be62de9abc8228226f06edbe9fada444e 100644
 --- a/src/test/java/org/bukkit/support/provider/RegistriesArgumentProvider.java
