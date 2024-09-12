@@ -6,12 +6,14 @@ Subject: [PATCH] Add PlayerLiddedOpenEvent
 
 diff --git a/src/main/java/io/papermc/paper/event/player/PlayerLiddedOpenEvent.java b/src/main/java/io/papermc/paper/event/player/PlayerLiddedOpenEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..35fdc0d95d4bcdad81de6f5c287705d5f85c2160
+index 0000000000000000000000000000000000000000..913e872b51d3e053f0c773c2264b92794dea4c8a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/PlayerLiddedOpenEvent.java
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,85 @@
 +package io.papermc.paper.event.player;
 +
++import io.papermc.paper.block.LidMode;
++import io.papermc.paper.block.LidState;
 +import io.papermc.paper.block.Lidded;
 +import org.bukkit.block.Block;
 +import org.bukkit.entity.Player;
@@ -21,12 +23,22 @@ index 0000000000000000000000000000000000000000..35fdc0d95d4bcdad81de6f5c287705d5
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.NotNull;
 +
++/**
++ * Called when a player opens a {@link Lidded} block.
++ *
++ * <p>
++ * This is called every time a player opens a {@link Lidded} block
++ * regardless of if the lid is already open (e.g. multiple players).
++ * <p>
++ * Cancelling this event prevents the player from being considered in other {@link Lidded} methods:
++ * they will not contribute to the {@link Lidded#getTrueLidState()} and {@link Lidded#getEffectiveLidState()}.
++ */
 +public class PlayerLiddedOpenEvent extends PlayerEvent implements Cancellable {
 +
 +    private static final HandlerList HANDLER_LIST = new HandlerList();
-+    private boolean cancelled;
 +    private final Lidded blockState;
 +    private final Block block;
++    private boolean cancelled;
 +
 +    @ApiStatus.Internal
 +    public PlayerLiddedOpenEvent(final @NotNull Player who, final @NotNull Lidded blockState, final @NotNull Block block) {
@@ -36,9 +48,6 @@ index 0000000000000000000000000000000000000000..35fdc0d95d4bcdad81de6f5c287705d5
 +        this.block = block;
 +    }
 +
-+    public static @NotNull HandlerList getHandlerList() {
-+        return HANDLER_LIST;
-+    }
 +
 +    @Override
 +    public boolean isCancelled() {
@@ -50,18 +59,39 @@ index 0000000000000000000000000000000000000000..35fdc0d95d4bcdad81de6f5c287705d5
 +        this.cancelled = cancel;
 +    }
 +
-+
++    /**
++     * Gets the {@link Lidded} block involved in this event.
++     * @return the lidded block
++     */
++    @NotNull
 +    public Lidded getLidded() {
 +        return blockState;
 +    }
 +
++    /**
++     * Gets the block involved in this event.
++     * @return the block
++     */
++    @NotNull
 +    public Block getBlock() {
 +        return block;
 +    }
 +
++    /**
++     * Gets if the block would appear to open, if this event is not cancelled.
++     * return if the block would appear to open
++     */
++    public boolean isOpening() {
++        return blockState.getLidMode() == LidMode.DEFAULT && blockState.getTrueLidState() == LidState.CLOSED;
++    }
 +
 +    @Override
-+    public @NotNull HandlerList getHandlers() {
++    @NotNull
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static @NotNull HandlerList getHandlerList() {
 +        return HANDLER_LIST;
 +    }
 +}
