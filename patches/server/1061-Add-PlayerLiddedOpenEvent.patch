@@ -1,0 +1,106 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Isaac - The456 <the456@the456gamer.dev>
+Date: Fri, 13 Sep 2024 00:28:27 +0100
+Subject: [PATCH] Add PlayerLiddedOpenEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java b/src/main/java/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java
+index dfc184ed9f49524cf198ff672282326c16b41441..bdb80c8c07c18140232b248b88849ab76461c7cc 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java
+@@ -47,6 +47,7 @@ public abstract class ContainerOpenersCounter {
+ 
+     // Paper start - add Improved Lidded API
+     private io.papermc.paper.block.LidMode apiLidMode = io.papermc.paper.block.LidMode.DEFAULT;
++    private final java.util.Set<Player> cancelledPlayers = new java.util.HashSet<>(); // Paper - store players whose opening was cancelled by PlayerLiddedOpenEvent
+     public void startForceLiddedLidOpen(Level level, BlockPos pos, BlockState state) {
+         incrementOpeners(null, level, pos, state);
+     }
+@@ -93,6 +94,12 @@ public abstract class ContainerOpenersCounter {
+     }
+ 
+     public void incrementOpeners(@javax.annotation.Nullable Player player, Level world, BlockPos pos, BlockState state) { // Paper - make player nullable for New Lidded API
++        // Paper start - Call PlayerLiddedOpenEvent
++        if (player != null && org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerLiddedOpenEvent(player, world, pos)) {
++            cancelledPlayers.add(player);
++            return;
++        }
++        // Paper end - Call PlayerLiddedOpenEvent
+         if (this.openCount == 0 && apiLidMode == io.papermc.paper.block.LidMode.CLOSED_UNTIL_NOT_VIEWED) {
+             apiLidMode = io.papermc.paper.block.LidMode.DEFAULT;
+             stopForceLiddedLidClose(world, pos, state);
+@@ -130,6 +137,7 @@ public abstract class ContainerOpenersCounter {
+     }
+ 
+     public void decrementOpeners(@javax.annotation.Nullable Player player, Level world, BlockPos pos, BlockState state) { // Paper - make player nullable for New Lidded API
++        if (player != null && cancelledPlayers.remove(player)) return; // Paper - do not decrement if player's opening was cancelled by PlayerLiddedOpenEvent
+         int oldPower = Math.max(0, Math.min(15, this.openCount)); // CraftBukkit - Get power before new viewer is added
+         if (this.openCount == 0) return; // Paper - Prevent ContainerOpenersCounter openCount from going negative
+         int i = this.openCount--;
+@@ -171,6 +179,11 @@ public abstract class ContainerOpenersCounter {
+     public void recheckOpeners(Level world, BlockPos pos, BlockState state) {
+         List<Player> list = this.getPlayersWithContainerOpen(world, pos);
+ 
++        // Paper start - maintain cancelledPlayers, list of players with the chest open, but without the lid.
++        cancelledPlayers.removeIf(java.util.function.Predicate.not(list::contains));
++        list.removeIf(cancelledPlayers::contains);
++        // Paper end - maintain cancelledPlayers, list of players with the chest open, but without the lid.
++
+         this.maxInteractionRange = 0.0D;
+ 
+         Player entityhuman;
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/ShulkerBoxBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/ShulkerBoxBlockEntity.java
+index 53a77dddfd6ae8b0cf102acd5a8e7679df500704..5f7ecfe65bd3528443abed923711283f784da6fb 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/ShulkerBoxBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/ShulkerBoxBlockEntity.java
+@@ -202,6 +202,7 @@ public class ShulkerBoxBlockEntity extends RandomizableContainerBlockEntity impl
+ 
+     // Paper start - add Improved Lidded API
+     private io.papermc.paper.block.LidMode apiLidMode = io.papermc.paper.block.LidMode.DEFAULT;
++    private final java.util.Set<Player> cancelledPlayers = new java.util.HashSet<>(); // Paper - store players whose opening was cancelled by PlayerLiddedOpenEvent
+     public void startForceLiddedLidOpen() {
+         this.openCount++;
+         this.level.blockEvent(this.worldPosition, this.getBlockState().getBlock(), 1, this.openCount);
+@@ -262,6 +263,12 @@ public class ShulkerBoxBlockEntity extends RandomizableContainerBlockEntity impl
+             if (this.openCount < 0) {
+                 this.openCount = 0;
+             }
++            // Paper start - Call PlayerLiddedOpenEvent
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerLiddedOpenEvent(player, this.level, this.worldPosition)) {
++                cancelledPlayers.add(player);
++                return;
++            }
++            // Paper end - Call PlayerLiddedOpenEvent
+             // Paper start - add Improved Lidded API
+             if (this.openCount == 0) {
+                 if (apiLidMode == io.papermc.paper.block.LidMode.CLOSED_UNTIL_NOT_VIEWED) {
+@@ -295,6 +302,7 @@ public class ShulkerBoxBlockEntity extends RandomizableContainerBlockEntity impl
+     @Override
+     public void stopOpen(Player player) {
+         if (!this.remove && !player.isSpectator()) {
++            if (cancelledPlayers.remove(player)) return; // Paper - do not decrement if player's opening was cancelled by PlayerLiddedOpenEvent
+             --this.openCount;
+             // Paper start - add Improved Lidded API
+             // if (this.opened) return; // CraftBukkit - only animate if the ShulkerBox hasn't been forced open already by an API call.
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 77ef27f9254235180a8596c6c8c4af750dc759d1..bdbee31dad9839d2504fb2a29e89b222f4b7fc9d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -2267,4 +2267,17 @@ public class CraftEventFactory {
+         return event;
+     }
+     // Paper end - add EntityFertilizeEggEvent
++
++    // Paper start - Add PlayerLiddedOpenEvent
++    public static boolean callPlayerLiddedOpenEvent(net.minecraft.world.entity.player.Player who, final Level world, final BlockPos pos) {
++
++        Player player = (Player) who.getBukkitEntity();
++        Block block = CraftBlock.at(world, pos);
++        io.papermc.paper.block.PaperLidded blockState = (io.papermc.paper.block.PaperLidded) CraftBlockStates.getBlockState(block);
++
++        io.papermc.paper.event.player.PlayerLiddedOpenEvent event = new io.papermc.paper.event.player.PlayerLiddedOpenEvent(player, blockState, block);
++
++        return event.callEvent();
++    }
++    // Paper end - Add PlayerLiddedOpenEvent
+ }
