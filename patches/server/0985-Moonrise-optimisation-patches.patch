@@ -4767,10 +4767,10 @@ index 0000000000000000000000000000000000000000..003a857e70ead858e8437e3c1bfaf22f
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..852d75a73dae7448cbe1e2f5e164b235efa8a969
+index 0000000000000000000000000000000000000000..5120655cd2feed764c7429f41b615a42cf4d6ee0
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java
-@@ -0,0 +1,1082 @@
+@@ -0,0 +1,1084 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.player;
 +
 +import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
@@ -4802,6 +4802,7 @@ index 0000000000000000000000000000000000000000..852d75a73dae7448cbe1e2f5e164b235
 +import net.minecraft.server.level.ServerPlayer;
 +import net.minecraft.server.level.TicketType;
 +import net.minecraft.server.network.PlayerChunkSender;
++import net.minecraft.util.Unit;
 +import net.minecraft.world.level.ChunkPos;
 +import net.minecraft.world.level.GameRules;
 +import net.minecraft.world.level.chunk.ChunkAccess;
@@ -4818,6 +4819,7 @@ index 0000000000000000000000000000000000000000..852d75a73dae7448cbe1e2f5e164b235
 +
 +    public static final TicketType<Long> PLAYER_TICKET         = TicketType.create("chunk_system:player_ticket", Long::compareTo);
 +    public static final TicketType<Long> PLAYER_TICKET_DELAYED = TicketType.create("chunk_system:player_ticket_delayed", Long::compareTo, 5 * 20);
++    public static final TicketType<Unit> PLAYER_JOIN           = TicketType.create("chunk_system:player_join", (a, b) -> 0, 2 * 20);
 +
 +    public static final int MIN_VIEW_DISTANCE = 2;
 +    public static final int MAX_VIEW_DISTANCE = 32;
@@ -26731,6 +26733,24 @@ index cdd66e6ce96e2613afe7f06ca8da3cfaa6704b2d..32634e45ac8433648e49e47e20081e15
          handler.send(new ClientboundLevelChunkWithLightPacket(chunk, world.getLightEngine(), null, null));
          // Paper start - PlayerChunkLoadEvent
          if (io.papermc.paper.event.packet.PlayerChunkLoadEvent.getHandlerList().getRegisteredListeners().length > 0) {
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index c9d72ab365dcfc2482764463b116451187684b3c..55913fb2246abc372f852436eedbdfd4704a7878 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -333,6 +333,13 @@ public abstract class PlayerList {
+ 
+         // Paper start - Fire PlayerJoinEvent when Player is actually ready; correctly register player BEFORE PlayerJoinEvent, so the entity is valid and doesn't require tick delay hacks
+         player.supressTrackerForLogin = true;
++        // Paper start - rewrite chunk system
++        worldserver1.moonrise$getChunkTaskScheduler().chunkHolderManager.addTicketAtLevel(
++            ca.spottedleaf.moonrise.patches.chunk_system.player.RegionizedPlayerChunkLoader.PLAYER_JOIN,
++            player.chunkPosition(),
++            ca.spottedleaf.moonrise.patches.chunk_system.player.RegionizedPlayerChunkLoader.TICK_TICKET_LEVEL,
++            net.minecraft.util.Unit.INSTANCE);
++        // Paper end - rewrite chunk system
+         worldserver1.addNewPlayer(player);
+         this.server.getCustomBossEvents().onPlayerConnect(player); // see commented out section below worldserver.addPlayerJoin(entityplayer);
+         this.mountSavedVehicle(player, worldserver1, optional);
 diff --git a/src/main/java/net/minecraft/util/BitStorage.java b/src/main/java/net/minecraft/util/BitStorage.java
 index 68648c5a5e3ff079f832092af0f2f801c42d1ede..19661e106612b8e4e152085fb398db7bd06acc23 100644
 --- a/src/main/java/net/minecraft/util/BitStorage.java
