@@ -243,6 +243,8 @@ public final class TestPlugin extends JavaPlugin implements Listener {
 
         });
 
+        getServer().getPluginManager().registerEvents(new LiddedTestListener(this.getLogger()), this);
+
         // io.papermc.testplugin.brigtests.Registration.registerViaOnEnable(this);
     }
 
