@@ -70,6 +70,11 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
 
     @Override
     public void setItem(int index, ItemStack item) {
+        // Paper start - Validate setItem index
+        if (index < 0 || index > 40) {
+            throw new ArrayIndexOutOfBoundsException("Index must be between 0 and 40");
+        }
+        // Paper end - Validate setItem index
         super.setItem(index, item);
         if (this.getHolder() == null) return;
         ServerPlayer player = ((CraftPlayer) this.getHolder()).getHandle();
