@@ -109,10 +109,18 @@ public class CraftBlockEntityState<T extends TileEntity> extends CraftBlockState
         return snapshot.saveWithFullMetadata(getRegistryAccess());
     }
 
-    public NBTTagCompound getSnapshotNBTWithoutComponents() {
-        NBTTagCompound nbt = getSnapshotNBT();
+    public NBTTagCompound getItemNBT() {
+        // update snapshot
+        applyTo(snapshot);
+
+        // See TileEntity#saveToItem
+        NBTTagCompound nbt = snapshot.saveCustomOnly(getRegistryAccess());
         snapshot.removeComponentsFromTag(nbt);
         return nbt;
+    }
+
+    public void addEntityType(NBTTagCompound nbt) {
+        TileEntity.addEntityType(nbt, snapshot.getType());
     }
 
     // gets the packet data of the TileEntity represented by this block state
