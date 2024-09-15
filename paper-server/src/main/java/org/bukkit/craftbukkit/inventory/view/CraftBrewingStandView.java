@@ -35,4 +35,17 @@ public class CraftBrewingStandView extends CraftInventoryView<BrewingStandMenu, 
         Preconditions.checkArgument(brewingTicks > 0, "The given brewing ticks must be greater than 0");
         this.container.setData(BrewingStandBlockEntity.DATA_BREW_TIME, brewingTicks);
     }
+
+    // Paper start - Add recipeBrewTime
+    @Override
+    public void setRecipeBrewTime(int recipeBrewTime) {
+        com.google.common.base.Preconditions.checkArgument(recipeBrewTime > 0, "recipeBrewTime must be positive");
+        this.container.brewingStandData.set(2, recipeBrewTime);
+    }
+
+    @Override
+    public int getRecipeBrewTime() {
+        return this.container.brewingStandData.get(2);
+    }
+    // Paper end - Add recipeBrewTime
 }

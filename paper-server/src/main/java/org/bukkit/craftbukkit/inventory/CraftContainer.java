@@ -163,7 +163,7 @@ public class CraftContainer extends AbstractContainerMenu {
                 this.delegate = new EnchantmentMenu(windowId, bottom);
                 break;
             case BREWING:
-                this.delegate = new BrewingStandMenu(windowId, bottom, top, new SimpleContainerData(2));
+                this.delegate = new BrewingStandMenu(windowId, bottom, top, new io.papermc.paper.inventory.BrewingSimpleContainerData()); // Paper - Add recipeBrewTime
                 break;
             case HOPPER:
                 this.delegate = new HopperMenu(windowId, bottom, top);

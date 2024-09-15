@@ -29,7 +29,12 @@
  
  public class BrewingStandBlockEntity extends BaseContainerBlockEntity implements WorldlyContainer {
  
-@@ -41,7 +54,37 @@
+@@ -37,11 +50,42 @@
+     public static final int NUM_DATA_VALUES = 2;
+     private NonNullList<ItemStack> items;
+     public int brewTime;
++    public int recipeBrewTime = 400; // Paper - Add recipeBrewTime
+     private boolean[] lastPotionCount;
      private Item ingredient;
      public int fuel;
      protected final ContainerData dataAccess;
@@ -67,7 +72,39 @@
      public BrewingStandBlockEntity(BlockPos pos, BlockState state) {
          super(BlockEntityType.BREWING_STAND, pos, state);
          this.items = NonNullList.withSize(5, ItemStack.EMPTY);
-@@ -107,8 +150,19 @@
+@@ -57,6 +101,11 @@
+                     case 1:
+                         j = BrewingStandBlockEntity.this.fuel;
+                         break;
++                    // Paper start - Add recipeBrewTime
++                    case 2:
++                        j = BrewingStandBlockEntity.this.recipeBrewTime;
++                        break;
++                    // Paper end - Add recipeBrewTime
+                     default:
+                         j = 0;
+                 }
+@@ -72,13 +121,18 @@
+                         break;
+                     case 1:
+                         BrewingStandBlockEntity.this.fuel = value;
++                        // Paper start - Add recipeBrewTime
++                    case 2:
++                        BrewingStandBlockEntity.this.recipeBrewTime = value;
++                        break;
++                    // Paper end - Add recipeBrewTime
+                 }
+ 
+             }
+ 
+             @Override
+             public int getCount() {
+-                return 2;
++                return 3; // Paper - Add recipeBrewTime
+             }
+         };
+     }
+@@ -107,8 +161,19 @@
          ItemStack itemstack = (ItemStack) blockEntity.items.get(4);
  
          if (blockEntity.fuel <= 0 && itemstack.is(ItemTags.BREWING_FUEL)) {
@@ -89,7 +126,7 @@
              setChanged(world, pos, state);
          }
  
-@@ -116,12 +170,15 @@
+@@ -116,12 +181,15 @@
          boolean flag1 = blockEntity.brewTime > 0;
          ItemStack itemstack1 = (ItemStack) blockEntity.items.get(3);
  
@@ -108,7 +145,7 @@
              } else if (!flag || !itemstack1.is(blockEntity.ingredient)) {
                  blockEntity.brewTime = 0;
              }
-@@ -129,7 +186,11 @@
+@@ -129,7 +197,12 @@
              setChanged(world, pos, state);
          } else if (flag && blockEntity.fuel > 0) {
              --blockEntity.fuel;
@@ -116,12 +153,13 @@
 +            // CraftBukkit start
 +            BrewingStartEvent event = new BrewingStartEvent(CraftBlock.at(world, pos), CraftItemStack.asCraftMirror(itemstack1), 400);
 +            world.getCraftServer().getPluginManager().callEvent(event);
-+            blockEntity.brewTime = event.getTotalBrewTime(); // 400 -> event.getTotalBrewTime()
++            blockEntity.recipeBrewTime = event.getRecipeBrewTime(); // Paper - use recipe brew time from event
++            blockEntity.brewTime = event.getBrewingTime(); // 400 -> event.getTotalBrewTime() // Paper - use brewing time from event
 +            // CraftBukkit end
              blockEntity.ingredient = itemstack1.getItem();
              setChanged(world, pos, state);
          }
-@@ -185,14 +246,36 @@
+@@ -185,14 +258,36 @@
          }
      }
  
@@ -161,7 +199,7 @@
          itemstack.shrink(1);
          ItemStack itemstack1 = itemstack.getItem().getCraftingRemainder();
  
-@@ -200,12 +283,12 @@
+@@ -200,12 +295,12 @@
              if (itemstack.isEmpty()) {
                  itemstack = itemstack1;
              } else {
@@ -177,7 +215,7 @@
      }
  
      @Override
-@@ -231,12 +314,12 @@
+@@ -231,12 +326,12 @@
  
      @Override
      public boolean canPlaceItem(int slot, ItemStack stack) {

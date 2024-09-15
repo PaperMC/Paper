@@ -41,6 +41,19 @@ public class CraftBrewingStand extends CraftContainer<BrewingStandBlockEntity> i
         this.getSnapshot().brewTime = brewTime;
     }
 
+    // Paper start - Add recipeBrewTime
+    @Override
+    public void setRecipeBrewTime(int recipeBrewTime) {
+        com.google.common.base.Preconditions.checkArgument(recipeBrewTime > 0, "recipeBrewTime must be positive");
+        this.getSnapshot().recipeBrewTime = recipeBrewTime;
+    }
+
+    @Override
+    public int getRecipeBrewTime() {
+        return this.getSnapshot().recipeBrewTime;
+    }
+    // Paper end - Add recipeBrewTime
+
     @Override
     public int getFuelLevel() {
         return this.getSnapshot().fuel;

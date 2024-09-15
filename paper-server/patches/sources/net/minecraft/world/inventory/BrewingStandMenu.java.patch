@@ -11,7 +11,7 @@
  
  public class BrewingStandMenu extends AbstractContainerMenu {
  
-@@ -35,21 +39,29 @@
+@@ -35,29 +39,51 @@
      public final ContainerData brewingStandData;
      private final Slot ingredientSlot;
  
@@ -21,14 +21,16 @@
 +    // CraftBukkit end
 +
      public BrewingStandMenu(int syncId, Inventory playerInventory) {
-         this(syncId, playerInventory, new SimpleContainer(5), new SimpleContainerData(2));
+-        this(syncId, playerInventory, new SimpleContainer(5), new SimpleContainerData(2));
++        this(syncId, playerInventory, new SimpleContainer(5), new io.papermc.paper.inventory.BrewingSimpleContainerData()); // Paper - Add totalBrewTime
      }
  
      public BrewingStandMenu(int syncId, Inventory playerInventory, Container inventory, ContainerData propertyDelegate) {
          super(MenuType.BREWING_STAND, syncId);
 +        this.player = playerInventory; // CraftBukkit
          checkContainerSize(inventory, 5);
-         checkContainerDataCount(propertyDelegate, 2);
+-        checkContainerDataCount(propertyDelegate, 2);
++        checkContainerDataCount(propertyDelegate, 3); // Paper - Add recipeBrewTime
          this.brewingStand = inventory;
          this.brewingStandData = propertyDelegate;
          PotionBrewing potionbrewer = playerInventory.player.level().potionBrewing();
@@ -43,8 +45,23 @@
 +        // Paper end - custom potion mixes
          this.ingredientSlot = this.addSlot(new BrewingStandMenu.IngredientsSlot(potionbrewer, inventory, 3, 79, 17));
          this.addSlot(new BrewingStandMenu.FuelSlot(inventory, 4, 17, 17));
-         this.addDataSlots(propertyDelegate);
-@@ -58,6 +70,7 @@
+-        this.addDataSlots(propertyDelegate);
++        // Paper start - Add recipeBrewTime
++        this.addDataSlots(new SimpleContainerData(2) {
++            @Override
++            public int get(final int index) {
++                if (index == 0) return 400 * propertyDelegate.get(index) / propertyDelegate.get(2);
++                return propertyDelegate.get(index);
++            }
++
++            @Override
++            public void set(final int index, final int value) {
++                propertyDelegate.set(index, value);
++            }
++        });
++        // Paper end - Add recipeBrewTime
+         this.addStandardInventorySlots(playerInventory, 8, 84);
+     }
  
      @Override
      public boolean stillValid(Player player) {
@@ -52,7 +69,7 @@
          return this.brewingStand.stillValid(player);
      }
  
-@@ -79,7 +92,7 @@
+@@ -79,7 +105,7 @@
                      if (!this.moveItemStackTo(itemstack1, 3, 4, false)) {
                          return ItemStack.EMPTY;
                      }
@@ -61,7 +78,7 @@
                      if (!this.moveItemStackTo(itemstack1, 0, 3, false)) {
                          return ItemStack.EMPTY;
                      }
-@@ -128,13 +141,15 @@
+@@ -128,13 +154,15 @@
  
      private static class PotionSlot extends Slot {
  
@@ -79,7 +96,7 @@
          }
  
          @Override
-@@ -153,8 +168,8 @@
+@@ -153,8 +181,8 @@
              super.onTake(player, stack);
          }
  
@@ -90,7 +107,7 @@
          }
  
          @Override
-@@ -198,4 +213,17 @@
+@@ -198,4 +226,17 @@
              return BrewingStandMenu.EMPTY_SLOT_FUEL;
          }
      }
