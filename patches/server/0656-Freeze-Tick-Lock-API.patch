@@ -1,0 +1,82 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Sun, 26 Dec 2021 20:27:43 -0500
+Subject: [PATCH] Freeze Tick Lock API
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 9f40cc481ded9279319d92fe5a0a9278a3f5d9c2..7d9ebc71b794d40246cbd43ff4de5795970e7ebe 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -411,6 +411,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     private org.bukkit.util.Vector origin;
+     @javax.annotation.Nullable
+     private UUID originWorld;
++    public boolean freezeLocked = false; // Paper - Freeze Tick Lock API
+ 
+     public void setOrigin(@javax.annotation.Nonnull Location location) {
+         this.origin = location.toVector();
+@@ -751,7 +752,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+                 this.setRemainingFireTicks(this.remainingFireTicks - 1);
+             }
+ 
+-            if (this.getTicksFrozen() > 0) {
++            if (this.getTicksFrozen() > 0 && !freezeLocked) { // Paper - Freeze Tick Lock API
+                 this.setTicksFrozen(0);
+                 this.level().levelEvent((Player) null, 1009, this.blockPosition, 1);
+             }
+@@ -2312,6 +2313,9 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+             if (fromNetherPortal) {
+                 nbttagcompound.putBoolean("Paper.FromNetherPortal", true);
+             }
++            if (freezeLocked) {
++                nbttagcompound.putBoolean("Paper.FreezeLock", true);
++            }
+             // Paper end
+             return nbttagcompound;
+         } catch (Throwable throwable) {
+@@ -2456,6 +2460,9 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+             if (spawnReason == null) {
+                 spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT;
+             }
++            if (nbt.contains("Paper.FreezeLock")) {
++                freezeLocked = nbt.getBoolean("Paper.FreezeLock");
++            }
+             // Paper end
+ 
+         } catch (Throwable throwable) {
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index ee7bb1a01bf027eb7b28e3795950a17e5f686815..01a6e91f1b8f619e99d9bccde12f6e91e6ab5eb8 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3497,7 +3497,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+ 
+         this.level().getProfiler().pop();
+         this.level().getProfiler().push("freezing");
+-        if (!this.level().isClientSide && !this.isDeadOrDying()) {
++        if (!this.level().isClientSide && !this.isDeadOrDying() && !this.freezeLocked) { // Paper - Freeze Tick Lock API
+             int i = this.getTicksFrozen();
+ 
+             if (this.isInPowderSnow && this.canFreeze()) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 4ed5647101bbace0005b1ebfb824e4aed48e43cb..4c09f2529dd8eb7ac7d260d177f5292ff2339442 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -323,6 +323,17 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         return this.getHandle().isFullyFrozen();
+     }
+ 
++    // Paper start - Freeze Tick Lock API
++    @Override
++    public boolean isFreezeTickingLocked() {
++        return this.entity.freezeLocked;
++    }
++
++    @Override
++    public void lockFreezeTicks(boolean locked) {
++        this.entity.freezeLocked = locked;
++    }
++    // Paper end - Freeze Tick Lock API
+     @Override
+     public void remove() {
+         this.entity.pluginRemoved = true;

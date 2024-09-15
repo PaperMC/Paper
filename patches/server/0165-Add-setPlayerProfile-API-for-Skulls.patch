@@ -7,7 +7,7 @@ This allows you to create already filled textures on Skulls to avoid texture loo
 which commonly cause rate limit issues with Mojang API
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftSkull.java b/src/main/java/org/bukkit/craftbukkit/block/CraftSkull.java
-index 08838e17979b59555adc242ccdd7af7cbf11f9d6..23374a104510025fd8f882361a29825d0bec6ee0 100644
+index 95045d09a3581816770a195db87086c616b843a7..7af3e5059546a897593dacb32a0fa796d0ad947a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftSkull.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftSkull.java
 @@ -98,7 +98,22 @@ public class CraftSkull extends CraftBlockEntityState<SkullBlockEntity> implemen
@@ -18,13 +18,13 @@ index 08838e17979b59555adc242ccdd7af7cbf11f9d6..23374a104510025fd8f882361a29825d
      @Override
 +    public void setPlayerProfile(com.destroystokyo.paper.profile.PlayerProfile profile) {
 +        Preconditions.checkNotNull(profile, "profile");
-+        this.profile = com.destroystokyo.paper.profile.CraftPlayerProfile.asAuthlibCopy(profile);
++        this.profile = com.destroystokyo.paper.profile.CraftPlayerProfile.asResolvableProfileCopy(profile);
 +    }
 +
 +    @javax.annotation.Nullable
 +    @Override
 +    public com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile() {
-+        return profile != null ? com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitCopy(profile) : null;
++        return profile != null ? com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitCopy(profile.gameProfile()) : null;
 +    }
 +    // Paper end
 +
@@ -42,36 +42,36 @@ index 08838e17979b59555adc242ccdd7af7cbf11f9d6..23374a104510025fd8f882361a29825d
          if (profile == null) {
              this.profile = null;
          } else {
--            this.profile = CraftPlayerProfile.validateSkullProfile(((CraftPlayerProfile) profile).buildGameProfile());
-+            this.profile = CraftPlayerProfile.validateSkullProfile(((com.destroystokyo.paper.profile.SharedPlayerProfile) profile).buildGameProfile()); // Paper
+-            this.profile = new ResolvableProfile(CraftPlayerProfile.validateSkullProfile(((CraftPlayerProfile) profile).buildGameProfile()));
++            this.profile = new ResolvableProfile(CraftPlayerProfile.validateSkullProfile(((com.destroystokyo.paper.profile.SharedPlayerProfile) profile).buildGameProfile())); // Paper
          }
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
-index a36fcd9bfcbd2b37d7cf40b32abc0aea2761ce15..d6e161374e0235031128a6ee86d1ffa875ea48aa 100644
+index 7181d81c231908f208b48a29f918136cb143f476..0b680f4d79e9d04b755309ac46969d7e43fd3c5f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSkull.java
-@@ -153,6 +153,19 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
-         return this.hasOwner() ? this.profile.getName() : null;
+@@ -148,6 +148,19 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
+         return this.hasOwner() ? this.profile.name().orElse(null) : null;
      }
  
 +    // Paper start
 +    @Override
 +    public void setPlayerProfile(@org.jetbrains.annotations.Nullable com.destroystokyo.paper.profile.PlayerProfile profile) {
-+        setProfile((profile == null) ? null : com.destroystokyo.paper.profile.CraftPlayerProfile.asAuthlibCopy(profile));
++        setProfile((profile == null) ? null : new ResolvableProfile(com.destroystokyo.paper.profile.CraftPlayerProfile.asAuthlibCopy(profile)));
 +    }
 +
 +    @org.jetbrains.annotations.Nullable
 +    @Override
 +    public com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile() {
-+        return profile != null ? com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitCopy(profile) : null;
++        return profile != null ? com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitCopy(profile.gameProfile()) : null;
 +    }
 +    // Paper end
 +
      @Override
      public OfflinePlayer getOwningPlayer() {
          if (this.hasOwner()) {
-@@ -203,6 +216,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
+@@ -198,6 +211,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
      }
  
      @Override
@@ -79,26 +79,24 @@ index a36fcd9bfcbd2b37d7cf40b32abc0aea2761ce15..d6e161374e0235031128a6ee86d1ffa8
      public PlayerProfile getOwnerProfile() {
          if (!this.hasOwner()) {
              return null;
-@@ -212,11 +226,12 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
+@@ -207,9 +221,10 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
      }
  
      @Override
 +    @Deprecated // Paper
      public void setOwnerProfile(PlayerProfile profile) {
-         if (profile == null) {
-             this.setProfile(null);
+         if (profile instanceof CraftPlayerProfile craftPlayerProfile) {
+-            this.setProfile(CraftPlayerProfile.validateSkullProfile(craftPlayerProfile.buildResolvableProfile()));
++            this.setProfile(CraftPlayerProfile.validateSkullProfile(((com.destroystokyo.paper.profile.SharedPlayerProfile) profile).buildResolvableProfile())); // Paper
          } else {
--            this.setProfile(CraftPlayerProfile.validateSkullProfile(((CraftPlayerProfile) profile).buildGameProfile()));
-+            this.setProfile(CraftPlayerProfile.validateSkullProfile(((com.destroystokyo.paper.profile.SharedPlayerProfile) profile).buildGameProfile())); // Paper
+             this.setProfile(null);
          }
-     }
- 
-@@ -271,7 +286,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
+@@ -263,7 +278,7 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
          super.serialize(builder);
  
-         if (this.profile != null) {
+         if (this.hasOwner()) {
 -            builder.put(CraftMetaSkull.SKULL_OWNER.BUKKIT, new CraftPlayerProfile(this.profile));
-+            builder.put(CraftMetaSkull.SKULL_OWNER.BUKKIT, new com.destroystokyo.paper.profile.CraftPlayerProfile(this.profile)); // Paper
++            builder.put(CraftMetaSkull.SKULL_OWNER.BUKKIT, new com.destroystokyo.paper.profile.CraftPlayerProfile(this.profile.gameProfile())); // Paper
          }
  
          NamespacedKey namespacedKeyNB = this.getNoteBlockSound();

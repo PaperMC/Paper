@@ -1,0 +1,76 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sat, 1 Jan 2022 05:19:37 -0800
+Subject: [PATCH] Validate usernames
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index e0a10f1d8bf2c0df66e62bdf2a174ce6a66bbd6d..9c343b579d9735dc59c8c74fde030d981a673c4f 100644
+--- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -90,6 +90,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+     private final String serverId;
+     private final boolean transferred;
+     private ServerPlayer player; // CraftBukkit
++    public boolean iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation = false; // Paper - username validation overriding
+ 
+     public ServerLoginPacketListenerImpl(MinecraftServer server, Connection connection, boolean transferred) {
+         this.state = ServerLoginPacketListenerImpl.State.HELLO;
+@@ -171,7 +172,13 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+     @Override
+     public void handleHello(ServerboundHelloPacket packet) {
+         Validate.validState(this.state == ServerLoginPacketListenerImpl.State.HELLO, "Unexpected hello packet", new Object[0]);
+-        Validate.validState(StringUtil.isValidPlayerName(packet.name()), "Invalid characters in username", new Object[0]);
++        // Paper start - Validate usernames
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode()
++            && io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.performUsernameValidation
++            && !this.iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation) {
++            Validate.validState(StringUtil.isReasonablePlayerName(packet.name()), "Invalid characters in username", new Object[0]);
++        }
++        // Paper end - Validate usernames
+         this.requestedUsername = packet.name();
+         GameProfile gameprofile = this.server.getSingleplayerProfile();
+ 
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index c7dc335d6da208c224d94256eab11b2c3c63745f..cff45afb90b232a236683bd569d50aab6b701149 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -670,7 +670,7 @@ public abstract class PlayerList {
+ 
+         for (int i = 0; i < this.players.size(); ++i) {
+             entityplayer = (ServerPlayer) this.players.get(i);
+-            if (entityplayer.getUUID().equals(uuid)) {
++            if (entityplayer.getUUID().equals(uuid) || (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && entityplayer.getGameProfile().getName().equalsIgnoreCase(gameprofile.getName()))) { // Paper - validate usernames
+                 list.add(entityplayer);
+             }
+         }
+diff --git a/src/main/java/net/minecraft/util/StringUtil.java b/src/main/java/net/minecraft/util/StringUtil.java
+index d3fc549a08993376c76c4ebebb788fea3f4ddf69..0bd191acb9596d3aa21c337230d26f09d26f6888 100644
+--- a/src/main/java/net/minecraft/util/StringUtil.java
++++ b/src/main/java/net/minecraft/util/StringUtil.java
+@@ -67,6 +67,25 @@ public class StringUtil {
+         return name.length() <= 16 && name.chars().filter(c -> c <= 32 || c >= 127).findAny().isEmpty();
+     }
+ 
++    // Paper start - Username validation
++    public static boolean isReasonablePlayerName(final String name) {
++        if (name.isEmpty() || name.length() > 16) {
++            return false;
++        }
++
++        for (int i = 0, len = name.length(); i < len; ++i) {
++            final char c = name.charAt(i);
++            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || (c == '_' || c == '.')) {
++                continue;
++            }
++
++            return false;
++        }
++
++        return true;
++    }
++    // Paper end - Username validation
++
+     public static String filterText(String string) {
+         return filterText(string, false);
+     }
