@@ -3,6 +3,7 @@ package org.bukkit.inventory;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a smithing trim recipe.
@@ -19,7 +20,7 @@ public class SmithingTrimRecipe extends SmithingRecipe implements ComplexRecipe 
      * @param base The base ingredient
      * @param addition The addition ingredient
      */
-    public SmithingTrimRecipe(@NotNull NamespacedKey key, @NotNull RecipeChoice template, @NotNull RecipeChoice base, @NotNull RecipeChoice addition) {
+    public SmithingTrimRecipe(@NotNull NamespacedKey key, @Nullable RecipeChoice template, @Nullable RecipeChoice base, @Nullable RecipeChoice addition) {
         super(key, new ItemStack(Material.AIR), base, addition);
         this.template = template;
     }
@@ -29,8 +30,8 @@ public class SmithingTrimRecipe extends SmithingRecipe implements ComplexRecipe 
      *
      * @return template choice
      */
-    @NotNull
+    @Nullable
     public RecipeChoice getTemplate() {
-        return template.clone();
+        return (template != null) ? template.clone() : null;
     }
 }

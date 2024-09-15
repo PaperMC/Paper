@@ -2,6 +2,7 @@ package org.bukkit.inventory;
 
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a smithing transform recipe.
@@ -19,7 +20,7 @@ public class SmithingTransformRecipe extends SmithingRecipe {
      * @param base The base ingredient
      * @param addition The addition ingredient
      */
-    public SmithingTransformRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull RecipeChoice template, @NotNull RecipeChoice base, @NotNull RecipeChoice addition) {
+    public SmithingTransformRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @Nullable RecipeChoice template, @Nullable RecipeChoice base, @Nullable RecipeChoice addition) {
         super(key, result, base, addition);
         this.template = template;
     }
@@ -29,8 +30,8 @@ public class SmithingTransformRecipe extends SmithingRecipe {
      *
      * @return template choice
      */
-    @NotNull
+    @Nullable
     public RecipeChoice getTemplate() {
-        return template.clone();
+        return (template != null) ? template.clone() : null;
     }
 }

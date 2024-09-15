@@ -3,6 +3,7 @@ package org.bukkit.inventory;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a smithing recipe.
@@ -27,7 +28,7 @@ public class SmithingRecipe implements Recipe, Keyed {
      * added to the server.
      */
     @Deprecated
-    public SmithingRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull RecipeChoice base, @NotNull RecipeChoice addition) {
+    public SmithingRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @Nullable RecipeChoice base, @Nullable RecipeChoice addition) {
         this.key = key;
         this.result = result;
         this.base = base;
@@ -39,9 +40,9 @@ public class SmithingRecipe implements Recipe, Keyed {
      *
      * @return base choice
      */
-    @NotNull
+    @Nullable
     public RecipeChoice getBase() {
-        return base.clone();
+        return (base != null) ? base.clone() : null;
     }
 
     /**
@@ -49,9 +50,9 @@ public class SmithingRecipe implements Recipe, Keyed {
      *
      * @return addition choice
      */
-    @NotNull
+    @Nullable
     public RecipeChoice getAddition() {
-        return addition.clone();
+        return (addition != null) ? addition.clone() : null;
     }
 
     @NotNull
