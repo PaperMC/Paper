@@ -3346,13 +3346,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 +    // Paper start
-+    @Override
+     @Override
 +    public net.kyori.adventure.text.Component shutdownMessage() {
 +        String msg = getShutdownMessage();
 +        return msg != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(msg) : null;
 +    }
 +    // Paper end
-     @Override
++    @Override
 +    @Deprecated // Paper
      public String getShutdownMessage() {
          return this.configuration.getString("settings.shutdown-message");
@@ -3429,12 +3429,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 +    // Paper start
-+    @Override
+     @Override
 +    public Merchant createMerchant(net.kyori.adventure.text.Component title) {
 +        return new org.bukkit.craftbukkit.inventory.CraftMerchantCustom(title == null ? InventoryType.MERCHANT.defaultTitle() : title);
 +    }
 +    // Paper end
-     @Override
++    @Override
 +    @Deprecated // Paper
      public Merchant createMerchant(String title) {
          return new CraftMerchantCustom(title == null ? InventoryType.MERCHANT.getDefaultTitle() : title);
@@ -4253,7 +4253,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-         this.getHandle().connection.disconnect(CraftChatMessage.fromStringOrEmpty(message, true));
+         this.getHandle().transferCookieConnection.kickPlayer(CraftChatMessage.fromStringOrEmpty(message, true));
      }
  
 +    // Paper start
@@ -4846,29 +4846,55 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - Adventure
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMenuType.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMenuType.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMenuType.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMenuType.java
+@@ -0,0 +0,0 @@ public class CraftMenuType<V extends InventoryView> implements MenuType.Typed<V>
+ 
+     @Override
+     public V create(final HumanEntity player, final String title) {
++    // Paper start - adventure
++        return create(player, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(title));
++    }
++    @Override
++    public V create(final HumanEntity player, final net.kyori.adventure.text.Component title) {
++    // Paper end - adventure
+         Preconditions.checkArgument(player != null, "The given player must not be null");
+         Preconditions.checkArgument(title != null, "The given title must not be null");
+         Preconditions.checkArgument(player instanceof CraftHumanEntity, "The given player must be a CraftHumanEntity");
+@@ -0,0 +0,0 @@ public class CraftMenuType<V extends InventoryView> implements MenuType.Typed<V>
+         final ServerPlayer serverPlayer = (ServerPlayer) craftHuman.getHandle();
+ 
+         final AbstractContainerMenu container = this.typeData.get().menuBuilder().build(serverPlayer, this.handle);
+-        container.setTitle(CraftChatMessage.fromString(title)[0]);
++        container.setTitle(io.papermc.paper.adventure.PaperAdventure.asVanilla(title)); // Paper - adventure
+         container.checkReachable = false;
+         return (V) container.getBukkitView();
+     }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMerchantCustom.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMerchantCustom.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMerchantCustom.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMerchantCustom.java
-@@ -0,0 +0,0 @@ import org.bukkit.craftbukkit.util.CraftChatMessage;
+@@ -0,0 +0,0 @@ public class CraftMerchantCustom implements CraftMerchant {
  
- public class CraftMerchantCustom extends CraftMerchant {
+     private MinecraftMerchant merchant;
  
 +    @Deprecated // Paper - Adventure
      public CraftMerchantCustom(String title) {
-         super(new MinecraftMerchant(title));
+         this.merchant = new MinecraftMerchant(title);
          this.getMerchant().craftMerchant = this;
      }
 +    // Paper start
 +    public CraftMerchantCustom(net.kyori.adventure.text.Component title) {
-+        super(new MinecraftMerchant(title));
++        this.merchant = new MinecraftMerchant(title);
 +        getMerchant().craftMerchant = this;
 +    }
 +    // Paper end
  
      @Override
      public String toString() {
-@@ -0,0 +0,0 @@ public class CraftMerchantCustom extends CraftMerchant {
+@@ -0,0 +0,0 @@ public class CraftMerchantCustom implements CraftMerchant {
          private Player tradingPlayer;
          protected CraftMerchant craftMerchant;
  

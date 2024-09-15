@@ -48,7 +48,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
 @@ -0,0 +0,0 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
-         return nbt;
+         return this.snapshot.getUpdateTag(this.getRegistryAccess());
      }
  
 +    // Paper start - properly save blockentity itemstacks
@@ -89,8 +89,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start - support updating profile after resolving it
 +        final CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator() {
 +            @Override
-+            void skullCallback(final com.mojang.authlib.GameProfile gameProfile) {
-+                itemStack.set(DataComponents.PROFILE, new net.minecraft.world.item.component.ResolvableProfile(gameProfile));
++            void skullCallback(final net.minecraft.world.item.component.ResolvableProfile profile) {
++                itemStack.set(DataComponents.PROFILE, profile);
 +            }
 +        };
 +        // Paper end - support updating profile after resolving it
@@ -105,8 +105,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper start - support updating profile after resolving it
 +            CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator() {
 +                @Override
-+                void skullCallback(final com.mojang.authlib.GameProfile gameProfile) {
-+                    item.set(DataComponents.PROFILE, new net.minecraft.world.item.component.ResolvableProfile(gameProfile));
++                void skullCallback(final net.minecraft.world.item.component.ResolvableProfile resolvableProfile) {
++                    item.set(DataComponents.PROFILE, resolvableProfile);
 +                }
 +            };
 +            // Paper end - support updating profile after resolving it
@@ -931,11 +931,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return !(this.effects != null || this.hasPower()); // Paper - empty effects list should stay on the item
      }
  
--    boolean hasPower() {
-+    public boolean hasPower() { // Paper - add hasPower to API
-         return this.power != null;
-     }
- 
+     @Override
 @@ -0,0 +0,0 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
          if (meta instanceof CraftMetaFirework that) {
  
@@ -991,15 +987,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      @Override
-@@ -0,0 +0,0 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
- 
-     @Override
-     public int getPower() {
--        return this.hasPower() ? this.power : 1;
-+        return this.hasPower() ? this.power : 0; // Paper - 0 is correct
-     }
- 
-     @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
@@ -1013,7 +1000,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -        private final DataComponentPatch.Builder builder = DataComponentPatch.builder();
 +        final DataComponentPatch.Builder builder = DataComponentPatch.builder(); // Paper - private -> package-private
-+        void skullCallback(com.mojang.authlib.GameProfile gameProfile) {} // Paper - support updating profile after resolving it
++        void skullCallback(net.minecraft.world.item.component.ResolvableProfile resolvableProfile) {} // Paper - support updating profile after resolving it
  
          <T> Applicator put(ItemMetaKeyType<T> key, T value) {
              this.builder.set(key.TYPE, value);
@@ -1897,7 +1884,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                ownerProfile.update().thenAccept((filledProfile) -> {
 +                ownerProfile.update().thenAcceptAsync((filledProfile) -> { // Paper - run on main thread
                      this.setOwnerProfile(filledProfile);
--                    tag.put(CraftMetaSkull.SKULL_PROFILE, new ResolvableProfile(this.profile));
+-                    tag.put(CraftMetaSkull.SKULL_PROFILE, this.profile);
 -                });
 +                    tag.skullCallback(this.profile); // Paper - actually set profile on itemstack
 +                }, ((org.bukkit.craftbukkit.CraftServer) org.bukkit.Bukkit.getServer()).getServer()); // Paper - run on main thread

@@ -53,14 +53,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
                  int j = this.getDamageValue() + amount;
 @@ -0,0 +0,0 @@ public final class ItemStack implements DataComponentHolder {
+                 if (j >= this.getMaxDamage()) {
+                     Item item = this.getItem();
+                     // CraftBukkit start - Check for item breaking
+-                    if (this.count == 1) {
+-                        org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemBreakEvent(player, this);
++                    if (this.count == 1 && player instanceof final ServerPlayer serverPlayer) { // Paper - Add EntityDamageItemEvent
++                        org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemBreakEvent(serverPlayer, this); // Paper - Add EntityDamageItemEvent
+                     }
+                     // CraftBukkit end
+ 
+@@ -0,0 +0,0 @@ public final class ItemStack implements DataComponentHolder {
                  entityplayer = null;
              }
  
 -            this.hurtAndBreak(amount, worldserver, entityplayer, (item) -> {
 +            this.hurtAndBreak(amount, worldserver, entity, (item) -> { // Paper - Add EntityDamageItemEvent
-                 // CraftBukkit start - Check for item breaking
-                 if (this.count == 1 && entity instanceof net.minecraft.world.entity.player.Player) {
-                     org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemBreakEvent((net.minecraft.world.entity.player.Player) entity, this);
+                 entity.onEquippedItemBroken(item, slot);
+             });
+         }
 diff --git a/src/main/java/net/minecraft/world/item/enchantment/effects/DamageItem.java b/src/main/java/net/minecraft/world/item/enchantment/effects/DamageItem.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/item/enchantment/effects/DamageItem.java
