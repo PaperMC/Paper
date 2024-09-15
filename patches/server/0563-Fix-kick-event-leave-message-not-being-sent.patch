@@ -1,0 +1,118 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 7 Jul 2021 16:19:41 -0700
+Subject: [PATCH] Fix kick event leave message not being sent
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index f20019261a09f425137731f7a4b92e889b617334..9982940af7d10ca7799e2c21ac994ea3afa0b805 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -290,7 +290,6 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+     public boolean joining = true;
+     public boolean sentListPacket = false;
+     public boolean supressTrackerForLogin = false; // Paper - Fire PlayerJoinEvent when Player is actually ready
+-    public String kickLeaveMessage = null; // SPIGOT-3034: Forward leave message to PlayerQuitEvent
+     // CraftBukkit end
+     public boolean isRealPlayer; // Paper
+     public com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
+diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+index 64450024ce8094874875321537ddab71ab5206fa..6998f32f8d79dbdb6b31ffaa126602fc4a428616 100644
+--- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+@@ -115,6 +115,11 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+ 
+     @Override
+     public void onDisconnect(DisconnectionDetails info) {
++        // Paper start - Fix kick event leave message not being sent
++        this.onDisconnect(info, null);
++    }
++    public void onDisconnect(DisconnectionDetails info, @Nullable net.kyori.adventure.text.Component quitMessage) {
++        // Paper end - Fix kick event leave message not being sent
+         if (this.isSingleplayerOwner()) {
+             ServerCommonPacketListenerImpl.LOGGER.info("Stopping singleplayer server as player logged out");
+             this.server.halt(false);
+@@ -379,18 +384,17 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+             // Do not kick the player
+             return;
+         }
+-        this.player.kickLeaveMessage = event.getLeaveMessage(); // CraftBukkit - SPIGOT-3034: Forward leave message to PlayerQuitEvent
+         // Send the possibly modified leave message
+-        this.disconnect0(new DisconnectionDetails(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.reason()), disconnectionInfo.report(), disconnectionInfo.bugReportLink())); // Paper - Adventure
++        this.disconnect0(new DisconnectionDetails(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.reason()), disconnectionInfo.report(), disconnectionInfo.bugReportLink()), event.leaveMessage()); // Paper - Adventure & use kick event leave message
+     }
+ 
+-    private void disconnect0(DisconnectionDetails disconnectiondetails) {
++    private void disconnect0(DisconnectionDetails disconnectiondetails, @Nullable net.kyori.adventure.text.Component leaveMessage) { // Paper - use kick event leave message
+         // CraftBukkit end
+         this.player.quitReason = org.bukkit.event.player.PlayerQuitEvent.QuitReason.KICKED; // Paper - Add API for quit reason
+         this.connection.send(new ClientboundDisconnectPacket(disconnectiondetails.reason()), PacketSendListener.thenRun(() -> {
+             this.connection.disconnect(disconnectiondetails);
+         }));
+-        this.onDisconnect(disconnectiondetails); // CraftBukkit - fire quit instantly
++        this.onDisconnect(disconnectiondetails, leaveMessage); // CraftBukkit - fire quit instantly // Paper - use kick event leave message
+         this.connection.setReadOnly();
+         MinecraftServer minecraftserver = this.server;
+         Connection networkmanager = this.connection;
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 3b20dce53403e241261f270f0a9e32f12b9e368a..08c4d0b79dc1c6e51105487b96e9333a5dd904d7 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1894,6 +1894,12 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+     @Override
+     public void onDisconnect(DisconnectionDetails info) {
++        // Paper start - Fix kick event leave message not being sent
++        this.onDisconnect(info, null);
++    }
++    @Override
++    public void onDisconnect(DisconnectionDetails info, @Nullable net.kyori.adventure.text.Component quitMessage) {
++        // Paper end - Fix kick event leave message not being sent
+         // CraftBukkit start - Rarely it would send a disconnect line twice
+         if (this.processedDisconnect) {
+             return;
+@@ -1902,11 +1908,17 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         }
+         // CraftBukkit end
+         ServerGamePacketListenerImpl.LOGGER.info("{} lost connection: {}", this.player.getName().getString(), info.reason().getString());
+-        this.removePlayerFromWorld();
+-        super.onDisconnect(info);
++        this.removePlayerFromWorld(quitMessage); // Paper - Fix kick event leave message not being sent
++        super.onDisconnect(info, quitMessage); // Paper - Fix kick event leave message not being sent
+     }
+ 
++    // Paper start - Fix kick event leave message not being sent
+     private void removePlayerFromWorld() {
++        this.removePlayerFromWorld(null);
++    }
++
++    private void removePlayerFromWorld(@Nullable net.kyori.adventure.text.Component quitMessage) {
++        // Paper end - Fix kick event leave message not being sent
+         this.chatMessageChain.close();
+         // CraftBukkit start - Replace vanilla quit message handling with our own.
+         /*
+@@ -1916,7 +1928,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+         this.player.disconnect();
+         // Paper start - Adventure
+-        net.kyori.adventure.text.Component quitMessage = this.server.getPlayerList().remove(this.player);
++        quitMessage = quitMessage == null ? this.server.getPlayerList().remove(this.player) : this.server.getPlayerList().remove(this.player, quitMessage); // Paper - pass in quitMessage to fix kick message not being used
+         if ((quitMessage != null) && !quitMessage.equals(net.kyori.adventure.text.Component.empty())) {
+             this.server.getPlayerList().broadcastSystemMessage(PaperAdventure.asVanilla(quitMessage), false);
+             // Paper end
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 55a2f234436808258ef59f889a9b253fe79b82e8..2b0eed116327e74ff66aa065e42899e74b90abf1 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -561,6 +561,11 @@ public abstract class PlayerList {
+     }
+ 
+     public net.kyori.adventure.text.Component remove(ServerPlayer entityplayer) { // CraftBukkit - return string // Paper - return Component
++        // Paper start - Fix kick event leave message not being sent
++        return this.remove(entityplayer, net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, io.papermc.paper.configuration.GlobalConfiguration.get().messages.useDisplayNameInQuitMessage ? entityplayer.getBukkitEntity().displayName() : io.papermc.paper.adventure.PaperAdventure.asAdventure(entityplayer.getDisplayName())));
++    }
++    public net.kyori.adventure.text.Component remove(ServerPlayer entityplayer, net.kyori.adventure.text.Component leaveMessage) {
++        // Paper end - Fix kick event leave message not being sent
+         ServerLevel worldserver = entityplayer.serverLevel();
+ 
+         entityplayer.awardStat(Stats.LEAVE_GAME);

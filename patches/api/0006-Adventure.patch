@@ -3343,16 +3343,16 @@ index 133760be6c73436512ba684a3ac77a514b2d8765..9473303bd8ab1f6b63b6999a5f5ff3ec
       * Gets how much EXP the Player should have at respawn.
       * <p>
 diff --git a/src/main/java/org/bukkit/event/inventory/InventoryType.java b/src/main/java/org/bukkit/event/inventory/InventoryType.java
-index c5734d66686e68080f55034754d43ae55030c3eb..32cd8ee2e849df602a7e10aa5d0a218007faa0ac 100644
+index 094963b16eccc303fb1a10b1e052feebe4a4d68b..3e6ac5beb137efd8ecd80e2e9b17015cb38e8a0a 100644
 --- a/src/main/java/org/bukkit/event/inventory/InventoryType.java
 +++ b/src/main/java/org/bukkit/event/inventory/InventoryType.java
-@@ -161,6 +161,18 @@ public enum InventoryType {
+@@ -163,7 +163,18 @@ public enum InventoryType {
      private final String title;
+     private final MenuType menuType;
      private final boolean isCreatable;
- 
 +    // Paper start
 +    private final net.kyori.adventure.text.Component defaultTitleComponent;
-+
+ 
 +    /**
 +     * Gets the inventory's default title.
 +     *
@@ -3362,18 +3362,18 @@ index c5734d66686e68080f55034754d43ae55030c3eb..32cd8ee2e849df602a7e10aa5d0a2180
 +        return defaultTitleComponent;
 +    }
 +    // Paper end
-     private InventoryType(int defaultSize, /*@NotNull*/ String defaultTitle) {
-         this(defaultSize, defaultTitle, true);
+     private InventoryType(int defaultSize, /*@NotNull*/ String defaultTitle, @Nullable MenuType type) {
+         this(defaultSize, defaultTitle, type, true);
      }
-@@ -169,6 +181,7 @@ public enum InventoryType {
-         size = defaultSize;
+@@ -173,6 +184,7 @@ public enum InventoryType {
          title = defaultTitle;
+         this.menuType = type;
          this.isCreatable = isCreatable;
 +        this.defaultTitleComponent = net.kyori.adventure.text.Component.text(defaultTitle); // Paper - Adventure
      }
  
      public int getDefaultSize() {
-@@ -176,6 +189,7 @@ public enum InventoryType {
+@@ -180,6 +192,7 @@ public enum InventoryType {
      }
  
      @NotNull
@@ -4421,6 +4421,56 @@ index eade62328895133c026e7e678e648e1fc846f5ee..730c42eddd38acec1cdbb19dfc8c6757
 +    }
 +    // Paper end
  }
+diff --git a/src/main/java/org/bukkit/inventory/MenuType.java b/src/main/java/org/bukkit/inventory/MenuType.java
+index ee39bf9019fa0377beb895a22db0b2a0934a4d84..29dfad691cbdd09d043f6171defc8a7fabbc2b75 100644
+--- a/src/main/java/org/bukkit/inventory/MenuType.java
++++ b/src/main/java/org/bukkit/inventory/MenuType.java
+@@ -146,11 +146,45 @@ public interface MenuType extends Keyed {
+          * @param player the player the view belongs to
+          * @param title the title of the view
+          * @return the created {@link InventoryView}
++         * @deprecated Use {@link #create(HumanEntity, net.kyori.adventure.text.Component)} instead.
+          */
+         @NotNull
++        @Deprecated(since = "1.21") // Paper - adventure
+         V create(@NotNull HumanEntity player, @NotNull String title);
++
++        // Paper start - adventure
++        /**
++         * Creates a view of the specified menu type.
++         * <p>
++         * The player provided to create this view must be the player the view
++         * is opened for. See {@link HumanEntity#openInventory(InventoryView)}
++         * for more information.
++         *
++         * @param player the player the view belongs to
++         * @param title the title of the view
++         * @return the created {@link InventoryView}
++         */
++        @NotNull
++        V create(@NotNull HumanEntity player, @NotNull net.kyori.adventure.text.Component title);
++        // Paper end - adventure
+     }
+ 
++    // Paper start - adventure
++    /**
++     * Creates a view of the specified menu type.
++     * <p>
++     * The player provided to create this view must be the player the view
++     * is opened for. See {@link HumanEntity#openInventory(InventoryView)}
++     * for more information.
++     *
++     * @param player the player the view belongs to
++     * @param title the title of the view
++     * @return the created {@link InventoryView}
++     */
++    @NotNull
++    InventoryView create(@NotNull HumanEntity player, @NotNull net.kyori.adventure.text.Component title);
++    // Paper end - adventure
++
+     /**
+      * Yields this MenuType as a typed version of itself with a plain
+      * {@link InventoryView} representing it.
 diff --git a/src/main/java/org/bukkit/inventory/meta/BookMeta.java b/src/main/java/org/bukkit/inventory/meta/BookMeta.java
 index 9bab73c3c2ca759b8e1c7d07d98cc593c961666a..f0c6943da3f783101ca647b75b3230fae3a310da 100644
 --- a/src/main/java/org/bukkit/inventory/meta/BookMeta.java

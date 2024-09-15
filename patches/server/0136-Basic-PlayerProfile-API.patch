@@ -16,10 +16,10 @@ public org.bukkit.craftbukkit.profile.CraftPlayerProfile setProperty(Ljava/lang/
 
 diff --git a/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cbe2789f8a055550dd7840a7bed980efd65eb9a1
+index 0000000000000000000000000000000000000000..23181027bb077417655913c29377bed720c9e9c1
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/profile/CraftPlayerProfile.java
-@@ -0,0 +1,422 @@
+@@ -0,0 +1,449 @@
 +package com.destroystokyo.paper.profile;
 +
 +import com.google.common.base.Preconditions;
@@ -34,6 +34,7 @@ index 0000000000000000000000000000000000000000..cbe2789f8a055550dd7840a7bed980ef
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.players.GameProfileCache;
 +import net.minecraft.util.StringUtil;
++import net.minecraft.world.item.component.ResolvableProfile;
 +import org.apache.commons.lang3.StringUtils;
 +import org.apache.commons.lang3.Validate;
 +import org.bukkit.configuration.serialization.SerializableAs;
@@ -52,6 +53,8 @@ index 0000000000000000000000000000000000000000..cbe2789f8a055550dd7840a7bed980ef
 +@SerializableAs("PlayerProfile")
 +public class CraftPlayerProfile implements PlayerProfile, SharedPlayerProfile {
 +
++    private boolean emptyName;
++    private boolean emptyUUID;
 +    private GameProfile profile;
 +    private final PropertySet properties = new PropertySet();
 +
@@ -61,11 +64,18 @@ index 0000000000000000000000000000000000000000..cbe2789f8a055550dd7840a7bed980ef
 +
 +    public CraftPlayerProfile(UUID id, String name) {
 +        this.profile = createAuthLibProfile(id, name);
++        this.emptyName = name == null;
++        this.emptyUUID = id == null;
 +    }
 +
 +    public CraftPlayerProfile(GameProfile profile) {
 +        Validate.notNull(profile, "GameProfile cannot be null!");
 +        this.profile = profile;
++    }
++
++    public CraftPlayerProfile(ResolvableProfile resolvableProfile) {
++        this(resolvableProfile.id().orElse(null), resolvableProfile.name().orElse(null));
++        copyProfileProperties(resolvableProfile.gameProfile(), this.profile);
 +    }
 +
 +    @Override
@@ -106,7 +116,7 @@ index 0000000000000000000000000000000000000000..cbe2789f8a055550dd7840a7bed980ef
 +    @Nullable
 +    @Override
 +    public UUID getId() {
-+        return profile.getId().equals(Util.NIL_UUID) ? null : profile.getId();
++        return this.emptyUUID ? null : this.profile.getId();
 +    }
 +
 +    @Override
@@ -116,6 +126,7 @@ index 0000000000000000000000000000000000000000..cbe2789f8a055550dd7840a7bed980ef
 +        final UUID previousId = this.getId();
 +        this.profile = createAuthLibProfile(uuid, previousProfile.getName());
 +        copyProfileProperties(previousProfile, this.profile);
++        this.emptyUUID = uuid == null;
 +        return previousId;
 +    }
 +
@@ -127,7 +138,7 @@ index 0000000000000000000000000000000000000000..cbe2789f8a055550dd7840a7bed980ef
 +    @Nullable
 +    @Override
 +    public String getName() {
-+        return profile.getName();
++        return this.emptyName ? null : this.profile.getName();
 +    }
 +
 +    @Override
@@ -136,6 +147,7 @@ index 0000000000000000000000000000000000000000..cbe2789f8a055550dd7840a7bed980ef
 +        GameProfile prev = this.profile;
 +        this.profile = createAuthLibProfile(prev.getId(), name);
 +        copyProfileProperties(prev, this.profile);
++        this.emptyName = name == null;
 +        return prev.getName();
 +    }
 +
@@ -181,6 +193,15 @@ index 0000000000000000000000000000000000000000..cbe2789f8a055550dd7840a7bed980ef
 +        GameProfile profile = new GameProfile(this.profile.getId(), this.profile.getName());
 +        profile.getProperties().putAll(this.profile.getProperties());
 +        return profile;
++    }
++
++    @Override
++    public @NotNull ResolvableProfile buildResolvableProfile() {
++        if (this.emptyName || this.emptyUUID) {
++            return new ResolvableProfile(this.emptyName ? Optional.empty() : Optional.of(this.profile.getName()), this.emptyUUID ? Optional.empty() : Optional.of(this.profile.getId()), this.profile.getProperties());
++        } else {
++            return new ResolvableProfile(this.buildGameProfile());
++        }
 +    }
 +
 +    @Override
@@ -251,6 +272,7 @@ index 0000000000000000000000000000000000000000..cbe2789f8a055550dd7840a7bed980ef
 +    public boolean complete(boolean textures) {
 +        return complete(textures, GlobalConfiguration.get().proxies.isProxyOnlineMode());
 +    }
++
 +    public boolean complete(boolean textures, boolean onlineMode) {
 +        if (this.isComplete() && (!textures || hasTextures())) { // Don't do lookup if we already have everything
 +            return true;
@@ -328,6 +350,10 @@ index 0000000000000000000000000000000000000000..cbe2789f8a055550dd7840a7bed980ef
 +        return craft.getGameProfile();
 +    }
 +
++    public static ResolvableProfile asResolvableProfileCopy(PlayerProfile profile) {
++        return ((SharedPlayerProfile) profile).buildResolvableProfile();
++    }
++
 +    @Override
 +    public @NotNull Map<String, Object> serialize() {
 +        Map<String, Object> map = new LinkedHashMap<>();
@@ -368,10 +394,16 @@ index 0000000000000000000000000000000000000000..cbe2789f8a055550dd7840a7bed980ef
 +    }
 +
 +    @Override
-+    public boolean equals(Object obj) {
-+        if (this == obj) return true;
-+        if (!(obj instanceof CraftPlayerProfile otherProfile)) return false;
-+        return Objects.equals(this.profile, otherProfile.profile);
++    public boolean equals(final Object o) {
++        if (this == o) return true;
++        if (o == null || this.getClass() != o.getClass()) return false;
++        final CraftPlayerProfile that = (CraftPlayerProfile) o;
++        return this.emptyName == that.emptyName && this.emptyUUID == that.emptyUUID && Objects.equals(this.profile, that.profile);
++    }
++
++    @Override
++    public int hashCode() {
++        return Objects.hash(this.emptyName, this.emptyUUID, this.profile);
 +    }
 +
 +    @Override
@@ -380,11 +412,6 @@ index 0000000000000000000000000000000000000000..cbe2789f8a055550dd7840a7bed980ef
 +            ", name=" + getName() +
 +            ", properties=" + org.bukkit.craftbukkit.profile.CraftPlayerProfile.toString(this.profile.getProperties()) +
 +            "]";
-+    }
-+
-+    @Override
-+    public int hashCode() {
-+        return this.profile.hashCode();
 +    }
 +
 +    private class PropertySet extends AbstractSet<ProfileProperty> {
@@ -531,14 +558,15 @@ index 0000000000000000000000000000000000000000..985e6fc43a0946943847e0c283426242
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/profile/SharedPlayerProfile.java b/src/main/java/com/destroystokyo/paper/profile/SharedPlayerProfile.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7ac27392a8647ef7d0dc78efe78703e993885017
+index 0000000000000000000000000000000000000000..332700f84c5587e47a4d2056bfbb5413de97e9f2
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/profile/SharedPlayerProfile.java
-@@ -0,0 +1,23 @@
+@@ -0,0 +1,26 @@
 +package com.destroystokyo.paper.profile;
 +
 +import com.mojang.authlib.GameProfile;
 +import com.mojang.authlib.properties.Property;
++import net.minecraft.world.item.component.ResolvableProfile;
 +import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
@@ -557,6 +585,8 @@ index 0000000000000000000000000000000000000000..7ac27392a8647ef7d0dc78efe78703e9
 +    @Nullable void setProperty(@NotNull String propertyName, @Nullable Property property);
 +
 +    @NotNull GameProfile buildGameProfile();
++
++    @NotNull ResolvableProfile buildResolvableProfile();
 +}
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
 index 6afede80c10503a261d0f735c351d943597be9ff..993296f9c2457809bd6b844c309895f417eb42a5 100644
@@ -594,7 +624,7 @@ index 416b26c2ab62b29d640169166980e398d5824b14..774d81c702edb76a2f6184d4dc53687d
          String s1 = name.toLowerCase(Locale.ROOT);
          GameProfileCache.GameProfileInfo usercache_usercacheentry = (GameProfileCache.GameProfileInfo) this.profilesByName.get(s1);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 1fd2f6053e660674baa239f142a720d59e64c776..5ab2836f14e1a7482e7136004507d66c4abb4bdd 100644
+index 16110e41480ad4508e56c196c551debdf0e96811..c5618c1a773442c9c016b67ea64d83f8efcb3b89 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -262,6 +262,9 @@ import org.yaml.snakeyaml.error.MarkedYAMLException;
@@ -615,7 +645,7 @@ index 1fd2f6053e660674baa239f142a720d59e64c776..5ab2836f14e1a7482e7136004507d66c
          CraftItemFactory.instance();
          CraftEntityFactory.instance();
      }
-@@ -2843,5 +2847,39 @@ public final class CraftServer implements Server {
+@@ -2840,5 +2844,39 @@ public final class CraftServer implements Server {
      public boolean suggestPlayerNamesWhenNullTabCompletions() {
          return io.papermc.paper.configuration.GlobalConfiguration.get().commands.suggestPlayerNamesWhenNullTabCompletions;
      }
@@ -656,11 +686,11 @@ index 1fd2f6053e660674baa239f142a720d59e64c776..5ab2836f14e1a7482e7136004507d66c
      // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java b/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
-index c49db689827b20ad211f06b9bad7062c8ef82c68..ce30a8853d5095ce5bf1ec902b41d27db9e35b4f 100644
+index 210fdad5f2041368fc359b275f1cbf05b70b6989..d9cc76d7e60001957c0f59fdc32d016f3589aa08 100644
 --- a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
 +++ b/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
-@@ -28,7 +28,7 @@ import org.bukkit.profile.PlayerProfile;
- import org.bukkit.profile.PlayerTextures;
+@@ -31,7 +31,7 @@ import org.bukkit.profile.PlayerTextures;
+ import org.jetbrains.annotations.ApiStatus;
  
  @SerializableAs("PlayerProfile")
 -public final class CraftPlayerProfile implements PlayerProfile {
@@ -668,7 +698,7 @@ index c49db689827b20ad211f06b9bad7062c8ef82c68..ce30a8853d5095ce5bf1ec902b41d27d
  
      @Nonnull
      public static GameProfile validateSkullProfile(@Nonnull GameProfile gameProfile) {
-@@ -107,8 +107,10 @@ public final class CraftPlayerProfile implements PlayerProfile {
+@@ -132,8 +132,10 @@ public final class CraftPlayerProfile implements PlayerProfile {
          }
      }
  
@@ -681,16 +711,16 @@ index c49db689827b20ad211f06b9bad7062c8ef82c68..ce30a8853d5095ce5bf1ec902b41d27d
      }
  
      void rebuildDirtyProperties() {
-@@ -251,6 +253,7 @@ public final class CraftPlayerProfile implements PlayerProfile {
+@@ -283,6 +285,7 @@ public final class CraftPlayerProfile implements PlayerProfile {
  
      @Override
      public Map<String, Object> serialize() {
 +        // Paper - diff on change
          Map<String, Object> map = new LinkedHashMap<>();
-         if (this.getUniqueId() != null) {
-             map.put("uniqueId", this.getUniqueId().toString());
-@@ -266,10 +269,12 @@ public final class CraftPlayerProfile implements PlayerProfile {
-             });
+         if (this.uniqueId != null) {
+             map.put("uniqueId", this.uniqueId.toString());
+@@ -296,10 +299,12 @@ public final class CraftPlayerProfile implements PlayerProfile {
+             this.properties.forEach((propertyName, property) -> propertiesData.add(CraftProfileProperty.serialize(property)));
              map.put("properties", propertiesData);
          }
 +        // Paper - diff on change
@@ -702,7 +732,7 @@ index c49db689827b20ad211f06b9bad7062c8ef82c68..ce30a8853d5095ce5bf1ec902b41d27d
          UUID uniqueId = ConfigSerializationUtil.getUuid(map, "uniqueId", true);
          String name = ConfigSerializationUtil.getString(map, "name", true);
  
-@@ -283,7 +288,7 @@ public final class CraftPlayerProfile implements PlayerProfile {
+@@ -313,7 +318,7 @@ public final class CraftPlayerProfile implements PlayerProfile {
                  profile.properties.put(property.name(), property);
              }
          }
