@@ -7,18 +7,18 @@ There are no plans to support creating worlds while worlds are
 being ticked themselvess.
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 8142e4a238066404f3d1685f9cee1a2b91cdd371..acdba56f025fe729398c5549175baad8e6818f62 100644
+index 94aa901b77b19445a33d5b2b24ba2e947d2a6aef..11b9eb8d7d5f9ad736f2c6784c5d9e745a355093 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -318,6 +318,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -317,6 +317,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public final double[] recentTps = new double[ 3 ];
      // Spigot end
      public final io.papermc.paper.configuration.PaperConfigurations paperConfigurations; // Paper - add paper configuration files
-     public static long currentTickLong = 0L; // Paper - track current tick as a long
 +    public boolean isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
-@@ -1582,7 +1583,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1580,7 +1581,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          this.getFunctions().tick();
          MinecraftTimings.commandFunctionsTimer.stopTiming(); // Spigot // Paper
          this.profiler.popPush("levels");
@@ -27,7 +27,7 @@ index 8142e4a238066404f3d1685f9cee1a2b91cdd371..acdba56f025fe729398c5549175baad8
  
          // CraftBukkit start
          // Run tasks that are waiting on processing
-@@ -1614,6 +1615,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1612,6 +1613,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          // Paper end - Perf: Optimize time updates
          MinecraftTimings.timeUpdateTimer.stopTiming(); // Spigot // Paper
  
@@ -36,7 +36,7 @@ index 8142e4a238066404f3d1685f9cee1a2b91cdd371..acdba56f025fe729398c5549175baad8
          while (iterator.hasNext()) {
              ServerLevel worldserver = (ServerLevel) iterator.next();
              worldserver.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
-@@ -1649,6 +1652,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1647,6 +1650,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              this.profiler.pop();
              worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
          }
