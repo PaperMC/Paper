@@ -34,7 +34,7 @@
      public int fuel;
      protected final ContainerData dataAccess;
 +    // CraftBukkit start - add fields and methods
-+    private int lastTick = MinecraftServer.currentTick;
++    // private int lastTick = MinecraftServer.currentTick; // Paper - remove anti tick skipping measures / wall time
 +    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
 +    private int maxStack = MAX_STACK;
  
@@ -89,18 +89,16 @@
              setChanged(world, pos, state);
          }
  
-@@ -116,12 +170,17 @@
+@@ -116,12 +170,15 @@
          boolean flag1 = blockEntity.brewTime > 0;
          ItemStack itemstack1 = (ItemStack) blockEntity.items.get(3);
  
-+        // CraftBukkit start - Use wall time instead of ticks for brewing
-+        int elapsedTicks = MinecraftServer.currentTick - blockEntity.lastTick;
-+        blockEntity.lastTick = MinecraftServer.currentTick;
++        // Paper - remove anti tick skipping measures / wall time
 +
          if (flag1) {
 -            --blockEntity.brewTime;
 -            boolean flag2 = blockEntity.brewTime == 0;
-+            blockEntity.brewTime -= elapsedTicks;
++            --blockEntity.brewTime; // Paper - remove anti tick skipping measures / wall time - revert to vanilla
 +            boolean flag2 = blockEntity.brewTime <= 0; // == -> <=
 +            // CraftBukkit end
  
@@ -110,7 +108,7 @@
              } else if (!flag || !itemstack1.is(blockEntity.ingredient)) {
                  blockEntity.brewTime = 0;
              }
-@@ -129,7 +188,11 @@
+@@ -129,7 +186,11 @@
              setChanged(world, pos, state);
          } else if (flag && blockEntity.fuel > 0) {
              --blockEntity.fuel;
@@ -123,7 +121,7 @@
              blockEntity.ingredient = itemstack1.getItem();
              setChanged(world, pos, state);
          }
-@@ -185,14 +248,36 @@
+@@ -185,14 +246,36 @@
          }
      }
  
@@ -163,7 +161,7 @@
          itemstack.shrink(1);
          ItemStack itemstack1 = itemstack.getItem().getCraftingRemainder();
  
-@@ -200,12 +285,12 @@
+@@ -200,12 +283,12 @@
              if (itemstack.isEmpty()) {
                  itemstack = itemstack1;
              } else {
@@ -179,7 +177,7 @@
      }
  
      @Override
-@@ -231,12 +316,12 @@
+@@ -231,12 +314,12 @@
  
      @Override
      public boolean canPlaceItem(int slot, ItemStack stack) {

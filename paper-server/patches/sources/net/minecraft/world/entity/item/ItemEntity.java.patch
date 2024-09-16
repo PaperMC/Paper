@@ -59,7 +59,7 @@
      @Nullable
      public UUID target;
      public final float bobOffs;
-+    private int lastTick = MinecraftServer.currentTick - 1; // CraftBukkit
++    // private int lastTick = MinecraftServer.currentTick - 1; // CraftBukkit // Paper - remove anti tick skipping measures / wall time
 +    public boolean canMobPickup = true; // Paper - Item#canEntityPickup
 +    private int despawnRate = -1; // Paper - Alternative item-despawn-rate
 +    public net.kyori.adventure.util.TriState frictionState = net.kyori.adventure.util.TriState.NOT_SET; // Paper - Friction API
@@ -80,7 +80,7 @@
      }
  
      public ItemEntity(Level world, double x, double y, double z, ItemStack stack, double velocityX, double velocityY, double velocityZ) {
-@@ -133,12 +150,15 @@
+@@ -133,12 +150,14 @@
      @Override
      public void tick() {
          if (this.getItem().isEmpty()) {
@@ -88,19 +88,15 @@
 +            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
          } else {
              super.tick();
--            if (this.pickupDelay > 0 && this.pickupDelay != 32767) {
--                --this.pickupDelay;
--            }
-+            // CraftBukkit start - Use wall time for pickup and despawn timers
-+            int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
-+            if (this.pickupDelay != 32767) this.pickupDelay -= elapsedTicks;
-+            if (this.age != -32768) this.age += elapsedTicks;
-+            this.lastTick = MinecraftServer.currentTick;
-+            // CraftBukkit end
++            // Paper start - remove anti tick skipping measures / wall time - revert to vanilla
+             if (this.pickupDelay > 0 && this.pickupDelay != 32767) {
+                 --this.pickupDelay;
+             }
++            // Paper end - remove anti tick skipping measures / wall time - revert to vanilla
  
              this.xo = this.getX();
              this.yo = this.getY();
-@@ -162,12 +182,16 @@
+@@ -162,12 +181,16 @@
                  }
              }
  
@@ -119,11 +115,11 @@
                      f = this.level().getBlockState(this.getBlockPosBelowThatAffectsMyMovement()).getBlock().getFriction() * 0.98F;
                  }
  
-@@ -188,9 +212,11 @@
+@@ -188,9 +211,11 @@
                  this.mergeWithNeighbours();
              }
  
-+            /* CraftBukkit start - moved up
++            // Paper - remove anti tick skipping measures / wall time - revert to vanilla /* CraftBukkit start - moved up
              if (this.age != -32768) {
                  ++this.age;
              }
@@ -131,7 +127,7 @@
  
              this.hasImpulse |= this.updateInWaterStateAndDoFluidPushing();
              if (!this.level().isClientSide) {
-@@ -201,14 +227,42 @@
+@@ -201,14 +226,44 @@
                  }
              }
  
@@ -153,12 +149,14 @@
 +    // Spigot start - copied from above
      @Override
 +    public void inactiveTick() {
-+        // CraftBukkit start - Use wall time for pickup and despawn timers
-+        int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
-+        if (this.pickupDelay != 32767) this.pickupDelay -= elapsedTicks;
-+        if (this.age != -32768) this.age += elapsedTicks;
-+        this.lastTick = MinecraftServer.currentTick;
-+        // CraftBukkit end
++        // Paper start - remove anti tick skipping measures / wall time - copied from above
++        if (this.pickupDelay > 0 && this.pickupDelay != 32767) {
++            --this.pickupDelay;
++        }
++        if (this.age != -32768) {
++            ++this.age;
++        }
++        // Paper end - remove anti tick skipping measures / wall time - copied from above
 +
 +        if (!this.level().isClientSide && this.age >= this.despawnRate) { // Spigot // Paper - Alternative item-despawn-rate
 +            // CraftBukkit start - fire ItemDespawnEvent
@@ -176,7 +174,7 @@
      public BlockPos getBlockPosBelowThatAffectsMyMovement() {
          return this.getOnPos(0.999999F);
      }
-@@ -229,7 +283,10 @@
+@@ -229,7 +284,10 @@
  
      private void mergeWithNeighbours() {
          if (this.isMergable()) {
@@ -188,7 +186,7 @@
                  return entityitem != this && entityitem.isMergable();
              });
              Iterator iterator = list.iterator();
-@@ -238,6 +295,14 @@
+@@ -238,6 +296,14 @@
                  ItemEntity entityitem = (ItemEntity) iterator.next();
  
                  if (entityitem.isMergable()) {
@@ -203,7 +201,7 @@
                      this.tryToMerge(entityitem);
                      if (this.isRemoved()) {
                          break;
-@@ -251,7 +316,7 @@
+@@ -251,7 +317,7 @@
      private boolean isMergable() {
          ItemStack itemstack = this.getItem();
  
@@ -212,7 +210,7 @@
      }
  
      private void tryToMerge(ItemEntity other) {
-@@ -259,7 +324,7 @@
+@@ -259,7 +325,7 @@
          ItemStack itemstack1 = other.getItem();
  
          if (Objects.equals(this.target, other.target) && ItemEntity.areMergable(itemstack, itemstack1)) {
@@ -221,7 +219,7 @@
                  ItemEntity.merge(this, itemstack, other, itemstack1);
              } else {
                  ItemEntity.merge(other, itemstack1, this, itemstack);
-@@ -287,11 +352,16 @@
+@@ -287,11 +353,16 @@
      }
  
      private static void merge(ItemEntity targetEntity, ItemStack targetStack, ItemEntity sourceEntity, ItemStack sourceStack) {
@@ -239,7 +237,7 @@
          }
  
      }
-@@ -320,12 +390,17 @@
+@@ -320,12 +391,17 @@
          } else if (!this.getItem().canBeHurtBy(source)) {
              return false;
          } else {
@@ -258,7 +256,7 @@
              }
  
              return true;
-@@ -339,6 +414,11 @@
+@@ -339,6 +415,11 @@
  
      @Override
      public void addAdditionalSaveData(CompoundTag nbt) {
@@ -270,7 +268,7 @@
          nbt.putShort("Health", (short) this.health);
          nbt.putShort("Age", (short) this.age);
          nbt.putShort("PickupDelay", (short) this.pickupDelay);
-@@ -381,23 +461,98 @@
+@@ -381,23 +462,98 @@
              this.setItem(ItemStack.EMPTY);
          }
  
@@ -315,12 +313,12 @@
 +                    if (flyAtPlayer) {
 +                        player.take(this, i);
 +                    }
- 
++
 +                    return;
 +                }
 +            }
 +            // Paper end - PlayerAttemptPickupItemEvent
-+
+ 
 +            if (this.pickupDelay <= 0 && canHold > 0) {
 +                itemstack.setCount(canHold);
 +                // Call legacy event
@@ -372,7 +370,7 @@
                      itemstack.setCount(i);
                  }
  
-@@ -438,6 +593,7 @@
+@@ -438,6 +594,7 @@
  
      public void setItem(ItemStack stack) {
          this.getEntityData().set(ItemEntity.DATA_ITEM, stack);
@@ -380,7 +378,7 @@
      }
  
      @Override
-@@ -492,7 +648,7 @@
+@@ -492,7 +649,7 @@
  
      public void makeFakeItem() {
          this.setNeverPickUp();

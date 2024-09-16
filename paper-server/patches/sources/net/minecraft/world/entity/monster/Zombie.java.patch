@@ -57,7 +57,7 @@
      private boolean canBreakDoors;
      private int inWaterTime;
      public int conversionTime;
-+    private int lastTick = MinecraftServer.currentTick; // CraftBukkit - add field
++    // private int lastTick = MinecraftServer.currentTick; // CraftBukkit - add field // Paper - remove anti tick skipping measures / wall time
 +    private boolean shouldBurnInDay = true; // Paper - Add more Zombie API
  
      public Zombie(EntityType<? extends Zombie> type, Level world) {
@@ -115,27 +115,24 @@
              }
          }
  
-@@ -203,7 +217,10 @@
+@@ -203,7 +217,7 @@
      public void tick() {
          if (!this.level().isClientSide && this.isAlive() && !this.isNoAi()) {
              if (this.isUnderWaterConverting()) {
 -                --this.conversionTime;
-+                // CraftBukkit start - Use wall time instead of ticks for conversion
-+                int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
-+                this.conversionTime -= elapsedTicks;
-+                // CraftBukkit end
++                --this.conversionTime; // Paper - remove anti tick skipping measures / wall time
                  if (this.conversionTime < 0) {
                      this.doUnderWaterConversion();
                  }
-@@ -220,6 +237,7 @@
+@@ -220,6 +234,7 @@
          }
  
          super.tick();
-+        this.lastTick = MinecraftServer.currentTick; // CraftBukkit
++        // this.lastTick = MinecraftServer.currentTick; // CraftBukkit // Paper - remove anti tick skipping measures / wall time
      }
  
      @Override
-@@ -253,7 +271,14 @@
+@@ -253,7 +268,14 @@
          super.aiStep();
      }
  
@@ -146,11 +143,11 @@
 +    }
 +    // Paper end - Add more Zombie API
      public void startUnderWaterConversion(int ticksUntilWaterConversion) {
-+        this.lastTick = MinecraftServer.currentTick; // CraftBukkit
++        // this.lastTick = MinecraftServer.currentTick; // CraftBukkit // Paper - remove anti tick skipping measures / wall time
          this.conversionTime = ticksUntilWaterConversion;
          this.getEntityData().set(Zombie.DATA_DROWNED_CONVERSION_ID, true);
      }
-@@ -267,32 +292,51 @@
+@@ -267,32 +289,51 @@
      }
  
      protected void convertToZombieType(EntityType<? extends Zombie> entityType) {
@@ -215,7 +212,7 @@
      @Override
      public boolean hurtServer(ServerLevel world, DamageSource source, float amount) {
          if (!super.hurtServer(world, source, amount)) {
-@@ -323,10 +367,10 @@
+@@ -323,10 +364,10 @@
  
                      if (SpawnPlacements.isSpawnPositionOk(entitytypes, world, blockposition) && SpawnPlacements.checkSpawnRules(entitytypes, world, EntitySpawnReason.REINFORCEMENT, blockposition, world.random)) {
                          entityzombie.setPos((double) i1, (double) j1, (double) k1);
@@ -229,7 +226,7 @@
                              AttributeInstance attributemodifiable = this.getAttribute(Attributes.SPAWN_REINFORCEMENTS_CHANCE);
                              AttributeModifier attributemodifier = attributemodifiable.getModifier(Zombie.REINFORCEMENT_CALLER_CHARGE_ID);
                              double d0 = attributemodifier != null ? attributemodifier.amount() : 0.0D;
-@@ -352,7 +396,14 @@
+@@ -352,7 +393,14 @@
              float f = this.level().getCurrentDifficultyAt(this.blockPosition()).getEffectiveDifficulty();
  
              if (this.getMainHandItem().isEmpty() && this.isOnFire() && this.random.nextFloat() < f * 0.3F) {
@@ -245,7 +242,7 @@
              }
          }
  
-@@ -385,7 +436,7 @@
+@@ -385,7 +433,7 @@
  
      @Override
      public EntityType<? extends Zombie> getType() {
@@ -254,7 +251,7 @@
      }
  
      protected boolean canSpawnInLiquids() {
-@@ -414,6 +465,7 @@
+@@ -414,6 +462,7 @@
          nbt.putBoolean("CanBreakDoors", this.canBreakDoors());
          nbt.putInt("InWaterTime", this.isInWater() ? this.inWaterTime : -1);
          nbt.putInt("DrownedConversionTime", this.isUnderWaterConverting() ? this.conversionTime : -1);
@@ -262,7 +259,7 @@
      }
  
      @Override
-@@ -425,6 +477,11 @@
+@@ -425,6 +474,11 @@
          if (nbt.contains("DrownedConversionTime", 99) && nbt.getInt("DrownedConversionTime") > -1) {
              this.startUnderWaterConversion(nbt.getInt("DrownedConversionTime"));
          }
@@ -274,7 +271,7 @@
  
      }
  
-@@ -432,10 +489,8 @@
+@@ -432,10 +486,8 @@
      public boolean killedEntity(ServerLevel world, LivingEntity other) {
          boolean flag = super.killedEntity(world, other);
  
@@ -287,7 +284,7 @@
  
              if (this.convertVillagerToZombieVillager(world, entityvillager)) {
                  flag = false;
-@@ -468,7 +523,7 @@
+@@ -468,7 +520,7 @@
          float f = difficulty.getSpecialMultiplier();
  
          if (spawnReason != EntitySpawnReason.CONVERSION) {
@@ -296,7 +293,7 @@
          }
  
          if (object == null) {
-@@ -496,7 +551,7 @@
+@@ -496,7 +548,7 @@
                              entitychicken1.finalizeSpawn(world, difficulty, EntitySpawnReason.JOCKEY, (SpawnGroupData) null);
                              entitychicken1.setChickenJockey(true);
                              this.startRiding(entitychicken1);
