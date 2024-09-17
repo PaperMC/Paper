@@ -1,0 +1,267 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: njsharpe <nelsonj.sharpe@gmail.com>
+Date: Tue, 17 Sep 2024 17:51:52 -0400
+Subject: [PATCH] Switch to Component API for Conversations API
+
+
+diff --git a/src/main/java/org/bukkit/conversations/Conversation.java b/src/main/java/org/bukkit/conversations/Conversation.java
+index bf2407c838bc20197802687c150d513f4e86ed2b..6957d18c8f3f5ecd55ca6bf87b0a7bd29c0c9c2c 100644
+--- a/src/main/java/org/bukkit/conversations/Conversation.java
++++ b/src/main/java/org/bukkit/conversations/Conversation.java
+@@ -219,7 +219,11 @@ public class Conversation {
+ 
+             // Echo the user's input
+             if (localEchoEnabled) {
+-                context.getForWhom().sendRawMessage(prefix.getPrefix(context) + input);
++                // Paper Start - Switch to Component API
++                net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer serializer = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection();
++                net.kyori.adventure.text.Component message = net.kyori.adventure.text.Component.join(net.kyori.adventure.text.JoinConfiguration.noSeparators(), prefix.getPrefix(context), net.kyori.adventure.text.Component.text(input));
++                context.getForWhom().sendRawMessage(serializer.serialize(message));
++                // Paper End - Switch to Component API
+             }
+ 
+             // Test for conversation abandonment based on input
+@@ -287,7 +291,11 @@ public class Conversation {
+         if (currentPrompt == null) {
+             abandon(new ConversationAbandonedEvent(this));
+         } else {
+-            context.getForWhom().sendRawMessage(prefix.getPrefix(context) + currentPrompt.getPromptText(context));
++            // Paper Start - Switch to Component API
++            net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer serializer = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection();
++            net.kyori.adventure.text.Component message = net.kyori.adventure.text.Component.join(net.kyori.adventure.text.JoinConfiguration.noSeparators(), prefix.getPrefix(context), currentPrompt.getPromptText(context));
++            context.getForWhom().sendRawMessage(serializer.serialize(message));
++            // Paper End - Switch to Component API
+             if (!currentPrompt.blocksForInput(context)) {
+                 currentPrompt = currentPrompt.acceptInput(context, null);
+                 outputNextPrompt();
+diff --git a/src/main/java/org/bukkit/conversations/ConversationFactory.java b/src/main/java/org/bukkit/conversations/ConversationFactory.java
+index 58009e1e7a9cbbba1b0db43cd81eddc19c710687..672be9f3fad46d77c60b84aec1ddde5e24886da3 100644
+--- a/src/main/java/org/bukkit/conversations/ConversationFactory.java
++++ b/src/main/java/org/bukkit/conversations/ConversationFactory.java
+@@ -27,7 +27,7 @@ public class ConversationFactory {
+     protected ConversationPrefix prefix;
+     protected Prompt firstPrompt;
+     protected Map<Object, Object> initialSessionData;
+-    protected String playerOnlyMessage;
++    protected net.kyori.adventure.text.Component playerOnlyMessage; // Paper - Switch to Component API
+     protected List<ConversationCanceller> cancellers;
+     protected List<ConversationAbandonedListener> abandonedListeners;
+ 
+@@ -168,10 +168,12 @@ public class ConversationFactory {
+      * @return This object.
+      */
+     @NotNull
+-    public ConversationFactory thatExcludesNonPlayersWithMessage(@Nullable String playerOnlyMessage) {
++    // Paper Start - Switch to Component API
++    public ConversationFactory thatExcludesNonPlayersWithMessage(@Nullable net.kyori.adventure.text.Component playerOnlyMessage) {
+         this.playerOnlyMessage = playerOnlyMessage;
+         return this;
+     }
++    // Paper End - Switch to Component API
+ 
+     /**
+      * Adds a {@link ConversationAbandonedListener} to all conversations
+@@ -227,9 +229,11 @@ public class ConversationFactory {
+ 
+         @Override
+         @NotNull
+-        public String getPromptText(@NotNull ConversationContext context) {
++        // Paper Start - Switch to Component API
++        public net.kyori.adventure.text.Component getPromptText(@NotNull ConversationContext context) {
+             return playerOnlyMessage;
+         }
++        // Paper End - Switch to Component API
+ 
+         @Nullable
+         @Override
+diff --git a/src/main/java/org/bukkit/conversations/ConversationPrefix.java b/src/main/java/org/bukkit/conversations/ConversationPrefix.java
+index 0c65f3365cab48109e2f6a1485fcf8ebcf4137a8..0f61e58c588cc670fc88148876ced1c98965511a 100644
+--- a/src/main/java/org/bukkit/conversations/ConversationPrefix.java
++++ b/src/main/java/org/bukkit/conversations/ConversationPrefix.java
+@@ -8,13 +8,14 @@ import org.jetbrains.annotations.NotNull;
+  * the plugin name or conversation status as the conversation evolves.
+  */
+ public interface ConversationPrefix {
+-
++    // Paper Start - Switch to Component API
+     /**
+      * Gets the prefix to use before each message to the player.
+      *
+      * @param context Context information about the conversation.
+-     * @return The prefix text.
++     * @return The prefix component.
+      */
+     @NotNull
+-    String getPrefix(@NotNull ConversationContext context);
++    net.kyori.adventure.text.Component getPrefix(@NotNull ConversationContext context);
++    // Paper End - Switch to Component API
+ }
+diff --git a/src/main/java/org/bukkit/conversations/NullConversationPrefix.java b/src/main/java/org/bukkit/conversations/NullConversationPrefix.java
+index 6ee8ebb1e56080ee91fcdaa49a5b8fcbef675be7..326896d55e35fb18403d0b43b57de861c05de8a9 100644
+--- a/src/main/java/org/bukkit/conversations/NullConversationPrefix.java
++++ b/src/main/java/org/bukkit/conversations/NullConversationPrefix.java
+@@ -7,16 +7,17 @@ import org.jetbrains.annotations.NotNull;
+  * displays nothing in front of conversation output.
+  */
+ public class NullConversationPrefix implements ConversationPrefix {
+-
++    // Paper Start - Switch to Component API
+     /**
+      * Prepends each conversation message with an empty string.
+      *
+      * @param context Context information about the conversation.
+-     * @return An empty string.
++     * @return An empty text component.
+      */
+     @Override
+     @NotNull
+-    public String getPrefix(@NotNull ConversationContext context) {
+-        return "";
++    public net.kyori.adventure.text.Component getPrefix(@NotNull ConversationContext context) {
++        return net.kyori.adventure.text.Component.text("");
+     }
++    // Paper End - Switch to Component API
+ }
+diff --git a/src/main/java/org/bukkit/conversations/NumericPrompt.java b/src/main/java/org/bukkit/conversations/NumericPrompt.java
+index 67134fa384d8f2d45c7f9a4d1d9045c14ec803ee..75eedf2e9f277662bd59076dd001382ea8b2bb0f 100644
+--- a/src/main/java/org/bukkit/conversations/NumericPrompt.java
++++ b/src/main/java/org/bukkit/conversations/NumericPrompt.java
+@@ -15,7 +15,7 @@ public abstract class NumericPrompt extends ValidatingPrompt {
+ 
+     @Override
+     protected boolean isInputValid(@NotNull ConversationContext context, @NotNull String input) {
+-        return NumberUtils.isNumber(input) && isNumberValid(context, NumberUtils.createNumber(input));
++        return NumberUtils.isCreatable(input) && isNumberValid(context, NumberUtils.createNumber(input)); // Paper - Remove deprecated functionality
+     }
+ 
+     /**
+@@ -53,8 +53,8 @@ public abstract class NumericPrompt extends ValidatingPrompt {
+ 
+     @Nullable
+     @Override
+-    protected String getFailedValidationText(@NotNull ConversationContext context, @NotNull String invalidInput) {
+-        if (NumberUtils.isNumber(invalidInput)) {
++    protected net.kyori.adventure.text.Component getFailedValidationText(@NotNull ConversationContext context, @NotNull String invalidInput) { // Paper - Switch to Component API
++        if (NumberUtils.isCreatable(invalidInput)) { // Paper - Remove deprecated functionality
+             return getFailedValidationText(context, NumberUtils.createNumber(invalidInput));
+         } else {
+             return getInputNotNumericText(context, invalidInput);
+@@ -70,7 +70,7 @@ public abstract class NumericPrompt extends ValidatingPrompt {
+      * @return A message explaining how to correct the input.
+      */
+     @Nullable
+-    protected String getInputNotNumericText(@NotNull ConversationContext context, @NotNull String invalidInput) {
++    protected net.kyori.adventure.text.Component getInputNotNumericText(@NotNull ConversationContext context, @NotNull String invalidInput) { // Paper - Switch to Component API
+         return null;
+     }
+ 
+@@ -83,7 +83,7 @@ public abstract class NumericPrompt extends ValidatingPrompt {
+      * @return A message explaining how to correct the input.
+      */
+     @Nullable
+-    protected String getFailedValidationText(@NotNull ConversationContext context, @NotNull Number invalidInput) {
++    protected net.kyori.adventure.text.Component getFailedValidationText(@NotNull ConversationContext context, @NotNull Number invalidInput) { // Paper - Switch to Component API
+         return null;
+     }
+ }
+diff --git a/src/main/java/org/bukkit/conversations/PluginNameConversationPrefix.java b/src/main/java/org/bukkit/conversations/PluginNameConversationPrefix.java
+index 5911944fe22d0f040a2b022e7aeb1acd4336763f..8b89074a3af939ac9b92cb21b434c440c9933386 100644
+--- a/src/main/java/org/bukkit/conversations/PluginNameConversationPrefix.java
++++ b/src/main/java/org/bukkit/conversations/PluginNameConversationPrefix.java
+@@ -1,6 +1,5 @@
+ package org.bukkit.conversations;
+ 
+-import org.bukkit.ChatColor;
+ import org.bukkit.plugin.Plugin;
+ import org.jetbrains.annotations.NotNull;
+ 
+@@ -9,34 +8,38 @@ import org.jetbrains.annotations.NotNull;
+  * that displays the plugin name in front of conversation output.
+  */
+ public class PluginNameConversationPrefix implements ConversationPrefix {
+-
+     protected String separator;
+-    protected ChatColor prefixColor;
++    protected net.kyori.adventure.text.format.TextColor prefixColor;
+     protected Plugin plugin;
+ 
+-    private String cachedPrefix;
++    // Paper Start - Switch to Component API
++    private net.kyori.adventure.text.Component cachedPrefix;
+ 
+     public PluginNameConversationPrefix(@NotNull Plugin plugin) {
+-        this(plugin, " > ", ChatColor.LIGHT_PURPLE);
++        this(plugin, " > ", net.kyori.adventure.text.format.NamedTextColor.LIGHT_PURPLE);
+     }
+ 
+-    public PluginNameConversationPrefix(@NotNull Plugin plugin, @NotNull String separator, @NotNull ChatColor prefixColor) {
++    public PluginNameConversationPrefix(@NotNull Plugin plugin, @NotNull String separator, @NotNull net.kyori.adventure.text.format.TextColor prefixColor) {
+         this.separator = separator;
+         this.prefixColor = prefixColor;
+         this.plugin = plugin;
+ 
+-        cachedPrefix = prefixColor + plugin.getDescription().getName() + separator + ChatColor.WHITE;
++        cachedPrefix = net.kyori.adventure.text.Component.text()
++            .append(net.kyori.adventure.text.Component.text(plugin.getPluginMeta().getName() + separator, prefixColor))
++            .color(net.kyori.adventure.text.format.NamedTextColor.WHITE)
++            .build();
+     }
+ 
+     /**
+      * Prepends each conversation message with the plugin name.
+      *
+      * @param context Context information about the conversation.
+-     * @return An empty string.
++     * @return An empty text component.
+      */
+     @Override
+     @NotNull
+-    public String getPrefix(@NotNull ConversationContext context) {
++    public net.kyori.adventure.text.Component getPrefix(@NotNull ConversationContext context) {
+         return cachedPrefix;
+     }
++    // Paper End - Switch to Component API
+ }
+diff --git a/src/main/java/org/bukkit/conversations/Prompt.java b/src/main/java/org/bukkit/conversations/Prompt.java
+index fcca208c0f31b41ab67323d0e77a8e3ecf9e78dd..3e28602cd263a92cfb74d8d54a300b650bc3ad4a 100644
+--- a/src/main/java/org/bukkit/conversations/Prompt.java
++++ b/src/main/java/org/bukkit/conversations/Prompt.java
+@@ -25,7 +25,7 @@ public interface Prompt extends Cloneable {
+      * @return The text to display.
+      */
+     @NotNull
+-    String getPromptText(@NotNull ConversationContext context);
++    net.kyori.adventure.text.Component getPromptText(@NotNull ConversationContext context); // Paper - Switch to Component API
+ 
+     /**
+      * Checks to see if this prompt implementation should wait for user input
+diff --git a/src/main/java/org/bukkit/conversations/ValidatingPrompt.java b/src/main/java/org/bukkit/conversations/ValidatingPrompt.java
+index c57b6cb479fdaf135d8153605268b615b31325d7..a3bc93f4f1690242dab31289e7720dd7ca2a86c9 100644
+--- a/src/main/java/org/bukkit/conversations/ValidatingPrompt.java
++++ b/src/main/java/org/bukkit/conversations/ValidatingPrompt.java
+@@ -29,10 +29,14 @@ public abstract class ValidatingPrompt implements Prompt {
+         if (isInputValid(context, input)) {
+             return acceptValidatedInput(context, input);
+         } else {
+-            String failPrompt = getFailedValidationText(context, input);
++            // Paper Start - Switch to Component API
++            net.kyori.adventure.text.Component failPrompt = getFailedValidationText(context, input);
+             if (failPrompt != null) {
+-                context.getForWhom().sendRawMessage(ChatColor.RED + failPrompt);
++                net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer serializer = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection();
++                failPrompt = failPrompt.color(net.kyori.adventure.text.format.NamedTextColor.RED);
++                context.getForWhom().sendRawMessage(serializer.serialize(failPrompt));
+             }
++            // Paper End - Switch to Component API
+             // Redisplay this prompt to the user to re-collect input
+             return this;
+         }
+@@ -79,7 +83,7 @@ public abstract class ValidatingPrompt implements Prompt {
+      * @return A message explaining how to correct the input.
+      */
+     @Nullable
+-    protected String getFailedValidationText(@NotNull ConversationContext context, @NotNull String invalidInput) {
++    protected net.kyori.adventure.text.Component getFailedValidationText(@NotNull ConversationContext context, @NotNull String invalidInput) { // Paper - Switch to Component API
+         return null;
+     }
+ }
