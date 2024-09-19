@@ -62,7 +62,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     }
 
     @ParameterizedTest
-    @EnumSource(value = Material.class, names = ".LEGACY_.*", mode = EnumSource.Mode.MATCH_NONE)
+    @EnumSource(value = Material.class, names = "LEGACY_.*", mode = EnumSource.Mode.MATCH_NONE)
     public void isEdible(Material material) {
         if (material.isBlock()) {
             assertFalse(material.isEdible());
