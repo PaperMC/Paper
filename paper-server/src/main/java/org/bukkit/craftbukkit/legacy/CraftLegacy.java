@@ -331,7 +331,7 @@ public final class CraftLegacy {
             }
 
             // Handle blocks
-            if (material.isBlock()) {
+            if (isBlock(material)) { // Use custom method instead of Material#isBlock since it relies on this being already run
                 for (byte data = 0; data < 16; data++) {
                     MaterialData matData = new MaterialData(material, data);
                     Dynamic blockTag = DataConverterFlattenData.getTag(material.getId() << 4 | data);
@@ -436,6 +436,12 @@ public final class CraftLegacy {
                 itemToMaterial.put(newMaterial, matData);
             }
         }
+    }
+
+    private static boolean isBlock(Material material) {
+        // From Material#isBlock before the rewrite to ItemType / BlockType
+        // Git hash: 42f6cdf4c5dcdd52a27543403dcd17fb60311621
+        return 0 <= material.getId() && material.getId() < 256;
     }
 
     public static void main(String[] args) {
