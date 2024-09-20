@@ -7,14 +7,15 @@ Subject: [PATCH] Add startingBrewTime
 public net.minecraft.world.inventory.BrewingStandMenu brewingStandData
 
 diff --git a/src/main/java/net/minecraft/world/inventory/BrewingStandMenu.java b/src/main/java/net/minecraft/world/inventory/BrewingStandMenu.java
-index 68c529cb38d61cd3a0f39bef0f666057fc219c9b..7ca84f720bc6bbe9d108534436bfc36d261c2dbd 100644
+index 68c529cb38d61cd3a0f39bef0f666057fc219c9b..21064adf41bf256ed310741eeb0596aedb99c2ce 100644
 --- a/src/main/java/net/minecraft/world/inventory/BrewingStandMenu.java
 +++ b/src/main/java/net/minecraft/world/inventory/BrewingStandMenu.java
-@@ -60,7 +60,18 @@ public class BrewingStandMenu extends AbstractContainerMenu {
+@@ -60,7 +60,20 @@ public class BrewingStandMenu extends AbstractContainerMenu {
          // Paper end - custom potion mixes
          this.ingredientSlot = this.addSlot(new BrewingStandMenu.IngredientsSlot(potionbrewer, inventory, 3, 79, 17));
          this.addSlot(new BrewingStandMenu.FuelSlot(inventory, 4, 17, 17));
 -        this.addDataSlots(propertyDelegate);
++        // Paper start - Add startingBrewTime
 +        this.addDataSlots(new SimpleContainerData(2) {
 +            @Override
 +            public int get(final int index) {
@@ -27,11 +28,12 @@ index 68c529cb38d61cd3a0f39bef0f666057fc219c9b..7ca84f720bc6bbe9d108534436bfc36d
 +                propertyDelegate.set(index, value);
 +            }
 +        });
++        // Paper end - Add startingBrewTime
  
          int j;
  
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
-index bf2c303a314205590a2839e0f729af3a9ff40a86..63db3e401a0f5935e5a2478e268c3b667b5c1ce7 100644
+index bf2c303a314205590a2839e0f729af3a9ff40a86..e34437024ca3c9cffe360e3729ecb9e2381079da 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
 @@ -49,6 +49,7 @@ public class BrewingStandBlockEntity extends BaseContainerBlockEntity implements
@@ -42,27 +44,31 @@ index bf2c303a314205590a2839e0f729af3a9ff40a86..63db3e401a0f5935e5a2478e268c3b66
      private boolean[] lastPotionCount;
      private Item ingredient;
      public int fuel;
-@@ -93,6 +94,9 @@ public class BrewingStandBlockEntity extends BaseContainerBlockEntity implements
+@@ -93,6 +94,11 @@ public class BrewingStandBlockEntity extends BaseContainerBlockEntity implements
                  int j;
  
                  switch (index) {
++                    // Paper start - Add startingBrewTime
 +                    case -1:
 +                        j = BrewingStandBlockEntity.this.startingBrewTime;
 +                        break;
++                    // Paper end - Add startingBrewTime
                      case 0:
                          j = BrewingStandBlockEntity.this.brewTime;
                          break;
-@@ -109,6 +113,9 @@ public class BrewingStandBlockEntity extends BaseContainerBlockEntity implements
+@@ -109,6 +115,11 @@ public class BrewingStandBlockEntity extends BaseContainerBlockEntity implements
              @Override
              public void set(int index, int value) {
                  switch (index) {
++                    // Paper start - Add startingBrewTime
 +                    case -1:
 +                        BrewingStandBlockEntity.this.startingBrewTime = value;
 +                        break;
++                    // Paper end - Add startingBrewTime
                      case 0:
                          BrewingStandBlockEntity.this.brewTime = value;
                          break;
-@@ -188,6 +195,7 @@ public class BrewingStandBlockEntity extends BaseContainerBlockEntity implements
+@@ -188,6 +199,7 @@ public class BrewingStandBlockEntity extends BaseContainerBlockEntity implements
              // CraftBukkit start
              BrewingStartEvent event = new BrewingStartEvent(CraftBlock.at(world, pos), CraftItemStack.asCraftMirror(itemstack1), 400);
              world.getCraftServer().getPluginManager().callEvent(event);
@@ -71,16 +77,17 @@ index bf2c303a314205590a2839e0f729af3a9ff40a86..63db3e401a0f5935e5a2478e268c3b66
              // CraftBukkit end
              blockEntity.ingredient = itemstack1.getItem();
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBrewingStand.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBrewingStand.java
-index e9f55c898de827afe6c9f951cbe1b46eea5f4149..0f803778c33b2003d302d9a57a93d7630fee757b 100644
+index e9f55c898de827afe6c9f951cbe1b46eea5f4149..47f8ea097bbe3fa93662b1d6840ca8d2eb595c32 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBrewingStand.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBrewingStand.java
-@@ -39,6 +39,17 @@ public class CraftBrewingStand extends CraftContainer<BrewingStandBlockEntity> i
+@@ -39,8 +39,21 @@ public class CraftBrewingStand extends CraftContainer<BrewingStandBlockEntity> i
      @Override
      public void setBrewingTime(int brewTime) {
          this.getSnapshot().brewTime = brewTime;
-+        if (brewTime > this.getSnapshot().startingBrewTime) this.getSnapshot().startingBrewTime = brewTime; // Paper - Add startingBrewTime
-+    }
-+
++        // Paper start - Add startingBrewTime
++        if (brewTime > this.getSnapshot().startingBrewTime) this.getSnapshot().startingBrewTime = brewTime;
+     }
+ 
 +    @Override
 +    public void setStartingBrewTime(int startingBrewTime) {
 +        this.getSnapshot().startingBrewTime = startingBrewTime;
@@ -89,19 +96,25 @@ index e9f55c898de827afe6c9f951cbe1b46eea5f4149..0f803778c33b2003d302d9a57a93d763
 +    @Override
 +    public int getStartingBrewTime() {
 +        return this.getSnapshot().startingBrewTime;
-     }
- 
++    }
++    // Paper end - Add startingBrewTime
++
      @Override
+     public int getFuelLevel() {
+         return this.getSnapshot().fuel;
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/view/CraftBrewingStandView.java b/src/main/java/org/bukkit/craftbukkit/inventory/view/CraftBrewingStandView.java
-index c92e51227cf2c0046a558b012c078c46582aed44..af05a648f699ca0df945a86f6985cf0604351a99 100644
+index c92e51227cf2c0046a558b012c078c46582aed44..c11b58da56d75a883464451ab3e88d2c4828c794 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/view/CraftBrewingStandView.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/view/CraftBrewingStandView.java
-@@ -34,5 +34,16 @@ public class CraftBrewingStandView extends CraftInventoryView<BrewingStandMenu>
+@@ -33,6 +33,19 @@ public class CraftBrewingStandView extends CraftInventoryView<BrewingStandMenu>
+     @Override
      public void setBrewingTicks(final int brewingTicks) {
          Preconditions.checkArgument(brewingTicks > 0, "The given brewing ticks must be greater than 0");
-         this.container.setData(BrewingStandBlockEntity.DATA_BREW_TIME, brewingTicks);
-+        if (brewingTicks > this.container.brewingStandData.get(-1)) this.container.brewingStandData.set(-1, brewingTicks); // Paper - Add startingBrewTime
-+    }
+-        this.container.setData(BrewingStandBlockEntity.DATA_BREW_TIME, brewingTicks);
++        // Paper start - Add startingBrewTime
++        this.container.brewingStandData.set(BrewingStandBlockEntity.DATA_BREW_TIME, brewingTicks);
++        if (brewingTicks > this.container.brewingStandData.get(-1)) this.container.brewingStandData.set(-1, brewingTicks);
+     }
 +
 +    @Override
 +    public void setStartingBrewTime(final int startingBrewTime) {
@@ -111,5 +124,6 @@ index c92e51227cf2c0046a558b012c078c46582aed44..af05a648f699ca0df945a86f6985cf06
 +    @Override
 +    public int getStartingBrewTime() {
 +        return this.container.brewingStandData.get(-1);
-     }
++    }
++    // Paper end - Add startingBrewTime
  }
