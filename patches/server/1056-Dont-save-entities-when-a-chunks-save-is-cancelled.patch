@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Newwind <support@newwindserver.com>
+Date: Mon, 28 Aug 2024 15:31:37 +0200
+Subject: [PATCH] Don't save entities when a chunk's save is cancelled
+
+From searching code across GitHub, the primary use case for ChunkUnloadEvent.setSaveChunk(false) seems to be preventing certain worlds, like minigame worlds, from being saved.
+
+In most cases, if you're not saving a chunk, it also makes sense not to save the entities within that chunk.
+Before version 1.17, this was the default behavior, as entities were saved within chunks.
+
+However, in the current system, even when chunk saving is canceled, entities like shot arrows or unexploded TNT are still saved, which can cause leftover items in minigame worlds.
+
+diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
+index 45eda96fd..a117ce4a5 100644
+--- a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
++++ b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
+@@ -907,7 +907,9 @@ public final class NewChunkHolder {
+ 
+         // unload entity data
+         if (entityChunk != null) {
+-            this.saveEntities(entityChunk, true);
++            if (!shouldLevelChunkNotSave) {
++                this.saveEntities(entityChunk, true);
++            }
+             // yes this is a hack to pass the compound tag through...
+             final CompoundTag lastEntityUnload = this.lastEntityUnload;
+             this.lastEntityUnload = null;
+@@ -1701,7 +1703,7 @@ public final class NewChunkHolder {
+         // can only synchronously save worldgen chunks during shutdown
+         boolean canSaveChunk = !forceNoSaveChunk && (chunk != null && ((shutdown || chunk instanceof LevelChunk) && chunk.isUnsaved()));
+         boolean canSavePOI = !forceNoSaveChunk && (poi != null && poi.isDirty());
+-        boolean canSaveEntities = entities != null;
++        boolean canSaveEntities = !forceNoSaveChunk && entities != null;
+ 
+         if (canSaveChunk) {
+             canSaveChunk = this.saveChunk(chunk, false);
