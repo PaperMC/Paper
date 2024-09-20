@@ -45,4 +45,27 @@ public interface BrewingStandView extends InventoryView {
      * @throws IllegalArgumentException if the ticks are less than 0
      */
     void setBrewingTicks(final int ticks) throws IllegalArgumentException;
+
+    // Paper start - Add recipeBrewTime
+    /**
+     * Sets the recipe time for the brewing process which is
+     * used to compute the progress of the brewing process with
+     * {@link #getBrewingTicks()}.
+     *
+     * @param recipeBrewTime recipe brew time (in ticks)
+     * @throws IllegalArgumentException if the recipe brew time is non-positive
+     */
+    @org.jetbrains.annotations.ApiStatus.Experimental
+    void setRecipeBrewTime(@org.jetbrains.annotations.Range(from = 1, to = Integer.MAX_VALUE) int recipeBrewTime);
+
+    /**
+     * Gets the recipe time for the brewing process which is
+     * used to compute the progress of the brewing process with
+     * {@link #getBrewingTicks()}.
+     *
+     * @return recipe brew time (in ticks)
+     */
+    @org.jetbrains.annotations.ApiStatus.Experimental
+    @org.jetbrains.annotations.Range(from = 1, to = Integer.MAX_VALUE) int getRecipeBrewTime();
+    // Paper end - Add recipeBrewTime
 }
