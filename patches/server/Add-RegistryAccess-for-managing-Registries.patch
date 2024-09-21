@@ -213,10 +213,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Deprecated(forRemoval = true)
 +    @Override
 +    public <T extends Keyed> @Nullable Registry<T> getRegistry(final Class<T> type) {
-+        final RegistryKey<T> registryKey;
-+        final @Nullable RegistryEntry<?, T> entry;
-+        registryKey = requireNonNull(byType(type), () -> type + " is not a valid registry type");
-+        entry = PaperRegistries.getEntry(registryKey);
++        final @Nullable RegistryKey<T> registryKey = byType(type);
++        // If our mapping from Class -> RegistryKey did not contain the passed type it was either a completely invalid type or a registry
++        // that merely exists as a SimpleRegistry in the org.bukkit.Registry type. We cannot return a registry for these, return null
++        // as per method contract in Bukkit#getRegistry.
++        if (registryKey == null) return null;
++
++        final @Nullable RegistryEntry<?, T> entry = PaperRegistries.getEntry(registryKey);
 +        final @Nullable RegistryHolder<T> registry = (RegistryHolder<T>) this.registries.get(registryKey);
 +        if (registry != null) {
 +            // if the registry exists, return right away. Since this is the "legacy" method, we return DelayedRegistry
