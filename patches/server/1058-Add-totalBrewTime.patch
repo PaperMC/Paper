@@ -7,10 +7,37 @@ Subject: [PATCH] Add totalBrewTime
 public net.minecraft.world.inventory.BrewingStandMenu brewingStandData
 
 diff --git a/src/main/java/net/minecraft/world/inventory/BrewingStandMenu.java b/src/main/java/net/minecraft/world/inventory/BrewingStandMenu.java
-index 68c529cb38d61cd3a0f39bef0f666057fc219c9b..413a90e7c313636f236c127062855effc2341584 100644
+index 68c529cb38d61cd3a0f39bef0f666057fc219c9b..b252bb8ddf71fc440a727b9081ee04b10d1e53b3 100644
 --- a/src/main/java/net/minecraft/world/inventory/BrewingStandMenu.java
 +++ b/src/main/java/net/minecraft/world/inventory/BrewingStandMenu.java
-@@ -60,7 +60,20 @@ public class BrewingStandMenu extends AbstractContainerMenu {
+@@ -41,7 +41,25 @@ public class BrewingStandMenu extends AbstractContainerMenu {
+     // CraftBukkit end
+ 
+     public BrewingStandMenu(int syncId, Inventory playerInventory) {
+-        this(syncId, playerInventory, new SimpleContainer(5), new SimpleContainerData(2));
++        // Paper start - Add totalBrewTime
++        this(syncId, playerInventory, new SimpleContainer(5), new SimpleContainerData(2) {
++            int totalBrewTime = 400;
++
++            @Override
++            public int get(final int index) {
++                return index == -1 ? totalBrewTime : super.get(index);
++            }
++
++            @Override
++            public void set(final int index, final int value) {
++                if (index == -1) {
++                    totalBrewTime = value;
++                    return;
++                }
++                super.set(index, value);
++            }
++        });
++        // Paper end - Add totalBrewTime
+     }
+ 
+     public BrewingStandMenu(int syncId, Inventory playerInventory, Container inventory, ContainerData propertyDelegate) {
+@@ -60,7 +78,20 @@ public class BrewingStandMenu extends AbstractContainerMenu {
          // Paper end - custom potion mixes
          this.ingredientSlot = this.addSlot(new BrewingStandMenu.IngredientsSlot(potionbrewer, inventory, 3, 79, 17));
          this.addSlot(new BrewingStandMenu.FuelSlot(inventory, 4, 17, 17));
@@ -102,6 +129,37 @@ index e9f55c898de827afe6c9f951cbe1b46eea5f4149..76f808fa7dee001ff596a23017a450c5
      @Override
      public int getFuelLevel() {
          return this.getSnapshot().fuel;
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java
+index 674e3a827f8fb64e5c0beefb3c1874d6e8aee4e5..b77873519b06f23985ffbcd6e20107a947e8d99f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java
+@@ -163,7 +163,25 @@ public class CraftContainer extends AbstractContainerMenu {
+                 this.delegate = new EnchantmentMenu(windowId, bottom);
+                 break;
+             case BREWING:
+-                this.delegate = new BrewingStandMenu(windowId, bottom, top, new SimpleContainerData(2));
++                // Paper start - Add totalBrewTime
++                this.delegate = new BrewingStandMenu(windowId, bottom, top, new SimpleContainerData(2) {
++                    int totalBrewTime = 400;
++
++                    @Override
++                    public int get(final int index) {
++                        return index == -1 ? totalBrewTime : super.get(index);
++                    }
++
++                    @Override
++                    public void set(final int index, final int value) {
++                        if (index == -1) {
++                            totalBrewTime = value;
++                            return;
++                        }
++                        super.set(index, value);
++                    }
++                });
++                // Paper end - Add totalBrewTime
+                 break;
+             case HOPPER:
+                 this.delegate = new HopperMenu(windowId, bottom, top);
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/view/CraftBrewingStandView.java b/src/main/java/org/bukkit/craftbukkit/inventory/view/CraftBrewingStandView.java
 index c92e51227cf2c0046a558b012c078c46582aed44..dad30c29a014ba4edacf2f0f297422fbb92610c5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/view/CraftBrewingStandView.java
