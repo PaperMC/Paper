@@ -2078,7 +2078,7 @@ index 3c0d2332207ba638faaaa4280bce18c334a01271..4017b82e72fefd6685e9250a936686fd
      public org.bukkit.command.CommandSender getBukkitSender() {
          return this.source.getBukkitSender(this);
 diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
-index 7b86e064564d3a285e3971fd08ea6168bac0720e..e8dcbe7c6d6ed20ad19d2ba1893ad16d917b9993 100644
+index 7b86e064564d3a285e3971fd08ea6168bac0720e..74fcdc74dc6c5cbf81abb7d46fc700473bd00eff 100644
 --- a/src/main/java/net/minecraft/commands/Commands.java
 +++ b/src/main/java/net/minecraft/commands/Commands.java
 @@ -155,7 +155,7 @@ public class Commands {
@@ -2145,16 +2145,22 @@ index 7b86e064564d3a285e3971fd08ea6168bac0720e..e8dcbe7c6d6ed20ad19d2ba1893ad16d
                  StackTraceElement[] astacktraceelement = exception.getStackTrace();
  
                  for (int i = 0; i < Math.min(astacktraceelement.length, 3); ++i) {
-@@ -475,7 +494,7 @@ public class Commands {
+@@ -473,13 +492,7 @@ public class Commands {
+     private void sendAsync(ServerPlayer player) {
+         // Paper end - Perf: Async command map building
          Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = Maps.newIdentityHashMap(); // Use identity to prevent aliasing issues
-         RootCommandNode vanillaRoot = new RootCommandNode();
- 
+-        RootCommandNode vanillaRoot = new RootCommandNode();
+-
 -        RootCommandNode<CommandSourceStack> vanilla = player.server.vanillaCommandDispatcher.getDispatcher().getRoot();
-+        RootCommandNode<CommandSourceStack> vanilla = player.server.getCommands().getDispatcher().getRoot(); // Paper
-         map.put(vanilla, vanillaRoot);
-         this.fillUsableCommands(vanilla, vanillaRoot, player.createCommandSourceStack(), (Map) map);
+-        map.put(vanilla, vanillaRoot);
+-        this.fillUsableCommands(vanilla, vanillaRoot, player.createCommandSourceStack(), (Map) map);
+-
+-        // Now build the global commands in a second pass
++        // Paper - brigadier API removes the need to fill the map twice
+         RootCommandNode<SharedSuggestionProvider> rootcommandnode = new RootCommandNode();
  
-@@ -513,6 +532,7 @@ public class Commands {
+         map.put(this.dispatcher.getRoot(), rootcommandnode);
+@@ -513,6 +526,7 @@ public class Commands {
      }
  
      private void fillUsableCommands(CommandNode<CommandSourceStack> tree, CommandNode<SharedSuggestionProvider> result, CommandSourceStack source, Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> resultNodes) {
@@ -2162,7 +2168,7 @@ index 7b86e064564d3a285e3971fd08ea6168bac0720e..e8dcbe7c6d6ed20ad19d2ba1893ad16d
          Iterator iterator = tree.getChildren().iterator();
  
          while (iterator.hasNext()) {
-@@ -526,6 +546,42 @@ public class Commands {
+@@ -526,6 +540,42 @@ public class Commands {
  
              if (commandnode2.canUse(source)) {
                  ArgumentBuilder argumentbuilder = commandnode2.createBuilder(); // CraftBukkit - decompile error
