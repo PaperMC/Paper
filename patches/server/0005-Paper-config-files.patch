@@ -487,10 +487,10 @@ index 0000000000000000000000000000000000000000..d9502ba028a96f9cc846f9ed428bd806
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..45ab7ff5497ceccb85944d2e8d354d9c860abf3b
+index 0000000000000000000000000000000000000000..b92bfd89e32becde2e7630c6116c16f8a4f6614a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-@@ -0,0 +1,324 @@
+@@ -0,0 +1,331 @@
 +package io.papermc.paper.configuration;
 +
 +import co.aikar.timings.MinecraftTimings;
@@ -594,7 +594,14 @@ index 0000000000000000000000000000000000000000..45ab7ff5497ceccb85944d2e8d354d9c
 +
 +            @PostProcess
 +            private void postProcess() {
-+                if (this.enabled && this.secret.isEmpty()) {
++                if (!this.enabled) return;
++
++                final String environmentSourcedVelocitySecret = System.getenv("PAPER_VELOCITY_SECRET");
++                if (environmentSourcedVelocitySecret != null && !environmentSourcedVelocitySecret.isEmpty()) {
++                    this.secret = environmentSourcedVelocitySecret;
++                }
++
++                if (this.secret.isEmpty()) {
 +                    LOGGER.error("Velocity is enabled, but no secret key was specified. A secret key is required. Disabling velocity...");
 +                    this.enabled = false;
 +                }
@@ -5216,7 +5223,7 @@ index e433037a03ffafabb952887ae3980e1d51411d4c..c061813d275fbc48d7629cc59d90dbb4
          this.world = new CraftWorld((ServerLevel) this, gen, biomeProvider, env);
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 3c0691ef65c8db1002b76984f4ddfe2072d793c9..b3c4cdd9cfff6857f3007fbd91a280bcc53ab072 100644
+index 10f07a6eff8f738cefef11829dd774874259b8f4..4c5b6f8d63e4c60a1dc81e68117fa049b956819a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -962,6 +962,7 @@ public final class CraftServer implements Server {
