@@ -164,10 +164,10 @@ index 0000000000000000000000000000000000000000..70e2c3b5cac9a0dfb043de218df20dc1
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistryAccess.java b/src/main/java/io/papermc/paper/registry/PaperRegistryAccess.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d591e3a2e19d5358a0d25a5a681368943622d231
+index 0000000000000000000000000000000000000000..35b6a7c5bac9640332a833bd3627f2bcb1bbf2f3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/PaperRegistryAccess.java
-@@ -0,0 +1,124 @@
+@@ -0,0 +1,127 @@
 +package io.papermc.paper.registry;
 +
 +import io.papermc.paper.registry.entry.ApiRegistryEntry;
@@ -213,10 +213,13 @@ index 0000000000000000000000000000000000000000..d591e3a2e19d5358a0d25a5a68136894
 +    @Deprecated(forRemoval = true)
 +    @Override
 +    public <T extends Keyed> @Nullable Registry<T> getRegistry(final Class<T> type) {
-+        final RegistryKey<T> registryKey;
-+        final @Nullable RegistryEntry<?, T> entry;
-+        registryKey = requireNonNull(byType(type), () -> type + " is not a valid registry type");
-+        entry = PaperRegistries.getEntry(registryKey);
++        final @Nullable RegistryKey<T> registryKey = byType(type);
++        // If our mapping from Class -> RegistryKey did not contain the passed type it was either a completely invalid type or a registry
++        // that merely exists as a SimpleRegistry in the org.bukkit.Registry type. We cannot return a registry for these, return null
++        // as per method contract in Bukkit#getRegistry.
++        if (registryKey == null) return null;
++
++        final @Nullable RegistryEntry<?, T> entry = PaperRegistries.getEntry(registryKey);
 +        final @Nullable RegistryHolder<T> registry = (RegistryHolder<T>) this.registries.get(registryKey);
 +        if (registry != null) {
 +            // if the registry exists, return right away. Since this is the "legacy" method, we return DelayedRegistry
