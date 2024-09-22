@@ -23,23 +23,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  to = teleEvent.getTo();
 -                teleportTarget = new DimensionTransition(((CraftWorld) to.getWorld()).getHandle(), CraftLocation.toVec3D(to), teleportTarget.speed(), to.getYaw(), to.getPitch(), teleportTarget.missingRespawnBlock(), teleportTarget.postDimensionTransition(), teleportTarget.cause());
 +                // Paper start - Call EntityPortalExitEvent
-+                CraftEntity bukkitEntity = this.getBukkitEntity();
-+                Vec3 velocity = teleportTarget.speed();
-+                org.bukkit.event.entity.EntityPortalExitEvent event = new org.bukkit.event.entity.EntityPortalExitEvent(
-+                    bukkitEntity,
-+                    bukkitEntity.getLocation(), to.clone(),
-+                    bukkitEntity.getVelocity(), org.bukkit.craftbukkit.util.CraftVector.toBukkit(velocity)
-+                );
-+                event.callEvent();
++                if (this.portalProcess != null) { // if in a portal
++                    CraftEntity bukkitEntity = this.getBukkitEntity();
++                    Vec3 velocity = teleportTarget.speed();
++                    org.bukkit.event.entity.EntityPortalExitEvent event = new org.bukkit.event.entity.EntityPortalExitEvent(
++                        bukkitEntity,
++                        bukkitEntity.getLocation(), to.clone(),
++                        bukkitEntity.getVelocity(), org.bukkit.craftbukkit.util.CraftVector.toBukkit(velocity)
++                    );
++                    event.callEvent();
++
++                    if (!event.isCancelled() && event.getTo() != null) {
++                        to = event.getTo().clone();
++                        velocity = org.bukkit.craftbukkit.util.CraftVector.toNMS(event.getAfter());
++                    }
++                    teleportTarget = new DimensionTransition(((CraftWorld) to.getWorld()).getHandle(), CraftLocation.toVec3D(to), velocity, to.getYaw(), to.getPitch(), teleportTarget.missingRespawnBlock(), teleportTarget.postDimensionTransition(), teleportTarget.cause());
++                }
 +                if (this.isRemoved()) {
 +                    return null;
 +                }
-+
-+                if (!event.isCancelled() && event.getTo() != null) {
-+                    to = event.getTo().clone();
-+                    velocity = org.bukkit.craftbukkit.util.CraftVector.toNMS(event.getAfter());
-+                }
-+                teleportTarget = new DimensionTransition(((CraftWorld) to.getWorld()).getHandle(), CraftLocation.toVec3D(to), velocity, to.getYaw(), to.getPitch(), teleportTarget.missingRespawnBlock(), teleportTarget.postDimensionTransition(), teleportTarget.cause());
 +                // Paper end - Call EntityPortalExitEvent
                  // CraftBukkit end
                  ServerLevel worldserver1 = teleportTarget.newLevel();
