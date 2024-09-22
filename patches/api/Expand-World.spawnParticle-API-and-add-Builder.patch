@@ -455,19 +455,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    /**
 +     * Sets the particle Color.
-+     * Only valid for {@link Particle#DUST}.
++     * Only valid for particles with a data type of {@link Color} or {@link Particle.DustOptions}.
 +     *
 +     * @param color the new particle color
 +     * @return a reference to this object.
 +     */
 +    @NotNull
 +    public ParticleBuilder color(@Nullable Color color) {
++        if (particle.getDataType() == Color.class) {
++            return data(color);
++        }
 +        return color(color, 1);
 +    }
 +
 +    /**
 +     * Sets the particle Color and size.
-+     * Only valid for {@link Particle#DUST}.
++     * Only valid for particles with a data type of {@link Particle.DustOptions}.
 +     *
 +     * @param color the new particle color
 +     * @param size the size of the particle
@@ -475,8 +478,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     */
 +    @NotNull
 +    public ParticleBuilder color(@Nullable Color color, float size) {
-+        if (particle != Particle.DUST && color != null) {
-+            throw new IllegalStateException("Color may only be set on particle DUST.");
++        if (particle.getDataType() != Particle.DustOptions.class && color != null) {
++            throw new IllegalStateException("The combination of Color and size cannot be set on this particle type.");
 +        }
 +
 +        // We don't officially support reusing these objects, but here we go
@@ -493,7 +496,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    /**
 +     * Sets the particle Color.
-+     * Only valid for {@link Particle#DUST}.
++     * Only valid for particles with a data type of {@link Color} or {@link Particle.DustOptions}.
 +     *
 +     * @param r red color component
 +     * @param g green color component
@@ -507,14 +510,37 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    /**
 +     * Sets the particle Color.
-+     * Only valid for {@link Particle#DUST}.
++     * Only valid for particles with a data type of {@link Color} or {@link Particle.DustOptions}.
++     * <p>
++     * This method detects if the provided color integer is in RGB or ARGB format.
++     * If the alpha channel is zero, it treats the color as RGB. Otherwise, it treats it as ARGB.
 +     *
-+     * @param rgb an integer representing the red, green, and blue color components
++     * @param color an integer representing the color components. If the highest byte (alpha channel) is zero,
++     *              the color is treated as RGB. Otherwise, it is treated as ARGB.
 +     * @return a reference to this object.
 +     */
 +    @NotNull
-+    public ParticleBuilder color(final int rgb) {
-+        return color(Color.fromRGB(rgb));
++    public ParticleBuilder color(final int color) {
++        int alpha = (color >> 24) & 0xFF;
++        if (alpha == 0) {
++            return color(Color.fromRGB(color));
++        }
++        return color(Color.fromARGB(color));
++    }
++
++    /**
++     * Sets the particle Color.
++     * Only valid for particles with a data type of {@link Color} or {@link Particle.DustOptions}.
++     *
++     * @param a alpha color component
++     * @param r red color component
++     * @param g green color component
++     * @param b blue color component
++     * @return a reference to this object.
++     */
++    @NotNull
++    public ParticleBuilder color(final int a, final int r, final int g, final int b) {
++        return color(Color.fromARGB(a, r, g, b));
 +    }
 +
 +    /**
