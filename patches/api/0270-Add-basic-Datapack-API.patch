@@ -3,71 +3,201 @@ From: Connor Linfoot <connorlinfoot@me.com>
 Date: Sun, 16 May 2021 15:07:34 +0100
 Subject: [PATCH] Add basic Datapack API
 
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/src/main/java/io/papermc/paper/datapack/Datapack.java b/src/main/java/io/papermc/paper/datapack/Datapack.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7b2ab0be10a21e0496ad1d485ff8cb2c0b92a2cb
+index 0000000000000000000000000000000000000000..233a31afa9673c9cb8d9eb52551425ff15f79661
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datapack/Datapack.java
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,98 @@
 +package io.papermc.paper.datapack;
 +
++import java.util.Set;
++import net.kyori.adventure.text.Component;
++import org.bukkit.FeatureFlag;
 +import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.Unmodifiable;
 +
++/**
++ * This is a snapshot of a datapack on the server. It
++ * won't be updated as datapacks are updated.
++ */
 +public interface Datapack {
 +
 +    /**
++     * Gets the name/id of this datapack.
++     *
 +     * @return the name of the pack
 +     */
-+    @NonNull
-+    String getName();
++    @Contract(pure = true)
++    @NonNull String getName();
 +
 +    /**
++     * Gets the title component of this datapack.
++     *
++     * @return the title
++     */
++    @NonNull Component getTitle();
++
++    /**
++     * Gets the description component of this datapack.
++     *
++     * @return the description
++     */
++    @NonNull Component getDescription();
++
++    /**
++     * Gets if this datapack is required to be enabled.
++     *
++     * @return true if the pack is required
++     */
++    boolean isRequired();
++
++    /**
++     * Gets the compatibility status of this pack.
++     *
 +     * @return the compatibility of the pack
 +     */
-+    @NonNull
-+    Compatibility getCompatibility();
++    @NonNull Compatibility getCompatibility();
 +
 +    /**
-+     * @return whether or not the pack is currently enabled
++     * Gets the set of required features for this datapack.
++     *
++     * @return the set of required features
++     */
++    @NonNull @Unmodifiable Set<FeatureFlag> getRequiredFeatures();
++
++    /**
++     * Gets the enabled state of this pack.
++     *
++     * @return whether the pack is currently enabled
 +     */
 +    boolean isEnabled();
 +
++    /**
++     * Changes the enabled state of this pack. Will
++     * cause a reload of resources ({@code /minecraft:reload}) if
++     * any change happens.
++     *
++     * @param enabled true to enable, false to disable
++     * @apiNote This method may be deprecated in the future as setters on a "snapshot" type are undesirable.
++     */
 +    void setEnabled(boolean enabled);
++
++    /**
++     * Gets the source for this datapack.
++     *
++     * @return the pack source
++     */
++    @NonNull DatapackSource getSource();
++
++    /**
++     * Computes the component vanilla Minecraft uses
++     * to display this datapack. Includes the {@link #getSource()},
++     * {@link #getDescription()}, {@link #getName()}, and the enabled state.
++     *
++     * @return a new component
++     */
++    @Contract(pure = true, value = "-> new")
++    @NonNull Component computeDisplayName();
 +
 +    enum Compatibility {
 +        TOO_OLD,
 +        TOO_NEW,
 +        COMPATIBLE,
 +    }
-+
 +}
 diff --git a/src/main/java/io/papermc/paper/datapack/DatapackManager.java b/src/main/java/io/papermc/paper/datapack/DatapackManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..58f78d5e91beacaf710f62461cf869f70d08b2a2
+index 0000000000000000000000000000000000000000..bbb81a8058a67fd554c781dbb4908434ad339655
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datapack/DatapackManager.java
-@@ -0,0 +1,21 @@
+@@ -0,0 +1,43 @@
 +package io.papermc.paper.datapack;
 +
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +
 +import java.util.Collection;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.jetbrains.annotations.Unmodifiable;
 +
 +public interface DatapackManager {
 +
 +    /**
-+     * @return all the packs known to the server
++     * Triggers a refresh of the available and selected datapacks. This
++     * can find new datapacks, remove old ones, and update the metadata for
++     * existing datapacks. Some of these changes will only take effect
++     * after the next {@link org.bukkit.Server#reloadData()} or {@code /minecraft:reload}.
 +     */
-+    @NonNull
-+    Collection<Datapack> getPacks();
++    void refreshPacks();
 +
 +    /**
++     * Gets a datapack by name. May require calling {@link #refreshPacks()} before
++     * to get the latest pack information.
++     *
++     * @param name the name/id of the datapack
++     * @return the datapack, or null if not found
++     */
++    @Nullable Datapack getPack(@NonNull String name);
++
++    /**
++     * Gets the available datapacks. May require calling {@link #refreshPacks()} before
++     * to get the latest pack information.
++     *
++     * @return all the packs known to the server
++     */
++    @NonNull @Unmodifiable Collection<Datapack> getPacks();
++
++    /**
++     * Gets the enabled datapacks. May require calling {@link #refreshPacks()} before
++     * to get the latest pack information.
++     *
 +     * @return all the packs which are currently enabled
 +     */
-+    @NonNull
-+    Collection<Datapack> getEnabledPacks();
++    @NonNull @Unmodifiable Collection<Datapack> getEnabledPacks();
++}
+diff --git a/src/main/java/io/papermc/paper/datapack/DatapackSource.java b/src/main/java/io/papermc/paper/datapack/DatapackSource.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1679cbd78920005475343092857e13906ab73f82
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datapack/DatapackSource.java
+@@ -0,0 +1,17 @@
++package io.papermc.paper.datapack;
 +
++/**
++ * Source of a datapack.
++ */
++public sealed interface DatapackSource permits DatapackSourceImpl {
++
++    DatapackSource DEFAULT = create("default");
++    DatapackSource BUILT_IN = create("built_in");
++    DatapackSource FEATURE = create("feature");
++    DatapackSource WORLD = create("world");
++    DatapackSource SERVER = create("server");
++
++    private static DatapackSource create(final String name) {
++        return new DatapackSourceImpl(name);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/datapack/DatapackSourceImpl.java b/src/main/java/io/papermc/paper/datapack/DatapackSourceImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3eb4d1df8187fdeab74948d261d9c8e03e55605c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datapack/DatapackSourceImpl.java
+@@ -0,0 +1,12 @@
++package io.papermc.paper.datapack;
++
++import org.jetbrains.annotations.ApiStatus;
++
++@ApiStatus.Internal
++record DatapackSourceImpl(String name) implements DatapackSource {
++
++    @Override
++    public String toString() {
++        return this.name;
++    }
 +}
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
 index b558fa73dbcf3747690933e6aadf7061a0de2630..be68351555bde59a4e55bf1bad261e9f6bc9f704 100644
