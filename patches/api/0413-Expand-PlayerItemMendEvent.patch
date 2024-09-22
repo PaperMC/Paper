@@ -1,0 +1,71 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 20 Jan 2022 18:11:44 -0800
+Subject: [PATCH] Expand PlayerItemMendEvent
+
+
+diff --git a/src/main/java/org/bukkit/event/player/PlayerItemMendEvent.java b/src/main/java/org/bukkit/event/player/PlayerItemMendEvent.java
+index 5b2415c2c92127947a21dfe8d672d2b88ea457df..533531f69a8d549e184161eefe6e5bf8a9e85c05 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerItemMendEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerItemMendEvent.java
+@@ -23,14 +23,60 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
+     private final ExperienceOrb experienceOrb;
+     private int repairAmount;
+     private boolean cancelled;
++    private java.util.function.IntUnaryOperator durabilityToXpOp; // Paper
+ 
++    @Deprecated // Paper
+     public PlayerItemMendEvent(@NotNull Player who, @NotNull ItemStack item, @NotNull EquipmentSlot slot, @NotNull ExperienceOrb experienceOrb, int repairAmount) {
++        // Paper start
++        this(who, item, slot, experienceOrb, repairAmount, amount -> amount / 2);
++    }
++
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public PlayerItemMendEvent(@NotNull Player who, @NotNull ItemStack item, @NotNull EquipmentSlot slot, @NotNull ExperienceOrb experienceOrb, int repairAmount, @NotNull java.util.function.IntUnaryOperator durabilityToXpOp) {
++        // Paper end
+         super(who);
+         this.item = item;
+         this.slot = slot;
+         this.experienceOrb = experienceOrb;
+         this.repairAmount = repairAmount;
++        // Paper start
++        this.durabilityToXpOp = durabilityToXpOp;
++    }
++
++    /**
++     * Get the operation used to calculate xp used based on
++     * the set repair amount. Used to calculate how much of
++     * an XP orb will be consumed by this mend operation.
++     *
++     * @return the durability-to-xp operation
++     */
++    public @NotNull java.util.function.IntUnaryOperator getDurabilityToXpOperation() {
++        return this.durabilityToXpOp;
++    }
++
++    /**
++     * Sets the operation used to calculate xp used based on
++     * the set repair amount. Used to calculate how much of
++     * an XP orb will be consumed by this mend operation.
++     *
++     * @param durabilityToXpOp the durability-to-xp operation
++     */
++    public void setDurabilityToXpOperation(@NotNull java.util.function.IntUnaryOperator durabilityToXpOp) {
++        com.google.common.base.Preconditions.checkNotNull(durabilityToXpOp);
++        this.durabilityToXpOp = durabilityToXpOp;
++    }
++
++    /**
++     * Helper method to get the amount of experience that will be consumed.
++     * This method just returns the result of inputting {@link #getRepairAmount()}
++     * into the function {@link #getDurabilityToXpOperation()}.
++     *
++     * @return the amount of xp that will be consumed
++     */
++    public int getConsumedExperience() {
++        return this.durabilityToXpOp.applyAsInt(this.getRepairAmount());
+     }
++    // Paper end
+ 
+     @Deprecated
+     public PlayerItemMendEvent(@NotNull Player who, @NotNull ItemStack item, @NotNull ExperienceOrb experienceOrb, int repairAmount) {

@@ -1,0 +1,87 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 22 Apr 2021 17:17:47 -0700
+Subject: [PATCH] Reorganize respawn events
+
+add RespawnFlags to PlayerRespawnEvent
+Implement PlayerPostRespawnEvent
+
+Co-authored-by: MisterVector <whizkid3000@hotmail.com>
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 2f9fe15fe34f44825d21ae840708fcbd89b76732..1f0b8f875a46a025fb387e79cf31d1e329a2e152 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2783,7 +2783,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+             case PERFORM_RESPAWN:
+                 if (this.player.wonGame) {
+                     this.player.wonGame = false;
+-                    this.player = this.server.getPlayerList().respawn(this.player, true, RespawnReason.END_PORTAL);
++                    this.player = this.server.getPlayerList().respawn(this.player, this.server.getLevel(this.player.getRespawnDimension()), true, null, true, RespawnReason.END_PORTAL, org.bukkit.event.player.PlayerRespawnEvent.RespawnFlag.END_PORTAL); // Paper - add isEndCreditsRespawn argument
+                     CriteriaTriggers.CHANGED_DIMENSION.trigger(this.player, Level.END, Level.OVERWORLD);
+                 } else {
+                     if (this.player.getHealth() > 0.0F) {
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 2c5e1567d762a4c4325824a5a1b882aff7838d4a..1e21507c7d5723147da105d311e81416c31e5e07 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -769,6 +769,12 @@ public abstract class PlayerList {
+     }
+ 
+     public ServerPlayer respawn(ServerPlayer entityplayer, ServerLevel worldserver, boolean flag, Location location, boolean avoidSuffocation, RespawnReason reason) {
++        // Paper start
++        return respawn(entityplayer, worldserver, flag, location, avoidSuffocation, reason, new org.bukkit.event.player.PlayerRespawnEvent.RespawnFlag[0]);
++    }
++
++    public ServerPlayer respawn(ServerPlayer entityplayer, ServerLevel worldserver, boolean flag, Location location, boolean avoidSuffocation, RespawnReason reason, org.bukkit.event.player.PlayerRespawnEvent.RespawnFlag...respawnFlags) {
++        // Paper end
+         entityplayer.stopRiding(); // CraftBukkit
+         this.players.remove(entityplayer);
+         this.playersByName.remove(entityplayer.getScoreboardName().toLowerCase(java.util.Locale.ROOT)); // Spigot
+@@ -810,10 +816,14 @@ public abstract class PlayerList {
+ 
+         boolean isAnchorSpawn = false; // Paper
+         boolean isLocAltered = false; // Paper - Fix SPIGOT-5989
++        // Paper start
++        boolean isBedSpawn = false;
++        boolean isRespawn = false;
++        // Paper end
+ 
+         // CraftBukkit start - fire PlayerRespawnEvent
+         if (location == null) {
+-            boolean isBedSpawn = false;
++            // boolean isBedSpawn = false; // Paper - moved up
+             ServerLevel worldserver1 = this.server.getLevel(entityplayer.getRespawnDimension());
+             if (worldserver1 != null) {
+                 Optional optional;
+@@ -856,7 +866,7 @@ public abstract class PlayerList {
+             }
+ 
+             Player respawnPlayer = entityplayer1.getBukkitEntity();
+-            PlayerRespawnEvent respawnEvent = new PlayerRespawnEvent(respawnPlayer, location, isBedSpawn && !isAnchorSpawn, isAnchorSpawn, reason); // Paper - Fix anchor respawn acting as a bed respawn from the end portal
++            PlayerRespawnEvent respawnEvent = new PlayerRespawnEvent(respawnPlayer, location, isBedSpawn && !isAnchorSpawn, isAnchorSpawn, reason, com.google.common.collect.ImmutableSet.<org.bukkit.event.player.PlayerRespawnEvent.RespawnFlag>builder().add(respawnFlags)); // Paper - Fix anchor respawn acting as a bed respawn from the end portal
+             this.cserver.getPluginManager().callEvent(respawnEvent);
+             // Spigot Start
+             if (entityplayer.connection.isDisconnected()) {
+@@ -871,6 +881,7 @@ public abstract class PlayerList {
+             }
+             // Paper end
+             if (!flag) entityplayer.reset(); // SPIGOT-4785
++            isRespawn = true; // Paper
+         } else {
+             location.setWorld(worldserver.getWorld());
+         }
+@@ -937,6 +948,13 @@ public abstract class PlayerList {
+         if (entityplayer.connection.isDisconnected()) {
+             this.save(entityplayer);
+         }
++
++        // Paper start
++        if (isRespawn) {
++            cserver.getPluginManager().callEvent(new com.destroystokyo.paper.event.player.PlayerPostRespawnEvent(entityplayer.getBukkitEntity(), location, isBedSpawn && !isAnchorSpawn, isAnchorSpawn, reason, com.google.common.collect.ImmutableSet.<org.bukkit.event.player.PlayerRespawnEvent.RespawnFlag>builder().add(respawnFlags)));
++        }
++        // Paper end
++
+         // CraftBukkit end
+         return entityplayer1;
+     }

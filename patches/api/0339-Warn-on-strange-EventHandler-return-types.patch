@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Tue, 18 Jan 2022 11:07:54 -0700
+Subject: [PATCH] Warn on strange @EventHandler return types
+
+
+diff --git a/src/main/java/org/bukkit/plugin/EventExecutor.java b/src/main/java/org/bukkit/plugin/EventExecutor.java
+index 9026e108ccd3a88aee1267ee275137befa646455..5fa52419f21d8e8b3d8f9aafd248b05774a28348 100644
+--- a/src/main/java/org/bukkit/plugin/EventExecutor.java
++++ b/src/main/java/org/bukkit/plugin/EventExecutor.java
+@@ -51,6 +51,12 @@ public interface EventExecutor {
+         Preconditions.checkArgument(m.getParameterCount() != 0, "Incorrect number of arguments %s", m.getParameterCount());
+         Preconditions.checkArgument(m.getParameterTypes()[0] == eventClass, "First parameter %s doesn't match event class %s", m.getParameterTypes()[0], eventClass);
+         ClassDefiner definer = ClassDefiner.getInstance();
++        if (m.getReturnType() != Void.TYPE) {
++            final org.bukkit.plugin.java.JavaPlugin plugin = org.bukkit.plugin.java.JavaPlugin.getProvidingPlugin(m.getDeclaringClass());
++            org.bukkit.Bukkit.getLogger().warning("@EventHandler method " + m.getDeclaringClass().getName() + (Modifier.isStatic(m.getModifiers()) ? '.' : '#') + m.getName()
++                + " returns non-void type " + m.getReturnType().getName() + ". This is unsupported behavior and will no longer work in a future version of Paper."
++                + " This should be reported to the developers of " + plugin.getPluginMeta().getDisplayName() + " (" + String.join(",", plugin.getPluginMeta().getAuthors()) + ')');
++        }
+         if (Modifier.isStatic(m.getModifiers())) {
+             return new StaticMethodHandleEventExecutor(eventClass, m);
+         } else if (definer.isBypassAccessChecks() || Modifier.isPublic(m.getDeclaringClass().getModifiers()) && Modifier.isPublic(m.getModifiers())) {
