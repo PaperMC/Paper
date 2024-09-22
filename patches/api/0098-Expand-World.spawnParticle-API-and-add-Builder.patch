@@ -10,10 +10,10 @@ This adds a new Builder API which is much friendlier to use.
 
 diff --git a/src/main/java/com/destroystokyo/paper/ParticleBuilder.java b/src/main/java/com/destroystokyo/paper/ParticleBuilder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..aa02a08da205b670408b2102af0d1151d677d89f
+index 0000000000000000000000000000000000000000..970084a788ab5547d16a5e08d4e9d9c769aca67e
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/ParticleBuilder.java
-@@ -0,0 +1,611 @@
+@@ -0,0 +1,609 @@
 +package com.destroystokyo.paper;
 +
 +import com.google.common.base.Preconditions;
@@ -462,12 +462,15 @@ index 0000000000000000000000000000000000000000..aa02a08da205b670408b2102af0d1151
 +     */
 +    @NotNull
 +    public ParticleBuilder color(@Nullable Color color) {
++        if (particle.getDataType() == Color.class) {
++            return data(color);
++        }
 +        return color(color, 1);
 +    }
 +
 +    /**
 +     * Sets the particle Color and size.
-+     * Only valid for particles with a data type of {@link Color} or {@link Particle.DustOptions}.
++     * Only valid for particles with a data type of {@link Particle.DustOptions}.
 +     *
 +     * @param color the new particle color
 +     * @param size the size of the particle
@@ -475,21 +478,17 @@ index 0000000000000000000000000000000000000000..aa02a08da205b670408b2102af0d1151
 +     */
 +    @NotNull
 +    public ParticleBuilder color(@Nullable Color color, float size) {
-+        if (particle.getDataType() != Color.class && particle.getDataType() != Particle.DustOptions.class && color != null) {
-+            throw new IllegalStateException("Color cannot be set on this particle type.");
++        if (particle.getDataType() != Particle.DustOptions.class && color != null) {
++            throw new IllegalStateException("The combination of Color and size cannot be set on this particle type.");
 +        }
 +
 +        // We don't officially support reusing these objects, but here we go
 +        if (color == null) {
-+            if (data instanceof Particle.DustOptions || data instanceof Color) {
++            if (data instanceof Particle.DustOptions) {
 +                return data(null);
 +            } else {
 +                return this;
 +            }
-+        }
-+
-+        if (particle.getDataType() == Color.class) {
-+            return data(color);
 +        }
 +
 +        return data(new Particle.DustOptions(color, size));
@@ -515,7 +514,6 @@ index 0000000000000000000000000000000000000000..aa02a08da205b670408b2102af0d1151
 +     * <p>
 +     * This method detects if the provided color integer is in RGB or ARGB format.
 +     * If the alpha channel is zero, it treats the color as RGB. Otherwise, it treats it as ARGB.
-+     * <\p>
 +     *
 +     * @param color an integer representing the color components. If the highest byte (alpha channel) is zero,
 +     *              the color is treated as RGB. Otherwise, it is treated as ARGB.
