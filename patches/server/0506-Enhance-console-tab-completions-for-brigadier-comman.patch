@@ -43,10 +43,10 @@ index a4070b59e261f0f1ac4beec47b11492f4724bf27..6ee39b534b8d992655bc0cef3c299d12
      @Override
 diff --git a/src/main/java/io/papermc/paper/console/BrigadierCommandCompleter.java b/src/main/java/io/papermc/paper/console/BrigadierCommandCompleter.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2fe00debd08c0f5fdb254edff62a79ced6fb09c2
+index 0000000000000000000000000000000000000000..bf7b9518c05ff8a6d4b7d7cd36187ca22257e3dc
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/console/BrigadierCommandCompleter.java
-@@ -0,0 +1,127 @@
+@@ -0,0 +1,119 @@
 +package io.papermc.paper.console;
 +
 +import com.destroystokyo.paper.event.server.AsyncTabCompleteEvent;
@@ -91,7 +91,7 @@ index 0000000000000000000000000000000000000000..2fe00debd08c0f5fdb254edff62a79ce
 +            return;
 +        }
 +        final CommandDispatcher<CommandSourceStack> dispatcher = this.server.getCommands().getDispatcher();
-+        final ParseResults<CommandSourceStack> results = dispatcher.parse(prepareStringReader(line.line()), this.commandSourceStack.get());
++        final ParseResults<CommandSourceStack> results = dispatcher.parse(new StringReader(line.line()), this.commandSourceStack.get());
 +        this.addCandidates(
 +            candidates,
 +            dispatcher.getCompletionSuggestions(results, line.cursor()).join().getList(),
@@ -157,14 +157,6 @@ index 0000000000000000000000000000000000000000..2fe00debd08c0f5fdb254edff62a79ce
 +        return completion(suggestion.getText(), PaperAdventure.asAdventure(ComponentUtils.fromMessage(suggestion.getTooltip())));
 +    }
 +
-+    static @NonNull StringReader prepareStringReader(final @NonNull String line) {
-+        final StringReader stringReader = new StringReader(line);
-+        if (stringReader.canRead() && stringReader.peek() == '/') {
-+            stringReader.skip();
-+        }
-+        return stringReader;
-+    }
-+
 +    private record ParseContext(String line, int suggestionStart) {
 +    }
 +
@@ -176,14 +168,15 @@ index 0000000000000000000000000000000000000000..2fe00debd08c0f5fdb254edff62a79ce
 +}
 diff --git a/src/main/java/io/papermc/paper/console/BrigadierCommandHighlighter.java b/src/main/java/io/papermc/paper/console/BrigadierCommandHighlighter.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dd9d77d7c7f1a5a130a1f4c15e5b1e68ae3753e1
+index 0000000000000000000000000000000000000000..0b21dac4473e3ea8022ef5c17f5f7d4d49d3ac0a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/console/BrigadierCommandHighlighter.java
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,67 @@
 +package io.papermc.paper.console;
 +
 +import com.google.common.base.Suppliers;
 +import com.mojang.brigadier.ParseResults;
++import com.mojang.brigadier.StringReader;
 +import com.mojang.brigadier.context.ParsedCommandNode;
 +import com.mojang.brigadier.tree.LiteralCommandNode;
 +import java.util.function.Supplier;
@@ -214,12 +207,8 @@ index 0000000000000000000000000000000000000000..dd9d77d7c7f1a5a130a1f4c15e5b1e68
 +            return new AttributedString(buffer, AttributedStyle.DEFAULT.foreground(AttributedStyle.RED));
 +        }
 +        final AttributedStringBuilder builder = new AttributedStringBuilder();
-+        final ParseResults<CommandSourceStack> results = this.server.getCommands().getDispatcher().parse(BrigadierCommandCompleter.prepareStringReader(buffer), this.commandSourceStack.get());
++        final ParseResults<CommandSourceStack> results = this.server.getCommands().getDispatcher().parse(new StringReader(buffer), this.commandSourceStack.get());
 +        int pos = 0;
-+        if (buffer.startsWith("/")) {
-+            builder.append("/", AttributedStyle.DEFAULT);
-+            pos = 1;
-+        }
 +        int component = -1;
 +        for (final ParsedCommandNode<CommandSourceStack> node : results.getContext().getLastChild().getNodes()) {
 +            if (node.getRange().getStart() >= buffer.length()) {
@@ -285,14 +274,15 @@ index 0000000000000000000000000000000000000000..1e8028a43db0ff1d5b22d06ef12c1c32
 +}
 diff --git a/src/main/java/io/papermc/paper/console/BrigadierConsoleParser.java b/src/main/java/io/papermc/paper/console/BrigadierConsoleParser.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6e211580b1bc6e2c5ec6f2641b0cf91862985db1
+index 0000000000000000000000000000000000000000..8239a8ba57f856cbbee237a601b3cabfce20ba26
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/console/BrigadierConsoleParser.java
-@@ -0,0 +1,80 @@
+@@ -0,0 +1,79 @@
 +package io.papermc.paper.console;
 +
 +import com.mojang.brigadier.ImmutableStringReader;
 +import com.mojang.brigadier.ParseResults;
++import com.mojang.brigadier.StringReader;
 +import com.mojang.brigadier.context.CommandContextBuilder;
 +import com.mojang.brigadier.context.ParsedCommandNode;
 +import com.mojang.brigadier.context.StringRange;
@@ -304,8 +294,6 @@ index 0000000000000000000000000000000000000000..6e211580b1bc6e2c5ec6f2641b0cf918
 +import org.jline.reader.Parser;
 +import org.jline.reader.SyntaxError;
 +
-+import static io.papermc.paper.console.BrigadierCommandCompleter.prepareStringReader;
-+
 +public class BrigadierConsoleParser implements Parser {
 +
 +    private final DedicatedServer server;
@@ -316,7 +304,7 @@ index 0000000000000000000000000000000000000000..6e211580b1bc6e2c5ec6f2641b0cf918
 +
 +    @Override
 +    public ParsedLine parse(final String line, final int cursor, final ParseContext context) throws SyntaxError {
-+        final ParseResults<CommandSourceStack> results = this.server.getCommands().getDispatcher().parse(prepareStringReader(line), this.server.createCommandSourceStack());
++        final ParseResults<CommandSourceStack> results = this.server.getCommands().getDispatcher().parse(new StringReader(line), this.server.createCommandSourceStack());
 +        final ImmutableStringReader reader = results.getReader();
 +        final List<String> words = new ArrayList<>();
 +        CommandContextBuilder<CommandSourceStack> currentContext = results.getContext();
@@ -391,7 +379,7 @@ index d5153f804cfcfd1a70c46975e3fb1e50c8a82999..764395fe8e49d811294ca82887fee91c
          com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics(); // Paper - start metrics
          com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // Paper - load version history now
 diff --git a/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java b/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java
-index 8f82041f0482df22a6a9ea38d50d56228131775d..3e93a6c489972ff2b4ecff3d83cc72b2d5c970f8 100644
+index 15bc85f4799a4b23edd2f1e93f1794de5ca3e8e3..a45e658996e483e9a21cfd8178153ddb7b87ae69 100644
 --- a/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java
 +++ b/src/main/java/org/bukkit/craftbukkit/command/ConsoleCommandCompleter.java
 @@ -18,9 +18,11 @@ import org.bukkit.event.server.TabCompleteEvent;
