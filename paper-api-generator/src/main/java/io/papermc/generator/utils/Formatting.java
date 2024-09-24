@@ -1,5 +1,6 @@
 package io.papermc.generator.utils;
 
+import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.lang3.math.NumberUtils;
 import java.util.Comparator;
@@ -12,8 +13,13 @@ public final class Formatting {
 
     private static final Pattern ILLEGAL_FIELD_CHARACTERS = Pattern.compile("[.-/]");
 
+    private static final Map<String, String> MANUAL_OVERRIDES = Map.of(
+        "5", "five",
+        "11", "eleven",
+        "13", "thirteen"
+    );
     public static String formatKeyAsField(String path) {
-        return ILLEGAL_FIELD_CHARACTERS.matcher(path.toUpperCase(Locale.ROOT)).replaceAll("_");
+        return ILLEGAL_FIELD_CHARACTERS.matcher(MANUAL_OVERRIDES.getOrDefault(path, path).toUpperCase(Locale.ROOT)).replaceAll("_");
     }
 
     public static Optional<String> formatTagKey(String tagDir, String resourcePath) {
