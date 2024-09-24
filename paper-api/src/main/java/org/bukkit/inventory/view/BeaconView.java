@@ -65,7 +65,8 @@ public interface BeaconView extends InventoryView {
 
     /**
      * Sets the secondary effect on this beacon, or null to clear. Note that
-     * tier must be &gt;= 4 for this effect to be active.
+     * tier must be &gt;= 4 and a primary effect must be set in order for this
+     * effect to be active.
      * <p>
      * The {@link PotionEffectType} provided must be one that is already within
      * the beacon as a valid option.
