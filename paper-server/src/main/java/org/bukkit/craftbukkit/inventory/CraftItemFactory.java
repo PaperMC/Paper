@@ -324,6 +324,22 @@ public final class CraftItemFactory implements ItemFactory {
         );
     }
 
+    @Override
+    public ItemStack enchantWithLevels(ItemStack itemStack, int levels, io.papermc.paper.registry.set.RegistryKeySet<org.bukkit.enchantments.Enchantment> keySet, java.util.Random random) {
+        return enchantWithLevels(
+            itemStack,
+            levels,
+            Optional.of(
+                io.papermc.paper.registry.set.PaperRegistrySets.convertToNms(
+                    Registries.ENCHANTMENT,
+                    net.minecraft.server.MinecraftServer.getServer().registryAccess().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE).lookupProvider,
+                    keySet
+                )
+            ),
+            random
+        );
+    }
+
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private ItemStack enchantWithLevels(
         ItemStack itemStack,
