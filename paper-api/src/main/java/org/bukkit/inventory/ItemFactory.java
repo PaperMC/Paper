@@ -338,4 +338,21 @@ public interface ItemFactory {
      */
     @NotNull ItemStack enchantWithLevels(@NotNull ItemStack itemStack, @org.jetbrains.annotations.Range(from = 1, to = 30) int levels, boolean allowTreasure, @NotNull java.util.Random random);
     // Paper end - enchantWithLevels API
+    // Paper start - enchantWithLevels with tag specification
+    /**
+     * Randomly enchants a copy of the provided {@link ItemStack} using the given experience levels.
+     *
+     * <p>If the provided ItemStack is already enchanted, the existing enchants will be removed before enchanting.</p>
+     *
+     * <p>Levels must be in range {@code [1, 30]}.</p>
+     *
+     * @param itemStack ItemStack to enchant
+     * @param levels levels to use for enchanting
+     * @param keySet registry key set defining the set of possible enchantments, e.g. {@link io.papermc.paper.registry.keys.tags.EnchantmentTagKeys#IN_ENCHANTING_TABLE}.
+     * @param random {@link java.util.Random} instance to use for enchanting
+     * @return enchanted copy of the provided ItemStack
+     * @throws IllegalArgumentException on bad arguments
+     */
+    @NotNull ItemStack enchantWithLevels(@NotNull ItemStack itemStack, @org.jetbrains.annotations.Range(from = 1, to = 30) int levels, @NotNull io.papermc.paper.registry.set.RegistryKeySet<@NotNull Enchantment> keySet, @NotNull java.util.Random random);
+    // Paper end - enchantWithLevels with tag specification
 }
