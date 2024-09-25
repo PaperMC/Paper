@@ -54,15 +54,12 @@ index 30b50e6294c6eaade5e17cfaf34600d122e6251c..0bb7694188d5fb75bb756ce75d0060ea
  }
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d0ef7fa0b3e5935d48f894596be6672b0016948a
+index 0000000000000000000000000000000000000000..ce808520d639581696689a2ab85de00d85aa0ee3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/LifecycleEventRunner.java
-@@ -0,0 +1,110 @@
+@@ -0,0 +1,100 @@
 +package io.papermc.paper.plugin.lifecycle.event;
 +
-+import com.google.common.base.Suppliers;
-+import com.mojang.logging.LogUtils;
-+import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 +import io.papermc.paper.plugin.lifecycle.event.registrar.PaperRegistrar;
 +import io.papermc.paper.plugin.lifecycle.event.registrar.RegistrarEvent;
 +import io.papermc.paper.plugin.lifecycle.event.registrar.RegistrarEventImpl;
@@ -72,33 +69,27 @@ index 0000000000000000000000000000000000000000..d0ef7fa0b3e5935d48f894596be6672b
 +import io.papermc.paper.plugin.lifecycle.event.types.OwnerAwareLifecycleEvent;
 +import java.util.ArrayList;
 +import java.util.List;
-+import java.util.Set;
 +import java.util.function.Predicate;
-+import java.util.function.Supplier;
 +import org.bukkit.plugin.Plugin;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.slf4j.Logger;
 +
 +@DefaultQualifier(NonNull.class)
 +public class LifecycleEventRunner {
 +
-+    private static final Logger LOGGER = LogUtils.getClassLogger();
-+    private static final Supplier<Set<LifecycleEventType<?, ?, ?>>> BLOCKS_RELOADING = Suppliers.memoize(() -> Set.of( // lazy due to cyclic initialization
-+    ));
 +    public static final LifecycleEventRunner INSTANCE = new LifecycleEventRunner();
 +
 +    private final List<LifecycleEventType<?, ?, ?>> lifecycleEventTypes = new ArrayList<>();
 +    private boolean blockPluginReloading = false;
 +
-+    public void checkRegisteredHandler(final LifecycleEventOwner owner, final LifecycleEventType<?, ?, ?> eventType) {
++    public <O extends LifecycleEventOwner> void checkRegisteredHandler(final O owner, final AbstractLifecycleEventType<O, ?, ?> eventType) {
 +        /*
 +        Lifecycle event handlers for reloadable events that are registered from the BootstrapContext prevent
 +        the server from reloading plugins. This is because reloading plugins requires disabling all the plugins,
 +        running the reload logic (which would include places where these events should fire) and then re-enabling plugins.
 +         */
-+        if (owner instanceof BootstrapContext && BLOCKS_RELOADING.get().contains(eventType)) {
++        if (eventType.blocksReloading(owner)) {
 +            this.blockPluginReloading = true;
 +        }
 +    }
@@ -107,9 +98,8 @@ index 0000000000000000000000000000000000000000..d0ef7fa0b3e5935d48f894596be6672b
 +        return this.blockPluginReloading;
 +    }
 +
-+    public <O extends LifecycleEventOwner, E extends LifecycleEvent, ET extends LifecycleEventType<O, E, ?>> ET addEventType(final ET eventType) {
++    public <O extends LifecycleEventOwner, E extends LifecycleEvent, ET extends LifecycleEventType<O, E, ?>> void addEventType(final ET eventType) {
 +        this.lifecycleEventTypes.add(eventType);
-+        return eventType;
 +    }
 +
 +    public <O extends LifecycleEventOwner, E extends PaperLifecycleEvent> void callEvent(final LifecycleEventType<O, ? super E, ?> eventType, final E event) {
@@ -429,12 +419,13 @@ index 0000000000000000000000000000000000000000..6d530c52aaf0dc2cdfe3bd56af557274
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/AbstractLifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/AbstractLifecycleEventType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..30f47879f87fc991c651416546c2f068209545f2
+index 0000000000000000000000000000000000000000..01a4e9a36a9970f30ed9f9236fc5a4a1cf71844e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/AbstractLifecycleEventType.java
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,62 @@
 +package io.papermc.paper.plugin.lifecycle.event.types;
 +
++import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 +import io.papermc.paper.plugin.lifecycle.event.LifecycleEvent;
 +import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
 +import io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner;
@@ -455,6 +446,7 @@ index 0000000000000000000000000000000000000000..30f47879f87fc991c651416546c2f068
 +    protected AbstractLifecycleEventType(final String name, final Class<? extends O> ownerType) {
 +        this.name = name;
 +        this.ownerType = ownerType;
++        LifecycleEventRunner.INSTANCE.addEventType(this);
 +    }
 +
 +    @Override
@@ -466,6 +458,10 @@ index 0000000000000000000000000000000000000000..30f47879f87fc991c651416546c2f068
 +        if (!this.ownerType.isInstance(owner)) {
 +            throw new IllegalArgumentException("You cannot register the lifecycle event '" + this.name + "' on " + owner);
 +        }
++    }
++
++    public boolean blocksReloading(final O eventOwner) {
++        return eventOwner instanceof BootstrapContext;
 +    }
 +
 +    public abstract boolean hasHandlers();
@@ -491,7 +487,7 @@ index 0000000000000000000000000000000000000000..30f47879f87fc991c651416546c2f068
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProviderImpl.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProviderImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7e84e0acd50ef04fa1ee2577f49e51c63f5ba5c3
+index 0000000000000000000000000000000000000000..b11346e04bb16c3238f32deb87dbd680e261d4d2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProviderImpl.java
 @@ -0,0 +1,25 @@
@@ -512,12 +508,12 @@ index 0000000000000000000000000000000000000000..7e84e0acd50ef04fa1ee2577f49e51c6
 +
 +    @Override
 +    public <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Monitorable<O, E> monitor(final String name, final Class<? extends O> ownerType) {
-+        return LifecycleEventRunner.INSTANCE.addEventType(new MonitorableLifecycleEventType<>(name, ownerType));
++        return new MonitorableLifecycleEventType<>(name, ownerType);
 +    }
 +
 +    @Override
 +    public <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Prioritizable<O, E> prioritized(final String name, final Class<? extends O> ownerType) {
-+        return LifecycleEventRunner.INSTANCE.addEventType(new PrioritizableLifecycleEventType.Simple<>(name, ownerType));
++        return new PrioritizableLifecycleEventType.Simple<>(name, ownerType);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/MonitorableLifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/MonitorableLifecycleEventType.java

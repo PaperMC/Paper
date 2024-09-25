@@ -9,7 +9,7 @@ public net.minecraft.resources.RegistryOps lookupProvider
 public net.minecraft.resources.RegistryOps$HolderLookupAdapter
 
 diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistries.java b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
-index 70e2c3b5cac9a0dfb043de218df20dc1ab2cc070..38222dca2497cec5b104b21429a9ec3aaf05d99e 100644
+index c92ce42398a9bfd00eb4e05972289c521ee255cf..fba7c1758439db9044d9f7368bc9b79642d6b1b9 100644
 --- a/src/main/java/io/papermc/paper/registry/PaperRegistries.java
 +++ b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
 @@ -2,6 +2,7 @@ package io.papermc.paper.registry;
@@ -695,10 +695,10 @@ index 0000000000000000000000000000000000000000..cc9c8fd313f530777af80ad79e03903f
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEventMap.java b/src/main/java/io/papermc/paper/registry/event/RegistryEventMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5e09cebc3893ab788f7b1d169c5ac48a3e45afc1
+index 0000000000000000000000000000000000000000..bfcd0884d778ca62817fb1d22f0f2ed1f2abe855
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/event/RegistryEventMap.java
-@@ -0,0 +1,46 @@
+@@ -0,0 +1,45 @@
 +package io.papermc.paper.registry.event;
 +
 +import io.papermc.paper.plugin.bootstrap.BootstrapContext;
@@ -728,7 +728,6 @@ index 0000000000000000000000000000000000000000..5e09cebc3893ab788f7b1d169c5ac48a
 +            eventType = (ET) this.eventTypes.get(registryKey);
 +        } else {
 +            eventType = eventTypeCreator.apply(registryKey, this.name);
-+            LifecycleEventRunner.INSTANCE.addEventType(eventType);
 +            this.eventTypes.put(registryKey, eventType);
 +        }
 +        return eventType;
@@ -822,10 +821,10 @@ index 0000000000000000000000000000000000000000..14d2d9766b8dee763f220c397aba3ad4
 +import org.checkerframework.framework.qual.DefaultQualifier;
 diff --git a/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddEventTypeImpl.java b/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddEventTypeImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0655386f85148cdb840d43ada97ab86bb773a765
+index 0000000000000000000000000000000000000000..fbf853bf1cbb3c7bbef531afe185818b9454299b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddEventTypeImpl.java
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,37 @@
 +package io.papermc.paper.registry.event.type;
 +
 +import io.papermc.paper.plugin.bootstrap.BootstrapContext;
@@ -841,6 +840,11 @@ index 0000000000000000000000000000000000000000..0655386f85148cdb840d43ada97ab86b
 +
 +    public RegistryEntryAddEventTypeImpl(final RegistryKey<T> registryKey, final String eventName) {
 +        super(registryKey + " / " + eventName, BootstrapContext.class);
++    }
++
++    @Override
++    public boolean blocksReloading(final BootstrapContext eventOwner) {
++        return false; // only runs once
 +    }
 +
 +    @Override
@@ -908,10 +912,10 @@ index 0000000000000000000000000000000000000000..548f5bf979e88708e98d04dfe22ccaa3
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/type/RegistryLifecycleEventType.java b/src/main/java/io/papermc/paper/registry/event/type/RegistryLifecycleEventType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..159bb82c27e8fc8f350985f03082fe218fda3568
+index 0000000000000000000000000000000000000000..7ee77022198bf5f9f88c6a1917a1da30b1863883
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/event/type/RegistryLifecycleEventType.java
-@@ -0,0 +1,13 @@
+@@ -0,0 +1,18 @@
 +package io.papermc.paper.registry.event.type;
 +
 +import io.papermc.paper.plugin.bootstrap.BootstrapContext;
@@ -923,6 +927,11 @@ index 0000000000000000000000000000000000000000..159bb82c27e8fc8f350985f03082fe21
 +
 +    public RegistryLifecycleEventType(final RegistryKey<T> registryKey, final String eventName) {
 +        super(registryKey + " / " + eventName, BootstrapContext.class);
++    }
++
++    @Override
++    public boolean blocksReloading(final BootstrapContext eventOwner) {
++        return false; // only runs once
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistry.java b/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistry.java
