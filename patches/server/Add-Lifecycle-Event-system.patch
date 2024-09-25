@@ -60,9 +60,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.plugin.lifecycle.event;
 +
-+import com.google.common.base.Suppliers;
-+import com.mojang.logging.LogUtils;
-+import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 +import io.papermc.paper.plugin.lifecycle.event.registrar.PaperRegistrar;
 +import io.papermc.paper.plugin.lifecycle.event.registrar.RegistrarEvent;
 +import io.papermc.paper.plugin.lifecycle.event.registrar.RegistrarEventImpl;
@@ -72,33 +69,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.plugin.lifecycle.event.types.OwnerAwareLifecycleEvent;
 +import java.util.ArrayList;
 +import java.util.List;
-+import java.util.Set;
 +import java.util.function.Predicate;
-+import java.util.function.Supplier;
 +import org.bukkit.plugin.Plugin;
 +import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.slf4j.Logger;
 +
 +@DefaultQualifier(NonNull.class)
 +public class LifecycleEventRunner {
 +
-+    private static final Logger LOGGER = LogUtils.getClassLogger();
-+    private static final Supplier<Set<LifecycleEventType<?, ?, ?>>> BLOCKS_RELOADING = Suppliers.memoize(() -> Set.of( // lazy due to cyclic initialization
-+    ));
 +    public static final LifecycleEventRunner INSTANCE = new LifecycleEventRunner();
 +
 +    private final List<LifecycleEventType<?, ?, ?>> lifecycleEventTypes = new ArrayList<>();
 +    private boolean blockPluginReloading = false;
 +
-+    public void checkRegisteredHandler(final LifecycleEventOwner owner, final LifecycleEventType<?, ?, ?> eventType) {
++    public <O extends LifecycleEventOwner> void checkRegisteredHandler(final O owner, final AbstractLifecycleEventType<O, ?, ?> eventType) {
 +        /*
 +        Lifecycle event handlers for reloadable events that are registered from the BootstrapContext prevent
 +        the server from reloading plugins. This is because reloading plugins requires disabling all the plugins,
 +        running the reload logic (which would include places where these events should fire) and then re-enabling plugins.
 +         */
-+        if (owner instanceof BootstrapContext && BLOCKS_RELOADING.get().contains(eventType)) {
++        if (eventType.blocksReloading(owner)) {
 +            this.blockPluginReloading = true;
 +        }
 +    }
@@ -107,9 +98,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return this.blockPluginReloading;
 +    }
 +
-+    public <O extends LifecycleEventOwner, E extends LifecycleEvent, ET extends LifecycleEventType<O, E, ?>> ET addEventType(final ET eventType) {
++    public <O extends LifecycleEventOwner, E extends LifecycleEvent, ET extends LifecycleEventType<O, E, ?>> void addEventType(final ET eventType) {
 +        this.lifecycleEventTypes.add(eventType);
-+        return eventType;
 +    }
 +
 +    public <O extends LifecycleEventOwner, E extends PaperLifecycleEvent> void callEvent(final LifecycleEventType<O, ? super E, ?> eventType, final E event) {
@@ -435,6 +425,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.plugin.lifecycle.event.types;
 +
++import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 +import io.papermc.paper.plugin.lifecycle.event.LifecycleEvent;
 +import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
 +import io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner;
@@ -455,6 +446,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    protected AbstractLifecycleEventType(final String name, final Class<? extends O> ownerType) {
 +        this.name = name;
 +        this.ownerType = ownerType;
++        LifecycleEventRunner.INSTANCE.addEventType(this);
 +    }
 +
 +    @Override
@@ -466,6 +458,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (!this.ownerType.isInstance(owner)) {
 +            throw new IllegalArgumentException("You cannot register the lifecycle event '" + this.name + "' on " + owner);
 +        }
++    }
++
++    public boolean blocksReloading(final O eventOwner) {
++        return eventOwner instanceof BootstrapContext;
 +    }
 +
 +    public abstract boolean hasHandlers();
@@ -512,12 +508,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Monitorable<O, E> monitor(final String name, final Class<? extends O> ownerType) {
-+        return LifecycleEventRunner.INSTANCE.addEventType(new MonitorableLifecycleEventType<>(name, ownerType));
++        return new MonitorableLifecycleEventType<>(name, ownerType);
 +    }
 +
 +    @Override
 +    public <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Prioritizable<O, E> prioritized(final String name, final Class<? extends O> ownerType) {
-+        return LifecycleEventRunner.INSTANCE.addEventType(new PrioritizableLifecycleEventType.Simple<>(name, ownerType));
++        return new PrioritizableLifecycleEventType.Simple<>(name, ownerType);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/MonitorableLifecycleEventType.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/MonitorableLifecycleEventType.java
