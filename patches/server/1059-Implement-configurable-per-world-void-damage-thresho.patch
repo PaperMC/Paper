@@ -1,0 +1,103 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Axionize <154778082+Axionize@users.noreply.github.com>
+Date: Wed, 25 Sep 2024 04:42:19 -0400
+Subject: [PATCH] Implement configurable per-world void damage threshold height
+ & amount
+
+
+diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
+index 790e3167cfa2511ef2fc707d9b9aa681a78d8ba0..47a0f9c64399d4eb8754851bde61731d36319e89 100644
+--- a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
++++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
+@@ -409,6 +409,17 @@ public class WorldConfiguration extends ConfigurationPart {
+         public boolean disableExplosionKnockback = false;
+         public boolean generateFlatBedrock = false;
+         public FrostedIce frostedIce;
++        public VoidDamage voidDamage;
++
++        public class VoidDamage extends ConfigurationPart {
++            public boolean enabled = true;
++            public Damage damage;
++
++            public class Damage extends ConfigurationPart {
++                public double heightThreshold = -128.0;
++                public float amount = 4.0F;
++            }
++        }
+ 
+         public class FrostedIce extends ConfigurationPart {
+             public boolean enabled = true;
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index bc45c74987974b4828201e06fc8b1f3fbc0af8b4..305b1d80559077333cc5a31a7b217cf2f764cf5d 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -310,7 +310,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     protected int boardingCooldown;
+     @Nullable
+     private Entity vehicle;
+-    private Level level;
++    Level level;
+     public double xo;
+     public double yo;
+     public double zo;
+@@ -931,8 +931,12 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     }
+ 
+     public void checkBelowWorld() {
++        if (!this.level.paperConfig().environment.voidDamage.enabled) {
++            return;
++        }
++
+         // Paper start - Configurable nether ceiling damage
+-        if (this.getY() < (double) (this.level.getMinBuildHeight() - 64) || (this.level.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER
++        if (this.getY() < this.level.paperConfig().environment.voidDamage.damage.heightThreshold  || (this.level.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER
+             && this.level.paperConfig().environment.netherCeilingVoidDamageHeight.test(v -> this.getY() >= v)
+             && (!(this instanceof Player player) || !player.getAbilities().invulnerable))) {
+             // Paper end - Configurable nether ceiling damage
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index cd3381d8225e0322b3e285b3c4aa0a1265a91cc0..64b4ee8bb1adf735efda00dfc87f71bc2c60f8bb 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -163,8 +163,30 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+     private final Object2IntOpenHashMap<SpawnCategory> spawnCategoryLimit = new Object2IntOpenHashMap<>();
+     private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftWorld.DATA_TYPE_REGISTRY);
+     private net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
++    private float voidDamageAmount;
++    private double voidDamageThreshold;
+ 
+     // Paper start - Provide fast information methods
++    @Override
++    public void setVoidDamageAmount(float voidDamageAmount) {
++        this.voidDamageAmount = voidDamageAmount;
++    }
++
++    @Override
++    public float getVoidDamageAmount() {
++        return this.voidDamageAmount;
++    }
++
++    @Override
++    public void setVoidDamageThreshold(double voidDamageThreshold) {
++        this.voidDamageThreshold = voidDamageThreshold;
++    }
++
++    @Override
++    public double getVoidDamageThreshold() {
++        return this.voidDamageThreshold;
++    }
++
+     @Override
+     public int getEntityCount() {
+         int ret = 0;
+@@ -271,6 +293,11 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+             }
+         }
+         // Paper end - per world spawn limits
++
++        // Paper start - per world void damage height
++        voidDamageThreshold = this.world.paperConfig().environment.voidDamage.damage.heightThreshold;
++        voidDamageAmount = this.world.paperConfig().environment.voidDamage.damage.amount;
++        // Paper end - per world void damage height
+     }
+ 
+     @Override
