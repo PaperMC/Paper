@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bjarne Koll <lynxplay101@gmail.com>
+Date: Fri, 20 Sep 2024 13:53:59 +0200
+Subject: [PATCH] Allow explosions to damage source
+
+This intends to give plugin developers more control over explosions created using the World#createExplosion method, specifically by adding the option for explosions to damage the explosion cause (not the default behavior, and previously impossible to do, as far as I know). This is done by overloading existing methods with an extra `excludeSourceFromDamage` parameter.
+
+diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
+index d8a23aa0d898ca3360757721e38ddb97387f7d21..adcd8161846b06fd1a7895750f98b629204a8406 100644
+--- a/src/main/java/org/bukkit/World.java
++++ b/src/main/java/org/bukkit/World.java
+@@ -2139,9 +2139,25 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+      * @param power The power of explosion, where 4F is TNT
+      * @param setFire Whether or not to set blocks on fire
+      * @param breakBlocks Whether or not to have blocks be destroyed
++     * @param excludeSourceFromDamage whether the explosion should exclude the passed source from taking damage like vanilla explosions do.
+      * @return false if explosion was canceled, otherwise true
+      */
+-    public boolean createExplosion(@Nullable Entity source, @NotNull Location loc, float power, boolean setFire, boolean breakBlocks);
++    public boolean createExplosion(@Nullable Entity source, @NotNull Location loc, float power, boolean setFire, boolean breakBlocks, boolean excludeSourceFromDamage);
++
++    /**
++     * Creates explosion at given location with given power and optionally
++     * setting blocks on fire, with the specified entity as the source.
++     *
++     * @param source The source entity of the explosion
++     * @param loc Location to blow up
++     * @param power The power of explosion, where 4F is TNT
++     * @param setFire Whether or not to set blocks on fire
++     * @param breakBlocks Whether or not to have blocks be destroyed
++     * @return false if explosion was canceled, otherwise true
++     */
++    default boolean createExplosion(@Nullable Entity source, @NotNull Location loc, float power, boolean setFire, boolean breakBlocks) {
++        return createExplosion(source, loc, power, setFire, breakBlocks, true);
++    }
+ 
+     /**
+      * Creates explosion at given location with given power and optionally
