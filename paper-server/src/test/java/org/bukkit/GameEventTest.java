@@ -3,10 +3,11 @@ package org.bukkit;
 import static org.junit.jupiter.api.Assertions.*;
 import net.minecraft.core.registries.BuiltInRegistries;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Test;
 
-public class GameEventTest extends AbstractTestingBase {
+@AllFeatures
+public class GameEventTest {
 
     @Test
     public void toBukkit() {

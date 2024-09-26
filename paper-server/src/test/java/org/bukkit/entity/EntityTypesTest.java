@@ -7,10 +7,11 @@ import java.util.stream.Collectors;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.MinecraftKey;
 import net.minecraft.world.entity.EntityTypes;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Test;
 
-public class EntityTypesTest extends AbstractTestingBase {
+@AllFeatures
+public class EntityTypesTest {
 
     @Test
     public void testMaps() {

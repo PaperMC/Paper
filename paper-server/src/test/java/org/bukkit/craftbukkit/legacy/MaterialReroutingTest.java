@@ -18,7 +18,7 @@ import org.bukkit.craftbukkit.legacy.reroute.RerouteBuilder;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteMethodData;
 import org.bukkit.craftbukkit.util.ApiVersion;
 import org.bukkit.craftbukkit.util.Commodore;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -29,7 +29,8 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
-public class MaterialReroutingTest extends AbstractTestingBase {
+@Normal
+public class MaterialReroutingTest {
 
     // Needs to be a bukkit class
     private static final URI BUKKIT_CLASSES;

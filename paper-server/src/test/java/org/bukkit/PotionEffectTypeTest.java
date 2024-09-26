@@ -13,10 +13,11 @@ import org.bukkit.craftbukkit.potion.CraftPotionEffectTypeCategory;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionEffectTypeCategory;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Test;
 
-public class PotionEffectTypeTest extends AbstractTestingBase {
+@AllFeatures
+public class PotionEffectTypeTest {
 
     @Test
     public void verifyMapping() {

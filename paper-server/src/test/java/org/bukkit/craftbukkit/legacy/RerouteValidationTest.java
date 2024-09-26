@@ -9,11 +9,13 @@ import java.util.Map;
 import java.util.stream.Stream;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteMethodData;
 import org.bukkit.craftbukkit.util.Commodore;
+import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.objectweb.asm.Type;
 
+@Normal
 public class RerouteValidationTest {
 
     public static Stream<Arguments> data() {

@@ -11,10 +11,11 @@ import net.minecraft.world.effect.MobEffectList;
 import net.minecraft.world.item.alchemy.PotionRegistry;
 import org.bukkit.craftbukkit.legacy.FieldRename;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Test;
 
-public class PotionTest extends AbstractTestingBase {
+@AllFeatures
+public class PotionTest {
     @Test
     public void testEffectCompleteness() throws Throwable {
         Map<PotionType, String> effects = new EnumMap(PotionType.class);

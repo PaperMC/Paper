@@ -16,16 +16,18 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.MinecraftKey;
 import net.minecraft.world.item.Item;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.LegacyHelper;
+import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Test;
 
-public class MaterialTest extends AbstractTestingBase {
+@AllFeatures
+public class MaterialTest {
 
     @Test
     public void verifyMapping() {
         Map<MinecraftKey, Material> materials = Maps.newHashMap();
         for (Material material : Material.values()) {
-            if (INVALIDATED_MATERIALS.contains(material)) {
+            if (LegacyHelper.getInvalidatedMaterials().contains(material)) {
                 continue;
             }
 

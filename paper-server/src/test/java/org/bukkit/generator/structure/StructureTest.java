@@ -9,11 +9,13 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.MinecraftKey;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Test;
 
-public class StructureTest extends AbstractTestingBase {
+@AllFeatures
+public class StructureTest {
 
     @Test
     public void testBukkitToMinecraftFieldName() {
@@ -32,7 +34,7 @@ public class StructureTest extends AbstractTestingBase {
 
     @Test
     public void testMinecraftToBukkitFieldName() {
-        IRegistry<net.minecraft.world.level.levelgen.structure.Structure> structureBuiltInRegistries = AbstractTestingBase.REGISTRY_CUSTOM.registryOrThrow(Registries.STRUCTURE);
+        IRegistry<net.minecraft.world.level.levelgen.structure.Structure> structureBuiltInRegistries = CraftRegistry.getMinecraftRegistry(Registries.STRUCTURE);
         for (net.minecraft.world.level.levelgen.structure.Structure structure : structureBuiltInRegistries) {
             MinecraftKey minecraftKey = structureBuiltInRegistries.getKey(structure);
 

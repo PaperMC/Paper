@@ -16,11 +16,12 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.tags.CustomItemTagContainer;
 import org.bukkit.inventory.meta.tags.ItemTagAdapterContext;
 import org.bukkit.inventory.meta.tags.ItemTagType;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.Legacy;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-public class DeprecatedItemMetaCustomValueTest extends AbstractTestingBase {
+@Legacy
+public class DeprecatedItemMetaCustomValueTest {
 
     private static NamespacedKey VALID_KEY;
 

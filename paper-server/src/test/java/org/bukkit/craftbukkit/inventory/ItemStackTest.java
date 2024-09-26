@@ -21,7 +21,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.AllFeatures;
 import org.bukkit.util.io.BukkitObjectInputStream;
 import org.bukkit.util.io.BukkitObjectOutputStream;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -29,7 +29,8 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
-public class ItemStackTest extends AbstractTestingBase {
+@AllFeatures
+public class ItemStackTest {
     abstract static class StackProvider {
         final Material material;
 

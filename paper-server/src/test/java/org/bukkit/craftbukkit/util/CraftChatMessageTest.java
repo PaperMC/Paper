@@ -4,8 +4,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import net.minecraft.network.chat.IChatBaseComponent;
 import net.minecraft.network.chat.IChatMutableComponent;
 import net.minecraft.network.chat.contents.LiteralContents;
+import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.api.Test;
 
+@Normal
 public class CraftChatMessageTest {
 
     @Test

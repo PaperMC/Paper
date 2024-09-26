@@ -10,10 +10,12 @@ import java.util.stream.Stream;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.Overridden;
+import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+@AllFeatures
 public class ItemMetaImplementationOverrideTest {
     static final Class<CraftMetaItem> parent = CraftMetaItem.class;
 

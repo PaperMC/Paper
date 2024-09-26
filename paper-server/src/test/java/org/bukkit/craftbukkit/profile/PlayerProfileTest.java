@@ -14,8 +14,10 @@ import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.profile.PlayerProfile;
 import org.bukkit.profile.PlayerTextures;
 import org.bukkit.support.condition.EnableIfMojangServerAvailable;
+import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.api.Test;
 
+@Normal
 public class PlayerProfileTest {
 
     /*

@@ -3,8 +3,10 @@ package org.bukkit.entity;
 import static org.junit.jupiter.api.Assertions.*;
 import net.minecraft.world.entity.boss.enderdragon.phases.DragonControllerPhase;
 import org.bukkit.craftbukkit.entity.CraftEnderDragon;
+import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.api.Test;
 
+@Normal
 public class EnderDragonPhaseTest {
 
     @Test

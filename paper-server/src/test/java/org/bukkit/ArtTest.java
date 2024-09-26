@@ -15,10 +15,11 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.decoration.PaintingVariant;
 import org.bukkit.craftbukkit.CraftArt;
 import org.bukkit.craftbukkit.CraftRegistry;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Test;
 
-public class ArtTest extends AbstractTestingBase {
+@AllFeatures
+public class ArtTest {
 
     @Test
     public void verifyMapping() {

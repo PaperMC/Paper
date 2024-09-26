@@ -4,8 +4,10 @@ import static org.bukkit.support.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import java.lang.reflect.Field;
 import org.bukkit.block.BlockType;
+import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Test;
 
+@AllFeatures
 public class BlockTypeTest {
 
     // Ensures all BlockType constants have the correct generics

@@ -67,6 +67,10 @@ Code Requirements
 Bukkit/CraftBukkit employs [JUnit 5](https://www.vogella.com/tutorials/JUnit/article.html) for testing. Pull Requests(PR) should attempt to integrate within that framework as appropriate.
 Bukkit is a large project and what seems simple to a PR author at the time of writing may easily be overlooked by other authors and updates. Including unit tests with your PR
 will help to ensure the PR can be easily maintained over time and encourage the Spigot team to pull the PR.
+CraftBukkit provides multiple environments for testing, which init the server to various states.
+Each test **needs** to have an environment, either by setting it to the whole class or the individual test methods.
+A test can have multiple environments.
+You can see the available test environments in [src/test/java/org.bukkit.support.environment](src/test/java/org/bukkit/support/environment).
 
 * There needs to be a new line at the end of every file.
 * Imports should be organised in a logical manner.

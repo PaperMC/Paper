@@ -5,8 +5,10 @@ import static org.hamcrest.Matchers.*;
 import org.bukkit.DyeColor;
 import org.bukkit.craftbukkit.entity.CraftTropicalFish;
 import org.bukkit.entity.TropicalFish.Pattern;
+import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.api.Test;
 
+@Normal
 public class TropicalFishTest {
 
     @Test

@@ -6,10 +6,11 @@ import net.minecraft.resources.MinecraftKey;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Test;
 
-public class EnchantmentTest extends AbstractTestingBase {
+@AllFeatures
+public class EnchantmentTest {
 
     @Test
     public void verifyMapping() {

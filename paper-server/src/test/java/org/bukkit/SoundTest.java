@@ -7,10 +7,11 @@ import java.util.Locale;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.MinecraftKey;
 import org.bukkit.craftbukkit.CraftSound;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Test;
 
-public class SoundTest extends AbstractTestingBase {
+@AllFeatures
+public class SoundTest {
 
     @Test
     public void testGetSound() {

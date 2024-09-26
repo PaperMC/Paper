@@ -5,8 +5,8 @@ import com.google.common.base.Joiner;
 import java.util.HashSet;
 import java.util.Set;
 import org.bukkit.Registry;
-import org.bukkit.support.AbstractTestingBase;
-import org.bukkit.support.DummyServer;
+import org.bukkit.support.environment.AllFeatures;
+import org.bukkit.support.extension.AllFeaturesExtension;
 import org.bukkit.support.provider.RegistriesArgumentProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.provider.Arguments;
@@ -14,14 +14,15 @@ import org.junit.jupiter.params.provider.Arguments;
 /**
  * This class tests, if all default registries present in {@link Registry} are added to {@link RegistriesArgumentProvider}
  */
-public class RegistryArgumentAddedTest extends AbstractTestingBase {
+@AllFeatures
+public class RegistryArgumentAddedTest {
 
     @Test
     public void testPresent() throws ClassNotFoundException {
         // Make sure every registry is created
         Class.forName(Registry.class.getName());
 
-        Set<Class<?>> loadedRegistries = new HashSet<>(DummyServer.registers.keySet());
+        Set<Class<?>> loadedRegistries = new HashSet<>(AllFeaturesExtension.getRealRegistries().keySet());
         Set<Class<?>> notFound = new HashSet<>();
 
         RegistriesArgumentProvider

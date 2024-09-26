@@ -7,10 +7,11 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ITileEntity;
 import net.minecraft.world.level.block.entity.TileEntity;
 import org.bukkit.Material;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Test;
 
-public class BlockStateTest extends AbstractTestingBase {
+@AllFeatures
+public class BlockStateTest {
 
     @Test
     public void testTileEntityBlockStates() {

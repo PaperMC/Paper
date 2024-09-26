@@ -17,7 +17,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.util.Handleable;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.AllFeatures;
 import org.bukkit.support.provider.RegistryArgumentProvider;
 import org.bukkit.support.test.RegistriesTest;
 import org.junit.jupiter.api.MethodOrderer;
@@ -25,8 +25,9 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.provider.Arguments;
 
+@AllFeatures
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class RegistryConversionTest extends AbstractTestingBase {
+public class RegistryConversionTest {
 
     private static final String MINECRAFT_TO_BUKKIT = "minecraftToBukkit";
     private static final String BUKKIT_TO_MINECRAFT = "bukkitToMinecraft";

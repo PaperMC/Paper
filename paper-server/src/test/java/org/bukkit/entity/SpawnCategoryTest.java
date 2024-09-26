@@ -2,8 +2,10 @@ package org.bukkit.entity;
 
 import net.minecraft.world.entity.EnumCreatureType;
 import org.bukkit.craftbukkit.util.CraftSpawnCategory;
+import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.api.Test;
 
+@Normal
 public class SpawnCategoryTest {
 
     @Test

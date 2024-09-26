@@ -2,10 +2,11 @@ package org.bukkit.craftbukkit.legacy;
 
 import static org.junit.jupiter.api.Assertions.*;
 import org.bukkit.Material;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.Legacy;
 import org.junit.jupiter.api.Test;
 
-public class EvilTest extends AbstractTestingBase {
+@Legacy
+public class EvilTest {
 
     @Test
     public void testFrom() {

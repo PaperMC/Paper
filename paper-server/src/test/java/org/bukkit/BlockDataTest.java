@@ -13,10 +13,11 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.Cake;
 import org.bukkit.block.data.type.Chest;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.VanillaFeature;
 import org.junit.jupiter.api.Test;
 
-public class BlockDataTest extends AbstractTestingBase {
+@VanillaFeature
+public class BlockDataTest {
 
     @Test
     public void testParsing() {

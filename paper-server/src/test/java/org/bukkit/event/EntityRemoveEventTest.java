@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 import net.minecraft.WorldVersion;
 import net.minecraft.server.Main;
 import net.minecraft.world.level.entity.EntityAccess;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -34,7 +34,8 @@ import org.objectweb.asm.tree.LineNumberNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 
-public class EntityRemoveEventTest extends AbstractTestingBase {
+@Normal
+public class EntityRemoveEventTest {
 
     // Needs to be a class, which is present in the source, and not a test class
     private static final URI CRAFT_BUKKIT_CLASSES;

@@ -5,10 +5,11 @@ import static org.hamcrest.Matchers.*;
 import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.VanillaFeature;
 import org.junit.jupiter.api.Test;
 
-public class NMSCraftItemStackTest extends AbstractTestingBase {
+@VanillaFeature
+public class NMSCraftItemStackTest {
 
     @Test
     public void testCloneEnchantedItem() throws Exception {

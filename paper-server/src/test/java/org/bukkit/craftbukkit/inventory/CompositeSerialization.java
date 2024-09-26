@@ -12,10 +12,11 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.api.Test;
 
-public class CompositeSerialization extends AbstractTestingBase {
+@Normal
+public class CompositeSerialization {
 
     public YamlConfiguration getConfig() {
         return new YamlConfiguration();

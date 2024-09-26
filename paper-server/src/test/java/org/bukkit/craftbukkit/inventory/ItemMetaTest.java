@@ -61,10 +61,11 @@ import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.VanillaFeature;
 import org.junit.jupiter.api.Test;
 
-public class ItemMetaTest extends AbstractTestingBase {
+@VanillaFeature
+public class ItemMetaTest {
 
     static final int MAX_FIREWORK_POWER = 255; // Please update ItemStackFireworkTest if/when this gets changed.
 

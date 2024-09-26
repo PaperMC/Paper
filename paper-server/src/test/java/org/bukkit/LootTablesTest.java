@@ -5,10 +5,11 @@ import net.minecraft.resources.ResourceKey;
 import org.bukkit.craftbukkit.CraftLootTable;
 import org.bukkit.loot.LootTable;
 import org.bukkit.loot.LootTables;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Test;
 
-public class LootTablesTest extends AbstractTestingBase {
+@AllFeatures
+public class LootTablesTest {
 
     @Test
     public void testLootTablesEnumExists() {

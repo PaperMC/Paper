@@ -10,14 +10,16 @@ import org.bukkit.Material;
 import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.LegacyHelper;
+import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+@AllFeatures
 @EnabledIfSystemProperty(named = "testEnv", matches = "full", disabledReason = "Disable for now, since Mockito's Location feature is too heavy in combination with this test")
-public class FactoryItemMaterialTest extends AbstractTestingBase {
+public class FactoryItemMaterialTest {
     static final ItemFactory factory = CraftItemFactory.instance();
     static final StringBuilder buffer = new StringBuilder();
     static final Material[] materials;
@@ -26,7 +28,7 @@ public class FactoryItemMaterialTest extends AbstractTestingBase {
         Material[] local_materials = Material.values();
         List<Material> list = new ArrayList<Material>(local_materials.length);
         for (Material material : local_materials) {
-            if (INVALIDATED_MATERIALS.contains(material)) {
+            if (LegacyHelper.getInvalidatedMaterials().contains(material)) {
                 continue;
             }
 

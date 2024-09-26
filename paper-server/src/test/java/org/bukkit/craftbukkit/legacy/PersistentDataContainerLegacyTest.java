@@ -13,10 +13,11 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.Legacy;
 import org.junit.jupiter.api.Test;
 
-public class PersistentDataContainerLegacyTest extends AbstractTestingBase {
+@Legacy
+public class PersistentDataContainerLegacyTest {
 
     @Test
     public void ensureLegacyParsing() {

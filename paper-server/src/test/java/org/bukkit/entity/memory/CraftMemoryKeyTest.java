@@ -6,11 +6,12 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.entity.memory.CraftMemoryKey;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-public class CraftMemoryKeyTest extends AbstractTestingBase {
+@AllFeatures
+public class CraftMemoryKeyTest {
 
     @Test
     public void shouldConvertBukkitHomeKeyToNMSRepresentation() {

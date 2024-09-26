@@ -5,14 +5,17 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Locale;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.MinecraftKey;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Test;
 
-public class StructureTypeTest extends AbstractTestingBase {
+@AllFeatures
+public class StructureTypeTest {
 
     @Test
     public void testBukkitToMinecraftFieldName() {
@@ -31,7 +34,7 @@ public class StructureTypeTest extends AbstractTestingBase {
 
     @Test
     public void testMinecraftToBukkitFieldName() {
-        for (net.minecraft.world.level.levelgen.structure.StructureType<?> structureType : BuiltInRegistries.STRUCTURE_TYPE) {
+        for (net.minecraft.world.level.levelgen.structure.StructureType<?> structureType : CraftRegistry.getMinecraftRegistry(Registries.STRUCTURE_TYPE)) {
             MinecraftKey minecraftKey = BuiltInRegistries.STRUCTURE_TYPE.getKey(structureType);
 
             try {

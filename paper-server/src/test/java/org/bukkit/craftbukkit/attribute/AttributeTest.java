@@ -5,10 +5,11 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.ai.attributes.AttributeBase;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Test;
 
-public class AttributeTest extends AbstractTestingBase {
+@AllFeatures
+public class AttributeTest {
 
     @Test
     public void testToBukkit() {

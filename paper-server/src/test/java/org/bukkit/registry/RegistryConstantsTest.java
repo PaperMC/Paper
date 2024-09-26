@@ -17,10 +17,12 @@ import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.damage.DamageType;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.RegistryHelper;
+import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Test;
 
-public class RegistryConstantsTest extends AbstractTestingBase {
+@AllFeatures
+public class RegistryConstantsTest {
 
     @Test
     public void testDamageType() {
@@ -62,7 +64,7 @@ public class RegistryConstantsTest extends AbstractTestingBase {
     private <T extends Keyed, M> void testMissingConstants(Class<T> clazz, ResourceKey<IRegistry<M>> nmsRegistryKey) {
         List<MinecraftKey> missingKeys = new ArrayList<>();
 
-        IRegistry<M> nmsRegistry = REGISTRY_CUSTOM.registryOrThrow(nmsRegistryKey);
+        IRegistry<M> nmsRegistry = RegistryHelper.getRegistry().registryOrThrow(nmsRegistryKey);
         for (M nmsObject : nmsRegistry) {
             MinecraftKey minecraftKey = nmsRegistry.getKey(nmsObject);
 

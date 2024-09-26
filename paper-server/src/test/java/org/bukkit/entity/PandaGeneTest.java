@@ -3,8 +3,10 @@ package org.bukkit.entity;
 import static org.junit.jupiter.api.Assertions.*;
 import net.minecraft.world.entity.animal.EntityPanda;
 import org.bukkit.craftbukkit.entity.CraftPanda;
+import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.api.Test;
 
+@Normal
 public class PandaGeneTest {
 
     @Test

@@ -7,10 +7,11 @@ import java.util.Set;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.material.MaterialData;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.Legacy;
 import org.junit.jupiter.api.Test;
 
-public class LegacyTest extends AbstractTestingBase {
+@Legacy
+public class LegacyTest {
 
     private final Set<Material> INVALIDATED_MATERIALS = new HashSet<>(Arrays.asList(Material.ACACIA_BUTTON, Material.ACACIA_PRESSURE_PLATE, Material.ACACIA_TRAPDOOR, Material.AIR, Material.ATTACHED_MELON_STEM, Material.ATTACHED_PUMPKIN_STEM,
             Material.BIRCH_BUTTON, Material.BIRCH_PRESSURE_PLATE, Material.BIRCH_TRAPDOOR, Material.BLACK_WALL_BANNER, Material.BLUE_WALL_BANNER, Material.BROWN_WALL_BANNER, Material.BUBBLE_COLUMN, Material.CAVE_AIR, Material.CREEPER_WALL_HEAD,

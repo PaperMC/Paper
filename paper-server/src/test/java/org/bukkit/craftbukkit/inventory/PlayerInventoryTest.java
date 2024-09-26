@@ -4,10 +4,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import net.minecraft.world.entity.player.PlayerInventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.api.Test;
 
-public class PlayerInventoryTest extends AbstractTestingBase {
+@Normal
+public class PlayerInventoryTest {
 
     @Test
     public void testCanHold() throws Exception {

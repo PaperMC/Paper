@@ -28,12 +28,14 @@ import org.bukkit.enchantments.EnchantmentTarget;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.LegacyHelper;
+import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
-public class PerMaterialTest extends AbstractTestingBase {
+@AllFeatures
+public class PerMaterialTest {
     private static Map<Block, Integer> fireValues;
 
     @BeforeAll
@@ -84,7 +86,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     @ParameterizedTest
     @EnumSource(value = Material.class, names = "LEGACY_.*", mode = EnumSource.Mode.MATCH_NONE)
     public void maxDurability(Material material) {
-        if (INVALIDATED_MATERIALS.contains(material)) return;
+        if (LegacyHelper.getInvalidatedMaterials().contains(material)) return;
 
         if (material == Material.AIR) {
             assertThat((int) material.getMaxDurability(), is(0));
@@ -97,7 +99,7 @@ public class PerMaterialTest extends AbstractTestingBase {
     @ParameterizedTest
     @EnumSource(value = Material.class, names = "LEGACY_.*", mode = EnumSource.Mode.MATCH_NONE)
     public void maxStackSize(Material material) {
-        if (INVALIDATED_MATERIALS.contains(material)) return;
+        if (LegacyHelper.getInvalidatedMaterials().contains(material)) return;
 
         final ItemStack bukkit = new ItemStack(material);
         final CraftItemStack craft = CraftItemStack.asCraftCopy(bukkit);

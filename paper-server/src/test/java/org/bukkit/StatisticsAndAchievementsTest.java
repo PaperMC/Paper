@@ -9,10 +9,11 @@ import net.minecraft.stats.StatisticWrapper;
 import net.minecraft.world.entity.EntityTypes;
 import org.bukkit.craftbukkit.CraftStatistic;
 import org.bukkit.entity.EntityType;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Test;
 
-public class StatisticsAndAchievementsTest extends AbstractTestingBase {
+@AllFeatures
+public class StatisticsAndAchievementsTest {
 
     @Test
     @SuppressWarnings("unchecked")

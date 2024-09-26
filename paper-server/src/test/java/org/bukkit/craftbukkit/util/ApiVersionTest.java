@@ -3,13 +3,14 @@ package org.bukkit.craftbukkit.util;
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.stream.Stream;
 import net.minecraft.SharedConstants;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.VanillaFeature;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class ApiVersionTest extends AbstractTestingBase {
+@VanillaFeature
+public class ApiVersionTest {
 
     public static Stream<Arguments> parseData() {
         return Stream.of(

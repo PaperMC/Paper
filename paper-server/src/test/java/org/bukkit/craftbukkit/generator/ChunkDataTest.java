@@ -3,10 +3,12 @@ package org.bukkit.craftbukkit.generator;
 import static org.junit.jupiter.api.Assertions.*;
 import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.RegistryHelper;
+import org.bukkit.support.environment.Legacy;
 import org.junit.jupiter.api.Test;
 
-public class ChunkDataTest extends AbstractTestingBase {
+@Legacy
+public class ChunkDataTest {
 
     private static final BlockData RED_WOOL = Material.RED_WOOL.createBlockData();
     private static final BlockData AIR = Material.AIR.createBlockData();
@@ -34,21 +36,21 @@ public class ChunkDataTest extends AbstractTestingBase {
 
     @Test
     public void testMinHeight() {
-        OldCraftChunkData data = new OldCraftChunkData(-128, 128, BIOMES);
+        OldCraftChunkData data = new OldCraftChunkData(-128, 128, RegistryHelper.getBiomes());
         assertTrue(testSetBlock(data, 0, -256, 0, RED_WOOL, AIR), "Could not set block below min height");
         assertTrue(testSetBlock(data, 0, -64, 0, RED_WOOL, RED_WOOL), "Could set block above min height");
     }
 
     @Test
     public void testMaxHeight() {
-        OldCraftChunkData data = new OldCraftChunkData(0, 128, BIOMES);
+        OldCraftChunkData data = new OldCraftChunkData(0, 128, RegistryHelper.getBiomes());
         assertTrue(testSetBlock(data, 0, 128, 0, RED_WOOL, AIR), "Could not set block above max height");
         assertTrue(testSetBlock(data, 0, 127, 0, RED_WOOL, RED_WOOL), "Could set block below max height");
     }
 
     @Test
     public void testBoundsCheckingSingle() {
-        OldCraftChunkData data = new OldCraftChunkData(0, 256, BIOMES);
+        OldCraftChunkData data = new OldCraftChunkData(0, 256, RegistryHelper.getBiomes());
         assertTrue(testSetBlock(data, 0, 0, 0, RED_WOOL, RED_WOOL), "Can set block inside chunk bounds");
         assertTrue(testSetBlock(data, 15, 255, 15, RED_WOOL, RED_WOOL), "Can set block inside chunk bounds");
         assertTrue(testSetBlock(data, -1, 0, 0, RED_WOOL, AIR), "Can no set block outside chunk bounds");
@@ -61,7 +63,7 @@ public class ChunkDataTest extends AbstractTestingBase {
 
     @Test
     public void testSetRegion() {
-        OldCraftChunkData data = new OldCraftChunkData(0, 256, BIOMES);
+        OldCraftChunkData data = new OldCraftChunkData(0, 256, RegistryHelper.getBiomes());
         testSetRegion(data, -100, 0, -100, 0, 256, 0, RED_WOOL); // exclusively outside
         testSetRegion(data, 16, 256, 16, 0, 0, 0, RED_WOOL); // minimum >= maximum
         testSetRegion(data, 0, 0, 0, 0, 0, 0, RED_WOOL); // minimum == maximum

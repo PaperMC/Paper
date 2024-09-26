@@ -7,7 +7,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.minecraft.world.level.material.MaterialMapColor;
 import org.bukkit.craftbukkit.map.CraftMapColorCache;
-import org.junit.jupiter.api.Disabled;
+import org.bukkit.support.environment.Normal;
+import org.bukkit.support.environment.Slow;
 import org.junit.jupiter.api.Test;
 
 public class MapTest {
@@ -17,6 +18,7 @@ public class MapTest {
     private static final int[] modifiers = {180, 220, 255, 135};
 
     @Test
+    @Normal
     public void testColors() {
         MaterialMapColor[] nmsColors = MaterialMapColor.MATERIAL_COLORS;
         Color[] bukkitColors = MapPalette.colors;
@@ -62,8 +64,8 @@ public class MapTest {
         assertFalse(fail);
     }
 
-    @Disabled("Test takes around 25 seconds, should be run by changes to the map color conversion")
     @Test
+    @Slow("Test takes around 25 seconds, should be run by changes to the map color conversion")
     public void testMapColorCacheBuilding() throws ExecutionException, InterruptedException {
         CraftMapColorCache craftMapColorCache = new CraftMapColorCache(logger);
         craftMapColorCache.initCache().get();

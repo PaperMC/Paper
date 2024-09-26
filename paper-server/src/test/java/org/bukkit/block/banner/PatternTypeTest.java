@@ -8,10 +8,11 @@ import net.minecraft.world.level.block.entity.EnumBannerPatternType;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Test;
 
-public class PatternTypeTest extends AbstractTestingBase {
+@AllFeatures
+public class PatternTypeTest {
 
     @Test
     public void testToBukkit() {

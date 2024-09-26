@@ -4,8 +4,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.Map;
 import net.minecraft.world.level.GameRules;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.api.Test;
 
+@Normal
 public class GameRuleTest {
 
     @Test

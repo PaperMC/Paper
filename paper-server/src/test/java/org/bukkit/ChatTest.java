@@ -4,10 +4,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import net.minecraft.EnumChatFormat;
 import net.minecraft.network.chat.IChatBaseComponent;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
-import org.bukkit.support.AbstractTestingBase;
+import org.bukkit.support.environment.VanillaFeature;
 import org.junit.jupiter.api.Test;
 
-public class ChatTest extends AbstractTestingBase {
+@VanillaFeature
+public class ChatTest {
 
     @Test
     public void testColors() {
