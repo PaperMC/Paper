@@ -1,6 +1,18 @@
 --- a/net/minecraft/server/level/ChunkMapDistance.java
 +++ b/net/minecraft/server/level/ChunkMapDistance.java
-@@ -163,7 +163,7 @@
+@@ -121,6 +121,11 @@
+         }
+ 
+         if (!this.chunksToUpdateFutures.isEmpty()) {
++            // CraftBukkit start - SPIGOT-7780: Call chunk unload events before updateHighestAllowedStatus
++            this.chunksToUpdateFutures.forEach((playerchunk) -> {
++                playerchunk.callEventIfUnloading(playerchunkmap);
++            });
++            // CraftBukkit end
+             this.chunksToUpdateFutures.forEach((playerchunk) -> {
+                 playerchunk.updateHighestAllowedStatus(playerchunkmap);
+             });
+@@ -163,7 +168,7 @@
          }
      }
  
@@ -9,7 +21,7 @@
          ArraySetSorted<Ticket<?>> arraysetsorted = this.getTickets(i);
          int j = getTicketLevelAt(arraysetsorted);
          Ticket<?> ticket1 = (Ticket) arraysetsorted.addOrGet(ticket);
-@@ -173,13 +173,15 @@
+@@ -173,13 +178,15 @@
              this.ticketTracker.update(i, ticket.getTicketLevel(), true);
          }
  
@@ -27,7 +39,7 @@
          }
  
          if (arraysetsorted.isEmpty()) {
-@@ -187,6 +189,7 @@
+@@ -187,6 +194,7 @@
          }
  
          this.ticketTracker.update(i, getTicketLevelAt(arraysetsorted), false);
@@ -35,7 +47,7 @@
      }
  
      public <T> void addTicket(TicketType<T> tickettype, ChunkCoordIntPair chunkcoordintpair, int i, T t0) {
-@@ -200,19 +203,33 @@
+@@ -200,19 +208,33 @@
      }
  
      public <T> void addRegionTicket(TicketType<T> tickettype, ChunkCoordIntPair chunkcoordintpair, int i, T t0) {
@@ -71,7 +83,7 @@
      }
  
      private ArraySetSorted<Ticket<?>> getTickets(long i) {
-@@ -251,6 +268,7 @@
+@@ -251,6 +273,7 @@
          ChunkCoordIntPair chunkcoordintpair = sectionposition.chunk();
          long i = chunkcoordintpair.toLong();
          ObjectSet<EntityPlayer> objectset = (ObjectSet) this.playersPerChunk.get(i);
@@ -79,7 +91,7 @@
  
          objectset.remove(entityplayer);
          if (objectset.isEmpty()) {
-@@ -380,6 +398,26 @@
+@@ -380,6 +403,26 @@
          return !this.tickets.isEmpty();
      }
  

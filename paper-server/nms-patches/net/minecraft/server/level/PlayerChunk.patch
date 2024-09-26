@@ -82,13 +82,19 @@
              });
          });
      }
-@@ -290,6 +310,30 @@
-         FullChunkStatus fullchunkstatus1 = ChunkLevel.fullStatus(this.ticketLevel);
-         boolean flag = fullchunkstatus.isOrAfter(FullChunkStatus.FULL);
-         boolean flag1 = fullchunkstatus1.isOrAfter(FullChunkStatus.FULL);
-+        // CraftBukkit start
-+        // ChunkUnloadEvent: Called before the chunk is unloaded: isChunkLoaded is still true and chunk can still be modified by plugins.
-+        if (flag && !flag1) {
+@@ -285,6 +305,38 @@
+         playerchunkmap.onFullChunkStatusChange(this.pos, fullchunkstatus);
+     }
+ 
++    // CraftBukkit start
++    // ChunkUnloadEvent: Called before the chunk is unloaded: isChunkLoaded is still true and chunk can still be modified by plugins.
++    // SPIGOT-7780: Moved out of updateFutures to call all chunk unload events before calling updateHighestAllowedStatus for all chunks
++    protected void callEventIfUnloading(PlayerChunkMap playerchunkmap) {
++        FullChunkStatus oldFullChunkStatus = ChunkLevel.fullStatus(this.oldTicketLevel);
++        FullChunkStatus newFullChunkStatus = ChunkLevel.fullStatus(this.ticketLevel);
++        boolean oldIsFull = oldFullChunkStatus.isOrAfter(FullChunkStatus.FULL);
++        boolean newIsFull = newFullChunkStatus.isOrAfter(FullChunkStatus.FULL);
++        if (oldIsFull && !newIsFull) {
 +            this.getFullChunkFuture().thenAccept((either) -> {
 +                Chunk chunk = (Chunk) either.orElse(null);
 +                if (chunk != null) {
@@ -109,11 +115,13 @@
 +            // Run callback right away if the future was already done
 +            playerchunkmap.callbackExecutor.run();
 +        }
-+        // CraftBukkit end
- 
-         this.wasAccessibleSinceLastSave |= flag1;
-         if (!flag && flag1) {
-@@ -341,6 +385,26 @@
++    }
++    // CraftBukkit end
++
+     protected void updateFutures(PlayerChunkMap playerchunkmap, Executor executor) {
+         FullChunkStatus fullchunkstatus = ChunkLevel.fullStatus(this.oldTicketLevel);
+         FullChunkStatus fullchunkstatus1 = ChunkLevel.fullStatus(this.ticketLevel);
+@@ -341,6 +393,26 @@
  
          this.onLevelChange.onLevelChange(this.pos, this::getQueueLevel, this.ticketLevel, this::setQueueLevel);
          this.oldTicketLevel = this.ticketLevel;
