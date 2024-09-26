@@ -269,11 +269,7 @@ public final class MapCursor {
 
         @NotNull
         private static Type getType(@NotNull String key) {
-            NamespacedKey namespacedKey = NamespacedKey.minecraft(key);
-            Type type = Registry.MAP_DECORATION_TYPE.get(namespacedKey);
-
-            Preconditions.checkNotNull(type, "No type found for %s. This is a bug.", namespacedKey);
-            return type;
+            return Registry.MAP_DECORATION_TYPE.getOrThrow(NamespacedKey.minecraft(key));
         }
 
         /**

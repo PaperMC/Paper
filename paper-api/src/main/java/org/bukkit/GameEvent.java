@@ -1,6 +1,5 @@
 package org.bukkit;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import java.util.Collection;
 import java.util.Collections;
@@ -140,11 +139,6 @@ public abstract class GameEvent implements Keyed {
 
     @NotNull
     private static GameEvent getEvent(@NotNull String key) {
-        NamespacedKey namespacedKey = NamespacedKey.minecraft(key);
-        GameEvent gameEvent = Registry.GAME_EVENT.get(namespacedKey);
-
-        Preconditions.checkNotNull(gameEvent, "No GameEvent found for %s. This is a bug.", namespacedKey);
-
-        return gameEvent;
+        return Registry.GAME_EVENT.getOrThrow(NamespacedKey.minecraft(key));
     }
 }

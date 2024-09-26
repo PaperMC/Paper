@@ -1,6 +1,5 @@
 package org.bukkit.damage;
 
-import com.google.common.base.Preconditions;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -66,11 +65,11 @@ public interface DamageType extends Keyed, Translatable {
     public static final DamageType BAD_RESPAWN_POINT = getDamageType("bad_respawn_point");
     public static final DamageType OUTSIDE_BORDER = getDamageType("outside_border");
     public static final DamageType GENERIC_KILL = getDamageType("generic_kill");
+    public static final DamageType WIND_CHARGE = getDamageType("wind_charge");
 
     @NotNull
     private static DamageType getDamageType(@NotNull String key) {
-        NamespacedKey namespacedKey = NamespacedKey.minecraft(key);
-        return Preconditions.checkNotNull(Registry.DAMAGE_TYPE.get(namespacedKey), "No DamageType found for %s. This is a bug.", namespacedKey);
+        return Registry.DAMAGE_TYPE.getOrThrow(NamespacedKey.minecraft(key));
     }
 
     /**

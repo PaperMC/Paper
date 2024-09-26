@@ -65,11 +65,7 @@ public interface Frog extends Animals {
 
         @NotNull
         private static Variant getVariant(@NotNull String key) {
-            NamespacedKey namespacedKey = NamespacedKey.minecraft(key);
-            Variant variant = Registry.FROG_VARIANT.get(namespacedKey);
-
-            Preconditions.checkNotNull(variant, "No frog variant found for %s. This is a bug.", namespacedKey);
-            return variant;
+            return Registry.FROG_VARIANT.getOrThrow(NamespacedKey.minecraft(key));
         }
 
         /**

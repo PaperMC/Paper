@@ -100,11 +100,7 @@ public interface PatternType extends OldEnum<PatternType>, Keyed {
 
     @NotNull
     private static PatternType getType(@NotNull String key) {
-        NamespacedKey namespacedKey = NamespacedKey.minecraft(key);
-        PatternType type = Registry.BANNER_PATTERN.get(namespacedKey);
-
-        Preconditions.checkNotNull(type, "No Banner Pattern found for %s. This is a bug.", namespacedKey);
-        return type;
+        return Registry.BANNER_PATTERN.getOrThrow(NamespacedKey.minecraft(key));
     }
 
     /**

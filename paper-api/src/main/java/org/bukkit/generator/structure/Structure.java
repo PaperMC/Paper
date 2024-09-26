@@ -49,8 +49,9 @@ public abstract class Structure implements Keyed {
     public static final Structure TRAIL_RUINS = getStructure("trail_ruins");
     public static final Structure TRIAL_CHAMBERS = getStructure("trial_chambers");
 
-    private static Structure getStructure(String name) {
-        return Registry.STRUCTURE.get(NamespacedKey.minecraft(name));
+    @NotNull
+    private static Structure getStructure(@NotNull String name) {
+        return Registry.STRUCTURE.getOrThrow(NamespacedKey.minecraft(name));
     }
 
     /**

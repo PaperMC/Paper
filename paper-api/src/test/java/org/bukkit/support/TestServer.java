@@ -1,6 +1,7 @@
 package org.bukkit.support;
 
 import static org.mockito.Mockito.*;
+import com.google.common.base.Preconditions;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
@@ -55,6 +56,16 @@ public final class TestServer {
                 }
 
                 return cache.computeIfAbsent(key, key2 -> mock(theClass, withSettings().stubOnly()));
+            }
+
+            @NotNull
+            @Override
+            public Keyed getOrThrow(@NotNull NamespacedKey key) {
+                Keyed keyed = get(key);
+
+                Preconditions.checkArgument(keyed != null, "No registry entry found for key " + key);
+
+                return keyed;
             }
 
             @NotNull

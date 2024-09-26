@@ -1,6 +1,5 @@
 package org.bukkit;
 
-import java.util.Objects;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,7 +30,7 @@ public interface JukeboxSong extends Keyed, Translatable {
     public static final JukeboxSong CREATOR_MUSIC_BOX = get("creator_music_box");
 
     @NotNull
-    private static JukeboxSong get(@NotNull String s) {
-        return Objects.requireNonNull(Registry.JUKEBOX_SONG.get(NamespacedKey.minecraft(s)), "Missing song " + s);
+    private static JukeboxSong get(@NotNull String key) {
+        return Registry.JUKEBOX_SONG.getOrThrow(NamespacedKey.minecraft(key));
     }
 }

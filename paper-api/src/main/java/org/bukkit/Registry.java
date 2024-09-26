@@ -62,6 +62,16 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
 
         @NotNull
         @Override
+        public Advancement getOrThrow(@NotNull NamespacedKey key) {
+            Advancement advancement = get(key);
+
+            Preconditions.checkArgument(advancement != null, "No registry entry found for key " + key);
+
+            return advancement;
+        }
+
+        @NotNull
+        @Override
         public Stream<Advancement> stream() {
             return StreamSupport.stream(spliterator(), false);
         }
@@ -116,6 +126,16 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         @Override
         public KeyedBossBar get(@NotNull NamespacedKey key) {
             return Bukkit.getBossBar(key);
+        }
+
+        @NotNull
+        @Override
+        public KeyedBossBar getOrThrow(@NotNull NamespacedKey key) {
+            KeyedBossBar keyedBossBar = get(key);
+
+            Preconditions.checkArgument(keyedBossBar != null, "No registry entry found for key " + key);
+
+            return keyedBossBar;
         }
 
         @NotNull
@@ -210,13 +230,13 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see Structure
      */
-    Registry<Structure> STRUCTURE = Bukkit.getRegistry(Structure.class);
+    Registry<Structure> STRUCTURE = Objects.requireNonNull(Bukkit.getRegistry(Structure.class), "No registry present for Structure. This is a bug.");
     /**
      * Server structure types.
      *
      * @see StructureType
      */
-    Registry<StructureType> STRUCTURE_TYPE = Bukkit.getRegistry(StructureType.class);
+    Registry<StructureType> STRUCTURE_TYPE = Objects.requireNonNull(Bukkit.getRegistry(StructureType.class), "No registry present for StructureType. This is a bug.");
     /**
      * Sound keys.
      *
@@ -229,14 +249,14 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see TrimMaterial
      */
     @ApiStatus.Experimental
-    Registry<TrimMaterial> TRIM_MATERIAL = Bukkit.getRegistry(TrimMaterial.class);
+    Registry<TrimMaterial> TRIM_MATERIAL = Objects.requireNonNull(Bukkit.getRegistry(TrimMaterial.class), "No registry present for TrimMaterial. This is a bug.");
     /**
      * Trim patterns.
      *
      * @see TrimPattern
      */
     @ApiStatus.Experimental
-    Registry<TrimPattern> TRIM_PATTERN = Bukkit.getRegistry(TrimPattern.class);
+    Registry<TrimPattern> TRIM_PATTERN = Objects.requireNonNull(Bukkit.getRegistry(TrimPattern.class), "No registry present for TrimPattern. This is a bug.");
     /**
      * Damage types.
      *
@@ -284,6 +304,16 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
 
         @NotNull
         @Override
+        public MemoryKey getOrThrow(@NotNull NamespacedKey key) {
+            MemoryKey memoryKey = get(key);
+
+            Preconditions.checkArgument(memoryKey != null, "No registry entry found for key " + key);
+
+            return memoryKey;
+        }
+
+        @NotNull
+        @Override
         public Stream<MemoryKey> stream() {
             return StreamSupport.stream(spliterator(), false);
         }
@@ -326,6 +356,18 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      */
     @Nullable
     T get(@NotNull NamespacedKey key);
+
+    /**
+     * Get the object by its key.
+     *
+     * If there is no object with the given key, an exception will be thrown.
+     *
+     * @param key to get the object from
+     * @return object with the given key
+     * @throws IllegalArgumentException if there is no object with the given key
+     */
+    @NotNull
+    T getOrThrow(@NotNull NamespacedKey key);
 
     /**
      * Returns a new stream, which contains all registry items, which are registered to the registry.
@@ -379,6 +421,16 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         @Override
         public T get(@NotNull NamespacedKey key) {
             return map.get(key);
+        }
+
+        @NotNull
+        @Override
+        public T getOrThrow(@NotNull NamespacedKey key) {
+            T object = get(key);
+
+            Preconditions.checkArgument(object != null, "No registry entry found for key " + key);
+
+            return object;
         }
 
         @NotNull

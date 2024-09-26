@@ -1,6 +1,5 @@
 package org.bukkit.inventory;
 
-import com.google.common.base.Preconditions;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -183,9 +182,8 @@ public interface MenuType extends Keyed {
     @NotNull
     Class<? extends InventoryView> getInventoryViewClass();
 
+    @NotNull
     private static <T extends MenuType> T get(@NotNull final String key) {
-        final MenuType type = Registry.MENU.get(NamespacedKey.minecraft(key));
-        Preconditions.checkArgument(type != null, "The given string key must be an existing menu type");
-        return (T) type;
+        return (T) Registry.MENU.getOrThrow(NamespacedKey.minecraft(key));
     }
 }

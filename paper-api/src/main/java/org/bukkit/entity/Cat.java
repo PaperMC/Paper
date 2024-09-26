@@ -64,11 +64,7 @@ public interface Cat extends Tameable, Sittable {
 
         @NotNull
         private static Type getType(@NotNull String key) {
-            NamespacedKey namespacedKey = NamespacedKey.minecraft(key);
-            Type type = Registry.CAT_VARIANT.get(namespacedKey);
-
-            Preconditions.checkNotNull(type, "No cat type found for %s. This is a bug.", namespacedKey);
-            return type;
+            return Registry.CAT_VARIANT.getOrThrow(NamespacedKey.minecraft(key));
         }
 
         /**

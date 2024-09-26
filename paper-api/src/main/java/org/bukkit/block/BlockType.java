@@ -1,6 +1,5 @@
 package org.bukkit.block;
 
-import com.google.common.base.Preconditions;
 import java.util.function.Consumer;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
@@ -108,6 +107,7 @@ import org.bukkit.block.data.type.TrialSpawner;
 import org.bukkit.block.data.type.Tripwire;
 import org.bukkit.block.data.type.TripwireHook;
 import org.bukkit.block.data.type.TurtleEgg;
+import org.bukkit.block.data.type.Vault;
 import org.bukkit.block.data.type.Wall;
 import org.bukkit.block.data.type.WallHangingSign;
 import org.bukkit.block.data.type.WallSign;
@@ -3295,16 +3295,20 @@ public interface BlockType extends Keyed, Translatable {
      * BlockData: {@link TrialSpawner}
      */
     BlockType.Typed<TrialSpawner> TRIAL_SPAWNER = getBlockType("trial_spawner");
-
+    /**
+     * BlockData: {@link Vault}
+     */
+    BlockType.Typed<Vault> VAULT = getBlockType("vault");
+    /**
+     * BlockData: {@link Waterlogged}
+     */
+    BlockType.Typed<Waterlogged> HEAVY_CORE = getBlockType("heavy_core");
     //</editor-fold>
 
     @NotNull
     private static <B extends BlockType> B getBlockType(@NotNull String key) {
-        NamespacedKey namespacedKey = NamespacedKey.minecraft(key);
-        BlockType blockType = Registry.BLOCK.get(namespacedKey);
-        Preconditions.checkNotNull(blockType, "No BlockType found for %s. This is a bug.", namespacedKey);
         // Cast instead of using BlockType#typed, since block type can be a mock during testing and would return null
-        return (B) blockType;
+        return (B) Registry.BLOCK.getOrThrow(NamespacedKey.minecraft(key));
     }
 
     /**
