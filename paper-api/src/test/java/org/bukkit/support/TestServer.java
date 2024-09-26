@@ -63,7 +63,7 @@ public final class TestServer {
             public Keyed getOrThrow(@NotNull NamespacedKey key) {
                 Keyed keyed = get(key);
 
-                Preconditions.checkArgument(keyed != null, "No registry entry found for key " + key);
+                Preconditions.checkArgument(keyed != null, "No %s registry entry found for key %s.", aClass, key);
 
                 return keyed;
             }

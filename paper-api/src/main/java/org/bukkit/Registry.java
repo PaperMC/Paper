@@ -65,7 +65,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         public Advancement getOrThrow(@NotNull NamespacedKey key) {
             Advancement advancement = get(key);
 
-            Preconditions.checkArgument(advancement != null, "No registry entry found for key " + key);
+            Preconditions.checkArgument(advancement != null, "No Advancement registry entry found for key %s.", key);
 
             return advancement;
         }
@@ -133,7 +133,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         public KeyedBossBar getOrThrow(@NotNull NamespacedKey key) {
             KeyedBossBar keyedBossBar = get(key);
 
-            Preconditions.checkArgument(keyedBossBar != null, "No registry entry found for key " + key);
+            Preconditions.checkArgument(keyedBossBar != null, "No KeyedBossBar registry entry found for key %s.", key);
 
             return keyedBossBar;
         }
@@ -307,7 +307,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         public MemoryKey getOrThrow(@NotNull NamespacedKey key) {
             MemoryKey memoryKey = get(key);
 
-            Preconditions.checkArgument(memoryKey != null, "No registry entry found for key " + key);
+            Preconditions.checkArgument(memoryKey != null, "No MemoryKey registry entry found for key %s.", key);
 
             return memoryKey;
         }
@@ -428,7 +428,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         public T getOrThrow(@NotNull NamespacedKey key) {
             T object = get(key);
 
-            Preconditions.checkArgument(object != null, "No registry entry found for key " + key);
+            Preconditions.checkArgument(object != null, "No %s registry entry found for key %s.", type, key);
 
             return object;
         }
