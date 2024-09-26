@@ -284,7 +284,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
     public B getOrThrow(@NotNull NamespacedKey namespacedKey) {
         B object = get(namespacedKey);
 
-        Preconditions.checkArgument(object != null, "No registry entry found for key " + namespacedKey);
+        Preconditions.checkArgument(object != null, "No %s registry entry found for key %s.", minecraftRegistry.key(), namespacedKey);
 
         return object;
     }
