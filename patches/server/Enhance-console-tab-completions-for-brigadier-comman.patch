@@ -91,7 +91,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return;
 +        }
 +        final CommandDispatcher<CommandSourceStack> dispatcher = this.server.getCommands().getDispatcher();
-+        final ParseResults<CommandSourceStack> results = dispatcher.parse(prepareStringReader(line.line()), this.commandSourceStack.get());
++        final ParseResults<CommandSourceStack> results = dispatcher.parse(new StringReader(line.line()), this.commandSourceStack.get());
 +        this.addCandidates(
 +            candidates,
 +            dispatcher.getCompletionSuggestions(results, line.cursor()).join().getList(),
@@ -157,14 +157,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return completion(suggestion.getText(), PaperAdventure.asAdventure(ComponentUtils.fromMessage(suggestion.getTooltip())));
 +    }
 +
-+    static @NonNull StringReader prepareStringReader(final @NonNull String line) {
-+        final StringReader stringReader = new StringReader(line);
-+        if (stringReader.canRead() && stringReader.peek() == '/') {
-+            stringReader.skip();
-+        }
-+        return stringReader;
-+    }
-+
 +    private record ParseContext(String line, int suggestionStart) {
 +    }
 +
@@ -184,6 +176,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import com.google.common.base.Suppliers;
 +import com.mojang.brigadier.ParseResults;
++import com.mojang.brigadier.StringReader;
 +import com.mojang.brigadier.context.ParsedCommandNode;
 +import com.mojang.brigadier.tree.LiteralCommandNode;
 +import java.util.function.Supplier;
@@ -214,12 +207,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return new AttributedString(buffer, AttributedStyle.DEFAULT.foreground(AttributedStyle.RED));
 +        }
 +        final AttributedStringBuilder builder = new AttributedStringBuilder();
-+        final ParseResults<CommandSourceStack> results = this.server.getCommands().getDispatcher().parse(BrigadierCommandCompleter.prepareStringReader(buffer), this.commandSourceStack.get());
++        final ParseResults<CommandSourceStack> results = this.server.getCommands().getDispatcher().parse(new StringReader(buffer), this.commandSourceStack.get());
 +        int pos = 0;
-+        if (buffer.startsWith("/")) {
-+            builder.append("/", AttributedStyle.DEFAULT);
-+            pos = 1;
-+        }
 +        int component = -1;
 +        for (final ParsedCommandNode<CommandSourceStack> node : results.getContext().getLastChild().getNodes()) {
 +            if (node.getRange().getStart() >= buffer.length()) {
@@ -293,6 +282,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import com.mojang.brigadier.ImmutableStringReader;
 +import com.mojang.brigadier.ParseResults;
++import com.mojang.brigadier.StringReader;
 +import com.mojang.brigadier.context.CommandContextBuilder;
 +import com.mojang.brigadier.context.ParsedCommandNode;
 +import com.mojang.brigadier.context.StringRange;
@@ -304,8 +294,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.jline.reader.Parser;
 +import org.jline.reader.SyntaxError;
 +
-+import static io.papermc.paper.console.BrigadierCommandCompleter.prepareStringReader;
-+
 +public class BrigadierConsoleParser implements Parser {
 +
 +    private final DedicatedServer server;
@@ -316,7 +304,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public ParsedLine parse(final String line, final int cursor, final ParseContext context) throws SyntaxError {
-+        final ParseResults<CommandSourceStack> results = this.server.getCommands().getDispatcher().parse(prepareStringReader(line), this.server.createCommandSourceStack());
++        final ParseResults<CommandSourceStack> results = this.server.getCommands().getDispatcher().parse(new StringReader(line), this.server.createCommandSourceStack());
 +        final ImmutableStringReader reader = results.getReader();
 +        final List<String> words = new ArrayList<>();
 +        CommandContextBuilder<CommandSourceStack> currentContext = results.getContext();
