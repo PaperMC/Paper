@@ -5,7 +5,7 @@ Subject: [PATCH] Add various missing EntityDropItemEvent calls
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index de483cc77931fcb1d8bb9b1bcfd6606706490fba..180a86c419cad9873c53a49c8881ced647a753e0 100644
+index 8b0959050cd5e0ef24347632c3b4184eadf565e6..73a69c35bca89ab82da39149a2a7cb86d4878e3c 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -2557,6 +2557,14 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
@@ -86,3 +86,24 @@ index 94df94f7acc121201966955a09fb336b0a98e599..d34d8fe70379dcad9540739ec0ae1c94
      }
  
      @Override
+diff --git a/src/main/java/net/minecraft/world/item/ItemUtils.java b/src/main/java/net/minecraft/world/item/ItemUtils.java
+index 66f88f44eb74dfbdafe0d6257dc1ef46238aaa92..4901f0d89ae2472bce7f242d9529236674f5d134 100644
+--- a/src/main/java/net/minecraft/world/item/ItemUtils.java
++++ b/src/main/java/net/minecraft/world/item/ItemUtils.java
+@@ -41,7 +41,15 @@ public class ItemUtils {
+     public static void onContainerDestroyed(ItemEntity itemEntity, Iterable<ItemStack> contents) {
+         Level level = itemEntity.level();
+         if (!level.isClientSide) {
+-            contents.forEach(stack -> level.addFreshEntity(new ItemEntity(level, itemEntity.getX(), itemEntity.getY(), itemEntity.getZ(), stack)));
++            // Paper start - call EntityDropItemEvent
++            contents.forEach(stack -> {
++                ItemEntity droppedItem = new ItemEntity(level, itemEntity.getX(), itemEntity.getY(), itemEntity.getZ(), stack);
++                org.bukkit.event.entity.EntityDropItemEvent event = new org.bukkit.event.entity.EntityDropItemEvent(itemEntity.getBukkitEntity(), (org.bukkit.entity.Item) droppedItem.getBukkitEntity());
++                if (event.callEvent()) {
++                    level.addFreshEntity(droppedItem);
++                }
++            });
++            // Paper end - call EntityDropItemEvent
+         }
+     }
+ }
