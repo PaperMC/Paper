@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: masmc05 <masmc05@gmail.com>
+Date: Wed, 25 Sep 2024 16:26:04 +0300
+Subject: [PATCH] Add enchantWithLevels with enchantment registry set
+
+
+diff --git a/src/main/java/org/bukkit/inventory/ItemFactory.java b/src/main/java/org/bukkit/inventory/ItemFactory.java
+index bd0e55562f1cabef3078573182e0cf9fbc844585..2669d783088b9f63f0edd6d0384c3a307ddccac7 100644
+--- a/src/main/java/org/bukkit/inventory/ItemFactory.java
++++ b/src/main/java/org/bukkit/inventory/ItemFactory.java
+@@ -338,4 +338,21 @@ public interface ItemFactory {
+      */
+     @NotNull ItemStack enchantWithLevels(@NotNull ItemStack itemStack, @org.jetbrains.annotations.Range(from = 1, to = 30) int levels, boolean allowTreasure, @NotNull java.util.Random random);
+     // Paper end - enchantWithLevels API
++    // Paper start - enchantWithLevels with tag specification
++    /**
++     * Randomly enchants a copy of the provided {@link ItemStack} using the given experience levels.
++     *
++     * <p>If the provided ItemStack is already enchanted, the existing enchants will be removed before enchanting.</p>
++     *
++     * <p>Levels must be in range {@code [1, 30]}.</p>
++     *
++     * @param itemStack ItemStack to enchant
++     * @param levels levels to use for enchanting
++     * @param keySet registry key set defining the set of possible enchantments, e.g. {@link io.papermc.paper.registry.keys.tags.EnchantmentTagKeys#IN_ENCHANTING_TABLE}.
++     * @param random {@link java.util.Random} instance to use for enchanting
++     * @return enchanted copy of the provided ItemStack
++     * @throws IllegalArgumentException on bad arguments
++     */
++    @NotNull ItemStack enchantWithLevels(@NotNull ItemStack itemStack, @org.jetbrains.annotations.Range(from = 1, to = 30) int levels, @NotNull io.papermc.paper.registry.set.RegistryKeySet<@NotNull Enchantment> keySet, @NotNull java.util.Random random);
++    // Paper end - enchantWithLevels with tag specification
+ }
+diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
+index 7f63a3a37eb06049bd5de10466c6dd96cb5dd4ee..b59222b8c262545d100a9fd28b3bf1d2a4cf4eb0 100644
+--- a/src/main/java/org/bukkit/inventory/ItemStack.java
++++ b/src/main/java/org/bukkit/inventory/ItemStack.java
+@@ -678,6 +678,23 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+         return Bukkit.getServer().getItemFactory().enchantWithLevels(this, levels, allowTreasure, random);
+     }
+ 
++    /**
++     * Randomly enchants a copy of this {@link ItemStack} using the given experience levels.
++     *
++     * <p>If the provided ItemStack is already enchanted, the existing enchants will be removed before enchanting.</p>
++     *
++     * <p>Levels must be in range {@code [1, 30]}.</p>
++     *
++     * @param levels levels to use for enchanting
++     * @param keySet registry key set defining the set of possible enchantments, e.g. {@link io.papermc.paper.registry.keys.tags.EnchantmentTagKeys#IN_ENCHANTING_TABLE}.
++     * @param random {@link java.util.Random} instance to use for enchanting
++     * @return enchanted copy of the provided ItemStack
++     * @throws IllegalArgumentException on bad arguments
++     */
++    public @NotNull ItemStack enchantWithLevels(final @org.jetbrains.annotations.Range(from = 1, to = 30) int levels, final @NotNull io.papermc.paper.registry.set.RegistryKeySet<@NotNull Enchantment> keySet, final @NotNull java.util.Random random) {
++        return Bukkit.getItemFactory().enchantWithLevels(this, levels, keySet, random);
++    }
++
+     @NotNull
+     @Override
+     public net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowItem> asHoverEvent(final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowItem> op) {
