@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Brokkonaut <hannos17@gmx.de>
+Date: Fri, 27 Sep 2024 02:40:24 +0200
+Subject: [PATCH] Call EntityDropItemEvent when a container item drops items
+
+
+diff --git a/src/main/java/net/minecraft/world/item/ItemUtils.java b/src/main/java/net/minecraft/world/item/ItemUtils.java
+index 66f88f44eb74dfbdafe0d6257dc1ef46238aaa92..4a787a7c966647d43ac0158c5cd53aacc83851b6 100644
+--- a/src/main/java/net/minecraft/world/item/ItemUtils.java
++++ b/src/main/java/net/minecraft/world/item/ItemUtils.java
+@@ -41,7 +41,16 @@ public class ItemUtils {
+     public static void onContainerDestroyed(ItemEntity itemEntity, Iterable<ItemStack> contents) {
+         Level level = itemEntity.level();
+         if (!level.isClientSide) {
+-            contents.forEach(stack -> level.addFreshEntity(new ItemEntity(level, itemEntity.getX(), itemEntity.getY(), itemEntity.getZ(), stack)));
++            // Paper start - call EntityDropItemEvent
++            contents.forEach(stack -> {
++                ItemEntity droppedItem = new ItemEntity(level, itemEntity.getX(), itemEntity.getY(), itemEntity.getZ(), stack);
++                org.bukkit.event.entity.EntityDropItemEvent event = new org.bukkit.event.entity.EntityDropItemEvent(itemEntity.getBukkitEntity(), (org.bukkit.entity.Item) droppedItem.getBukkitEntity());
++                org.bukkit.craftbukkit.event.CraftEventFactory.callEvent(event);
++                if (!event.isCancelled()) {
++                    level.addFreshEntity(droppedItem);
++                }
++            });
++            // Paper end - call EntityDropItemEvent
+         }
+     }
+ }
