@@ -1,0 +1,82 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 30 Aug 2021 15:29:45 -0700
+Subject: [PATCH] Specify more directories to search for datapacks
+
+
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index 5443013060b62e3bfcc51cddca96d1c0bc59fe72..b794d16df3c74fadde3b79cce368f710359faf43 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -241,8 +241,14 @@ public class Main {
+             if (flag) {
+                 Main.LOGGER.warn("Safe mode active, only vanilla datapack will be loaded");
+             }
+-
+-            PackRepository resourcepackrepository = ServerPacksSource.createPackRepository(convertable_conversionsession);
++            // Paper start - additional places to search for datapacks
++            @SuppressWarnings("unchecked") java.util.List<net.minecraft.server.packs.repository.RepositorySource> additionalDatapackFolders = ((java.util.List<File>) optionset.valuesOf("add-datapacks-directory")).stream()
++                .filter(File::isDirectory)
++                .<net.minecraft.server.packs.repository.RepositorySource>map(f -> new net.minecraft.server.packs.repository.FolderRepositorySource(f.toPath(), net.minecraft.server.packs.PackType.SERVER_DATA, net.minecraft.server.packs.repository.PackSource.SERVER, convertable_conversionsession.parent().getWorldDirValidator()))
++                .toList();
++            // Paper end - additional places to search for datapacks
++
++            PackRepository resourcepackrepository = ServerPacksSource.createPackRepository(convertable_conversionsession, additionalDatapackFolders); // Paper - add additional datapack sources
+             // CraftBukkit start
+             File bukkitDataPackFolder = new File(convertable_conversionsession.getLevelPath(LevelResource.DATAPACK_DIR).toFile(), "bukkit");
+             if (!bukkitDataPackFolder.exists()) {
+diff --git a/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java b/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java
+index def8ed40ef732b512a07fe50449c77a860b97462..c5c1d22f8cfcbca45f5960e16a99611083714a26 100644
+--- a/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java
++++ b/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java
+@@ -80,9 +80,15 @@ public class ServerPacksSource extends BuiltInPackSource {
+     }
+ 
+     public static PackRepository createPackRepository(Path dataPacksPath, DirectoryValidator symlinkFinder) {
+-        return new PackRepository(
+-            new ServerPacksSource(symlinkFinder), new FolderRepositorySource(dataPacksPath, PackType.SERVER_DATA, PackSource.WORLD, symlinkFinder)
+-        );
++        // Paper start - add extra sources
++        return createPackRepository(dataPacksPath, symlinkFinder, java.util.Collections.emptyList());
++    }
++    public static PackRepository createPackRepository(Path dataPacksPath, DirectoryValidator symlinkFinder, java.util.List<RepositorySource> extraSources) {
++        final java.util.List<RepositorySource> sources = new java.util.ArrayList<>(extraSources);
++        sources.add(0, new ServerPacksSource(symlinkFinder));
++        sources.add(1, new FolderRepositorySource(dataPacksPath, PackType.SERVER_DATA, PackSource.WORLD, symlinkFinder));
++        return new PackRepository(sources.toArray(RepositorySource[]::new));
++        // Paper end - add extra sources
+     }
+ 
+     public static PackRepository createVanillaTrustedRepository() {
+@@ -90,6 +96,11 @@ public class ServerPacksSource extends BuiltInPackSource {
+     }
+ 
+     public static PackRepository createPackRepository(LevelStorageSource.LevelStorageAccess session) {
+-        return createPackRepository(session.getLevelPath(LevelResource.DATAPACK_DIR), session.parent().getWorldDirValidator());
++        // Paper start - add extra sources
++        return createPackRepository(session, java.util.Collections.emptyList());
++    }
++    public static PackRepository createPackRepository(LevelStorageSource.LevelStorageAccess session, java.util.List<RepositorySource> extraSources) {
++        return createPackRepository(session.getLevelPath(LevelResource.DATAPACK_DIR), session.parent().getWorldDirValidator(), extraSources);
++        // Paper end - add extra sources
+     }
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index c988afa496d25314451435eedd64079a0d87cef0..20e99b8fd26a1e024603e0d281fd4b220ad98e02 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -175,6 +175,14 @@ public class Main {
+                         .describedAs("Jar file");
+                 // Paper end
+ 
++                // Paper start - additional datapacks
++                this.acceptsAll(asList("add-datapacks-directory"), "Additional directory to look for datapacks in")
++                    .withRequiredArg()
++                    .ofType(File.class)
++                    .defaultsTo(new File[] {})
++                    .describedAs("Datapacks directory");
++                // Paper end - additional datapacks
++
+                 // Paper start
+                 acceptsAll(asList("server-name"), "Name of the server")
+                         .withRequiredArg()
