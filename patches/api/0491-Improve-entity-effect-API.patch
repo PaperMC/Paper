@@ -1,0 +1,140 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 27 Sep 2024 17:12:50 -0700
+Subject: [PATCH] Improve entity effect API
+
+
+diff --git a/src/main/java/org/bukkit/EntityEffect.java b/src/main/java/org/bukkit/EntityEffect.java
+index 5341957b10cccd7bce5a7595699b1d90412a01d0..83d623cc824ddeeae7350c9f9a757fcf8e97c9ea 100644
+--- a/src/main/java/org/bukkit/EntityEffect.java
++++ b/src/main/java/org/bukkit/EntityEffect.java
+@@ -112,11 +112,25 @@ public enum EntityEffect {
+     // 5 - unused
+     /**
+      * The smoke when taming an entity fails.
++     * @deprecated use {@link EntityEffect#TAMING_FAILED}
+      */
++    @Deprecated(since = "1.21") // Paper
+     WOLF_SMOKE(6, Tameable.class),
++    // Paper start - rename "wolf" effects
++    /**
++     * The smoke when taming an entity fails.
++     */
++    TAMING_FAILED(6, Tameable.class),
++    /**
++     * The hearts when taming an entity succeeds.
++     */
++    TAMING_SUCCEEDED(7, Tameable.class),
++    // Paper end - rename "wolf" effects
+     /**
+      * The hearts when taming an entity succeeds.
++     * @deprecated use {@link EntityEffect#TAMING_SUCCEEDED}
+      */
++    @Deprecated(since = "1.21") // Paper
+     WOLF_HEARTS(7, Tameable.class),
+     /**
+      * When a wolf shakes (after being wet).
+@@ -204,7 +218,9 @@ public enum EntityEffect {
+     ARMOR_STAND_HIT(32, ArmorStand.class),
+     /**
+      * Entity hurt by thorns attack.
++     * @deprecated in favor of {@link LivingEntity#playHurtAnimation(float)} or {@link Entity#broadcastHurtAnimation(java.util.Collection)}
+      */
++    @Deprecated(since = "1.19.4", forRemoval = true) // Paper
+     THORNS_HURT(33, LivingEntity.class),
+     /**
+      * Iron golem puts away rose.
+@@ -216,11 +232,15 @@ public enum EntityEffect {
+     TOTEM_RESURRECT(35, LivingEntity.class),
+     /**
+      * Entity hurt due to drowning damage.
++     * @deprecated in favor of {@link LivingEntity#playHurtAnimation(float)} or {@link Entity#broadcastHurtAnimation(java.util.Collection)}
+      */
++    @Deprecated(since = "1.19.4", forRemoval = true)
+     HURT_DROWN(36, LivingEntity.class),
+     /**
+      * Entity hurt due to explosion damage.
++     * @deprecated in favor of {@link LivingEntity#playHurtAnimation(float)} or {@link Entity#broadcastHurtAnimation(java.util.Collection)}
+      */
++    @Deprecated(since = "1.19.4", forRemoval = true)
+     HURT_EXPLOSION(37, LivingEntity.class),
+     /**
+      * Dolphin has been fed and is locating a structure.
+@@ -244,11 +264,15 @@ public enum EntityEffect {
+     VILLAGER_SPLASH(42, Villager.class),
+     /**
+      * Player's bad omen effect removed to start or increase raid difficult.
++     * @deprecated raid system was overhauled in 1.20.5
+      */
++    @Deprecated(since = "1.20.5", forRemoval = true)
+     PLAYER_BAD_OMEN_RAID(43, Player.class),
+     /**
+      * Entity hurt due to berry bush. Prickly!
++     * @deprecated in favor of {@link LivingEntity#playHurtAnimation(float)} or {@link Entity#broadcastHurtAnimation(java.util.Collection)}
+      */
++    @Deprecated(since = "1.19.4", forRemoval = true)
+     HURT_BERRY_BUSH(44, LivingEntity.class),
+     /**
+      * Fox chews the food in its mouth
+@@ -331,7 +355,17 @@ public enum EntityEffect {
+      * Sniffer must have a target and be in {@link Sniffer.State#SEARCHING} or
+      * {@link Sniffer.State#DIGGING}
+      */
+-    SNIFFER_DIG(63, Sniffer.class);
++    SNIFFER_DIG(63, Sniffer.class),
++    // Paper start - add missing EntityEffect
++    /**
++     * Armadillo peeks out of its shell
++     */
++    ARMADILLO_PEEK(64, org.bukkit.entity.Armadillo.class),
++    /**
++     * {@link org.bukkit.inventory.EquipmentSlot#BODY} armor piece breaks
++     */
++    BODY_BREAK(65, LivingEntity.class);
++    // Paper end - add missing EntityEffect
+ 
+     private final byte data;
+     private final Class<? extends Entity> applicable;
+diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
+index 725ef320f929d5e3d141c1ed3246d73a7d741f31..d0ae8a94db20281d3664d74718c65234eb2e5f83 100644
+--- a/src/main/java/org/bukkit/entity/Entity.java
++++ b/src/main/java/org/bukkit/entity/Entity.java
+@@ -1159,4 +1159,17 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
+      */
+     @NotNull String getScoreboardEntryName();
+     // Paper end - entity scoreboard name
++
++    // Paper start - broadcast hurt animation
++    /**
++     * Broadcasts a hurt animation. This fakes incoming damage towards the target entity.
++     * <p>
++     * The target players cannot include {@code this} player. For self-damage, use
++     * {@link Player#sendHurtAnimation(float)}.
++     *
++     * @param players the players to broadcast to (cannot include {@code this}
++     * @throws IllegalArgumentException if {@code this} is contained in {@code players}
++     */
++    void broadcastHurtAnimation(@NotNull java.util.Collection<Player> players);
++    // Paper end - broadcast hurt animation
+ }
+diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
+index 7c56182acaf827f4b1a986a61cea8e9960604c98..8086acceacbceb2c5a7228fff005e41a86d37008 100644
+--- a/src/main/java/org/bukkit/entity/Player.java
++++ b/src/main/java/org/bukkit/entity/Player.java
+@@ -3859,4 +3859,16 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+     @Override
+     Spigot spigot();
+     // Spigot end
++
++    // Paper start - entity effect API
++    /**
++     * Plays an entity effect to this player for the target entity
++     * <p>
++     * If the effect is not applicable to this class of entity, it will not play.
++     *
++     * @param effect the entity effect
++     * @param target the target entity
++     */
++    void sendEntityEffect(org.bukkit.@NotNull EntityEffect effect, @NotNull Entity target);
++    // Paper end - entity effect API
+ }
