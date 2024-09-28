@@ -1284,6 +1284,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void sendHurtAnimation(float yaw) {
+        // Paper start - Add target entity to sendHurtAnimation
+        this.sendHurtAnimation(yaw, this);
+    }
+    public void sendHurtAnimation(float yaw, org.bukkit.entity.Entity target) {
+        // Paper end - Add target entity to sendHurtAnimation
         if (this.getHandle().connection == null) {
             return;
         }
@@ -1293,7 +1298,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          * This makes no sense. We'll add 90 to it so that 0 = front, clockwise from there.
          */
         float actualYaw = yaw + 90;
-        this.getHandle().connection.send(new ClientboundHurtAnimationPacket(this.getEntityId(), actualYaw));
+        this.getHandle().connection.send(new ClientboundHurtAnimationPacket(target.getEntityId(), actualYaw)); // Paper - Add target entity to sendHurtAnimation
     }
 
     @Override
@@ -3515,4 +3520,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void setSendViewDistance(final int viewDistance) {
         throw new UnsupportedOperationException("Not implemented yet");
     }
+
+    // Paper start - entity effect API
+    @Override
+    public void sendEntityEffect(final org.bukkit.EntityEffect effect, final org.bukkit.entity.Entity target) {
+        if (this.getHandle().connection == null || !effect.isApplicableTo(target)) {
+            return;
+        }
+        this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundEntityEventPacket(((CraftEntity) target).getHandle(), effect.getData()));
+    }
+    // Paper end - entity effect API
 }

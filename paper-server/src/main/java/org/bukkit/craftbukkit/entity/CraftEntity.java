@@ -1291,4 +1291,15 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         return this.getHandle().getScoreboardName();
     }
     // Paper end - entity scoreboard name
+
+    // Paper start - broadcast hurt animation
+    @Override
+    public void broadcastHurtAnimation(java.util.Collection<Player> players) {
+        //noinspection SuspiciousMethodCalls
+        Preconditions.checkArgument(!players.contains(this), "Cannot broadcast hurt animation to self without a yaw");
+        for (final org.bukkit.entity.Player player : players) {
+            ((CraftPlayer) player).sendHurtAnimation(0, this);
+        }
+    }
+    // Paper end - broadcast hurt animation
 }
