@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 19 Mar 2022 18:10:51 -0700
+Subject: [PATCH] Clean up removed tags after datapack unload
+
+On server load and reload, each Registry has its tags re-bound
+with update tags from any loaded datapacks (including the vanilla
+built-in datapack). It doesn't simply clear the collection of tags
+for each registry to preserve the instances of HolderSet.Named so it
+just checks if one exists at the right location and rebinds the set to
+the new collection of values. There is also a log message that logs if
+any previously tag key is missing from the new set of tags. This log
+doesn't make sense seeing as unloading datapacks that add keys is
+perfectly valid behavior.
+
+Unfortunetly the client synching that occurs with the tags doesn't
+remove references to removed tags so the client still things tags,
+that have been removed from the server, still exist (for things like
+command completions).
+
+diff --git a/src/main/java/net/minecraft/core/MappedRegistry.java b/src/main/java/net/minecraft/core/MappedRegistry.java
+index 742af4feb3986ca7d8f5ed136b556a41cbe0722f..e16d79abf3e45336d0708eccf45ca0c54d4e2855 100644
+--- a/src/main/java/net/minecraft/core/MappedRegistry.java
++++ b/src/main/java/net/minecraft/core/MappedRegistry.java
+@@ -398,13 +398,18 @@ public class MappedRegistry<T> implements WritableRegistry<T> {
+ 
+         });
+         Set<TagKey<T>> set = Sets.difference(this.tags.keySet(), tagEntries.keySet());
+-        if (!set.isEmpty()) {
+-            LOGGER.warn("Not all defined tags for registry {} are present in data pack: {}", this.key(), set.stream().map((tag) -> {
+-                return tag.location().toString();
+-            }).sorted().collect(Collectors.joining(", ")));
+-        }
++        // if (!set.isEmpty()) { // Paper - don't log this, because datapacks can be disabled and the tags they added won't be in tagEntries
++        //     LOGGER.warn("Not all defined tags for registry {} are present in data pack: {}", this.key(), set.stream().map((tag) -> {
++        //         return tag.location().toString();
++        //     }).sorted().collect(Collectors.joining(", ")));
++        // }
+ 
+         Map<TagKey<T>, HolderSet.Named<T>> map2 = new IdentityHashMap<>(this.tags);
++        // Paper start - remove and unbind removed tags
++        set.forEach(removedTag -> {
++            map2.remove(removedTag).bind(Collections.emptyList());
++        });
++        // Paper end
+         tagEntries.forEach((tag, entries) -> {
+             map2.computeIfAbsent(tag, this::createTag).bind(entries);
+         });
