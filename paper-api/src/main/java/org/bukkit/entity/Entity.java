@@ -1159,4 +1159,17 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     @NotNull String getScoreboardEntryName();
     // Paper end - entity scoreboard name
+
+    // Paper start - broadcast hurt animation
+    /**
+     * Broadcasts a hurt animation. This fakes incoming damage towards the target entity.
+     * <p>
+     * The target players cannot include {@code this} player. For self-damage, use
+     * {@link Player#sendHurtAnimation(float)}.
+     *
+     * @param players the players to broadcast to (cannot include {@code this}
+     * @throws IllegalArgumentException if {@code this} is contained in {@code players}
+     */
+    void broadcastHurtAnimation(@NotNull java.util.Collection<Player> players);
+    // Paper end - broadcast hurt animation
 }

@@ -3899,4 +3899,16 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     @Override
     Spigot spigot();
     // Spigot end
+
+    // Paper start - entity effect API
+    /**
+     * Plays an entity effect to this player for the target entity
+     * <p>
+     * If the effect is not applicable to this class of entity, it will not play.
+     *
+     * @param effect the entity effect
+     * @param target the target entity
+     */
+    void sendEntityEffect(org.bukkit.@NotNull EntityEffect effect, @NotNull Entity target);
+    // Paper end - entity effect API
 }
