@@ -45,3 +45,73 @@ index 93e3454de0b0d62895f165b0772526f3eae1e333..c858556ea457931aa14e338e20672cb5
      }
  
      @Override
+diff --git a/src/main/java/net/minecraft/world/item/BowItem.java b/src/main/java/net/minecraft/world/item/BowItem.java
+index 6eb5c0f23d9dc61e69ad5ad493c89602a9dcd4b5..03f04dc429a5ad034285e16c055258ba25df501c 100644
+--- a/src/main/java/net/minecraft/world/item/BowItem.java
++++ b/src/main/java/net/minecraft/world/item/BowItem.java
+@@ -32,7 +32,7 @@ public class BowItem extends ProjectileWeaponItem {
+                 if (!((double)f < 0.1)) {
+                     List<ItemStack> list = draw(stack, itemStack, player);
+                     if (world instanceof ServerLevel serverLevel && !list.isEmpty()) {
+-                        this.shoot(serverLevel, player, player.getUsedItemHand(), stack, list, f * 3.0F, 1.0F, f == 1.0F, null);
++                        this.shoot(serverLevel, player, player.getUsedItemHand(), stack, new UnrealizedDrawResult(list, itemStack), f * 3.0F, 1.0F, f == 1.0F, null); // Paper - improve shoot bow - correctly prevent item consumption
+                     }
+ 
+                     world.playSound(
+diff --git a/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java b/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
+index 56595dd3a0b7df4b5f9819ade797212278c8fd40..0ee3109b3f5b7693bb045f91c239aab1866732f8 100644
+--- a/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
++++ b/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
+@@ -46,7 +46,34 @@ public abstract class ProjectileWeaponItem extends Item {
+ 
+     public abstract int getDefaultProjectileRange();
+ 
++    // Paper start - improve shoot bow - correctly prevent item consumption
++    protected record UnrealizedDrawResult(
++        List<ItemStack> projectileStacks,
++        @Nullable ItemStack originalInPlayerInventory // Null in case the unrealised draw result is a noop (case of Crossbow)
++    ) {
++        public void consumeProjectilesFromPlayerInventory(int projectStackIndex) {
++            if (projectStackIndex != 0 || originalInPlayerInventory == null) return;
++
++            if (projectileStacks.isEmpty()) return; // Whatever happened hear, nothing
++            final ItemStack nonIntangibleStack = projectileStacks.get(projectStackIndex);
++
++            // The stack at index 0 was intangible, this means that net.minecraft.world.item.ProjectileWeaponItem.useAmmo
++            // determined the player was not consuming items anyway, e.g. via creative mode. Do not remove items in this
++            // case.
++            if (nonIntangibleStack.has(DataComponents.INTANGIBLE_PROJECTILE)) return;
++
++            originalInPlayerInventory.shrink(nonIntangibleStack.getCount());
++        }
++    }
++    // Paper end - improve shoot bow - correctly prevent item consumption
++
+     protected void shoot(ServerLevel world, LivingEntity shooter, InteractionHand hand, ItemStack stack, List<ItemStack> projectiles, float speed, float divergence, boolean critical, @Nullable LivingEntity target) {
++    // Paper start - improve shoot bow - correctly prevent item consumption
++        shoot(world, shooter, hand, stack, new UnrealizedDrawResult(projectiles, null), speed, divergence, critical, target);
++    }
++    protected void shoot(ServerLevel world, LivingEntity shooter, InteractionHand hand, ItemStack stack, UnrealizedDrawResult unrealizedDrawResult, float speed, float divergence, boolean critical, @Nullable LivingEntity target) {
++        final List<ItemStack> projectiles = unrealizedDrawResult.projectileStacks();
++    // Paper end - improve shoot bow - correctly prevent item consumption
+         float f2 = EnchantmentHelper.processProjectileSpread(world, stack, shooter, 0.0F);
+         float f3 = projectiles.size() == 1 ? 0.0F : 2.0F * f2 / (float) (projectiles.size() - 1);
+         float f4 = (float) ((projectiles.size() - 1) % 2) * f3 / 2.0F;
+@@ -77,6 +104,8 @@ public abstract class ProjectileWeaponItem extends Item {
+                         return;
+                     }
+                 }
++                if (!event.shouldConsumeItem() && iprojectile instanceof final net.minecraft.world.entity.projectile.AbstractArrow abstractArrow) abstractArrow.pickup = net.minecraft.world.entity.projectile.AbstractArrow.Pickup.CREATIVE_ONLY;
++                if (event.shouldConsumeItem()) unrealizedDrawResult.consumeProjectilesFromPlayerInventory(i); // Paper - improve shoot bow - correctly prevent item consumption
+                 // CraftBukkit end
+                 stack.hurtAndBreak(this.getDurabilityUse(itemstack1), shooter, LivingEntity.getSlotForHand(hand));
+                 if (stack.isEmpty()) {
+@@ -174,7 +203,7 @@ public abstract class ProjectileWeaponItem extends Item {
+                 itemstack2.set(DataComponents.INTANGIBLE_PROJECTILE, Unit.INSTANCE);
+                 return itemstack2;
+             } else {
+-                itemstack2 = projectileStack.split(j);
++                itemstack2 = projectileStack.copyWithCount(j); // Paper - improve bow shoot event - do not reduce item in player inventory just yet - create full copy
+                 if (projectileStack.isEmpty() && shooter instanceof Player) {
+                     Player entityhuman = (Player) shooter;
+ 
