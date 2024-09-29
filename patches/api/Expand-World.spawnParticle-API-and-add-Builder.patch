@@ -19,37 +19,36 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import com.google.common.base.Preconditions;
 +import com.google.common.collect.Lists;
 +import it.unimi.dsi.fastutil.objects.ObjectArrayList;
++import java.util.Collection;
++import java.util.List;
 +import org.bukkit.Color;
 +import org.bukkit.Location;
 +import org.bukkit.Particle;
 +import org.bukkit.World;
 +import org.bukkit.entity.Player;
 +import org.bukkit.util.NumberConversions;
-+
-+import java.util.Collection;
-+import java.util.List;
-+import org.jetbrains.annotations.Contract;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
 +/**
 + * Helps prepare a particle to be sent to players.
-+ *
++ * <p>
 + * Usage of the builder is preferred over the super long {@link World#spawnParticle(Particle, Location, int, double, double, double, double, Object)} API
 + */
++@NullMarked
 +public class ParticleBuilder implements Cloneable {
 +
 +    private Particle particle;
-+    private List<Player> receivers;
-+    private Player source;
-+    private Location location;
++    private @Nullable List<Player> receivers;
++    private @Nullable Player source;
++    private @Nullable Location location;
 +    private int count = 1;
 +    private double offsetX = 0, offsetY = 0, offsetZ = 0;
 +    private double extra = 1;
-+    private Object data;
++    private @Nullable Object data;
 +    private boolean force = true;
 +
-+    public ParticleBuilder(@NotNull Particle particle) {
++    public ParticleBuilder(final Particle particle) {
 +        this.particle = particle;
 +    }
 +
@@ -59,14 +58,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     *
 +     * @return a reference to this object.
 +     */
-+    @NotNull
 +    public ParticleBuilder spawn() {
 +        if (this.location == null) {
 +            throw new IllegalStateException("Please specify location for this particle");
 +        }
-+        location.getWorld().spawnParticle(particle, receivers, source,
-+            location.getX(), location.getY(), location.getZ(),
-+            count, offsetX, offsetY, offsetZ, extra, data, force
++        this.location.getWorld().spawnParticle(
++            this.particle, this.receivers, this.source,
++            this.location.getX(), this.location.getY(), this.location.getZ(),
++            this.count, this.offsetX, this.offsetY, this.offsetZ, this.extra, this.data, this.force
 +        );
 +        return this;
 +    }
@@ -74,9 +73,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    /**
 +     * @return The particle going to be sent
 +     */
-+    @NotNull
 +    public Particle particle() {
-+        return particle;
++        return this.particle;
 +    }
 +
 +    /**
@@ -85,8 +83,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param particle The particle
 +     * @return a reference to this object.
 +     */
-+    @NotNull
-+    public ParticleBuilder particle(@NotNull Particle particle) {
++    public ParticleBuilder particle(final Particle particle) {
 +        this.particle = particle;
 +        return this;
 +    }
@@ -94,32 +91,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    /**
 +     * @return List of players who will receive the particle, or null for all in world
 +     */
-+    @Nullable
-+    public List<Player> receivers() {
-+        return receivers;
++    public @Nullable List<Player> receivers() {
++        return this.receivers;
 +    }
 +
 +    /**
 +     * Example use:
-+     *
++     * <p>
 +     * builder.receivers(16); if (builder.hasReceivers()) { sendParticleAsync(builder); }
 +     *
 +     * @return If this particle is going to be sent to someone
 +     */
 +    public boolean hasReceivers() {
-+        return (receivers == null && !location.getWorld().getPlayers().isEmpty()) || (
-+            receivers != null && !receivers.isEmpty());
++        return (this.receivers == null && this.location != null && !this.location.getWorld().getPlayers().isEmpty()) || (
++            this.receivers != null && !this.receivers.isEmpty());
 +    }
 +
 +    /**
-+     * Sends this particle to all players in the world. This is rather silly and you should likely not
++     * Sends this particle to all players in the world. This is rather silly, and you should likely not
 +     * be doing this.
-+     *
++     * <p>
 +     * Just be a logical person and use receivers by radius or collection.
 +     *
 +     * @return a reference to this object.
 +     */
-+    @NotNull
 +    public ParticleBuilder allPlayers() {
 +        this.receivers = null;
 +        return this;
@@ -127,11 +122,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    /**
 +     * @param receivers List of players to receive this particle, or null for all players in the
-+     * world
++     *                  world
 +     * @return a reference to this object.
 +     */
-+    @NotNull
-+    public ParticleBuilder receivers(@Nullable List<Player> receivers) {
++    public ParticleBuilder receivers(final @Nullable List<Player> receivers) {
 +        // Had to keep this as we first made API List<> and not Collection, but removing this may break plugins compiled on older jars
 +        // TODO: deprecate?
 +        this.receivers = receivers != null ? Lists.newArrayList(receivers) : null;
@@ -140,22 +134,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    /**
 +     * @param receivers List of players to receive this particle, or null for all players in the
-+     * world
++     *                  world
 +     * @return a reference to this object.
 +     */
-+    @NotNull
-+    public ParticleBuilder receivers(@Nullable Collection<Player> receivers) {
++    public ParticleBuilder receivers(final @Nullable Collection<Player> receivers) {
 +        this.receivers = receivers != null ? Lists.newArrayList(receivers) : null;
 +        return this;
 +    }
 +
 +    /**
-+     * @param receivers List of players to be receive this particle, or null for all players in the
-+     * world
++     * @param receivers List of players to receive this particle, or null for all players in the
++     *                  world
 +     * @return a reference to this object.
 +     */
-+    @NotNull
-+    public ParticleBuilder receivers(@Nullable Player... receivers) {
++    public ParticleBuilder receivers(final Player @Nullable... receivers) {
 +        this.receivers = receivers != null ? Lists.newArrayList(receivers) : null;
 +        return this;
 +    }
@@ -168,9 +160,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param radius amount to add on all axis
 +     * @return a reference to this object.
 +     */
-+    @NotNull
-+    public ParticleBuilder receivers(int radius) {
-+        return receivers(radius, radius);
++    public ParticleBuilder receivers(final int radius) {
++        return this.receivers(radius, radius);
 +    }
 +
 +    /**
@@ -178,22 +169,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * false, behavior uses cuboid selection the same as {@link #receivers(int, int)} If byDistance is
 +     * true, radius is tested by distance in a spherical shape
 +     *
-+     * @param radius amount to add on each axis
++     * @param radius     amount to add on each axis
 +     * @param byDistance true to use a spherical radius, false to use a cuboid
 +     * @return a reference to this object.
 +     */
-+    @NotNull
-+    public ParticleBuilder receivers(int radius, boolean byDistance) {
++    public ParticleBuilder receivers(final int radius, final boolean byDistance) {
 +        if (!byDistance) {
-+            return receivers(radius, radius, radius);
++            return this.receivers(radius, radius, radius);
 +        } else {
++            if (this.location == null) {
++                throw new IllegalStateException("Please set location first");
++            }
 +            this.receivers = Lists.newArrayList();
-+            for (Player nearbyPlayer : location.getWorld()
-+                .getNearbyPlayers(location, radius, radius, radius)) {
-+                Location loc = nearbyPlayer.getLocation();
-+                double x = NumberConversions.square(location.getX() - loc.getX());
-+                double y = NumberConversions.square(location.getY() - loc.getY());
-+                double z = NumberConversions.square(location.getZ() - loc.getZ());
++            for (final Player nearbyPlayer : this.location.getWorld()
++                .getNearbyPlayers(this.location, radius, radius, radius)) {
++                final Location loc = nearbyPlayer.getLocation();
++                final double x = NumberConversions.square(this.location.getX() - loc.getX());
++                final double y = NumberConversions.square(this.location.getY() - loc.getY());
++                final double z = NumberConversions.square(this.location.getZ() - loc.getZ());
 +                if (Math.sqrt(x + y + z) > radius) {
 +                    continue;
 +                }
@@ -210,12 +203,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * see {@link #receivers(int, boolean)}
 +     *
 +     * @param xzRadius amount to add on the x/z axis
-+     * @param yRadius amount to add on the y axis
++     * @param yRadius  amount to add on the y axis
 +     * @return a reference to this object.
 +     */
-+    @NotNull
-+    public ParticleBuilder receivers(int xzRadius, int yRadius) {
-+        return receivers(xzRadius, yRadius, xzRadius);
++    public ParticleBuilder receivers(final int xzRadius, final int yRadius) {
++        return this.receivers(xzRadius, yRadius, xzRadius);
 +    }
 +
 +    /**
@@ -223,25 +215,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * false, behavior uses cuboid selection the same as {@link #receivers(int, int)} If byDistance is
 +     * true, radius is tested by distance on the y plane and on the x/z plane, in a cylinder shape.
 +     *
-+     * @param xzRadius amount to add on the x/z axis
-+     * @param yRadius amount to add on the y axis
++     * @param xzRadius   amount to add on the x/z axis
++     * @param yRadius    amount to add on the y axis
 +     * @param byDistance true to use a cylinder shape, false to use cuboid
 +     * @return a reference to this object.
++     * @throws IllegalStateException if a location hasn't been specified yet
 +     */
-+    @NotNull
-+    public ParticleBuilder receivers(int xzRadius, int yRadius, boolean byDistance) {
++    public ParticleBuilder receivers(final int xzRadius, final int yRadius, final boolean byDistance) {
 +        if (!byDistance) {
-+            return receivers(xzRadius, yRadius, xzRadius);
++            return this.receivers(xzRadius, yRadius, xzRadius);
 +        } else {
++            if (this.location == null) {
++                throw new IllegalStateException("Please set location first");
++            }
 +            this.receivers = Lists.newArrayList();
-+            for (Player nearbyPlayer : location.getWorld()
-+                .getNearbyPlayers(location, xzRadius, yRadius, xzRadius)) {
-+                Location loc = nearbyPlayer.getLocation();
++            for (final Player nearbyPlayer : this.location.getWorld()
++                .getNearbyPlayers(this.location, xzRadius, yRadius, xzRadius)) {
++                final Location loc = nearbyPlayer.getLocation();
 +                if (Math.abs(loc.getY() - this.location.getY()) > yRadius) {
 +                    continue;
 +                }
-+                double x = NumberConversions.square(location.getX() - loc.getX());
-+                double z = NumberConversions.square(location.getZ() - loc.getZ());
++                final double x = NumberConversions.square(this.location.getX() - loc.getX());
++                final double z = NumberConversions.square(this.location.getZ() - loc.getZ());
 +                if (x + z > NumberConversions.square(xzRadius)) {
 +                    continue;
 +                }
@@ -261,20 +256,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param zRadius amount to add on the z axis
 +     * @return a reference to this object.
 +     */
-+    @NotNull
-+    public ParticleBuilder receivers(int xRadius, int yRadius, int zRadius) {
-+        if (location == null) {
++    public ParticleBuilder receivers(final int xRadius, final int yRadius, final int zRadius) {
++        if (this.location == null) {
 +            throw new IllegalStateException("Please set location first");
 +        }
-+        return receivers(location.getWorld().getNearbyPlayers(location, xRadius, yRadius, zRadius));
++        return this.receivers(this.location.getWorld().getNearbyPlayers(this.location, xRadius, yRadius, zRadius));
 +    }
 +
 +    /**
 +     * @return The player considered the source of this particle (for Visibility concerns), or null
 +     */
-+    @Nullable
-+    public Player source() {
-+        return source;
++    public @Nullable Player source() {
++        return this.source;
 +    }
 +
 +    /**
@@ -283,8 +276,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param source The player who is considered the source
 +     * @return a reference to this object.
 +     */
-+    @NotNull
-+    public ParticleBuilder source(@Nullable Player source) {
++    public ParticleBuilder source(final @Nullable Player source) {
 +        this.source = source;
 +        return this;
 +    }
@@ -292,9 +284,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    /**
 +     * @return Location of where the particle will spawn
 +     */
-+    @Nullable
-+    public Location location() {
-+        return location;
++    public @Nullable Location location() {
++        return this.location;
 +    }
 +
 +    /**
@@ -303,8 +294,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param location The location of the particle
 +     * @return a reference to this object.
 +     */
-+    @NotNull
-+    public ParticleBuilder location(@NotNull Location location) {
++    public ParticleBuilder location(final Location location) {
 +        this.location = location.clone();
 +        return this;
 +    }
@@ -313,13 +303,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * Sets the location of where to spawn the particle
 +     *
 +     * @param world World to spawn particle in
-+     * @param x X location
-+     * @param y Y location
-+     * @param z Z location
++     * @param x     X location
++     * @param y     Y location
++     * @param z     Z location
 +     * @return a reference to this object.
 +     */
-+    @NotNull
-+    public ParticleBuilder location(@NotNull World world, double x, double y, double z) {
++    public ParticleBuilder location(final World world, final double x, final double y, final double z) {
 +        this.location = new Location(world, x, y, z);
 +        return this;
 +    }
@@ -328,7 +317,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @return Number of particles to spawn
 +     */
 +    public int count() {
-+        return count;
++        return this.count;
 +    }
 +
 +    /**
@@ -337,8 +326,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param count Number of particles
 +     * @return a reference to this object.
 +     */
-+    @NotNull
-+    public ParticleBuilder count(int count) {
++    public ParticleBuilder count(final int count) {
 +        this.count = count;
 +        return this;
 +    }
@@ -349,7 +337,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @return Particle offset X.
 +     */
 +    public double offsetX() {
-+        return offsetX;
++        return this.offsetX;
 +    }
 +
 +    /**
@@ -358,7 +346,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @return Particle offset Y.
 +     */
 +    public double offsetY() {
-+        return offsetY;
++        return this.offsetY;
 +    }
 +
 +    /**
@@ -367,7 +355,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @return Particle offset Z.
 +     */
 +    public double offsetZ() {
-+        return offsetZ;
++        return this.offsetZ;
 +    }
 +
 +    /**
@@ -378,8 +366,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param offsetZ Particle offset Z
 +     * @return a reference to this object.
 +     */
-+    @NotNull
-+    public ParticleBuilder offset(double offsetX, double offsetY, double offsetZ) {
++    public ParticleBuilder offset(final double offsetX, final double offsetY, final double offsetZ) {
 +        this.offsetX = offsetX;
 +        this.offsetY = offsetY;
 +        this.offsetZ = offsetZ;
@@ -392,7 +379,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @return the extra particle data
 +     */
 +    public double extra() {
-+        return extra;
++        return this.extra;
 +    }
 +
 +    /**
@@ -401,8 +388,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param extra the extra particle data
 +     * @return a reference to this object.
 +     */
-+    @NotNull
-+    public ParticleBuilder extra(double extra) {
++    public ParticleBuilder extra(final double extra) {
 +        this.extra = extra;
 +        return this;
 +    }
@@ -413,21 +399,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param <T> The Particle data type
 +     * @return the ParticleData for this particle
 +     */
-+    @Nullable
-+    public <T> T data() {
++    public @Nullable <T> T data() {
 +        //noinspection unchecked
-+        return (T) data;
++        return (T) this.data;
 +    }
 +
 +    /**
 +     * Sets the particle custom data. Varies by particle on how this is used
 +     *
 +     * @param data The new particle data
-+     * @param <T> The Particle data type
++     * @param <T>  The Particle data type
 +     * @return a reference to this object.
 +     */
-+    @NotNull
-+    public <T> ParticleBuilder data(@Nullable T data) {
++    public <T> ParticleBuilder data(final @Nullable T data) {
 +        this.data = data;
 +        return this;
 +    }
@@ -436,7 +420,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @return whether the particle is forcefully shown to players.
 +     */
 +    public boolean force() {
-+        return force;
++        return this.force;
 +    }
 +
 +    /**
@@ -447,8 +431,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param force true to force, false for normal
 +     * @return a reference to this object.
 +     */
-+    @NotNull
-+    public ParticleBuilder force(boolean force) {
++    public ParticleBuilder force(final boolean force) {
 +        this.force = force;
 +        return this;
 +    }
@@ -460,12 +443,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param color the new particle color
 +     * @return a reference to this object.
 +     */
-+    @NotNull
-+    public ParticleBuilder color(@Nullable Color color) {
-+        if (particle.getDataType() == Color.class) {
-+            return data(color);
++    public ParticleBuilder color(final @Nullable Color color) {
++        if (this.particle.getDataType() == Color.class) {
++            return this.data(color);
 +        }
-+        return color(color, 1);
++        return this.color(color, 1);
 +    }
 +
 +    /**
@@ -473,25 +455,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * Only valid for particles with a data type of {@link Particle.DustOptions}.
 +     *
 +     * @param color the new particle color
-+     * @param size the size of the particle
++     * @param size  the size of the particle
 +     * @return a reference to this object.
 +     */
-+    @NotNull
-+    public ParticleBuilder color(@Nullable Color color, float size) {
-+        if (particle.getDataType() != Particle.DustOptions.class && color != null) {
++    public ParticleBuilder color(final @Nullable Color color, final float size) {
++        if (this.particle.getDataType() != Particle.DustOptions.class && color != null) {
 +            throw new IllegalStateException("The combination of Color and size cannot be set on this particle type.");
 +        }
 +
 +        // We don't officially support reusing these objects, but here we go
 +        if (color == null) {
-+            if (data instanceof Particle.DustOptions) {
-+                return data(null);
++            if (this.data instanceof Particle.DustOptions) {
++                return this.data(null);
 +            } else {
 +                return this;
 +            }
 +        }
 +
-+        return data(new Particle.DustOptions(color, size));
++        return this.data(new Particle.DustOptions(color, size));
 +    }
 +
 +    /**
@@ -503,9 +484,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param b blue color component
 +     * @return a reference to this object.
 +     */
-+    @NotNull
-+    public ParticleBuilder color(int r, int g, int b) {
-+        return color(Color.fromRGB(r, g, b));
++    public ParticleBuilder color(final int r, final int g, final int b) {
++        return this.color(Color.fromRGB(r, g, b));
 +    }
 +
 +    /**
@@ -519,13 +499,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     *              the color is treated as RGB. Otherwise, it is treated as ARGB.
 +     * @return a reference to this object.
 +     */
-+    @NotNull
 +    public ParticleBuilder color(final int color) {
-+        int alpha = (color >> 24) & 0xFF;
++        final int alpha = (color >> 24) & 0xFF;
 +        if (alpha == 0) {
-+            return color(Color.fromRGB(color));
++            return this.color(Color.fromRGB(color));
 +        }
-+        return color(Color.fromARGB(color));
++        return this.color(Color.fromARGB(color));
 +    }
 +
 +    /**
@@ -538,9 +517,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param b blue color component
 +     * @return a reference to this object.
 +     */
-+    @NotNull
 +    public ParticleBuilder color(final int a, final int r, final int g, final int b) {
-+        return color(Color.fromARGB(a, r, g, b));
++        return this.color(Color.fromARGB(a, r, g, b));
 +    }
 +
 +    /**
@@ -548,69 +526,64 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * Only valid for {@link Particle#DUST_COLOR_TRANSITION}.
 +     *
 +     * @param fromColor the new particle from color
-+     * @param toColor the new particle to color
++     * @param toColor   the new particle to color
 +     * @return a reference to this object.
 +     * @throws IllegalArgumentException if the particle builder's {@link #particle()} isn't {@link Particle#DUST_COLOR_TRANSITION}.
 +     */
-+    @NotNull
-+    public ParticleBuilder colorTransition(@NotNull final Color fromColor, @NotNull final Color toColor) {
-+        return colorTransition(fromColor, toColor, 1);
++    public ParticleBuilder colorTransition(final Color fromColor, final Color toColor) {
++        return this.colorTransition(fromColor, toColor, 1);
 +    }
 +
 +    /**
 +     * Sets the particle Color Transition.
 +     * Only valid for {@link Particle#DUST_COLOR_TRANSITION}.
 +     *
-+     * @param fromRed red color component for the from color
-+     * @param fromGreen green color component for the from color
-+     * @param fromBlue blue color component for the from color
-+     * @param toRed red color component for the to color
-+     * @param toGreen green color component for the to color
-+     * @param toBlue blue color component for the to color
++     * @param fromRed   red color component for the "from" color
++     * @param fromGreen green color component for the "from" color
++     * @param fromBlue  blue color component for the "from" color
++     * @param toRed     red color component for the to color
++     * @param toGreen   green color component for the to color
++     * @param toBlue    blue color component for the to color
 +     * @return a reference to this object.
 +     * @throws IllegalArgumentException if the particle builder's {@link #particle()} isn't {@link Particle#DUST_COLOR_TRANSITION}.
 +     */
-+    @NotNull
-+    public ParticleBuilder colorTransition(final int fromRed, final int fromGreen, final int fromBlue,
-+                                           final int toRed, final int toGreen, final int toBlue) {
-+        return colorTransition(Color.fromRGB(fromRed, fromGreen, fromBlue), Color.fromRGB(toRed, toGreen, toBlue));
++    public ParticleBuilder colorTransition(
++        final int fromRed, final int fromGreen, final int fromBlue,
++        final int toRed, final int toGreen, final int toBlue
++    ) {
++        return this.colorTransition(Color.fromRGB(fromRed, fromGreen, fromBlue), Color.fromRGB(toRed, toGreen, toBlue));
 +    }
 +
 +    /**
 +     * Sets the particle Color Transition.
 +     * Only valid for {@link Particle#DUST_COLOR_TRANSITION}.
 +     *
-+     * @param fromRgb an integer representing the red, green, and blue color components for the from color
-+     * @param toRgb   an integer representing the red, green, and blue color components for the to color
++     * @param fromRgb an integer representing the red, green, and blue color components for the "from" color
++     * @param toRgb   an integer representing the red, green, and blue color components for the "to" color
 +     * @return a reference to this object.
 +     * @throws IllegalArgumentException if the particle builder's {@link #particle()} isn't {@link Particle#DUST_COLOR_TRANSITION}.
 +     */
-+    @NotNull
 +    public ParticleBuilder colorTransition(final int fromRgb, final int toRgb) {
-+        return colorTransition(Color.fromRGB(fromRgb), Color.fromRGB(toRgb));
++        return this.colorTransition(Color.fromRGB(fromRgb), Color.fromRGB(toRgb));
 +    }
 +
 +    /**
 +     * Sets the particle Color Transition and size.
 +     * Only valid for {@link Particle#DUST_COLOR_TRANSITION}.
 +     *
-+     * @param fromColor the new particle color for the from color.
-+     * @param toColor the new particle color for the to color.
-+     * @param size the size of the particle
++     * @param fromColor the new particle color for the "from" color.
++     * @param toColor   the new particle color for the "to" color.
++     * @param size      the size of the particle
 +     * @return a reference to this object.
 +     * @throws IllegalArgumentException if the particle builder's {@link #particle()} isn't {@link Particle#DUST_COLOR_TRANSITION}.
 +     */
-+    @NotNull
-+    public ParticleBuilder colorTransition(@NotNull final Color fromColor,
-+                                           @NotNull final Color toColor,
-+                                           final float size) {
++    public ParticleBuilder colorTransition(final Color fromColor, final Color toColor, final float size) {
 +        Preconditions.checkArgument(fromColor != null, "Cannot define color transition with null fromColor.");
 +        Preconditions.checkArgument(toColor != null, "Cannot define color transition with null toColor.");
 +        Preconditions.checkArgument(this.particle() == Particle.DUST_COLOR_TRANSITION, "Can only define a color transition on particle DUST_COLOR_TRANSITION.");
-+        return data(new Particle.DustTransition(fromColor, toColor, size));
++        return this.data(new Particle.DustTransition(fromColor, toColor, size));
 +    }
 +
-+    @NotNull
 +    @Override
 +    public ParticleBuilder clone() {
 +        try {
