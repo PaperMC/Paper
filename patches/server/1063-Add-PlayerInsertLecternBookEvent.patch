@@ -5,22 +5,29 @@ Subject: [PATCH] Add PlayerInsertLecternBookEvent
 
 
 diff --git a/src/main/java/net/minecraft/world/level/block/LecternBlock.java b/src/main/java/net/minecraft/world/level/block/LecternBlock.java
-index ebb79907391fe3128d3d16fbe9d8cb0b22bcc9f7..6a72fe2fb2a65cb9a5b447eb7156a0b8b061e4e2 100644
+index ebb79907391fe3128d3d16fbe9d8cb0b22bcc9f7..f2a8540857dff99e6de625507d03913c924730e4 100644
 --- a/src/main/java/net/minecraft/world/level/block/LecternBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/LecternBlock.java
-@@ -157,6 +157,15 @@ public class LecternBlock extends BaseEntityBlock {
+@@ -157,7 +157,21 @@ public class LecternBlock extends BaseEntityBlock {
          BlockEntity tileentity = world.getBlockEntity(pos);
  
          if (tileentity instanceof LecternBlockEntity tileentitylectern) {
+-            tileentitylectern.setBook(stack.consumeAndReturn(1, user));
 +            // Paper start - Add PlayerInsertLecternBookEvent
++            ItemStack eventSourcedBookStack = null;
 +            if (user instanceof final net.minecraft.server.level.ServerPlayer serverPlayer) {
 +                final io.papermc.paper.event.player.PlayerInsertLecternBookEvent event = new io.papermc.paper.event.player.PlayerInsertLecternBookEvent(
-+                    serverPlayer.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(stack)
++                    serverPlayer.getBukkitEntity(),
++                    org.bukkit.craftbukkit.block.CraftBlock.at(world, pos),
++                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(stack.copyWithCount(1))
 +                );
 +                if (!event.callEvent()) return;
-+                stack = org.bukkit.craftbukkit.inventory.CraftItemStack.unwrap(event.getBook());
++                eventSourcedBookStack = org.bukkit.craftbukkit.inventory.CraftItemStack.unwrap(event.getBook());
 +            }
++            final ItemStack originalBookStack = stack.consumeAndReturn(1, user);
++            if (eventSourcedBookStack == null) eventSourcedBookStack = originalBookStack;
++            tileentitylectern.setBook(eventSourcedBookStack);
 +            // Paper end - Add PlayerInsertLecternBookEvent
-             tileentitylectern.setBook(stack.consumeAndReturn(1, user));
              LecternBlock.resetBookState(user, world, pos, state, true);
              world.playSound((Player) null, pos, SoundEvents.BOOK_PUT, SoundSource.BLOCKS, 1.0F, 1.0F);
+         }
