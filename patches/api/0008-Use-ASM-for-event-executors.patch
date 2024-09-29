@@ -6,7 +6,7 @@ Subject: [PATCH] Use ASM for event executors.
 Uses method handles for private or static methods.
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index af3514113abdf3f42c41f1e7ff0f930cc1a417f5..ed0b67ac322aa22b191cd35502ae5b4f20af19f8 100644
+index 74f0e2b812c1e2e922b136fefe505fc8cbe33e83..1f627e81622e77b81b1228a467fbb9e6fd979e7a 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -47,6 +47,9 @@ dependencies {
@@ -21,127 +21,138 @@ index af3514113abdf3f42c41f1e7ff0f930cc1a417f5..ed0b67ac322aa22b191cd35502ae5b4f
      compileOnly("org.apache.maven:maven-resolver-provider:3.9.6")
 diff --git a/src/main/java/com/destroystokyo/paper/event/executor/MethodHandleEventExecutor.java b/src/main/java/com/destroystokyo/paper/event/executor/MethodHandleEventExecutor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5b28e9b1daba7834af67dbc193dd656bedd9a994
+index 0000000000000000000000000000000000000000..5a702481d28d90cb503faad0d9b9c3231bbff940
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/executor/MethodHandleEventExecutor.java
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,46 @@
 +package com.destroystokyo.paper.event.executor;
 +
++import com.destroystokyo.paper.util.SneakyThrow;
 +import java.lang.invoke.MethodHandle;
 +import java.lang.invoke.MethodHandles;
 +import java.lang.reflect.Method;
-+
-+import com.destroystokyo.paper.util.SneakyThrow;
 +import org.bukkit.event.Event;
 +import org.bukkit.event.EventException;
 +import org.bukkit.event.Listener;
 +import org.bukkit.plugin.EventExecutor;
-+import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
++@ApiStatus.Internal
++@NullMarked
 +public class MethodHandleEventExecutor implements EventExecutor {
++
 +    private final Class<? extends Event> eventClass;
 +    private final MethodHandle handle;
 +
-+    public MethodHandleEventExecutor(@NotNull Class<? extends Event> eventClass, @NotNull MethodHandle handle) {
++    public MethodHandleEventExecutor(final Class<? extends Event> eventClass, final MethodHandle handle) {
 +        this.eventClass = eventClass;
 +        this.handle = handle;
 +    }
 +
-+    public MethodHandleEventExecutor(@NotNull Class<? extends Event> eventClass, @NotNull Method m) {
++    public MethodHandleEventExecutor(final Class<? extends Event> eventClass, final Method m) {
 +        this.eventClass = eventClass;
 +        try {
 +            m.setAccessible(true);
 +            this.handle = MethodHandles.lookup().unreflect(m);
-+        } catch (IllegalAccessException e) {
++        } catch (final IllegalAccessException e) {
 +            throw new AssertionError("Unable to set accessible", e);
 +        }
 +    }
 +
 +    @Override
-+    public void execute(@NotNull Listener listener, @NotNull Event event) throws EventException {
-+        if (!eventClass.isInstance(event)) return;
++    public void execute(final Listener listener, final Event event) throws EventException {
++        if (!this.eventClass.isInstance(event)) return;
 +        try {
-+            handle.invoke(listener, event);
-+        } catch (Throwable t) {
++            this.handle.invoke(listener, event);
++        } catch (final Throwable t) {
 +            SneakyThrow.sneaky(t);
 +        }
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/event/executor/StaticMethodHandleEventExecutor.java b/src/main/java/com/destroystokyo/paper/event/executor/StaticMethodHandleEventExecutor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..827f2b27f70a7ec0bc11d039305c3e58c02a4ef4
+index 0000000000000000000000000000000000000000..bbdb5b472df116b71c459bdc6cc4b74267ea0f5e
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/executor/StaticMethodHandleEventExecutor.java
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,44 @@
 +package com.destroystokyo.paper.event.executor;
 +
++import com.destroystokyo.paper.util.SneakyThrow;
++import com.google.common.base.Preconditions;
 +import java.lang.invoke.MethodHandle;
 +import java.lang.invoke.MethodHandles;
 +import java.lang.reflect.Method;
 +import java.lang.reflect.Modifier;
-+
-+import com.destroystokyo.paper.util.SneakyThrow;
-+import com.google.common.base.Preconditions;
-+
 +import org.bukkit.event.Event;
 +import org.bukkit.event.EventException;
 +import org.bukkit.event.Listener;
 +import org.bukkit.plugin.EventExecutor;
-+import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
++@ApiStatus.Internal
++@NullMarked
 +public class StaticMethodHandleEventExecutor implements EventExecutor {
++
 +    private final Class<? extends Event> eventClass;
 +    private final MethodHandle handle;
 +
-+    public StaticMethodHandleEventExecutor(@NotNull Class<? extends Event> eventClass, @NotNull Method m) {
++    public StaticMethodHandleEventExecutor(final Class<? extends Event> eventClass, final Method m) {
 +        Preconditions.checkArgument(Modifier.isStatic(m.getModifiers()), "Not a static method: %s", m);
 +        Preconditions.checkArgument(eventClass != null, "eventClass is null");
 +        this.eventClass = eventClass;
 +        try {
 +            m.setAccessible(true);
 +            this.handle = MethodHandles.lookup().unreflect(m);
-+        } catch (IllegalAccessException e) {
++        } catch (final IllegalAccessException e) {
 +            throw new AssertionError("Unable to set accessible", e);
 +        }
 +    }
 +
 +    @Override
-+    public void execute(@NotNull Listener listener, @NotNull Event event) throws EventException {
-+        if (!eventClass.isInstance(event)) return;
++    public void execute(final Listener listener, final Event event) throws EventException {
++        if (!this.eventClass.isInstance(event)) return;
 +        try {
-+            handle.invoke(event);
-+        } catch (Throwable throwable) {
++            this.handle.invoke(event);
++        } catch (final Throwable throwable) {
 +            SneakyThrow.sneaky(throwable);
 +        }
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/event/executor/asm/ASMEventExecutorGenerator.java b/src/main/java/com/destroystokyo/paper/event/executor/asm/ASMEventExecutorGenerator.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..084c31af1a7ba32bb4c3dc8f16f67fd09ce0b6a4
+index 0000000000000000000000000000000000000000..abfcb6e8383ff311940d82afe4ff990649a082dc
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/executor/asm/ASMEventExecutorGenerator.java
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,59 @@
 +package com.destroystokyo.paper.event.executor.asm;
 +
 +import java.lang.reflect.Method;
 +import java.util.concurrent.atomic.AtomicInteger;
-+
 +import org.bukkit.plugin.EventExecutor;
-+import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +import org.objectweb.asm.ClassWriter;
 +import org.objectweb.asm.Type;
 +import org.objectweb.asm.commons.GeneratorAdapter;
 +
-+import static org.objectweb.asm.Opcodes.*;
++import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
++import static org.objectweb.asm.Opcodes.INVOKEINTERFACE;
++import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
++import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
++import static org.objectweb.asm.Opcodes.V1_8;
 +
-+public class ASMEventExecutorGenerator {
++@ApiStatus.Internal
++@NullMarked
++public final class ASMEventExecutorGenerator {
 +
 +    private static final String EXECUTE_DESCRIPTOR = "(Lorg/bukkit/event/Listener;Lorg/bukkit/event/Event;)V";
 +
-+    @NotNull
-+    public static byte[] generateEventExecutor(@NotNull Method m, @NotNull String name) {
-+        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
-+        writer.visit(V1_8, ACC_PUBLIC, name.replace('.', '/'), null, Type.getInternalName(Object.class), new String[] {Type.getInternalName(EventExecutor.class)});
++    public static byte[] generateEventExecutor(final Method m, final String name) {
++        final ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
++        writer.visit(V1_8, ACC_PUBLIC, name.replace('.', '/'), null, Type.getInternalName(Object.class), new String[]{Type.getInternalName(EventExecutor.class)});
 +        // Generate constructor
 +        GeneratorAdapter methodGenerator = new GeneratorAdapter(writer.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null), ACC_PUBLIC, "<init>", "()V");
 +        methodGenerator.loadThis();
@@ -169,22 +180,25 @@ index 0000000000000000000000000000000000000000..084c31af1a7ba32bb4c3dc8f16f67fd0
 +    }
 +
 +    public static AtomicInteger NEXT_ID = new AtomicInteger(1);
-+    @NotNull
++
 +    public static String generateName() {
-+        int id = NEXT_ID.getAndIncrement();
++        final int id = NEXT_ID.getAndIncrement();
 +        return "com.destroystokyo.paper.event.executor.asm.generated.GeneratedEventExecutor" + id;
 +    }
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/event/executor/asm/ClassDefiner.java b/src/main/java/com/destroystokyo/paper/event/executor/asm/ClassDefiner.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f79685b48bb581277a6891927988b6f7a4389dc4
+index 0000000000000000000000000000000000000000..581561fbd32c81ab1774ba8f0b7f3cec9392d99a
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/executor/asm/ClassDefiner.java
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,35 @@
 +package com.destroystokyo.paper.event.executor.asm;
 +
-+import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
++@ApiStatus.Internal
++@NullMarked
 +public interface ClassDefiner {
 +
 +    /**
@@ -192,7 +206,7 @@ index 0000000000000000000000000000000000000000..f79685b48bb581277a6891927988b6f7
 +     *
 +     * @return if classes bypass access checks
 +     */
-+    public default boolean isBypassAccessChecks() {
++    default boolean isBypassAccessChecks() {
 +        return false;
 +    }
 +
@@ -206,79 +220,79 @@ index 0000000000000000000000000000000000000000..f79685b48bb581277a6891927988b6f7
 +     * @throws ClassFormatError     if the class data is invalid
 +     * @throws NullPointerException if any of the arguments are null
 +     */
-+    @NotNull
-+    public Class<?> defineClass(@NotNull ClassLoader parentLoader, @NotNull String name, @NotNull byte[] data);
++    Class<?> defineClass(ClassLoader parentLoader, String name, byte[] data);
 +
-+    @NotNull
-+    public static ClassDefiner getInstance() {
++    static ClassDefiner getInstance() {
 +        return SafeClassDefiner.INSTANCE;
 +    }
 +
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/event/executor/asm/SafeClassDefiner.java b/src/main/java/com/destroystokyo/paper/event/executor/asm/SafeClassDefiner.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..abcc966d8ee01d73c1d1480237ab46fa0ab55fdc
+index 0000000000000000000000000000000000000000..48bcc72293c2a31b6e2dd2dcd6a79d618c72a137
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/executor/asm/SafeClassDefiner.java
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,66 @@
 +package com.destroystokyo.paper.event.executor.asm;
 +
-+import java.util.concurrent.ConcurrentMap;
-+
 +import com.google.common.base.Preconditions;
-+
 +import com.google.common.collect.MapMaker;
-+import org.jetbrains.annotations.NotNull;
++import java.util.concurrent.ConcurrentMap;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
++@ApiStatus.Internal
++@NullMarked
 +public class SafeClassDefiner implements ClassDefiner {
++
 +    /* default */ static final SafeClassDefiner INSTANCE = new SafeClassDefiner();
 +
-+    private SafeClassDefiner() {}
++    private SafeClassDefiner() {
++    }
 +
 +    private final ConcurrentMap<ClassLoader, GeneratedClassLoader> loaders = new MapMaker().weakKeys().makeMap();
 +
-+    @NotNull
 +    @Override
-+    public Class<?> defineClass(@NotNull ClassLoader parentLoader, @NotNull String name, @NotNull byte[] data) {
-+        GeneratedClassLoader loader = loaders.computeIfAbsent(parentLoader, GeneratedClassLoader::new);
++    public Class<?> defineClass(final ClassLoader parentLoader, final String name, final byte[] data) {
++        final GeneratedClassLoader loader = this.loaders.computeIfAbsent(parentLoader, GeneratedClassLoader::new);
 +        synchronized (loader.getClassLoadingLock(name)) {
 +            Preconditions.checkState(!loader.hasClass(name), "%s already defined", name);
-+            Class<?> c = loader.define(name, data);
++            final Class<?> c = loader.define(name, data);
 +            assert c.getName().equals(name);
 +            return c;
 +        }
 +    }
 +
 +    private static class GeneratedClassLoader extends ClassLoader {
++
 +        static {
 +            ClassLoader.registerAsParallelCapable();
 +        }
 +
-+        protected GeneratedClassLoader(@NotNull ClassLoader parent) {
++        protected GeneratedClassLoader(final ClassLoader parent) {
 +            super(parent);
 +        }
 +
-+        private Class<?> define(@NotNull String name, byte[] data) {
-+            synchronized (getClassLoadingLock(name)) {
-+                assert !hasClass(name);
-+                Class<?> c = defineClass(name, data, 0, data.length);
-+                resolveClass(c);
++        private Class<?> define(final String name, final byte[] data) {
++            synchronized (this.getClassLoadingLock(name)) {
++                assert !this.hasClass(name);
++                final Class<?> c = this.defineClass(name, data, 0, data.length);
++                this.resolveClass(c);
 +                return c;
 +            }
 +        }
 +
 +        @Override
-+        @NotNull
-+        public Object getClassLoadingLock(@NotNull String name) {
++        public Object getClassLoadingLock(final String name) {
 +            return super.getClassLoadingLock(name);
 +        }
 +
-+        public boolean hasClass(@NotNull String name) {
-+            synchronized (getClassLoadingLock(name)) {
++        public boolean hasClass(final String name) {
++            synchronized (this.getClassLoadingLock(name)) {
 +                try {
 +                    Class.forName(name);
 +                    return true;
-+                } catch (ClassNotFoundException e) {
++                } catch (final ClassNotFoundException e) {
 +                    return false;
 +                }
 +            }

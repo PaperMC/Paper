@@ -7,10 +7,10 @@ Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/src/main/java/io/papermc/paper/event/world/StructuresLocateEvent.java b/src/main/java/io/papermc/paper/event/world/StructuresLocateEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..41ea65c9ecf6339bb50864a6d28e53c7e8d1edf7
+index 0000000000000000000000000000000000000000..d39b3dc48079fc83f1fd8e7ecde0d4ae77b635ce
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/world/StructuresLocateEvent.java
-@@ -0,0 +1,176 @@
+@@ -0,0 +1,177 @@
 +package io.papermc.paper.event.world;
 +
 +import io.papermc.paper.math.Position;
@@ -24,9 +24,9 @@ index 0000000000000000000000000000000000000000..41ea65c9ecf6339bb50864a6d28e53c7
 +import org.bukkit.generator.structure.Structure;
 +import org.bukkit.generator.structure.StructureType;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
 +import org.jetbrains.annotations.UnmodifiableView;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
 +/**
 + * Called <b>before</b> a set of configured structures is located.
@@ -41,12 +41,13 @@ index 0000000000000000000000000000000000000000..41ea65c9ecf6339bb50864a6d28e53c7
 + *     <li>{@link World#locateNearestStructure(Location, Structure, int, boolean)} is invoked.</li>
 + * </ul>
 + */
++@NullMarked
 +public class StructuresLocateEvent extends WorldEvent implements Cancellable {
 +
 +    private static final HandlerList HANDLER_LIST = new HandlerList();
 +
 +    private final Location origin;
-+    private Result result;
++    private @Nullable Result result;
 +    private List<Structure> structures;
 +    private int radius;
 +    private boolean findUnexplored;
@@ -54,7 +55,7 @@ index 0000000000000000000000000000000000000000..41ea65c9ecf6339bb50864a6d28e53c7
 +    private boolean cancelled;
 +
 +    @ApiStatus.Internal
-+    public StructuresLocateEvent(@NotNull World world, @NotNull Location origin, @NotNull List<Structure> structures, int radius, boolean findUnexplored) {
++    public StructuresLocateEvent(final World world, final Location origin, final List<Structure> structures, final int radius, final boolean findUnexplored) {
 +        super(world);
 +        this.origin = origin;
 +        this.structures = structures;
@@ -67,7 +68,7 @@ index 0000000000000000000000000000000000000000..41ea65c9ecf6339bb50864a6d28e53c7
 +     *
 +     * @return {@link Location} where search begins
 +     */
-+    public @NotNull Location getOrigin() {
++    public Location getOrigin() {
 +        return this.origin.clone();
 +    }
 +
@@ -90,7 +91,7 @@ index 0000000000000000000000000000000000000000..41ea65c9ecf6339bb50864a6d28e53c7
 +     *
 +     * @param result the {@link Location} and {@link Structure} of the search.
 +     */
-+    public void setResult(@Nullable Result result) {
++    public void setResult(final @Nullable Result result) {
 +        this.result = result;
 +    }
 +
@@ -99,7 +100,7 @@ index 0000000000000000000000000000000000000000..41ea65c9ecf6339bb50864a6d28e53c7
 +     *
 +     * @return an unmodifiable list of Structures
 +     */
-+    public @NotNull @UnmodifiableView List<Structure> getStructures() {
++    public @UnmodifiableView List<Structure> getStructures() {
 +        return Collections.unmodifiableList(this.structures);
 +    }
 +
@@ -108,7 +109,7 @@ index 0000000000000000000000000000000000000000..41ea65c9ecf6339bb50864a6d28e53c7
 +     *
 +     * @param structures a list of Structures targets
 +     */
-+    public void setStructures(final @NotNull List<Structure> structures) {
++    public void setStructures(final List<Structure> structures) {
 +        this.structures = structures;
 +    }
 +
@@ -130,7 +131,7 @@ index 0000000000000000000000000000000000000000..41ea65c9ecf6339bb50864a6d28e53c7
 +     *
 +     * @param radius the search radius (in chunks)
 +     */
-+    public void setRadius(int radius) {
++    public void setRadius(final int radius) {
 +        this.radius = radius;
 +    }
 +
@@ -152,7 +153,7 @@ index 0000000000000000000000000000000000000000..41ea65c9ecf6339bb50864a6d28e53c7
 +     *
 +     * @param findUnexplored Whether to search for only unexplored structures.
 +     */
-+    public void setFindUnexplored(boolean findUnexplored) {
++    public void setFindUnexplored(final boolean findUnexplored) {
 +        this.findUnexplored = findUnexplored;
 +    }
 +
@@ -162,26 +163,26 @@ index 0000000000000000000000000000000000000000..41ea65c9ecf6339bb50864a6d28e53c7
 +    }
 +
 +    @Override
-+    public void setCancelled(boolean cancel) {
++    public void setCancelled(final boolean cancel) {
 +        this.cancelled = cancel;
 +    }
 +
 +    @Override
-+    public @NotNull HandlerList getHandlers() {
++    public HandlerList getHandlers() {
 +        return HANDLER_LIST;
 +    }
 +
-+    public static @NotNull HandlerList getHandlerList() {
++    public static HandlerList getHandlerList() {
 +        return HANDLER_LIST;
 +    }
 +
 +    /**
 +     * Result for {@link StructuresLocateEvent}.
 +     */
-+    public record Result(@NotNull Position pos, @NotNull Structure structure) {
++    public record Result(Position pos, Structure structure) {
 +
 +        @Deprecated(forRemoval = true)
-+        public @NotNull Location position() {
++        public Location position() {
 +            //noinspection DataFlowIssue
 +            return this.pos.toLocation(null);
 +        }

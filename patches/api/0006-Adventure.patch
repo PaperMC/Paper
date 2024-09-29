@@ -8,7 +8,7 @@ Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 Co-authored-by: Yannick Lamprecht <yannicklamprecht@live.de>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 7470f18dc36c5e4357ce3bb936c4842066df9114..7624069435a9be6c4249a444db0bf1bf54691caa 100644
+index 3383fb91249ea53740326b538abd905f84ff0e3c..74f0e2b812c1e2e922b136fefe505fc8cbe33e83 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -11,12 +11,28 @@ java {
@@ -55,7 +55,7 @@ index 7470f18dc36c5e4357ce3bb936c4842066df9114..7624069435a9be6c4249a444db0bf1bf
      // Paper end
  
      compileOnly("org.apache.maven:maven-resolver-provider:3.9.6")
-@@ -100,14 +123,31 @@ tasks.withType<Javadoc> {
+@@ -100,15 +123,32 @@ tasks.withType<Javadoc> {
          "https://guava.dev/releases/32.1.2-jre/api/docs/",
          "https://javadoc.io/doc/org.yaml/snakeyaml/2.2/",
          "https://javadoc.io/doc/org.jetbrains/annotations/$annotationsVersion/", // Paper - we don't want Java 5 annotations
@@ -64,6 +64,7 @@ index 7470f18dc36c5e4357ce3bb936c4842066df9114..7624069435a9be6c4249a444db0bf1bf
          // Paper start - add missing javadoc links
          "https://javadoc.io/doc/org.joml/joml/1.10.5/index.html",
          "https://www.javadoc.io/doc/com.google.code.gson/gson/2.10.1",
+         "https://jspecify.dev/docs/api/",
          // Paper end
 +        // Paper start
 +        "https://jd.advntr.dev/api/$adventureVersion/",
@@ -208,13 +209,14 @@ index 0000000000000000000000000000000000000000..2ad76b1751ba707f7ae0d283aa1cbaf6
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java b/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a0fd845bc9b2540c398fe1dbbf821803a7017a28
+index 0000000000000000000000000000000000000000..9a95d203151d2c91b0eec494e3674f0facfaa305
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/AbstractChatEvent.java
-@@ -0,0 +1,127 @@
+@@ -0,0 +1,122 @@
 +package io.papermc.paper.event.player;
 +
 +import io.papermc.paper.chat.ChatRenderer;
++import java.util.Set;
 +import net.kyori.adventure.audience.Audience;
 +import net.kyori.adventure.chat.SignedMessage;
 +import net.kyori.adventure.text.Component;
@@ -222,9 +224,7 @@ index 0000000000000000000000000000000000000000..a0fd845bc9b2540c398fe1dbbf821803
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.player.PlayerEvent;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
-+
-+import java.util.Set;
++import org.jspecify.annotations.NullMarked;
 +
 +import static java.util.Objects.requireNonNull;
 +
@@ -232,6 +232,7 @@ index 0000000000000000000000000000000000000000..a0fd845bc9b2540c398fe1dbbf821803
 + * An abstract implementation of a chat event, handling shared logic.
 + */
 +@ApiStatus.NonExtendable
++@NullMarked
 +public abstract class AbstractChatEvent extends PlayerEvent implements Cancellable {
 +
 +    private final Set<Audience> viewers;
@@ -242,7 +243,7 @@ index 0000000000000000000000000000000000000000..a0fd845bc9b2540c398fe1dbbf821803
 +
 +    private boolean cancelled;
 +
-+    AbstractChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage, final @NotNull SignedMessage signedMessage) {
++    AbstractChatEvent(final boolean async, final Player player, final Set<Audience> viewers, final ChatRenderer renderer, final Component message, final Component originalMessage, final SignedMessage signedMessage) {
 +        super(player, async);
 +        this.viewers = viewers;
 +        this.renderer = renderer;
@@ -259,7 +260,6 @@ index 0000000000000000000000000000000000000000..a0fd845bc9b2540c398fe1dbbf821803
 +     *
 +     * @return a mutable set of {@link Audience audiences} who will receive the chat message
 +     */
-+    @NotNull
 +    public final Set<Audience> viewers() {
 +        return this.viewers;
 +    }
@@ -270,7 +270,7 @@ index 0000000000000000000000000000000000000000..a0fd845bc9b2540c398fe1dbbf821803
 +     * @param renderer the chat renderer
 +     * @throws NullPointerException if {@code renderer} is {@code null}
 +     */
-+    public final void renderer(final @NotNull ChatRenderer renderer) {
++    public final void renderer(final ChatRenderer renderer) {
 +        this.renderer = requireNonNull(renderer, "renderer");
 +    }
 +
@@ -279,7 +279,6 @@ index 0000000000000000000000000000000000000000..a0fd845bc9b2540c398fe1dbbf821803
 +     *
 +     * @return the chat renderer
 +     */
-+    @NotNull
 +    public final ChatRenderer renderer() {
 +        return this.renderer;
 +    }
@@ -290,7 +289,6 @@ index 0000000000000000000000000000000000000000..a0fd845bc9b2540c398fe1dbbf821803
 +     *
 +     * @return the user-supplied message
 +     */
-+    @NotNull
 +    public final Component message() {
 +        return this.message;
 +    }
@@ -301,7 +299,7 @@ index 0000000000000000000000000000000000000000..a0fd845bc9b2540c398fe1dbbf821803
 +     * @param message the user-supplied message
 +     * @throws NullPointerException if {@code message} is {@code null}
 +     */
-+    public final void message(final @NotNull Component message) {
++    public final void message(final Component message) {
 +        this.message = requireNonNull(message, "message");
 +    }
 +
@@ -312,7 +310,6 @@ index 0000000000000000000000000000000000000000..a0fd845bc9b2540c398fe1dbbf821803
 +     *
 +     * @return the original user-supplied message
 +     */
-+    @NotNull
 +    public final Component originalMessage() {
 +        return this.originalMessage;
 +    }
@@ -324,7 +321,6 @@ index 0000000000000000000000000000000000000000..a0fd845bc9b2540c398fe1dbbf821803
 +     *
 +     * @return the signed message
 +     */
-+    @NotNull
 +    public final SignedMessage signedMessage() {
 +        return this.signedMessage;
 +    }
@@ -341,41 +337,42 @@ index 0000000000000000000000000000000000000000..a0fd845bc9b2540c398fe1dbbf821803
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatCommandDecorateEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatCommandDecorateEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..01cf89d3558132912c4d0eb48c98cd8c06e46a67
+index 0000000000000000000000000000000000000000..ddd4c90f83b5cb8f069ff53760abb3c4adfd1168
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/AsyncChatCommandDecorateEvent.java
-@@ -0,0 +1,28 @@
+@@ -0,0 +1,29 @@
 +package io.papermc.paper.event.player;
 +
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.HandlerList;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
 +@ApiStatus.Experimental
++@NullMarked
 +public class AsyncChatCommandDecorateEvent extends AsyncChatDecorateEvent {
 +
 +    private static final HandlerList HANDLER_LIST = new HandlerList();
 +
 +    @ApiStatus.Internal
-+    public AsyncChatCommandDecorateEvent(@Nullable Player player, @NotNull Component originalMessage) {
++    public AsyncChatCommandDecorateEvent(final @Nullable Player player, final Component originalMessage) {
 +        super(player, originalMessage);
 +    }
 +
 +    @Override
-+    public @NotNull HandlerList getHandlers() {
++    public HandlerList getHandlers() {
 +        return HANDLER_LIST;
 +    }
 +
-+    public static @NotNull HandlerList getHandlerList() {
++    public static HandlerList getHandlerList() {
 +        return HANDLER_LIST;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatDecorateEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatDecorateEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2e492f4cd179135bd40ad951ab23acb562be2f06
+index 0000000000000000000000000000000000000000..9e5ea0cd006bd9744b84923620841f07fa40c2cb
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/AsyncChatDecorateEvent.java
 @@ -0,0 +1,105 @@
@@ -387,9 +384,8 @@ index 0000000000000000000000000000000000000000..2e492f4cd179135bd40ad951ab23acb5
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.server.ServerEvent;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.Contract;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
 +/**
 + * This event is fired when the server decorates a component for chat purposes. This is called
@@ -401,18 +397,19 @@ index 0000000000000000000000000000000000000000..2e492f4cd179135bd40ad951ab23acb5
 + * See {@link AsyncChatCommandDecorateEvent} for the decoration of messages sent via commands
 + */
 +@ApiStatus.Experimental
++@NullMarked
 +public class AsyncChatDecorateEvent extends ServerEvent implements Cancellable {
 +
 +    private static final HandlerList HANDLER_LIST = new HandlerList();
 +
-+    private final Player player;
++    private final @Nullable Player player;
 +    private final Component originalMessage;
 +    private Component result;
 +
 +    private boolean cancelled;
 +
 +    @ApiStatus.Internal
-+    public AsyncChatDecorateEvent(final @Nullable Player player, final @NotNull Component originalMessage) {
++    public AsyncChatDecorateEvent(final @Nullable Player player, final Component originalMessage) {
 +        super(true);
 +        this.player = player;
 +        this.originalMessage = originalMessage;
@@ -436,7 +433,7 @@ index 0000000000000000000000000000000000000000..2e492f4cd179135bd40ad951ab23acb5
 +     *
 +     * @return the input
 +     */
-+    public @NotNull Component originalMessage() {
++    public Component originalMessage() {
 +        return this.originalMessage;
 +    }
 +
@@ -447,7 +444,7 @@ index 0000000000000000000000000000000000000000..2e492f4cd179135bd40ad951ab23acb5
 +     *
 +     * @return the result
 +     */
-+    public @NotNull Component result() {
++    public Component result() {
 +        return this.result;
 +    }
 +
@@ -456,7 +453,7 @@ index 0000000000000000000000000000000000000000..2e492f4cd179135bd40ad951ab23acb5
 +     *
 +     * @param result the result
 +     */
-+    public void result(@NotNull Component result) {
++    public void result(final Component result) {
 +        this.result = result;
 +    }
 +
@@ -471,36 +468,36 @@ index 0000000000000000000000000000000000000000..2e492f4cd179135bd40ad951ab23acb5
 +     * component.
 +     */
 +    @Override
-+    public void setCancelled(boolean cancel) {
++    public void setCancelled(final boolean cancel) {
 +        this.cancelled = cancel;
 +    }
 +
 +    @Override
-+    public @NotNull HandlerList getHandlers() {
++    public HandlerList getHandlers() {
 +        return HANDLER_LIST;
 +    }
 +
-+    public static @NotNull HandlerList getHandlerList() {
++    public static HandlerList getHandlerList() {
 +        return HANDLER_LIST;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java b/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4adae8b8a8640ffbd6a86b0908ca21fded737b88
+index 0000000000000000000000000000000000000000..50c3e117dec63811823b4e6395bf4f090692ee8c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/AsyncChatEvent.java
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,44 @@
 +package io.papermc.paper.event.player;
 +
-+import java.util.Set;
 +import io.papermc.paper.chat.ChatRenderer;
++import java.util.Set;
 +import net.kyori.adventure.audience.Audience;
 +import net.kyori.adventure.chat.SignedMessage;
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.HandlerList;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * An event fired when a {@link Player} sends a chat message to the server.
@@ -515,36 +512,35 @@ index 0000000000000000000000000000000000000000..4adae8b8a8640ffbd6a86b0908ca21fd
 + * Care should be taken to check {@link #isAsynchronous()} and treat the event
 + * appropriately.
 + */
++@NullMarked
 +public final class AsyncChatEvent extends AbstractChatEvent {
 +
 +    private static final HandlerList HANDLER_LIST = new HandlerList();
 +
 +    @ApiStatus.Internal
-+    public AsyncChatEvent(final boolean async, final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage, final @NotNull SignedMessage signedMessage) {
++    public AsyncChatEvent(final boolean async, final Player player, final Set<Audience> viewers, final ChatRenderer renderer, final Component message, final Component originalMessage, final SignedMessage signedMessage) {
 +        super(async, player, viewers, renderer, message, originalMessage, signedMessage);
 +    }
 +
-+    @NotNull
 +    @Override
 +    public HandlerList getHandlers() {
 +        return HANDLER_LIST;
 +    }
 +
-+    @NotNull
 +    public static HandlerList getHandlerList() {
 +        return HANDLER_LIST;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/event/player/ChatEvent.java b/src/main/java/io/papermc/paper/event/player/ChatEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7411f58f9f36beaadcc47c2264a4af313956ee03
+index 0000000000000000000000000000000000000000..42a82ce2316a4aad2883d24c7e2ff95d95f5881a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/ChatEvent.java
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,40 @@
 +package io.papermc.paper.event.player;
 +
-+import java.util.Set;
 +import io.papermc.paper.chat.ChatRenderer;
++import java.util.Set;
 +import net.kyori.adventure.audience.Audience;
 +import net.kyori.adventure.chat.SignedMessage;
 +import net.kyori.adventure.text.Component;
@@ -552,7 +548,7 @@ index 0000000000000000000000000000000000000000..7411f58f9f36beaadcc47c2264a4af31
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.HandlerList;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * An event fired when a {@link Player} sends a chat message to the server.
@@ -562,22 +558,21 @@ index 0000000000000000000000000000000000000000..7411f58f9f36beaadcc47c2264a4af31
 + */
 +@Deprecated
 +@Warning(reason = "Listening to this event forces chat to wait for the main thread, delaying chat messages.")
++@NullMarked
 +public final class ChatEvent extends AbstractChatEvent {
 +
 +    private static final HandlerList HANDLER_LIST = new HandlerList();
 +
 +    @ApiStatus.Internal
-+    public ChatEvent(final @NotNull Player player, final @NotNull Set<Audience> viewers, final @NotNull ChatRenderer renderer, final @NotNull Component message, final @NotNull Component originalMessage, final @NotNull SignedMessage signedMessage) {
++    public ChatEvent(final Player player, final Set<Audience> viewers, final ChatRenderer renderer, final Component message, final Component originalMessage, final SignedMessage signedMessage) {
 +        super(false, player, viewers, renderer, message, originalMessage, signedMessage);
 +    }
 +
-+    @NotNull
 +    @Override
 +    public HandlerList getHandlers() {
 +        return HANDLER_LIST;
 +    }
 +
-+    @NotNull
 +    public static HandlerList getHandlerList() {
 +        return HANDLER_LIST;
 +    }

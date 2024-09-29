@@ -6,18 +6,18 @@ Subject: [PATCH] Add Player Client Options API
 
 diff --git a/src/main/java/com/destroystokyo/paper/ClientOption.java b/src/main/java/com/destroystokyo/paper/ClientOption.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f89bfeba29e6988db849957a508ca97ff5322242
+index 0000000000000000000000000000000000000000..ed08f823e0620289392f7fc2ff0ac721cff60478
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/ClientOption.java
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,51 @@
 +package com.destroystokyo.paper;
 +
 +import net.kyori.adventure.translation.Translatable;
 +import net.kyori.adventure.util.Index;
-+import org.jetbrains.annotations.NotNull;
-+
 +import org.bukkit.inventory.MainHand;
++import org.jspecify.annotations.NullMarked;
 +
++@NullMarked
 +public final class ClientOption<T> {
 +
 +    public static final ClientOption<SkinParts> SKIN_PARTS = new ClientOption<>(SkinParts.class);
@@ -31,13 +31,12 @@ index 0000000000000000000000000000000000000000..f89bfeba29e6988db849957a508ca97f
 +
 +    private final Class<T> type;
 +
-+    private ClientOption(@NotNull Class<T> type) {
++    private ClientOption(final Class<T> type) {
 +        this.type = type;
 +    }
 +
-+    @NotNull
 +    public Class<T> getType() {
-+        return type;
++        return this.type;
 +    }
 +
 +    public enum ChatVisibility implements Translatable {
@@ -46,15 +45,15 @@ index 0000000000000000000000000000000000000000..f89bfeba29e6988db849957a508ca97f
 +        HIDDEN("hidden"),
 +        UNKNOWN("unknown");
 +
-+        public static Index<String, ChatVisibility> NAMES = Index.create(ChatVisibility.class, chatVisibility -> chatVisibility.name);
++        public static final Index<String, ChatVisibility> NAMES = Index.create(ChatVisibility.class, chatVisibility -> chatVisibility.name);
 +        private final String name;
 +
-+        ChatVisibility(String name) {
++        ChatVisibility(final String name) {
 +            this.name = name;
 +        }
 +
 +        @Override
-+        public @NotNull String translationKey() {
++        public String translationKey() {
 +            if (this == UNKNOWN) {
 +                throw new UnsupportedOperationException(this.name + " doesn't have a translation key");
 +            }
@@ -90,27 +89,27 @@ index 0000000000000000000000000000000000000000..4a0c39405d4fbed457787e3c6ded4cc6
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/event/player/PlayerClientOptionsChangeEvent.java b/src/main/java/com/destroystokyo/paper/event/player/PlayerClientOptionsChangeEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1757055d821d9ec7c728aa6c1b52fa6aea591ae5
+index 0000000000000000000000000000000000000000..6cf6aa876278d0d3e75148608951fc5865ad5aee
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/player/PlayerClientOptionsChangeEvent.java
-@@ -0,0 +1,136 @@
+@@ -0,0 +1,130 @@
 +package com.destroystokyo.paper.event.player;
 +
 +import com.destroystokyo.paper.ClientOption;
 +import com.destroystokyo.paper.ClientOption.ChatVisibility;
 +import com.destroystokyo.paper.SkinParts;
++import java.util.Map;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.player.PlayerEvent;
 +import org.bukkit.inventory.MainHand;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
-+
-+import java.util.Map;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Called when the player changes their client settings
 + */
++@NullMarked
 +public class PlayerClientOptionsChangeEvent extends PlayerEvent {
 +
 +    private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -125,7 +124,7 @@ index 0000000000000000000000000000000000000000..1757055d821d9ec7c728aa6c1b52fa6a
 +    private final boolean textFilteringEnabled;
 +
 +    @Deprecated
-+    public PlayerClientOptionsChangeEvent(@NotNull Player player, @NotNull String locale, int viewDistance, @NotNull ChatVisibility chatVisibility, boolean chatColors, @NotNull SkinParts skinParts, @NotNull MainHand mainHand) {
++    public PlayerClientOptionsChangeEvent(final Player player, final String locale, final int viewDistance, final ChatVisibility chatVisibility, final boolean chatColors, final SkinParts skinParts, final MainHand mainHand) {
 +        super(player);
 +        this.locale = locale;
 +        this.viewDistance = viewDistance;
@@ -138,7 +137,7 @@ index 0000000000000000000000000000000000000000..1757055d821d9ec7c728aa6c1b52fa6a
 +    }
 +
 +    @ApiStatus.Internal
-+    public PlayerClientOptionsChangeEvent(@NotNull Player player, @NotNull Map<ClientOption<?>, ?> options) {
++    public PlayerClientOptionsChangeEvent(final Player player, final Map<ClientOption<?>, ?> options) {
 +        super(player);
 +
 +        this.locale = (String) options.get(ClientOption.LOCALE);
@@ -151,7 +150,6 @@ index 0000000000000000000000000000000000000000..1757055d821d9ec7c728aa6c1b52fa6a
 +        this.textFilteringEnabled = (boolean) options.get(ClientOption.TEXT_FILTERING_ENABLED);
 +    }
 +
-+    @NotNull
 +    public String getLocale() {
 +        return this.locale;
 +    }
@@ -168,7 +166,6 @@ index 0000000000000000000000000000000000000000..1757055d821d9ec7c728aa6c1b52fa6a
 +        return this.viewDistance != this.player.getClientOption(ClientOption.VIEW_DISTANCE);
 +    }
 +
-+    @NotNull
 +    public ChatVisibility getChatVisibility() {
 +        return this.chatVisibility;
 +    }
@@ -185,7 +182,6 @@ index 0000000000000000000000000000000000000000..1757055d821d9ec7c728aa6c1b52fa6a
 +        return this.chatColors != this.player.getClientOption(ClientOption.CHAT_COLORS_ENABLED);
 +    }
 +
-+    @NotNull
 +    public SkinParts getSkinParts() {
 +        return this.skinparts;
 +    }
@@ -194,7 +190,6 @@ index 0000000000000000000000000000000000000000..1757055d821d9ec7c728aa6c1b52fa6a
 +        return this.skinparts.getRaw() != this.player.getClientOption(ClientOption.SKIN_PARTS).getRaw();
 +    }
 +
-+    @NotNull
 +    public MainHand getMainHand() {
 +        return this.mainHand;
 +    }
@@ -220,12 +215,10 @@ index 0000000000000000000000000000000000000000..1757055d821d9ec7c728aa6c1b52fa6a
 +    }
 +
 +    @Override
-+    @NotNull
 +    public HandlerList getHandlers() {
 +        return HANDLER_LIST;
 +    }
 +
-+    @NotNull
 +    public static HandlerList getHandlerList() {
 +        return HANDLER_LIST;
 +    }

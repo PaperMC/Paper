@@ -12,96 +12,100 @@ Provides methods to determine players looted state for an object
 
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/LootableBlockInventory.java b/src/main/java/com/destroystokyo/paper/loottable/LootableBlockInventory.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..92d7b853a2ccaae5afa8ac141bead840942944ef
+index 0000000000000000000000000000000000000000..08e82b9de34c5ce8c5e83631b1229e90e5aa9694
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/loottable/LootableBlockInventory.java
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,18 @@
 +package com.destroystokyo.paper.loottable;
 +
 +import org.bukkit.block.Block;
 +import org.jetbrains.annotations.NotNull;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Represents an Inventory that can generate loot, such as Chests inside of Fortresses and Mineshafts
 + */
++@NullMarked
 +public interface LootableBlockInventory extends LootableInventory {
 +
 +    /**
 +     * Gets the block that is lootable
 +     * @return The Block
 +     */
-+    @NotNull
 +    Block getBlock();
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/LootableEntityInventory.java b/src/main/java/com/destroystokyo/paper/loottable/LootableEntityInventory.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b387894fe8001edb41ad2ad2b70ebabe065b682e
+index 0000000000000000000000000000000000000000..a1e1a0256010f293e7dfa63c6622e9125eb4cc73
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/loottable/LootableEntityInventory.java
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,18 @@
 +package com.destroystokyo.paper.loottable;
 +
 +import org.bukkit.entity.Entity;
 +import org.jetbrains.annotations.NotNull;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Represents an Inventory that can generate loot, such as Minecarts inside of Mineshafts
 + */
++@NullMarked
 +public interface LootableEntityInventory extends LootableInventory {
 +
 +    /**
 +     * Gets the entity that is lootable
 +     * @return The Entity
 +     */
-+    @NotNull
 +    Entity getEntity();
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/LootableInventory.java b/src/main/java/com/destroystokyo/paper/loottable/LootableInventory.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b18a0b50c12fe8d8c954e5c070f2ecd1854a2583
+index 0000000000000000000000000000000000000000..b085e1217838012e4f4c6bcce100d8282190cdbc
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/loottable/LootableInventory.java
-@@ -0,0 +1,124 @@
+@@ -0,0 +1,129 @@
 +package com.destroystokyo.paper.loottable;
 +
++import java.util.UUID;
 +import org.bukkit.entity.Player;
 +import org.bukkit.loot.Lootable;
-+
-+import java.util.UUID;
-+import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Represents an Inventory that contains a Loot Table associated to it that will
 + * automatically fill on first open.
-+ *
++ * <p>
 + * A new feature and API is provided to support automatically refreshing the contents
 + * of the inventory based on that Loot Table after a configurable amount of time has passed.
-+ *
++ * <p>
 + * The behavior of how the Inventory is filled based on the loot table may vary based
 + * on Minecraft versions and the Loot Table feature.
 + */
++@NullMarked
 +public interface LootableInventory extends Lootable {
 +
 +    /**
-+     * Server owners have to enable whether or not an object in a world should refill
++     * Server owners have to enable whether an object in a world should refill
 +     *
 +     * @return If the world this inventory is currently in has Replenishable Lootables enabled
 +     */
 +    boolean isRefillEnabled();
 +
 +    /**
-+     * Whether or not this object has ever been filled
++     * Whether this object has ever been filled
++     *
 +     * @return Has ever been filled
 +     */
 +    boolean hasBeenFilled();
 +
 +    /**
 +     * Has this player ever looted this block
++     *
 +     * @param player The player to check
-+     * @return Whether or not this player has looted this block
++     * @return Whether this player has looted this block
 +     */
-+    default boolean hasPlayerLooted(final @NotNull Player player) {
++    default boolean hasPlayerLooted(final Player player) {
 +        return this.hasPlayerLooted(player.getUniqueId());
 +    }
 +
@@ -109,17 +113,17 @@ index 0000000000000000000000000000000000000000..b18a0b50c12fe8d8c954e5c070f2ecd1
 +     * Checks if this player can loot this block. Takes into account the "restrict player reloot" settings
 +     *
 +     * @param player the player to check
-+     *
 +     * @return Whether this player can loot this block
 +     */
-+    boolean canPlayerLoot(@NotNull UUID player);
++    boolean canPlayerLoot(UUID player);
 +
 +    /**
 +     * Has this player ever looted this block
++     *
 +     * @param player The player to check
-+     * @return Whether or not this player has looted this block
++     * @return Whether this player has looted this block
 +     */
-+    boolean hasPlayerLooted(@NotNull UUID player);
++    boolean hasPlayerLooted(UUID player);
 +
 +    /**
 +     * Gets the timestamp, in milliseconds, of when the player last looted this object
@@ -127,7 +131,7 @@ index 0000000000000000000000000000000000000000..b18a0b50c12fe8d8c954e5c070f2ecd1
 +     * @param player The player to check
 +     * @return Timestamp last looted, or null if player has not looted this object
 +     */
-+    default @Nullable Long getLastLooted(final @NotNull Player player) {
++    default @Nullable Long getLastLooted(final Player player) {
 +        return this.getLastLooted(player.getUniqueId());
 +    }
 +
@@ -138,28 +142,31 @@ index 0000000000000000000000000000000000000000..b18a0b50c12fe8d8c954e5c070f2ecd1
 +     * @return Timestamp last looted, or null if player has not looted this object
 +     */
 +    @Nullable
-+    Long getLastLooted(@NotNull UUID player);
++    Long getLastLooted(UUID player);
 +
 +    /**
-+     * Change the state of whether or not a player has looted this block
++     * Change the state of whether a player has looted this block
++     *
 +     * @param player The player to change state for
 +     * @param looted true to add player to looted list, false to remove
 +     * @return The previous state of whether the player had looted this or not
 +     */
-+    default boolean setHasPlayerLooted(final @NotNull Player player, final boolean looted) {
++    default boolean setHasPlayerLooted(final Player player, final boolean looted) {
 +        return this.setHasPlayerLooted(player.getUniqueId(), looted);
 +    }
 +
 +    /**
-+     * Change the state of whether or not a player has looted this block
++     * Change the state of whether a player has looted this block
++     *
 +     * @param player The player to change state for
 +     * @param looted true to add player to looted list, false to remove
 +     * @return The previous state of whether the player had looted this or not
 +     */
-+    boolean setHasPlayerLooted(@NotNull UUID player, boolean looted);
++    boolean setHasPlayerLooted(UUID player, boolean looted);
 +
 +    /**
-+     * Returns Whether or not this object has been filled and now has a pending refill
++     * Returns Whether this object has been filled and now has a pending refill
++     *
 +     * @return Has pending refill
 +     */
 +    boolean hasPendingRefill();
@@ -188,10 +195,10 @@ index 0000000000000000000000000000000000000000..b18a0b50c12fe8d8c954e5c070f2ecd1
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/LootableInventoryReplenishEvent.java b/src/main/java/com/destroystokyo/paper/loottable/LootableInventoryReplenishEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5ee1a04aaaa4ef09559f2cf757811e463e2a1be6
+index 0000000000000000000000000000000000000000..994c2183db89fc40d5991d5e1906e4bd04db6291
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/loottable/LootableInventoryReplenishEvent.java
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,46 @@
 +package com.destroystokyo.paper.loottable;
 +
 +import org.bukkit.entity.Player;
@@ -199,22 +206,22 @@ index 0000000000000000000000000000000000000000..5ee1a04aaaa4ef09559f2cf757811e46
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.player.PlayerEvent;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
++import org.jspecify.annotations.NullMarked;
 +
++@NullMarked
 +public class LootableInventoryReplenishEvent extends PlayerEvent implements Cancellable {
 +
 +    private static final HandlerList HANDLER_LIST = new HandlerList();
 +
-+    @NotNull private final LootableInventory inventory;
++    private final LootableInventory inventory;
 +    private boolean cancelled;
 +
 +    @ApiStatus.Internal
-+    public LootableInventoryReplenishEvent(@NotNull Player player, @NotNull LootableInventory inventory) {
++    public LootableInventoryReplenishEvent(final Player player, final LootableInventory inventory) {
 +        super(player);
 +        this.inventory = inventory;
 +    }
 +
-+    @NotNull
 +    public LootableInventory getInventory() {
 +        return this.inventory;
 +    }
@@ -225,16 +232,15 @@ index 0000000000000000000000000000000000000000..5ee1a04aaaa4ef09559f2cf757811e46
 +    }
 +
 +    @Override
-+    public void setCancelled(boolean cancel) {
++    public void setCancelled(final boolean cancel) {
 +        this.cancelled = cancel;
 +    }
 +
-+    @NotNull
++    @Override
 +    public HandlerList getHandlers() {
 +        return HANDLER_LIST;
 +    }
 +
-+    @NotNull
 +    public static HandlerList getHandlerList() {
 +        return HANDLER_LIST;
 +    }

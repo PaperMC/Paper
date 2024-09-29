@@ -6,21 +6,20 @@ Subject: [PATCH] Add Mob Goal API
 
 diff --git a/src/main/java/com/destroystokyo/paper/entity/ai/Goal.java b/src/main/java/com/destroystokyo/paper/entity/ai/Goal.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c57c5416c88e2070a082403ab0dda9d7f08d2a57
+index 0000000000000000000000000000000000000000..88f64a84c6b81246a4936e37c9f0410eefc847fd
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/entity/ai/Goal.java
-@@ -0,0 +1,66 @@
+@@ -0,0 +1,63 @@
 +package com.destroystokyo.paper.entity.ai;
 +
-+import org.jetbrains.annotations.NotNull;
-+
 +import java.util.EnumSet;
-+
 +import org.bukkit.entity.Mob;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Represents an AI goal of an entity
 + */
++@NullMarked
 +public interface Goal<T extends Mob> {
 +
 +    /**
@@ -36,7 +35,7 @@ index 0000000000000000000000000000000000000000..c57c5416c88e2070a082403ab0dda9d7
 +     * @return if this goal should stay active
 +     */
 +    default boolean shouldStayActive() {
-+        return shouldActivate();
++        return this.shouldActivate();
 +    }
 +
 +    /**
@@ -63,86 +62,79 @@ index 0000000000000000000000000000000000000000..c57c5416c88e2070a082403ab0dda9d7
 +     *
 +     * @return the goal key
 +     */
-+    @NotNull
 +    GoalKey<T> getKey();
 +
 +    /**
 +     * Returns a list of all applicable flags for this goal.<br>
-+     *
++     * <p>
 +     * This method is only called on construction.
 +     *
 +     * @return the subtypes.
 +     */
-+    @NotNull
 +    EnumSet<GoalType> getTypes();
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/entity/ai/GoalKey.java b/src/main/java/com/destroystokyo/paper/entity/ai/GoalKey.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9cd98c6fcfa3eb439d9013ef76ef4661175a0e5a
+index 0000000000000000000000000000000000000000..fb626065c642a3f43075f2ae751419e23431763c
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/entity/ai/GoalKey.java
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,59 @@
 +package com.destroystokyo.paper.entity.ai;
 +
 +import com.google.common.base.Objects;
-+
-+import org.jetbrains.annotations.NotNull;
-+
 +import java.util.StringJoiner;
-+
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.entity.Mob;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
 +/**
-+ *
 + * Used to identify a Goal. Consists of a {@link NamespacedKey} and the type of mob the goal can be applied to
 + *
 + * @param <T> the type of mob the goal can be applied to
 + */
-+public class GoalKey<T extends Mob> {
++@NullMarked
++public final class GoalKey<T extends Mob> {
 +
 +    private final Class<T> entityClass;
 +    private final NamespacedKey namespacedKey;
 +
-+    private GoalKey(@NotNull Class<T> entityClass, @NotNull NamespacedKey namespacedKey) {
++    private GoalKey(Class<T> entityClass, NamespacedKey namespacedKey) {
 +        this.entityClass = entityClass;
 +        this.namespacedKey = namespacedKey;
 +    }
 +
-+    @NotNull
 +    public Class<T> getEntityClass() {
-+        return entityClass;
++        return this.entityClass;
 +    }
 +
-+    @NotNull
 +    public NamespacedKey getNamespacedKey() {
-+        return namespacedKey;
++        return this.namespacedKey;
 +    }
 +
 +    @Override
-+    public boolean equals(Object o) {
++    public boolean equals(@Nullable Object o) {
 +        if (this == o) return true;
-+        if (o == null || getClass() != o.getClass()) return false;
++        if (o == null || this.getClass() != o.getClass()) return false;
 +        GoalKey<?> goalKey = (GoalKey<?>) o;
-+        return Objects.equal(entityClass, goalKey.entityClass) &&
-+               Objects.equal(namespacedKey, goalKey.namespacedKey);
++        return Objects.equal(this.entityClass, goalKey.entityClass) &&
++            Objects.equal(this.namespacedKey, goalKey.namespacedKey);
 +    }
 +
 +    @Override
 +    public int hashCode() {
-+        return Objects.hashCode(entityClass, namespacedKey);
++        return Objects.hashCode(this.entityClass, this.namespacedKey);
 +    }
 +
 +    @Override
 +    public String toString() {
 +        return new StringJoiner(", ", GoalKey.class.getSimpleName() + "[", "]")
-+            .add("entityClass=" + entityClass)
-+            .add("namespacedKey=" + namespacedKey)
++            .add("entityClass=" + this.entityClass)
++            .add("namespacedKey=" + this.namespacedKey)
 +            .toString();
 +    }
 +
-+    @NotNull
-+    public static <A extends Mob> GoalKey<A> of(@NotNull Class<A> entityClass, @NotNull NamespacedKey namespacedKey) {
++    public static <A extends Mob> GoalKey<A> of(Class<A> entityClass, NamespacedKey namespacedKey) {
 +        return new GoalKey<>(entityClass, namespacedKey);
 +    }
 +}
@@ -171,59 +163,51 @@ index 0000000000000000000000000000000000000000..7024c8f484d2460abf3abfe65a29771d
 +}
 diff --git a/src/main/java/com/destroystokyo/paper/entity/ai/MobGoals.java b/src/main/java/com/destroystokyo/paper/entity/ai/MobGoals.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e21f7574763dd4f13794f91bbef192ef66a8f5e9
+index 0000000000000000000000000000000000000000..0203e7efbb8c729ed378c53c2630a523b697314f
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/entity/ai/MobGoals.java
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,42 @@
 +package com.destroystokyo.paper.entity.ai;
 +
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
 +
 +import java.util.Collection;
-+
 +import org.bukkit.entity.Mob;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
 +/**
 + * Represents a part of the "brain" of a mob. It tracks all tasks (running or not), allows adding and removing goals
 + */
++@NullMarked
 +public interface MobGoals {
 +
-+    <T extends Mob> void addGoal(@NotNull T mob, int priority, @NotNull Goal<T> goal);
++    <T extends Mob> void addGoal(T mob, int priority, Goal<T> goal);
 +
-+    <T extends Mob> void removeGoal(@NotNull T mob, @NotNull Goal<T> goal);
++    <T extends Mob> void removeGoal(T mob, Goal<T> goal);
 +
-+    <T extends Mob> void removeAllGoals(@NotNull T mob);
++    <T extends Mob> void removeAllGoals(T mob);
 +
-+    <T extends Mob> void removeAllGoals(@NotNull T mob, @NotNull GoalType type);
++    <T extends Mob> void removeAllGoals(T mob, GoalType type);
 +
-+    <T extends Mob> void removeGoal(@NotNull T mob, @NotNull GoalKey<T> key);
++    <T extends Mob> void removeGoal(T mob, GoalKey<T> key);
 +
-+    <T extends Mob> boolean hasGoal(@NotNull T mob, @NotNull GoalKey<T> key);
++    <T extends Mob> boolean hasGoal(T mob, GoalKey<T> key);
 +
-+    @Nullable
-+    <T extends Mob> Goal<T> getGoal(@NotNull T mob, @NotNull GoalKey<T> key);
++    <T extends Mob> @Nullable Goal<T> getGoal(T mob, GoalKey<T> key);
 +
-+    @NotNull
-+    <T extends Mob> Collection<Goal<T>> getGoals(@NotNull T mob, @NotNull GoalKey<T> key);
++    <T extends Mob> Collection<Goal<T>> getGoals(T mob, GoalKey<T> key);
 +
-+    @NotNull
-+    <T extends Mob> Collection<Goal<T>> getAllGoals(@NotNull T mob);
++    <T extends Mob> Collection<Goal<T>> getAllGoals(T mob);
 +
-+    @NotNull
-+    <T extends Mob> Collection<Goal<T>> getAllGoals(@NotNull T mob, @NotNull GoalType type);
++    <T extends Mob> Collection<Goal<T>> getAllGoals(T mob, GoalType type);
 +
-+    @NotNull
-+    <T extends Mob> Collection<Goal<T>> getAllGoalsWithout(@NotNull T mob, @NotNull GoalType type);
++    <T extends Mob> Collection<Goal<T>> getAllGoalsWithout(T mob, GoalType type);
 +
-+    @NotNull
-+    <T extends Mob> Collection<Goal<T>> getRunningGoals(@NotNull T mob);
++    <T extends Mob> Collection<Goal<T>> getRunningGoals(T mob);
 +
-+    @NotNull
-+    <T extends Mob> Collection<Goal<T>> getRunningGoals(@NotNull T mob, @NotNull GoalType type);
++    <T extends Mob> Collection<Goal<T>> getRunningGoals(T mob, GoalType type);
 +
-+    @NotNull
-+    <T extends Mob> Collection<Goal<T>> getRunningGoalsWithout(@NotNull T mob, @NotNull GoalType type);
++    <T extends Mob> Collection<Goal<T>> getRunningGoalsWithout(T mob, GoalType type);
 +}
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
 index 54626b927444ab3fc6b7d9ac9e326ff368b0cd25..1a671331ec4ab21430d7d52e9a4f45510ef39944 100644

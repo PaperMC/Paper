@@ -13,30 +13,28 @@ You can use EntityPathfindEvent to cancel new pathfinds from overriding your cur
 
 diff --git a/src/main/java/com/destroystokyo/paper/entity/Pathfinder.java b/src/main/java/com/destroystokyo/paper/entity/Pathfinder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3c1e2c93d923a683cc0455af77c43784ef12270e
+index 0000000000000000000000000000000000000000..5f6d6e222f9f1ac1648a11b6d4a240371c4f07e9
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/entity/Pathfinder.java
-@@ -0,0 +1,220 @@
+@@ -0,0 +1,221 @@
 +package com.destroystokyo.paper.entity;
 +
++import java.util.List;
 +import org.bukkit.Location;
 +import org.bukkit.entity.LivingEntity;
 +import org.bukkit.entity.Mob;
-+
-+import java.util.List;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
 +/**
 + * Handles pathfinding operations for an Entity
 + */
++@NullMarked
 +public interface Pathfinder {
 +
 +    /**
-+     *
 +     * @return The entity that is controlled by this pathfinder
 +     */
-+    @NotNull
 +    Mob getEntity();
 +
 +    /**
@@ -46,6 +44,7 @@ index 0000000000000000000000000000000000000000..3c1e2c93d923a683cc0455af77c43784
 +
 +    /**
 +     * If the entity is currently trying to navigate to a destination, this will return true
++     *
 +     * @return true if the entity is navigating to a destination
 +     */
 +    boolean hasPath();
@@ -53,86 +52,88 @@ index 0000000000000000000000000000000000000000..3c1e2c93d923a683cc0455af77c43784
 +    /**
 +     * @return The location the entity is trying to navigate to, or null if there is no destination
 +     */
-+    @Nullable
-+    PathResult getCurrentPath();
++    @Nullable PathResult getCurrentPath();
 +
 +    /**
 +     * Calculates a destination for the Entity to navigate to, but does not set it
 +     * as the current target. Useful for calculating what would happen before setting it.
++     *
 +     * @param loc Location to navigate to
 +     * @return The closest Location the Entity can get to for this navigation, or null if no path could be calculated
 +     */
-+    @Nullable PathResult findPath(@NotNull Location loc);
++    @Nullable PathResult findPath(Location loc);
 +
 +    /**
 +     * Calculates a destination for the Entity to navigate to to reach the target entity,
 +     * but does not set it as the current target.
 +     * Useful for calculating what would happen before setting it.
-+     *
++     * <p>
 +     * The behavior of this PathResult is subject to the games pathfinding rules, and may
 +     * result in the pathfinding automatically updating to follow the target Entity.
-+     *
++     * <p>
 +     * However, this behavior is not guaranteed, and is subject to the games behavior.
 +     *
 +     * @param target the Entity to navigate to
 +     * @return The closest Location the Entity can get to for this navigation, or null if no path could be calculated
 +     */
-+    @Nullable PathResult findPath(@NotNull LivingEntity target);
++    @Nullable PathResult findPath(LivingEntity target);
 +
 +    /**
 +     * Calculates a destination for the Entity to navigate to, and sets it with default speed
 +     * as the current target.
++     *
 +     * @param loc Location to navigate to
 +     * @return If the pathfinding was successfully started
 +     */
-+    default boolean moveTo(@NotNull Location loc) {
-+        return moveTo(loc, 1);
++    default boolean moveTo(Location loc) {
++        return this.moveTo(loc, 1);
 +    }
 +
 +    /**
 +     * Calculates a destination for the Entity to navigate to, with desired speed
 +     * as the current target.
-+     * @param loc Location to navigate to
++     *
++     * @param loc   Location to navigate to
 +     * @param speed Speed multiplier to navigate at, where 1 is 'normal'
 +     * @return If the pathfinding was successfully started
 +     */
-+    default boolean moveTo(@NotNull Location loc, double speed) {
-+        PathResult path = findPath(loc);
-+        return path != null && moveTo(path, speed);
++    default boolean moveTo(Location loc, double speed) {
++        PathResult path = this.findPath(loc);
++        return path != null && this.moveTo(path, speed);
 +    }
 +
 +    /**
 +     * Calculates a destination for the Entity to navigate to to reach the target entity,
 +     * and sets it with default speed.
-+     *
++     * <p>
 +     * The behavior of this PathResult is subject to the games pathfinding rules, and may
 +     * result in the pathfinding automatically updating to follow the target Entity.
-+     *
++     * <p>
 +     * However, this behavior is not guaranteed, and is subject to the games behavior.
 +     *
 +     * @param target the Entity to navigate to
 +     * @return If the pathfinding was successfully started
 +     */
-+    default boolean moveTo(@NotNull LivingEntity target) {
-+        return moveTo(target, 1);
++    default boolean moveTo(LivingEntity target) {
++        return this.moveTo(target, 1);
 +    }
 +
 +    /**
 +     * Calculates a destination for the Entity to navigate to to reach the target entity,
 +     * and sets it with specified speed.
-+     *
++     * <p>
 +     * The behavior of this PathResult is subject to the games pathfinding rules, and may
 +     * result in the pathfinding automatically updating to follow the target Entity.
-+     *
++     * <p>
 +     * However, this behavior is not guaranteed, and is subject to the games behavior.
 +     *
 +     * @param target the Entity to navigate to
-+     * @param speed Speed multiplier to navigate at, where 1 is 'normal'
++     * @param speed  Speed multiplier to navigate at, where 1 is 'normal'
 +     * @return If the pathfinding was successfully started
 +     */
-+    default boolean moveTo(@NotNull LivingEntity target, double speed) {
-+        PathResult path = findPath(target);
-+        return path != null && moveTo(path, speed);
++    default boolean moveTo(LivingEntity target, double speed) {
++        PathResult path = this.findPath(target);
++        return path != null && this.moveTo(path, speed);
 +    }
 +
 +    /**
@@ -142,19 +143,19 @@ index 0000000000000000000000000000000000000000..3c1e2c93d923a683cc0455af77c43784
 +     * @param path The Path to start following
 +     * @return If the pathfinding was successfully started
 +     */
-+    default boolean moveTo(@NotNull PathResult path) {
-+        return moveTo(path, 1);
++    default boolean moveTo(PathResult path) {
++        return this.moveTo(path, 1);
 +    }
 +
 +    /**
 +     * Takes the result of a previous pathfinding calculation and sets it
 +     * as the active pathfinding,
 +     *
-+     * @param path The Path to start following
++     * @param path  The Path to start following
 +     * @param speed Speed multiplier to navigate at, where 1 is 'normal'
 +     * @return If the pathfinding was successfully started
 +     */
-+    boolean moveTo(@NotNull PathResult path, double speed);
++    boolean moveTo(PathResult path, double speed);
 +
 +    /**
 +     * Checks if this pathfinder allows passing through closed doors.
@@ -205,11 +206,11 @@ index 0000000000000000000000000000000000000000..3c1e2c93d923a683cc0455af77c43784
 +
 +        /**
 +         * All currently calculated points to follow along the path to reach the destination location
-+         *
++         * <p>
 +         * Will return points the entity has already moved past, see {@link #getNextPointIndex()}
++         *
 +         * @return List of points
 +         */
-+        @NotNull
 +        List<Location> getPoints();
 +
 +        /**
