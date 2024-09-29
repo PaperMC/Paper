@@ -46,7 +46,7 @@ index 93e3454de0b0d62895f165b0772526f3eae1e333..c858556ea457931aa14e338e20672cb5
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/item/BowItem.java b/src/main/java/net/minecraft/world/item/BowItem.java
-index 6eb5c0f23d9dc61e69ad5ad493c89602a9dcd4b5..03f04dc429a5ad034285e16c055258ba25df501c 100644
+index 6eb5c0f23d9dc61e69ad5ad493c89602a9dcd4b5..274b62a44ce1b25160e31193ccc32a14c1c6f9f4 100644
 --- a/src/main/java/net/minecraft/world/item/BowItem.java
 +++ b/src/main/java/net/minecraft/world/item/BowItem.java
 @@ -32,7 +32,7 @@ public class BowItem extends ProjectileWeaponItem {
@@ -54,15 +54,28 @@ index 6eb5c0f23d9dc61e69ad5ad493c89602a9dcd4b5..03f04dc429a5ad034285e16c055258ba
                      List<ItemStack> list = draw(stack, itemStack, player);
                      if (world instanceof ServerLevel serverLevel && !list.isEmpty()) {
 -                        this.shoot(serverLevel, player, player.getUsedItemHand(), stack, list, f * 3.0F, 1.0F, f == 1.0F, null);
-+                        this.shoot(serverLevel, player, player.getUsedItemHand(), stack, new UnrealizedDrawResult(list, itemStack), f * 3.0F, 1.0F, f == 1.0F, null); // Paper - improve shoot bow - correctly prevent item consumption
++                        if(!this.shoot(serverLevel, player, player.getUsedItemHand(), stack, new UnrealizedDrawResult(list, itemStack), f * 3.0F, 1.0F, f == 1.0F, null)) return; // Paper - improve shoot bow - correctly prevent item consumption / return if all events were cancelled
                      }
  
                      world.playSound(
+diff --git a/src/main/java/net/minecraft/world/item/CrossbowItem.java b/src/main/java/net/minecraft/world/item/CrossbowItem.java
+index ac983b6f0bd3d3294481d08831063b6e232e5ef6..6e38d4592dcff69e52fbd0f3bae75da9619fd550 100644
+--- a/src/main/java/net/minecraft/world/item/CrossbowItem.java
++++ b/src/main/java/net/minecraft/world/item/CrossbowItem.java
+@@ -186,7 +186,7 @@ public class CrossbowItem extends ProjectileWeaponItem {
+         if (world instanceof ServerLevel serverLevel) {
+             ChargedProjectiles chargedProjectiles = stack.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.EMPTY);
+             if (chargedProjectiles != null && !chargedProjectiles.isEmpty()) {
+-                this.shoot(serverLevel, shooter, hand, stack, chargedProjectiles.getItems(), speed, divergence, shooter instanceof Player, target);
++                if (!this.shoot(serverLevel, shooter, hand, stack, new UnrealizedDrawResult(chargedProjectiles.getItems(), null), speed, divergence, shooter instanceof Player, target)) return; // Paper - improve shoot bow - return if all events were cancelled
+                 if (shooter instanceof ServerPlayer serverPlayer) {
+                     CriteriaTriggers.SHOT_CROSSBOW.trigger(serverPlayer, stack);
+                     serverPlayer.awardStat(Stats.ITEM_USED.get(stack.getItem()));
 diff --git a/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java b/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
-index 56595dd3a0b7df4b5f9819ade797212278c8fd40..0ee3109b3f5b7693bb045f91c239aab1866732f8 100644
+index 56595dd3a0b7df4b5f9819ade797212278c8fd40..193d74236a895b716b86962be405bb3cf44cd4a8 100644
 --- a/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
 +++ b/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
-@@ -46,7 +46,34 @@ public abstract class ProjectileWeaponItem extends Item {
+@@ -46,7 +46,35 @@ public abstract class ProjectileWeaponItem extends Item {
  
      public abstract int getDefaultProjectileRange();
  
@@ -91,14 +104,29 @@ index 56595dd3a0b7df4b5f9819ade797212278c8fd40..0ee3109b3f5b7693bb045f91c239aab1
 +    // Paper start - improve shoot bow - correctly prevent item consumption
 +        shoot(world, shooter, hand, stack, new UnrealizedDrawResult(projectiles, null), speed, divergence, critical, target);
 +    }
-+    protected void shoot(ServerLevel world, LivingEntity shooter, InteractionHand hand, ItemStack stack, UnrealizedDrawResult unrealizedDrawResult, float speed, float divergence, boolean critical, @Nullable LivingEntity target) {
++    protected boolean shoot(ServerLevel world, LivingEntity shooter, InteractionHand hand, ItemStack stack, UnrealizedDrawResult unrealizedDrawResult, float speed, float divergence, boolean critical, @Nullable LivingEntity target) {
 +        final List<ItemStack> projectiles = unrealizedDrawResult.projectileStacks();
++        boolean atLeastOneShootBowEventUncancelled = false;
 +    // Paper end - improve shoot bow - correctly prevent item consumption
          float f2 = EnchantmentHelper.processProjectileSpread(world, stack, shooter, 0.0F);
          float f3 = projectiles.size() == 1 ? 0.0F : 2.0F * f2 / (float) (projectiles.size() - 1);
          float f4 = (float) ((projectiles.size() - 1) % 2) * f3 / 2.0F;
-@@ -77,6 +104,8 @@ public abstract class ProjectileWeaponItem extends Item {
-                         return;
+@@ -66,17 +94,20 @@ public abstract class ProjectileWeaponItem extends Item {
+                 org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(shooter, stack, itemstack1, iprojectile, hand, speed, true);
+                 if (event.isCancelled()) {
+                     event.getProjectile().remove();
+-                    return;
++                    continue; // Paper - improve shoot bow - call event for each shot entity
+                 }
++                atLeastOneShootBowEventUncancelled = true; // Paper - improve shoot bow - track event cancellation to potentially skip sounds/stats
+ 
+                 if (event.getProjectile() == iprojectile.getBukkitEntity()) {
+                     if (!world.addFreshEntity(iprojectile)) {
+                         if (shooter instanceof net.minecraft.server.level.ServerPlayer) {
+                             ((net.minecraft.server.level.ServerPlayer) shooter).getBukkitEntity().updateInventory();
+                         }
+-                        return;
++                        continue; // Paper - improve shoot bow - call event for each shot entity
                      }
                  }
 +                if (!event.shouldConsumeItem() && iprojectile instanceof final net.minecraft.world.entity.projectile.AbstractArrow abstractArrow) abstractArrow.pickup = net.minecraft.world.entity.projectile.AbstractArrow.Pickup.CREATIVE_ONLY;
@@ -106,7 +134,15 @@ index 56595dd3a0b7df4b5f9819ade797212278c8fd40..0ee3109b3f5b7693bb045f91c239aab1
                  // CraftBukkit end
                  stack.hurtAndBreak(this.getDurabilityUse(itemstack1), shooter, LivingEntity.getSlotForHand(hand));
                  if (stack.isEmpty()) {
-@@ -174,7 +203,7 @@ public abstract class ProjectileWeaponItem extends Item {
+@@ -85,6 +116,7 @@ public abstract class ProjectileWeaponItem extends Item {
+             }
+         }
+ 
++        return atLeastOneShootBowEventUncancelled; // Paper - improve shoot bow - track event cancellation to potentially skip sounds/stats
+     }
+ 
+     protected int getDurabilityUse(ItemStack projectile) {
+@@ -174,7 +206,7 @@ public abstract class ProjectileWeaponItem extends Item {
                  itemstack2.set(DataComponents.INTANGIBLE_PROJECTILE, Unit.INSTANCE);
                  return itemstack2;
              } else {
