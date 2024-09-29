@@ -168,6 +168,41 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     private final Object2IntOpenHashMap<SpawnCategory> spawnCategoryLimit = new Object2IntOpenHashMap<>();
     private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftWorld.DATA_TYPE_REGISTRY);
     private net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
+    // Paper start - void damage configuration
+    private boolean voidDamageEnabled;
+    private float voidDamageAmount;
+    private double voidDamageMinBuildHeightOffset;
+
+    @Override
+    public boolean isVoidDamageEnabled() {
+        return this.voidDamageEnabled;
+    }
+
+    @Override
+    public void setVoidDamageEnabled(final boolean enabled) {
+        this.voidDamageEnabled = enabled;
+    }
+
+    @Override
+    public float getVoidDamageAmount() {
+        return this.voidDamageAmount;
+    }
+
+    @Override
+    public void setVoidDamageAmount(float voidDamageAmount) {
+        this.voidDamageAmount = voidDamageAmount;
+    }
+
+    @Override
+    public double getVoidDamageMinBuildHeightOffset() {
+        return this.voidDamageMinBuildHeightOffset;
+    }
+
+    @Override
+    public void setVoidDamageMinBuildHeightOffset(double minBuildHeightOffset) {
+        this.voidDamageMinBuildHeightOffset = minBuildHeightOffset;
+    }
+    // Paper end - void damage configuration
 
     // Paper start - Provide fast information methods
     @Override
@@ -268,6 +303,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             }
         }
         // Paper end - per world spawn limits
+
+        // Paper start - per world void damage height
+        this.voidDamageEnabled = this.world.paperConfig().environment.voidDamageAmount.enabled();
+        this.voidDamageMinBuildHeightOffset = this.world.paperConfig().environment.voidDamageMinBuildHeightOffset;
+        this.voidDamageAmount = (float) this.world.paperConfig().environment.voidDamageAmount.or(0);
+        // Paper end - per world void damage height
     }
 
     @Override
