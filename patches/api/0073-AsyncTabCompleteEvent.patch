@@ -17,10 +17,10 @@ Co-authored-by: Aikar <aikar@aikar.co>
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java b/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8965974988ad20fbe1d45885f20a3a98d2e9595f
+index 0000000000000000000000000000000000000000..e2bfd86c964ce5a75470fef1ea7e031a95735fb3
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/server/AsyncTabCompleteEvent.java
-@@ -0,0 +1,339 @@
+@@ -0,0 +1,332 @@
 +/*
 + * Copyright (c) 2017 Daniel Ennis (Aikar) MIT License
 + *
@@ -48,6 +48,10 @@ index 0000000000000000000000000000000000000000..8965974988ad20fbe1d45885f20a3a98
 +
 +import com.google.common.base.Preconditions;
 +import io.papermc.paper.util.TransformingRandomAccessList;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.Objects;
++import java.util.stream.Stream;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.examination.Examinable;
 +import net.kyori.examination.ExaminableProperty;
@@ -58,14 +62,9 @@ index 0000000000000000000000000000000000000000..8965974988ad20fbe1d45885f20a3a98
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.Event;
 +import org.bukkit.event.HandlerList;
-+
-+import java.util.ArrayList;
-+import java.util.List;
-+import java.util.Objects;
-+import java.util.stream.Stream;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
 +/**
 + * Allows plugins to compute tab completion results asynchronously.
@@ -76,15 +75,15 @@ index 0000000000000000000000000000000000000000..8965974988ad20fbe1d45885f20a3a98
 + * <p>
 + * Only 1 process will be allowed to provide completions, the Async Event, or the standard process.
 + */
++@NullMarked
 +public class AsyncTabCompleteEvent extends Event implements Cancellable {
 +
 +    private static final HandlerList HANDLER_LIST = new HandlerList();
 +
-+    @NotNull private final CommandSender sender;
-+    @NotNull private final String buffer;
++    private final CommandSender sender;
++    private final String buffer;
 +    private final boolean isCommand;
-+    @Nullable
-+    private final Location location;
++    private final @Nullable Location location;
 +    private final List<Completion> completions = new ArrayList<>();
 +    private final List<String> stringCompletions = new TransformingRandomAccessList<>(
 +        this.completions,
@@ -95,7 +94,7 @@ index 0000000000000000000000000000000000000000..8965974988ad20fbe1d45885f20a3a98
 +    private boolean cancelled;
 +
 +    @ApiStatus.Internal
-+    public AsyncTabCompleteEvent(@NotNull CommandSender sender, @NotNull String buffer, boolean isCommand, @Nullable Location loc) {
++    public AsyncTabCompleteEvent(final CommandSender sender, final String buffer, final boolean isCommand, final @Nullable Location loc) {
 +        super(true);
 +        this.sender = sender;
 +        this.buffer = buffer;
@@ -105,7 +104,7 @@ index 0000000000000000000000000000000000000000..8965974988ad20fbe1d45885f20a3a98
 +
 +    @Deprecated
 +    @ApiStatus.Internal
-+    public AsyncTabCompleteEvent(@NotNull CommandSender sender, @NotNull List<String> completions, @NotNull String buffer, boolean isCommand, @Nullable Location loc) {
++    public AsyncTabCompleteEvent(final CommandSender sender, final List<String> completions, final String buffer, final boolean isCommand, final @Nullable Location loc) {
 +        super(true);
 +        this.sender = sender;
 +        this.completions.addAll(fromStrings(completions));
@@ -119,7 +118,6 @@ index 0000000000000000000000000000000000000000..8965974988ad20fbe1d45885f20a3a98
 +     *
 +     * @return the {@link CommandSender} instance
 +     */
-+    @NotNull
 +    public CommandSender getSender() {
 +        return this.sender;
 +    }
@@ -134,7 +132,6 @@ index 0000000000000000000000000000000000000000..8965974988ad20fbe1d45885f20a3a98
 +     *
 +     * @return a list of offered completions
 +     */
-+    @NotNull
 +    public List<String> getCompletions() {
 +        return this.stringCompletions;
 +    }
@@ -149,7 +146,7 @@ index 0000000000000000000000000000000000000000..8965974988ad20fbe1d45885f20a3a98
 +     *
 +     * @param completions the new completions
 +     */
-+    public void setCompletions(@NotNull List<String> completions) {
++    public void setCompletions(final List<String> completions) {
 +        Preconditions.checkArgument(completions != null, "Completions list cannot be null");
 +        if (completions == this.stringCompletions) {
 +            return;
@@ -168,7 +165,7 @@ index 0000000000000000000000000000000000000000..8965974988ad20fbe1d45885f20a3a98
 +     *
 +     * @return a list of offered completions
 +     */
-+    public @NotNull List<Completion> completions() {
++    public List<Completion> completions() {
 +        return this.completions;
 +    }
 +
@@ -182,7 +179,7 @@ index 0000000000000000000000000000000000000000..8965974988ad20fbe1d45885f20a3a98
 +     *
 +     * @param newCompletions the new completions
 +     */
-+    public void completions(final @NotNull List<Completion> newCompletions) {
++    public void completions(final List<Completion> newCompletions) {
 +        Preconditions.checkArgument(newCompletions != null, "new completions cannot be null");
 +        this.completions.clear();
 +        this.completions.addAll(newCompletions);
@@ -193,7 +190,6 @@ index 0000000000000000000000000000000000000000..8965974988ad20fbe1d45885f20a3a98
 +     *
 +     * @return command buffer, as entered
 +     */
-+    @NotNull
 +    public String getBuffer() {
 +        return this.buffer;
 +    }
@@ -208,8 +204,7 @@ index 0000000000000000000000000000000000000000..8965974988ad20fbe1d45885f20a3a98
 +    /**
 +     * @return The position looked at by the sender, or {@code null} if none
 +     */
-+    @Nullable
-+    public Location getLocation() {
++    public @Nullable Location getLocation() {
 +        return this.location != null ? this.location.clone() : null;
 +    }
 +
@@ -230,7 +225,7 @@ index 0000000000000000000000000000000000000000..8965974988ad20fbe1d45885f20a3a98
 +     *
 +     * @param handled if this completion should be marked as being handled
 +     */
-+    public void setHandled(boolean handled) {
++    public void setHandled(final boolean handled) {
 +        this.handled = handled;
 +    }
 +
@@ -245,21 +240,19 @@ index 0000000000000000000000000000000000000000..8965974988ad20fbe1d45885f20a3a98
 +     * Will provide no completions, and will not fire the synchronous process
 +     */
 +    @Override
-+    public void setCancelled(boolean cancel) {
++    public void setCancelled(final boolean cancel) {
 +        this.cancelled = cancel;
 +    }
 +
-+    @NotNull
 +    public HandlerList getHandlers() {
 +        return HANDLER_LIST;
 +    }
 +
-+    @NotNull
 +    public static HandlerList getHandlerList() {
 +        return HANDLER_LIST;
 +    }
 +
-+    private static @NotNull List<Completion> fromStrings(final @NotNull List<String> suggestions) {
++    private static List<Completion> fromStrings(final List<String> suggestions) {
 +        final List<Completion> list = new ArrayList<>(suggestions.size());
 +        for (final String suggestion : suggestions) {
 +            list.add(new CompletionImpl(suggestion, null));
@@ -277,7 +270,7 @@ index 0000000000000000000000000000000000000000..8965974988ad20fbe1d45885f20a3a98
 +         *
 +         * @return suggestion string
 +         */
-+        @NotNull String suggestion();
++        String suggestion();
 +
 +        /**
 +         * Get the suggestion tooltip for this {@link Completion}.
@@ -287,7 +280,7 @@ index 0000000000000000000000000000000000000000..8965974988ad20fbe1d45885f20a3a98
 +        @Nullable Component tooltip();
 +
 +        @Override
-+        default @NotNull Stream<? extends ExaminableProperty> examinableProperties() {
++        default Stream<? extends ExaminableProperty> examinableProperties() {
 +            return Stream.of(ExaminableProperty.of("suggestion", this.suggestion()), ExaminableProperty.of("tooltip", this.tooltip()));
 +        }
 +
@@ -297,7 +290,7 @@ index 0000000000000000000000000000000000000000..8965974988ad20fbe1d45885f20a3a98
 +         * @param suggestion suggestion string
 +         * @return new completion instance
 +         */
-+        static @NotNull Completion completion(final @NotNull String suggestion) {
++        static Completion completion(final String suggestion) {
 +            return new CompletionImpl(suggestion, null);
 +        }
 +
@@ -310,7 +303,7 @@ index 0000000000000000000000000000000000000000..8965974988ad20fbe1d45885f20a3a98
 +         * @param tooltip    tooltip component, or {@code null}
 +         * @return new completion instance
 +         */
-+        static @NotNull Completion completion(final @NotNull String suggestion, final @Nullable Component tooltip) {
++        static Completion completion(final String suggestion, final @Nullable Component tooltip) {
 +            return new CompletionImpl(suggestion, tooltip);
 +        }
 +    }
@@ -319,15 +312,15 @@ index 0000000000000000000000000000000000000000..8965974988ad20fbe1d45885f20a3a98
 +    static final class CompletionImpl implements Completion {
 +
 +        private final String suggestion;
-+        private final Component tooltip;
++        private final @Nullable Component tooltip;
 +
-+        CompletionImpl(final @NotNull String suggestion, final @Nullable Component tooltip) {
++        CompletionImpl(final String suggestion, final @Nullable Component tooltip) {
 +            this.suggestion = suggestion;
 +            this.tooltip = tooltip;
 +        }
 +
 +        @Override
-+        public @NotNull String suggestion() {
++        public String suggestion() {
 +            return this.suggestion;
 +        }
 +
@@ -355,7 +348,7 @@ index 0000000000000000000000000000000000000000..8965974988ad20fbe1d45885f20a3a98
 +        }
 +
 +        @Override
-+        public @NotNull String toString() {
++        public String toString() {
 +            return StringExaminer.simpleEscaping().examine(this);
 +        }
 +    }
@@ -599,7 +592,7 @@ index 270e6d8ad4358baa256cee5f16cff281f063ce3b..6465e290c090d82986352d5ab7ba5dc6
  
      @Override
 diff --git a/src/test/java/org/bukkit/AnnotationTest.java b/src/test/java/org/bukkit/AnnotationTest.java
-index d9091ba1e5a55e03adca98305233cce9d6888609..b82f07a2879412f6b30643ca93a97439aa49a98a 100644
+index 65cca227207efb8177f3cdbcbff5fe0c3b8a563f..d3a2cb7cf1bc708002fa0b7a44c03ed53fc0c454 100644
 --- a/src/test/java/org/bukkit/AnnotationTest.java
 +++ b/src/test/java/org/bukkit/AnnotationTest.java
 @@ -48,6 +48,8 @@ public class AnnotationTest {
