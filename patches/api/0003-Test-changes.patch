@@ -12,10 +12,10 @@ Co-authored-by: Riley Park <rileysebastianpark@gmail.com>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index a918fd14c95e714e935758d60bccd72755e00b11..768024b2b4584fd7dd86f068c0e79c89ffc5faa1 100644
+index 2e99ea99cfc96b3602ba26b20a402e7d30f0f05f..d91ce069b5fce4afb245691bd90f448d6dfdc492 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -105,6 +105,12 @@ tasks.test {
+@@ -106,6 +106,12 @@ tasks.test {
      useJUnitPlatform()
  }
  
@@ -66,7 +66,7 @@ index 0000000000000000000000000000000000000000..77154095cfb8b259bdb318e8ff40cb6f
 +    }
 +}
 diff --git a/src/test/java/org/bukkit/AnnotationTest.java b/src/test/java/org/bukkit/AnnotationTest.java
-index 64e7aef6220097edefdff3b98a771b988365930d..d9091ba1e5a55e03adca98305233cce9d6888609 100644
+index 64e7aef6220097edefdff3b98a771b988365930d..7ff939ea41417bad3a436a87c89d5efa7ecefe86 100644
 --- a/src/test/java/org/bukkit/AnnotationTest.java
 +++ b/src/test/java/org/bukkit/AnnotationTest.java
 @@ -29,7 +29,13 @@ public class AnnotationTest {
@@ -103,7 +103,19 @@ index 64e7aef6220097edefdff3b98a771b988365930d..d9091ba1e5a55e03adca98305233cce9
      };
  
      @Test
-@@ -67,14 +83,48 @@ public class AnnotationTest {
+@@ -61,20 +77,60 @@ public class AnnotationTest {
+                 continue;
+             }
+ 
++            // Paper start - skip class if it's @NullMarked
++            if (isClassNullMarked(clazz)) {
++                return;
++            }
++            // Paper end - skip class if it's @NullMarked
++
+             for (MethodNode method : clazz.methods) {
+                 if (!isMethodIncluded(clazz, method, foundClasses)) {
+                     continue;
                  }
  
                  if (mustBeAnnotated(Type.getReturnType(method.desc)) && !isWellAnnotated(method.invisibleAnnotations)) {
@@ -152,7 +164,7 @@ index 64e7aef6220097edefdff3b98a771b988365930d..d9091ba1e5a55e03adca98305233cce9
                          ParameterNode paramNode = parameters == null ? null : parameters.get(i);
                          String paramName = paramNode == null ? null : paramNode.name;
  
-@@ -91,13 +141,18 @@ public class AnnotationTest {
+@@ -91,13 +147,18 @@ public class AnnotationTest {
  
          Collections.sort(errors);
  
@@ -175,7 +187,20 @@ index 64e7aef6220097edefdff3b98a771b988365930d..d9091ba1e5a55e03adca98305233cce9
      }
  
      private static void collectClasses(@NotNull File from, @NotNull Map<String, ClassNode> to) throws IOException {
-@@ -140,6 +195,11 @@ public class AnnotationTest {
+@@ -125,6 +186,12 @@ public class AnnotationTest {
+         }
+     }
+ 
++    // Paper start - skip class if it's @NullMarked
++    private static boolean isClassNullMarked(@NotNull ClassNode clazz) {
++        return clazz.visibleAnnotations != null && clazz.visibleAnnotations.stream().anyMatch(node -> "Lorg/jspecify/annotations/NullMarked;".equals(node.desc));
++    }
++    // Paper end - skip class if it's @NullMarked
++
+     private static boolean isClassIncluded(@NotNull ClassNode clazz, @NotNull Map<String, ClassNode> allClasses) {
+         // Exclude private, synthetic or deprecated classes and annotations, since their members can't be null
+         if ((clazz.access & (Opcodes.ACC_PRIVATE | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_DEPRECATED | Opcodes.ACC_ANNOTATION)) != 0) {
+@@ -140,6 +207,11 @@ public class AnnotationTest {
              // Exceptions are excluded
              return false;
          }
@@ -187,7 +212,7 @@ index 64e7aef6220097edefdff3b98a771b988365930d..d9091ba1e5a55e03adca98305233cce9
  
          for (String excludedClass : EXCLUDED_CLASSES) {
              if (excludedClass.equals(clazz.name)) {
-@@ -152,7 +212,7 @@ public class AnnotationTest {
+@@ -152,7 +224,7 @@ public class AnnotationTest {
  
      private static boolean isMethodIncluded(@NotNull ClassNode clazz, @NotNull MethodNode method, @NotNull Map<String, ClassNode> allClasses) {
          // Exclude private, synthetic and deprecated methods
@@ -196,7 +221,7 @@ index 64e7aef6220097edefdff3b98a771b988365930d..d9091ba1e5a55e03adca98305233cce9
              return false;
          }
  
-@@ -170,11 +230,30 @@ public class AnnotationTest {
+@@ -170,11 +242,30 @@ public class AnnotationTest {
          if ("<init>".equals(method.name) && isAnonymous(clazz)) {
              return false;
          }
