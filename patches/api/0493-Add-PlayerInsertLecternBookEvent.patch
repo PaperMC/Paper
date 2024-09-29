@@ -6,12 +6,14 @@ Subject: [PATCH] Add PlayerInsertLecternBookEvent
 
 diff --git a/src/main/java/io/papermc/paper/event/player/PlayerInsertLecternBookEvent.java b/src/main/java/io/papermc/paper/event/player/PlayerInsertLecternBookEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..df9b3eab5e02886cdd208c44e970bac34f9799ec
+index 0000000000000000000000000000000000000000..fa26303480d1daec03f1d14e644895d68cf1ce3a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/PlayerInsertLecternBookEvent.java
 @@ -0,0 +1,83 @@
 +package io.papermc.paper.event.player;
 +
++import com.google.common.base.Preconditions;
++import org.bukkit.block.Block;
 +import org.bukkit.block.Lectern;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.Cancellable;
@@ -29,10 +31,10 @@ index 0000000000000000000000000000000000000000..df9b3eab5e02886cdd208c44e970bac3
 +
 +    private static final HandlerList HANDLER_LIST = new HandlerList();
 +    private boolean cancelled = false;
-+    private final Lectern lectern;
++    private final Block lectern;
 +    private ItemStack book;
 +
-+    public PlayerInsertLecternBookEvent(@NotNull Player who, @NotNull Lectern lectern, @NotNull ItemStack book) {
++    public PlayerInsertLecternBookEvent(@NotNull Player who, @NotNull Block lectern, @NotNull ItemStack book) {
 +        super(who);
 +        this.lectern = lectern;
 +        this.book = book;
@@ -44,12 +46,12 @@ index 0000000000000000000000000000000000000000..df9b3eab5e02886cdd208c44e970bac3
 +    }
 +
 +    /**
-+     * Gets the lectern involved.
++     * Gets the block of the lectern involved in this event.
 +     *
-+     * @return the lectern
++     * @return the block of the lectern.
 +     */
 +    @NotNull
-+    public Lectern getLectern() {
++    public Block getLectern() {
 +        return lectern;
 +    }
 +
@@ -62,7 +64,7 @@ index 0000000000000000000000000000000000000000..df9b3eab5e02886cdd208c44e970bac3
 +     */
 +    @NotNull
 +    public ItemStack getBook() {
-+        return book;
++        return book.clone();
 +    }
 +
 +    @Override
@@ -73,13 +75,11 @@ index 0000000000000000000000000000000000000000..df9b3eab5e02886cdd208c44e970bac3
 +    /**
 +     * Sets the itemstack to insert into the lectern.
 +     *
-+     * @param book the book to insert
++     * @param book the book to insert or {@link ItemStack#empty()} if no book should be inserted.
 +     */
-+    public void setBook(@Nullable ItemStack book) {
-+        if (book == null)
-+            setCancelled(true);
-+        else
-+            this.book = book;
++    public void setBook(@NotNull ItemStack book) {
++        Preconditions.checkArgument(book != null, "Cannot set book to null");
++        this.book = book.clone();
 +    }
 +
 +    @NotNull
