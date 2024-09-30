@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: masmc05 <masmc05@gmail.com>
+Date: Mon, 30 Sep 2024 23:51:49 +0300
+Subject: [PATCH] Fix and enhance openInventory(InventoryView)
+
+== AT ==
+public net.minecraft.world.inventory.HorseInventoryMenu horse
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+index 7dcfb45c24d7743956be514c7d554e06aac77b3e..acf8d6b6dd7a1967eaffd43df2f7da3984d23e9c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+@@ -436,6 +436,18 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+ 
+     @Override
+     public void openInventory(InventoryView inventory) {
++        // Paper start - fix and enhance openInventory(InventoryView)
++        this.openInventory0(inventory, null);
++    }
++
++    @Override
++    public void openInventory(InventoryView inventory, net.kyori.adventure.text.Component defaultOverride) {
++        Preconditions.checkNotNull(defaultOverride, "defaultOverride cannot be null");
++        this.openInventory0(inventory, defaultOverride);
++    }
++
++    private void openInventory0(InventoryView inventory, net.kyori.adventure.text.Component defaultOverride) {
++        // Paper end - fix and enhance openInventory(InventoryView)
+         Preconditions.checkArgument(this.equals(inventory.getPlayer()), "InventoryView must belong to the opening player");
+         if (!(this.getHandle() instanceof ServerPlayer)) return; // TODO: NPC support?
+         if (((ServerPlayer) this.getHandle()).connection == null) return;
+@@ -461,14 +473,23 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+         }
+ 
+         // Now open the window
+-        MenuType<?> windowType = CraftContainer.getNotchInventoryType(inventory.getTopInventory());
++        // MenuType<?> windowType = CraftContainer.getNotchInventoryType(inventory.getTopInventory()); // Paper - move down - fix and enhance openInventory(InventoryView)
+ 
+         //String title = inventory.getTitle(); // Paper - comment
+-        net.kyori.adventure.text.Component adventure$title = inventory.title(); // Paper
++        net.kyori.adventure.text.Component adventure$title = defaultOverride == null ? inventory.title() : defaultOverride; // Paper // Paper - fix and enhance openInventory(InventoryView)
+         if (adventure$title == null) adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(inventory.getTitle()); // Paper
+         if (result.getFirst() != null) adventure$title = result.getFirst(); // Paper - Add titleOverride to InventoryOpenEvent
+         //player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, CraftChatMessage.fromString(title)[0])); // Paper - comment
+-        if (!player.isImmobile()) player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper - Prevent opening inventories when frozen
++        // Paper start - fix and enhance openInventory(InventoryView)
++        if (!player.isImmobile()) { // Paper - Prevent opening inventories when frozen
++            if (container instanceof net.minecraft.world.inventory.HorseInventoryMenu menu) {
++                player.connection.send(new net.minecraft.network.protocol.game.ClientboundHorseScreenOpenPacket(menu.containerId, menu.horse.getInventoryColumns(), menu.horse.getId()));
++            } else {
++                MenuType<?> windowType = CraftContainer.getNotchInventoryType(inventory.getTopInventory());
++                player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper - Prevent opening inventories when frozen
++            }
++        }
++        // Paper end - fix and enhance openInventory(InventoryView)
+         player.containerMenu = container;
+         player.initMenu(container);
+     }
