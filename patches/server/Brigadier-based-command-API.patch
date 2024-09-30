@@ -1053,13 +1053,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import com.mojang.brigadier.context.CommandContext;
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
++import java.util.concurrent.CompletableFuture;
 +import net.kyori.adventure.chat.SignedMessage;
 +import net.minecraft.commands.CommandSourceStack;
 +import net.minecraft.commands.arguments.MessageArgument;
-+import org.jetbrains.annotations.NotNull;
++import org.jspecify.annotations.NullMarked;
 +
-+import java.util.concurrent.CompletableFuture;
-+
++@NullMarked
 +public record SignedMessageResolverImpl(MessageArgument.Message message) implements SignedMessageResolver {
 +
 +    @Override
@@ -1067,13 +1067,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return this.message.text();
 +    }
 +
++    @SuppressWarnings({"rawtypes", "unchecked"})
 +    @Override
-+    public @NotNull CompletableFuture<SignedMessage> resolveSignedMessage(final String argumentName, final CommandContext erased) throws CommandSyntaxException {
-+        final CommandContext<CommandSourceStack> type = erased;
++    public CompletableFuture<SignedMessage> resolveSignedMessage(final String argumentName, final CommandContext erased) throws CommandSyntaxException {
 +        final CompletableFuture<SignedMessage> future = new CompletableFuture<>();
 +
-+        final MessageArgument.Message response = type.getArgument(argumentName, SignedMessageResolverImpl.class).message;
-+        MessageArgument.resolveChatMessage(response, type, argumentName, (message) -> {
++        final MessageArgument.Message response = ((CommandContext<CommandSourceStack>) erased).getArgument(argumentName, SignedMessageResolverImpl.class).message;
++        MessageArgument.resolveChatMessage(response, erased, argumentName, (message) -> {
 +            future.complete(message.adventureView());
 +        });
 +        return future;

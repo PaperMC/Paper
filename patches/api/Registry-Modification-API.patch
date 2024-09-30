@@ -13,14 +13,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package io.papermc.paper.registry;
 +
 +import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * To be implemented by any type used for modifying registries.
 + *
 + * @param <T> registry value type
 + */
-+@ApiStatus.NonExtendable
 +@ApiStatus.Experimental
++@NullMarked
++@ApiStatus.NonExtendable
 +public interface RegistryBuilder<T> {
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEvent.java b/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEvent.java
@@ -36,8 +38,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.registry.tag.Tag;
 +import io.papermc.paper.registry.tag.TagKey;
 +import org.bukkit.Keyed;
-+import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Event object for {@link RegistryEventProvider#entryAdd()}. This
@@ -48,6 +50,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + * @param <B> registry entry builder type
 + */
 +@ApiStatus.Experimental
++@NullMarked
 +@ApiStatus.NonExtendable
 +public interface RegistryEntryAddEvent<T, B extends RegistryBuilder<T>> extends RegistryEvent<T> {
 +
@@ -56,14 +59,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     *
 +     * @return the object builder
 +     */
-+    @NonNull B builder();
++    B builder();
 +
 +    /**
 +     * Gets the key for this entry in the registry.
 +     *
 +     * @return the key
 +     */
-+    @NonNull TypedKey<T> key();
++    TypedKey<T> key();
 +
 +    /**
 +     * Gets or creates a tag for the given tag key. This tag
@@ -74,7 +77,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @return the tag
 +     * @param <V> the tag value type
 +     */
-+    @NonNull <V extends Keyed> Tag<V> getOrCreateTag(@NonNull TagKey<V> tagKey);
++    <V extends Keyed> Tag<V> getOrCreateTag(TagKey<V> tagKey);
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEvent.java b/src/main/java/io/papermc/paper/registry/event/RegistryEvent.java
 new file mode 100644
@@ -86,8 +89,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import io.papermc.paper.plugin.lifecycle.event.LifecycleEvent;
 +import io.papermc.paper.registry.RegistryKey;
-+import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Base type for all registry events.
@@ -95,6 +98,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + * @param <T> registry entry type
 + */
 +@ApiStatus.Experimental
++@NullMarked
 +@ApiStatus.NonExtendable
 +public interface RegistryEvent<T> extends LifecycleEvent {
 +
@@ -103,7 +107,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     *
 +     * @return the registry key
 +     */
-+    @NonNull RegistryKey<T> registryKey();
++    RegistryKey<T> registryKey();
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEventProvider.java b/src/main/java/io/papermc/paper/registry/event/RegistryEventProvider.java
 new file mode 100644
@@ -115,14 +119,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 +import io.papermc.paper.plugin.lifecycle.event.handler.LifecycleEventHandler;
-+import io.papermc.paper.plugin.lifecycle.event.handler.configuration.LifecycleEventHandlerConfiguration;
-+import io.papermc.paper.plugin.lifecycle.event.handler.configuration.PrioritizedLifecycleEventHandlerConfiguration;
 +import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEventType;
 +import io.papermc.paper.registry.RegistryBuilder;
 +import io.papermc.paper.registry.RegistryKey;
 +import io.papermc.paper.registry.event.type.RegistryEntryAddEventType;
-+import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Provider for registry events for a specific registry.
@@ -137,6 +139,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + * @param <B> registry entry builder type
 + */
 +@ApiStatus.Experimental
++@NullMarked
 +@ApiStatus.NonExtendable
 +public interface RegistryEventProvider<T, B extends RegistryBuilder<T>> {
 +
@@ -149,7 +152,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     *
 +     * @return the registry entry add event type
 +     */
-+    @NonNull RegistryEntryAddEventType<T, B> entryAdd();
++    RegistryEntryAddEventType<T, B> entryAdd();
 +
 +    /**
 +     * Gets the event type for {@link RegistryFreezeEvent} which is fired just before
@@ -160,14 +163,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     *
 +     * @return the registry freeze event type
 +     */
-+    LifecycleEventType.@NonNull Prioritizable<BootstrapContext, RegistryFreezeEvent<T, B>> freeze();
++    LifecycleEventType.Prioritizable<BootstrapContext, RegistryFreezeEvent<T, B>> freeze();
 +
 +    /**
 +     * Gets the registry key associated with this event type provider.
 +     *
 +     * @return the registry key
 +     */
-+    @NonNull RegistryKey<T> registryKey();
++    RegistryKey<T> registryKey();
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEventProviderImpl.java b/src/main/java/io/papermc/paper/registry/event/RegistryEventProviderImpl.java
 new file mode 100644
@@ -182,12 +185,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.registry.RegistryBuilder;
 +import io.papermc.paper.registry.RegistryKey;
 +import io.papermc.paper.registry.event.type.RegistryEntryAddEventType;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.framework.qual.DefaultQualifier;
 +import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +@ApiStatus.Internal
-+@DefaultQualifier(NonNull.class)
++@NullMarked
 +record RegistryEventProviderImpl<T, B extends RegistryBuilder<T>>(RegistryKey<T> registryKey) implements RegistryEventProvider<T, B> {
 +
 +    static <T, B extends RegistryBuilder<T>> RegistryEventProvider<T, B> create(final RegistryKey<T> registryKey) {
@@ -244,12 +246,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package io.papermc.paper.registry.event;
 +
 +import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Holds providers for {@link RegistryEntryAddEvent} and {@link RegistryFreezeEvent}
 + * handlers for each applicable registry.
 + */
 +@ApiStatus.Experimental
++@NullMarked
 +public final class RegistryEvents {
 +
 +    private RegistryEvents() {
@@ -267,8 +271,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.registry.tag.Tag;
 +import io.papermc.paper.registry.tag.TagKey;
 +import org.bukkit.Keyed;
-+import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Event object for {@link RegistryEventProvider#freeze()}. This
@@ -279,6 +283,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + * @param <B> registry entry builder type
 + */
 +@ApiStatus.Experimental
++@NullMarked
 +@ApiStatus.NonExtendable
 +public interface RegistryFreezeEvent<T, B extends RegistryBuilder<T>> extends RegistryEvent<T> {
 +
@@ -287,7 +292,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     *
 +     * @return a writable registry
 +     */
-+    @NonNull WritableRegistry<T, B> registry();
++    WritableRegistry<T, B> registry();
 +
 +    /**
 +     * Gets or creates a tag for the given tag key. This tag
@@ -298,7 +303,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @return the tag
 +     * @param <V> the tag value type
 +     */
-+    @NonNull <V extends Keyed> Tag<V> getOrCreateTag(@NonNull TagKey<V> tagKey);
++    <V extends Keyed> Tag<V> getOrCreateTag(TagKey<V> tagKey);
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/WritableRegistry.java b/src/main/java/io/papermc/paper/registry/event/WritableRegistry.java
 new file mode 100644
@@ -311,8 +316,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.registry.RegistryBuilder;
 +import io.papermc.paper.registry.TypedKey;
 +import java.util.function.Consumer;
-+import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * A registry which supports registering new objects.
@@ -320,8 +325,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + * @param <T> registry entry type
 + * @param <B> registry entry builder type
 + */
-+@ApiStatus.NonExtendable
 +@ApiStatus.Experimental
++@NullMarked
++@ApiStatus.NonExtendable
 +public interface WritableRegistry<T, B extends RegistryBuilder<T>> {
 +
 +    /**
@@ -331,7 +337,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param key the entry's key (must be unique from others)
 +     * @param value a consumer for the entry's builder
 +     */
-+    void register(@NonNull TypedKey<T> key, @NonNull Consumer<? super B> value);
++    void register(TypedKey<T> key, Consumer<? super B> value);
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddConfiguration.java b/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddConfiguration.java
 new file mode 100644
@@ -345,14 +351,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.plugin.lifecycle.event.handler.configuration.PrioritizedLifecycleEventHandlerConfiguration;
 +import io.papermc.paper.registry.TypedKey;
 +import java.util.function.Predicate;
-+import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.Contract;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Specific configuration for {@link io.papermc.paper.registry.event.RegistryEntryAddEvent}s.
 + *
 + * @param <T> registry entry type
 + */
++@NullMarked
 +public interface RegistryEntryAddConfiguration<T> extends PrioritizedLifecycleEventHandlerConfiguration<BootstrapContext> {
 +
 +    /**
@@ -362,7 +369,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @return this configuration
 +     */
 +    @Contract(value = "_ -> this", mutates = "this")
-+    default @NonNull RegistryEntryAddConfiguration<T> filter(final @NonNull TypedKey<T> key) {
++    default RegistryEntryAddConfiguration<T> filter(final TypedKey<T> key) {
 +        return this.filter(key::equals);
 +    }
 +
@@ -373,13 +380,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @return this configuration
 +     */
 +    @Contract(value = "_ -> this", mutates = "this")
-+    @NonNull RegistryEntryAddConfiguration<T> filter(@NonNull Predicate<TypedKey<T>> filter);
++    RegistryEntryAddConfiguration<T> filter(Predicate<TypedKey<T>> filter);
 +
 +    @Override
-+    @NonNull RegistryEntryAddConfiguration<T> priority(int priority);
++    RegistryEntryAddConfiguration<T> priority(int priority);
 +
 +    @Override
-+    @NonNull RegistryEntryAddConfiguration<T> monitor();
++    RegistryEntryAddConfiguration<T> monitor();
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddEventType.java b/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddEventType.java
 new file mode 100644
@@ -394,6 +401,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.registry.RegistryBuilder;
 +import io.papermc.paper.registry.event.RegistryEntryAddEvent;
 +import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Lifecycle event type for {@link RegistryEntryAddEvent}s.
@@ -402,6 +410,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + * @param <B> registry entry builder type
 + */
 +@ApiStatus.Experimental
++@NullMarked
 +@ApiStatus.NonExtendable
 +public interface RegistryEntryAddEventType<T, B extends RegistryBuilder<T>> extends LifecycleEventType<BootstrapContext, RegistryEntryAddEvent<T, B>, RegistryEntryAddConfiguration<T>> {
 +}
@@ -418,11 +427,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.Iterator;
 +import org.bukkit.Keyed;
 +import org.bukkit.Registry;
-+import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Unmodifiable;
++import org.jspecify.annotations.NullMarked;
 +
 +@ApiStatus.Experimental
++@NullMarked
 +@ApiStatus.NonExtendable
 +public non-sealed interface RegistryKeySet<T extends Keyed> extends Iterable<TypedKey<T>>, RegistrySet<T> { // TODO remove Keyed
 +
@@ -436,7 +446,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     *
 +     * @return the keys
 +     */
-+    @NonNull @Unmodifiable Collection<TypedKey<T>> values();
++    @Unmodifiable Collection<TypedKey<T>> values();
 +
 +    /**
 +     * Resolve this set into a collection of values. Prefer using
@@ -446,7 +456,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @return the resolved values
 +     * @see RegistryKeySet#values()
 +     */
-+    @NonNull @Unmodifiable Collection<T> resolve(final @NonNull Registry<T> registry);
++    @Unmodifiable Collection<T> resolve(final Registry<T> registry);
 +
 +    /**
 +     * Checks if this set contains the value with the given key.
@@ -454,10 +464,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param valueKey the key to check
 +     * @return true if the value is in this set
 +     */
-+    boolean contains(@NonNull TypedKey<T> valueKey);
++    boolean contains(TypedKey<T> valueKey);
 +
 +    @Override
-+    default @NonNull Iterator<TypedKey<T>> iterator() {
++    default Iterator<TypedKey<T>> iterator() {
 +        return this.values().iterator();
 +    }
 +}
@@ -480,20 +490,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.bukkit.Keyed;
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.Registry;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.framework.qual.DefaultQualifier;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.Nullable;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
 +@ApiStatus.Internal
-+@DefaultQualifier(NonNull.class)
-+record RegistryKeySetImpl<T extends Keyed>(RegistryKey<T> registryKey, List<TypedKey<T>> values) implements RegistryKeySet<T> { // TODO remove Keyed
++@NullMarked
++record RegistryKeySetImpl<T extends @Nullable Keyed>(RegistryKey<T> registryKey, List<TypedKey<T>> values) implements RegistryKeySet<T> { // TODO remove Keyed
 +
 +    static <T extends Keyed> RegistryKeySet<T> create(final RegistryKey<T> registryKey, final Iterable<? extends T> values) { // TODO remove Keyed
 +        final Registry<T> registry = RegistryAccess.registryAccess().getRegistry(registryKey);
 +        final ArrayList<TypedKey<T>> keys = new ArrayList<>();
 +        for (final T value : values) {
-+            final @Nullable NamespacedKey key = registry.getKey(value);
++            final NamespacedKey key = registry.getKey(value);
 +            Preconditions.checkArgument(key != null, value + " does not have a key in " + registryKey);
 +            keys.add(TypedKey.create(registryKey, key));
 +        }
@@ -513,7 +522,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public Collection<T> resolve(final Registry<T> registry) {
 +        final List<T> values = new ArrayList<>(this.values.size());
 +        for (final TypedKey<T> key : this.values) {
-+            final @Nullable T value = registry.get(key.key());
++            final T value = registry.get(key.key());
 +            Preconditions.checkState(value != null, "Trying to access unbound TypedKey: " + key);
 +            values.add(value);
 +        }
@@ -533,9 +542,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.registry.TypedKey;
 +import io.papermc.paper.registry.tag.Tag;
 +import org.bukkit.Keyed;
-+import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Represents a collection tied to a registry.
@@ -553,6 +562,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + * @param <T> registry value type
 + */
 +@ApiStatus.Experimental
++@NullMarked
 +public sealed interface RegistrySet<T> permits RegistryKeySet, RegistryValueSet {
 +
 +    // TODO uncomment when direct holder sets need to be exposed to the API
@@ -566,7 +576,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    //  * @param <T> the type of the values
 +    //  */
 +    // @Contract(value = "_, _ -> new", pure = true)
-+    // static <T> @NonNull RegistryValueSet<T> valueSet(final @NonNull RegistryKey<T> registryKey, final @NonNull Iterable<? extends T> values) {
++    // static <T> RegistryValueSet<T> valueSet(final RegistryKey<T> registryKey, final Iterable<? extends T> values) {
 +    //     return RegistryValueSetImpl.create(registryKey, values);
 +    // }
 +
@@ -584,7 +594,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @throws IllegalArgumentException if the registry isn't available yet or if any value doesn't have a key in that registry
 +     */
 +    @Contract(value = "_, _ -> new", pure = true)
-+    static <T extends Keyed> @NonNull RegistryKeySet<T> keySetFromValues(final @NonNull RegistryKey<T> registryKey, final @NonNull Iterable<? extends T> values) { // TODO remove Keyed
++    static <T extends Keyed> RegistryKeySet<T> keySetFromValues(final RegistryKey<T> registryKey, final Iterable<? extends T> values) { // TODO remove Keyed
 +        return RegistryKeySetImpl.create(registryKey, values);
 +    }
 +
@@ -597,7 +607,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param <T> the type of the values
 +     */
 +    @SafeVarargs
-+    static <T extends Keyed> RegistryKeySet<T> keySet(final @NonNull RegistryKey<T> registryKey, final @NonNull TypedKey<T> @NonNull... keys) { // TODO remove Keyed
++    static <T extends Keyed> RegistryKeySet<T> keySet(final RegistryKey<T> registryKey, final TypedKey<T>... keys) { // TODO remove Keyed
 +        return keySet(registryKey, Lists.newArrayList(keys));
 +    }
 +
@@ -611,7 +621,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     */
 +    @SuppressWarnings("BoundedWildcard")
 +    @Contract(value = "_, _ -> new", pure = true)
-+    static <T extends Keyed> @NonNull RegistryKeySet<T> keySet(final @NonNull RegistryKey<T> registryKey, final @NonNull Iterable<TypedKey<T>> keys) { // TODO remove Keyed
++    static <T extends Keyed> RegistryKeySet<T> keySet(final RegistryKey<T> registryKey, final Iterable<TypedKey<T>> keys) { // TODO remove Keyed
 +        return new RegistryKeySetImpl<>(registryKey, Lists.newArrayList(keys));
 +    }
 +
@@ -620,7 +630,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     *
 +     * @return the registry key
 +     */
-+    @NonNull RegistryKey<T> registryKey();
++    RegistryKey<T> registryKey();
 +
 +    /**
 +     * Get the size of this set.
@@ -648,9 +658,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import java.util.Collection;
 +import java.util.Iterator;
-+import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Unmodifiable;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * A collection of anonymous values relating to a registry. These
@@ -659,6 +669,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + * @param <T> registry value type
 + */
 +@ApiStatus.Experimental
++@NullMarked
 +public sealed interface RegistryValueSet<T> extends Iterable<T>, RegistrySet<T> permits RegistryValueSetImpl {
 +
 +    @Override
@@ -671,10 +682,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     *
 +     * @return the values
 +     */
-+    @NonNull @Unmodifiable Collection<T> values();
++    @Unmodifiable Collection<T> values();
 +
 +    @Override
-+    default @NonNull Iterator<T> iterator() {
++    default Iterator<T> iterator() {
 +        return this.values().iterator();
 +    }
 +}
@@ -690,8 +701,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.registry.RegistryKey;
 +import java.util.List;
 +import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +@ApiStatus.Internal
++@NullMarked
 +record RegistryValueSetImpl<T>(RegistryKey<T> registryKey, List<T> values) implements RegistryValueSet<T> {
 +
 +    RegistryValueSetImpl {
@@ -712,8 +725,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import io.papermc.paper.registry.set.RegistryKeySet;
 +import org.bukkit.Keyed;
-+import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * A named {@link RegistryKeySet} which are created
@@ -724,6 +737,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + * @see org.bukkit.Registry#getTag(TagKey)
 + */
 +@ApiStatus.Experimental
++@NullMarked
 +public interface Tag<T extends Keyed> extends RegistryKeySet<T> { // TODO remove Keyed
 +
 +    /**
@@ -731,7 +745,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     *
 +     * @return the tag key identifier
 +     */
-+    @NonNull TagKey<T> tagKey();
++    TagKey<T> tagKey();
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/tag/TagKey.java b/src/main/java/io/papermc/paper/registry/tag/TagKey.java
 new file mode 100644
@@ -744,11 +758,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.registry.RegistryKey;
 +import net.kyori.adventure.key.Key;
 +import net.kyori.adventure.key.Keyed;
-+import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
++import org.jspecify.annotations.NullMarked;
 +
 +@ApiStatus.Experimental
++@NullMarked
 +public sealed interface TagKey<T> extends Keyed permits TagKeyImpl {
 +
 +    /**
@@ -760,7 +775,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param <T> the registry value type
 +     */
 +    @Contract(value = "_, _ -> new", pure = true)
-+    static <T> @NonNull TagKey<T> create(final @NonNull RegistryKey<T> registryKey, final @NonNull Key key) {
++    static <T> TagKey<T> create(final RegistryKey<T> registryKey, final Key key) {
 +        return new TagKeyImpl<>(registryKey, key);
 +    }
 +
@@ -769,7 +784,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     *
 +     * @return the registry key
 +     */
-+    @NonNull RegistryKey<T> registryKey();
++    RegistryKey<T> registryKey();
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/tag/TagKeyImpl.java b/src/main/java/io/papermc/paper/registry/tag/TagKeyImpl.java
 new file mode 100644
@@ -781,12 +796,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import io.papermc.paper.registry.RegistryKey;
 +import net.kyori.adventure.key.Key;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.framework.qual.DefaultQualifier;
 +import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +@ApiStatus.Internal
-+@DefaultQualifier(NonNull.class)
++@NullMarked
 +record TagKeyImpl<T>(RegistryKey<T> registryKey, Key key) implements TagKey<T> {
 +
 +    @Override

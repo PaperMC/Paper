@@ -45,8 +45,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.registry.RegistryKey;
 +import io.papermc.paper.tag.PostFlattenTagRegistrar;
 +import io.papermc.paper.tag.PreFlattenTagRegistrar;
-+import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Provides event types for tag registration.
@@ -55,6 +55,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + * @see PostFlattenTagRegistrar
 + */
 +@ApiStatus.Experimental
++@NullMarked
 +@ApiStatus.NonExtendable
 +public interface TagEventTypeProvider {
 +
@@ -66,7 +67,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param <T> the type of value in the tag
 +     * @see PreFlattenTagRegistrar
 +     */
-+    <T> LifecycleEventType.@NonNull Prioritizable<BootstrapContext, ReloadableRegistrarEvent<PreFlattenTagRegistrar<T>>> preFlatten(@NonNull RegistryKey<T> registryKey);
++    <T> LifecycleEventType.Prioritizable<BootstrapContext, ReloadableRegistrarEvent<PreFlattenTagRegistrar<T>>> preFlatten(RegistryKey<T> registryKey);
 +
 +    /**
 +     * Get a prioritizable, reloadable registrar event for tags after they are flattened.
@@ -76,7 +77,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param <T> the type of value in the tag
 +     * @see PostFlattenTagRegistrar
 +     */
-+    <T> LifecycleEventType.@NonNull Prioritizable<BootstrapContext, ReloadableRegistrarEvent<PostFlattenTagRegistrar<T>>> postFlatten(@NonNull RegistryKey<T> registryKey);
++    <T> LifecycleEventType.Prioritizable<BootstrapContext, ReloadableRegistrarEvent<PostFlattenTagRegistrar<T>>> postFlatten(RegistryKey<T> registryKey);
 +}
 diff --git a/src/main/java/io/papermc/paper/tag/PostFlattenTagRegistrar.java b/src/main/java/io/papermc/paper/tag/PostFlattenTagRegistrar.java
 new file mode 100644
@@ -92,10 +93,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.registry.tag.TagKey;
 +import java.util.Collection;
 +import java.util.Map;
-+import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
 +import org.jetbrains.annotations.Unmodifiable;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Registrar for tags after they have been flattened. Flattened
@@ -110,7 +111,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + * class YourBootstrapClass implements PluginBootstrap {
 + *
 + *     @Override
-+ *     public void bootstrap(@NotNull BootstrapContext context) {
++ *     public void bootstrap(BootstrapContext context) {
 + *         LifecycleEventManager<BootstrapContext> manager = context.getLifecycleManager();
 + *         manager.registerEventHandler(LifecycleEvents.TAGS.postFlatten(RegistryKey.ENCHANTMENT), event -> {
 + *             final PostFlattenTagRegistrar<Enchantment> registrar = event.registrar();
@@ -127,6 +128,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + * @see PreFlattenTagRegistrar
 + */
 +@ApiStatus.Experimental
++@NullMarked
 +@ApiStatus.NonExtendable
 +public interface PostFlattenTagRegistrar<T> extends Registrar {
 +
@@ -135,7 +137,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     *
 +     * @return the registry key
 +     */
-+    @NonNull RegistryKey<T> registryKey();
++    RegistryKey<T> registryKey();
 +
 +    /**
 +     * Get a copy of all tags currently held in this registrar.
@@ -143,7 +145,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @return an immutable map of all tags
 +     */
 +    @Contract(value = "-> new", pure = true)
-+    @Unmodifiable @NonNull Map<TagKey<T>, Collection<TypedKey<T>>> getAllTags();
++    @Unmodifiable Map<TagKey<T>, Collection<TypedKey<T>>> getAllTags();
 +
 +    /**
 +     * Checks if this registrar has a tag with the given key.
@@ -152,7 +154,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @return true if the tag exists, false otherwise
 +     */
 +    @Contract(pure = true)
-+    boolean hasTag(@NonNull TagKey<T> tagKey);
++    boolean hasTag(TagKey<T> tagKey);
 +
 +    /**
 +     * Get the tag with the given key. Use {@link #hasTag(TagKey)} to check
@@ -164,7 +166,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @see #hasTag(TagKey)
 +     */
 +    @Contract(value = "_ -> new", pure = true)
-+    @Unmodifiable @NonNull Collection<TypedKey<T>> getTag(@NonNull TagKey<T> tagKey);
++    @Unmodifiable Collection<TypedKey<T>> getTag(TagKey<T> tagKey);
 +
 +    /**
 +     * Adds values to the given tag. If the tag does not exist, it will be created.
@@ -174,7 +176,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @see #setTag(TagKey, Collection)
 +     */
 +    @Contract(mutates = "this")
-+    void addToTag(@NonNull TagKey<T> tagKey, @NonNull Collection<TypedKey<T>> values);
++    void addToTag(TagKey<T> tagKey, Collection<TypedKey<T>> values);
 +
 +    /**
 +     * Sets the values of the given tag. If the tag does not exist, it will be created.
@@ -185,7 +187,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @see #addToTag(TagKey, Collection)
 +     */
 +    @Contract(mutates = "this")
-+    void setTag(@NonNull TagKey<T> tagKey, @NonNull Collection<TypedKey<T>> values);
++    void setTag(TagKey<T> tagKey, Collection<TypedKey<T>> values);
 +}
 diff --git a/src/main/java/io/papermc/paper/tag/PreFlattenTagRegistrar.java b/src/main/java/io/papermc/paper/tag/PreFlattenTagRegistrar.java
 new file mode 100644
@@ -201,10 +203,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.Collection;
 +import java.util.List;
 +import java.util.Map;
-+import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
 +import org.jetbrains.annotations.Unmodifiable;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Registrar for tags before they are flattened. Flattened
@@ -218,7 +220,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + * class YourBootstrapClass implements PluginBootstrap {
 + *
 + *     @Override
-+ *     public void bootstrap(@NotNull BootstrapContext context) {
++ *     public void bootstrap(BootstrapContext context) {
 + *         LifecycleEventManager<BootstrapContext> manager = context.getLifecycleManager();
 + *         manager.registerEventHandler(LifecycleEvents.TAGS.preFlatten(RegistryKey.ITEM), event -> {
 + *             final PreFlattenTagRegistrar<ItemType> registrar = event.registrar();
@@ -235,6 +237,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + * @see PostFlattenTagRegistrar
 + */
 +@ApiStatus.Experimental
++@NullMarked
 +@ApiStatus.NonExtendable
 +public interface PreFlattenTagRegistrar<T> extends Registrar {
 +
@@ -243,7 +246,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     *
 +     * @return the registry key
 +     */
-+    @NonNull RegistryKey<T> registryKey();
++    RegistryKey<T> registryKey();
 +
 +    /**
 +     * Get a copy of all tags currently held in this registrar.
@@ -251,7 +254,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @return an immutable map of all tags
 +     */
 +    @Contract(value = "-> new", pure = true)
-+    @Unmodifiable @NonNull Map<TagKey<T>, Collection<TagEntry<T>>> getAllTags();
++    @Unmodifiable Map<TagKey<T>, Collection<TagEntry<T>>> getAllTags();
 +
 +    /**
 +     * Checks if this registrar has a tag with the given key.
@@ -260,7 +263,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @return true if the tag exists, false otherwise
 +     */
 +    @Contract(pure = true)
-+    boolean hasTag(@NonNull TagKey<T> tagKey);
++    boolean hasTag(TagKey<T> tagKey);
 +
 +    /**
 +     * Get the tag with the given key. Use {@link #hasTag(TagKey)} to check
@@ -272,7 +275,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @see #hasTag(TagKey)
 +     */
 +    @Contract(value = "_ -> new", pure = true)
-+    @Unmodifiable @NonNull List<TagEntry<T>> getTag(@NonNull TagKey<T> tagKey);
++    @Unmodifiable List<TagEntry<T>> getTag(TagKey<T> tagKey);
 +
 +    /**
 +     * Adds entries to the given tag. If the tag does not exist, it will be created.
@@ -282,7 +285,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @see #setTag(TagKey, Collection)
 +     */
 +    @Contract(mutates = "this")
-+    void addToTag(@NonNull TagKey<T> tagKey, @NonNull Collection<TagEntry<T>> entries);
++    void addToTag(TagKey<T> tagKey, Collection<TagEntry<T>> entries);
 +
 +    /**
 +     * Sets the entries of the given tag. If the tag does not exist, it will be created.
@@ -293,7 +296,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @see #addToTag(TagKey, Collection)
 +     */
 +    @Contract(mutates = "this")
-+    void setTag(@NonNull TagKey<T> tagKey, @NonNull Collection<TagEntry<T>> entries);
++    void setTag(TagKey<T> tagKey, Collection<TagEntry<T>> entries);
 +}
 diff --git a/src/main/java/io/papermc/paper/tag/TagEntry.java b/src/main/java/io/papermc/paper/tag/TagEntry.java
 new file mode 100644
@@ -306,9 +309,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.registry.TypedKey;
 +import io.papermc.paper.registry.tag.TagKey;
 +import net.kyori.adventure.key.Keyed;
-+import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * An entry is a pre-flattened tag. Represents
@@ -318,6 +321,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 + * @see PreFlattenTagRegistrar
 + */
 +@ApiStatus.Experimental
++@NullMarked
 +@ApiStatus.NonExtendable
 +public interface TagEntry<T> extends Keyed {
 +
@@ -329,7 +333,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param <T> the type of value
 +     */
 +    @Contract(value = "_ -> new", pure = true)
-+    static <T> @NonNull TagEntry<T> valueEntry(final @NonNull TypedKey<T> entryKey) {
++    static <T> TagEntry<T> valueEntry(final TypedKey<T> entryKey) {
 +        return valueEntry(entryKey, true);
 +    }
 +
@@ -342,7 +346,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param <T> the type of value
 +     */
 +    @Contract(value = "_, _ -> new", pure = true)
-+    static <T> @NonNull TagEntry<T> valueEntry(final @NonNull TypedKey<T> entryKey, final boolean isRequired) {
++    static <T> TagEntry<T> valueEntry(final TypedKey<T> entryKey, final boolean isRequired) {
 +        return new TagEntryImpl<>(entryKey.key(), false, isRequired);
 +    }
 +
@@ -354,7 +358,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param <T> the type of value
 +     */
 +    @Contract(value = "_ -> new", pure = true)
-+    static <T> @NonNull TagEntry<T> tagEntry(final @NonNull TagKey<T> tagKey) {
++    static <T> TagEntry<T> tagEntry(final TagKey<T> tagKey) {
 +        return tagEntry(tagKey, true);
 +    }
 +
@@ -367,7 +371,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param <T> the type of value
 +     */
 +    @Contract(value = "_, _ -> new", pure = true)
-+    static <T> @NonNull TagEntry<T> tagEntry(final @NonNull TagKey<T> tagKey, final boolean isRequired) {
++    static <T> TagEntry<T> tagEntry(final TagKey<T> tagKey, final boolean isRequired) {
 +        return new TagEntryImpl<>(tagKey.key(), true, isRequired);
 +    }
 +
@@ -400,7 +404,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import net.kyori.adventure.key.Key;
 +import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
++@NullMarked
 +@ApiStatus.Internal
 +record TagEntryImpl<T>(Key key, boolean isTag, boolean isRequired) implements TagEntry<T> {
 +}

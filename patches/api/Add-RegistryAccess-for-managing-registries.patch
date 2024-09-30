@@ -105,14 +105,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.bukkit.Keyed;
 +import org.bukkit.Registry;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
 +/**
 + * Used for accessing different {@link Registry} instances
 + * by a {@link RegistryKey}. Get the main instance of {@link RegistryAccess}
 + * with {@link RegistryAccess#registryAccess()}.
 + */
++@NullMarked
 +@ApiStatus.NonExtendable
 +public interface RegistryAccess {
 +
@@ -121,7 +122,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     *
 +     * @return the RegistryAccess instance
 +     */
-+    static @NotNull RegistryAccess registryAccess() {
++    static RegistryAccess registryAccess() {
 +        return RegistryAccessHolder.INSTANCE.orElseThrow(() -> new IllegalStateException("No RegistryAccess implementation found"));
 +    }
 +
@@ -134,7 +135,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @deprecated use {@link #getRegistry(RegistryKey)} with keys from {@link RegistryKey}
 +     */
 +    @Deprecated(since = "1.20.6", forRemoval = true)
-+    <T extends Keyed> @Nullable Registry<T> getRegistry(@NotNull Class<T> type);
++    <T extends Keyed> @Nullable Registry<T> getRegistry(Class<T> type);
 +
 +    /**
 +     * Gets the registry with the specified key.
@@ -147,7 +148,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     */
 +    // Future note: We should have no trouble removing this generic qualifier when
 +    // registry types no longer have to be "keyed" as it shouldn't break ABI or API.
-+    <T extends Keyed> @NotNull Registry<T> getRegistry(@NotNull RegistryKey<T> registryKey);
++    <T extends Keyed> Registry<T> getRegistry(RegistryKey<T> registryKey);
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/RegistryAccessHolder.java b/src/main/java/io/papermc/paper/registry/RegistryAccessHolder.java
 new file mode 100644
@@ -171,13 +172,13 @@ diff --git a/src/main/java/io/papermc/paper/registry/RegistryKeyImpl.java b/src/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/io/papermc/paper/registry/RegistryKeyImpl.java
 +++ b/src/main/java/io/papermc/paper/registry/RegistryKeyImpl.java
-@@ -0,0 +0,0 @@ record RegistryKeyImpl<T>(@NotNull Key key) implements RegistryKey<T> {
+@@ -0,0 +0,0 @@ record RegistryKeyImpl<T>(Key key) implements RegistryKey<T> {
  
      static final Set<RegistryKey<?>> REGISTRY_KEYS = Sets.newIdentityHashSet();
  
 +    // override equals and hashCode to this can be used to simulate an "identity" hashmap
 +    @Override
-+    public boolean equals(final Object obj) {
++    public boolean equals(final @Nullable Object obj) {
 +        return obj == this;
 +    }
 +
