@@ -1,0 +1,80 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Intybyte <vaan.testwork@gmail.com>
+Date: Mon, 30 Sep 2024 17:16:36 +0200
+Subject: [PATCH] Create Limited set for Entity
+
+
+diff --git a/src/main/java/io/papermc/paper/util/SizeLimitedSet.java b/src/main/java/io/papermc/paper/util/SizeLimitedSet.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0ce9c117447ae07563c576944d2fc3f255d49cf1
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/SizeLimitedSet.java
+@@ -0,0 +1,46 @@
++package io.papermc.paper.util;
++
++import com.google.common.collect.ForwardingSet;
++import java.util.Collection;
++import java.util.Set;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
++
++@NullMarked
++public class SizeLimitedSet<E> extends ForwardingSet<E> {
++
++    private final Set<E> delegate;
++    private final int maxSize;
++
++    public SizeLimitedSet(final Set<E> delegate, final int maxSize) {
++        this.delegate = delegate;
++        this.maxSize = maxSize;
++    }
++
++    @Override
++    public boolean add(final E element) {
++        if (this.size() >= this.maxSize) {
++            return false;
++        }
++        return super.add(element);
++    }
++
++    @Override
++    public boolean addAll(final Collection<? extends @Nullable E> collection) {
++        boolean edited = false;
++
++        for (final E element : collection) {
++            if (this.size() >= this.maxSize) {
++                break;
++            }
++
++            edited |= super.add(element);
++        }
++        return edited;
++    }
++
++    @Override
++    protected Set<E> delegate() {
++        return this.delegate;
++    }
++}
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 4b54d0ea31062972e68ee8fafe3cfaf68f65a5cd..2711cd3b13686efdb3227cf681ddcf98ee82fd06 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -566,7 +566,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+         this.packetPositionCodec = new VecDeltaCodec();
+         this.uuid = Mth.createInsecureUUID(this.random);
+         this.stringUUID = this.uuid.toString();
+-        this.tags = Sets.newHashSet();
++        this.tags = new io.papermc.paper.util.SizeLimitedSet<>(new it.unimi.dsi.fastutil.objects.ObjectOpenHashSet<>(), MAX_ENTITY_TAG_COUNT);
+         this.pistonDeltas = new double[]{0.0D, 0.0D, 0.0D};
+         this.mainSupportingBlockPos = Optional.empty();
+         this.onGroundNoBlocks = false;
+@@ -654,7 +654,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     }
+ 
+     public boolean addTag(String tag) {
+-        return this.tags.size() >= 1024 ? false : this.tags.add(tag);
++        return this.tags.add(tag); // Paper - Create Limited set for Entity
+     }
+ 
+     public boolean removeTag(String tag) {
