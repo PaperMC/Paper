@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Kevin Raneri <kevin.raneri@gmail.com>
+Date: Mon, 30 Sep 2024 09:50:55 -0700
+Subject: [PATCH] Configurable Entity Despawn Time
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 4b54d0ea31062972e68ee8fafe3cfaf68f65a5cd..7a74e06f98dd17b055fa4697635395a8a9fc77ae 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -429,6 +429,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     private UUID originWorld;
+     public boolean freezeLocked = false; // Paper - Freeze Tick Lock API
+     public boolean fixedPose = false; // Paper - Expand Pose API
++    private final int despawnTime; // Paper - entity despawn time limit
+ 
+     public void setOrigin(@javax.annotation.Nonnull Location location) {
+         this.origin = location.toVector();
+@@ -552,6 +553,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+ 
+     public Entity(EntityType<?> type, Level world) {
+         this.id = Entity.ENTITY_COUNTER.incrementAndGet();
++        this.despawnTime = type == EntityType.PLAYER ? -1 : world.paperConfig().entities.spawning.despawnTime.getOrDefault(type, io.papermc.paper.configuration.type.number.IntOr.Disabled.DISABLED).or(-1); // Paper - entity despawn time limit
+         this.passengers = ImmutableList.of();
+         this.deltaMovement = Vec3.ZERO;
+         this.bb = Entity.INITIAL_AABB;
+@@ -845,6 +847,12 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     }
+ 
+     public void tick() {
++        // Paper start - entity despawn time limit
++        if (this.despawnTime >= 0 && this.tickCount >= this.despawnTime) {
++            this.discard();
++            return;
++        }
++        // Paper end - entity despawn time limit
+         this.baseTick();
+     }
+ 
