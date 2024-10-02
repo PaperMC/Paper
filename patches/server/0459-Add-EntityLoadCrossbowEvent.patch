@@ -5,7 +5,7 @@ Subject: [PATCH] Add EntityLoadCrossbowEvent
 
 
 diff --git a/src/main/java/net/minecraft/world/item/CrossbowItem.java b/src/main/java/net/minecraft/world/item/CrossbowItem.java
-index 6e38d4592dcff69e52fbd0f3bae75da9619fd550..68f1e837dfef9954fa47d7d6523c6e482dafb5ea 100644
+index 6e38d4592dcff69e52fbd0f3bae75da9619fd550..6ba8b38425291cf2469dad8016dbae5a2bbdb751 100644
 --- a/src/main/java/net/minecraft/world/item/CrossbowItem.java
 +++ b/src/main/java/net/minecraft/world/item/CrossbowItem.java
 @@ -89,7 +89,14 @@ public class CrossbowItem extends ProjectileWeaponItem {
@@ -36,33 +36,31 @@ index 6e38d4592dcff69e52fbd0f3bae75da9619fd550..68f1e837dfef9954fa47d7d6523c6e48
 +        return CrossbowItem.tryLoadProjectiles(shooter, crossbow, true);
 +    }
 +    private static boolean tryLoadProjectiles(LivingEntity shooter, ItemStack crossbow, boolean consume) {
-+        List<ItemStack> list = draw(crossbow, shooter.getProjectile(crossbow), shooter, consume);
++        List<ItemStack> list = draw(crossbow, shooter.getProjectile(crossbow), shooter, consume ? ProjectileDrawingItemConsumption.IMMEDIATELY : ProjectileDrawingItemConsumption.NEVER);
 +        // Paper end - Add EntityLoadCrossbowEvent
          if (!list.isEmpty()) {
              crossbow.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.of(list));
              return true;
 diff --git a/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java b/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
-index 193d74236a895b716b86962be405bb3cf44cd4a8..312c8d3da59750440cebc2c574cb2615cbdb0727 100644
+index 8154773fd74d76e83a65e518e6f6959f1012033c..52555846a873f5006c58f7e1e08f5190854c30ba 100644
 --- a/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
 +++ b/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
-@@ -146,6 +146,11 @@ public abstract class ProjectileWeaponItem extends Item {
+@@ -158,6 +158,9 @@ public abstract class ProjectileWeaponItem extends Item {
+         // being tangible, allowing for it to be picked up once shot.
+         // Callers that do *not* consume later are responsible for marking the shot projectile as intangible.
+         MAYBE_LATER,
++
++        // Will not reduce the passed projectile stack and prepare all returned items to be intangible.
++        NEVER,
      }
+     protected static List<ItemStack> draw(ItemStack stack, ItemStack projectileStack, LivingEntity shooter, final ProjectileDrawingItemConsumption consumption) {
+     // Paper end - improve bow shoot event - delayed consumption to allow for consumption cancellation
+@@ -200,7 +203,7 @@ public abstract class ProjectileWeaponItem extends Item {
+         int i;
+         label28:
+         {
+-            if (!multishot && !shooter.hasInfiniteMaterials()) {
++            if (!multishot && !shooter.hasInfiniteMaterials() && consumption != ProjectileDrawingItemConsumption.NEVER) { // Paper - add EntityLoadCrossbowEvent
+                 Level world = shooter.level();
  
-     protected static List<ItemStack> draw(ItemStack stack, ItemStack projectileStack, LivingEntity shooter) {
-+        // Paper start
-+        return draw(stack, projectileStack, shooter, true);
-+    }
-+    protected static List<ItemStack> draw(ItemStack stack, ItemStack projectileStack, LivingEntity shooter, boolean consume) {
-+        // Paper end
-         if (projectileStack.isEmpty()) {
-             return List.of();
-         } else {
-@@ -165,7 +170,7 @@ public abstract class ProjectileWeaponItem extends Item {
-             ItemStack itemstack2 = projectileStack.copy();
- 
-             for (int k = 0; k < j; ++k) {
--                ItemStack itemstack3 = ProjectileWeaponItem.useAmmo(stack, k == 0 ? projectileStack : itemstack2, shooter, k > 0);
-+                ItemStack itemstack3 = ProjectileWeaponItem.useAmmo(stack, k == 0 ? projectileStack : itemstack2, shooter, k > 0 || !consume); // Paper
- 
-                 if (!itemstack3.isEmpty()) {
-                     list.add(itemstack3);
+                 if (world instanceof ServerLevel) {

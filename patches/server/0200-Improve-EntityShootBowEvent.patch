@@ -46,12 +46,15 @@ index 93e3454de0b0d62895f165b0772526f3eae1e333..c858556ea457931aa14e338e20672cb5
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/item/BowItem.java b/src/main/java/net/minecraft/world/item/BowItem.java
-index 6eb5c0f23d9dc61e69ad5ad493c89602a9dcd4b5..ac5056efcbfc251f12b016c4e51c98ee77418db1 100644
+index 6eb5c0f23d9dc61e69ad5ad493c89602a9dcd4b5..795489936265bd5f52afdca3122479ffbf8cfe80 100644
 --- a/src/main/java/net/minecraft/world/item/BowItem.java
 +++ b/src/main/java/net/minecraft/world/item/BowItem.java
-@@ -32,7 +32,7 @@ public class BowItem extends ProjectileWeaponItem {
+@@ -30,9 +30,9 @@ public class BowItem extends ProjectileWeaponItem {
+                 int i = this.getUseDuration(stack, user) - remainingUseTicks;
+                 float f = getPowerForTime(i);
                  if (!((double)f < 0.1)) {
-                     List<ItemStack> list = draw(stack, itemStack, player);
+-                    List<ItemStack> list = draw(stack, itemStack, player);
++                    List<ItemStack> list = draw(stack, itemStack, player, ProjectileDrawingItemConsumption.MAYBE_LATER); // // Paper - improve shoot bow - correctly prevent item consumption
                      if (world instanceof ServerLevel serverLevel && !list.isEmpty()) {
 -                        this.shoot(serverLevel, player, player.getUsedItemHand(), stack, list, f * 3.0F, 1.0F, f == 1.0F, null);
 +                        if (!this.shoot(serverLevel, player, player.getUsedItemHand(), stack, new UnrealizedDrawResult(list, itemStack), f * 3.0F, 1.0F, f == 1.0F, null)) return; // Paper - improve shoot bow - correctly prevent item consumption / return if all events were cancelled
@@ -72,7 +75,7 @@ index ac983b6f0bd3d3294481d08831063b6e232e5ef6..6e38d4592dcff69e52fbd0f3bae75da9
                      CriteriaTriggers.SHOT_CROSSBOW.trigger(serverPlayer, stack);
                      serverPlayer.awardStat(Stats.ITEM_USED.get(stack.getItem()));
 diff --git a/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java b/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
-index 56595dd3a0b7df4b5f9819ade797212278c8fd40..6952acb1e1cbe6eb1a1811a6ce1a3b630347454e 100644
+index 56595dd3a0b7df4b5f9819ade797212278c8fd40..8154773fd74d76e83a65e518e6f6959f1012033c 100644
 --- a/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
 +++ b/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
 @@ -46,7 +46,35 @@ public abstract class ProjectileWeaponItem extends Item {
@@ -91,8 +94,8 @@ index 56595dd3a0b7df4b5f9819ade797212278c8fd40..6952acb1e1cbe6eb1a1811a6ce1a3b63
 +            final ItemStack nonIntangibleStack = projectileStacks.get(projectStackIndex);
 +
 +            // The stack at index 0 was intangible, this means that net.minecraft.world.item.ProjectileWeaponItem.useAmmo
-+            // determined the player was not consuming items anyway, e.g. via creative mode. Do not remove items in this
-+            // case.
++            // determined the player was not consuming items anyway, e.g. via creative mode or because of other API means.
++            // Do not remove items in this case.
 +            if (nonIntangibleStack.has(DataComponents.INTANGIBLE_PROJECTILE)) return;
 +
 +            originalInPlayerInventory.shrink(nonIntangibleStack.getCount());
@@ -142,12 +145,55 @@ index 56595dd3a0b7df4b5f9819ade797212278c8fd40..6952acb1e1cbe6eb1a1811a6ce1a3b63
      }
  
      protected int getDurabilityUse(ItemStack projectile) {
-@@ -174,7 +206,7 @@ public abstract class ProjectileWeaponItem extends Item {
+@@ -114,6 +146,21 @@ public abstract class ProjectileWeaponItem extends Item {
+     }
+ 
+     protected static List<ItemStack> draw(ItemStack stack, ItemStack projectileStack, LivingEntity shooter) {
++    // Paper start - improve bow shoot event - delayed consumption to allow for consumption cancellation
++        return draw(stack, projectileStack, shooter);
++    }
++    protected enum ProjectileDrawingItemConsumption {
++        // Will immediately consume from the passed projectile stack, like vanilla would
++        IMMEDIATELY,
++
++        // Will create a copyWithCount from the projectileStack, allowing for later reduction.
++        // The stacks yielded will adhere to vanilla's intangibility layout, with the first itemstack
++        // being tangible, allowing for it to be picked up once shot.
++        // Callers that do *not* consume later are responsible for marking the shot projectile as intangible.
++        MAYBE_LATER,
++    }
++    protected static List<ItemStack> draw(ItemStack stack, ItemStack projectileStack, LivingEntity shooter, final ProjectileDrawingItemConsumption consumption) {
++    // Paper end - improve bow shoot event - delayed consumption to allow for consumption cancellation
+         if (projectileStack.isEmpty()) {
+             return List.of();
+         } else {
+@@ -133,7 +180,7 @@ public abstract class ProjectileWeaponItem extends Item {
+             ItemStack itemstack2 = projectileStack.copy();
+ 
+             for (int k = 0; k < j; ++k) {
+-                ItemStack itemstack3 = ProjectileWeaponItem.useAmmo(stack, k == 0 ? projectileStack : itemstack2, shooter, k > 0);
++                ItemStack itemstack3 = ProjectileWeaponItem.useAmmo(stack, k == 0 ? projectileStack : itemstack2, shooter, k > 0, consumption);
+ 
+                 if (!itemstack3.isEmpty()) {
+                     list.add(itemstack3);
+@@ -145,6 +192,11 @@ public abstract class ProjectileWeaponItem extends Item {
+     }
+ 
+     protected static ItemStack useAmmo(ItemStack stack, ItemStack projectileStack, LivingEntity shooter, boolean multishot) {
++    // Paper start - improve bow shoot event - delayed consumption to allow for consumption cancellation
++        return useAmmo(stack, projectileStack, shooter, multishot, ProjectileDrawingItemConsumption.IMMEDIATELY);
++    }
++    protected static ItemStack useAmmo(ItemStack stack, ItemStack projectileStack, LivingEntity shooter, boolean multishot, final ProjectileDrawingItemConsumption consumption) {
++    // Paper end - improve bow shoot event - delayed consumption to allow for consumption cancellation
+         int i;
+         label28:
+         {
+@@ -174,7 +226,7 @@ public abstract class ProjectileWeaponItem extends Item {
                  itemstack2.set(DataComponents.INTANGIBLE_PROJECTILE, Unit.INSTANCE);
                  return itemstack2;
              } else {
 -                itemstack2 = projectileStack.split(j);
-+                itemstack2 = projectileStack.copyWithCount(j); // Paper - improve bow shoot event - do not reduce item in player inventory just yet - create full copy
++                itemstack2 = consumption == ProjectileDrawingItemConsumption.MAYBE_LATER ? projectileStack.copyWithCount(j) : projectileStack.split(j); // Paper - improve bow shoot event - do not reduce item in player inventory just yet - create full copy if configured
                  if (projectileStack.isEmpty() && shooter instanceof Player) {
                      Player entityhuman = (Player) shooter;
  
