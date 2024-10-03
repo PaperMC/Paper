@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Cryptite <cryptite@gmail.com>
+Date: Tue, 27 Jun 2023 12:21:29 -0500
+Subject: [PATCH] Add Warden setCanDespawn
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java b/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
+index 97b763431bc5015448ee7a26a340635a932c950b..0f45e7e455185cec66551d1c490737cef7120f04 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
++++ b/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
+@@ -110,6 +110,7 @@ public class Warden extends Monster implements VibrationSystem {
+     private final VibrationSystem.User vibrationUser = new Warden.VibrationUser();
+     private VibrationSystem.Data vibrationData = new VibrationSystem.Data();
+     AngerManagement angerManagement = new AngerManagement(this::canTargetEntity, Collections.emptyList());
++    public boolean canDespawn; // Paper
+ 
+     public Warden(EntityType<? extends Monster> type, Level world) {
+         super(type, world);
+diff --git a/src/main/java/net/minecraft/world/entity/monster/warden/WardenAi.java b/src/main/java/net/minecraft/world/entity/monster/warden/WardenAi.java
+index 03f16a5541de6bc95407aaa24741570c1993dc9e..0468eca241c88e82f8f36daf1d4eda3bea38e274 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/warden/WardenAi.java
++++ b/src/main/java/net/minecraft/world/entity/monster/warden/WardenAi.java
+@@ -139,7 +139,15 @@ public class WardenAi {
+ 
+     public static void setDigCooldown(LivingEntity warden) {
+         if (warden.getBrain().hasMemoryValue(MemoryModuleType.DIG_COOLDOWN)) {
+-            warden.getBrain().setMemoryWithExpiry(MemoryModuleType.DIG_COOLDOWN, Unit.INSTANCE, 1200L);
++            // Paper start - Wardens despawn based off an expiring DIG_COOLDOWN memory. So, the
++            // only way to sanely prevent them despawning is to reset their cooldown memory to
++            // a non-expiring one.
++            if (warden instanceof Warden nmsWarden && !nmsWarden.canDespawn) {
++                warden.getBrain().setMemory(MemoryModuleType.DIG_COOLDOWN, Unit.INSTANCE);
++            } else {
++                warden.getBrain().setMemoryWithExpiry(MemoryModuleType.DIG_COOLDOWN, Unit.INSTANCE, 1200L);
++            }
++            // Paper end
+         }
+ 
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftWarden.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftWarden.java
+index 6ecdc4bf1f6b8f0363e667135ba463433be5c0fb..eb3e3839593c7f8cc42f845a5dead9849ce6f3a2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftWarden.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftWarden.java
+@@ -92,4 +92,16 @@ public class CraftWarden extends CraftMonster implements org.bukkit.entity.Warde
+             case ANGRY -> AngerLevel.ANGRY;
+         };
+     }
++
++    // Paper start
++    @Override
++    public void setCanDespawn(boolean canDespawn) {
++        this.getHandle().canDespawn = canDespawn;
++    }
++
++    @Override
++    public boolean canDespawn() {
++        return this.getHandle().canDespawn;
++    }
++    // Paper end
+ }
