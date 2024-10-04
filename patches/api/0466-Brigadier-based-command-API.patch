@@ -502,24 +502,25 @@ index 0000000000000000000000000000000000000000..9df87708206e26167a2c4934deff7fc6
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/BasicCommand.java b/src/main/java/io/papermc/paper/command/brigadier/BasicCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..99a9a5ecc5010bcd30351f8844cb5d824c252523
+index 0000000000000000000000000000000000000000..c89d6c4c38e2390cb11ffba182f8741d3726cfd1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/BasicCommand.java
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,62 @@
 +package io.papermc.paper.command.brigadier;
 +
 +import java.util.Collection;
 +import java.util.Collections;
 +import org.bukkit.command.CommandSender;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
 +/**
 + * Implementing this interface allows for easily creating "Bukkit-style" {@code String[] args} commands.
 + * The implementation handles converting the command to a representation compatible with Brigadier on registration, usually in the form of {@literal /commandlabel <greedy_string>}.
 + */
 +@ApiStatus.Experimental
++@NullMarked
 +@FunctionalInterface
 +public interface BasicCommand {
 +
@@ -530,7 +531,7 @@ index 0000000000000000000000000000000000000000..99a9a5ecc5010bcd30351f8844cb5d82
 +     * @param args the arguments of the command ignoring repeated spaces
 +     */
 +    @ApiStatus.OverrideOnly
-+    void execute(@NotNull CommandSourceStack commandSourceStack, @NotNull String[] args);
++    void execute(CommandSourceStack commandSourceStack, String[] args);
 +
 +    /**
 +     * Suggests possible completions for the given command {@link CommandSourceStack} and arguments.
@@ -540,7 +541,7 @@ index 0000000000000000000000000000000000000000..99a9a5ecc5010bcd30351f8844cb5d82
 +     * @return a collection of suggestions
 +     */
 +    @ApiStatus.OverrideOnly
-+    default @NotNull Collection<String> suggest(final @NotNull CommandSourceStack commandSourceStack, final @NotNull String[] args) {
++    default Collection<String> suggest(final CommandSourceStack commandSourceStack, final String[] args) {
 +        return Collections.emptyList();
 +    }
 +
@@ -552,8 +553,9 @@ index 0000000000000000000000000000000000000000..99a9a5ecc5010bcd30351f8844cb5d82
 +     * @see #permission()
 +     */
 +    @ApiStatus.OverrideOnly
-+    default boolean canUse(final @NotNull CommandSender sender) {
-+        return this.permission() == null || sender.hasPermission(this.permission());
++    default boolean canUse(final CommandSender sender) {
++        final String permission = this.permission();
++        return permission == null || sender.hasPermission(permission);
 +    }
 +
 +    /**
@@ -588,18 +590,18 @@ index 0000000000000000000000000000000000000000..7e24babf746de474c8deec4b147e2203
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/CommandSourceStack.java b/src/main/java/io/papermc/paper/command/brigadier/CommandSourceStack.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..54288dbe7185b875a74184f002ee4de4405e91b1
+index 0000000000000000000000000000000000000000..ac6f5b754a15e85ce09de4ed4cdee2044b45022c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/CommandSourceStack.java
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,51 @@
 +package io.papermc.paper.command.brigadier;
 +
 +import org.bukkit.Location;
 +import org.bukkit.command.CommandSender;
 +import org.bukkit.entity.Entity;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
 +/**
 + * The command source type for Brigadier commands registered using Paper API.
@@ -613,8 +615,9 @@ index 0000000000000000000000000000000000000000..54288dbe7185b875a74184f002ee4de4
 + * exist yet, or no specific sender is available. Methods on such a {@link CommandSender}
 + * will either have no effect or throw an {@link UnsupportedOperationException}.</p>
 + */
-+@ApiStatus.NonExtendable
 +@ApiStatus.Experimental
++@NullMarked
++@ApiStatus.NonExtendable
 +public interface CommandSourceStack {
 +
 +    /**
@@ -622,7 +625,7 @@ index 0000000000000000000000000000000000000000..54288dbe7185b875a74184f002ee4de4
 +     *
 +     * @return a cloned location instance.
 +     */
-+    @NotNull Location getLocation();
++    Location getLocation();
 +
 +    /**
 +     * Gets the command sender that executed this command.
@@ -631,7 +634,7 @@ index 0000000000000000000000000000000000000000..54288dbe7185b875a74184f002ee4de4
 +     *
 +     * @return the command sender instance
 +     */
-+    @NotNull CommandSender getSender();
++    CommandSender getSender();
 +
 +    /**
 +     * Gets the entity that executes this command.
@@ -644,10 +647,10 @@ index 0000000000000000000000000000000000000000..54288dbe7185b875a74184f002ee4de4
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/Commands.java b/src/main/java/io/papermc/paper/command/brigadier/Commands.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ce60b618de10da7638f5aefa974aebe02600465c
+index 0000000000000000000000000000000000000000..e32559772a39af781d89de101b3f7483a339e317
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/Commands.java
-@@ -0,0 +1,266 @@
+@@ -0,0 +1,267 @@
 +package io.papermc.paper.command.brigadier;
 +
 +import com.mojang.brigadier.CommandDispatcher;
@@ -664,9 +667,9 @@ index 0000000000000000000000000000000000000000..ce60b618de10da7638f5aefa974aebe0
 +import java.util.Collections;
 +import java.util.Set;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
 +import org.jetbrains.annotations.Unmodifiable;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
 +/**
 + * The registrar for custom commands. Supports Brigadier commands and {@link BasicCommand}.
@@ -709,6 +712,7 @@ index 0000000000000000000000000000000000000000..ce60b618de10da7638f5aefa974aebe0
 + * @see io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents#COMMANDS
 + */
 +@ApiStatus.Experimental
++@NullMarked
 +@ApiStatus.NonExtendable
 +public interface Commands extends Registrar {
 +
@@ -718,7 +722,7 @@ index 0000000000000000000000000000000000000000..ce60b618de10da7638f5aefa974aebe0
 +     * @param literal literal name
 +     * @return a new builder instance
 +     */
-+    static @NotNull LiteralArgumentBuilder<CommandSourceStack> literal(final @NotNull String literal) {
++    static LiteralArgumentBuilder<CommandSourceStack> literal(final String literal) {
 +        return LiteralArgumentBuilder.literal(literal);
 +    }
 +
@@ -730,7 +734,7 @@ index 0000000000000000000000000000000000000000..ce60b618de10da7638f5aefa974aebe0
 +     * @param <T>          the generic type of the argument value
 +     * @return a new required argument builder
 +     */
-+    static <T> @NotNull RequiredArgumentBuilder<CommandSourceStack, T> argument(final @NotNull String name, final @NotNull ArgumentType<T> argumentType) {
++    static <T> RequiredArgumentBuilder<CommandSourceStack, T> argument(final String name, final ArgumentType<T> argumentType) {
 +        return RequiredArgumentBuilder.argument(name, argumentType);
 +    }
 +
@@ -754,7 +758,7 @@ index 0000000000000000000000000000000000000000..ce60b618de10da7638f5aefa974aebe0
 +     * @return the dispatcher instance
 +     */
 +    @ApiStatus.Experimental
-+    @NotNull CommandDispatcher<CommandSourceStack> getDispatcher();
++    CommandDispatcher<CommandSourceStack> getDispatcher();
 +
 +    /**
 +     * Registers a command for the current plugin context.
@@ -768,7 +772,7 @@ index 0000000000000000000000000000000000000000..ce60b618de10da7638f5aefa974aebe0
 +     * @param node the built literal command node
 +     * @return successfully registered root command labels (including aliases and namespaced variants)
 +     */
-+    default @Unmodifiable @NotNull Set<String> register(final @NotNull LiteralCommandNode<CommandSourceStack> node) {
++    default @Unmodifiable Set<String> register(final LiteralCommandNode<CommandSourceStack> node) {
 +        return this.register(node, null, Collections.emptyList());
 +    }
 +
@@ -785,7 +789,7 @@ index 0000000000000000000000000000000000000000..ce60b618de10da7638f5aefa974aebe0
 +     * @param description the help description for the root literal node
 +     * @return successfully registered root command labels (including aliases and namespaced variants)
 +     */
-+    default @Unmodifiable @NotNull Set<String> register(final @NotNull LiteralCommandNode<CommandSourceStack> node, final @Nullable String description) {
++    default @Unmodifiable Set<String> register(final LiteralCommandNode<CommandSourceStack> node, final @Nullable String description) {
 +        return this.register(node, description, Collections.emptyList());
 +    }
 +
@@ -802,7 +806,7 @@ index 0000000000000000000000000000000000000000..ce60b618de10da7638f5aefa974aebe0
 +     * @param aliases a collection of aliases to register the literal node's command to
 +     * @return successfully registered root command labels (including aliases and namespaced variants)
 +     */
-+    default @Unmodifiable @NotNull Set<String> register(final @NotNull LiteralCommandNode<CommandSourceStack> node, final @NotNull Collection<String> aliases) {
++    default @Unmodifiable Set<String> register(final LiteralCommandNode<CommandSourceStack> node, final Collection<String> aliases) {
 +        return this.register(node, null, aliases);
 +    }
 +
@@ -820,7 +824,7 @@ index 0000000000000000000000000000000000000000..ce60b618de10da7638f5aefa974aebe0
 +     * @param aliases     a collection of aliases to register the literal node's command to
 +     * @return successfully registered root command labels (including aliases and namespaced variants)
 +     */
-+    @Unmodifiable @NotNull Set<String> register(@NotNull LiteralCommandNode<CommandSourceStack> node, @Nullable String description, @NotNull Collection<String> aliases);
++    @Unmodifiable Set<String> register(LiteralCommandNode<CommandSourceStack> node, @Nullable String description, Collection<String> aliases);
 +
 +    /**
 +     * Registers a command for a plugin.
@@ -837,7 +841,7 @@ index 0000000000000000000000000000000000000000..ce60b618de10da7638f5aefa974aebe0
 +     * @param aliases     a collection of aliases to register the literal node's command to
 +     * @return successfully registered root command labels (including aliases and namespaced variants)
 +     */
-+    @Unmodifiable @NotNull Set<String> register(@NotNull PluginMeta pluginMeta, @NotNull LiteralCommandNode<CommandSourceStack> node, @Nullable String description, @NotNull Collection<String> aliases);
++    @Unmodifiable Set<String> register(PluginMeta pluginMeta, LiteralCommandNode<CommandSourceStack> node, @Nullable String description, Collection<String> aliases);
 +
 +    /**
 +     * This allows configuring the registration of your command, which is not intended for public use.
@@ -854,7 +858,7 @@ index 0000000000000000000000000000000000000000..ce60b618de10da7638f5aefa974aebe0
 +     * See {@link CommandRegistrationFlag} for a more indepth explanation of this method's use-case.
 +     */
 +    @ApiStatus.Internal
-+    @Unmodifiable @NotNull Set<String> registerWithFlags(@NotNull PluginMeta pluginMeta, @NotNull LiteralCommandNode<CommandSourceStack> node, @Nullable String description, @NotNull Collection<String> aliases, @NotNull Set<CommandRegistrationFlag> flags);
++    @Unmodifiable Set<String> registerWithFlags(PluginMeta pluginMeta, LiteralCommandNode<CommandSourceStack> node, @Nullable String description, Collection<String> aliases, Set<CommandRegistrationFlag> flags);
 +
 +    /**
 +     * Registers a command under the same logic as {@link Commands#register(LiteralCommandNode, String, Collection)}.
@@ -863,7 +867,7 @@ index 0000000000000000000000000000000000000000..ce60b618de10da7638f5aefa974aebe0
 +     * @param basicCommand the basic command instance to register
 +     * @return successfully registered root command labels (including aliases and namespaced variants)
 +     */
-+    default @Unmodifiable @NotNull Set<String> register(final @NotNull String label, final @NotNull BasicCommand basicCommand) {
++    default @Unmodifiable Set<String> register(final String label, final BasicCommand basicCommand) {
 +        return this.register(label, null, Collections.emptyList(), basicCommand);
 +    }
 +
@@ -875,7 +879,7 @@ index 0000000000000000000000000000000000000000..ce60b618de10da7638f5aefa974aebe0
 +     * @param basicCommand the basic command instance to register
 +     * @return successfully registered root command labels (including aliases and namespaced variants)
 +     */
-+    default @Unmodifiable @NotNull Set<String> register(final @NotNull String label, final @Nullable String description, final @NotNull BasicCommand basicCommand) {
++    default @Unmodifiable Set<String> register(final String label, final @Nullable String description, final BasicCommand basicCommand) {
 +        return this.register(label, description, Collections.emptyList(), basicCommand);
 +    }
 +
@@ -887,7 +891,7 @@ index 0000000000000000000000000000000000000000..ce60b618de10da7638f5aefa974aebe0
 +     * @param basicCommand the basic command instance to register
 +     * @return successfully registered root command labels (including aliases and namespaced variants)
 +     */
-+    default @Unmodifiable @NotNull Set<String> register(final @NotNull String label, final @NotNull Collection<String> aliases, final @NotNull BasicCommand basicCommand) {
++    default @Unmodifiable Set<String> register(final String label, final Collection<String> aliases, final BasicCommand basicCommand) {
 +        return this.register(label, null, aliases, basicCommand);
 +    }
 +
@@ -900,7 +904,7 @@ index 0000000000000000000000000000000000000000..ce60b618de10da7638f5aefa974aebe0
 +     * @param basicCommand the basic command instance to register
 +     * @return successfully registered root command labels (including aliases and namespaced variants)
 +     */
-+    @Unmodifiable @NotNull Set<String> register(@NotNull String label, @Nullable String description, @NotNull Collection<String> aliases, @NotNull BasicCommand basicCommand);
++    @Unmodifiable Set<String> register(String label, @Nullable String description, Collection<String> aliases, BasicCommand basicCommand);
 +
 +    /**
 +     * Registers a command under the same logic as {@link Commands#register(PluginMeta, LiteralCommandNode, String, Collection)}.
@@ -912,26 +916,27 @@ index 0000000000000000000000000000000000000000..ce60b618de10da7638f5aefa974aebe0
 +     * @param basicCommand the basic command instance to register
 +     * @return successfully registered root command labels (including aliases and namespaced variants)
 +     */
-+    @Unmodifiable @NotNull Set<String> register(@NotNull PluginMeta pluginMeta, @NotNull String label, @Nullable String description, @NotNull Collection<String> aliases, @NotNull BasicCommand basicCommand);
++    @Unmodifiable Set<String> register(PluginMeta pluginMeta, String label, @Nullable String description, Collection<String> aliases, BasicCommand basicCommand);
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/MessageComponentSerializer.java b/src/main/java/io/papermc/paper/command/brigadier/MessageComponentSerializer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..57061a3dd738416c2045e641b6080dc3f096de1a
+index 0000000000000000000000000000000000000000..19f3dc12426be09613a13b5889f77627a81305f4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/MessageComponentSerializer.java
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,25 @@
 +package io.papermc.paper.command.brigadier;
 +
 +import com.mojang.brigadier.Message;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.serializer.ComponentSerializer;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * A component serializer for converting between {@link Message} and {@link Component}.
 + */
 +@ApiStatus.Experimental
++@NullMarked
 +@ApiStatus.NonExtendable
 +public interface MessageComponentSerializer extends ComponentSerializer<Component, Component, Message> {
 +
@@ -940,7 +945,7 @@ index 0000000000000000000000000000000000000000..57061a3dd738416c2045e641b6080dc3
 +     *
 +     * @return serializer instance
 +     */
-+    static @NotNull MessageComponentSerializer message() {
++    static MessageComponentSerializer message() {
 +        return MessageComponentSerializerHolder.PROVIDER.orElseThrow();
 +    }
 +}
@@ -964,10 +969,10 @@ index 0000000000000000000000000000000000000000..2db12952461c92a64505d6646f6f49f8
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/ArgumentTypes.java b/src/main/java/io/papermc/paper/command/brigadier/argument/ArgumentTypes.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4ef470c70
+index 0000000000000000000000000000000000000000..9abb9ff33672036bb548c688c5661dc8f237aae2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/argument/ArgumentTypes.java
-@@ -0,0 +1,370 @@
+@@ -0,0 +1,371 @@
 +package io.papermc.paper.command.brigadier.argument;
 +
 +import com.mojang.brigadier.arguments.ArgumentType;
@@ -998,7 +1003,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +import org.bukkit.scoreboard.Criteria;
 +import org.bukkit.scoreboard.DisplaySlot;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
++import org.jspecify.annotations.NullMarked;
 +
 +import static io.papermc.paper.command.brigadier.argument.VanillaArgumentProvider.provider;
 +
@@ -1011,6 +1016,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 + * <p>{@link CustomArgumentType} is provided for customizing parsing or result types server-side, while sending the vanilla argument type to the client.</p>
 + */
 +@ApiStatus.Experimental
++@NullMarked
 +public final class ArgumentTypes {
 +
 +    /**
@@ -1019,7 +1025,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     *
 +     * @return argument that takes one entity
 +     */
-+    public static @NotNull ArgumentType<EntitySelectorArgumentResolver> entity() {
++    public static ArgumentType<EntitySelectorArgumentResolver> entity() {
 +        return provider().entity();
 +    }
 +
@@ -1029,7 +1035,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     *
 +     * @return argument that takes multiple entities
 +     */
-+    public static @NotNull ArgumentType<EntitySelectorArgumentResolver> entities() {
++    public static ArgumentType<EntitySelectorArgumentResolver> entities() {
 +        return provider().entities();
 +    }
 +
@@ -1039,7 +1045,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     *
 +     * @return argument that takes one player
 +     */
-+    public static @NotNull ArgumentType<PlayerSelectorArgumentResolver> player() {
++    public static ArgumentType<PlayerSelectorArgumentResolver> player() {
 +        return provider().player();
 +    }
 +
@@ -1049,7 +1055,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     *
 +     * @return argument that takes multiple players
 +     */
-+    public static @NotNull ArgumentType<PlayerSelectorArgumentResolver> players() {
++    public static ArgumentType<PlayerSelectorArgumentResolver> players() {
 +        return provider().players();
 +    }
 +
@@ -1059,7 +1065,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     *
 +     * @return player profile argument
 +     */
-+    public static @NotNull ArgumentType<PlayerProfileListResolver> playerProfiles() {
++    public static ArgumentType<PlayerProfileListResolver> playerProfiles() {
 +        return provider().playerProfiles();
 +    }
 +
@@ -1068,7 +1074,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     *
 +     * @return block position argument
 +     */
-+    public static @NotNull ArgumentType<BlockPositionResolver> blockPosition() {
++    public static ArgumentType<BlockPositionResolver> blockPosition() {
 +        return provider().blockPosition();
 +    }
 +
@@ -1078,7 +1084,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     * @return fine position argument
 +     * @see #finePosition(boolean) to center whole numbers
 +     */
-+    public static @NotNull ArgumentType<FinePositionResolver> finePosition() {
++    public static ArgumentType<FinePositionResolver> finePosition() {
 +        return finePosition(false);
 +    }
 +
@@ -1088,7 +1094,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     * @param centerIntegers if whole numbers should be centered (+0.5)
 +     * @return fine position argument
 +     */
-+    public static @NotNull ArgumentType<FinePositionResolver> finePosition(final boolean centerIntegers) {
++    public static ArgumentType<FinePositionResolver> finePosition(final boolean centerIntegers) {
 +        return provider().finePosition(centerIntegers);
 +    }
 +
@@ -1098,7 +1104,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     *
 +     * @return argument
 +     */
-+    public static @NotNull ArgumentType<BlockState> blockState() {
++    public static ArgumentType<BlockState> blockState() {
 +        return provider().blockState();
 +    }
 +
@@ -1108,7 +1114,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     *
 +     * @return argument
 +     */
-+    public static @NotNull ArgumentType<ItemStack> itemStack() {
++    public static ArgumentType<ItemStack> itemStack() {
 +        return provider().itemStack();
 +    }
 +
@@ -1117,7 +1123,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     *
 +     * @return argument
 +     */
-+    public static @NotNull ArgumentType<ItemStackPredicate> itemPredicate() {
++    public static ArgumentType<ItemStackPredicate> itemPredicate() {
 +        return provider().itemStackPredicate();
 +    }
 +
@@ -1126,7 +1132,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     *
 +     * @return argument
 +     */
-+    public static @NotNull ArgumentType<NamedTextColor> namedColor() {
++    public static ArgumentType<NamedTextColor> namedColor() {
 +        return provider().namedColor();
 +    }
 +
@@ -1135,7 +1141,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     *
 +     * @return argument
 +     */
-+    public static @NotNull ArgumentType<Component> component() {
++    public static ArgumentType<Component> component() {
 +        return provider().component();
 +    }
 +
@@ -1144,7 +1150,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     *
 +     * @return argument
 +     */
-+    public static @NotNull ArgumentType<Style> style() {
++    public static ArgumentType<Style> style() {
 +        return provider().style();
 +    }
 +
@@ -1155,7 +1161,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     *
 +     * @return argument
 +     */
-+    public static @NotNull ArgumentType<SignedMessageResolver> signedMessage() {
++    public static ArgumentType<SignedMessageResolver> signedMessage() {
 +        return provider().signedMessage();
 +    }
 +
@@ -1164,7 +1170,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     *
 +     * @return argument
 +     */
-+    public static @NotNull ArgumentType<DisplaySlot> scoreboardDisplaySlot() {
++    public static ArgumentType<DisplaySlot> scoreboardDisplaySlot() {
 +        return provider().scoreboardDisplaySlot();
 +    }
 +
@@ -1173,7 +1179,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     *
 +     * @return argument
 +     */
-+    public static @NotNull ArgumentType<NamespacedKey> namespacedKey() {
++    public static ArgumentType<NamespacedKey> namespacedKey() {
 +        return provider().namespacedKey();
 +    }
 +
@@ -1183,7 +1189,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     * @return argument
 +     */
 +    // include both key types as we are slowly moving to use adventure's key
-+    public static @NotNull ArgumentType<Key> key() {
++    public static ArgumentType<Key> key() {
 +        return provider().key();
 +    }
 +
@@ -1192,7 +1198,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     *
 +     * @return argument
 +     */
-+    public static @NotNull ArgumentType<IntegerRangeProvider> integerRange() {
++    public static ArgumentType<IntegerRangeProvider> integerRange() {
 +        return provider().integerRange();
 +    }
 +
@@ -1201,7 +1207,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     *
 +     * @return argument
 +     */
-+    public static @NotNull ArgumentType<DoubleRangeProvider> doubleRange() {
++    public static ArgumentType<DoubleRangeProvider> doubleRange() {
 +        return provider().doubleRange();
 +    }
 +
@@ -1210,7 +1216,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     *
 +     * @return argument
 +     */
-+    public static @NotNull ArgumentType<World> world() {
++    public static ArgumentType<World> world() {
 +        return provider().world();
 +    }
 +
@@ -1219,16 +1225,16 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     *
 +     * @return argument
 +     */
-+    public static @NotNull ArgumentType<GameMode> gameMode() {
++    public static ArgumentType<GameMode> gameMode() {
 +        return provider().gameMode();
 +    }
 +
 +    /**
-+     * A argument for getting a heightmap type.
++     * An argument for getting a heightmap type.
 +     *
 +     * @return argument
 +     */
-+    public static @NotNull ArgumentType<HeightMap> heightMap() {
++    public static ArgumentType<HeightMap> heightMap() {
 +        return provider().heightMap();
 +    }
 +
@@ -1237,7 +1243,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     *
 +     * @return argument
 +     */
-+    public static @NotNull ArgumentType<UUID> uuid() {
++    public static ArgumentType<UUID> uuid() {
 +        return provider().uuid();
 +    }
 +
@@ -1246,7 +1252,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     *
 +     * @return argument
 +     */
-+    public static @NotNull ArgumentType<Criteria> objectiveCriteria() {
++    public static ArgumentType<Criteria> objectiveCriteria() {
 +        return provider().objectiveCriteria();
 +    }
 +
@@ -1255,7 +1261,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     *
 +     * @return argument
 +     */
-+    public static @NotNull ArgumentType<LookAnchor> entityAnchor() {
++    public static ArgumentType<LookAnchor> entityAnchor() {
 +        return provider().entityAnchor();
 +    }
 +
@@ -1271,7 +1277,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     *
 +     * @return argument
 +     */
-+    public static @NotNull ArgumentType<Integer> time() {
++    public static ArgumentType<Integer> time() {
 +        return time(0);
 +    }
 +
@@ -1288,7 +1294,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     * @param mintime The minimum time required for this argument.
 +     * @return argument
 +     */
-+    public static @NotNull ArgumentType<Integer> time(final int mintime) {
++    public static ArgumentType<Integer> time(final int mintime) {
 +        return provider().time(mintime);
 +    }
 +
@@ -1298,7 +1304,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     * @return argument
 +     * @see Mirror
 +     */
-+    public static @NotNull ArgumentType<Mirror> templateMirror() {
++    public static ArgumentType<Mirror> templateMirror() {
 +        return provider().templateMirror();
 +    }
 +
@@ -1308,7 +1314,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     * @return argument
 +     * @see StructureRotation
 +     */
-+    public static @NotNull ArgumentType<StructureRotation> templateRotation() {
++    public static ArgumentType<StructureRotation> templateRotation() {
 +        return provider().templateRotation();
 +    }
 +
@@ -1319,7 +1325,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     * @return argument
 +     * @param <T> the registry value type
 +     */
-+    public static <T> @NotNull ArgumentType<T> resource(final @NotNull RegistryKey<T> registryKey) {
++    public static <T> ArgumentType<T> resource(final RegistryKey<T> registryKey) {
 +        return provider().resource(registryKey);
 +    }
 +
@@ -1331,7 +1337,7 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +     * @param <T> the registry value type
 +     * @see RegistryArgumentExtractor#getTypedKey(com.mojang.brigadier.context.CommandContext, RegistryKey, String)
 +     */
-+    public static <T> @NotNull ArgumentType<TypedKey<T>> resourceKey(final @NotNull RegistryKey<T> registryKey) {
++    public static <T> ArgumentType<TypedKey<T>> resourceKey(final RegistryKey<T> registryKey) {
 +        return provider().resourceKey(registryKey);
 +    }
 +
@@ -1340,10 +1346,10 @@ index 0000000000000000000000000000000000000000..f102176791e57d23a148ba79bfc949f4
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/CustomArgumentType.java b/src/main/java/io/papermc/paper/command/brigadier/argument/CustomArgumentType.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..02acac7f9186677d19c0a62095cc3012bc112961
+index 0000000000000000000000000000000000000000..91d40ef0bdbdee3609e33577782c5cce29deda6a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/argument/CustomArgumentType.java
-@@ -0,0 +1,106 @@
+@@ -0,0 +1,107 @@
 +package io.papermc.paper.command.brigadier.argument;
 +
 +import com.mojang.brigadier.StringReader;
@@ -1355,7 +1361,7 @@ index 0000000000000000000000000000000000000000..02acac7f9186677d19c0a62095cc3012
 +import java.util.Collection;
 +import java.util.concurrent.CompletableFuture;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * An argument type that wraps around a native-to-vanilla argument type.
@@ -1370,6 +1376,7 @@ index 0000000000000000000000000000000000000000..02acac7f9186677d19c0a62095cc3012
 + * @param <N> type with an argument native to vanilla Minecraft (from {@link ArgumentTypes})
 + */
 +@ApiStatus.Experimental
++@NullMarked
 +public interface CustomArgumentType<T, N> extends ArgumentType<T> {
 +
 +    /**
@@ -1384,7 +1391,7 @@ index 0000000000000000000000000000000000000000..02acac7f9186677d19c0a62095cc3012
 +     * @throws CommandSyntaxException if an error occurs while parsing
 +     */
 +    @Override
-+    @NotNull T parse(final @NotNull StringReader reader) throws CommandSyntaxException;
++    T parse(final StringReader reader) throws CommandSyntaxException;
 +
 +    /**
 +     * Gets the native type that this argument uses,
@@ -1392,7 +1399,7 @@ index 0000000000000000000000000000000000000000..02acac7f9186677d19c0a62095cc3012
 +     *
 +     * @return native argument type
 +     */
-+    @NotNull ArgumentType<N> getNativeType();
++    ArgumentType<N> getNativeType();
 +
 +    /**
 +     * Cannot be controlled by the server.
@@ -1403,7 +1410,7 @@ index 0000000000000000000000000000000000000000..02acac7f9186677d19c0a62095cc3012
 +     */
 +    @Override
 +    @ApiStatus.NonExtendable
-+    default @NotNull Collection<String> getExamples() {
++    default Collection<String> getExamples() {
 +        return this.getNativeType().getExamples();
 +    }
 +
@@ -1416,7 +1423,7 @@ index 0000000000000000000000000000000000000000..02acac7f9186677d19c0a62095cc3012
 +     * @param <S> context type
 +     */
 +    @Override
-+    default <S> @NotNull CompletableFuture<Suggestions> listSuggestions(final @NotNull CommandContext<S> context, final @NotNull SuggestionsBuilder builder) {
++    default <S> CompletableFuture<Suggestions> listSuggestions(final CommandContext<S> context, final SuggestionsBuilder builder) {
 +        return ArgumentType.super.listSuggestions(context, builder);
 +    }
 +
@@ -1436,7 +1443,7 @@ index 0000000000000000000000000000000000000000..02acac7f9186677d19c0a62095cc3012
 +
 +        @ApiStatus.NonExtendable
 +        @Override
-+        default @NotNull T parse(final @NotNull StringReader reader) throws CommandSyntaxException {
++        default T parse(final StringReader reader) throws CommandSyntaxException {
 +            return this.convert(this.getNativeType().parse(reader));
 +        }
 +
@@ -1447,25 +1454,26 @@ index 0000000000000000000000000000000000000000..02acac7f9186677d19c0a62095cc3012
 +         * @return converted value
 +         * @throws CommandSyntaxException if an exception occurs while parsing
 +         */
-+        @NotNull T convert(@NotNull N nativeType) throws CommandSyntaxException;
++        T convert(N nativeType) throws CommandSyntaxException;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/RegistryArgumentExtractor.java b/src/main/java/io/papermc/paper/command/brigadier/argument/RegistryArgumentExtractor.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..475266144edf0f7dc4e7939abaf9e1705c4e6461
+index 0000000000000000000000000000000000000000..c6123342df9610a97752030955a43df18e8d0cbd
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/argument/RegistryArgumentExtractor.java
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,36 @@
 +package io.papermc.paper.command.brigadier.argument;
 +
 +import com.mojang.brigadier.context.CommandContext;
 +import io.papermc.paper.registry.RegistryKey;
 +import io.papermc.paper.registry.TypedKey;
-+import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Utilities for extracting registry-related arguments from a {@link CommandContext}.
 + */
++@NullMarked
 +public final class RegistryArgumentExtractor {
 +
 +    /**
@@ -1480,7 +1488,7 @@ index 0000000000000000000000000000000000000000..475266144edf0f7dc4e7939abaf9e170
 +     * @throws IllegalArgumentException if the registry key doesn't match the typed key
 +     */
 +    @SuppressWarnings("unchecked")
-+    public static <T, S> @NonNull TypedKey<T> getTypedKey(final @NonNull CommandContext<S> context, final @NonNull RegistryKey<T> registryKey, final @NonNull String name) {
++    public static <T, S> TypedKey<T> getTypedKey(final CommandContext<S> context, final RegistryKey<T> registryKey, final String name) {
 +        final TypedKey<T> typedKey = context.getArgument(name, TypedKey.class);
 +        if (typedKey.registryKey().equals(registryKey)) {
 +            return typedKey;
@@ -1493,10 +1501,10 @@ index 0000000000000000000000000000000000000000..475266144edf0f7dc4e7939abaf9e170
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/SignedMessageResolver.java b/src/main/java/io/papermc/paper/command/brigadier/argument/SignedMessageResolver.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..159b691e7a1a7066f3e706e80d75ca8f87a3a964
+index 0000000000000000000000000000000000000000..2f2c1729c5d9f1a6b6171c0ed5326b9b631f3c20
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/argument/SignedMessageResolver.java
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,42 @@
 +package io.papermc.paper.command.brigadier.argument;
 +
 +import com.mojang.brigadier.context.CommandContext;
@@ -1505,7 +1513,7 @@ index 0000000000000000000000000000000000000000..159b691e7a1a7066f3e706e80d75ca8f
 +import java.util.concurrent.CompletableFuture;
 +import net.kyori.adventure.chat.SignedMessage;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * A resolver for a {@link SignedMessage}
@@ -1513,6 +1521,7 @@ index 0000000000000000000000000000000000000000..159b691e7a1a7066f3e706e80d75ca8f
 + * @see ArgumentTypes#signedMessage()
 + */
 +@ApiStatus.Experimental
++@NullMarked
 +@ApiStatus.NonExtendable
 +public interface SignedMessageResolver {
 +
@@ -1521,7 +1530,7 @@ index 0000000000000000000000000000000000000000..159b691e7a1a7066f3e706e80d75ca8f
 +     *
 +     * @return string content
 +     */
-+    @NotNull String content();
++    String content();
 +
 +    /**
 +     * Resolves this signed message. This will the {@link CommandContext}
@@ -1535,15 +1544,15 @@ index 0000000000000000000000000000000000000000..159b691e7a1a7066f3e706e80d75ca8f
 +     * @return a completable future for the {@link SignedMessage}
 +     * @throws CommandSyntaxException syntax exception
 +     */
-+    @NotNull CompletableFuture<SignedMessage> resolveSignedMessage(@NotNull String argumentName, @NotNull CommandContext<CommandSourceStack> context) throws CommandSyntaxException;
++    CompletableFuture<SignedMessage> resolveSignedMessage(String argumentName, CommandContext<CommandSourceStack> context) throws CommandSyntaxException;
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/VanillaArgumentProvider.java b/src/main/java/io/papermc/paper/command/brigadier/argument/VanillaArgumentProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a36a36a46b5d71489e1b3e183d48e6e83721ebdf
+index 0000000000000000000000000000000000000000..4f640bd3e536fb79db54dcedd5807e7de402acef
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/argument/VanillaArgumentProvider.java
-@@ -0,0 +1,107 @@
+@@ -0,0 +1,106 @@
 +package io.papermc.paper.command.brigadier.argument;
 +
 +import com.mojang.brigadier.arguments.ArgumentType;
@@ -1575,12 +1584,11 @@ index 0000000000000000000000000000000000000000..a36a36a46b5d71489e1b3e183d48e6e8
 +import org.bukkit.inventory.ItemStack;
 +import org.bukkit.scoreboard.Criteria;
 +import org.bukkit.scoreboard.DisplaySlot;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.framework.qual.DefaultQualifier;
 +import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +@ApiStatus.Internal
-+@DefaultQualifier(NonNull.class)
++@NullMarked
 +interface VanillaArgumentProvider {
 +
 +    Optional<VanillaArgumentProvider> PROVIDER = ServiceLoader.load(VanillaArgumentProvider.class)
@@ -1714,7 +1722,7 @@ index 0000000000000000000000000000000000000000..06ffff68d2652ef8eb40aa723803c24e
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/range/RangeProvider.java b/src/main/java/io/papermc/paper/command/brigadier/argument/range/RangeProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..651dbf15c155f8d8fef25785300d44752c388b37
+index 0000000000000000000000000000000000000000..af1c01ab0d2146225c54a7766788007314f59328
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/argument/range/RangeProvider.java
 @@ -0,0 +1,22 @@
@@ -1722,7 +1730,7 @@ index 0000000000000000000000000000000000000000..651dbf15c155f8d8fef25785300d4475
 +
 +import com.google.common.collect.Range;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * A provider for a range of numbers
@@ -1731,27 +1739,27 @@ index 0000000000000000000000000000000000000000..651dbf15c155f8d8fef25785300d4475
 + * @see io.papermc.paper.command.brigadier.argument.ArgumentTypes
 + */
 +@ApiStatus.Experimental
++@NullMarked
 +public sealed interface RangeProvider<T extends Comparable<?>> permits DoubleRangeProvider, IntegerRangeProvider {
 +
 +    /**
 +     * Provides the given range.
 +     * @return range
 +     */
-+    @NotNull
 +    Range<T> range();
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/resolvers/ArgumentResolver.java b/src/main/java/io/papermc/paper/command/brigadier/argument/resolvers/ArgumentResolver.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dea24d91999f78b77fe85221130d87a54edf004a
+index 0000000000000000000000000000000000000000..60439269d8b1535c779ae8bd008c8f28cc7e4133
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/command/brigadier/argument/resolvers/ArgumentResolver.java
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,27 @@
 +package io.papermc.paper.command.brigadier.argument.resolvers;
 +
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
 +import io.papermc.paper.command.brigadier.CommandSourceStack;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * An {@link ArgumentResolver} is capable of resolving
@@ -1761,6 +1769,7 @@ index 0000000000000000000000000000000000000000..dea24d91999f78b77fe85221130d87a5
 + * @see io.papermc.paper.command.brigadier.argument.ArgumentTypes
 + */
 +@ApiStatus.Experimental
++@NullMarked
 +@ApiStatus.NonExtendable
 +public interface ArgumentResolver<T> {
 +
@@ -1770,7 +1779,7 @@ index 0000000000000000000000000000000000000000..dea24d91999f78b77fe85221130d87a5
 +     * @param sourceStack source stack
 +     * @return resolved
 +     */
-+    @NotNull T resolve(@NotNull CommandSourceStack sourceStack) throws CommandSyntaxException;
++    T resolve(CommandSourceStack sourceStack) throws CommandSyntaxException;
 +}
 diff --git a/src/main/java/io/papermc/paper/command/brigadier/argument/resolvers/BlockPositionResolver.java b/src/main/java/io/papermc/paper/command/brigadier/argument/resolvers/BlockPositionResolver.java
 new file mode 100644
@@ -1914,7 +1923,7 @@ index 0000000000000000000000000000000000000000..906ce6eff30ebd9ec3010ce03b471418
 +public interface SelectorArgumentResolver<T> extends ArgumentResolver<T> {
 +}
 diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEvents.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEvents.java
-index 29476a1a82b3526ac03f21011d297d01462d153e..dae4935d8e9f46c52f700927a43a9202dac13df6 100644
+index f70814de0d6c40b2c1c9921b8abdd1162e1d3995..ab6b262cf0d2d17962ed012b2ea7b8f1db8bc576 100644
 --- a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEvents.java
 +++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEvents.java
 @@ -1,9 +1,11 @@
@@ -1928,9 +1937,9 @@ index 29476a1a82b3526ac03f21011d297d01462d153e..dae4935d8e9f46c52f700927a43a9202
 +import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent;
  import org.bukkit.plugin.Plugin;
  import org.jetbrains.annotations.ApiStatus;
- 
-@@ -15,6 +17,13 @@ import org.jetbrains.annotations.ApiStatus;
- @ApiStatus.Experimental
+ import org.jspecify.annotations.NullMarked;
+@@ -17,6 +19,13 @@ import org.jspecify.annotations.NullMarked;
+ @NullMarked
  public final class LifecycleEvents {
  
 +    /**

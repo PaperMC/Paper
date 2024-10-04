@@ -5,7 +5,7 @@ Subject: [PATCH] ProfileWhitelistVerifyEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index d5f17d7e3b56ca87ec9070b69265ce098de61f69..768a5c6ebc4466aae4108a79e1564b2bfc93463a 100644
+index d5f17d7e3b56ca87ec9070b69265ce098de61f69..c08ffdbc9afb2fe7abbf5567dc1fb1e2bcb01b96 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -624,9 +624,9 @@ public abstract class PlayerList {
@@ -21,24 +21,25 @@ index d5f17d7e3b56ca87ec9070b69265ce098de61f69..768a5c6ebc4466aae4108a79e1564b2b
          } else if (this.getIpBans().isBanned(socketaddress) && !this.getIpBans().get(socketaddress).hasExpired()) {
              IpBanListEntry ipbanentry = this.ipBans.get(socketaddress);
  
-@@ -993,7 +993,24 @@ public abstract class PlayerList {
+@@ -993,7 +993,25 @@ public abstract class PlayerList {
      }
  
      public boolean isWhiteListed(GameProfile profile) {
 -        return !this.doWhiteList || this.ops.contains(profile) || this.whitelist.contains(profile);
 +        // Paper start - ProfileWhitelistVerifyEvent
-+        return isWhiteListed(profile, null);
++        return this.isWhiteListed(profile, null);
 +    }
-+    public boolean isWhiteListed(GameProfile gameprofile, org.bukkit.event.player.PlayerLoginEvent loginEvent) {
++    public boolean isWhiteListed(GameProfile gameprofile, @Nullable org.bukkit.event.player.PlayerLoginEvent loginEvent) {
 +        boolean isOp = this.ops.contains(gameprofile);
 +        boolean isWhitelisted = !this.doWhiteList || isOp || this.whitelist.contains(gameprofile);
 +        final com.destroystokyo.paper.event.profile.ProfileWhitelistVerifyEvent event;
 +
-+        event = new com.destroystokyo.paper.event.profile.ProfileWhitelistVerifyEvent(com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitMirror(gameprofile), this.doWhiteList, isWhitelisted, isOp, org.spigotmc.SpigotConfig.whitelistMessage);
++        final net.kyori.adventure.text.Component configuredMessage = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.whitelistMessage);
++        event = new com.destroystokyo.paper.event.profile.ProfileWhitelistVerifyEvent(com.destroystokyo.paper.profile.CraftPlayerProfile.asBukkitMirror(gameprofile), this.doWhiteList, isWhitelisted, isOp, configuredMessage);
 +        event.callEvent();
 +        if (!event.isWhitelisted()) {
 +            if (loginEvent != null) {
-+                loginEvent.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(event.getKickMessage() == null ? org.spigotmc.SpigotConfig.whitelistMessage : event.getKickMessage()));
++                loginEvent.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, event.kickMessage() == null ? configuredMessage : event.kickMessage());
 +            }
 +            return false;
 +        }

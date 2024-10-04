@@ -5,10 +5,10 @@ Subject: [PATCH] Introduce registry entry and builders
 
 
 diff --git a/src/main/java/io/papermc/paper/registry/RegistryKey.java b/src/main/java/io/papermc/paper/registry/RegistryKey.java
-index 1e2765d296decbb3e61b8434e78b5e0214f8fee0..5e580649578d25f567b0f7d40bcdc68f62701f0a 100644
+index 8410d7213370f01cbedbf7fac29bac96f150c49a..d8716f855806471728c35b3ec34efb808a5146cf 100644
 --- a/src/main/java/io/papermc/paper/registry/RegistryKey.java
 +++ b/src/main/java/io/papermc/paper/registry/RegistryKey.java
-@@ -77,9 +77,10 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
+@@ -79,9 +79,10 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      @ApiStatus.Internal
      RegistryKey<BlockType> BLOCK = create("block");
      /**
@@ -23,7 +23,7 @@ index 1e2765d296decbb3e61b8434e78b5e0214f8fee0..5e580649578d25f567b0f7d40bcdc68f
       * Built-in registry for cat variants.
 diff --git a/src/main/java/io/papermc/paper/registry/data/EnchantmentRegistryEntry.java b/src/main/java/io/papermc/paper/registry/data/EnchantmentRegistryEntry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6c7d8b98103909428bb4dcf14825fe188db6d12f
+index 0000000000000000000000000000000000000000..d0d19a4bb2ba0e92710861b106777a428bdc5ad9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/data/EnchantmentRegistryEntry.java
 @@ -0,0 +1,332 @@
@@ -40,18 +40,18 @@ index 0000000000000000000000000000000000000000..6c7d8b98103909428bb4dcf14825fe18
 +import org.bukkit.enchantments.Enchantment;
 +import org.bukkit.inventory.EquipmentSlotGroup;
 +import org.bukkit.inventory.ItemType;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
-+import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Range;
 +import org.jetbrains.annotations.Unmodifiable;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
 +/**
 + * A data-centric version-specific registry entry for the {@link Enchantment} type.
 + */
 +@ApiStatus.Experimental
++@NullMarked
 +@ApiStatus.NonExtendable
 +public interface EnchantmentRegistryEntry {
 +
@@ -61,14 +61,14 @@ index 0000000000000000000000000000000000000000..6c7d8b98103909428bb4dcf14825fe18
 +     *
 +     * @return the description component.
 +     */
-+    @NonNull Component description();
++    Component description();
 +
 +    /**
 +     * Provides the registry key set referencing the items this enchantment is supported on.
 +     *
 +     * @return the registry key set.
 +     */
-+    @NonNull RegistryKeySet<ItemType> supportedItems();
++    RegistryKeySet<ItemType> supportedItems();
 +
 +    /**
 +     * Provides the registry key set referencing the item types this enchantment can be applied to when
@@ -106,7 +106,7 @@ index 0000000000000000000000000000000000000000..6c7d8b98103909428bb4dcf14825fe18
 +     * @see <a href="https://minecraft.wiki/w/Enchanting/Levels">https://minecraft.wiki/w/Enchanting/Levels</a> for
 +     * examplary costs.
 +     */
-+    @NonNull EnchantmentCost minimumCost();
++    EnchantmentCost minimumCost();
 +
 +    /**
 +     * Provides the maximum cost allowed to enchant an item with this enchantment.
@@ -117,7 +117,7 @@ index 0000000000000000000000000000000000000000..6c7d8b98103909428bb4dcf14825fe18
 +     * @see <a href="https://minecraft.wiki/w/Enchanting/Levels">https://minecraft.wiki/w/Enchanting/Levels</a> for
 +     * examplary costs.
 +     */
-+    @NonNull EnchantmentCost maximumCost();
++    EnchantmentCost maximumCost();
 +
 +    /**
 +     * Provides the cost of applying this enchantment using an anvil.
@@ -140,7 +140,7 @@ index 0000000000000000000000000000000000000000..6c7d8b98103909428bb4dcf14825fe18
 +     * @return a list of equipment slot groups.
 +     * @see Enchantment#getActiveSlotGroups()
 +     */
-+    @NonNull @Unmodifiable List<EquipmentSlotGroup> activeSlots();
++    @Unmodifiable List<EquipmentSlotGroup> activeSlots();
 +
 +    /**
 +     * Provides the registry key set of enchantments that this enchantment is exclusive with.
@@ -150,7 +150,7 @@ index 0000000000000000000000000000000000000000..6c7d8b98103909428bb4dcf14825fe18
 +     *
 +     * @return a registry set of enchantments exclusive to this one.
 +     */
-+    @NonNull RegistryKeySet<Enchantment> exclusiveWith();
++    RegistryKeySet<Enchantment> exclusiveWith();
 +
 +    /**
 +     * A mutable builder for the {@link EnchantmentRegistryEntry} plugins may change in applicable registry events.
@@ -179,7 +179,7 @@ index 0000000000000000000000000000000000000000..6c7d8b98103909428bb4dcf14825fe18
 +         * @return this builder.
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder description(@NonNull Component description);
++        Builder description(Component description);
 +
 +        /**
 +         * Configures the set of supported items this enchantment can be applied on. This
@@ -195,7 +195,7 @@ index 0000000000000000000000000000000000000000..6c7d8b98103909428bb4dcf14825fe18
 +         * @see io.papermc.paper.registry.event.RegistryFreezeEvent#getOrCreateTag(TagKey)
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder supportedItems(@NonNull RegistryKeySet<ItemType> supportedItems);
++        Builder supportedItems(RegistryKeySet<ItemType> supportedItems);
 +
 +        /**
 +         * Configures a set of item types this enchantment can naturally be applied to, when enchanting in an
@@ -216,7 +216,7 @@ index 0000000000000000000000000000000000000000..6c7d8b98103909428bb4dcf14825fe18
 +         * @see io.papermc.paper.registry.event.RegistryFreezeEvent#getOrCreateTag(TagKey)
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder primaryItems(@Nullable RegistryKeySet<ItemType> primaryItems);
++        Builder primaryItems(@Nullable RegistryKeySet<ItemType> primaryItems);
 +
 +        /**
 +         * Configures the weight of this enchantment used by the weighted random when selecting enchantments.
@@ -226,7 +226,7 @@ index 0000000000000000000000000000000000000000..6c7d8b98103909428bb4dcf14825fe18
 +         * @see <a href="https://minecraft.wiki/w/Enchanting">https://minecraft.wiki/w/Enchanting</a> for examplary weights.
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder weight(@Range(from = 1, to = 1024) int weight);
++        Builder weight(@Range(from = 1, to = 1024) int weight);
 +
 +        /**
 +         * Configures the maximum level this enchantment can have when applied.
@@ -235,7 +235,7 @@ index 0000000000000000000000000000000000000000..6c7d8b98103909428bb4dcf14825fe18
 +         * @return this builder.
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder maxLevel(@Range(from = 1, to = 255) int maxLevel);
++        Builder maxLevel(@Range(from = 1, to = 255) int maxLevel);
 +
 +        /**
 +         * Configures the minimum cost needed to enchant an item with this enchantment.
@@ -248,7 +248,7 @@ index 0000000000000000000000000000000000000000..6c7d8b98103909428bb4dcf14825fe18
 +         * examplary costs.
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder minimumCost(@NotNull EnchantmentCost minimumCost);
++        Builder minimumCost(EnchantmentCost minimumCost);
 +
 +        /**
 +         * Configures the maximum cost to enchant an item with this enchantment.
@@ -261,7 +261,7 @@ index 0000000000000000000000000000000000000000..6c7d8b98103909428bb4dcf14825fe18
 +         * examplary costs.
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder maximumCost(@NotNull EnchantmentCost maximumCost);
++        Builder maximumCost(EnchantmentCost maximumCost);
 +
 +        /**
 +         * Configures the cost of applying this enchantment using an anvil.
@@ -275,7 +275,7 @@ index 0000000000000000000000000000000000000000..6c7d8b98103909428bb4dcf14825fe18
 +         * @see Enchantment#getAnvilCost()
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder anvilCost(@Range(from = 0, to = Integer.MAX_VALUE) int anvilCost);
++        Builder anvilCost(@Range(from = 0, to = Integer.MAX_VALUE) int anvilCost);
 +
 +        /**
 +         * Configures the list of slot groups this enchantment may be active in.
@@ -288,7 +288,7 @@ index 0000000000000000000000000000000000000000..6c7d8b98103909428bb4dcf14825fe18
 +         * @see Enchantment#getActiveSlotGroups()
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
-+        default @NonNull Builder activeSlots(final @NonNull EquipmentSlotGroup @NonNull... activeSlots) {
++        default Builder activeSlots(final EquipmentSlotGroup... activeSlots) {
 +            return this.activeSlots(List.of(activeSlots));
 +        }
 +
@@ -303,7 +303,7 @@ index 0000000000000000000000000000000000000000..6c7d8b98103909428bb4dcf14825fe18
 +         * @see Enchantment#getActiveSlotGroups()
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder activeSlots(@NonNull Iterable<@NonNull EquipmentSlotGroup> activeSlots);
++        Builder activeSlots(Iterable<EquipmentSlotGroup> activeSlots);
 +
 +        /**
 +         * Configures the registry key set of enchantments that this enchantment is exclusive with.
@@ -319,7 +319,7 @@ index 0000000000000000000000000000000000000000..6c7d8b98103909428bb4dcf14825fe18
 +         * @see io.papermc.paper.registry.event.RegistryFreezeEvent#getOrCreateTag(TagKey)
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder exclusiveWith(@NonNull RegistryKeySet<Enchantment> exclusiveWith);
++        Builder exclusiveWith(RegistryKeySet<Enchantment> exclusiveWith);
 +    }
 +
 +    /**
@@ -345,7 +345,7 @@ index 0000000000000000000000000000000000000000..6c7d8b98103909428bb4dcf14825fe18
 +        /**
 +         * Creates a new enchantment cost instance based on the passed values.
 +         *
-+         * @param baseCost               the base cost of the enchantment cost as returned by {@link #baseCost()}
++         * @param baseCost the base cost of the enchantment cost as returned by {@link #baseCost()}
 +         * @param additionalPerLevelCost the additional cost per level, as returned by {@link #additionalPerLevelCost()}
 +         * @return the created instance.
 +         */
@@ -361,23 +361,24 @@ index 0000000000000000000000000000000000000000..6c7d8b98103909428bb4dcf14825fe18
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/data/GameEventRegistryEntry.java b/src/main/java/io/papermc/paper/registry/data/GameEventRegistryEntry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a59620816f8795fc0e585f969741d1940340673a
+index 0000000000000000000000000000000000000000..980fe12b75258b51cc2498590cadb9de80805b1f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/data/GameEventRegistryEntry.java
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,49 @@
 +package io.papermc.paper.registry.data;
 +
 +import io.papermc.paper.registry.RegistryBuilder;
 +import org.bukkit.GameEvent;
-+import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
 +import org.jetbrains.annotations.Range;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * A data-centric version-specific registry entry for the {@link GameEvent} type.
 + */
 +@ApiStatus.Experimental
++@NullMarked
 +@ApiStatus.NonExtendable
 +public interface GameEventRegistryEntry {
 +
@@ -410,7 +411,7 @@ index 0000000000000000000000000000000000000000..a59620816f8795fc0e585f969741d194
 +         * @see GameEvent#getRange()
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder range(@Range(from = 0, to = Integer.MAX_VALUE) int range);
++        Builder range(@Range(from = 0, to = Integer.MAX_VALUE) int range);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/data/package-info.java b/src/main/java/io/papermc/paper/registry/data/package-info.java
@@ -429,10 +430,10 @@ index 0000000000000000000000000000000000000000..4f8f536f437c5f483ac7bce393e664fd
 + */
 +package io.papermc.paper.registry.data;
 diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEvents.java b/src/main/java/io/papermc/paper/registry/event/RegistryEvents.java
-index 1f89945be2ed68f52a544f41f7a151b8fdfe113e..b32ae215e976bcfcdd86b03037de61b3d896f57c 100644
+index 91ae9c0d3ec55ce417d4b447bf3d1b0d0c174b5e..1c8e77c7243cfedef6c4d1491cf98e6ec8f1690f 100644
 --- a/src/main/java/io/papermc/paper/registry/event/RegistryEvents.java
 +++ b/src/main/java/io/papermc/paper/registry/event/RegistryEvents.java
-@@ -1,7 +1,14 @@
+@@ -1,8 +1,15 @@
  package io.papermc.paper.registry.event;
  
 +import io.papermc.paper.registry.RegistryKey;
@@ -441,14 +442,15 @@ index 1f89945be2ed68f52a544f41f7a151b8fdfe113e..b32ae215e976bcfcdd86b03037de61b3
 +import org.bukkit.GameEvent;
 +import org.bukkit.enchantments.Enchantment;
  import org.jetbrains.annotations.ApiStatus;
+ import org.jspecify.annotations.NullMarked;
  
 +import static io.papermc.paper.registry.event.RegistryEventProviderImpl.create;
 +
  /**
   * Holds providers for {@link RegistryEntryAddEvent} and {@link RegistryFreezeEvent}
   * handlers for each applicable registry.
-@@ -9,6 +16,9 @@ import org.jetbrains.annotations.ApiStatus;
- @ApiStatus.Experimental
+@@ -11,6 +18,9 @@ import org.jspecify.annotations.NullMarked;
+ @NullMarked
  public final class RegistryEvents {
  
 +    public static final RegistryEventProvider<GameEvent, GameEventRegistryEntry.Builder> GAME_EVENT = create(RegistryKey.GAME_EVENT);

@@ -98,12 +98,12 @@ public final class Registration {
 
             commands.register(plugin.getPluginMeta(), "example", "test", Collections.emptyList(), new BasicCommand() {
                 @Override
-                public void execute(@NotNull final CommandSourceStack commandSourceStack, final @NotNull String[] args) {
+                public void execute(@NotNull final CommandSourceStack commandSourceStack, final @NotNull String @NotNull [] args) {
                     System.out.println(Arrays.toString(args));
                 }
 
                 @Override
-                public @NotNull Collection<String> suggest(final @NotNull CommandSourceStack commandSourceStack, final @NotNull String[] args) {
+                public @NotNull Collection<String> suggest(final @NotNull CommandSourceStack commandSourceStack, final @NotNull String @NotNull [] args) {
                     System.out.println(Arrays.toString(args));
                     return List.of("apple", "banana");
                 }

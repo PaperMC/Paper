@@ -6,17 +6,17 @@ Subject: [PATCH] Add FeatureFlag API
 
 diff --git a/src/main/java/io/papermc/paper/world/flag/FeatureDependant.java b/src/main/java/io/papermc/paper/world/flag/FeatureDependant.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0fda065100c17ee00060df16467c0f7f98984ea7
+index 0000000000000000000000000000000000000000..f5633319c64bf19cf07e2b9a1cac2dd1d11ab70b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/flag/FeatureDependant.java
-@@ -0,0 +1,27 @@
+@@ -0,0 +1,28 @@
 +package io.papermc.paper.world.flag;
 +
 +import java.util.Set;
 +import org.bukkit.FeatureFlag;
-+import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Unmodifiable;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Implemented by types in built-in registries that are controlled by {@link FeatureFlag FeatureFlags}.
@@ -24,6 +24,7 @@ index 0000000000000000000000000000000000000000..0fda065100c17ee00060df16467c0f7f
 + * @apiNote When a type that currently implements this interface transitions to being data-drive, this
 + * interface will be removed from that type in the following major version.
 + */
++@NullMarked
 +@ApiStatus.NonExtendable
 +public interface FeatureDependant {
 +
@@ -33,16 +34,16 @@ index 0000000000000000000000000000000000000000..0fda065100c17ee00060df16467c0f7f
 +     *
 +     * @return the immutable set of feature flags
 +     */
-+    default @Unmodifiable @NonNull Set<FeatureFlag> requiredFeatures() {
++    default @Unmodifiable Set<FeatureFlag> requiredFeatures() {
 +        return FeatureFlagProvider.provider().requiredFeatures(this);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/world/flag/FeatureFlagProvider.java b/src/main/java/io/papermc/paper/world/flag/FeatureFlagProvider.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f64cbee35fd3c6fe7b5f7391f6d118166d26dc18
+index 0000000000000000000000000000000000000000..388e70628f88d8ee0749a43f82b228453e25d5d0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/flag/FeatureFlagProvider.java
-@@ -0,0 +1,19 @@
+@@ -0,0 +1,21 @@
 +package io.papermc.paper.world.flag;
 +
 +import java.util.Optional;
@@ -50,7 +51,9 @@ index 0000000000000000000000000000000000000000..f64cbee35fd3c6fe7b5f7391f6d11816
 +import java.util.Set;
 +import org.bukkit.FeatureFlag;
 +import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
++@NullMarked
 +@ApiStatus.Internal
 +interface FeatureFlagProvider {
 +
@@ -64,22 +67,23 @@ index 0000000000000000000000000000000000000000..f64cbee35fd3c6fe7b5f7391f6d11816
 +}
 diff --git a/src/main/java/io/papermc/paper/world/flag/FeatureFlagSetHolder.java b/src/main/java/io/papermc/paper/world/flag/FeatureFlagSetHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c4432ee20872eeb127852159cf89ed00809fb00e
+index 0000000000000000000000000000000000000000..0955699df65ccbb8711cfa48f0b34d5a8805f1af
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/world/flag/FeatureFlagSetHolder.java
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,32 @@
 +package io.papermc.paper.world.flag;
 +
 +import java.util.Set;
 +import org.bukkit.FeatureFlag;
-+import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Unmodifiable;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Implemented by types that hold {@link FeatureFlag FeatureFlags} like
 + * {@link org.bukkit.generator.WorldInfo} and {@link org.bukkit.RegionAccessor}.
 + */
++@NullMarked
 +@ApiStatus.NonExtendable
 +public interface FeatureFlagSetHolder {
 +
@@ -88,7 +92,7 @@ index 0000000000000000000000000000000000000000..c4432ee20872eeb127852159cf89ed00
 +     *
 +     * @return true if enabled
 +     */
-+    default boolean isEnabled(final @NonNull FeatureDependant featureDependant) {
++    default boolean isEnabled(final FeatureDependant featureDependant) {
 +        return this.getFeatureFlags().containsAll(featureDependant.requiredFeatures());
 +    }
 +
@@ -97,7 +101,7 @@ index 0000000000000000000000000000000000000000..c4432ee20872eeb127852159cf89ed00
 +     *
 +     * @return all enabled {@link FeatureFlag FeatureFlags}
 +     */
-+    @Unmodifiable @NonNull Set<FeatureFlag> getFeatureFlags();
++    @Unmodifiable Set<FeatureFlag> getFeatureFlags();
 +}
 diff --git a/src/main/java/org/bukkit/FeatureFlag.java b/src/main/java/org/bukkit/FeatureFlag.java
 index 026b1832bcd163ab89668c991bf002e608e36aef..b5e87480b6a1d064547e4e608f3d402825931a00 100644
@@ -181,20 +185,19 @@ index 026b1832bcd163ab89668c991bf002e608e36aef..b5e87480b6a1d064547e4e608f3d4028
  }
 diff --git a/src/main/java/org/bukkit/FeatureFlagImpl.java b/src/main/java/org/bukkit/FeatureFlagImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a33517dbd69021fde8246836720b6247800ee43c
+index 0000000000000000000000000000000000000000..5a43f65f633dc9a1a0ba7dba0c15488375427444
 --- /dev/null
 +++ b/src/main/java/org/bukkit/FeatureFlagImpl.java
-@@ -0,0 +1,29 @@
+@@ -0,0 +1,27 @@
 +package org.bukkit;
 +
 +import java.util.HashSet;
 +import java.util.Set;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.framework.qual.DefaultQualifier;
 +import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +@ApiStatus.Internal
-+@DefaultQualifier(NonNull.class)
++@NullMarked
 +record FeatureFlagImpl(NamespacedKey key) implements FeatureFlag {
 +
 +    static final Set<FeatureFlag> ALL_FLAGS = new HashSet<>();
@@ -205,7 +208,6 @@ index 0000000000000000000000000000000000000000..a33517dbd69021fde8246836720b6247
 +    }
 +
 +    @ApiStatus.Internal
-+    @DefaultQualifier(NonNull.class)
 +    record Deprecated(NamespacedKey key) implements FeatureFlag {
 +
 +        @Override

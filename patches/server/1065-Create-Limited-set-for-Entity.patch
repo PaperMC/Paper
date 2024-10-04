@@ -6,7 +6,7 @@ Subject: [PATCH] Create Limited set for Entity
 
 diff --git a/src/main/java/io/papermc/paper/util/SizeLimitedSet.java b/src/main/java/io/papermc/paper/util/SizeLimitedSet.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d6789463dc8d671f3dc1f011e1c81ae94d105a95
+index 0000000000000000000000000000000000000000..e5a1b373a87e789fb728a7dec9054fae3196e50f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/SizeLimitedSet.java
 @@ -0,0 +1,37 @@
@@ -17,7 +17,7 @@ index 0000000000000000000000000000000000000000..d6789463dc8d671f3dc1f011e1c81ae9
 +import java.util.HashSet;
 +
 +@NullMarked
-+public class SizeLimitedSet extends HashSet<String> {
++public class SizeLimitedSet<T> extends HashSet<T> {
 +    private final int maxTags;
 +
 +    public SizeLimitedSet(int maxTags) {
@@ -25,20 +25,20 @@ index 0000000000000000000000000000000000000000..d6789463dc8d671f3dc1f011e1c81ae9
 +    }
 +
 +    @Override
-+    public boolean add(String tag) {
++    public boolean add(T tag) {
 +        // Enforce the max tag limit
-+        if (this.size() >= maxTags) {
++        if (this.size() >= this.maxTags) {
 +            return false;
 +        }
 +        return super.add(tag);
 +    }
 +
 +    @Override
-+    public boolean addAll(Collection<? extends String> tags) {
++    public boolean addAll(Collection<? extends T> tags) {
 +        boolean edited = false;
 +
-+        for (String tag : tags) {
-+            if (this.size() >= maxTags) {
++        for (T tag : tags) {
++            if (this.size() >= this.maxTags) {
 +                break;
 +            }
 +
@@ -48,7 +48,7 @@ index 0000000000000000000000000000000000000000..d6789463dc8d671f3dc1f011e1c81ae9
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 4b54d0ea31062972e68ee8fafe3cfaf68f65a5cd..94e6637045e4a4f0a4d79d3aba245b13465dfa27 100644
+index 4b54d0ea31062972e68ee8fafe3cfaf68f65a5cd..5c6555445b0713c6e1f53b8daed10dc4fd3d0fc4 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -566,7 +566,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
@@ -56,7 +56,7 @@ index 4b54d0ea31062972e68ee8fafe3cfaf68f65a5cd..94e6637045e4a4f0a4d79d3aba245b13
          this.uuid = Mth.createInsecureUUID(this.random);
          this.stringUUID = this.uuid.toString();
 -        this.tags = Sets.newHashSet();
-+        this.tags = new io.papermc.paper.util.SizeLimitedSet(1024); // Paper - Create Limited set for Entity
++        this.tags = new io.papermc.paper.util.SizeLimitedSet(MAX_ENTITY_TAG_COUNT); // Paper - Create Limited set for Entity
          this.pistonDeltas = new double[]{0.0D, 0.0D, 0.0D};
          this.mainSupportingBlockPos = Optional.empty();
          this.onGroundNoBlocks = false;

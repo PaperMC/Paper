@@ -6,10 +6,10 @@ Subject: [PATCH] Make a PDC view accessible directly from ItemStack
 
 diff --git a/src/main/java/io/papermc/paper/persistence/PersistentDataContainerView.java b/src/main/java/io/papermc/paper/persistence/PersistentDataContainerView.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4a4949fde3f03e2ea9d2dde245f7dea119e202bf
+index 0000000000000000000000000000000000000000..061ffc1f050a950e041ceef217b5f335e3cd0af1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/persistence/PersistentDataContainerView.java
-@@ -0,0 +1,167 @@
+@@ -0,0 +1,160 @@
 +package io.papermc.paper.persistence;
 +
 +import java.util.Set;
@@ -18,15 +18,17 @@ index 0000000000000000000000000000000000000000..4a4949fde3f03e2ea9d2dde245f7dea1
 +import org.bukkit.persistence.PersistentDataContainer;
 +import org.bukkit.persistence.PersistentDataHolder;
 +import org.bukkit.persistence.PersistentDataType;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
 +/**
 + * This represents a view of a persistent data container. No
 + * methods on this interface mutate the container.
++ *
 + * @see PersistentDataContainer
 + */
++@NullMarked
 +@ApiStatus.NonExtendable
 +public interface PersistentDataContainerView {
 +
@@ -52,14 +54,12 @@ index 0000000000000000000000000000000000000000..4a4949fde3f03e2ea9d2dde245f7dea1
 +     * @param type the type the primative stored value has to match
 +     * @param <P> the generic type of the stored primitive
 +     * @param <C> the generic type of the eventually created complex object
-+     *
 +     * @return if a value with the provided key and type exists
-+     *
 +     * @throws IllegalArgumentException if the key to look up is null
 +     * @throws IllegalArgumentException if the type to cast the found object to is
 +     * null
 +     */
-+    <P, C> boolean has(@NonNull NamespacedKey key, @NonNull PersistentDataType<P, C> type);
++    <P, C> boolean has(NamespacedKey key, PersistentDataType<P, C> type);
 +
 +    /**
 +     * Returns if the persistent metadata provider has metadata registered matching
@@ -73,12 +73,10 @@ index 0000000000000000000000000000000000000000..4a4949fde3f03e2ea9d2dde245f7dea1
 +     * namespace.
 +     *
 +     * @param key the key the value is stored under
-+     *
 +     * @return if a value with the provided key exists
-+     *
 +     * @throws IllegalArgumentException if the key to look up is null
 +     */
-+    boolean has(@NonNull NamespacedKey key);
++    boolean has(NamespacedKey key);
 +
 +    /**
 +     * Returns the metadata value that is stored on the
@@ -88,10 +86,8 @@ index 0000000000000000000000000000000000000000..4a4949fde3f03e2ea9d2dde245f7dea1
 +     * @param type the type the value must have and will be casted to
 +     * @param <P> the generic type of the stored primitive
 +     * @param <C> the generic type of the eventually created complex object
-+     *
 +     * @return the value or {@code null} if no value was mapped under the given
 +     * value
-+     *
 +     * @throws IllegalArgumentException if the key to look up is null
 +     * @throws IllegalArgumentException if the type to cast the found object to is
 +     * null
@@ -101,7 +97,7 @@ index 0000000000000000000000000000000000000000..4a4949fde3f03e2ea9d2dde245f7dea1
 +     * the {@link
 +     * PersistentDataType#getPrimitiveType()}
 +     */
-+    <P, C> @Nullable C get(@NonNull NamespacedKey key, @NonNull PersistentDataType<P, C> type);
++    <P, C> @Nullable C get(NamespacedKey key, PersistentDataType<P, C> type);
 +
 +    /**
 +     * Returns the metadata value that is stored on the
@@ -114,10 +110,8 @@ index 0000000000000000000000000000000000000000..4a4949fde3f03e2ea9d2dde245f7dea1
 +     * the provided key
 +     * @param <P> the generic type of the stored primitive
 +     * @param <C> the generic type of the eventually created complex object
-+     *
 +     * @return the value or the default value if no value was mapped under the
 +     * given key
-+     *
 +     * @throws IllegalArgumentException if the key to look up is null
 +     * @throws IllegalArgumentException if the type to cast the found object to is
 +     * null
@@ -126,18 +120,18 @@ index 0000000000000000000000000000000000000000..4a4949fde3f03e2ea9d2dde245f7dea1
 +     * @throws IllegalArgumentException if no suitable adapter was found for
 +     * the {@link PersistentDataType#getPrimitiveType()}
 +     */
-+    <P, C> @NonNull C getOrDefault(@NonNull NamespacedKey key, @NonNull PersistentDataType<P, C> type, @NonNull C defaultValue);
++    <P, C> C getOrDefault(NamespacedKey key, PersistentDataType<P, C> type, C defaultValue);
 +
 +    /**
 +     * Get the set of keys present on this {@link PersistentDataContainer}
 +     * instance.
-+     *
++     * <p>
 +     * Any changes made to the returned set will not be reflected on the
 +     * instance.
 +     *
 +     * @return the key set
 +     */
-+    @NonNull Set<NamespacedKey> getKeys();
++    Set<NamespacedKey> getKeys();
 +
 +    /**
 +     * Returns if the container instance is empty, therefore has no entries
@@ -154,19 +148,18 @@ index 0000000000000000000000000000000000000000..4a4949fde3f03e2ea9d2dde245f7dea1
 +     * This method only copies custom object keys. Existing tags, like the display
 +     * name, will not be copied as the values are stored using your namespace.
 +     *
-+     * @param other   the container to copy to
++     * @param other the container to copy to
 +     * @param replace whether to replace any matching values in the target container
-+     *
 +     * @throws IllegalArgumentException if the other container is null
 +     */
-+    void copyTo(@NonNull PersistentDataContainer other, boolean replace);
++    void copyTo(PersistentDataContainer other, boolean replace);
 +
 +    /**
 +     * Returns the adapter context this tag container uses.
 +     *
 +     * @return the tag context
 +     */
-+    @NonNull PersistentDataAdapterContext getAdapterContext();
++    PersistentDataAdapterContext getAdapterContext();
 +
 +    /**
 +     * Serialize this {@link PersistentDataContainer} instance to a
@@ -175,23 +168,24 @@ index 0000000000000000000000000000000000000000..4a4949fde3f03e2ea9d2dde245f7dea1
 +     * @return a binary representation of this container
 +     * @throws java.io.IOException if we fail to write this container to a byte array
 +     */
-+    byte @NonNull [] serializeToBytes() throws java.io.IOException;
++    byte[] serializeToBytes() throws java.io.IOException;
 +}
 diff --git a/src/main/java/io/papermc/paper/persistence/PersistentDataViewHolder.java b/src/main/java/io/papermc/paper/persistence/PersistentDataViewHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9789916f949374bfb50da535b076180700f7ae73
+index 0000000000000000000000000000000000000000..05bc2ac326fb58ea429cee825520e70f7f211f0d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/persistence/PersistentDataViewHolder.java
-@@ -0,0 +1,23 @@
+@@ -0,0 +1,24 @@
 +package io.papermc.paper.persistence;
 +
-+import org.checkerframework.checker.nullness.qual.NonNull;
 +import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * The {@link PersistentDataViewHolder} interface defines an object that can view
 + * custom persistent data on it.
 + */
++@NullMarked
 +@ApiStatus.NonExtendable
 +public interface PersistentDataViewHolder {
 +
@@ -204,10 +198,10 @@ index 0000000000000000000000000000000000000000..9789916f949374bfb50da535b0761807
 +     *
 +     * @return the persistent data container view
 +     */
-+    @NonNull PersistentDataContainerView getPersistentDataContainer();
++    PersistentDataContainerView getPersistentDataContainer();
 +}
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index 4fe68a22576933676271f841a5af0ee45b90216f..b3abe3bde05d4a360e31e490bff8a859dc2bd4a6 100644
+index 6fc8bddfcabca8c363e0d9f958f0ce7bc39099f1..7f63a3a37eb06049bd5de10466c6dd96cb5dd4ee 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
 @@ -27,7 +27,7 @@ import org.jetbrains.annotations.Nullable;

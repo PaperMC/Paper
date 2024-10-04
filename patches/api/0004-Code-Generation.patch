@@ -85,10 +85,10 @@ index 0000000000000000000000000000000000000000..2512dba27edfdccbc4430815b6cba048
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/RegistryKey.java b/src/main/java/io/papermc/paper/registry/RegistryKey.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1e2765d296decbb3e61b8434e78b5e0214f8fee0
+index 0000000000000000000000000000000000000000..8410d7213370f01cbedbf7fac29bac96f150c49a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/RegistryKey.java
-@@ -0,0 +1,177 @@
+@@ -0,0 +1,179 @@
 +package io.papermc.paper.registry;
 +
 +import net.kyori.adventure.key.Keyed;
@@ -121,6 +121,7 @@ index 0000000000000000000000000000000000000000..1e2765d296decbb3e61b8434e78b5e02
 +import org.bukkit.potion.PotionEffectType;
 +import org.bukkit.potion.PotionType;
 +import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +import static io.papermc.paper.registry.RegistryKeyImpl.create;
 +
@@ -137,6 +138,7 @@ index 0000000000000000000000000000000000000000..1e2765d296decbb3e61b8434e78b5e02
 + * @param <T> the value type
 + */
 +@SuppressWarnings("unused")
++@NullMarked
 +public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
 +
 +    /* ******************* *
@@ -268,19 +270,21 @@ index 0000000000000000000000000000000000000000..1e2765d296decbb3e61b8434e78b5e02
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/RegistryKeyImpl.java b/src/main/java/io/papermc/paper/registry/RegistryKeyImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..791813220b2504214b1adecc69093cd600fb0f8c
+index 0000000000000000000000000000000000000000..80e3e64f47ac55a4978c9e5b430e2f2d1c871d1b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/RegistryKeyImpl.java
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,26 @@
 +package io.papermc.paper.registry;
 +
 +import com.google.common.collect.Sets;
 +import java.util.Set;
 +import net.kyori.adventure.key.Key;
 +import org.intellij.lang.annotations.Subst;
-+import org.jetbrains.annotations.NotNull;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
-+record RegistryKeyImpl<T>(@NotNull Key key) implements RegistryKey<T> {
++@NullMarked
++record RegistryKeyImpl<T>(Key key) implements RegistryKey<T> {
 +
 +    static final Set<RegistryKey<?>> REGISTRY_KEYS = Sets.newIdentityHashSet();
 +
@@ -298,16 +302,16 @@ index 0000000000000000000000000000000000000000..791813220b2504214b1adecc69093cd6
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/TypedKey.java b/src/main/java/io/papermc/paper/registry/TypedKey.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6f5a062ba7ee7173468ecea3c1855a233bf3855e
+index 0000000000000000000000000000000000000000..cb2e1a4a6d583787573eeefab24e3188c43d148f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/TypedKey.java
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,45 @@
 +package io.papermc.paper.registry;
 +
 +import net.kyori.adventure.key.Key;
 +import net.kyori.adventure.key.Keyed;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Represents a key for a value in a specific registry.
@@ -315,6 +319,7 @@ index 0000000000000000000000000000000000000000..6f5a062ba7ee7173468ecea3c1855a23
 + * @param <T> the value type for the registry
 + */
 +@ApiStatus.Experimental
++@NullMarked
 +public sealed interface TypedKey<T> extends Keyed permits TypedKeyImpl {
 +
 +    /**
@@ -323,7 +328,7 @@ index 0000000000000000000000000000000000000000..6f5a062ba7ee7173468ecea3c1855a23
 +     * @return the value's key
 +     */
 +    @Override
-+    @NotNull Key key();
++    Key key();
 +
 +    /**
 +     * Gets the registry key for the value this key
@@ -331,7 +336,7 @@ index 0000000000000000000000000000000000000000..6f5a062ba7ee7173468ecea3c1855a23
 +     *
 +     * @return the registry key
 +     */
-+    @NotNull RegistryKey<T> registryKey();
++    RegistryKey<T> registryKey();
 +
 +    /**
 +     * Create a typed key from a key and a registry key.
@@ -342,23 +347,23 @@ index 0000000000000000000000000000000000000000..6f5a062ba7ee7173468ecea3c1855a23
 +     * @return a new key for the value key and registry key
 +     */
 +    @ApiStatus.Experimental
-+    static <T> @NotNull TypedKey<T> create(final @NotNull RegistryKey<T> registryKey, final @NotNull Key key) {
++    static <T> TypedKey<T> create(final RegistryKey<T> registryKey, final Key key) {
 +        return new TypedKeyImpl<>(key, registryKey);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/TypedKeyImpl.java b/src/main/java/io/papermc/paper/registry/TypedKeyImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1a97b3359c4ece5c29131da7c3f208aaa8fab66e
+index 0000000000000000000000000000000000000000..99375deaa6b90b33cd6a77e0df651236d304874e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/TypedKeyImpl.java
 @@ -0,0 +1,8 @@
 +package io.papermc.paper.registry;
 +
 +import net.kyori.adventure.key.Key;
-+import net.kyori.adventure.key.Keyed;
-+import org.jetbrains.annotations.NotNull;
++import org.jspecify.annotations.NullMarked;
 +
-+record TypedKeyImpl<T>(@NotNull Key key, @NotNull RegistryKey<T> registryKey) implements TypedKey<T> {
++@NullMarked
++record TypedKeyImpl<T>(Key key, RegistryKey<T> registryKey) implements TypedKey<T> {
 +}
 diff --git a/src/main/java/org/bukkit/MinecraftExperimental.java b/src/main/java/org/bukkit/MinecraftExperimental.java
 index a86b87e4c3332202e40e484c3f9c6562b419c70f..305532968f9f7dd497c77259ed147ea2f081bc74 100644

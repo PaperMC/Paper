@@ -91,23 +91,25 @@ index 3383fb91249ea53740326b538abd905f84ff0e3c..74f0e2b812c1e2e922b136fefe505fc8
      doLast {
 diff --git a/src/main/java/io/papermc/paper/chat/ChatRenderer.java b/src/main/java/io/papermc/paper/chat/ChatRenderer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ffe0a921cc1ebbb95104f22b57e0e3af85e287a6
+index 0000000000000000000000000000000000000000..1288cdeafe587e9e78e7c5087742ea054ba8423d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chat/ChatRenderer.java
-@@ -0,0 +1,71 @@
+@@ -0,0 +1,70 @@
 +package io.papermc.paper.chat;
 +
 +import net.kyori.adventure.audience.Audience;
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.entity.Player;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * A chat renderer is responsible for rendering chat messages sent by {@link Player}s to the server.
 + */
++@NullMarked
 +@FunctionalInterface
 +public interface ChatRenderer {
++
 +    /**
 +     * Renders a chat message. This will be called once for each receiving {@link Audience}.
 +     *
@@ -118,15 +120,13 @@ index 0000000000000000000000000000000000000000..ffe0a921cc1ebbb95104f22b57e0e3af
 +     * @return a rendered chat message
 +     */
 +    @ApiStatus.OverrideOnly
-+    @NotNull
-+    Component render(@NotNull Player source, @NotNull Component sourceDisplayName, @NotNull Component message, @NotNull Audience viewer);
++    Component render(Player source, Component sourceDisplayName, Component message, Audience viewer);
 +
 +    /**
 +     * Create a new instance of the default {@link ChatRenderer}.
 +     *
 +     * @return a new {@link ChatRenderer}
 +     */
-+    @NotNull
 +    static ChatRenderer defaultRenderer() {
 +        return new ViewerUnawareImpl.Default((source, sourceDisplayName, message) -> Component.translatable("chat.type.text", sourceDisplayName, message));
 +    }
@@ -142,8 +142,7 @@ index 0000000000000000000000000000000000000000..ffe0a921cc1ebbb95104f22b57e0e3af
 +     * @param renderer the viewer unaware renderer
 +     * @return a new {@link ChatRenderer}
 +     */
-+    @NotNull
-+    static ChatRenderer viewerUnaware(final @NotNull ViewerUnaware renderer) {
++    static ChatRenderer viewerUnaware(final ViewerUnaware renderer) {
 +        return new ViewerUnawareImpl(renderer);
 +    }
 +
@@ -153,6 +152,7 @@ index 0000000000000000000000000000000000000000..ffe0a921cc1ebbb95104f22b57e0e3af
 +     * @see ChatRenderer#viewerUnaware(ViewerUnaware)
 +     */
 +    interface ViewerUnaware {
++
 +        /**
 +         * Renders a chat message.
 +         *
@@ -162,24 +162,26 @@ index 0000000000000000000000000000000000000000..ffe0a921cc1ebbb95104f22b57e0e3af
 +         * @return a rendered chat message
 +         */
 +        @ApiStatus.OverrideOnly
-+        @NotNull
-+        Component render(@NotNull Player source, @NotNull Component sourceDisplayName, @NotNull Component message);
++        Component render(Player source, Component sourceDisplayName, Component message);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/chat/ViewerUnawareImpl.java b/src/main/java/io/papermc/paper/chat/ViewerUnawareImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2ad76b1751ba707f7ae0d283aa1cbaf6c9619da9
+index 0000000000000000000000000000000000000000..e1ef23b4bdf60a299d6d37099cef777b3de13ac7
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/chat/ViewerUnawareImpl.java
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,38 @@
 +package io.papermc.paper.chat;
 +
 +import net.kyori.adventure.audience.Audience;
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.entity.Player;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
++@ApiStatus.Internal
++@NullMarked
 +sealed class ViewerUnawareImpl implements ChatRenderer, ChatRenderer.ViewerUnaware permits ViewerUnawareImpl.Default {
 +    private final ViewerUnaware unaware;
 +    private @Nullable Component message;
@@ -189,12 +191,12 @@ index 0000000000000000000000000000000000000000..2ad76b1751ba707f7ae0d283aa1cbaf6
 +    }
 +
 +    @Override
-+    public @NotNull Component render(final @NotNull Player source, final @NotNull Component sourceDisplayName, final @NotNull Component message, final @NotNull Audience viewer) {
++    public Component render(final Player source, final Component sourceDisplayName, final Component message, final Audience viewer) {
 +        return this.render(source, sourceDisplayName, message);
 +    }
 +
 +    @Override
-+    public @NotNull Component render(final @NotNull Player source, final @NotNull Component sourceDisplayName, final @NotNull Component message) {
++    public Component render(final Player source, final Component sourceDisplayName, final Component message) {
 +        if (this.message == null) {
 +            this.message = this.unaware.render(source, sourceDisplayName, message);
 +        }
@@ -579,12 +581,13 @@ index 0000000000000000000000000000000000000000..42a82ce2316a4aad2883d24c7e2ff95d
 +}
 diff --git a/src/main/java/io/papermc/paper/text/PaperComponents.java b/src/main/java/io/papermc/paper/text/PaperComponents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1a11cfde07db55194cd26757863a268b9042d0bb
+index 0000000000000000000000000000000000000000..934d1d3ca490a8e25c438bc8c57eb6bde50e0147
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/text/PaperComponents.java
-@@ -0,0 +1,177 @@
+@@ -0,0 +1,180 @@
 +package io.papermc.paper.text;
 +
++import java.io.IOException;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.flattener.ComponentFlattener;
 +import net.kyori.adventure.text.format.NamedTextColor;
@@ -595,15 +598,15 @@ index 0000000000000000000000000000000000000000..1a11cfde07db55194cd26757863a268b
 +import org.bukkit.Bukkit;
 +import org.bukkit.command.CommandSender;
 +import org.bukkit.entity.Entity;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
-+
-+import java.io.IOException;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
 +/**
 + * Paper API-specific methods for working with {@link Component}s and related.
 + */
++@NullMarked
 +public final class PaperComponents {
++
 +    private PaperComponents() {
 +        throw new RuntimeException("PaperComponents is not to be instantiated!");
 +    }
@@ -633,7 +636,7 @@ index 0000000000000000000000000000000000000000..1a11cfde07db55194cd26757863a268b
 +     * @return the resolved component
 +     * @throws IOException if a syntax error tripped during resolving
 +     */
-+    public static @NotNull Component resolveWithContext(@NotNull Component input, @Nullable CommandSender context, @Nullable Entity scoreboardSubject) throws IOException {
++    public static Component resolveWithContext(final Component input, final @Nullable CommandSender context, final @Nullable Entity scoreboardSubject) throws IOException {
 +        return resolveWithContext(input, context, scoreboardSubject, true);
 +    }
 +
@@ -664,7 +667,8 @@ index 0000000000000000000000000000000000000000..1a11cfde07db55194cd26757863a268b
 +     * @return the resolved component
 +     * @throws IOException if a syntax error tripped during resolving
 +     */
-+    public static @NotNull Component resolveWithContext(@NotNull Component input, @Nullable CommandSender context, @Nullable Entity scoreboardSubject, boolean bypassPermissions) throws IOException {
++    @SuppressWarnings("deprecation") // using unsafe as a bridge
++    public static Component resolveWithContext(final Component input, final @Nullable CommandSender context, final @Nullable Entity scoreboardSubject, final boolean bypassPermissions) throws IOException {
 +        return Bukkit.getUnsafe().resolveWithContext(input, context, scoreboardSubject, bypassPermissions);
 +    }
 +
@@ -673,7 +677,8 @@ index 0000000000000000000000000000000000000000..1a11cfde07db55194cd26757863a268b
 +     *
 +     * @return a component flattener
 +     */
-+    public static @NotNull ComponentFlattener flattener() {
++    @SuppressWarnings("deprecation") // using unsafe as a bridge
++    public static ComponentFlattener flattener() {
 +        return Bukkit.getUnsafe().componentFlattener();
 +    }
 +
@@ -688,7 +693,7 @@ index 0000000000000000000000000000000000000000..1a11cfde07db55194cd26757863a268b
 +     * @deprecated will be removed in adventure 5.0.0, use {@link PlainTextComponentSerializer#plainText()}
 +     */
 +    @Deprecated(forRemoval = true, since = "1.18.1")
-+    public static @NotNull PlainComponentSerializer plainSerializer() {
++    public static PlainComponentSerializer plainSerializer() {
 +        return Bukkit.getUnsafe().plainComponentSerializer();
 +    }
 +
@@ -703,7 +708,7 @@ index 0000000000000000000000000000000000000000..1a11cfde07db55194cd26757863a268b
 +     * @deprecated use {@link PlainTextComponentSerializer#plainText()}
 +     */
 +    @Deprecated(forRemoval = true, since = "1.18.2")
-+    public static @NotNull PlainTextComponentSerializer plainTextSerializer() {
++    public static PlainTextComponentSerializer plainTextSerializer() {
 +        return Bukkit.getUnsafe().plainTextSerializer();
 +    }
 +
@@ -719,7 +724,7 @@ index 0000000000000000000000000000000000000000..1a11cfde07db55194cd26757863a268b
 +     * @deprecated use {@link GsonComponentSerializer#gson()}
 +     */
 +    @Deprecated(forRemoval = true, since = "1.18.2")
-+    public static @NotNull GsonComponentSerializer gsonSerializer() {
++    public static GsonComponentSerializer gsonSerializer() {
 +        return Bukkit.getUnsafe().gsonComponentSerializer();
 +    }
 +
@@ -736,7 +741,7 @@ index 0000000000000000000000000000000000000000..1a11cfde07db55194cd26757863a268b
 +     * @deprecated use {@link GsonComponentSerializer#colorDownsamplingGson()}
 +     */
 +    @Deprecated(forRemoval = true, since = "1.18.2")
-+    public static @NotNull GsonComponentSerializer colorDownsamplingGsonSerializer() {
++    public static GsonComponentSerializer colorDownsamplingGsonSerializer() {
 +        return Bukkit.getUnsafe().colorDownsamplingGsonComponentSerializer();
 +    }
 +
@@ -756,7 +761,7 @@ index 0000000000000000000000000000000000000000..1a11cfde07db55194cd26757863a268b
 +     * @deprecated use {@link LegacyComponentSerializer#legacySection()}
 +     */
 +    @Deprecated(forRemoval = true, since = "1.18.2")
-+    public static @NotNull LegacyComponentSerializer legacySectionSerializer() {
++    public static LegacyComponentSerializer legacySectionSerializer() {
 +        return Bukkit.getUnsafe().legacyComponentSerializer();
 +    }
 +}
