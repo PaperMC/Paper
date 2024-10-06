@@ -9,12 +9,12 @@ import org.bukkit.block.banner.PatternType;
 import org.bukkit.craftbukkit.block.banner.CraftPatternType;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.entity.HumanEntity;
-import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.LoomInventory;
 import org.bukkit.inventory.view.LoomView;
 
-public class CraftLoomView extends CraftInventoryView<ContainerLoom> implements LoomView {
+public class CraftLoomView extends CraftInventoryView<ContainerLoom, LoomInventory> implements LoomView {
 
-    public CraftLoomView(final HumanEntity player, final Inventory viewing, final ContainerLoom container) {
+    public CraftLoomView(final HumanEntity player, final LoomInventory viewing, final ContainerLoom container) {
         super(player, viewing, container);
     }
 

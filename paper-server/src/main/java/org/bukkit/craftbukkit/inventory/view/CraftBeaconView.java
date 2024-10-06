@@ -5,14 +5,14 @@ import net.minecraft.world.level.block.entity.TileEntityBeacon;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 import org.bukkit.entity.HumanEntity;
-import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.BeaconInventory;
 import org.bukkit.inventory.view.BeaconView;
 import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.Nullable;
 
-public class CraftBeaconView extends CraftInventoryView<ContainerBeacon> implements BeaconView {
+public class CraftBeaconView extends CraftInventoryView<ContainerBeacon, BeaconInventory> implements BeaconView {
 
-    public CraftBeaconView(final HumanEntity player, final Inventory viewing, final ContainerBeacon container) {
+    public CraftBeaconView(final HumanEntity player, final BeaconInventory viewing, final ContainerBeacon container) {
         super(player, viewing, container);
     }
 

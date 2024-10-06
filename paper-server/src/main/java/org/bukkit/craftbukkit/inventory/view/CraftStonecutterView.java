@@ -7,14 +7,14 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeStonecutting;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.entity.HumanEntity;
-import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.StonecutterInventory;
 import org.bukkit.inventory.StonecuttingRecipe;
 import org.bukkit.inventory.view.StonecutterView;
 import org.jetbrains.annotations.NotNull;
 
-public class CraftStonecutterView extends CraftInventoryView<ContainerStonecutter> implements StonecutterView {
+public class CraftStonecutterView extends CraftInventoryView<ContainerStonecutter, StonecutterInventory> implements StonecutterView {
 
-    public CraftStonecutterView(final HumanEntity player, final Inventory viewing, final ContainerStonecutter container) {
+    public CraftStonecutterView(final HumanEntity player, final StonecutterInventory viewing, final ContainerStonecutter container) {
         super(player, viewing, container);
     }
 

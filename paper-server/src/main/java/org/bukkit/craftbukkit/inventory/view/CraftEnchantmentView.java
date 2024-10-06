@@ -11,13 +11,13 @@ import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.enchantments.EnchantmentOffer;
 import org.bukkit.entity.HumanEntity;
-import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.EnchantingInventory;
 import org.bukkit.inventory.view.EnchantmentView;
 import org.jetbrains.annotations.NotNull;
 
-public class CraftEnchantmentView extends CraftInventoryView<ContainerEnchantTable> implements EnchantmentView {
+public class CraftEnchantmentView extends CraftInventoryView<ContainerEnchantTable, EnchantingInventory> implements EnchantmentView {
 
-    public CraftEnchantmentView(final HumanEntity player, final Inventory viewing, final ContainerEnchantTable container) {
+    public CraftEnchantmentView(final HumanEntity player, final EnchantingInventory viewing, final ContainerEnchantTable container) {
         super(player, viewing, container);
     }
 

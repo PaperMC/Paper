@@ -5,12 +5,12 @@ import net.minecraft.world.inventory.ContainerLectern;
 import net.minecraft.world.level.block.entity.TileEntityLectern;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.entity.HumanEntity;
-import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.LecternInventory;
 import org.bukkit.inventory.view.LecternView;
 
-public class CraftLecternView extends CraftInventoryView<ContainerLectern> implements LecternView {
+public class CraftLecternView extends CraftInventoryView<ContainerLectern, LecternInventory> implements LecternView {
 
-    public CraftLecternView(final HumanEntity player, final Inventory viewing, final ContainerLectern container) {
+    public CraftLecternView(final HumanEntity player, final LecternInventory viewing, final ContainerLectern container) {
         super(player, viewing, container);
     }
 

@@ -4,12 +4,12 @@ import net.minecraft.world.inventory.ContainerFurnace;
 import net.minecraft.world.level.block.entity.TileEntityFurnace;
 import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.entity.HumanEntity;
-import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.FurnaceInventory;
 import org.bukkit.inventory.view.FurnaceView;
 
-public class CraftFurnaceView extends CraftInventoryView<ContainerFurnace> implements FurnaceView {
+public class CraftFurnaceView extends CraftInventoryView<ContainerFurnace, FurnaceInventory> implements FurnaceView {
 
-    public CraftFurnaceView(final HumanEntity player, final Inventory viewing, final ContainerFurnace container) {
+    public CraftFurnaceView(final HumanEntity player, final FurnaceInventory viewing, final ContainerFurnace container) {
         super(player, viewing, container);
     }
 
