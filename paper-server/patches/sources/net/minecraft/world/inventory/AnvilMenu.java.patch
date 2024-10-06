@@ -11,7 +11,7 @@
  public class AnvilMenu extends ItemCombinerMenu {
  
      public static final int INPUT_SLOT = 0;
-@@ -45,6 +49,11 @@
+@@ -45,6 +49,12 @@
      private static final int ADDITIONAL_SLOT_X_PLACEMENT = 76;
      private static final int RESULT_SLOT_X_PLACEMENT = 134;
      private static final int SLOT_Y_PLACEMENT = 47;
@@ -20,10 +20,11 @@
 +    public int maximumRepairCost = 40;
 +    private CraftAnvilView bukkitEntity;
 +    // CraftBukkit end
++    public boolean bypassEnchantmentLevelRestriction = false; // Paper - bypass anvil level restrictions
  
      public AnvilMenu(int syncId, Inventory inventory) {
          this(syncId, inventory, ContainerLevelAccess.NULL);
-@@ -72,7 +81,7 @@
+@@ -72,7 +82,7 @@
  
      @Override
      protected boolean mayPickup(Player player, boolean present) {
@@ -32,7 +33,7 @@
      }
  
      @Override
-@@ -94,7 +103,7 @@
+@@ -94,7 +104,7 @@
              this.inputSlots.setItem(1, ItemStack.EMPTY);
          }
  
@@ -41,7 +42,7 @@
          this.inputSlots.setItem(0, ItemStack.EMPTY);
          this.access.execute((world, blockposition) -> {
              BlockState iblockdata = world.getBlockState(blockposition);
-@@ -102,6 +111,16 @@
+@@ -102,6 +112,16 @@
              if (!player.hasInfiniteMaterials() && iblockdata.is(BlockTags.ANVIL) && player.getRandom().nextFloat() < 0.12F) {
                  BlockState iblockdata1 = AnvilBlock.damage(iblockdata);
  
@@ -58,7 +59,7 @@
                  if (iblockdata1 == null) {
                      world.removeBlock(blockposition, false);
                      world.levelEvent(1029, blockposition, 0);
-@@ -143,8 +162,8 @@
+@@ -143,8 +163,8 @@
                  if (itemstack1.isDamageableItem() && itemstack.isValidRepairItem(itemstack2)) {
                      k = Math.min(itemstack1.getDamageValue(), itemstack1.getMaxDamage() / 4);
                      if (k <= 0) {
@@ -69,7 +70,7 @@
                          return;
                      }
  
-@@ -158,8 +177,8 @@
+@@ -158,8 +178,8 @@
                      this.repairItemCountCost = i1;
                  } else {
                      if (!flag && (!itemstack1.is(itemstack2.getItem()) || !itemstack1.isDamageableItem())) {
@@ -80,7 +81,16 @@
                          return;
                      }
  
-@@ -233,8 +252,8 @@
+@@ -214,7 +234,7 @@
+                             flag2 = true;
+                         } else {
+                             flag1 = true;
+-                            if (i2 > enchantment.getMaxLevel()) {
++                            if (i2 > enchantment.getMaxLevel() && !this.bypassEnchantmentLevelRestriction) { // Paper - bypass anvil level restrictions
+                                 i2 = enchantment.getMaxLevel();
+                             }
+ 
+@@ -233,8 +253,8 @@
                      }
  
                      if (flag2 && !flag1) {
@@ -91,7 +101,7 @@
                          return;
                      }
                  }
-@@ -260,14 +279,14 @@
+@@ -260,14 +280,14 @@
              }
  
              if (b0 == i && b0 > 0) {
@@ -109,7 +119,7 @@
                  itemstack1 = ItemStack.EMPTY;
              }
  
-@@ -285,12 +304,13 @@
+@@ -285,12 +305,13 @@
                  EnchantmentHelper.setEnchantments(itemstack1, itemenchantments_a.toImmutable());
              }
  
@@ -126,7 +136,7 @@
      }
  
      public static int calculateIncreasedRepairCost(int cost) {
-@@ -313,6 +333,7 @@
+@@ -313,6 +334,7 @@
              }
  
              this.createResult();
@@ -134,7 +144,7 @@
              return true;
          } else {
              return false;
-@@ -329,4 +350,19 @@
+@@ -329,4 +351,19 @@
      public int getCost() {
          return this.cost.get();
      }
