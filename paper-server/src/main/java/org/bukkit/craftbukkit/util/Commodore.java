@@ -166,7 +166,7 @@ public class Commodore {
         final boolean modern = pluginVersion.isNewerThanOrSameAs(ApiVersion.FLATTENING);
         final boolean enumCompatibility = pluginVersion.isOlderThanOrSameAs(ApiVersion.getOrCreateVersion("1.20.6")) && activeCompatibilities.contains("enum-compatibility-mode");
         ClassReader cr = new ClassReader(b);
-        ClassWriter cw = new ClassWriter(0); // TODO 2024-06-22: Open PR to ASM to included interface in handle hash
+        ClassWriter cw = new ClassWriter(cr, 0);
 
         List<String> methodEnumSignatures = getMethodSignatures(b);
         Multimap<String, String> enumLessToEnum = HashMultimap.create();
