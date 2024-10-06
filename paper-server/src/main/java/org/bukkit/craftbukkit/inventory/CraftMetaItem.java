@@ -903,7 +903,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     }
 
     void applyEnchantments(Map<Enchantment, Integer> enchantments, CraftMetaItem.Applicator tag, ItemMetaKeyType<ItemEnchantments> key, ItemFlag itemFlag) {
-        if (enchantments == null) {
+        if (enchantments == null && !hasItemFlag(itemFlag)) {
             return;
         }
 
