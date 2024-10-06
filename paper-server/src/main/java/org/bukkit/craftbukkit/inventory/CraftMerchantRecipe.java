@@ -3,7 +3,9 @@ package org.bukkit.craftbukkit.inventory;
 import com.google.common.base.Preconditions;
 import java.util.List;
 import java.util.Optional;
+import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentPredicate;
+import net.minecraft.core.component.PatchedDataComponentMap;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.ItemCost;
 import org.bukkit.inventory.ItemStack;
@@ -116,10 +118,12 @@ public class CraftMerchantRecipe extends MerchantRecipe {
         List<ItemStack> ingredients = getIngredients();
         Preconditions.checkState(!ingredients.isEmpty(), "No offered ingredients");
         net.minecraft.world.item.ItemStack baseCostA = CraftItemStack.asNMSCopy(ingredients.get(0));
-        handle.baseCostA = new ItemCost(baseCostA.getItemHolder(), baseCostA.getCount(), DataComponentPredicate.allOf(baseCostA.getComponents()), baseCostA);
+        DataComponentPredicate baseCostAPredicate = DataComponentPredicate.allOf(PatchedDataComponentMap.fromPatch(DataComponentMap.EMPTY, baseCostA.getComponentsPatch()));
+        handle.baseCostA = new ItemCost(baseCostA.getItemHolder(), baseCostA.getCount(), baseCostAPredicate, baseCostA);
         if (ingredients.size() > 1) {
             net.minecraft.world.item.ItemStack costB = CraftItemStack.asNMSCopy(ingredients.get(1));
-            handle.costB = Optional.of(new ItemCost(costB.getItemHolder(), costB.getCount(), DataComponentPredicate.allOf(costB.getComponents()), costB));
+            DataComponentPredicate costBPredicate = DataComponentPredicate.allOf(PatchedDataComponentMap.fromPatch(DataComponentMap.EMPTY, costB.getComponentsPatch()));
+            handle.costB = Optional.of(new ItemCost(costB.getItemHolder(), costB.getCount(), costBPredicate, costB));
         } else {
             handle.costB = Optional.empty();
         }
