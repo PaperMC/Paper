@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Doc <nachito94@msn.com>
+Date: Sun, 6 Oct 2024 16:46:36 -0300
+Subject: [PATCH] Allow change max level enchanting behaviour in anvil using
+ AnvilView
+
+
+diff --git a/src/main/java/net/minecraft/world/inventory/AnvilMenu.java b/src/main/java/net/minecraft/world/inventory/AnvilMenu.java
+index d685511104ac552dfc9ae2111e1bfb60fa812102..bb84ad72a984e5a01a951ab2fe0fa0a84486c909 100644
+--- a/src/main/java/net/minecraft/world/inventory/AnvilMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/AnvilMenu.java
+@@ -53,6 +53,7 @@ public class AnvilMenu extends ItemCombinerMenu {
+     public int maximumRepairCost = 40;
+     private CraftAnvilView bukkitEntity;
+     // CraftBukkit end
++    public boolean limitEnchantmentOverMaxLevel = true; // Paper
+ 
+     public AnvilMenu(int syncId, Inventory inventory) {
+         this(syncId, inventory, ContainerLevelAccess.NULL);
+@@ -231,7 +232,7 @@ public class AnvilMenu extends ItemCombinerMenu {
+                             flag2 = true;
+                         } else {
+                             flag1 = true;
+-                            if (i2 > enchantment.getMaxLevel()) {
++                            if (i2 > enchantment.getMaxLevel() && this.limitEnchantmentOverMaxLevel) { // Paper
+                                 i2 = enchantment.getMaxLevel();
+                             }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/view/CraftAnvilView.java b/src/main/java/org/bukkit/craftbukkit/inventory/view/CraftAnvilView.java
+index e2d8d69c5ae8feb6840462ba8332344972658d83..f39a0005f926ac844353ba49376cae7d4bdacc3c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/view/CraftAnvilView.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/view/CraftAnvilView.java
+@@ -50,6 +50,18 @@ public class CraftAnvilView extends CraftInventoryView<AnvilMenu> implements Anv
+         this.container.maximumRepairCost = cost;
+     }
+ 
++    // Paper start
++    @Override
++    public boolean canApplyEnchantmentsOverMaxLevel() {
++        return !this.container.limitEnchantmentOverMaxLevel;
++    }
++
++    @Override
++    public void setCanApplyEnchantmentsOverMaxLevel(final boolean applyEnchantmentsOverMaxLevel) {
++        this.container.limitEnchantmentOverMaxLevel = !applyEnchantmentsOverMaxLevel;
++    }
++    // Paper end
++
+     public void updateFromLegacy(CraftInventoryAnvil legacy) {
+         if (legacy.isRepairCostSet()) {
+             this.setRepairCost(legacy.getRepairCost());
