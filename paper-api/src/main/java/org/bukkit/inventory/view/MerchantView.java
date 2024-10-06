@@ -2,6 +2,7 @@ package org.bukkit.inventory.view;
 
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.Merchant;
+import org.bukkit.inventory.MerchantInventory;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -9,6 +10,10 @@ import org.jetbrains.annotations.NotNull;
  * merchant view data.
  */
 public interface MerchantView extends InventoryView {
+
+    @NotNull
+    @Override
+    MerchantInventory getTopInventory();
 
     /**
      * Gets the merchant that this view is for.

@@ -1,12 +1,18 @@
 package org.bukkit.inventory.view;
 
+import org.bukkit.inventory.BrewerInventory;
 import org.bukkit.inventory.InventoryView;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * An instance of {@link InventoryView} which provides extra methods related to
  * brewing stand view data.
  */
 public interface BrewingStandView extends InventoryView {
+
+    @NotNull
+    @Override
+    BrewerInventory getTopInventory();
 
     /**
      * Gets the fuel level of this brewing stand.

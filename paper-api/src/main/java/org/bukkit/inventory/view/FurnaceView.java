@@ -1,13 +1,19 @@
 package org.bukkit.inventory.view;
 
 import org.bukkit.block.Furnace;
+import org.bukkit.inventory.FurnaceInventory;
 import org.bukkit.inventory.InventoryView;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * An instance of {@link InventoryView} which provides extra methods related to
  * furnace view data.
  */
 public interface FurnaceView extends InventoryView {
+
+    @NotNull
+    @Override
+    FurnaceInventory getTopInventory();
 
     /**
      * The cook time for this view.

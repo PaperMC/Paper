@@ -1,6 +1,7 @@
 package org.bukkit.inventory.view;
 
 import org.bukkit.enchantments.EnchantmentOffer;
+import org.bukkit.inventory.EnchantingInventory;
 import org.bukkit.inventory.InventoryView;
 import org.jetbrains.annotations.NotNull;
 
@@ -9,6 +10,10 @@ import org.jetbrains.annotations.NotNull;
  * enchantment table view data.
  */
 public interface EnchantmentView extends InventoryView {
+
+    @NotNull
+    @Override
+    EnchantingInventory getTopInventory();
 
     /**
      * Gets the random enchantment seed used in this view

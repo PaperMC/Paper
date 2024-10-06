@@ -3,6 +3,7 @@ package org.bukkit.inventory.view;
 import java.util.List;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.inventory.InventoryView;
+import org.bukkit.inventory.LoomInventory;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -10,6 +11,10 @@ import org.jetbrains.annotations.NotNull;
  * loom view data.
  */
 public interface LoomView extends InventoryView {
+
+    @NotNull
+    @Override
+    LoomInventory getTopInventory();
 
     /**
      * Gets a list of all selectable to the player.

@@ -1,6 +1,8 @@
 package org.bukkit.inventory.view;
 
+import org.bukkit.inventory.AnvilInventory;
 import org.bukkit.inventory.InventoryView;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -8,6 +10,10 @@ import org.jetbrains.annotations.Nullable;
  * anvil view data.
  */
 public interface AnvilView extends InventoryView {
+
+    @NotNull
+    @Override
+    AnvilInventory getTopInventory();
 
     /**
      * Gets the rename text specified within the anvil's text field.

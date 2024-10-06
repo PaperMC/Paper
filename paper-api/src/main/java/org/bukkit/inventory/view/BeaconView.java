@@ -1,7 +1,9 @@
 package org.bukkit.inventory.view;
 
+import org.bukkit.inventory.BeaconInventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.potion.PotionEffectType;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -9,6 +11,10 @@ import org.jetbrains.annotations.Nullable;
  * beacon view data.
  */
 public interface BeaconView extends InventoryView {
+
+    @NotNull
+    @Override
+    BeaconInventory getTopInventory();
 
     /**
      * Gets the tier of the beacon
