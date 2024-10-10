@@ -1,0 +1,182 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: derverdox <mail.ysp@web.de>
+Date: Thu, 30 Nov 2023 01:22:23 +0100
+Subject: [PATCH] Adding ChunkSerialization and Generation events.
+
+diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
+index b66a7d4aab887309579154815a0d4abf9de506b0..9c403423551db5280edaca5869e42e23ae6aa5c2 100644
+--- a/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
++++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/NewChunkHolder.java
+@@ -1817,7 +1817,9 @@ public final class NewChunkHolder {
+         public void run() {
+             final CompoundTag toSerialize;
+             try {
+-                toSerialize = ChunkSerializer.saveChunk(this.world, this.chunk, this.asyncSaveData);
++                // Paper start - add ChunkDataEvents
++                toSerialize = ChunkSerializer.saveChunk(this.world, this.chunk, this.asyncSaveData, false);
++                // Paper end - add ChunkDataEvents
+             } catch (final ThreadDeath death) {
+                 throw death;
+             } catch (final Throwable throwable) {
+@@ -1825,7 +1827,9 @@ public final class NewChunkHolder {
+                 this.world.chunkTaskScheduler.scheduleChunkTask(this.chunk.locX, this.chunk.locZ, () -> {
+                     final CompoundTag synchronousSave;
+                     try {
+-                        synchronousSave = ChunkSerializer.saveChunk(AsyncChunkSerializeTask.this.world, AsyncChunkSerializeTask.this.chunk, AsyncChunkSerializeTask.this.asyncSaveData);
++                        // Paper start - add ChunkDataEvents
++                        synchronousSave = ChunkSerializer.saveChunk(AsyncChunkSerializeTask.this.world, AsyncChunkSerializeTask.this.chunk, AsyncChunkSerializeTask.this.asyncSaveData, false);
++                        // Paper end - add ChunkDataEvents
+                     } catch (final ThreadDeath death) {
+                         throw death;
+                     } catch (final Throwable throwable2) {
+@@ -1881,7 +1885,9 @@ public final class NewChunkHolder {
+                 }
+             }
+ 
+-            final CompoundTag save = ChunkSerializer.saveChunk(this.world, chunk, null);
++            // Paper start - add ChunkDataEvents
++            final CompoundTag save = ChunkSerializer.saveChunk(this.world, chunk, null, unloading);
++            // Paper end - add ChunkDataEvents
+ 
+             if (unloading) {
+                 completing = true;
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java b/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
+index a907b79fd8291a0e92db138f37239d17424188a1..802735bf4f34ed225ab08252c0f10b4c5bb915a0 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
+@@ -27,6 +27,7 @@ import net.minecraft.world.level.levelgen.GenerationStep;
+ import net.minecraft.world.level.levelgen.Heightmap;
+ import net.minecraft.world.level.levelgen.blending.Blender;
+ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
+ 
+ public class ChunkStatus {
+ 
+@@ -68,6 +69,9 @@ public class ChunkStatus {
+         }
+ 
+         worldserver.onStructureStartsAvailable(ichunkaccess);
++        // Paper start - add ChunkDataEvents
++        CraftEventFactory.callChunkGenerateEvent(worldserver, ichunkaccess, ichunkaccess.persistentDataContainer);
++        // Paper end - add ChunkDataEvents
+         return CompletableFuture.completedFuture(Either.left(ichunkaccess));
+     }, (chunkstatus, worldserver, structuretemplatemanager, lightenginethreaded, function, ichunkaccess) -> {
+         worldserver.onStructureStartsAvailable(ichunkaccess);
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
+index 1379084a80ce25644f13736b4a5ee5fabbd9ec1f..fedfdcf893478d9df9e35851d0ab4edb9a30856f 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
+@@ -67,6 +67,7 @@ import net.minecraft.world.level.lighting.LevelLightEngine;
+ import net.minecraft.world.level.material.Fluid;
+ import net.minecraft.world.ticks.LevelChunkTicks;
+ import net.minecraft.world.ticks.ProtoChunkTicks;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
+ import org.slf4j.Logger;
+ 
+ public class ChunkSerializer {
+@@ -366,6 +367,9 @@ public class ChunkSerializer {
+         }
+ 
+         if (chunkstatus_type == ChunkStatus.ChunkType.LEVELCHUNK) {
++            // Paper start - add ChunkDataEvents
++            CraftEventFactory.callChunkDeserializeEvent(world, (ChunkAccess) object1, ((ChunkAccess) object1).persistentDataContainer);
++            // Paper start - add ChunkDataEvents
+             return new InProgressChunkHolder(new ImposterProtoChunk((LevelChunk) object1, false)); // Paper - Async chunk loading
+         } else {
+             ProtoChunk protochunk1 = (ProtoChunk) object1;
+@@ -401,6 +405,9 @@ public class ChunkSerializer {
+                 protochunk1.setCarvingMask(worldgenstage_features, new CarvingMask(nbttagcompound5.getLongArray(s1), ((ChunkAccess) object1).getMinBuildHeight()));
+             }
+ 
++            // Paper start - add ChunkDataEvents
++            CraftEventFactory.callChunkDeserializeEvent(world, (ChunkAccess) object1, ((ChunkAccess) object1).persistentDataContainer);
++            // Paper end - add ChunkDataEvents
+             return new InProgressChunkHolder(protochunk1); // Paper - Async chunk loading
+         }
+     }
+@@ -452,11 +459,12 @@ public class ChunkSerializer {
+     // CraftBukkit end
+ 
+     public static CompoundTag write(ServerLevel world, ChunkAccess chunk) {
+-        // Paper start
+-        return saveChunk(world, chunk, null);
++        // Paper start - add ChunkDataEvents
++        return saveChunk(world, chunk, null, false);
++
+     }
+-    public static CompoundTag saveChunk(ServerLevel world, ChunkAccess chunk, @org.checkerframework.checker.nullness.qual.Nullable AsyncSaveData asyncsavedata) {
+-        // Paper end
++    public static CompoundTag saveChunk(ServerLevel world, ChunkAccess chunk, @org.checkerframework.checker.nullness.qual.Nullable AsyncSaveData asyncsavedata, boolean unloadingChunk) {
++        // Paper end - add ChunkDataEvents
+         // Paper start - rewrite light impl
+         final int minSection = io.papermc.paper.util.WorldUtil.getMinLightSection(world);
+         final int maxSection = io.papermc.paper.util.WorldUtil.getMaxLightSection(world);
+@@ -637,6 +645,9 @@ public class ChunkSerializer {
+ 
+         nbttagcompound.put("Heightmaps", nbttagcompound3);
+         nbttagcompound.put("structures", ChunkSerializer.packStructureData(StructurePieceSerializationContext.fromLevel(world), chunkcoordintpair, chunk.getAllStarts(), chunk.getAllReferences()));
++        // Paper start - add ChunkDataEvents
++        CraftEventFactory.callChunkSaveEvent(world, chunk, chunk.persistentDataContainer, unloadingChunk);
++        // Paper end - add ChunkDataEvents
+         // CraftBukkit start - store chunk persistent data in nbt
+         if (!chunk.persistentDataContainer.isEmpty()) { // SPIGOT-6814: Always save PDC to account for 1.17 to 1.18 chunk upgrading.
+             nbttagcompound.put("ChunkBukkitValues", chunk.persistentDataContainer.toTagCompound());
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 5dc160b743534665c6b3efb10b10f7c36e2da5ab..039383f4a17c7ace34a2cf93b75e89bf519c1612 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -16,6 +16,9 @@ import java.util.Map;
+ import java.util.stream.Collectors;
+ import java.util.stream.Stream;
+ import javax.annotation.Nullable;
++import io.papermc.paper.event.chunk.ChunkDeserializeEvent;
++import io.papermc.paper.event.chunk.ChunkGenerateEvent;
++import io.papermc.paper.event.chunk.ChunkSerializeEvent;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
+ import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
+@@ -56,6 +59,8 @@ import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.LevelAccessor;
+ import net.minecraft.world.level.block.entity.SignBlockEntity;
+ import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
++import net.minecraft.world.level.chunk.ChunkAccess;
++import net.minecraft.world.level.chunk.LevelChunk;
+ import net.minecraft.world.level.storage.loot.LootContext;
+ import net.minecraft.world.level.storage.loot.LootTable;
+ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
+@@ -242,6 +247,7 @@ import org.bukkit.inventory.EquipmentSlot;
+ import org.bukkit.inventory.InventoryView;
+ import org.bukkit.inventory.Recipe;
+ import org.bukkit.inventory.meta.BookMeta;
++import org.bukkit.persistence.PersistentDataContainer;
+ import org.bukkit.potion.PotionEffect;
+ import org.bukkit.util.Vector;
+ 
+@@ -2166,4 +2172,27 @@ public class CraftEventFactory {
+         return event;
+     }
+     // Paper end - add EntityFertilizeEggEvent
++
++    // Paper start - add ChunkDataEvents
++    public static void callChunkGenerateEvent(ServerLevel serverLevel, ChunkAccess chunkAccess, PersistentDataContainer persistentDataContainer) {
++        Bukkit.getPluginManager()
++              .callEvent(new ChunkGenerateEvent(serverLevel.getWorld(), getCraftChunk(chunkAccess), chunkAccess.locX, chunkAccess.locZ, persistentDataContainer));
++        chunkAccess.persistentDataContainer.dirty(true);
++    }
++
++    public static void callChunkDeserializeEvent(ServerLevel serverLevel, ChunkAccess chunkAccess, PersistentDataContainer persistentDataContainer) {
++        Bukkit.getPluginManager().
++              callEvent(new ChunkDeserializeEvent(serverLevel.getWorld(), getCraftChunk(chunkAccess), chunkAccess.locX, chunkAccess.locZ, persistentDataContainer));
++    }
++
++    public static void callChunkSaveEvent(ServerLevel serverLevel, ChunkAccess chunkAccess, PersistentDataContainer persistentDataContainer, boolean unloadingChunk) {
++        Bukkit.getPluginManager()
++              .callEvent(new ChunkSerializeEvent(serverLevel.getWorld(), getCraftChunk(chunkAccess), chunkAccess.locX, chunkAccess.locZ, persistentDataContainer, unloadingChunk));
++        chunkAccess.persistentDataContainer.dirty(true);
++    }
++
++    private static CraftChunk getCraftChunk(ChunkAccess chunkAccess) {
++        return chunkAccess instanceof LevelChunk chunk ? new CraftChunk(chunk) : null;
++    }
++    // Paper end - add ChunkDataEvents
+ }
