@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Barnaby <22575741+barnabwhy@users.noreply.github.com>
+Date: Sat, 29 Jun 2024 12:06:51 +0100
+Subject: [PATCH] Reduce work done in CraftMapCanvas.drawImage by limiting size
+ of image and using System.arraycopy instead of for loops and use bitwise
+ operations to do bounds checks.
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/map/CraftMapCanvas.java b/src/main/java/org/bukkit/craftbukkit/map/CraftMapCanvas.java
+index ff59f759669620795ef355c988b664bdcda39f52..a5e98571d6d83390761c11e28a0bc3c4415799cd 100644
+--- a/src/main/java/org/bukkit/craftbukkit/map/CraftMapCanvas.java
++++ b/src/main/java/org/bukkit/craftbukkit/map/CraftMapCanvas.java
+@@ -91,12 +91,41 @@ public class CraftMapCanvas implements MapCanvas {
+ 
+     @Override
+     public void drawImage(int x, int y, Image image) {
+-        byte[] bytes = MapPalette.imageToBytes(image);
+-        for (int x2 = 0; x2 < image.getWidth(null); ++x2) {
+-            for (int y2 = 0; y2 < image.getHeight(null); ++y2) {
+-                this.setPixel(x + x2, y + y2, bytes[y2 * image.getWidth(null) + x2]);
++        // Paper start - Reduce work done by limiting size of image and using System.arraycopy
++        int width = 128 - x;
++        int height = 128 - y;
++        if (image.getHeight(null) < height)
++            height = image.getHeight(null);
++
++        // Create a subimage if the image is larger than the max allowed size
++        java.awt.image.BufferedImage temp;
++        if (image.getWidth(null) >= width && image instanceof java.awt.image.BufferedImage bImage) {
++            // If the image is larger than the max allowed size, get a subimage, otherwise use the image as is
++            if (image.getWidth(null) > width || image.getHeight(null) > height) {
++                temp = bImage.getSubimage(0, 0, width, height);
++            } else {
++                temp = bImage;
+             }
++        } else {
++            temp = new java.awt.image.BufferedImage(width, height, java.awt.image.BufferedImage.TYPE_INT_ARGB);
++            java.awt.Graphics2D graphics = temp.createGraphics();
++            graphics.drawImage(image, 0, 0, null);
++            graphics.dispose();
+         }
++
++        byte[] bytes = MapPalette.imageToBytes(temp);
++        
++        // Since we now control the size of the image, we can safely use System.arraycopy
++        // If x is 0, we can just copy the entire image as width is 128 and height is <=(128-y)
++        if (x == 0) {
++            System.arraycopy(bytes, 0, this.buffer, y * 128, width * height);
++            return;
++        }
++
++        for (int y2 = 0; y2 < height; ++y2) {
++            System.arraycopy(bytes, 0, this.buffer, (y + y2) * 128 + x, width);
++        }
++        // Paper end
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/map/CraftMapRenderer.java b/src/main/java/org/bukkit/craftbukkit/map/CraftMapRenderer.java
+index 0cbbd915631904fe8c6effefb92895422b33eff6..cf0920e5f84b35647882fb963e9972af4e8427e0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/map/CraftMapRenderer.java
++++ b/src/main/java/org/bukkit/craftbukkit/map/CraftMapRenderer.java
+@@ -23,8 +23,10 @@ public class CraftMapRenderer extends MapRenderer {
+     @Override
+     public void render(MapView map, MapCanvas canvas, Player player) {
+         // Map
+-        for (int x = 0; x < 128; ++x) {
+-            for (int y = 0; y < 128; ++y) {
++        // Paper start - Swap inner and outer loops here to (theoretically) improve cache locality
++        for (int y = 0; y < 128; ++y) {
++            for (int x = 0; x < 128; ++x) {
++        // Paper end
+                 canvas.setPixel(x, y, this.worldMap.colors[y * 128 + x]);
+             }
+         }
