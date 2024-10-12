@@ -6,10 +6,10 @@ Subject: [PATCH] Make a PDC view accessible directly from ItemStack
 
 diff --git a/src/main/java/io/papermc/paper/persistence/PaperPersistentDataContainerView.java b/src/main/java/io/papermc/paper/persistence/PaperPersistentDataContainerView.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..710a147791bed25fa6441d33683361ccd2830c58
+index 0000000000000000000000000000000000000000..122c32e82b299cafd7d0c6a9f4818523470c9f05
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/persistence/PaperPersistentDataContainerView.java
-@@ -0,0 +1,115 @@
+@@ -0,0 +1,120 @@
 +package io.papermc.paper.persistence;
 +
 +import com.google.common.base.Preconditions;
@@ -29,11 +29,10 @@ index 0000000000000000000000000000000000000000..710a147791bed25fa6441d33683361cc
 +import org.bukkit.persistence.PersistentDataAdapterContext;
 +import org.bukkit.persistence.PersistentDataContainer;
 +import org.bukkit.persistence.PersistentDataType;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
-+@DefaultQualifier(NonNull.class)
++@NullMarked
 +public abstract class PaperPersistentDataContainerView implements PersistentDataContainerView {
 +
 +    protected final CraftPersistentDataTypeRegistry registry;
@@ -53,7 +52,7 @@ index 0000000000000000000000000000000000000000..710a147791bed25fa6441d33683361cc
 +        Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
 +        Preconditions.checkArgument(type != null, "The provided type cannot be null");
 +
-+        final @Nullable Tag value = this.getTag(key.toString());
++        final Tag value = this.getTag(key.toString());
 +        if (value == null) {
 +            return false;
 +        }
@@ -72,12 +71,18 @@ index 0000000000000000000000000000000000000000..710a147791bed25fa6441d33683361cc
 +        Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
 +        Preconditions.checkArgument(type != null, "The provided type cannot be null");
 +
-+        final @Nullable Tag value = this.getTag(key.toString());
++        final Tag value = this.getTag(key.toString());
 +        if (value == null) {
 +            return null;
 +        }
 +
 +        return type.fromPrimitive(this.registry.extract(type, value), this.adapterContext);
++    }
++
++    @Override
++    public <P, C> C getOrDefault(final NamespacedKey key, final PersistentDataType<P, C> type, final C defaultValue) {
++        final C c = this.get(key, type);
++        return c != null ? c : defaultValue;
 +    }
 +
 +    @Override
