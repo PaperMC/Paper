@@ -5,7 +5,7 @@ Subject: [PATCH] Fix ProjectileHitEvent not calling for multiple entities
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
-index ddf47dab1ab92c45e3eea09239d418a9798ed59e..2bf36912bd02f1f9d5d7af8379af74546ac9936e 100644
+index 9ca29b3d4bf8bca5f51f3644e12fcbec2cb5d35e..86ce991caa1f0e874490f24417743d9c4b31548b 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
 @@ -249,37 +249,48 @@ public abstract class AbstractArrow extends Projectile {
@@ -89,10 +89,10 @@ index ddf47dab1ab92c45e3eea09239d418a9798ed59e..2bf36912bd02f1f9d5d7af8379af7454
              if (this.piercingIgnoreEntityIds == null) {
                  this.piercingIgnoreEntityIds = new IntOpenHashSet(5);
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractHurtingProjectile.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractHurtingProjectile.java
-index 3107ad04dda9f43976a385976d6952e2f2af3939..ca788b47d00d818b5e30ea73eadba489f524b914 100644
+index f79fc0ed58af2cf55e8642b6d7fc9e4f57d0ba20..69ba6a7a42cf69559a190a8db9e9319c566861ff 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/AbstractHurtingProjectile.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractHurtingProjectile.java
-@@ -84,16 +84,20 @@ public abstract class AbstractHurtingProjectile extends Projectile {
+@@ -83,10 +83,20 @@ public abstract class AbstractHurtingProjectile extends Projectile {
                  this.igniteForSeconds(1.0F);
              }
  
@@ -100,10 +100,6 @@ index 3107ad04dda9f43976a385976d6952e2f2af3939..ca788b47d00d818b5e30ea73eadba489
 -
 -            if (movingobjectposition.getType() != HitResult.Type.MISS) {
 -                this.preHitTargetOrDeflectSelf(movingobjectposition); // CraftBukkit - projectile hit event
--
--                // CraftBukkit start - Fire ProjectileHitEvent
--                if (this.isRemoved()) {
--                    // CraftEventFactory.callProjectileHitEvent(this, movingobjectposition); // Paper - this is an undesired duplicate event
 +            // Paper start - Fix ProjectileHitEvent not calling for multiple entities
 +            for (HitResult movingobjectposition : ProjectileUtil.getHitResultsOnMoveVector(this, this::canHitEntity, this.getClipType())) {
 +                if (movingobjectposition.getType() != HitResult.Type.MISS) {
@@ -117,8 +113,7 @@ index 3107ad04dda9f43976a385976d6952e2f2af3939..ca788b47d00d818b5e30ea73eadba489
 +                    }
 +                    // CraftBukkit end
 +                    // Paper end - Fix ProjectileHitEvent not calling for multiple entities
-                 }
--                // CraftBukkit end
++                }
              }
  
              this.checkInsideBlocks();
@@ -190,10 +185,10 @@ index 8575941fd238750c5d56843989a48bcbde2d8a88..3dae4271d14cd5cabf7d3d352faf9ab5
          double d1 = this.getY() + vec3d.y;
          double d2 = this.getZ() + vec3d.z;
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
-index 5f7d152f41eb85f17bcded4bc8099b998e5a338b..0186faba5a5f9f6c00e859f8016fe80cfbedef5d 100644
+index 10ade433c083851d9ea4797c6ec618db122229f9..fe37ce0b82ce2b9039ad94b978622db5a397803d 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
-@@ -205,15 +205,14 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+@@ -208,15 +208,14 @@ public abstract class Projectile extends Entity implements TraceableEntity {
      }
  
      // CraftBukkit start - call projectile hit event
