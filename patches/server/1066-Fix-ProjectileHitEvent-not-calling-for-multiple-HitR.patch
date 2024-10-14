@@ -14,7 +14,7 @@ cancelled.
 protected net.minecraft.world.entity.projectile.Projectile hitCancelled
 
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
-index 2ee88a693193277e34702b0123955cfdee27a588..8f7aa08793e392a7b08752e6bc402fda6ce6ddc3 100644
+index 2ee88a693193277e34702b0123955cfdee27a588..efec64f01916e5c9bcb54a70909b21954f886fb2 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
 @@ -73,8 +73,7 @@ public abstract class AbstractArrow extends Projectile {
@@ -27,10 +27,11 @@ index 2ee88a693193277e34702b0123955cfdee27a588..8f7aa08793e392a7b08752e6bc402fda
      @Nullable
      private List<Entity> piercedAndKilledEntities;
      public ItemStack pickupItemStack;
-@@ -243,43 +242,30 @@ public abstract class AbstractArrow extends Projectile {
+@@ -242,44 +241,26 @@ public abstract class AbstractArrow extends Projectile {
+             this.inGroundTime = 0;
              Vec3 vec3d2 = this.position();
  
-             vec3d1 = vec3d2.add(vec3d);
+-            vec3d1 = vec3d2.add(vec3d);
 -            Object object = this.level().clip(new ClipContext(vec3d2, vec3d1, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
 -
 -            if (((HitResult) object).getType() != HitResult.Type.MISS) {
@@ -57,41 +58,39 @@ index 2ee88a693193277e34702b0123955cfdee27a588..8f7aa08793e392a7b08752e6bc402fda
 +                    if (hitResult.getType() == HitResult.Type.ENTITY) {
 +                        Entity entity = ((EntityHitResult) hitResult).getEntity();
 +                        Entity entity1 = this.getOwner();
-+
 +                        if (entity instanceof Player && entity1 instanceof Player && !((Player) entity1).canHarmPlayer((Player) entity)) {
 +                            continue;
 +                        }
                      }
 -                }
- 
+-
 -                if (object != null && !flag) {
 -                    ProjectileDeflection projectiledeflection = this.preHitTargetOrDeflectSelf((HitResult) object); // CraftBukkit - projectile hit event
 -
 -                    this.hasImpulse = true;
 -                    if (projectiledeflection != ProjectileDeflection.NONE) {
 -                        break;
--                    }
--                }
 +                    if (!flag) {
 +                        com.mojang.datafixers.util.Pair<ProjectileDeflection, org.bukkit.event.entity.ProjectileHitEvent> projectiledeflection = this.preHitTargetOrDeflectSelf(hitResult); // CraftBukkit - projectile hit event
- 
--                if (movingobjectpositionentity == null || this.getPierceLevel() <= 0) {
--                    break;
--                }
 +                        if ((projectiledeflection.getSecond() == null || !projectiledeflection.getSecond().isCancelled()) && this.getPierceLevel() <= 0)
 +                            break;
- 
--                object = null;
 +                        this.hasImpulse = true;
 +                        if (projectiledeflection.getFirst() != ProjectileDeflection.NONE) {
 +                            break;
 +                        }
-+                    }
+                     }
+-                }
+-
+-                if (movingobjectpositionentity == null || this.getPierceLevel() <= 0) {
+-                    break;
+-                }
+-
+-                object = null;
 +                // Paper end - Fix ProjectileHitEvent not calling for multiple entities
              }
  
              vec3d = this.getDeltaMovement();
-@@ -329,6 +315,14 @@ public abstract class AbstractArrow extends Projectile {
+@@ -329,6 +310,14 @@ public abstract class AbstractArrow extends Projectile {
          }
      }
  
@@ -106,7 +105,7 @@ index 2ee88a693193277e34702b0123955cfdee27a588..8f7aa08793e392a7b08752e6bc402fda
      @Override
      protected double getDefaultGravity() {
          return 0.05D;
-@@ -368,9 +362,7 @@ public abstract class AbstractArrow extends Projectile {
+@@ -368,9 +357,7 @@ public abstract class AbstractArrow extends Projectile {
              this.piercedAndKilledEntities.clear();
          }
  
@@ -117,7 +116,7 @@ index 2ee88a693193277e34702b0123955cfdee27a588..8f7aa08793e392a7b08752e6bc402fda
  
      }
  
-@@ -396,20 +388,16 @@ public abstract class AbstractArrow extends Projectile {
+@@ -396,20 +383,16 @@ public abstract class AbstractArrow extends Projectile {
          int i = Mth.ceil(Mth.clamp((double) f * d0, 0.0D, 2.147483647E9D));
  
          if (this.getPierceLevel() > 0) {
@@ -140,7 +139,7 @@ index 2ee88a693193277e34702b0123955cfdee27a588..8f7aa08793e392a7b08752e6bc402fda
          }
  
          if (this.isCritArrow()) {
-@@ -591,11 +579,6 @@ public abstract class AbstractArrow extends Projectile {
+@@ -591,11 +574,6 @@ public abstract class AbstractArrow extends Projectile {
          return ProjectileUtil.getEntityHitResult(this.level(), this, currentPosition, nextPosition, this.getBoundingBox().expandTowards(this.getDeltaMovement()).inflate(1.0D), this::canHitEntity);
      }
  
