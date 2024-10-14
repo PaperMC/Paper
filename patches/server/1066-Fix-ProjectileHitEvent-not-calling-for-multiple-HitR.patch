@@ -3,9 +3,18 @@ From: Tamion <70228790+notTamion@users.noreply.github.com>
 Date: Tue, 28 May 2024 11:15:19 +0200
 Subject: [PATCH] Fix ProjectileHitEvent not calling for multiple HitResults
 
+Projectiles only try to hit the closest entity in their hitbox,
+if multiple entities are inside of it and the ProjectileHitEvent is
+cancelled the other entities will simply be ignored. So we instead
+loop over all entities in the projectiles hitbox sorted by distance
+and call the event for each one until one event comes back as not
+cancelled.
+
+== AT ==
+protected net.minecraft.world.entity.projectile.Projectile hitCancelled
 
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
-index 2ee88a693193277e34702b0123955cfdee27a588..759487ffda9922320ca916286d5df24625353d8f 100644
+index 2ee88a693193277e34702b0123955cfdee27a588..8f7aa08793e392a7b08752e6bc402fda6ce6ddc3 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
 @@ -73,8 +73,7 @@ public abstract class AbstractArrow extends Projectile {
@@ -14,7 +23,7 @@ index 2ee88a693193277e34702b0123955cfdee27a588..759487ffda9922320ca916286d5df246
      public SoundEvent soundEvent;
 -    @Nullable
 -    private IntOpenHashSet piercingIgnoreEntityIds;
-+    private int piercedEntityAmount;
++    private int piercedEntityAmount; // Paper - Fix ProjectileHitEvent not calling for multiple entities
      @Nullable
      private List<Entity> piercedAndKilledEntities;
      public ItemStack pickupItemStack;
@@ -57,15 +66,15 @@ index 2ee88a693193277e34702b0123955cfdee27a588..759487ffda9922320ca916286d5df246
  
 -                if (object != null && !flag) {
 -                    ProjectileDeflection projectiledeflection = this.preHitTargetOrDeflectSelf((HitResult) object); // CraftBukkit - projectile hit event
-+                    if (!flag) {
-+                        com.mojang.datafixers.util.Pair<ProjectileDeflection, org.bukkit.event.entity.ProjectileHitEvent> projectiledeflection = this.preHitTargetOrDeflectSelf(hitResult); // CraftBukkit - projectile hit event
- 
+-
 -                    this.hasImpulse = true;
 -                    if (projectiledeflection != ProjectileDeflection.NONE) {
 -                        break;
 -                    }
 -                }
--
++                    if (!flag) {
++                        com.mojang.datafixers.util.Pair<ProjectileDeflection, org.bukkit.event.entity.ProjectileHitEvent> projectiledeflection = this.preHitTargetOrDeflectSelf(hitResult); // CraftBukkit - projectile hit event
+ 
 -                if (movingobjectpositionentity == null || this.getPierceLevel() <= 0) {
 -                    break;
 -                }
@@ -104,7 +113,7 @@ index 2ee88a693193277e34702b0123955cfdee27a588..759487ffda9922320ca916286d5df246
 -        if (this.piercingIgnoreEntityIds != null) {
 -            this.piercingIgnoreEntityIds.clear();
 -        }
-+        this.piercedEntityAmount = 0;
++        this.piercedEntityAmount = 0; // Paper - Fix ProjectileHitEvent not calling for multiple entities
  
      }
  
@@ -121,25 +130,28 @@ index 2ee88a693193277e34702b0123955cfdee27a588..759487ffda9922320ca916286d5df246
              }
  
 -            if (this.piercingIgnoreEntityIds.size() >= this.getPierceLevel() + 1) {
-+            if (this.piercedEntityAmount >= this.getPierceLevel() + 1) {
++            if (this.piercedEntityAmount >= this.getPierceLevel() + 1) { // Paper - Fix ProjectileHitEvent not calling for multiple entities
                  this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
                  return;
              }
  
 -            this.piercingIgnoreEntityIds.add(entity.getId());
-+            this.piercedEntityAmount += 1;
++            this.piercedEntityAmount += 1; // Paper - Fix ProjectileHitEvent not calling for multiple entities
          }
  
          if (this.isCritArrow()) {
-@@ -593,7 +581,7 @@ public abstract class AbstractArrow extends Projectile {
- 
-     @Override
-     public boolean canHitEntity(Entity entity) {
--        return super.canHitEntity(entity) && (this.piercingIgnoreEntityIds == null || !this.piercingIgnoreEntityIds.contains(entity.getId()));
-+        return super.canHitEntity(entity);
+@@ -591,11 +579,6 @@ public abstract class AbstractArrow extends Projectile {
+         return ProjectileUtil.getEntityHitResult(this.level(), this, currentPosition, nextPosition, this.getBoundingBox().expandTowards(this.getDeltaMovement()).inflate(1.0D), this::canHitEntity);
      }
  
+-    @Override
+-    public boolean canHitEntity(Entity entity) {
+-        return super.canHitEntity(entity) && (this.piercingIgnoreEntityIds == null || !this.piercingIgnoreEntityIds.contains(entity.getId()));
+-    }
+-
      @Override
+     public void addAdditionalSaveData(CompoundTag nbt) {
+         super.addAdditionalSaveData(nbt);
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractHurtingProjectile.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractHurtingProjectile.java
 index f79fc0ed58af2cf55e8642b6d7fc9e4f57d0ba20..69ba6a7a42cf69559a190a8db9e9319c566861ff 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/AbstractHurtingProjectile.java
