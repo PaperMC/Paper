@@ -3,6 +3,8 @@ import io.papermc.paperweight.tasks.BaseTask
 import io.papermc.paperweight.util.*
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
+import org.jetbrains.gradle.ext.runConfigurations
+import org.jetbrains.gradle.ext.settings
 import java.io.ByteArrayOutputStream
 import java.nio.file.Path
 import java.util.regex.Pattern
@@ -12,6 +14,7 @@ plugins {
     java
     `maven-publish`
     id("io.papermc.paperweight.core") version "1.7.3"
+    id("org.jetbrains.gradle.plugin.idea-ext") version "1.1.9"
 }
 
 allprojects {
@@ -291,5 +294,22 @@ abstract class RebasePatches : BaseTask() {
         val git = Git(projectDir.path)
         git("add", appliedPatches.path.toString() + "/*").runSilently()
         git("add", unappliedPatches.path.toString() + "/*").runSilently()
+    }
+}
+
+idea {
+    project {
+        settings {
+            runConfigurations {
+                for (task in listOf(
+                    "runDevServer",
+                    "runBundler",
+                )) {
+                    add(create(task, org.jetbrains.gradle.ext.Gradle::class) {
+                        taskNames = listOf(task)
+                    })
+                }
+            }
+        }
     }
 }
