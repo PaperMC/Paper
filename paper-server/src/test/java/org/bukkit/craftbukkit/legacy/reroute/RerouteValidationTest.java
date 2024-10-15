@@ -1,13 +1,13 @@
-package org.bukkit.craftbukkit.legacy;
+package org.bukkit.craftbukkit.legacy.reroute;
 
 import static org.junit.jupiter.api.Assertions.*;
 import com.google.common.base.Joiner;
+import com.google.common.base.Predicates;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
-import org.bukkit.craftbukkit.legacy.reroute.RerouteMethodData;
 import org.bukkit.craftbukkit.util.Commodore;
 import org.bukkit.support.environment.Normal;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -19,25 +19,28 @@ import org.objectweb.asm.Type;
 public class RerouteValidationTest {
 
     public static Stream<Arguments> data() {
-        return Commodore.REROUTES.stream().map(Arguments::of);
+        Commodore commodore = new Commodore(Predicates.alwaysTrue());
+        return commodore.getReroutes().stream().map(Arguments::of);
     }
 
     @ParameterizedTest
     @MethodSource("data")
-    public void testReroutes(Map<String, RerouteMethodData> reroutes) {
+    public void testReroutes(Reroute reroute) {
         Map<String, String> wrongReroutes = new HashMap<>();
         String owner = null;
 
-        for (Map.Entry<String, RerouteMethodData> entry : reroutes.entrySet()) {
-            owner = entry.getValue().targetOwner();
-            if (!entry.getValue().isInBukkit()) {
-                continue;
-            }
+        for (Map.Entry<String, Reroute.RerouteDataHolder> value : reroute.rerouteDataMap.entrySet()) {
+            for (Map.Entry<String, RerouteMethodData> entry : value.getValue().rerouteMethodDataMap.entrySet()) {
+                owner = entry.getValue().targetOwner();
+                if (!entry.getValue().isInBukkit()) {
+                    continue;
+                }
 
-            String error = isValid(entry.getKey(), entry.getValue());
+                String error = isValid(entry.getKey(), entry.getValue());
 
-            if (error != null) {
-                wrongReroutes.put(entry.getKey(), error);
+                if (error != null) {
+                    wrongReroutes.put(entry.getKey(), error);
+                }
             }
         }
 

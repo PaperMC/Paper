@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.util;
 
+import com.google.common.base.Predicates;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.io.ByteStreams;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
@@ -28,6 +30,7 @@ import org.bukkit.craftbukkit.legacy.FieldRename;
 import org.bukkit.craftbukkit.legacy.MaterialRerouting;
 import org.bukkit.craftbukkit.legacy.MethodRerouting;
 import org.bukkit.craftbukkit.legacy.enums.EnumEvil;
+import org.bukkit.craftbukkit.legacy.reroute.Reroute;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteArgument;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteBuilder;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteMethodData;
@@ -87,18 +90,38 @@ public class Commodore {
             "org/bukkit/block/banner/PatternType", "NOP"
     );
 
-    private static Map<String, RerouteMethodData> createReroutes(Class<?> clazz) {
-        Map<String, RerouteMethodData> reroutes = RerouteBuilder.buildFromClass(clazz);
-        REROUTES.add(reroutes);
-        return reroutes;
+    private final List<Reroute> reroutes = new ArrayList<>(); // only for testing
+    private Reroute materialReroute;
+    private Reroute reroute;
+
+    public Commodore() {
+    }
+
+    public Commodore(Predicate<String> compatibilityPresent) {
+        updateReroute(compatibilityPresent);
+    }
+
+    public void updateReroute(Predicate<String> compatibilityPresent) {
+        materialReroute = RerouteBuilder
+                .create(compatibilityPresent)
+                .forClass(MaterialRerouting.class)
+                .build();
+        reroute = RerouteBuilder
+                .create(compatibilityPresent)
+                .forClass(FieldRename.class)
+                .forClass(MethodRerouting.class)
+                .forClass(EnumEvil.class)
+                .build();
+
+        reroutes.clear();
+        reroutes.add(materialReroute);
+        reroutes.add(reroute);
     }
 
     @VisibleForTesting
-    public static final List<Map<String, RerouteMethodData>> REROUTES = new ArrayList<>(); // Only used for testing
-    private static final Map<String, RerouteMethodData> FIELD_RENAME_METHOD_REROUTE = createReroutes(FieldRename.class);
-    private static final Map<String, RerouteMethodData> MATERIAL_METHOD_REROUTE = createReroutes(MaterialRerouting.class);
-    private static final Map<String, RerouteMethodData> METHOD_REROUTE = createReroutes(MethodRerouting.class);
-    private static final Map<String, RerouteMethodData> ENUM_METHOD_REROUTE = createReroutes(EnumEvil.class);
+    public List<Reroute> getReroutes() {
+        return reroutes;
+    }
 
     public static void main(String[] args) {
         OptionParser parser = new OptionParser();
@@ -110,6 +133,8 @@ public class Commodore {
         File input = options.valueOf(inputFlag);
         File output = options.valueOf(outputFlag);
 
+        Commodore commodore = new Commodore(Predicates.alwaysTrue());
+
         if (input.isDirectory()) {
             if (!output.isDirectory()) {
                 System.err.println("If input directory specified, output directory required too");
@@ -118,15 +143,15 @@ public class Commodore {
 
             for (File in : input.listFiles()) {
                 if (in.getName().endsWith(".jar")) {
-                    convert(in, new File(output, in.getName()));
+                    convert(in, new File(output, in.getName()), commodore);
                 }
             }
         } else {
-            convert(input, output);
+            convert(input, output, commodore);
         }
     }
 
-    private static void convert(File in, File out) {
+    private static void convert(File in, File out, Commodore commodore) {
         System.out.println("Attempting to convert " + in + " to " + out);
 
         try {
@@ -144,7 +169,7 @@ public class Commodore {
                             byte[] b = ByteStreams.toByteArray(is);
 
                             if (entry.getName().endsWith(".class")) {
-                                b = convert(b, "dummy", ApiVersion.NONE, Collections.emptySet());
+                                b = commodore.convert(b, "dummy", ApiVersion.NONE, Collections.emptySet());
                                 entry = new JarEntry(entry.getName());
                             }
 
@@ -162,7 +187,7 @@ public class Commodore {
         }
     }
 
-    public static byte[] convert(byte[] b, final String pluginName, final ApiVersion pluginVersion, final Set<String> activeCompatibilities) {
+    public byte[] convert(byte[] b, final String pluginName, final ApiVersion pluginVersion, final Set<String> activeCompatibilities) {
         final boolean modern = pluginVersion.isNewerThanOrSameAs(ApiVersion.FLATTENING);
         final boolean enumCompatibility = pluginVersion.isOlderThanOrSameAs(ApiVersion.getOrCreateVersion("1.20.6")) && activeCompatibilities.contains("enum-compatibility-mode");
         ClassReader cr = new ClassReader(b);
@@ -329,10 +354,7 @@ public class Commodore {
                     }
 
                     private void handleMethod(MethodPrinter visitor, int opcode, String owner, String name, String desc, boolean itf, Type samMethodType, Type instantiatedMethodType) {
-                        if (checkReroute(visitor, FIELD_RENAME_METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
-                            return;
-                        }
-                        if (checkReroute(visitor, METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
+                        if (checkReroute(visitor, reroute, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
                             return;
                         }
 
@@ -351,10 +373,6 @@ public class Commodore {
 
                                 itf = true;
                             }
-                        }
-
-                        if (checkReroute(visitor, ENUM_METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
-                            return;
                         }
 
                         // SPIGOT-4496
@@ -448,15 +466,15 @@ public class Commodore {
                         }
 
                         // TODO 2024-05-21: Move this up, when material gets fully replaced with ItemType and BlockType
-                        if (owner.startsWith("org/bukkit") && checkReroute(visitor, MATERIAL_METHOD_REROUTE, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
+                        if (owner.startsWith("org/bukkit") && checkReroute(visitor, materialReroute, opcode, owner, name, desc, samMethodType, instantiatedMethodType)) {
                             return;
                         }
 
                         visitor.visit(opcode, owner, name, desc, itf, samMethodType, instantiatedMethodType);
                     }
 
-                    private boolean checkReroute(MethodPrinter visitor, Map<String, RerouteMethodData> rerouteMethodDataMap, int opcode, String owner, String name, String desc, Type samMethodType, Type instantiatedMethodType) {
-                        return rerouteMethods(activeCompatibilities, pluginVersion, rerouteMethodDataMap, opcode == Opcodes.INVOKESTATIC || opcode == Opcodes.H_INVOKESTATIC, owner, name, desc, data -> {
+                    private boolean checkReroute(MethodPrinter visitor, Reroute reroute, int opcode, String owner, String name, String desc, Type samMethodType, Type instantiatedMethodType) {
+                        return rerouteMethods(pluginVersion, reroute, opcode == Opcodes.INVOKESTATIC || opcode == Opcodes.H_INVOKESTATIC, owner, name, desc, data -> {
                             visitor.visit(Opcodes.INVOKESTATIC, className, buildMethodName(data), buildMethodDesc(data), isInterface, samMethodType, instantiatedMethodType);
                             rerouteMethodData.add(data);
                         });
@@ -599,69 +617,8 @@ public class Commodore {
         };
     }
 
-    /*
-    This method looks (and probably is) overengineered, but it gives the most flexible when it comes to remapping normal methods to static one.
-    The problem with normal owner and desc replacement is that child classes have them as an owner, instead there parents for there parents methods
-
-    For example, if we have following two interfaces org.bukkit.BlockData and org.bukkit.Orientable extents BlockData
-    and BlockData has the method org.bukkit.Material getType which we want to reroute to the static method
-    org.bukkit.Material org.bukkit.craftbukkit.legacy.EnumEvil#getType(org.bukkit.BlockData)
-
-    If we now call BlockData#getType we get as the owner org/bukkit/BlockData and as desc ()Lorg/bukkit/Material;
-    Which we can nicely reroute by checking if the owner is BlockData and the name getType
-    The problem, starts if we use Orientable#getType no we get as owner org/bukkit/Orientable and as desc ()Lorg/bukkit/Material;
-    Now we can now longer safely say to which getType method we need to reroute (assume there are multiple getType methods from different classes,
-    which are not related to BlockData), simple using the owner class will not work, since would reroute to
-    EnumEvil#getType(org.bukkit.Orientable) which is not EnumEvil#getType(org.bukkit.BlockData) and will throw a method not found error
-    at runtime.
-
-    Meaning we would need to add checks for each subclass, which would be pur insanity.
-
-    To solve this, we go through each super class and interfaces (and their super class and interfaces etc.) and try to get an owner
-    which matches with one of our replacement methods. Based on how inheritance works in java, this method should be safe to use.
-
-    As a site note: This method could also be used for the other method reroute, e.g. legacy method rerouting, where only the replacement
-    method needs to be written, and this method figures out the rest, which could reduce the size and complexity of the Commodore class.
-    The question then becomes one about performance (since this is not the most performance way) and convenience.
-    But since it is only applied for each class and method call once when they get first loaded, it should not be that bad.
-    (Although some load time testing could be done)
-     */
-    public static boolean rerouteMethods(Set<String> activeCompatibilities, ApiVersion pluginVersion, Map<String, RerouteMethodData> rerouteMethodDataMap, boolean staticCall, String owner, String name, String desc, Consumer<RerouteMethodData> consumer) {
-        Type ownerType = Type.getObjectType(owner);
-        Class<?> ownerClass;
-        try {
-            ownerClass = Class.forName(ownerType.getClassName());
-        } catch (ClassNotFoundException e) {
-            return false;
-        }
-
-        ClassTraverser it = new ClassTraverser(ownerClass);
-        while (it.hasNext()) {
-            Class<?> clazz = it.next();
-
-            String methodKey = Type.getInternalName(clazz) + " " + desc + " " + name;
-
-            RerouteMethodData data = rerouteMethodDataMap.get(methodKey);
-            if (data == null) {
-                if (staticCall) {
-                    return false;
-                }
-                continue;
-            }
-
-            if (data.requiredCompatibility() != null && !activeCompatibilities.contains(data.requiredCompatibility())) {
-                return false;
-            }
-
-            if (data.requiredPluginVersion() != null && !data.requiredPluginVersion().test(pluginVersion)) {
-                return false;
-            }
-
-            consumer.accept(data);
-            return true;
-        }
-
-        return false;
+    public static boolean rerouteMethods(ApiVersion pluginVersion, Reroute reroute, boolean staticCall, String owner, String name, String desc, Consumer<RerouteMethodData> consumer) {
+        return reroute.apply(pluginVersion, owner, name, desc, staticCall, consumer);
     }
 
     private static List<String> getMethodSignatures(byte[] clazz) {

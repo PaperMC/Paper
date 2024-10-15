@@ -1,53 +1,69 @@
 package org.bukkit.craftbukkit.legacy.reroute;
 
 import com.google.common.base.Preconditions;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import org.bukkit.craftbukkit.util.ApiVersion;
 import org.objectweb.asm.Type;
 
 public class RerouteBuilder {
 
-    public static Map<String, RerouteMethodData> buildFromClass(Class<?> clazz) {
-        Preconditions.checkArgument(!clazz.isInterface(), "Interface Classes are currently not supported");
+    private final List<Class<?>> classes = new ArrayList<>();
+    private final Predicate<String> compatibilityPresent;
 
-        Map<String, RerouteMethodData> result = new HashMap<>();
-
-        for (Method method : clazz.getDeclaredMethods()) {
-            if (method.isBridge()) {
-                continue;
-            }
-
-            if (method.isSynthetic()) {
-                continue;
-            }
-
-            if (!Modifier.isPublic(method.getModifiers())) {
-                continue;
-            }
-
-            if (!Modifier.isStatic(method.getModifiers())) {
-                continue;
-            }
-
-            if (method.isAnnotationPresent(DoNotReroute.class)) {
-                continue;
-            }
-
-            RerouteMethodData rerouteMethodData = buildFromMethod(method);
-            result.put(rerouteMethodData.source(), rerouteMethodData);
-        }
-
-        return Collections.unmodifiableMap(result);
+    private RerouteBuilder(Predicate<String> compatibilityPresent) {
+        this.compatibilityPresent = compatibilityPresent;
     }
 
-    public static RerouteMethodData buildFromMethod(Method method) {
+    public static RerouteBuilder create(Predicate<String> compatibilityPresent) {
+        return new RerouteBuilder(compatibilityPresent);
+    }
+
+    public RerouteBuilder forClass(Class<?> clazz) {
+        classes.add(clazz);
+        return this;
+    }
+
+    public Reroute build() {
+        Map<String, Reroute.RerouteDataHolder> rerouteDataHolderMap = new HashMap<>();
+
+        for (Class<?> clazz : classes) {
+            List<RerouteMethodData> data = buildFromClass(clazz, compatibilityPresent);
+            data.forEach(value -> rerouteDataHolderMap.computeIfAbsent(value.methodKey(), v -> new Reroute.RerouteDataHolder()).add(value));
+        }
+
+        return new Reroute(rerouteDataHolderMap);
+    }
+
+    private static List<RerouteMethodData> buildFromClass(Class<?> clazz, Predicate<String> compatibilityPresent) {
+        Preconditions.checkArgument(!clazz.isInterface(), "Interface Classes are currently not supported");
+
+        List<RerouteMethodData> result = new ArrayList<>();
+        boolean shouldInclude = shouldInclude(getRequireCompatibility(clazz), true, compatibilityPresent);
+
+        for (Method method : clazz.getDeclaredMethods()) {
+            if (!isMethodValid(method)) {
+                continue;
+            }
+
+            if (!shouldInclude(getRequireCompatibility(method), shouldInclude, compatibilityPresent)) {
+                continue;
+            }
+
+            result.add(buildFromMethod(method));
+        }
+
+        return result;
+    }
+
+    private static RerouteMethodData buildFromMethod(Method method) {
         RerouteReturn rerouteReturn = new RerouteReturn(Type.getReturnType(method));
         List<RerouteArgument> arguments = new ArrayList<>();
         List<RerouteArgument> sourceArguments = new ArrayList<>();
@@ -113,7 +129,10 @@ public class RerouteBuilder {
         if (rerouteStatic != null) {
             sourceOwner = Type.getObjectType(rerouteStatic.value());
         } else {
-            RerouteArgument argument = sourceArguments.get(0);
+            if (sourceArguments.isEmpty()) {
+                throw new RuntimeException("Source argument list is empty, no owner class found");
+            }
+            RerouteArgument argument = sourceArguments.getFirst();
             sourceOwner = argument.sourceType();
             sourceArguments.remove(argument);
         }
@@ -135,22 +154,11 @@ public class RerouteBuilder {
             methodName = method.getName();
         }
 
-        String methodKey = sourceOwner.getInternalName()
-                + " "
-                + sourceDesc.getDescriptor()
-                + " "
-                + methodName;
+        String methodKey = sourceDesc.getDescriptor() + methodName;
 
         Type targetType = Type.getType(method);
 
         boolean inBukkit = !method.isAnnotationPresent(NotInBukkit.class) && !method.getDeclaringClass().isAnnotationPresent(NotInBukkit.class);
-
-        String requiredCompatibility = null;
-        if (method.isAnnotationPresent(RequireCompatibility.class)) {
-            requiredCompatibility = method.getAnnotation(RequireCompatibility.class).value();
-        } else if (method.getDeclaringClass().isAnnotationPresent(RequireCompatibility.class)) {
-            requiredCompatibility = method.getDeclaringClass().getAnnotation(RequireCompatibility.class).value();
-        }
 
         RequirePluginVersionData requiredPluginVersion = null;
         if (method.isAnnotationPresent(RequirePluginVersion.class)) {
@@ -159,6 +167,47 @@ public class RerouteBuilder {
             requiredPluginVersion = RequirePluginVersionData.create(method.getDeclaringClass().getAnnotation(RequirePluginVersion.class));
         }
 
-        return new RerouteMethodData(methodKey, sourceDesc, sourceOwner, methodName, rerouteStatic != null, targetType, Type.getInternalName(method.getDeclaringClass()), method.getName(), arguments, rerouteReturn, inBukkit, requiredCompatibility, requiredPluginVersion);
+        return new RerouteMethodData(methodKey, sourceDesc, sourceOwner, methodName, rerouteStatic != null, targetType, Type.getInternalName(method.getDeclaringClass()), method.getName(), arguments, rerouteReturn, inBukkit, requiredPluginVersion);
+    }
+
+    private static boolean isMethodValid(Method method) {
+        if (method.isBridge()) {
+            return false;
+        }
+
+        if (method.isSynthetic()) {
+            return false;
+        }
+
+        if (!Modifier.isPublic(method.getModifiers())) {
+            return false;
+        }
+
+        if (!Modifier.isStatic(method.getModifiers())) {
+            return false;
+        }
+
+        if (method.isAnnotationPresent(DoNotReroute.class)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static String getRequireCompatibility(AnnotatedElement element) {
+        RequireCompatibility annotation = element.getAnnotation(RequireCompatibility.class);
+        if (annotation == null) {
+            return null;
+        }
+
+        return annotation.value();
+    }
+
+    private static boolean shouldInclude(String string, boolean parent, Predicate<String> compatibilityPresent) {
+        if (string == null) {
+            return parent;
+        }
+
+        return compatibilityPresent.test(string);
     }
 }
