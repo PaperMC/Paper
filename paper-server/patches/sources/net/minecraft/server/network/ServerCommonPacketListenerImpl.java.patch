@@ -123,7 +123,7 @@
          if (this.isSingleplayerOwner()) {
              ServerCommonPacketListenerImpl.LOGGER.info("Stopping singleplayer server as player logged out");
              this.server.halt(false);
-@@ -80,13 +136,18 @@
+@@ -80,13 +136,14 @@
  
      @Override
      public void handleKeepAlive(ServerboundKeepAlivePacket packet) {
@@ -135,15 +135,11 @@
              this.keepAlivePending = false;
          } else if (!this.isSingleplayerOwner()) {
 -            this.disconnect(ServerCommonPacketListenerImpl.TIMEOUT_DISCONNECTION_MESSAGE);
-+            // Paper start - This needs to be handled on the main thread for plugins
-+            server.submit(() -> {
-+                this.disconnect(ServerCommonPacketListenerImpl.TIMEOUT_DISCONNECTION_MESSAGE, PlayerKickEvent.Cause.TIMEOUT); // Paper - kick event cause
-+            });
-+            // Paper end - This needs to be handled on the main thread for plugins
++            this.disconnectAsync(ServerCommonPacketListenerImpl.TIMEOUT_DISCONNECTION_MESSAGE, PlayerKickEvent.Cause.TIMEOUT); // Paper - add proper async disconnect
          }
  
      }
-@@ -94,38 +155,127 @@
+@@ -94,38 +151,127 @@
      @Override
      public void handlePong(ServerboundPongPacket packet) {}
  
@@ -165,7 +161,7 @@
 +        PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
 +        ResourceLocation identifier = packet.payload().type().id();
 +        ByteBuf payload = ((DiscardedPayload)packet.payload()).data();
-+
+ 
 +        if (identifier.equals(ServerCommonPacketListenerImpl.CUSTOM_REGISTER)) {
 +            try {
 +                String channels = payload.toString(com.google.common.base.Charsets.UTF_8);
@@ -212,7 +208,7 @@
 +        return (!this.player.joining && !this.connection.isConnected()) || this.processedDisconnect; // Paper - Fix duplication bugs
 +    }
 +    // CraftBukkit end
- 
++
      @Override
      public void handleResourcePackResponse(ServerboundResourcePackPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, (BlockableEventLoop) this.server);
@@ -281,7 +277,7 @@
  
          Profiler.get().pop();
      }
-@@ -133,7 +283,7 @@
+@@ -133,7 +279,7 @@
      private boolean checkIfClosed(long time) {
          if (this.closed) {
              if (time - this.closedListenerTime >= 15000L) {
@@ -290,7 +286,7 @@
              }
  
              return false;
-@@ -156,6 +306,14 @@
+@@ -156,6 +302,14 @@
      }
  
      public void send(Packet<?> packet, @Nullable PacketSendListener callbacks) {
@@ -305,7 +301,7 @@
          if (packet.isTerminal()) {
              this.close();
          }
-@@ -175,20 +333,82 @@
+@@ -175,22 +329,109 @@
          }
      }
  
@@ -392,4 +388,31 @@
 +        minecraftserver.scheduleOnMain(networkmanager::handleDisconnection); // Paper
      }
  
++    // Paper start - add proper async disconnect
++    public void disconnectAsync(net.kyori.adventure.text.Component reason, PlayerKickEvent.Cause cause) {
++        this.disconnectAsync(io.papermc.paper.adventure.PaperAdventure.asVanilla(reason), cause);
++    }
++
++    public void disconnectAsync(Component reason, PlayerKickEvent.Cause cause) {
++        this.disconnectAsync(new DisconnectionDetails(reason), cause);
++    }
++
++    public void disconnectAsync(DisconnectionDetails disconnectionInfo, PlayerKickEvent.Cause cause) {
++        if (this.cserver.isPrimaryThread()) {
++            this.disconnect(disconnectionInfo, cause);
++            return;
++        }
++        this.connection.setReadOnly();
++        this.server.scheduleOnMain(() -> {
++            ServerCommonPacketListenerImpl.this.disconnect(disconnectionInfo, cause);
++            if (ServerCommonPacketListenerImpl.this.player.quitReason == null) {
++                // cancelled
++                ServerCommonPacketListenerImpl.this.connection.enableAutoRead();
++            }
++        });
++    }
++    // Paper end - add proper async disconnect
++
      protected boolean isSingleplayerOwner() {
+         return this.server.isSingleplayerOwner(this.playerProfile());
+     }
