@@ -1,0 +1,238 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aeltumn <daniel@goossens.ch>
+Date: Sun, 20 Aug 2023 19:39:43 +0200
+Subject: [PATCH] Provide registered listeners in the PluginManager and add
+ faster unregistration method
+
+Adds new methods that supersede the old registerEvent methods but return a RegisteredListener object. And adds an unregister() method to RegisteredListener which allows for targetted unregistration instead of unregistering from all HandlerLists which is inefficient when unregistering listeners often.
+
+diff --git a/src/main/java/org/bukkit/event/HandlerList.java b/src/main/java/org/bukkit/event/HandlerList.java
+index 2292bd460ce2be113beb4ba6b4eb19350060f01c..6d66a6293986ff4e6b195c3de8c58730f6441d51 100644
+--- a/src/main/java/org/bukkit/event/HandlerList.java
++++ b/src/main/java/org/bukkit/event/HandlerList.java
+@@ -61,6 +61,11 @@ public class HandlerList {
+             for (HandlerList h : allLists) {
+                 synchronized (h) {
+                     for (List<RegisteredListener> list : h.handlerslots.values()) {
++                        // Paper start - store handler list on registered listener
++                        for (RegisteredListener listener : list) {
++                            listener.unregisterHandlerList(h);
++                        }
++                        // Paper end - store handler list on registered listener
+                         list.clear();
+                     }
+                     h.handlers = null;
+@@ -126,6 +131,7 @@ public class HandlerList {
+             throw new IllegalStateException("This listener is already registered to priority " + listener.getPriority().toString());
+         handlers = null;
+         handlerslots.get(listener.getPriority()).add(listener);
++        listener.registerHandlerList(this); // Paper - store handler list on registered listener
+     }
+ 
+     /**
+@@ -146,6 +152,7 @@ public class HandlerList {
+      */
+     public synchronized void unregister(@NotNull RegisteredListener listener) {
+         if (handlerslots.get(listener.getPriority()).remove(listener)) {
++            listener.unregisterHandlerList(this); // Paper - store handler list on registered listener
+             handlers = null;
+         }
+     }
+@@ -159,7 +166,11 @@ public class HandlerList {
+         boolean changed = false;
+         for (List<RegisteredListener> list : handlerslots.values()) {
+             for (ListIterator<RegisteredListener> i = list.listIterator(); i.hasNext();) {
+-                if (i.next().getPlugin().equals(plugin)) {
++                // Paper start - store handler list on registered listener
++                RegisteredListener registeredListener = i.next();
++                if (registeredListener.getPlugin().equals(plugin)) {
++                    registeredListener.unregisterHandlerList(this);
++                    // Paper end - store handler list on registered listener
+                     i.remove();
+                     changed = true;
+                 }
+@@ -177,7 +188,11 @@ public class HandlerList {
+         boolean changed = false;
+         for (List<RegisteredListener> list : handlerslots.values()) {
+             for (ListIterator<RegisteredListener> i = list.listIterator(); i.hasNext();) {
+-                if (i.next().getListener().equals(listener)) {
++                // Paper start - store handler list on registered listener
++                RegisteredListener registeredListener = i.next();
++                if (registeredListener.getListener().equals(listener)) {
++                    registeredListener.unregisterHandlerList(this);
++                    // Paper end - store handler list on registered listener
+                     i.remove();
+                     changed = true;
+                 }
+diff --git a/src/main/java/org/bukkit/plugin/PluginManager.java b/src/main/java/org/bukkit/plugin/PluginManager.java
+index 03213fde8315384ec56c16031cfc606ade2e8091..45a7e6e10300f2ff800daaa0e3660c665907694f 100644
+--- a/src/main/java/org/bukkit/plugin/PluginManager.java
++++ b/src/main/java/org/bukkit/plugin/PluginManager.java
+@@ -115,25 +115,36 @@ public interface PluginManager extends io.papermc.paper.plugin.PermissionManager
+     /**
+      * Registers all the events in the given listener class
+      *
++     * Superseded by {@link PluginManager#registerListener(Listener, Plugin)} which
++     * also returns the registered listener
++     *
+      * @param listener Listener to register
+      * @param plugin Plugin to register
+      */
++    @org.jetbrains.annotations.ApiStatus.Obsolete
+     public void registerEvents(@NotNull Listener listener, @NotNull Plugin plugin);
+ 
+     /**
+      * Registers the specified executor to the given event class
+      *
++     * Superseded by {@link PluginManager#registerListener(Class, Listener, EventPriority, EventExecutor, Plugin)}
++     * which also returns the registered listener
++     *
+      * @param event Event type to register
+      * @param listener Listener to register
+      * @param priority Priority to register this event at
+      * @param executor EventExecutor to register
+      * @param plugin Plugin to register
+      */
++    @org.jetbrains.annotations.ApiStatus.Obsolete
+     public void registerEvent(@NotNull Class<? extends Event> event, @NotNull Listener listener, @NotNull EventPriority priority, @NotNull EventExecutor executor, @NotNull Plugin plugin);
+ 
+     /**
+      * Registers the specified executor to the given event class
+      *
++     * Superseded by {@link PluginManager#registerListener(Class, Listener, EventPriority, EventExecutor, Plugin, boolean)}
++     * which also returns the registered listeners
++     *
+      * @param event Event type to register
+      * @param listener Listener to register
+      * @param priority Priority to register this event at
+@@ -141,6 +152,7 @@ public interface PluginManager extends io.papermc.paper.plugin.PermissionManager
+      * @param plugin Plugin to register
+      * @param ignoreCancelled Whether to pass cancelled events or not
+      */
++    @org.jetbrains.annotations.ApiStatus.Obsolete
+     public void registerEvent(@NotNull Class<? extends Event> event, @NotNull Listener listener, @NotNull EventPriority priority, @NotNull EventExecutor executor, @NotNull Plugin plugin, boolean ignoreCancelled);
+ 
+     /**
+@@ -316,5 +328,43 @@ public interface PluginManager extends io.papermc.paper.plugin.PermissionManager
+      */
+     @org.jetbrains.annotations.ApiStatus.Experimental
+     void overridePermissionManager(@NotNull Plugin plugin, @Nullable io.papermc.paper.plugin.PermissionManager permissionManager);
++
++    /**
++     * Registers all event handlers in the given listener object. Each individual event handler will
++     * receive its own registered listener instance.
++     *
++     * @param listener Listener to register
++     * @param plugin Plugin to register
++     * @return The new registered listeners, may be empty if no event handlers were found
++     */
++    @NotNull
++    public java.util.Collection<RegisteredListener> registerListener(@NotNull Listener listener, @NotNull Plugin plugin);
++
++    /**
++     * Registers the specified executor to the given event class
++     *
++     * @param event Event type to register
++     * @param listener Listener to register
++     * @param priority Priority to register this event at
++     * @param executor EventExecutor to register
++     * @param plugin Plugin to register
++     * @return The new registered listener
++     */
++    @NotNull
++    public RegisteredListener registerListener(@NotNull Class<? extends Event> event, @NotNull Listener listener, @NotNull EventPriority priority, @NotNull EventExecutor executor, @NotNull Plugin plugin);
++
++    /**
++     * Registers the specified executor to the given event class
++     *
++     * @param event Event type to register
++     * @param listener Listener to register
++     * @param priority Priority to register this event at
++     * @param executor EventExecutor to register
++     * @param plugin Plugin to register
++     * @param ignoreCancelled Whether to pass cancelled events or not
++     * @return The new registered listener
++     */
++    @NotNull
++    public RegisteredListener registerListener(@NotNull Class<? extends Event> event, @NotNull Listener listener, @NotNull EventPriority priority, @NotNull EventExecutor executor, @NotNull Plugin plugin, boolean ignoreCancelled);
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/plugin/RegisteredListener.java b/src/main/java/org/bukkit/plugin/RegisteredListener.java
+index 3b3d9642a8d63798dc28f2f8df77f0466451cbff..ab6b6ac3019274dbe7f112df13152e3ddf573e5f 100644
+--- a/src/main/java/org/bukkit/plugin/RegisteredListener.java
++++ b/src/main/java/org/bukkit/plugin/RegisteredListener.java
+@@ -16,6 +16,7 @@ public class RegisteredListener {
+     private final Plugin plugin;
+     private final EventExecutor executor;
+     private final boolean ignoreCancelled;
++    private final java.util.Set<org.bukkit.event.HandlerList> handlersLists = new java.util.HashSet<>(); // Paper - store handler lists
+ 
+     public RegisteredListener(@NotNull final Listener listener, @NotNull final EventExecutor executor, @NotNull final EventPriority priority, @NotNull final Plugin plugin, final boolean ignoreCancelled) {
+         this.listener = listener;
+@@ -25,6 +26,37 @@ public class RegisteredListener {
+         this.ignoreCancelled = ignoreCancelled;
+     }
+ 
++    // Paper start - add methods to quickly fetch handler lists and unregister
++    /**
++     * Marks down that this listener is registered to this list.
++     *
++     * @param list A handler list that this registered listener is registered to.
++     */
++    public void registerHandlerList(@NotNull org.bukkit.event.HandlerList list) {
++        handlersLists.add(list);
++    }
++
++    /**
++     * Removes the marking that this listener is registered to the given list.
++     *
++     * @param list A handler list that this registered listener is no longer registered to.
++     */
++    public void unregisterHandlerList(@NotNull org.bukkit.event.HandlerList list) {
++        handlersLists.remove(list);
++    }
++
++    /**
++     * Unregisters this listener from all {@link org.bukkit.event.HandlerList} instances.
++     * This is faster than calling HandlerList.unregisterAll as this directly goes to the
++     * correct handler lists to unregister this listener.
++     */
++    public void unregister() {
++        for (org.bukkit.event.HandlerList list : new java.util.HashSet<>(handlersLists)) {
++            list.unregister(this);
++        }
++    }
++    // Paper end - add methods to quickly fetch handler lists and unregister
++
+     /**
+      * Gets the listener for this registration
+      *
+diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+index fc2dae69165776d08274e34a69962cc70445f411..3fc4360ed30280bdb395dc59c7540746c0b167fc 100644
+--- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
++++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+@@ -715,6 +715,24 @@ public final class SimplePluginManager implements PluginManager {
+         }
+     }
+ 
++    // Paper start - add registerListener
++    @NotNull
++    @Override
++    public Collection<RegisteredListener> registerListener(@NotNull final Listener listener, @NotNull final Plugin plugin) {
++        return this.paperPluginManager.registerListener(listener, plugin);
++    }
++
++    @Override
++    public @NotNull RegisteredListener registerListener(@NotNull final Class<? extends Event> event, @NotNull final Listener listener, @NotNull final EventPriority priority, @NotNull final EventExecutor executor, @NotNull final Plugin plugin) {
++        return this.paperPluginManager.registerListener(event, listener, priority, executor, plugin);
++    }
++
++    @Override
++    public @NotNull RegisteredListener registerListener(@NotNull final Class<? extends Event> event, @NotNull final Listener listener, @NotNull final EventPriority priority, @NotNull final EventExecutor executor, @NotNull final Plugin plugin, final boolean ignoreCancelled) {
++        return this.paperPluginManager.registerListener(event, listener, priority, executor, plugin, ignoreCancelled);
++    }
++    // Paper end - add registerListener
++
+     @NotNull
+     private HandlerList getEventListeners(@NotNull Class<? extends Event> type) {
+         try {
