@@ -1,0 +1,68 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: radsteve <radsteve@radsteve.net>
+Date: Sun, 7 Jul 2024 10:51:55 +0200
+Subject: [PATCH] Item stack name tooltip API
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 9d1e68c09fa7093cf0f6fa636f90cb15a44cbb38..4384869b79539c9e424b20bd656b67160a475b77 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -805,6 +805,19 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player imple
+         this.trackEnteredOrExitedLavaOnVehicle();
+         this.updatePlayerAttributes();
+         this.advancements.flushDirty(this);
++
++        // Paper start - Item stack name tooltip API
++        // This is taken from net.minecraft.client.gui.Gui#tick and adapted to a non-tick behaviour.
++        ItemStack selectedStack = this.getInventory().getSelected();
++        if(selectedStack.isEmpty()) {
++            lastItemStackChangeTime = 0;
++        } else {
++            if(!selectedStack.is(this.currentlySelectedItemStack.getItem()) || !selectedStack.getDisplayName().equals(this.currentlySelectedItemStack.getDisplayName())) {
++                lastItemStackChangeTime = net.minecraft.Util.getMillis();
++            }
++        }
++        this.currentlySelectedItemStack = selectedStack;
++        // Paper end - Item stack name tooltip API
+     }
+ 
+     private void updatePlayerAttributes() {
+@@ -2944,4 +2957,12 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player imple
+         return (CraftPlayer) super.getBukkitEntity();
+     }
+     // CraftBukkit end
++
++    // Paper start - Item stack name tooltip API
++    private ItemStack currentlySelectedItemStack = ItemStack.EMPTY;
++    private long lastItemStackChangeTime = 0;
++    public long getLastItemStackChangeTime() {
++        return lastItemStackChangeTime;
++    }
++    // Paper end - Item stack name tooltip API
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index d01b45a48d412e3cb591acee101730704574448a..52a985b95d8c6a35f7df52979b7fab84ad673e98 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -3554,4 +3554,20 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         ((ca.spottedleaf.moonrise.patches.chunk_system.player.ChunkSystemServerPlayer)this.getHandle())
+             .moonrise$getViewDistanceHolder().setSendViewDistance(viewDistance);
+     }
++
++    // Paper start - Item stack name tooltip API
++    private static final long DEFAULT_ITEM_TOOLTIP_DURATION_MS = 40 * 50;
++
++    @Override
++    public long getLastItemStackChangeTime() {
++        return this.getHandle().getLastItemStackChangeTime();
++    }
++
++    @Override
++    public boolean isItemNameTooltipEstimatedToBeVisible() {
++        long currentTime = net.minecraft.Util.getMillis();
++        long lastItemStackChange = this.getLastItemStackChangeTime();
++        return currentTime - lastItemStackChange < DEFAULT_ITEM_TOOLTIP_DURATION_MS;
++    }
++    // Paper end - Item stack name tooltip API
+ }
