@@ -1,0 +1,71 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Intybyte <vaan.testwork@gmail.com>
+Date: Mon, 30 Sep 2024 17:16:36 +0200
+Subject: [PATCH] Create Limited set for Entity
+
+
+diff --git a/src/main/java/io/papermc/paper/util/SizeLimitedSet.java b/src/main/java/io/papermc/paper/util/SizeLimitedSet.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e5a1b373a87e789fb728a7dec9054fae3196e50f
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/SizeLimitedSet.java
+@@ -0,0 +1,37 @@
++package io.papermc.paper.util;
++
++import org.jspecify.annotations.NullMarked;
++import java.util.Collection;
++import java.util.HashSet;
++
++@NullMarked
++public class SizeLimitedSet<T> extends HashSet<T> {
++    private final int maxTags;
++
++    public SizeLimitedSet(int maxTags) {
++        this.maxTags = maxTags;
++    }
++
++    @Override
++    public boolean add(T tag) {
++        // Enforce the max tag limit
++        if (this.size() >= this.maxTags) {
++            return false;
++        }
++        return super.add(tag);
++    }
++
++    @Override
++    public boolean addAll(Collection<? extends T> tags) {
++        boolean edited = false;
++
++        for (T tag : tags) {
++            if (this.size() >= this.maxTags) {
++                break;
++            }
++
++            edited |= this.add(tag);
++        }
++        return edited;
++    }
++}
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 4b54d0ea31062972e68ee8fafe3cfaf68f65a5cd..5c6555445b0713c6e1f53b8daed10dc4fd3d0fc4 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -566,7 +566,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+         this.packetPositionCodec = new VecDeltaCodec();
+         this.uuid = Mth.createInsecureUUID(this.random);
+         this.stringUUID = this.uuid.toString();
+-        this.tags = Sets.newHashSet();
++        this.tags = new io.papermc.paper.util.SizeLimitedSet(MAX_ENTITY_TAG_COUNT); // Paper - Create Limited set for Entity
+         this.pistonDeltas = new double[]{0.0D, 0.0D, 0.0D};
+         this.mainSupportingBlockPos = Optional.empty();
+         this.onGroundNoBlocks = false;
+@@ -654,7 +654,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     }
+ 
+     public boolean addTag(String tag) {
+-        return this.tags.size() >= 1024 ? false : this.tags.add(tag);
++        return this.tags.add(tag); // Paper - Create Limited set for Entity
+     }
+ 
+     public boolean removeTag(String tag) {
