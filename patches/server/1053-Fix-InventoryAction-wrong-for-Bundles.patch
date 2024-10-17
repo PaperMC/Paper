@@ -1,0 +1,74 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tamion <70228790+notTamion@users.noreply.github.com>
+Date: Wed, 21 Aug 2024 14:21:00 +0200
+Subject: [PATCH] Fix InventoryAction wrong for Bundles
+
+== AT ==
+public net/minecraft/world/item/component/BundleContents$Mutable getMaxAmountToAdd(Lnet/minecraft/world/item/ItemStack;)I;
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index b13057c0792067cc6b0abdf0d64a9be2cc9389a4..8762e480f439598ab54e8621ac8a0358dfecfc14 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -3003,11 +3003,23 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                                         ItemStack cursor = this.player.containerMenu.getCarried();
+                                         if (clickedItem.isEmpty()) {
+                                             if (!cursor.isEmpty()) {
+-                                                action = packet.getButtonNum() == 0 ? InventoryAction.PLACE_ALL : InventoryAction.PLACE_ONE;
++                                                // Paper start - Fix InventoryAction wrong for Bundles
++                                                if (cursor.is(Items.BUNDLE) && packet.getButtonNum() != 0) {
++                                                    action = cursor.get(DataComponents.BUNDLE_CONTENTS).isEmpty() ? InventoryAction.NOTHING : InventoryAction.PLACE_FROM_BUNDLE;
++                                                } else {
++                                                    action = packet.getButtonNum() == 0 ? InventoryAction.PLACE_ALL : InventoryAction.PLACE_ONE;
++                                                }
++                                                // Paper end - Fix InventoryAction wrong for Bundles
+                                             }
+                                         } else if (slot.mayPickup(this.player)) {
+                                             if (cursor.isEmpty()) {
+-                                                action = packet.getButtonNum() == 0 ? InventoryAction.PICKUP_ALL : InventoryAction.PICKUP_HALF;
++                                                // Paper start - Fix InventoryAction wrong for Bundles
++                                                if (slot.getItem().is(Items.BUNDLE) && packet.getButtonNum() != 0) {
++                                                    action = slot.getItem().get(DataComponents.BUNDLE_CONTENTS).isEmpty() ? InventoryAction.NOTHING : InventoryAction.PICKUP_FROM_BUNDLE;
++                                                } else {
++                                                    action = packet.getButtonNum() == 0 ? InventoryAction.PICKUP_ALL : InventoryAction.PICKUP_HALF;
++                                                }
++                                                // Paper end - Fix InventoryAction wrong for Bundles
+                                             } else if (slot.mayPlace(cursor)) {
+                                                 if (ItemStack.isSameItemSameComponents(clickedItem, cursor)) {
+                                                     int toPlace = packet.getButtonNum() == 0 ? cursor.getCount() : 1;
+@@ -3023,7 +3035,34 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                                                         action = InventoryAction.PLACE_SOME;
+                                                     }
+                                                 } else if (cursor.getCount() <= slot.getMaxStackSize()) {
+-                                                    action = InventoryAction.SWAP_WITH_CURSOR;
++                                                    // Paper start - Fix InventoryAction wrong for Bundles
++                                                    if (cursor.is(Items.BUNDLE) && packet.getButtonNum() != 0) {
++                                                        int toPickup = new net.minecraft.world.item.component.BundleContents.Mutable(cursor.get(DataComponents.BUNDLE_CONTENTS)).getMaxAmountToAdd(slot.getItem());
++                                                        if (toPickup >= slot.getItem().getCount()) {
++                                                            action = InventoryAction.PICKUP_ALL_INTO_BUNDLE;
++                                                        } else if (toPickup == 1) {
++                                                            action = InventoryAction.PICKUP_ONE_INTO_BUNDLE;
++                                                        } else if (toPickup == 0) {
++                                                            action = InventoryAction.NOTHING;
++                                                        } else {
++                                                            action = InventoryAction.PICKUP_SOME_INTO_BUNDLE;
++                                                        }
++                                                    } else if (slot.getItem().is(Items.BUNDLE) && packet.getButtonNum() != 0) {
++                                                        int toPickup = new net.minecraft.world.item.component.BundleContents.Mutable(slot.getItem().get(DataComponents.BUNDLE_CONTENTS)).getMaxAmountToAdd(cursor);
++                                                        if (toPickup >= cursor.getCount()) {
++                                                            action = InventoryAction.PLACE_ALL_INTO_BUNDLE;
++                                                        } else if (toPickup == 1) {
++                                                            action = InventoryAction.PLACE_ONE_INTO_BUNDLE;
++                                                        } else if (toPickup == 0) {
++                                                            action = InventoryAction.NOTHING;
++                                                        } else {
++                                                            action = InventoryAction.PLACE_SOME_INTO_BUNDLE;
++                                                        }
++
++                                                    } else {
++                                                        action = InventoryAction.SWAP_WITH_CURSOR;
++                                                    }
++                                                    // Paper end - Fix InventoryAction wrong for Bundles
+                                                 }
+                                             } else if (ItemStack.isSameItemSameComponents(cursor, clickedItem)) {
+                                                 if (clickedItem.getCount() >= 0) {
