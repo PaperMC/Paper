@@ -1,0 +1,189 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 23 Sep 2024 16:10:57 -0700
+Subject: [PATCH] move methods to PaperDiscoveredDatapack
+
+
+diff --git a/src/main/java/io/papermc/paper/datapack/PaperDatapack.java b/src/main/java/io/papermc/paper/datapack/PaperDatapack.java
+index 8bd8263b51fb2bb364353565b1ba26b3b0d1d55e..5a78ce1bee122951a9346e99f1b05eef772912b5 100644
+--- a/src/main/java/io/papermc/paper/datapack/PaperDatapack.java
++++ b/src/main/java/io/papermc/paper/datapack/PaperDatapack.java
+@@ -2,71 +2,27 @@ package io.papermc.paper.datapack;
+ 
+ import io.papermc.paper.adventure.PaperAdventure;
+ import io.papermc.paper.event.server.ServerResourcesReloadedEvent;
+-import io.papermc.paper.world.flag.PaperFeatureFlagProviderImpl;
+ import java.util.ArrayList;
+ import java.util.List;
+-import java.util.Map;
+-import java.util.Set;
+-import java.util.concurrent.ConcurrentHashMap;
+ import net.kyori.adventure.text.Component;
+ import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.packs.repository.Pack;
+-import net.minecraft.server.packs.repository.PackSource;
+-import org.bukkit.FeatureFlag;
+ import org.checkerframework.checker.nullness.qual.NonNull;
+ import org.checkerframework.checker.nullness.qual.Nullable;
+ import org.checkerframework.framework.qual.DefaultQualifier;
+ 
+ @DefaultQualifier(NonNull.class)
+-public class PaperDatapack implements Datapack {
+-
+-    private static final Map<PackSource, DatapackSource> PACK_SOURCES = new ConcurrentHashMap<>();
+-    static {
+-        PACK_SOURCES.put(PackSource.DEFAULT, DatapackSource.DEFAULT);
+-        PACK_SOURCES.put(PackSource.BUILT_IN, DatapackSource.BUILT_IN);
+-        PACK_SOURCES.put(PackSource.FEATURE, DatapackSource.FEATURE);
+-        PACK_SOURCES.put(PackSource.WORLD, DatapackSource.WORLD);
+-        PACK_SOURCES.put(PackSource.SERVER, DatapackSource.SERVER);
+-    }
++public class PaperDatapack extends PaperDiscoveredDatapack implements Datapack {
+ 
+     private final Pack pack;
+     private final boolean enabled;
+ 
+     PaperDatapack(final Pack pack, final boolean enabled) {
++        super(pack);
+         this.pack = pack;
+         this.enabled = enabled;
+     }
+ 
+-    @Override
+-    public String getName() {
+-        return this.pack.getId();
+-    }
+-
+-    @Override
+-    public Component getTitle() {
+-        return PaperAdventure.asAdventure(this.pack.getTitle());
+-    }
+-
+-    @Override
+-    public Component getDescription() {
+-        return PaperAdventure.asAdventure(this.pack.getDescription());
+-    }
+-
+-    @Override
+-    public boolean isRequired() {
+-        return this.pack.isRequired();
+-    }
+-
+-    @Override
+-    public Compatibility getCompatibility() {
+-        return Datapack.Compatibility.valueOf(this.pack.getCompatibility().name());
+-    }
+-
+-    @Override
+-    public Set<FeatureFlag> getRequiredFeatures() {
+-        return PaperFeatureFlagProviderImpl.fromNms(this.pack.getRequestedFeatures());
+-    }
+-
+     @Override
+     public boolean isEnabled() {
+         return this.enabled;
+@@ -91,11 +47,6 @@ public class PaperDatapack implements Datapack {
+         server.reloadResources(enabledPacks.stream().map(Pack::getId).toList(), ServerResourcesReloadedEvent.Cause.PLUGIN);
+     }
+ 
+-    @Override
+-    public DatapackSource getSource() {
+-        return PACK_SOURCES.computeIfAbsent(this.pack.location().source(), source -> new DatapackSourceImpl(source.toString()));
+-    }
+-
+     @Override
+     public Component computeDisplayName() {
+         return PaperAdventure.asAdventure(this.pack.getChatLink(this.enabled));
+diff --git a/src/main/java/io/papermc/paper/datapack/PaperDiscoveredDatapack.java b/src/main/java/io/papermc/paper/datapack/PaperDiscoveredDatapack.java
+index 572a62ceafcd066adfc0c2588cc43a0b61cedb7f..711e6a8791a72e759ca777f66426ce12fc2230b0 100644
+--- a/src/main/java/io/papermc/paper/datapack/PaperDiscoveredDatapack.java
++++ b/src/main/java/io/papermc/paper/datapack/PaperDiscoveredDatapack.java
+@@ -1,46 +1,67 @@
+ package io.papermc.paper.datapack;
+ 
+-import java.util.Objects;
++import io.papermc.paper.adventure.PaperAdventure;
++import io.papermc.paper.world.flag.PaperFeatureFlagProviderImpl;
++import java.util.Map;
++import java.util.Set;
++import java.util.concurrent.ConcurrentHashMap;
++import net.kyori.adventure.text.Component;
+ import net.minecraft.server.packs.repository.Pack;
++import net.minecraft.server.packs.repository.PackSource;
++import org.bukkit.FeatureFlag;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
+ 
+-public class PaperDiscoveredDatapack implements DiscoveredDatapack{
++@DefaultQualifier(NonNull.class)
++public class PaperDiscoveredDatapack implements DiscoveredDatapack {
+ 
+-    private final String name;
+-    private final Datapack.Compatibility compatibility;
++    private static final Map<PackSource, DatapackSource> PACK_SOURCES = new ConcurrentHashMap<>();
++    static {
++        PACK_SOURCES.put(PackSource.DEFAULT, DatapackSource.DEFAULT);
++        PACK_SOURCES.put(PackSource.BUILT_IN, DatapackSource.BUILT_IN);
++        PACK_SOURCES.put(PackSource.FEATURE, DatapackSource.FEATURE);
++        PACK_SOURCES.put(PackSource.WORLD, DatapackSource.WORLD);
++        PACK_SOURCES.put(PackSource.SERVER, DatapackSource.SERVER);
++    }
++
++    private final Pack pack;
+ 
+     PaperDiscoveredDatapack(Pack pack) {
+-        this.name = pack.getId();
+-        this.compatibility = Datapack.Compatibility.valueOf(pack.getCompatibility().name());
++        this.pack = pack;
+     }
+ 
+     @Override
+     public String getName() {
+-        return this.name;
++        return this.pack.getId();
+     }
+ 
+     @Override
+-    public Datapack.Compatibility getCompatibility() {
+-        return this.compatibility;
++    public Component getTitle() {
++        return PaperAdventure.asAdventure(this.pack.getTitle());
++    }
++
++    @Override
++    public Component getDescription() {
++        return PaperAdventure.asAdventure(this.pack.getDescription());
+     }
+ 
+     @Override
+-    public boolean equals(final Object o) {
+-        if (this == o) return true;
+-        if (o == null || this.getClass() != o.getClass()) return false;
+-        final PaperDiscoveredDatapack that = (PaperDiscoveredDatapack) o;
+-        return Objects.equals(this.name, that.name) && this.compatibility == that.compatibility;
++    public boolean isRequired() {
++        return this.pack.isRequired();
++    }
++
++    @Override
++    public Datapack.Compatibility getCompatibility() {
++        return Datapack.Compatibility.valueOf(this.pack.getCompatibility().name());
+     }
+ 
+     @Override
+-    public int hashCode() {
+-        return Objects.hash(this.name, this.compatibility);
++    public Set<FeatureFlag> getRequiredFeatures() {
++        return PaperFeatureFlagProviderImpl.fromNms(this.pack.getRequestedFeatures());
+     }
+ 
+     @Override
+-    public String toString() {
+-        return "PaperDiscoveredDatapack{" +
+-            "name='" + this.name + '\'' +
+-            ", compatibility=" + this.compatibility +
+-            '}';
++    public DatapackSource getSource() {
++        return PACK_SOURCES.computeIfAbsent(this.pack.location().source(), source -> new DatapackSourceImpl(source.toString()));
+     }
+ }
