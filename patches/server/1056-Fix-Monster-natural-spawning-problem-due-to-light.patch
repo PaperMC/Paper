@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: DavidTs93 <david.ts93@gmail.com>
+Date: Thu, 5 Sep 2024 12:26:18 +0300
+Subject: [PATCH] Fix Monster natural spawning problem due to light
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Monster.java b/src/main/java/net/minecraft/world/entity/monster/Monster.java
+index e7bfce0534c7ef3a1480a1082ae8514caf78778b..15c65d11be5430e45e8da7e3e4c0da759a949979 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Monster.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Monster.java
+@@ -85,6 +85,14 @@ public abstract class Monster extends PathfinderMob implements Enemy {
+     public float getWalkTargetValue(BlockPos pos, LevelReader world) {
+         return -world.getPathfindingCostFromLightLevels(pos);
+     }
++    
++    // Paper start - Natural spawning conditions already checked
++    @Override
++    public boolean checkSpawnRules(LevelAccessor world, MobSpawnType spawnReason) {
++        if (spawnReason == MobSpawnType.NATURAL || spawnReason == MobSpawnType.CHUNK_GENERATION) return true;
++        return super.checkSpawnRules(world, spawnReason);
++    }
++    // Paper end - Natural spawning conditions already checked
+ 
+     public static boolean isDarkEnoughToSpawn(ServerLevelAccessor world, BlockPos pos, RandomSource random) {
+         if (world.getBrightness(LightLayer.SKY, pos) > random.nextInt(32)) {
