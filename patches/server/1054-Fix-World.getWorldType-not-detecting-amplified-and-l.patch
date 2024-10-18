@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: LeonTG <leontg77@gmail.com>
+Date: Sun, 10 Mar 2024 20:52:51 +0100
+Subject: [PATCH] Fix World.getWorldType not detecting amplified and large
+ biomes
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index bfb178c69026e9759e9afaebb9da141b62d1f144..dc6cdd455b48d150cc2889c7314489075d42aef1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -1645,6 +1645,17 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+ 
+     @Override
+     public org.bukkit.WorldType getWorldType() {
++        // Paper start - Fix World.getWorldType not detecting amplified and large biomes
++        if (this.world.getChunkSource().getGenerator() instanceof net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator noiseGen) {
++            if (noiseGen.generatorSettings().is(net.minecraft.world.level.levelgen.NoiseGeneratorSettings.AMPLIFIED)) {
++                return org.bukkit.WorldType.AMPLIFIED;
++            }
++
++            if (noiseGen.generatorSettings().is(net.minecraft.world.level.levelgen.NoiseGeneratorSettings.LARGE_BIOMES)) {
++                return org.bukkit.WorldType.LARGE_BIOMES;
++            }
++        }
++        // Paper end
+         return this.world.isFlat() ? org.bukkit.WorldType.FLAT : org.bukkit.WorldType.NORMAL;
+     }
+ 
