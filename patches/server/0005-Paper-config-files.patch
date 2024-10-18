@@ -862,10 +862,10 @@ index 0000000000000000000000000000000000000000..69add4a7f1147015806bc9b63a8340d1
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1029b6de6f36b08bf634b4056ef5701383f6f258
+index 0000000000000000000000000000000000000000..1c562f384a66258b1a33c4ab33370b0a1cdeeeb1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
-@@ -0,0 +1,467 @@
+@@ -0,0 +1,470 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.base.Suppliers;
@@ -904,6 +904,8 @@ index 0000000000000000000000000000000000000000..1029b6de6f36b08bf634b4056ef57013
 +import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 +import it.unimi.dsi.fastutil.objects.Reference2LongMap;
 +import it.unimi.dsi.fastutil.objects.Reference2LongOpenHashMap;
++import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
++import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 +import java.io.File;
 +import java.io.IOException;
 +import java.lang.reflect.Type;
@@ -1109,6 +1111,7 @@ index 0000000000000000000000000000000000000000..1029b6de6f36b08bf634b4056ef57013
 +                .serializers(serializers -> serializers
 +                    .register(new TypeToken<Reference2IntMap<?>>() {}, new FastutilMapSerializer.SomethingToPrimitive<Reference2IntMap<?>>(Reference2IntOpenHashMap::new, Integer.TYPE))
 +                    .register(new TypeToken<Reference2LongMap<?>>() {}, new FastutilMapSerializer.SomethingToPrimitive<Reference2LongMap<?>>(Reference2LongOpenHashMap::new, Long.TYPE))
++                    .register(new TypeToken<Reference2ObjectMap<?, ?>>() {}, new FastutilMapSerializer.SomethingToSomething<Reference2ObjectMap<?, ?>>(Reference2ObjectOpenHashMap::new))
 +                    .register(new TypeToken<Table<?, ?, ?>>() {}, new TableSerializer())
 +                    .register(DespawnRange.class, DespawnRange.SERIALIZER)
 +                    .register(StringRepresentableSerializer::isValidFor, new StringRepresentableSerializer())
@@ -1423,10 +1426,10 @@ index 0000000000000000000000000000000000000000..990d1bb46e0f9719f4e9af928d80ac6f
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fd3b1c10695634f65c7291016bf671c084bc4d57
+index 0000000000000000000000000000000000000000..abb3b2686fdf2db68f8734923fa23084250a0d6c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
-@@ -0,0 +1,581 @@
+@@ -0,0 +1,588 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.collect.HashBasedTable;
@@ -1451,6 +1454,8 @@ index 0000000000000000000000000000000000000000..fd3b1c10695634f65c7291016bf671c0
 +import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 +import it.unimi.dsi.fastutil.objects.Reference2LongMap;
 +import it.unimi.dsi.fastutil.objects.Reference2LongOpenHashMap;
++import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
++import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 +import java.util.Arrays;
 +import java.util.IdentityHashMap;
 +import java.util.List;
@@ -1628,6 +1633,11 @@ index 0000000000000000000000000000000000000000..fd3b1c10695634f65c7291016bf671c0
 +                    );
 +                }
 +            }
++
++            public Reference2ObjectMap<EntityType<?>, IntOr.Disabled> despawnTime = Util.make(new Reference2ObjectOpenHashMap<>(), map -> {
++                map.put(EntityType.SNOWBALL, IntOr.Disabled.DISABLED);
++                map.put(EntityType.LLAMA_SPIT, IntOr.Disabled.DISABLED);
++            });
 +
 +            @PostProcess
 +            public void precomputeDespawnDistances() throws SerializationException {
@@ -2802,41 +2812,43 @@ index 0000000000000000000000000000000000000000..7fc0905fc6b8f5df762b4cea573f935d
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/collections/FastutilMapSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/collections/FastutilMapSerializer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4af710e144b70933d750c22edfe484c18e4a3540
+index 0000000000000000000000000000000000000000..5a0ecd5423be7fd84e02808a3de4cf3d75d96ecd
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/serializer/collections/FastutilMapSerializer.java
-@@ -0,0 +1,69 @@
+@@ -0,0 +1,85 @@
 +package io.papermc.paper.configuration.serializer.collections;
 +
 +import io.leangen.geantyref.GenericTypeReflector;
 +import io.leangen.geantyref.TypeFactory;
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.spongepowered.configurate.ConfigurationNode;
-+import org.spongepowered.configurate.serialize.SerializationException;
-+import org.spongepowered.configurate.serialize.TypeSerializer;
-+
 +import java.lang.reflect.ParameterizedType;
 +import java.lang.reflect.Type;
 +import java.util.Collections;
 +import java.util.Map;
 +import java.util.function.Function;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
++import org.spongepowered.configurate.ConfigurationNode;
++import org.spongepowered.configurate.serialize.SerializationException;
++import org.spongepowered.configurate.serialize.TypeSerializer;
 +
 +@SuppressWarnings("rawtypes")
++@NullMarked
 +public abstract class FastutilMapSerializer<M extends Map<?, ?>> implements TypeSerializer<M> {
-+    private final Function<Map, ? extends M> factory;
 +
-+    protected FastutilMapSerializer(final Function<Map, ? extends M> factory) {
++    private final Function<? super Map, ? extends M> factory;
++
++    protected FastutilMapSerializer(final Function<? super Map, ? extends M> factory) {
 +        this.factory = factory;
 +    }
 +
 +    @Override
 +    public M deserialize(final Type type, final ConfigurationNode node) throws SerializationException {
-+        @Nullable final Map map = (Map) node.get(this.createBaseMapType((ParameterizedType) type));
++        final Map map = (Map) node.get(this.createBaseMapType((ParameterizedType) type));
 +        return this.factory.apply(map == null ? Collections.emptyMap() : map);
 +    }
 +
 +    @Override
-+    public void serialize(final Type type, @Nullable final M obj, final ConfigurationNode node) throws SerializationException {
++    public void serialize(final Type type, final @Nullable M obj, final ConfigurationNode node) throws SerializationException {
 +        if (obj == null || obj.isEmpty()) {
 +            node.raw(null);
 +        } else {
@@ -2848,6 +2860,7 @@ index 0000000000000000000000000000000000000000..4af710e144b70933d750c22edfe484c1
 +    protected abstract Type createBaseMapType(final ParameterizedType type);
 +
 +    public static final class SomethingToPrimitive<M extends Map<?, ?>> extends FastutilMapSerializer<M> {
++
 +        private final Type primitiveType;
 +
 +        public SomethingToPrimitive(final Function<Map, ? extends M> factory, final Type primitiveType) {
@@ -2862,6 +2875,7 @@ index 0000000000000000000000000000000000000000..4af710e144b70933d750c22edfe484c1
 +    }
 +
 +    public static final class PrimitiveToSomething<M extends Map<?, ?>> extends FastutilMapSerializer<M> {
++
 +        private final Type primitiveType;
 +
 +        public PrimitiveToSomething(final Function<Map, ? extends M> factory, final Type primitiveType) {
@@ -2872,6 +2886,18 @@ index 0000000000000000000000000000000000000000..4af710e144b70933d750c22edfe484c1
 +        @Override
 +        protected Type createBaseMapType(final ParameterizedType type) {
 +            return TypeFactory.parameterizedClass(Map.class, GenericTypeReflector.box(this.primitiveType), type.getActualTypeArguments()[0]);
++        }
++    }
++
++    public static final class SomethingToSomething<M extends Map<?, ?>> extends FastutilMapSerializer<M> {
++
++        public SomethingToSomething(final Function<? super Map, ? extends M> factory) {
++            super(factory);
++        }
++
++        @Override
++        protected Type createBaseMapType(final ParameterizedType type) {
++            return TypeFactory.parameterizedClass(Map.class, type.getActualTypeArguments()[0], type.getActualTypeArguments()[1]);
 +        }
 +    }
 +}
