@@ -1,0 +1,95 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Warrior <50800980+Warriorrrr@users.noreply.github.com>
+Date: Wed, 13 Sep 2023 05:46:10 +0200
+Subject: [PATCH] Call BlockRedstoneEvent properly
+
+Call BlockRedstoneEvents for lecterns
+
+Fix BlockRedstoneEvent for tripwire hooks
+Previously the event was called for any state update even non redstone related.
+Now only two events are always at least fired (one per hook), more when
+the events are cancelled.
+
+Co-authored-by: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/world/level/block/LecternBlock.java b/src/main/java/net/minecraft/world/level/block/LecternBlock.java
+index 751ff3d51f8ae57f847c3acf7a7cd663a6ae1c68..405923b0e058e4a179d1aac54b6b233899e3b33e 100644
+--- a/src/main/java/net/minecraft/world/level/block/LecternBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/LecternBlock.java
+@@ -179,6 +179,16 @@ public class LecternBlock extends BaseEntityBlock {
+     }
+ 
+     private static void changePowered(Level world, BlockPos pos, BlockState state, boolean powered) {
++        // Paper start - Call BlockRedstoneEvent properly
++        final int currentRedstoneLevel = state.getValue(LecternBlock.POWERED) ? 15 : 0, targetRedstoneLevel = powered ? 15 : 0;
++        if (currentRedstoneLevel != targetRedstoneLevel) {
++            final org.bukkit.event.block.BlockRedstoneEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(world, pos, currentRedstoneLevel, targetRedstoneLevel);
++
++            if (event.getNewCurrent() != targetRedstoneLevel) {
++                return;
++            }
++        }
++        // Paper end - Call BlockRedstoneEvent properly
+         world.setBlock(pos, (BlockState) state.setValue(LecternBlock.POWERED, powered), 3);
+         LecternBlock.updateBelow(world, pos, state);
+     }
+diff --git a/src/main/java/net/minecraft/world/level/block/TripWireHookBlock.java b/src/main/java/net/minecraft/world/level/block/TripWireHookBlock.java
+index 8614fad5b3df7a6030384b108b1689bf6b9f1209..a6991039bc76cceee572b925a1f3e8e18dd27b38 100644
+--- a/src/main/java/net/minecraft/world/level/block/TripWireHookBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/TripWireHookBlock.java
+@@ -169,24 +169,44 @@ public class TripWireHookBlock extends Block {
+             flag5 &= flag4;
+             BlockState iblockdata3 = (BlockState) ((BlockState) block.defaultBlockState().trySetValue(TripWireHookBlock.ATTACHED, flag4)).trySetValue(TripWireHookBlock.POWERED, flag5);
+ 
++            boolean cancelledEmitterHook = false, cancelledReceiverHook = false; // Paper - Call BlockRedstoneEvent properly
++            boolean wasPowered = flag3, willBePowered = flag5; // Paper - OBFHELPER
+             if (j > 0) {
+                 blockposition1 = pos.relative(enumdirection, j);
++                // Paper start - Call BlockRedstoneEvent properly
++                if (wasPowered != willBePowered) {
++                    int newCurrent = willBePowered ? 15 : 0;
++                    BlockRedstoneEvent redstoneEvent = new BlockRedstoneEvent(CraftBlock.at(world, blockposition1), wasPowered ? 15 : 0, newCurrent);
++                    world.getCraftServer().getPluginManager().callEvent(redstoneEvent);
++                    if (redstoneEvent.getNewCurrent() != newCurrent) {
++                        cancelledReceiverHook = true;
++                    }
++                }
++                if (!cancelledReceiverHook) { // always trigger two events even when the first hook current change is cancelled
++                // Paper end - Call BlockRedstoneEvent properly
+                 Direction enumdirection1 = enumdirection.getOpposite();
+ 
+                 world.setBlock(blockposition1, (BlockState) iblockdata3.setValue(TripWireHookBlock.FACING, enumdirection1), 3);
+                 TripWireHookBlock.notifyNeighbors(block, world, blockposition1, enumdirection1);
+                 TripWireHookBlock.emitState(world, blockposition1, flag4, flag5, flag2, flag3);
++                } // Paper - Call BlockRedstoneEvent properly
+             }
+ 
++            if (wasPowered != willBePowered) { // Paper - Call BlockRedstoneEvent properly
++            int newCurrent = willBePowered ? 15 : 0; // Paper - Call BlockRedstoneEvent properly
+             // CraftBukkit start
+-            BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(CraftBlock.at(world, pos), 15, 0);
++            BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(CraftBlock.at(world, pos), wasPowered ? 15 : 0, newCurrent); // Paper - Call BlockRedstoneEvent properly
+             world.getCraftServer().getPluginManager().callEvent(eventRedstone);
+ 
+-            if (eventRedstone.getNewCurrent() > 0) {
+-                return;
++            // Paper start - Call BlockRedstoneEvent properly
++            if (eventRedstone.getNewCurrent() != newCurrent) {
++                cancelledEmitterHook = true;
++            }
++            // Paper end - Call BlockRedstoneEvent properly
+             }
+             // CraftBukkit end
+ 
++            if (!cancelledEmitterHook) { // Paper - Call BlockRedstoneEvent properly
+             TripWireHookBlock.emitState(world, pos, flag4, flag5, flag2, flag3);
+             if (!flag) {
+                 if (world.getBlockState(pos).getBlock() == Blocks.TRIPWIRE_HOOK) // Paper - Validate tripwire hook placement before update
+@@ -195,6 +215,7 @@ public class TripWireHookBlock extends Block {
+                     TripWireHookBlock.notifyNeighbors(block, world, pos, enumdirection);
+                 }
+             }
++            } // Paper - Call BlockRedstoneEvent properly
+ 
+             if (flag2 != flag4) {
+                 for (int l = 1; l < j; ++l) {
