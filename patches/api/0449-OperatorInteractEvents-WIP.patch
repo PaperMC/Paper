@@ -1,0 +1,140 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 13 Jun 2023 23:42:01 -0700
+Subject: [PATCH] OperatorInteractEvents - WIP
+
+
+diff --git a/src/main/java/io/papermc/paper/event/player/OperatorBlockInteractEvent.java b/src/main/java/io/papermc/paper/event/player/OperatorBlockInteractEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5b68151606ad71f09f527fcc87880a0819d6657f
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/OperatorBlockInteractEvent.java
+@@ -0,0 +1,23 @@
++package io.papermc.paper.event.player;
++
++import net.kyori.adventure.text.Component;
++import org.bukkit.block.Block;
++import org.bukkit.entity.Player;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++public final class OperatorBlockInteractEvent extends OperatorInteractEvent {
++
++    private final Block block;
++
++    @ApiStatus.Internal
++    public OperatorBlockInteractEvent(final @NotNull Player player, final @NotNull Action action, final @NotNull Block block, final @Nullable Component denialMessage) {
++        super(player, action, denialMessage);
++        this.block = block;
++    }
++
++    public @NotNull Block getBlock() {
++        return this.block;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/player/OperatorEntityInteractEvent.java b/src/main/java/io/papermc/paper/event/player/OperatorEntityInteractEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b39a5eb82cb128934040972aa3c8f7cecdb7da7c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/OperatorEntityInteractEvent.java
+@@ -0,0 +1,21 @@
++package io.papermc.paper.event.player;
++
++import net.kyori.adventure.text.Component;
++import org.bukkit.entity.Entity;
++import org.bukkit.entity.Player;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++public final class OperatorEntityInteractEvent extends OperatorInteractEvent {
++
++    private final Entity target;
++
++    public OperatorEntityInteractEvent(final @NotNull Player player, final @NotNull Action action, final @NotNull Entity target, final @Nullable Component denialMessage) {
++        super(player, action, denialMessage);
++        this.target = target;
++    }
++
++    public @NotNull Entity getTarget() {
++        return this.target;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/player/OperatorInteractEvent.java b/src/main/java/io/papermc/paper/event/player/OperatorInteractEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d325e836b9e43c80ecb5c6aea7fadd3ab3a855e1
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/OperatorInteractEvent.java
+@@ -0,0 +1,72 @@
++package io.papermc.paper.event.player;
++
++import com.google.common.base.Preconditions;
++import net.kyori.adventure.text.Component;
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.player.PlayerEvent;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++public abstract sealed class OperatorInteractEvent extends PlayerEvent implements Cancellable permits OperatorBlockInteractEvent, OperatorEntityInteractEvent {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++    private final Action action;
++    private Component denialMessage;
++    private Result result = Result.DEFAULT;
++
++    @ApiStatus.Internal
++    public OperatorInteractEvent(final @NotNull Player player, final @NotNull Action action, final @Nullable Component denialMessage) {
++        super(player);
++        this.action = action;
++        this.denialMessage = denialMessage;
++    }
++
++    public @NotNull Action getAction() {
++        return this.action;
++    }
++
++    public @NotNull Result getResult() {
++        return this.result;
++    }
++
++    public void setResult(final @NotNull Result result) {
++        Preconditions.checkArgument(result != null, "result must not be null");
++        this.result = result;
++    }
++
++    public @Nullable Component denialMessage() {
++        return this.denialMessage;
++    }
++
++    public void denialMessage(final @Nullable Component denialMessage) {
++        this.denialMessage = denialMessage;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return this.result == Result.DENY;
++    }
++
++    @Override
++    public void setCancelled(final boolean cancel) {
++        this.result = cancel ? Result.DENY : Result.DEFAULT;
++    }
++
++    @Override
++    public @NotNull HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static @NotNull HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++
++    public enum Action {
++        DESTROY,
++        PLACE,
++        CHANGE
++    }
++}
