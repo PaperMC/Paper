@@ -1,0 +1,506 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 30 Mar 2023 08:34:28 -0700
+Subject: [PATCH] Fix incorrect command feedback numbers
+
+Fixes MC-122717
+
+diff --git a/src/main/java/io/papermc/paper/commands/VanillaCommandAccountant.java b/src/main/java/io/papermc/paper/commands/VanillaCommandAccountant.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6e2b92a9ba20e3bfcf4917f378abf316b940f442
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/commands/VanillaCommandAccountant.java
+@@ -0,0 +1,33 @@
++package io.papermc.paper.commands;
++
++import net.minecraft.network.chat.Component;
++import net.minecraft.world.Nameable;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++import static java.util.Objects.requireNonNull;
++
++@DefaultQualifier(NonNull.class)
++public class VanillaCommandAccountant<T> {
++
++    private @Nullable T lastTarget;
++    private int targetCount;
++
++    public void account(final T entity) {
++        this.lastTarget = entity;
++        this.targetCount++;
++    }
++
++    public T lastTarget() {
++        return requireNonNull(this.lastTarget);
++    }
++
++    public Component lastTargetDisplayName() {
++        return ((Nameable) this.lastTarget()).getDisplayName();
++    }
++
++    public int targetCount() {
++        return this.targetCount;
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/commands/AdvancementCommands.java b/src/main/java/net/minecraft/server/commands/AdvancementCommands.java
+index 7d116ff3c0cf5c30583c10853940e8897e1d9ca3..c56834331e8f1ec27a415a63fa9780de656ec322 100644
+--- a/src/main/java/net/minecraft/server/commands/AdvancementCommands.java
++++ b/src/main/java/net/minecraft/server/commands/AdvancementCommands.java
+@@ -64,8 +64,15 @@ public class AdvancementCommands {
+     private static int perform(CommandSourceStack source, Collection<ServerPlayer> targets, AdvancementCommands.Action operation, Collection<AdvancementHolder> selection) {
+         int i = 0;
+ 
++        final io.papermc.paper.commands.VanillaCommandAccountant<ServerPlayer> accountant = new io.papermc.paper.commands.VanillaCommandAccountant<>(); // Paper
+         for(ServerPlayer serverPlayer : targets) {
+-            i += operation.perform(serverPlayer, selection);
++            // Paper start
++            int op = operation.perform(serverPlayer, selection);
++            if (op > 0) {
++                accountant.account(serverPlayer);
++            }
++            i += op;
++            // Paper end
+         }
+ 
+         if (i == 0) {
+@@ -82,22 +89,22 @@ public class AdvancementCommands {
+             }
+         } else {
+             if (selection.size() == 1) {
+-                if (targets.size() == 1) {
++                if (accountant.targetCount() == 1) { // Paper
+                     source.sendSuccess(() -> {
+-                        return Component.translatable(operation.getKey() + ".one.to.one.success", Advancement.name(selection.iterator().next()), targets.iterator().next().getDisplayName());
++                        return Component.translatable(operation.getKey() + ".one.to.one.success", Advancement.name(selection.iterator().next()), accountant.lastTargetDisplayName()); // Paper
+                     }, true);
+                 } else {
+                     source.sendSuccess(() -> {
+-                        return Component.translatable(operation.getKey() + ".one.to.many.success", Advancement.name(selection.iterator().next()), targets.size());
++                        return Component.translatable(operation.getKey() + ".one.to.many.success", Advancement.name(selection.iterator().next()), accountant.targetCount()); // Paper
+                     }, true);
+                 }
+-            } else if (targets.size() == 1) {
++            } else if (accountant.targetCount() == 1) { // Paper
+                 source.sendSuccess(() -> {
+-                    return Component.translatable(operation.getKey() + ".many.to.one.success", selection.size(), targets.iterator().next().getDisplayName());
++                    return Component.translatable(operation.getKey() + ".many.to.one.success", selection.size(), accountant.lastTargetDisplayName()); // Paper
+                 }, true);
+             } else {
+                 source.sendSuccess(() -> {
+-                    return Component.translatable(operation.getKey() + ".many.to.many.success", selection.size(), targets.size());
++                    return Component.translatable(operation.getKey() + ".many.to.many.success", selection.size(), accountant.targetCount()); // Paper
+                 }, true);
+             }
+ 
+@@ -111,9 +118,11 @@ public class AdvancementCommands {
+         if (!advancement2.criteria().containsKey(criterion)) {
+             throw new CommandRuntimeException(Component.translatable("commands.advancement.criterionNotFound", Advancement.name(advancement), criterion));
+         } else {
++            final io.papermc.paper.commands.VanillaCommandAccountant<ServerPlayer> accountant = new io.papermc.paper.commands.VanillaCommandAccountant<>(); // Paper
+             for(ServerPlayer serverPlayer : targets) {
+                 if (operation.performCriterion(serverPlayer, advancement, criterion)) {
+                     ++i;
++                    accountant.account(serverPlayer); // Paper
+                 }
+             }
+ 
+@@ -124,13 +133,13 @@ public class AdvancementCommands {
+                     throw new CommandRuntimeException(Component.translatable(operation.getKey() + ".criterion.to.many.failure", criterion, Advancement.name(advancement), targets.size()));
+                 }
+             } else {
+-                if (targets.size() == 1) {
++                if (i == 1) { // Paper
+                     source.sendSuccess(() -> {
+-                        return Component.translatable(operation.getKey() + ".criterion.to.one.success", criterion, Advancement.name(advancement), targets.iterator().next().getDisplayName());
++                        return Component.translatable(operation.getKey() + ".criterion.to.one.success", criterion, Advancement.name(advancement), accountant.lastTargetDisplayName()); // Paper
+                     }, true);
+                 } else {
+                     source.sendSuccess(() -> {
+-                        return Component.translatable(operation.getKey() + ".criterion.to.many.success", criterion, Advancement.name(advancement), targets.size());
++                        return Component.translatable(operation.getKey() + ".criterion.to.many.success", criterion, Advancement.name(advancement), accountant.targetCount()); // Paper
+                     }, true);
+                 }
+ 
+diff --git a/src/main/java/net/minecraft/server/commands/ClearInventoryCommands.java b/src/main/java/net/minecraft/server/commands/ClearInventoryCommands.java
+index 90c061eaf40ed756dcd56bb877a617a219ea90e1..2c1242c94289c8a8f24ea20f5722d5d453a5fd67 100644
+--- a/src/main/java/net/minecraft/server/commands/ClearInventoryCommands.java
++++ b/src/main/java/net/minecraft/server/commands/ClearInventoryCommands.java
+@@ -45,8 +45,15 @@ public class ClearInventoryCommands {
+     private static int clearInventory(CommandSourceStack source, Collection<ServerPlayer> targets, Predicate<ItemStack> item, int maxCount) throws CommandSyntaxException {
+         int i = 0;
+ 
++        final io.papermc.paper.commands.VanillaCommandAccountant<ServerPlayer> accountant = new io.papermc.paper.commands.VanillaCommandAccountant<>(); // Paper
+         for(ServerPlayer serverPlayer : targets) {
+-            i += serverPlayer.getInventory().clearOrCountMatchingItems(item, maxCount, serverPlayer.inventoryMenu.getCraftSlots());
++            // Paper start
++            int op = serverPlayer.getInventory().clearOrCountMatchingItems(item, maxCount, serverPlayer.inventoryMenu.getCraftSlots());
++            if (op > 0) {
++                accountant.account(serverPlayer);
++            }
++            i += op;
++            // Paper end
+             serverPlayer.containerMenu.broadcastChanges();
+             serverPlayer.inventoryMenu.slotsChanged(serverPlayer.getInventory());
+         }
+@@ -60,22 +67,22 @@ public class ClearInventoryCommands {
+         } else {
+             int j = i;
+             if (maxCount == 0) {
+-                if (targets.size() == 1) {
++                if (accountant.targetCount() == 1) { // Paper
+                     source.sendSuccess(() -> {
+-                        return Component.translatable("commands.clear.test.single", j, targets.iterator().next().getDisplayName());
++                        return Component.translatable("commands.clear.test.single", j, accountant.lastTargetDisplayName()); // Paper
+                     }, true);
+                 } else {
+                     source.sendSuccess(() -> {
+-                        return Component.translatable("commands.clear.test.multiple", j, targets.size());
++                        return Component.translatable("commands.clear.test.multiple", j, accountant.targetCount()); // Paper
+                     }, true);
+                 }
+-            } else if (targets.size() == 1) {
++            } else if (accountant.targetCount() == 1) { // Paper
+                 source.sendSuccess(() -> {
+-                    return Component.translatable("commands.clear.success.single", j, targets.iterator().next().getDisplayName());
++                    return Component.translatable("commands.clear.success.single", j, accountant.lastTargetDisplayName()); // Paper
+                 }, true);
+             } else {
+                 source.sendSuccess(() -> {
+-                    return Component.translatable("commands.clear.success.multiple", j, targets.size());
++                    return Component.translatable("commands.clear.success.multiple", j, accountant.targetCount()); // Paper
+                 }, true);
+             }
+ 
+diff --git a/src/main/java/net/minecraft/server/commands/EffectCommands.java b/src/main/java/net/minecraft/server/commands/EffectCommands.java
+index ebe50e2e69d346ce9266ed3f180d91ceb58008bd..64d316a558d1249b429ff6f171682d838006a4fc 100644
+--- a/src/main/java/net/minecraft/server/commands/EffectCommands.java
++++ b/src/main/java/net/minecraft/server/commands/EffectCommands.java
+@@ -78,6 +78,7 @@ public class EffectCommands {
+ 
+         Iterator iterator = targets.iterator();
+ 
++        final io.papermc.paper.commands.VanillaCommandAccountant<Entity> accountant = new io.papermc.paper.commands.VanillaCommandAccountant<>(); // Paper
+         while (iterator.hasNext()) {
+             Entity entity = (Entity) iterator.next();
+ 
+@@ -86,6 +87,7 @@ public class EffectCommands {
+ 
+                 if (((LivingEntity) entity).addEffect(mobeffect, source.getEntity(), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.COMMAND)) { // CraftBukkit
+                     ++j;
++                    accountant.account(entity); // paper
+                 }
+             }
+         }
+@@ -93,13 +95,13 @@ public class EffectCommands {
+         if (j == 0) {
+             throw EffectCommands.ERROR_GIVE_FAILED.create();
+         } else {
+-            if (targets.size() == 1) {
++            if (j == 1) { // Paper
+                 source.sendSuccess(() -> {
+-                    return Component.translatable("commands.effect.give.success.single", mobeffectlist.getDisplayName(), ((Entity) targets.iterator().next()).getDisplayName(), k / 20);
++                    return Component.translatable("commands.effect.give.success.single", mobeffectlist.getDisplayName(), accountant.lastTargetDisplayName(), k / 20); // Paper
+                 }, true);
+             } else {
+                 source.sendSuccess(() -> {
+-                    return Component.translatable("commands.effect.give.success.multiple", mobeffectlist.getDisplayName(), targets.size(), k / 20);
++                    return Component.translatable("commands.effect.give.success.multiple", mobeffectlist.getDisplayName(), accountant.targetCount(), k / 20); // Paper
+                 }, true);
+             }
+ 
+@@ -111,24 +113,26 @@ public class EffectCommands {
+         int i = 0;
+         Iterator iterator = targets.iterator();
+ 
++        final io.papermc.paper.commands.VanillaCommandAccountant<Entity> accountant = new io.papermc.paper.commands.VanillaCommandAccountant<>(); // Paper
+         while (iterator.hasNext()) {
+             Entity entity = (Entity) iterator.next();
+ 
+             if (entity instanceof LivingEntity && ((LivingEntity) entity).removeAllEffects(org.bukkit.event.entity.EntityPotionEffectEvent.Cause.COMMAND)) { // CraftBukkit
+                 ++i;
++                accountant.account(entity); // Paper
+             }
+         }
+ 
+         if (i == 0) {
+             throw EffectCommands.ERROR_CLEAR_EVERYTHING_FAILED.create();
+         } else {
+-            if (targets.size() == 1) {
++            if (i == 1) { // Paper
+                 source.sendSuccess(() -> {
+-                    return Component.translatable("commands.effect.clear.everything.success.single", ((Entity) targets.iterator().next()).getDisplayName());
++                    return Component.translatable("commands.effect.clear.everything.success.single", accountant.lastTargetDisplayName()); // Paper
+                 }, true);
+             } else {
+                 source.sendSuccess(() -> {
+-                    return Component.translatable("commands.effect.clear.everything.success.multiple", targets.size());
++                    return Component.translatable("commands.effect.clear.everything.success.multiple", accountant.targetCount()); // Paper
+                 }, true);
+             }
+ 
+@@ -141,24 +145,26 @@ public class EffectCommands {
+         int i = 0;
+         Iterator iterator = targets.iterator();
+ 
++        final io.papermc.paper.commands.VanillaCommandAccountant<Entity> accountant = new io.papermc.paper.commands.VanillaCommandAccountant<>(); // Paper
+         while (iterator.hasNext()) {
+             Entity entity = (Entity) iterator.next();
+ 
+             if (entity instanceof LivingEntity && ((LivingEntity) entity).removeEffect(mobeffectlist, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.COMMAND)) { // CraftBukkit
+                 ++i;
++                accountant.account(entity); // Paper
+             }
+         }
+ 
+         if (i == 0) {
+             throw EffectCommands.ERROR_CLEAR_SPECIFIC_FAILED.create();
+         } else {
+-            if (targets.size() == 1) {
++            if (i == 1) { // Paper
+                 source.sendSuccess(() -> {
+-                    return Component.translatable("commands.effect.clear.specific.success.single", mobeffectlist.getDisplayName(), ((Entity) targets.iterator().next()).getDisplayName());
++                    return Component.translatable("commands.effect.clear.specific.success.single", mobeffectlist.getDisplayName(), accountant.lastTargetDisplayName()); // Paper
+                 }, true);
+             } else {
+                 source.sendSuccess(() -> {
+-                    return Component.translatable("commands.effect.clear.specific.success.multiple", mobeffectlist.getDisplayName(), targets.size());
++                    return Component.translatable("commands.effect.clear.specific.success.multiple", mobeffectlist.getDisplayName(), accountant.targetCount()); // Paper
+                 }, true);
+             }
+ 
+diff --git a/src/main/java/net/minecraft/server/commands/EnchantCommand.java b/src/main/java/net/minecraft/server/commands/EnchantCommand.java
+index 664cbce2e06fcb95d3d3d6c5302fc9119f938925..385603347da668c18fe6a85a40aed758bad87350 100644
+--- a/src/main/java/net/minecraft/server/commands/EnchantCommand.java
++++ b/src/main/java/net/minecraft/server/commands/EnchantCommand.java
+@@ -53,6 +53,7 @@ public class EnchantCommand {
+         } else {
+             int i = 0;
+ 
++            final io.papermc.paper.commands.VanillaCommandAccountant<Entity> accountant = new io.papermc.paper.commands.VanillaCommandAccountant<>(); // Paper
+             for(Entity entity : targets) {
+                 if (entity instanceof LivingEntity) {
+                     LivingEntity livingEntity = (LivingEntity)entity;
+@@ -61,6 +62,7 @@ public class EnchantCommand {
+                         if (enchantment2.canEnchant(itemStack) && EnchantmentHelper.isEnchantmentCompatible(EnchantmentHelper.getEnchantments(itemStack).keySet(), enchantment2)) {
+                             itemStack.enchant(enchantment2, level);
+                             ++i;
++                            accountant.account(entity); // Paper
+                         } else if (targets.size() == 1) {
+                             throw ERROR_INCOMPATIBLE.create(itemStack.getItem().getName(itemStack).getString());
+                         }
+@@ -75,13 +77,13 @@ public class EnchantCommand {
+             if (i == 0) {
+                 throw ERROR_NOTHING_HAPPENED.create();
+             } else {
+-                if (targets.size() == 1) {
++                if (i == 1) { // Paper
+                     source.sendSuccess(() -> {
+-                        return Component.translatable("commands.enchant.success.single", enchantment2.getFullname(level), targets.iterator().next().getDisplayName());
++                        return Component.translatable("commands.enchant.success.single", enchantment2.getFullname(level), accountant.lastTargetDisplayName()); // Paper
+                     }, true);
+                 } else {
+                     source.sendSuccess(() -> {
+-                        return Component.translatable("commands.enchant.success.multiple", enchantment2.getFullname(level), targets.size());
++                        return Component.translatable("commands.enchant.success.multiple", enchantment2.getFullname(level), accountant.targetCount()); // Paper
+                     }, true);
+                 }
+ 
+diff --git a/src/main/java/net/minecraft/server/commands/PlaySoundCommand.java b/src/main/java/net/minecraft/server/commands/PlaySoundCommand.java
+index 85cfdcc361136b79dc9fa3abe840f1a15c190ab1..5eac5df4355eb4d8a462fa430b40ce4787c89100 100644
+--- a/src/main/java/net/minecraft/server/commands/PlaySoundCommand.java
++++ b/src/main/java/net/minecraft/server/commands/PlaySoundCommand.java
+@@ -58,6 +58,7 @@ public class PlaySoundCommand {
+         int i = 0;
+         long l = source.getLevel().getRandom().nextLong();
+ 
++        final io.papermc.paper.commands.VanillaCommandAccountant<ServerPlayer> accountant = new io.papermc.paper.commands.VanillaCommandAccountant<>(); // Paper
+         for(ServerPlayer serverPlayer : targets) {
+             double e = pos.x - serverPlayer.getX();
+             double f = pos.y - serverPlayer.getY();
+@@ -77,18 +78,19 @@ public class PlaySoundCommand {
+ 
+             serverPlayer.connection.send(new ClientboundSoundPacket(holder, category, vec3.x(), vec3.y(), vec3.z(), j, pitch, l));
+             ++i;
++            accountant.account(serverPlayer); // Paper
+         }
+ 
+         if (i == 0) {
+             throw ERROR_TOO_FAR.create();
+         } else {
+-            if (targets.size() == 1) {
++            if (i == 1) { // Paper
+                 source.sendSuccess(() -> {
+-                    return Component.translatable("commands.playsound.success.single", sound, targets.iterator().next().getDisplayName());
++                    return Component.translatable("commands.playsound.success.single", sound, accountant.lastTargetDisplayName()); // Paper
+                 }, true);
+             } else {
+                 source.sendSuccess(() -> {
+-                    return Component.translatable("commands.playsound.success.multiple", sound, targets.size());
++                    return Component.translatable("commands.playsound.success.multiple", sound, accountant.targetCount()); // Paper
+                 }, true);
+             }
+ 
+diff --git a/src/main/java/net/minecraft/server/commands/RecipeCommand.java b/src/main/java/net/minecraft/server/commands/RecipeCommand.java
+index c5c690b044ff799d9909fce6856b3bf133f6ef04..9da7ffffa4d27868880d5b448126d2f1506896ed 100644
+--- a/src/main/java/net/minecraft/server/commands/RecipeCommand.java
++++ b/src/main/java/net/minecraft/server/commands/RecipeCommand.java
+@@ -35,20 +35,27 @@ public class RecipeCommand {
+     private static int giveRecipes(CommandSourceStack source, Collection<ServerPlayer> targets, Collection<RecipeHolder<?>> recipes) throws CommandSyntaxException {
+         int i = 0;
+ 
++        final io.papermc.paper.commands.VanillaCommandAccountant<ServerPlayer> accountant = new io.papermc.paper.commands.VanillaCommandAccountant<>(); // Paper
+         for(ServerPlayer serverPlayer : targets) {
+-            i += serverPlayer.awardRecipes(recipes);
++            // Paper start
++            int op = serverPlayer.awardRecipes(recipes);
++            if (op > 0) {
++                accountant.account(serverPlayer);
++            }
++            i += op;
++            // Paper end
+         }
+ 
+         if (i == 0) {
+             throw ERROR_GIVE_FAILED.create();
+         } else {
+-            if (targets.size() == 1) {
++            if (accountant.targetCount() == 1) { // Paper
+                 source.sendSuccess(() -> {
+-                    return Component.translatable("commands.recipe.give.success.single", recipes.size(), targets.iterator().next().getDisplayName());
++                    return Component.translatable("commands.recipe.give.success.single", recipes.size(), accountant.lastTargetDisplayName()); // Paper
+                 }, true);
+             } else {
+                 source.sendSuccess(() -> {
+-                    return Component.translatable("commands.recipe.give.success.multiple", recipes.size(), targets.size());
++                    return Component.translatable("commands.recipe.give.success.multiple", recipes.size(), accountant.targetCount()); // Paper
+                 }, true);
+             }
+ 
+@@ -59,20 +66,27 @@ public class RecipeCommand {
+     private static int takeRecipes(CommandSourceStack source, Collection<ServerPlayer> targets, Collection<RecipeHolder<?>> recipes) throws CommandSyntaxException {
+         int i = 0;
+ 
++        final io.papermc.paper.commands.VanillaCommandAccountant<ServerPlayer> accountant = new io.papermc.paper.commands.VanillaCommandAccountant<>(); // Paper
+         for(ServerPlayer serverPlayer : targets) {
+-            i += serverPlayer.resetRecipes(recipes);
++            // Paper start
++            int op = serverPlayer.resetRecipes(recipes);
++            if (op > 0) {
++                accountant.account(serverPlayer);
++            }
++            i += op;
++            // Paper end
+         }
+ 
+         if (i == 0) {
+             throw ERROR_TAKE_FAILED.create();
+         } else {
+-            if (targets.size() == 1) {
++            if (accountant.targetCount() == 1) { // Paper
+                 source.sendSuccess(() -> {
+-                    return Component.translatable("commands.recipe.take.success.single", recipes.size(), targets.iterator().next().getDisplayName());
++                    return Component.translatable("commands.recipe.take.success.single", recipes.size(), accountant.lastTargetDisplayName()); // Paper
+                 }, true);
+             } else {
+                 source.sendSuccess(() -> {
+-                    return Component.translatable("commands.recipe.take.success.multiple", recipes.size(), targets.size());
++                    return Component.translatable("commands.recipe.take.success.multiple", recipes.size(), accountant.targetCount()); // Paper
+                 }, true);
+             }
+ 
+diff --git a/src/main/java/net/minecraft/server/commands/ScoreboardCommand.java b/src/main/java/net/minecraft/server/commands/ScoreboardCommand.java
+index be8f7a2a3f19181ed1daa45048f26a671e170b93..79607f746d6df06ab369f7d8b7d9ef1cf7d6bdaf 100644
+--- a/src/main/java/net/minecraft/server/commands/ScoreboardCommand.java
++++ b/src/main/java/net/minecraft/server/commands/ScoreboardCommand.java
+@@ -168,24 +168,26 @@ public class ScoreboardCommand {
+             Scoreboard scoreboard = source.getServer().getScoreboard();
+             int i = 0;
+ 
++            final io.papermc.paper.commands.VanillaCommandAccountant<String> accountant = new io.papermc.paper.commands.VanillaCommandAccountant<String>(); // Paper
+             for(String string : targets) {
+                 Score score = scoreboard.getOrCreatePlayerScore(string, objective);
+                 if (score.isLocked()) {
+                     score.setLocked(false);
+                     ++i;
++                    accountant.account(string); // Paper
+                 }
+             }
+ 
+             if (i == 0) {
+                 throw ERROR_TRIGGER_ALREADY_ENABLED.create();
+             } else {
+-                if (targets.size() == 1) {
++                if (accountant.targetCount() == 1) { // Paper
+                     source.sendSuccess(() -> {
+-                        return Component.translatable("commands.scoreboard.players.enable.success.single", objective.getFormattedDisplayName(), targets.iterator().next());
++                        return Component.translatable("commands.scoreboard.players.enable.success.single", objective.getFormattedDisplayName(), accountant.lastTarget()); // Paper
+                     }, true);
+                 } else {
+                     source.sendSuccess(() -> {
+-                        return Component.translatable("commands.scoreboard.players.enable.success.multiple", objective.getFormattedDisplayName(), targets.size());
++                        return Component.translatable("commands.scoreboard.players.enable.success.multiple", objective.getFormattedDisplayName(), accountant.targetCount()); // Paper
+                     }, true);
+                 }
+ 
+diff --git a/src/main/java/net/minecraft/server/commands/TagCommand.java b/src/main/java/net/minecraft/server/commands/TagCommand.java
+index 4bb8bd2e833796728d37e0f0387ea018617e9e17..ed1a6e498fc97462969ef3d2dde5a95503329099 100644
+--- a/src/main/java/net/minecraft/server/commands/TagCommand.java
++++ b/src/main/java/net/minecraft/server/commands/TagCommand.java
+@@ -46,22 +46,24 @@ public class TagCommand {
+     private static int addTag(CommandSourceStack source, Collection<? extends Entity> targets, String tag) throws CommandSyntaxException {
+         int i = 0;
+ 
++        final io.papermc.paper.commands.VanillaCommandAccountant<Entity> accountant = new io.papermc.paper.commands.VanillaCommandAccountant<>(); // Paper
+         for(Entity entity : targets) {
+             if (entity.addTag(tag)) {
+                 ++i;
++                accountant.account(entity); // Paper
+             }
+         }
+ 
+         if (i == 0) {
+             throw ERROR_ADD_FAILED.create();
+         } else {
+-            if (targets.size() == 1) {
++            if (i == 1) { // Paper
+                 source.sendSuccess(() -> {
+-                    return Component.translatable("commands.tag.add.success.single", tag, targets.iterator().next().getDisplayName());
++                    return Component.translatable("commands.tag.add.success.single", tag, accountant.lastTargetDisplayName()); // Paper
+                 }, true);
+             } else {
+                 source.sendSuccess(() -> {
+-                    return Component.translatable("commands.tag.add.success.multiple", tag, targets.size());
++                    return Component.translatable("commands.tag.add.success.multiple", tag, accountant.targetCount()); // Paper
+                 }, true);
+             }
+ 
+@@ -72,22 +74,24 @@ public class TagCommand {
+     private static int removeTag(CommandSourceStack source, Collection<? extends Entity> targets, String tag) throws CommandSyntaxException {
+         int i = 0;
+ 
++        final io.papermc.paper.commands.VanillaCommandAccountant<Entity> accountant = new io.papermc.paper.commands.VanillaCommandAccountant<>(); // Paper
+         for(Entity entity : targets) {
+             if (entity.removeTag(tag)) {
+                 ++i;
++                accountant.account(entity); // Paper
+             }
+         }
+ 
+         if (i == 0) {
+             throw ERROR_REMOVE_FAILED.create();
+         } else {
+-            if (targets.size() == 1) {
++            if (i == 1) { // Paper
+                 source.sendSuccess(() -> {
+-                    return Component.translatable("commands.tag.remove.success.single", tag, targets.iterator().next().getDisplayName());
++                    return Component.translatable("commands.tag.remove.success.single", tag, accountant.lastTargetDisplayName()); // Paper
+                 }, true);
+             } else {
+                 source.sendSuccess(() -> {
+-                    return Component.translatable("commands.tag.remove.success.multiple", tag, targets.size());
++                    return Component.translatable("commands.tag.remove.success.multiple", tag, accountant.targetCount()); // Paper
+                 }, true);
+             }
+ 
