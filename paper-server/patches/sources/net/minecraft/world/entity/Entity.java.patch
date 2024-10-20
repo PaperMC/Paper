@@ -261,6 +261,15 @@
          this.remainingFireTicks = -this.getFireImmuneTicks();
          this.fluidHeight = new Object2DoubleArrayMap(2);
          this.fluidOnEyes = new HashSet();
+@@ -270,7 +477,7 @@
+         this.packetPositionCodec = new VecDeltaCodec();
+         this.uuid = Mth.createInsecureUUID(this.random);
+         this.stringUUID = this.uuid.toString();
+-        this.tags = Sets.newHashSet();
++        this.tags = new io.papermc.paper.util.SizeLimitedSet<>(new it.unimi.dsi.fastutil.objects.ObjectOpenHashSet<>(), MAX_ENTITY_TAG_COUNT); // Paper - fully limit tag size - replace set impl
+         this.pistonDeltas = new double[]{0.0D, 0.0D, 0.0D};
+         this.mainSupportingBlockPos = Optional.empty();
+         this.onGroundNoBlocks = false;
 @@ -284,6 +491,13 @@
          this.position = Vec3.ZERO;
          this.blockPosition = BlockPos.ZERO;
@@ -284,7 +293,16 @@
          datawatcher_a.define(Entity.DATA_TICKS_FROZEN, 0);
          this.defineSynchedData(datawatcher_a);
          this.entityData = datawatcher_a.build();
-@@ -362,12 +576,18 @@
+@@ -354,7 +568,7 @@
+     }
+ 
+     public boolean addTag(String tag) {
+-        return this.tags.size() >= 1024 ? false : this.tags.add(tag);
++        return this.tags.add(tag); // Paper - fully limit tag size - replace set impl
+     }
+ 
+     public boolean removeTag(String tag) {
+@@ -362,20 +576,36 @@
      }
  
      public void kill(ServerLevel world) {
@@ -297,15 +315,16 @@
 -        this.remove(Entity.RemovalReason.DISCARDED);
 +        // CraftBukkit start - add Bukkit remove cause
 +        this.discard(null);
-+    }
-+
+     }
+ 
 +    public final void discard(EntityRemoveEvent.Cause cause) {
 +        this.remove(Entity.RemovalReason.DISCARDED, cause);
 +        // CraftBukkit end
-     }
- 
++    }
++
      protected abstract void defineSynchedData(SynchedEntityData.Builder builder);
-@@ -376,6 +596,16 @@
+ 
+     public SynchedEntityData getEntityData() {
          return this.entityData;
      }
  
@@ -950,14 +969,14 @@
 +            // Spigot start
 +            if (this instanceof net.minecraft.world.entity.LivingEntity) {
 +                this.tickCount = nbt.getInt("Spigot.ticksLived");
-+            }
+             }
 +            // Spigot end
 +            this.persist = !nbt.contains("Bukkit.persist") || nbt.getBoolean("Bukkit.persist");
 +            this.visibleByDefault = !nbt.contains("Bukkit.visibleByDefault") || nbt.getBoolean("Bukkit.visibleByDefault");
 +            // SPIGOT-6907: re-implement LivingEntity#setMaximumAir()
 +            if (nbt.contains("Bukkit.MaxAirSupply")) {
 +                this.maxAirTicks = nbt.getInt("Bukkit.MaxAirSupply");
-             }
++            }
 +            // CraftBukkit end
 +
 +            // CraftBukkit start
@@ -1364,15 +1383,14 @@
  
      public void thunderHit(ServerLevel world, LightningBolt lightning) {
          this.setRemainingFireTicks(this.remainingFireTicks + 1);
--        if (this.remainingFireTicks == 0) {
--            this.igniteForSeconds(8.0F);
 +        // CraftBukkit start
 +        final org.bukkit.entity.Entity thisBukkitEntity = this.getBukkitEntity();
 +        final org.bukkit.entity.Entity stormBukkitEntity = lightning.getBukkitEntity();
 +        final PluginManager pluginManager = Bukkit.getPluginManager();
 +        // CraftBukkit end
 +
-+        if (this.remainingFireTicks == 0) {
+         if (this.remainingFireTicks == 0) {
+-            this.igniteForSeconds(8.0F);
 +            // CraftBukkit start - Call a combust event when lightning strikes
 +            EntityCombustByEntityEvent entityCombustEvent = new EntityCombustByEntityEvent(stormBukkitEntity, thisBukkitEntity, 8.0F);
 +            pluginManager.callEvent(entityCombustEvent);
@@ -1749,10 +1767,11 @@
          return new Vec3(this.getX(), this.getBoundingBox().maxY, this.getZ());
      }
  
-@@ -3489,8 +4380,37 @@
+@@ -3488,9 +4379,38 @@
+     public int getFireImmuneTicks() {
          return 1;
      }
- 
++
 +    // CraftBukkit start
 +    private final CommandSource commandSource = new CommandSource() {
 +
@@ -1764,7 +1783,7 @@
 +        public CommandSender getBukkitSender(CommandSourceStack wrapper) {
 +            return Entity.this.getBukkitEntity();
 +        }
-+
+ 
 +        @Override
 +        public boolean acceptsSuccess() {
 +            return ((ServerLevel) Entity.this.level()).getGameRules().getBoolean(GameRules.RULE_SENDCOMMANDFEEDBACK);
