@@ -9,7 +9,7 @@ public net.minecraft.server.packs.VanillaPackResourcesBuilder safeGetPath(Ljava/
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 9ea079d14a92367629dc8fb30d1be043c9290964..f276414e9e81abf8f1f80991ebd5ab43472e07b1 100644
+index 82b298d454dee6a6d996aa7822dd745e70a8da74..ef88afa5fe914ae3fef9ffb1a971dabf568f75f3 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -8,9 +8,7 @@ plugins {
@@ -20,10 +20,10 @@ index 9ea079d14a92367629dc8fb30d1be043c9290964..f276414e9e81abf8f1f80991ebd5ab43
 -        exclude(group = "org.apache.logging.log4j", module = "log4j-api")
 -    }
 +    implementation("org.apache.logging.log4j:log4j-iostreams:2.22.1") // Paper - remove exclusion
-     implementation("org.ow2.asm:asm-commons:9.7")
+     implementation("org.ow2.asm:asm-commons:9.7.1")
      implementation("commons-lang:commons-lang:2.6")
      runtimeOnly("org.xerial:sqlite-jdbc:3.46.0.0")
-@@ -38,6 +36,7 @@ tasks.jar {
+@@ -39,6 +37,7 @@ tasks.jar {
          val gitHash = git("rev-parse", "--short=7", "HEAD").getText().trim()
          val implementationVersion = System.getenv("BUILD_NUMBER") ?: "\"$gitHash\""
          val date = git("show", "-s", "--format=%ci", gitHash).getText().trim() // Paper
@@ -31,7 +31,7 @@ index 9ea079d14a92367629dc8fb30d1be043c9290964..f276414e9e81abf8f1f80991ebd5ab43
          attributes(
              "Main-Class" to "org.bukkit.craftbukkit.Main",
              "Implementation-Title" to "CraftBukkit",
-@@ -46,6 +45,9 @@ tasks.jar {
+@@ -47,6 +46,9 @@ tasks.jar {
              "Specification-Title" to "Bukkit",
              "Specification-Version" to project.version,
              "Specification-Vendor" to "Bukkit Team",
@@ -41,7 +41,7 @@ index 9ea079d14a92367629dc8fb30d1be043c9290964..f276414e9e81abf8f1f80991ebd5ab43
          )
          for (tld in setOf("net", "com", "org")) {
              attributes("$tld/bukkit", "Sealed" to true)
-@@ -58,6 +60,17 @@ publishing {
+@@ -59,6 +61,17 @@ publishing {
      }
  }
  
@@ -57,9 +57,9 @@ index 9ea079d14a92367629dc8fb30d1be043c9290964..f276414e9e81abf8f1f80991ebd5ab43
 +// Paper end
 +
  tasks.test {
-     exclude("org/bukkit/craftbukkit/inventory/ItemStack*Test.class")
-     useJUnitPlatform()
-@@ -123,4 +136,5 @@ tasks.registerRunTask("runReobf") {
+     include("**/**TestSuite.class")
+     workingDir = temporaryDir
+@@ -128,4 +141,5 @@ tasks.registerRunTask("runReobf") {
  tasks.registerRunTask("runDev") {
      description = "Spin up a non-relocated Mojang-mapped test server"
      classpath(sourceSets.main.map { it.runtimeClasspath })
@@ -131,7 +131,7 @@ index feca36209fd2405fab70f564f63e627b8b78ac18..396ec10a76bdadbf5be2f0e15e88eed4
  
      public static PackRepository createPackRepository(Path dataPacksPath, DirectoryValidator symlinkFinder) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 9bae4835882a7c1b5a623d57330c36cc61b9b6d1..273a6658deacbf00f6cc498cf3fcd20d144bd9e4 100644
+index dd64f5c16560d2ce6255c8319ddd0f5157237f0f..4566237fa1d49a559b2df806f9a318be46a6eade 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -199,7 +199,7 @@ public class Main {
@@ -142,7 +142,7 @@ index 9bae4835882a7c1b5a623d57330c36cc61b9b6d1..273a6658deacbf00f6cc498cf3fcd20d
 +                    Date buildDate = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").parse(Main.class.getPackage().getImplementationVendor()); // Paper
  
                      Calendar deadline = Calendar.getInstance();
-                     deadline.add(Calendar.DAY_OF_YEAR, -14);
+                     deadline.add(Calendar.DAY_OF_YEAR, -28);
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java b/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
 index 93046379d0cefd5d3236fc59e698809acdc18f80..774556a62eb240da42e84db4502e2ed43495be17 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
@@ -171,15 +171,15 @@ index 0000000000000000000000000000000000000000..288fbe68c6053f40e72f0feedef0ae0f
 +        "pack_format": 41
 +    }
 +}
-diff --git a/src/test/java/org/bukkit/support/AbstractTestingBase.java b/src/test/java/org/bukkit/support/AbstractTestingBase.java
-index 1bdf0b2b8f8e6dace403695fece80ebb3dc9e039..544307fe34cbcfa286a7d7b30900ebea127d189e 100644
---- a/src/test/java/org/bukkit/support/AbstractTestingBase.java
-+++ b/src/test/java/org/bukkit/support/AbstractTestingBase.java
-@@ -43,6 +43,7 @@ public abstract class AbstractTestingBase {
-     public static final Registry<Biome> BIOMES;
+diff --git a/src/test/java/org/bukkit/support/RegistryHelper.java b/src/test/java/org/bukkit/support/RegistryHelper.java
+index e5dbcdcbd4187c724c3c6a3b8141a3796710c7a8..73645ea2e5c17e973ed3b888aab56f733f9c87a3 100644
+--- a/src/test/java/org/bukkit/support/RegistryHelper.java
++++ b/src/test/java/org/bukkit/support/RegistryHelper.java
+@@ -58,6 +58,7 @@ public final class RegistryHelper {
+     }
  
-     static {
-+        System.setProperty("Paper.pushPaperAssetsRoot", "true"); // Paper
+     public static void setup(FeatureFlagSet featureFlagSet) {
++        System.setProperty("Paper.pushPaperAssetsRoot", "true"); // Paper - build system changes - push asset root
          SharedConstants.tryDetectVersion();
          Bootstrap.bootStrap();
-         // Populate available packs
+ 

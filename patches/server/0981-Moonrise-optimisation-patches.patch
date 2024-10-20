@@ -22685,7 +22685,7 @@ index 0761d5bc5f2813bb4a9f664ac7a05b9744d0a778..7d2896918ff5fed37e5de5a22c37b0c7
      }
  
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 9a009a688c02e990723917766c51e1c0e71e338d..4db96543e2072e47040bb25a9d97ea6a69c4a43d 100644
+index 43513325b7052d388a63d63bd3a4edff48cf23c2..4db96543e2072e47040bb25a9d97ea6a69c4a43d 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -32,46 +32,125 @@ import net.minecraft.world.level.lighting.LevelLightEngine;
@@ -22960,7 +22960,7 @@ index 9a009a688c02e990723917766c51e1c0e71e338d..4db96543e2072e47040bb25a9d97ea6a
  
                  for (int i = 0; i < this.changedBlocksPerSection.length; ++i) {
                      ShortSet shortset = this.changedBlocksPerSection[i];
-@@ -269,193 +349,40 @@ public class ChunkHolder extends GenerationChunkHolder {
+@@ -269,201 +349,40 @@ public class ChunkHolder extends GenerationChunkHolder {
  
      @Override
      public int getTicketLevel() {
@@ -23006,18 +23006,19 @@ index 9a009a688c02e990723917766c51e1c0e71e338d..4db96543e2072e47040bb25a9d97ea6a
 +        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
      }
  
-     protected void updateFutures(ChunkMap chunkLoadingManager, Executor executor) {
--        FullChunkStatus fullchunkstatus = ChunkLevel.fullStatus(this.oldTicketLevel);
--        FullChunkStatus fullchunkstatus1 = ChunkLevel.fullStatus(this.ticketLevel);
--        boolean flag = fullchunkstatus.isOrAfter(FullChunkStatus.FULL);
--        boolean flag1 = fullchunkstatus1.isOrAfter(FullChunkStatus.FULL);
--        // CraftBukkit start
--        // ChunkUnloadEvent: Called before the chunk is unloaded: isChunkLoaded is still true and chunk can still be modified by plugins.
--        if (flag && !flag1) {
+-    // CraftBukkit start
+-    // ChunkUnloadEvent: Called before the chunk is unloaded: isChunkLoaded is still true and chunk can still be modified by plugins.
+-    // SPIGOT-7780: Moved out of updateFutures to call all chunk unload events before calling updateHighestAllowedStatus for all chunks
+-    protected void callEventIfUnloading(ChunkMap playerchunkmap) {
+-        FullChunkStatus oldFullChunkStatus = ChunkLevel.fullStatus(this.oldTicketLevel);
+-        FullChunkStatus newFullChunkStatus = ChunkLevel.fullStatus(this.ticketLevel);
+-        boolean oldIsFull = oldFullChunkStatus.isOrAfter(FullChunkStatus.FULL);
+-        boolean newIsFull = newFullChunkStatus.isOrAfter(FullChunkStatus.FULL);
+-        if (oldIsFull && !newIsFull) {
 -            this.getFullChunkFuture().thenAccept((either) -> {
 -                LevelChunk chunk = (LevelChunk) either.orElse(null);
 -                if (chunk != null) {
--                    chunkLoadingManager.callbackExecutor.execute(() -> {
+-                    playerchunkmap.callbackExecutor.execute(() -> {
 -                        // Minecraft will apply the chunks tick lists to the world once the chunk got loaded, and then store the tick
 -                        // lists again inside the chunk once the chunk becomes inaccessible and set the chunk's needsSaving flag.
 -                        // These actions may however happen deferred, so we manually set the needsSaving flag already here.
@@ -23032,9 +23033,16 @@ index 9a009a688c02e990723917766c51e1c0e71e338d..4db96543e2072e47040bb25a9d97ea6a
 -            });
 -
 -            // Run callback right away if the future was already done
--            chunkLoadingManager.callbackExecutor.run();
+-            playerchunkmap.callbackExecutor.run();
 -        }
--        // CraftBukkit end
+-    }
+-    // CraftBukkit end
+-
+     protected void updateFutures(ChunkMap chunkLoadingManager, Executor executor) {
+-        FullChunkStatus fullchunkstatus = ChunkLevel.fullStatus(this.oldTicketLevel);
+-        FullChunkStatus fullchunkstatus1 = ChunkLevel.fullStatus(this.ticketLevel);
+-        boolean flag = fullchunkstatus.isOrAfter(FullChunkStatus.FULL);
+-        boolean flag1 = fullchunkstatus1.isOrAfter(FullChunkStatus.FULL);
 -
 -        this.wasAccessibleSinceLastSave |= flag1;
 -        if (!flag && flag1) {
@@ -24295,7 +24303,7 @@ index 4c1cf5798209297e1e8a634b63770e917a84a63c..48b8fa3dea0244f9a0f4e0b8850b17a6
              this.serverEntity = new ServerEntity(ChunkMap.this.level, entity, j, flag, this::broadcast, this.seenBy); // CraftBukkit
              this.entity = entity;
 diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
-index 56aa26bb8d0bfbd3c799163fa620259e6455c89b..2d2596f04f5addac38037a14a02c6e0622d0c485 100644
+index 1e7b440cc2c1bf53210069b38286f67a7b97041b..2d2596f04f5addac38037a14a02c6e0622d0c485 100644
 --- a/src/main/java/net/minecraft/server/level/DistanceManager.java
 +++ b/src/main/java/net/minecraft/server/level/DistanceManager.java
 @@ -36,64 +36,58 @@ import net.minecraft.world.level.ChunkPos;
@@ -24397,7 +24405,7 @@ index 56aa26bb8d0bfbd3c799163fa620259e6455c89b..2d2596f04f5addac38037a14a02c6e06
  
      }
  
-@@ -110,86 +104,15 @@ public abstract class DistanceManager {
+@@ -110,91 +104,15 @@ public abstract class DistanceManager {
      protected abstract ChunkHolder updateChunkScheduling(long pos, int level, @Nullable ChunkHolder holder, int k);
  
      public boolean runAllUpdates(ChunkMap chunkLoadingManager) {
@@ -24412,6 +24420,11 @@ index 56aa26bb8d0bfbd3c799163fa620259e6455c89b..2d2596f04f5addac38037a14a02c6e06
 -        }
 -
 -        if (!this.chunksToUpdateFutures.isEmpty()) {
+-            // CraftBukkit start - SPIGOT-7780: Call chunk unload events before updateHighestAllowedStatus
+-            this.chunksToUpdateFutures.forEach((playerchunk) -> {
+-                playerchunk.callEventIfUnloading(chunkLoadingManager);
+-            });
+-            // CraftBukkit end
 -            this.chunksToUpdateFutures.forEach((playerchunk) -> {
 -                playerchunk.updateHighestAllowedStatus(chunkLoadingManager);
 -            });
@@ -24487,7 +24500,7 @@ index 56aa26bb8d0bfbd3c799163fa620259e6455c89b..2d2596f04f5addac38037a14a02c6e06
      }
  
      public <T> void addTicket(TicketType<T> type, ChunkPos pos, int level, T argument) {
-@@ -208,13 +131,7 @@ public abstract class DistanceManager {
+@@ -213,13 +131,7 @@ public abstract class DistanceManager {
      }
  
      public <T> boolean addRegionTicketAtDistance(TicketType<T> tickettype, ChunkPos chunkcoordintpair, int i, T t0) {
@@ -24502,7 +24515,7 @@ index 56aa26bb8d0bfbd3c799163fa620259e6455c89b..2d2596f04f5addac38037a14a02c6e06
      }
  
      public <T> void removeRegionTicket(TicketType<T> type, ChunkPos pos, int radius, T argument) {
-@@ -223,32 +140,21 @@ public abstract class DistanceManager {
+@@ -228,32 +140,21 @@ public abstract class DistanceManager {
      }
  
      public <T> boolean removeRegionTicketAtDistance(TicketType<T> tickettype, ChunkPos chunkcoordintpair, int i, T t0) {
@@ -24541,7 +24554,7 @@ index 56aa26bb8d0bfbd3c799163fa620259e6455c89b..2d2596f04f5addac38037a14a02c6e06
  
      }
  
-@@ -259,9 +165,8 @@ public abstract class DistanceManager {
+@@ -264,9 +165,8 @@ public abstract class DistanceManager {
          ((ObjectSet) this.playersPerChunk.computeIfAbsent(i, (j) -> {
              return new ObjectOpenHashSet();
          })).add(player);
@@ -24553,7 +24566,7 @@ index 56aa26bb8d0bfbd3c799163fa620259e6455c89b..2d2596f04f5addac38037a14a02c6e06
      }
  
      public void removePlayer(SectionPos pos, ServerPlayer player) {
-@@ -273,151 +178,81 @@ public abstract class DistanceManager {
+@@ -278,151 +178,81 @@ public abstract class DistanceManager {
          if (objectset != null) objectset.remove(player); // Paper - some state corruption happens here, don't crash, clean up gracefully
          if (objectset == null || objectset.isEmpty()) { // Paper
              this.playersPerChunk.remove(i);
@@ -24728,7 +24741,7 @@ index 56aa26bb8d0bfbd3c799163fa620259e6455c89b..2d2596f04f5addac38037a14a02c6e06
      private class ChunkTicketTracker extends ChunkTracker {
  
          private static final int MAX_LEVEL = ChunkLevel.MAX_LEVEL + 1;
-@@ -463,7 +298,7 @@ public abstract class DistanceManager {
+@@ -468,7 +298,7 @@ public abstract class DistanceManager {
          public int runDistanceUpdates(int distance) {
              return this.runUpdates(distance);
          }
@@ -24737,7 +24750,7 @@ index 56aa26bb8d0bfbd3c799163fa620259e6455c89b..2d2596f04f5addac38037a14a02c6e06
  
      private class FixedPlayerDistanceChunkTracker extends ChunkTracker {
  
-@@ -543,6 +378,7 @@ public abstract class DistanceManager {
+@@ -548,6 +378,7 @@ public abstract class DistanceManager {
          }
      }
  
@@ -24745,7 +24758,7 @@ index 56aa26bb8d0bfbd3c799163fa620259e6455c89b..2d2596f04f5addac38037a14a02c6e06
      private class PlayerTicketTracker extends DistanceManager.FixedPlayerDistanceChunkTracker {
  
          private int viewDistance = 0;
-@@ -637,5 +473,5 @@ public abstract class DistanceManager {
+@@ -642,5 +473,5 @@ public abstract class DistanceManager {
          private boolean haveTicketFor(int distance) {
              return distance <= this.viewDistance;
          }
@@ -32731,10 +32744,10 @@ index 69c7fe5bf5b914276a9f7a0e57ce668e569d91f9..33322b57b4c6922f4daad0f584733f0f
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index df15ce8d1da2737e339880d3d2f6731e0b92ca7f..b5644700878a3eda50a56cd2292c6ceb5d43f34e 100644
+index 35d1dcabb182b0a31727e5ddefe33955c804603b..0bad47a4d45e9ca399de98edd0956efb90d21062 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1428,7 +1428,7 @@ public final class CraftServer implements Server {
+@@ -1430,7 +1430,7 @@ public final class CraftServer implements Server {
          // Paper - Put world into worldlist before initing the world; move up
  
          this.getServer().prepareLevels(internal.getChunkSource().chunkMap.progressListener, internal);
@@ -32743,7 +32756,7 @@ index df15ce8d1da2737e339880d3d2f6731e0b92ca7f..b5644700878a3eda50a56cd2292c6ceb
  
          this.pluginManager.callEvent(new WorldLoadEvent(internal.getWorld()));
          return internal.getWorld();
-@@ -1473,7 +1473,7 @@ public final class CraftServer implements Server {
+@@ -1475,7 +1475,7 @@ public final class CraftServer implements Server {
              }
  
              handle.getChunkSource().close(save);
@@ -32752,7 +32765,7 @@ index df15ce8d1da2737e339880d3d2f6731e0b92ca7f..b5644700878a3eda50a56cd2292c6ceb
              handle.convertable.close();
          } catch (Exception ex) {
              this.getLogger().log(Level.SEVERE, null, ex);
-@@ -2509,7 +2509,7 @@ public final class CraftServer implements Server {
+@@ -2511,7 +2511,7 @@ public final class CraftServer implements Server {
  
      @Override
      public boolean isPrimaryThread() {
@@ -32762,7 +32775,7 @@ index df15ce8d1da2737e339880d3d2f6731e0b92ca7f..b5644700878a3eda50a56cd2292c6ceb
  
      // Paper start - Adventure
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index e8404d5bad60b8fa290f334d3c64ee5503e01e5c..65c77bce55121c95bf2264e9058af73bcf22fc4b 100644
+index 3e5d381c0f2cfaf46292db0819d4996edf6e8564..5ff343759cc0c5046a9d45e8f74d4e6ec63f0f91 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 @@ -461,10 +461,14 @@ public class CraftWorld extends CraftRegionAccessor implements World {
