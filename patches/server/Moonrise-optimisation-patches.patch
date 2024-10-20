@@ -23006,18 +23006,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
      }
  
-     protected void updateFutures(ChunkMap chunkLoadingManager, Executor executor) {
--        FullChunkStatus fullchunkstatus = ChunkLevel.fullStatus(this.oldTicketLevel);
--        FullChunkStatus fullchunkstatus1 = ChunkLevel.fullStatus(this.ticketLevel);
--        boolean flag = fullchunkstatus.isOrAfter(FullChunkStatus.FULL);
--        boolean flag1 = fullchunkstatus1.isOrAfter(FullChunkStatus.FULL);
--        // CraftBukkit start
--        // ChunkUnloadEvent: Called before the chunk is unloaded: isChunkLoaded is still true and chunk can still be modified by plugins.
--        if (flag && !flag1) {
+-    // CraftBukkit start
+-    // ChunkUnloadEvent: Called before the chunk is unloaded: isChunkLoaded is still true and chunk can still be modified by plugins.
+-    // SPIGOT-7780: Moved out of updateFutures to call all chunk unload events before calling updateHighestAllowedStatus for all chunks
+-    protected void callEventIfUnloading(ChunkMap playerchunkmap) {
+-        FullChunkStatus oldFullChunkStatus = ChunkLevel.fullStatus(this.oldTicketLevel);
+-        FullChunkStatus newFullChunkStatus = ChunkLevel.fullStatus(this.ticketLevel);
+-        boolean oldIsFull = oldFullChunkStatus.isOrAfter(FullChunkStatus.FULL);
+-        boolean newIsFull = newFullChunkStatus.isOrAfter(FullChunkStatus.FULL);
+-        if (oldIsFull && !newIsFull) {
 -            this.getFullChunkFuture().thenAccept((either) -> {
 -                LevelChunk chunk = (LevelChunk) either.orElse(null);
 -                if (chunk != null) {
--                    chunkLoadingManager.callbackExecutor.execute(() -> {
+-                    playerchunkmap.callbackExecutor.execute(() -> {
 -                        // Minecraft will apply the chunks tick lists to the world once the chunk got loaded, and then store the tick
 -                        // lists again inside the chunk once the chunk becomes inaccessible and set the chunk's needsSaving flag.
 -                        // These actions may however happen deferred, so we manually set the needsSaving flag already here.
@@ -23032,9 +23033,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            });
 -
 -            // Run callback right away if the future was already done
--            chunkLoadingManager.callbackExecutor.run();
+-            playerchunkmap.callbackExecutor.run();
 -        }
--        // CraftBukkit end
+-    }
+-    // CraftBukkit end
+-
+     protected void updateFutures(ChunkMap chunkLoadingManager, Executor executor) {
+-        FullChunkStatus fullchunkstatus = ChunkLevel.fullStatus(this.oldTicketLevel);
+-        FullChunkStatus fullchunkstatus1 = ChunkLevel.fullStatus(this.ticketLevel);
+-        boolean flag = fullchunkstatus.isOrAfter(FullChunkStatus.FULL);
+-        boolean flag1 = fullchunkstatus1.isOrAfter(FullChunkStatus.FULL);
 -
 -        this.wasAccessibleSinceLastSave |= flag1;
 -        if (!flag && flag1) {
@@ -24412,6 +24420,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        }
 -
 -        if (!this.chunksToUpdateFutures.isEmpty()) {
+-            // CraftBukkit start - SPIGOT-7780: Call chunk unload events before updateHighestAllowedStatus
+-            this.chunksToUpdateFutures.forEach((playerchunk) -> {
+-                playerchunk.callEventIfUnloading(chunkLoadingManager);
+-            });
+-            // CraftBukkit end
 -            this.chunksToUpdateFutures.forEach((playerchunk) -> {
 -                playerchunk.updateHighestAllowedStatus(chunkLoadingManager);
 -            });

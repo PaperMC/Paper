@@ -946,6 +946,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import java.util.Iterator;
  import java.util.function.Supplier;
  import java.util.stream.Stream;
+@@ -0,0 +0,0 @@ import net.kyori.adventure.key.Key;
  import org.bukkit.Keyed;
  import org.bukkit.NamespacedKey;
  import org.bukkit.Registry;
@@ -1403,7 +1404,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.core.Registry;
 +import net.minecraft.resources.RegistryOps;
 +import net.minecraft.resources.ResourceKey;
-+import org.bukkit.support.AbstractTestingBase;
++import org.bukkit.support.RegistryHelper;
++import org.bukkit.support.environment.AllFeatures;
 +import org.junit.jupiter.api.Disabled;
 +import org.junit.jupiter.params.ParameterizedTest;
 +import org.junit.jupiter.params.provider.Arguments;
@@ -1411,7 +1413,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import static org.junit.jupiter.api.Assertions.assertEquals;
 +
-+class RegistryBuilderTest extends AbstractTestingBase {
++@AllFeatures
++class RegistryBuilderTest {
 +
 +    static List<Arguments> registries() {
 +        return List.of(
@@ -1422,10 +1425,74 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @ParameterizedTest
 +    @MethodSource("registries")
 +    <M, T> void testEquality(final ResourceKey<? extends Registry<M>> resourceKey, final PaperRegistryBuilder.Filler<M, T, ?> filler) {
-+        final Registry<M> registry = AbstractTestingBase.REGISTRY_CUSTOM.registryOrThrow(resourceKey);
++        final Registry<M> registry = RegistryHelper.getRegistry().registryOrThrow(resourceKey);
 +        for (final Map.Entry<ResourceKey<M>, M> entry : registry.entrySet()) {
-+            final M built = filler.fill(new Conversions(new RegistryOps.HolderLookupAdapter(AbstractTestingBase.REGISTRY_CUSTOM)), PaperRegistries.fromNms(entry.getKey()), entry.getValue()).build();
++            final M built = filler.fill(new Conversions(new RegistryOps.HolderLookupAdapter(RegistryHelper.getRegistry())), PaperRegistries.fromNms(entry.getKey()), entry.getValue()).build();
 +            assertEquals(entry.getValue(), built);
 +        }
 +    }
 +}
+diff --git a/src/test/java/org/bukkit/registry/RegistryClassTest.java b/src/test/java/org/bukkit/registry/RegistryClassTest.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/test/java/org/bukkit/registry/RegistryClassTest.java
++++ b/src/test/java/org/bukkit/registry/RegistryClassTest.java
+@@ -0,0 +0,0 @@ public class RegistryClassTest {
+                         outsideRequest.clear();
+                         MockUtil.resetMock(spyRegistry);
+                         doAnswer(invocation -> {
+-                            Keyed item = realRegistry.get(invocation.getArgument(0));
++                            Keyed item = realRegistry.get((NamespacedKey) invocation.getArgument(0)); // Paper - registry modification api - specifically call namespaced key overload
+ 
+                             if (item == null) {
+                                 nullValue.add(invocation.getArgument(0));
+@@ -0,0 +0,0 @@ public class RegistryClassTest {
+                             nullAble.add(invocation.getArgument(0));
+ 
+                             return item;
+-                        }).when(spyRegistry).get(any());
++                        }).when(spyRegistry).get((NamespacedKey) any()); // Paper - registry modification api - specifically call namespaced key overload
+ 
+                         doAnswer(invocation -> {
+-                            Keyed item = realRegistry.get(invocation.getArgument(0));
++                            Keyed item = realRegistry.get((NamespacedKey) invocation.getArgument(0)); // Paper - registry modification api - specifically call namespaced key overload
+ 
+                             if (item == null) {
+                                 nullValue.add(invocation.getArgument(0));
+@@ -0,0 +0,0 @@ public class RegistryClassTest {
+                             notNullAble.add(invocation.getArgument(0));
+ 
+                             return item;
+-                        }).when(spyRegistry).getOrThrow(any());
++                        }).when(spyRegistry).getOrThrow((NamespacedKey) any()); // Paper - registry modification api - specifically call namespaced key overload
+ 
+                         // Load class
+                         try {
+@@ -0,0 +0,0 @@ public class RegistryClassTest {
+             outsideRequest
+                     .computeIfAbsent(type, ty -> new ArrayList<>()).add(invocation.getArgument(0));
+             return mock(type);
+-        }).when(spyRegistry).get(any());
++        }).when(spyRegistry).get((NamespacedKey) any()); // Paper - registry modification api - specifically call namespaced key overload
+ 
+         doAnswer(invocation -> {
+             outsideRequest
+                     .computeIfAbsent(type, ty -> new ArrayList<>()).add(invocation.getArgument(0));
+             return mock(type);
+-        }).when(spyRegistry).getOrThrow(any());
++        }).when(spyRegistry).getOrThrow((NamespacedKey) any()); // Paper - registry modification api - specifically call namespaced key overload
+     }
+ 
+     private static void initFieldDataCache() {
+diff --git a/src/test/java/org/bukkit/support/extension/NormalExtension.java b/src/test/java/org/bukkit/support/extension/NormalExtension.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/test/java/org/bukkit/support/extension/NormalExtension.java
++++ b/src/test/java/org/bukkit/support/extension/NormalExtension.java
+@@ -0,0 +0,0 @@ public class NormalExtension extends BaseExtension {
+ 
+         doAnswer(invocation ->
+                 mocks.computeIfAbsent(invocation.getArgument(0), k -> mock(RegistryHelper.updateClass(keyed, invocation.getArgument(0)), withSettings().stubOnly().defaultAnswer(DEFAULT_ANSWER)))
+-        ).when(registry).get(any()); // Allow static classes to fill there fields, so that it does not error out, just by loading them
++        ).when(registry).get((NamespacedKey) any()); // Allow static classes to fill there fields, so that it does not error out, just by loading them // Paper - registry modification api - specifically call namespaced key overload
+ 
+         return registry;
+     }

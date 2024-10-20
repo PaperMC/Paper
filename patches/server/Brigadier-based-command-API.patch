@@ -2721,38 +2721,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package io.papermc.paper.command.brigadier;
 +
 +import com.mojang.brigadier.CommandDispatcher;
-+import com.mojang.brigadier.ResultConsumer;
-+import com.mojang.brigadier.context.CommandContext;
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
 +import com.mojang.brigadier.suggestion.Suggestions;
-+import com.mojang.brigadier.tree.CommandNode;
 +import io.papermc.paper.command.brigadier.bukkit.BukkitBrigForwardingMap;
-+import net.minecraft.server.MinecraftServer;
-+import net.minecraft.world.flag.FeatureFlags;
-+import org.apache.logging.log4j.core.util.Assert;
++import java.util.List;
++import java.util.Map;
 +import org.bukkit.Bukkit;
 +import org.bukkit.Location;
-+import org.bukkit.World;
 +import org.bukkit.command.Command;
 +import org.bukkit.command.CommandMap;
 +import org.bukkit.command.CommandSender;
 +import org.bukkit.command.SimpleCommandMap;
-+import org.bukkit.craftbukkit.command.CraftCommandMap;
-+import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
-+import org.bukkit.entity.Entity;
-+import org.bukkit.plugin.PluginManager;
-+import org.bukkit.support.AbstractTestingBase;
++import org.bukkit.support.RegistryHelper;
++import org.bukkit.support.environment.AllFeatures;
++import org.bukkit.support.environment.Normal;
 +import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
 +import org.junit.jupiter.api.Assertions;
 +import org.junit.jupiter.api.Test;
 +import org.mockito.Mockito;
 +
-+import java.util.List;
-+import java.util.Map;
-+import java.util.logging.Logger;
-+
-+public class BukkitCommandConversionTest extends AbstractTestingBase {
++@Normal
++public class BukkitCommandConversionTest {
 +
 +    private CommandSender getSender() {
 +        return Mockito.mock(CommandSender.class);
@@ -2764,7 +2753,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        CommandSourceStack object = Mockito.mock(CommandSourceStack.class);
 +        Mockito.when(object.getLocation()).thenReturn(new Location(null, 0, 0, 0));;
 +
-+        CommandDispatcher dispatcher = DATA_PACK.commands.getDispatcher();
++        CommandDispatcher dispatcher = RegistryHelper.getDataPack().commands.getDispatcher();
 +        dispatcher.setConsumer((context, success, result) -> {});
 +        CommandMap commandMap = new SimpleCommandMap(Bukkit.getServer(), new BukkitBrigForwardingMap());
 +        Map<String, Command> stringCommandMap = commandMap.getKnownCommands();
@@ -2831,16 +2820,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +}
-diff --git a/src/test/java/org/bukkit/support/DummyServer.java b/src/test/java/org/bukkit/support/DummyServer.java
+diff --git a/src/test/java/org/bukkit/support/DummyServerHelper.java b/src/test/java/org/bukkit/support/DummyServerHelper.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/test/java/org/bukkit/support/DummyServer.java
-+++ b/src/test/java/org/bukkit/support/DummyServer.java
-@@ -0,0 +0,0 @@ public final class DummyServer {
-             final Thread currentThread = Thread.currentThread();
-             when(instance.isPrimaryThread()).thenAnswer(ignored -> Thread.currentThread().equals(currentThread));
- 
--            final org.bukkit.plugin.PluginManager pluginManager = new  io.papermc.paper.plugin.manager.PaperPluginManagerImpl(instance, new org.bukkit.command.SimpleCommandMap(instance), null);
-+            final org.bukkit.plugin.PluginManager pluginManager = new  io.papermc.paper.plugin.manager.PaperPluginManagerImpl(instance, new org.bukkit.command.SimpleCommandMap(instance, new java.util.HashMap<>()), null); // Paper
-             when(instance.getPluginManager()).thenReturn(pluginManager);
-             // paper end - testing additions
+--- a/src/test/java/org/bukkit/support/DummyServerHelper.java
++++ b/src/test/java/org/bukkit/support/DummyServerHelper.java
+@@ -0,0 +0,0 @@ public final class DummyServerHelper {
+         // Paper start - testing additions
+         final Thread currentThread = Thread.currentThread();
+         when(instance.isPrimaryThread()).thenAnswer(ignored -> Thread.currentThread().equals(currentThread));
+-        final org.bukkit.plugin.PluginManager pluginManager = new  io.papermc.paper.plugin.manager.PaperPluginManagerImpl(instance, new org.bukkit.command.SimpleCommandMap(instance), null);
++        final org.bukkit.plugin.PluginManager pluginManager = new  io.papermc.paper.plugin.manager.PaperPluginManagerImpl(instance, new org.bukkit.command.SimpleCommandMap(instance, new java.util.HashMap<>()), null);
+         when(instance.getPluginManager()).thenReturn(pluginManager);
+         // Paper end - testing additions
  

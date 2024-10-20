@@ -568,6 +568,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.Iterator;
 +import java.util.function.Supplier;
 +import java.util.stream.Stream;
++import net.kyori.adventure.key.Key;
 +import org.bukkit.Keyed;
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.Registry;
@@ -601,6 +602,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public @Nullable T get(final NamespacedKey key) {
 +        return this.delegate().get(key);
++    }
++
++    @Override
++    public @NotNull T getOrThrow(@NotNull final NamespacedKey key) {
++        return this.delegate().getOrThrow(key);
 +    }
 +
 +    @Override
@@ -914,11 +920,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
 @@ -0,0 +0,0 @@ public class Commodore {
  
-     public static byte[] convert(byte[] b, final String pluginName, final ApiVersion pluginVersion, final Set<String> activeCompatibilities) {
+     public byte[] convert(byte[] b, final String pluginName, final ApiVersion pluginVersion, final Set<String> activeCompatibilities) {
          final boolean modern = pluginVersion.isNewerThanOrSameAs(ApiVersion.FLATTENING);
 -        final boolean enumCompatibility = pluginVersion.isOlderThanOrSameAs(ApiVersion.getOrCreateVersion("1.20.6")) && activeCompatibilities.contains("enum-compatibility-mode");
          ClassReader cr = new ClassReader(b);
-         ClassWriter cw = new ClassWriter(0); // TODO 2024-06-22: Open PR to ASM to included interface in handle hash
+         ClassWriter cw = new ClassWriter(cr, 0);
  
 -        List<String> methodEnumSignatures = Commodore.getMethodSignatures(b);
 -        Multimap<String, String> enumLessToEnum = HashMultimap.create();
@@ -981,13 +987,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.bukkit.GameEvent;
 +import org.bukkit.MusicInstrument;
 +import org.bukkit.inventory.meta.trim.TrimPattern;
-+import org.bukkit.support.AbstractTestingBase;
++import org.bukkit.support.environment.VanillaFeature;
 +import org.junit.jupiter.api.Test;
 +
 +import static org.junit.jupiter.api.Assertions.assertSame;
 +
 +@Deprecated
-+class LegacyRegistryIdentifierTest extends AbstractTestingBase {
++@VanillaFeature
++class LegacyRegistryIdentifierTest {
 +
 +    @Test
 +    void testSeveralConversions() {
@@ -1009,8 +1016,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import net.minecraft.core.Registry;
  import net.minecraft.resources.ResourceKey;
  import net.minecraft.resources.ResourceLocation;
-+import org.bukkit.Keyed;
- import org.bukkit.support.AbstractTestingBase;
+-import org.bukkit.support.AbstractTestingBase;
++import org.bukkit.support.RegistryHelper;
++import org.bukkit.support.environment.AllFeatures;
 +import org.checkerframework.checker.nullness.qual.Nullable;
  import org.junit.jupiter.api.BeforeAll;
  import org.junit.jupiter.params.ParameterizedTest;
@@ -1019,10 +1027,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import static org.junit.jupiter.api.Assertions.assertNotNull;
  import static org.junit.jupiter.api.Assertions.assertTrue;
  
- class RegistryKeyTest extends AbstractTestingBase {
-@@ -0,0 +0,0 @@ class RegistryKeyTest extends AbstractTestingBase {
+ @AllFeatures
+@@ -0,0 +0,0 @@ class RegistryKeyTest {
      void testApiRegistryKeysExist(final RegistryKey<?> key) {
-         final Optional<Registry<Object>> registry = AbstractTestingBase.REGISTRY_CUSTOM.registry(ResourceKey.createRegistryKey(ResourceLocation.parse(key.key().asString())));
+         final Optional<Registry<Object>> registry = RegistryHelper.getRegistry().registry(ResourceKey.createRegistryKey(ResourceLocation.parse(key.key().asString())));
          assertTrue(registry.isPresent(), "Missing vanilla registry for " + key.key().asString());
 +    }
  
@@ -1037,11 +1045,11 @@ diff --git a/src/test/java/org/bukkit/registry/RegistryArgumentAddedTest.java b/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/test/java/org/bukkit/registry/RegistryArgumentAddedTest.java
 +++ b/src/test/java/org/bukkit/registry/RegistryArgumentAddedTest.java
-@@ -0,0 +0,0 @@ public class RegistryArgumentAddedTest extends AbstractTestingBase {
+@@ -0,0 +0,0 @@ public class RegistryArgumentAddedTest {
          // Make sure every registry is created
          Class.forName(Registry.class.getName());
  
--        Set<Class<?>> loadedRegistries = new HashSet<>(DummyServer.registers.keySet());
+-        Set<Class<?>> loadedRegistries = new HashSet<>(AllFeaturesExtension.getRealRegistries().keySet());
 -        Set<Class<?>> notFound = new HashSet<>();
 +        // Paper start
 +        Set<io.papermc.paper.registry.RegistryKey<?>> loadedRegistries = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
@@ -1062,7 +1070,7 @@ diff --git a/src/test/java/org/bukkit/registry/RegistryConversionTest.java b/src
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/test/java/org/bukkit/registry/RegistryConversionTest.java
 +++ b/src/test/java/org/bukkit/registry/RegistryConversionTest.java
-@@ -0,0 +0,0 @@ public class RegistryConversionTest extends AbstractTestingBase {
+@@ -0,0 +0,0 @@ public class RegistryConversionTest {
  
      @Order(1)
      @RegistriesTest
@@ -1074,7 +1082,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          for (Keyed item : registry) {
              if (!(item instanceof Handleable<?>)) {
-@@ -0,0 +0,0 @@ public class RegistryConversionTest extends AbstractTestingBase {
+@@ -0,0 +0,0 @@ public class RegistryConversionTest {
  
      @Order(2)
      @RegistriesTest
@@ -1083,7 +1091,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                                               Class<? extends Keyed> craftClazz, Class<?> minecraftClazz, boolean newMethod) {
          String methodName = (newMethod) ? RegistryConversionTest.MINECRAFT_TO_BUKKIT_NEW : RegistryConversionTest.MINECRAFT_TO_BUKKIT;
          Method method = null;
-@@ -0,0 +0,0 @@ public class RegistryConversionTest extends AbstractTestingBase {
+@@ -0,0 +0,0 @@ public class RegistryConversionTest {
  
      @Order(2)
      @RegistriesTest
@@ -1092,7 +1100,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                                               Class<? extends Keyed> craftClazz, Class<?> minecraftClazz, boolean newMethod) {
          String methodName = (newMethod) ? RegistryConversionTest.BUKKIT_TO_MINECRAFT_NEW : RegistryConversionTest.BUKKIT_TO_MINECRAFT;
          Method method = null;
-@@ -0,0 +0,0 @@ public class RegistryConversionTest extends AbstractTestingBase {
+@@ -0,0 +0,0 @@ public class RegistryConversionTest {
                  """, minecraftClazz.getName(), methodName, clazz.getSimpleName());
      }
  
@@ -1104,7 +1112,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.checkValidMinecraftToBukkit(clazz);
  
          try {
-@@ -0,0 +0,0 @@ public class RegistryConversionTest extends AbstractTestingBase {
+@@ -0,0 +0,0 @@ public class RegistryConversionTest {
  
      @Order(3)
      @RegistriesTest
@@ -1113,7 +1121,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.checkValidBukkitToMinecraft(clazz);
  
          try {
-@@ -0,0 +0,0 @@ public class RegistryConversionTest extends AbstractTestingBase {
+@@ -0,0 +0,0 @@ public class RegistryConversionTest {
  
      @Order(3)
      @RegistriesTest
@@ -1130,7 +1138,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              Keyed bukkit = (Keyed) arguments[0];
              Object minecraft = arguments[1];
  
-@@ -0,0 +0,0 @@ public class RegistryConversionTest extends AbstractTestingBase {
+@@ -0,0 +0,0 @@ public class RegistryConversionTest {
  
      @Order(3)
      @RegistriesTest
@@ -1147,7 +1155,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              Keyed bukkit = (Keyed) arguments[0];
              Object minecraft = arguments[1];
  
-@@ -0,0 +0,0 @@ public class RegistryConversionTest extends AbstractTestingBase {
+@@ -0,0 +0,0 @@ public class RegistryConversionTest {
       */
      @Order(3)
      @RegistriesTest
@@ -1156,22 +1164,85 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                                                        Class<? extends Keyed> craftClazz, Class<?> minecraftClazz) throws IllegalAccessException {
          this.checkValidMinecraftToBukkit(clazz);
  
-diff --git a/src/test/java/org/bukkit/support/DummyServer.java b/src/test/java/org/bukkit/support/DummyServer.java
+diff --git a/src/test/java/org/bukkit/support/extension/AllFeaturesExtension.java b/src/test/java/org/bukkit/support/extension/AllFeaturesExtension.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/test/java/org/bukkit/support/DummyServer.java
-+++ b/src/test/java/org/bukkit/support/DummyServer.java
-@@ -0,0 +0,0 @@ public final class DummyServer {
-             when(instance.getLootTable(any())).then(mock -> new CraftLootTable(mock.getArgument(0),
-                     AbstractTestingBase.DATA_PACK.fullRegistries().getLootTable(ResourceKey.create(Registries.LOOT_TABLE, CraftNamespacedKey.toMinecraft(mock.getArgument(0))))));
+--- a/src/test/java/org/bukkit/support/extension/AllFeaturesExtension.java
++++ b/src/test/java/org/bukkit/support/extension/AllFeaturesExtension.java
+@@ -0,0 +0,0 @@ public class AllFeaturesExtension extends BaseExtension {
  
--            when(instance.getRegistry(any())).then((Answer<Registry<?>>) mock -> {
--                Class<? extends Keyed> aClass = mock.getArgument(0);
--                return registers.computeIfAbsent(aClass, key -> CraftRegistry.createRegistry(aClass, AbstractTestingBase.REGISTRY_CUSTOM));
--            });
-+            // Paper - RegistryAccess
+         Bukkit.setServer(server);
  
-             when(instance.getTag(any(), any(), any())).then(mock -> {
-                 String registry = mock.getArgument(0);
+-        when(server.getRegistry(any()))
+-                .then(invocation -> {
+-                    Class<? extends Keyed> keyed = invocation.getArgument(0);
+-                    if (spyRegistries.containsKey(keyed)) {
+-                        return spyRegistries.get(keyed);
+-                    }
+-
+-                    Registry<?> registry = CraftRegistry.createRegistry(keyed, RegistryHelper.getRegistry());
+-                    realRegistries.put(keyed, registry);
+-
+-                    Registry<?> spy = mock(registry.getClass(), withSettings().stubOnly().spiedInstance(registry).defaultAnswer(CALLS_REAL_METHODS));
+-
+-                    spyRegistries.put(keyed, spy);
+-
+-                    return spy;
+-                });
++        // Paper - Add RegistryAccess for managing registries - replaced with registry access
+ 
+         CraftRegistry.setMinecraftRegistry(RegistryHelper.getRegistry());
+     }
+diff --git a/src/test/java/org/bukkit/support/extension/LegacyExtension.java b/src/test/java/org/bukkit/support/extension/LegacyExtension.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/test/java/org/bukkit/support/extension/LegacyExtension.java
++++ b/src/test/java/org/bukkit/support/extension/LegacyExtension.java
+@@ -0,0 +0,0 @@ public class LegacyExtension extends BaseExtension {
+ 
+         Bukkit.setServer(server);
+ 
+-        when(server.getRegistry(any()))
+-                .then(invocation -> {
+-                    Class<? extends Keyed> keyed = invocation.getArgument(0);
+-                    return registries.computeIfAbsent(keyed, k -> CraftRegistry.createRegistry(keyed, RegistryHelper.getRegistry()));
+-                });
++        // Paper - Add RegistryAccess for managing registries - replaced with registry access
+ 
+         CraftRegistry.setMinecraftRegistry(RegistryHelper.getRegistry());
+     }
+diff --git a/src/test/java/org/bukkit/support/extension/SlowExtension.java b/src/test/java/org/bukkit/support/extension/SlowExtension.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/test/java/org/bukkit/support/extension/SlowExtension.java
++++ b/src/test/java/org/bukkit/support/extension/SlowExtension.java
+@@ -0,0 +0,0 @@ public class SlowExtension extends BaseExtension {
+ 
+         Bukkit.setServer(server);
+ 
+-        when(server.getRegistry(any()))
+-                .then(invocation -> {
+-                    Class<? extends Keyed> keyed = invocation.getArgument(0);
+-                    return registries.computeIfAbsent(keyed, k -> CraftRegistry.createRegistry(keyed, RegistryHelper.getRegistry()));
+-                });
++        // Paper - Add RegistryAccess for managing registries - replaced with registry access
+ 
+         CraftRegistry.setMinecraftRegistry(RegistryHelper.getRegistry());
+     }
+diff --git a/src/test/java/org/bukkit/support/extension/VanillaFeatureExtension.java b/src/test/java/org/bukkit/support/extension/VanillaFeatureExtension.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/test/java/org/bukkit/support/extension/VanillaFeatureExtension.java
++++ b/src/test/java/org/bukkit/support/extension/VanillaFeatureExtension.java
+@@ -0,0 +0,0 @@ public class VanillaFeatureExtension extends BaseExtension {
+ 
+         Bukkit.setServer(server);
+ 
+-        when(server.getRegistry(any()))
+-                .then(invocation -> {
+-                    Class<? extends Keyed> keyed = invocation.getArgument(0);
+-                    return registries.computeIfAbsent(keyed, k -> CraftRegistry.createRegistry(keyed, RegistryHelper.getRegistry()));
+-                });
++        // Paper - Add RegistryAccess for managing registries - replaced with registry access
+ 
+         CraftRegistry.setMinecraftRegistry(RegistryHelper.getRegistry());
+     }
 diff --git a/src/test/java/org/bukkit/support/provider/RegistriesArgumentProvider.java b/src/test/java/org/bukkit/support/provider/RegistriesArgumentProvider.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/test/java/org/bukkit/support/provider/RegistriesArgumentProvider.java

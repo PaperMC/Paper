@@ -49,7 +49,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void addToCraftingManager() {
          ItemStack result = this.getResult();
  
--        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toMinecraft(this.getKey()), new net.minecraft.world.item.crafting.SmithingTransformRecipe(this.toNMS(this.getTemplate(), true), this.toNMS(this.getBase(), true), this.toNMS(this.getAddition(), true), CraftItemStack.asNMSCopy(result), this.willCopyDataComponents()))); // Paper - Option to prevent data components copy
+-        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toMinecraft(this.getKey()), new net.minecraft.world.item.crafting.SmithingTransformRecipe(this.toNMS(this.getTemplate(), false), this.toNMS(this.getBase(), false), this.toNMS(this.getAddition(), false), CraftItemStack.asNMSCopy(result), this.willCopyDataComponents()))); // Paper - Option to prevent data components copy
 +        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toMinecraft(this.getKey()), new net.minecraft.world.item.crafting.SmithingTransformRecipe(this.toNMS(this.getTemplate(), false), this.toNMS(this.getBase(), false), this.toNMS(this.getAddition(), false), CraftItemStack.asNMSCopy(result), this.willCopyDataComponents()))); // Paper - Option to prevent data components copy & support empty RecipeChoice
      }
  }
@@ -61,7 +61,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Override
      public void addToCraftingManager() {
--        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toMinecraft(this.getKey()), new net.minecraft.world.item.crafting.SmithingTrimRecipe(this.toNMS(this.getTemplate(), true), this.toNMS(this.getBase(), true), this.toNMS(this.getAddition(), true), this.willCopyDataComponents()))); // Paper - Option to prevent data components copy
+-        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toMinecraft(this.getKey()), new net.minecraft.world.item.crafting.SmithingTrimRecipe(this.toNMS(this.getTemplate(), false), this.toNMS(this.getBase(), false), this.toNMS(this.getAddition(), false), this.willCopyDataComponents()))); // Paper - Option to prevent data components copy
 +        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toMinecraft(this.getKey()), new net.minecraft.world.item.crafting.SmithingTrimRecipe(this.toNMS(this.getTemplate(), false), this.toNMS(this.getBase(), false), this.toNMS(this.getAddition(), false), this.willCopyDataComponents()))); // Paper - Option to prevent data components copy & support empty RecipeChoice
      }
  }
@@ -76,13 +76,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.Iterator;
 +import org.bukkit.Bukkit;
 +import org.bukkit.inventory.Recipe;
-+import org.bukkit.support.AbstractTestingBase;
++import org.bukkit.support.environment.AllFeatures;
 +import org.junit.jupiter.api.Test;
 +
 +import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 +import static org.junit.jupiter.api.Assertions.assertTrue;
 +
-+class TestRecipeChoice extends AbstractTestingBase {
++@AllFeatures
++class TestRecipeChoice {
 +
 +    @Test
 +    void testRecipeChoices() {
@@ -95,22 +96,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        assertTrue(foundRecipes, "No recipes found!");
 +    }
 +}
-diff --git a/src/test/java/org/bukkit/support/DummyServer.java b/src/test/java/org/bukkit/support/DummyServer.java
+diff --git a/src/test/java/org/bukkit/support/DummyServerHelper.java b/src/test/java/org/bukkit/support/DummyServerHelper.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/test/java/org/bukkit/support/DummyServer.java
-+++ b/src/test/java/org/bukkit/support/DummyServer.java
-@@ -0,0 +0,0 @@ public final class DummyServer {
-             when(instance.getPluginManager()).thenReturn(pluginManager);
-             // paper end - testing additions
+--- a/src/test/java/org/bukkit/support/DummyServerHelper.java
++++ b/src/test/java/org/bukkit/support/DummyServerHelper.java
+@@ -0,0 +0,0 @@ public final class DummyServerHelper {
+         // Paper end - testing additions
  
-+            // Paper start - add test for recipe conversion
-+            when(instance.recipeIterator()).thenAnswer(ignored -> {
-+                return com.google.common.collect.Iterators.transform(
-+                    AbstractTestingBase.DATA_PACK.getRecipeManager().byType.entries().iterator(),
-+                    input -> input.getValue().toBukkitRecipe());
-+            });
-+            // Paper end - add test for recipe conversion
+         io.papermc.paper.configuration.GlobalConfigTestingBase.setupGlobalConfigForTest(); // Paper - configuration files - setup global configuration test base
 +
-             Bukkit.setServer(instance);
-         } catch (Throwable t) {
-             throw new Error(t);
++        // Paper start - add test for recipe conversion
++        when(instance.recipeIterator()).thenAnswer(ignored ->
++            com.google.common.collect.Iterators.transform(
++                RegistryHelper.getDataPack().getRecipeManager().byType.entries().iterator(),
++                input -> input.getValue().toBukkitRecipe()
++            )
++        );
++        // Paper end - add test for recipe conversion
+         return instance;
+     }
+ }
