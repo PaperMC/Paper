@@ -159,7 +159,7 @@ index d0a8cd89da3b8d87248494056470c306f8fb5ae8..fdc0c1d73bb523f003e4169589f10023
  
          for (Pattern p : this.patterns) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
-index 413e41f113226b8a2e9b30bb519076d78e451fa0..0f441dfaa4e0a19d10d32b5b036d70054a30f586 100644
+index 413e41f113226b8a2e9b30bb519076d78e451fa0..0063d2b37765f15337b76781197fab203732f24b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
 @@ -52,10 +52,24 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
@@ -270,7 +270,7 @@ index 413e41f113226b8a2e9b30bb519076d78e451fa0..0f441dfaa4e0a19d10d32b5b036d7005
          }
      }
  
-@@ -118,42 +146,30 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+@@ -118,42 +146,43 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
              this.material = Material.AIR;
          }
          if (this.internalTag != null) {
@@ -279,6 +279,19 @@ index 413e41f113226b8a2e9b30bb519076d78e451fa0..0f441dfaa4e0a19d10d32b5b036d7005
              this.internalTag = null;
          }
 -        this.position = SerializableMeta.getObject(BlockVector.class, map, "blockPosition", true);
++        // Paper start - general item meta fixes - parse spigot legacy position and merge into block entity tag
++        final BlockVector legacyPosition = SerializableMeta.getObject(BlockVector.class, map, "blockPosition", true);
++        if (legacyPosition != null) {
++            this.blockEntityTag = this.blockEntityTag.update(t -> {
++                if (t.isEmpty()) {
++                    BlockEntity.addEntityType(t, java.util.Objects.requireNonNull(CraftBlockStates.getBlockEntityType(this.materialForBlockEntityType())));
++                }
++                t.putInt("x", legacyPosition.getBlockX());
++                t.putInt("y", legacyPosition.getBlockX());
++                t.putInt("z", legacyPosition.getBlockX());
++            });
++        }
++        // Paper end - general item meta fixes - parse spigot legacy position and merge into block entity tag
      }
  
      @Override
@@ -326,7 +339,7 @@ index 413e41f113226b8a2e9b30bb519076d78e451fa0..0f441dfaa4e0a19d10d32b5b036d7005
      }
  
      @Override
-@@ -162,23 +178,35 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+@@ -162,23 +191,35 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
  
          if (tag.contains(CraftMetaBlockState.BLOCK_ENTITY_TAG.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
              this.internalTag = tag.getCompound(CraftMetaBlockState.BLOCK_ENTITY_TAG.NBT);
@@ -335,10 +348,10 @@ index 413e41f113226b8a2e9b30bb519076d78e451fa0..0f441dfaa4e0a19d10d32b5b036d7005
 +        // Paper start - new serialization format
 +        if (tag.contains(CraftMetaBlockState.BLOCK_ENTITY_TAG_CUSTOM_DATA.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
 +            this.blockEntityTag = CustomData.of(tag.getCompound(CraftMetaBlockState.BLOCK_ENTITY_TAG_CUSTOM_DATA.NBT));
-         }
++        }
 +        if (tag.contains(CraftMetaBlockState.BLOCK_ENTITY_COMPONENTS.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
 +            this.components = DataComponentMap.CODEC.parse(org.bukkit.craftbukkit.CraftRegistry.getMinecraftRegistry().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), tag.getCompound(CraftMetaBlockState.BLOCK_ENTITY_COMPONENTS.NBT)).getOrThrow();
-+        }
+         }
 +        // Paper end - new serialization format
      }
  
@@ -349,11 +362,11 @@ index 413e41f113226b8a2e9b30bb519076d78e451fa0..0f441dfaa4e0a19d10d32b5b036d7005
 +        // Paper start - new serialization format
 +        if (!this.blockEntityTag.isEmpty()) {
 +            internalTags.put(CraftMetaBlockState.BLOCK_ENTITY_TAG_CUSTOM_DATA.NBT, this.blockEntityTag.getUnsafe()); // unsafe because it's serialized right away
-+        }
+         }
 +        if (!this.components.isEmpty()) {
 +            final Tag componentsTag = DataComponentMap.CODEC.encodeStart(org.bukkit.craftbukkit.CraftRegistry.getMinecraftRegistry().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), this.components).getOrThrow();
 +            internalTags.put(CraftMetaBlockState.BLOCK_ENTITY_COMPONENTS.NBT, componentsTag);
-         }
++        }
 +        // Paper end - new serialization format
      }
  
@@ -367,7 +380,7 @@ index 413e41f113226b8a2e9b30bb519076d78e451fa0..0f441dfaa4e0a19d10d32b5b036d7005
          return builder;
      }
  
-@@ -186,12 +214,10 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+@@ -186,12 +227,10 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
      int applyHash() {
          final int original;
          int hash = original = super.applyHash();
@@ -384,7 +397,7 @@ index 413e41f113226b8a2e9b30bb519076d78e451fa0..0f441dfaa4e0a19d10d32b5b036d7005
          return original != hash ? CraftMetaBlockState.class.hashCode() ^ hash : hash;
      }
  
-@@ -203,52 +229,75 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+@@ -203,52 +242,75 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
          if (meta instanceof CraftMetaBlockState) {
              CraftMetaBlockState that = (CraftMetaBlockState) meta;
  
@@ -474,7 +487,7 @@ index 413e41f113226b8a2e9b30bb519076d78e451fa0..0f441dfaa4e0a19d10d32b5b036d7005
      }
  
      private static CraftBlockEntityState<?> getBlockState(Material material, CompoundTag blockEntityTag) {
-@@ -278,7 +327,23 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+@@ -278,7 +340,23 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
          Class<?> blockStateType = CraftBlockStates.getBlockStateType(stateMaterial);
          Preconditions.checkArgument(blockStateType == blockState.getClass() && blockState instanceof CraftBlockEntityState, "Invalid blockState for %s", this.material);
  
