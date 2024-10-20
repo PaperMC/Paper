@@ -19,6 +19,15 @@
      public DyeColor baseColor;
      private BannerPatternLayers patterns;
  
+@@ -53,7 +57,7 @@
+     @Override
+     protected void saveAdditional(CompoundTag nbt, HolderLookup.Provider registries) {
+         super.saveAdditional(nbt, registries);
+-        if (!this.patterns.equals(BannerPatternLayers.EMPTY)) {
++        if (!this.patterns.equals(BannerPatternLayers.EMPTY) || serialisingForNetwork.get()) { // Paper - always send patterns to client
+             nbt.put("patterns", (Tag) BannerPatternLayers.CODEC.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE), this.patterns).getOrThrow());
+         }
+ 
 @@ -74,7 +78,7 @@
              BannerPatternLayers.CODEC.parse(registries.createSerializationContext(NbtOps.INSTANCE), nbt.get("patterns")).resultOrPartial((s) -> {
                  BannerBlockEntity.LOGGER.error("Failed to parse banner patterns: '{}'", s);
@@ -28,7 +37,26 @@
              });
          }
  
-@@ -108,7 +112,7 @@
+@@ -85,9 +89,18 @@
+         return ClientboundBlockEntityDataPacket.create(this);
+     }
+ 
++    // Paper start - always send patterns to client
++    ThreadLocal<Boolean> serialisingForNetwork = ThreadLocal.withInitial(() -> Boolean.FALSE);
+     @Override
+     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
++        final Boolean wasSerialisingForNetwork = serialisingForNetwork.get();
++        try {
++            serialisingForNetwork.set(Boolean.TRUE);
+         return this.saveWithoutMetadata(registries);
++        } finally {
++            serialisingForNetwork.set(wasSerialisingForNetwork);
++        }
++        // Paper end - always send patterns to client
+     }
+ 
+     public BannerPatternLayers getPatterns() {
+@@ -108,7 +121,7 @@
      @Override
      protected void applyImplicitComponents(BlockEntity.DataComponentInput components) {
          super.applyImplicitComponents(components);
@@ -37,7 +65,7 @@
          this.name = (Component) components.get(DataComponents.CUSTOM_NAME);
      }
  
-@@ -124,4 +128,13 @@
+@@ -124,4 +137,13 @@
          nbt.remove("patterns");
          nbt.remove("CustomName");
      }
