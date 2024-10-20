@@ -108,8 +108,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
  
 +            // Paper start - skip class if it's @NullMarked
-+            if (isClassNullMarked(clazz)) {
-+                return;
++            if (isClassNullMarked(clazz, foundClasses)) {
++                continue;
 +            }
 +            // Paper end - skip class if it's @NullMarked
 +
@@ -192,7 +192,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 +    // Paper start - skip class if it's @NullMarked
-+    private static boolean isClassNullMarked(@NotNull ClassNode clazz) {
++    private static boolean isClassNullMarked(@NotNull ClassNode clazz, @NotNull Map<String, ClassNode> allClasses) {
++        if (clazz.nestHostClass != null) {
++            final ClassNode nestHostNode = allClasses.get(clazz.nestHostClass);
++            if (nestHostNode != null) {
++                return isClassNullMarked0(nestHostNode);
++            }
++        }
++
++        return isClassNullMarked0(clazz);
++    }
++
++    private static boolean isClassNullMarked0(@NotNull ClassNode clazz) {
 +        return clazz.visibleAnnotations != null && clazz.visibleAnnotations.stream().anyMatch(node -> "Lorg/jspecify/annotations/NullMarked;".equals(node.desc));
 +    }
 +    // Paper end - skip class if it's @NullMarked
