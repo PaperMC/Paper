@@ -2392,7 +2392,7 @@ index e0c46e548a34c963750c9411dfd3c0946d67a7c7..5215783353021583e7a726d281e4d173
      // CraftBukkit end
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index cd747daf186fa3a540db08232a57683492f0131f..df15ce8d1da2737e339880d3d2f6731e0b92ca7f 100644
+index 0fc6e659915a4547c2db9205fed205a1d28f21d4..35d1dcabb182b0a31727e5ddefe33955c804603b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -272,11 +272,11 @@ public final class CraftServer implements Server {
@@ -2423,7 +2423,7 @@ index cd747daf186fa3a540db08232a57683492f0131f..df15ce8d1da2737e339880d3d2f6731e
  
          CraftRegistry.setMinecraftRegistry(console.registryAccess());
  
-@@ -602,48 +608,11 @@ public final class CraftServer implements Server {
+@@ -603,48 +609,11 @@ public final class CraftServer implements Server {
      }
  
      private void setVanillaCommands(boolean first) { // Spigot
@@ -2474,7 +2474,7 @@ index cd747daf186fa3a540db08232a57683492f0131f..df15ce8d1da2737e339880d3d2f6731e
  
          // Refresh commands
          for (ServerPlayer player : this.getHandle().players) {
-@@ -1030,17 +999,31 @@ public final class CraftServer implements Server {
+@@ -1031,17 +1000,31 @@ public final class CraftServer implements Server {
              return true;
          }
  
@@ -2516,7 +2516,7 @@ index cd747daf186fa3a540db08232a57683492f0131f..df15ce8d1da2737e339880d3d2f6731e
  
          return false;
      }
-@@ -1049,7 +1032,7 @@ public final class CraftServer implements Server {
+@@ -1050,7 +1033,7 @@ public final class CraftServer implements Server {
      public void reload() {
          // Paper start - lifecycle events
          if (io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.blocksPluginReloading()) {
@@ -2525,7 +2525,7 @@ index cd747daf186fa3a540db08232a57683492f0131f..df15ce8d1da2737e339880d3d2f6731e
          }
          // Paper end - lifecycle events
          org.spigotmc.WatchdogThread.hasStarted = false; // Paper - Disable watchdog early timeout on reload
-@@ -1103,8 +1086,9 @@ public final class CraftServer implements Server {
+@@ -1105,8 +1088,9 @@ public final class CraftServer implements Server {
          }
  
          Plugin[] pluginClone = pluginManager.getPlugins().clone(); // Paper
@@ -2536,7 +2536,7 @@ index cd747daf186fa3a540db08232a57683492f0131f..df15ce8d1da2737e339880d3d2f6731e
          // Paper start
          for (Plugin plugin : pluginClone) {
              entityMetadata.removeAll(plugin);
-@@ -1144,6 +1128,12 @@ public final class CraftServer implements Server {
+@@ -1146,6 +1130,12 @@ public final class CraftServer implements Server {
          this.enablePlugins(PluginLoadOrder.STARTUP);
          this.enablePlugins(PluginLoadOrder.POSTWORLD);
          if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
@@ -2714,45 +2714,34 @@ index 0000000000000000000000000000000000000000..b2fdb8351c2abb55283850a929d2a87a
 +io.papermc.paper.command.brigadier.argument.VanillaArgumentProviderImpl
 diff --git a/src/test/java/io/papermc/paper/command/brigadier/BukkitCommandConversionTest.java b/src/test/java/io/papermc/paper/command/brigadier/BukkitCommandConversionTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6475510ea1084a003fb2c8645cb4538b3f48e1c7
+index 0000000000000000000000000000000000000000..4b419ce023f61d5af9ff7a34e6879de1991cf4df
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/command/brigadier/BukkitCommandConversionTest.java
-@@ -0,0 +1,113 @@
+@@ -0,0 +1,102 @@
 +package io.papermc.paper.command.brigadier;
 +
 +import com.mojang.brigadier.CommandDispatcher;
-+import com.mojang.brigadier.ResultConsumer;
-+import com.mojang.brigadier.context.CommandContext;
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
 +import com.mojang.brigadier.suggestion.Suggestions;
-+import com.mojang.brigadier.tree.CommandNode;
 +import io.papermc.paper.command.brigadier.bukkit.BukkitBrigForwardingMap;
-+import net.minecraft.server.MinecraftServer;
-+import net.minecraft.world.flag.FeatureFlags;
-+import org.apache.logging.log4j.core.util.Assert;
++import java.util.List;
++import java.util.Map;
 +import org.bukkit.Bukkit;
 +import org.bukkit.Location;
-+import org.bukkit.World;
 +import org.bukkit.command.Command;
 +import org.bukkit.command.CommandMap;
 +import org.bukkit.command.CommandSender;
 +import org.bukkit.command.SimpleCommandMap;
-+import org.bukkit.craftbukkit.command.CraftCommandMap;
-+import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
-+import org.bukkit.entity.Entity;
-+import org.bukkit.plugin.PluginManager;
-+import org.bukkit.support.AbstractTestingBase;
++import org.bukkit.support.RegistryHelper;
++import org.bukkit.support.environment.AllFeatures;
++import org.bukkit.support.environment.Normal;
 +import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
 +import org.junit.jupiter.api.Assertions;
 +import org.junit.jupiter.api.Test;
 +import org.mockito.Mockito;
 +
-+import java.util.List;
-+import java.util.Map;
-+import java.util.logging.Logger;
-+
-+public class BukkitCommandConversionTest extends AbstractTestingBase {
++@Normal
++public class BukkitCommandConversionTest {
 +
 +    private CommandSender getSender() {
 +        return Mockito.mock(CommandSender.class);
@@ -2764,7 +2753,7 @@ index 0000000000000000000000000000000000000000..6475510ea1084a003fb2c8645cb4538b
 +        CommandSourceStack object = Mockito.mock(CommandSourceStack.class);
 +        Mockito.when(object.getLocation()).thenReturn(new Location(null, 0, 0, 0));;
 +
-+        CommandDispatcher dispatcher = DATA_PACK.commands.getDispatcher();
++        CommandDispatcher dispatcher = RegistryHelper.getDataPack().commands.getDispatcher();
 +        dispatcher.setConsumer((context, success, result) -> {});
 +        CommandMap commandMap = new SimpleCommandMap(Bukkit.getServer(), new BukkitBrigForwardingMap());
 +        Map<String, Command> stringCommandMap = commandMap.getKnownCommands();
@@ -2831,16 +2820,16 @@ index 0000000000000000000000000000000000000000..6475510ea1084a003fb2c8645cb4538b
 +        }
 +    }
 +}
-diff --git a/src/test/java/org/bukkit/support/DummyServer.java b/src/test/java/org/bukkit/support/DummyServer.java
-index cce9e2226ef554c10e1df1dbaa1791656d5d0799..6e9ee1b56b4151c31c373e58172055e02fd7875a 100644
---- a/src/test/java/org/bukkit/support/DummyServer.java
-+++ b/src/test/java/org/bukkit/support/DummyServer.java
-@@ -100,7 +100,7 @@ public final class DummyServer {
-             final Thread currentThread = Thread.currentThread();
-             when(instance.isPrimaryThread()).thenAnswer(ignored -> Thread.currentThread().equals(currentThread));
- 
--            final org.bukkit.plugin.PluginManager pluginManager = new  io.papermc.paper.plugin.manager.PaperPluginManagerImpl(instance, new org.bukkit.command.SimpleCommandMap(instance), null);
-+            final org.bukkit.plugin.PluginManager pluginManager = new  io.papermc.paper.plugin.manager.PaperPluginManagerImpl(instance, new org.bukkit.command.SimpleCommandMap(instance, new java.util.HashMap<>()), null); // Paper
-             when(instance.getPluginManager()).thenReturn(pluginManager);
-             // paper end - testing additions
+diff --git a/src/test/java/org/bukkit/support/DummyServerHelper.java b/src/test/java/org/bukkit/support/DummyServerHelper.java
+index 5d24b95e3eec351ec1e9444533dd5f9d376ec4c6..fb4b7625b4ea4b4918ade95829e10e98d1bac70f 100644
+--- a/src/test/java/org/bukkit/support/DummyServerHelper.java
++++ b/src/test/java/org/bukkit/support/DummyServerHelper.java
+@@ -87,7 +87,7 @@ public final class DummyServerHelper {
+         // Paper start - testing additions
+         final Thread currentThread = Thread.currentThread();
+         when(instance.isPrimaryThread()).thenAnswer(ignored -> Thread.currentThread().equals(currentThread));
+-        final org.bukkit.plugin.PluginManager pluginManager = new  io.papermc.paper.plugin.manager.PaperPluginManagerImpl(instance, new org.bukkit.command.SimpleCommandMap(instance), null);
++        final org.bukkit.plugin.PluginManager pluginManager = new  io.papermc.paper.plugin.manager.PaperPluginManagerImpl(instance, new org.bukkit.command.SimpleCommandMap(instance, new java.util.HashMap<>()), null);
+         when(instance.getPluginManager()).thenReturn(pluginManager);
+         // Paper end - testing additions
  

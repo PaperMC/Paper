@@ -6,18 +6,18 @@ Subject: [PATCH] Test changes
 Co-authored-by: yannnicklamprecht <yannicklamprecht@live.de>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index f276414e9e81abf8f1f80991ebd5ab43472e07b1..7a0f2391a464eeebc5e57856300bc000b8d35e52 100644
+index ef88afa5fe914ae3fef9ffb1a971dabf568f75f3..3c1770864ab3e8708bab6cd50d6ffb5e19af5399 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -22,6 +22,7 @@ dependencies {
+@@ -23,6 +23,7 @@ dependencies {
      testImplementation("org.hamcrest:hamcrest:2.2")
-     testImplementation("org.mockito:mockito-core:5.11.0")
-     testImplementation("org.ow2.asm:asm-tree:9.7")
+     testImplementation("org.mockito:mockito-core:5.14.1")
+     testImplementation("org.ow2.asm:asm-tree:9.7.1")
 +    testImplementation("org.junit-pioneer:junit-pioneer:2.2.0") // Paper - CartesianTest
  }
  
  paperweight {
-@@ -55,6 +56,12 @@ tasks.jar {
+@@ -56,6 +57,12 @@ tasks.jar {
      }
  }
  
@@ -32,10 +32,10 @@ index f276414e9e81abf8f1f80991ebd5ab43472e07b1..7a0f2391a464eeebc5e57856300bc000
      }
 diff --git a/src/test/java/io/papermc/paper/registry/RegistryKeyTest.java b/src/test/java/io/papermc/paper/registry/RegistryKeyTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e1c14886064cde56be7fcd8f22a6ecb2d222a762
+index 0000000000000000000000000000000000000000..fe52d229c31526cc32f6422328efe92edf75a7ff
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/registry/RegistryKeyTest.java
-@@ -0,0 +1,33 @@
+@@ -0,0 +1,34 @@
 +package io.papermc.paper.registry;
 +
 +import java.util.Optional;
@@ -50,7 +50,8 @@ index 0000000000000000000000000000000000000000..e1c14886064cde56be7fcd8f22a6ecb2
 +
 +import static org.junit.jupiter.api.Assertions.assertTrue;
 +
-+class RegistryKeyTest extends AbstractTestingBase {
++@AllFeatures
++class RegistryKeyTest {
 +
 +    @BeforeAll
 +    static void before() throws ClassNotFoundException {
@@ -64,7 +65,7 @@ index 0000000000000000000000000000000000000000..e1c14886064cde56be7fcd8f22a6ecb2
 +    @ParameterizedTest
 +    @MethodSource("data")
 +    void testApiRegistryKeysExist(final RegistryKey<?> key) {
-+        final Optional<Registry<Object>> registry = AbstractTestingBase.REGISTRY_CUSTOM.registry(ResourceKey.createRegistryKey(ResourceLocation.parse(key.key().asString())));
++        final Optional<Registry<Object>> registry = RegistryHelper.getRegistry().registry(ResourceKey.createRegistryKey(ResourceLocation.parse(key.key().asString())));
 +        assertTrue(registry.isPresent(), "Missing vanilla registry for " + key.key().asString());
 +
 +    }
@@ -338,11 +339,35 @@ index 0000000000000000000000000000000000000000..6cbf11c898439834cffb99ef84e5df14
 +public @interface MethodParameterSource {
 +    String[] value() default {};
 +}
+diff --git a/src/test/java/org/bukkit/ExplosionResultTest.java b/src/test/java/org/bukkit/ExplosionResultTest.java
+index ee5ab15bb0bfeb0ff6fa0d720eeff086d92cb459..7419ea2f68607aad27929a608c402bd4c222f95d 100644
+--- a/src/test/java/org/bukkit/ExplosionResultTest.java
++++ b/src/test/java/org/bukkit/ExplosionResultTest.java
+@@ -5,6 +5,7 @@ import net.minecraft.world.level.Explosion;
+ import org.bukkit.craftbukkit.CraftExplosionResult;
+ import org.junit.jupiter.api.Test;
+ 
++@org.bukkit.support.environment.Normal // Paper - test changes - missing test suite annotation
+ public class ExplosionResultTest {
+ 
+     @Test
+diff --git a/src/test/java/org/bukkit/registry/RegistryClassTest.java b/src/test/java/org/bukkit/registry/RegistryClassTest.java
+index 740073ddd99b5e6aba056b99d5ed3e2a94a13b6c..575a06125e0b60b5bb8b6f85131f7d6cf86f5083 100644
+--- a/src/test/java/org/bukkit/registry/RegistryClassTest.java
++++ b/src/test/java/org/bukkit/registry/RegistryClassTest.java
+@@ -57,6 +57,7 @@ import org.objectweb.asm.Type;
+  * Note: This test class assumes that feature flags only enable more features and do not disable vanilla ones.
+  */
+ @AllFeatures
++@org.junit.jupiter.api.Disabled // Paper - disabled for now as it constructs a second root registry, which is not supported on paper
+ public class RegistryClassTest {
+ 
+     private static final Map<Class<? extends Keyed>, Data> INIT_DATA = new HashMap<>();
 diff --git a/src/test/java/org/bukkit/registry/RegistryConstantsTest.java b/src/test/java/org/bukkit/registry/RegistryConstantsTest.java
-index ebcb65cb74acdb9d1bcf2b4b3551a2dc6d809bc9..7d9dbed7281099b78d7f898885b37cdcfe8b099f 100644
+index 8fb906c77070eedec8cde263154eaf4610ad3197..8705ee2a28d5dba7bb579eae1436451502e1e3c2 100644
 --- a/src/test/java/org/bukkit/registry/RegistryConstantsTest.java
 +++ b/src/test/java/org/bukkit/registry/RegistryConstantsTest.java
-@@ -24,7 +24,7 @@ public class RegistryConstantsTest extends AbstractTestingBase {
+@@ -26,7 +26,7 @@ public class RegistryConstantsTest {
      @Test
      public void testDamageType() {
          this.testExcessConstants(DamageType.class, Registry.DAMAGE_TYPE);
@@ -351,68 +376,67 @@ index ebcb65cb74acdb9d1bcf2b4b3551a2dc6d809bc9..7d9dbed7281099b78d7f898885b37cdc
      }
  
      @Test
-diff --git a/src/test/java/org/bukkit/support/AbstractTestingBase.java b/src/test/java/org/bukkit/support/AbstractTestingBase.java
-index 544307fe34cbcfa286a7d7b30900ebea127d189e..5bda0bc976920f224586f2c0e083b771c676e307 100644
---- a/src/test/java/org/bukkit/support/AbstractTestingBase.java
-+++ b/src/test/java/org/bukkit/support/AbstractTestingBase.java
-@@ -53,6 +53,11 @@ public abstract class AbstractTestingBase {
-         MultiPackResourceManager resourceManager = new MultiPackResourceManager(PackType.SERVER_DATA, resourceRepository.getAvailablePacks().stream().map(Pack::open).toList());
+diff --git a/src/test/java/org/bukkit/support/DummyServerHelper.java b/src/test/java/org/bukkit/support/DummyServerHelper.java
+index 6ecafd167d4d8c79f2cbc43ea9da98a5d61d8751..f81f86cf05a8c6816d356185af6d0d84a0474dd2 100644
+--- a/src/test/java/org/bukkit/support/DummyServerHelper.java
++++ b/src/test/java/org/bukkit/support/DummyServerHelper.java
+@@ -47,7 +47,7 @@ public final class DummyServerHelper {
+         when(instance.getTag(any(), any(), any())).then(mock -> {
+             String registry = mock.getArgument(0);
+             Class<?> clazz = mock.getArgument(2);
+-            MinecraftKey key = CraftNamespacedKey.toMinecraft(mock.getArgument(1));
++            net.minecraft.resources.ResourceLocation key = CraftNamespacedKey.toMinecraft(mock.getArgument(1)); // Paper - address remapping issues
+ 
+             switch (registry) {
+                 case org.bukkit.Tag.REGISTRY_BLOCKS -> {
+@@ -66,24 +66,31 @@ public final class DummyServerHelper {
+                 }
+                 case org.bukkit.Tag.REGISTRY_FLUIDS -> {
+                     Preconditions.checkArgument(clazz == org.bukkit.Fluid.class, "Fluid namespace must have fluid type");
+-                    TagKey<FluidType> fluidTagKey = TagKey.create(Registries.FLUID, key);
++                    TagKey<net.minecraft.world.level.material.Fluid> fluidTagKey = TagKey.create(Registries.FLUID, key); // Paper - address remapping issues
+                     if (BuiltInRegistries.FLUID.getTag(fluidTagKey).isPresent()) {
+                         return new CraftFluidTag(BuiltInRegistries.FLUID, fluidTagKey);
+                     }
+                 }
+                 case org.bukkit.Tag.REGISTRY_ENTITY_TYPES -> {
+                     Preconditions.checkArgument(clazz == org.bukkit.entity.EntityType.class, "Entity type namespace must have entity type");
+-                    TagKey<EntityTypes<?>> entityTagKey = TagKey.create(Registries.ENTITY_TYPE, key);
++                    TagKey<net.minecraft.world.entity.EntityType<?>> entityTagKey = TagKey.create(Registries.ENTITY_TYPE, key); // Paper - address remapping issues
+                     if (BuiltInRegistries.ENTITY_TYPE.getTag(entityTagKey).isPresent()) {
+                         return new CraftEntityTag(BuiltInRegistries.ENTITY_TYPE, entityTagKey);
+                     }
+                 }
+-                default -> throw new IllegalArgumentException();
++                default -> new io.papermc.paper.util.EmptyTag(); // Paper - testing additions
+             }
+ 
+             return null;
+         });
+ 
++        // Paper start - testing additions
++        final Thread currentThread = Thread.currentThread();
++        when(instance.isPrimaryThread()).thenAnswer(ignored -> Thread.currentThread().equals(currentThread));
++        final org.bukkit.plugin.PluginManager pluginManager = new org.bukkit.plugin.SimplePluginManager(instance, new org.bukkit.command.SimpleCommandMap(instance));
++        when(instance.getPluginManager()).thenReturn(pluginManager);
++        // Paper end - testing additions
++
+         return instance;
+     }
+ }
+diff --git a/src/test/java/org/bukkit/support/RegistryHelper.java b/src/test/java/org/bukkit/support/RegistryHelper.java
+index 73645ea2e5c17e973ed3b888aab56f733f9c87a3..4d169ff3541044d447de519d2b0973da98b0bd53 100644
+--- a/src/test/java/org/bukkit/support/RegistryHelper.java
++++ b/src/test/java/org/bukkit/support/RegistryHelper.java
+@@ -98,6 +98,11 @@ public final class RegistryHelper {
+     private static LayeredRegistryAccess<RegistryLayer> createLayers(MultiPackResourceManager resourceManager) {
          // add tags and loot tables for unit tests
          LayeredRegistryAccess<RegistryLayer> layers = RegistryLayer.createRegistryAccess();
 +        // Paper start - load registry here to ensure bukkit object registry are correctly delayed if needed
 +        try {
 +            Class.forName("org.bukkit.Registry");
-+        } catch (ClassNotFoundException ignored) {}
++        } catch (final ClassNotFoundException ignored) {}
 +        // Paper end - load registry here to ensure bukkit object registry are correctly delayed if needed
          layers = WorldLoader.loadAndReplaceLayer(resourceManager, layers, RegistryLayer.WORLDGEN, RegistryDataLoader.WORLDGEN_REGISTRIES);
-         REGISTRY_CUSTOM = layers.compositeAccess().freeze();
-         // Register vanilla pack
-diff --git a/src/test/java/org/bukkit/support/DummyServer.java b/src/test/java/org/bukkit/support/DummyServer.java
-index 1acdf5bc439c073c1777c2c4f5743ae082f4a621..183d30e3d3d413b05c762f374a964498d6ffdec4 100644
---- a/src/test/java/org/bukkit/support/DummyServer.java
-+++ b/src/test/java/org/bukkit/support/DummyServer.java
-@@ -62,7 +62,7 @@ public final class DummyServer {
-             when(instance.getTag(any(), any(), any())).then(mock -> {
-                 String registry = mock.getArgument(0);
-                 Class<?> clazz = mock.getArgument(2);
--                MinecraftKey key = CraftNamespacedKey.toMinecraft(mock.getArgument(1));
-+                net.minecraft.resources.ResourceLocation key = CraftNamespacedKey.toMinecraft(mock.getArgument(1)); // Paper - address remapping issues
  
-                 switch (registry) {
-                     case org.bukkit.Tag.REGISTRY_BLOCKS -> {
-@@ -81,24 +81,32 @@ public final class DummyServer {
-                     }
-                     case org.bukkit.Tag.REGISTRY_FLUIDS -> {
-                         Preconditions.checkArgument(clazz == org.bukkit.Fluid.class, "Fluid namespace must have fluid type");
--                        TagKey<FluidType> fluidTagKey = TagKey.create(Registries.FLUID, key);
-+                        TagKey<net.minecraft.world.level.material.Fluid> fluidTagKey = TagKey.create(Registries.FLUID, key); // Paper - address remapping issues
-                         if (BuiltInRegistries.FLUID.getTag(fluidTagKey).isPresent()) {
-                             return new CraftFluidTag(BuiltInRegistries.FLUID, fluidTagKey);
-                         }
-                     }
-                     case org.bukkit.Tag.REGISTRY_ENTITY_TYPES -> {
-                         Preconditions.checkArgument(clazz == org.bukkit.entity.EntityType.class, "Entity type namespace must have entity type");
--                        TagKey<EntityTypes<?>> entityTagKey = TagKey.create(Registries.ENTITY_TYPE, key);
-+                        TagKey<net.minecraft.world.entity.EntityType<?>> entityTagKey = TagKey.create(Registries.ENTITY_TYPE, key); // Paper - address remapping issues
-                         if (BuiltInRegistries.ENTITY_TYPE.getTag(entityTagKey).isPresent()) {
-                             return new CraftEntityTag(BuiltInRegistries.ENTITY_TYPE, entityTagKey);
-                         }
-                     }
--                    default -> throw new IllegalArgumentException();
-+                    default -> new io.papermc.paper.util.EmptyTag(); // Paper - testing additions
-                 }
- 
-                 return null;
-             });
- 
-+            // Paper start - testing additions
-+            final Thread currentThread = Thread.currentThread();
-+            when(instance.isPrimaryThread()).thenAnswer(ignored -> Thread.currentThread().equals(currentThread));
-+
-+            final org.bukkit.plugin.PluginManager pluginManager = new org.bukkit.plugin.SimplePluginManager(instance, new org.bukkit.command.SimpleCommandMap(instance));
-+            when(instance.getPluginManager()).thenReturn(pluginManager);
-+            // paper end - testing additions
-+
-             Bukkit.setServer(instance);
-         } catch (Throwable t) {
-             throw new Error(t);
+         return layers;
