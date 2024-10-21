@@ -12,7 +12,7 @@ public net.minecraft.world.entity.projectile.ShulkerBullet targetDeltaZ
 public net.minecraft.world.entity.projectile.ShulkerBullet currentMoveDirection
 public net.minecraft.world.entity.projectile.ShulkerBullet flightSteps
 public net.minecraft.world.entity.projectile.AbstractArrow soundEvent
-public net/minecraft/world/entity/projectile/AbstractArrow setPickupItemStack(Lnet/minecraft/world/item/ItemStack;)V
+public net.minecraft.world.entity.projectile.AbstractArrow setPickupItemStack(Lnet/minecraft/world/item/ItemStack;)V
 public net.minecraft.world.entity.projectile.ThrownTrident dealtDamage
 public net.minecraft.world.entity.projectile.Arrow NO_EFFECT_COLOR
 public net.minecraft.world.entity.projectile.Projectile hasBeenShot
@@ -844,7 +844,7 @@ index e8a455eb5e17bcfcae3f03664f2b47773fbdf37e..08178a88ba7d0881a6c2843eef24a846
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/projectiles/CraftBlockProjectileSource.java b/src/main/java/org/bukkit/craftbukkit/projectiles/CraftBlockProjectileSource.java
-index 93b9e6b32798e32026492fa3f80de9d4a7b3d9a5..baab2e097777a4295e7b14957304c927640a4a77 100644
+index 93b9e6b32798e32026492fa3f80de9d4a7b3d9a5..47539778660d6d12e5ce912129156465811af161 100644
 --- a/src/main/java/org/bukkit/craftbukkit/projectiles/CraftBlockProjectileSource.java
 +++ b/src/main/java/org/bukkit/craftbukkit/projectiles/CraftBlockProjectileSource.java
 @@ -55,7 +55,15 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
@@ -863,15 +863,40 @@ index 93b9e6b32798e32026492fa3f80de9d4a7b3d9a5..baab2e097777a4295e7b14957304c927
          // Copied from BlockDispenser.dispense()
          BlockSource sourceblock = new BlockSource((ServerLevel) this.dispenserBlock.getLevel(), this.dispenserBlock.getBlockPos(), this.dispenserBlock.getBlockState(), this.dispenserBlock);
          // Copied from DispenseBehaviorProjectile
-@@ -88,7 +96,7 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
+@@ -67,7 +75,7 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
+             item = Items.SNOWBALL;
+         } else if (Egg.class.isAssignableFrom(projectile)) {
+             item = Items.EGG;
+-        } else if (EnderPearl.class.isAssignableFrom(projectile)) {
++        } else if (false && EnderPearl.class.isAssignableFrom(projectile)) { // Paper - disable this (make it more obvious)
+             item = Items.ENDER_PEARL;
+         } else if (ThrownExpBottle.class.isAssignableFrom(projectile)) {
+             item = Items.EXPERIENCE_BOTTLE;
+@@ -82,20 +90,20 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
+                 item = Items.TIPPED_ARROW;
+             } else if (SpectralArrow.class.isAssignableFrom(projectile)) {
+                 item = Items.SPECTRAL_ARROW;
+-            } else {
++            } else if (org.bukkit.entity.Arrow.class.isAssignableFrom(projectile)) { // Paper - prevent trident to be valid here
+                 item = Items.ARROW;
+             }
          } else if (Fireball.class.isAssignableFrom(projectile)) {
-             if (AbstractWindCharge.class.isAssignableFrom(projectile)) {
+-            if (AbstractWindCharge.class.isAssignableFrom(projectile)) {
++            if (org.bukkit.entity.WindCharge.class.isAssignableFrom(projectile)) { // Paper
                  item = Items.WIND_CHARGE;
 -            } else {
 +            } else if (org.bukkit.entity.SmallFireball.class.isAssignableFrom(projectile)) { // Paper - more projectile API - only allow firing fire charges.
                  item = Items.FIRE_CHARGE;
              }
          } else if (Firework.class.isAssignableFrom(projectile)) {
+             item = Items.FIREWORK_ROCKET;
+         }
+ 
+-        Preconditions.checkArgument(item instanceof ProjectileItem, "Projectile not supported");
++        Preconditions.checkArgument(item instanceof ProjectileItem, "Projectile '%s' not supported", projectile.getSimpleName()); // Paper
+ 
+         ItemStack itemstack = new ItemStack(item);
+         ProjectileItem projectileItem = (ProjectileItem) item;
 @@ -104,7 +112,7 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
          Position iposition = dispenseConfig.positionFunction().getDispensePosition(sourceblock, enumdirection);
          net.minecraft.world.entity.projectile.Projectile launch = projectileItem.asProjectile(world, iposition, itemstack, enumdirection);
