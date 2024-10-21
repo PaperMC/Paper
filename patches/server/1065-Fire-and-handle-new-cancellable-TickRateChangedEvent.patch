@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Axionize <154778082+Axionize@users.noreply.github.com>
+Date: Tue, 8 Oct 2024 20:32:34 -0400
+Subject: [PATCH] Fire and handle new cancellable TickRateChangedEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/ServerTickRateManager.java b/src/main/java/net/minecraft/server/ServerTickRateManager.java
+index 37dcf3dc3e50afd85912a7496c828576a38a4e9c..e9198a83de38e5f0fc564f6c6c87c9cdbf1abd67 100644
+--- a/src/main/java/net/minecraft/server/ServerTickRateManager.java
++++ b/src/main/java/net/minecraft/server/ServerTickRateManager.java
+@@ -121,13 +121,19 @@ public class ServerTickRateManager extends TickRateManager {
+         this.sprintTimeSpend += System.nanoTime() - this.sprintTickStartTime;
+     }
+ 
+-    @Override
+-    public void setTickRate(float tickRate) {
++    // Paper start - Fire and handle cancellable TickRateChangeEvent
++    public void setTickRate(io.papermc.paper.command.brigadier.CommandSourceStack commandSourceStack, float tickRate) {
+         super.setTickRate(tickRate);
+         this.server.onTickRateChanged();
+         this.updateStateToClients();
+     }
+ 
++    @Override
++    public void setTickRate(float tickRate) {
++        setTickRate(null, tickRate);
++    }
++    // Paper end - Fire and handle cancellable TickRateChangeEvent
++
+     public void updateJoiningPlayer(ServerPlayer player) {
+         player.connection.send(ClientboundTickingStatePacket.from(this));
+         player.connection.send(ClientboundTickingStepPacket.from(this));
+diff --git a/src/main/java/net/minecraft/server/commands/TickCommand.java b/src/main/java/net/minecraft/server/commands/TickCommand.java
+index 5ce845a9cd84c355e2716dfcb0b62686c783c9f9..4de4b27ec563a9b37de4355374a1ff45fa8bd551 100644
+--- a/src/main/java/net/minecraft/server/commands/TickCommand.java
++++ b/src/main/java/net/minecraft/server/commands/TickCommand.java
+@@ -61,7 +61,12 @@ public class TickCommand {
+ 
+     private static int setTickingRate(CommandSourceStack source, float rate) {
+         ServerTickRateManager serverTickRateManager = source.getServer().tickRateManager();
+-        serverTickRateManager.setTickRate(rate);
++        org.bukkit.event.server.TickRateChangeEvent event = new org.bukkit.event.server.TickRateChangeEvent(source, rate);
++        if (!event.callEvent()) {
++            return(int)rate;
++        }
++        rate = event.getTickRate();
++        serverTickRateManager.setTickRate(source, rate); // Paper - Fire and handle cancellable TickRateChangeEvent
+         String string = String.format("%.1f", rate);
+         source.sendSuccess(() -> Component.translatable("commands.tick.rate.success", string), true);
+         return (int)rate;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServerTickManager.java b/src/main/java/org/bukkit/craftbukkit/CraftServerTickManager.java
+index cdc55d0703d8ea2d3f6e315f598ebc0afec6fd2d..5d87144b2ea8a996cfcd2056e68ec386d52e4488 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServerTickManager.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServerTickManager.java
+@@ -42,7 +42,11 @@ final class CraftServerTickManager implements ServerTickManager {
+     @Override
+     public void setTickRate(final float tickRate) {
+         Preconditions.checkArgument(tickRate >= 1.0F && tickRate <= 10_000.0F, "The given tick rate must not be less than 1.0 or greater than 10,000.0");
+-        this.manager.setTickRate(tickRate);
++        org.bukkit.event.server.TickRateChangeEvent event = new org.bukkit.event.server.TickRateChangeEvent(null, tickRate);
++        if (!event.callEvent()) {
++            return;
++        }
++        this.manager.setTickRate(event.getTickRate());
+     }
+ 
+     @Override
