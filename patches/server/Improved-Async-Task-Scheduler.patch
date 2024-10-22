@@ -106,8 +106,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
-+    public void mainThreadHeartbeat(int currentTick) {
-+        this.currentTick = currentTick;
++    public void mainThreadHeartbeat() {
++        this.currentTick++;
 +        this.management.execute(() -> this.runTasks(currentTick));
 +    }
 +
@@ -304,28 +304,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 @@ -0,0 +0,0 @@ public class CraftScheduler implements BukkitScheduler {
-      * This method is designed to never block or wait for locks; an immediate execution of all current tasks.
       */
-     public void mainThreadHeartbeat(final int currentTick) {
+     public void mainThreadHeartbeat() {
+         this.currentTick++;
 +        // Paper start
 +        if (!this.isAsyncScheduler) {
-+            this.asyncScheduler.mainThreadHeartbeat(currentTick);
++            this.asyncScheduler.mainThreadHeartbeat();
 +        }
 +        // Paper end
-         this.currentTick = currentTick;
          final List<CraftTask> temp = this.temp;
          this.parsePending();
+         while (this.isReady(this.currentTick)) {
 @@ -0,0 +0,0 @@ public class CraftScheduler implements BukkitScheduler {
                  this.parsePending();
              } else {
-                 // this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass())); // Paper
+                 // this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(this.currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass())); // Paper
 -                this.executor.execute(new com.destroystokyo.paper.ServerSchedulerReportingWrapper(task)); // Paper
 +                task.getOwner().getLogger().log(Level.SEVERE, "Unexpected Async Task in the Sync Scheduler. Report this to Paper"); // Paper
                  // We don't need to parse pending
                  // (async tasks must live with race-conditions if they attempt to cancel between these few lines of code)
              }
 @@ -0,0 +0,0 @@ public class CraftScheduler implements BukkitScheduler {
-         //this.debugHead = this.debugHead.getNextHead(currentTick); // Paper
+         //this.debugHead = this.debugHead.getNextHead(this.currentTick); // Paper
      }
  
 -    private void addTask(final CraftTask task) {
