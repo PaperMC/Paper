@@ -14,7 +14,7 @@ public interface FeatureFlag extends Keyed {
     public static final FeatureFlag VANILLA = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("vanilla"));
 
     /**
-     * <strong>AVAILABLE BETWEEN VERSIONS:</strong> 1.19.3 - 1.21.2
+     * <strong>AVAILABLE BETWEEN VERSIONS:</strong> 1.19.3 - 1.21.1
      *
      * @deprecated not available since 1.21.2
      */
