@@ -65,21 +65,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/item/FireworkRocketItem.java
 +++ b/src/main/java/net/minecraft/world/item/FireworkRocketItem.java
 @@ -0,0 +0,0 @@ public class FireworkRocketItem extends Item implements ProjectileItem {
-                 vec3.z + (double)direction.getStepZ() * 0.15,
-                 itemStack
+                     itemStack
+                 ),
+                 serverLevel,
+-                itemStack
++                itemStack, f -> f.spawningEntity = context.getPlayer() == null ? null : context.getPlayer().getUUID()  // Paper - firework api - assign spawning entity uuid
              );
-+            fireworkRocketEntity.spawningEntity = context.getPlayer() == null ? null : context.getPlayer().getUUID(); // Paper
-             level.addFreshEntity(fireworkRocketEntity);
              itemStack.shrink(1);
          }
 @@ -0,0 +0,0 @@ public class FireworkRocketItem extends Item implements ProjectileItem {
+         if (user.isFallFlying()) {
              ItemStack itemStack = user.getItemInHand(hand);
-             if (!world.isClientSide) {
-                 FireworkRocketEntity fireworkRocketEntity = new FireworkRocketEntity(world, itemStack, user);
-+                fireworkRocketEntity.spawningEntity = user.getUUID(); // Paper
-                 world.addFreshEntity(fireworkRocketEntity);
+             if (world instanceof ServerLevel serverLevel) {
+-                Projectile.spawnProjectile(new FireworkRocketEntity(world, itemStack, user), serverLevel, itemStack);
++                Projectile.spawnProjectile(new FireworkRocketEntity(world, itemStack, user), serverLevel, itemStack, f -> f.spawningEntity = user.getUUID());  // Paper - firework api - assign spawning entity uuid
                  itemStack.consume(1, user);
                  user.awardStat(Stats.ITEM_USED.get(this));
+             }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
