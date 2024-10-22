@@ -104,10 +104,10 @@ index 0000000000000000000000000000000000000000..0955699df65ccbb8711cfa48f0b34d5a
 +    @Unmodifiable Set<FeatureFlag> getFeatureFlags();
 +}
 diff --git a/src/main/java/org/bukkit/FeatureFlag.java b/src/main/java/org/bukkit/FeatureFlag.java
-index 026b1832bcd163ab89668c991bf002e608e36aef..b5e87480b6a1d064547e4e608f3d402825931a00 100644
+index 82f9ba32256bfc1125ee970a7fed0895fe08f145..163b73204f3c94c1a234eb86cc73bd92858bc5e4 100644
 --- a/src/main/java/org/bukkit/FeatureFlag.java
 +++ b/src/main/java/org/bukkit/FeatureFlag.java
-@@ -1,37 +1,56 @@
+@@ -1,17 +1,24 @@
  package org.bukkit;
  
 +// Paper start - overhaul FeatureFlag API
@@ -136,12 +136,14 @@ index 026b1832bcd163ab89668c991bf002e608e36aef..b5e87480b6a1d064547e4e608f3d4028
 +     */
 +    FeatureFlag VANILLA = create("vanilla");
  
-+    /**
-+     * The {@code bundle} feature flag.
-+     */
-     @ApiStatus.Experimental // Paper - add missing annotation
+     /**
+      * <strong>AVAILABLE BETWEEN VERSIONS:</strong> 1.19.3 - 1.21.2
+@@ -19,34 +26,43 @@ public interface FeatureFlag extends Keyed {
+      * @deprecated not available since 1.21.2
+      */
+     @Deprecated
 -    public static final FeatureFlag BUNDLE = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("bundle"));
-+    FeatureFlag BUNDLE = create("bundle");
++    FeatureFlag BUNDLE = deprecated("bundle");
  
      /**
 -     * <strong>AVAILABLE BETWEEN VERSIONS:</strong> 1.19 - 1.19.4
@@ -155,21 +157,35 @@ index 026b1832bcd163ab89668c991bf002e608e36aef..b5e87480b6a1d064547e4e608f3d4028
      @ApiStatus.Experimental // Paper - add missing annotation
 -    public static final FeatureFlag TRADE_REBALANCE = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("trade_rebalance"));
 +    FeatureFlag TRADE_REBALANCE = create("trade_rebalance");
-+
+ 
+-    /**
+-     * <strong>AVAILABLE BETWEEN VERSIONS:</strong> 1.20.5 - 1.20.6
+-     *
+-     * @deprecated not available since 1.21
+-     */
+-    @Deprecated
+-    public static final FeatureFlag UPDATE_121 = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("update_1_21"));
 +    @Deprecated(since = "1.20")
 +    FeatureFlag UPDATE_1_20 = deprecated("update_1_20");
 +
 +    @Deprecated(since = "1.21")
 +    FeatureFlag UPDATE_121 = deprecated("update_1_21");
  
-     /**
--     * <strong>AVAILABLE BETWEEN VERSIONS:</strong> 1.20.5 - 1.20.6
--     *
--     * @deprecated not available since 1.21
+     @ApiStatus.Experimental // Paper - add missing annotation
+-    public static final FeatureFlag WINTER_DROP = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("winter_drop"));
++    FeatureFlag WINTER_DROP = create("winter_drop");
+ 
+     @ApiStatus.Experimental // Paper - add missing annotation
+-    public static final FeatureFlag REDSTONE_EXPERIMENTS = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("redstone_experiments"));
++    FeatureFlag REDSTONE_EXPERIMENTS = create("redstone_experiments");
+ 
+     @ApiStatus.Experimental // Paper - add missing annotation
+-    public static final FeatureFlag MINECART_IMPROVEMENTS = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("minecart_improvements"));
++    FeatureFlag MINECART_IMPROVEMENTS = create("minecart_improvements");
++
++    /**
 +     * An index of all feature flags.
-      */
--    @Deprecated
--    public static final FeatureFlag UPDATE_121 = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("update_1_21"));
++     */
 +    Index<Key, FeatureFlag> ALL_FLAGS = Index.create(FeatureFlag::key, List.copyOf(FeatureFlagImpl.ALL_FLAGS));
 +
 +    private static FeatureFlag create(@Subst("vanilla") final String name) {
@@ -182,6 +198,7 @@ index 026b1832bcd163ab89668c991bf002e608e36aef..b5e87480b6a1d064547e4e608f3d4028
 +        return new FeatureFlagImpl.Deprecated(NamespacedKey.minecraft(name));
 +    }
 +    // Paper end - overhaul FeatureFlag API
+ 
  }
 diff --git a/src/main/java/org/bukkit/FeatureFlagImpl.java b/src/main/java/org/bukkit/FeatureFlagImpl.java
 new file mode 100644
@@ -244,10 +261,10 @@ index 330e3013eda204aa9b33d5e1c3104e0b595abdbc..c80e0ef587a001ee6de3f5c182cc9696
      /**
       * Do not use, method will get removed, and the plugin won't run
 diff --git a/src/main/java/org/bukkit/block/BlockType.java b/src/main/java/org/bukkit/block/BlockType.java
-index a58ef2238208fbb55341f4532eaa288577ed8c0e..fb2b373c1822e7248a30e610d11e2c2bd438c19a 100644
+index c080c2a3323d19cb3d549aa0fe6c164666d7da75..ed534fe4983873a2d5f623f0d9d5e3ce254615eb 100644
 --- a/src/main/java/org/bukkit/block/BlockType.java
 +++ b/src/main/java/org/bukkit/block/BlockType.java
-@@ -125,7 +125,7 @@ import org.jetbrains.annotations.Nullable;
+@@ -129,7 +129,7 @@ import org.jetbrains.annotations.Nullable;
   * changes may occur. Do not use this API in plugins.
   */
  @ApiStatus.Internal
@@ -256,7 +273,7 @@ index a58ef2238208fbb55341f4532eaa288577ed8c0e..fb2b373c1822e7248a30e610d11e2c2b
  
      /**
       * Typed represents a subtype of {@link BlockType}s that have a known block
-@@ -3490,7 +3490,9 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
+@@ -3629,7 +3629,9 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
       *
       * @param world the world to check
       * @return true if this BlockType can be used in this World.
@@ -267,10 +284,10 @@ index a58ef2238208fbb55341f4532eaa288577ed8c0e..fb2b373c1822e7248a30e610d11e2c2b
  
      /**
 diff --git a/src/main/java/org/bukkit/entity/EntityType.java b/src/main/java/org/bukkit/entity/EntityType.java
-index ba605ad75d4ed920c0dc4527529998041a58676b..a78e1c431a6ea46ba7c44880e25a871f473bef41 100644
+index 6521a20d69a4c8e75be7e9b3fdebbc25b843ec1b..37dbd114f91a26bc09a1230d38afe7f6a99e5c28 100644
 --- a/src/main/java/org/bukkit/entity/EntityType.java
 +++ b/src/main/java/org/bukkit/entity/EntityType.java
-@@ -23,7 +23,7 @@ import org.jetbrains.annotations.Contract;
+@@ -45,7 +45,7 @@ import org.jetbrains.annotations.Contract;
  import org.jetbrains.annotations.NotNull;
  import org.jetbrains.annotations.Nullable;
  
@@ -293,10 +310,10 @@ index 5067f1371433cccd3287af7f03e152f2c3c1ece3..e0cb282541548ac3bd24cce86b3413f5
      /**
       * Gets the unique name of this world
 diff --git a/src/main/java/org/bukkit/inventory/ItemType.java b/src/main/java/org/bukkit/inventory/ItemType.java
-index 15d68c4997f739c39675ef8ffa5ab7967dac59f2..f96ced6ae8a969319728efb4fc4fe545923e32be 100644
+index ef3a30d5cca29c7a7c546791be3c333e63e425f4..72803c00e4af576f286d2af34bf300ee554a7f3c 100644
 --- a/src/main/java/org/bukkit/inventory/ItemType.java
 +++ b/src/main/java/org/bukkit/inventory/ItemType.java
-@@ -47,7 +47,7 @@ import org.jetbrains.annotations.Nullable;
+@@ -48,7 +48,7 @@ import org.jetbrains.annotations.Nullable;
   * changes may occur. Do not use this API in plugins.
   */
  @ApiStatus.Experimental // Paper - already required for registry builders
@@ -305,7 +322,7 @@ index 15d68c4997f739c39675ef8ffa5ab7967dac59f2..f96ced6ae8a969319728efb4fc4fe545
  
      /**
       * Typed represents a subtype of {@link ItemType}s that have a known item meta type
-@@ -2300,7 +2300,9 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
+@@ -2451,7 +2451,9 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
       *
       * @param world the world to check
       * @return true if this ItemType can be used in this World.
