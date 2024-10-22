@@ -13,6 +13,7 @@ import org.bukkit.BanEntry;
 import org.bukkit.DyeColor;
 import org.bukkit.Effect;
 import org.bukkit.GameMode;
+import org.bukkit.Input;
 import org.bukkit.Instrument;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -502,6 +503,18 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     @NotNull
     @ApiStatus.Experimental
     public Collection<EnderPearl> getEnderPearls();
+
+    /**
+     * Gets the current movement input, as last provided by the player.
+     * <br>
+     * <b>Note: that this may not always be consistent with the current movement
+     * of the player.</b>
+     *
+     * @return current input
+     */
+    @NotNull
+    @ApiStatus.Experimental
+    public Input getCurrentInput();
 
     /**
      * Play a note for the player at a location. <br>
