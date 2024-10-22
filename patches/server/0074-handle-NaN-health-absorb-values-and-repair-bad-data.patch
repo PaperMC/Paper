@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 27 Sep 2015 01:18:02 -0400
+Subject: [PATCH] handle NaN health/absorb values and repair bad data
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 4fa5e7127549e090338b11e6493413a3fab254a0..14d9e62c86309676ddd7eed19cce2f4b30a59b94 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -833,7 +833,13 @@ public abstract class LivingEntity extends Entity implements Attackable {
+ 
+     @Override
+     public void readAdditionalSaveData(CompoundTag nbt) {
+-        this.internalSetAbsorptionAmount(nbt.getFloat("AbsorptionAmount"));
++        // Paper start - Check for NaN
++        float absorptionAmount = nbt.getFloat("AbsorptionAmount");
++        if (Float.isNaN(absorptionAmount)) {
++            absorptionAmount = 0;
++        }
++        this.internalSetAbsorptionAmount(absorptionAmount);
++        // Paper end - Check for NaN
+         if (nbt.contains("attributes", 9) && this.level() != null && !this.level().isClientSide) {
+             this.getAttributes().load(nbt.getList("attributes", 10));
+         }
+@@ -1373,6 +1379,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
+     }
+ 
+     public void setHealth(float health) {
++        // Paper start - Check for NaN
++        if (Float.isNaN(health)) { health = getMaxHealth(); if (this.valid) {
++            System.err.println("[NAN-HEALTH] " + getScoreboardName() + " had NaN health set");
++        } } // Paper end - Check for NaN
+         // CraftBukkit start - Handle scaled health
+         if (this instanceof ServerPlayer) {
+             org.bukkit.craftbukkit.entity.CraftPlayer player = ((ServerPlayer) this).getBukkitEntity();
+@@ -3841,7 +3851,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+     }
+ 
+     public final void setAbsorptionAmount(float absorptionAmount) {
+-        this.internalSetAbsorptionAmount(Mth.clamp(absorptionAmount, 0.0F, this.getMaxAbsorption()));
++        this.internalSetAbsorptionAmount(!Float.isNaN(absorptionAmount) ? Mth.clamp(absorptionAmount, 0.0F, this.getMaxAbsorption()) : 0.0F); // Paper - Check for NaN
+     }
+ 
+     protected void internalSetAbsorptionAmount(float absorptionAmount) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 69459b11c77bd0a6d9584f868773dba92f73aa36..ca6194580c10cc864430b859a2c60d0b2e6a9a16 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -2351,6 +2351,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     }
+ 
+     public void setRealHealth(double health) {
++        if (Double.isNaN(health)) {return;} // Paper - Check for NaN
+         this.health = health;
+     }
+ 
