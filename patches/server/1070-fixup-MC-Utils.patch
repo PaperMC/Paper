@@ -1,0 +1,87 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Mon, 21 Oct 2024 12:21:54 -0700
+Subject: [PATCH] fixup! MC Utils
+
+
+diff --git a/src/main/java/ca/spottedleaf/moonrise/common/util/ChunkSystem.java b/src/main/java/ca/spottedleaf/moonrise/common/util/ChunkSystem.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/ca/spottedleaf/moonrise/common/util/ChunkSystem.java
++++ b/src/main/java/ca/spottedleaf/moonrise/common/util/ChunkSystem.java
+@@ -0,0 +0,0 @@
+ package ca.spottedleaf.moonrise.common.util;
+ 
+-import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
++import ca.spottedleaf.concurrentutil.util.Priority;
+ import ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel;
+ import ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkSystemLevelChunk;
+ import ca.spottedleaf.moonrise.patches.chunk_system.player.RegionizedPlayerChunkLoader;
+@@ -0,0 +0,0 @@ public final class ChunkSystem {
+     private static final Logger LOGGER = LogUtils.getLogger();
+ 
+     public static void scheduleChunkTask(final ServerLevel level, final int chunkX, final int chunkZ, final Runnable run) {
+-        scheduleChunkTask(level, chunkX, chunkZ, run, PrioritisedExecutor.Priority.NORMAL);
++        scheduleChunkTask(level, chunkX, chunkZ, run, Priority.NORMAL);
+     }
+ 
+-    public static void scheduleChunkTask(final ServerLevel level, final int chunkX, final int chunkZ, final Runnable run, final PrioritisedExecutor.Priority priority) {
++    public static void scheduleChunkTask(final ServerLevel level, final int chunkX, final int chunkZ, final Runnable run, final Priority priority) {
+         ((ChunkSystemServerLevel)level).moonrise$getChunkTaskScheduler().scheduleChunkTask(chunkX, chunkZ, run, priority);
+     }
+ 
+     public static void scheduleChunkLoad(final ServerLevel level, final int chunkX, final int chunkZ, final boolean gen,
+-                                         final ChunkStatus toStatus, final boolean addTicket, final PrioritisedExecutor.Priority priority,
++                                         final ChunkStatus toStatus, final boolean addTicket, final Priority priority,
+                                          final Consumer<ChunkAccess> onComplete) {
+         ((ChunkSystemServerLevel)level).moonrise$getChunkTaskScheduler().scheduleChunkLoad(chunkX, chunkZ, gen, toStatus, addTicket, priority, onComplete);
+     }
+ 
+     public static void scheduleChunkLoad(final ServerLevel level, final int chunkX, final int chunkZ, final ChunkStatus toStatus,
+-                                         final boolean addTicket, final PrioritisedExecutor.Priority priority, final Consumer<ChunkAccess> onComplete) {
++                                         final boolean addTicket, final Priority priority, final Consumer<ChunkAccess> onComplete) {
+         ((ChunkSystemServerLevel)level).moonrise$getChunkTaskScheduler().scheduleChunkLoad(chunkX, chunkZ, toStatus, addTicket, priority, onComplete);
+     }
+ 
+     public static void scheduleTickingState(final ServerLevel level, final int chunkX, final int chunkZ,
+                                             final FullChunkStatus toStatus, final boolean addTicket,
+-                                            final PrioritisedExecutor.Priority priority, final Consumer<LevelChunk> onComplete) {
++                                            final Priority priority, final Consumer<LevelChunk> onComplete) {
+         ((ChunkSystemServerLevel)level).moonrise$getChunkTaskScheduler().scheduleTickingState(chunkX, chunkZ, toStatus, addTicket, priority, onComplete);
+     }
+ 
+@@ -0,0 +0,0 @@ public final class ChunkSystem {
+         return getUpdatingChunkHolderCount(level) != 0;
+     }
+ 
+-    public static boolean screenEntity(final ServerLevel level, final Entity entity) {
++    public static boolean screenEntity(final ServerLevel level, final Entity entity, final boolean fromDisk, final boolean event) {
+         return true;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
++++ b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
+@@ -0,0 +0,0 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+     private boolean addEntity(T entity, boolean existing) {
+         org.spigotmc.AsyncCatcher.catchOp("Entity add"); // Paper
+         // Paper start - chunk system hooks
+-        if (existing) {
+-            // I don't want to know why this is a generic type.
+-            Entity entityCasted = (Entity)entity;
+-            boolean wasRemoved = entityCasted.isRemoved();
+-            boolean screened = ca.spottedleaf.moonrise.common.util.ChunkSystem.screenEntity((net.minecraft.server.level.ServerLevel)entityCasted.level(), entityCasted);
+-            if ((!wasRemoved && entityCasted.isRemoved()) || !screened) {
+-                // removed by callback
+-                return false;
+-            }
++        // I don't want to know why this is a generic type.
++        Entity entityCasted = (Entity)entity;
++        boolean wasRemoved = entityCasted.isRemoved();
++        boolean screened = ca.spottedleaf.moonrise.common.util.ChunkSystem.screenEntity((net.minecraft.server.level.ServerLevel)entityCasted.level(), entityCasted, existing, false);
++        if ((!wasRemoved && entityCasted.isRemoved()) || !screened) {
++            // removed by callback
++            return false;
+         }
+         // Paper end - chunk system hooks
+         if (!this.addEntityUuid(entity)) {
