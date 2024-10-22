@@ -15,7 +15,7 @@ public net.minecraft.server.dedicated.DedicatedServerProperties reload(Lnet/mine
 public net.minecraft.world.level.NaturalSpawner SPAWNING_CATEGORIES
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 2233e51bfab4ac36977984e8fe7fddb04120dddd..7f7b7f0b29107375b2438e3af0bc0f40390db4fa 100644
+index 41b000aaa71dca3fb392ae657be16e05bd37a178..da6b4787fa787e098e4031790e955ce616593ee9 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -10,6 +10,7 @@ dependencies {
@@ -24,8 +24,8 @@ index 2233e51bfab4ac36977984e8fe7fddb04120dddd..7f7b7f0b29107375b2438e3af0bc0f40
      implementation("org.ow2.asm:asm-commons:9.7.1")
 +    implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT") // Paper - config files
      implementation("commons-lang:commons-lang:2.6")
-     runtimeOnly("org.xerial:sqlite-jdbc:3.46.0.0")
-     runtimeOnly("com.mysql:mysql-connector-j:8.4.0")
+     runtimeOnly("org.xerial:sqlite-jdbc:3.46.1.3")
+     runtimeOnly("com.mysql:mysql-connector-j:9.1.0")
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..ef41cf3a7d1e6f2bfe81e0fb865d2f969bbc77c1
@@ -5074,7 +5074,7 @@ index 0000000000000000000000000000000000000000..614aba60bb07946a144650fd3aedb316
 +    protected abstract boolean belowZero(O value);
 +}
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index b334265d4015fec13d7fedbffba2b6c22f4c8bc8..5b4ac7b4fd0077e900e9f788963f1613bbc9a5d0 100644
+index fc5c42e77a76b0ca946b13435144584b9c4bfafa..9bd6056bba6ba48bada7e9cd5883b0a171b0bbc4 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
 @@ -129,6 +129,10 @@ public class Main {
@@ -5098,10 +5098,10 @@ index b334265d4015fec13d7fedbffba2b6c22f4c8bc8..5b4ac7b4fd0077e900e9f788963f1613
              String s = (String) Optional.ofNullable((String) optionset.valueOf("world")).orElse(dedicatedserversettings.getProperties().levelName);
              LevelStorageSource convertable = LevelStorageSource.createDefault(file.toPath());
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index db2031ffbc802bd850ab40acaec2a9624b753f4c..299afe72a2fc2affca196f2fdfbf27e5533c51a6 100644
+index c54fae06acd566742cea3aef537ad1b4e2b7414a..3fc0abef2c4e2c8ceb3b8c4f02c59700aa3d0803 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -309,6 +309,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -320,6 +320,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      private static final int SAMPLE_INTERVAL = 100;
      public final double[] recentTps = new double[ 3 ];
      // Spigot end
@@ -5109,7 +5109,7 @@ index db2031ffbc802bd850ab40acaec2a9624b753f4c..299afe72a2fc2affca196f2fdfbf27e5
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
-@@ -405,6 +406,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -420,6 +421,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
          Runtime.getRuntime().addShutdownHook(new org.bukkit.craftbukkit.util.ServerShutdownThread(this));
          // CraftBukkit end
@@ -5158,10 +5158,10 @@ index dfbb04800d6f1dcbb909fcdfeb1ebf1a5efa6a48..5928e5f1934b8e247ba516595018ed5c
  
      @Nullable
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index d3c7c1e016af5d04b5a18a6ced898cf4dc9b1700..cd26616aba6abd44abc5eb8b01cc96f29248aecd 100644
+index abde0c14bf0998830f1f9a7661e9eab8b35c7b85..ca095f9d6c985b066a393debc6529973a3616397 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -200,6 +200,10 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -199,6 +199,10 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          org.spigotmc.SpigotConfig.init((java.io.File) this.options.valueOf("spigot-settings"));
          org.spigotmc.SpigotConfig.registerCommands();
          // Spigot end
@@ -5185,23 +5185,23 @@ index 6d89a5414f46a0c30badb4fcd25bc6cb6d18db3a..0ec3b546db0cf3858dd9cd9ea067d1d6
              }
              // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 63ad1280667a02e00f9c636193e38f933cad0185..a696a0d168987aaa4e59c471a23eeb48d683c1b2 100644
+index a0b4ca006ba51da1a91d10b8e8d4a1b12a5a37d3..a17846ccd8581c3d6da962e977623aaab8314ec7 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -242,7 +242,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
-         // Holder holder = worlddimension.type(); // CraftBukkit - decompile error
+@@ -241,7 +241,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
  
-         // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
--        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env);
-+        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess(), iworlddataserver.getGameRules()))); // Paper - create paper world configs
+     // Add env and gen to constructor, IWorldDataServer -> WorldDataServer
+     public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PrimaryLevelData iworlddataserver, ResourceKey<Level> resourcekey, LevelStem worlddimension, ChunkProgressListener worldloadlistener, boolean flag, long i, List<CustomSpawner> list, boolean flag1, @Nullable RandomSequences randomsequences, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
+-        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env);
++        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess(), iworlddataserver.getGameRules()))); // Paper - create paper world configs
          this.pvpMode = minecraftserver.isPvpAllowed();
          this.convertable = convertable_conversionsession;
          this.uuid = WorldUUID.getUUID(convertable_conversionsession.levelDirectory.path().toFile());
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index e433037a03ffafabb952887ae3980e1d51411d4c..c061813d275fbc48d7629cc59d90dbb4c347516c 100644
+index 9cf0c141fefe67893828e300cba4f8a8545ba25f..c8e49c1904c80c4ede40ca5c26efad9b12e247d1 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -156,6 +156,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -157,6 +157,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public final it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<SpawnCategory> ticksPerSpawnCategory = new it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<>();
      public boolean populating;
      public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
@@ -5214,31 +5214,31 @@ index e433037a03ffafabb952887ae3980e1d51411d4c..c061813d275fbc48d7629cc59d90dbb4
  
      public final SpigotTimings.WorldTimingsHandler timings; // Spigot
      public static BlockPos lastPhysicsProblem; // Spigot
-@@ -173,8 +179,9 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -174,8 +180,9 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
  
      public abstract ResourceKey<LevelStem> getTypeKey();
  
--    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env) {
-+    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator) { // Paper - create paper world config
+-    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env) {
++    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator) { // Paper - create paper world config
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
 +        this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper - create paper world config
          this.generator = gen;
          this.world = new CraftWorld((ServerLevel) this, gen, biomeProvider, env);
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 357c948dd66644497583996f211f25cbe5c78828..d0c41302478bd9b0ec65020e7ef520bd3ff1f347 100644
+index c48b1d5fc73a98eb4967632d8e6e0744961a688f..3882ae04173cd125fe490692a6bc2b4d8b20ff7b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -964,6 +964,7 @@ public final class CraftServer implements Server {
+@@ -967,6 +967,7 @@ public final class CraftServer implements Server {
          }
  
          org.spigotmc.SpigotConfig.init((File) this.console.options.valueOf("spigot-settings")); // Spigot
 +        this.console.paperConfigurations.reloadConfigs(this.console);
          for (ServerLevel world : this.console.getAllLevels()) {
              world.serverLevelData.setDifficulty(config.difficulty);
-             world.setSpawnSettings(config.spawnMonsters, config.spawnAnimals);
+             world.setSpawnSettings(config.spawnMonsters);
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 4566237fa1d49a559b2df806f9a318be46a6eade..0ea2d13ab80559472513c6df362583b8371a9532 100644
+index 17e10c4373b4281cc74b748c4a1e173e36eb9196..755b1d77418ecae0dc9ec5197275d0cd914e7bee 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -142,6 +142,19 @@ public class Main {
@@ -5363,7 +5363,7 @@ index 0000000000000000000000000000000000000000..0396589795da1f83ddf62426236dde9a
 +    }
 +}
 diff --git a/src/test/java/org/bukkit/support/DummyServerHelper.java b/src/test/java/org/bukkit/support/DummyServerHelper.java
-index f81f86cf05a8c6816d356185af6d0d84a0474dd2..ba0a2ab9de34fa40dd90cecaeec4a5e54fe3e2d8 100644
+index 0a6ba289a94468b67d282a199250142e1e86f075..bdfa164ea21cba91b30b965d65d47112111a1209 100644
 --- a/src/test/java/org/bukkit/support/DummyServerHelper.java
 +++ b/src/test/java/org/bukkit/support/DummyServerHelper.java
 @@ -91,6 +91,7 @@ public final class DummyServerHelper {
