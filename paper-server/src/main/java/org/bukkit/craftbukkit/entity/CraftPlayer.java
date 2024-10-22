@@ -160,6 +160,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.conversations.ConversationTracker;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.inventory.CraftRecipe;
 import org.bukkit.craftbukkit.map.CraftMapCursor;
 import org.bukkit.craftbukkit.map.CraftMapView;
 import org.bukkit.craftbukkit.map.RenderData;
@@ -416,6 +417,18 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                 player.connection.send(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.a.UPDATE_DISPLAY_NAME, getHandle()));
             }
         }
+    }
+
+    @Override
+    public int getPlayerListOrder() {
+        return getHandle().listOrder;
+    }
+
+    @Override
+    public void setPlayerListOrder(int order) {
+        Preconditions.checkArgument(order >= 0, "order cannot be negative");
+
+        getHandle().listOrder = order;
     }
 
     private IChatBaseComponent playerListHeader;
@@ -961,7 +974,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             }
         }
 
-        PacketPlayOutMap packet = new PacketPlayOutMap(new MapId(map.getId()), map.getScale().getValue(), map.isLocked(), icons, new WorldMap.b(0, 0, 128, 128, data.buffer));
+        PacketPlayOutMap packet = new PacketPlayOutMap(new MapId(map.getId()), map.getScale().getValue(), map.isLocked(), icons, new WorldMap.c(0, 0, 128, 128, data.buffer));
         getHandle().connection.send(packet);
     }
 
@@ -1184,13 +1197,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public boolean hasDiscoveredRecipe(NamespacedKey recipe) {
         Preconditions.checkArgument(recipe != null, "recipe cannot be null");
-        return getHandle().getRecipeBook().contains(CraftNamespacedKey.toMinecraft(recipe));
+        return getHandle().getRecipeBook().contains(CraftRecipe.toMinecraft(recipe));
     }
 
     @Override
     public Set<NamespacedKey> getDiscoveredRecipes() {
         ImmutableSet.Builder<NamespacedKey> bukkitRecipeKeys = ImmutableSet.builder();
-        getHandle().getRecipeBook().known.forEach(key -> bukkitRecipeKeys.add(CraftNamespacedKey.fromMinecraft(key)));
+        getHandle().getRecipeBook().known.forEach(key -> bukkitRecipeKeys.add(CraftNamespacedKey.fromMinecraft(key.location())));
         return bukkitRecipeKeys.build();
     }
 

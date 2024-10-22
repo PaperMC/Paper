@@ -21,6 +21,7 @@ import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.ZombieVillager;
 import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.event.entity.EntityTransformEvent;
 
 public class CraftVillager extends CraftAbstractVillager implements Villager {
 
@@ -123,7 +124,7 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
 
     @Override
     public ZombieVillager zombify() {
-        EntityZombieVillager entityzombievillager = EntityZombie.zombifyVillager(getHandle().level().getMinecraftWorld(), getHandle(), getHandle().blockPosition(), isSilent(), CreatureSpawnEvent.SpawnReason.CUSTOM);
+        EntityZombieVillager entityzombievillager = EntityZombie.convertVillagerToZombieVillager(getHandle().level().getMinecraftWorld(), getHandle(), getHandle().blockPosition(), isSilent(), EntityTransformEvent.TransformReason.INFECTION, CreatureSpawnEvent.SpawnReason.CUSTOM);
         return (entityzombievillager != null) ? (ZombieVillager) entityzombievillager.getBukkitEntity() : null;
     }
 

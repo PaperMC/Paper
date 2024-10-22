@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/GameRules.java
 +++ b/net/minecraft/world/level/GameRules.java
-@@ -55,7 +55,7 @@
+@@ -58,7 +58,7 @@
      public static final GameRules.GameRuleKey<GameRules.GameRuleBoolean> RULE_SENDCOMMANDFEEDBACK = register("sendCommandFeedback", GameRules.GameRuleCategory.CHAT, GameRules.GameRuleBoolean.create(true));
      public static final GameRules.GameRuleKey<GameRules.GameRuleBoolean> RULE_REDUCEDDEBUGINFO = register("reducedDebugInfo", GameRules.GameRuleCategory.MISC, GameRules.GameRuleBoolean.create(false, (minecraftserver, gamerules_gameruleboolean) -> {
          int i = gamerules_gameruleboolean.get() ? 22 : 23;
@@ -9,7 +9,7 @@
  
          while (iterator.hasNext()) {
              EntityPlayer entityplayer = (EntityPlayer) iterator.next();
-@@ -70,7 +70,7 @@
+@@ -74,7 +74,7 @@
      public static final GameRules.GameRuleKey<GameRules.GameRuleInt> RULE_MAX_ENTITY_CRAMMING = register("maxEntityCramming", GameRules.GameRuleCategory.MOBS, GameRules.GameRuleInt.create(24));
      public static final GameRules.GameRuleKey<GameRules.GameRuleBoolean> RULE_WEATHER_CYCLE = register("doWeatherCycle", GameRules.GameRuleCategory.UPDATES, GameRules.GameRuleBoolean.create(true));
      public static final GameRules.GameRuleKey<GameRules.GameRuleBoolean> RULE_LIMITED_CRAFTING = register("doLimitedCrafting", GameRules.GameRuleCategory.PLAYER, GameRules.GameRuleBoolean.create(false, (minecraftserver, gamerules_gameruleboolean) -> {
@@ -18,7 +18,7 @@
  
          while (iterator.hasNext()) {
              EntityPlayer entityplayer = (EntityPlayer) iterator.next();
-@@ -86,7 +86,7 @@
+@@ -90,7 +90,7 @@
      public static final GameRules.GameRuleKey<GameRules.GameRuleBoolean> RULE_DISABLE_RAIDS = register("disableRaids", GameRules.GameRuleCategory.MOBS, GameRules.GameRuleBoolean.create(false));
      public static final GameRules.GameRuleKey<GameRules.GameRuleBoolean> RULE_DOINSOMNIA = register("doInsomnia", GameRules.GameRuleCategory.SPAWNING, GameRules.GameRuleBoolean.create(true));
      public static final GameRules.GameRuleKey<GameRules.GameRuleBoolean> RULE_DO_IMMEDIATE_RESPAWN = register("doImmediateRespawn", GameRules.GameRuleCategory.PLAYER, GameRules.GameRuleBoolean.create(false, (minecraftserver, gamerules_gameruleboolean) -> {
@@ -27,25 +27,25 @@
  
          while (iterator.hasNext()) {
              EntityPlayer entityplayer = (EntityPlayer) iterator.next();
-@@ -117,7 +117,7 @@
-     public static final GameRules.GameRuleKey<GameRules.GameRuleBoolean> RULE_DO_VINES_SPREAD = register("doVinesSpread", GameRules.GameRuleCategory.UPDATES, GameRules.GameRuleBoolean.create(true));
-     public static final GameRules.GameRuleKey<GameRules.GameRuleBoolean> RULE_ENDER_PEARLS_VANISH_ON_DEATH = register("enderPearlsVanishOnDeath", GameRules.GameRuleCategory.PLAYER, GameRules.GameRuleBoolean.create(true));
-     public static final GameRules.GameRuleKey<GameRules.GameRuleInt> RULE_SPAWN_CHUNK_RADIUS = register("spawnChunkRadius", GameRules.GameRuleCategory.MISC, GameRules.GameRuleInt.create(2, 0, 32, (minecraftserver, gamerules_gameruleint) -> {
+@@ -123,7 +123,7 @@
+     public static final GameRules.GameRuleKey<GameRules.GameRuleInt> RULE_MINECART_MAX_SPEED = register("minecartMaxSpeed", GameRules.GameRuleCategory.MISC, GameRules.GameRuleInt.create(8, 1, 1000, FeatureFlagSet.of(FeatureFlags.MINECART_IMPROVEMENTS), (minecraftserver, gamerules_gameruleint) -> {
+     }));
+     public static final GameRules.GameRuleKey<GameRules.GameRuleInt> RULE_SPAWN_CHUNK_RADIUS = register("spawnChunkRadius", GameRules.GameRuleCategory.MISC, GameRules.GameRuleInt.create(2, 0, 32, FeatureFlagSet.of(), (minecraftserver, gamerules_gameruleint) -> {
 -        WorldServer worldserver = minecraftserver.overworld();
 +        WorldServer worldserver = minecraftserver; // CraftBukkit - per-world
  
          worldserver.setDefaultSpawnPos(worldserver.getSharedSpawnPos(), worldserver.getSharedSpawnAngle());
      }));
-@@ -150,7 +150,7 @@
+@@ -164,7 +164,7 @@
      }
  
      public <T extends GameRules.GameRuleValue<T>> T getRule(GameRules.GameRuleKey<T> gamerules_gamerulekey) {
--        return (GameRules.GameRuleValue) this.rules.get(gamerules_gamerulekey);
-+        return (T) this.rules.get(gamerules_gamerulekey); // CraftBukkit - decompile error
-     }
+-        T t0 = (GameRules.GameRuleValue) this.rules.get(gamerules_gamerulekey);
++        T t0 = (T) this.rules.get(gamerules_gamerulekey); // CraftBukkit - decompile error
  
-     public NBTTagCompound createTag() {
-@@ -164,7 +164,7 @@
+         if (t0 == null) {
+             throw new IllegalArgumentException("Tried to access invalid game rule");
+@@ -184,7 +184,7 @@
  
      private void loadFromTag(DynamicLike<?> dynamiclike) {
          this.rules.forEach((gamerules_gamerulekey, gamerules_gamerulevalue) -> {
@@ -54,14 +54,16 @@
  
              Objects.requireNonNull(gamerules_gamerulevalue);
              dataresult.ifSuccess(gamerules_gamerulevalue::deserialize);
-@@ -184,17 +184,17 @@
-     }
+@@ -205,19 +205,19 @@
  
-     private static <T extends GameRules.GameRuleValue<T>> void callVisitorCap(GameRules.GameRuleVisitor gamerules_gamerulevisitor, GameRules.GameRuleKey<?> gamerules_gamerulekey, GameRules.GameRuleDefinition<?> gamerules_gameruledefinition) {
--        gamerules_gamerulevisitor.visit(gamerules_gamerulekey, gamerules_gameruledefinition);
--        gamerules_gameruledefinition.callVisitor(gamerules_gamerulevisitor, gamerules_gamerulekey);
-+        gamerules_gamerulevisitor.visit((GameRules.GameRuleKey<T>) gamerules_gamerulekey, (GameRules.GameRuleDefinition<T>) gamerules_gameruledefinition); // CraftBukkit - decompile error
-+        ((GameRules.GameRuleDefinition<T>) gamerules_gameruledefinition).callVisitor(gamerules_gamerulevisitor, (GameRules.GameRuleKey<T>) gamerules_gamerulekey); // CraftBukkit - decompile error
+     private <T extends GameRules.GameRuleValue<T>> void callVisitorCap(GameRules.GameRuleVisitor gamerules_gamerulevisitor, GameRules.GameRuleKey<?> gamerules_gamerulekey, GameRules.GameRuleDefinition<?> gamerules_gameruledefinition) {
+         if (gamerules_gameruledefinition.requiredFeatures.isSubsetOf(this.enabledFeatures)) {
+-            gamerules_gamerulevisitor.visit(gamerules_gamerulekey, gamerules_gameruledefinition);
+-            gamerules_gameruledefinition.callVisitor(gamerules_gamerulevisitor, gamerules_gamerulekey);
++            gamerules_gamerulevisitor.visit((GameRules.GameRuleKey<T>) gamerules_gamerulekey, (GameRules.GameRuleDefinition<T>) gamerules_gameruledefinition); // CraftBukkit - decompile error
++            ((GameRules.GameRuleDefinition<T>) gamerules_gameruledefinition).callVisitor(gamerules_gamerulevisitor, (GameRules.GameRuleKey<T>) gamerules_gamerulekey); // CraftBukkit - decompile error
+         }
+ 
      }
  
 -    public void assignFrom(GameRules gamerules, @Nullable MinecraftServer minecraftserver) {
@@ -76,20 +78,21 @@
          T t0 = gamerules.getRule(gamerules_gamerulekey);
  
          this.getRule(gamerules_gamerulekey).setFrom(t0, minecraftserver);
-@@ -262,10 +262,10 @@
+@@ -285,11 +285,11 @@
  
          final Supplier<ArgumentType<?>> argument;
          private final Function<GameRules.GameRuleDefinition<T>, T> constructor;
 -        final BiConsumer<MinecraftServer, T> callback;
 +        final BiConsumer<WorldServer, T> callback; // CraftBukkit - per-world
          private final GameRules.h<T> visitorCaller;
+         final FeatureFlagSet requiredFeatures;
  
--        GameRuleDefinition(Supplier<ArgumentType<?>> supplier, Function<GameRules.GameRuleDefinition<T>, T> function, BiConsumer<MinecraftServer, T> biconsumer, GameRules.h<T> gamerules_h) {
-+        GameRuleDefinition(Supplier<ArgumentType<?>> supplier, Function<GameRules.GameRuleDefinition<T>, T> function, BiConsumer<WorldServer, T> biconsumer, GameRules.h<T> gamerules_h) { // CraftBukkit - per-world
+-        GameRuleDefinition(Supplier<ArgumentType<?>> supplier, Function<GameRules.GameRuleDefinition<T>, T> function, BiConsumer<MinecraftServer, T> biconsumer, GameRules.h<T> gamerules_h, FeatureFlagSet featureflagset) {
++        GameRuleDefinition(Supplier<ArgumentType<?>> supplier, Function<GameRules.GameRuleDefinition<T>, T> function, BiConsumer<WorldServer, T> biconsumer, GameRules.h<T> gamerules_h, FeatureFlagSet featureflagset) { // CraftBukkit - per-world
              this.argument = supplier;
              this.constructor = function;
              this.callback = biconsumer;
-@@ -277,7 +277,7 @@
+@@ -302,7 +302,7 @@
          }
  
          public T createRule() {
@@ -98,7 +101,7 @@
          }
  
          public void callVisitor(GameRules.GameRuleVisitor gamerules_gamerulevisitor, GameRules.GameRuleKey<T> gamerules_gamerulekey) {
-@@ -297,17 +297,17 @@
+@@ -326,17 +326,17 @@
  
          public void setFromArgument(CommandContext<CommandListenerWrapper> commandcontext, String s) {
              this.updateFromArgument(commandcontext, s);
@@ -119,7 +122,7 @@
  
          public abstract String serialize();
  
-@@ -321,7 +321,7 @@
+@@ -350,7 +350,7 @@
  
          protected abstract T copy();
  
@@ -128,7 +131,7 @@
      }
  
      public interface GameRuleVisitor {
-@@ -337,7 +337,7 @@
+@@ -366,7 +366,7 @@
  
          private boolean value;
  
@@ -136,8 +139,8 @@
 +        static GameRules.GameRuleDefinition<GameRules.GameRuleBoolean> create(boolean flag, BiConsumer<WorldServer, GameRules.GameRuleBoolean> biconsumer) { // CraftBukkit - per-world
              return new GameRules.GameRuleDefinition<>(BoolArgumentType::bool, (gamerules_gameruledefinition) -> {
                  return new GameRules.GameRuleBoolean(gamerules_gameruledefinition, flag);
-             }, biconsumer, GameRules.GameRuleVisitor::visitBoolean);
-@@ -362,7 +362,7 @@
+             }, biconsumer, GameRules.GameRuleVisitor::visitBoolean, FeatureFlagSet.of());
+@@ -391,7 +391,7 @@
              return this.value;
          }
  
@@ -146,7 +149,7 @@
              this.value = flag;
              this.onChanged(minecraftserver);
          }
-@@ -373,7 +373,7 @@
+@@ -402,7 +402,7 @@
          }
  
          @Override
@@ -155,7 +158,7 @@
              this.value = Boolean.parseBoolean(s);
          }
  
-@@ -392,7 +392,7 @@
+@@ -421,7 +421,7 @@
              return new GameRules.GameRuleBoolean(this.type, this.value);
          }
  
@@ -164,7 +167,7 @@
              this.value = gamerules_gameruleboolean.value;
              this.onChanged(minecraftserver);
          }
-@@ -402,13 +402,13 @@
+@@ -431,13 +431,13 @@
  
          private int value;
  
@@ -172,15 +175,15 @@
 +        private static GameRules.GameRuleDefinition<GameRules.GameRuleInt> create(int i, BiConsumer<WorldServer, GameRules.GameRuleInt> biconsumer) { // CraftBukkit - per-world
              return new GameRules.GameRuleDefinition<>(IntegerArgumentType::integer, (gamerules_gameruledefinition) -> {
                  return new GameRules.GameRuleInt(gamerules_gameruledefinition, i);
-             }, biconsumer, GameRules.GameRuleVisitor::visitInteger);
+             }, biconsumer, GameRules.GameRuleVisitor::visitInteger, FeatureFlagSet.of());
          }
  
--        static GameRules.GameRuleDefinition<GameRules.GameRuleInt> create(int i, int j, int k, BiConsumer<MinecraftServer, GameRules.GameRuleInt> biconsumer) {
-+        static GameRules.GameRuleDefinition<GameRules.GameRuleInt> create(int i, int j, int k, BiConsumer<WorldServer, GameRules.GameRuleInt> biconsumer) { // CraftBukkit - per-world
+-        static GameRules.GameRuleDefinition<GameRules.GameRuleInt> create(int i, int j, int k, FeatureFlagSet featureflagset, BiConsumer<MinecraftServer, GameRules.GameRuleInt> biconsumer) {
++        static GameRules.GameRuleDefinition<GameRules.GameRuleInt> create(int i, int j, int k, FeatureFlagSet featureflagset, BiConsumer<WorldServer, GameRules.GameRuleInt> biconsumer) { // CraftBukkit - per-world
              return new GameRules.GameRuleDefinition<>(() -> {
                  return IntegerArgumentType.integer(j, k);
              }, (gamerules_gameruledefinition) -> {
-@@ -435,7 +435,7 @@
+@@ -464,7 +464,7 @@
              return this.value;
          }
  
@@ -189,7 +192,7 @@
              this.value = i;
              this.onChanged(minecraftserver);
          }
-@@ -446,7 +446,7 @@
+@@ -475,7 +475,7 @@
          }
  
          @Override
@@ -198,7 +201,7 @@
              this.value = safeParse(s);
          }
  
-@@ -488,7 +488,7 @@
+@@ -517,7 +517,7 @@
              return new GameRules.GameRuleInt(this.type, this.value);
          }
  

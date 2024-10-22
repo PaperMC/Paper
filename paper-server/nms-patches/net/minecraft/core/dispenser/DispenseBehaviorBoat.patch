@@ -1,6 +1,6 @@
 --- a/net/minecraft/core/dispenser/DispenseBehaviorBoat.java
 +++ b/net/minecraft/core/dispenser/DispenseBehaviorBoat.java
-@@ -13,6 +13,12 @@
+@@ -12,6 +12,12 @@
  import net.minecraft.world.level.block.BlockDispenser;
  import net.minecraft.world.phys.Vec3D;
  
@@ -12,13 +12,11 @@
 +
  public class DispenseBehaviorBoat extends DispenseBehaviorItem {
  
-     private final DispenseBehaviorItem defaultDispenseItemBehavior;
-@@ -51,13 +57,41 @@
+     private final DispenseBehaviorItem defaultDispenseItemBehavior = new DispenseBehaviorItem();
+@@ -43,14 +49,40 @@
              d4 = 0.0D;
          }
  
--        Object object = this.isChestBoat ? new ChestBoat(worldserver, d1, d2 + d4, d3) : new EntityBoat(worldserver, d1, d2 + d4, d3);
-+        // Object object = this.isChestBoat ? new ChestBoat(worldserver, d1, d2 + d4, d3) : new EntityBoat(worldserver, d1, d2 + d4, d3);
 +        // CraftBukkit start
 +        ItemStack itemstack1 = itemstack.split(1);
 +        org.bukkit.block.Block block = CraftBlock.at(worldserver, sourceblock.pos());
@@ -44,17 +42,18 @@
 +                return itemstack;
 +            }
 +        }
-+
-+        EntityBoat object = this.isChestBoat ? new ChestBoat(worldserver, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ()) : new EntityBoat(worldserver, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ());
 +        // CraftBukkit end
+         AbstractBoat abstractboat = (AbstractBoat) this.type.create(worldserver, EntitySpawnReason.DISPENSER);
  
-         EntityTypes.createDefaultStackConfig(worldserver, itemstack, (EntityHuman) null).accept(object);
-         ((EntityBoat) object).setVariant(this.type);
-         ((EntityBoat) object).setYRot(enumdirection.toYRot());
--        worldserver.addFreshEntity((Entity) object);
--        itemstack.shrink(1);
-+        if (!worldserver.addFreshEntity((Entity) object)) itemstack.grow(1); // CraftBukkit
-+        // itemstack.shrink(1); // CraftBukkit - handled during event processing
+         if (abstractboat != null) {
+-            abstractboat.setInitialPos(d1, d2 + d4, d3);
++            abstractboat.setInitialPos(event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ()); // CraftBukkit
+             EntityTypes.createDefaultStackConfig(worldserver, itemstack, (EntityHuman) null).accept(abstractboat);
+             abstractboat.setYRot(enumdirection.toYRot());
+-            worldserver.addFreshEntity(abstractboat);
+-            itemstack.shrink(1);
++            if (!worldserver.addFreshEntity(abstractboat)) itemstack.grow(1); // CraftBukkit
++            // itemstack.shrink(1); // CraftBukkit - handled during event processing
+         }
+ 
          return itemstack;
-     }
- 

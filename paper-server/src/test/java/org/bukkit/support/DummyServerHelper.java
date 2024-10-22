@@ -56,28 +56,28 @@ public final class DummyServerHelper {
                 case org.bukkit.Tag.REGISTRY_BLOCKS -> {
                     Preconditions.checkArgument(clazz == Material.class, "Block namespace must have block type");
                     TagKey<Block> blockTagKey = TagKey.create(Registries.BLOCK, key);
-                    if (BuiltInRegistries.BLOCK.getTag(blockTagKey).isPresent()) {
+                    if (BuiltInRegistries.BLOCK.get(blockTagKey).isPresent()) {
                         return new CraftBlockTag(BuiltInRegistries.BLOCK, blockTagKey);
                     }
                 }
                 case org.bukkit.Tag.REGISTRY_ITEMS -> {
                     Preconditions.checkArgument(clazz == Material.class, "Item namespace must have item type");
                     TagKey<Item> itemTagKey = TagKey.create(Registries.ITEM, key);
-                    if (BuiltInRegistries.ITEM.getTag(itemTagKey).isPresent()) {
+                    if (BuiltInRegistries.ITEM.get(itemTagKey).isPresent()) {
                         return new CraftItemTag(BuiltInRegistries.ITEM, itemTagKey);
                     }
                 }
                 case org.bukkit.Tag.REGISTRY_FLUIDS -> {
                     Preconditions.checkArgument(clazz == org.bukkit.Fluid.class, "Fluid namespace must have fluid type");
                     TagKey<FluidType> fluidTagKey = TagKey.create(Registries.FLUID, key);
-                    if (BuiltInRegistries.FLUID.getTag(fluidTagKey).isPresent()) {
+                    if (BuiltInRegistries.FLUID.get(fluidTagKey).isPresent()) {
                         return new CraftFluidTag(BuiltInRegistries.FLUID, fluidTagKey);
                     }
                 }
                 case org.bukkit.Tag.REGISTRY_ENTITY_TYPES -> {
                     Preconditions.checkArgument(clazz == org.bukkit.entity.EntityType.class, "Entity type namespace must have entity type");
                     TagKey<EntityTypes<?>> entityTagKey = TagKey.create(Registries.ENTITY_TYPE, key);
-                    if (BuiltInRegistries.ENTITY_TYPE.getTag(entityTagKey).isPresent()) {
+                    if (BuiltInRegistries.ENTITY_TYPE.get(entityTagKey).isPresent()) {
                         return new CraftEntityTag(BuiltInRegistries.ENTITY_TYPE, entityTagKey);
                     }
                 }

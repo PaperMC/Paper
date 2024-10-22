@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/boss/wither/EntityWither.java
 +++ b/net/minecraft/world/entity/boss/wither/EntityWither.java
-@@ -59,6 +59,18 @@
+@@ -57,6 +57,18 @@
  import net.minecraft.world.level.block.state.IBlockData;
  import net.minecraft.world.phys.Vec3D;
  
@@ -16,29 +16,29 @@
 +import org.bukkit.event.entity.ExplosionPrimeEvent;
 +// CraftBukkit end
 +
- public class EntityWither extends EntityMonster implements PowerableMob, IRangedEntity {
+ public class EntityWither extends EntityMonster implements IRangedEntity {
  
      private static final DataWatcherObject<Integer> DATA_TARGET_A = DataWatcher.defineId(EntityWither.class, DataWatcherRegistry.INT);
-@@ -255,15 +267,40 @@
+@@ -253,15 +265,40 @@
              i = this.getInvulnerableTicks() - 1;
              this.bossEvent.setProgress(1.0F - (float) i / 220.0F);
              if (i <= 0) {
--                this.level().explode(this, this.getX(), this.getEyeY(), this.getZ(), 7.0F, false, World.a.MOB);
+-                worldserver.explode(this, this.getX(), this.getEyeY(), this.getZ(), 7.0F, false, World.a.MOB);
 +                // CraftBukkit start
-+                // this.level().explode(this, this.getX(), this.getEyeY(), this.getZ(), 7.0F, false, World.a.MOB);
++                // worldserver.explode(this, this.getX(), this.getEyeY(), this.getZ(), 7.0F, false, World.a.MOB);
 +                ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), 7.0F, false);
-+                this.level().getCraftServer().getPluginManager().callEvent(event);
++                worldserver.getCraftServer().getPluginManager().callEvent(event);
 +
 +                if (!event.isCancelled()) {
-+                    this.level().explode(this, this.getX(), this.getEyeY(), this.getZ(), event.getRadius(), event.getFire(), World.a.MOB);
++                    worldserver.explode(this, this.getX(), this.getEyeY(), this.getZ(), event.getRadius(), event.getFire(), World.a.MOB);
 +                }
 +                // CraftBukkit end
 +
                  if (!this.isSilent()) {
--                    this.level().globalLevelEvent(1023, this.blockPosition(), 0);
+-                    worldserver.globalLevelEvent(1023, this.blockPosition(), 0);
 +                    // CraftBukkit start - Use relative location for far away sounds
-+                    // this.level().globalLevelEvent(1023, new BlockPosition(this), 0);
-+                    int viewDistance = ((WorldServer) this.level()).getCraftServer().getViewDistance() * 16;
++                    // worldserver.globalLevelEvent(1023, new BlockPosition(this), 0);
++                    int viewDistance = worldserver.getCraftServer().getViewDistance() * 16;
 +                    for (EntityPlayer player : (List<EntityPlayer>) MinecraftServer.getServer().getPlayerList().players) {
 +                        double deltaX = this.getX() - player.getX();
 +                        double deltaZ = this.getZ() - player.getZ();
@@ -63,7 +63,7 @@
              }
  
          } else {
-@@ -308,6 +345,7 @@
+@@ -306,6 +343,7 @@
                          if (!list.isEmpty()) {
                              EntityLiving entityliving1 = (EntityLiving) list.get(this.random.nextInt(list.size()));
  
@@ -71,8 +71,8 @@
                              this.setAlternativeTarget(i, entityliving1.getId());
                          }
                      }
-@@ -334,6 +372,11 @@
-                         IBlockData iblockdata = this.level().getBlockState(blockposition);
+@@ -332,6 +370,11 @@
+                         IBlockData iblockdata = worldserver.getBlockState(blockposition);
  
                          if (canDestroy(iblockdata)) {
 +                            // CraftBukkit start
@@ -80,10 +80,10 @@
 +                                continue;
 +                            }
 +                            // CraftBukkit end
-                             flag = this.level().destroyBlock(blockposition, true, this) || flag;
+                             flag = worldserver.destroyBlock(blockposition, true, this) || flag;
                          }
                      }
-@@ -345,7 +388,7 @@
+@@ -343,7 +386,7 @@
              }
  
              if (this.tickCount % 20 == 0) {
@@ -92,7 +92,7 @@
              }
  
              this.bossEvent.setProgress(this.getHealth() / this.getMaxHealth());
-@@ -502,7 +545,7 @@
+@@ -500,7 +543,7 @@
      @Override
      public void checkDespawn() {
          if (this.level().getDifficulty() == EnumDifficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {

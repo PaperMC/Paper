@@ -1,17 +1,18 @@
 --- a/net/minecraft/world/level/block/state/BlockBase.java
 +++ b/net/minecraft/world/level/block/state/BlockBase.java
-@@ -81,6 +81,10 @@
+@@ -84,6 +84,11 @@
  import net.minecraft.world.phys.shapes.VoxelShapeCollision;
  import net.minecraft.world.phys.shapes.VoxelShapes;
  
 +// CraftBukkit start
 +import net.minecraft.world.item.context.ItemActionContext;
++import net.minecraft.world.level.ServerExplosion;
 +// CraftBukkit end
 +
  public abstract class BlockBase implements FeatureElement {
  
      protected static final EnumDirection[] UPDATE_SHAPE_ORDER = new EnumDirection[]{EnumDirection.WEST, EnumDirection.EAST, EnumDirection.NORTH, EnumDirection.SOUTH, EnumDirection.DOWN, EnumDirection.UP};
-@@ -156,6 +160,12 @@
+@@ -158,6 +163,12 @@
  
      protected void onPlace(IBlockData iblockdata, World world, BlockPosition blockposition, IBlockData iblockdata1, boolean flag) {}
  
@@ -24,20 +25,20 @@
      protected void onRemove(IBlockData iblockdata, World world, BlockPosition blockposition, IBlockData iblockdata1, boolean flag) {
          if (iblockdata.hasBlockEntity() && !iblockdata.is(iblockdata1.getBlock())) {
              world.removeBlockEntity(blockposition);
-@@ -173,8 +183,10 @@
-                 TileEntity tileentity = iblockdata.hasBlockEntity() ? world.getBlockEntity(blockposition) : null;
+@@ -174,8 +185,10 @@
+                 TileEntity tileentity = iblockdata.hasBlockEntity() ? worldserver.getBlockEntity(blockposition) : null;
                  LootParams.a lootparams_a = (new LootParams.a(worldserver)).withParameter(LootContextParameters.ORIGIN, Vec3D.atCenterOf(blockposition)).withParameter(LootContextParameters.TOOL, ItemStack.EMPTY).withOptionalParameter(LootContextParameters.BLOCK_ENTITY, tileentity).withOptionalParameter(LootContextParameters.THIS_ENTITY, explosion.getDirectSourceEntity());
  
 -                if (explosion.getBlockInteraction() == Explosion.Effect.DESTROY_WITH_DECAY) {
 -                    lootparams_a.withParameter(LootContextParameters.EXPLOSION_RADIUS, explosion.radius());
 +                // CraftBukkit start - add yield
-+                if (explosion.yield < 1.0F) {
-+                    lootparams_a.withParameter(LootContextParameters.EXPLOSION_RADIUS, 1.0F / explosion.yield);
++                if (explosion instanceof ServerExplosion serverExplosion && serverExplosion.yield < 1.0F) {
++                    lootparams_a.withParameter(LootContextParameters.EXPLOSION_RADIUS, 1.0F / serverExplosion.yield);
 +                    // CraftBukkit end
                  }
  
                  iblockdata.spawnAfterBreak(worldserver, blockposition, ItemStack.EMPTY, flag);
-@@ -1066,7 +1078,13 @@
+@@ -1121,7 +1134,13 @@
          }
  
          public void onPlace(World world, BlockPosition blockposition, IBlockData iblockdata, boolean flag) {

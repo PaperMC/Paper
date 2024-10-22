@@ -1,23 +1,19 @@
 --- a/net/minecraft/world/item/ItemEgg.java
 +++ b/net/minecraft/world/item/ItemEgg.java
-@@ -22,14 +22,22 @@
-     public InteractionResultWrapper<ItemStack> use(World world, EntityHuman entityhuman, EnumHand enumhand) {
+@@ -23,10 +23,18 @@
+     public EnumInteractionResult use(World world, EntityHuman entityhuman, EnumHand enumhand) {
          ItemStack itemstack = entityhuman.getItemInHand(enumhand);
  
 -        world.playSound((EntityHuman) null, entityhuman.getX(), entityhuman.getY(), entityhuman.getZ(), SoundEffects.EGG_THROW, SoundCategory.PLAYERS, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
 +        // world.playSound((EntityHuman) null, entityhuman.getX(), entityhuman.getY(), entityhuman.getZ(), SoundEffects.EGG_THROW, SoundCategory.PLAYERS, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F)); // CraftBukkit - moved down
-         if (!world.isClientSide) {
-             EntityEgg entityegg = new EntityEgg(world, entityhuman);
- 
-             entityegg.setItem(itemstack);
-             entityegg.shootFromRotation(entityhuman, entityhuman.getXRot(), entityhuman.getYRot(), 0.0F, 1.5F, 1.0F);
--            world.addFreshEntity(entityegg);
+         if (world instanceof WorldServer worldserver) {
+-            IProjectile.spawnProjectileFromRotation(EntityEgg::new, worldserver, itemstack, entityhuman, 0.0F, 1.5F, 1.0F);
 +            // CraftBukkit start
-+            if (!world.addFreshEntity(entityegg)) {
++            if (IProjectile.spawnProjectileFromRotation(EntityEgg::new, worldserver, itemstack, entityhuman, 0.0F, 1.5F, 1.0F).isRemoved()) {
 +                if (entityhuman instanceof net.minecraft.server.level.EntityPlayer) {
 +                    ((net.minecraft.server.level.EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
 +                }
-+                return InteractionResultWrapper.fail(itemstack);
++                return EnumInteractionResult.FAIL;
 +            }
 +            // CraftBukkit end
          }

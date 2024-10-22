@@ -26,7 +26,7 @@ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
  */
 public class CraftChunkSnapshot implements ChunkSnapshot {
     private final int x, z;
-    private final int minHeight, maxHeight;
+    private final int minHeight, maxHeight, seaLevel;
     private final String worldname;
     private final DataPaletteBlock<IBlockData>[] blockids;
     private final byte[][] skylight;
@@ -37,11 +37,12 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
     private final IRegistry<BiomeBase> biomeRegistry;
     private final PalettedContainerRO<Holder<BiomeBase>>[] biome;
 
-    CraftChunkSnapshot(int x, int z, int minHeight, int maxHeight, String wname, long wtime, DataPaletteBlock<IBlockData>[] sectionBlockIDs, byte[][] sectionSkyLights, byte[][] sectionEmitLights, boolean[] sectionEmpty, HeightMap hmap, IRegistry<BiomeBase> biomeRegistry, PalettedContainerRO<Holder<BiomeBase>>[] biome) {
+    CraftChunkSnapshot(int x, int z, int minHeight, int maxHeight, int seaLevel, String wname, long wtime, DataPaletteBlock<IBlockData>[] sectionBlockIDs, byte[][] sectionSkyLights, byte[][] sectionEmitLights, boolean[] sectionEmpty, HeightMap hmap, IRegistry<BiomeBase> biomeRegistry, PalettedContainerRO<Holder<BiomeBase>>[] biome) {
         this.x = x;
         this.z = z;
         this.minHeight = minHeight;
         this.maxHeight = maxHeight;
+        this.seaLevel = seaLevel;
         this.worldname = wname;
         this.captureFulltime = wtime;
         this.blockids = sectionBlockIDs;
@@ -166,7 +167,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
         validateChunkCoordinates(x, y, z);
 
         PalettedContainerRO<Holder<BiomeBase>> biome = this.biome[getSectionIndex(y)]; // SPIGOT-7188: Don't need to convert y to biome coordinate scale since it is bound to the block chunk section
-        return biome.get(x >> 2, (y & 0xF) >> 2, z >> 2).value().getTemperature(new BlockPosition((this.x << 4) | x, y, (this.z << 4) | z));
+        return biome.get(x >> 2, (y & 0xF) >> 2, z >> 2).value().getTemperature(new BlockPosition((this.x << 4) | x, y, (this.z << 4) | z), seaLevel);
     }
 
     @Override

@@ -17,7 +17,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.DynamicOpsNBT;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.server.level.WorldServer;
-import net.minecraft.util.thread.ThreadedMailbox;
+import net.minecraft.util.thread.ConsecutiveExecutor;
 import net.minecraft.world.level.ChunkCoordIntPair;
 import net.minecraft.world.level.EnumSkyBlock;
 import net.minecraft.world.level.biome.BiomeBase;
@@ -31,8 +31,8 @@ import net.minecraft.world.level.chunk.NibbleArray;
 import net.minecraft.world.level.chunk.PalettedContainerRO;
 import net.minecraft.world.level.chunk.ProtoChunkExtension;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
-import net.minecraft.world.level.chunk.storage.ChunkRegionLoader;
 import net.minecraft.world.level.chunk.storage.EntityStorage;
+import net.minecraft.world.level.chunk.storage.SerializableChunkData;
 import net.minecraft.world.level.entity.PersistentEntitySectionManager;
 import net.minecraft.world.level.levelgen.HeightMap;
 import net.minecraft.world.level.levelgen.SeededRandom;
@@ -111,7 +111,7 @@ public class CraftChunk implements Chunk {
 
     @Override
     public Block getBlock(int x, int y, int z) {
-        validateChunkCoordinates(worldServer.getMinBuildHeight(), worldServer.getMaxBuildHeight(), x, y, z);
+        validateChunkCoordinates(worldServer.getMinY(), worldServer.getMaxY(), x, y, z);
 
         return new CraftBlock(worldServer, new BlockPosition((this.x << 4) | x, y, (this.z << 4) | z));
     }
@@ -139,7 +139,7 @@ public class CraftChunk implements Chunk {
         entityManager.ensureChunkQueuedForLoad(pair); // Start entity loading
 
         // SPIGOT-6772: Use entity mailbox and re-schedule entities if they get unloaded
-        ThreadedMailbox<Runnable> mailbox = ((EntityStorage) entityManager.permanentStorage).entityDeserializerQueue;
+        ConsecutiveExecutor mailbox = ((EntityStorage) entityManager.permanentStorage).entityDeserializerQueue;
         BooleanSupplier supplier = () -> {
             // only execute inbox if our entities are not present
             if (entityManager.areEntitiesLoaded(pair)) {
@@ -310,14 +310,14 @@ public class CraftChunk implements Chunk {
         boolean[] sectionEmpty = new boolean[cs.length];
         PalettedContainerRO<Holder<BiomeBase>>[] biome = (includeBiome || includeBiomeTempRain) ? new DataPaletteBlock[cs.length] : null;
 
-        IRegistry<BiomeBase> iregistry = worldServer.registryAccess().registryOrThrow(Registries.BIOME);
-        Codec<PalettedContainerRO<Holder<BiomeBase>>> biomeCodec = DataPaletteBlock.codecRO(iregistry.asHolderIdMap(), iregistry.holderByNameCodec(), DataPaletteBlock.d.SECTION_BIOMES, iregistry.getHolderOrThrow(Biomes.PLAINS));
+        IRegistry<BiomeBase> iregistry = worldServer.registryAccess().lookupOrThrow(Registries.BIOME);
+        Codec<PalettedContainerRO<Holder<BiomeBase>>> biomeCodec = DataPaletteBlock.codecRO(iregistry.asHolderIdMap(), iregistry.holderByNameCodec(), DataPaletteBlock.d.SECTION_BIOMES, iregistry.getOrThrow(Biomes.PLAINS));
 
         for (int i = 0; i < cs.length; i++) {
             NBTTagCompound data = new NBTTagCompound();
 
-            data.put("block_states", ChunkRegionLoader.BLOCK_STATE_CODEC.encodeStart(DynamicOpsNBT.INSTANCE, cs[i].getStates()).getOrThrow());
-            sectionBlockIDs[i] = ChunkRegionLoader.BLOCK_STATE_CODEC.parse(DynamicOpsNBT.INSTANCE, data.getCompound("block_states")).getOrThrow(ChunkRegionLoader.a::new);
+            data.put("block_states", SerializableChunkData.BLOCK_STATE_CODEC.encodeStart(DynamicOpsNBT.INSTANCE, cs[i].getStates()).getOrThrow());
+            sectionBlockIDs[i] = SerializableChunkData.BLOCK_STATE_CODEC.parse(DynamicOpsNBT.INSTANCE, data.getCompound("block_states")).getOrThrow(SerializableChunkData.a::new);
             sectionEmpty[i] = cs[i].hasOnlyAir();
 
             LevelLightEngine lightengine = worldServer.getLightEngine();
@@ -338,7 +338,7 @@ public class CraftChunk implements Chunk {
 
             if (biome != null) {
                 data.put("biomes", biomeCodec.encodeStart(DynamicOpsNBT.INSTANCE, cs[i].getBiomes()).getOrThrow());
-                biome[i] = biomeCodec.parse(DynamicOpsNBT.INSTANCE, data.getCompound("biomes")).getOrThrow(ChunkRegionLoader.a::new);
+                biome[i] = biomeCodec.parse(DynamicOpsNBT.INSTANCE, data.getCompound("biomes")).getOrThrow(SerializableChunkData.a::new);
             }
         }
 
@@ -350,7 +350,7 @@ public class CraftChunk implements Chunk {
         }
 
         World world = getWorld();
-        return new CraftChunkSnapshot(getX(), getZ(), chunk.getMinBuildHeight(), chunk.getMaxBuildHeight(), world.getName(), world.getFullTime(), sectionBlockIDs, sectionSkyLights, sectionEmitLights, sectionEmpty, hmap, iregistry, biome);
+        return new CraftChunkSnapshot(getX(), getZ(), chunk.getMinY(), chunk.getMaxY(), world.getSeaLevel(), world.getName(), world.getFullTime(), sectionBlockIDs, sectionSkyLights, sectionEmitLights, sectionEmpty, hmap, iregistry, biome);
     }
 
     @Override
@@ -411,9 +411,9 @@ public class CraftChunk implements Chunk {
         byte[][] skyLight = new byte[hSection][];
         byte[][] emitLight = new byte[hSection][];
         boolean[] empty = new boolean[hSection];
-        IRegistry<BiomeBase> iregistry = world.getHandle().registryAccess().registryOrThrow(Registries.BIOME);
+        IRegistry<BiomeBase> iregistry = world.getHandle().registryAccess().lookupOrThrow(Registries.BIOME);
         DataPaletteBlock<Holder<BiomeBase>>[] biome = (includeBiome || includeBiomeTempRain) ? new DataPaletteBlock[hSection] : null;
-        Codec<PalettedContainerRO<Holder<BiomeBase>>> biomeCodec = DataPaletteBlock.codecRO(iregistry.asHolderIdMap(), iregistry.holderByNameCodec(), DataPaletteBlock.d.SECTION_BIOMES, iregistry.getHolderOrThrow(Biomes.PLAINS));
+        Codec<PalettedContainerRO<Holder<BiomeBase>>> biomeCodec = DataPaletteBlock.codecRO(iregistry.asHolderIdMap(), iregistry.holderByNameCodec(), DataPaletteBlock.d.SECTION_BIOMES, iregistry.getOrThrow(Biomes.PLAINS));
 
         for (int i = 0; i < hSection; i++) {
             blockIDs[i] = emptyBlockIDs;
@@ -422,11 +422,11 @@ public class CraftChunk implements Chunk {
             empty[i] = true;
 
             if (biome != null) {
-                biome[i] = (DataPaletteBlock<Holder<BiomeBase>>) biomeCodec.parse(DynamicOpsNBT.INSTANCE, biomeCodec.encodeStart(DynamicOpsNBT.INSTANCE, actual.getSection(i).getBiomes()).getOrThrow()).getOrThrow(ChunkRegionLoader.a::new);
+                biome[i] = (DataPaletteBlock<Holder<BiomeBase>>) biomeCodec.parse(DynamicOpsNBT.INSTANCE, biomeCodec.encodeStart(DynamicOpsNBT.INSTANCE, actual.getSection(i).getBiomes()).getOrThrow()).getOrThrow(SerializableChunkData.a::new);
             }
         }
 
-        return new CraftChunkSnapshot(x, z, world.getMinHeight(), world.getMaxHeight(), world.getName(), world.getFullTime(), blockIDs, skyLight, emitLight, empty, new HeightMap(actual, HeightMap.Type.MOTION_BLOCKING), iregistry, biome);
+        return new CraftChunkSnapshot(x, z, world.getMinHeight(), world.getMaxHeight(), world.getSeaLevel(), world.getName(), world.getFullTime(), blockIDs, skyLight, emitLight, empty, new HeightMap(actual, HeightMap.Type.MOTION_BLOCKING), iregistry, biome);
     }
 
     static void validateChunkCoordinates(int minY, int maxY, int x, int y, int z) {

@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
 import java.util.Locale;
+import net.minecraft.core.Holder;
 import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityTypes;
@@ -31,6 +32,19 @@ public class CraftEntityType {
 
         return CraftRegistry.getMinecraftRegistry(Registries.ENTITY_TYPE)
                 .getOptional(CraftNamespacedKey.toMinecraft(bukkit.getKey())).orElseThrow();
+    }
+
+    public static Holder<EntityTypes<?>> bukkitToMinecraftHolder(EntityType bukkit) {
+        Preconditions.checkArgument(bukkit != null);
+
+        IRegistry<EntityTypes<?>> registry = CraftRegistry.getMinecraftRegistry(Registries.ENTITY_TYPE);
+
+        if (registry.wrapAsHolder(bukkitToMinecraft(bukkit)) instanceof Holder.c<EntityTypes<?>> holder) {
+            return holder;
+        }
+
+        throw new IllegalArgumentException("No Reference holder found for " + bukkit
+                + ", this can happen if a plugin creates its own sound effect with out properly registering it.");
     }
 
     public static String bukkitToString(EntityType bukkit) {

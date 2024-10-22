@@ -1,17 +1,6 @@
 --- a/net/minecraft/world/entity/animal/frog/Tadpole.java
 +++ b/net/minecraft/world/entity/animal/frog/Tadpole.java
-@@ -38,6 +38,10 @@
- import net.minecraft.world.item.component.CustomData;
- import net.minecraft.world.level.World;
- 
-+// CraftBukkit start
-+import org.bukkit.event.entity.EntityRemoveEvent;
-+// CraftBukkit end
-+
- public class Tadpole extends EntityFish {
- 
-     @VisibleForTesting
-@@ -71,7 +75,7 @@
+@@ -74,7 +74,7 @@
  
      @Override
      public BehaviorController<Tadpole> getBrain() {
@@ -20,22 +9,23 @@
      }
  
      @Override
-@@ -232,10 +236,16 @@
-                 }
+@@ -225,12 +225,17 @@
+         World world = this.level();
  
+         if (world instanceof WorldServer worldserver) {
+-            this.convertTo(EntityTypes.FROG, ConversionParams.single(this, false, false), (frog) -> {
++            Frog converted = this.convertTo(EntityTypes.FROG, ConversionParams.single(this, false, false), (frog) -> { // CraftBukkit
+                 frog.finalizeSpawn(worldserver, this.level().getCurrentDifficultyAt(frog.blockPosition()), EntitySpawnReason.CONVERSION, (GroupDataEntity) null);
                  frog.setPersistenceRequired();
-+                // CraftBukkit start
-+                if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTransformEvent(this, frog, org.bukkit.event.entity.EntityTransformEvent.TransformReason.METAMORPHOSIS).isCancelled()) {
-+                    this.setAge(0); // Sets the age to 0 for avoid a loop if the event is canceled
-+                    return;
-+                }
-+                // CraftBukkit end
                  frog.fudgePositionAfterSizeChange(this.getDimensions(this.getPose()));
                  this.playSound(SoundEffects.TADPOLE_GROW_UP, 0.15F, 1.0F);
--                worldserver.addFreshEntityWithPassengers(frog);
--                this.discard();
-+                worldserver.addFreshEntityWithPassengers(frog, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.METAMORPHOSIS); // CraftBukkit - add SpawnReason
-+                this.discard(EntityRemoveEvent.Cause.TRANSFORMATION); // CraftBukkit - add Bukkit remove cause
-             }
+-            });
++            // CraftBukkit start
++            }, org.bukkit.event.entity.EntityTransformEvent.TransformReason.METAMORPHOSIS, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.METAMORPHOSIS);
++            if (converted == null) {
++                this.setAge(0); // Sets the age to 0 for avoid a loop if the event is canceled
++            }
++            // CraftBukkit end
          }
  
+     }

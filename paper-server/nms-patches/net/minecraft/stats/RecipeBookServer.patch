@@ -1,7 +1,7 @@
 --- a/net/minecraft/stats/RecipeBookServer.java
 +++ b/net/minecraft/stats/RecipeBookServer.java
-@@ -20,6 +20,8 @@
- import net.minecraft.world.item.crafting.RecipeHolder;
+@@ -29,6 +29,8 @@
+ import net.minecraft.world.item.crafting.display.RecipeDisplayId;
  import org.slf4j.Logger;
  
 +import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
@@ -9,20 +9,30 @@
  public class RecipeBookServer extends RecipeBook {
  
      public static final String RECIPE_BOOK_TAG = "recipeBook";
-@@ -36,7 +38,7 @@
+@@ -72,7 +74,7 @@
              RecipeHolder<?> recipeholder = (RecipeHolder) iterator.next();
-             MinecraftKey minecraftkey = recipeholder.id();
+             ResourceKey<IRecipe<?>> resourcekey = recipeholder.id();
  
--            if (!this.known.contains(minecraftkey) && !recipeholder.value().isSpecial()) {
-+            if (!this.known.contains(minecraftkey) && !recipeholder.value().isSpecial() && CraftEventFactory.handlePlayerRecipeListUpdateEvent(entityplayer, minecraftkey)) { // CraftBukkit
-                 this.add(minecraftkey);
-                 this.addHighlight(minecraftkey);
-                 list.add(minecraftkey);
-@@ -73,6 +75,7 @@
-     }
+-            if (!this.known.contains(resourcekey) && !recipeholder.value().isSpecial()) {
++            if (!this.known.contains(resourcekey) && !recipeholder.value().isSpecial() && CraftEventFactory.handlePlayerRecipeListUpdateEvent(entityplayer, resourcekey.location())) { // CraftBukkit
+                 this.add(resourcekey);
+                 this.addHighlight(resourcekey);
+                 this.displayResolver.displaysForRecipe(resourcekey, (recipedisplayentry) -> {
+@@ -82,7 +84,7 @@
+             }
+         }
  
-     private void sendRecipes(PacketPlayOutRecipes.Action packetplayoutrecipes_action, EntityPlayer entityplayer, List<MinecraftKey> list) {
-+        if (entityplayer.connection == null) return; // SPIGOT-4478 during PlayerLoginEvent
-         entityplayer.connection.send(new PacketPlayOutRecipes(packetplayoutrecipes_action, list, Collections.emptyList(), this.getBookSettings()));
-     }
+-        if (!list.isEmpty()) {
++        if (!list.isEmpty() && entityplayer.connection != null) { // SPIGOT-4478 during PlayerLoginEvent
+             entityplayer.connection.send(new ClientboundRecipeBookAddPacket(list, false));
+         }
+ 
+@@ -105,7 +107,7 @@
+             }
+         }
+ 
+-        if (!list.isEmpty()) {
++        if (!list.isEmpty() && entityplayer.connection != null) { // SPIGOT-4478 during PlayerLoginEvent
+             entityplayer.connection.send(new ClientboundRecipeBookRemovePacket(list));
+         }
  

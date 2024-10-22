@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/level/block/BlockEnderPortal.java
 +++ b/net/minecraft/world/level/block/BlockEnderPortal.java
 @@ -26,6 +26,19 @@
+ import net.minecraft.world.phys.shapes.VoxelShape;
  import net.minecraft.world.phys.shapes.VoxelShapeCollision;
- import net.minecraft.world.phys.shapes.VoxelShapes;
  
 +// CraftBukkit start
 +import java.util.List;
@@ -20,10 +20,10 @@
  public class BlockEnderPortal extends BlockTileEntity implements Portal {
  
      public static final MapCodec<BlockEnderPortal> CODEC = simpleCodec(BlockEnderPortal::new);
-@@ -53,6 +66,10 @@
+@@ -58,6 +71,10 @@
      @Override
      protected void entityInside(IBlockData iblockdata, World world, BlockPosition blockposition, Entity entity) {
-         if (entity.canUsePortal(false) && VoxelShapes.joinIsNotEmpty(VoxelShapes.create(entity.getBoundingBox().move((double) (-blockposition.getX()), (double) (-blockposition.getY()), (double) (-blockposition.getZ()))), iblockdata.getShape(world, blockposition), OperatorBoolean.AND)) {
+         if (entity.canUsePortal(false)) {
 +            // CraftBukkit start - Entity in portal
 +            EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), blockposition.getX(), blockposition.getY(), blockposition.getZ()));
 +            world.getCraftServer().getPluginManager().callEvent(event);
@@ -31,41 +31,41 @@
              if (!world.isClientSide && world.dimension() == World.END && entity instanceof EntityPlayer) {
                  EntityPlayer entityplayer = (EntityPlayer) entity;
  
-@@ -69,11 +86,11 @@
+@@ -74,11 +91,11 @@
  
      @Override
-     public DimensionTransition getPortalDestination(WorldServer worldserver, Entity entity, BlockPosition blockposition) {
+     public TeleportTransition getPortalDestination(WorldServer worldserver, Entity entity, BlockPosition blockposition) {
 -        ResourceKey<World> resourcekey = worldserver.dimension() == World.END ? World.OVERWORLD : World.END;
 +        ResourceKey<World> resourcekey = worldserver.getTypeKey() == WorldDimension.END ? World.OVERWORLD : World.END; // CraftBukkit - SPIGOT-6152: send back to main overworld in custom ends
          WorldServer worldserver1 = worldserver.getServer().getLevel(resourcekey);
  
          if (worldserver1 == null) {
 -            return null;
-+            return new DimensionTransition(PlayerTeleportEvent.TeleportCause.END_PORTAL); // CraftBukkit- always fire event in case plugins wish to change it
++            return new TeleportTransition(PlayerTeleportEvent.TeleportCause.END_PORTAL); // CraftBukkit- always fire event in case plugins wish to change it
          } else {
              boolean flag = resourcekey == World.END;
              BlockPosition blockposition1 = flag ? WorldServer.END_SPAWN_POINT : worldserver1.getSharedSpawnPos();
-@@ -81,7 +98,7 @@
-             float f = entity.getYRot();
+@@ -87,7 +104,7 @@
+             Set set;
  
              if (flag) {
 -                EndPlatformFeature.createEndPlatform(worldserver1, BlockPosition.containing(vec3d).below(), true);
 +                EndPlatformFeature.createEndPlatform(worldserver1, BlockPosition.containing(vec3d).below(), true, entity); // CraftBukkit
                  f = EnumDirection.WEST.toYRot();
+                 set = Relative.union(Relative.DELTA, Set.of(Relative.X_ROT));
                  if (entity instanceof EntityPlayer) {
-                     vec3d = vec3d.subtract(0.0D, 1.0D, 0.0D);
-@@ -90,13 +107,21 @@
+@@ -99,13 +116,21 @@
                  if (entity instanceof EntityPlayer) {
                      EntityPlayer entityplayer = (EntityPlayer) entity;
  
--                    return entityplayer.findRespawnPositionAndUseSpawnBlock(false, DimensionTransition.DO_NOTHING);
-+                    return entityplayer.findRespawnPositionAndUseSpawnBlock(false, DimensionTransition.DO_NOTHING, PlayerRespawnEvent.RespawnReason.END_PORTAL); // CraftBukkit
+-                    return entityplayer.findRespawnPositionAndUseSpawnBlock(false, TeleportTransition.DO_NOTHING);
++                    return entityplayer.findRespawnPositionAndUseSpawnBlock(false, TeleportTransition.DO_NOTHING, PlayerRespawnEvent.RespawnReason.END_PORTAL); // CraftBukkit
                  }
  
                  vec3d = entity.adjustSpawnLocation(worldserver1, blockposition1).getBottomCenter();
              }
  
--            return new DimensionTransition(worldserver1, vec3d, entity.getDeltaMovement(), f, entity.getXRot(), DimensionTransition.PLAY_PORTAL_SOUND.then(DimensionTransition.PLACE_PORTAL_TICKET));
+-            return new TeleportTransition(worldserver1, vec3d, Vec3D.ZERO, f, 0.0F, set, TeleportTransition.PLAY_PORTAL_SOUND.then(TeleportTransition.PLACE_PORTAL_TICKET));
 +            // CraftBukkit start
 +            CraftPortalEvent event = entity.callPortalEvent(entity, CraftLocation.toBukkit(vec3d, worldserver1.getWorld(), f, entity.getXRot()), PlayerTeleportEvent.TeleportCause.END_PORTAL, 0, 0);
 +            if (event == null) {
@@ -73,7 +73,7 @@
 +            }
 +            Location to = event.getTo();
 +
-+            return new DimensionTransition(((CraftWorld) to.getWorld()).getHandle(), CraftLocation.toVec3D(to), entity.getDeltaMovement(), to.getYaw(), to.getPitch(), DimensionTransition.PLAY_PORTAL_SOUND.then(DimensionTransition.PLACE_PORTAL_TICKET), PlayerTeleportEvent.TeleportCause.END_PORTAL);
++            return new TeleportTransition(((CraftWorld) to.getWorld()).getHandle(), CraftLocation.toVec3D(to), entity.getDeltaMovement(), to.getYaw(), to.getPitch(), set, TeleportTransition.PLAY_PORTAL_SOUND.then(TeleportTransition.PLACE_PORTAL_TICKET), PlayerTeleportEvent.TeleportCause.END_PORTAL);
 +            // CraftBukkit end
          }
      }

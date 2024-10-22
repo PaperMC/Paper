@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import java.util.Optional;
 import net.minecraft.sounds.SoundEffect;
 import net.minecraft.world.entity.EntityInsentient;
 import org.bukkit.Sound;
@@ -63,12 +64,12 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob {
 
     @Override
     public void setLootTable(LootTable table) {
-        getHandle().lootTable = CraftLootTable.bukkitToMinecraft(table);
+        getHandle().lootTable = Optional.ofNullable(CraftLootTable.bukkitToMinecraft(table));
     }
 
     @Override
     public LootTable getLootTable() {
-        return CraftLootTable.minecraftToBukkit(getHandle().getLootTable());
+        return CraftLootTable.minecraftToBukkit(getHandle().getLootTable().orElse(null));
     }
 
     @Override

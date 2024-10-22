@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/npc/EntityVillager.java
 +++ b/net/minecraft/world/entity/npc/EntityVillager.java
-@@ -92,6 +92,15 @@
+@@ -93,6 +93,15 @@
  import net.minecraft.world.phys.AxisAlignedBB;
  import org.slf4j.Logger;
  
@@ -25,7 +25,7 @@
      }
  
      @Override
-@@ -233,7 +242,7 @@
+@@ -235,7 +244,7 @@
                      this.increaseProfessionLevelOnUpdate = false;
                  }
  
@@ -34,7 +34,7 @@
              }
          }
  
-@@ -363,7 +372,13 @@
+@@ -360,7 +369,13 @@
          while (iterator.hasNext()) {
              MerchantRecipe merchantrecipe = (MerchantRecipe) iterator.next();
  
@@ -49,7 +49,7 @@
          }
  
          this.resendOffersToTradingPlayer();
-@@ -432,7 +447,13 @@
+@@ -429,7 +444,13 @@
              while (iterator.hasNext()) {
                  MerchantRecipe merchantrecipe = (MerchantRecipe) iterator.next();
  
@@ -64,7 +64,7 @@
              }
          }
  
-@@ -492,7 +513,7 @@
+@@ -489,7 +510,7 @@
      @Override
      public void addAdditionalSaveData(NBTTagCompound nbttagcompound) {
          super.addAdditionalSaveData(nbttagcompound);
@@ -73,7 +73,7 @@
          Logger logger = EntityVillager.LOGGER;
  
          Objects.requireNonNull(logger);
-@@ -515,7 +536,7 @@
+@@ -512,7 +533,7 @@
      public void readAdditionalSaveData(NBTTagCompound nbttagcompound) {
          super.readAdditionalSaveData(nbttagcompound);
          if (nbttagcompound.contains("VillagerData", 10)) {
@@ -82,33 +82,25 @@
              Logger logger = EntityVillager.LOGGER;
  
              Objects.requireNonNull(logger);
-@@ -828,9 +849,14 @@
-                 }
- 
-                 entitywitch.setPersistenceRequired();
--                worldserver.addFreshEntityWithPassengers(entitywitch);
-+                // CraftBukkit start
-+                if (CraftEventFactory.callEntityTransformEvent(this, entitywitch, EntityTransformEvent.TransformReason.LIGHTNING).isCancelled()) {
-+                    return;
-+                }
-+                worldserver.addFreshEntityWithPassengers(entitywitch, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.LIGHTNING);
-+                // CraftBukkit end
+@@ -808,7 +829,7 @@
+                 entitywitch1.finalizeSpawn(worldserver, worldserver.getCurrentDifficultyAt(entitywitch1.blockPosition()), EntitySpawnReason.CONVERSION, (GroupDataEntity) null);
+                 entitywitch1.setPersistenceRequired();
                  this.releaseAllPois();
--                this.discard();
-+                this.discard(EntityRemoveEvent.Cause.TRANSFORMATION); // CraftBukkit - add Bukkit remove cause
-             } else {
+-            });
++            }, EntityTransformEvent.TransformReason.LIGHTNING, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.LIGHTNING); // CraftBukkit
+ 
+             if (entitywitch == null) {
                  super.thunderHit(worldserver, entitylightning);
-             }
-@@ -927,7 +953,7 @@
-             }).limit(5L).collect(Collectors.toList());
+@@ -906,7 +927,7 @@
+             }).limit(5L).toList();
  
              if (list1.size() >= j) {
--                if (!SpawnUtil.trySpawnMob(EntityTypes.IRON_GOLEM, EnumMobSpawn.MOB_SUMMONED, worldserver, this.blockPosition(), 10, 8, 6, SpawnUtil.a.LEGACY_IRON_GOLEM).isEmpty()) {
-+                if (!SpawnUtil.trySpawnMob(EntityTypes.IRON_GOLEM, EnumMobSpawn.MOB_SUMMONED, worldserver, this.blockPosition(), 10, 8, 6, SpawnUtil.a.LEGACY_IRON_GOLEM, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_DEFENSE).isEmpty()) { // CraftBukkit
+-                if (!SpawnUtil.trySpawnMob(EntityTypes.IRON_GOLEM, EntitySpawnReason.MOB_SUMMONED, worldserver, this.blockPosition(), 10, 8, 6, SpawnUtil.a.LEGACY_IRON_GOLEM).isEmpty()) {
++                if (!SpawnUtil.trySpawnMob(EntityTypes.IRON_GOLEM, EntitySpawnReason.MOB_SUMMONED, worldserver, this.blockPosition(), 10, 8, 6, SpawnUtil.a.LEGACY_IRON_GOLEM, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_DEFENSE).isEmpty()) { // CraftBukkit
                      list.forEach(SensorGolemLastSeen::golemDetected);
                  }
              }
-@@ -984,7 +1010,7 @@
+@@ -963,7 +984,7 @@
      @Override
      public void startSleeping(BlockPosition blockposition) {
          super.startSleeping(blockposition);
@@ -117,7 +109,7 @@
          this.brain.eraseMemory(MemoryModuleType.WALK_TARGET);
          this.brain.eraseMemory(MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE);
      }
-@@ -992,7 +1018,7 @@
+@@ -971,7 +992,7 @@
      @Override
      public void stopSleeping() {
          super.stopSleeping();

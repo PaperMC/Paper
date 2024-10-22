@@ -14,7 +14,7 @@ import net.minecraft.data.worldgen.features.TreeFeatures;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityInsentient;
-import net.minecraft.world.entity.EnumMobSpawn;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.GroupDataEntity;
 import net.minecraft.world.entity.projectile.EntityPotion;
 import net.minecraft.world.level.GeneratorAccessSeed;
@@ -24,7 +24,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.IBlockData;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.feature.WorldGenFeatureConfigured;
-import net.minecraft.world.level.portal.DimensionTransition;
+import net.minecraft.world.level.portal.TeleportTransition;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.RegionAccessor;
@@ -280,7 +280,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
                 break;
         }
 
-        Holder<WorldGenFeatureConfigured<?, ?>> holder = access.registryAccess().registryOrThrow(Registries.CONFIGURED_FEATURE).getHolder(gen).orElse(null);
+        Holder<WorldGenFeatureConfigured<?, ?>> holder = access.registryAccess().lookupOrThrow(Registries.CONFIGURED_FEATURE).get(gen).orElse(null);
         return (holder != null) ? holder.value().place(access, chunkGenerator, random, pos) : false;
     }
 
@@ -419,7 +419,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         Preconditions.checkArgument(!entity.isInWorld(), "Entity has already been added to a world");
         net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entity).getHandle();
         if (nmsEntity.level() != getHandle().getLevel()) {
-            nmsEntity = nmsEntity.changeDimension(new DimensionTransition(getHandle().getLevel(), nmsEntity, DimensionTransition.DO_NOTHING));
+            nmsEntity = nmsEntity.teleport(new TeleportTransition(getHandle().getLevel(), nmsEntity, TeleportTransition.DO_NOTHING));
         }
 
         addEntityWithPassengers(nmsEntity, CreatureSpawnEvent.SpawnReason.CUSTOM);
@@ -436,7 +436,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         Preconditions.checkArgument(entity != null, "Cannot spawn null entity");
 
         if (randomizeData && entity instanceof EntityInsentient) {
-            ((EntityInsentient) entity).finalizeSpawn(getHandle(), getHandle().getCurrentDifficultyAt(entity.blockPosition()), EnumMobSpawn.COMMAND, (GroupDataEntity) null);
+            ((EntityInsentient) entity).finalizeSpawn(getHandle(), getHandle().getCurrentDifficultyAt(entity.blockPosition()), EntitySpawnReason.COMMAND, (GroupDataEntity) null);
         }
 
         if (!isNormalWorld()) {

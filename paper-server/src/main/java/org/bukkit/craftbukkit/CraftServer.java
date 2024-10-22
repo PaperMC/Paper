@@ -51,7 +51,6 @@ import net.minecraft.commands.arguments.ArgumentEntity;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.IRegistry;
 import net.minecraft.core.IRegistryCustom;
-import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.NbtException;
@@ -80,6 +79,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.util.ChatDeserializer;
 import net.minecraft.util.datafix.DataConverterRegistry;
 import net.minecraft.world.EnumDifficulty;
+import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.ai.village.VillageSiege;
 import net.minecraft.world.entity.npc.MobSpawnerCat;
@@ -180,6 +180,7 @@ import org.bukkit.craftbukkit.inventory.CraftSmithingTransformRecipe;
 import org.bukkit.craftbukkit.inventory.CraftSmithingTrimRecipe;
 import org.bukkit.craftbukkit.inventory.CraftSmokingRecipe;
 import org.bukkit.craftbukkit.inventory.CraftStonecuttingRecipe;
+import org.bukkit.craftbukkit.inventory.CraftTransmuteRecipe;
 import org.bukkit.craftbukkit.inventory.RecipeIterator;
 import org.bukkit.craftbukkit.inventory.util.CraftInventoryCreator;
 import org.bukkit.craftbukkit.map.CraftMapColorCache;
@@ -196,6 +197,7 @@ import org.bukkit.craftbukkit.scoreboard.CraftCriteria;
 import org.bukkit.craftbukkit.scoreboard.CraftScoreboardManager;
 import org.bukkit.craftbukkit.structure.CraftStructureManager;
 import org.bukkit.craftbukkit.tag.CraftBlockTag;
+import org.bukkit.craftbukkit.tag.CraftDamageTag;
 import org.bukkit.craftbukkit.tag.CraftEntityTag;
 import org.bukkit.craftbukkit.tag.CraftFluidTag;
 import org.bukkit.craftbukkit.tag.CraftItemTag;
@@ -240,6 +242,7 @@ import org.bukkit.inventory.SmithingTransformRecipe;
 import org.bukkit.inventory.SmithingTrimRecipe;
 import org.bukkit.inventory.SmokingRecipe;
 import org.bukkit.inventory.StonecuttingRecipe;
+import org.bukkit.inventory.TransmuteRecipe;
 import org.bukkit.loot.LootTable;
 import org.bukkit.map.MapPalette;
 import org.bukkit.map.MapView;
@@ -946,7 +949,7 @@ public final class CraftServer implements Server {
 
         for (WorldServer world : console.getAllLevels()) {
             world.serverLevelData.setDifficulty(config.difficulty);
-            world.setSpawnSettings(config.spawnMonsters, config.spawnAnimals);
+            world.setSpawnSettings(config.spawnMonsters);
 
             for (SpawnCategory spawnCategory : SpawnCategory.values()) {
                 if (CraftSpawnCategory.isValidForLimits(spawnCategory)) {
@@ -1169,7 +1172,7 @@ public final class CraftServer implements Server {
         WorldDataServer worlddata;
         WorldLoader.a worldloader_a = console.worldLoader;
         IRegistryCustom.Dimension iregistrycustom_dimension = worldloader_a.datapackDimensions();
-        IRegistry<WorldDimension> iregistry = iregistrycustom_dimension.registryOrThrow(Registries.LEVEL_STEM);
+        IRegistry<WorldDimension> iregistry = iregistrycustom_dimension.lookupOrThrow(Registries.LEVEL_STEM);
         if (dynamic != null) {
             LevelDataAndDimensions leveldataanddimensions = Convertable.getLevelDataAndDimensions(dynamic, worldloader_a.dataConfiguration(), iregistry, worldloader_a.datapackWorldgen());
 
@@ -1182,7 +1185,7 @@ public final class CraftServer implements Server {
 
             DedicatedServerProperties.WorldDimensionData properties = new DedicatedServerProperties.WorldDimensionData(ChatDeserializer.parse((creator.generatorSettings().isEmpty()) ? "{}" : creator.generatorSettings()), creator.type().name().toLowerCase(Locale.ROOT));
 
-            worldsettings = new WorldSettings(name, EnumGamemode.byId(getDefaultGameMode().getValue()), hardcore, EnumDifficulty.EASY, false, new GameRules(), worldloader_a.dataConfiguration());
+            worldsettings = new WorldSettings(name, EnumGamemode.byId(getDefaultGameMode().getValue()), hardcore, EnumDifficulty.EASY, false, new GameRules(worldloader_a.dataConfiguration().enabledFeatures()), worldloader_a.dataConfiguration());
             worlddimensions = properties.create(worldloader_a.datapackWorldgen());
 
             WorldDimensions.b worlddimensions_b = worlddimensions.bake(iregistry);
@@ -1191,7 +1194,7 @@ public final class CraftServer implements Server {
             worlddata = new WorldDataServer(worldsettings, worldoptions, worlddimensions_b.specialWorldProperty(), lifecycle);
             iregistrycustom_dimension = worlddimensions_b.dimensionsRegistryAccess();
         }
-        iregistry = iregistrycustom_dimension.registryOrThrow(Registries.LEVEL_STEM);
+        iregistry = iregistrycustom_dimension.lookupOrThrow(Registries.LEVEL_STEM);
         worlddata.customDimensions = iregistry;
         worlddata.checkName(name);
         worlddata.setModdedInfo(console.getServerModName(), console.getModdedStatus().shouldReportAsModified());
@@ -1202,7 +1205,7 @@ public final class CraftServer implements Server {
 
         long j = BiomeManager.obfuscateSeed(creator.seed());
         List<MobSpawner> list = ImmutableList.of(new MobSpawnerPhantom(), new MobSpawnerPatrol(), new MobSpawnerCat(), new VillageSiege(), new MobSpawnerTrader(worlddata));
-        WorldDimension worlddimension = iregistry.get(actualDimension);
+        WorldDimension worlddimension = iregistry.getValue(actualDimension);
 
         WorldInfo worldInfo = new CraftWorldInfo(worlddata, worldSession, creator.environment(), worlddimension.type().value());
         if (biomeProvider == null && generator != null) {
@@ -1232,7 +1235,7 @@ public final class CraftServer implements Server {
 
         console.initWorld(internal, worlddata, worlddata, worlddata.worldGenOptions());
 
-        internal.setSpawnSettings(true, true);
+        internal.setSpawnSettings(true);
         console.addLevel(internal);
 
         getServer().prepareLevels(internal.getChunkSource().chunkMap.progressListener, internal);
@@ -1376,6 +1379,8 @@ public final class CraftServer implements Server {
                 toAdd = CraftSmithingTransformRecipe.fromBukkitRecipe((SmithingTransformRecipe) recipe);
             } else if (recipe instanceof SmithingTrimRecipe) {
                 toAdd = CraftSmithingTrimRecipe.fromBukkitRecipe((SmithingTrimRecipe) recipe);
+            } else if (recipe instanceof TransmuteRecipe) {
+                toAdd = CraftTransmuteRecipe.fromBukkitRecipe((TransmuteRecipe) recipe);
             } else if (recipe instanceof ComplexRecipe) {
                 throw new UnsupportedOperationException("Cannot add custom complex recipe");
             } else {
@@ -1409,7 +1414,7 @@ public final class CraftServer implements Server {
     public Recipe getRecipe(NamespacedKey recipeKey) {
         Preconditions.checkArgument(recipeKey != null, "NamespacedKey recipeKey cannot be null");
 
-        return getServer().getRecipeManager().byKey(CraftNamespacedKey.toMinecraft(recipeKey)).map(RecipeHolder::toBukkitRecipe).orElse(null);
+        return getServer().getRecipeManager().byKey(CraftRecipe.toMinecraft(recipeKey)).map(RecipeHolder::toBukkitRecipe).orElse(null);
     }
 
     private InventoryCrafting createInventoryCrafting() {
@@ -1464,7 +1469,7 @@ public final class CraftServer implements Server {
 
         if (recipe.isPresent()) {
             RecipeHolder<RecipeCrafting> recipeCrafting = recipe.get();
-            if (craftResult.setRecipeUsed(craftWorld.getHandle(), craftPlayer.getHandle(), recipeCrafting)) {
+            if (craftResult.setRecipeUsed(craftPlayer.getHandle(), recipeCrafting)) {
                 itemstack = recipeCrafting.value().assemble(inventoryCrafting.asCraftInput(), craftWorld.getHandle().registryAccess());
             }
         }
@@ -1472,7 +1477,7 @@ public final class CraftServer implements Server {
         // Call Bukkit event to check for matrix/result changes.
         net.minecraft.world.item.ItemStack result = CraftEventFactory.callPreCraftEvent(inventoryCrafting, craftResult, itemstack, container.getBukkitView(), recipe.map(RecipeHolder::value).orElse(null) instanceof RecipeRepair);
 
-        return createItemCraftResult(CraftItemStack.asBukkitCopy(result), inventoryCrafting, craftWorld.getHandle());
+        return createItemCraftResult(recipe, CraftItemStack.asBukkitCopy(result), inventoryCrafting, craftWorld.getHandle());
     }
 
     @Override
@@ -1498,34 +1503,34 @@ public final class CraftServer implements Server {
             itemStack = recipe.get().value().assemble(inventoryCrafting.asCraftInput(), craftWorld.getHandle().registryAccess());
         }
 
-        return createItemCraftResult(CraftItemStack.asBukkitCopy(itemStack), inventoryCrafting, craftWorld.getHandle());
+        return createItemCraftResult(recipe, CraftItemStack.asBukkitCopy(itemStack), inventoryCrafting, craftWorld.getHandle());
     }
 
-    private CraftItemCraftResult createItemCraftResult(ItemStack itemStack, InventoryCrafting inventoryCrafting, WorldServer worldServer) {
+    private CraftItemCraftResult createItemCraftResult(Optional<RecipeHolder<RecipeCrafting>> recipe, ItemStack itemStack, InventoryCrafting inventoryCrafting, WorldServer worldServer) {
         CraftItemCraftResult craftItemResult = new CraftItemCraftResult(itemStack);
-        NonNullList<net.minecraft.world.item.ItemStack> remainingItems = getServer().getRecipeManager().getRemainingItemsFor(Recipes.CRAFTING, inventoryCrafting.asCraftInput(), worldServer);
+        recipe.map((holder) -> holder.value().getRemainingItems(inventoryCrafting.asCraftInput())).ifPresent((remainingItems) -> {
+            // Set the resulting matrix items and overflow items
+            for (int i = 0; i < remainingItems.size(); ++i) {
+                net.minecraft.world.item.ItemStack itemstack1 = inventoryCrafting.getItem(i);
+                net.minecraft.world.item.ItemStack itemstack2 = (net.minecraft.world.item.ItemStack) remainingItems.get(i);
 
-        // Set the resulting matrix items and overflow items
-        for (int i = 0; i < remainingItems.size(); ++i) {
-            net.minecraft.world.item.ItemStack itemstack1 = inventoryCrafting.getItem(i);
-            net.minecraft.world.item.ItemStack itemstack2 = (net.minecraft.world.item.ItemStack) remainingItems.get(i);
+                if (!itemstack1.isEmpty()) {
+                    inventoryCrafting.removeItem(i, 1);
+                    itemstack1 = inventoryCrafting.getItem(i);
+                }
 
-            if (!itemstack1.isEmpty()) {
-                inventoryCrafting.removeItem(i, 1);
-                itemstack1 = inventoryCrafting.getItem(i);
-            }
-
-            if (!itemstack2.isEmpty()) {
-                if (itemstack1.isEmpty()) {
-                    inventoryCrafting.setItem(i, itemstack2);
-                } else if (net.minecraft.world.item.ItemStack.isSameItemSameComponents(itemstack1, itemstack2)) {
-                    itemstack2.grow(itemstack1.getCount());
-                    inventoryCrafting.setItem(i, itemstack2);
-                } else {
-                    craftItemResult.getOverflowItems().add(CraftItemStack.asBukkitCopy(itemstack2));
+                if (!itemstack2.isEmpty()) {
+                    if (itemstack1.isEmpty()) {
+                        inventoryCrafting.setItem(i, itemstack2);
+                    } else if (net.minecraft.world.item.ItemStack.isSameItemSameComponents(itemstack1, itemstack2)) {
+                        itemstack2.grow(itemstack1.getCount());
+                        inventoryCrafting.setItem(i, itemstack2);
+                    } else {
+                        craftItemResult.getOverflowItems().add(CraftItemStack.asBukkitCopy(itemstack2));
+                    }
                 }
             }
-        }
+        });
 
         for (int i = 0; i < inventoryCrafting.getContents().size(); i++) {
             craftItemResult.setResultMatrix(i, CraftItemStack.asBukkitCopy(inventoryCrafting.getItem(i)));
@@ -1565,8 +1570,7 @@ public final class CraftServer implements Server {
     public boolean removeRecipe(NamespacedKey recipeKey) {
         Preconditions.checkArgument(recipeKey != null, "recipeKey == null");
 
-        MinecraftKey mcKey = CraftNamespacedKey.toMinecraft(recipeKey);
-        return getServer().getRecipeManager().removeRecipe(mcKey);
+        return getServer().getRecipeManager().removeRecipe(CraftRecipe.toMinecraft(recipeKey));
     }
 
     @Override
@@ -2292,7 +2296,7 @@ public final class CraftServer implements Server {
     public ChunkGenerator.ChunkData createChunkData(World world) {
         Preconditions.checkArgument(world != null, "World cannot be null");
         WorldServer handle = ((CraftWorld) world).getHandle();
-        return new OldCraftChunkData(world.getMinHeight(), world.getMaxHeight(), handle.registryAccess().registryOrThrow(Registries.BIOME));
+        return new OldCraftChunkData(world.getMinHeight(), world.getMaxHeight(), handle.registryAccess().lookupOrThrow(Registries.BIOME));
     }
 
     @Override
@@ -2428,29 +2432,37 @@ public final class CraftServer implements Server {
             case org.bukkit.Tag.REGISTRY_BLOCKS -> {
                 Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Block namespace (%s) must have material type", clazz.getName());
                 TagKey<Block> blockTagKey = TagKey.create(Registries.BLOCK, key);
-                if (BuiltInRegistries.BLOCK.getTag(blockTagKey).isPresent()) {
+                if (BuiltInRegistries.BLOCK.get(blockTagKey).isPresent()) {
                     return (org.bukkit.Tag<T>) new CraftBlockTag(BuiltInRegistries.BLOCK, blockTagKey);
                 }
             }
             case org.bukkit.Tag.REGISTRY_ITEMS -> {
                 Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Item namespace (%s) must have material type", clazz.getName());
                 TagKey<Item> itemTagKey = TagKey.create(Registries.ITEM, key);
-                if (BuiltInRegistries.ITEM.getTag(itemTagKey).isPresent()) {
+                if (BuiltInRegistries.ITEM.get(itemTagKey).isPresent()) {
                     return (org.bukkit.Tag<T>) new CraftItemTag(BuiltInRegistries.ITEM, itemTagKey);
                 }
             }
             case org.bukkit.Tag.REGISTRY_FLUIDS -> {
                 Preconditions.checkArgument(clazz == org.bukkit.Fluid.class, "Fluid namespace (%s) must have fluid type", clazz.getName());
                 TagKey<FluidType> fluidTagKey = TagKey.create(Registries.FLUID, key);
-                if (BuiltInRegistries.FLUID.getTag(fluidTagKey).isPresent()) {
+                if (BuiltInRegistries.FLUID.get(fluidTagKey).isPresent()) {
                     return (org.bukkit.Tag<T>) new CraftFluidTag(BuiltInRegistries.FLUID, fluidTagKey);
                 }
             }
             case org.bukkit.Tag.REGISTRY_ENTITY_TYPES -> {
                 Preconditions.checkArgument(clazz == org.bukkit.entity.EntityType.class, "Entity type namespace (%s) must have entity type", clazz.getName());
                 TagKey<EntityTypes<?>> entityTagKey = TagKey.create(Registries.ENTITY_TYPE, key);
-                if (BuiltInRegistries.ENTITY_TYPE.getTag(entityTagKey).isPresent()) {
+                if (BuiltInRegistries.ENTITY_TYPE.get(entityTagKey).isPresent()) {
                     return (org.bukkit.Tag<T>) new CraftEntityTag(BuiltInRegistries.ENTITY_TYPE, entityTagKey);
+                }
+            }
+            case org.bukkit.tag.DamageTypeTags.REGISTRY_DAMAGE_TYPES -> {
+                Preconditions.checkArgument(clazz == org.bukkit.damage.DamageType.class, "Damage type namespace (%s) must have damage type", clazz.getName());
+                TagKey<DamageType> damageTagKey = TagKey.create(Registries.DAMAGE_TYPE, key);
+                IRegistry<DamageType> damageRegistry = CraftRegistry.getMinecraftRegistry(Registries.DAMAGE_TYPE);
+                if (damageRegistry.get(damageTagKey).isPresent()) {
+                    return (org.bukkit.Tag<T>) new CraftDamageTag(damageRegistry, damageTagKey);
                 }
             }
             default -> throw new IllegalArgumentException();
@@ -2468,22 +2480,27 @@ public final class CraftServer implements Server {
             case org.bukkit.Tag.REGISTRY_BLOCKS -> {
                 Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Block namespace (%s) must have material type", clazz.getName());
                 IRegistry<Block> blockTags = BuiltInRegistries.BLOCK;
-                return blockTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftBlockTag(blockTags, pair.getFirst())).collect(ImmutableList.toImmutableList());
+                return blockTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftBlockTag(blockTags, pair.key())).collect(ImmutableList.toImmutableList());
             }
             case org.bukkit.Tag.REGISTRY_ITEMS -> {
                 Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Item namespace (%s) must have material type", clazz.getName());
                 IRegistry<Item> itemTags = BuiltInRegistries.ITEM;
-                return itemTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftItemTag(itemTags, pair.getFirst())).collect(ImmutableList.toImmutableList());
+                return itemTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftItemTag(itemTags, pair.key())).collect(ImmutableList.toImmutableList());
             }
             case org.bukkit.Tag.REGISTRY_FLUIDS -> {
                 Preconditions.checkArgument(clazz == org.bukkit.Material.class, "Fluid namespace (%s) must have fluid type", clazz.getName());
                 IRegistry<FluidType> fluidTags = BuiltInRegistries.FLUID;
-                return fluidTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftFluidTag(fluidTags, pair.getFirst())).collect(ImmutableList.toImmutableList());
+                return fluidTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftFluidTag(fluidTags, pair.key())).collect(ImmutableList.toImmutableList());
             }
             case org.bukkit.Tag.REGISTRY_ENTITY_TYPES -> {
                 Preconditions.checkArgument(clazz == org.bukkit.entity.EntityType.class, "Entity type namespace (%s) must have entity type", clazz.getName());
                 IRegistry<EntityTypes<?>> entityTags = BuiltInRegistries.ENTITY_TYPE;
-                return entityTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftEntityTag(entityTags, pair.getFirst())).collect(ImmutableList.toImmutableList());
+                return entityTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftEntityTag(entityTags, pair.key())).collect(ImmutableList.toImmutableList());
+            }
+            case org.bukkit.tag.DamageTypeTags.REGISTRY_DAMAGE_TYPES -> {
+                Preconditions.checkArgument(clazz == org.bukkit.damage.DamageType.class, "Damage type namespace (%s) must have damage type", clazz.getName());
+                IRegistry<DamageType> damageTags = CraftRegistry.getMinecraftRegistry(Registries.DAMAGE_TYPE);
+                return damageTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftDamageTag(damageTags, pair.key())).collect(ImmutableList.toImmutableList());
             }
             default -> throw new IllegalArgumentException();
         }
@@ -2493,7 +2510,7 @@ public final class CraftServer implements Server {
     public LootTable getLootTable(NamespacedKey key) {
         Preconditions.checkArgument(key != null, "NamespacedKey key cannot be null");
 
-        ReloadableServerRegistries.b registry = getServer().reloadableRegistries();
+        ReloadableServerRegistries.a registry = getServer().reloadableRegistries();
         return registry.lookup().lookup(Registries.LOOT_TABLE)
                 .flatMap((lookup) -> lookup.get(CraftLootTable.bukkitKeyToMinecraft(key)))
                 .map((holder) -> new CraftLootTable(key, holder.value()))

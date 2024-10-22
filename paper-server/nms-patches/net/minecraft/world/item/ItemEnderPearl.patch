@@ -1,30 +1,22 @@
 --- a/net/minecraft/world/item/ItemEnderPearl.java
 +++ b/net/minecraft/world/item/ItemEnderPearl.java
-@@ -19,16 +19,24 @@
-     public InteractionResultWrapper<ItemStack> use(World world, EntityHuman entityhuman, EnumHand enumhand) {
+@@ -21,10 +21,17 @@
+     public EnumInteractionResult use(World world, EntityHuman entityhuman, EnumHand enumhand) {
          ItemStack itemstack = entityhuman.getItemInHand(enumhand);
  
 -        world.playSound((EntityHuman) null, entityhuman.getX(), entityhuman.getY(), entityhuman.getZ(), SoundEffects.ENDER_PEARL_THROW, SoundCategory.NEUTRAL, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
--        entityhuman.getCooldowns().addCooldown(this, 20);
-+        // CraftBukkit start - change order
-         if (!world.isClientSide) {
-             EntityEnderPearl entityenderpearl = new EntityEnderPearl(world, entityhuman);
- 
-             entityenderpearl.setItem(itemstack);
-             entityenderpearl.shootFromRotation(entityhuman, entityhuman.getXRot(), entityhuman.getYRot(), 0.0F, 1.5F, 1.0F);
--            world.addFreshEntity(entityenderpearl);
-+            if (!world.addFreshEntity(entityenderpearl)) {
+         if (world instanceof WorldServer worldserver) {
+-            IProjectile.spawnProjectileFromRotation(EntityEnderPearl::new, worldserver, itemstack, entityhuman, 0.0F, 1.5F, 1.0F);
++            // CraftBukkit start
++            if (IProjectile.spawnProjectileFromRotation(EntityEnderPearl::new, worldserver, itemstack, entityhuman, 0.0F, 1.5F, 1.0F).isRemoved()) {
 +                if (entityhuman instanceof net.minecraft.server.level.EntityPlayer) {
 +                    ((net.minecraft.server.level.EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
 +                }
-+                return InteractionResultWrapper.fail(itemstack);
++                return EnumInteractionResult.FAIL;
 +            }
          }
- 
 +        world.playSound((EntityHuman) null, entityhuman.getX(), entityhuman.getY(), entityhuman.getZ(), SoundEffects.ENDER_PEARL_THROW, SoundCategory.NEUTRAL, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
-+        entityhuman.getCooldowns().addCooldown(this, 20);
 +        // CraftBukkit end
-+
+ 
          entityhuman.awardStat(StatisticList.ITEM_USED.get(this));
          itemstack.consume(1, entityhuman);
-         return InteractionResultWrapper.sidedSuccess(itemstack, world.isClientSide());

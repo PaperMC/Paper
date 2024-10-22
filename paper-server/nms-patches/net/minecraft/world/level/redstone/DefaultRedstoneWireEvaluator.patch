@@ -1,0 +1,32 @@
+--- a/net/minecraft/world/level/redstone/DefaultRedstoneWireEvaluator.java
++++ b/net/minecraft/world/level/redstone/DefaultRedstoneWireEvaluator.java
+@@ -10,6 +10,11 @@
+ import net.minecraft.world.level.block.BlockRedstoneWire;
+ import net.minecraft.world.level.block.state.IBlockData;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.event.block.BlockRedstoneEvent;
++// CraftBukkit end
++
+ public class DefaultRedstoneWireEvaluator extends RedstoneWireEvaluator {
+ 
+     public DefaultRedstoneWireEvaluator(BlockRedstoneWire blockredstonewire) {
+@@ -20,7 +25,16 @@
+     public void updatePowerStrength(World world, BlockPosition blockposition, IBlockData iblockdata, @Nullable Orientation orientation, boolean flag) {
+         int i = this.calculateTargetStrength(world, blockposition);
+ 
+-        if ((Integer) iblockdata.getValue(BlockRedstoneWire.POWER) != i) {
++        // CraftBukkit start
++        int oldPower = iblockdata.getValue(BlockRedstoneWire.POWER);
++        if (oldPower != i) {
++            BlockRedstoneEvent event = new BlockRedstoneEvent(CraftBlock.at(world, blockposition), oldPower, i);
++            world.getCraftServer().getPluginManager().callEvent(event);
++
++            i = event.getNewCurrent();
++        }
++        if (oldPower != i) {
++            // CraftBukkit end
+             if (world.getBlockState(blockposition) == iblockdata) {
+                 world.setBlock(blockposition, (IBlockData) iblockdata.setValue(BlockRedstoneWire.POWER, i), 2);
+             }

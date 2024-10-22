@@ -10,10 +10,10 @@ import org.bukkit.structure.Palette;
 
 public class CraftPalette implements Palette {
 
-    private final DefinedStructure.a palette;
+    private final DefinedStructure.b palette;
     private final IRegistryCustom registry;
 
-    public CraftPalette(DefinedStructure.a palette, IRegistryCustom registry) {
+    public CraftPalette(DefinedStructure.b palette, IRegistryCustom registry) {
         this.palette = palette;
         this.registry = registry;
     }

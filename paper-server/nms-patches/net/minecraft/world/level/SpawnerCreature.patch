@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/SpawnerCreature.java
 +++ b/net/minecraft/world/level/SpawnerCreature.java
-@@ -46,6 +46,13 @@
+@@ -50,6 +50,13 @@
  import net.minecraft.world.phys.Vec3D;
  import org.slf4j.Logger;
  
@@ -14,12 +14,19 @@
  public final class SpawnerCreature {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -108,10 +115,25 @@
+@@ -107,15 +114,31 @@
+         return (BiomeBase) ichunkaccess.getNoiseBiome(QuartPos.fromBlock(blockposition.getX()), QuartPos.fromBlock(blockposition.getY()), QuartPos.fromBlock(blockposition.getZ())).value();
+     }
+ 
+-    public static List<EnumCreatureType> getFilteredSpawningCategories(SpawnerCreature.d spawnercreature_d, boolean flag, boolean flag1, boolean flag2) {
++    // CraftBukkit start - add server
++    public static List<EnumCreatureType> getFilteredSpawningCategories(SpawnerCreature.d spawnercreature_d, boolean flag, boolean flag1, boolean flag2, WorldServer worldserver) {
++        WorldData worlddata = worldserver.getLevelData(); // CraftBukkit - Other mob type spawn tick rate
++        // CraftBukkit end
+         List<EnumCreatureType> list = new ArrayList(SpawnerCreature.SPAWNING_CATEGORIES.length);
          EnumCreatureType[] aenumcreaturetype = SpawnerCreature.SPAWNING_CATEGORIES;
          int i = aenumcreaturetype.length;
  
-+        WorldData worlddata = worldserver.getLevelData(); // CraftBukkit - Other mob type spawn tick rate
-+
          for (int j = 0; j < i; ++j) {
              EnumCreatureType enumcreaturetype = aenumcreaturetype[j];
 +            // CraftBukkit start - Use per-world spawn limits
@@ -31,20 +38,20 @@
 +                limit = worldserver.getWorld().getSpawnLimit(spawnCategory);
 +            }
  
--            if ((flag || !enumcreaturetype.isFriendly()) && (flag1 || enumcreaturetype.isFriendly()) && (flag2 || !enumcreaturetype.isPersistent()) && spawnercreature_d.canSpawnForCategory(enumcreaturetype, chunk.getPos())) {
+-            if ((flag || !enumcreaturetype.isFriendly()) && (flag1 || enumcreaturetype.isFriendly()) && (flag2 || !enumcreaturetype.isPersistent()) && spawnercreature_d.canSpawnForCategoryGlobal(enumcreaturetype)) {
 +            if (!spawnThisTick || limit == 0) {
 +                continue;
 +            }
 +
-+            if ((flag || !enumcreaturetype.isFriendly()) && (flag1 || enumcreaturetype.isFriendly()) && (flag2 || !enumcreaturetype.isPersistent()) && spawnercreature_d.canSpawnForCategory(enumcreaturetype, chunk.getPos(), limit)) {
++            if ((flag || !enumcreaturetype.isFriendly()) && (flag1 || enumcreaturetype.isFriendly()) && (flag2 || !enumcreaturetype.isPersistent()) && spawnercreature_d.canSpawnForCategoryGlobal(enumcreaturetype, limit)) {
 +                // CraftBukkit end
-                 Objects.requireNonNull(spawnercreature_d);
-                 SpawnerCreature.c spawnercreature_c = spawnercreature_d::canSpawn;
- 
-@@ -196,10 +218,15 @@
+                 list.add(enumcreaturetype);
+             }
+         }
+@@ -217,10 +240,15 @@
                                          entityinsentient.moveTo(d0, (double) i, d1, worldserver.random.nextFloat() * 360.0F, 0.0F);
                                          if (isValidPositionForMob(worldserver, entityinsentient, d2)) {
-                                             groupdataentity = entityinsentient.finalizeSpawn(worldserver, worldserver.getCurrentDifficultyAt(entityinsentient.blockPosition()), EnumMobSpawn.NATURAL, groupdataentity);
+                                             groupdataentity = entityinsentient.finalizeSpawn(worldserver, worldserver.getCurrentDifficultyAt(entityinsentient.blockPosition()), EntitySpawnReason.NATURAL, groupdataentity);
 -                                            ++j;
 -                                            ++k1;
 -                                            worldserver.addFreshEntityWithPassengers(entityinsentient);
@@ -61,25 +68,25 @@
                                              if (j >= entityinsentient.getMaxSpawnClusterSize()) {
                                                  return;
                                              }
-@@ -348,7 +375,7 @@
+@@ -369,7 +397,7 @@
  
-                                     if (entityinsentient.checkSpawnRules(worldaccess, EnumMobSpawn.CHUNK_GENERATION) && entityinsentient.checkSpawnObstruction(worldaccess)) {
-                                         groupdataentity = entityinsentient.finalizeSpawn(worldaccess, worldaccess.getCurrentDifficultyAt(entityinsentient.blockPosition()), EnumMobSpawn.CHUNK_GENERATION, groupdataentity);
+                                     if (entityinsentient.checkSpawnRules(worldaccess, EntitySpawnReason.CHUNK_GENERATION) && entityinsentient.checkSpawnObstruction(worldaccess)) {
+                                         groupdataentity = entityinsentient.finalizeSpawn(worldaccess, worldaccess.getCurrentDifficultyAt(entityinsentient.blockPosition()), EntitySpawnReason.CHUNK_GENERATION, groupdataentity);
 -                                        worldaccess.addFreshEntityWithPassengers(entityinsentient);
 +                                        worldaccess.addFreshEntityWithPassengers(entityinsentient, SpawnReason.CHUNK_GEN); // CraftBukkit
                                          flag = true;
                                      }
                                  }
-@@ -461,8 +488,10 @@
+@@ -482,8 +510,10 @@
              return this.unmodifiableMobCategoryCounts;
          }
  
--        boolean canSpawnForCategory(EnumCreatureType enumcreaturetype, ChunkCoordIntPair chunkcoordintpair) {
+-        boolean canSpawnForCategoryGlobal(EnumCreatureType enumcreaturetype) {
 -            int i = enumcreaturetype.getMaxInstancesPerChunk() * this.spawnableChunkCount / SpawnerCreature.MAGIC_NUMBER;
 +        // CraftBukkit start
-+        boolean canSpawnForCategory(EnumCreatureType enumcreaturetype, ChunkCoordIntPair chunkcoordintpair, int limit) {
++        boolean canSpawnForCategoryGlobal(EnumCreatureType enumcreaturetype, int limit) {
 +            int i = limit * this.spawnableChunkCount / SpawnerCreature.MAGIC_NUMBER;
 +            // CraftBukkit end
  
-             return this.mobCategoryCounts.getInt(enumcreaturetype) >= i ? false : this.localMobCapCalculator.canSpawn(enumcreaturetype, chunkcoordintpair);
+             return this.mobCategoryCounts.getInt(enumcreaturetype) < i;
          }

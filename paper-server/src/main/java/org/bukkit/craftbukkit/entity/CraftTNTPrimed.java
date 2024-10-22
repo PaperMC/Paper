@@ -15,7 +15,7 @@ public class CraftTNTPrimed extends CraftEntity implements TNTPrimed {
 
     @Override
     public float getYield() {
-        return getHandle().yield;
+        return getHandle().explosionPower;
     }
 
     @Override
@@ -30,7 +30,7 @@ public class CraftTNTPrimed extends CraftEntity implements TNTPrimed {
 
     @Override
     public void setYield(float yield) {
-        getHandle().yield = yield;
+        getHandle().explosionPower = yield;
     }
 
     @Override

@@ -395,8 +395,8 @@ public class CraftScheduler implements BukkitScheduler {
     /**
      * This method is designed to never block or wait for locks; an immediate execution of all current tasks.
      */
-    public void mainThreadHeartbeat(final int currentTick) {
-        this.currentTick = currentTick;
+    public void mainThreadHeartbeat() {
+        this.currentTick++;
         final List<CraftTask> temp = this.temp;
         parsePending();
         while (isReady(currentTick)) {

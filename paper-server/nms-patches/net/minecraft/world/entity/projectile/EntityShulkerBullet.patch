@@ -42,16 +42,16 @@
          }
  
      }
-@@ -230,7 +247,7 @@
-             MovingObjectPosition movingobjectposition = ProjectileHelper.getHitResultOnMoveVector(this, this::canHitEntity);
- 
-             if (movingobjectposition.getType() != MovingObjectPosition.EnumMovingObjectType.MISS) {
--                this.hitTargetOrDeflectSelf(movingobjectposition);
-+                this.preHitTargetOrDeflectSelf(movingobjectposition); // CraftBukkit - projectile hit event
-             }
+@@ -239,7 +256,7 @@
          }
  
-@@ -307,7 +324,7 @@
+         if (movingobjectposition != null && this.isAlive() && movingobjectposition.getType() != MovingObjectPosition.EnumMovingObjectType.MISS) {
+-            this.hitTargetOrDeflectSelf(movingobjectposition);
++            this.preHitTargetOrDeflectSelf(movingobjectposition); // CraftBukkit - projectile hit event
+         }
+ 
+         ProjectileHelper.rotateTowardsMovement(this, 0.5F);
+@@ -312,7 +329,7 @@
              if (entity instanceof EntityLiving) {
                  EntityLiving entityliving1 = (EntityLiving) entity;
  
@@ -60,7 +60,7 @@
              }
          }
  
-@@ -321,14 +338,20 @@
+@@ -326,14 +343,20 @@
      }
  
      private void destroy() {
@@ -83,20 +83,19 @@
      }
  
      @Override
-@@ -338,10 +361,15 @@
+@@ -348,9 +371,14 @@
  
      @Override
-     public boolean hurt(DamageSource damagesource, float f) {
+     public boolean hurtServer(WorldServer worldserver, DamageSource damagesource, float f) {
 +        // CraftBukkit start
 +        if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f, false)) {
 +            return false;
 +        }
 +        // CraftBukkit end
-         if (!this.level().isClientSide) {
-             this.playSound(SoundEffects.SHULKER_BULLET_HURT, 1.0F, 1.0F);
-             ((WorldServer) this.level()).sendParticles(Particles.CRIT, this.getX(), this.getY(), this.getZ(), 15, 0.2D, 0.2D, 0.2D, 0.0D);
--            this.destroy();
-+            this.destroy(EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
-         }
- 
+         this.playSound(SoundEffects.SHULKER_BULLET_HURT, 1.0F, 1.0F);
+         worldserver.sendParticles(Particles.CRIT, this.getX(), this.getY(), this.getZ(), 15, 0.2D, 0.2D, 0.2D, 0.0D);
+-        this.destroy();
++        this.destroy(EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
          return true;
+     }
+ 

@@ -4,7 +4,6 @@
  import net.minecraft.world.phys.Vec2F;
  import net.minecraft.world.phys.Vec3D;
  
--public class TileEntityLectern extends TileEntity implements Clearable, ITileInventory {
 +// CraftBukkit start
 +import java.util.ArrayList;
 +import java.util.Arrays;
@@ -17,7 +16,7 @@
 +import org.bukkit.inventory.InventoryHolder;
 +// CraftBukkit end
 +
-+public class TileEntityLectern extends TileEntity implements Clearable, ITileInventory, ICommandListener { // CraftBukkit - ICommandListener
+ public class TileEntityLectern extends TileEntity implements Clearable, ITileInventory {
  
      public static final int DATA_PAGE = 0;
      public static final int NUM_DATA = 1;
@@ -107,50 +106,53 @@
          }
  
      }
-@@ -187,6 +255,32 @@
+@@ -189,6 +257,35 @@
          return itemstack;
      }
  
 +    // CraftBukkit start
-+    @Override
-+    public void sendSystemMessage(IChatBaseComponent ichatbasecomponent) {
-+    }
++    private final ICommandListener commandSource = new ICommandListener() {
 +
-+    @Override
-+    public org.bukkit.command.CommandSender getBukkitSender(CommandListenerWrapper wrapper) {
-+        return wrapper.getEntity() != null ? wrapper.getEntity().getBukkitSender(wrapper) : new org.bukkit.craftbukkit.command.CraftBlockCommandSender(wrapper, this);
-+    }
++        @Override
++        public void sendSystemMessage(IChatBaseComponent ichatbasecomponent) {
++        }
 +
-+    @Override
-+    public boolean acceptsSuccess() {
-+        return false;
-+    }
++        @Override
++        public org.bukkit.command.CommandSender getBukkitSender(CommandListenerWrapper wrapper) {
++            return wrapper.getEntity() != null ? wrapper.getEntity().getBukkitEntity() : new org.bukkit.craftbukkit.command.CraftBlockCommandSender(wrapper, TileEntityLectern.this);
++        }
 +
-+    @Override
-+    public boolean acceptsFailure() {
-+        return false;
-+    }
++        @Override
++        public boolean acceptsSuccess() {
++            return false;
++        }
 +
-+    @Override
-+    public boolean shouldInformAdmins() {
-+        return false;
-+    }
++        @Override
++        public boolean acceptsFailure() {
++            return false;
++        }
 +
++        @Override
++        public boolean shouldInformAdmins() {
++            return false;
++        }
++    };
 +    // CraftBukkit end
-     private CommandListenerWrapper createCommandSourceStack(@Nullable EntityHuman entityhuman) {
++
+     private CommandListenerWrapper createCommandSourceStack(@Nullable EntityHuman entityhuman, WorldServer worldserver) {
          String s;
          Object object;
-@@ -201,7 +295,8 @@
+@@ -203,7 +300,8 @@
  
          Vec3D vec3d = Vec3D.atCenterOf(this.worldPosition);
  
--        return new CommandListenerWrapper(ICommandListener.NULL, vec3d, Vec2F.ZERO, (WorldServer) this.level, 2, s, (IChatBaseComponent) object, this.level.getServer(), entityhuman);
-+        // CraftBukkit - this
-+        return new CommandListenerWrapper(this, vec3d, Vec2F.ZERO, (WorldServer) this.level, 2, s, (IChatBaseComponent) object, this.level.getServer(), entityhuman);
+-        return new CommandListenerWrapper(ICommandListener.NULL, vec3d, Vec2F.ZERO, worldserver, 2, s, (IChatBaseComponent) object, worldserver.getServer(), entityhuman);
++        // CraftBukkit - commandSource
++        return new CommandListenerWrapper(commandSource, vec3d, Vec2F.ZERO, worldserver, 2, s, (IChatBaseComponent) object, worldserver.getServer(), entityhuman);
      }
  
      @Override
-@@ -239,7 +334,7 @@
+@@ -241,7 +339,7 @@
  
      @Override
      public Container createMenu(int i, PlayerInventory playerinventory, EntityHuman entityhuman) {

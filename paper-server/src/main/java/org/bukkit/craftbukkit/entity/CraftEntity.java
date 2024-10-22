@@ -16,12 +16,13 @@ import net.minecraft.server.level.PlayerChunkMap;
 import net.minecraft.server.level.WorldServer;
 import net.minecraft.server.network.ServerPlayerConnection;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.boss.EntityComplexPart;
 import net.minecraft.world.entity.boss.enderdragon.EntityEnderDragon;
 import net.minecraft.world.entity.player.EntityHuman;
 import net.minecraft.world.entity.projectile.EntityArrow;
-import net.minecraft.world.level.portal.DimensionTransition;
+import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.phys.AxisAlignedBB;
 import net.minecraft.world.phys.Vec3D;
 import org.bukkit.EntityEffect;
@@ -153,7 +154,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public boolean isOnGround() {
         if (entity instanceof EntityArrow) {
-            return ((EntityArrow) entity).inGround;
+            return ((EntityArrow) entity).isInGround();
         }
         return entity.onGround();
     }
@@ -204,7 +205,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         if (location.getWorld() != null && !location.getWorld().equals(getWorld())) {
             // Prevent teleportation to an other world during world generation
             Preconditions.checkState(!entity.generation, "Cannot teleport entity to an other world during world generation");
-            entity.changeDimension(new DimensionTransition(((CraftWorld) location.getWorld()).getHandle(), CraftLocation.toVec3D(location), Vec3D.ZERO, location.getPitch(), location.getYaw(), DimensionTransition.DO_NOTHING, TeleportCause.PLUGIN));
+            entity.teleport(new TeleportTransition(((CraftWorld) location.getWorld()).getHandle(), CraftLocation.toVec3D(location), Vec3D.ZERO, location.getPitch(), location.getYaw(), Set.of(), TeleportTransition.DO_NOTHING, TeleportCause.PLUGIN));
             return true;
         }
 
@@ -703,7 +704,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public boolean isInvulnerable() {
-        return getHandle().isInvulnerableTo(getHandle().damageSources().generic());
+        return getHandle().isInvulnerableToBase(getHandle().damageSources().generic());
     }
 
     @Override
@@ -820,7 +821,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         NBTTagCompound compoundTag = new NBTTagCompound();
         getHandle().saveAsPassenger(compoundTag, false);
 
-        return EntityTypes.loadEntityRecursive(compoundTag, level, java.util.function.Function.identity());
+        return EntityTypes.loadEntityRecursive(compoundTag, level, EntitySpawnReason.LOAD, java.util.function.Function.identity());
     }
 
     public void storeBukkitValues(NBTTagCompound c) {

@@ -5,13 +5,14 @@ import com.google.common.collect.ImmutableMap.Builder;
 import java.util.Map;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.component.OminousBottleAmplifier;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.inventory.meta.OminousBottleMeta;
 
 @DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaOminousBottle extends CraftMetaItem implements OminousBottleMeta {
 
-    static final ItemMetaKeyType<Integer> OMINOUS_BOTTLE_AMPLIFIER = new ItemMetaKeyType<>(DataComponents.OMINOUS_BOTTLE_AMPLIFIER, "ominous-bottle-amplifier");
+    static final ItemMetaKeyType<OminousBottleAmplifier> OMINOUS_BOTTLE_AMPLIFIER = new ItemMetaKeyType<>(DataComponents.OMINOUS_BOTTLE_AMPLIFIER, "ominous-bottle-amplifier");
     private Integer ominousBottleAmplifier;
 
     CraftMetaOminousBottle(CraftMetaItem meta) {
@@ -26,7 +27,7 @@ public class CraftMetaOminousBottle extends CraftMetaItem implements OminousBott
     CraftMetaOminousBottle(DataComponentPatch tag) {
         super(tag);
         getOrEmpty(tag, OMINOUS_BOTTLE_AMPLIFIER).ifPresent((amplifier) -> {
-            ominousBottleAmplifier = amplifier;
+            ominousBottleAmplifier = amplifier.value();
         });
     }
 
@@ -43,7 +44,7 @@ public class CraftMetaOminousBottle extends CraftMetaItem implements OminousBott
         super.applyToItem(tag);
 
         if (hasAmplifier()) {
-            tag.put(OMINOUS_BOTTLE_AMPLIFIER, ominousBottleAmplifier);
+            tag.put(OMINOUS_BOTTLE_AMPLIFIER, new OminousBottleAmplifier(ominousBottleAmplifier));
         }
     }
 

@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/level/redstone/NeighborUpdater.java
 +++ b/net/minecraft/world/level/redstone/NeighborUpdater.java
-@@ -12,6 +12,13 @@
- import net.minecraft.world.level.World;
+@@ -13,6 +13,13 @@
  import net.minecraft.world.level.block.Block;
+ import net.minecraft.world.level.block.Blocks;
  import net.minecraft.world.level.block.state.IBlockData;
 +// CraftBukkit start
 +import net.minecraft.server.level.WorldServer;
@@ -14,14 +14,14 @@
  
  public interface NeighborUpdater {
  
-@@ -46,6 +53,17 @@
+@@ -50,6 +57,17 @@
  
-     static void executeUpdate(World world, IBlockData iblockdata, BlockPosition blockposition, Block block, BlockPosition blockposition1, boolean flag) {
+     static void executeUpdate(World world, IBlockData iblockdata, BlockPosition blockposition, Block block, @Nullable Orientation orientation, boolean flag) {
          try {
 +            // CraftBukkit start
 +            CraftWorld cworld = ((WorldServer) world).getWorld();
 +            if (cworld != null) {
-+                BlockPhysicsEvent event = new BlockPhysicsEvent(CraftBlock.at(world, blockposition), CraftBlockData.fromData(iblockdata), CraftBlock.at(world, blockposition1));
++                BlockPhysicsEvent event = new BlockPhysicsEvent(CraftBlock.at(world, blockposition), CraftBlockData.fromData(iblockdata));
 +                ((WorldServer) world).getCraftServer().getPluginManager().callEvent(event);
 +
 +                if (event.isCancelled()) {
@@ -29,6 +29,6 @@
 +                }
 +            }
 +            // CraftBukkit end
-             iblockdata.handleNeighborChanged(world, blockposition, block, blockposition1, flag);
+             iblockdata.handleNeighborChanged(world, blockposition, block, orientation, flag);
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.forThrowable(throwable, "Exception while updating neighbours");

@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import net.minecraft.commands.CommandDispatcher;
 import net.minecraft.commands.CommandListenerWrapper;
+import net.minecraft.server.level.WorldServer;
 import net.minecraft.world.entity.vehicle.EntityMinecartCommandBlock;
 import org.bukkit.Location;
 import org.bukkit.command.BlockCommandSender;
@@ -20,7 +21,6 @@ import org.bukkit.command.defaults.BukkitCommand;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftMinecartCommand;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.minecart.CommandMinecart;
 
 public final class VanillaCommandWrapper extends BukkitCommand {
@@ -62,12 +62,12 @@ public final class VanillaCommandWrapper extends BukkitCommand {
     }
 
     public static CommandListenerWrapper getListener(CommandSender sender) {
-        if (sender instanceof Entity) {
+        if (sender instanceof CraftEntity entity) {
             if (sender instanceof CommandMinecart) {
                 return ((EntityMinecartCommandBlock) ((CraftMinecartCommand) sender).getHandle()).getCommandBlock().createCommandSourceStack();
             }
 
-            return ((CraftEntity) sender).getHandle().createCommandSourceStack();
+            return entity.getHandle().createCommandSourceStackForNameResolution((WorldServer) entity.getHandle().level());
         }
         if (sender instanceof BlockCommandSender) {
             return ((CraftBlockCommandSender) sender).getWrapper();

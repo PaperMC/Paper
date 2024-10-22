@@ -16,7 +16,7 @@ public class PatternTypeTest {
 
     @Test
     public void testToBukkit() {
-        for (EnumBannerPatternType nms : MinecraftServer.getDefaultRegistryAccess().registryOrThrow(Registries.BANNER_PATTERN)) {
+        for (EnumBannerPatternType nms : MinecraftServer.getDefaultRegistryAccess().lookupOrThrow(Registries.BANNER_PATTERN)) {
             PatternType bukkit = Registry.BANNER_PATTERN.get(CraftNamespacedKey.fromMinecraft(nms.assetId()));
 
             assertNotNull(bukkit, "No Bukkit banner pattern for " + nms + " " + nms);
@@ -25,7 +25,7 @@ public class PatternTypeTest {
 
     @Test
     public void testToNMS() {
-        IRegistry<EnumBannerPatternType> registry = MinecraftServer.getDefaultRegistryAccess().registryOrThrow(Registries.BANNER_PATTERN);
+        IRegistry<EnumBannerPatternType> registry = MinecraftServer.getDefaultRegistryAccess().lookupOrThrow(Registries.BANNER_PATTERN);
         for (PatternType bukkit : PatternType.values()) {
             EnumBannerPatternType found = null;
             for (EnumBannerPatternType nms : registry) {

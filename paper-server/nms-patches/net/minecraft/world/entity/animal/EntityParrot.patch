@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/EntityParrot.java
 +++ b/net/minecraft/world/entity/animal/EntityParrot.java
-@@ -248,7 +248,7 @@
+@@ -250,7 +250,7 @@
              }
  
              if (!this.level().isClientSide) {
@@ -9,16 +9,16 @@
                      this.tame(entityhuman);
                      this.level().broadcastEntityEvent(this, (byte) 7);
                  } else {
-@@ -269,7 +269,7 @@
+@@ -271,7 +271,7 @@
              }
          } else {
-             itemstack.consume(1, entityhuman);
+             this.usePlayerItem(entityhuman, enumhand, itemstack);
 -            this.addEffect(new MobEffect(MobEffects.POISON, 900));
 +            this.addEffect(new MobEffect(MobEffects.POISON, 900), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.FOOD); // CraftBukkit
              if (entityhuman.isCreative() || !this.isInvulnerable()) {
                  this.hurt(this.damageSources().playerAttack(entityhuman), Float.MAX_VALUE);
              }
-@@ -363,7 +363,7 @@
+@@ -365,7 +365,7 @@
  
      @Override
      public boolean isPushable() {
@@ -27,19 +27,18 @@
      }
  
      @Override
-@@ -378,11 +378,14 @@
-         if (this.isInvulnerableTo(damagesource)) {
+@@ -380,8 +380,14 @@
+         if (this.isInvulnerableTo(worldserver, damagesource)) {
              return false;
          } else {
--            if (!this.level().isClientSide) {
 +            // CraftBukkit start
-+            boolean result = super.hurt(damagesource, f);
-+            if (!this.level().isClientSide && result) {
-+                // CraftBukkit end
-                 this.setOrderedToSit(false);
-             }
- 
--            return super.hurt(damagesource, f);
++            boolean result = super.hurtServer(worldserver, damagesource, f);
++            if (!result) {
++                return result;
++            }
++            // CraftBukkit end
+             this.setOrderedToSit(false);
+-            return super.hurtServer(worldserver, damagesource, f);
 +            return result; // CraftBukkit
          }
      }

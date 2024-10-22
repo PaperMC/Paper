@@ -2,6 +2,7 @@ package org.bukkit;
 
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.Map;
+import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.level.GameRules;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.support.environment.Normal;
@@ -23,7 +24,7 @@ public class GameRuleTest {
 
     @Test
     public void testMinecraftRules() {
-        Map<String, GameRules.GameRuleKey<?>> minecraftRules = CraftWorld.getGameRulesNMS();
+        Map<String, GameRules.GameRuleKey<?>> minecraftRules = CraftWorld.getGameRulesNMS(new GameRules(FeatureFlags.REGISTRY.allFlags()));
 
         for (Map.Entry<String, GameRules.GameRuleKey<?>> entry : minecraftRules.entrySet()) {
             GameRule<?> bukkitRule = GameRule.getByName(entry.getKey());

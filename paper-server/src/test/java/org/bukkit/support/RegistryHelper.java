@@ -1,9 +1,11 @@
 package org.bukkit.support;
 
 import com.google.common.util.concurrent.MoreExecutors;
+import java.util.List;
 import java.util.Locale;
 import net.minecraft.SharedConstants;
 import net.minecraft.commands.CommandDispatcher;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.IRegistry;
 import net.minecraft.core.IRegistryCustom;
 import net.minecraft.core.LayeredRegistryAccess;
@@ -12,12 +14,13 @@ import net.minecraft.resources.RegistryDataLoader;
 import net.minecraft.server.DataPackResources;
 import net.minecraft.server.DispenserRegistry;
 import net.minecraft.server.RegistryLayer;
-import net.minecraft.server.WorldLoader;
 import net.minecraft.server.packs.EnumResourcePackType;
 import net.minecraft.server.packs.repository.ResourcePackLoader;
 import net.minecraft.server.packs.repository.ResourcePackRepository;
 import net.minecraft.server.packs.repository.ResourcePackSourceVanilla;
+import net.minecraft.server.packs.resources.IResourceManager;
 import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.tags.TagDataPack;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.level.biome.BiomeBase;
 import org.bukkit.Keyed;
@@ -54,22 +57,37 @@ public final class RegistryHelper {
     }
 
     public static IRegistryCustom.Dimension createRegistry(FeatureFlagSet featureFlagSet) {
-        return createLayers(createResourceManager(featureFlagSet)).compositeAccess().freeze();
+        ResourceManager ireloadableresourcemanager = createResourceManager(featureFlagSet);
+        // add tags and loot tables for unit tests
+        LayeredRegistryAccess<RegistryLayer> layeredregistryaccess = RegistryLayer.createRegistryAccess();
+        List<IRegistry.a<?>> list = TagDataPack.loadTagsForExistingRegistries(ireloadableresourcemanager, layeredregistryaccess.getLayer(RegistryLayer.STATIC));
+        IRegistryCustom.Dimension iregistrycustom_dimension = layeredregistryaccess.getAccessForLoading(RegistryLayer.WORLDGEN);
+        List<HolderLookup.b<?>> list1 = TagDataPack.buildUpdatedLookups(iregistrycustom_dimension, list);
+        IRegistryCustom.Dimension iregistrycustom_dimension1 = RegistryDataLoader.load((IResourceManager) ireloadableresourcemanager, list1, RegistryDataLoader.WORLDGEN_REGISTRIES);
+        LayeredRegistryAccess<RegistryLayer> layers = layeredregistryaccess.replaceFrom(RegistryLayer.WORLDGEN, iregistrycustom_dimension1);
+
+        return layers.compositeAccess().freeze();
     }
 
     public static void setup(FeatureFlagSet featureFlagSet) {
         SharedConstants.tryDetectVersion();
         DispenserRegistry.bootStrap();
 
-        ResourceManager resourceManager = createResourceManager(featureFlagSet);
-        LayeredRegistryAccess<RegistryLayer> layers = createLayers(resourceManager);
+        ResourceManager ireloadableresourcemanager = createResourceManager(featureFlagSet);
+        // add tags and loot tables for unit tests
+        LayeredRegistryAccess<RegistryLayer> layeredregistryaccess = RegistryLayer.createRegistryAccess();
+        List<IRegistry.a<?>> list = TagDataPack.loadTagsForExistingRegistries(ireloadableresourcemanager, layeredregistryaccess.getLayer(RegistryLayer.STATIC));
+        IRegistryCustom.Dimension iregistrycustom_dimension = layeredregistryaccess.getAccessForLoading(RegistryLayer.WORLDGEN);
+        List<HolderLookup.b<?>> list1 = TagDataPack.buildUpdatedLookups(iregistrycustom_dimension, list);
+        IRegistryCustom.Dimension iregistrycustom_dimension1 = RegistryDataLoader.load((IResourceManager) ireloadableresourcemanager, list1, RegistryDataLoader.WORLDGEN_REGISTRIES);
+        LayeredRegistryAccess<RegistryLayer> layers = layeredregistryaccess.replaceFrom(RegistryLayer.WORLDGEN, iregistrycustom_dimension1);
         registry = layers.compositeAccess().freeze();
         // Register vanilla pack
-        dataPack = DataPackResources.loadResources(resourceManager, layers, featureFlagSet, CommandDispatcher.ServerType.DEDICATED, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
+        dataPack = DataPackResources.loadResources(ireloadableresourcemanager, layers, list, featureFlagSet, CommandDispatcher.ServerType.DEDICATED, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
         // Bind tags
-        dataPack.updateRegistryTags();
+        dataPack.updateStaticRegistryTags();
         // Biome shortcut
-        biomes = registry.registryOrThrow(Registries.BIOME);
+        biomes = registry.lookupOrThrow(Registries.BIOME);
     }
 
     public static <T extends Keyed> Class<T> updateClass(Class<T> aClass, NamespacedKey key) {
@@ -92,14 +110,6 @@ public final class RegistryHelper {
         resourceRepository.reload();
         // Set up resource manager
         return new ResourceManager(EnumResourcePackType.SERVER_DATA, resourceRepository.getAvailablePacks().stream().filter(pack -> pack.getRequestedFeatures().isSubsetOf(featureFlagSet)).map(ResourcePackLoader::open).toList());
-    }
-
-    private static LayeredRegistryAccess<RegistryLayer> createLayers(ResourceManager resourceManager) {
-        // add tags and loot tables for unit tests
-        LayeredRegistryAccess<RegistryLayer> layers = RegistryLayer.createRegistryAccess();
-        layers = WorldLoader.loadAndReplaceLayer(resourceManager, layers, RegistryLayer.WORLDGEN, RegistryDataLoader.WORLDGEN_REGISTRIES);
-
-        return layers;
     }
 
     private static void throwError(String field) {

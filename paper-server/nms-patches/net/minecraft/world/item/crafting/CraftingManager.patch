@@ -1,108 +1,87 @@
 --- a/net/minecraft/world/item/crafting/CraftingManager.java
 +++ b/net/minecraft/world/item/crafting/CraftingManager.java
-@@ -34,6 +34,11 @@
+@@ -38,6 +38,10 @@
  import net.minecraft.world.level.World;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
-+import com.google.common.collect.LinkedHashMultimap;
-+import com.google.common.collect.Maps;
++import java.util.Collections;
 +// CraftBukkit end
 +
- public class CraftingManager extends ResourceDataJson {
+ public class CraftingManager extends ResourceDataAbstract<RecipeMap> implements RecipeAccess {
  
-     private static final Gson GSON = (new GsonBuilder()).setPrettyPrinting().disableHtmlEscaping().create();
-@@ -70,11 +75,26 @@
-             }
-         }
- 
--        this.byType = builder.build();
--        this.byName = com_google_common_collect_immutablemap_builder.build();
-+        // CraftBukkit start - mutable
-+        this.byType = LinkedHashMultimap.create(builder.build());
-+        this.byName = Maps.newHashMap(com_google_common_collect_immutablemap_builder.build());
-+        // CraftBukkit end
-         CraftingManager.LOGGER.info("Loaded {} recipes", this.byType.size());
+     private static final Logger LOGGER = LogUtils.getLogger();
+@@ -109,7 +113,23 @@
+         CraftingManager.LOGGER.info("Loaded {} recipes", recipemap.values().size());
      }
  
 +    // CraftBukkit start
 +    public void addRecipe(RecipeHolder<?> irecipe) {
-+        Collection<RecipeHolder<?>> map = this.byType.get(irecipe.value().getType()); // CraftBukkit
++        this.recipes.addRecipe(irecipe);
++        finalizeRecipeLoading();
++    }
 +
-+        if (byName.containsKey(irecipe.id())) {
-+            throw new IllegalStateException("Duplicate recipe ignored with ID " + irecipe.id());
-+        } else {
-+            map.add(irecipe);
-+            byName.put(irecipe.id(), irecipe);
++    private FeatureFlagSet featureflagset;
++
++    public void finalizeRecipeLoading() {
++        if (featureflagset != null) {
++            finalizeRecipeLoading(featureflagset);
 +        }
 +    }
-+    // CraftBukkit end
 +
-     public boolean hadErrorsLoading() {
-         return this.hasErrors;
-     }
-@@ -90,9 +110,13 @@
+     public void finalizeRecipeLoading(FeatureFlagSet featureflagset) {
++        this.featureflagset = featureflagset;
++        // CraftBukkit end
+         List<SelectableRecipe.a<RecipeStonecutting>> list = new ArrayList();
+         List<CraftingManager.b> list1 = CraftingManager.RECIPE_PROPERTY_SETS.entrySet().stream().map((entry) -> {
+             return new CraftingManager.b((ResourceKey) entry.getKey(), (CraftingManager.c) entry.getValue());
+@@ -128,7 +148,7 @@
+                     RecipeStonecutting recipestonecutting = (RecipeStonecutting) irecipe;
+ 
+                     if (isIngredientEnabled(featureflagset, recipestonecutting.input()) && recipestonecutting.resultDisplay().isEnabled(featureflagset)) {
+-                        list.add(new SelectableRecipe.a<>(recipestonecutting.input(), new SelectableRecipe<>(recipestonecutting.resultDisplay(), Optional.of(recipeholder))));
++                        list.add(new SelectableRecipe.a<RecipeStonecutting>(recipestonecutting.input(), new SelectableRecipe<>(recipestonecutting.resultDisplay(), Optional.of((RecipeHolder<RecipeStonecutting>) recipeholder)))); // CraftBukkit - decompile error
+                     }
+                 }
+ 
+@@ -170,7 +190,10 @@
      }
  
-     public <I extends RecipeInput, T extends IRecipe<I>> Optional<RecipeHolder<T>> getRecipeFor(Recipes<T> recipes, I i0, World world, @Nullable RecipeHolder<T> recipeholder) {
--        return i0.isEmpty() ? Optional.empty() : (recipeholder != null && recipeholder.value().matches(i0, world) ? Optional.of(recipeholder) : this.byType(recipes).stream().filter((recipeholder1) -> {
+     public <I extends RecipeInput, T extends IRecipe<I>> Optional<RecipeHolder<T>> getRecipeFor(Recipes<T> recipes, I i0, World world) {
+-        return this.recipes.getRecipesFor(recipes, i0, world).findFirst();
 +        // CraftBukkit start
-+        List<RecipeHolder<T>> list = this.byType(recipes).stream().filter((recipeholder1) -> {
-             return recipeholder1.value().matches(i0, world);
--        }).findFirst());
-+        }).toList();
-+        Optional<RecipeHolder<T>> recipe = (list.isEmpty() || i0.isEmpty()) ? Optional.empty() : (recipeholder != null && recipeholder.value().matches(i0, world) ? Optional.of(recipeholder) : Optional.of(list.getLast())); // CraftBukkit - SPIGOT-4638: last recipe gets priority
-+        return recipe;
++        List<RecipeHolder<T>> list = this.recipes.getRecipesFor(recipes, i0, world).toList();
++        return (list.isEmpty()) ? Optional.empty() : Optional.of(list.getLast()); // CraftBukkit - SPIGOT-4638: last recipe gets priority
 +        // CraftBukkit end
      }
  
-     public <I extends RecipeInput, T extends IRecipe<I>> List<RecipeHolder<T>> getAllRecipesFor(Recipes<T> recipes) {
-@@ -108,7 +132,7 @@
-     }
- 
-     private <I extends RecipeInput, T extends IRecipe<I>> Collection<RecipeHolder<T>> byType(Recipes<T> recipes) {
--        return this.byType.get(recipes);
-+        return (Collection) this.byType.get(recipes); // CraftBukkit - decompile error
-     }
- 
-     public <I extends RecipeInput, T extends IRecipe<I>> NonNullList<ItemStack> getRemainingItemsFor(Recipes<T> recipes, I i0, World world) {
-@@ -135,7 +159,7 @@
-     private <T extends IRecipe<?>> RecipeHolder<T> byKeyTyped(Recipes<T> recipes, MinecraftKey minecraftkey) {
-         RecipeHolder<?> recipeholder = (RecipeHolder) this.byName.get(minecraftkey);
+     public Optional<RecipeHolder<?>> byKey(ResourceKey<IRecipe<?>> resourcekey) {
+@@ -181,7 +204,7 @@
+     private <T extends IRecipe<?>> RecipeHolder<T> byKeyTyped(Recipes<T> recipes, ResourceKey<IRecipe<?>> resourcekey) {
+         RecipeHolder<?> recipeholder = this.recipes.byKey(resourcekey);
  
 -        return recipeholder != null && recipeholder.value().getType().equals(recipes) ? recipeholder : null;
 +        return recipeholder != null && recipeholder.value().getType().equals(recipes) ? (RecipeHolder) recipeholder : null; // CraftBukkit - decompile error
      }
  
-     public Collection<RecipeHolder<?>> getOrderedRecipes() {
-@@ -171,10 +195,31 @@
-             com_google_common_collect_immutablemap_builder.put(recipeholder.id(), recipeholder);
-         }
- 
--        this.byType = builder.build();
--        this.byName = com_google_common_collect_immutablemap_builder.build();
-+        // CraftBukkit start - mutable
-+        this.byType = LinkedHashMultimap.create(builder.build());
-+        this.byName = Maps.newHashMap(com_google_common_collect_immutablemap_builder.build());
-+        // CraftBukkit end
-+    }
-+
-+    // CraftBukkit start
-+    public boolean removeRecipe(MinecraftKey mcKey) {
-+        Iterator<RecipeHolder<?>> iter = byType.values().iterator();
-+        while (iter.hasNext()) {
-+            RecipeHolder<?> recipe = iter.next();
-+            if (recipe.id().equals(mcKey)) {
-+                iter.remove();
-+            }
-+        }
-+
-+        return byName.remove(mcKey) != null;
+     public Map<ResourceKey<RecipePropertySet>, RecipePropertySet> getSynchronizedItemProperties() {
+@@ -229,6 +252,22 @@
+         return new RecipeHolder<>(resourcekey, irecipe);
      }
  
++    // CraftBukkit start
++    public boolean removeRecipe(ResourceKey<IRecipe<?>> mcKey) {
++        boolean removed = this.recipes.removeRecipe(mcKey);
++        if (removed) {
++            finalizeRecipeLoading();
++        }
++
++        return removed;
++    }
++
 +    public void clearRecipes() {
-+        this.byType = LinkedHashMultimap.create();
-+        this.byName = Maps.newHashMap();
++        this.recipes = RecipeMap.create(Collections.emptyList());
++        finalizeRecipeLoading();
 +    }
 +    // CraftBukkit end
 +

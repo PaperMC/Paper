@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/projectile/EntityArrow.java
 +++ b/net/minecraft/world/entity/projectile/EntityArrow.java
-@@ -52,6 +52,13 @@
+@@ -51,6 +51,13 @@
  import net.minecraft.world.phys.Vec3D;
  import net.minecraft.world.phys.shapes.VoxelShape;
  
@@ -29,7 +29,7 @@
          this.pickupItemStack = itemstack.copy();
          this.setCustomName((IChatBaseComponent) itemstack.get(DataComponents.CUSTOM_NAME));
          Unit unit = (Unit) itemstack.remove(DataComponents.INTANGIBLE_PROJECTILE);
-@@ -116,8 +130,8 @@
+@@ -112,8 +126,8 @@
      }
  
      protected EntityArrow(EntityTypes<? extends EntityArrow> entitytypes, EntityLiving entityliving, World world, ItemStack itemstack, @Nullable ItemStack itemstack1) {
@@ -40,16 +40,16 @@
      }
  
      public void setSoundEvent(SoundEffect soundeffect) {
-@@ -242,7 +256,7 @@
-                 }
+@@ -276,7 +290,7 @@
  
-                 if (object != null && !flag) {
--                    ProjectileDeflection projectiledeflection = this.hitTargetOrDeflectSelf((MovingObjectPosition) object);
-+                    ProjectileDeflection projectiledeflection = this.preHitTargetOrDeflectSelf((MovingObjectPosition) object); // CraftBukkit - projectile hit event
- 
-                     this.hasImpulse = true;
-                     if (projectiledeflection != ProjectileDeflection.NONE) {
-@@ -333,7 +347,7 @@
+                 if (movingobjectpositionentity == null) {
+                     if (this.isAlive() && movingobjectpositionblock.getType() != MovingObjectPosition.EnumMovingObjectType.MISS) {
+-                        this.hitTargetOrDeflectSelf(movingobjectpositionblock);
++                        this.preHitTargetOrDeflectSelf(movingobjectpositionblock); // CraftBukkit - projectile hit event
+                         this.hasImpulse = true;
+                     }
+                 } else {
+@@ -356,7 +370,7 @@
      protected void tickDespawn() {
          ++this.life;
          if (this.life >= 1200) {
@@ -58,7 +58,7 @@
          }
  
      }
-@@ -380,7 +394,7 @@
+@@ -408,7 +422,7 @@
              }
  
              if (this.piercingIgnoreEntityIds.size() >= this.getPierceLevel() + 1) {
@@ -67,7 +67,7 @@
                  return;
              }
  
-@@ -401,7 +415,13 @@
+@@ -429,7 +443,13 @@
          int k = entity.getRemainingFireTicks();
  
          if (this.isOnFire() && !flag) {
@@ -81,8 +81,8 @@
 +            // CraftBukkit end
          }
  
-         if (entity.hurt(damagesource, (float) i)) {
-@@ -447,7 +467,7 @@
+         if (entity.hurtOrSimulate(damagesource, (float) i)) {
+@@ -475,7 +495,7 @@
  
              this.playSound(this.soundEvent, 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
              if (this.getPierceLevel() <= 0) {
@@ -91,16 +91,16 @@
              }
          } else {
              entity.setRemainingFireTicks(k);
-@@ -458,7 +478,7 @@
-                     this.spawnAtLocation(this.getPickupItem(), 0.1F);
-                 }
+@@ -491,7 +511,7 @@
+                         this.spawnAtLocation(worldserver2, this.getPickupItem(), 0.1F);
+                     }
  
--                this.discard();
-+                this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
+-                    this.discard();
++                    this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
+                 }
              }
          }
- 
-@@ -614,7 +634,7 @@
+@@ -660,7 +680,7 @@
          }
  
          if (nbttagcompound.contains("weapon", 10)) {
@@ -109,7 +109,7 @@
          } else {
              this.firedFromWeapon = null;
          }
-@@ -627,34 +647,31 @@
+@@ -673,34 +693,31 @@
          Entity entity1 = entity;
          byte b0 = 0;
  
@@ -156,10 +156,10 @@
          }
  
          this.pickup = entityarrow_pickupstatus;
-@@ -663,9 +680,24 @@
+@@ -709,9 +726,24 @@
      @Override
      public void playerTouch(EntityHuman entityhuman) {
-         if (!this.level().isClientSide && (this.inGround || this.isNoPhysics()) && this.shakeTime <= 0) {
+         if (!this.level().isClientSide && (this.isInGround() || this.isNoPhysics()) && this.shakeTime <= 0) {
 -            if (this.tryPickup(entityhuman)) {
 +            // CraftBukkit start
 +            ItemStack itemstack = this.getPickupItem();

@@ -64,7 +64,7 @@ public class RegistryConstantsTest {
     private <T extends Keyed, M> void testMissingConstants(Class<T> clazz, ResourceKey<IRegistry<M>> nmsRegistryKey) {
         List<MinecraftKey> missingKeys = new ArrayList<>();
 
-        IRegistry<M> nmsRegistry = RegistryHelper.getRegistry().registryOrThrow(nmsRegistryKey);
+        IRegistry<M> nmsRegistry = RegistryHelper.getRegistry().lookupOrThrow(nmsRegistryKey);
         for (M nmsObject : nmsRegistry) {
             MinecraftKey minecraftKey = nmsRegistry.getKey(nmsObject);
 

@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.block;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
-import net.minecraft.resources.MinecraftKey;
 import net.minecraft.world.level.block.BlockFurnace;
 import net.minecraft.world.level.block.entity.TileEntityFurnace;
 import org.bukkit.Bukkit;
@@ -74,12 +73,12 @@ public abstract class CraftFurnace<T extends TileEntityFurnace> extends CraftCon
     @Override
     public Map<CookingRecipe<?>, Integer> getRecipesUsed() {
         ImmutableMap.Builder<CookingRecipe<?>, Integer> recipesUsed = ImmutableMap.builder();
-        for (Map.Entry<MinecraftKey, Integer> entrySet : this.getSnapshot().getRecipesUsed().object2IntEntrySet()) {
-            Recipe recipe = Bukkit.getRecipe(CraftNamespacedKey.fromMinecraft(entrySet.getKey()));
+        this.getSnapshot().recipesUsed.reference2IntEntrySet().fastForEach(entrySet -> {
+            Recipe recipe = Bukkit.getRecipe(CraftNamespacedKey.fromMinecraft(entrySet.getKey().location()));
             if (recipe instanceof CookingRecipe<?> cookingRecipe) {
                 recipesUsed.put(cookingRecipe, entrySet.getValue());
             }
-        }
+        });
 
         return recipesUsed.build();
     }

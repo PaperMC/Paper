@@ -1,0 +1,56 @@
+--- a/net/minecraft/world/item/crafting/RecipeMap.java
++++ b/net/minecraft/world/item/crafting/RecipeMap.java
+@@ -12,6 +12,11 @@
+ import net.minecraft.resources.ResourceKey;
+ import net.minecraft.world.level.World;
+ 
++// CraftBukkit start
++import com.google.common.collect.LinkedHashMultimap;
++import com.google.common.collect.Maps;
++// CraftBukkit end
++
+ public class RecipeMap {
+ 
+     public static final RecipeMap EMPTY = new RecipeMap(ImmutableMultimap.of(), Map.of());
+@@ -35,11 +40,39 @@
+             com_google_common_collect_immutablemap_builder.put(recipeholder.id(), recipeholder);
+         }
+ 
+-        return new RecipeMap(builder.build(), com_google_common_collect_immutablemap_builder.build());
++        // CraftBukkit start - mutable
++        return new RecipeMap(LinkedHashMultimap.create(builder.build()), Maps.newHashMap(com_google_common_collect_immutablemap_builder.build()));
++    }
++
++    public void addRecipe(RecipeHolder<?> irecipe) {
++        Collection<RecipeHolder<?>> map = this.byType.get(irecipe.value().getType());
++
++        if (byKey.containsKey(irecipe.id())) {
++            throw new IllegalStateException("Duplicate recipe ignored with ID " + irecipe.id());
++        } else {
++            map.add(irecipe);
++            byKey.put(irecipe.id(), irecipe);
++        }
+     }
+ 
++    public boolean removeRecipe(ResourceKey<IRecipe<?>> mcKey) {
++        boolean removed = false;
++        Iterator<RecipeHolder<?>> iter = byType.values().iterator();
++        while (iter.hasNext()) {
++            RecipeHolder<?> recipe = iter.next();
++            if (recipe.id().equals(mcKey)) {
++                iter.remove();
++                removed = true;
++            }
++        }
++        removed |= byKey.remove(mcKey) != null;
++
++        return removed;
++    }
++    // CraftBukkit end
++
+     public <I extends RecipeInput, T extends IRecipe<I>> Collection<RecipeHolder<T>> byType(Recipes<T> recipes) {
+-        return this.byType.get(recipes);
++        return (Collection) this.byType.get(recipes); // CraftBukkit - decompile error
+     }
+ 
+     public Collection<RecipeHolder<?>> values() {

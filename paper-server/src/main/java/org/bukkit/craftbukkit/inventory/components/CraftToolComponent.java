@@ -14,8 +14,6 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.MinecraftKey;
-import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.component.Tool;
 import net.minecraft.world.level.block.Block;
 import org.bukkit.Material;
@@ -197,35 +195,7 @@ public final class CraftToolComponent implements ToolComponent {
         public CraftToolRule(Map<String, Object> map) {
             Float speed = SerializableMeta.getObject(Float.class, map, "speed", true);
             Boolean correct = SerializableMeta.getObject(Boolean.class, map, "correct-for-drops", true);
-
-            HolderSet<Block> blocks = null;
-            Object blocksObject = SerializableMeta.getObject(Object.class, map, "blocks", false);
-            if (blocksObject instanceof String blocksString && blocksString.startsWith("#")) { // Tag
-                blocksString = blocksString.substring(1);
-                MinecraftKey key = MinecraftKey.tryParse(blocksString);
-                if (key != null) {
-                    blocks = BuiltInRegistries.BLOCK.getTag(TagKey.create(Registries.BLOCK, key)).orElse(null);
-                }
-            } else if (blocksObject instanceof List blocksList) { // List of blocks
-                List<Holder.c<Block>> blockHolders = new ArrayList<>(blocksList.size());
-
-                for (Object entry : blocksList) {
-                    MinecraftKey key = MinecraftKey.tryParse(entry.toString());
-                    if (key == null) {
-                        continue;
-                    }
-
-                    BuiltInRegistries.BLOCK.getHolder(key).ifPresent(blockHolders::add);
-                }
-
-                blocks = HolderSet.direct(blockHolders);
-            } else {
-                throw new IllegalArgumentException("blocks" + "(" + blocksObject + ") is not a valid String or List");
-            }
-
-            if (blocks == null) {
-                blocks = HolderSet.empty();
-            }
+            HolderSet<Block> blocks = CraftHolderUtil.parse(SerializableMeta.getObject(Object.class, map, "blocks", false), Registries.BLOCK, BuiltInRegistries.BLOCK);
 
             this.handle = new Tool.a(blocks, Optional.ofNullable(speed), Optional.ofNullable(correct));
         }
@@ -234,9 +204,7 @@ public final class CraftToolComponent implements ToolComponent {
         public Map<String, Object> serialize() {
             Map<String, Object> result = new LinkedHashMap<>();
 
-            handle.blocks().unwrap()
-                    .ifLeft(key -> result.put("blocks", "#" + key.location().toString())) // Tag
-                    .ifRight(blocks -> result.put("blocks", blocks.stream().map((block) -> block.unwrapKey().orElseThrow().location().toString()).toList())); // List of blocks
+            CraftHolderUtil.serialize(result, "blocks", handle.blocks());
 
             Float speed = getSpeed();
             if (speed != null) {

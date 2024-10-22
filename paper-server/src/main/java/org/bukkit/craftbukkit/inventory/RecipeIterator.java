@@ -11,7 +11,7 @@ public class RecipeIterator implements Iterator<Recipe> {
     private final Iterator<Map.Entry<Recipes<?>, RecipeHolder<?>>> recipes;
 
     public RecipeIterator() {
-        this.recipes = MinecraftServer.getServer().getRecipeManager().byType.entries().iterator();
+        this.recipes = MinecraftServer.getServer().getRecipeManager().recipes.byType.entries().iterator();
     }
 
     @Override

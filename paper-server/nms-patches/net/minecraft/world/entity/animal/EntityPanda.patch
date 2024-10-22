@@ -1,7 +1,7 @@
 --- a/net/minecraft/world/entity/animal/EntityPanda.java
 +++ b/net/minecraft/world/entity/animal/EntityPanda.java
-@@ -73,6 +73,12 @@
- import net.minecraft.world.level.storage.loot.parameters.LootContextParameters;
+@@ -69,6 +69,12 @@
+ import net.minecraft.world.level.storage.loot.LootTables;
  import net.minecraft.world.phys.Vec3D;
  
 +// CraftBukkit start;
@@ -13,12 +13,12 @@
  public class EntityPanda extends EntityAnimal {
  
      private static final DataWatcherObject<Integer> UNHAPPY_COUNTER = DataWatcher.defineId(EntityPanda.class, DataWatcherRegistry.INT);
-@@ -558,14 +564,14 @@
+@@ -541,14 +547,14 @@
  
      @Override
-     protected void pickUpItem(EntityItem entityitem) {
--        if (this.getItemBySlot(EnumItemSlot.MAINHAND).isEmpty() && EntityPanda.PANDA_ITEMS.test(entityitem)) {
-+        if (!CraftEventFactory.callEntityPickupItemEvent(this, entityitem, 0, !(this.getItemBySlot(EnumItemSlot.MAINHAND).isEmpty() && EntityPanda.PANDA_ITEMS.test(entityitem))).isCancelled()) { // CraftBukkit
+     protected void pickUpItem(WorldServer worldserver, EntityItem entityitem) {
+-        if (this.getItemBySlot(EnumItemSlot.MAINHAND).isEmpty() && canPickUpAndEat(entityitem)) {
++        if (!CraftEventFactory.callEntityPickupItemEvent(this, entityitem, 0, !(this.getItemBySlot(EnumItemSlot.MAINHAND).isEmpty() && canPickUpAndEat(entityitem))).isCancelled()) { // CraftBukkit
              this.onItemPickup(entityitem);
              ItemStack itemstack = entityitem.getItem();
  
@@ -30,7 +30,16 @@
          }
  
      }
-@@ -889,10 +895,10 @@
+@@ -772,7 +778,7 @@
+         }
+ 
+         public static EntityPanda.Gene byName(String s) {
+-            return (EntityPanda.Gene) EntityPanda.Gene.CODEC.byName(s, (Enum) EntityPanda.Gene.NORMAL);
++            return (EntityPanda.Gene) EntityPanda.Gene.CODEC.byName(s, EntityPanda.Gene.NORMAL); // CraftBukkit - decompile error
+         }
+ 
+         public static EntityPanda.Gene getRandom(RandomSource randomsource) {
+@@ -876,10 +882,10 @@
          private final EntityPanda panda;
  
          public c(EntityPanda entitypanda, Class<T> oclass, float f, double d0, double d1) {
@@ -44,7 +53,7 @@
              this.panda = entitypanda;
          }
  
-@@ -1131,7 +1137,7 @@
+@@ -1116,7 +1122,7 @@
          @Override
          protected void alertOther(EntityInsentient entityinsentient, EntityLiving entityliving) {
              if (entityinsentient instanceof EntityPanda && entityinsentient.isAggressive()) {

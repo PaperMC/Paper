@@ -6,6 +6,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.io.Files;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.Dynamic;
@@ -27,7 +28,6 @@ import net.minecraft.nbt.DynamicOpsNBT;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagString;
 import net.minecraft.resources.MinecraftKey;
-import net.minecraft.server.AdvancementDataWorld;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.datafix.DataConverterRegistry;
 import net.minecraft.util.datafix.fixes.DataConverterTypes;
@@ -232,7 +232,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
      * @return string
      */
     public String getMappingsVersion() {
-        return "7092ff1ff9352ad7e2260dc150e6a3ec";
+        return "ec8b033a89c54252f1dfcb809eab710a";
     }
 
     @Override
@@ -264,7 +264,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         Preconditions.checkArgument(Bukkit.getAdvancement(key) == null, "Advancement %s already exists", key);
         MinecraftKey minecraftkey = CraftNamespacedKey.toMinecraft(key);
 
-        JsonElement jsonelement = AdvancementDataWorld.GSON.fromJson(advancement, JsonElement.class);
+        JsonElement jsonelement = JsonParser.parseString(advancement);
         net.minecraft.advancements.Advancement nms = net.minecraft.advancements.Advancement.CODEC.parse(JsonOps.INSTANCE, jsonelement).getOrThrow(JsonParseException::new);
         if (nms != null) {
             MinecraftServer.getServer().getAdvancements().advancements.put(minecraftkey, new AdvancementHolder(minecraftkey, nms));
@@ -363,7 +363,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
     @Override
     public String getTranslationKey(ItemStack itemStack) {
         net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
-        return nmsItemStack.getItem().getDescriptionId(nmsItemStack);
+        return nmsItemStack.getItem().getDescriptionId();
     }
 
     @Override

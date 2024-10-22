@@ -1,8 +1,8 @@
 --- a/net/minecraft/core/cauldron/CauldronInteraction.java
 +++ b/net/minecraft/core/cauldron/CauldronInteraction.java
-@@ -34,9 +34,15 @@
- import net.minecraft.world.level.block.state.IBlockData;
+@@ -36,14 +36,20 @@
  import net.minecraft.world.level.gameevent.GameEvent;
+ import net.minecraft.world.level.material.Fluid;
  
 +// CraftBukkit start
 +import org.bukkit.event.block.CauldronLevelChangeEvent;
@@ -11,27 +11,28 @@
  public interface CauldronInteraction {
  
      Map<String, CauldronInteraction.a> INTERACTIONS = new Object2ObjectArrayMap();
-+    // CraftBukkit start - decompile error
-+    /*
-     Codec<CauldronInteraction.a> CODEC;
-     CauldronInteraction.a EMPTY;
-     CauldronInteraction.a WATER;
-@@ -48,6 +54,8 @@
-     CauldronInteraction SHULKER_BOX;
-     CauldronInteraction BANNER;
-     CauldronInteraction DYED_ITEM;
-+     */
+-    Codec<CauldronInteraction.a> CODEC;
+-    CauldronInteraction.a EMPTY;
+-    CauldronInteraction.a WATER;
+-    CauldronInteraction.a LAVA;
+-    CauldronInteraction.a POWDER_SNOW;
++    // CraftBukkit start - decompile errors
++    Codec<CauldronInteraction.a> CODEC = Codec.stringResolver(CauldronInteraction.a::name, CauldronInteraction.INTERACTIONS::get);
++    CauldronInteraction.a EMPTY = newInteractionMap("empty");
++    CauldronInteraction.a WATER = newInteractionMap("water");
++    CauldronInteraction.a LAVA = newInteractionMap("lava");
++    CauldronInteraction.a POWDER_SNOW = newInteractionMap("powder_snow");
 +    // CraftBukkit end
  
      static CauldronInteraction.a newInteractionMap(String s) {
          Object2ObjectOpenHashMap<Item, CauldronInteraction> object2objectopenhashmap = new Object2ObjectOpenHashMap();
-@@ -72,12 +80,17 @@
+@@ -68,12 +74,17 @@
  
              if (potioncontents != null && potioncontents.is(Potions.WATER)) {
                  if (!world.isClientSide) {
 +                    // CraftBukkit start
 +                    if (!LayeredCauldronBlock.changeLevel(iblockdata, world, blockposition, Blocks.WATER_CAULDRON.defaultBlockState(), entityhuman, CauldronLevelChangeEvent.ChangeReason.BOTTLE_EMPTY)) {
-+                        return ItemInteractionResult.SUCCESS;
++                        return EnumInteractionResult.SUCCESS;
 +                    }
 +                    // CraftBukkit end
                      Item item = itemstack.getItem();
@@ -44,13 +45,13 @@
                      world.playSound((EntityHuman) null, blockposition, SoundEffects.BOTTLE_EMPTY, SoundCategory.BLOCKS, 1.0F, 1.0F);
                      world.gameEvent((Entity) null, (Holder) GameEvent.FLUID_PLACE, blockposition);
                  }
-@@ -97,12 +110,17 @@
+@@ -93,12 +104,17 @@
          });
          map1.put(Items.GLASS_BOTTLE, (iblockdata, world, blockposition, entityhuman, enumhand, itemstack) -> {
              if (!world.isClientSide) {
 +                // CraftBukkit start
 +                if (!LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition, entityhuman, CauldronLevelChangeEvent.ChangeReason.BOTTLE_FILL)) {
-+                    return ItemInteractionResult.SUCCESS;
++                    return EnumInteractionResult.SUCCESS;
 +                }
 +                // CraftBukkit end
                  Item item = itemstack.getItem();
@@ -63,13 +64,13 @@
                  world.playSound((EntityHuman) null, blockposition, SoundEffects.BOTTLE_FILL, SoundCategory.BLOCKS, 1.0F, 1.0F);
                  world.gameEvent((Entity) null, (Holder) GameEvent.FLUID_PICKUP, blockposition);
              }
-@@ -117,10 +135,15 @@
+@@ -113,10 +129,15 @@
  
                  if (potioncontents != null && potioncontents.is(Potions.WATER)) {
                      if (!world.isClientSide) {
 +                        // CraftBukkit start
 +                        if (!LayeredCauldronBlock.changeLevel(iblockdata, world, blockposition, iblockdata.cycle(LayeredCauldronBlock.LEVEL), entityhuman, CauldronLevelChangeEvent.ChangeReason.BOTTLE_EMPTY)) {
-+                            return ItemInteractionResult.SUCCESS;
++                            return EnumInteractionResult.SUCCESS;
 +                        }
 +                        // CraftBukkit end
                          entityhuman.setItemInHand(enumhand, ItemLiquidUtil.createFilledResult(itemstack, entityhuman, new ItemStack(Items.GLASS_BOTTLE)));
@@ -80,13 +81,13 @@
                          world.playSound((EntityHuman) null, blockposition, SoundEffects.BOTTLE_EMPTY, SoundCategory.BLOCKS, 1.0F, 1.0F);
                          world.gameEvent((Entity) null, (Holder) GameEvent.FLUID_PLACE, blockposition);
                      }
-@@ -198,12 +221,17 @@
-             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+@@ -194,12 +215,17 @@
+             return EnumInteractionResult.TRY_WITH_EMPTY_HAND;
          } else {
              if (!world.isClientSide) {
 +                // CraftBukkit start
 +                if (!LayeredCauldronBlock.changeLevel(iblockdata, world, blockposition, Blocks.CAULDRON.defaultBlockState(), entityhuman, CauldronLevelChangeEvent.ChangeReason.BUCKET_FILL)) {
-+                    return ItemInteractionResult.SUCCESS;
++                    return EnumInteractionResult.SUCCESS;
 +                }
 +                // CraftBukkit end
                  Item item = itemstack.getItem();
@@ -99,13 +100,13 @@
                  world.playSound((EntityHuman) null, blockposition, soundeffect, SoundCategory.BLOCKS, 1.0F, 1.0F);
                  world.gameEvent((Entity) null, (Holder) GameEvent.FLUID_PICKUP, blockposition);
              }
-@@ -214,12 +242,17 @@
+@@ -210,12 +236,17 @@
  
-     static ItemInteractionResult emptyBucket(World world, BlockPosition blockposition, EntityHuman entityhuman, EnumHand enumhand, ItemStack itemstack, IBlockData iblockdata, SoundEffect soundeffect) {
+     static EnumInteractionResult emptyBucket(World world, BlockPosition blockposition, EntityHuman entityhuman, EnumHand enumhand, ItemStack itemstack, IBlockData iblockdata, SoundEffect soundeffect) {
          if (!world.isClientSide) {
 +            // CraftBukkit start
 +            if (!LayeredCauldronBlock.changeLevel(iblockdata, world, blockposition, iblockdata, entityhuman, CauldronLevelChangeEvent.ChangeReason.BUCKET_EMPTY)) {
-+                return ItemInteractionResult.SUCCESS;
++                return EnumInteractionResult.SUCCESS;
 +            }
 +            // CraftBukkit end
              Item item = itemstack.getItem();
@@ -118,113 +119,74 @@
              world.playSound((EntityHuman) null, blockposition, soundeffect, SoundCategory.BLOCKS, 1.0F, 1.0F);
              world.gameEvent((Entity) null, (Holder) GameEvent.FLUID_PLACE, blockposition);
          }
-@@ -227,76 +260,89 @@
-         return ItemInteractionResult.sidedSuccess(world.isClientSide);
+@@ -242,11 +273,16 @@
+             return EnumInteractionResult.TRY_WITH_EMPTY_HAND;
+         } else {
+             if (!world.isClientSide) {
++                // CraftBukkit start
++                if (!LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition, entityhuman, CauldronLevelChangeEvent.ChangeReason.SHULKER_WASH)) {
++                    return EnumInteractionResult.SUCCESS;
++                }
++                // CraftBukkit end
+                 ItemStack itemstack1 = itemstack.transmuteCopy(Blocks.SHULKER_BOX, 1);
+ 
+                 entityhuman.setItemInHand(enumhand, ItemLiquidUtil.createFilledResult(itemstack, entityhuman, itemstack1, false));
+                 entityhuman.awardStat(StatisticList.CLEAN_SHULKER_BOX);
+-                LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition);
++                // LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition); // CraftBukkit
+             }
+ 
+             return EnumInteractionResult.SUCCESS;
+@@ -260,12 +296,17 @@
+             return EnumInteractionResult.TRY_WITH_EMPTY_HAND;
+         } else {
+             if (!world.isClientSide) {
++                // CraftBukkit start
++                if (!LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition, entityhuman, CauldronLevelChangeEvent.ChangeReason.BANNER_WASH)) {
++                    return EnumInteractionResult.SUCCESS;
++                }
++                // CraftBukkit end
+                 ItemStack itemstack1 = itemstack.copyWithCount(1);
+ 
+                 itemstack1.set(DataComponents.BANNER_PATTERNS, bannerpatternlayers.removeLast());
+                 entityhuman.setItemInHand(enumhand, ItemLiquidUtil.createFilledResult(itemstack, entityhuman, itemstack1, false));
+                 entityhuman.awardStat(StatisticList.CLEAN_BANNER);
+-                LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition);
++                // LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition); // CraftBukkit
+             }
+ 
+             return EnumInteractionResult.SUCCESS;
+@@ -279,9 +320,14 @@
+             return EnumInteractionResult.TRY_WITH_EMPTY_HAND;
+         } else {
+             if (!world.isClientSide) {
++                // CraftBukkit start
++                if (!LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition, entityhuman, CauldronLevelChangeEvent.ChangeReason.ARMOR_WASH)) {
++                    return EnumInteractionResult.SUCCESS;
++                }
++                // CraftBukkit end
+                 itemstack.remove(DataComponents.DYED_COLOR);
+                 entityhuman.awardStat(StatisticList.CLEAN_ARMOR);
+-                LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition);
++                // LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition); // CraftBukkit
+             }
+ 
+             return EnumInteractionResult.SUCCESS;
+@@ -294,6 +340,8 @@
+         return fluid.is(TagsFluid.WATER);
      }
  
--    static {
--        Function function = CauldronInteraction.a::name;
--        Map map = CauldronInteraction.INTERACTIONS;
--
--        Objects.requireNonNull(map);
--        CODEC = Codec.stringResolver(function, map::get);
--        EMPTY = newInteractionMap("empty");
--        WATER = newInteractionMap("water");
--        LAVA = newInteractionMap("lava");
--        POWDER_SNOW = newInteractionMap("powder_snow");
--        FILL_WATER = (iblockdata, world, blockposition, entityhuman, enumhand, itemstack) -> {
 +    // CraftBukkit start - decompile errors
-+    // static {
-+        Codec<CauldronInteraction.a> CODEC = Codec.stringResolver(CauldronInteraction.a::name, CauldronInteraction.INTERACTIONS::get);
-+        CauldronInteraction.a EMPTY = newInteractionMap("empty");
-+        CauldronInteraction.a WATER = newInteractionMap("water");
-+        CauldronInteraction.a LAVA = newInteractionMap("lava");
-+        CauldronInteraction.a POWDER_SNOW = newInteractionMap("powder_snow");
-+        CauldronInteraction FILL_WATER = (iblockdata, world, blockposition, entityhuman, enumhand, itemstack) -> {
-             return emptyBucket(world, blockposition, entityhuman, enumhand, itemstack, (IBlockData) Blocks.WATER_CAULDRON.defaultBlockState().setValue(LayeredCauldronBlock.LEVEL, 3), SoundEffects.BUCKET_EMPTY);
-         };
--        FILL_LAVA = (iblockdata, world, blockposition, entityhuman, enumhand, itemstack) -> {
-+        CauldronInteraction FILL_LAVA = (iblockdata, world, blockposition, entityhuman, enumhand, itemstack) -> {
-             return emptyBucket(world, blockposition, entityhuman, enumhand, itemstack, Blocks.LAVA_CAULDRON.defaultBlockState(), SoundEffects.BUCKET_EMPTY_LAVA);
-         };
--        FILL_POWDER_SNOW = (iblockdata, world, blockposition, entityhuman, enumhand, itemstack) -> {
-+        CauldronInteraction FILL_POWDER_SNOW = (iblockdata, world, blockposition, entityhuman, enumhand, itemstack) -> {
-             return emptyBucket(world, blockposition, entityhuman, enumhand, itemstack, (IBlockData) Blocks.POWDER_SNOW_CAULDRON.defaultBlockState().setValue(LayeredCauldronBlock.LEVEL, 3), SoundEffects.BUCKET_EMPTY_POWDER_SNOW);
-         };
--        SHULKER_BOX = (iblockdata, world, blockposition, entityhuman, enumhand, itemstack) -> {
-+        CauldronInteraction SHULKER_BOX = (iblockdata, world, blockposition, entityhuman, enumhand, itemstack) -> {
-+            // CraftBukkit end
-             Block block = Block.byItem(itemstack.getItem());
- 
-             if (!(block instanceof BlockShulkerBox)) {
-                 return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-             } else {
-                 if (!world.isClientSide) {
-+                    // CraftBukkit start
-+                    if (!LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition, entityhuman, CauldronLevelChangeEvent.ChangeReason.SHULKER_WASH)) {
-+                        return ItemInteractionResult.SUCCESS;
-+                    }
-+                    // CraftBukkit end
-                     ItemStack itemstack1 = itemstack.transmuteCopy(Blocks.SHULKER_BOX, 1);
- 
-                     entityhuman.setItemInHand(enumhand, ItemLiquidUtil.createFilledResult(itemstack, entityhuman, itemstack1, false));
-                     entityhuman.awardStat(StatisticList.CLEAN_SHULKER_BOX);
--                    LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition);
-+                    // LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition); // CraftBukkit
-                 }
- 
-                 return ItemInteractionResult.sidedSuccess(world.isClientSide);
-             }
-         };
--        BANNER = (iblockdata, world, blockposition, entityhuman, enumhand, itemstack) -> {
-+        CauldronInteraction BANNER = (iblockdata, world, blockposition, entityhuman, enumhand, itemstack) -> { // CraftBukkit - decompile error
-             BannerPatternLayers bannerpatternlayers = (BannerPatternLayers) itemstack.getOrDefault(DataComponents.BANNER_PATTERNS, BannerPatternLayers.EMPTY);
- 
-             if (bannerpatternlayers.layers().isEmpty()) {
-                 return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-             } else {
-                 if (!world.isClientSide) {
-+                    // CraftBukkit start
-+                    if (!LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition, entityhuman, CauldronLevelChangeEvent.ChangeReason.BANNER_WASH)) {
-+                        return ItemInteractionResult.SUCCESS;
-+                    }
-+                    // CraftBukkit end
-                     ItemStack itemstack1 = itemstack.copyWithCount(1);
- 
-                     itemstack1.set(DataComponents.BANNER_PATTERNS, bannerpatternlayers.removeLast());
-                     entityhuman.setItemInHand(enumhand, ItemLiquidUtil.createFilledResult(itemstack, entityhuman, itemstack1, false));
-                     entityhuman.awardStat(StatisticList.CLEAN_BANNER);
--                    LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition);
-+                    // LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition); // CraftBukkit
-                 }
- 
-                 return ItemInteractionResult.sidedSuccess(world.isClientSide);
-             }
-         };
--        DYED_ITEM = (iblockdata, world, blockposition, entityhuman, enumhand, itemstack) -> {
-+        CauldronInteraction DYED_ITEM = (iblockdata, world, blockposition, entityhuman, enumhand, itemstack) -> { // CraftBukkit - decompile error
-             if (!itemstack.is(TagsItem.DYEABLE)) {
-                 return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-             } else if (!itemstack.has(DataComponents.DYED_COLOR)) {
-                 return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-             } else {
-                 if (!world.isClientSide) {
-+                    // CraftBukkit start
-+                    if (!LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition, entityhuman, CauldronLevelChangeEvent.ChangeReason.ARMOR_WASH)) {
-+                        return ItemInteractionResult.SUCCESS;
-+                    }
-+                    // CraftBukkit end
-                     itemstack.remove(DataComponents.DYED_COLOR);
-                     entityhuman.awardStat(StatisticList.CLEAN_ARMOR);
--                    LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition);
-+                    // LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition); // CraftBukkit
-                 }
- 
-                 return ItemInteractionResult.sidedSuccess(world.isClientSide);
-             }
-         };
--    }
-+    // } // CraftBukkit - decompile error
++    /*
+     static {
+         Function function = CauldronInteraction.a::name;
+         Map map = CauldronInteraction.INTERACTIONS;
+@@ -305,6 +353,8 @@
+         LAVA = newInteractionMap("lava");
+         POWDER_SNOW = newInteractionMap("powder_snow");
+     }
++     */
++    // CraftBukkit end
  
      public static record a(String name, Map<Item, CauldronInteraction> map) {
  

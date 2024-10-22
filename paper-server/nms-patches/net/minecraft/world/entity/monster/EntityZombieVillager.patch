@@ -1,11 +1,12 @@
 --- a/net/minecraft/world/entity/monster/EntityZombieVillager.java
 +++ b/net/minecraft/world/entity/monster/EntityZombieVillager.java
-@@ -51,6 +51,13 @@
+@@ -52,6 +52,14 @@
  import net.minecraft.world.level.block.state.IBlockData;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
 +import net.minecraft.server.MinecraftServer;
++import net.minecraft.world.entity.npc.EntityVillager;
 +import org.bukkit.entity.ZombieVillager;
 +import org.bukkit.event.entity.CreatureSpawnEvent;
 +import org.bukkit.event.entity.EntityTransformEvent;
@@ -14,7 +15,7 @@
  public class EntityZombieVillager extends EntityZombie implements VillagerDataHolder {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -68,6 +75,7 @@
+@@ -69,6 +77,7 @@
      @Nullable
      private MerchantRecipeList tradeOffers;
      private int villagerXp;
@@ -22,7 +23,7 @@
  
      public EntityZombieVillager(EntityTypes<? extends EntityZombieVillager> entitytypes, World world) {
          super(entitytypes, world);
-@@ -86,7 +94,7 @@
+@@ -87,7 +96,7 @@
      @Override
      public void addAdditionalSaveData(NBTTagCompound nbttagcompound) {
          super.addAdditionalSaveData(nbttagcompound);
@@ -31,7 +32,7 @@
          Logger logger = EntityZombieVillager.LOGGER;
  
          Objects.requireNonNull(logger);
-@@ -121,7 +129,7 @@
+@@ -122,7 +131,7 @@
          }
  
          if (nbttagcompound.contains("Offers")) {
@@ -40,7 +41,7 @@
              Logger logger1 = EntityZombieVillager.LOGGER;
  
              Objects.requireNonNull(logger1);
-@@ -148,6 +156,10 @@
+@@ -149,6 +158,10 @@
      public void tick() {
          if (!this.level().isClientSide && this.isAlive() && this.isConverting()) {
              int i = this.getConversionProgress();
@@ -51,7 +52,7 @@
  
              this.villagerConversionTime -= i;
              if (this.villagerConversionTime <= 0) {
-@@ -156,6 +168,7 @@
+@@ -157,6 +170,7 @@
          }
  
          super.tick();
@@ -59,7 +60,7 @@
      }
  
      @Override
-@@ -196,8 +209,10 @@
+@@ -197,8 +211,10 @@
          this.conversionStarter = uuid;
          this.villagerConversionTime = i;
          this.getEntityData().set(EntityZombieVillager.DATA_CONVERTING_ID, true);
@@ -72,29 +73,20 @@
          this.level().broadcastEntityEvent(this, (byte) 16);
      }
  
-@@ -214,12 +229,20 @@
+@@ -215,10 +231,11 @@
      }
  
      private void finishConversion(WorldServer worldserver) {
--        EntityVillager entityvillager = (EntityVillager) this.convertTo(EntityTypes.VILLAGER, false);
-+        // CraftBukkit start
-+        EntityVillager entityvillager = (EntityVillager) this.convertTo(EntityTypes.VILLAGER, false, EntityTransformEvent.TransformReason.CURED, CreatureSpawnEvent.SpawnReason.CURED);
-+        if (entityvillager == null) {
-+            ((ZombieVillager) getBukkitEntity()).setConversionTime(-1); // SPIGOT-5208: End conversion to stop event spam
-+            return;
-+        }
-+        // CraftBukkit end
- 
-         if (entityvillager != null) {
-+            this.forceDrops = true; // CraftBukkit
-             Iterator iterator = this.dropPreservedEquipment((itemstack) -> {
+-        this.convertTo(EntityTypes.VILLAGER, ConversionParams.single(this, false, false), (entityvillager) -> {
++        EntityVillager converted = this.convertTo(EntityTypes.VILLAGER, ConversionParams.single(this, false, false), (entityvillager) -> { // CraftBukkit
+             Iterator iterator = this.dropPreservedEquipment(worldserver, (itemstack) -> {
                  return !EnchantmentManager.has(itemstack, EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE);
              }).iterator();
 +            this.forceDrops = false; // CraftBukkit
  
              while (iterator.hasNext()) {
                  EnumItemSlot enumitemslot = (EnumItemSlot) iterator.next();
-@@ -249,7 +272,7 @@
+@@ -248,12 +265,16 @@
                  }
              }
  
@@ -103,3 +95,14 @@
              if (!this.isSilent()) {
                  worldserver.levelEvent((EntityHuman) null, 1027, this.blockPosition(), 0);
              }
+-
+-        });
++        // CraftBukkit start
++        }, EntityTransformEvent.TransformReason.CURED, CreatureSpawnEvent.SpawnReason.CURED);
++        if (converted == null) {
++            ((ZombieVillager) getBukkitEntity()).setConversionTime(-1); // SPIGOT-5208: End conversion to stop event spam
++        }
++        // CraftBukkit end
+     }
+ 
+     @VisibleForTesting

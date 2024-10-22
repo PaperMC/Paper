@@ -47,7 +47,6 @@ import net.minecraft.world.entity.monster.EntitySlime;
 import net.minecraft.world.entity.monster.EntityStrider;
 import net.minecraft.world.entity.monster.piglin.EntityPiglin;
 import net.minecraft.world.entity.npc.EntityVillager;
-import net.minecraft.world.entity.npc.NPC;
 import net.minecraft.world.entity.player.EntityHuman;
 import net.minecraft.world.entity.projectile.EntityFireworks;
 import net.minecraft.world.entity.projectile.EntityPotion;
@@ -668,10 +667,9 @@ public class CraftEventFactory {
         if (entity instanceof EntityLiving && !(entity instanceof EntityPlayer)) {
             boolean isAnimal = entity instanceof EntityAnimal || entity instanceof EntityWaterAnimal || entity instanceof EntityGolem;
             boolean isMonster = entity instanceof EntityMonster || entity instanceof EntityGhast || entity instanceof EntitySlime;
-            boolean isNpc = entity instanceof NPC;
 
             if (spawnReason != SpawnReason.CUSTOM) {
-                if (isAnimal && !world.getWorld().getAllowAnimals() || isMonster && !world.getWorld().getAllowMonsters() || isNpc && !world.getCraftServer().getServer().areNpcsEnabled()) {
+                if (isAnimal && !world.getWorld().getAllowAnimals() || isMonster && !world.getWorld().getAllowMonsters()) {
                     entity.discard(null); // Add Bukkit remove cause
                     return false;
                 }
@@ -899,8 +897,8 @@ public class CraftEventFactory {
     public static EntityDeathEvent callEntityDeathEvent(EntityLiving victim, DamageSource damageSource, List<org.bukkit.inventory.ItemStack> drops) {
         CraftLivingEntity entity = (CraftLivingEntity) victim.getBukkitEntity();
         CraftDamageSource bukkitDamageSource = new CraftDamageSource(damageSource);
-        EntityDeathEvent event = new EntityDeathEvent(entity, bukkitDamageSource, drops, victim.getExpReward(damageSource.getEntity()));
         CraftWorld world = (CraftWorld) entity.getWorld();
+        EntityDeathEvent event = new EntityDeathEvent(entity, bukkitDamageSource, drops, victim.getExpReward(world.getHandle(), damageSource.getEntity()));
         Bukkit.getServer().getPluginManager().callEvent(event);
 
         victim.expToDrop = event.getDroppedExp();
@@ -917,7 +915,7 @@ public class CraftEventFactory {
     public static PlayerDeathEvent callPlayerDeathEvent(EntityPlayer victim, DamageSource damageSource, List<org.bukkit.inventory.ItemStack> drops, String deathMessage, boolean keepInventory) {
         CraftPlayer entity = victim.getBukkitEntity();
         CraftDamageSource bukkitDamageSource = new CraftDamageSource(damageSource);
-        PlayerDeathEvent event = new PlayerDeathEvent(entity, bukkitDamageSource, drops, victim.getExpReward(damageSource.getEntity()), 0, deathMessage);
+        PlayerDeathEvent event = new PlayerDeathEvent(entity, bukkitDamageSource, drops, victim.getExpReward(victim.serverLevel(), damageSource.getEntity()), 0, deathMessage);
         event.setKeepInventory(keepInventory);
         event.setKeepLevel(victim.keepLevel); // SPIGOT-2222: pre-set keepLevel
         Bukkit.getServer().getPluginManager().callEvent(event);
@@ -935,7 +933,7 @@ public class CraftEventFactory {
                 victim.drop(CraftItemStack.asNMSCopy(stack), true, false, false); // SPIGOT-7800, SPIGOT-7801: Vanilla Behaviour for Player Inventory dropped items
             } else {
                 victim.forceDrops = true;
-                victim.spawnAtLocation(CraftItemStack.asNMSCopy(stack)); // SPIGOT-7806: Vanilla Behaviour for items not related to Player Inventory dropped items
+                victim.spawnAtLocation(victim.serverLevel(), CraftItemStack.asNMSCopy(stack)); // SPIGOT-7806: Vanilla Behaviour for items not related to Player Inventory dropped items
                 victim.forceDrops = false;
             }
         }
@@ -1427,7 +1425,7 @@ public class CraftEventFactory {
     }
 
     public static BlockIgniteEvent callBlockIgniteEvent(World world, BlockPosition blockposition, Explosion explosion) {
-        org.bukkit.entity.Entity igniter = explosion.source == null ? null : explosion.source.getBukkitEntity();
+        org.bukkit.entity.Entity igniter = explosion.getDirectSourceEntity() == null ? null : explosion.getDirectSourceEntity().getBukkitEntity();
 
         BlockIgniteEvent event = new BlockIgniteEvent(CraftBlock.at(world, blockposition), IgniteCause.EXPLOSION, igniter);
         world.getCraftServer().getPluginManager().callEvent(event);
@@ -1780,7 +1778,7 @@ public class CraftEventFactory {
 
     public static LootGenerateEvent callLootGenerateEvent(IInventory inventory, LootTable lootTable, LootTableInfo lootInfo, List<ItemStack> loot, boolean plugin) {
         CraftWorld world = lootInfo.getLevel().getWorld();
-        Entity entity = lootInfo.getParamOrNull(LootContextParameters.THIS_ENTITY);
+        Entity entity = lootInfo.getOptionalParameter(LootContextParameters.THIS_ENTITY);
         List<org.bukkit.inventory.ItemStack> bukkitLoot = loot.stream().map(CraftItemStack::asCraftMirror).collect(Collectors.toCollection(ArrayList::new));
 
         LootGenerateEvent event = new LootGenerateEvent(world, (entity != null ? entity.getBukkitEntity() : null), inventory.getOwner(), lootTable.craftLootTable, CraftLootTable.convertContext(lootInfo), bukkitLoot, plugin);

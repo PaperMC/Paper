@@ -1,7 +1,7 @@
 --- a/net/minecraft/world/entity/animal/EntitySheep.java
 +++ b/net/minecraft/world/entity/animal/EntitySheep.java
-@@ -63,6 +63,12 @@
- import net.minecraft.world.level.storage.loot.LootTable;
+@@ -57,6 +57,12 @@
+ import net.minecraft.world.level.gameevent.GameEvent;
  import net.minecraft.world.level.storage.loot.LootTables;
  
 +// CraftBukkit start
@@ -13,29 +13,29 @@
  public class EntitySheep extends EntityAnimal implements IShearable {
  
      private static final int EAT_ANIMATION_TICKS = 40;
-@@ -250,6 +256,11 @@
+@@ -167,6 +173,11 @@
+                 WorldServer worldserver = (WorldServer) world;
  
-         if (itemstack.is(Items.SHEARS)) {
-             if (!this.level().isClientSide && this.readyForShearing()) {
-+                // CraftBukkit start
-+                if (!CraftEventFactory.handlePlayerShearEntityEvent(entityhuman, this, itemstack, enumhand)) {
-+                    return EnumInteractionResult.PASS;
-+                }
-+                // CraftBukkit end
-                 this.shear(SoundCategory.PLAYERS);
-                 this.gameEvent(GameEvent.SHEAR, entityhuman);
-                 itemstack.hurtAndBreak(1, entityhuman, getSlotForHand(enumhand));
-@@ -269,7 +280,9 @@
-         int i = 1 + this.random.nextInt(3);
+                 if (this.readyForShearing()) {
++                    // CraftBukkit start
++                    if (!CraftEventFactory.handlePlayerShearEntityEvent(entityhuman, this, itemstack, enumhand)) {
++                        return EnumInteractionResult.PASS;
++                    }
++                    // CraftBukkit end
+                     this.shear(worldserver, SoundCategory.PLAYERS, itemstack);
+                     this.gameEvent(GameEvent.SHEAR, entityhuman);
+                     itemstack.hurtAndBreak(1, entityhuman, getSlotForHand(enumhand));
+@@ -185,7 +196,9 @@
+         worldserver.playSound((EntityHuman) null, (Entity) this, SoundEffects.SHEEP_SHEAR, soundcategory, 1.0F, 1.0F);
+         this.dropFromShearingLootTable(worldserver, LootTables.SHEAR_SHEEP, itemstack, (worldserver1, itemstack1) -> {
+             for (int i = 0; i < itemstack1.getCount(); ++i) {
++                this.forceDrops = true; // CraftBukkit
+                 EntityItem entityitem = this.spawnAtLocation(worldserver1, itemstack1.copyWithCount(1), 1.0F);
++                this.forceDrops = false; // CraftBukkit
  
-         for (int j = 0; j < i; ++j) {
-+            this.forceDrops = true; // CraftBukkit
-             EntityItem entityitem = this.spawnAtLocation((IMaterial) EntitySheep.ITEM_BY_DYE.get(this.getColor()), 1);
-+            this.forceDrops = false; // CraftBukkit
- 
-             if (entityitem != null) {
-                 entityitem.setDeltaMovement(entityitem.getDeltaMovement().add((double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F), (double) (this.random.nextFloat() * 0.05F), (double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F)));
-@@ -362,6 +375,12 @@
+                 if (entityitem != null) {
+                     entityitem.setDeltaMovement(entityitem.getDeltaMovement().add((double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F), (double) (this.random.nextFloat() * 0.05F), (double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F)));
+@@ -280,6 +293,12 @@
  
      @Override
      public void ate() {
@@ -48,12 +48,12 @@
          super.ate();
          this.setSheared(false);
          if (this.isBaby()) {
-@@ -381,7 +400,7 @@
-         EnumColor enumcolor = ((EntitySheep) entityanimal).getColor();
-         EnumColor enumcolor1 = ((EntitySheep) entityanimal1).getColor();
+@@ -299,7 +318,7 @@
+         EnumColor enumcolor = entitysheep.getColor();
+         EnumColor enumcolor1 = entitysheep1.getColor();
          CraftingInput craftinginput = makeCraftInput(enumcolor, enumcolor1);
--        Optional optional = this.level().getRecipeManager().getRecipeFor(Recipes.CRAFTING, craftinginput, this.level()).map((recipeholder) -> {
-+        Optional<Item> optional = this.level().getRecipeManager().getRecipeFor(Recipes.CRAFTING, craftinginput, this.level()).map((recipeholder) -> { // CraftBukkit - decompile error
-             return ((RecipeCrafting) recipeholder.value()).assemble(craftinginput, this.level().registryAccess());
+-        Optional optional = worldserver.recipeAccess().getRecipeFor(Recipes.CRAFTING, craftinginput, worldserver).map((recipeholder) -> {
++        Optional<Item> optional = worldserver.recipeAccess().getRecipeFor(Recipes.CRAFTING, craftinginput, worldserver).map((recipeholder) -> { // CraftBukkit - decompile error
+             return ((RecipeCrafting) recipeholder.value()).assemble(craftinginput, worldserver.registryAccess());
          }).map(ItemStack::getItem);
  

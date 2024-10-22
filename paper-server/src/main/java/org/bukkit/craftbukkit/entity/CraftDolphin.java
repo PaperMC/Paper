@@ -4,7 +4,7 @@ import net.minecraft.world.entity.animal.EntityDolphin;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Dolphin;
 
-public class CraftDolphin extends CraftWaterMob implements Dolphin {
+public class CraftDolphin extends CraftAgeable implements Dolphin {
 
     public CraftDolphin(CraftServer server, EntityDolphin entity) {
         super(server, entity);

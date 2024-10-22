@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.entity;
 import com.google.common.base.Preconditions;
 import java.util.function.Function;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -49,9 +50,9 @@ public class CraftEntitySnapshot implements EntitySnapshot {
 
     private net.minecraft.world.entity.Entity createInternal(World world) {
         net.minecraft.world.level.World nms = ((CraftWorld) world).getHandle();
-        net.minecraft.world.entity.Entity internal = EntityTypes.loadEntityRecursive(data, nms, Function.identity());
+        net.minecraft.world.entity.Entity internal = EntityTypes.loadEntityRecursive(data, nms, EntitySpawnReason.LOAD, Function.identity());
         if (internal == null) { // Try creating by type
-            internal = CraftEntityType.bukkitToMinecraft(type).create(nms);
+            internal = CraftEntityType.bukkitToMinecraft(type).create(nms, EntitySpawnReason.LOAD);
         }
 
         Preconditions.checkArgument(internal != null, "Error creating new entity."); // This should only fail if the stored NBTTagCompound is malformed.

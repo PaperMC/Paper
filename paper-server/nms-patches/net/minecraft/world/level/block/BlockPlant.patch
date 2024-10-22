@@ -1,17 +1,29 @@
 --- a/net/minecraft/world/level/block/BlockPlant.java
 +++ b/net/minecraft/world/level/block/BlockPlant.java
-@@ -26,7 +26,14 @@
+@@ -12,6 +12,10 @@
+ import net.minecraft.world.level.block.state.IBlockData;
+ import net.minecraft.world.level.pathfinder.PathMode;
+ 
++// CraftBukkit start
++import net.minecraft.world.level.World;
++// CraftBukkit end
++
+ public abstract class BlockPlant extends Block {
+ 
+     protected BlockPlant(BlockBase.Info blockbase_info) {
+@@ -27,7 +31,15 @@
  
      @Override
-     protected IBlockData updateShape(IBlockData iblockdata, EnumDirection enumdirection, IBlockData iblockdata1, GeneratorAccess generatoraccess, BlockPosition blockposition, BlockPosition blockposition1) {
--        return !iblockdata.canSurvive(generatoraccess, blockposition) ? Blocks.AIR.defaultBlockState() : super.updateShape(iblockdata, enumdirection, iblockdata1, generatoraccess, blockposition, blockposition1);
+     protected IBlockData updateShape(IBlockData iblockdata, IWorldReader iworldreader, ScheduledTickAccess scheduledtickaccess, BlockPosition blockposition, EnumDirection enumdirection, BlockPosition blockposition1, IBlockData iblockdata1, RandomSource randomsource) {
+-        return !iblockdata.canSurvive(iworldreader, blockposition) ? Blocks.AIR.defaultBlockState() : super.updateShape(iblockdata, iworldreader, scheduledtickaccess, blockposition, enumdirection, blockposition1, iblockdata1, randomsource);
 +        // CraftBukkit start
-+        if (!iblockdata.canSurvive(generatoraccess, blockposition)) {
-+            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPhysicsEvent(generatoraccess, blockposition).isCancelled()) {
++        if (!iblockdata.canSurvive(iworldreader, blockposition)) {
++            // Suppress during worldgen
++            if (!(iworldreader instanceof World world) || !org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPhysicsEvent(world, blockposition).isCancelled()) {
 +                return Blocks.AIR.defaultBlockState();
 +            }
 +        }
-+        return super.updateShape(iblockdata, enumdirection, iblockdata1, generatoraccess, blockposition, blockposition1);
++        return super.updateShape(iblockdata, iworldreader, scheduledtickaccess, blockposition, enumdirection, blockposition1, iblockdata1, randomsource);
 +        // CraftBukkit end
      }
  

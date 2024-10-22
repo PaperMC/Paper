@@ -29,7 +29,7 @@ public class CraftEnchantmentView extends CraftInventoryView<ContainerEnchantTab
     @NotNull
     @Override
     public EnchantmentOffer[] getOffers() {
-        Registry<Holder<Enchantment>> registry = CraftRegistry.getMinecraftRegistry().registryOrThrow(Registries.ENCHANTMENT).asHolderIdMap();
+        Registry<Holder<Enchantment>> registry = CraftRegistry.getMinecraftRegistry().lookupOrThrow(Registries.ENCHANTMENT).asHolderIdMap();
         EnchantmentOffer[] offers = new EnchantmentOffer[3];
         for (int i = 0; i < 3; i++) {
             org.bukkit.enchantments.Enchantment enchantment = (container.enchantClue[i] >= 0) ? CraftEnchantment.minecraftHolderToBukkit(registry.byId(container.enchantClue[i])) : null;
@@ -41,7 +41,7 @@ public class CraftEnchantmentView extends CraftInventoryView<ContainerEnchantTab
     @Override
     public void setOffers(@NotNull final EnchantmentOffer[] offers) {
         Preconditions.checkArgument(offers.length != 3, "There must be 3 offers given");
-        Registry<Holder<Enchantment>> registry = CraftRegistry.getMinecraftRegistry().registryOrThrow(Registries.ENCHANTMENT).asHolderIdMap();
+        Registry<Holder<Enchantment>> registry = CraftRegistry.getMinecraftRegistry().lookupOrThrow(Registries.ENCHANTMENT).asHolderIdMap();
         for (int i = 0; i < offers.length; i++) {
             final EnchantmentOffer offer = offers[i];
             if (offer == null) {

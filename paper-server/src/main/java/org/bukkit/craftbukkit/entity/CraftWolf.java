@@ -51,7 +51,7 @@ public class CraftWolf extends CraftTameableAnimal implements Wolf {
 
     @Override
     public boolean isWet() {
-        return getHandle().isWet();
+        return getHandle().isWet;
     }
 
     @Override

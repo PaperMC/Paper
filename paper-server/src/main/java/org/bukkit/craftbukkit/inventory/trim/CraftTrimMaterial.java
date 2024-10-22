@@ -12,26 +12,26 @@ import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.jetbrains.annotations.NotNull;
 
-public class CraftTrimMaterial implements TrimMaterial, Handleable<net.minecraft.world.item.armortrim.TrimMaterial> {
+public class CraftTrimMaterial implements TrimMaterial, Handleable<net.minecraft.world.item.equipment.trim.TrimMaterial> {
 
-    public static TrimMaterial minecraftToBukkit(net.minecraft.world.item.armortrim.TrimMaterial minecraft) {
+    public static TrimMaterial minecraftToBukkit(net.minecraft.world.item.equipment.trim.TrimMaterial minecraft) {
         return CraftRegistry.minecraftToBukkit(minecraft, Registries.TRIM_MATERIAL, Registry.TRIM_MATERIAL);
     }
 
-    public static TrimMaterial minecraftHolderToBukkit(Holder<net.minecraft.world.item.armortrim.TrimMaterial> minecraft) {
+    public static TrimMaterial minecraftHolderToBukkit(Holder<net.minecraft.world.item.equipment.trim.TrimMaterial> minecraft) {
         return minecraftToBukkit(minecraft.value());
     }
 
-    public static net.minecraft.world.item.armortrim.TrimMaterial bukkitToMinecraft(TrimMaterial bukkit) {
+    public static net.minecraft.world.item.equipment.trim.TrimMaterial bukkitToMinecraft(TrimMaterial bukkit) {
         return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
-    public static Holder<net.minecraft.world.item.armortrim.TrimMaterial> bukkitToMinecraftHolder(TrimMaterial bukkit) {
+    public static Holder<net.minecraft.world.item.equipment.trim.TrimMaterial> bukkitToMinecraftHolder(TrimMaterial bukkit) {
         Preconditions.checkArgument(bukkit != null);
 
-        IRegistry<net.minecraft.world.item.armortrim.TrimMaterial> registry = CraftRegistry.getMinecraftRegistry(Registries.TRIM_MATERIAL);
+        IRegistry<net.minecraft.world.item.equipment.trim.TrimMaterial> registry = CraftRegistry.getMinecraftRegistry(Registries.TRIM_MATERIAL);
 
-        if (registry.wrapAsHolder(bukkitToMinecraft(bukkit)) instanceof Holder.c<net.minecraft.world.item.armortrim.TrimMaterial> holder) {
+        if (registry.wrapAsHolder(bukkitToMinecraft(bukkit)) instanceof Holder.c<net.minecraft.world.item.equipment.trim.TrimMaterial> holder) {
             return holder;
         }
 
@@ -40,15 +40,15 @@ public class CraftTrimMaterial implements TrimMaterial, Handleable<net.minecraft
     }
 
     private final NamespacedKey key;
-    private final net.minecraft.world.item.armortrim.TrimMaterial handle;
+    private final net.minecraft.world.item.equipment.trim.TrimMaterial handle;
 
-    public CraftTrimMaterial(NamespacedKey key, net.minecraft.world.item.armortrim.TrimMaterial handle) {
+    public CraftTrimMaterial(NamespacedKey key, net.minecraft.world.item.equipment.trim.TrimMaterial handle) {
         this.key = key;
         this.handle = handle;
     }
 
     @Override
-    public net.minecraft.world.item.armortrim.TrimMaterial getHandle() {
+    public net.minecraft.world.item.equipment.trim.TrimMaterial getHandle() {
         return handle;
     }
 

@@ -1,11 +1,11 @@
 --- a/net/minecraft/world/item/crafting/IRecipeComplex.java
 +++ b/net/minecraft/world/item/crafting/IRecipeComplex.java
-@@ -3,6 +3,15 @@
- import net.minecraft.core.HolderLookup;
- import net.minecraft.world.item.ItemStack;
+@@ -8,6 +8,15 @@
+ import net.minecraft.network.RegistryFriendlyByteBuf;
+ import net.minecraft.network.codec.StreamCodec;
  
 +// CraftBukkit start
-+import net.minecraft.core.IRegistryCustom;
++import net.minecraft.world.item.ItemStack;
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.craftbukkit.inventory.CraftComplexRecipe;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -16,21 +16,39 @@
  public abstract class IRecipeComplex implements RecipeCrafting {
  
      private final CraftingBookCategory category;
-@@ -25,4 +34,17 @@
-     public CraftingBookCategory category() {
-         return this.category;
-     }
-+
+@@ -34,6 +43,19 @@
+     @Override
+     public abstract RecipeSerializer<? extends IRecipeComplex> getSerializer();
+ 
 +    // CraftBukkit start
 +    @Override
 +    public Recipe toBukkitRecipe(NamespacedKey id) {
-+        CraftItemStack result = CraftItemStack.asCraftMirror(getResultItem(IRegistryCustom.EMPTY));
++        CraftItemStack result = CraftItemStack.asCraftMirror(ItemStack.EMPTY);
 +
 +        CraftComplexRecipe recipe = new CraftComplexRecipe(id, result, this);
-+        recipe.setGroup(this.getGroup());
++        recipe.setGroup(this.group());
 +        recipe.setCategory(CraftRecipe.getCategory(this.category()));
 +
 +        return recipe;
 +    }
 +    // CraftBukkit end
- }
++
+     public static class Serializer<T extends RecipeCrafting> implements RecipeSerializer<T> {
+ 
+         private final MapCodec<T> codec;
+@@ -41,13 +63,13 @@
+ 
+         public Serializer(IRecipeComplex.Serializer.Factory<T> irecipecomplex_serializer_factory) {
+             this.codec = RecordCodecBuilder.mapCodec((instance) -> {
+-                P1 p1 = instance.group(CraftingBookCategory.CODEC.fieldOf("category").orElse(CraftingBookCategory.MISC).forGetter(RecipeCrafting::category));
++                P1<RecordCodecBuilder.Mu<T>, CraftingBookCategory> p1 = instance.group(CraftingBookCategory.CODEC.fieldOf("category").orElse(CraftingBookCategory.MISC).forGetter(RecipeCrafting::category)); // CraftBukkit - decompile error
+ 
+                 Objects.requireNonNull(irecipecomplex_serializer_factory);
+                 return p1.apply(instance, irecipecomplex_serializer_factory::create);
+             });
+             StreamCodec streamcodec = CraftingBookCategory.STREAM_CODEC;
+-            Function function = RecipeCrafting::category;
++            Function<RecipeCrafting, CraftingBookCategory> function = RecipeCrafting::category; // CraftBukkit - decompile error
+ 
+             Objects.requireNonNull(irecipecomplex_serializer_factory);
+             this.streamCodec = StreamCodec.composite(streamcodec, function, irecipecomplex_serializer_factory::create);

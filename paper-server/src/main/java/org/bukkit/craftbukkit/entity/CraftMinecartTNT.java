@@ -11,6 +11,26 @@ public final class CraftMinecartTNT extends CraftMinecart implements ExplosiveMi
     }
 
     @Override
+    public float getYield() {
+        return getHandle().explosionPowerBase;
+    }
+
+    @Override
+    public boolean isIncendiary() {
+        return getHandle().isIncendiary;
+    }
+
+    @Override
+    public void setIsIncendiary(boolean isIncendiary) {
+        getHandle().isIncendiary = isIncendiary;
+    }
+
+    @Override
+    public void setYield(float yield) {
+        getHandle().explosionPowerBase = yield;
+    }
+
+    @Override
     public void setFuseTicks(int ticks) {
         getHandle().fuse = ticks;
     }

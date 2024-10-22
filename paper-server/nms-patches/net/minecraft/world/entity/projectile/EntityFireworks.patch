@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/projectile/EntityFireworks.java
 +++ b/net/minecraft/world/entity/projectile/EntityFireworks.java
-@@ -32,6 +32,10 @@
+@@ -33,6 +33,10 @@
  import net.minecraft.world.phys.MovingObjectPositionEntity;
  import net.minecraft.world.phys.Vec3D;
  
@@ -11,59 +11,60 @@
  public class EntityFireworks extends IProjectile implements ItemSupplier {
  
      public static final DataWatcherObject<ItemStack> DATA_ID_FIREWORKS_ITEM = DataWatcher.defineId(EntityFireworks.class, DataWatcherRegistry.ITEM_STACK);
-@@ -148,7 +152,7 @@
-         MovingObjectPosition movingobjectposition = ProjectileHelper.getHitResultOnMoveVector(this, this::canHitEntity);
+@@ -152,7 +156,7 @@
+         }
  
-         if (!this.noPhysics) {
+         if (!this.noPhysics && this.isAlive() && movingobjectposition.getType() != MovingObjectPosition.EnumMovingObjectType.MISS) {
 -            this.hitTargetOrDeflectSelf(movingobjectposition);
 +            this.preHitTargetOrDeflectSelf(movingobjectposition); // CraftBukkit - projectile hit event
              this.hasImpulse = true;
          }
  
-@@ -163,7 +167,11 @@
+@@ -172,7 +176,11 @@
+             if (world instanceof WorldServer) {
+                 WorldServer worldserver = (WorldServer) world;
+ 
+-                this.explode(worldserver);
++                // CraftBukkit start
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
++                    this.explode(worldserver);
++                }
++                // CraftBukkit end
+             }
          }
  
-         if (!this.level().isClientSide && this.life > this.lifetime) {
--            this.explode();
-+            // CraftBukkit start
-+            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
-+                this.explode();
-+            }
-+            // CraftBukkit end
-         }
- 
-     }
-@@ -172,14 +180,18 @@
-         this.level().broadcastEntityEvent(this, (byte) 17);
+@@ -182,7 +190,7 @@
+         worldserver.broadcastEntityEvent(this, (byte) 17);
          this.gameEvent(GameEvent.EXPLODE, this.getOwner());
-         this.dealExplosionDamage();
+         this.dealExplosionDamage(worldserver);
 -        this.discard();
 +        this.discard(EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause
      }
  
      @Override
-     protected void onHitEntity(MovingObjectPositionEntity movingobjectpositionentity) {
-         super.onHitEntity(movingobjectpositionentity);
-         if (!this.level().isClientSide) {
--            this.explode();
+@@ -191,7 +199,11 @@
+         World world = this.level();
+ 
+         if (world instanceof WorldServer worldserver) {
+-            this.explode(worldserver);
 +            // CraftBukkit start
 +            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
-+                this.explode();
++                this.explode(worldserver);
 +            }
 +            // CraftBukkit end
          }
+ 
      }
+@@ -205,7 +217,11 @@
  
-@@ -189,7 +201,11 @@
- 
-         this.level().getBlockState(blockposition).entityInside(this.level(), blockposition, this);
-         if (!this.level().isClientSide() && this.hasExplosion()) {
--            this.explode();
-+            // CraftBukkit start
-+            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
-+                this.explode();
-+            }
-+            // CraftBukkit end
+         if (world instanceof WorldServer worldserver) {
+             if (this.hasExplosion()) {
+-                this.explode(worldserver);
++                // CraftBukkit start
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
++                    this.explode(worldserver);
++                }
++                // CraftBukkit end
+             }
          }
  
-         super.onHitBlock(movingobjectpositionblock);

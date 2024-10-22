@@ -1,31 +1,27 @@
 --- a/net/minecraft/world/item/ItemSnowball.java
 +++ b/net/minecraft/world/item/ItemSnowball.java
-@@ -22,17 +22,25 @@
-     public InteractionResultWrapper<ItemStack> use(World world, EntityHuman entityhuman, EnumHand enumhand) {
+@@ -23,13 +23,21 @@
+     public EnumInteractionResult use(World world, EntityHuman entityhuman, EnumHand enumhand) {
          ItemStack itemstack = entityhuman.getItemInHand(enumhand);
  
 -        world.playSound((EntityHuman) null, entityhuman.getX(), entityhuman.getY(), entityhuman.getZ(), SoundEffects.SNOWBALL_THROW, SoundCategory.NEUTRAL, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
-+        // CraftBukkit - moved down
++        // CraftBukkit start - moved down
 +        // world.playSound((EntityHuman) null, entityhuman.getX(), entityhuman.getY(), entityhuman.getZ(), SoundEffects.SNOWBALL_THROW, SoundCategory.NEUTRAL, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
-         if (!world.isClientSide) {
-             EntitySnowball entitysnowball = new EntitySnowball(world, entityhuman);
- 
-             entitysnowball.setItem(itemstack);
-             entitysnowball.shootFromRotation(entityhuman, entityhuman.getXRot(), entityhuman.getYRot(), 0.0F, 1.5F, 1.0F);
--            world.addFreshEntity(entitysnowball);
-+            if (world.addFreshEntity(entitysnowball)) {
+         if (world instanceof WorldServer worldserver) {
+-            IProjectile.spawnProjectileFromRotation(EntitySnowball::new, worldserver, itemstack, entityhuman, 0.0F, 1.5F, 1.0F);
++            if (IProjectile.spawnProjectileFromRotation(EntitySnowball::new, worldserver, itemstack, entityhuman, 0.0F, 1.5F, 1.0F).isAlive()) {
 +                itemstack.consume(1, entityhuman);
 +
 +                world.playSound((EntityHuman) null, entityhuman.getX(), entityhuman.getY(), entityhuman.getZ(), SoundEffects.SNOWBALL_THROW, SoundCategory.NEUTRAL, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
 +            } else if (entityhuman instanceof net.minecraft.server.level.EntityPlayer) {
 +                ((net.minecraft.server.level.EntityPlayer) entityhuman).getBukkitEntity().updateInventory();
 +            }
++            // CraftBukkit end
          }
-+        // CraftBukkit end
  
          entityhuman.awardStat(StatisticList.ITEM_USED.get(this));
 -        itemstack.consume(1, entityhuman);
 +        // itemstack.consume(1, entityhuman); // CraftBukkit - moved up
-         return InteractionResultWrapper.sidedSuccess(itemstack, world.isClientSide());
+         return EnumInteractionResult.SUCCESS;
      }
  

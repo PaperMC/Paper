@@ -1,26 +1,52 @@
 --- a/net/minecraft/world/item/crafting/RecipeItemStack.java
 +++ b/net/minecraft/world/item/crafting/RecipeItemStack.java
-@@ -40,6 +40,7 @@
-     public ItemStack[] itemStacks;
+@@ -42,6 +42,24 @@
+     private final HolderSet<Item> values;
      @Nullable
-     private IntList stackingIds;
-+    public boolean exact; // CraftBukkit
-     public static final Codec<RecipeItemStack> CODEC = codec(true);
-     public static final Codec<RecipeItemStack> CODEC_NONEMPTY = codec(false);
- 
-@@ -77,6 +78,15 @@
-             for (int j = 0; j < i; ++j) {
-                 ItemStack itemstack1 = aitemstack[j];
- 
-+                // CraftBukkit start
-+                if (exact) {
-+                    if (itemstack1.getItem() == itemstack.getItem() && ItemStack.isSameItemSameComponents(itemstack, itemstack1)) {
-+                        return true;
-+                    }
+     private List<Holder<Item>> items;
++    // CraftBukkit start
++    @Nullable
++    private List<ItemStack> itemStacks;
 +
-+                    continue;
++    public boolean isExact() {
++        return this.itemStacks != null;
++    }
++
++    public List<ItemStack> itemStacks() {
++        return this.itemStacks;
++    }
++
++    public static RecipeItemStack ofStacks(Stream<ItemStack> stacks) {
++        RecipeItemStack recipe = RecipeItemStack.of(stacks.map(ItemStack::getItem));
++        recipe.itemStacks = stacks.toList();
++        return recipe;
++    }
++    // CraftBukkit end
+ 
+     private RecipeItemStack(HolderSet<Item> holderset) {
+         holderset.unwrap().ifRight((list) -> {
+@@ -72,6 +90,15 @@
+     }
+ 
+     public boolean test(ItemStack itemstack) {
++        // CraftBukkit start
++        if (this.isExact()) {
++            for (ItemStack itemstack1 : this.itemStacks()) {
++                if (itemstack1.getItem() == itemstack.getItem() && ItemStack.isSameItemSameComponents(itemstack, itemstack1)) {
++                    return true;
 +                }
-+                // CraftBukkit end
-                 if (itemstack1.is(itemstack.getItem())) {
-                     return true;
-                 }
++            }
++        }
++        // CraftBukkit end
+         List<Holder<Item>> list = this.items();
+ 
+         for (int i = 0; i < list.size(); ++i) {
+@@ -85,7 +112,7 @@
+ 
+     public boolean equals(Object object) {
+         if (object instanceof RecipeItemStack recipeitemstack) {
+-            return Objects.equals(this.values, recipeitemstack.values);
++            return Objects.equals(this.values, recipeitemstack.values) && Objects.equals(this.itemStacks, recipeitemstack.itemStacks); // CraftBukkit
+         } else {
+             return false;
+         }

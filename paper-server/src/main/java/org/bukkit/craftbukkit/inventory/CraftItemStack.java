@@ -2,10 +2,18 @@ package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
+import net.minecraft.advancements.critereon.CriterionConditionItem;
+import net.minecraft.advancements.critereon.CriterionConditionValue;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
+import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.component.DataComponentPredicate;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.component.PatchedDataComponentMap;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.enchantment.EnchantmentManager;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
@@ -83,6 +91,13 @@ public final class CraftItemStack extends ItemStack {
 
     public static CraftItemStack asNewCraftStack(Item item, int amount) {
         return new CraftItemStack(CraftItemType.minecraftToBukkit(item), amount, (short) 0, null);
+    }
+
+    public static CriterionConditionItem asCriterionConditionItem(ItemStack original) {
+        net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(original);
+        DataComponentPredicate predicate = DataComponentPredicate.allOf(PatchedDataComponentMap.fromPatch(DataComponentMap.EMPTY, nms.getComponentsPatch()));
+
+        return new CriterionConditionItem(Optional.of(HolderSet.direct(nms.getItemHolder())), CriterionConditionValue.IntegerRange.ANY, predicate, Collections.emptyMap());
     }
 
     net.minecraft.world.item.ItemStack handle;

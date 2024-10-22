@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/projectile/EntityPotion.java
 +++ b/net/minecraft/world/entity/projectile/EntityPotion.java
-@@ -34,6 +34,18 @@
+@@ -35,6 +35,18 @@
  import net.minecraft.world.phys.MovingObjectPositionBlock;
  import net.minecraft.world.phys.MovingObjectPositionEntity;
  
@@ -16,45 +16,45 @@
 +import org.bukkit.event.entity.EntityRemoveEvent;
 +// CraftBukkit end
 +
- public class EntityPotion extends EntityProjectileThrowable implements ItemSupplier {
+ public class EntityPotion extends EntityProjectileThrowable {
  
      public static final double SPLASH_RANGE = 4.0D;
-@@ -98,18 +110,18 @@
+@@ -101,18 +113,18 @@
  
              if (potioncontents.is(Potions.WATER)) {
-                 this.applyWater();
+                 this.applyWater(worldserver);
 -            } else if (potioncontents.hasEffects()) {
 +            } else if (true || potioncontents.hasEffects()) { // CraftBukkit - Call event even if no effects to apply
                  if (this.isLingering()) {
 -                    this.makeAreaOfEffectCloud(potioncontents);
 +                    this.makeAreaOfEffectCloud(potioncontents, movingobjectposition); // CraftBukkit - Pass MovingObjectPosition
                  } else {
--                    this.applySplash(potioncontents.getAllEffects(), movingobjectposition.getType() == MovingObjectPosition.EnumMovingObjectType.ENTITY ? ((MovingObjectPositionEntity) movingobjectposition).getEntity() : null);
-+                    this.applySplash(potioncontents.getAllEffects(), movingobjectposition.getType() == MovingObjectPosition.EnumMovingObjectType.ENTITY ? ((MovingObjectPositionEntity) movingobjectposition).getEntity() : null, movingobjectposition); // CraftBukkit - Pass MovingObjectPosition
+-                    this.applySplash(worldserver, potioncontents.getAllEffects(), movingobjectposition.getType() == MovingObjectPosition.EnumMovingObjectType.ENTITY ? ((MovingObjectPositionEntity) movingobjectposition).getEntity() : null);
++                    this.applySplash(worldserver, potioncontents.getAllEffects(), movingobjectposition.getType() == MovingObjectPosition.EnumMovingObjectType.ENTITY ? ((MovingObjectPositionEntity) movingobjectposition).getEntity() : null, movingobjectposition); // CraftBukkit - Pass MovingObjectPosition
                  }
              }
  
              int i = potioncontents.potion().isPresent() && ((PotionRegistry) ((Holder) potioncontents.potion().get()).value()).hasInstantEffects() ? 2007 : 2002;
  
-             this.level().levelEvent(i, this.blockPosition(), potioncontents.getColor());
+             worldserver.levelEvent(i, this.blockPosition(), potioncontents.getColor());
 -            this.discard();
 +            this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
          }
      }
  
-@@ -144,9 +156,10 @@
+@@ -147,9 +159,10 @@
  
      }
  
--    private void applySplash(Iterable<MobEffect> iterable, @Nullable Entity entity) {
-+    private void applySplash(Iterable<MobEffect> iterable, @Nullable Entity entity, MovingObjectPosition position) { // CraftBukkit - Pass MovingObjectPosition
+-    private void applySplash(WorldServer worldserver, Iterable<MobEffect> iterable, @Nullable Entity entity) {
++    private void applySplash(WorldServer worldserver, Iterable<MobEffect> iterable, @Nullable Entity entity, MovingObjectPosition position) { // CraftBukkit - Pass MovingObjectPosition
          AxisAlignedBB axisalignedbb = this.getBoundingBox().inflate(4.0D, 2.0D, 4.0D);
-         List<EntityLiving> list = this.level().getEntitiesOfClass(EntityLiving.class, axisalignedbb);
+         List<EntityLiving> list = worldserver.getEntitiesOfClass(EntityLiving.class, axisalignedbb);
 +        Map<LivingEntity, Double> affected = new HashMap<LivingEntity, Double>(); // CraftBukkit
  
          if (!list.isEmpty()) {
              Entity entity1 = this.getEffectSource();
-@@ -167,24 +180,50 @@
+@@ -170,24 +183,50 @@
                              d1 = 1.0D - Math.sqrt(d0) / 4.0D;
                          }
  
@@ -78,7 +78,7 @@
 +                }
  
 -                            if (((MobEffectList) holder.value()).isInstantenous()) {
--                                ((MobEffectList) holder.value()).applyInstantenousEffect(this, this.getOwner(), entityliving, mobeffect.getAmplifier(), d1);
+-                                ((MobEffectList) holder.value()).applyInstantenousEffect(worldserver, this, this.getOwner(), entityliving, mobeffect.getAmplifier(), d1);
 -                            } else {
 -                                int i = mobeffect.mapDuration((j) -> {
 -                                    return (int) (d1 * (double) j + 0.5D);
@@ -108,7 +108,7 @@
 +                    // CraftBukkit end
 +
 +                    if (((MobEffectList) holder.value()).isInstantenous()) {
-+                        ((MobEffectList) holder.value()).applyInstantenousEffect(this, this.getOwner(), entityliving, mobeffect.getAmplifier(), d1);
++                        ((MobEffectList) holder.value()).applyInstantenousEffect(worldserver, this, this.getOwner(), entityliving, mobeffect.getAmplifier(), d1);
 +                    } else {
 +                        int i = mobeffect.mapDuration((j) -> {
 +                            return (int) (d1 * (double) j + 0.5D);
@@ -120,7 +120,7 @@
                          }
                      }
                  }
-@@ -193,7 +232,7 @@
+@@ -196,7 +235,7 @@
  
      }
  
@@ -129,7 +129,7 @@
          EntityAreaEffectCloud entityareaeffectcloud = new EntityAreaEffectCloud(this.level(), this.getX(), this.getY(), this.getZ());
          Entity entity = this.getOwner();
  
-@@ -206,7 +245,14 @@
+@@ -209,7 +248,14 @@
          entityareaeffectcloud.setWaitTime(10);
          entityareaeffectcloud.setRadiusPerTick(-entityareaeffectcloud.getRadius() / (float) entityareaeffectcloud.getDuration());
          entityareaeffectcloud.setPotionContents(potioncontents);
@@ -145,7 +145,7 @@
      }
  
      public boolean isLingering() {
-@@ -217,13 +263,25 @@
+@@ -220,13 +266,25 @@
          IBlockData iblockdata = this.level().getBlockState(blockposition);
  
          if (iblockdata.is(TagsBlock.FIRE)) {

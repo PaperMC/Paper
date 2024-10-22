@@ -12,7 +12,7 @@
  public class BlockSoil extends Block {
  
      public static final MapCodec<BlockSoil> CODEC = simpleCodec(BlockSoil::new);
-@@ -92,26 +97,49 @@
+@@ -92,28 +97,51 @@
  
          if (!isNearWater(worldserver, blockposition) && !worldserver.isRainingAt(blockposition.above())) {
              if (i > 0) {
@@ -31,25 +31,27 @@
      @Override
      public void fallOn(World world, IBlockData iblockdata, BlockPosition blockposition, Entity entity, float f) {
 +        super.fallOn(world, iblockdata, blockposition, entity, f); // CraftBukkit - moved here as game rules / events shouldn't affect fall damage.
-         if (!world.isClientSide && world.random.nextFloat() < f - 0.5F && entity instanceof EntityLiving && (entity instanceof EntityHuman || world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) && entity.getBbWidth() * entity.getBbWidth() * entity.getBbHeight() > 0.512F) {
-+            // CraftBukkit start - Interact soil
-+            org.bukkit.event.Cancellable cancellable;
-+            if (entity instanceof EntityHuman) {
-+                cancellable = CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, org.bukkit.event.block.Action.PHYSICAL, blockposition, null, null, null);
-+            } else {
-+                cancellable = new EntityInteractEvent(entity.getBukkitEntity(), world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()));
-+                world.getCraftServer().getPluginManager().callEvent((EntityInteractEvent) cancellable);
-+            }
+         if (world instanceof WorldServer worldserver) {
+             if (world.random.nextFloat() < f - 0.5F && entity instanceof EntityLiving && (entity instanceof EntityHuman || worldserver.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) && entity.getBbWidth() * entity.getBbWidth() * entity.getBbHeight() > 0.512F) {
++                // CraftBukkit start - Interact soil
++                org.bukkit.event.Cancellable cancellable;
++                if (entity instanceof EntityHuman) {
++                    cancellable = CraftEventFactory.callPlayerInteractEvent((EntityHuman) entity, org.bukkit.event.block.Action.PHYSICAL, blockposition, null, null, null);
++                } else {
++                    cancellable = new EntityInteractEvent(entity.getBukkitEntity(), world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()));
++                    world.getCraftServer().getPluginManager().callEvent((EntityInteractEvent) cancellable);
++                }
 +
-+            if (cancellable.isCancelled()) {
-+                return;
-+            }
++                if (cancellable.isCancelled()) {
++                    return;
++                }
 +
-+            if (!CraftEventFactory.callEntityChangeBlockEvent(entity, blockposition, Blocks.DIRT.defaultBlockState())) {
-+                return;
-+            }
-+            // CraftBukkit end
-             turnToDirt(entity, iblockdata, world, blockposition);
++                if (!CraftEventFactory.callEntityChangeBlockEvent(entity, blockposition, Blocks.DIRT.defaultBlockState())) {
++                    return;
++                }
++                // CraftBukkit end
+                 turnToDirt(entity, iblockdata, world, blockposition);
+             }
          }
  
 -        super.fallOn(world, iblockdata, blockposition, entity, f);

@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.IRegistryCustom;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.level.ChunkCoordIntPair;
 import net.minecraft.world.level.GeneratorAccessSeed;
@@ -133,7 +134,7 @@ public class CraftStructure implements Structure {
     public List<Entity> getEntities() {
         List<Entity> entities = new ArrayList<>();
         for (DefinedStructure.EntityInfo entity : structure.entityInfoList) {
-            EntityTypes.create(entity.nbt, ((CraftWorld) Bukkit.getServer().getWorlds().get(0)).getHandle()).ifPresent(dummyEntity -> {
+            EntityTypes.create(entity.nbt, ((CraftWorld) Bukkit.getServer().getWorlds().get(0)).getHandle(), EntitySpawnReason.STRUCTURE).ifPresent(dummyEntity -> {
                 dummyEntity.setPos(entity.pos.x, entity.pos.y, entity.pos.z);
                 entities.add(dummyEntity.getBukkitEntity());
             });

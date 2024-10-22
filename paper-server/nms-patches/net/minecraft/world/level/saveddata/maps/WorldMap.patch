@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/saveddata/maps/WorldMap.java
 +++ b/net/minecraft/world/level/saveddata/maps/WorldMap.java
-@@ -44,6 +44,17 @@
+@@ -47,6 +47,17 @@
  import net.minecraft.world.level.saveddata.PersistentBase;
  import org.slf4j.Logger;
  
@@ -18,7 +18,7 @@
  public class WorldMap extends PersistentBase {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -67,6 +78,13 @@
+@@ -70,6 +81,13 @@
      private final Map<String, WorldMapFrame> frameMarkers = Maps.newHashMap();
      private int trackedDecorationCount;
  
@@ -32,10 +32,10 @@
      public static PersistentBase.a<WorldMap> factory() {
          return new PersistentBase.a<>(() -> {
              throw new IllegalStateException("Should never create an empty map saved data");
-@@ -82,6 +100,10 @@
+@@ -84,6 +102,10 @@
+         this.trackingPosition = flag;
          this.unlimitedTracking = flag1;
          this.locked = flag2;
-         this.setDirty();
 +        // CraftBukkit start
 +        mapView = new CraftMapView(this);
 +        server = (CraftServer) org.bukkit.Bukkit.getServer();
@@ -43,7 +43,7 @@
      }
  
      public static WorldMap createFresh(double d0, double d1, byte b0, boolean flag, boolean flag1, ResourceKey<World> resourcekey) {
-@@ -99,12 +121,30 @@
+@@ -101,12 +123,30 @@
      }
  
      public static WorldMap load(NBTTagCompound nbttagcompound, HolderLookup.a holderlookup_a) {
@@ -77,7 +77,7 @@
          });
          int i = nbttagcompound.getInt("xCenter");
          int j = nbttagcompound.getInt("zCenter");
-@@ -129,7 +169,8 @@
+@@ -131,7 +171,8 @@
              MapIconBanner mapiconbanner = (MapIconBanner) iterator.next();
  
              worldmap.bannerMarkers.put(mapiconbanner.getId(), mapiconbanner);
@@ -87,7 +87,7 @@
          }
  
          NBTTagList nbttaglist = nbttagcompound.getList("frames", 10);
-@@ -148,13 +189,32 @@
+@@ -150,13 +191,32 @@
  
      @Override
      public NBTTagCompound save(NBTTagCompound nbttagcompound, HolderLookup.a holderlookup_a) {
@@ -121,7 +121,7 @@
          nbttagcompound.putInt("xCenter", this.centerX);
          nbttagcompound.putInt("zCenter", this.centerZ);
          nbttagcompound.putByte("scale", this.scale);
-@@ -409,7 +469,7 @@
+@@ -443,7 +503,7 @@
  
              if (!this.isTrackedCountOverLimit(256)) {
                  this.bannerMarkers.put(mapiconbanner.getId(), mapiconbanner);
@@ -130,16 +130,16 @@
                  return true;
              }
          }
-@@ -519,7 +579,7 @@
+@@ -554,7 +614,7 @@
              this.player = entityhuman;
          }
  
--        private WorldMap.b createPatch() {
-+        private WorldMap.b createPatch(byte[] buffer) { // CraftBukkit
+-        private WorldMap.c createPatch() {
++        private WorldMap.c createPatch(byte[] buffer) { // CraftBukkit
              int i = this.minDirtyX;
              int j = this.minDirtyY;
              int k = this.maxDirtyX + 1 - this.minDirtyX;
-@@ -528,7 +588,7 @@
+@@ -563,7 +623,7 @@
  
              for (int i1 = 0; i1 < k; ++i1) {
                  for (int j1 = 0; j1 < l; ++j1) {
@@ -148,18 +148,18 @@
                  }
              }
  
-@@ -538,19 +598,29 @@
+@@ -573,19 +633,29 @@
          @Nullable
          Packet<?> nextUpdatePacket(MapId mapid) {
-             WorldMap.b worldmap_b;
+             WorldMap.c worldmap_c;
 +            org.bukkit.craftbukkit.map.RenderData render = WorldMap.this.mapView.render((org.bukkit.craftbukkit.entity.CraftPlayer) this.player.getBukkitEntity()); // CraftBukkit
  
              if (this.dirtyData) {
                  this.dirtyData = false;
--                worldmap_b = this.createPatch();
-+                worldmap_b = this.createPatch(render.buffer); // CraftBukkit
+-                worldmap_c = this.createPatch();
++                worldmap_c = this.createPatch(render.buffer); // CraftBukkit
              } else {
-                 worldmap_b = null;
+                 worldmap_c = null;
              }
  
              Collection collection;

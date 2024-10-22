@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -60,6 +60,18 @@
+@@ -59,6 +59,18 @@
  import net.minecraft.world.level.storage.Convertable;
  import org.slf4j.Logger;
  
@@ -19,7 +19,7 @@
  public class DedicatedServer extends MinecraftServer implements IMinecraftServer {
  
      static final Logger LOGGER = LogUtils.getLogger();
-@@ -68,7 +80,7 @@
+@@ -67,7 +79,7 @@
      private final List<ServerCommand> consoleInput = Collections.synchronizedList(Lists.newArrayList());
      @Nullable
      private RemoteStatusListener queryThreadGs4;
@@ -28,7 +28,7 @@
      @Nullable
      private RemoteControlListener rconThread;
      public DedicatedServerSettings settings;
-@@ -82,10 +94,12 @@
+@@ -81,10 +93,12 @@
      private DebugSampleSubscriptionTracker debugSampleSubscriptionTracker;
      public ServerLinks serverLinks;
  
@@ -41,10 +41,10 @@
          this.settings = dedicatedserversettings;
 -        this.rconConsoleSource = new RemoteControlCommandListener(this);
 +        // this.rconConsoleSource = new RemoteControlCommandListener(this); // CraftBukkit - remove field
-         this.textFilterClient = TextFilter.createFromConfig(dedicatedserversettings.getProperties().textFilteringConfig);
+         this.serverTextFilter = ServerTextFilter.createFromConfig(dedicatedserversettings.getProperties());
          this.serverLinks = createServerLinks(dedicatedserversettings);
      }
-@@ -94,13 +108,44 @@
+@@ -93,13 +107,44 @@
      public boolean initServer() throws IOException {
          Thread thread = new Thread("Server console handler") {
              public void run() {
@@ -92,7 +92,7 @@
                      }
                  } catch (IOException ioexception) {
                      DedicatedServer.LOGGER.error("Exception handling console input", ioexception);
-@@ -109,6 +154,29 @@
+@@ -108,6 +153,29 @@
              }
          };
  
@@ -122,7 +122,7 @@
          thread.setDaemon(true);
          thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(DedicatedServer.LOGGER));
          thread.start();
-@@ -133,7 +201,7 @@
+@@ -132,7 +200,7 @@
          this.setMotd(dedicatedserverproperties.motd);
          super.setPlayerIdleTimeout((Integer) dedicatedserverproperties.playerIdleTimeout.get());
          this.setEnforceWhitelist(dedicatedserverproperties.enforceWhitelist);
@@ -131,7 +131,7 @@
          DedicatedServer.LOGGER.info("Default game type: {}", dedicatedserverproperties.gamemode);
          InetAddress inetaddress = null;
  
-@@ -157,6 +225,12 @@
+@@ -156,6 +224,12 @@
              return false;
          }
  
@@ -144,7 +144,7 @@
          if (!this.usesAuthentication()) {
              DedicatedServer.LOGGER.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
              DedicatedServer.LOGGER.warn("The server will make no attempt to authenticate usernames. Beware.");
-@@ -171,7 +245,7 @@
+@@ -170,7 +244,7 @@
          if (!NameReferencingFileConverter.serverReadyAfterUserconversion(this)) {
              return false;
          } else {
@@ -153,7 +153,7 @@
              this.debugSampleSubscriptionTracker = new DebugSampleSubscriptionTracker(this.getPlayerList());
              this.tickTimeLogger = new RemoteSampleLogger(TpsDebugDimensions.values().length, this.debugSampleSubscriptionTracker, RemoteDebugSampleType.TICK_TIME);
              long i = SystemUtils.getNanos();
-@@ -179,13 +253,13 @@
+@@ -178,13 +252,13 @@
              TileEntitySkull.setup(this.services, this);
              UserCache.setUsesAuthentication(this.usesAuthentication());
              DedicatedServer.LOGGER.info("Preparing level \"{}\"", this.getLevelIdName());
@@ -169,7 +169,7 @@
              }
  
              if (dedicatedserverproperties.enableQuery) {
-@@ -311,6 +385,7 @@
+@@ -293,6 +367,7 @@
              this.queryThreadGs4.stop();
          }
  
@@ -177,7 +177,7 @@
      }
  
      @Override
-@@ -332,7 +407,15 @@
+@@ -314,7 +389,15 @@
          while (!this.consoleInput.isEmpty()) {
              ServerCommand servercommand = (ServerCommand) this.consoleInput.remove(0);
  
@@ -194,7 +194,7 @@
          }
  
      }
-@@ -559,16 +642,52 @@
+@@ -541,16 +624,52 @@
  
      @Override
      public String getPluginNames() {
@@ -251,7 +251,7 @@
      }
  
      public void storeUsingWhiteList(boolean flag) {
-@@ -673,4 +792,15 @@
+@@ -660,4 +779,15 @@
              }
          }
      }

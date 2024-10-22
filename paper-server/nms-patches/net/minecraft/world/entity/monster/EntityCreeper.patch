@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/monster/EntityCreeper.java
 +++ b/net/minecraft/world/entity/monster/EntityCreeper.java
-@@ -43,6 +43,13 @@
+@@ -42,6 +42,13 @@
  import net.minecraft.world.level.World;
  import net.minecraft.world.level.gameevent.GameEvent;
  
@@ -11,10 +11,10 @@
 +import org.bukkit.event.entity.ExplosionPrimeEvent;
 +// CraftBukkit end
 +
- public class EntityCreeper extends EntityMonster implements PowerableMob {
+ public class EntityCreeper extends EntityMonster {
  
      private static final DataWatcherObject<Integer> DATA_SWELL_DIR = DataWatcher.defineId(EntityCreeper.class, DataWatcherRegistry.INT);
-@@ -53,6 +60,7 @@
+@@ -52,6 +59,7 @@
      public int maxSwell = 30;
      public int explosionRadius = 3;
      private int droppedSkulls;
@@ -22,7 +22,7 @@
  
      public EntityCreeper(EntityTypes<? extends EntityCreeper> entitytypes, World world) {
          super(entitytypes, world);
-@@ -216,9 +224,20 @@
+@@ -214,9 +222,20 @@
      @Override
      public void thunderHit(WorldServer worldserver, EntityLightning entitylightning) {
          super.thunderHit(worldserver, entitylightning);
@@ -43,7 +43,7 @@
      @Override
      protected EnumInteractionResult mobInteract(EntityHuman entityhuman, EnumHand enumhand) {
          ItemStack itemstack = entityhuman.getItemInHand(enumhand);
-@@ -228,8 +247,9 @@
+@@ -226,8 +245,9 @@
  
              this.level().playSound(entityhuman, this.getX(), this.getY(), this.getZ(), soundeffect, this.getSoundSource(), 1.0F, this.random.nextFloat() * 0.4F + 0.8F);
              if (!this.level().isClientSide) {
@@ -55,7 +55,7 @@
                  } else {
                      itemstack.hurtAndBreak(1, entityhuman, getSlotForHand(enumhand));
 @@ -246,11 +266,20 @@
-         if (!this.level().isClientSide) {
+         if (world instanceof WorldServer worldserver) {
              float f = this.isPowered() ? 2.0F : 1.0F;
  
 +            // CraftBukkit start
@@ -63,10 +63,10 @@
 +            if (!event.isCancelled()) {
 +            // CraftBukkit end
              this.dead = true;
--            this.level().explode(this, this.getX(), this.getY(), this.getZ(), (float) this.explosionRadius * f, World.a.MOB);
-+            this.level().explode(this, net.minecraft.world.level.Explosion.getDefaultDamageSource(this.level(), this).customCausingEntityDamager(this.entityIgniter), null, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), World.a.MOB); // CraftBukkit
+-            worldserver.explode(this, this.getX(), this.getY(), this.getZ(), (float) this.explosionRadius * f, World.a.MOB);
++            worldserver.explode(this, net.minecraft.world.level.Explosion.getDefaultDamageSource(this.level(), this).customCausingEntityDamager(this.entityIgniter), null, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), World.a.MOB); // CraftBukkit
              this.spawnLingeringCloud();
-             this.triggerOnDeathMobEffects(Entity.RemovalReason.KILLED);
+             this.triggerOnDeathMobEffects(worldserver, Entity.RemovalReason.KILLED);
 -            this.discard();
 +            this.discard(EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause
 +            // CraftBukkit start

@@ -1,18 +1,22 @@
 --- a/net/minecraft/server/level/ChunkMapDistance.java
 +++ b/net/minecraft/server/level/ChunkMapDistance.java
-@@ -121,6 +121,11 @@
-         }
+@@ -117,6 +117,15 @@
  
-         if (!this.chunksToUpdateFutures.isEmpty()) {
+             PlayerChunk playerchunk;
+ 
 +            // CraftBukkit start - SPIGOT-7780: Call chunk unload events before updateHighestAllowedStatus
-+            this.chunksToUpdateFutures.forEach((playerchunk) -> {
++            while (iterator.hasNext()) {
++                playerchunk = (PlayerChunk) iterator.next();
 +                playerchunk.callEventIfUnloading(playerchunkmap);
-+            });
++            }
++
++            iterator = this.chunksToUpdateFutures.iterator();
 +            // CraftBukkit end
-             this.chunksToUpdateFutures.forEach((playerchunk) -> {
++
+             while (iterator.hasNext()) {
+                 playerchunk = (PlayerChunk) iterator.next();
                  playerchunk.updateHighestAllowedStatus(playerchunkmap);
-             });
-@@ -163,7 +168,7 @@
+@@ -165,7 +174,7 @@
          }
      }
  
@@ -21,7 +25,7 @@
          ArraySetSorted<Ticket<?>> arraysetsorted = this.getTickets(i);
          int j = getTicketLevelAt(arraysetsorted);
          Ticket<?> ticket1 = (Ticket) arraysetsorted.addOrGet(ticket);
-@@ -173,13 +178,15 @@
+@@ -175,13 +184,15 @@
              this.ticketTracker.update(i, ticket.getTicketLevel(), true);
          }
  
@@ -39,7 +43,7 @@
          }
  
          if (arraysetsorted.isEmpty()) {
-@@ -187,6 +194,7 @@
+@@ -189,6 +200,7 @@
          }
  
          this.ticketTracker.update(i, getTicketLevelAt(arraysetsorted), false);
@@ -47,7 +51,7 @@
      }
  
      public <T> void addTicket(TicketType<T> tickettype, ChunkCoordIntPair chunkcoordintpair, int i, T t0) {
-@@ -200,19 +208,33 @@
+@@ -202,19 +214,33 @@
      }
  
      public <T> void addRegionTicket(TicketType<T> tickettype, ChunkCoordIntPair chunkcoordintpair, int i, T t0) {
@@ -83,7 +87,7 @@
      }
  
      private ArraySetSorted<Ticket<?>> getTickets(long i) {
-@@ -251,6 +273,7 @@
+@@ -253,6 +279,7 @@
          ChunkCoordIntPair chunkcoordintpair = sectionposition.chunk();
          long i = chunkcoordintpair.toLong();
          ObjectSet<EntityPlayer> objectset = (ObjectSet) this.playersPerChunk.get(i);
@@ -91,7 +95,7 @@
  
          objectset.remove(entityplayer);
          if (objectset.isEmpty()) {
-@@ -380,6 +403,26 @@
+@@ -391,6 +418,26 @@
          return !this.tickets.isEmpty();
      }
  

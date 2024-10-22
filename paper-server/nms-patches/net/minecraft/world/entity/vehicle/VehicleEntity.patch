@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/vehicle/VehicleEntity.java
 +++ b/net/minecraft/world/entity/vehicle/VehicleEntity.java
-@@ -14,6 +14,13 @@
+@@ -17,6 +17,13 @@
  import net.minecraft.world.level.World;
  import net.minecraft.world.level.gameevent.GameEvent;
  
@@ -14,42 +14,30 @@
  public abstract class VehicleEntity extends Entity {
  
      protected static final DataWatcherObject<Integer> DATA_ID_HURT = DataWatcher.defineId(VehicleEntity.class, DataWatcherRegistry.INT);
-@@ -30,6 +37,18 @@
-             if (this.isInvulnerableTo(damagesource)) {
-                 return false;
-             } else {
-+                // CraftBukkit start
-+                Vehicle vehicle = (Vehicle) this.getBukkitEntity();
-+                org.bukkit.entity.Entity attacker = (damagesource.getEntity() == null) ? null : damagesource.getEntity().getBukkitEntity();
+@@ -40,6 +47,18 @@
+             return false;
+         } else {
+             boolean flag;
++            // CraftBukkit start
++            Vehicle vehicle = (Vehicle) this.getBukkitEntity();
++            org.bukkit.entity.Entity attacker = (damagesource.getEntity() == null) ? null : damagesource.getEntity().getBukkitEntity();
 +
-+                VehicleDamageEvent event = new VehicleDamageEvent(vehicle, attacker, (double) f);
-+                this.level().getCraftServer().getPluginManager().callEvent(event);
++            VehicleDamageEvent event = new VehicleDamageEvent(vehicle, attacker, (double) f);
++            this.level().getCraftServer().getPluginManager().callEvent(event);
 +
-+                if (event.isCancelled()) {
-+                    return false;
-+                }
-+                f = (float) event.getDamage();
-+                // CraftBukkit end
++            if (event.isCancelled()) {
++                return false;
++            }
++            f = (float) event.getDamage();
++            // CraftBukkit end
+             label32:
+             {
                  this.setHurtDir(-this.getHurtDir());
-                 this.setHurtTime(10);
-                 this.markHurt();
-@@ -39,9 +58,27 @@
+@@ -65,9 +84,27 @@
  
-                 if ((flag || this.getDamage() <= 40.0F) && !this.shouldSourceDestroy(damagesource)) {
-                     if (flag) {
--                        this.discard();
-+                        // CraftBukkit start
-+                        VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, attacker);
-+                        this.level().getCraftServer().getPluginManager().callEvent(destroyEvent);
-+
-+                        if (destroyEvent.isCancelled()) {
-+                            this.setDamage(40.0F); // Maximize damage so this doesn't get triggered again right away
-+                            return true;
-+                        }
-+                        // CraftBukkit end
-+                        this.discard(EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
-                     }
-                 } else {
+             if ((flag1 || this.getDamage() <= 40.0F) && !this.shouldSourceDestroy(damagesource)) {
+                 if (flag1) {
+-                    this.discard();
 +                    // CraftBukkit start
 +                    VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, attacker);
 +                    this.level().getCraftServer().getPluginManager().callEvent(destroyEvent);
@@ -59,6 +47,18 @@
 +                        return true;
 +                    }
 +                    // CraftBukkit end
-                     this.destroy(damagesource);
++                    this.discard(EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
                  }
+             } else {
++                // CraftBukkit start
++                VehicleDestroyEvent destroyEvent = new VehicleDestroyEvent(vehicle, attacker);
++                this.level().getCraftServer().getPluginManager().callEvent(destroyEvent);
++
++                if (destroyEvent.isCancelled()) {
++                    this.setDamage(40.0F); // Maximize damage so this doesn't get triggered again right away
++                    return true;
++                }
++                // CraftBukkit end
+                 this.destroy(worldserver, damagesource);
+             }
  

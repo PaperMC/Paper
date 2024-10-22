@@ -1,21 +1,21 @@
 --- a/net/minecraft/world/level/block/Block.java
 +++ b/net/minecraft/world/level/block/Block.java
 @@ -340,7 +340,13 @@
-             EntityItem entityitem = (EntityItem) supplier.get();
+                 EntityItem entityitem = (EntityItem) supplier.get();
  
-             entityitem.setDefaultPickUpDelay();
--            world.addFreshEntity(entityitem);
-+            // CraftBukkit start
-+            if (world.captureDrops != null) {
-+                world.captureDrops.add(entityitem);
-+            } else {
-+                world.addFreshEntity(entityitem);
-+            }
-+            // CraftBukkit end
+                 entityitem.setDefaultPickUpDelay();
+-                world.addFreshEntity(entityitem);
++                // CraftBukkit start
++                if (world.captureDrops != null) {
++                    world.captureDrops.add(entityitem);
++                } else {
++                    world.addFreshEntity(entityitem);
++                }
++                // CraftBukkit end
+                 return;
+             }
          }
-     }
- 
-@@ -366,7 +372,7 @@
+@@ -369,7 +375,7 @@
  
      public void playerDestroy(World world, EntityHuman entityhuman, BlockPosition blockposition, IBlockData iblockdata, @Nullable TileEntity tileentity, ItemStack itemstack) {
          entityhuman.awardStat(StatisticList.BLOCK_MINED.get(this));
@@ -24,7 +24,7 @@
          dropResources(iblockdata, world, blockposition, tileentity, entityhuman, itemstack);
      }
  
-@@ -499,15 +505,23 @@
+@@ -494,15 +500,23 @@
          return this.builtInRegistryHolder;
      }
  
@@ -47,6 +47,6 @@
 +    }
 +    // CraftBukkit end
 +
-     public static final class a {
+     private static record a(VoxelShape first, VoxelShape second) {
  
-         private final IBlockData first;
+         public boolean equals(Object object) {

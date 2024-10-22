@@ -18,8 +18,10 @@ import org.bukkit.entity.AbstractWindCharge;
 import org.bukkit.entity.Ageable;
 import org.bukkit.entity.Ambient;
 import org.bukkit.entity.Animals;
+import org.bukkit.entity.Boat;
 import org.bukkit.entity.Boss;
 import org.bukkit.entity.Breedable;
+import org.bukkit.entity.ChestBoat;
 import org.bukkit.entity.ChestedHorse;
 import org.bukkit.entity.ComplexEntityPart;
 import org.bukkit.entity.ComplexLivingEntity;
@@ -78,8 +80,10 @@ public class EntityTypesTest {
             Ageable.class,
             Ambient.class,
             Animals.class,
-            Breedable.class,
+            Boat.class,
             Boss.class,
+            Breedable.class,
+            ChestBoat.class,
             ChestedHorse.class,
             ComplexEntityPart.class,
             ComplexLivingEntity.class,

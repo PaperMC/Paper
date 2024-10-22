@@ -1,39 +1,38 @@
 package org.bukkit.craftbukkit.entity;
 
-import com.google.common.base.Preconditions;
 import java.util.stream.Collectors;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.vehicle.AbstractBoat;
 import net.minecraft.world.entity.vehicle.EntityBoat;
 import org.bukkit.TreeSpecies;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Boat;
 import org.bukkit.entity.Entity;
 
-public class CraftBoat extends CraftVehicle implements Boat {
+public abstract class CraftBoat extends CraftVehicle implements Boat {
 
-    public CraftBoat(CraftServer server, EntityBoat entity) {
+    public CraftBoat(CraftServer server, AbstractBoat entity) {
         super(server, entity);
     }
 
     @Override
     public TreeSpecies getWoodType() {
-        return getTreeSpecies(getHandle().getVariant());
+        return getTreeSpecies(getHandle().getType());
     }
 
     @Override
     public void setWoodType(TreeSpecies species) {
-        getHandle().setVariant(getBoatType(species));
+        throw new UnsupportedOperationException("Not supported - you must spawn a new entity to change boat type.");
     }
 
     @Override
     public Type getBoatType() {
-        return boatTypeFromNms(getHandle().getVariant());
+        return boatTypeFromNms(getHandle().getType());
     }
 
     @Override
     public void setBoatType(Type type) {
-        Preconditions.checkArgument(type != null, "Boat.Type cannot be null");
-
-        getHandle().setVariant(boatTypeToNms(type));
+        throw new UnsupportedOperationException("Not supported - you must spawn a new entity to change boat type.");
     }
 
     @Override
@@ -86,8 +85,8 @@ public class CraftBoat extends CraftVehicle implements Boat {
     }
 
     @Override
-    public EntityBoat getHandle() {
-        return (EntityBoat) entity;
+    public AbstractBoat getHandle() {
+        return (AbstractBoat) entity;
     }
 
     @Override
@@ -95,34 +94,44 @@ public class CraftBoat extends CraftVehicle implements Boat {
         return "CraftBoat{boatType=" + getBoatType() + ",status=" + getStatus() + ",passengers=" + getPassengers().stream().map(Entity::toString).collect(Collectors.joining("-", "{", "}")) + "}";
     }
 
-    public static Boat.Type boatTypeFromNms(EntityBoat.EnumBoatType boatType) {
-        return switch (boatType) {
-            default -> throw new EnumConstantNotPresentException(Type.class, boatType.name());
-            case OAK -> Type.OAK;
-            case BIRCH -> Type.BIRCH;
-            case ACACIA -> Type.ACACIA;
-            case CHERRY -> Type.CHERRY;
-            case JUNGLE -> Type.JUNGLE;
-            case SPRUCE -> Type.SPRUCE;
-            case DARK_OAK -> Type.DARK_OAK;
-            case MANGROVE -> Type.MANGROVE;
-            case BAMBOO -> Type.BAMBOO;
-        };
-    }
+    public static Boat.Type boatTypeFromNms(EntityTypes<?> boatType) {
+        if (boatType == EntityTypes.OAK_BOAT || boatType == EntityTypes.OAK_CHEST_BOAT) {
+            return Type.OAK;
+        }
 
-    public static EntityBoat.EnumBoatType boatTypeToNms(Boat.Type type) {
-        return switch (type) {
-            default -> throw new EnumConstantNotPresentException(EntityBoat.EnumBoatType.class, type.name());
-            case BAMBOO -> EntityBoat.EnumBoatType.BAMBOO;
-            case MANGROVE -> EntityBoat.EnumBoatType.MANGROVE;
-            case SPRUCE -> EntityBoat.EnumBoatType.SPRUCE;
-            case DARK_OAK -> EntityBoat.EnumBoatType.DARK_OAK;
-            case JUNGLE -> EntityBoat.EnumBoatType.JUNGLE;
-            case CHERRY -> EntityBoat.EnumBoatType.CHERRY;
-            case ACACIA -> EntityBoat.EnumBoatType.ACACIA;
-            case BIRCH -> EntityBoat.EnumBoatType.BIRCH;
-            case OAK -> EntityBoat.EnumBoatType.OAK;
-        };
+        if (boatType == EntityTypes.BIRCH_BOAT || boatType == EntityTypes.BIRCH_CHEST_BOAT) {
+            return Type.BIRCH;
+        }
+
+        if (boatType == EntityTypes.ACACIA_BOAT || boatType == EntityTypes.ACACIA_CHEST_BOAT) {
+            return Type.ACACIA;
+        }
+
+        if (boatType == EntityTypes.CHERRY_BOAT || boatType == EntityTypes.CHERRY_CHEST_BOAT) {
+            return Type.CHERRY;
+        }
+
+        if (boatType == EntityTypes.JUNGLE_BOAT || boatType == EntityTypes.JUNGLE_CHEST_BOAT) {
+            return Type.JUNGLE;
+        }
+
+        if (boatType == EntityTypes.SPRUCE_BOAT || boatType == EntityTypes.SPRUCE_CHEST_BOAT) {
+            return Type.SPRUCE;
+        }
+
+        if (boatType == EntityTypes.DARK_OAK_BOAT || boatType == EntityTypes.DARK_OAK_CHEST_BOAT) {
+            return Type.DARK_OAK;
+        }
+
+        if (boatType == EntityTypes.MANGROVE_BOAT || boatType == EntityTypes.MANGROVE_CHEST_BOAT) {
+            return Type.MANGROVE;
+        }
+
+        if (boatType == EntityTypes.BAMBOO_RAFT || boatType == EntityTypes.BAMBOO_CHEST_RAFT) {
+            return Type.BAMBOO;
+        }
+
+        throw new EnumConstantNotPresentException(Type.class, boatType.toString());
     }
 
     public static Status boatStatusFromNms(EntityBoat.EnumStatus enumStatus) {
@@ -137,40 +146,27 @@ public class CraftBoat extends CraftVehicle implements Boat {
     }
 
     @Deprecated
-    public static TreeSpecies getTreeSpecies(EntityBoat.EnumBoatType boatType) {
-        switch (boatType) {
-            case SPRUCE:
-                return TreeSpecies.REDWOOD;
-            case BIRCH:
-                return TreeSpecies.BIRCH;
-            case JUNGLE:
-                return TreeSpecies.JUNGLE;
-            case ACACIA:
-                return TreeSpecies.ACACIA;
-            case DARK_OAK:
-                return TreeSpecies.DARK_OAK;
-            case OAK:
-            default:
-                return TreeSpecies.GENERIC;
+    public static TreeSpecies getTreeSpecies(EntityTypes<?> boatType) {
+        if (boatType == EntityTypes.SPRUCE_BOAT || boatType == EntityTypes.SPRUCE_CHEST_BOAT) {
+            return TreeSpecies.REDWOOD;
         }
-    }
 
-    @Deprecated
-    public static EntityBoat.EnumBoatType getBoatType(TreeSpecies species) {
-        switch (species) {
-            case REDWOOD:
-                return EntityBoat.EnumBoatType.SPRUCE;
-            case BIRCH:
-                return EntityBoat.EnumBoatType.BIRCH;
-            case JUNGLE:
-                return EntityBoat.EnumBoatType.JUNGLE;
-            case ACACIA:
-                return EntityBoat.EnumBoatType.ACACIA;
-            case DARK_OAK:
-                return EntityBoat.EnumBoatType.DARK_OAK;
-            case GENERIC:
-            default:
-                return EntityBoat.EnumBoatType.OAK;
+        if (boatType == EntityTypes.BIRCH_BOAT || boatType == EntityTypes.BIRCH_CHEST_BOAT) {
+            return TreeSpecies.BIRCH;
         }
+
+        if (boatType == EntityTypes.JUNGLE_BOAT || boatType == EntityTypes.JUNGLE_CHEST_BOAT) {
+            return TreeSpecies.JUNGLE;
+        }
+
+        if (boatType == EntityTypes.ACACIA_BOAT || boatType == EntityTypes.ACACIA_CHEST_BOAT) {
+            return TreeSpecies.ACACIA;
+        }
+
+        if (boatType == EntityTypes.DARK_OAK_BOAT || boatType == EntityTypes.DARK_OAK_CHEST_BOAT) {
+            return TreeSpecies.DARK_OAK;
+        }
+
+        return TreeSpecies.GENERIC;
     }
 }

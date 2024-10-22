@@ -1,0 +1,51 @@
+--- a/net/minecraft/world/item/component/Consumable.java
++++ b/net/minecraft/world/item/component/Consumable.java
+@@ -29,6 +29,11 @@
+ import net.minecraft.world.level.World;
+ import net.minecraft.world.level.gameevent.GameEvent;
+ 
++// CraftBukkit start
++import net.minecraft.world.item.Items;
++import org.bukkit.event.entity.EntityPotionEffectEvent;
++// CraftBukkit end
++
+ public record Consumable(float consumeSeconds, ItemUseAnimation animation, Holder<SoundEffect> sound, boolean hasConsumeParticles, List<ConsumeEffect> onConsumeEffects) {
+ 
+     public static final float DEFAULT_CONSUME_SECONDS = 1.6F;
+@@ -69,8 +74,19 @@
+             consumablelistener.onConsume(world, entityliving, itemstack, this);
+         });
+         if (!world.isClientSide) {
++            // CraftBukkit start
++            EntityPotionEffectEvent.Cause cause;
++            if (itemstack.is(Items.MILK_BUCKET)) {
++                cause = EntityPotionEffectEvent.Cause.MILK;
++            } else if (itemstack.is(Items.POTION)) {
++                cause = EntityPotionEffectEvent.Cause.POTION_DRINK;
++            } else {
++                cause = EntityPotionEffectEvent.Cause.FOOD;
++            }
++
+             this.onConsumeEffects.forEach((consumeeffect) -> {
+-                consumeeffect.apply(world, itemstack, entityliving);
++                consumeeffect.apply(world, itemstack, entityliving, cause);
++                // CraftBukkit end
+             });
+         }
+ 
+@@ -79,6 +95,15 @@
+         return itemstack;
+     }
+ 
++    // CraftBukkit start
++    public void cancelUsingItem(net.minecraft.server.level.EntityPlayer entityplayer, ItemStack itemstack) {
++        itemstack.getAllOfType(ConsumableListener.class).forEach((consumablelistener) -> {
++            consumablelistener.cancelUsingItem(entityplayer, itemstack);
++        });
++        entityplayer.server.getPlayerList().sendActivePlayerEffects(entityplayer);
++    }
++    // CraftBukkit end
++
+     public boolean canConsume(EntityLiving entityliving, ItemStack itemstack) {
+         FoodInfo foodinfo = (FoodInfo) itemstack.get(DataComponents.FOOD);
+ 

@@ -31,7 +31,6 @@ import net.minecraft.world.level.levelgen.HeightMap;
 import net.minecraft.world.level.levelgen.LegacyRandomSource;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.SeededRandom;
-import net.minecraft.world.level.levelgen.WorldGenStage;
 import net.minecraft.world.level.levelgen.blending.Blender;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 import org.bukkit.block.Biome;
@@ -224,14 +223,14 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
     }
 
     @Override
-    public void applyCarvers(RegionLimitedWorldAccess regionlimitedworldaccess, long seed, RandomState randomstate, BiomeManager biomemanager, StructureManager structuremanager, IChunkAccess ichunkaccess, WorldGenStage.Features worldgenstage_features) {
+    public void applyCarvers(RegionLimitedWorldAccess regionlimitedworldaccess, long seed, RandomState randomstate, BiomeManager biomemanager, StructureManager structuremanager, IChunkAccess ichunkaccess) {
         SeededRandom random = getSeededRandom();
         int x = ichunkaccess.getPos().x;
         int z = ichunkaccess.getPos().z;
 
         random.setSeed(MathHelper.getSeed(x, "should-caves".hashCode(), z) ^ regionlimitedworldaccess.getSeed());
         if (generator.shouldGenerateCaves(this.world.getWorld(), new RandomSourceWrapper.RandomWrapper(random), x, z)) {
-            delegate.applyCarvers(regionlimitedworldaccess, seed, randomstate, biomemanager, structuremanager, ichunkaccess, worldgenstage_features);
+            delegate.applyCarvers(regionlimitedworldaccess, seed, randomstate, biomemanager, structuremanager, ichunkaccess);
         }
 
         // Minecraft removed the LIQUID_CARVERS stage from world generation, without removing the LIQUID Carving enum.

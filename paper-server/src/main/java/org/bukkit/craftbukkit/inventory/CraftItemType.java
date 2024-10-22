@@ -8,11 +8,11 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemBlock;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.level.block.BlockComposter;
-import net.minecraft.world.level.block.entity.TileEntityFurnace;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -172,7 +172,7 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
 
     @Override
     public boolean isFuel() {
-        return TileEntityFurnace.isFuel(new net.minecraft.world.item.ItemStack(item));
+        return MinecraftServer.getServer().fuelValues().isFuel(new net.minecraft.world.item.ItemStack(item));
     }
 
     @Override
@@ -188,8 +188,8 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
 
     @Override
     public ItemType getCraftingRemainingItem() {
-        Item expectedItem = item.getCraftingRemainingItem();
-        return expectedItem == null ? null : minecraftToBukkitNew(expectedItem);
+        net.minecraft.world.item.ItemStack expectedItem = item.getCraftingRemainder();
+        return expectedItem.isEmpty() ? null : minecraftToBukkitNew(expectedItem.getItem());
     }
 
 //    @Override
@@ -202,9 +202,6 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
         ImmutableMultimap.Builder<Attribute, AttributeModifier> defaultAttributes = ImmutableMultimap.builder();
 
         ItemAttributeModifiers nmsDefaultAttributes = item.components().getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
-        if (nmsDefaultAttributes.modifiers().isEmpty()) {
-            nmsDefaultAttributes = item.getDefaultAttributeModifiers();
-        }
 
         nmsDefaultAttributes.forEach(CraftEquipmentSlot.getNMS(slot), (key, value) -> {
             Attribute attribute = CraftAttribute.minecraftToBukkit(key.value());

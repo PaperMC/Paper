@@ -26,10 +26,10 @@
              }
          }
  
-@@ -94,12 +104,26 @@
+@@ -99,12 +109,26 @@
              return false;
          } else {
-             if (!this.isRemoved() && !this.level().isClientSide) {
+             if (!this.isRemoved()) {
 -                this.remove(Entity.RemovalReason.KILLED);
 +                // CraftBukkit start - All non-living entities need this
 +                if (CraftEventFactory.handleNonLivingEntityDamageEvent(this, damagesource, f, false)) {
@@ -39,7 +39,7 @@
                  if (!damagesource.is(DamageTypeTags.IS_EXPLOSION)) {
                      DamageSource damagesource1 = damagesource.getEntity() != null ? this.damageSources().explosion(this, damagesource.getEntity()) : null;
  
--                    this.level().explode(this, damagesource1, (ExplosionDamageCalculator) null, this.getX(), this.getY(), this.getZ(), 6.0F, false, World.a.BLOCK);
+-                    worldserver.explode(this, damagesource1, (ExplosionDamageCalculator) null, this.getX(), this.getY(), this.getZ(), 6.0F, false, World.a.BLOCK);
 +                    // CraftBukkit start
 +                    ExplosionPrimeEvent event = CraftEventFactory.callExplosionPrimeEvent(this, 6.0F, false);
 +                    if (event.isCancelled()) {
@@ -47,11 +47,11 @@
 +                    }
 +
 +                    this.remove(Entity.RemovalReason.KILLED, EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause
-+                    this.level().explode(this, damagesource1, (ExplosionDamageCalculator) null, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), World.a.BLOCK);
++                    worldserver.explode(this, damagesource1, (ExplosionDamageCalculator) null, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), World.a.BLOCK);
 +                } else {
 +                    this.remove(Entity.RemovalReason.KILLED, EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
                  }
 +                // CraftBukkit end
  
-                 this.onDestroyedBy(damagesource);
+                 this.onDestroyedBy(worldserver, damagesource);
              }

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
 +++ b/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
-@@ -38,7 +38,7 @@
+@@ -36,7 +36,7 @@
      static CompletableFuture<IChunkAccess> generateStructureStarts(WorldGenContext worldgencontext, ChunkStep chunkstep, StaticCache2D<GenerationChunkHolder> staticcache2d, IChunkAccess ichunkaccess) {
          WorldServer worldserver = worldgencontext.level();
  
@@ -9,20 +9,16 @@
              worldgencontext.generator().createStructures(worldserver.registryAccess(), worldserver.getChunkSource().getGeneratorState(), worldserver.structureManager(), ichunkaccess, worldgencontext.structureManager());
          }
  
-@@ -177,7 +177,21 @@
+@@ -170,7 +170,17 @@
  
      private static void postLoadProtoChunk(WorldServer worldserver, List<NBTTagCompound> list) {
          if (!list.isEmpty()) {
--            worldserver.addWorldGenChunkEntities(EntityTypes.loadEntitiesRecursive(list, worldserver));
+-            worldserver.addWorldGenChunkEntities(EntityTypes.loadEntitiesRecursive(list, worldserver, EntitySpawnReason.LOAD));
 +            // CraftBukkit start - these are spawned serialized (DefinedStructure) and we don't call an add event below at the moment due to ordering complexities
-+            worldserver.addWorldGenChunkEntities(EntityTypes.loadEntitiesRecursive(list, worldserver).filter((entity) -> {
++            worldserver.addWorldGenChunkEntities(EntityTypes.loadEntitiesRecursive(list, worldserver, EntitySpawnReason.LOAD).filter((entity) -> {
 +                boolean needsRemoval = false;
 +                net.minecraft.server.dedicated.DedicatedServer server = worldserver.getCraftServer().getServer();
-+                if (!server.areNpcsEnabled() && entity instanceof net.minecraft.world.entity.npc.NPC) {
-+                    entity.discard(null); // CraftBukkit - add Bukkit remove cause
-+                    needsRemoval = true;
-+                }
-+                if (!server.isSpawningAnimals() && (entity instanceof net.minecraft.world.entity.animal.EntityAnimal || entity instanceof net.minecraft.world.entity.animal.EntityWaterAnimal)) {
++                if (!worldserver.getChunkSource().spawnFriendlies && (entity instanceof net.minecraft.world.entity.animal.EntityAnimal || entity instanceof net.minecraft.world.entity.animal.EntityWaterAnimal)) {
 +                    entity.discard(null); // CraftBukkit - add Bukkit remove cause
 +                    needsRemoval = true;
 +                }

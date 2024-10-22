@@ -1,10 +1,9 @@
 --- a/net/minecraft/world/level/block/entity/TileEntitySign.java
 +++ b/net/minecraft/world/level/block/entity/TileEntitySign.java
-@@ -36,7 +36,17 @@
+@@ -36,6 +36,16 @@
  import net.minecraft.world.phys.Vec3D;
  import org.slf4j.Logger;
  
--public class TileEntitySign extends TileEntity {
 +// CraftBukkit start
 +import net.minecraft.nbt.NBTBase;
 +import net.minecraft.server.level.EntityPlayer;
@@ -15,10 +14,9 @@
 +import org.bukkit.event.block.SignChangeEvent;
 +// CraftBukkit end
 +
-+public class TileEntitySign extends TileEntity implements ICommandListener { // CraftBukkit - implements
+ public class TileEntitySign extends TileEntity {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-     private static final int MAX_TEXT_LINE_WIDTH = 90;
 @@ -101,7 +111,7 @@
      protected void saveAdditional(NBTTagCompound nbttagcompound, HolderLookup.a holderlookup_a) {
          super.saveAdditional(nbttagcompound, holderlookup_a);
@@ -92,34 +90,37 @@
          return signtext;
      }
  
-@@ -250,11 +285,37 @@
+@@ -250,11 +285,40 @@
          return flag1;
      }
  
 -    private static CommandListenerWrapper createCommandSourceStack(@Nullable EntityHuman entityhuman, World world, BlockPosition blockposition) {
 +    // CraftBukkit start
-+    @Override
-+    public void sendSystemMessage(IChatBaseComponent ichatbasecomponent) {}
++    private final ICommandListener commandSource = new ICommandListener() {
 +
-+    @Override
-+    public org.bukkit.command.CommandSender getBukkitSender(CommandListenerWrapper wrapper) {
-+        return wrapper.getEntity() != null ? wrapper.getEntity().getBukkitSender(wrapper) : new org.bukkit.craftbukkit.command.CraftBlockCommandSender(wrapper, this);
-+    }
++        @Override
++        public void sendSystemMessage(IChatBaseComponent ichatbasecomponent) {}
 +
-+    @Override
-+    public boolean acceptsSuccess() {
-+        return false;
-+    }
++        @Override
++        public org.bukkit.command.CommandSender getBukkitSender(CommandListenerWrapper wrapper) {
++            return wrapper.getEntity() != null ? wrapper.getEntity().getBukkitEntity() : new org.bukkit.craftbukkit.command.CraftBlockCommandSender(wrapper, TileEntitySign.this);
++        }
 +
-+    @Override
-+    public boolean acceptsFailure() {
-+        return false;
-+    }
++        @Override
++        public boolean acceptsSuccess() {
++            return false;
++        }
 +
-+    @Override
-+    public boolean shouldInformAdmins() {
-+        return false;
-+    }
++        @Override
++        public boolean acceptsFailure() {
++            return false;
++        }
++
++        @Override
++        public boolean shouldInformAdmins() {
++            return false;
++        }
++    };
 +
 +    private CommandListenerWrapper createCommandSourceStack(@Nullable EntityHuman entityhuman, World world, BlockPosition blockposition) {
 +        // CraftBukkit end
@@ -127,12 +128,12 @@
          Object object = entityhuman == null ? IChatBaseComponent.literal("Sign") : entityhuman.getDisplayName();
  
 -        return new CommandListenerWrapper(ICommandListener.NULL, Vec3D.atCenterOf(blockposition), Vec2F.ZERO, (WorldServer) world, 2, s, (IChatBaseComponent) object, world.getServer(), entityhuman);
-+        // CraftBukkit - this
-+        return new CommandListenerWrapper(this, Vec3D.atCenterOf(blockposition), Vec2F.ZERO, (WorldServer) world, 2, s, (IChatBaseComponent) object, world.getServer(), entityhuman);
++        // CraftBukkit - commandSource
++        return new CommandListenerWrapper(commandSource, Vec3D.atCenterOf(blockposition), Vec2F.ZERO, (WorldServer) world, 2, s, (IChatBaseComponent) object, world.getServer(), entityhuman);
      }
  
      @Override
-@@ -278,12 +339,17 @@
+@@ -278,12 +342,17 @@
  
      @Nullable
      public UUID getPlayerWhoMayEdit() {

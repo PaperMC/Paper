@@ -13,6 +13,7 @@ import net.minecraft.core.particles.ParticleParamRedstone;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.particles.SculkChargeParticleOptions;
 import net.minecraft.core.particles.ShriekParticleOption;
+import net.minecraft.core.particles.TargetColorParticleOption;
 import net.minecraft.core.particles.VibrationParticleOption;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.DynamicOpsNBT;
@@ -109,6 +110,11 @@ public class ParticleTest {
 
         if (bukkit.getDataType().equals(Color.class)) {
             testColor(bukkit, minecraft);
+            return;
+        }
+
+        if (bukkit.getDataType().equals(Particle.TargetColor.class)) {
+            testTargetColor(bukkit, minecraft);
             return;
         }
 
@@ -236,6 +242,28 @@ public class ParticleTest {
         Vector4f expected = new Vector4f(0.4196f, 0.92549f, 0.1098f, 0.14117647f);
         assertTrue(expected.equals(actual, 0.001f), String.format("""
                 Dust transition to color for particle %s do not match.
+                Did something change in the implementation or minecraft?
+                Expected: %s.
+                Got: %s.
+                """, bukkit.getKey(), expected, actual)); // Print expected and got since we use assert true
+    }
+
+    private <T extends ParticleParam> void testTargetColor(Particle bukkit, net.minecraft.core.particles.Particle<T> minecraft) {
+        Color color = Color.fromRGB(236, 28, 36);
+        Particle.TargetColor targetColor = new Particle.TargetColor(new Location(null, 1, 5, 9), color);
+
+        TargetColorParticleOption param = createAndTest(bukkit, minecraft, targetColor, TargetColorParticleOption.class);
+
+        Vec3D pos = param.target();
+        assertEquals(new Vec3D(1.0, 5.0, 9.0), pos, String.format("""
+                Vibration position for particle %s do not match.
+                Did something change in the implementation or minecraft?
+                """, bukkit.getKey()));
+
+        int actual = param.color();
+        int expected = color.asRGB();
+        assertEquals(expected, actual, String.format("""
+                Color for particle %s do not match.
                 Did something change in the implementation or minecraft?
                 Expected: %s.
                 Got: %s.

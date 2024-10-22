@@ -15,7 +15,7 @@ public class EnchantmentTest {
     @Test
     public void verifyMapping() {
         for (MinecraftKey key : CraftRegistry.getMinecraftRegistry(Registries.ENCHANTMENT).keySet()) {
-            net.minecraft.world.item.enchantment.Enchantment nms = CraftRegistry.getMinecraftRegistry(Registries.ENCHANTMENT).get(key);
+            net.minecraft.world.item.enchantment.Enchantment nms = CraftRegistry.getMinecraftRegistry(Registries.ENCHANTMENT).getValue(key);
 
             Enchantment bukkitById = Enchantment.getByKey(CraftNamespacedKey.fromMinecraft(key));
 

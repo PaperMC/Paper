@@ -18,6 +18,7 @@ import net.minecraft.world.level.block.entity.BrushableBlockEntity;
 import net.minecraft.world.level.block.entity.CalibratedSculkSensorBlockEntity;
 import net.minecraft.world.level.block.entity.ChiseledBookShelfBlockEntity;
 import net.minecraft.world.level.block.entity.CrafterBlockEntity;
+import net.minecraft.world.level.block.entity.CreakingHeartBlockEntity;
 import net.minecraft.world.level.block.entity.DecoratedPotBlockEntity;
 import net.minecraft.world.level.block.entity.HangingSignBlockEntity;
 import net.minecraft.world.level.block.entity.SculkCatalystBlockEntity;
@@ -150,6 +151,8 @@ public final class CraftBlockStates {
                         Material.MANGROVE_WALL_SIGN,
                         Material.OAK_SIGN,
                         Material.OAK_WALL_SIGN,
+                        Material.PALE_OAK_SIGN,
+                        Material.PALE_OAK_WALL_SIGN,
                         Material.SPRUCE_SIGN,
                         Material.SPRUCE_WALL_SIGN,
                         Material.WARPED_SIGN,
@@ -177,6 +180,8 @@ public final class CraftBlockStates {
                         Material.MANGROVE_WALL_HANGING_SIGN,
                         Material.OAK_HANGING_SIGN,
                         Material.OAK_WALL_HANGING_SIGN,
+                        Material.PALE_OAK_HANGING_SIGN,
+                        Material.PALE_OAK_WALL_HANGING_SIGN,
                         Material.SPRUCE_HANGING_SIGN,
                         Material.SPRUCE_WALL_HANGING_SIGN,
                         Material.WARPED_HANGING_SIGN,
@@ -314,6 +319,7 @@ public final class CraftBlockStates {
         register(Material.CHISELED_BOOKSHELF, CraftChiseledBookshelf.class, CraftChiseledBookshelf::new, ChiseledBookShelfBlockEntity::new);
         register(Material.COMPARATOR, CraftComparator.class, CraftComparator::new, TileEntityComparator::new);
         register(Material.CONDUIT, CraftConduit.class, CraftConduit::new, TileEntityConduit::new);
+        register(Material.CREAKING_HEART, CraftCreakingHeart.class, CraftCreakingHeart::new, CreakingHeartBlockEntity::new);
         register(Material.DAYLIGHT_DETECTOR, CraftDaylightDetector.class, CraftDaylightDetector::new, TileEntityLightDetector::new);
         register(Material.DECORATED_POT, CraftDecoratedPot.class, CraftDecoratedPot::new, DecoratedPotBlockEntity::new);
         register(Material.DISPENSER, CraftDispenser.class, CraftDispenser::new, TileEntityDispenser::new);

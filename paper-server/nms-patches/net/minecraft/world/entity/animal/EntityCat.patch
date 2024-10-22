@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/EntityCat.java
 +++ b/net/minecraft/world/entity/animal/EntityCat.java
-@@ -181,10 +181,10 @@
+@@ -174,10 +174,10 @@
      @Override
      public void readAdditionalSaveData(NBTTagCompound nbttagcompound) {
          super.readAdditionalSaveData(nbttagcompound);
@@ -12,8 +12,8 @@
 +        IRegistry<CatVariant> iregistry = BuiltInRegistries.CAT_VARIANT; // CraftBukkit - decompile error
  
          Objects.requireNonNull(iregistry);
-         optional.flatMap(iregistry::getHolder).ifPresent(this::setVariant);
-@@ -452,7 +452,7 @@
+         optional.flatMap(iregistry::get).ifPresent(this::setVariant);
+@@ -463,7 +463,7 @@
      }
  
      private void tryToTame(EntityHuman entityhuman) {
@@ -22,7 +22,7 @@
              this.tame(entityhuman);
              this.setOrderedToSit(true);
              this.level().broadcastEntityEvent(this, (byte) 7);
-@@ -470,7 +470,7 @@
+@@ -481,7 +481,7 @@
      private static class PathfinderGoalTemptChance extends PathfinderGoalTempt {
  
          @Nullable
@@ -31,24 +31,24 @@
          private final EntityCat cat;
  
          public PathfinderGoalTemptChance(EntityCat entitycat, double d0, Predicate<ItemStack> predicate, boolean flag) {
-@@ -611,7 +611,15 @@
-             while (iterator.hasNext()) {
-                 ItemStack itemstack = (ItemStack) iterator.next();
- 
--                this.cat.level().addFreshEntity(new EntityItem(this.cat.level(), (double) blockposition_mutableblockposition.getX() - (double) MathHelper.sin(this.cat.yBodyRot * 0.017453292F), (double) blockposition_mutableblockposition.getY(), (double) blockposition_mutableblockposition.getZ() + (double) MathHelper.cos(this.cat.yBodyRot * 0.017453292F), itemstack));
+@@ -615,7 +615,15 @@
+             this.cat.randomTeleport((double) (blockposition_mutableblockposition.getX() + randomsource.nextInt(11) - 5), (double) (blockposition_mutableblockposition.getY() + randomsource.nextInt(5) - 2), (double) (blockposition_mutableblockposition.getZ() + randomsource.nextInt(11) - 5), false);
+             blockposition_mutableblockposition.set(this.cat.blockPosition());
+             this.cat.dropFromGiftLootTable(getServerLevel((Entity) this.cat), LootTables.CAT_MORNING_GIFT, (worldserver, itemstack) -> {
+-                worldserver.addFreshEntity(new EntityItem(worldserver, (double) blockposition_mutableblockposition.getX() - (double) MathHelper.sin(this.cat.yBodyRot * 0.017453292F), (double) blockposition_mutableblockposition.getY(), (double) blockposition_mutableblockposition.getZ() + (double) MathHelper.cos(this.cat.yBodyRot * 0.017453292F), itemstack));
 +                // CraftBukkit start
-+                EntityItem entityitem = new EntityItem(this.cat.level(), (double) blockposition_mutableblockposition.getX() - (double) MathHelper.sin(this.cat.yBodyRot * 0.017453292F), (double) blockposition_mutableblockposition.getY(), (double) blockposition_mutableblockposition.getZ() + (double) MathHelper.cos(this.cat.yBodyRot * 0.017453292F), itemstack);
++                EntityItem entityitem = new EntityItem(worldserver, (double) blockposition_mutableblockposition.getX() - (double) MathHelper.sin(this.cat.yBodyRot * 0.017453292F), (double) blockposition_mutableblockposition.getY(), (double) blockposition_mutableblockposition.getZ() + (double) MathHelper.cos(this.cat.yBodyRot * 0.017453292F), itemstack);
 +                org.bukkit.event.entity.EntityDropItemEvent event = new org.bukkit.event.entity.EntityDropItemEvent(this.cat.getBukkitEntity(), (org.bukkit.entity.Item) entityitem.getBukkitEntity());
 +                entityitem.level().getCraftServer().getPluginManager().callEvent(event);
 +                if (event.isCancelled()) {
-+                    continue;
++                    return;
 +                }
-+                this.cat.level().addFreshEntity(entityitem);
++                worldserver.addFreshEntity(entityitem);
 +                // CraftBukkit end
-             }
- 
+             });
          }
-@@ -643,10 +651,10 @@
+ 
+@@ -646,10 +654,10 @@
          private final EntityCat cat;
  
          public a(EntityCat entitycat, Class<T> oclass, float f, double d0, double d1) {

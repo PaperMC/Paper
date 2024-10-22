@@ -339,7 +339,7 @@ public class RegistryClassTest {
                 continue;
             }
 
-            IRegistry<?> registry = vanilla_registry.registryOrThrow(registryKey);
+            IRegistry<?> registry = vanilla_registry.lookupOrThrow(registryKey);
 
             Optional<?> optionalValue = registry.getOptional(CraftNamespacedKey.toMinecraft(((Keyed) fieldData.field().get(null)).getKey()));
 
@@ -368,7 +368,7 @@ public class RegistryClassTest {
     @ParameterizedTest
     @MethodSource("fieldData")
     public <T extends Keyed> void testMissingExperimentalAnnotation(Class<T> type, ResourceKey<IRegistry<?>> registryKey, List<FieldData> fieldDataList) throws IllegalAccessException {
-        IRegistry<?> registry = vanilla_registry.registryOrThrow(registryKey);
+        IRegistry<?> registry = vanilla_registry.lookupOrThrow(registryKey);
         List<Field> missing = new ArrayList<>();
 
         for (FieldData fieldData : fieldDataList) {
@@ -403,7 +403,7 @@ public class RegistryClassTest {
     @ParameterizedTest
     @MethodSource("fieldData")
     public <T extends Keyed> void testExcessNullCheck(Class<T> type, ResourceKey<IRegistry<?>> registryKey, List<FieldData> fieldDataList) throws IllegalAccessException {
-        IRegistry<?> registry = vanilla_registry.registryOrThrow(registryKey);
+        IRegistry<?> registry = vanilla_registry.lookupOrThrow(registryKey);
         List<Field> excess = new ArrayList<>();
         Data data = INIT_DATA.get(type);
 
@@ -434,7 +434,7 @@ public class RegistryClassTest {
     @ParameterizedTest
     @MethodSource("fieldData")
     public <T extends Keyed> void testMissingNullCheck(Class<T> type, ResourceKey<IRegistry<?>> registryKey, List<FieldData> fieldDataList) throws IllegalAccessException {
-        IRegistry<?> registry = vanilla_registry.registryOrThrow(registryKey);
+        IRegistry<?> registry = vanilla_registry.lookupOrThrow(registryKey);
         List<Field> missing = new ArrayList<>();
         Data data = INIT_DATA.get(type);
 
@@ -491,7 +491,7 @@ public class RegistryClassTest {
     @ParameterizedTest
     @MethodSource("fieldData")
     public <T extends Keyed> void testMissingConstants(Class<T> type, ResourceKey<IRegistry<?>> registryKey) throws IllegalAccessException {
-        IRegistry<Object> registry = RegistryHelper.getRegistry().registryOrThrow(registryKey);
+        IRegistry<Object> registry = RegistryHelper.getRegistry().lookupOrThrow(registryKey);
         List<MinecraftKey> missingKeys = new ArrayList<>();
 
         for (Object nmsObject : registry) {

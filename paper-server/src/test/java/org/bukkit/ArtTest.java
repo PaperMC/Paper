@@ -26,7 +26,7 @@ public class ArtTest {
         List<Art> arts = Lists.newArrayList(Art.values());
 
         for (ResourceKey<PaintingVariant> key : CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT).registryKeySet()) {
-            Holder<PaintingVariant> enumArt = CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT).getHolderOrThrow(key);
+            Holder<PaintingVariant> enumArt = CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT).getOrThrow(key);
             String name = key.location().getPath();
             int width = enumArt.value().width();
             int height = enumArt.value().height();

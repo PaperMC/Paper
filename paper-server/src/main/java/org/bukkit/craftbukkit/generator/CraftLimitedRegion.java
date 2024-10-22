@@ -10,6 +10,7 @@ import java.util.function.Consumer;
 import net.minecraft.core.BlockPosition;
 import net.minecraft.core.Holder;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.level.ChunkCoordIntPair;
 import net.minecraft.world.level.GeneratorAccessSeed;
@@ -84,7 +85,7 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
             for (int z = -(buffer >> 4); z <= (buffer >> 4); z++) {
                 ProtoChunk chunk = (ProtoChunk) access.getChunk(centerChunkX + x, centerChunkZ + z);
                 for (NBTTagCompound compound : chunk.getEntities()) {
-                    EntityTypes.loadEntityRecursive(compound, access.getMinecraftWorld(), (entity) -> {
+                    EntityTypes.loadEntityRecursive(compound, access.getMinecraftWorld(), EntitySpawnReason.LOAD, (entity) -> {
                         if (region.contains(entity.getX(), entity.getY(), entity.getZ())) {
                             entity.generation = true;
                             entities.add(entity);

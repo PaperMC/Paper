@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/TileEntityBeehive.java
 +++ b/net/minecraft/world/level/block/entity/TileEntityBeehive.java
-@@ -42,6 +42,10 @@
+@@ -43,6 +43,10 @@
  import net.minecraft.world.level.gameevent.GameEvent;
  import org.slf4j.Logger;
  
@@ -11,7 +11,7 @@
  public class TileEntityBeehive extends TileEntity {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -55,6 +59,7 @@
+@@ -56,6 +60,7 @@
      private List<TileEntityBeehive.HiveBee> stored = Lists.newArrayList();
      @Nullable
      public BlockPosition savedFlowerPos;
@@ -19,7 +19,7 @@
  
      public TileEntityBeehive(BlockPosition blockposition, IBlockData iblockdata) {
          super(TileEntityTypes.BEEHIVE, blockposition, iblockdata);
-@@ -94,7 +99,7 @@
+@@ -95,7 +100,7 @@
      }
  
      public boolean isFull() {
@@ -28,7 +28,7 @@
      }
  
      public void emptyAllLivingFromHive(@Nullable EntityHuman entityhuman, IBlockData iblockdata, TileEntityBeehive.ReleaseStatus tileentitybeehive_releasestatus) {
-@@ -111,7 +116,7 @@
+@@ -112,7 +117,7 @@
  
                      if (entityhuman.position().distanceToSqr(entity.position()) <= 16.0D) {
                          if (!this.isSedated()) {
@@ -37,7 +37,7 @@
                          } else {
                              entitybee.setStayOutOfHiveCountdown(400);
                          }
-@@ -123,10 +128,16 @@
+@@ -124,10 +129,16 @@
      }
  
      private List<Entity> releaseAllOccupants(IBlockData iblockdata, TileEntityBeehive.ReleaseStatus tileentitybeehive_releasestatus) {
@@ -55,7 +55,7 @@
          });
          if (!list.isEmpty()) {
              super.setChanged();
-@@ -150,7 +161,19 @@
+@@ -151,7 +162,19 @@
      }
  
      public void addOccupant(Entity entity) {
@@ -76,7 +76,7 @@
              entity.stopRiding();
              entity.ejectPassengers();
              this.storeBee(TileEntityBeehive.c.of(entity));
-@@ -169,7 +192,7 @@
+@@ -170,7 +193,7 @@
                  this.level.gameEvent((Holder) GameEvent.BLOCK_CHANGE, blockposition, GameEvent.a.of(entity, this.getBlockState()));
              }
  
@@ -85,22 +85,22 @@
              super.setChanged();
          }
      }
-@@ -179,7 +202,13 @@
+@@ -180,7 +203,13 @@
      }
  
      private static boolean releaseOccupant(World world, BlockPosition blockposition, IBlockData iblockdata, TileEntityBeehive.c tileentitybeehive_c, @Nullable List<Entity> list, TileEntityBeehive.ReleaseStatus tileentitybeehive_releasestatus, @Nullable BlockPosition blockposition1) {
--        if ((world.isNight() || world.isRaining()) && tileentitybeehive_releasestatus != TileEntityBeehive.ReleaseStatus.EMERGENCY) {
+-        if (EntityBee.isNightOrRaining(world) && tileentitybeehive_releasestatus != TileEntityBeehive.ReleaseStatus.EMERGENCY) {
 +        // CraftBukkit start - This allows us to bypass the night/rain/emergency check
 +        return releaseOccupant(world, blockposition, iblockdata, tileentitybeehive_c, list, tileentitybeehive_releasestatus, blockposition1, false);
 +    }
 +
 +    private static boolean releaseOccupant(World world, BlockPosition blockposition, IBlockData iblockdata, TileEntityBeehive.c tileentitybeehive_c, @Nullable List<Entity> list, TileEntityBeehive.ReleaseStatus tileentitybeehive_releasestatus, @Nullable BlockPosition blockposition1, boolean force) {
-+        if (!force && (world.isNight() || world.isRaining()) && tileentitybeehive_releasestatus != TileEntityBeehive.ReleaseStatus.EMERGENCY) {
++        if (!force && EntityBee.isNightOrRaining(world) && tileentitybeehive_releasestatus != TileEntityBeehive.ReleaseStatus.EMERGENCY) {
 +            // CraftBukkit end
              return false;
          } else {
              EnumDirection enumdirection = (EnumDirection) iblockdata.getValue(BlockBeehive.FACING);
-@@ -192,6 +221,18 @@
+@@ -193,6 +222,18 @@
                  Entity entity = tileentitybeehive_c.createEntity(world, blockposition);
  
                  if (entity != null) {
@@ -119,7 +119,7 @@
                      if (entity instanceof EntityBee) {
                          EntityBee entitybee = (EntityBee) entity;
  
-@@ -222,6 +263,7 @@
+@@ -223,6 +264,7 @@
                              list.add(entitybee);
                          }
  
@@ -127,7 +127,7 @@
                          float f = entity.getBbWidth();
                          double d0 = flag ? 0.0D : 0.55D + (double) (f / 2.0F);
                          double d1 = (double) blockposition.getX() + 0.5D + d0 * (double) enumdirection.getStepX();
-@@ -229,11 +271,12 @@
+@@ -230,11 +272,12 @@
                          double d3 = (double) blockposition.getZ() + 0.5D + d0 * (double) enumdirection.getStepZ();
  
                          entity.moveTo(d1, d2, d3, entity.getYRot(), entity.getXRot());
@@ -141,7 +141,7 @@
                  } else {
                      return false;
                  }
-@@ -258,6 +301,10 @@
+@@ -259,6 +302,10 @@
                  if (releaseOccupant(world, blockposition, iblockdata, tileentitybeehive_hivebee.toOccupant(), (List) null, tileentitybeehive_releasestatus, blockposition1)) {
                      flag = true;
                      iterator.remove();
@@ -152,7 +152,7 @@
                  }
              }
          }
-@@ -284,7 +331,7 @@
+@@ -285,7 +332,7 @@
      @Override
      protected void loadAdditional(NBTTagCompound nbttagcompound, HolderLookup.a holderlookup_a) {
          super.loadAdditional(nbttagcompound, holderlookup_a);
@@ -161,7 +161,7 @@
          if (nbttagcompound.contains("bees")) {
              TileEntityBeehive.c.LIST_CODEC.parse(DynamicOpsNBT.INSTANCE, nbttagcompound.get("bees")).resultOrPartial((s) -> {
                  TileEntityBeehive.LOGGER.error("Failed to parse bees: '{}'", s);
-@@ -293,7 +340,12 @@
+@@ -294,7 +341,12 @@
              });
          }
  
@@ -175,7 +175,7 @@
      }
  
      @Override
-@@ -303,13 +355,14 @@
+@@ -304,13 +356,14 @@
          if (this.hasSavedFlowerPos()) {
              nbttagcompound.put("flower_pos", GameProfileSerializer.writeBlockPos(this.savedFlowerPos));
          }
@@ -191,7 +191,7 @@
          List<TileEntityBeehive.c> list = (List) tileentity_b.getOrDefault(DataComponents.BEES, List.of());
  
          list.forEach(this::storeBee);
-@@ -350,7 +403,7 @@
+@@ -351,7 +404,7 @@
              NBTTagCompound nbttagcompound = new NBTTagCompound();
  
              entity.save(nbttagcompound);
@@ -200,7 +200,7 @@
  
              Objects.requireNonNull(nbttagcompound);
              list.forEach(nbttagcompound::remove);
-@@ -369,7 +422,7 @@
+@@ -370,7 +423,7 @@
          @Nullable
          public Entity createEntity(World world, BlockPosition blockposition) {
              NBTTagCompound nbttagcompound = this.entityData.copyTag();

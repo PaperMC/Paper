@@ -18,7 +18,7 @@
          super(EntityTypes.SMALL_FIREBALL, entityliving, vec3d, world);
 +        // CraftBukkit start
 +        if (this.getOwner() != null && this.getOwner() instanceof EntityInsentient) {
-+            isIncendiary = this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING);
++            isIncendiary = (world instanceof WorldServer worldserver) && worldserver.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING);
 +        }
 +        // CraftBukkit end
      }
@@ -39,12 +39,12 @@
 +            // CraftBukkit end
              DamageSource damagesource = this.damageSources().fireball(this, entity1);
  
-             if (!entity.hurt(damagesource, 5.0F)) {
-@@ -58,10 +75,10 @@
-         if (!this.level().isClientSide) {
+             if (!entity.hurtServer(worldserver, damagesource, 5.0F)) {
+@@ -60,10 +77,10 @@
+         if (world instanceof WorldServer worldserver) {
              Entity entity = this.getOwner();
  
--            if (!(entity instanceof EntityInsentient) || this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+-            if (!(entity instanceof EntityInsentient) || worldserver.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
 +            if (isIncendiary) { // CraftBukkit
                  BlockPosition blockposition = movingobjectpositionblock.getBlockPos().relative(movingobjectpositionblock.getDirection());
  
@@ -53,7 +53,7 @@
                      this.level().setBlockAndUpdate(blockposition, BlockFireAbstract.getState(this.level(), blockposition));
                  }
              }
-@@ -73,7 +90,7 @@
+@@ -75,7 +92,7 @@
      protected void onHit(MovingObjectPosition movingobjectposition) {
          super.onHit(movingobjectposition);
          if (!this.level().isClientSide) {

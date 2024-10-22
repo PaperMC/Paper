@@ -12,6 +12,7 @@ import net.minecraft.core.BlockPosition;
 import net.minecraft.core.EnumDirection;
 import net.minecraft.world.entity.EntityAreaEffectCloud;
 import net.minecraft.world.entity.EntityExperienceOrb;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.boss.enderdragon.EntityEnderDragon;
 import net.minecraft.world.entity.decoration.EntityHanging;
@@ -28,13 +29,8 @@ import net.minecraft.world.entity.projectile.EntityFireball;
 import net.minecraft.world.entity.projectile.EntityFireworks;
 import net.minecraft.world.entity.projectile.EntityPotion;
 import net.minecraft.world.entity.projectile.EntitySnowball;
-import net.minecraft.world.entity.vehicle.EntityMinecartChest;
-import net.minecraft.world.entity.vehicle.EntityMinecartCommandBlock;
-import net.minecraft.world.entity.vehicle.EntityMinecartFurnace;
-import net.minecraft.world.entity.vehicle.EntityMinecartHopper;
-import net.minecraft.world.entity.vehicle.EntityMinecartMobSpawner;
-import net.minecraft.world.entity.vehicle.EntityMinecartRideable;
-import net.minecraft.world.entity.vehicle.EntityMinecartTNT;
+import net.minecraft.world.entity.vehicle.EntityMinecartAbstract;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GeneratorAccessSeed;
 import net.minecraft.world.level.World;
@@ -44,11 +40,29 @@ import net.minecraft.world.phys.AxisAlignedBB;
 import net.minecraft.world.phys.Vec3D;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.entity.boat.CraftAcaciaBoat;
+import org.bukkit.craftbukkit.entity.boat.CraftAcaciaChestBoat;
+import org.bukkit.craftbukkit.entity.boat.CraftBambooChestRaft;
+import org.bukkit.craftbukkit.entity.boat.CraftBambooRaft;
+import org.bukkit.craftbukkit.entity.boat.CraftBirchBoat;
+import org.bukkit.craftbukkit.entity.boat.CraftBirchChestBoat;
+import org.bukkit.craftbukkit.entity.boat.CraftCherryBoat;
+import org.bukkit.craftbukkit.entity.boat.CraftCherryChestBoat;
+import org.bukkit.craftbukkit.entity.boat.CraftDarkOakBoat;
+import org.bukkit.craftbukkit.entity.boat.CraftDarkOakChestBoat;
+import org.bukkit.craftbukkit.entity.boat.CraftJungleBoat;
+import org.bukkit.craftbukkit.entity.boat.CraftJungleChestBoat;
+import org.bukkit.craftbukkit.entity.boat.CraftMangroveBoat;
+import org.bukkit.craftbukkit.entity.boat.CraftMangroveChestBoat;
+import org.bukkit.craftbukkit.entity.boat.CraftOakBoat;
+import org.bukkit.craftbukkit.entity.boat.CraftOakChestBoat;
+import org.bukkit.craftbukkit.entity.boat.CraftPaleOakBoat;
+import org.bukkit.craftbukkit.entity.boat.CraftPaleOakChestBoat;
+import org.bukkit.craftbukkit.entity.boat.CraftSpruceBoat;
+import org.bukkit.craftbukkit.entity.boat.CraftSpruceChestBoat;
 import org.bukkit.entity.Allay;
 import org.bukkit.entity.AreaEffectCloud;
 import org.bukkit.entity.Armadillo;
@@ -59,17 +73,17 @@ import org.bukkit.entity.Bat;
 import org.bukkit.entity.Bee;
 import org.bukkit.entity.Blaze;
 import org.bukkit.entity.BlockDisplay;
-import org.bukkit.entity.Boat;
 import org.bukkit.entity.Bogged;
 import org.bukkit.entity.Breeze;
 import org.bukkit.entity.BreezeWindCharge;
 import org.bukkit.entity.Camel;
 import org.bukkit.entity.Cat;
 import org.bukkit.entity.CaveSpider;
-import org.bukkit.entity.ChestBoat;
 import org.bukkit.entity.Chicken;
 import org.bukkit.entity.Cod;
 import org.bukkit.entity.Cow;
+import org.bukkit.entity.Creaking;
+import org.bukkit.entity.CreakingTransient;
 import org.bukkit.entity.Creeper;
 import org.bukkit.entity.Dolphin;
 import org.bukkit.entity.Donkey;
@@ -175,6 +189,26 @@ import org.bukkit.entity.Zoglin;
 import org.bukkit.entity.Zombie;
 import org.bukkit.entity.ZombieHorse;
 import org.bukkit.entity.ZombieVillager;
+import org.bukkit.entity.boat.AcaciaBoat;
+import org.bukkit.entity.boat.AcaciaChestBoat;
+import org.bukkit.entity.boat.BambooChestRaft;
+import org.bukkit.entity.boat.BambooRaft;
+import org.bukkit.entity.boat.BirchBoat;
+import org.bukkit.entity.boat.BirchChestBoat;
+import org.bukkit.entity.boat.CherryBoat;
+import org.bukkit.entity.boat.CherryChestBoat;
+import org.bukkit.entity.boat.DarkOakBoat;
+import org.bukkit.entity.boat.DarkOakChestBoat;
+import org.bukkit.entity.boat.JungleBoat;
+import org.bukkit.entity.boat.JungleChestBoat;
+import org.bukkit.entity.boat.MangroveBoat;
+import org.bukkit.entity.boat.MangroveChestBoat;
+import org.bukkit.entity.boat.OakBoat;
+import org.bukkit.entity.boat.OakChestBoat;
+import org.bukkit.entity.boat.PaleOakBoat;
+import org.bukkit.entity.boat.PaleOakChestBoat;
+import org.bukkit.entity.boat.SpruceBoat;
+import org.bukkit.entity.boat.SpruceChestBoat;
 import org.bukkit.entity.minecart.CommandMinecart;
 import org.bukkit.entity.minecart.ExplosiveMinecart;
 import org.bukkit.entity.minecart.HopperMinecart;
@@ -182,7 +216,6 @@ import org.bukkit.entity.minecart.PoweredMinecart;
 import org.bukkit.entity.minecart.RideableMinecart;
 import org.bukkit.entity.minecart.SpawnerMinecart;
 import org.bukkit.entity.minecart.StorageMinecart;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 public final class CraftEntityTypes {
@@ -317,6 +350,8 @@ public final class CraftEntityTypes {
         register(new EntityTypeData<>(EntityType.SNIFFER, Sniffer.class, CraftSniffer::new, createLiving(EntityTypes.SNIFFER)));
         register(new EntityTypeData<>(EntityType.BREEZE, Breeze.class, CraftBreeze::new, createLiving(EntityTypes.BREEZE)));
         register(new EntityTypeData<>(EntityType.ARMADILLO, Armadillo.class, CraftArmadillo::new, createLiving(EntityTypes.ARMADILLO)));
+        register(new EntityTypeData<>(EntityType.CREAKING, Creaking.class, CraftCreaking::new, createLiving(EntityTypes.CREAKING)));
+        register(new EntityTypeData<>(EntityType.CREAKING_TRANSIENT, CreakingTransient.class, CraftCreakingTransient::new, createLiving(EntityTypes.CREAKING_TRANSIENT)));
 
         Function<SpawnData, EntityEnderDragon> dragonFunction = createLiving(EntityTypes.ENDER_DRAGON);
         register(new EntityTypeData<>(EntityType.ENDER_DRAGON, EnderDragon.class, CraftEnderDragon::new, spawnData -> {
@@ -358,10 +393,29 @@ public final class CraftEntityTypes {
 
         // Move
         register(new EntityTypeData<>(EntityType.SHULKER_BULLET, ShulkerBullet.class, CraftShulkerBullet::new, createAndMove(EntityTypes.SHULKER_BULLET)));
-        register(new EntityTypeData<>(EntityType.BOAT, Boat.class, CraftBoat::new, createAndMove(EntityTypes.BOAT)));
         register(new EntityTypeData<>(EntityType.LLAMA_SPIT, LlamaSpit.class, CraftLlamaSpit::new, createAndMove(EntityTypes.LLAMA_SPIT)));
-        register(new EntityTypeData<>(EntityType.CHEST_BOAT, ChestBoat.class, CraftChestBoat::new, createAndMove(EntityTypes.CHEST_BOAT)));
         register(new EntityTypeData<>(EntityType.OMINOUS_ITEM_SPAWNER, OminousItemSpawner.class, CraftOminousItemSpawner::new, createAndMove(EntityTypes.OMINOUS_ITEM_SPAWNER)));
+        // Move (boats)
+        register(new EntityTypeData<>(EntityType.ACACIA_BOAT, AcaciaBoat.class, CraftAcaciaBoat::new, createAndMove(EntityTypes.ACACIA_BOAT)));
+        register(new EntityTypeData<>(EntityType.ACACIA_CHEST_BOAT, AcaciaChestBoat.class, CraftAcaciaChestBoat::new, createAndMove(EntityTypes.ACACIA_CHEST_BOAT)));
+        register(new EntityTypeData<>(EntityType.BAMBOO_RAFT, BambooRaft.class, CraftBambooRaft::new, createAndMove(EntityTypes.BAMBOO_RAFT)));
+        register(new EntityTypeData<>(EntityType.BAMBOO_CHEST_RAFT, BambooChestRaft.class, CraftBambooChestRaft::new, createAndMove(EntityTypes.BAMBOO_CHEST_RAFT)));
+        register(new EntityTypeData<>(EntityType.BIRCH_BOAT, BirchBoat.class, CraftBirchBoat::new, createAndMove(EntityTypes.BIRCH_BOAT)));
+        register(new EntityTypeData<>(EntityType.BIRCH_CHEST_BOAT, BirchChestBoat.class, CraftBirchChestBoat::new, createAndMove(EntityTypes.BIRCH_CHEST_BOAT)));
+        register(new EntityTypeData<>(EntityType.CHERRY_BOAT, CherryBoat.class, CraftCherryBoat::new, createAndMove(EntityTypes.CHERRY_BOAT)));
+        register(new EntityTypeData<>(EntityType.CHERRY_CHEST_BOAT, CherryChestBoat.class, CraftCherryChestBoat::new, createAndMove(EntityTypes.CHERRY_CHEST_BOAT)));
+        register(new EntityTypeData<>(EntityType.DARK_OAK_BOAT, DarkOakBoat.class, CraftDarkOakBoat::new, createAndMove(EntityTypes.DARK_OAK_BOAT)));
+        register(new EntityTypeData<>(EntityType.DARK_OAK_CHEST_BOAT, DarkOakChestBoat.class, CraftDarkOakChestBoat::new, createAndMove(EntityTypes.DARK_OAK_CHEST_BOAT)));
+        register(new EntityTypeData<>(EntityType.JUNGLE_BOAT, JungleBoat.class, CraftJungleBoat::new, createAndMove(EntityTypes.JUNGLE_BOAT)));
+        register(new EntityTypeData<>(EntityType.JUNGLE_CHEST_BOAT, JungleChestBoat.class, CraftJungleChestBoat::new, createAndMove(EntityTypes.JUNGLE_CHEST_BOAT)));
+        register(new EntityTypeData<>(EntityType.MANGROVE_BOAT, MangroveBoat.class, CraftMangroveBoat::new, createAndMove(EntityTypes.MANGROVE_BOAT)));
+        register(new EntityTypeData<>(EntityType.MANGROVE_CHEST_BOAT, MangroveChestBoat.class, CraftMangroveChestBoat::new, createAndMove(EntityTypes.MANGROVE_CHEST_BOAT)));
+        register(new EntityTypeData<>(EntityType.OAK_BOAT, OakBoat.class, CraftOakBoat::new, createAndMove(EntityTypes.OAK_BOAT)));
+        register(new EntityTypeData<>(EntityType.OAK_CHEST_BOAT, OakChestBoat.class, CraftOakChestBoat::new, createAndMove(EntityTypes.OAK_CHEST_BOAT)));
+        register(new EntityTypeData<>(EntityType.PALE_OAK_BOAT, PaleOakBoat.class, CraftPaleOakBoat::new, createAndMove(EntityTypes.PALE_OAK_BOAT)));
+        register(new EntityTypeData<>(EntityType.PALE_OAK_CHEST_BOAT, PaleOakChestBoat.class, CraftPaleOakChestBoat::new, createAndMove(EntityTypes.PALE_OAK_CHEST_BOAT)));
+        register(new EntityTypeData<>(EntityType.SPRUCE_BOAT, SpruceBoat.class, CraftSpruceBoat::new, createAndMove(EntityTypes.SPRUCE_BOAT)));
+        register(new EntityTypeData<>(EntityType.SPRUCE_CHEST_BOAT, SpruceChestBoat.class, CraftSpruceChestBoat::new, createAndMove(EntityTypes.SPRUCE_CHEST_BOAT)));
 
         // Set pos
         register(new EntityTypeData<>(EntityType.MARKER, Marker.class, CraftMarker::new, createAndSetPos(EntityTypes.MARKER)));
@@ -384,13 +438,12 @@ public final class CraftEntityTypes {
                 spawnData -> new EntityExperienceOrb(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), 0)
         ));
         register(new EntityTypeData<>(EntityType.AREA_EFFECT_CLOUD, AreaEffectCloud.class, CraftAreaEffectCloud::new, spawnData -> new EntityAreaEffectCloud(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z())));
-        register(new EntityTypeData<>(EntityType.EGG, Egg.class, CraftEgg::new, spawnData -> new EntityEgg(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z())));
+        register(new EntityTypeData<>(EntityType.EGG, Egg.class, CraftEgg::new, spawnData -> new EntityEgg(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), new net.minecraft.world.item.ItemStack(Items.EGG))));
         register(new EntityTypeData<>(EntityType.LEASH_KNOT, LeashHitch.class, CraftLeash::new, spawnData -> new EntityLeash(spawnData.minecraftWorld(), BlockPosition.containing(spawnData.x(), spawnData.y(), spawnData.z())))); // SPIGOT-5732: LeashHitch has no direction and is always centered at a block
-        register(new EntityTypeData<>(EntityType.SNOWBALL, Snowball.class, CraftSnowball::new, spawnData -> new EntitySnowball(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z())));
+        register(new EntityTypeData<>(EntityType.SNOWBALL, Snowball.class, CraftSnowball::new, spawnData -> new EntitySnowball(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), new net.minecraft.world.item.ItemStack(Items.SNOWBALL))));
         register(new EntityTypeData<>(EntityType.EYE_OF_ENDER, EnderSignal.class, CraftEnderSignal::new, spawnData -> new EntityEnderSignal(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z())));
         register(new EntityTypeData<>(EntityType.POTION, ThrownPotion.class, CraftThrownPotion::new, spawnData -> {
-            EntityPotion entity = new EntityPotion(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z());
-            entity.setItem(CraftItemStack.asNMSCopy(new ItemStack(Material.SPLASH_POTION, 1)));
+            EntityPotion entity = new EntityPotion(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), new net.minecraft.world.item.ItemStack(Items.SPLASH_POTION));
             return entity;
         }));
         register(new EntityTypeData<>(EntityType.TNT, TNTPrimed.class, CraftTNTPrimed::new, spawnData -> new EntityTNTPrimed(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), null)));
@@ -400,13 +453,13 @@ public final class CraftEntityTypes {
         }));
         register(new EntityTypeData<>(EntityType.FIREWORK_ROCKET, Firework.class, CraftFirework::new, spawnData -> new EntityFireworks(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), net.minecraft.world.item.ItemStack.EMPTY)));
         register(new EntityTypeData<>(EntityType.EVOKER_FANGS, EvokerFangs.class, CraftEvokerFangs::new, spawnData -> new EntityEvokerFangs(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), (float) Math.toRadians(spawnData.yaw()), 0, null)));
-        register(new EntityTypeData<>(EntityType.COMMAND_BLOCK_MINECART, CommandMinecart.class, CraftMinecartCommand::new, spawnData -> new EntityMinecartCommandBlock(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z())));
-        register(new EntityTypeData<>(EntityType.MINECART, RideableMinecart.class, CraftMinecartRideable::new, spawnData -> new EntityMinecartRideable(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z())));
-        register(new EntityTypeData<>(EntityType.CHEST_MINECART, StorageMinecart.class, CraftMinecartChest::new, spawnData -> new EntityMinecartChest(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z())));
-        register(new EntityTypeData<>(EntityType.FURNACE_MINECART, PoweredMinecart.class, CraftMinecartFurnace::new, spawnData -> new EntityMinecartFurnace(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z())));
-        register(new EntityTypeData<>(EntityType.TNT_MINECART, ExplosiveMinecart.class, CraftMinecartTNT::new, spawnData -> new EntityMinecartTNT(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z())));
-        register(new EntityTypeData<>(EntityType.HOPPER_MINECART, HopperMinecart.class, CraftMinecartHopper::new, spawnData -> new EntityMinecartHopper(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z())));
-        register(new EntityTypeData<>(EntityType.SPAWNER_MINECART, SpawnerMinecart.class, CraftMinecartMobSpawner::new, spawnData -> new EntityMinecartMobSpawner(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z())));
+        register(new EntityTypeData<>(EntityType.COMMAND_BLOCK_MINECART, CommandMinecart.class, CraftMinecartCommand::new, createMinecart(EntityTypes.COMMAND_BLOCK_MINECART)));
+        register(new EntityTypeData<>(EntityType.MINECART, RideableMinecart.class, CraftMinecartRideable::new, createMinecart(EntityTypes.MINECART)));
+        register(new EntityTypeData<>(EntityType.CHEST_MINECART, StorageMinecart.class, CraftMinecartChest::new, createMinecart(EntityTypes.CHEST_MINECART)));
+        register(new EntityTypeData<>(EntityType.FURNACE_MINECART, PoweredMinecart.class, CraftMinecartFurnace::new, createMinecart(EntityTypes.FURNACE_MINECART)));
+        register(new EntityTypeData<>(EntityType.TNT_MINECART, ExplosiveMinecart.class, CraftMinecartTNT::new, createMinecart(EntityTypes.TNT_MINECART)));
+        register(new EntityTypeData<>(EntityType.HOPPER_MINECART, HopperMinecart.class, CraftMinecartHopper::new, createMinecart(EntityTypes.HOPPER_MINECART)));
+        register(new EntityTypeData<>(EntityType.SPAWNER_MINECART, SpawnerMinecart.class, CraftMinecartMobSpawner::new, createMinecart(EntityTypes.SPAWNER_MINECART)));
 
         // None spawn able
         register(new EntityTypeData<>(EntityType.FISHING_BOBBER, FishHook.class, CraftFishHook::new, null)); // Cannot spawn a fish hook
@@ -426,7 +479,7 @@ public final class CraftEntityTypes {
     }
 
     private static <R extends net.minecraft.world.entity.Entity> Function<SpawnData, R> fromEntityType(EntityTypes<R> entityTypes) {
-        return spawnData -> entityTypes.create(spawnData.minecraftWorld());
+        return spawnData -> entityTypes.create(spawnData.minecraftWorld(), EntitySpawnReason.COMMAND);
     }
 
     private static <R extends net.minecraft.world.entity.EntityLiving> Function<SpawnData, R> createLiving(EntityTypes<R> entityTypes) {
@@ -435,6 +488,10 @@ public final class CraftEntityTypes {
 
     private static <R extends EntityFireball> Function<SpawnData, R> createFireball(EntityTypes<R> entityTypes) {
         return combine(createAndMove(entityTypes), DIRECTION);
+    }
+
+    private static <R extends EntityMinecartAbstract> Function<SpawnData, R> createMinecart(EntityTypes<R> entityTypes) {
+        return spawnData -> EntityMinecartAbstract.createMinecart(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), entityTypes, EntitySpawnReason.TRIGGERED, ItemStack.EMPTY, null);
     }
 
     private static <R extends net.minecraft.world.entity.Entity> Function<SpawnData, R> createAndMove(EntityTypes<R> entityTypes) {

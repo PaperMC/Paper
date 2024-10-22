@@ -175,6 +175,8 @@ public class FieldRename {
             .change("SNOWMAN", "SNOW_GOLEM")
             .change("FISHING_HOOK", "FISHING_BOBBER")
             .change("LIGHTNING", "LIGHTNING_BOLT")
+            .change("BOAT", "OAK_BOAT")
+            .change("CHEST_BOAT", "OAK_CHEST_BOAT")
             .withKeyRename()
             .change("XP_ORB", "EXPERIENCE_ORB")
             .change("EYE_OF_ENDER_SIGNAL", "EYE_OF_ENDER")

@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/entity/item/EntityTNTPrimed.java
 +++ b/net/minecraft/world/entity/item/EntityTNTPrimed.java
-@@ -24,6 +24,12 @@
+@@ -27,6 +27,12 @@
  import net.minecraft.world.level.material.Fluid;
- import net.minecraft.world.level.portal.DimensionTransition;
+ import net.minecraft.world.level.portal.TeleportTransition;
  
 +// CraftBukkit start;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
@@ -13,16 +13,15 @@
  public class EntityTNTPrimed extends Entity implements TraceableEntity {
  
      private static final DataWatcherObject<Integer> DATA_FUSE_ID = DataWatcher.defineId(EntityTNTPrimed.class, DataWatcherRegistry.INT);
-@@ -45,6 +51,8 @@
-     @Nullable
+@@ -51,6 +57,7 @@
      public EntityLiving owner;
      private boolean usedPortal;
-+    public float yield = 4; // CraftBukkit - add field
+     public float explosionPower;
 +    public boolean isIncendiary = false; // CraftBukkit - add field
  
      public EntityTNTPrimed(EntityTypes<? extends EntityTNTPrimed> entitytypes, World world) {
          super(entitytypes, world);
-@@ -99,10 +107,13 @@
+@@ -107,10 +114,13 @@
  
          this.setFuse(i);
          if (i <= 0) {
@@ -37,19 +36,17 @@
          } else {
              this.updateInWaterStateAndDoFluidPushing();
              if (this.level().isClientSide) {
-@@ -113,9 +124,14 @@
+@@ -121,7 +131,13 @@
      }
  
      private void explode() {
--        float f = 4.0F;
+-        this.level().explode(this, Explosion.getDefaultDamageSource(this.level(), this), this.usedPortal ? EntityTNTPrimed.USED_PORTAL_DAMAGE_CALCULATOR : null, this.getX(), this.getY(0.0625D), this.getZ(), this.explosionPower, false, World.a.TNT);
 +        // CraftBukkit start
-+        // float f = 4.0F;
-+        ExplosionPrimeEvent event = CraftEventFactory.callExplosionPrimeEvent((org.bukkit.entity.Explosive)this.getBukkitEntity());
- 
--        this.level().explode(this, Explosion.getDefaultDamageSource(this.level(), this), this.usedPortal ? EntityTNTPrimed.USED_PORTAL_DAMAGE_CALCULATOR : null, this.getX(), this.getY(0.0625D), this.getZ(), 4.0F, false, World.a.TNT);
-+        if (!event.isCancelled()) {
-+            this.level().explode(this, Explosion.getDefaultDamageSource(this.level(), this), this.usedPortal ? EntityTNTPrimed.USED_PORTAL_DAMAGE_CALCULATOR : null, this.getX(), this.getY(0.0625D), this.getZ(), event.getRadius(), event.getFire(), World.a.TNT);
++        ExplosionPrimeEvent event = CraftEventFactory.callExplosionPrimeEvent((org.bukkit.entity.Explosive) this.getBukkitEntity());
++        if (event.isCancelled()) {
++            return;
 +        }
++        this.level().explode(this, Explosion.getDefaultDamageSource(this.level(), this), this.usedPortal ? EntityTNTPrimed.USED_PORTAL_DAMAGE_CALCULATOR : null, this.getX(), this.getY(0.0625D), this.getZ(), event.getRadius(), event.getFire(), World.a.TNT);
 +        // CraftBukkit end
      }
  

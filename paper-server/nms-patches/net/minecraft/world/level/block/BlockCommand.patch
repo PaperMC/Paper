@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/BlockCommand.java
 +++ b/net/minecraft/world/level/block/BlockCommand.java
-@@ -29,6 +29,8 @@
+@@ -31,6 +31,8 @@
  import net.minecraft.world.phys.MovingObjectPositionBlock;
  import org.slf4j.Logger;
  
@@ -9,19 +9,19 @@
  public class BlockCommand extends BlockTileEntity implements GameMasterBlock {
  
      public static final MapCodec<BlockCommand> CODEC = RecordCodecBuilder.mapCodec((instance) -> {
-@@ -69,6 +71,15 @@
-                 TileEntityCommand tileentitycommand = (TileEntityCommand) tileentity;
-                 boolean flag1 = world.hasNeighborSignal(blockposition);
-                 boolean flag2 = tileentitycommand.isPowered();
-+                // CraftBukkit start
-+                org.bukkit.block.Block bukkitBlock = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
-+                int old = flag2 ? 15 : 0;
-+                int current = flag1 ? 15 : 0;
-+
-+                BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(bukkitBlock, old, current);
-+                world.getCraftServer().getPluginManager().callEvent(eventRedstone);
-+                flag1 = eventRedstone.getNewCurrent() > 0;
-+                // CraftBukkit end
+@@ -78,6 +80,15 @@
  
-                 tileentitycommand.setPowered(flag1);
-                 if (!flag2 && !tileentitycommand.isAutomatic() && tileentitycommand.getMode() != TileEntityCommand.Type.SEQUENCE) {
+     private void setPoweredAndUpdate(World world, BlockPosition blockposition, TileEntityCommand tileentitycommand, boolean flag) {
+         boolean flag1 = tileentitycommand.isPowered();
++        // CraftBukkit start
++        org.bukkit.block.Block bukkitBlock = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
++        int old = flag1 ? 15 : 0;
++        int current = flag ? 15 : 0;
++
++        BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(bukkitBlock, old, current);
++        world.getCraftServer().getPluginManager().callEvent(eventRedstone);
++        flag = eventRedstone.getNewCurrent() > 0;
++        // CraftBukkit end
+ 
+         if (flag != flag1) {
+             tileentitycommand.setPowered(flag);

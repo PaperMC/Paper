@@ -52,15 +52,15 @@
      }
  
      @Nullable
-@@ -134,6 +150,7 @@
-         if (chunk != null) {
+@@ -138,6 +154,7 @@
+             boolean flag = this.hasChangedSections;
              int i = this.levelHeightAccessor.getSectionIndex(blockposition.getY());
  
-+            if (i < 0 || i >= this.changedBlocksPerSection.length) return; // CraftBukkit - SPIGOT-6086, SPIGOT-6296
++            if (i < 0 || i >= this.changedBlocksPerSection.length) return false; // CraftBukkit - SPIGOT-6086, SPIGOT-6296
              if (this.changedBlocksPerSection[i] == null) {
                  this.hasChangedSections = true;
                  this.changedBlocksPerSection[i] = new ShortOpenHashSet();
-@@ -208,8 +225,11 @@
+@@ -224,8 +241,11 @@
                                  PacketPlayOutMultiBlockChange packetplayoutmultiblockchange = new PacketPlayOutMultiBlockChange(sectionposition, shortset, chunksection);
  
                                  this.broadcast(list, packetplayoutmultiblockchange);
@@ -73,7 +73,7 @@
                                  });
                              }
                          }
-@@ -275,7 +295,7 @@
+@@ -291,7 +311,7 @@
          this.pendingFullStateConfirmation = completablefuture1;
          completablefuture.thenAccept((chunkresult) -> {
              chunkresult.ifSuccess((chunk) -> {
@@ -82,7 +82,7 @@
              });
          });
      }
-@@ -285,6 +305,38 @@
+@@ -301,6 +321,38 @@
          playerchunkmap.onFullChunkStatusChange(this.pos, fullchunkstatus);
      }
  
@@ -102,7 +102,7 @@
 +                        // Minecraft will apply the chunks tick lists to the world once the chunk got loaded, and then store the tick
 +                        // lists again inside the chunk once the chunk becomes inaccessible and set the chunk's needsSaving flag.
 +                        // These actions may however happen deferred, so we manually set the needsSaving flag already here.
-+                        chunk.setUnsaved(true);
++                        chunk.markUnsaved();
 +                        chunk.unloadCallback();
 +                    });
 +                }
@@ -121,7 +121,7 @@
      protected void updateFutures(PlayerChunkMap playerchunkmap, Executor executor) {
          FullChunkStatus fullchunkstatus = ChunkLevel.fullStatus(this.oldTicketLevel);
          FullChunkStatus fullchunkstatus1 = ChunkLevel.fullStatus(this.ticketLevel);
-@@ -341,6 +393,26 @@
+@@ -357,6 +409,26 @@
  
          this.onLevelChange.onLevelChange(this.pos, this::getQueueLevel, this.ticketLevel, this::setQueueLevel);
          this.oldTicketLevel = this.ticketLevel;
