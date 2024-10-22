@@ -9,9 +9,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
-             if (!this.isRemoved()) {
                  // CraftBukkit start
-                 Location to = new Location(teleportTarget.newLevel().getWorld(), teleportTarget.pos().x, teleportTarget.pos().y, teleportTarget.pos().z, teleportTarget.yRot(), teleportTarget.xRot());
+                 PositionMoveRotation absolutePosition = PositionMoveRotation.calculateAbsolute(PositionMoveRotation.of(this), PositionMoveRotation.of(teleportTarget), teleportTarget.relatives());
+                 Location to = CraftLocation.toBukkit(absolutePosition.position(), teleportTarget.newLevel().getWorld(), absolutePosition.yRot(), absolutePosition.xRot());
 -                EntityTeleportEvent teleEvent = CraftEventFactory.callEntityTeleportEvent(this, to);
 -                if (teleEvent.isCancelled()) {
 +                // Paper start - gateway-specific teleport event
@@ -26,4 +26,4 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                if (teleEvent.isCancelled() || teleEvent.getTo() == null) {
                      return null;
                  }
-                 to = teleEvent.getTo();
+                 if (!to.equals(teleEvent.getTo())) {
