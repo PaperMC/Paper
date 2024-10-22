@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Thu, 5 Oct 2017 01:54:07 +0100
+Subject: [PATCH] handle ServerboundKeepAlivePacket async
+
+In 1.12.2, Mojang moved the processing of ServerboundKeepAlivePacket off the main
+thread, while entirely correct for the server, this causes issues with
+plugins which are expecting the PlayerQuitEvent on the main thread.
+
+In order to counteract some bad behavior, we will post handling of the
+disconnection to the main thread, but leave the actual processing of the packet
+off the main thread.
+
+also adding some additional logging in order to help work out what is causing
+random disconnections for clients.
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+index 04ada45eabd5a6c752c320cdff1a65c7ac83eb22..6fd8204a8d66d26c3011d197c004398d320dc469 100644
+--- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+@@ -129,14 +129,18 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+ 
+     @Override
+     public void handleKeepAlive(ServerboundKeepAlivePacket packet) {
+-        PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel()); // CraftBukkit
++        //PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel()); // CraftBukkit // Paper - handle ServerboundKeepAlivePacket async
+         if (this.keepAlivePending && packet.getId() == this.keepAliveChallenge) {
+             int i = (int) (Util.getMillis() - this.keepAliveTime);
+ 
+             this.latency = (this.latency * 3 + i) / 4;
+             this.keepAlivePending = false;
+         } else if (!this.isSingleplayerOwner()) {
+-            this.disconnect(ServerCommonPacketListenerImpl.TIMEOUT_DISCONNECTION_MESSAGE);
++            // Paper start - This needs to be handled on the main thread for plugins
++            server.submit(() -> {
++                this.disconnect(ServerCommonPacketListenerImpl.TIMEOUT_DISCONNECTION_MESSAGE);
++            });
++            // Paper end - This needs to be handled on the main thread for plugins
+         }
+ 
+     }
