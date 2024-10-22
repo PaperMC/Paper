@@ -492,6 +492,18 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public void setRespawnLocation(@Nullable Location location, boolean force);
 
     /**
+     * Gets the ender pearls currently associated with this entity.
+     * <p>
+     * The returned list will not be directly linked to the entity's current
+     * pearls, and no guarantees are made as to its mutability.
+     *
+     * @return collection of entities corresponding to current pearls.
+     */
+    @NotNull
+    @ApiStatus.Experimental
+    public Collection<EnderPearl> getEnderPearls();
+
+    /**
      * Play a note for the player at a location. <br>
      * This <i>will</i> work with cake.
      *
