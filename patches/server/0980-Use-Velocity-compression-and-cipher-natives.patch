@@ -3,6 +3,8 @@ From: Andrew Steinborn <git@steinborn.me>
 Date: Mon, 26 Jul 2021 02:15:17 -0400
 Subject: [PATCH] Use Velocity compression and cipher natives
 
+== AT ==
+private-f net.minecraft.network.CompressionDecoder inflater
 
 diff --git a/build.gradle.kts b/build.gradle.kts
 index 25001d6cf4f70bd01ab304625b49ec45f5b1f525..9966576652ed6007d2228237f292c1dc83ede485 100644
@@ -102,13 +104,13 @@ index 0f3d502a9680006bcdcd7d272240a2e5c3b46790..ffa1c48585fbbc1d30826d435043527f
 +    // Paper end - Use Velocity cipher
  }
 diff --git a/src/main/java/net/minecraft/network/CompressionDecoder.java b/src/main/java/net/minecraft/network/CompressionDecoder.java
-index 5927c928b27f64bd3973e95d5867b59f67476d41..974a2f3ecf84d2130ef0d0b0f153639b18d11ba3 100644
+index a57e8516b3fafd7060dc1b30550164e74e17fc84..446c281da888686f50b5ff4f2496e8462722fd0a 100644
 --- a/src/main/java/net/minecraft/network/CompressionDecoder.java
 +++ b/src/main/java/net/minecraft/network/CompressionDecoder.java
 @@ -13,13 +13,20 @@ public class CompressionDecoder extends ByteToMessageDecoder {
      public static final int MAXIMUM_COMPRESSED_LENGTH = 2097152;
      public static final int MAXIMUM_UNCOMPRESSED_LENGTH = 8388608;
-     private final Inflater inflater;
+     private Inflater inflater;
 +    private com.velocitypowered.natives.compression.VelocityCompressor compressor; // Paper - Use Velocity cipher
      private int threshold;
      private boolean validateDecompressed;
@@ -170,13 +172,18 @@ index 5927c928b27f64bd3973e95d5867b59f67476d41..974a2f3ecf84d2130ef0d0b0f153639b
      private void setupInflaterInput(ByteBuf buf) {
          ByteBuffer byteBuffer;
          if (buf.nioBufferCount() > 0) {
-@@ -82,7 +117,8 @@ public class CompressionDecoder extends ByteToMessageDecoder {
+@@ -82,7 +117,13 @@ public class CompressionDecoder extends ByteToMessageDecoder {
          }
      }
  
 -    public void setThreshold(int compressionThreshold, boolean rejectsBadPackets) {
-+    public void setThreshold(com.velocitypowered.natives.compression.VelocityCompressor compressor, int compressionThreshold, boolean rejectsBadPackets) { // Paper - Use Velocity cipher
-+        this.compressor = compressor; // Paper - Use Velocity cipher
++    // Paper start - Use Velocity cipher
++    public void setThreshold(com.velocitypowered.natives.compression.VelocityCompressor compressor, int compressionThreshold, boolean rejectsBadPackets) {
++        if (this.compressor == null && compressor != null) {
++            this.compressor = compressor;
++            this.inflater = null;
++        }
++    // Paper end - Use Velocity cipher
          this.threshold = compressionThreshold;
          this.validateDecompressed = rejectsBadPackets;
      }
