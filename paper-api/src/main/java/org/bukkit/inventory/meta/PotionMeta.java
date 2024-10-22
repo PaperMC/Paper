@@ -146,6 +146,31 @@ public interface PotionMeta extends ItemMeta {
      */
     void setColor(@Nullable Color color);
 
+    /**
+     * Checks for existence of a custom potion name translation suffix.
+     *
+     * @return true if this has a custom potion name
+     */
+    boolean hasCustomName();
+
+    /**
+     * Gets the potion name translation suffix that is set.
+     * <p>
+     * Plugins should check that hasCustomName() returns <code>true</code>
+     * before calling this method.
+     *
+     * @return the potion name that is set
+     */
+    @Nullable
+    String getCustomName();
+
+    /**
+     * Sets the potion name translation suffix.
+     *
+     * @param name the name to set
+     */
+    void setCustomName(@Nullable String name);
+
     @Override
     PotionMeta clone();
 }

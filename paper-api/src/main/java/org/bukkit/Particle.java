@@ -3,6 +3,7 @@ package org.bukkit;
 import com.google.common.base.Preconditions;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 public enum Particle implements Keyed {
@@ -141,6 +142,16 @@ public enum Particle implements Keyed {
      * Uses {@link BlockData} as DataType
      */
     DUST_PILLAR("dust_pillar", BlockData.class),
+    /**
+     * Uses {@link BlockData} as DataType
+     */
+    @ApiStatus.Experimental
+    BLOCK_CRUMBLE("block_crumble", BlockData.class),
+    /**
+     * Uses {@link TargetColor} as DataType
+     */
+    @ApiStatus.Experimental
+    TRAIL("trail", TargetColor.class),
     OMINOUS_SPAWNING("ominous_spawning"),
     RAID_OMEN("raid_omen"),
     TRIAL_OMEN("trial_omen"),
@@ -251,6 +262,41 @@ public enum Particle implements Keyed {
         @NotNull
         public Color getToColor() {
             return toColor;
+        }
+    }
+
+    /**
+     * Options which can be applied to trail particles - a location and color.
+     */
+    @ApiStatus.Experimental
+    public static class TargetColor {
+
+        private final Location target;
+        private final Color color;
+
+        public TargetColor(@NotNull Location target, @NotNull Color color) {
+            this.target = target;
+            this.color = color;
+        }
+
+        /**
+         * The target of the particles to be displayed.
+         *
+         * @return particle target
+         */
+        @NotNull
+        public Location getTarget() {
+            return target;
+        }
+
+        /**
+         * The color of the particles to be displayed.
+         *
+         * @return particle color
+         */
+        @NotNull
+        public Color getColor() {
+            return color;
         }
     }
 }

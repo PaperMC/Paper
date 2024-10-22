@@ -1,5 +1,6 @@
 package org.bukkit.entity;
 
+import org.bukkit.GameRule;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.material.MaterialData;
 import org.bukkit.util.Vector;
@@ -30,7 +31,9 @@ public interface Minecart extends Vehicle {
      * velocity.
      *
      * @return The max speed
+     * @see GameRule#MINECART_MAX_SPEED
      */
+    @Deprecated
     public double getMaxSpeed();
 
     /**
@@ -38,7 +41,9 @@ public interface Minecart extends Vehicle {
      * 0.4D.
      *
      * @param speed The max speed
+     * @see GameRule#MINECART_MAX_SPEED
      */
+    @Deprecated
     public void setMaxSpeed(double speed);
 
     /**

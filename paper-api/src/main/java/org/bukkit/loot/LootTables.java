@@ -15,7 +15,6 @@ import org.jetbrains.annotations.NotNull;
  */
 public enum LootTables implements Keyed {
 
-    EMPTY("empty"),
     // Chests/Dispensers - treasure chests
     ABANDONED_MINESHAFT("chests/abandoned_mineshaft"),
     BURIED_TREASURE("chests/buried_treasure"),
@@ -175,8 +174,12 @@ public enum LootTables implements Keyed {
     SHEPHERD_GIFT("gameplay/hero_of_the_village/shepherd_gift"),
     TOOLSMITH_GIFT("gameplay/hero_of_the_village/toolsmith_gift"),
     WEAPONSMITH_GIFT("gameplay/hero_of_the_village/weaponsmith_gift"),
+    UNEMPLOYED_GIFT("gameplay/hero_of_the_village/unemployed_gift"),
+    BABY_VILLAGER_GIFT("gameplay/hero_of_the_village/baby_gift"),
     SNIFFER_DIGGING("gameplay/sniffer_digging"),
     PANDA_SNEEZE("gameplay/panda_sneeze"),
+    CHICKEN_LAY("gameplay/chicken_lay"),
+    ARMADILLO_SHED("gameplay/armadillo_shed"),
     PIGLIN_BARTERING("gameplay/piglin_bartering"),
     // Spawners
     TRIAL_CHAMBER_KEY("spawners/trial_chamber/key"),
@@ -186,6 +189,27 @@ public enum LootTables implements Keyed {
     TRIAL_CHAMBER_ITEMS_TO_DROP_WHEN_OMINOUS("spawners/trial_chamber/items_to_drop_when_ominous"),
     // Shearing
     SHEARING_BOGGED("shearing/bogged"),
+    SHEARING_MOOSHROOM("shearing/mooshroom"),
+    SHEARING_MOOSHROOM_RED("shearing/mooshroom/red"),
+    SHEARING_MOOSHROOM_BROWN("shearing/mooshroom/brown"),
+    SHEARING_SNOW_GOLEM("shearing/snow_golem"),
+    SHEARING_SHEEP("shearing/sheep"),
+    SHEARING_SHEEP_BLACK("shearing/sheep/black"),
+    SHEARING_SHEEP_BLUE("shearing/sheep/blue"),
+    SHEARING_SHEEP_BROWN("shearing/sheep/brown"),
+    SHEARING_SHEEP_CYAN("shearing/sheep/cyan"),
+    SHEARING_SHEEP_GRAY("shearing/sheep/gray"),
+    SHEARING_SHEEP_GREEN("shearing/sheep/green"),
+    SHEARING_SHEEP_LIGHT_BLUE("shearing/sheep/light_blue"),
+    SHEARING_SHEEP_LIGHT_GRAY("shearing/sheep/light_gray"),
+    SHEARING_SHEEP_LIME("shearing/sheep/lime"),
+    SHEARING_SHEEP_MAGENTA("shearing/sheep/magenta"),
+    SHEARING_SHEEP_ORANGE("shearing/sheep/orange"),
+    SHEARING_SHEEP_PINK("shearing/sheep/pink"),
+    SHEARING_SHEEP_PURPLE("shearing/sheep/purple"),
+    SHEARING_SHEEP_RED("shearing/sheep/red"),
+    SHEARING_SHEEP_WHITE("shearing/sheep/white"),
+    SHEARING_SHEEP_YELLOW("shearing/sheep/yellow"),
     // Archaeology
     DESERT_WELL_ARCHAEOLOGY("archaeology/desert_well"),
     DESERT_PYRAMID_ARCHAEOLOGY("archaeology/desert_pyramid"),

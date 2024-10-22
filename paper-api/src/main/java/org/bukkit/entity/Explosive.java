@@ -6,14 +6,18 @@ package org.bukkit.entity;
 public interface Explosive extends Entity {
 
     /**
-     * Set the radius affected by this explosive's explosion
+     * Set the radius affected by this explosive's explosion.
+     * <br>
+     * This is the base yield, which may be affected by other entity attributes.
      *
      * @param yield The explosive yield
      */
     public void setYield(float yield);
 
     /**
-     * Return the radius or yield of this explosive's explosion
+     * Return the radius or yield of this explosive's explosion.
+     * <br>
+     * This is the base yield, which may be affected by other entity attributes.
      *
      * @return the radius of blocks affected
      */

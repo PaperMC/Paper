@@ -107,6 +107,21 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public void setPlayerListName(@Nullable String name);
 
     /**
+     * Gets the relative order that the player is shown on the player list.
+     *
+     * @return the player list order
+     */
+    public int getPlayerListOrder();
+
+    /**
+     * Sets the relative order that the player is shown on the in-game player
+     * list.
+     *
+     * @param order new player list order, must be positive
+     */
+    public void setPlayerListOrder(int order);
+
+    /**
      * Gets the currently displayed player list header for this player.
      *
      * @return player list header or null

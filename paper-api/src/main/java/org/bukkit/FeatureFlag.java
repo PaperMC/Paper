@@ -13,6 +13,12 @@ public interface FeatureFlag extends Keyed {
 
     public static final FeatureFlag VANILLA = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("vanilla"));
 
+    /**
+     * <strong>AVAILABLE BETWEEN VERSIONS:</strong> 1.19.3 - 1.21.2
+     *
+     * @deprecated not available since 1.21.2
+     */
+    @Deprecated
     public static final FeatureFlag BUNDLE = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("bundle"));
 
     /**
@@ -32,4 +38,11 @@ public interface FeatureFlag extends Keyed {
      */
     @Deprecated
     public static final FeatureFlag UPDATE_121 = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("update_1_21"));
+
+    public static final FeatureFlag WINTER_DROP = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("winter_drop"));
+
+    public static final FeatureFlag REDSTONE_EXPERIMENTS = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("redstone_experiments"));
+
+    public static final FeatureFlag MINECART_IMPROVEMENTS = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("minecart_improvements"));
+
 }

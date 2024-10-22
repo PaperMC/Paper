@@ -2,7 +2,9 @@ package org.bukkit.block;
 
 import java.util.Locale;
 import org.bukkit.Keyed;
+import org.bukkit.MinecraftExperimental;
 import org.bukkit.NamespacedKey;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -73,6 +75,9 @@ public enum Biome implements Keyed {
     JAGGED_PEAKS,
     STONY_PEAKS,
     CHERRY_GROVE,
+    @ApiStatus.Experimental
+    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
+    PALE_GARDEN,
     /**
      * Represents a custom Biome
      */

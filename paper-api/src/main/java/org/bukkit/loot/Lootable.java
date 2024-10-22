@@ -16,8 +16,7 @@ public interface Lootable {
     /**
      * Set the loot table for a container or entity.
      * <br>
-     * To remove a loot table use null. Do not use {@link LootTables#EMPTY} to
-     * clear a LootTable.
+     * To remove a loot table use null.
      *
      * @param table the Loot Table this {@link org.bukkit.block.Container} or
      * {@link org.bukkit.entity.Mob} will have.

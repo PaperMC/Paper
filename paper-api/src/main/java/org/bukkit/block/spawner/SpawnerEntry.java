@@ -5,7 +5,6 @@ import java.util.Map;
 import org.bukkit.entity.EntitySnapshot;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.loot.LootTable;
-import org.bukkit.loot.LootTables;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -128,8 +127,7 @@ public class SpawnerEntry {
         /**
          * Set the loot table for the entity.
          * <br>
-         * To remove a loot table use null. Do not use {@link LootTables#EMPTY}
-         * to clear a LootTable.
+         * To remove a loot table use null.
          *
          * @param table this {@link org.bukkit.entity.Mob} will have.
          */

@@ -32,7 +32,9 @@ public interface Boat extends Vehicle {
      * Gets the type of the boat.
      *
      * @return the boat type
+     * @deprecated different boats types are now different entity types
      */
+    @Deprecated
     @NotNull
     Type getBoatType();
 
@@ -40,7 +42,9 @@ public interface Boat extends Vehicle {
      * Sets the type of the boat.
      *
      * @param type the new type
+     * @deprecated different boats types are now different entity types
      */
+    @Deprecated
     void setBoatType(@NotNull Type type);
 
     /**
@@ -134,7 +138,9 @@ public interface Boat extends Vehicle {
 
     /**
      * Represents the type of boats.
+     * @deprecated different boats types are now different entity types
      */
+    @Deprecated
     public enum Type {
         OAK(Material.OAK_PLANKS),
         SPRUCE(Material.SPRUCE_PLANKS),

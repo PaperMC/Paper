@@ -257,6 +257,37 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     public void setCooldown(@NotNull Material material, int ticks);
 
     /**
+     * Check whether a cooldown is active on the specified item.
+     *
+     * @param item the item to check
+     * @return if a cooldown is active on the item
+     */
+    public boolean hasCooldown(@NotNull ItemStack item);
+
+    /**
+     * Get the cooldown time in ticks remaining for the specified item.
+     *
+     * @param item the item to check
+     * @return the remaining cooldown time in ticks
+     */
+    public int getCooldown(@NotNull ItemStack item);
+
+    /**
+     * Set a cooldown on the specified item for a certain amount of ticks.
+     * ticks. 0 ticks will result in the removal of the cooldown.
+     * <p>
+     * Cooldowns are used by the server for items such as ender pearls and
+     * shields to prevent them from being used repeatedly.
+     * <p>
+     * Note that cooldowns will not by themselves stop an item from being used
+     * for attacking.
+     *
+     * @param item the item to set the cooldown for
+     * @param ticks the amount of ticks to set or 0 to remove
+     */
+    public void setCooldown(@NotNull ItemStack item, int ticks);
+
+    /**
      * Get the sleep ticks of the player. This value may be capped.
      *
      * @return slumber ticks

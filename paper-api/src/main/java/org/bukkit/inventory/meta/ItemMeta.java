@@ -5,19 +5,26 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Tag;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemRarity;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.components.EquippableComponent;
 import org.bukkit.inventory.meta.components.FoodComponent;
 import org.bukkit.inventory.meta.components.JukeboxPlayableComponent;
 import org.bukkit.inventory.meta.components.ToolComponent;
+import org.bukkit.inventory.meta.components.UseCooldownComponent;
 import org.bukkit.inventory.meta.tags.CustomItemTagContainer;
 import org.bukkit.persistence.PersistentDataHolder;
+import org.bukkit.tag.DamageTypeTags;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -180,6 +187,27 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
     void setCustomModelData(@Nullable Integer data);
 
     /**
+     * Gets if the enchantable component is set.
+     *
+     * @return if an enchantable is set.
+     */
+    boolean hasEnchantable();
+
+    /**
+     * Gets the enchantable component. Higher values allow higher enchantments.
+     *
+     * @return max_stack_size
+     */
+    int getEnchantable();
+
+    /**
+     * Sets the enchantable. Higher values allow higher enchantments.
+     *
+     * @param enchantable enchantable value
+     */
+    void setEnchantable(@Nullable Integer enchantable);
+
+    /**
      * Checks for the existence of any enchantments.
      *
      * @return true if an enchantment exists on this meta
@@ -293,6 +321,50 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
     void setHideTooltip(boolean hideTooltip);
 
     /**
+     * Gets if this item has a custom tooltip style.
+     *
+     * @return if a tooltip_style is set
+     */
+    boolean hasTooltipStyle();
+
+    /**
+     * Gets the custom tooltip style.
+     *
+     * @return the tooltip style
+     */
+    @Nullable
+    NamespacedKey getTooltipStyle();
+
+    /**
+     * Sets the custom tooltip style.
+     *
+     * @param tooltipStyle the new style
+     */
+    void setTooltipStyle(@Nullable NamespacedKey tooltipStyle);
+
+    /**
+     * Gets if this item has a custom item model.
+     *
+     * @return if a item_model is set
+     */
+    boolean hasItemModel();
+
+    /**
+     * Gets the custom item model.
+     *
+     * @return the item model
+     */
+    @Nullable
+    NamespacedKey getItemModel();
+
+    /**
+     * Sets the custom item model.
+     *
+     * @param itemModel the new model
+     */
+    void setItemModel(@Nullable NamespacedKey itemModel);
+
+    /**
      * Return if the unbreakable tag is true. An unbreakable item will not lose
      * durability.
      *
@@ -337,11 +409,30 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
     void setEnchantmentGlintOverride(@Nullable Boolean override);
 
     /**
+     * Checks if this item is a glider. If true, this item will allow players to
+     * glide when it is equipped.
+     *
+     * @return glider
+     */
+    boolean isGlider();
+
+    /**
+     * Sets if this item is a glider. If true, this item will allow players to
+     * glide when it is equipped.
+     *
+     * @param glider glider
+     */
+    void setGlider(boolean glider);
+
+    /**
      * Checks if this item is fire_resistant. If true, it will not burn in fire
      * or lava.
      *
      * @return fire_resistant
+     * @deprecated use {@link #getDamageResistant()} and
+     * {@link DamageTypeTags#IS_FIRE}
      */
+    @Deprecated
     boolean isFireResistant();
 
     /**
@@ -349,8 +440,38 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * or lava.
      *
      * @param fireResistant fire_resistant
+     * @deprecated use {@link #setDamageResistant(org.bukkit.Tag)} and
+     * {@link DamageTypeTags#IS_FIRE}
      */
+    @Deprecated
     void setFireResistant(boolean fireResistant);
+
+    /**
+     * Gets if this item is resistant to certain types of damage.
+     *
+     * @return true if a resistance is set
+     */
+    boolean hasDamageResistant();
+
+    /**
+     * Gets the type of damage this item will be resistant to when in entity
+     * form.
+     *
+     * Plugins should check {@link #hasDamageResistant()} before calling this
+     * method.
+     *
+     * @return damage type
+     */
+    @Nullable
+    Tag<DamageType> getDamageResistant();
+
+    /**
+     * Sets the type of damage this item will be resistant to when in entity
+     * form.
+     *
+     * @param tag the tag, or null to clear
+     */
+    void setDamageResistant(@Nullable Tag<DamageType> tag);
 
     /**
      * Gets if the max_stack_size is set.
@@ -398,6 +519,61 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * @param rarity new rarity
      */
     void setRarity(@Nullable ItemRarity rarity);
+
+    /**
+     * Checks if the use remainder is set.
+     *
+     * @return if a use remainder item is set
+     */
+    boolean hasUseRemainder();
+
+    /**
+     * Gets the item which this item will convert to when used.
+     * <p>
+     * The returned component is a snapshot of its current state and does not
+     * reflect a live view of what is on an item. After changing any value on
+     * this component, it must be set with {@link #setUseRemainder(ItemStack)}
+     * to apply the changes.
+     *
+     * @return remainder
+     */
+    @Nullable
+    ItemStack getUseRemainder();
+
+    /**
+     * Sets the item which this item will convert to when used.
+     *
+     * @param remainder new item
+     */
+    void setUseRemainder(@Nullable ItemStack remainder);
+
+    /**
+     * Checks if the use cooldown is set.
+     *
+     * @return if a use cooldown is set
+     */
+    boolean hasUseCooldown();
+
+    /**
+     * Gets the use cooldown set on this item, or creates an empty cooldown
+     * instance.
+     * <p>
+     * The returned component is a snapshot of its current state and does not
+     * reflect a live view of what is on an item. After changing any value on
+     * this component, it must be set with
+     * {@link #setUseCooldown(UseCooldownComponent)} to apply the changes.
+     *
+     * @return cooldown
+     */
+    @NotNull
+    UseCooldownComponent getUseCooldown();
+
+    /**
+     * Sets the item use cooldown.
+     *
+     * @param cooldown new cooldown
+     */
+    void setUseCooldown(@Nullable UseCooldownComponent cooldown);
 
     /**
      * Checks if the food is set.
@@ -452,6 +628,34 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * @param tool new tool
      */
     void setTool(@Nullable ToolComponent tool);
+
+    /**
+     * Checks if the equippable is set.
+     *
+     * @return if a equippable is set
+     */
+    boolean hasEquippable();
+
+    /**
+     * Gets the equippable set on this item, or creates an empty equippable
+     * instance.
+     * <p>
+     * The returned component is a snapshot of its current state and does not
+     * reflect a live view of what is on an item. After changing any value on
+     * this component, it must be set with
+     * {@link #setEquippable(EquippableComponent)} to apply the changes.
+     *
+     * @return equippable
+     */
+    @NotNull
+    EquippableComponent getEquippable();
+
+    /**
+     * Sets the equippable tool.
+     *
+     * @param equippable new equippable
+     */
+    void setEquippable(@Nullable EquippableComponent equippable);
 
     /**
      * Checks if the jukebox playable is set.

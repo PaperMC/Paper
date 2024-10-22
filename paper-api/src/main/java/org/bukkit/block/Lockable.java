@@ -1,5 +1,7 @@
 package org.bukkit.block;
 
+import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,8 +23,10 @@ public interface Lockable {
      * Gets the key needed to access the container.
      *
      * @return the key needed.
+     * @deprecated locks are not necessarily pure strings
      */
     @NotNull
+    @Deprecated
     String getLock();
 
     /**
@@ -30,6 +34,18 @@ public interface Lockable {
      * string) to remove key.
      *
      * @param key the key required to access the container.
+     * @deprecated locks are not necessarily pure strings
      */
+    @Deprecated
     void setLock(@Nullable String key);
+
+    /**
+     * Sets the key required to access this container. All explicit
+     * modifications to the set key will be required to match on the opening
+     * key. Set to null to remove key.
+     *
+     * @param key the key required to access the container.
+     */
+    @ApiStatus.Experimental
+    void setLockItem(@Nullable ItemStack key);
 }

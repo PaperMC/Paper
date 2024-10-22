@@ -31,6 +31,7 @@ public interface DamageType extends Keyed, Translatable {
     public static final DamageType STARVE = getDamageType("starve");
     public static final DamageType CACTUS = getDamageType("cactus");
     public static final DamageType FALL = getDamageType("fall");
+    public static final DamageType ENDER_PEARL = getDamageType("ender_pearl");
     public static final DamageType FLY_INTO_WALL = getDamageType("fly_into_wall");
     public static final DamageType OUT_OF_WORLD = getDamageType("out_of_world");
     public static final DamageType GENERIC = getDamageType("generic");
@@ -66,6 +67,7 @@ public interface DamageType extends Keyed, Translatable {
     public static final DamageType OUTSIDE_BORDER = getDamageType("outside_border");
     public static final DamageType GENERIC_KILL = getDamageType("generic_kill");
     public static final DamageType WIND_CHARGE = getDamageType("wind_charge");
+    public static final DamageType MACE_SMASH = getDamageType("mace_smash");
 
     @NotNull
     private static DamageType getDamageType(@NotNull String key) {
