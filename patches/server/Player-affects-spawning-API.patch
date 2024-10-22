@@ -9,7 +9,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/EntitySelector.java
 +++ b/src/main/java/net/minecraft/world/entity/EntitySelector.java
 @@ -0,0 +0,0 @@ public final class EntitySelector {
-     public static final Predicate<Entity> CAN_BE_COLLIDED_WITH = EntitySelector.NO_SPECTATORS.and(Entity::canBeCollidedWith);
+     public static final Predicate<Entity> CAN_BE_PICKED = EntitySelector.NO_SPECTATORS.and(Entity::isPickable);
  
      private EntitySelector() {}
 +    // Paper start - Affects Spawning API
@@ -51,27 +51,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
 @@ -0,0 +0,0 @@ public class Silverfish extends Monster {
-         if (checkAnyLightMonsterSpawnRules(type, world, spawnReason, pos, random)) {
+         } else {
              Player entityhuman = world.getNearestPlayer((double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, 5.0D, true);
  
 -            return entityhuman == null;
 +            return !(entityhuman != null && !entityhuman.affectsSpawning) && entityhuman == null; // Paper - Affects Spawning API
-         } else {
-             return false;
          }
+     }
+ 
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Zombie.java b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Zombie.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
 @@ -0,0 +0,0 @@ public class Zombie extends Monster {
  
-                     if (SpawnPlacements.isSpawnPositionOk(entitytypes, this.level(), blockposition) && SpawnPlacements.checkSpawnRules(entitytypes, worldserver, MobSpawnType.REINFORCEMENT, blockposition, this.level().random)) {
+                     if (SpawnPlacements.isSpawnPositionOk(entitytypes, world, blockposition) && SpawnPlacements.checkSpawnRules(entitytypes, world, EntitySpawnReason.REINFORCEMENT, blockposition, world.random)) {
                          entityzombie.setPos((double) i1, (double) j1, (double) k1);
--                        if (!this.level().hasNearbyAlivePlayer((double) i1, (double) j1, (double) k1, 7.0D) && this.level().isUnobstructed(entityzombie) && this.level().noCollision((Entity) entityzombie) && !this.level().containsAnyLiquid(entityzombie.getBoundingBox())) {
-+                        if (!this.level().hasNearbyAlivePlayerThatAffectsSpawning((double) i1, (double) j1, (double) k1, 7.0D) && this.level().isUnobstructed(entityzombie) && this.level().noCollision((Entity) entityzombie) && !this.level().containsAnyLiquid(entityzombie.getBoundingBox())) { // Paper - Affects Spawning API
+-                        if (!world.hasNearbyAlivePlayer((double) i1, (double) j1, (double) k1, 7.0D) && world.isUnobstructed(entityzombie) && world.noCollision((Entity) entityzombie) && (entityzombie.canSpawnInLiquids() || !world.containsAnyLiquid(entityzombie.getBoundingBox()))) {
++                        if (!world.hasNearbyAlivePlayerhasNearbyAlivePlayerThatAffectsSpawning((double) i1, (double) j1, (double) k1, 7.0D) && world.isUnobstructed(entityzombie) && world.noCollision((Entity) entityzombie) && (entityzombie.canSpawnInLiquids() || !world.containsAnyLiquid(entityzombie.getBoundingBox()))) { // Paper - affects spawning api
                              entityzombie.setTarget(entityliving, EntityTargetEvent.TargetReason.REINFORCEMENT_TARGET, true); // CraftBukkit
-                             entityzombie.finalizeSpawn(worldserver, this.level().getCurrentDifficultyAt(entityzombie.blockPosition()), MobSpawnType.REINFORCEMENT, (SpawnGroupData) null);
-                             worldserver.addFreshEntityWithPassengers(entityzombie, CreatureSpawnEvent.SpawnReason.REINFORCEMENTS); // CraftBukkit
+                             entityzombie.finalizeSpawn(world, world.getCurrentDifficultyAt(entityzombie.blockPosition()), EntitySpawnReason.REINFORCEMENT, (SpawnGroupData) null);
+                             world.addFreshEntityWithPassengers(entityzombie, CreatureSpawnEvent.SpawnReason.REINFORCEMENTS); // CraftBukkit
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java

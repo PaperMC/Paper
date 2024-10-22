@@ -15,13 +15,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              ServerLevel worldserver = (ServerLevel) iterator.next();
 +            worldserver.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
  
-             this.profiler.push(() -> {
+             gameprofilerfiller.push(() -> {
                  String s = String.valueOf(worldserver);
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
      // CraftBukkit start
      public final LevelStorageSource.LevelStorageAccess convertable;
      public final UUID uuid;
@@ -47,11 +47,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/block/BushBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/BushBlock.java
 @@ -0,0 +0,0 @@ public abstract class BushBlock extends Block {
-     protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor world, BlockPos pos, BlockPos neighborPos) {
          // CraftBukkit start
          if (!state.canSurvive(world, pos)) {
--            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPhysicsEvent(world, pos).isCancelled()) {
-+            if (!(world instanceof net.minecraft.server.level.ServerLevel && ((net.minecraft.server.level.ServerLevel) world).hasPhysicsEvent) || !org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPhysicsEvent(world, pos).isCancelled()) { // Paper
+             // Suppress during worldgen
+-            if (!(world instanceof Level world1) || !org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPhysicsEvent(world1, pos).isCancelled()) {
++            if (!(world instanceof net.minecraft.server.level.ServerLevel world1 && world1.hasPhysicsEvent) || !org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPhysicsEvent(world1, pos).isCancelled()) { // Paper
                  return Blocks.AIR.defaultBlockState();
              }
          }

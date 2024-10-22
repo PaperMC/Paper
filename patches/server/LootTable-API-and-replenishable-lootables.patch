@@ -608,6 +608,34 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - LootTable API
  }
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/AbstractChestBoat.java b/src/main/java/net/minecraft/world/entity/vehicle/AbstractChestBoat.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/AbstractChestBoat.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/AbstractChestBoat.java
+@@ -0,0 +0,0 @@ public abstract class AbstractChestBoat extends AbstractBoat implements HasCusto
+     @Nullable
+     @Override
+     public AbstractContainerMenu createMenu(int syncId, Inventory playerInventory, Player player) {
+-        if (this.lootTable != null && player.isSpectator()) {
++        if (this.lootTable != null && player.isSpectator()) { // Paper - LootTable API (TODO spectators can open chests that aren't ready to be re-generated but this doesn't support that)
+             return null;
+         } else {
+             this.unpackLootTable(playerInventory.player);
+@@ -0,0 +0,0 @@ public abstract class AbstractChestBoat extends AbstractBoat implements HasCusto
+         this.level().gameEvent((Holder) GameEvent.CONTAINER_CLOSE, this.position(), GameEvent.Context.of((Entity) player));
+     }
+ 
++    // Paper start - LootTable API
++    final com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData = new com.destroystokyo.paper.loottable.PaperLootableInventoryData();
++
++    @Override
++    public com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData() {
++        return this.lootableData;
++    }
++    // Paper end - LootTable API
+     // CraftBukkit start
+     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
+     private int maxStack = MAX_STACK;
 diff --git a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecartContainer.java b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecartContainer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecartContainer.java
@@ -627,86 +655,59 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // CraftBukkit start
      public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
      private int maxStack = MAX_STACK;
-diff --git a/src/main/java/net/minecraft/world/entity/vehicle/ChestBoat.java b/src/main/java/net/minecraft/world/entity/vehicle/ChestBoat.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/entity/vehicle/ChestBoat.java
-+++ b/src/main/java/net/minecraft/world/entity/vehicle/ChestBoat.java
-@@ -0,0 +0,0 @@ public class ChestBoat extends Boat implements HasCustomInventoryScreen, Contain
-     @Nullable
-     @Override
-     public AbstractContainerMenu createMenu(int syncId, Inventory playerInventory, Player player) {
--        if (this.lootTable != null && player.isSpectator()) {
-+        if (this.lootTable != null && player.isSpectator()) { // Paper - LootTable API (TODO spectators can open chests that aren't ready to be re-generated but this doesn't support that)
-             return null;
-         } else {
-             this.unpackLootTable(playerInventory.player);
-@@ -0,0 +0,0 @@ public class ChestBoat extends Boat implements HasCustomInventoryScreen, Contain
-         this.level().gameEvent((Holder) GameEvent.CONTAINER_CLOSE, this.position(), GameEvent.Context.of((Entity) player));
-     }
- 
-+    // Paper start - LootTable API
-+    final com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData = new com.destroystokyo.paper.loottable.PaperLootableInventoryData();
-+
-+    @Override
-+    public com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData() {
-+        return this.lootableData;
-+    }
-+    // Paper end - LootTable API
-     // CraftBukkit start
-     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
-     private int maxStack = MAX_STACK;
 diff --git a/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java b/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
 @@ -0,0 +0,0 @@ public interface ContainerEntity extends Container, MenuProvider {
-     default void addChestVehicleSaveData(CompoundTag nbt, HolderLookup.Provider registriesLookup) {
-         if (this.getLootTable() != null) {
-             nbt.putString("LootTable", this.getLootTable().location().toString());
+     default void addChestVehicleSaveData(CompoundTag nbt, HolderLookup.Provider registries) {
+         if (this.getContainerLootTable() != null) {
+             nbt.putString("LootTable", this.getContainerLootTable().location().toString());
 +            this.lootableData().saveNbt(nbt); // Paper
-             if (this.getLootTableSeed() != 0L) {
-                 nbt.putLong("LootTableSeed", this.getLootTableSeed());
+             if (this.getContainerLootTableSeed() != 0L) {
+                 nbt.putLong("LootTableSeed", this.getContainerLootTableSeed());
              }
 -        } else {
--            ContainerHelper.saveAllItems(nbt, this.getItemStacks(), registriesLookup);
+-            ContainerHelper.saveAllItems(nbt, this.getItemStacks(), registries);
          }
-+        ContainerHelper.saveAllItems(nbt, this.getItemStacks(), registriesLookup); // Paper - always save the items, table may still remain
++        ContainerHelper.saveAllItems(nbt, this.getItemStacks(), registries); // Paper - always save the items, table may still remain
      }
  
-     default void readChestVehicleSaveData(CompoundTag nbt, HolderLookup.Provider registriesLookup) {
+     default void readChestVehicleSaveData(CompoundTag nbt, HolderLookup.Provider registries) {
          this.clearItemStacks();
          if (nbt.contains("LootTable", 8)) {
-             this.setLootTable(ResourceKey.create(Registries.LOOT_TABLE, ResourceLocation.parse(nbt.getString("LootTable"))));
+             this.setContainerLootTable(ResourceKey.create(Registries.LOOT_TABLE, ResourceLocation.parse(nbt.getString("LootTable"))));
 +            // Paper start - LootTable API
 +            if (this.getLootTable() != null) {
 +                this.lootableData().loadNbt(nbt);
 +            }
 +            // Paper end - LootTable API
-             this.setLootTableSeed(nbt.getLong("LootTableSeed"));
+             this.setContainerLootTableSeed(nbt.getLong("LootTableSeed"));
 -        } else {
--            ContainerHelper.loadAllItems(nbt, this.getItemStacks(), registriesLookup);
+-            ContainerHelper.loadAllItems(nbt, this.getItemStacks(), registries);
          }
-+        ContainerHelper.loadAllItems(nbt, this.getItemStacks(), registriesLookup); // Paper - always save the items, table may still remain
++        ContainerHelper.loadAllItems(nbt, this.getItemStacks(), registries); // Paper - always save the items, table may still remain
      }
  
-     default void chestVehicleDestroyed(DamageSource source, Level world, Entity vehicle) {
+     default void chestVehicleDestroyed(DamageSource source, ServerLevel world, Entity vehicle) {
 @@ -0,0 +0,0 @@ public interface ContainerEntity extends Container, MenuProvider {
  
      default void unpackChestVehicleLootTable(@Nullable Player player) {
          MinecraftServer minecraftServer = this.level().getServer();
--        if (this.getLootTable() != null && minecraftServer != null) {
+-        if (this.getContainerLootTable() != null && minecraftServer != null) {
 +        if (minecraftServer != null && this.lootableData().shouldReplenish(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.ENTITY, player)) { // Paper - LootTable API
-             LootTable lootTable = minecraftServer.reloadableRegistries().getLootTable(this.getLootTable());
+             LootTable lootTable = minecraftServer.reloadableRegistries().getLootTable(this.getContainerLootTable());
              if (player != null) {
-                 CriteriaTriggers.GENERATE_LOOT.trigger((ServerPlayer)player, this.getLootTable());
+                 CriteriaTriggers.GENERATE_LOOT.trigger((ServerPlayer)player, this.getContainerLootTable());
              }
  
--            this.setLootTable(null);
+-            this.setContainerLootTable(null);
 +            // Paper start - LootTable API
 +            if (this.lootableData().shouldClearLootTable(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.ENTITY, player)) {
-+                this.setLootTable(null);
++                this.setContainerLootTable(null);
 +            }
 +            // Paper end - LootTable API
++
              LootParams.Builder builder = new LootParams.Builder((ServerLevel)this.level()).withParameter(LootContextParams.ORIGIN, this.position());
              if (player != null) {
                  builder.withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player);
@@ -857,13 +858,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import org.bukkit.inventory.Inventory;
  import org.bukkit.loot.LootTable;
  
--public class CraftChestBoat extends CraftBoat implements org.bukkit.entity.ChestBoat {
+-public abstract class CraftChestBoat extends CraftBoat implements org.bukkit.entity.ChestBoat {
 -
-+public class CraftChestBoat extends CraftBoat implements org.bukkit.entity.ChestBoat, com.destroystokyo.paper.loottable.PaperLootableEntityInventory { // Paper
++public abstract class CraftChestBoat extends CraftBoat implements org.bukkit.entity.ChestBoat, com.destroystokyo.paper.loottable.PaperLootableEntityInventory { // Paper
      private final Inventory inventory;
  
-     public CraftChestBoat(CraftServer server, ChestBoat entity) {
-@@ -0,0 +0,0 @@ public class CraftChestBoat extends CraftBoat implements org.bukkit.entity.Chest
+     public CraftChestBoat(CraftServer server, AbstractChestBoat entity) {
+@@ -0,0 +0,0 @@ public abstract class CraftChestBoat extends CraftBoat implements org.bukkit.ent
          return this.inventory;
      }
  
@@ -871,10 +872,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    public void setLootTable(LootTable table) {
 -        this.setLootTable(table, this.getSeed());
 -    }
--
++    // Paper - moved loot table logic to PaperLootableEntityInventory
+ 
 -    @Override
 -    public LootTable getLootTable() {
--        return CraftLootTable.minecraftToBukkit(this.getHandle().getLootTable());
+-        return CraftLootTable.minecraftToBukkit(this.getHandle().getContainerLootTable());
 -    }
 -
 -    @Override
@@ -884,14 +886,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -
 -    @Override
 -    public long getSeed() {
--        return this.getHandle().getLootTableSeed();
+-        return this.getHandle().getContainerLootTableSeed();
 -    }
 -
 -    private void setLootTable(LootTable table, long seed) {
--        this.getHandle().setLootTable(CraftLootTable.bukkitToMinecraft(table));
--        this.getHandle().setLootTableSeed(seed);
+-        this.getHandle().setContainerLootTable(CraftLootTable.bukkitToMinecraft(table));
+-        this.getHandle().setContainerLootTableSeed(seed);
 -    }
-+    // Paper - moved loot table logic to PaperLootableEntityInventory
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartChest.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartChest.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644

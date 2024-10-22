@@ -34,12 +34,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class GroundPathNavigation extends PathNavigation {
                  }
  
-                 if (blockPos.getY() > this.level.getMinBuildHeight()) {
--                    return super.createPath(blockPos.above(), distance);
-+                    return super.createPath(blockPos.above(), entity, distance); // Paper - EntityPathfindEvent
+                 if (mutableBlockPos.getY() > this.level.getMinY()) {
+-                    return super.createPath(mutableBlockPos.above(), distance);
++                    return super.createPath(mutableBlockPos.above(), entity, distance); // Paper - EntityPathfindEvent
                  }
  
-                 while (blockPos.getY() < this.level.getMaxBuildHeight() && levelChunk.getBlockState(blockPos).isAir()) {
+                 mutableBlockPos.setY(target.getY() + 1);
 @@ -0,0 +0,0 @@ public class GroundPathNavigation extends PathNavigation {
              }
  
@@ -47,14 +47,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                return super.createPath(target, distance);
 +                return super.createPath(target, entity, distance); // Paper - EntityPathfindEvent
              } else {
-                 BlockPos blockPos2 = target.above();
+                 BlockPos.MutableBlockPos mutableBlockPos2 = target.mutable().move(Direction.UP);
  
 @@ -0,0 +0,0 @@ public class GroundPathNavigation extends PathNavigation {
-                     blockPos2 = blockPos2.above();
+                     mutableBlockPos2.move(Direction.UP);
                  }
  
--                return super.createPath(blockPos2, distance);
-+                return super.createPath(blockPos2, entity, distance); // Paper - EntityPathfindEvent
+-                return super.createPath(mutableBlockPos2.immutable(), distance);
++                return super.createPath(mutableBlockPos2.immutable(), entity, distance);  // Paper - EntityPathfindEvent
              }
          }
      }
@@ -111,7 +111,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end - EntityPathfindEvent
          if (positions.isEmpty()) {
              return null;
-         } else if (this.mob.getY() < (double)this.level.getMinBuildHeight()) {
+         } else if (this.mob.getY() < (double)this.level.getMinY()) {
 @@ -0,0 +0,0 @@ public abstract class PathNavigation {
          } else if (this.path != null && !this.path.isDone() && positions.contains(this.targetPos)) {
              return this.path;
@@ -133,9 +133,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                }
 +            }
 +            // Paper end - EntityPathfindEvent
-             this.level.getProfiler().push("pathfind");
+             ProfilerFiller profilerFiller = Profiler.get();
+             profilerFiller.push("pathfind");
              BlockPos blockPos = useHeadPos ? this.mob.blockPosition().above() : this.mob.blockPosition();
-             int i = (int)(followRange + (float)range);
 diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/WallClimberNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/WallClimberNavigation.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/navigation/WallClimberNavigation.java
