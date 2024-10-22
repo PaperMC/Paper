@@ -5,13 +5,13 @@ Subject: [PATCH] Add EntityTeleportEndGatewayEvent
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 946f289e0e681524c6fde696921965dbdedda372..d6017d9d71fb4b3a3df6eaa44da0ebda54c83da4 100644
+index 99794276626d26849150d4956abbbc2296543907..087f030985180b91a809fb45244e23106da62e34 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -3301,8 +3301,16 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
-             if (!this.isRemoved()) {
+@@ -3429,8 +3429,16 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
                  // CraftBukkit start
-                 Location to = new Location(teleportTarget.newLevel().getWorld(), teleportTarget.pos().x, teleportTarget.pos().y, teleportTarget.pos().z, teleportTarget.yRot(), teleportTarget.xRot());
+                 PositionMoveRotation absolutePosition = PositionMoveRotation.calculateAbsolute(PositionMoveRotation.of(this), PositionMoveRotation.of(teleportTarget), teleportTarget.relatives());
+                 Location to = CraftLocation.toBukkit(absolutePosition.position(), teleportTarget.newLevel().getWorld(), absolutePosition.yRot(), absolutePosition.xRot());
 -                EntityTeleportEvent teleEvent = CraftEventFactory.callEntityTeleportEvent(this, to);
 -                if (teleEvent.isCancelled()) {
 +                // Paper start - gateway-specific teleport event
@@ -26,4 +26,4 @@ index 946f289e0e681524c6fde696921965dbdedda372..d6017d9d71fb4b3a3df6eaa44da0ebda
 +                if (teleEvent.isCancelled() || teleEvent.getTo() == null) {
                      return null;
                  }
-                 to = teleEvent.getTo();
+                 if (!to.equals(teleEvent.getTo())) {
