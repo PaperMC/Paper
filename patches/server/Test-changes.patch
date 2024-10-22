@@ -395,7 +395,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      Preconditions.checkArgument(clazz == org.bukkit.Fluid.class, "Fluid namespace must have fluid type");
 -                    TagKey<FluidType> fluidTagKey = TagKey.create(Registries.FLUID, key);
 +                    TagKey<net.minecraft.world.level.material.Fluid> fluidTagKey = TagKey.create(Registries.FLUID, key); // Paper - address remapping issues
-                     if (BuiltInRegistries.FLUID.getTag(fluidTagKey).isPresent()) {
+                     if (BuiltInRegistries.FLUID.get(fluidTagKey).isPresent()) {
                          return new CraftFluidTag(BuiltInRegistries.FLUID, fluidTagKey);
                      }
                  }
@@ -403,7 +403,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      Preconditions.checkArgument(clazz == org.bukkit.entity.EntityType.class, "Entity type namespace must have entity type");
 -                    TagKey<EntityTypes<?>> entityTagKey = TagKey.create(Registries.ENTITY_TYPE, key);
 +                    TagKey<net.minecraft.world.entity.EntityType<?>> entityTagKey = TagKey.create(Registries.ENTITY_TYPE, key); // Paper - address remapping issues
-                     if (BuiltInRegistries.ENTITY_TYPE.getTag(entityTagKey).isPresent()) {
+                     if (BuiltInRegistries.ENTITY_TYPE.get(entityTagKey).isPresent()) {
                          return new CraftEntityTag(BuiltInRegistries.ENTITY_TYPE, entityTagKey);
                      }
                  }
@@ -429,14 +429,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/test/java/org/bukkit/support/RegistryHelper.java
 +++ b/src/test/java/org/bukkit/support/RegistryHelper.java
 @@ -0,0 +0,0 @@ public final class RegistryHelper {
-     private static LayeredRegistryAccess<RegistryLayer> createLayers(MultiPackResourceManager resourceManager) {
-         // add tags and loot tables for unit tests
-         LayeredRegistryAccess<RegistryLayer> layers = RegistryLayer.createRegistryAccess();
+         List<HolderLookup.RegistryLookup<?>> list1 = TagLoader.buildUpdatedLookups(iregistrycustom_dimension, list);
+         RegistryAccess.Frozen iregistrycustom_dimension1 = RegistryDataLoader.load((ResourceManager) ireloadableresourcemanager, list1, RegistryDataLoader.WORLDGEN_REGISTRIES);
+         LayeredRegistryAccess<RegistryLayer> layers = layeredregistryaccess.replaceFrom(RegistryLayer.WORLDGEN, iregistrycustom_dimension1);
 +        // Paper start - load registry here to ensure bukkit object registry are correctly delayed if needed
 +        try {
 +            Class.forName("org.bukkit.Registry");
 +        } catch (final ClassNotFoundException ignored) {}
 +        // Paper end - load registry here to ensure bukkit object registry are correctly delayed if needed
-         layers = WorldLoader.loadAndReplaceLayer(resourceManager, layers, RegistryLayer.WORLDGEN, RegistryDataLoader.WORLDGEN_REGISTRIES);
  
-         return layers;
+         return layers.compositeAccess().freeze();
+     }
+@@ -0,0 +0,0 @@ public final class RegistryHelper {
+         List<HolderLookup.RegistryLookup<?>> list1 = TagLoader.buildUpdatedLookups(iregistrycustom_dimension, list);
+         RegistryAccess.Frozen iregistrycustom_dimension1 = RegistryDataLoader.load((ResourceManager) ireloadableresourcemanager, list1, RegistryDataLoader.WORLDGEN_REGISTRIES);
+         LayeredRegistryAccess<RegistryLayer> layers = layeredregistryaccess.replaceFrom(RegistryLayer.WORLDGEN, iregistrycustom_dimension1);
++        // Paper start - load registry here to ensure bukkit object registry are correctly delayed if needed
++        try {
++            Class.forName("org.bukkit.Registry");
++        } catch (final ClassNotFoundException ignored) {}
++        // Paper end - load registry here to ensure bukkit object registry are correctly delayed if needed
+         RegistryHelper.registry = layers.compositeAccess().freeze();
+         // Register vanilla pack
+         RegistryHelper.dataPack = ReloadableServerResources.loadResources(ireloadableresourcemanager, layers, list, featureFlagSet, Commands.CommandSelection.DEDICATED, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();

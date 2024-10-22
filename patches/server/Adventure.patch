@@ -2611,7 +2611,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ import org.bukkit.craftbukkit.SpigotTimings; // Spigot
- public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements ServerInfo, ChunkIOErrorReporter, CommandSource, AutoCloseable {
+ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements ServerInfo, ChunkIOErrorReporter, CommandSource {
  
      public static final Logger LOGGER = LogUtils.getLogger();
 +    public static final net.kyori.adventure.text.logger.slf4j.ComponentLogger COMPONENT_LOGGER = net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger(LOGGER.getName()); // Paper
@@ -2639,10 +2639,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private ServerStatus.Players buildPlayerStatus() {
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          SpigotTimings.schedulerTimer.startTiming(); // Spigot
-         this.server.getScheduler().mainThreadHeartbeat(this.tickCount); // CraftBukkit
+         this.server.getScheduler().mainThreadHeartbeat(); // CraftBukkit
          SpigotTimings.schedulerTimer.stopTiming(); // Spigot
 +        io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CALLBACK_MANAGER.handleQueue(this.tickCount); // Paper
-         this.profiler.push("commandFunctions");
+         gameprofilerfiller.push("commandFunctions");
          SpigotTimings.commandFunctionsTimer.startTiming(); // Spigot
          this.getFunctions().tick();
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -2725,8 +2725,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public String displayName;
 +    public net.kyori.adventure.text.Component adventure$displayName; // Paper
      public Component listName;
+     public int listOrder = 0;
      public org.bukkit.Location compassTarget;
-     public int newExp = 0;
 @@ -0,0 +0,0 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
  
          // CraftBukkit start
@@ -3265,7 +3265,7 @@ diff --git a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntit
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
-@@ -0,0 +0,0 @@ public class SignBlockEntity extends BlockEntity implements CommandSource { // C
+@@ -0,0 +0,0 @@ public class SignBlockEntity extends BlockEntity {
  
          // CraftBukkit start
          Player player = ((ServerPlayer) entityhuman).getBukkitEntity();
@@ -3578,7 +3578,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            player.connection.send(io.papermc.paper.adventure.PaperAdventure.asSoundPacket(sound, player.getX(), player.getY(), player.getZ(), seed, null));
 +        }
 +    }
-+
+ 
+     @Override
+     public void playSound(Entity entity, String sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
+@@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         }
+     }
+ 
 +    @Override
 +    public void playSound(final net.kyori.adventure.sound.Sound sound, final double x, final double y, final double z) {
 +        org.spigotmc.AsyncCatcher.catchOp("play sound"); // Paper
@@ -3604,10 +3610,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private java.util.function.BiConsumer<net.minecraft.network.protocol.Packet<?>, Float> playSound0(final double x, final double y, final double z) {
 +        return (packet, distance) -> this.world.getServer().getPlayerList().broadcast(null, x, y, z, distance, this.world.dimension(), packet);
 +    }
-+    // Paper end
- 
-     private static Map<String, GameRules.Key<?>> gamerules;
-     public static synchronized Map<String, GameRules.Key<?>> getGameRulesNMS() {
++    // Paper end - Adventure
++
+     private Map<String, GameRules.Key<?>> gamerules;
+     public synchronized Map<String, GameRules.Key<?>> getGameRulesNMS() {
+         if (this.gamerules != null) {
 @@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      public void setSendViewDistance(final int viewDistance) {
          throw new UnsupportedOperationException("Not implemented yet");
@@ -3694,7 +3701,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftContainer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftContainer.java
 @@ -0,0 +0,0 @@ public abstract class CraftContainer<T extends BaseContainerBlockEntity> extends
-         this.getSnapshot().lockKey = (key == null) ? LockCode.NO_LOCK : new LockCode(key);
+         }
      }
  
 +    // Paper start
@@ -4201,7 +4208,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (player.getBukkitEntity().canSee(this)) {
                  player.connection.send(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME, this.getHandle()));
 @@ -0,0 +0,0 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-         }
+         this.getHandle().listOrder = order;
      }
  
 -    private Component playerListHeader;
@@ -4688,7 +4695,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public static PlayerDeathEvent callPlayerDeathEvent(ServerPlayer victim, DamageSource damageSource, List<org.bukkit.inventory.ItemStack> drops, net.kyori.adventure.text.Component deathMessage, boolean keepInventory) { // Paper - Adventure
          CraftPlayer entity = victim.getBukkitEntity();
          CraftDamageSource bukkitDamageSource = new CraftDamageSource(damageSource);
-         PlayerDeathEvent event = new PlayerDeathEvent(entity, bukkitDamageSource, drops, victim.getExpReward(damageSource.getEntity()), 0, deathMessage);
+         PlayerDeathEvent event = new PlayerDeathEvent(entity, bukkitDamageSource, drops, victim.getExpReward(victim.serverLevel(), damageSource.getEntity()), 0, deathMessage);
 @@ -0,0 +0,0 @@ public class CraftEventFactory {
       * Server methods
       */
@@ -4825,7 +4832,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 @@ -0,0 +0,0 @@ public final class CraftItemFactory implements ItemFactory {
-         Optional<HolderSet.Named<Enchantment>> optional = (allowTreasures) ? Optional.empty() : registry.registryOrThrow(Registries.ENCHANTMENT).getTag(EnchantmentTags.IN_ENCHANTING_TABLE);
+         Optional<HolderSet.Named<Enchantment>> optional = (allowTreasures) ? Optional.empty() : registry.lookupOrThrow(Registries.ENCHANTMENT).get(EnchantmentTags.IN_ENCHANTING_TABLE);
          return CraftItemStack.asCraftMirror(EnchantmentHelper.enchantItem(source, craft.handle, level, registry, optional));
      }
 +
@@ -5195,7 +5202,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
-         return !(this.hasDisplayName() || this.hasItemName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.build().isEmpty() || !this.removedTags.isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isHideTooltip() || this.isUnbreakable() || this.hasEnchantmentGlintOverride() || this.isFireResistant() || this.hasMaxStackSize() || this.hasRarity() || this.hasFood() || this.hasTool() || this.hasJukeboxPlayable() || this.hasDamage() || this.hasMaxDamage() || this.hasAttributeModifiers() || this.customTag != null);
+         return !(this.hasDisplayName() || this.hasItemName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasEnchantable() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.build().isEmpty() || !this.removedTags.isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isHideTooltip() || this.hasTooltipStyle() || this.hasItemModel() || this.isUnbreakable() || this.hasEnchantmentGlintOverride() || this.isGlider() || this.hasDamageResistant() || this.hasMaxStackSize() || this.hasRarity() || this.hasUseRemainder() || this.hasUseCooldown() || this.hasFood() || this.hasTool() || this.hasJukeboxPlayable() || this.hasEquippable() || this.hasDamage() || this.hasMaxDamage() || this.hasAttributeModifiers() || this.customTag != null);
      }
  
 +    // Paper start

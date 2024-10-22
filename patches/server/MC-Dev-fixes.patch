@@ -43,7 +43,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
 +++ b/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
 @@ -0,0 +0,0 @@ public class BuiltInRegistries {
-         Bootstrap.checkBootstrapCalled(() -> "registry " + key);
+         Bootstrap.checkBootstrapCalled(() -> "registry " + key.location());
          ResourceLocation resourceLocation = key.location();
          LOADERS.put(resourceLocation, () -> initializer.run(registry));
 -        WRITABLE_REGISTRY.register((ResourceKey<WritableRegistry<?>>)key, registry, RegistrationInfo.BUILT_IN);
@@ -82,7 +82,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return stream.<Pack>map(resourcepackrepository::getPack).filter(Objects::nonNull).map(Pack::open).collect(ImmutableList.toImmutableList()); // CraftBukkit - decompile error // Paper - decompile error // todo: is this needed anymore?
          }, this).thenCompose((immutablelist) -> {
              MultiPackResourceManager resourcemanager = new MultiPackResourceManager(PackType.SERVER_DATA, immutablelist);
- 
+             List<Registry.PendingTags<?>> list = TagLoader.loadTagsForExistingRegistries(resourcemanager, this.registries.compositeAccess());
 diff --git a/src/main/java/net/minecraft/util/SortedArraySet.java b/src/main/java/net/minecraft/util/SortedArraySet.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/util/SortedArraySet.java
@@ -101,9 +101,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/monster/Pillager.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Pillager.java
 @@ -0,0 +0,0 @@ public class Pillager extends AbstractIllager implements CrossbowAttackMob, Inve
-     protected void registerGoals() {
          super.registerGoals();
          this.goalSelector.addGoal(0, new FloatGoal(this));
+         this.goalSelector.addGoal(1, new AvoidEntityGoal<>(this, Creaking.class, 8.0F, 1.0D, 1.2D));
 -        this.goalSelector.addGoal(2, new Raider.HoldGroundAttackGoal(this, this, 10.0F));
 +        this.goalSelector.addGoal(2, new Raider.HoldGroundAttackGoal(this, 10.0F)); // Paper - decomp fix
          this.goalSelector.addGoal(3, new RangedCrossbowAttackGoal<>(this, 1.0D, 8.0F));
@@ -114,8 +114,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
 @@ -0,0 +0,0 @@ public class ChunkStatusTasks {
-             if (protochunk instanceof ImposterProtoChunk) {
-                 chunk1 = ((ImposterProtoChunk) protochunk).getWrapped();
+             if (protochunk instanceof ImposterProtoChunk protochunkextension) {
+                 chunk1 = protochunkextension.getWrapped();
              } else {
 -                chunk1 = new LevelChunk(worldserver, protochunk, (chunk1) -> {
 +                chunk1 = new LevelChunk(worldserver, protochunk, ($) -> { // Paper - decompile fix

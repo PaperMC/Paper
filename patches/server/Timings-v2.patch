@@ -724,7 +724,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -import org.bukkit.craftbukkit.SpigotTimings; // Spigot
 +import co.aikar.timings.MinecraftTimings; // Paper
  
- public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements ServerInfo, ChunkIOErrorReporter, CommandSource, AutoCloseable {
+ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements ServerInfo, ChunkIOErrorReporter, CommandSource {
  
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
@@ -761,21 +761,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      protected void waitUntilNextTick() {
 -        this.runAllTasks();
-+        //this.executeAll(); // Paper - move this into the tick method for timings
-         this.managedBlock(() -> {
--            return !this.haveTime();
-+            return !this.canSleepForTickNoOversleep(); // Paper - move oversleep into full server tick
-         });
-     }
++        //this.runAllTasks(); // Paper - move this into the tick method for timings
+         this.waitingForNextTick = true;
  
+         try {
+             this.managedBlock(() -> {
+-                return !this.haveTime();
++                return !this.canSleepForTickNoOversleep(); // Paper - move oversleep into full server tick
+             });
+         } finally {
+             this.waitingForNextTick = false;
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      public void tickServer(BooleanSupplier shouldKeepTicking) {
--        SpigotTimings.serverTickTimer.startTiming(); // Spigot
+-        org.spigotmc.WatchdogThread.tick(); // Spigot
 +        co.aikar.timings.TimingsManager.FULL_SERVER_TICK.startTiming(); // Paper
          long i = Util.getNanos();
+         int j = this.pauseWhileEmptySeconds() * 20;
  
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             }
+         }
+ 
+-        SpigotTimings.serverTickTimer.startTiming(); // Spigot
 +        // Paper start - move oversleep into full server tick
 +        isOversleep = true;MinecraftTimings.serverOversleep.startTiming();
 +        this.managedBlock(() -> {
@@ -788,32 +797,37 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.tickRateManager.tick();
          this.tickChildren(shouldKeepTicking);
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-         if (this.autosavePeriod > 0 && this.ticksUntilAutosave <= 0) {
-             this.ticksUntilAutosave = this.autosavePeriod;
-             // CraftBukkit end
--            SpigotTimings.worldSaveTimer.startTiming(); // Spigot
-             MinecraftServer.LOGGER.debug("Autosave started");
-             this.profiler.push("save");
-             this.saveEverything(true, false, false);
-             this.profiler.pop();
-             MinecraftServer.LOGGER.debug("Autosave finished");
--            SpigotTimings.worldSaveTimer.stopTiming(); // Spigot
-         }
+ 
+         ProfilerFiller gameprofilerfiller = Profiler.get();
+ 
 +        // Paper start - move executeAll() into full server tick timing
 +        try (co.aikar.timings.Timing ignored = MinecraftTimings.processTasksTimer.startTiming()) {
 +            this.runAllTasks();
 +        }
 +        // Paper end
-         this.profiler.push("tallying");
-         long j = Util.getNanos() - i;
-         int k = this.tickCount % 100;
+         gameprofilerfiller.push("tallying");
+         long k = Util.getNanos() - i;
+         int l = this.tickCount % 100;
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         this.smoothedTickTimeMillis = this.smoothedTickTimeMillis * 0.8F + (float) k / (float) TimeUtil.NANOSECONDS_PER_MILLISECOND * 0.19999999F;
          this.logTickMethodTime(i);
-         this.profiler.pop();
-         org.spigotmc.WatchdogThread.tick(); // Spigot
+         gameprofilerfiller.pop();
 -        SpigotTimings.serverTickTimer.stopTiming(); // Spigot
 -        org.spigotmc.CustomTimingsHandler.tick(); // Spigot
 +        co.aikar.timings.TimingsManager.FULL_SERVER_TICK.stopTiming(); // Paper
+     }
+ 
+     private void autoSave() {
+         this.ticksUntilAutosave = this.autosavePeriod; // CraftBukkit
+-        SpigotTimings.worldSaveTimer.startTiming(); // Spigot
+         MinecraftServer.LOGGER.debug("Autosave started");
+         ProfilerFiller gameprofilerfiller = Profiler.get();
+ 
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         this.saveEverything(true, false, false);
+         gameprofilerfiller.pop();
+         MinecraftServer.LOGGER.debug("Autosave finished");
+-        SpigotTimings.worldSaveTimer.stopTiming(); // Spigot
      }
  
      private void logTickMethodTime(long tickStartTime) {
@@ -823,17 +837,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          });
 -        SpigotTimings.schedulerTimer.startTiming(); // Spigot
 +        MinecraftTimings.bukkitSchedulerTimer.startTiming(); // Spigot // Paper
-         this.server.getScheduler().mainThreadHeartbeat(this.tickCount); // CraftBukkit
+         this.server.getScheduler().mainThreadHeartbeat(); // CraftBukkit
 -        SpigotTimings.schedulerTimer.stopTiming(); // Spigot
 +        MinecraftTimings.bukkitSchedulerTimer.stopTiming(); // Spigot // Paper
          io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CALLBACK_MANAGER.handleQueue(this.tickCount); // Paper
-         this.profiler.push("commandFunctions");
+         gameprofilerfiller.push("commandFunctions");
 -        SpigotTimings.commandFunctionsTimer.startTiming(); // Spigot
 +        MinecraftTimings.commandFunctionsTimer.startTiming(); // Spigot // Paper
          this.getFunctions().tick();
 -        SpigotTimings.commandFunctionsTimer.stopTiming(); // Spigot
 +        MinecraftTimings.commandFunctionsTimer.stopTiming(); // Spigot // Paper
-         this.profiler.popPush("levels");
+         gameprofilerfiller.popPush("levels");
          Iterator iterator = this.getAllLevels().iterator();
  
          // CraftBukkit start
@@ -852,7 +866,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (this.tickCount % 20 == 0) {
              for (int i = 0; i < this.getPlayerList().players.size(); ++i) {
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-                 entityplayer.connection.send(new ClientboundSetTimePacket(entityplayer.level().getGameTime(), entityplayer.getPlayerTime(), entityplayer.level().getGameRules().getBoolean(GameRules.RULE_DAYLIGHT))); // Add support for per player time
+                 entityplayer.connection.send(new ClientboundSetTimePacket(entityplayer.level().getGameTime(), entityplayer.getPlayerTime(), entityplayer.serverLevel().getGameRules().getBoolean(GameRules.RULE_DAYLIGHT))); // Add support for per player time
              }
          }
 -        SpigotTimings.timeUpdateTimer.stopTiming(); // Spigot
@@ -863,13 +877,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
  
-         this.profiler.popPush("connection");
+         gameprofilerfiller.popPush("connection");
 -        SpigotTimings.connectionTimer.startTiming(); // Spigot
 +        MinecraftTimings.connectionTimer.startTiming(); // Spigot // Paper
-         this.getConnection().tick();
+         this.tickConnection();
 -        SpigotTimings.connectionTimer.stopTiming(); // Spigot
 +        MinecraftTimings.connectionTimer.stopTiming(); // Spigot // Paper
-         this.profiler.popPush("players");
+         gameprofilerfiller.popPush("players");
 -        SpigotTimings.playerListTimer.startTiming(); // Spigot
 +        MinecraftTimings.playerListTimer.startTiming(); // Spigot // Paper
          this.playerList.tick();
@@ -879,7 +893,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              GameTestTicker.SINGLETON.tick();
          }
  
-         this.profiler.popPush("server gui refresh");
+         gameprofilerfiller.popPush("server gui refresh");
  
 -        SpigotTimings.tickablesTimer.startTiming(); // Spigot
 +        MinecraftTimings.tickablesTimer.startTiming(); // Spigot // Paper
@@ -889,7 +903,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        SpigotTimings.tickablesTimer.stopTiming(); // Spigot
 +        MinecraftTimings.tickablesTimer.stopTiming(); // Spigot // Paper
  
-         this.profiler.popPush("send chunks");
+         gameprofilerfiller.popPush("send chunks");
          iterator = this.playerList.getPlayers().iterator();
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -1051,7 +1065,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
          this.level.timings.doChunkMap.stopTiming(); // Spigot
-         this.level.getProfiler().popPush("chunks");
+         gameprofilerfiller.popPush("chunks");
          if (tickChunks) {
 +            this.level.timings.chunks.startTiming(); // Paper - timings
              this.tickChunks();
@@ -1063,52 +1077,54 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          this.level.timings.doChunkUnload.startTiming(); // Spigot
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
-             gameprofilerfiller.push("filteringLoadedChunks");
-             List<ServerChunkCache.ChunkAndHolder> list = Lists.newArrayListWithCapacity(this.chunkMap.size());
-             Iterator iterator = this.chunkMap.getChunks().iterator();
+         gameprofilerfiller.pop();
+         this.clearCache();
+     }
 +            if (this.level.getServer().tickRateManager().runsNormally()) this.level.timings.chunkTicks.startTiming(); // Paper
  
-             while (iterator.hasNext()) {
-                 ChunkHolder playerchunk = (ChunkHolder) iterator.next();
+     private void tickChunks() {
+         long i = this.level.getGameTime();
+@@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
+             LevelChunk chunk = playerchunk.getTickingChunk();
+ 
+             if (chunk != null) {
++                this.level.timings.broadcastChunkUpdates.startTiming(); // Paper - timing
+                 playerchunk.broadcastChanges(chunk);
++                this.level.timings.broadcastChunkUpdates.stopTiming(); // Paper - timing
+             }
+         }
+ 
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
  
-             if (this.level.tickRateManager().runsNormally()) {
-                 gameprofilerfiller.popPush("naturalSpawnCount");
-+                this.level.timings.countNaturalMobs.startTiming(); // Paper - timings
-                 int k = this.distanceManager.getNaturalSpawnChunkCount();
-                 NaturalSpawner.SpawnState spawnercreature_d = NaturalSpawner.createState(k, this.level.getAllEntities(), this::getFullChunk, new LocalMobCapCalculator(this.chunkMap));
-+                this.level.timings.countNaturalMobs.stopTiming(); // Paper - timings
+     private void tickChunks(ProfilerFiller profiler, long timeDelta, List<LevelChunk> chunks) {
+         profiler.popPush("naturalSpawnCount");
++        this.level.timings.countNaturalMobs.startTiming(); // Paper - timings
+         int j = this.distanceManager.getNaturalSpawnChunkCount();
+         NaturalSpawner.SpawnState spawnercreature_d = NaturalSpawner.createState(j, this.level.getAllEntities(), this::getFullChunk, new LocalMobCapCalculator(this.chunkMap));
++        this.level.timings.countNaturalMobs.stopTiming(); // Paper - timings
  
-                 this.lastSpawnState = spawnercreature_d;
-                 gameprofilerfiller.popPush("spawnAndTick");
+         this.lastSpawnState = spawnercreature_d;
+         profiler.popPush("spawnAndTick");
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
-                         }
- 
-                         if (this.level.shouldTickBlocksAt(chunkcoordintpair.toLong())) {
--                            this.level.timings.doTickTiles.startTiming(); // Spigot
-                             this.level.tickChunk(chunk1, l);
--                            this.level.timings.doTickTiles.stopTiming(); // Spigot
-                         }
-                     }
-                 }
-+                this.level.timings.chunkTicks.stopTiming(); // Paper
- 
-                 gameprofilerfiller.popPush("customSpawners");
-                 if (flag) {
-+                    try (co.aikar.timings.Timing ignored = this.level.timings.miscMobSpawning.startTiming()) { // Paper - timings
-                     this.level.tickCustomSpawners(this.spawnEnemies, this.spawnFriendlies);
-+                    } // Paper - timings
-                 }
              }
  
-             gameprofilerfiller.popPush("broadcast");
-             list.forEach((chunkproviderserver_a1) -> {
-+                this.level.timings.broadcastChunkUpdates.startTiming(); // Paper - timing
-                 chunkproviderserver_a1.holder.broadcastChanges(chunkproviderserver_a1.chunk);
-+                this.level.timings.broadcastChunkUpdates.stopTiming(); // Paper - timing
-             });
-             gameprofilerfiller.pop();
-             gameprofilerfiller.pop();
+             if (this.level.shouldTickBlocksAt(chunkcoordintpair.toLong())) {
+-                this.level.timings.doTickTiles.startTiming(); // Spigot
+                 this.level.tickChunk(chunk, k);
+-                this.level.timings.doTickTiles.stopTiming(); // Spigot
+             }
+         }
+ 
++        this.level.timings.chunkTicks.stopTiming(); // Paper
++
+         profiler.popPush("customSpawners");
+         if (flag) {
++            try (co.aikar.timings.Timing ignored = this.level.timings.miscMobSpawning.startTiming()) { // Paper - timings
+             this.level.tickCustomSpawners(this.spawnEnemies, this.spawnFriendlies);
++            }
+         }
+ 
+     }
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
@@ -1130,16 +1146,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import org.bukkit.craftbukkit.event.CraftEventFactory;
  import org.bukkit.craftbukkit.generator.CustomWorldChunkManager;
  import org.bukkit.craftbukkit.util.WorldUUID;
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
          }
  
-         gameprofilerfiller.popPush("tickPending");
+         gameprofilerfiller.push("tickPending");
 -        this.timings.doTickPending.startTiming(); // Spigot
 +        this.timings.scheduledBlocks.startTiming(); // Paper
          if (!this.isDebug() && flag) {
              j = this.getGameTime();
              gameprofilerfiller.push("blockTicks");
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
              this.fluidTicks.tick(j, 65536, this::tickFluid);
              gameprofilerfiller.pop();
          }
@@ -1160,7 +1176,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          gameprofilerfiller.popPush("blockEvents");
          if (flag) {
              this.timings.doSounds.startTiming(); // Spigot
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
          }
  
          gameprofilerfiller.popPush("tickBlocks");
@@ -1168,7 +1184,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (randomTickSpeed > 0) {
              LevelChunkSection[] achunksection = chunk.getSections();
  
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
              }
          }
  
@@ -1176,7 +1192,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          gameprofilerfiller.pop();
      }
  
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
      }
  
      public void tickNonPassenger(Entity entity) {
@@ -1198,9 +1214,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        try {
 +        // Paper end - timings
          entity.setOldPosAndRot();
-         ProfilerFiller gameprofilerfiller = this.getProfiler();
+         ProfilerFiller gameprofilerfiller = Profiler.get();
  
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
  
              this.tickPassenger(entity, entity1);
          }
@@ -1209,7 +1225,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      }
  
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
  
          if (!savingDisabled) {
              org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(this.getWorld())); // CraftBukkit
@@ -1217,7 +1233,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (progressListener != null) {
                  progressListener.progressStartNoAbort(Component.translatable("menu.savingLevel"));
              }
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
                  progressListener.progressStage(Component.translatable("menu.savingChunks"));
              }
  
@@ -1322,19 +1338,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      }
  
-     public void move(MoverType movementType, Vec3 movement) {
+     public void move(MoverType type, Vec3 movement) {
 -        org.bukkit.craftbukkit.SpigotTimings.entityMoveTimer.startTiming(); // Spigot
          if (this.noPhysics) {
              this.setPos(this.getX() + movement.x, this.getY() + movement.y, this.getZ() + movement.z);
          } else {
 @@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
-                 this.level().getProfiler().pop();
+                 gameprofilerfiller.pop();
              }
          }
 -        org.bukkit.craftbukkit.SpigotTimings.entityMoveTimer.stopTiming(); // Spigot
      }
  
-     private boolean isStateClimbable(BlockState state) {
+     private void applyMovementEmissionAndPlaySound(Entity.MovementEmission moveEffect, Vec3 movement, BlockPos landingPos, BlockState landingState) {
 diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/EntityType.java
@@ -1342,7 +1358,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
      }
  
-     public EntityType(EntityType.EntityFactory<T> factory, MobCategory spawnGroup, boolean saveable, boolean summonable, boolean fireImmune, boolean spawnableFarFromPlayer, ImmutableSet<Block> canSpawnInside, EntityDimensions dimensions, float spawnBoxScale, int maxTrackDistance, int trackTickInterval, FeatureFlagSet requiredFeatures) {
+     public EntityType(EntityType.EntityFactory<T> factory, MobCategory spawnGroup, boolean saveable, boolean summonable, boolean fireImmune, boolean spawnableFarFromPlayer, ImmutableSet<Block> canSpawnInside, EntityDimensions dimensions, float spawnBoxScale, int maxTrackDistance, int trackTickInterval, String translationKey, Optional<ResourceKey<LootTable>> lootTable, FeatureFlagSet requiredFeatures) {
 +       // Paper start
 +        this(factory, spawnGroup, saveable, summonable, fireImmune, spawnableFarFromPlayer, canSpawnInside, dimensions, spawnBoxScale, maxTrackDistance, trackTickInterval, requiredFeatures, "custom");
 +    }
@@ -1351,6 +1367,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.inactiveTickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "inactiveTick");
 +        this.passengerTickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "passengerTick");
 +        this.passengerInactiveTickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "passengerInactiveTick");
++        this.id = id;
 +        // Paper end
          this.builtInRegistryHolder = BuiltInRegistries.ENTITY_TYPE.createIntrusiveHolder(this);
          this.factory = factory;
@@ -1364,16 +1381,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public final co.aikar.timings.Timing inactiveTickTimer;
 +    public final co.aikar.timings.Timing passengerTickTimer;
 +    public final co.aikar.timings.Timing passengerInactiveTickTimer;
++    private final String id;
 +    // Paper end
      public boolean trackDeltas() {
          return this != EntityType.PLAYER && this != EntityType.LLAMA_SPIT && this != EntityType.WITHER && this != EntityType.BAT && this != EntityType.ITEM_FRAME && this != EntityType.GLOW_ITEM_FRAME && this != EntityType.LEASH_KNOT && this != EntityType.PAINTING && this != EntityType.END_CRYSTAL && this != EntityType.EVOKER_FANGS;
      }
 @@ -0,0 +0,0 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
-                 Util.fetchChoiceType(References.ENTITY_TREE, id);
+                 Util.fetchChoiceType(References.ENTITY_TREE, registryKey.location().toString());
              }
  
--            return new EntityType<>(this.factory, this.category, this.serialize, this.summon, this.fireImmune, this.canSpawnFarFromPlayer, this.immuneTo, this.dimensions.withAttachments(this.attachments), this.spawnDimensionsScale, this.clientTrackingRange, this.updateInterval, this.requiredFeatures);
-+            return new EntityType<>(this.factory, this.category, this.serialize, this.summon, this.fireImmune, this.canSpawnFarFromPlayer, this.immuneTo, this.dimensions.withAttachments(this.attachments), this.spawnDimensionsScale, this.clientTrackingRange, this.updateInterval, this.requiredFeatures, id); // Paper - add id
+-            return new EntityType<>(this.factory, this.category, this.serialize, this.summon, this.fireImmune, this.canSpawnFarFromPlayer, this.immuneTo, this.dimensions.withAttachments(this.attachments), this.spawnDimensionsScale, this.clientTrackingRange, this.updateInterval, (String) this.descriptionId.get(registryKey), (Optional) this.lootTable.get(registryKey), this.requiredFeatures);
++            return new EntityType<>(this.factory, this.category, this.serialize, this.summon, this.fireImmune, this.canSpawnFarFromPlayer, this.immuneTo, this.dimensions.withAttachments(this.attachments), this.spawnDimensionsScale, this.clientTrackingRange, this.updateInterval, (String) this.descriptionId.get(registryKey), (Optional) this.lootTable.get(registryKey), this.requiredFeatures, this.id); // Paper - add id
          }
      }
  
@@ -1409,35 +1427,35 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          double d0 = this.getX() - this.xo;
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
-             this.refreshDimensions();
          }
  
+         this.elytraAnimationState.tick();
 -        SpigotTimings.timerEntityTickRest.stopTiming(); // Spigot
      }
  
      public void detectEquipmentUpdatesPublic() { // CraftBukkit
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         ProfilerFiller gameprofilerfiller = Profiler.get();
  
-         this.setDeltaMovement(d0, d1, d2);
-         this.level().getProfiler().push("ai");
+         gameprofilerfiller.push("ai");
 -        SpigotTimings.timerEntityAI.startTiming(); // Spigot
          if (this.isImmobile()) {
              this.jumping = false;
              this.xxa = 0.0F;
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
              this.serverAiStep();
-             this.level().getProfiler().pop();
+             gameprofilerfiller.pop();
          }
 -        SpigotTimings.timerEntityAI.stopTiming(); // Spigot
  
-         this.level().getProfiler().pop();
-         this.level().getProfiler().push("jump");
+         gameprofilerfiller.pop();
+         gameprofilerfiller.push("jump");
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
              this.resetFallDistance();
          }
  
 -        SpigotTimings.timerEntityAIMove.startTiming(); // Spigot
-         label104:
+         label112:
          {
              LivingEntity entityliving = this.getControllingPassenger();
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -1446,8 +1464,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
 -        SpigotTimings.timerEntityAIMove.stopTiming(); // Spigot
  
-         this.level().getProfiler().pop();
-         this.level().getProfiler().push("freezing");
+         if (!this.level().isClientSide() || this.isControlledByLocalInstance()) {
+             this.applyEffectsFromBlocks();
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
              this.checkAutoSpinAttack(axisalignedbb, this.getBoundingBox());
          }
@@ -1455,9 +1473,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        SpigotTimings.timerEntityAICollision.startTiming(); // Spigot
          this.pushEntities();
 -        SpigotTimings.timerEntityAICollision.stopTiming(); // Spigot
-         this.level().getProfiler().pop();
-         if (!this.level().isClientSide && this.isSensitiveToWater() && this.isInWaterRainOrBubble()) {
-             this.hurt(this.damageSources().drown(), 1.0F);
+         gameprofilerfiller.pop();
+         world = this.level();
+         if (world instanceof ServerLevel worldserver) {
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
@@ -1523,8 +1541,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
      @Nullable
-     private String descriptionId;
-     @Nullable
+     private Item item;
+     private static final int CACHE_SIZE = 256;
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
@@ -1562,32 +1580,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                } // Paper
              }
          }
-     }
-diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-+++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkSerializer.java
-@@ -0,0 +0,0 @@ public class ChunkSerializer {
-         ListTag nbttaglist1 = ChunkSerializer.getListOfCompoundsOrNull(nbt, "block_entities");
- 
-         return nbttaglist == null && nbttaglist1 == null ? null : (chunk) -> {
--            world.timings.syncChunkLoadEntitiesTimer.startTiming(); // Spigot
-             if (nbttaglist != null) {
-                 world.addLegacyChunkEntities(EntityType.loadEntitiesRecursive(nbttaglist, world));
-             }
--            world.timings.syncChunkLoadEntitiesTimer.stopTiming(); // Spigot
- 
--            world.timings.syncChunkLoadTileEntitiesTimer.startTiming(); // Spigot
-             if (nbttaglist1 != null) {
-                 for (int i = 0; i < nbttaglist1.size(); ++i) {
-                     CompoundTag nbttagcompound1 = nbttaglist1.getCompound(i);
-@@ -0,0 +0,0 @@ public class ChunkSerializer {
-                     }
-                 }
-             }
--            world.timings.syncChunkLoadTileEntitiesTimer.stopTiming(); // Spigot
- 
-         };
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -1869,7 +1861,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.pending.addAll(temp);
          temp.clear();
 +        MinecraftTimings.bukkitSchedulerFinishTimer.stopTiming(); // Paper
-         this.debugHead = this.debugHead.getNextHead(currentTick);
+         this.debugHead = this.debugHead.getNextHead(this.currentTick);
      }
  
 @@ -0,0 +0,0 @@ public class CraftScheduler implements BukkitScheduler {
