@@ -19,7 +19,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/server/commands/SummonCommand.java
 @@ -0,0 +0,0 @@ public class SummonCommand {
              ServerLevel worldserver = source.getLevel();
-             Entity entity = EntityType.loadEntityRecursive(nbttagcompound1, worldserver, (entity1) -> {
+             Entity entity = EntityType.loadEntityRecursive(nbttagcompound1, worldserver, EntitySpawnReason.COMMAND, (entity1) -> {
                  entity1.moveTo(pos.x, pos.y, pos.z, entity1.getYRot(), entity1.getXRot());
 +                entity1.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.COMMAND; // Paper - Entity#getEntitySpawnReason
                  return entity1;
@@ -29,7 +29,7 @@ diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/mai
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
              return true;
          }
          // Paper end - extra debug info
@@ -37,6 +37,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (entity.isRemoved()) {
              // WorldServer.LOGGER.warn("Tried to add entity {} but it was marked as removed already", EntityTypes.getKey(entity.getType())); // CraftBukkit
              return false;
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -0,0 +0,0 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+                 ServerLevel worldserver = (ServerLevel) world;
+                 CompoundTag nbttagcompound = ((CompoundTag) nbt.get()).getCompound("RootVehicle");
+                 Entity entity = EntityType.loadEntityRecursive(nbttagcompound.getCompound("Entity"), worldserver, EntitySpawnReason.LOAD, (entity1) -> {
+-                    return !worldserver.addWithUUID(entity1) ? null : entity1;
++                    return !worldserver.addWithUUID(entity1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.MOUNT) ? null : entity1; // CraftBukkit - decompile error // Paper - Entity#getEntitySpawnReason
+                 });
+ 
+                 if (entity == null) {
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
@@ -53,15 +66,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          player.setServerLevel(worldserver1);
          String s1 = connection.getLoggableAddress(this.server.logIPs());
  
-@@ -0,0 +0,0 @@ public abstract class PlayerList {
-             CompoundTag nbttagcompound = ((CompoundTag) optional.get()).getCompound("RootVehicle");
-             ServerLevel finalWorldServer = worldserver1; // CraftBukkit - decompile error
-             Entity entity = EntityType.loadEntityRecursive(nbttagcompound.getCompound("Entity"), worldserver1, (entity1) -> {
--                return !finalWorldServer.addWithUUID(entity1) ? null : entity1; // CraftBukkit - decompile error
-+                return !finalWorldServer.addWithUUID(entity1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.MOUNT) ? null : entity1; // CraftBukkit - decompile error // Paper - Entity#getEntitySpawnReason
-             });
- 
-             if (entity != null) {
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
@@ -117,10 +121,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/world/entity/EntityType.java
 @@ -0,0 +0,0 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
      @Nullable
-     public T spawn(ServerLevel world, @Nullable ItemStack stack, @Nullable Player player, BlockPos pos, MobSpawnType spawnReason, boolean alignPosition, boolean invertY) {
+     public T spawn(ServerLevel world, @Nullable ItemStack stack, @Nullable Player player, BlockPos pos, EntitySpawnReason spawnReason, boolean alignPosition, boolean invertY) {
          // CraftBukkit start
 -        return this.spawn(world, stack, player, pos, spawnReason, alignPosition, invertY, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG);
-+        return this.spawn(world, stack, player, pos, spawnReason, alignPosition, invertY, spawnReason == MobSpawnType.DISPENSER ? org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DISPENSE_EGG : org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // Paper - use correct spawn reason for dispenser spawn eggs
++        return this.spawn(world, stack, player, pos, spawnReason, alignPosition, invertY, spawnReason == EntitySpawnReason.DISPENSER ? org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DISPENSE_EGG : org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // Paper - use correct spawn reason for dispenser spawn eggs
      }
  
      @Nullable
@@ -129,14 +133,32 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/OminousItemSpawner.java
 +++ b/src/main/java/net/minecraft/world/entity/OminousItemSpawner.java
 @@ -0,0 +0,0 @@ public class OminousItemSpawner extends Entity {
-                 entity = new ItemEntity(level, this.getX(), this.getY(), this.getZ(), itemStack);
-             }
+                     entity = this.spawnProjectile(serverLevel, projectileItem, itemStack);
+                 } else {
+                     entity = new ItemEntity(serverLevel, this.getX(), this.getY(), this.getZ(), itemStack);
+-                    serverLevel.addFreshEntity(entity);
++                    serverLevel.addFreshEntity(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.OMINOUS_ITEM_SPAWNER); // Paper - fixes and addition to spawn reason API
+                 }
  
--            level.addFreshEntity(entity);
-+            level.addFreshEntity(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.OMINOUS_ITEM_SPAWNER); // Paper - Fixes and additions to the SpawnReason API
-             level.levelEvent(3021, this.blockPosition(), 1);
-             level.gameEvent(entity, GameEvent.ENTITY_PLACE, this.position());
-             this.setItem(ItemStack.EMPTY);
+                 serverLevel.levelEvent(3021, this.blockPosition(), 1);
+@@ -0,0 +0,0 @@ public class OminousItemSpawner extends Entity {
+         ProjectileItem.DispenseConfig dispenseConfig = item.createDispenseConfig();
+         dispenseConfig.overrideDispenseEvent().ifPresent(dispenseEvent -> world.levelEvent(dispenseEvent, this.blockPosition(), 0));
+         Direction direction = Direction.DOWN;
+-        Projectile projectile = Projectile.spawnProjectileUsingShoot(
++        Projectile projectile = Projectile.spawnProjectileUsingShootDelayed( // Paper - fixes and addition to spawn reason API
+             item.asProjectile(world, this.position(), stack, direction),
+             world,
+             stack,
+@@ -0,0 +0,0 @@ public class OminousItemSpawner extends Entity {
+             (double)direction.getStepZ(),
+             dispenseConfig.power(),
+             dispenseConfig.uncertainty()
+-        );
++        ).spawn(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.OMINOUS_ITEM_SPAWNER); // Paper - fixes and addition to spawn reason API
+         projectile.setOwner(this);
+         return projectile;
+     }
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/DragonFireball.java b/src/main/java/net/minecraft/world/entity/projectile/DragonFireball.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/DragonFireball.java
@@ -150,6 +172,42 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  } else entityareaeffectcloud.discard(null); // Paper - EnderDragon Events
                  this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
              }
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
+@@ -0,0 +0,0 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+     }
+ 
+     public static <T extends Projectile> T spawnProjectileUsingShoot(T projectile, ServerLevel world, ItemStack projectileStack, double velocityX, double velocityY, double velocityZ, float power, float divergence) {
+-        return Projectile.spawnProjectile(projectile, world, projectileStack, (iprojectile) -> {
++    // Paper start - fixes and addition to spawn reason API
++        return spawnProjectileUsingShootDelayed(projectile, world, projectileStack, velocityX, velocityY, velocityZ, power, divergence).spawn();
++    }
++    public static <T extends Projectile> Delayed<T> spawnProjectileUsingShootDelayed(T projectile, ServerLevel world, ItemStack projectileStack, double velocityX, double velocityY, double velocityZ, float power, float divergence) {
++        return Projectile.spawnProjectileDelayed(projectile, world, projectileStack, (iprojectile) -> {
++    // Paper end - fixes and addition to spawn reason API
+             projectile.shoot(velocityX, velocityY, velocityZ, power, divergence);
+         });
+     }
+@@ -0,0 +0,0 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+             this.attemptSpawn();
+             return projectile();
+         }
++
++        public boolean attemptSpawn(final org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++            if (!world.addFreshEntity(projectile, reason)) return false;
++            projectile.applyOnProjectileSpawned(this.world, this.projectileStack);
++            return true;
++        }
++
++        public T spawn(final org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++            this.attemptSpawn(reason);
++            return projectile();
++        }
+     }
+     // Paper end - delayed projectile spawning
+ 
 diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
@@ -196,8 +254,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      private boolean trySummonWarden(ServerLevel world) {
          return this.warningLevel >= 4
--            && SpawnUtil.trySpawnMob(EntityType.WARDEN, MobSpawnType.TRIGGERED, world, this.getBlockPos(), 20, 5, 6, SpawnUtil.Strategy.ON_TOP_OF_COLLIDER)
-+            && SpawnUtil.trySpawnMob(EntityType.WARDEN, MobSpawnType.TRIGGERED, world, this.getBlockPos(), 20, 5, 6, SpawnUtil.Strategy.ON_TOP_OF_COLLIDER, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL, null) // Paper - Entity#getEntitySpawnReason
+-            && SpawnUtil.trySpawnMob(EntityType.WARDEN, EntitySpawnReason.TRIGGERED, world, this.getBlockPos(), 20, 5, 6, SpawnUtil.Strategy.ON_TOP_OF_COLLIDER)
++            && SpawnUtil.trySpawnMob(EntityType.WARDEN, EntitySpawnReason.TRIGGERED, world, this.getBlockPos(), 20, 5, 6, SpawnUtil.Strategy.ON_TOP_OF_COLLIDER, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL, null) // Paper - Entity#getEntitySpawnReason
                  .isPresent();
      }
  
