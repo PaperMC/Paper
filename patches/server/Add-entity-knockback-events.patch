@@ -97,9 +97,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
 @@ -0,0 +0,0 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
-             if (f1 > 0.0F && target instanceof LivingEntity) {
-                 LivingEntity entityliving = (LivingEntity) target;
  
+             if (f1 > 0.0F && target instanceof LivingEntity) {
+                 entityliving = (LivingEntity) target;
 -                entityliving.knockback((double) (f1 * 0.5F), (double) Mth.sin(this.getYRot() * 0.017453292F), (double) (-Mth.cos(this.getYRot() * 0.017453292F)), this, org.bukkit.event.entity.EntityKnockbackEvent.KnockbackCause.ENTITY_ATTACK); // CraftBukkit
 +                entityliving.knockback((double) (f1 * 0.5F), (double) Mth.sin(this.getYRot() * 0.017453292F), (double) (-Mth.cos(this.getYRot() * 0.017453292F)), this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK); // CraftBukkit // Paper - knockback events
                  this.setDeltaMovement(this.getDeltaMovement().multiply(0.6D, 1.0D, 0.6D));
@@ -123,7 +123,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/warden/SonicBoom.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/behavior/warden/SonicBoom.java
 @@ -0,0 +0,0 @@ public class SonicBoom extends Behavior<Warden> {
-                     if (target.hurt(world.damageSources().sonicBoom(entity), 10.0F)) {
+                     if (target.hurtServer(world, world.damageSources().sonicBoom(entity), 10.0F)) {
                          double d = 0.5 * (1.0 - target.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
                          double e = 2.5 * (1.0 - target.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
 -                        target.push(vec33.x() * e, vec33.y() * d, vec33.z() * e);
@@ -154,9 +154,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
 -    public void push(double deltaX, double deltaY, double deltaZ) {
 +    public void push(double deltaX, double deltaY, double deltaZ, @Nullable Entity pushingEntity) { // Paper - override correct overload
-         if (false && !this.level().isClientSide && !this.isRemoved() && deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ > 0.0D) { // CraftBukkit - not needed
-             this.kill();
-             this.dropItem((Entity) null);
+         Level world = this.level();
+ 
+         if (world instanceof ServerLevel worldserver) {
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
@@ -250,28 +250,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public abstract void explode(Vec3 pos);
  
-diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
+diff --git a/src/main/java/net/minecraft/world/level/ServerExplosion.java b/src/main/java/net/minecraft/world/level/ServerExplosion.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/Explosion.java
-+++ b/src/main/java/net/minecraft/world/level/Explosion.java
-@@ -0,0 +0,0 @@ public class Explosion {
+--- a/src/main/java/net/minecraft/world/level/ServerExplosion.java
++++ b/src/main/java/net/minecraft/world/level/ServerExplosion.java
+@@ -0,0 +0,0 @@ public class ServerExplosion implements Explosion {
  
                          // CraftBukkit start - Call EntityKnockbackEvent
                          if (entity instanceof LivingEntity) {
--                            Vec3 result = entity.getDeltaMovement().add(vec3d1);
--                            org.bukkit.event.entity.EntityKnockbackEvent event = CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity) entity.getBukkitEntity(), this.source, org.bukkit.event.entity.EntityKnockbackEvent.KnockbackCause.EXPLOSION, d13, vec3d1, result.x, result.y, result.z);
+-                            Vec3 result = entity.getDeltaMovement().add(vec3d);
+-                            org.bukkit.event.entity.EntityKnockbackEvent event = CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity) entity.getBukkitEntity(), this.source, org.bukkit.event.entity.EntityKnockbackEvent.KnockbackCause.EXPLOSION, d6, vec3d, result.x, result.y, result.z);
 -
 -                            // SPIGOT-7640: Need to subtract entity movement from the event result,
 -                            // since the code below (the setDeltaMovement call as well as the hitPlayers map)
 -                            // want the vector to be the relative velocity will the event provides the absolute velocity
--                            vec3d1 = (event.isCancelled()) ? Vec3.ZERO : new Vec3(event.getFinalKnockback().getX(), event.getFinalKnockback().getY(), event.getFinalKnockback().getZ()).subtract(entity.getDeltaMovement());
-+                            // Paper start - knockback events
-+                            io.papermc.paper.event.entity.EntityKnockbackEvent event = CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity) entity.getBukkitEntity(), this.source, this.damageSource.getEntity() != null ? this.damageSource.getEntity() : this.source, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.EXPLOSION, d13, vec3d1);
-+                            vec3d1 = event.isCancelled() ? Vec3.ZERO : org.bukkit.craftbukkit.util.CraftVector.toNMS(event.getKnockback());
-+                            // Paper end - knockback events
+-                            vec3d = (event.isCancelled()) ? Vec3.ZERO : new Vec3(event.getFinalKnockback().getX(), event.getFinalKnockback().getY(), event.getFinalKnockback().getZ()).subtract(entity.getDeltaMovement());
++                           // Paper start - knockback events
++                           io.papermc.paper.event.entity.EntityKnockbackEvent event = CraftEventFactory.callEntityKnockbackEvent((org.bukkit.craftbukkit.entity.CraftLivingEntity) entity.getBukkitEntity(), this.source, this.damageSource.getEntity() != null ? this.damageSource.getEntity() : this.source, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.EXPLOSION, d6, vec3d);
++                            vec3d = event.isCancelled() ? Vec3.ZERO : org.bukkit.craftbukkit.util.CraftVector.toNMS(event.getKnockback());
++                           // Paper end - knockback events
                          }
                          // CraftBukkit end
-                         entity.setDeltaMovement(entity.getDeltaMovement().add(vec3d1));
+                         entity.setDeltaMovement(entity.getDeltaMovement().add(vec3d));
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
