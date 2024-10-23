@@ -8,33 +8,52 @@ diff --git a/src/main/java/net/minecraft/world/entity/monster/Skeleton.java b/sr
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Skeleton.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Skeleton.java
+@@ -0,0 +0,0 @@ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.item.Items;
+ import net.minecraft.world.level.ItemLike;
+ import net.minecraft.world.level.Level;
++import org.bukkit.event.entity.CreatureSpawnEvent;
++import org.bukkit.event.entity.EntityTransformEvent;
+ 
+ public class Skeleton extends AbstractSkeleton {
+ 
 @@ -0,0 +0,0 @@ public class Skeleton extends AbstractSkeleton {
      }
  
      protected void doFreezeConversion() {
--        this.convertTo(EntityType.STRAY, true, org.bukkit.event.entity.EntityTransformEvent.TransformReason.FROZEN, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.FROZEN); // CraftBukkit - add spawn and transform reasons
-+        Stray stray = this.convertTo(EntityType.STRAY, true, org.bukkit.event.entity.EntityTransformEvent.TransformReason.FROZEN, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.FROZEN); // CraftBukkit - add spawn and transform reasons // Paper - Fix issues with mob conversion
-         if (!this.isSilent()) {
-             this.level().levelEvent((Player) null, 1048, this.blockPosition(), 0);
-         }
+-        this.convertTo(EntityType.STRAY, ConversionParams.single(this, true, true), (entityskeletonstray) -> {
++        final Stray stray = this.convertTo(EntityType.STRAY, ConversionParams.single(this, true, true), (entityskeletonstray) -> { // Paper - Fix issues with mob conversion; reset conversion time to prevent event spam
+             if (!this.isSilent()) {
+                 this.level().levelEvent((Player) null, 1048, this.blockPosition(), 0);
+             }
+ 
+-        }, org.bukkit.event.entity.EntityTransformEvent.TransformReason.FROZEN, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.FROZEN); // CraftBukkit - add spawn and transform reasons
++        }, EntityTransformEvent.TransformReason.FROZEN, CreatureSpawnEvent.SpawnReason.FROZEN);// CraftBukkit - add spawn and transform reasons
++
 +        // Paper start - Fix issues with mob conversion; reset conversion time to prevent event spam
 +        if (stray == null) {
 +            this.conversionTime = 300;
 +        }
 +        // Paper end - Fix issues with mob conversion
- 
++
      }
  
+     @Override
 diff --git a/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java b/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
 @@ -0,0 +0,0 @@ public class Hoglin extends Animal implements Enemy, HoglinBase {
-         if (zoglin != null) {
-             zoglin.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 200, 0));
-         }
+     }
+ 
+     private void finishConversion() {
+-        this.convertTo(
++        net.minecraft.world.entity.Entity converted = this.convertTo( // Paper - Fix issues with mob conversion; reset to prevent event spam
+             EntityType.ZOGLIN, ConversionParams.single(this, true, false), zoglin -> zoglin.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 200, 0))
+         );
++
 +        // Paper start - Fix issues with mob conversion; reset to prevent event spam
-+        else {
++        if (converted == null) {
 +            this.timeInOverworld = 0;
 +        }
 +        // Paper end - Fix issues with mob conversion
@@ -46,14 +65,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/monster/piglin/AbstractPiglin.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/piglin/AbstractPiglin.java
 @@ -0,0 +0,0 @@ public abstract class AbstractPiglin extends Monster {
-         if (entitypigzombie != null) {
+     }
+ 
+     protected void finishConversion(ServerLevel world) {
+-        this.convertTo(EntityType.ZOMBIFIED_PIGLIN, ConversionParams.single(this, true, true), (entitypigzombie) -> {
++        net.minecraft.world.entity.Entity converted = this.convertTo(EntityType.ZOMBIFIED_PIGLIN, ConversionParams.single(this, true, true), (entitypigzombie) -> { // Paper - Fix issues with mob conversion; reset to prevent event spam
              entitypigzombie.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 200, 0));
-         }
+         }, org.bukkit.event.entity.EntityTransformEvent.TransformReason.PIGLIN_ZOMBIFIED, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.PIGLIN_ZOMBIFIED); // CraftBukkit - add spawn and transform reasons
++
 +        // Paper start - Fix issues with mob conversion; reset to prevent event spam
-+        else {
++        if (converted == null) {
 +            this.timeInOverworld = 0;
 +        }
 +        // Paper end - Fix issues with mob conversion
- 
      }
  
+     public boolean isAdult() {
