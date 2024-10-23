@@ -28,10 +28,10 @@ index c1d121d83591ca1b5bf9d9406c9622b4f24eafef..aee26dd78953ff43306aaa64161f5b9e
 +    // Paper end - add critical damage API
  }
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index 7fee6ffeb8ccde965fcc1454eb0d8c6b3637da41..e772b6a501b225f13399365ad743cabe5f6f792e 100644
+index 57850f16a681af4fc302895c7608247675b44ab4..68a6b1508ce4544fe8b18746d440944d41a2fe5b 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
-@@ -1293,6 +1293,7 @@ public abstract class Player extends LivingEntity {
+@@ -1258,6 +1258,7 @@ public abstract class Player extends LivingEntity {
  
                      flag2 = flag2 && !this.level().paperConfig().entities.behavior.disablePlayerCrits; // Paper - Toggleable player crits
                      if (flag2) {
@@ -39,20 +39,20 @@ index 7fee6ffeb8ccde965fcc1454eb0d8c6b3637da41..e772b6a501b225f13399365ad743cabe
                          f *= 1.5F;
                      }
  
-@@ -1352,7 +1353,7 @@ public abstract class Player extends LivingEntity {
+@@ -1317,7 +1318,7 @@ public abstract class Player extends LivingEntity {
                                      float f7 = this.getEnchantedDamage(entityliving2, f6, damagesource) * f2;
  
                                      // CraftBukkit start - Only apply knockback if the damage hits
--                                    if (!entityliving2.hurt(this.damageSources().playerAttack(this).sweep(), f7)) {
-+                                    if (!entityliving2.hurt(this.damageSources().playerAttack(this).sweep().critical(flag2), f7)) { // Paper - add critical damage API
+-                                    if (!entityliving2.hurtServer((ServerLevel) this.level(), this.damageSources().playerAttack(this).sweep(), f7)) {
++                                    if (!entityliving2.hurtServer((ServerLevel) this.level(), this.damageSources().playerAttack(this).sweep().critical(flag2), f7)) { // Paper - add critical damage API
                                          continue;
                                      }
                                      // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
-index 746bb8a36bd6c6ef953289576af499caad588d79..57ebb96707748e90810dc07471f9769f1317df9d 100644
+index bc167c21f82ad09952f6cdbf1016523062890f8b..44bcb1117cfa4d66c500011489ae193a0d1e7d78 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
-@@ -422,6 +422,7 @@ public abstract class AbstractArrow extends Projectile {
+@@ -450,6 +450,7 @@ public abstract class AbstractArrow extends Projectile {
              entityliving.setLastHurtMob(entity);
          }
  
@@ -61,10 +61,10 @@ index 746bb8a36bd6c6ef953289576af499caad588d79..57ebb96707748e90810dc07471f9769f
          int k = entity.getRemainingFireTicks();
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index b93fa1ea73f0b218e6c6bed8bd36694e26544ab0..5fc6ef13cdc9df11b0fd2b0baf3cec862ccb5e37 100644
+index 83648509a5b90daa4b072650cbc3215b64659a86..376563ea6990aef558a34e4f5889125412b734df 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -1080,7 +1080,7 @@ public class CraftEventFactory {
+@@ -1078,7 +1078,7 @@ populateFields(victim, event); // Paper - make cancellable
                  return CraftEventFactory.callEntityDamageEvent(source.getDirectBlock(), source.getDirectBlockState(), entity, DamageCause.BLOCK_EXPLOSION, bukkitDamageSource, modifiers, modifierFunctions, cancelled);
              }
              DamageCause damageCause = (damager.getBukkitEntity() instanceof org.bukkit.entity.TNTPrimed) ? DamageCause.BLOCK_EXPLOSION : DamageCause.ENTITY_EXPLOSION;
@@ -73,7 +73,7 @@ index b93fa1ea73f0b218e6c6bed8bd36694e26544ab0..5fc6ef13cdc9df11b0fd2b0baf3cec86
          } else if (damager != null || source.getDirectEntity() != null) {
              DamageCause cause = (source.isSweep()) ? DamageCause.ENTITY_SWEEP_ATTACK : DamageCause.ENTITY_ATTACK;
  
-@@ -1106,7 +1106,7 @@ public class CraftEventFactory {
+@@ -1104,7 +1104,7 @@ populateFields(victim, event); // Paper - make cancellable
                  cause = DamageCause.MAGIC;
              }
  
@@ -82,7 +82,7 @@ index b93fa1ea73f0b218e6c6bed8bd36694e26544ab0..5fc6ef13cdc9df11b0fd2b0baf3cec86
          } else if (source.is(DamageTypes.FELL_OUT_OF_WORLD)) {
              return CraftEventFactory.callEntityDamageEvent(source.getDirectBlock(), source.getDirectBlockState(), entity, DamageCause.VOID, bukkitDamageSource, modifiers, modifierFunctions, cancelled);
          } else if (source.is(DamageTypes.LAVA)) {
-@@ -1166,13 +1166,13 @@ public class CraftEventFactory {
+@@ -1164,13 +1164,13 @@ populateFields(victim, event); // Paper - make cancellable
              cause = DamageCause.CUSTOM;
          }
  

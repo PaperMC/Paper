@@ -17,22 +17,22 @@ Async catch modifications to critical entity state
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 44d1cd3e6047590a989a2b85c759be4c64125a47..926c0a5f4eaaa8fb650905216d2303fb476d3fa5 100644
+index 74b21852d9346708a62033c78fac04050b98c80b..020aed78c0eb1fdb9fd0d633bf2fe45bb9eb7532 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1577,6 +1577,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1589,6 +1589,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
      }
  
-     public void internalTeleport(double d0, double d1, double d2, float f, float f1, Set<RelativeMovement> set) { // Paper
+     public void internalTeleport(PositionMoveRotation positionmoverotation, Set<Relative> set) {
 +        org.spigotmc.AsyncCatcher.catchOp("teleport"); // Paper
          // Paper start - Prevent teleporting dead entities
          if (player.isRemoved()) {
              LOGGER.info("Attempt to teleport removed player {} restricted", player.getScoreboardName());
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index e56ae5170526fdc9d4e6f8b94a1e6ebc77cae582..4132b5dfbc6a7693f0bb923a8b14ded571560030 100644
+index eeed7d1d4b7fee0e8ab1f43f9b7ec6f74a01330d..f7e14d9668c74e20bc327b05cf84c8203e4e590b 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -1122,7 +1122,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1145,7 +1145,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
      }
  
      public boolean addEffect(MobEffectInstance mobeffect, @Nullable Entity entity, EntityPotionEffectEvent.Cause cause) {
@@ -166,10 +166,10 @@ index 1cfc906317f07a44f06a4adf021c44e34a2f1d07..6baa313b8201ed23193d7885c85606b0
                  PersistentEntitySectionManager.LOGGER.warn("Entity {} wasn't found in section {} (destroying due to {})", new Object[]{this.entity, SectionPos.of(this.currentSectionKey), reason});
              }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 16e715c48acc882a9b355d885e181f1dd916fa76..bf4be21f24af1e569267be6413dbee533c153fc5 100644
+index c2af72ffbe3e58db0b9915f4016811b82313dfdb..890d3b648b1b991e351538088c06ed93686e35f5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -1760,6 +1760,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1770,6 +1770,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void playSound(Location loc, Sound sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
@@ -177,7 +177,7 @@ index 16e715c48acc882a9b355d885e181f1dd916fa76..bf4be21f24af1e569267be6413dbee53
          if (loc == null || sound == null || category == null) return;
  
          double x = loc.getX();
-@@ -1771,6 +1772,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1781,6 +1782,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void playSound(Location loc, String sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
@@ -185,7 +185,7 @@ index 16e715c48acc882a9b355d885e181f1dd916fa76..bf4be21f24af1e569267be6413dbee53
          if (loc == null || sound == null || category == null) return;
  
          double x = loc.getX();
-@@ -1803,6 +1805,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1813,6 +1815,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void playSound(Entity entity, Sound sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
@@ -193,7 +193,7 @@ index 16e715c48acc882a9b355d885e181f1dd916fa76..bf4be21f24af1e569267be6413dbee53
          if (!(entity instanceof CraftEntity craftEntity) || entity.getWorld() != this || sound == null || category == null) return;
  
          ClientboundSoundEntityPacket packet = new ClientboundSoundEntityPacket(CraftSound.bukkitToMinecraftHolder(sound), net.minecraft.sounds.SoundSource.valueOf(category.name()), craftEntity.getHandle(), volume, pitch, seed);
-@@ -1814,6 +1817,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1833,6 +1836,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void playSound(Entity entity, String sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
@@ -202,10 +202,10 @@ index 16e715c48acc882a9b355d885e181f1dd916fa76..bf4be21f24af1e569267be6413dbee53
  
          ClientboundSoundEntityPacket packet = new ClientboundSoundEntityPacket(Holder.direct(SoundEvent.createVariableRangeEvent(ResourceLocation.parse(sound))), net.minecraft.sounds.SoundSource.valueOf(category.name()), craftEntity.getHandle(), volume, pitch, seed);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-index efac0d3ed78c621a52f905b5d7f267b4fb180e65..0ed2910e64b6efdb4180c5bc23a146aced87c3d9 100644
+index 9870222cc1c46bcc37f9d3d44881606f2b9d038e..e148239d4930e5cbb000beed4de386f992f28d88 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-@@ -525,6 +525,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+@@ -534,6 +534,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
  
      @Override
      public boolean addPotionEffect(PotionEffect effect, boolean force) {
