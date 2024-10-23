@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Sat, 19 Mar 2022 12:12:22 +0000
+Subject: [PATCH] Buffer OOB setBlock calls
+
+lets debug mode throw a trace in order to potentially see where
+such calls are cascading from easier, but, generally, if you see one setBlock
+call, you're gonna see more, and this just potentially causes a flood of logs
+which can cause issues for slower terminals, etc.
+
+We can limit the flood by just allowing one for a single gen region,
+we'll also only gen a trace for the first one, I see no real pressing need
+to generate more, given that that would *massively* negate this patch otherwise
+
+diff --git a/src/main/java/net/minecraft/server/level/WorldGenRegion.java b/src/main/java/net/minecraft/server/level/WorldGenRegion.java
+index f1725ef766c35aa623ace58fe8bf31fc9b2bb6b3..5bf438bb58833c1df3620e82d3d2b90207366372 100644
+--- a/src/main/java/net/minecraft/server/level/WorldGenRegion.java
++++ b/src/main/java/net/minecraft/server/level/WorldGenRegion.java
+@@ -284,6 +284,7 @@ public class WorldGenRegion implements WorldGenLevel {
+         }
+     }
+ 
++    private boolean hasSetFarWarned = false; // Paper - Buffer OOB setBlock calls
+     @Override
+     public boolean ensureCanWrite(BlockPos pos) {
+         int i = SectionPos.blockToSectionCoord(pos.getX());
+@@ -303,7 +304,15 @@ public class WorldGenRegion implements WorldGenLevel {
+ 
+             return true;
+         } else {
++            // Paper start - Buffer OOB setBlock calls
++            if (!hasSetFarWarned) {
+             Util.logAndPauseIfInIde("Detected setBlock in a far chunk [" + i + ", " + j + "], pos: " + String.valueOf(pos) + ", status: " + String.valueOf(this.generatingStep.targetStatus()) + (this.currentlyGenerating == null ? "" : ", currently generating: " + (String) this.currentlyGenerating.get()));
++                hasSetFarWarned = true;
++                if (this.getServer() != null && this.getServer().isDebugging()) {
++                    io.papermc.paper.util.TraceUtil.dumpTraceForThread("far setBlock call");
++                }
++            }
++            // Paper end - Buffer OOB setBlock calls
+             return false;
+         }
+     }
