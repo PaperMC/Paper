@@ -14,8 +14,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      protected void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
          if (!entity.fireImmune()) {
-             entity.setRemainingFireTicks(entity.getRemainingFireTicks() + 1);
-             if (entity.getRemainingFireTicks() == 0) {
+             if (entity.getRemainingFireTicks() < 0) {
+                 entity.setRemainingFireTicks(entity.getRemainingFireTicks() + 1);
 diff --git a/src/main/java/net/minecraft/world/level/block/BasePressurePlateBlock.java b/src/main/java/net/minecraft/world/level/block/BasePressurePlateBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/BasePressurePlateBlock.java
@@ -97,9 +97,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      protected void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
-         if (entity instanceof Ravager && CraftEventFactory.callEntityChangeBlockEvent(entity, pos, Blocks.AIR.defaultBlockState(), !world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING))) { // CraftBukkit
-             world.destroyBlock(pos, true, entity);
-         }
+         if (world instanceof ServerLevel worldserver) {
+             if (entity instanceof Ravager && CraftEventFactory.callEntityChangeBlockEvent(entity, pos, Blocks.AIR.defaultBlockState(), !worldserver.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING))) { // CraftBukkit
+                 worldserver.destroyBlock(pos, true, entity);
 diff --git a/src/main/java/net/minecraft/world/level/block/DetectorRailBlock.java b/src/main/java/net/minecraft/world/level/block/DetectorRailBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/DetectorRailBlock.java
@@ -133,7 +133,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      protected void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
-         if (entity.canUsePortal(false) && Shapes.joinIsNotEmpty(Shapes.create(entity.getBoundingBox().move((double) (-pos.getX()), (double) (-pos.getY()), (double) (-pos.getZ()))), state.getShape(world, pos), BooleanOp.AND)) {
+         if (entity.canUsePortal(false)) {
              // CraftBukkit start - Entity in portal
              EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ()));
 diff --git a/src/main/java/net/minecraft/world/level/block/FrogspawnBlock.java b/src/main/java/net/minecraft/world/level/block/FrogspawnBlock.java
@@ -193,9 +193,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      protected void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
-         if (!world.isClientSide && entity.isOnFire() && this.isEntityInsideContent(state, pos, entity)) {
-             // CraftBukkit start
-             if (entity.mayInteract(world, pos)) {
+         if (world instanceof ServerLevel worldserver) {
+             if (entity.isOnFire() && this.isEntityInsideContent(state, pos, entity)) {
+                 // CraftBukkit start - moved down
 diff --git a/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java b/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java
@@ -217,8 +217,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
-         if (entity instanceof Ravager && world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
-             world.destroyBlock(pos, true, entity);
+         if (world instanceof ServerLevel serverLevel && entity instanceof Ravager && serverLevel.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+             serverLevel.destroyBlock(pos, true, entity);
          }
 diff --git a/src/main/java/net/minecraft/world/level/block/PowderSnowBlock.java b/src/main/java/net/minecraft/world/level/block/PowderSnowBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -243,7 +243,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
          if (entity instanceof LivingEntity && entity.getType() != EntityType.FOX && entity.getType() != EntityType.BEE) {
              entity.makeStuckInBlock(state, new Vec3(0.800000011920929D, 0.75D, 0.800000011920929D));
-             if (!world.isClientSide && (Integer) state.getValue(SweetBerryBushBlock.AGE) > 0 && (entity.xOld != entity.getX() || entity.zOld != entity.getZ())) {
+             if (world instanceof ServerLevel) {
 diff --git a/src/main/java/net/minecraft/world/level/block/TripWireBlock.java b/src/main/java/net/minecraft/world/level/block/TripWireBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/TripWireBlock.java
@@ -255,19 +255,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
          if (!world.isClientSide) {
              if (!(Boolean) state.getValue(TripWireBlock.POWERED)) {
-                 this.checkPressed(world, pos);
+                 this.checkPressed(world, pos, List.of(entity));
 diff --git a/src/main/java/net/minecraft/world/level/block/WaterlilyBlock.java b/src/main/java/net/minecraft/world/level/block/WaterlilyBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/WaterlilyBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/WaterlilyBlock.java
 @@ -0,0 +0,0 @@ public class WaterlilyBlock extends BushBlock {
+ 
      @Override
      protected void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
-         super.entityInside(state, world, pos, entity);
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
-         if (world instanceof ServerLevel && entity instanceof Boat) {
+         super.entityInside(state, world, pos, entity);
+         if (world instanceof ServerLevel && entity instanceof AbstractBoat) {
              // CraftBukkit start
-             if (!CraftEventFactory.callEntityChangeBlockEvent(entity, pos, Blocks.AIR.defaultBlockState())) {
 diff --git a/src/main/java/net/minecraft/world/level/block/WebBlock.java b/src/main/java/net/minecraft/world/level/block/WebBlock.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/WebBlock.java
@@ -289,6 +289,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      protected void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
-         if (!world.isClientSide && world.getDifficulty() != Difficulty.PEACEFUL) {
-             if (entity instanceof LivingEntity) {
-                 LivingEntity entityliving = (LivingEntity) entity;
+         if (world instanceof ServerLevel worldserver) {
+             if (world.getDifficulty() != Difficulty.PEACEFUL && entity instanceof LivingEntity entityliving) {
+                 if (!entityliving.isInvulnerableTo(worldserver, world.damageSources().wither())) {

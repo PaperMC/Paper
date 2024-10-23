@@ -251,7 +251,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  }
              } else {
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
- 
+         this.dropSpamThrottler.tick();
          if (this.player.getLastActionTime() > 0L && this.server.getPlayerIdleTimeout() > 0 && Util.getMillis() - this.player.getLastActionTime() > (long) this.server.getPlayerIdleTimeout() * 1000L * 60L) {
              this.player.resetLastActionTime(); // CraftBukkit - SPIGOT-854
 -            this.disconnect((Component) Component.translatable("multiplayer.disconnect.idling"));
@@ -280,7 +280,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          // PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel()); // Paper - AsyncTabCompleteEvent; run this async
          // CraftBukkit start
-         if (this.chatSpamTickCount.addAndGet(io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.tabSpamIncrement) > io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.tabSpamLimit && !this.server.getPlayerList().isOp(this.player.getGameProfile())) { // Paper - configurable tab spam limits
+         if (!this.tabSpamThrottler.isIncrementAndUnderThreshold() && !this.server.getPlayerList().isOp(this.player.getGameProfile()) && !this.server.isSingleplayerOwner(this.player.getGameProfile())) { // Paper - configurable tab spam limits
 -            this.disconnect(Component.translatable("disconnect.spam"));
 +            this.disconnect(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM); // Paper - Kick event cause
              return;
@@ -358,8 +358,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
              return optional;
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-         // this.chatSpamTickCount += 20;
-         if (this.chatSpamTickCount.addAndGet(20) > 200 && !this.server.getPlayerList().isOp(this.player.getGameProfile()) && !this.server.isSingleplayerOwner(this.player.getGameProfile())) {
+         // this.chatSpamThrottler.increment();
+         if (!this.chatSpamThrottler.isIncrementAndUnderThreshold() && !this.server.getPlayerList().isOp(this.player.getGameProfile()) && !this.server.isSingleplayerOwner(this.player.getGameProfile())) {
              // CraftBukkit end
 -            this.disconnect((Component) Component.translatable("disconnect.spam"));
 +            this.disconnect((Component) Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM); // Paper - kick event cause
@@ -405,7 +405,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          // Paper start - auto recipe limit
          if (!org.bukkit.Bukkit.isPrimaryThread()) {
-             if (this.recipeSpamPackets.addAndGet(io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.recipeSpamIncrement) > io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.recipeSpamLimit) {
+             if (!this.recipeSpamPackets.isIncrementAndUnderThreshold()) {
 -                this.disconnect(net.minecraft.network.chat.Component.translatable("disconnect.spam"));
 +                this.disconnect(net.minecraft.network.chat.Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM); // Paper - kick event cause
                  return;
