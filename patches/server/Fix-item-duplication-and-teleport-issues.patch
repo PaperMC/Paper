@@ -28,14 +28,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  return null;
              }
              // CraftBukkit end
--            ItemEntity entityitem = new ItemEntity(this.level(), this.getX(), this.getY() + (double) yOffset, this.getZ(), stack);
-+            ItemEntity entityitem = new ItemEntity(this.level(), this.getX(), this.getY() + (double) yOffset, this.getZ(), stack.copy()); // Paper - copy so we can destroy original
+             ItemEntity entityitem = new ItemEntity(world, this.getX(), this.getY() + (double) yOffset, this.getZ(), stack);
 +            stack.setCount(0); // Paper - destroy this item - if this ever leaks due to game bugs, ensure it doesn't dupe
  
              entityitem.setDefaultPickUpDelay();
              // CraftBukkit start
 @@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
-     public Entity changeDimension(DimensionTransition teleportTarget) {
+     public Entity teleport(TeleportTransition teleportTarget) {
          Level world = this.level();
  
 +        // Paper start - Fix item duplication and teleport issues
@@ -48,26 +47,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              if (!this.isRemoved()) {
                  // CraftBukkit start
 @@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
- 
-                 if (entity2 != null) {
-                     if (this != entity2) {
-+                        // Paper start - Fix item duplication and teleport issues
-+                        if (this instanceof Leashable leashable) {
-+                            leashable.dropLeash(true, true); // Paper drop lead
-+                        }
-+                        // Paper end - Fix item duplication and teleport issues
-                         entity2.restoreFrom(this);
-                         this.removeAfterChangingDimensions();
-                         // CraftBukkit start - Forward the CraftEntity to the new entity
+             gameprofilerfiller.pop();
+             return null;
+         } else {
++            // Paper start - Fix item duplication and teleport issues
++            if (this instanceof Leashable leashable) {
++                leashable.dropLeash(true, true); // Paper drop lead
++            }
++            // Paper end - Fix item duplication and teleport issues
+             entity.restoreFrom(this);
+             this.removeAfterChangingDimensions();
+             // CraftBukkit start - Forward the CraftEntity to the new entity
 @@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      }
  
-     public boolean canChangeDimensions(Level from, Level to) {
--        return true;
-+        return this.isAlive() && this.valid; // Paper - Fix item duplication and teleport issues
-     }
+     public boolean canTeleport(Level from, Level to) {
++        if (!this.isAlive() || !this.valid) return false; // Paper - Fix item duplication and teleport issues
+         if (from.dimension() == Level.END && to.dimension() == Level.OVERWORLD) {
+             Iterator iterator = this.getPassengers().iterator();
  
-     public float getBlockExplosionResistance(Explosion explosion, BlockGetter world, BlockPos pos, BlockState blockState, FluidState fluidState, float max) {
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
@@ -138,7 +136,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end
          CraftLivingEntity entity = (CraftLivingEntity) victim.getBukkitEntity();
          CraftDamageSource bukkitDamageSource = new CraftDamageSource(damageSource);
-         EntityDeathEvent event = new EntityDeathEvent(entity, bukkitDamageSource, drops, victim.getExpReward(damageSource.getEntity()));
+         CraftWorld world = (CraftWorld) entity.getWorld();
 @@ -0,0 +0,0 @@ public class CraftEventFactory {
          playDeathSound(victim, event);
          // Paper end
