@@ -14,10 +14,10 @@ clearing the owner.
 Co-authored-by: Warrior <50800980+Warriorrrr@users.noreply.github.com>
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 34e175b28f7c9120b58fc8e2b65ca978c7f301b5..cd362a91ad31dbae94fdb5a8c71839576f397ea1 100644
+index 2c959a99376ed479415354c481801643c5f6b1a1..8cdef637f6343119fc77f87e7478ee23e9b8efab 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -390,6 +390,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -393,6 +393,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      public boolean inWorld = false;
      public boolean generation;
      public int maxAirTicks = this.getDefaultMaxAirSupply(); // CraftBukkit - SPIGOT-6907: re-implement LivingEntity#setMaximumAir()
@@ -26,10 +26,10 @@ index 34e175b28f7c9120b58fc8e2b65ca978c7f301b5..cd362a91ad31dbae94fdb5a8c7183957
      public boolean lastDamageCancelled; // SPIGOT-5339, SPIGOT-6252, SPIGOT-6777: Keep track if the event was canceled
      public boolean persistentInvisibility = false;
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
-index 63ffa02f820d88f865ae604712edcf2ac13f0bff..f2bdd95a6ae77400742d87bcae35c09fb8b047ba 100644
+index 4d487090a622d280bdfacc18978929c61f74f147..3982b32cf69250ebd138eff225b65313f75286ea 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
-@@ -57,14 +57,31 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+@@ -63,17 +63,35 @@ public abstract class Projectile extends Entity implements TraceableEntity {
              this.ownerUUID = entity.getUUID();
              this.cachedOwner = entity;
          }
@@ -61,16 +61,12 @@ index 63ffa02f820d88f865ae604712edcf2ac13f0bff..f2bdd95a6ae77400742d87bcae35c09f
          if (this.cachedOwner != null && !this.cachedOwner.isRemoved()) {
 +            this.refreshProjectileSource(false); // Paper - Refresh ProjectileSource for projectiles
              return this.cachedOwner;
+         } else if (this.ownerUUID != null) {
+             this.cachedOwner = this.findOwner(this.ownerUUID);
++            this.refreshProjectileSource(false); // Paper - Refresh ProjectileSource for projectiles
+             return this.cachedOwner;
          } else {
-             if (this.ownerUUID != null) {
-@@ -74,6 +91,7 @@ public abstract class Projectile extends Entity implements TraceableEntity {
-                     ServerLevel worldserver = (ServerLevel) world;
- 
-                     this.cachedOwner = worldserver.getEntity(this.ownerUUID);
-+                    this.refreshProjectileSource(false); // Paper - Refresh ProjectileSource for projectiles
-                     return this.cachedOwner;
-                 }
-             }
+             return null;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/AbstractProjectile.java b/src/main/java/org/bukkit/craftbukkit/entity/AbstractProjectile.java
 index de4fb2654c7895cfd83ad694455ee56cb708c2f2..591af9d0d2fdc9953415979fc97a4a00afd85885 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/AbstractProjectile.java
