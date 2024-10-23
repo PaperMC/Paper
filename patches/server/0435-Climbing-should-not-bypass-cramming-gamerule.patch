@@ -5,10 +5,10 @@ Subject: [PATCH] Climbing should not bypass cramming gamerule
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 6ab665efcac4c2543bab9d95472026e0ec8580c5..dae7643897b47dba304cbea56112445df2736cff 100644
+index 0bd608894ab596c773570f92b4662aee5a6934cc..25f625e28c8c9f63a1b2207d5e8d1a48e2fea039 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -2079,6 +2079,12 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -2195,6 +2195,12 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      }
  
      public boolean isPushable() {
@@ -22,10 +22,10 @@ index 6ab665efcac4c2543bab9d95472026e0ec8580c5..dae7643897b47dba304cbea56112445d
      }
  
 diff --git a/src/main/java/net/minecraft/world/entity/EntitySelector.java b/src/main/java/net/minecraft/world/entity/EntitySelector.java
-index eb425fac573881f3aad09ae75a32184fb0e325a6..302decdccd37c5579473c8fc33adda3956be7603 100644
+index b8d57e25851dd7da905100dfd4022e4b99fd7f02..721321a19ce056f82de2bef44a8791dc9d5b3418 100644
 --- a/src/main/java/net/minecraft/world/entity/EntitySelector.java
 +++ b/src/main/java/net/minecraft/world/entity/EntitySelector.java
-@@ -46,11 +46,16 @@ public final class EntitySelector {
+@@ -45,11 +45,16 @@ public final class EntitySelector {
      }
  
      public static Predicate<Entity> pushableBy(Entity entity) {
@@ -44,19 +44,19 @@ index eb425fac573881f3aad09ae75a32184fb0e325a6..302decdccd37c5579473c8fc33adda39
              } else if (entity1 instanceof Player && entity instanceof Player && !io.papermc.paper.configuration.GlobalConfiguration.get().collisions.enablePlayerCollisions) { // Paper - Configurable player collision
                  return false;
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 906e8589483b93bcdb55677f7f942f6c7a89caf8..d94c3e86885c5a8ba636988d29f98b496e13b627 100644
+index 91a5166e69a03d846a1b396ba964003c12a0dcdb..7ea58478d3cde175a056f41cf945636a04128828 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -3573,7 +3573,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3712,7 +3712,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
                  return;
              }
              // Paper end - don't run getEntities if we're not going to use its result
--            List<Entity> list = this.level().getEntities((Entity) this, this.getBoundingBox(), EntitySelector.pushableBy(this));
-+            List<Entity> list = this.level().getEntities((Entity) this, this.getBoundingBox(), EntitySelector.pushable(this, this.level().paperConfig().collisions.fixClimbingBypassingCrammingRule)); // Paper - Climbing should not bypass cramming gamerule
+-            List list = this.level().getEntities((Entity) this, this.getBoundingBox(), EntitySelector.pushableBy(this));
++            List list = this.level().getEntities((Entity) this, this.getBoundingBox(), EntitySelector.pushable(this, this.level().paperConfig().collisions.fixClimbingBypassingCrammingRule)); // Paper - Climbing should not bypass cramming gamerule
  
              if (!list.isEmpty()) {
                  // Paper - don't run getEntities if we're not going to use its result; moved up
-@@ -3765,9 +3765,16 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3917,9 +3917,16 @@ public abstract class LivingEntity extends Entity implements Attackable {
          return !this.isRemoved() && this.collides; // CraftBukkit
      }
  
@@ -75,10 +75,10 @@ index 906e8589483b93bcdb55677f7f942f6c7a89caf8..d94c3e86885c5a8ba636988d29f98b49
  
      // CraftBukkit start - collidable API
 diff --git a/src/main/java/net/minecraft/world/entity/ambient/Bat.java b/src/main/java/net/minecraft/world/entity/ambient/Bat.java
-index 934fa26b8f347b8b2d90f79370b62165c0cdc312..dc27ddf5131e7398a5390a5187261d4c7fb6ccaa 100644
+index d8a2fbb33f4b77ffb1b3c928a369c2824ad815d7..60c2868f255d372226e0c1389caaa5477bbef41e 100644
 --- a/src/main/java/net/minecraft/world/entity/ambient/Bat.java
 +++ b/src/main/java/net/minecraft/world/entity/ambient/Bat.java
-@@ -88,7 +88,7 @@ public class Bat extends AmbientCreature {
+@@ -91,7 +91,7 @@ public class Bat extends AmbientCreature {
      }
  
      @Override
@@ -88,10 +88,10 @@ index 934fa26b8f347b8b2d90f79370b62165c0cdc312..dc27ddf5131e7398a5390a5187261d4c
      }
  
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Parrot.java b/src/main/java/net/minecraft/world/entity/animal/Parrot.java
-index 12b2267cba476547d510d9161b25a28f4f5c798e..97931bfd360725945ab9606ff698b518ae101076 100644
+index 9a187b9b20e4e5ee4cdb7df31629faee9d3ebb60..8883894da73c7d5975a8826d23ee7f542db98b0b 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Parrot.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/Parrot.java
-@@ -362,8 +362,8 @@ public class Parrot extends ShoulderRidingEntity implements VariantHolder<Parrot
+@@ -364,8 +364,8 @@ public class Parrot extends ShoulderRidingEntity implements VariantHolder<Parrot
      }
  
      @Override
@@ -103,10 +103,10 @@ index 12b2267cba476547d510d9161b25a28f4f5c798e..97931bfd360725945ab9606ff698b518
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
-index 45ba002e23258ef734012ae81b2c4c9e92d863fb..affa2e133611b7a045a99bac801398263d114ba7 100644
+index 4e0ab5c3feb6350ab6c25db6227879d41ed8a749..709237639ef0ec1cb623f270302a27b0072e8685 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
-@@ -356,7 +356,7 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
+@@ -369,7 +369,7 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
      }
  
      @Override
@@ -116,10 +116,10 @@ index 45ba002e23258ef734012ae81b2c4c9e92d863fb..affa2e133611b7a045a99bac80139826
      }
  
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
-index cc1189c2d7dc57ba8f29aad4ba5d2a07362bcd5b..5bcb9a53ebebeef4bd6ec2458df4b63002ebd804 100644
+index 59fbfe8de2dc5ec020dd61a5e446b0b6f67d76e4..2bb2b36f793d25b6e49d1a72bb665cfa9f212730 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
 +++ b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
-@@ -349,7 +349,7 @@ public class ArmorStand extends LivingEntity {
+@@ -354,7 +354,7 @@ public class ArmorStand extends LivingEntity {
      }
  
      @Override
@@ -128,11 +128,11 @@ index cc1189c2d7dc57ba8f29aad4ba5d2a07362bcd5b..5bcb9a53ebebeef4bd6ec2458df4b630
          return false;
      }
  
-diff --git a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
-index 351e581c55d38e652fc3397f95a0837a6ee3656c..4d8c14d3a42f3e4b963cf5f8fa764df79813912b 100644
---- a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
-+++ b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
-@@ -169,7 +169,7 @@ public abstract class AbstractMinecart extends VehicleEntity {
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/AbstractBoat.java b/src/main/java/net/minecraft/world/entity/vehicle/AbstractBoat.java
+index 4f3f149b79fc2f5cd97e7337b2ae39193b7177cd..a4eab65c280e493889621e62d8fc94158b930c96 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/AbstractBoat.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/AbstractBoat.java
+@@ -144,7 +144,7 @@ public abstract class AbstractBoat extends VehicleEntity implements Leashable {
      }
  
      @Override
@@ -141,11 +141,11 @@ index 351e581c55d38e652fc3397f95a0837a6ee3656c..4d8c14d3a42f3e4b963cf5f8fa764df7
          return true;
      }
  
-diff --git a/src/main/java/net/minecraft/world/entity/vehicle/Boat.java b/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
-index 26dd7c9f48f15f66a326901259ee89f4ab911526..2cb535639bff0e867c1b1e845fee6e34bb237044 100644
---- a/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
-+++ b/src/main/java/net/minecraft/world/entity/vehicle/Boat.java
-@@ -154,7 +154,7 @@ public class Boat extends VehicleEntity implements Leashable, VariantHolder<Boat
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
+index a8fc89f78181abf9963bd1523f3bbefa911847d8..50c0055d80735313c280821991bd2a76e427f082 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
+@@ -161,7 +161,7 @@ public abstract class AbstractMinecart extends VehicleEntity {
      }
  
      @Override

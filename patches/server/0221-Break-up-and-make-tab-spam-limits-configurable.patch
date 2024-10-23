@@ -22,26 +22,18 @@ to take the burden of this into their own hand without having to rely on
 plugins doing unsafe things.
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index bcceb9d18524ddcf7cdf2ab6dcb95a67f1155414..816b53894c6420a6b1603252e53facacecc07c52 100644
+index 9033c0e720a432d9abffdd7aebee2d26e595ee93..c20ae23e4ca340cd5ec093578f88d16529c3523a 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -7,6 +7,7 @@ import com.mojang.brigadier.ParseResults;
- import com.mojang.brigadier.StringReader;
- import com.mojang.brigadier.suggestion.Suggestions;
- import com.mojang.logging.LogUtils;
-+import io.papermc.paper.configuration.GlobalConfiguration;
- import it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry;
- import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
- import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-@@ -272,6 +273,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -272,6 +272,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
      private int tickCount;
      private int ackBlockChangesUpTo = -1;
      private final TickThrottler chatSpamThrottler = new TickThrottler(20, 200);
-+    private final TickThrottler tabSpamThrottler = new TickThrottler(GlobalConfiguration.get().spamLimiter.tabSpamIncrement, GlobalConfiguration.get().spamLimiter.tabSpamLimit); // Paper - configurable tab spam limits
++    private final TickThrottler tabSpamThrottler = new TickThrottler(io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.tabSpamIncrement, io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.tabSpamLimit); // Paper - configurable tab spam limits
      private final TickThrottler dropSpamThrottler = new TickThrottler(20, 1480);
      private double firstGoodX;
      private double firstGoodY;
-@@ -387,6 +389,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -387,6 +388,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
          this.keepConnectionAlive();
          this.chatSpamThrottler.tick();
@@ -49,7 +41,7 @@ index bcceb9d18524ddcf7cdf2ab6dcb95a67f1155414..816b53894c6420a6b1603252e53facac
          this.dropSpamThrottler.tick();
          if (this.player.getLastActionTime() > 0L && this.server.getPlayerIdleTimeout() > 0 && Util.getMillis() - this.player.getLastActionTime() > (long) this.server.getPlayerIdleTimeout() * 1000L * 60L) {
              this.player.resetLastActionTime(); // CraftBukkit - SPIGOT-854
-@@ -722,7 +725,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -722,7 +724,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
      public void handleCustomCommandSuggestions(ServerboundCommandSuggestionPacket packet) {
          // PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel()); // Paper - AsyncTabCompleteEvent; run this async
          // CraftBukkit start
