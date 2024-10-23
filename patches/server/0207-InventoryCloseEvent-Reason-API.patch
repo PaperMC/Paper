@@ -7,10 +7,10 @@ Allows you to determine why an inventory was closed, enabling plugin developers
 to "confirm" things based on if it was player triggered close or not.
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index f2e75b36cbceb9cfa0755bd045f23073712d0e8a..480025bb35a838cc05022e3e316f8536c47dd87b 100644
+index a4709b08ea90e15533a3e1b1d22d16e004556243..438c936fceede5b21435e1f37f2372072a9d4571 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -1239,7 +1239,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -1234,7 +1234,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
          for (net.minecraft.world.level.block.entity.BlockEntity tileentity : chunk.getBlockEntities().values()) {
              if (tileentity instanceof net.minecraft.world.Container) {
                  for (org.bukkit.entity.HumanEntity h : Lists.newArrayList(((net.minecraft.world.Container) tileentity).getViewers())) {
@@ -19,7 +19,7 @@ index f2e75b36cbceb9cfa0755bd045f23073712d0e8a..480025bb35a838cc05022e3e316f8536
                  }
              }
          }
-@@ -2198,7 +2198,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -2279,7 +2279,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
              // Spigot Start
              if (entity.getBukkitEntity() instanceof org.bukkit.inventory.InventoryHolder && (!(entity instanceof ServerPlayer) || entity.getRemovalReason() != Entity.RemovalReason.KILLED)) { // SPIGOT-6876: closeInventory clears death message
                  for (org.bukkit.entity.HumanEntity h : Lists.newArrayList(((org.bukkit.inventory.InventoryHolder) entity.getBukkitEntity()).getInventory().getViewers())) {
@@ -29,10 +29,10 @@ index f2e75b36cbceb9cfa0755bd045f23073712d0e8a..480025bb35a838cc05022e3e316f8536
              }
              // Spigot End
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index fb5130b6378554ccb23fb7992e408497ca093ff3..0dee94f1dd27a0d7e709367450c5ef7956e27217 100644
+index 98aeafcc51e23a7534c8d57e4db0eb58abb3f30b..29b836a75b835f0d5233db419fc5ca8dde885fdb 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -705,7 +705,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+@@ -933,7 +933,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
          }
          // Paper end - Configurable container update tick rate
          if (!this.level().isClientSide && !this.containerMenu.stillValid(this)) {
@@ -41,7 +41,7 @@ index fb5130b6378554ccb23fb7992e408497ca093ff3..0dee94f1dd27a0d7e709367450c5ef79
              this.containerMenu = this.inventoryMenu;
          }
  
-@@ -925,7 +925,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+@@ -1185,7 +1185,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
  
          // SPIGOT-943 - only call if they have an inventory open
          if (this.containerMenu != this.inventoryMenu) {
@@ -50,7 +50,7 @@ index fb5130b6378554ccb23fb7992e408497ca093ff3..0dee94f1dd27a0d7e709367450c5ef79
          }
  
          net.kyori.adventure.text.Component deathMessage = event.deathMessage() != null ? event.deathMessage() : net.kyori.adventure.text.Component.empty(); // Paper - Adventure
-@@ -1591,7 +1591,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+@@ -1859,7 +1859,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
          }
          // CraftBukkit end
          if (this.containerMenu != this.inventoryMenu) {
@@ -59,7 +59,7 @@ index fb5130b6378554ccb23fb7992e408497ca093ff3..0dee94f1dd27a0d7e709367450c5ef79
          }
  
          // this.nextContainerCounter(); // CraftBukkit - moved up
-@@ -1621,7 +1621,13 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+@@ -1889,7 +1889,13 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
  
      @Override
      public void closeContainer() {
@@ -75,10 +75,10 @@ index fb5130b6378554ccb23fb7992e408497ca093ff3..0dee94f1dd27a0d7e709367450c5ef79
          this.doCloseContainer();
      }
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 0073c6c5433be3193a01257a26c7035e544f37dd..0321128ab745250e79fa5f66079c9aeb7f394cc0 100644
+index 0cce81cb61665b2dbd445fa9a0fcfeb42ce3be2c..bcceb9d18524ddcf7cdf2ab6dcb95a67f1155414 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -2619,10 +2619,15 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2633,10 +2633,15 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
      @Override
      public void handleContainerClose(ServerboundContainerClosePacket packet) {
@@ -96,10 +96,10 @@ index 0073c6c5433be3193a01257a26c7035e544f37dd..0321128ab745250e79fa5f66079c9aeb
          this.player.doCloseContainer();
      }
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 26cee48ea3650aaf87fd2ba9c70d4ca9a88e2d87..25dee4848c8b2cff74075c6d26d384e71f706627 100644
+index 95b9341859ba6da6945faebf8430a044cc1ee828..038c5f16e60f0e182774e6df5b6c5359153a4b07 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -510,7 +510,7 @@ public abstract class PlayerList {
+@@ -469,7 +469,7 @@ public abstract class PlayerList {
          // CraftBukkit start - Quitting must be before we do final save of data, in case plugins need to modify it
          // See SPIGOT-5799, SPIGOT-6145
          if (entityplayer.containerMenu != entityplayer.inventoryMenu) {
@@ -109,7 +109,7 @@ index 26cee48ea3650aaf87fd2ba9c70d4ca9a88e2d87..25dee4848c8b2cff74075c6d26d384e7
  
          PlayerQuitEvent playerQuitEvent = new PlayerQuitEvent(entityplayer.getBukkitEntity(), net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, io.papermc.paper.configuration.GlobalConfiguration.get().messages.useDisplayNameInQuitMessage ? entityplayer.getBukkitEntity().displayName() : io.papermc.paper.adventure.PaperAdventure.asAdventure(entityplayer.getDisplayName()))); // Paper - Adventure
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index 1b13096da1f0bc49efe25677ec24e6abe7ff2879..b70fbc1a93271bbf28402afbe9c6e538a4b6e9aa 100644
+index ba0ea4d6b67c9c52f170e0235e4b972aad3ce211..7eb4563299e7c54ec4df53c966f6d1a86fb2ec4e 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
 @@ -279,7 +279,7 @@ public abstract class Player extends LivingEntity {
@@ -121,7 +121,7 @@ index 1b13096da1f0bc49efe25677ec24e6abe7ff2879..b70fbc1a93271bbf28402afbe9c6e538
              this.containerMenu = this.inventoryMenu;
          }
  
-@@ -497,6 +497,13 @@ public abstract class Player extends LivingEntity {
+@@ -531,6 +531,13 @@ public abstract class Player extends LivingEntity {
  
      }
  
@@ -136,10 +136,10 @@ index 1b13096da1f0bc49efe25677ec24e6abe7ff2879..b70fbc1a93271bbf28402afbe9c6e538
          this.containerMenu = this.inventoryMenu;
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
-index e59fee587c2d90df5a6aa7a3df0eefc0cb5165ac..ee7cf7f1d491ffdf26c3f156d299e2f517a05608 100644
+index 6d4e0a90c70f7a66450cbb18ebec1d7bf9200af2..5ff159be1a6dfb4b1a5b9aa1e435d294f205215e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
-@@ -386,7 +386,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+@@ -387,7 +387,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
          if (((ServerPlayer) this.getHandle()).connection == null) return;
          if (this.getHandle().containerMenu != this.getHandle().inventoryMenu) {
              // fire INVENTORY_CLOSE if one already open
@@ -148,7 +148,7 @@ index e59fee587c2d90df5a6aa7a3df0eefc0cb5165ac..ee7cf7f1d491ffdf26c3f156d299e2f5
          }
          ServerPlayer player = (ServerPlayer) this.getHandle();
          AbstractContainerMenu container;
-@@ -456,8 +456,14 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+@@ -457,8 +457,14 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
  
      @Override
      public void closeInventory() {
@@ -165,10 +165,10 @@ index e59fee587c2d90df5a6aa7a3df0eefc0cb5165ac..ee7cf7f1d491ffdf26c3f156d299e2f5
      @Override
      public boolean isBlocking() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 18bcc27d07d7ab4b57148521891670ab61d6432c..35addb8d7620eeeede31c4831983a2c8bfb23ef5 100644
+index e7477aaad01c26e56e3d5e90bd403311deae8d59..ad75996926b7e054f1053d07fb978ac745f22ce6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1273,7 +1273,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1286,7 +1286,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
          // Close any foreign inventory
          if (this.getHandle().containerMenu != this.getHandle().inventoryMenu) {
@@ -178,10 +178,10 @@ index 18bcc27d07d7ab4b57148521891670ab61d6432c..35addb8d7620eeeede31c4831983a2c8
  
          // Check if the fromWorld and toWorld are the same.
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 7b1f55d02c2c1f3598b7b67c4c3d26c11c7450ae..889a2094850e6c5bda1efeac2e26bf77a007f4f3 100644
+index 60a16ac62a27a92b763bf90e72fab4ed01aeb592..41c6a7260317ed575a3320ac36b0f2be22c120aa 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -1283,7 +1283,7 @@ public class CraftEventFactory {
+@@ -1281,7 +1281,7 @@ public class CraftEventFactory {
  
      public static AbstractContainerMenu callInventoryOpenEvent(ServerPlayer player, AbstractContainerMenu container, boolean cancelled) {
          if (player.containerMenu != player.inventoryMenu) { // fire INVENTORY_CLOSE if one already open
@@ -190,7 +190,7 @@ index 7b1f55d02c2c1f3598b7b67c4c3d26c11c7450ae..889a2094850e6c5bda1efeac2e26bf77
          }
  
          CraftServer server = player.level().getCraftServer();
-@@ -1479,8 +1479,18 @@ public class CraftEventFactory {
+@@ -1477,8 +1477,18 @@ public class CraftEventFactory {
          return event;
      }
  
