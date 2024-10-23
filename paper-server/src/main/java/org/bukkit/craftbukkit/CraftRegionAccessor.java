@@ -274,6 +274,12 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
             case CHERRY:
                 gen = TreeFeatures.CHERRY;
                 break;
+            case PALE_OAK:
+                gen = TreeFeatures.PALE_OAK;
+                break;
+            case PALE_OAK_CREAKING:
+                gen = TreeFeatures.PALE_OAK_CREAKING;
+                break;
             case TREE:
             default:
                 gen = TreeFeatures.OAK;
