@@ -16,7 +16,7 @@ public final class ApiVersion implements Comparable<ApiVersion>, Serializable {
 
     static {
         versions = new HashMap<>();
-        CURRENT = getOrCreateVersion("1.21.2");
+        CURRENT = getOrCreateVersion("1.21.3");
         FLATTENING = getOrCreateVersion("1.13");
         FIELD_NAME_PARITY = getOrCreateVersion("1.20.5");
         NONE = getOrCreateVersion("none");
