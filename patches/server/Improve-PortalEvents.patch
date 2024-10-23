@@ -9,14 +9,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -0,0 +0,0 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
-                 }
-                 // CraftBukkit start
-                 Location enter = this.getBukkitEntity().getLocation();
--                Location exit = (worldserver == null) ? null : CraftLocation.toBukkit(teleportTarget.pos(), worldserver.getWorld(), teleportTarget.yRot(), teleportTarget.xRot());
-+                Location exit =/* (worldserver == null) ? null : // Paper - always non-null */CraftLocation.toBukkit(teleportTarget.pos(), worldserver.getWorld(), teleportTarget.yRot(), teleportTarget.xRot());
-                 PlayerTeleportEvent tpEvent = new PlayerTeleportEvent(this.getBukkitEntity(), enter, exit, teleportTarget.cause());
-                 Bukkit.getServer().getPluginManager().callEvent(tpEvent);
-                 if (tpEvent.isCancelled() || tpEvent.getTo() == null) {
+ 
+             Location enter = this.getBukkitEntity().getLocation();
+             PositionMoveRotation absolutePosition = PositionMoveRotation.calculateAbsolute(PositionMoveRotation.of(this), PositionMoveRotation.of(teleportTarget), teleportTarget.relatives());
+-            Location exit = (worldserver == null) ? null : CraftLocation.toBukkit(absolutePosition.position(), worldserver.getWorld(), absolutePosition.yRot(), absolutePosition.xRot());
++            Location exit = /* (worldserver == null) ? null : // Paper - always non-null */CraftLocation.toBukkit(absolutePosition.position(), worldserver.getWorld(), absolutePosition.yRot(), absolutePosition.xRot());
+             PlayerTeleportEvent tpEvent = new PlayerTeleportEvent(this.getBukkitEntity(), enter, exit, teleportTarget.cause());
+             // Paper start - gateway-specific teleport event
+             if (this.portalProcess != null && this.portalProcess.isSamePortal(((net.minecraft.world.level.block.EndGatewayBlock) net.minecraft.world.level.block.Blocks.END_GATEWAY)) && this.serverLevel().getBlockEntity(this.portalProcess.getEntryPosition()) instanceof net.minecraft.world.level.block.entity.TheEndGatewayBlockEntity theEndGatewayBlockEntity) {
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
@@ -59,7 +59,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java
 @@ -0,0 +0,0 @@ public class EndPortalBlock extends BaseEntityBlock implements Portal {
          if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
-         if (entity.canUsePortal(false) && Shapes.joinIsNotEmpty(Shapes.create(entity.getBoundingBox().move((double) (-pos.getX()), (double) (-pos.getY()), (double) (-pos.getZ()))), state.getShape(world, pos), BooleanOp.AND)) {
+         if (entity.canUsePortal(false)) {
              // CraftBukkit start - Entity in portal
 -            EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ()));
 +            EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ()), org.bukkit.PortalType.ENDER); // Paper - add portal type
@@ -72,7 +72,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          ServerLevel worldserver1 = world.getServer().getLevel(resourcekey);
  
          if (worldserver1 == null) {
--            return new DimensionTransition(PlayerTeleportEvent.TeleportCause.END_PORTAL); // CraftBukkit- always fire event in case plugins wish to change it
+-            return new TeleportTransition(PlayerTeleportEvent.TeleportCause.END_PORTAL); // CraftBukkit- always fire event in case plugins wish to change it
 +            return null; // Paper - keep previous behavior of not firing PlayerTeleportEvent if the target world doesn't exist
          } else {
              boolean flag = resourcekey == Level.END;
@@ -96,23 +96,89 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // Paper end - Add EntityPortalReadyEvent
  
          if (worldserver1 == null) {
--            return new DimensionTransition(PlayerTeleportEvent.TeleportCause.NETHER_PORTAL); // always fire event in case plugins wish to change it
+-            return new TeleportTransition(PlayerTeleportEvent.TeleportCause.NETHER_PORTAL); // always fire event in case plugins wish to change it
 +            return null; // Paper - keep previous behavior of not firing PlayerTeleportEvent if the target world doesn't exist
          } else {
              boolean flag = worldserver1.getTypeKey() == LevelStem.NETHER;
              // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/world/level/portal/DimensionTransition.java b/src/main/java/net/minecraft/world/level/portal/DimensionTransition.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/portal/DimensionTransition.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
 +++ b/src/main/java/net/minecraft/world/level/portal/DimensionTransition.java
-@@ -0,0 +0,0 @@ public record DimensionTransition(ServerLevel newLevel, Vec3 pos, Vec3 speed, fl
-         this(newLevel, pos, speed, yRot, xRot, missingRespawnBlock, postDimensionTransition, PlayerTeleportEvent.TeleportCause.UNKNOWN);
-     }
- 
--    public DimensionTransition(PlayerTeleportEvent.TeleportCause cause) {
--        this(null, Vec3.ZERO, Vec3.ZERO, 0.0F, 0.0F, false, DO_NOTHING, cause);
--    }
+@@ -0,0 +0,0 @@
++package net.minecraft.world.level.portal;
++
++import net.minecraft.core.BlockPos;
++import net.minecraft.network.protocol.game.ClientboundLevelEventPacket;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.server.level.ServerPlayer;
++import net.minecraft.world.entity.Entity;
++import net.minecraft.world.phys.Vec3;
++// CraftBukkit start
++import org.bukkit.event.player.PlayerTeleportEvent;
++
++public record DimensionTransition(ServerLevel newLevel, Vec3 pos, Vec3 speed, float yRot, float xRot, boolean missingRespawnBlock, DimensionTransition.PostDimensionTransition postDimensionTransition, PlayerTeleportEvent.TeleportCause cause) {
++
++    public DimensionTransition(ServerLevel newLevel, Vec3 pos, Vec3 speed, float yRot, float xRot, boolean missingRespawnBlock, DimensionTransition.PostDimensionTransition postDimensionTransition) {
++        this(newLevel, pos, speed, yRot, xRot, missingRespawnBlock, postDimensionTransition, PlayerTeleportEvent.TeleportCause.UNKNOWN);
++    }
++
 +    // Paper - remove unused constructor (for safety)
-     // CraftBukkit end
- 
-     public static final DimensionTransition.PostDimensionTransition DO_NOTHING = (entity) -> {
++    // CraftBukkit end
++
++    public static final DimensionTransition.PostDimensionTransition DO_NOTHING = (entity) -> {
++    };
++    public static final DimensionTransition.PostDimensionTransition PLAY_PORTAL_SOUND = DimensionTransition::playPortalSound;
++    public static final DimensionTransition.PostDimensionTransition PLACE_PORTAL_TICKET = DimensionTransition::placePortalTicket;
++
++    public DimensionTransition(ServerLevel world, Vec3 pos, Vec3 velocity, float yaw, float pitch, DimensionTransition.PostDimensionTransition postDimensionTransition) {
++        // CraftBukkit start
++        this(world, pos, velocity, yaw, pitch, postDimensionTransition, PlayerTeleportEvent.TeleportCause.UNKNOWN);
++    }
++
++    public DimensionTransition(ServerLevel worldserver, Vec3 vec3d, Vec3 vec3d1, float f, float f1, DimensionTransition.PostDimensionTransition dimensiontransition_a, PlayerTeleportEvent.TeleportCause cause) {
++        this(worldserver, vec3d, vec3d1, f, f1, false, dimensiontransition_a, cause);
++    }
++
++    public DimensionTransition(ServerLevel world, Entity entity, DimensionTransition.PostDimensionTransition postDimensionTransition) {
++        this(world, entity, postDimensionTransition, PlayerTeleportEvent.TeleportCause.UNKNOWN);
++    }
++
++    public DimensionTransition(ServerLevel worldserver, Entity entity, DimensionTransition.PostDimensionTransition dimensiontransition_a, PlayerTeleportEvent.TeleportCause cause) {
++        this(worldserver, findAdjustedSharedSpawnPos(worldserver, entity), Vec3.ZERO, worldserver.getSharedSpawnAngle(), 0.0F, false, dimensiontransition_a, cause); // Paper - MC-200092 - fix spawn pos yaw being ignored
++        // CraftBukkit end
++    }
++
++    private static void playPortalSound(Entity entity) {
++        if (entity instanceof ServerPlayer entityplayer) {
++            entityplayer.connection.send(new ClientboundLevelEventPacket(1032, BlockPos.ZERO, 0, false));
++        }
++
++    }
++
++    private static void placePortalTicket(Entity entity) {
++        entity.placePortalTicket(BlockPos.containing(entity.position()));
++    }
++
++    public static DimensionTransition missingRespawnBlock(ServerLevel world, Entity entity, DimensionTransition.PostDimensionTransition postDimensionTransition) {
++        return new DimensionTransition(world, findAdjustedSharedSpawnPos(world, entity), Vec3.ZERO, world.getSharedSpawnAngle(), 0.0F, true, postDimensionTransition); // Paper - MC-200092 - fix spawn pos yaw being ignored
++    }
++
++    private static Vec3 findAdjustedSharedSpawnPos(ServerLevel world, Entity entity) {
++        return entity.adjustSpawnLocation(world, world.getSharedSpawnPos()).getBottomCenter();
++    }
++
++    @FunctionalInterface
++    public interface PostDimensionTransition {
++
++        void onTransition(Entity entity);
++
++        default DimensionTransition.PostDimensionTransition then(DimensionTransition.PostDimensionTransition next) {
++            return (entity) -> {
++                this.onTransition(entity);
++                next.onTransition(entity);
++            };
++        }
++    }
++}
