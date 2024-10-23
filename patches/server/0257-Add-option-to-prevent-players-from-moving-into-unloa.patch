@@ -6,10 +6,10 @@ Subject: [PATCH] Add option to prevent players from moving into unloaded
 
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 5ed35d744a87290a03e9bf58143b5650501af0e6..6cf68d7173bc23c39261856f11cbd42de387bd60 100644
+index 816b53894c6420a6b1603252e53facacecc07c52..825e181edc612daa2deaee2977d82a0d048720e7 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -494,9 +494,9 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -491,9 +491,9 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                  double d0 = entity.getX();
                  double d1 = entity.getY();
                  double d2 = entity.getZ();
@@ -22,7 +22,7 @@ index 5ed35d744a87290a03e9bf58143b5650501af0e6..6cf68d7173bc23c39261856f11cbd42d
                  float f = Mth.wrapDegrees(packet.getYRot());
                  float f1 = Mth.wrapDegrees(packet.getXRot());
                  double d6 = d3 - this.vehicleFirstGoodX;
-@@ -530,6 +530,16 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -527,6 +527,16 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                  }
                  speed *= 2f; // TODO: Get the speed of the vehicle instead of the player
  
@@ -39,7 +39,7 @@ index 5ed35d744a87290a03e9bf58143b5650501af0e6..6cf68d7173bc23c39261856f11cbd42d
                  if (d10 - d9 > Math.max(100.0D, Math.pow((double) (org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) i * speed), 2)) && !this.isSingleplayerOwner()) {
                  // CraftBukkit end
                      ServerGamePacketListenerImpl.LOGGER.warn("{} (vehicle of {}) moved too quickly! {},{},{}", new Object[]{entity.getName().getString(), this.player.getName().getString(), d6, d7, d8});
-@@ -1157,9 +1167,9 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1160,9 +1170,9 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                  }
  
                  if (!this.updateAwaitingTeleport()) {
@@ -52,16 +52,16 @@ index 5ed35d744a87290a03e9bf58143b5650501af0e6..6cf68d7173bc23c39261856f11cbd42d
                      float f = Mth.wrapDegrees(packet.getYRot(this.player.getYRot()));
                      float f1 = Mth.wrapDegrees(packet.getXRot(this.player.getXRot()));
  
-@@ -1217,6 +1227,12 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1220,6 +1230,12 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                                  } else {
                                      speed = this.player.getAbilities().walkingSpeed * 10f;
                                  }
 +                                // Paper start - Prevent moving into unloaded chunks
 +                                if (this.player.level().paperConfig().chunks.preventMovingIntoUnloadedChunks && (this.player.getX() != toX || this.player.getZ() != toZ) && !worldserver.areChunksLoadedForMove(this.player.getBoundingBox().expandTowards(new Vec3(toX, toY, toZ).subtract(this.player.position())))) {
-+                                    this.internalTeleport(this.player.getX(), this.player.getY(), this.player.getZ(), this.player.getYRot(), this.player.getXRot(), Collections.emptySet());
++                                    this.internalTeleport(PositionMoveRotation.of(this.player), Collections.emptySet());
 +                                    return;
 +                                }
 +                                // Paper end - Prevent moving into unloaded chunks
  
-                                 if (!this.player.isChangingDimension() && (!this.player.level().getGameRules().getBoolean(GameRules.RULE_DISABLE_ELYTRA_MOVEMENT_CHECK) || !flag)) {
+                                 if (this.shouldCheckPlayerMovement(flag)) {
                                      float f2 = flag ? 300.0F : 100.0F;

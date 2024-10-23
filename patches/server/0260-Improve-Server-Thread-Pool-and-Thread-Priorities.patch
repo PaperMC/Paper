@@ -38,25 +38,25 @@ index 0000000000000000000000000000000000000000..b60f59cf5cc8eb84a6055b7861857dec
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
-index 54562fa04d14a937451ea7aa9d80194f2c31b471..4cf88f6d815d60cfbf8e4ecf9d96d0cfadd0620b 100644
+index b87d3ac2700eedb492bd55a631c60630c2f9c96c..0fbe4ea495a8101f6bc1b9830ce3f47af2aa5be4 100644
 --- a/src/main/java/net/minecraft/Util.java
 +++ b/src/main/java/net/minecraft/Util.java
-@@ -89,7 +89,7 @@ public class Util {
+@@ -92,7 +92,7 @@ public class Util {
      private static final int DEFAULT_MAX_THREADS = 255;
      private static final int DEFAULT_SAFE_FILE_OPERATION_RETRIES = 10;
      private static final String MAX_THREADS_SYSTEM_PROPERTY = "max.bg.threads";
--    private static final ExecutorService BACKGROUND_EXECUTOR = makeExecutor("Main");
-+    private static final ExecutorService BACKGROUND_EXECUTOR = makeExecutor("Main", -1); // Paper - Perf: add priority
-     private static final ExecutorService IO_POOL = makeIoExecutor("IO-Worker-", false);
-     private static final ExecutorService DOWNLOAD_POOL = makeIoExecutor("Download-", true);
+-    private static final TracingExecutor BACKGROUND_EXECUTOR = makeExecutor("Main");
++    private static final TracingExecutor BACKGROUND_EXECUTOR = makeExecutor("Main", -1); // Paper - Perf: add priority
+     private static final TracingExecutor IO_POOL = makeIoExecutor("IO-Worker-", false);
+     private static final TracingExecutor DOWNLOAD_POOL = makeIoExecutor("Download-", true);
      // Paper start - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
-@@ -160,15 +160,27 @@ public class Util {
+@@ -163,15 +163,28 @@ public class Util {
          return FILENAME_DATE_TIME_FORMATTER.format(ZonedDateTime.now());
      }
  
--    private static ExecutorService makeExecutor(String name) {
+-    private static TracingExecutor makeExecutor(String name) {
 -        int i = Mth.clamp(Runtime.getRuntime().availableProcessors() - 1, 1, getMaxThreads());
-+    private static ExecutorService makeExecutor(String s, int priorityModifier) { // Paper - Perf: add priority
++    private static TracingExecutor makeExecutor(String s, final int priorityModifier) { // Paper - Perf: add priority
 +        // Paper start - Perf: use simpler thread pool that allows 1 thread and reduce worldgen thread worker count for low core count CPUs
 +        int cpus = Runtime.getRuntime().availableProcessors() / 2;
 +        int i;
@@ -70,32 +70,34 @@ index 54562fa04d14a937451ea7aa9d80194f2c31b471..4cf88f6d815d60cfbf8e4ecf9d96d0cf
 +        }
 +        i = Math.min(8, i);
 +        i = Integer.getInteger("Paper.WorkerThreadCount", i);
++
          ExecutorService executorService;
          if (i <= 0) {
              executorService = MoreExecutors.newDirectExecutorService();
          } else {
 -            AtomicInteger atomicInteger = new AtomicInteger(1);
 -            executorService = new ForkJoinPool(i, pool -> {
--                ForkJoinWorkerThread forkJoinWorkerThread = new ForkJoinWorkerThread(pool) {
+-                final String string2 = "Worker-" + name + "-" + atomicInteger.getAndIncrement();
 +            executorService = new java.util.concurrent.ThreadPoolExecutor(i, i,0L, TimeUnit.MILLISECONDS, new java.util.concurrent.LinkedBlockingQueue<>(), target -> new io.papermc.paper.util.ServerWorkerThread(target, s, priorityModifier));
 +        }
-+        /*
++        /*      final String string2 = "Worker-" + name + "-" + atomicInteger.getAndIncrement();
+                 ForkJoinWorkerThread forkJoinWorkerThread = new ForkJoinWorkerThread(pool) {
                      @Override
-                     protected void onTermination(Throwable throwable) {
-                         if (throwable != null) {
-@@ -184,6 +196,7 @@ public class Util {
+                     protected void onStart() {
+@@ -193,7 +206,7 @@ public class Util {
+                 forkJoinWorkerThread.setName(string2);
                  return forkJoinWorkerThread;
              }, Util::onThreadException, true);
-         }
-+        }*/ // Paper end - Perf: use simpler thread pool
+-        }
++        }*/
  
-         return executorService;
+         return new TracingExecutor(executorService);
      }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 2d5ae71c143556a938f078d2fb84cab7bd4f789b..f3f3f80f14bc1df13b80033aa143fcccab6f3a31 100644
+index cc15ec47155ee16377a65c9f56a62339dc0a129d..a35e1a741f042d7ac8a21ef24f04fbef96e87825 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -322,6 +322,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -333,6 +333,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          thread.setUncaughtExceptionHandler((thread1, throwable) -> {
              MinecraftServer.LOGGER.error("Uncaught exception in server thread", throwable);
          });

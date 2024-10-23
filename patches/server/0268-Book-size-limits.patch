@@ -5,27 +5,11 @@ Subject: [PATCH] Book size limits
 
 Puts some limits on the size of books.
 
-diff --git a/src/main/java/net/minecraft/network/protocol/game/ServerboundEditBookPacket.java b/src/main/java/net/minecraft/network/protocol/game/ServerboundEditBookPacket.java
-index ed61767a64cdce37dc7c226ebd0d693a60de24a9..f634a830a2b58a419e84f969bd53eeae4f4513bb 100644
---- a/src/main/java/net/minecraft/network/protocol/game/ServerboundEditBookPacket.java
-+++ b/src/main/java/net/minecraft/network/protocol/game/ServerboundEditBookPacket.java
-@@ -16,9 +16,9 @@ public record ServerboundEditBookPacket(int slot, List<String> pages, Optional<S
-     public static final StreamCodec<FriendlyByteBuf, ServerboundEditBookPacket> STREAM_CODEC = StreamCodec.composite(
-         ByteBufCodecs.VAR_INT,
-         ServerboundEditBookPacket::slot,
--        ByteBufCodecs.stringUtf8(8192).apply(ByteBufCodecs.list(200)),
-+        ByteBufCodecs.stringUtf8(net.minecraft.world.item.component.WritableBookContent.PAGE_EDIT_LENGTH).apply(ByteBufCodecs.list(net.minecraft.world.item.component.WritableBookContent.MAX_PAGES)), // Paper - limit books
-         ServerboundEditBookPacket::pages,
--        ByteBufCodecs.stringUtf8(128).apply(ByteBufCodecs::optional),
-+        ByteBufCodecs.stringUtf8(net.minecraft.world.item.component.WrittenBookContent.TITLE_MAX_LENGTH).apply(ByteBufCodecs::optional), // Paper - limit books
-         ServerboundEditBookPacket::title,
-         ServerboundEditBookPacket::new
-     );
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 4942aa857ecc5762c9b0b1662eefaeae4daab80d..577f0e290f66afd2ded18714fb8b5f62a7a9aa71 100644
+index 5b5c5864fa1ad96946b0892998284fab26e54095..9c04eb00c80a343502ece3001a6b21382d011d30 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1043,6 +1043,44 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1049,6 +1049,44 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
      @Override
      public void handleEditBook(ServerboundEditBookPacket packet) {
