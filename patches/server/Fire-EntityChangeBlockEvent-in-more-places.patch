@@ -12,17 +12,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/world/effect/WeavingMobEffect.java
 @@ -0,0 +0,0 @@ class WeavingMobEffect extends MobEffect {
      @Override
-     public void onMobRemoved(LivingEntity entity, int amplifier, Entity.RemovalReason reason) {
-         if (reason == Entity.RemovalReason.KILLED && (entity instanceof Player || entity.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING))) {
--            this.spawnCobwebsRandomlyAround(entity.level(), entity.getRandom(), entity.getOnPos());
-+            this.spawnCobwebsRandomlyAround(entity, entity.level(), entity.getRandom(), entity.getOnPos()); // Paper - Fire EntityChangeBlockEvent in more places
+     public void onMobRemoved(ServerLevel world, LivingEntity entity, int amplifier, Entity.RemovalReason reason) {
+         if (reason == Entity.RemovalReason.KILLED && (entity instanceof Player || world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING))) {
+-            this.spawnCobwebsRandomlyAround(world, entity.getRandom(), entity.blockPosition());
++            this.spawnCobwebsRandomlyAround(entity, world, entity.getRandom(), entity.blockPosition()); // Paper - Fire EntityChangeBlockEvent in more places
          }
      }
- 
--    private void spawnCobwebsRandomlyAround(Level world, RandomSource random, BlockPos pos) {
-+    private void spawnCobwebsRandomlyAround(LivingEntity entity, Level world, RandomSource random, BlockPos pos) { // Paper - Fire EntityChangeBlockEvent in more places
-         Set<BlockPos> set = Sets.newHashSet();
-         int i = this.maxCobwebs.applyAsInt(random);
  
 @@ -0,0 +0,0 @@ class WeavingMobEffect extends MobEffect {
          }
@@ -46,7 +41,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
          }
 @@ -0,0 +0,0 @@ public class LightningBolt extends Entity {
-         }
+ 
      }
  
 -    private static void clearCopperOnLightningStrike(Level world, BlockPos pos) {
@@ -153,26 +148,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                return InteractionResult.PASS;
 +            }
 +            // Paper end
-             if (player instanceof ServerPlayer) {
-                 CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger((ServerPlayer)player, blockPos, itemStack);
+             if (player instanceof ServerPlayer serverPlayer) {
+                 CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger(serverPlayer, blockPos, itemStack);
              }
 diff --git a/src/main/java/net/minecraft/world/item/PotionItem.java b/src/main/java/net/minecraft/world/item/PotionItem.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/item/PotionItem.java
 +++ b/src/main/java/net/minecraft/world/item/PotionItem.java
 @@ -0,0 +0,0 @@ public class PotionItem extends Item {
-         BlockState iblockdata = world.getBlockState(blockposition);
- 
-         if (context.getClickedFace() != Direction.DOWN && iblockdata.is(BlockTags.CONVERTABLE_TO_MUD) && potioncontents.is(Potions.WATER)) {
+         PotionContents potionContents = itemStack.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
+         BlockState blockState = level.getBlockState(blockPos);
+         if (context.getClickedFace() != Direction.DOWN && blockState.is(BlockTags.CONVERTABLE_TO_MUD) && potionContents.is(Potions.WATER)) {
 +            // Paper start
 +            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entityhuman, blockposition, Blocks.MUD.defaultBlockState())) {
 +                entityhuman.containerMenu.sendAllDataToRemote();
 +                return InteractionResult.PASS;
 +            }
 +            // Paper end
-             world.playSound((Player) null, blockposition, SoundEvents.GENERIC_SPLASH, SoundSource.BLOCKS, 1.0F, 1.0F);
-             entityhuman.setItemInHand(context.getHand(), ItemUtils.createFilledResult(itemstack, entityhuman, new ItemStack(Items.GLASS_BOTTLE)));
-             entityhuman.awardStat(Stats.ITEM_USED.get(itemstack.getItem()));
+             level.playSound(null, blockPos, SoundEvents.GENERIC_SPLASH, SoundSource.BLOCKS, 1.0F, 1.0F);
+             player.setItemInHand(context.getHand(), ItemUtils.createFilledResult(itemStack, player, new ItemStack(Items.GLASS_BOTTLE)));
+             player.awardStat(Stats.ITEM_USED.get(itemStack.getItem()));
 diff --git a/src/main/java/net/minecraft/world/item/ShovelItem.java b/src/main/java/net/minecraft/world/item/ShovelItem.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/item/ShovelItem.java
