@@ -11,25 +11,36 @@ the logic associated with damaging them
 public net.minecraft.world.entity.LivingEntity entityEventForEquipmentBreak(Lnet/minecraft/world/entity/EquipmentSlot;)B
 
 diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
-index bee59df6a8f30416f94c1a4fbd5e2629336e842f..e64cc91b416bbbefe6aadf1c6b685346cf258ab4 100644
+index bcb3a45166e5dd75dd727adf92304b3a75399c8d..d8dc3228f3cd8c9efc8359162edac601a87bf762 100644
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
 +++ b/src/main/java/net/minecraft/world/item/ItemStack.java
-@@ -647,8 +647,13 @@ public final class ItemStack implements DataComponentHolder {
+@@ -693,8 +693,13 @@ public final class ItemStack implements DataComponentHolder {
      }
  
-     public void hurtAndBreak(int amount, ServerLevel world, @Nullable LivingEntity player, Consumer<Item> breakCallback) { // Paper - Add EntityDamageItemEvent
-+        // Paper start - add param to skip infinite mats check
+     public void hurtAndBreak(int amount, ServerLevel world, @Nullable LivingEntity player, Consumer<Item> breakCallback) {  // Paper - Add EntityDamageItemEvent
++        // Paper start - add force boolean overload
 +        this.hurtAndBreak(amount, world, player, breakCallback, false);
 +    }
-+    public void hurtAndBreak(int amount, ServerLevel world, @Nullable LivingEntity player, Consumer<Item> breakCallback, boolean force) {
-+        // Paper end - add param to skip infinite mats check
-         if (this.isDamageableItem()) {
--            if (player == null || !player.hasInfiniteMaterials()) {
-+            if (player == null || !player.hasInfiniteMaterials() || force) { // Paper
-                 if (amount > 0) {
-                     int originalDamage = amount; // Paper - Expand PlayerItemDamageEvent
-                     amount = EnchantmentHelper.processDurabilityChange(world, this, amount);
-@@ -704,6 +709,11 @@ public final class ItemStack implements DataComponentHolder {
++    public void hurtAndBreak(int amount, ServerLevel world, @Nullable LivingEntity player, Consumer<Item> breakCallback, boolean force) {  // Paper - Add EntityDamageItemEvent
++        // Paper end
+         int originalDamage = amount; // Paper - Expand PlayerItemDamageEvent
+-        int j = this.processDurabilityChange(amount, world, player);
++        int j = this.processDurabilityChange(amount, world, player, force); // Paper
+         // CraftBukkit start
+         if (player instanceof final ServerPlayer serverPlayer) { // Paper - Add EntityDamageItemEvent
+             PlayerItemDamageEvent event = new PlayerItemDamageEvent(serverPlayer.getBukkitEntity(), CraftItemStack.asCraftMirror(this), j, originalDamage); // Paper - Add EntityDamageItemEvent
+@@ -725,8 +730,8 @@ public final class ItemStack implements DataComponentHolder {
+ 
+     }
+ 
+-    private int processDurabilityChange(int baseDamage, ServerLevel world, @Nullable LivingEntity player) {  // Paper - Add EntityDamageItemEvent
+-        return !this.isDamageableItem() ? 0 : (player instanceof ServerPlayer && player.hasInfiniteMaterials() ? 0 : (baseDamage > 0 ? EnchantmentHelper.processDurabilityChange(world, this, baseDamage) : baseDamage));  // Paper - Add EntityDamageItemEvent
++    private int processDurabilityChange(int baseDamage, ServerLevel world, @Nullable LivingEntity player, boolean force) {  // Paper - Add EntityDamageItemEvent
++        return !this.isDamageableItem() ? 0 : (player instanceof ServerPlayer && player.hasInfiniteMaterials() && !force ? 0 : (baseDamage > 0 ? EnchantmentHelper.processDurabilityChange(world, this, baseDamage) : baseDamage));  // Paper - Add EntityDamageItemEvent
+     }
+ 
+     private void applyDamage(int damage, @Nullable LivingEntity player, Consumer<Item> breakCallback) { // Paper - Add EntityDamageItemEvent
+@@ -766,6 +771,11 @@ public final class ItemStack implements DataComponentHolder {
      }
  
      public void hurtAndBreak(int amount, LivingEntity entity, EquipmentSlot slot) {
@@ -41,7 +52,7 @@ index bee59df6a8f30416f94c1a4fbd5e2629336e842f..e64cc91b416bbbefe6aadf1c6b685346
          Level world = entity.level();
  
          if (world instanceof ServerLevel worldserver) {
-@@ -716,8 +726,8 @@ public final class ItemStack implements DataComponentHolder {
+@@ -778,8 +788,8 @@ public final class ItemStack implements DataComponentHolder {
              }
  
              this.hurtAndBreak(amount, worldserver, entity, (item) -> { // Paper - Add EntityDamageItemEvent
@@ -53,10 +64,10 @@ index bee59df6a8f30416f94c1a4fbd5e2629336e842f..e64cc91b416bbbefe6aadf1c6b685346
  
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-index 2a7fffa71106327d0ffee632408d45faaec76702..2332f40fed84510741e63073aaf0a18aab85303e 100644
+index 4fa19ddb1414282020e118eea298d57d2bf42754..1ceaa081231a617bd87331b308c24d9c7a8dcf2b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-@@ -1135,4 +1135,48 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+@@ -1154,4 +1154,48 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
          this.getHandle().knockback(strength, directionX, directionZ);
      };
      // Paper end - knockback API

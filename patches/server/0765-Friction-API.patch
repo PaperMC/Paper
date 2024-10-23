@@ -5,10 +5,10 @@ Subject: [PATCH] Friction API
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index f662a791e8cb045903a0de29778e5f30892fb766..2bb61084b628582ded44926d7697ee26d0bb1e8e 100644
+index 0a52f925b0ef28ca7cee067a40d5dc4d30c224b0..abcb1065100597f66c9f76fdae5f873fa0d8f315 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -285,6 +285,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -298,6 +298,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
      public boolean bukkitPickUpLoot;
      public org.bukkit.craftbukkit.entity.CraftLivingEntity getBukkitLivingEntity() { return (org.bukkit.craftbukkit.entity.CraftLivingEntity) super.getBukkitEntity(); } // Paper
      public boolean silentDeath = false; // Paper - mark entity as dying silently for cancellable death event
@@ -16,7 +16,7 @@ index f662a791e8cb045903a0de29778e5f30892fb766..2bb61084b628582ded44926d7697ee26
  
      @Override
      public float getBukkitYaw() {
-@@ -706,7 +707,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -724,7 +725,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
      }
  
      public boolean shouldDiscardFriction() {
@@ -25,7 +25,7 @@ index f662a791e8cb045903a0de29778e5f30892fb766..2bb61084b628582ded44926d7697ee26
      }
  
      public void setDiscardFriction(boolean noDrag) {
-@@ -774,6 +775,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -798,6 +799,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
  
      @Override
      public void addAdditionalSaveData(CompoundTag nbt) {
@@ -37,7 +37,7 @@ index f662a791e8cb045903a0de29778e5f30892fb766..2bb61084b628582ded44926d7697ee26
          nbt.putFloat("Health", this.getHealth());
          nbt.putShort("HurtTime", (short) this.hurtTime);
          nbt.putInt("HurtByTimestamp", this.lastHurtByMobTimestamp);
-@@ -817,6 +823,16 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -841,6 +847,16 @@ public abstract class LivingEntity extends Entity implements Attackable {
          }
          this.internalSetAbsorptionAmount(absorptionAmount);
          // Paper end - Check for NaN
@@ -55,7 +55,7 @@ index f662a791e8cb045903a0de29778e5f30892fb766..2bb61084b628582ded44926d7697ee26
              this.getAttributes().load(nbt.getList("attributes", 10));
          }
 diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
-index 446c319524183d6a1b4d0e6f0613a8db690677da..cbfb07bdf8d5e2e5a462835184be2d47e59d506c 100644
+index aa41c4cf8d3ae291c4147118c96190ff0bb807b2..e83a705f54063a17fc69a22683333aacad5a43ce 100644
 --- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
 @@ -63,6 +63,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
@@ -66,8 +66,8 @@ index 446c319524183d6a1b4d0e6f0613a8db690677da..cbfb07bdf8d5e2e5a462835184be2d47
  
      public ItemEntity(EntityType<? extends ItemEntity> type, Level world) {
          super(type, world);
-@@ -185,7 +186,11 @@ public class ItemEntity extends Entity implements TraceableEntity {
-                 this.move(MoverType.SELF, this.getDeltaMovement());
+@@ -186,7 +187,11 @@ public class ItemEntity extends Entity implements TraceableEntity {
+                 this.applyEffectsFromBlocks();
                  float f = 0.98F;
  
 -                if (this.onGround()) {
@@ -79,7 +79,7 @@ index 446c319524183d6a1b4d0e6f0613a8db690677da..cbfb07bdf8d5e2e5a462835184be2d47
                      f = this.level().getBlockState(this.getBlockPosBelowThatAffectsMyMovement()).getBlock().getFriction() * 0.98F;
                  }
  
-@@ -393,6 +398,11 @@ public class ItemEntity extends Entity implements TraceableEntity {
+@@ -409,6 +414,11 @@ public class ItemEntity extends Entity implements TraceableEntity {
  
      @Override
      public void addAdditionalSaveData(CompoundTag nbt) {
@@ -91,7 +91,7 @@ index 446c319524183d6a1b4d0e6f0613a8db690677da..cbfb07bdf8d5e2e5a462835184be2d47
          nbt.putShort("Health", (short) this.health);
          nbt.putShort("Age", (short) this.age);
          nbt.putShort("PickupDelay", (short) this.pickupDelay);
-@@ -435,6 +445,17 @@ public class ItemEntity extends Entity implements TraceableEntity {
+@@ -451,6 +461,17 @@ public class ItemEntity extends Entity implements TraceableEntity {
              this.setItem(ItemStack.EMPTY);
          }
  
@@ -133,10 +133,10 @@ index 1a291dd8a287db30e71dcb315599fc4b038764c4..30d62ee4d5cd2ddacb8783b5bbbf475d
      public int getHealth() {
          return this.getHandle().health;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-index 2332f40fed84510741e63073aaf0a18aab85303e..516ea1ec9ae5069c3c0e4708f62164a91960b627 100644
+index 1ceaa081231a617bd87331b308c24d9c7a8dcf2b..2fd4a3068d86a37cc18c9203448823c53d590ffb 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-@@ -1179,4 +1179,17 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+@@ -1198,4 +1198,17 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
          nmsStack.hurtAndBreak(amount, this.getHandle(), slot, true);
      }
      // Paper end - ItemStack damage API
