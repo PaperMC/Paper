@@ -33,7 +33,7 @@ public interface CraftRecipe extends Recipe {
         } else if (bukkit instanceof RecipeChoice.MaterialChoice) {
             stack = RecipeItemStack.of(((RecipeChoice.MaterialChoice) bukkit).getChoices().stream().map((mat) -> CraftItemType.bukkitToMinecraft(mat)));
         } else if (bukkit instanceof RecipeChoice.ExactChoice) {
-            stack = RecipeItemStack.ofStacks(((RecipeChoice.ExactChoice) bukkit).getChoices().stream().map((mat) -> CraftItemStack.asNMSCopy(mat)));
+            stack = RecipeItemStack.ofStacks(((RecipeChoice.ExactChoice) bukkit).getChoices().stream().map((mat) -> CraftItemStack.asNMSCopy(mat)).toList());
         } else {
             throw new IllegalArgumentException("Unknown recipe stack instance " + bukkit);
         }
