@@ -19,7 +19,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -        if (worldserver.structureManager().getStructureWithPieceAt(this.blockPosition(), StructureTags.CATS_SPAWN_AS_BLACK).isValid()) {
 +        if (worldserver.structureManager().getStructureWithPieceAt(this.blockPosition(), StructureTags.CATS_SPAWN_AS_BLACK, world).isValid()) { // Paper - Fix swamp hut cat generation deadlock
-             this.setVariant((Holder) BuiltInRegistries.CAT_VARIANT.getHolderOrThrow(CatVariant.ALL_BLACK));
+             this.setVariant((Holder) BuiltInRegistries.CAT_VARIANT.getOrThrow(CatVariant.ALL_BLACK));
              this.setPersistenceRequired();
          }
 diff --git a/src/main/java/net/minecraft/world/level/StructureManager.java b/src/main/java/net/minecraft/world/level/StructureManager.java
@@ -54,11 +54,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public StructureStart getStructureWithPieceAt(BlockPos pos, Predicate<Holder<Structure>> predicate, @Nullable ServerLevelAccessor levelAccessor) {
 +        // Paper end - Fix swamp hut cat generation deadlock
-         Registry<Structure> registry = this.registryAccess().registryOrThrow(Registries.STRUCTURE);
+         Registry<Structure> registry = this.registryAccess().lookupOrThrow(Registries.STRUCTURE);
  
          for (StructureStart structureStart : this.startsForStructure(
--            new ChunkPos(pos), structure -> registry.getHolder(registry.getId(structure)).map(predicate::test).orElse(false)
-+            new ChunkPos(pos), structure -> registry.getHolder(registry.getId(structure)).map(predicate::test).orElse(false), levelAccessor // Paper - Fix swamp hut cat generation deadlock
+-            new ChunkPos(pos), structure -> registry.get(registry.getId(structure)).map(predicate::test).orElse(false)
++            new ChunkPos(pos), structure -> registry.get(registry.getId(structure)).map(predicate::test).orElse(false), levelAccessor // Paper - Fix swamp hut cat generation deadlock
          )) {
              if (this.structureHasPieceAt(pos, structureStart)) {
                  return structureStart;

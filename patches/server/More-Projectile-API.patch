@@ -69,7 +69,7 @@ diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.ja
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
-@@ -0,0 +0,0 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+@@ -0,0 +0,0 @@ public class ThrownPotion extends ThrowableItemProjectile {
      @Override
      protected void onHit(HitResult hitResult) {
          super.onHit(hitResult);
@@ -78,28 +78,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    public void splash(@Nullable HitResult hitResult) {
 +        // Paper end - More projectile API
-         if (!this.level().isClientSide) {
+         Level world = this.level();
+-
+         if (world instanceof ServerLevel worldserver) {
              ItemStack itemstack = this.getItem();
              PotionContents potioncontents = (PotionContents) itemstack.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
-@@ -0,0 +0,0 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+@@ -0,0 +0,0 @@ public class ThrownPotion extends ThrowableItemProjectile {
                  if (this.isLingering()) {
                      showParticles = this.makeAreaOfEffectCloud(potioncontents, hitResult); // CraftBukkit - Pass MovingObjectPosition // Paper
                  } else {
--                    showParticles = this.applySplash(potioncontents.getAllEffects(), hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null, hitResult); // CraftBukkit - Pass MovingObjectPosition // Paper
-+                    showParticles = this.applySplash(potioncontents.getAllEffects(), hitResult != null && hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null, hitResult); // CraftBukkit - Pass MovingObjectPosition // Paper - More projectile API
+-                    showParticles = this.applySplash(worldserver, potioncontents.getAllEffects(), hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null, hitResult); // CraftBukkit - Pass MovingObjectPosition // Paper
++                    showParticles = this.applySplash(worldserver, potioncontents.getAllEffects(), hitResult != null && hitResult.getType() == HitResult.Type.ENTITY ? ((EntityHitResult) hitResult).getEntity() : null, hitResult); // CraftBukkit - Pass MovingObjectPosition // Paper - More projectile API
                  }
              }
  
-@@ -0,0 +0,0 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+@@ -0,0 +0,0 @@ public class ThrownPotion extends ThrowableItemProjectile {
  
      }
  
--    private boolean applySplash(Iterable<MobEffectInstance> iterable, @Nullable Entity entity, HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - Fix potions splash events
-+    private boolean applySplash(Iterable<MobEffectInstance> iterable, @Nullable Entity entity, @Nullable HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - Fix potions splash events & More projectile API
+-    private boolean applySplash(ServerLevel worldserver, Iterable<MobEffectInstance> iterable, @Nullable Entity entity, HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - Fix potions splash events
++    private boolean applySplash(ServerLevel worldserver, Iterable<MobEffectInstance> iterable, @Nullable Entity entity, @Nullable HitResult position) { // CraftBukkit - Pass MovingObjectPosition // Paper - Fix potions splash events & More projectile API
          AABB axisalignedbb = this.getBoundingBox().inflate(4.0D, 2.0D, 4.0D);
-         List<net.minecraft.world.entity.LivingEntity> list = this.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, axisalignedbb);
+         List<net.minecraft.world.entity.LivingEntity> list = worldserver.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, axisalignedbb);
          Map<LivingEntity, Double> affected = new HashMap<LivingEntity, Double>(); // CraftBukkit
-@@ -0,0 +0,0 @@ public class ThrownPotion extends ThrowableItemProjectile implements ItemSupplie
+@@ -0,0 +0,0 @@ public class ThrownPotion extends ThrowableItemProjectile {
  
      }
  
@@ -275,7 +277,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
      public void clearCustomEffects() {
          PotionContents old = this.getHandle().potionContents;
-         this.getHandle().setPotionContents(new PotionContents(old.potion(), old.customColor(), List.of()));
+         this.getHandle().setPotionContents(new PotionContents(old.potion(), old.customColor(), List.of(), old.customName()));
 -        this.getHandle().updateColor();
 +        // this.getHandle().updateColor(); // Paper - already done above
      }
@@ -297,7 +299,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class CraftArrow extends CraftAbstractArrow implements Arrow {
      public void clearCustomEffects() {
          PotionContents old = this.getHandle().getPotionContents();
-         this.getHandle().setPotionContents(new PotionContents(old.potion(), old.customColor(), List.of()));
+         this.getHandle().setPotionContents(new PotionContents(old.potion(), old.customColor(), List.of(), old.customName()));
 -        this.getHandle().updateColor();
 +        // this.getHandle().updateColor(); // Paper - already done above
      }
@@ -310,7 +312,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        int colorRGB = (color == null) ? -1 : color.asRGB();
 +        int colorRGB = (color == null) ? net.minecraft.world.entity.projectile.Arrow.NO_EFFECT_COLOR : color.asARGB(); // Paper
          PotionContents old = this.getHandle().getPotionContents();
-         this.getHandle().setPotionContents(new PotionContents(old.potion(), Optional.of(colorRGB), old.customEffects()));
+         this.getHandle().setPotionContents(new PotionContents(old.potion(), Optional.of(colorRGB), old.customEffects(), old.customName()));
      }
  
      @Override
@@ -335,8 +337,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        register(new EntityTypeData<>(EntityType.FIREWORK_ROCKET, Firework.class, CraftFirework::new, spawnData -> new FireworkRocketEntity(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), net.minecraft.world.item.ItemStack.EMPTY)));
 +        register(new EntityTypeData<>(EntityType.FIREWORK_ROCKET, Firework.class, CraftFirework::new, spawnData -> new FireworkRocketEntity(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), FireworkRocketEntity.getDefaultItem()))); // Paper - pass correct default to rocket for data storage
          register(new EntityTypeData<>(EntityType.EVOKER_FANGS, EvokerFangs.class, CraftEvokerFangs::new, spawnData -> new net.minecraft.world.entity.projectile.EvokerFangs(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), (float) Math.toRadians(spawnData.yaw()), 0, null)));
-         register(new EntityTypeData<>(EntityType.COMMAND_BLOCK_MINECART, CommandMinecart.class, CraftMinecartCommand::new, spawnData -> new MinecartCommandBlock(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z())));
-         register(new EntityTypeData<>(EntityType.MINECART, RideableMinecart.class, CraftMinecartRideable::new, spawnData -> new Minecart(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z())));
+         register(new EntityTypeData<>(EntityType.COMMAND_BLOCK_MINECART, CommandMinecart.class, CraftMinecartCommand::new, createMinecart(net.minecraft.world.entity.EntityType.COMMAND_BLOCK_MINECART)));
+         register(new EntityTypeData<>(EntityType.MINECART, RideableMinecart.class, CraftMinecartRideable::new, createMinecart(net.minecraft.world.entity.EntityType.MINECART)));
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java
@@ -546,7 +548,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            ((net.minecraft.world.entity.projectile.AbstractArrow) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, Trident.class.isAssignableFrom(projectile) ? net.minecraft.world.item.TridentItem.SHOOT_POWER : 3.0F, 1.0F); // ItemBow // Paper - see TridentItem
          } else if (ThrownPotion.class.isAssignableFrom(projectile)) {
              if (LingeringPotion.class.isAssignableFrom(projectile)) {
-                 launch = new net.minecraft.world.entity.projectile.ThrownPotion(world, this.getHandle());
+                 launch = new net.minecraft.world.entity.projectile.ThrownPotion(world, this.getHandle(), new net.minecraft.world.item.ItemStack(Items.LINGERING_POTION));
 @@ -0,0 +0,0 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
          } else if (Firework.class.isAssignableFrom(projectile)) {
              Location location = this.getEyeLocation();
@@ -905,7 +907,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (false && Fireball.class.isAssignableFrom(projectile)) { // Paper - more project API - dispensers cannot launch anything but fire charges.
              AbstractHurtingProjectile customFireball = null;
              if (WitherSkull.class.isAssignableFrom(projectile)) {
-                 launch = customFireball = EntityType.WITHER_SKULL.create(world);
+                 launch = customFireball = EntityType.WITHER_SKULL.create(world, EntitySpawnReason.TRIGGERED);
 @@ -0,0 +0,0 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
              }
          }
