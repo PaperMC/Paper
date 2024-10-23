@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spyridon Pagkalos <spyridon@ender.gr>
+Date: Thu, 25 Mar 2021 20:28:04 +0200
+Subject: [PATCH] Introduce beacon activation/deactivation events
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
+index dc3171b1493d7c4c8ddf1c79587c4e27bd819c17..8aab6f68f576fb022eb59798585e264f5aafbc69 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
+@@ -225,6 +225,15 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+                 BeaconBlockEntity.playSound(world, pos, SoundEvents.BEACON_AMBIENT);
+             }
+         }
++        // Paper start - beacon activation/deactivation events
++        if (i1 <= 0 && blockEntity.levels > 0) {
++            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(world, pos);
++            new io.papermc.paper.event.block.BeaconActivatedEvent(block).callEvent();
++        } else if (i1 > 0 && blockEntity.levels <= 0) {
++            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(world, pos);
++            new io.papermc.paper.event.block.BeaconDeactivatedEvent(block).callEvent();
++        }
++        // Paper end - beacon activation/deactivation events
+ 
+         if (blockEntity.lastCheckY >= l) {
+             blockEntity.lastCheckY = world.getMinY() - 1;
+@@ -282,6 +291,10 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+ 
+     @Override
+     public void setRemoved() {
++        // Paper start - beacon activation/deactivation events
++        org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, worldPosition);
++        new io.papermc.paper.event.block.BeaconDeactivatedEvent(block).callEvent();
++        // Paper end - beacon activation/deactivation events
+         BeaconBlockEntity.playSound(this.level, this.worldPosition, SoundEvents.BEACON_DEACTIVATE);
+         super.setRemoved();
+     }

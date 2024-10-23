@@ -1,0 +1,91 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 29 May 2020 20:29:02 -0400
+Subject: [PATCH] Synchronize PalettedContainer instead of
+ ThreadingDetector/Semaphore
+
+Mojang has flaws in their logic about chunks being concurrently
+wrote to. So we constantly see crashes around multiple threads writing.
+
+Additionally, java has optimized synchronization so well that its
+in many times faster than trying to manage read write locks for low
+contention situations.
+
+And this is extremely a low contention situation.
+
+diff --git a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
+index 8c318c5f9eaaae1e961ff24247283c232fa84c20..112d1259dd37743076ff6c67ffd711d084ba8698 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
++++ b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
+@@ -30,14 +30,14 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+     public final IdMap<T> registry;
+     private volatile PalettedContainer.Data<T> data;
+     private final PalettedContainer.Strategy strategy;
+-    private final ThreadingDetector threadingDetector = new ThreadingDetector("PalettedContainer");
++    // private final ThreadingDetector threadingDetector = new ThreadingDetector("PalettedContainer"); // Paper - unused
+ 
+     public void acquire() {
+-        this.threadingDetector.checkAndLock();
++        // this.threadingDetector.checkAndLock(); // Paper - disable this - use proper synchronization
+     }
+ 
+     public void release() {
+-        this.threadingDetector.checkAndUnlock();
++        // this.threadingDetector.checkAndUnlock(); // Paper - disable this
+     }
+ 
+     public static <T> Codec<PalettedContainer<T>> codecRW(IdMap<T> idList, Codec<T> entryCodec, PalettedContainer.Strategy paletteProvider, T defaultValue) {
+@@ -110,7 +110,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+     }
+ 
+     @Override
+-    public int onResize(int newBits, T object) {
++    public synchronized int onResize(int newBits, T object) { // Paper - synchronize
+         PalettedContainer.Data<T> data = this.data;
+         PalettedContainer.Data<T> data2 = this.createOrReuseData(data, newBits);
+         data2.copyFrom(data.palette, data.storage);
+@@ -135,7 +135,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+         return this.getAndSet(this.strategy.getIndex(x, y, z), value);
+     }
+ 
+-    private T getAndSet(int index, T value) {
++    private synchronized T getAndSet(int index, T value) { // Paper - synchronize
+         int i = this.data.palette.idFor(value);
+         int j = this.data.storage.getAndSet(index, i);
+         return this.data.palette.valueFor(j);
+@@ -151,7 +151,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+         }
+     }
+ 
+-    private void set(int index, T value) {
++    private synchronized void set(int index, T value) { // Paper - synchronize
+         int i = this.data.palette.idFor(value);
+         this.data.storage.set(index, i);
+     }
+@@ -174,7 +174,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+         intSet.forEach(id -> action.accept(palette.valueFor(id)));
+     }
+ 
+-    public void read(FriendlyByteBuf buf) {
++    public synchronized void read(FriendlyByteBuf buf) { // Paper - synchronize
+         this.acquire();
+ 
+         try {
+@@ -189,7 +189,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+     }
+ 
+     @Override
+-    public void write(FriendlyByteBuf buf) {
++    public synchronized void write(FriendlyByteBuf buf) { // Paper - synchronize
+         this.acquire();
+ 
+         try {
+@@ -237,7 +237,7 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+     }
+ 
+     @Override
+-    public PalettedContainerRO.PackedData<T> pack(IdMap<T> idList, PalettedContainer.Strategy paletteProvider) {
++    public synchronized PalettedContainerRO.PackedData<T> pack(IdMap<T> idList, PalettedContainer.Strategy paletteProvider) { // Paper - synchronize
+         this.acquire();
+ 
+         PalettedContainerRO.PackedData var12;

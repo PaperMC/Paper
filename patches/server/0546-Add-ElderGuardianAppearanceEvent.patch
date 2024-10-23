@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Fri, 19 Mar 2021 23:39:09 -0400
+Subject: [PATCH] Add ElderGuardianAppearanceEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/effect/MobEffectUtil.java b/src/main/java/net/minecraft/world/effect/MobEffectUtil.java
+index f8026eb1d9b10e468d28ee2e1296653e873c87db..23977c2074b920b646a639bef79c0f625b284bea 100644
+--- a/src/main/java/net/minecraft/world/effect/MobEffectUtil.java
++++ b/src/main/java/net/minecraft/world/effect/MobEffectUtil.java
+@@ -55,10 +55,23 @@ public final class MobEffectUtil {
+     }
+ 
+     public static List<ServerPlayer> addEffectToPlayersAround(ServerLevel worldserver, @Nullable Entity entity, Vec3 vec3d, double d0, MobEffectInstance mobeffect, int i, org.bukkit.event.entity.EntityPotionEffectEvent.Cause cause) {
++        // Paper start - Add ElderGuardianAppearanceEvent
++        return addEffectToPlayersAround(worldserver, entity, vec3d, d0, mobeffect, i, cause, null);
++    }
++
++    public static List<ServerPlayer> addEffectToPlayersAround(ServerLevel worldserver, @Nullable Entity entity, Vec3 vec3d, double d0, MobEffectInstance mobeffect, int i, org.bukkit.event.entity.EntityPotionEffectEvent.Cause cause, @Nullable java.util.function.Predicate<ServerPlayer> playerPredicate) {
++        // Paper end - Add ElderGuardianAppearanceEvent
+         // CraftBukkit end
+         Holder<MobEffect> holder = mobeffect.getEffect();
+         List<ServerPlayer> list = worldserver.getPlayers((entityplayer) -> {
+-            return entityplayer.gameMode.isSurvival() && (entity == null || !entity.isAlliedTo((Entity) entityplayer)) && vec3d.closerThan(entityplayer.position(), d0) && (!entityplayer.hasEffect(holder) || entityplayer.getEffect(holder).getAmplifier() < mobeffect.getAmplifier() || entityplayer.getEffect(holder).endsWithin(i - 1));
++            // Paper start - Add ElderGuardianAppearanceEvent
++            boolean condition = entityplayer.gameMode.isSurvival() && (entity == null || !entity.isAlliedTo((Entity) entityplayer)) && vec3d.closerThan(entityplayer.position(), d0) && (!entityplayer.hasEffect(holder) || entityplayer.getEffect(holder).getAmplifier() < mobeffect.getAmplifier() || entityplayer.getEffect(holder).endsWithin(i - 1));
++            if (condition) {
++                return playerPredicate == null || playerPredicate.test(entityplayer); // Only test the player AFTER it is true
++            } else {
++                return false;
++            }
++            // Paper ned - Add ElderGuardianAppearanceEvent
+         });
+ 
+         list.forEach((entityplayer) -> {
+diff --git a/src/main/java/net/minecraft/world/entity/monster/ElderGuardian.java b/src/main/java/net/minecraft/world/entity/monster/ElderGuardian.java
+index 9290f43b4b37a7fa2afae81f8351ea76b7ee7de0..378694a38115c012978e1fea59d049d1ebd04110 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/ElderGuardian.java
++++ b/src/main/java/net/minecraft/world/entity/monster/ElderGuardian.java
+@@ -67,7 +67,7 @@ public class ElderGuardian extends Guardian {
+         super.customServerAiStep(world);
+         if ((this.tickCount + this.getId()) % 1200 == 0) {
+             MobEffectInstance mobeffect = new MobEffectInstance(MobEffects.DIG_SLOWDOWN, 6000, 2);
+-            List<ServerPlayer> list = MobEffectUtil.addEffectToPlayersAround(world, this, this.position(), 50.0D, mobeffect, 1200, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
++            List<ServerPlayer> list = MobEffectUtil.addEffectToPlayersAround(world, this, this.position(), 50.0D, mobeffect, 1200, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK, (player) -> new io.papermc.paper.event.entity.ElderGuardianAppearanceEvent((org.bukkit.entity.ElderGuardian) this.getBukkitEntity(), player.getBukkitEntity()).callEvent()); // CraftBukkit // Paper - Add ElderGuardianAppearanceEvent
+ 
+             list.forEach((entityplayer) -> {
+                 entityplayer.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.GUARDIAN_ELDER_EFFECT, this.isSilent() ? 0.0F : 1.0F));
