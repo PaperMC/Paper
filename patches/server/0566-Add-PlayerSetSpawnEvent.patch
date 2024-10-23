@@ -49,10 +49,10 @@ index a2d0699e8427b2262a2396495111125eccafbb66..15db9368227dbc29d07d74e85bd126b3
      }
  }
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index d1b21afe48dbe1e53d4a046434336be580497165..2dd10cada8d36ed5565481f3f5a5fba168ba9b26 100644
+index 94cc69ed1ccbcfcc8f431762fef641c313b2f634..c680b311760601bb539d685bceddba6712d141d4 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -1422,7 +1422,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+@@ -1690,7 +1690,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
              } else if (this.bedBlocked(blockposition, enumdirection)) {
                  return Either.left(net.minecraft.world.entity.player.Player.BedSleepingProblem.OBSTRUCTED);
              } else {
@@ -61,7 +61,7 @@ index d1b21afe48dbe1e53d4a046434336be580497165..2dd10cada8d36ed5565481f3f5a5fba1
                  if (this.level().isDay()) {
                      return Either.left(net.minecraft.world.entity.player.Player.BedSleepingProblem.NOT_POSSIBLE_NOW);
                  } else {
-@@ -2399,44 +2399,50 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+@@ -2640,44 +2640,50 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
          this.setRespawnPosition(player.getRespawnDimension(), player.getRespawnPosition(), player.getRespawnAngle(), player.isRespawnForced(), false);
      }
  
@@ -145,7 +145,7 @@ index d1b21afe48dbe1e53d4a046434336be580497165..2dd10cada8d36ed5565481f3f5a5fba1
          } else {
              this.respawnPosition = null;
              this.respawnDimension = Level.OVERWORLD;
-@@ -2444,6 +2450,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+@@ -2685,6 +2691,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
              this.respawnForced = false;
          }
  
@@ -154,12 +154,12 @@ index d1b21afe48dbe1e53d4a046434336be580497165..2dd10cada8d36ed5565481f3f5a5fba1
  
      public SectionPos getLastSectionPos() {
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 2b0eed116327e74ff66aa065e42899e74b90abf1..c7dc335d6da208c224d94256eab11b2c3c63745f 100644
+index 55e1e8ab83e8ca44735a0b1a7365526d0a3b24e7..1b6540ae28d73501c59581b1864f0e01ab53e365 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -845,7 +845,7 @@ public abstract class PlayerList {
+@@ -803,7 +803,7 @@ public abstract class PlayerList {
          // CraftBukkit end
-         if (dimensiontransition.missingRespawnBlock()) {
+         if (teleporttransition.missingRespawnBlock()) {
              entityplayer1.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.NO_RESPAWN_BLOCK_AVAILABLE, 0.0F));
 -            entityplayer1.setRespawnPosition(null, null, 0f, false, false, PlayerSpawnChangeEvent.Cause.RESET); // CraftBukkit - SPIGOT-5988: Clear respawn location when obstructed
 +            entityplayer1.setRespawnPosition(null, null, 0f, false, false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN); // CraftBukkit - SPIGOT-5988: Clear respawn location when obstructed // Paper - PlayerSetSpawnEvent
@@ -167,17 +167,17 @@ index 2b0eed116327e74ff66aa065e42899e74b90abf1..c7dc335d6da208c224d94256eab11b2c
  
          int i = flag ? 1 : 0;
 diff --git a/src/main/java/net/minecraft/world/level/block/RespawnAnchorBlock.java b/src/main/java/net/minecraft/world/level/block/RespawnAnchorBlock.java
-index ba22ad1e4253477572d10d71db6db0ebc14d6755..94d067e9eeee73183de25165d8c97043fe256103 100644
+index db26b5a0464bd6087eeacaf6dd61eba37365df92..9117c035d5a6ff114b028fad3380ceb1fc2b9691 100644
 --- a/src/main/java/net/minecraft/world/level/block/RespawnAnchorBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/RespawnAnchorBlock.java
-@@ -89,9 +89,14 @@ public class RespawnAnchorBlock extends Block {
+@@ -88,9 +88,14 @@ public class RespawnAnchorBlock extends Block {
                  ServerPlayer entityplayer = (ServerPlayer) player;
  
                  if (entityplayer.getRespawnDimension() != world.dimension() || !pos.equals(entityplayer.getRespawnPosition())) {
 -                    entityplayer.setRespawnPosition(world.dimension(), pos, 0.0F, false, true, org.bukkit.event.player.PlayerSpawnChangeEvent.Cause.RESPAWN_ANCHOR); // CraftBukkit
 +                    if (entityplayer.setRespawnPosition(world.dimension(), pos, 0.0F, false, true, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.RESPAWN_ANCHOR)) { // Paper - Add PlayerSetSpawnEvent
                      world.playSound((Player) null, (double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, SoundEvents.RESPAWN_ANCHOR_SET_SPAWN, SoundSource.BLOCKS, 1.0F, 1.0F);
-                     return InteractionResult.SUCCESS;
+                     return InteractionResult.SUCCESS_SERVER;
 +                    // Paper start - Add PlayerSetSpawnEvent
 +                    } else {
 +                        return InteractionResult.FAIL;
@@ -187,10 +187,10 @@ index ba22ad1e4253477572d10d71db6db0ebc14d6755..94d067e9eeee73183de25165d8c97043
              }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index b747df28b862990d5db08329149272c67eb17d94..bc0d63f90e352ad4158d1dcc0f21a34954279095 100644
+index 5347ad30130d598644902cdc8902e0b77ac4dfb1..b3efe7391b7e43327bcca419efe72811574c0664 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1413,9 +1413,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1426,9 +1426,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      @Override
      public void setRespawnLocation(Location location, boolean override) {
          if (location == null) {

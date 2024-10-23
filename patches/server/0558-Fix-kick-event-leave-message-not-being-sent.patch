@@ -5,10 +5,10 @@ Subject: [PATCH] Fix kick event leave message not being sent
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index f20019261a09f425137731f7a4b92e889b617334..9982940af7d10ca7799e2c21ac994ea3afa0b805 100644
+index 7bcb3ef3cb498114428782848e0370ac2497ccdc..99a634760cd04d5e3182254b1d0b817baf1cf87a 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -290,7 +290,6 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+@@ -318,7 +318,6 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
      public boolean joining = true;
      public boolean sentListPacket = false;
      public boolean supressTrackerForLogin = false; // Paper - Fire PlayerJoinEvent when Player is actually ready
@@ -17,10 +17,10 @@ index f20019261a09f425137731f7a4b92e889b617334..9982940af7d10ca7799e2c21ac994ea3
      public boolean isRealPlayer; // Paper
      public com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
 diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-index 64450024ce8094874875321537ddab71ab5206fa..6998f32f8d79dbdb6b31ffaa126602fc4a428616 100644
+index 59d20fd62e850a38380d877cef95ed69cb46ecbd..fc242acade3ff06c9213428cde103cf078216382 100644
 --- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-@@ -115,6 +115,11 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -116,6 +116,11 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
  
      @Override
      public void onDisconnect(DisconnectionDetails info) {
@@ -32,7 +32,7 @@ index 64450024ce8094874875321537ddab71ab5206fa..6998f32f8d79dbdb6b31ffaa126602fc
          if (this.isSingleplayerOwner()) {
              ServerCommonPacketListenerImpl.LOGGER.info("Stopping singleplayer server as player logged out");
              this.server.halt(false);
-@@ -379,18 +384,17 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -386,18 +391,17 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
              // Do not kick the player
              return;
          }
@@ -55,10 +55,10 @@ index 64450024ce8094874875321537ddab71ab5206fa..6998f32f8d79dbdb6b31ffaa126602fc
          MinecraftServer minecraftserver = this.server;
          Connection networkmanager = this.connection;
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 3b20dce53403e241261f270f0a9e32f12b9e368a..08c4d0b79dc1c6e51105487b96e9333a5dd904d7 100644
+index c8ab002ddfcea910f916ee503e930085f6c5cb5a..e9e5b35cd09fe50ce4f2116ca5c38137408105bf 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1894,6 +1894,12 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1907,6 +1907,12 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
      @Override
      public void onDisconnect(DisconnectionDetails info) {
@@ -71,7 +71,7 @@ index 3b20dce53403e241261f270f0a9e32f12b9e368a..08c4d0b79dc1c6e51105487b96e9333a
          // CraftBukkit start - Rarely it would send a disconnect line twice
          if (this.processedDisconnect) {
              return;
-@@ -1902,11 +1908,17 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1915,11 +1921,17 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          }
          // CraftBukkit end
          ServerGamePacketListenerImpl.LOGGER.info("{} lost connection: {}", this.player.getName().getString(), info.reason().getString());
@@ -91,7 +91,7 @@ index 3b20dce53403e241261f270f0a9e32f12b9e368a..08c4d0b79dc1c6e51105487b96e9333a
          this.chatMessageChain.close();
          // CraftBukkit start - Replace vanilla quit message handling with our own.
          /*
-@@ -1916,7 +1928,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1929,7 +1941,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
          this.player.disconnect();
          // Paper start - Adventure
@@ -101,10 +101,10 @@ index 3b20dce53403e241261f270f0a9e32f12b9e368a..08c4d0b79dc1c6e51105487b96e9333a
              this.server.getPlayerList().broadcastSystemMessage(PaperAdventure.asVanilla(quitMessage), false);
              // Paper end
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 55a2f234436808258ef59f889a9b253fe79b82e8..2b0eed116327e74ff66aa065e42899e74b90abf1 100644
+index 3ec8d38ca514048d94d24424d2132a90c10f529f..55e1e8ab83e8ca44735a0b1a7365526d0a3b24e7 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -561,6 +561,11 @@ public abstract class PlayerList {
+@@ -511,6 +511,11 @@ public abstract class PlayerList {
      }
  
      public net.kyori.adventure.text.Component remove(ServerPlayer entityplayer) { // CraftBukkit - return string // Paper - return Component

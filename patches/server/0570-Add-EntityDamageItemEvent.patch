@@ -1,0 +1,94 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 22 Dec 2020 13:52:48 -0800
+Subject: [PATCH] Add EntityDamageItemEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index f00b756fe5dad616323e3b11e35e27353f347042..8c9ae9ac38def29ae4cd8944395e566e434d46d0 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -692,11 +692,11 @@ public final class ItemStack implements DataComponentHolder {
+         return this.isDamageableItem() && this.getDamageValue() >= this.getMaxDamage() - 1;
+     }
+ 
+-    public void hurtAndBreak(int amount, ServerLevel world, @Nullable ServerPlayer player, Consumer<Item> breakCallback) {
++    public void hurtAndBreak(int amount, ServerLevel world, @Nullable LivingEntity player, Consumer<Item> breakCallback) {  // Paper - Add EntityDamageItemEvent
+         int j = this.processDurabilityChange(amount, world, player);
+         // CraftBukkit start
+-        if (player != null) {
+-            PlayerItemDamageEvent event = new PlayerItemDamageEvent(player.getBukkitEntity(), CraftItemStack.asCraftMirror(this), j);
++        if (player instanceof final ServerPlayer serverPlayer) { // Paper - Add EntityDamageItemEvent
++            PlayerItemDamageEvent event = new PlayerItemDamageEvent(serverPlayer.getBukkitEntity(), CraftItemStack.asCraftMirror(this), j); // Paper - Add EntityDamageItemEvent
+             event.getPlayer().getServer().getPluginManager().callEvent(event);
+ 
+             if (j != event.getDamage() || event.isCancelled()) {
+@@ -707,6 +707,14 @@ public final class ItemStack implements DataComponentHolder {
+             }
+ 
+             j = event.getDamage();
++            // Paper start - Add EntityDamageItemEvent
++        } else if (player != null) {
++            io.papermc.paper.event.entity.EntityDamageItemEvent event = new io.papermc.paper.event.entity.EntityDamageItemEvent(player.getBukkitLivingEntity(), CraftItemStack.asCraftMirror(this), amount);
++            if (!event.callEvent()) {
++                return;
++            }
++            j = event.getDamage();
++            // Paper end - Add EntityDamageItemEvent
+         }
+         // CraftBukkit end
+ 
+@@ -716,21 +724,21 @@ public final class ItemStack implements DataComponentHolder {
+ 
+     }
+ 
+-    private int processDurabilityChange(int baseDamage, ServerLevel world, @Nullable ServerPlayer player) {
+-        return !this.isDamageableItem() ? 0 : (player != null && player.hasInfiniteMaterials() ? 0 : (baseDamage > 0 ? EnchantmentHelper.processDurabilityChange(world, this, baseDamage) : baseDamage));
++    private int processDurabilityChange(int baseDamage, ServerLevel world, @Nullable LivingEntity player) {  // Paper - Add EntityDamageItemEvent
++        return !this.isDamageableItem() ? 0 : (player instanceof ServerPlayer && player.hasInfiniteMaterials() ? 0 : (baseDamage > 0 ? EnchantmentHelper.processDurabilityChange(world, this, baseDamage) : baseDamage));  // Paper - Add EntityDamageItemEvent
+     }
+ 
+-    private void applyDamage(int damage, @Nullable ServerPlayer player, Consumer<Item> breakCallback) {
+-        if (player != null) {
+-            CriteriaTriggers.ITEM_DURABILITY_CHANGED.trigger(player, this, damage);
++    private void applyDamage(int damage, @Nullable LivingEntity player, Consumer<Item> breakCallback) { // Paper - Add EntityDamageItemEvent
++        if (player instanceof final ServerPlayer serverPlayer) { // Paper - Add EntityDamageItemEvent
++            CriteriaTriggers.ITEM_DURABILITY_CHANGED.trigger(serverPlayer, this, damage); // Paper - Add EntityDamageItemEvent
+         }
+ 
+         this.setDamageValue(damage);
+         if (this.isBroken()) {
+             Item item = this.getItem();
+             // CraftBukkit start - Check for item breaking
+-            if (this.count == 1 && player != null) {
+-                org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemBreakEvent(player, this);
++            if (this.count == 1 && player instanceof final ServerPlayer serverPlayer) { // Paper - Add EntityDamageItemEvent
++                org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemBreakEvent(serverPlayer, this); // Paper - Add EntityDamageItemEvent
+             }
+             // CraftBukkit end
+ 
+@@ -768,7 +776,7 @@ public final class ItemStack implements DataComponentHolder {
+                 entityplayer = null;
+             }
+ 
+-            this.hurtAndBreak(amount, worldserver, entityplayer, (item) -> {
++            this.hurtAndBreak(amount, worldserver, entity, (item) -> { // Paper - Add EntityDamageItemEvent
+                 entity.onEquippedItemBroken(item, slot);
+             });
+         }
+diff --git a/src/main/java/net/minecraft/world/item/enchantment/effects/ChangeItemDamage.java b/src/main/java/net/minecraft/world/item/enchantment/effects/ChangeItemDamage.java
+index 0019c8548aa4901b248ced32cc1475ad14b725bf..7e21c8b10debd70c35a138c14b9b177ef6fff37a 100644
+--- a/src/main/java/net/minecraft/world/item/enchantment/effects/ChangeItemDamage.java
++++ b/src/main/java/net/minecraft/world/item/enchantment/effects/ChangeItemDamage.java
+@@ -21,9 +21,9 @@ public record ChangeItemDamage(LevelBasedValue amount) implements EnchantmentEnt
+     public void apply(ServerLevel world, int level, EnchantedItemInUse context, Entity user, Vec3 pos) {
+         ItemStack itemStack = context.itemStack();
+         if (itemStack.has(DataComponents.MAX_DAMAGE) && itemStack.has(DataComponents.DAMAGE)) {
+-            ServerPlayer serverPlayer2 = context.owner() instanceof ServerPlayer serverPlayer ? serverPlayer : null;
++            // ServerPlayer serverPlayer2 = context.owner() instanceof ServerPlayer serverPlayer ? serverPlayer : null; // Paper - EntityDamageItemEvent - always pass in entity
+             int i = (int)this.amount.calculate(level);
+-            itemStack.hurtAndBreak(i, world, serverPlayer2, context.onBreak());
++            itemStack.hurtAndBreak(i, world, context.owner(), context.onBreak()); // Paper - EntityDamageItemEvent - always pass in entity
+         }
+     }
+ 
