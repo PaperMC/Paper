@@ -7,22 +7,17 @@ Co-authored-by: ChristopheG <61288881+chrisgdt@users.noreply.github.com>
 Co-authored-by: maxcom1 <46265094+maxcom1@users.noreply.github.com>
 
 diff --git a/src/main/java/net/minecraft/world/effect/WeavingMobEffect.java b/src/main/java/net/minecraft/world/effect/WeavingMobEffect.java
-index 6a84eaeddd0d7f050053c8aa0659d6811192aad4..1b2d41a6c6f149701c8a78f3d345f45069f1f857 100644
+index e311f94918fb03e9d202cbae71b0909ea3219180..d090126dbe6b69489490e6b1e2d443fa171ddde6 100644
 --- a/src/main/java/net/minecraft/world/effect/WeavingMobEffect.java
 +++ b/src/main/java/net/minecraft/world/effect/WeavingMobEffect.java
-@@ -25,11 +25,11 @@ class WeavingMobEffect extends MobEffect {
+@@ -25,7 +25,7 @@ class WeavingMobEffect extends MobEffect {
      @Override
-     public void onMobRemoved(LivingEntity entity, int amplifier, Entity.RemovalReason reason) {
-         if (reason == Entity.RemovalReason.KILLED && (entity instanceof Player || entity.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING))) {
--            this.spawnCobwebsRandomlyAround(entity.level(), entity.getRandom(), entity.getOnPos());
-+            this.spawnCobwebsRandomlyAround(entity, entity.level(), entity.getRandom(), entity.getOnPos()); // Paper - Fire EntityChangeBlockEvent in more places
+     public void onMobRemoved(ServerLevel world, LivingEntity entity, int amplifier, Entity.RemovalReason reason) {
+         if (reason == Entity.RemovalReason.KILLED && (entity instanceof Player || world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING))) {
+-            this.spawnCobwebsRandomlyAround(world, entity.getRandom(), entity.blockPosition());
++            this.spawnCobwebsRandomlyAround(entity, world, entity.getRandom(), entity.blockPosition()); // Paper - Fire EntityChangeBlockEvent in more places
          }
      }
- 
--    private void spawnCobwebsRandomlyAround(Level world, RandomSource random, BlockPos pos) {
-+    private void spawnCobwebsRandomlyAround(LivingEntity entity, Level world, RandomSource random, BlockPos pos) { // Paper - Fire EntityChangeBlockEvent in more places
-         Set<BlockPos> set = Sets.newHashSet();
-         int i = this.maxCobwebs.applyAsInt(random);
  
 @@ -46,6 +46,7 @@ class WeavingMobEffect extends MobEffect {
          }
@@ -33,10 +28,10 @@ index 6a84eaeddd0d7f050053c8aa0659d6811192aad4..1b2d41a6c6f149701c8a78f3d345f450
              world.levelEvent(3018, blockPos3, 0);
          }
 diff --git a/src/main/java/net/minecraft/world/entity/LightningBolt.java b/src/main/java/net/minecraft/world/entity/LightningBolt.java
-index bf5015c4bb68e5c46313bab1e59c0a4d45053b73..0471d9c85af02133f99cca4e181b83b58a3f1abc 100644
+index 2b09e9efad198ff596d88f97d703a8a00c108608..152ecd38814089333b8d61538297ce720756d2c3 100644
 --- a/src/main/java/net/minecraft/world/entity/LightningBolt.java
 +++ b/src/main/java/net/minecraft/world/entity/LightningBolt.java
-@@ -99,7 +99,7 @@ public class LightningBolt extends Entity {
+@@ -98,7 +98,7 @@ public class LightningBolt extends Entity {
                  }
  
                  this.powerLightningRod();
@@ -45,8 +40,8 @@ index bf5015c4bb68e5c46313bab1e59c0a4d45053b73..0471d9c85af02133f99cca4e181b83b5
                  this.gameEvent(GameEvent.LIGHTNING_STRIKE);
              }
          }
-@@ -193,7 +193,7 @@ public class LightningBolt extends Entity {
-         }
+@@ -202,7 +202,7 @@ public class LightningBolt extends Entity {
+ 
      }
  
 -    private static void clearCopperOnLightningStrike(Level world, BlockPos pos) {
@@ -54,7 +49,7 @@ index bf5015c4bb68e5c46313bab1e59c0a4d45053b73..0471d9c85af02133f99cca4e181b83b5
          BlockState iblockdata = world.getBlockState(pos);
          BlockPos blockposition1;
          BlockState iblockdata1;
-@@ -207,24 +207,29 @@ public class LightningBolt extends Entity {
+@@ -216,24 +216,29 @@ public class LightningBolt extends Entity {
          }
  
          if (iblockdata1.getBlock() instanceof WeatheringCopper) {
@@ -88,7 +83,7 @@ index bf5015c4bb68e5c46313bab1e59c0a4d45053b73..0471d9c85af02133f99cca4e181b83b5
  
              if (optional.isEmpty()) {
                  break;
-@@ -235,7 +240,7 @@ public class LightningBolt extends Entity {
+@@ -244,7 +249,7 @@ public class LightningBolt extends Entity {
  
      }
  
@@ -97,7 +92,7 @@ index bf5015c4bb68e5c46313bab1e59c0a4d45053b73..0471d9c85af02133f99cca4e181b83b5
          Iterator iterator = BlockPos.randomInCube(world.random, 10, pos, 1).iterator();
  
          BlockPos blockposition1;
-@@ -252,6 +257,7 @@ public class LightningBolt extends Entity {
+@@ -261,6 +266,7 @@ public class LightningBolt extends Entity {
  
          BlockPos blockposition1Final = blockposition1; // CraftBukkit - decompile error
          WeatheringCopper.getPrevious(iblockdata).ifPresent((iblockdata1) -> {
@@ -106,10 +101,10 @@ index bf5015c4bb68e5c46313bab1e59c0a4d45053b73..0471d9c85af02133f99cca4e181b83b5
          });
          world.levelEvent(3002, blockposition1, -1);
 diff --git a/src/main/java/net/minecraft/world/item/AxeItem.java b/src/main/java/net/minecraft/world/item/AxeItem.java
-index c227784544e52ee2c75ab1a2181e0b0ba7246f4b..f005ea92449cf5e249ff64f4791c3bc6b8635528 100644
+index 74c9966093377b67e31b50483c2f24b70734faf6..abff08f2d61014944235ffe2f5494a718a28cc10 100644
 --- a/src/main/java/net/minecraft/world/item/AxeItem.java
 +++ b/src/main/java/net/minecraft/world/item/AxeItem.java
-@@ -65,6 +65,11 @@ public class AxeItem extends DiggerItem {
+@@ -67,6 +67,11 @@ public class AxeItem extends DiggerItem {
                  return InteractionResult.PASS;
              } else {
                  ItemStack itemStack = context.getItemInHand();
@@ -122,10 +117,10 @@ index c227784544e52ee2c75ab1a2181e0b0ba7246f4b..f005ea92449cf5e249ff64f4791c3bc6
                      CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger((ServerPlayer)player, blockPos, itemStack);
                  }
 diff --git a/src/main/java/net/minecraft/world/item/EnderEyeItem.java b/src/main/java/net/minecraft/world/item/EnderEyeItem.java
-index 391579b515c5a07066f82b33c4f9ef8ee1d05530..d8ce44a180f848f4c9c04967470c4359af979b2f 100644
+index 770467bd319f8e2fdf3d713591368aa825cfa5ae..b00a2fe4cefff26b65789829777b25bbc8e024fa 100644
 --- a/src/main/java/net/minecraft/world/item/EnderEyeItem.java
 +++ b/src/main/java/net/minecraft/world/item/EnderEyeItem.java
-@@ -46,6 +46,11 @@ public class EnderEyeItem extends Item {
+@@ -45,6 +45,11 @@ public class EnderEyeItem extends Item {
                  return InteractionResult.SUCCESS;
              } else {
                  BlockState iblockdata1 = (BlockState) iblockdata.setValue(EndPortalFrameBlock.HAS_EYE, true);
@@ -138,7 +133,7 @@ index 391579b515c5a07066f82b33c4f9ef8ee1d05530..d8ce44a180f848f4c9c04967470c4359
                  Block.pushEntitiesUp(iblockdata, iblockdata1, world, blockposition);
                  world.setBlock(blockposition, iblockdata1, 2);
 diff --git a/src/main/java/net/minecraft/world/item/HoneycombItem.java b/src/main/java/net/minecraft/world/item/HoneycombItem.java
-index decabf6fccaca3d1bfeba679ac71677d33315f5e..14d37bf64af719eae3ea154ea7f952cc27712b57 100644
+index 6c0fe41692c9d1fa50a4f421eb4735860a9ae0e9..d7924825823b2bf79ca3a26272de11ff8d2ec74c 100644
 --- a/src/main/java/net/minecraft/world/item/HoneycombItem.java
 +++ b/src/main/java/net/minecraft/world/item/HoneycombItem.java
 @@ -74,6 +74,14 @@ public class HoneycombItem extends Item implements SignApplicator {
@@ -153,28 +148,28 @@ index decabf6fccaca3d1bfeba679ac71677d33315f5e..14d37bf64af719eae3ea154ea7f952cc
 +                return InteractionResult.PASS;
 +            }
 +            // Paper end
-             if (player instanceof ServerPlayer) {
-                 CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger((ServerPlayer)player, blockPos, itemStack);
+             if (player instanceof ServerPlayer serverPlayer) {
+                 CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger(serverPlayer, blockPos, itemStack);
              }
 diff --git a/src/main/java/net/minecraft/world/item/PotionItem.java b/src/main/java/net/minecraft/world/item/PotionItem.java
-index 92fa6523f2bba105a74fff228e36e58666ed56ae..d147b24bb57b322d3f5f4a9eb8cfef2acdd9e0f5 100644
+index 1c8fd643c32226d72d51abc869a49e256dd2432b..627439c3aa8171e9a54dbcb8842af50cc58f7f23 100644
 --- a/src/main/java/net/minecraft/world/item/PotionItem.java
 +++ b/src/main/java/net/minecraft/world/item/PotionItem.java
-@@ -109,6 +109,12 @@ public class PotionItem extends Item {
-         BlockState iblockdata = world.getBlockState(blockposition);
- 
-         if (context.getClickedFace() != Direction.DOWN && iblockdata.is(BlockTags.CONVERTABLE_TO_MUD) && potioncontents.is(Potions.WATER)) {
+@@ -42,6 +42,12 @@ public class PotionItem extends Item {
+         PotionContents potionContents = itemStack.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
+         BlockState blockState = level.getBlockState(blockPos);
+         if (context.getClickedFace() != Direction.DOWN && blockState.is(BlockTags.CONVERTABLE_TO_MUD) && potionContents.is(Potions.WATER)) {
 +            // Paper start
 +            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entityhuman, blockposition, Blocks.MUD.defaultBlockState())) {
 +                entityhuman.containerMenu.sendAllDataToRemote();
 +                return InteractionResult.PASS;
 +            }
 +            // Paper end
-             world.playSound((Player) null, blockposition, SoundEvents.GENERIC_SPLASH, SoundSource.BLOCKS, 1.0F, 1.0F);
-             entityhuman.setItemInHand(context.getHand(), ItemUtils.createFilledResult(itemstack, entityhuman, new ItemStack(Items.GLASS_BOTTLE)));
-             entityhuman.awardStat(Stats.ITEM_USED.get(itemstack.getItem()));
+             level.playSound(null, blockPos, SoundEvents.GENERIC_SPLASH, SoundSource.BLOCKS, 1.0F, 1.0F);
+             player.setItemInHand(context.getHand(), ItemUtils.createFilledResult(itemStack, player, new ItemStack(Items.GLASS_BOTTLE)));
+             player.awardStat(Stats.ITEM_USED.get(itemStack.getItem()));
 diff --git a/src/main/java/net/minecraft/world/item/ShovelItem.java b/src/main/java/net/minecraft/world/item/ShovelItem.java
-index c0e96284bb470353c0e54ad4e0c2205017913e61..24f6a158e4759aac3be8da4cf5e0d40bd295355b 100644
+index c0377341227e8f4f1f7b1448580b3c7bc1b65f48..55c18f182166f4905d623d6f5e909eefd5ed2483 100644
 --- a/src/main/java/net/minecraft/world/item/ShovelItem.java
 +++ b/src/main/java/net/minecraft/world/item/ShovelItem.java
 @@ -46,20 +46,29 @@ public class ShovelItem extends DiggerItem {
@@ -209,10 +204,10 @@ index c0e96284bb470353c0e54ad4e0c2205017913e61..24f6a158e4759aac3be8da4cf5e0d40b
                      level.gameEvent(GameEvent.BLOCK_CHANGE, blockPos, GameEvent.Context.of(player, blockState3));
                      if (player != null) {
 diff --git a/src/main/java/net/minecraft/world/level/block/CakeBlock.java b/src/main/java/net/minecraft/world/level/block/CakeBlock.java
-index d72f4a01ca07df8a9678b3ca4707e5363e482283..43e306b5ef00b39923c1597f212b4a07fb95f1ca 100644
+index 7629b9212ded7155e94f67ca429f62271e5f5aa0..1104f620a050555f71d058711cc34fadb964222f 100644
 --- a/src/main/java/net/minecraft/world/level/block/CakeBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/CakeBlock.java
-@@ -65,6 +65,12 @@ public class CakeBlock extends Block {
+@@ -66,6 +66,12 @@ public class CakeBlock extends Block {
              if (block instanceof CandleBlock) {
                  CandleBlock candleblock = (CandleBlock) block;
  
@@ -225,7 +220,7 @@ index d72f4a01ca07df8a9678b3ca4707e5363e482283..43e306b5ef00b39923c1597f212b4a07
                  stack.consume(1, player);
                  world.playSound((Player) null, pos, SoundEvents.CAKE_ADD_CANDLE, SoundSource.BLOCKS, 1.0F, 1.0F);
                  world.setBlockAndUpdate(pos, CandleCakeBlock.byCandle(candleblock));
-@@ -96,6 +102,14 @@ public class CakeBlock extends Block {
+@@ -97,6 +103,14 @@ public class CakeBlock extends Block {
          if (!player.canEat(false)) {
              return InteractionResult.PASS;
          } else {
@@ -240,7 +235,7 @@ index d72f4a01ca07df8a9678b3ca4707e5363e482283..43e306b5ef00b39923c1597f212b4a07
              player.awardStat(Stats.EAT_CAKE_SLICE);
              // CraftBukkit start
              // entityhuman.getFoodData().eat(2, 0.1F);
-@@ -109,7 +123,7 @@ public class CakeBlock extends Block {
+@@ -110,7 +124,7 @@ public class CakeBlock extends Block {
  
              ((net.minecraft.server.level.ServerPlayer) player).getBukkitEntity().sendHealthUpdate();
              // CraftBukkit end
@@ -250,10 +245,10 @@ index d72f4a01ca07df8a9678b3ca4707e5363e482283..43e306b5ef00b39923c1597f212b4a07
              world.gameEvent((Entity) player, (Holder) GameEvent.EAT, pos);
              if (i < 6) {
 diff --git a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java b/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
-index 804adb5ed92dfcf4c29c756dd95d7164150a9666..19fa8a9f935e9063497f8c0bd7909036fa0af2b7 100644
+index 2bcd246a26dad560cf69682b29983d320ebf1884..60bf63c2cff3ce8a1892ba5c2303738c35b83d79 100644
 --- a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
-@@ -239,6 +239,11 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+@@ -243,6 +243,11 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
          if (i < 8 && ComposterBlock.COMPOSTABLES.containsKey(stack.getItem())) {
              if (i < 7 && !world.isClientSide) {
                  BlockState iblockdata1 = ComposterBlock.addItem(player, state, world, pos, stack);
@@ -265,7 +260,7 @@ index 804adb5ed92dfcf4c29c756dd95d7164150a9666..19fa8a9f935e9063497f8c0bd7909036
  
                  world.levelEvent(1500, pos, state != iblockdata1 ? 1 : 0);
                  player.awardStat(Stats.ITEM_USED.get(stack.getItem()));
-@@ -269,11 +274,16 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+@@ -273,11 +278,16 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
          if (i < 7 && ComposterBlock.COMPOSTABLES.containsKey(stack.getItem())) {
              // CraftBukkit start
              double rand = world.getRandom().nextDouble();
@@ -284,7 +279,7 @@ index 804adb5ed92dfcf4c29c756dd95d7164150a9666..19fa8a9f935e9063497f8c0bd7909036
              // CraftBukkit end
  
              stack.shrink(1);
-@@ -314,11 +324,13 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+@@ -318,11 +328,13 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
          return iblockdata1;
      }
  
@@ -298,7 +293,7 @@ index 804adb5ed92dfcf4c29c756dd95d7164150a9666..19fa8a9f935e9063497f8c0bd7909036
      static BlockState addItem(@Nullable Entity entity, BlockState iblockdata, LevelAccessor generatoraccess, BlockPos blockposition, ItemStack itemstack, double rand) {
          // CraftBukkit end
          int i = (Integer) iblockdata.getValue(ComposterBlock.LEVEL);
-@@ -329,6 +341,11 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+@@ -333,6 +345,11 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
          } else {
              int j = i + 1;
              BlockState iblockdata1 = (BlockState) iblockdata.setValue(ComposterBlock.LEVEL, j);
@@ -311,10 +306,10 @@ index 804adb5ed92dfcf4c29c756dd95d7164150a9666..19fa8a9f935e9063497f8c0bd7909036
              generatoraccess.setBlock(blockposition, iblockdata1, 3);
              generatoraccess.gameEvent((Holder) GameEvent.BLOCK_CHANGE, blockposition, GameEvent.Context.of(entity, iblockdata1));
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
-index ef8a0236ab4fb648c4bb2a8cfc90e3cefe8f9f1d..1a3d8755c8f6a7cfe06069e2082d8147aaaff097 100644
+index 8224d5bddb7f7893dee09222a673af54791abcfa..f8828dc8334af19d7b2118e8cf34d94be5e09ee8 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
-@@ -259,7 +259,13 @@ public class BeehiveBlockEntity extends BlockEntity {
+@@ -260,7 +260,13 @@ public class BeehiveBlockEntity extends BlockEntity {
                                          --j;
                                      }
  

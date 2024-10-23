@@ -91,11 +91,11 @@ index 6854ca4d4fec2b4fa541c3fabf63787665572609..e7b444a10b244828827b3c66c5346520
          }
  
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 071e9ef3680c5dc492c6142ccd05f6788ebc3035..61fda6927f060cdf8bcfddaaa08bbbe2c514c630 100644
+index 7f18146c0dea654c62b3e01e6848fd1c05f87946..1a724f9bb6ef82a0b5fdd9ade036d7365167f14b 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -1027,7 +1027,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         // CraftBukkit end
+@@ -1080,7 +1080,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+ 
      }
  
 -    boolean anyPlayerCloseEnoughForSpawning(ChunkPos pos) {
@@ -104,12 +104,12 @@ index 071e9ef3680c5dc492c6142ccd05f6788ebc3035..61fda6927f060cdf8bcfddaaa08bbbe2
          return this.anyPlayerCloseEnoughForSpawning(pos, false);
      }
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index b88a7f580b4138ceb262f3d398e78fdc2e6b018c..1edad85fc5c199dcab66497fa758e48dd14aec8c 100644
+index 100661b77466152a651d22daa7df992c28fbbecb..79fabd52eb3a08ec9c9ab2ec5d6ff4a31a02a292 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -777,7 +777,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -764,7 +764,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
          } else {
-             AABB axisalignedbb = AABB.encapsulatingFullBlocks(blockposition1, new BlockPos(blockposition1.atY(this.getMaxBuildHeight()))).inflate(3.0D);
+             AABB axisalignedbb = AABB.encapsulatingFullBlocks(blockposition1, blockposition1.atY(this.getMaxY() + 1)).inflate(3.0D);
              List<LivingEntity> list = this.getEntitiesOfClass(LivingEntity.class, axisalignedbb, (entityliving) -> {
 -                return entityliving != null && entityliving.isAlive() && this.canSeeSky(entityliving.blockPosition());
 +                return entityliving != null && entityliving.isAlive() && this.canSeeSky(entityliving.blockPosition()) && !entityliving.isSpectator(); // Paper - Fix lightning being able to hit spectators (MC-262422)
@@ -117,10 +117,10 @@ index b88a7f580b4138ceb262f3d398e78fdc2e6b018c..1edad85fc5c199dcab66497fa758e48d
  
              if (!list.isEmpty()) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-index 6abecaac8407b992d208a9108e11fd4954a4106f..03d89f326d320c5d778c3d1e2db7d6b88753faec 100644
+index 064a7a3e1c4d192010e072a5e985a54135748d87..a706f0855fdf88cc9aece3ba00ef574b9cd8bd11 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
-@@ -93,7 +93,7 @@ public class ServerPlayerGameMode {
+@@ -91,7 +91,7 @@ public class ServerPlayerGameMode {
                  return event; // Paper - Expand PlayerGameModeChangeEvent
              }
              // CraftBukkit end
@@ -130,23 +130,23 @@ index 6abecaac8407b992d208a9108e11fd4954a4106f..03d89f326d320c5d778c3d1e2db7d6b8
              this.player.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, this.player), this.player); // CraftBukkit
              this.level.updateSleepingPlayerList();
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index ca32e5aa6e77ca1bab886e7b6a778ec931ac4e4c..28808ffc6e486f7dc01be370c9eb249dc1f7ea46 100644
+index 5f567d6a8ac93113c2f57d38736c4891c5f9ae19..6c7c6cd7c071b722faf7ec06e022a6ad8b1ecc42 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1814,7 +1814,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-                             } else if (enuminteractionresult.shouldSwing() && !this.player.gameMode.interactResult) { // Paper - Call interact event
-                                 this.player.swing(enumhand, true);
+@@ -1823,7 +1823,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                                     this.player.swing(enumhand, true);
+                                 }
                              }
 -                        }
 +                        } else { this.player.containerMenu.sendAllDataToRemote(); } // Paper - Fix inventory desync; MC-99075
                      } else {
-                         MutableComponent ichatmutablecomponent1 = Component.translatable("build.tooHigh", i - 1).withStyle(ChatFormatting.RED);
+                         MutableComponent ichatmutablecomponent1 = Component.translatable("build.tooHigh", i).withStyle(ChatFormatting.RED);
  
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 03572023ae7f061bf34fed8ac27852e08d6412c0..38b9ab369e25e4b718418375f76e782283b48411 100644
+index f0ce0041497d038c55019e0f5a8e8b8619cec398..8e71eeb5be2df1352447f3662a6d092a7db9e2d0 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -260,7 +260,7 @@ public abstract class PlayerList {
+@@ -261,7 +261,7 @@ public abstract class PlayerList {
          }
          if (optional.isEmpty() || invalidPlayerWorld[0]) {
              // Paper end - reset to main world spawn if first spawn or invalid world
@@ -155,7 +155,7 @@ index 03572023ae7f061bf34fed8ac27852e08d6412c0..38b9ab369e25e4b718418375f76e7822
          }
          // Paper end - Entity#getEntitySpawnReason
          player.setServerLevel(worldserver1);
-@@ -703,8 +703,10 @@ public abstract class PlayerList {
+@@ -661,8 +661,10 @@ public abstract class PlayerList {
          Player player = entity.getBukkitEntity();
          PlayerLoginEvent event = new PlayerLoginEvent(player, loginlistener.connection.hostname, ((java.net.InetSocketAddress) socketaddress).getAddress(), ((java.net.InetSocketAddress) loginlistener.connection.channel.remoteAddress()).getAddress());
  
@@ -169,10 +169,10 @@ index 03572023ae7f061bf34fed8ac27852e08d6412c0..38b9ab369e25e4b718418375f76e7822
              ichatmutablecomponent = Component.translatable("multiplayer.disconnect.banned.reason", gameprofilebanentry.getReason());
              if (gameprofilebanentry.getExpires() != null) {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java
-index 784a894688f98f9d0368a36d456c5c94e1ee3695..a85885ee51df585fa11ae9f8fcd67ff2a71c5a18 100644
+index 6827426e6e9706909265f84bf97b5fa7105a7fea..7324da6b7dd2623ce394e3827ff77ef684a3b98b 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java
-@@ -77,9 +77,10 @@ public class BreakDoorGoal extends DoorInteractGoal {
+@@ -78,9 +78,10 @@ public class BreakDoorGoal extends DoorInteractGoal {
                  return;
              }
              // CraftBukkit end
@@ -185,7 +185,7 @@ index 784a894688f98f9d0368a36d456c5c94e1ee3695..a85885ee51df585fa11ae9f8fcd67ff2
  
      }
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java
-index d802985f1431be4332c07f0dab88feebedea4ce2..4e2c23ccdf4e4a4d65b291dbe20952bae1838bff 100644
+index 9e6f946e6d2878aa3fa8abe0f6fa4770d18676d3..32bb591371fe78ba10a2bc52389ef33978cbc0eb 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java
 @@ -31,6 +31,11 @@ public class EatBlockGoal extends Goal {
@@ -219,26 +219,26 @@ index ef71b3ef4444c05b4211de87e1c8ec52cbe3e72a..137ec75ee803789deb7b1ca93dd9369c
      public void start() {
          this.creeper.getNavigation().stop();
 diff --git a/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java b/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
-index 923806900ef6248576e71260d40e9caf2c8943e8..02e49c7ae5e120302b6479cf3e3934b9217eebf0 100644
+index dbcf14f5af9c9c0655a82529ee99450a8da14525..f745a554b9b84a53d9bd942ca9908153fb0a668c 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
-@@ -243,9 +243,10 @@ public class Goat extends Animal {
+@@ -247,9 +247,10 @@ public class Goat extends Animal {
              player.setItemInHand(hand, itemstack1);
-             return InteractionResult.sidedSuccess(this.level().isClientSide);
+             return InteractionResult.SUCCESS;
          } else {
 +            boolean isFood = this.isFood(itemstack); // Paper - track before stack is possibly decreased to 0 (Fixes MC-244739)
              InteractionResult enuminteractionresult = super.mobInteract(player, hand);
  
 -            if (enuminteractionresult.consumesAction() && this.isFood(itemstack)) {
 +            if (enuminteractionresult.consumesAction() && isFood) { // Paper
-                 this.level().playSound((Player) null, (Entity) this, this.getEatingSound(itemstack), SoundSource.NEUTRAL, 1.0F, Mth.randomBetween(this.level().random, 0.8F, 1.2F));
+                 this.playEatingSound();
              }
  
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
-index 3c6edc5ea44b7ec15d8fc7a2dca95a11a0d6108a..ba4e0ad7c7c2731d61ec7f60f19d7e9ec31a28ba 100644
+index 30af4cbb17148c247a46c0346419d6c838dbc9d2..07c143c3eac263848fc5daf6f958d16a1a163e92 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
 +++ b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
-@@ -260,6 +260,14 @@ public class ItemFrame extends HangingEntity {
+@@ -272,6 +272,14 @@ public class ItemFrame extends HangingEntity {
          return (ItemStack) this.getEntityData().get(ItemFrame.DATA_ITEM);
      }
  
@@ -251,10 +251,10 @@ index 3c6edc5ea44b7ec15d8fc7a2dca95a11a0d6108a..ba4e0ad7c7c2731d61ec7f60f19d7e9e
 +    // Paper end
 +
      @Nullable
-     public MapId getFramedMapId(ItemStack itemstack) {
-         return (MapId) itemstack.get(DataComponents.MAP_ID);
+     public MapId getFramedMapId(ItemStack stack) {
+         return (MapId) stack.get(DataComponents.MAP_ID);
 diff --git a/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java b/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
-index 08dcc94c9eca9a5fd61055f05b7737ba5840b5bf..e0e5046c84941a8d17e18c177f3daea9cb631940 100644
+index 15a1ea01917ce57c2457094186dde937c21ffb22..b0236c7bf9441aa84d3795ffed05dd6099f29636 100644
 --- a/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
 +++ b/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
 @@ -82,8 +82,8 @@ public class CatSpawner implements CustomSpawner {
@@ -262,16 +262,16 @@ index 08dcc94c9eca9a5fd61055f05b7737ba5840b5bf..e0e5046c84941a8d17e18c177f3daea9
              return 0;
          } else {
 +            cat.moveTo(pos, 0.0F, 0.0F); // Paper - move up - Fix MC-147659
-             cat.finalizeSpawn(world, world.getCurrentDifficultyAt(pos), MobSpawnType.NATURAL, null);
+             cat.finalizeSpawn(world, world.getCurrentDifficultyAt(pos), EntitySpawnReason.NATURAL, null);
 -            cat.moveTo(pos, 0.0F, 0.0F);
              world.addFreshEntityWithPassengers(cat);
              return 1;
          }
 diff --git a/src/main/java/net/minecraft/world/inventory/BeaconMenu.java b/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
-index 396559c281eee9e8c677cb222721414e8d9e12a2..8b0ebf659f6b219ce2a5d10b0d79f9b89b47c911 100644
+index cad0b581c992edc5cd312a727695a443e26e96d8..9db647cfbd3f9c884465cf3d3a1b911d46a3da58 100644
 --- a/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
 +++ b/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
-@@ -178,6 +178,11 @@ public class BeaconMenu extends AbstractContainerMenu {
+@@ -164,6 +164,11 @@ public class BeaconMenu extends AbstractContainerMenu {
      // Paper end - Add PlayerChangeBeaconEffectEvent
  
      public void updateEffects(Optional<Holder<MobEffect>> primary, Optional<Holder<MobEffect>> secondary) {
@@ -283,43 +283,27 @@ index 396559c281eee9e8c677cb222721414e8d9e12a2..8b0ebf659f6b219ce2a5d10b0d79f9b8
          if (this.paymentSlot.hasItem()) {
              // Paper start - Add PlayerChangeBeaconEffectEvent
              io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent event = new io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent((org.bukkit.entity.Player) this.player.player.getBukkitEntity(), convert(primary), convert(secondary), this.access.getLocation().getBlock());
-diff --git a/src/main/java/net/minecraft/world/level/block/AzaleaBlock.java b/src/main/java/net/minecraft/world/level/block/AzaleaBlock.java
-index cd90129be2cf8095abd80528e5de3bbe05022a9d..fad69dfc20574ab23634b14252b50929cca75b21 100644
---- a/src/main/java/net/minecraft/world/level/block/AzaleaBlock.java
-+++ b/src/main/java/net/minecraft/world/level/block/AzaleaBlock.java
-@@ -51,4 +51,11 @@ public class AzaleaBlock extends BushBlock implements BonemealableBlock {
-     public void performBonemeal(ServerLevel world, RandomSource random, BlockPos pos, BlockState state) {
-         TreeGrower.AZALEA.growTree(world, world.getChunkSource().getGenerator(), pos, state, random);
-     }
-+
-+    // Paper start - Fix MC-224454
-+    @Override
-+    public boolean isPathfindable(BlockState state, net.minecraft.world.level.pathfinder.PathComputationType type) {
-+        return false;
-+    }
-+    // Paper end
- }
 diff --git a/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java b/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
-index fa5366961861370c2366e6f0ff026a6d65128316..a5c7c2d24498c66159316a4f92677625975ce5ca 100644
+index 7dd6b7c0ea472cfbc7ece55bc64bc5d85be4a6c0..6dcb571e9f35fbae724be69dc113b0c33eca63b3 100644
 --- a/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
-@@ -69,7 +69,7 @@ public class LayeredCauldronBlock extends AbstractCauldronBlock {
-         if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
-         if (!world.isClientSide && entity.isOnFire() && this.isEntityInsideContent(state, pos, entity)) {
-             // CraftBukkit start
--            if (entity.mayInteract(world, pos)) {
-+            if ((entity instanceof net.minecraft.world.entity.player.Player || world.getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_MOBGRIEFING)) && entity.mayInteract(world, pos)) { // Paper - Fixes MC-248588
-                 if (!this.handleEntityOnFireInsideWithEvent(state, world, pos, entity)) { // Paper - fix powdered snow cauldron extinguishing entities
-                     return;
-                 }
+@@ -72,7 +72,7 @@ public class LayeredCauldronBlock extends AbstractCauldronBlock {
+             if (entity.isOnFire() && this.isEntityInsideContent(state, pos, entity)) {
+                 // CraftBukkit start - moved down
+                 // entity.clearFire();
+-                if (entity.mayInteract(worldserver, pos)) {
++                if ((entity instanceof net.minecraft.world.entity.player.Player || worldserver.getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_MOBGRIEFING)) && entity.mayInteract(worldserver, pos)) { // Paper - Fixes MC-248588
+                     if (this.handleEntityOnFireInsideWithEvent(state, world, pos, entity)) { // Paper - fix powdered snow cauldron extinguishing entities
+                         entity.clearFire();
+                     }
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
-index aa59a45bcbe652996eddb80a3187618b7f6d1234..f1a7054a0ee1842e78338d8984f151b24c352849 100644
+index a23a87da259ab8d28dd8d8513098cd0730e72e0c..18f8b2c469feef659437684ce156a79ec3a3ce83 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
-@@ -648,13 +648,10 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+@@ -531,13 +531,10 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
  
      @Override
-     public void fillStackedContents(StackedContents finder) {
+     public void fillStackedContents(StackedItemContents finder) {
 -        Iterator iterator = this.items.iterator();
 -
 -        while (iterator.hasNext()) {
@@ -335,7 +319,7 @@ index aa59a45bcbe652996eddb80a3187618b7f6d1234..f1a7054a0ee1842e78338d8984f151b2
      }
  }
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
-index e124f040386e130aebd7135434c4f06d130d28f6..f8d432ef21e59796da4b11c9748ba151c54e5e04 100644
+index 8aab6f68f576fb022eb59798585e264f5aafbc69..edd6017937a7f20a1b43fa15204ec130b524b52b 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
 @@ -295,7 +295,11 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
@@ -351,35 +335,42 @@ index e124f040386e130aebd7135434c4f06d130d28f6..f8d432ef21e59796da4b11c9748ba151
      }
  
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerData.java b/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerData.java
-index 055f4b87c01ee7ecf7d2a111b72cc5aa85d9fbe8..6684ded7135f943f8cea954b417f596369215357 100644
+index e64a30577e9000e5c4d22fd3d9cf8a9381c5c459..b9690f31d410e82d833b2ca805df2fa68abcb6d1 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerData.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerData.java
-@@ -100,13 +100,13 @@ public class TrialSpawnerData {
+@@ -101,17 +101,19 @@ public class TrialSpawnerData {
          this.ejectingLootTable = rewardLootTable;
      }
  
 -    public void reset() {
 +    public void reset(TrialSpawner logic) { // Paper - Fix TrialSpawner forgets assigned mob; MC-273635
+         this.currentMobs.clear();
+         this.nextSpawnData = Optional.empty();
+-        this.resetStatistics();
++        this.resetStatistics(logic);
+     }
+ 
+-    public void resetStatistics() {
++    public void resetStatistics(TrialSpawner logic) { // Paper - Fix TrialSpawner forgets assigned mob; MC-273635
          this.detectedPlayers.clear();
          this.totalMobsSpawned = 0;
          this.nextMobSpawnsAt = 0L;
          this.cooldownEndsAt = 0L;
-         this.currentMobs.clear();
--        this.nextSpawnData = Optional.empty();
++        this.nextSpawnData = Optional.empty();
 +        if (!logic.getConfig().spawnPotentialsDefinition().isEmpty()) this.nextSpawnData = Optional.empty(); // Paper - Fix TrialSpawner forgets assigned mob; MC-273635
      }
  
      public boolean hasMobToSpawn(TrialSpawner logic, RandomSource random) {
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerState.java b/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerState.java
-index ffabcfaef8defe932473dee515f05220921904e0..005aea8a747e9cbbc352b8b57c64b84ec71ad321 100644
+index 83cdeee5e2ce115ff696a5afc5465dc4301779b9..027d5c4117feba1e152d0ecf9923aef77ba72207 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerState.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerState.java
 @@ -68,7 +68,7 @@ public enum TrialSpawnerState implements StringRepresentable {
              case INACTIVE -> trialSpawnerData.getOrCreateDisplayEntity(logic, world, WAITING_FOR_PLAYERS) == null ? this : WAITING_FOR_PLAYERS;
              case WAITING_FOR_PLAYERS -> {
                  if (!logic.canSpawnInLevel(world)) {
--                    trialSpawnerData.reset();
-+                    trialSpawnerData.reset(logic); // Paper - Fix TrialSpawner forgets assigned mob; MC-273635
+-                    trialSpawnerData.resetStatistics();
++                    trialSpawnerData.resetStatistics(logic); // Paper - Fix TrialSpawner forgets assigned mob; MC-273635
                      yield this;
                  } else if (!trialSpawnerData.hasMobToSpawn(logic, world.random)) {
                      yield INACTIVE;
@@ -387,8 +378,8 @@ index ffabcfaef8defe932473dee515f05220921904e0..005aea8a747e9cbbc352b8b57c64b84e
              }
              case ACTIVE -> {
                  if (!logic.canSpawnInLevel(world)) {
--                    trialSpawnerData.reset();
-+                    trialSpawnerData.reset(logic); // Paper - Fix TrialSpawner forgets assigned mob; MC-273635
+-                    trialSpawnerData.resetStatistics();
++                    trialSpawnerData.resetStatistics(logic); // Paper - Fix TrialSpawner forgets assigned mob; MC-273635
                      yield WAITING_FOR_PLAYERS;
                  } else if (!trialSpawnerData.hasMobToSpawn(logic, world.random)) {
                      yield INACTIVE;
@@ -401,25 +392,3 @@ index ffabcfaef8defe932473dee515f05220921904e0..005aea8a747e9cbbc352b8b57c64b84e
                      yield WAITING_FOR_PLAYERS;
                  } else {
                      yield this;
-diff --git a/src/main/java/net/minecraft/world/level/portal/DimensionTransition.java b/src/main/java/net/minecraft/world/level/portal/DimensionTransition.java
-index 1595a379875abc718659f6b1ce7c64c6383b1bc8..788f79dc38012595b385ee6a449daa0bccf0079a 100644
---- a/src/main/java/net/minecraft/world/level/portal/DimensionTransition.java
-+++ b/src/main/java/net/minecraft/world/level/portal/DimensionTransition.java
-@@ -39,7 +39,7 @@ public record DimensionTransition(ServerLevel newLevel, Vec3 pos, Vec3 speed, fl
-     }
- 
-     public DimensionTransition(ServerLevel worldserver, Entity entity, DimensionTransition.PostDimensionTransition dimensiontransition_a, PlayerTeleportEvent.TeleportCause cause) {
--        this(worldserver, findAdjustedSharedSpawnPos(worldserver, entity), Vec3.ZERO, 0.0F, 0.0F, false, dimensiontransition_a, cause);
-+        this(worldserver, findAdjustedSharedSpawnPos(worldserver, entity), Vec3.ZERO, worldserver.getSharedSpawnAngle(), 0.0F, false, dimensiontransition_a, cause); // Paper - MC-200092 - fix spawn pos yaw being ignored
-         // CraftBukkit end
-     }
- 
-@@ -55,7 +55,7 @@ public record DimensionTransition(ServerLevel newLevel, Vec3 pos, Vec3 speed, fl
-     }
- 
-     public static DimensionTransition missingRespawnBlock(ServerLevel world, Entity entity, DimensionTransition.PostDimensionTransition postDimensionTransition) {
--        return new DimensionTransition(world, findAdjustedSharedSpawnPos(world, entity), Vec3.ZERO, 0.0F, 0.0F, true, postDimensionTransition);
-+        return new DimensionTransition(world, findAdjustedSharedSpawnPos(world, entity), Vec3.ZERO, world.getSharedSpawnAngle(), 0.0F, true, postDimensionTransition); // Paper - MC-200092 - fix spawn pos yaw being ignored
-     }
- 
-     private static Vec3 findAdjustedSharedSpawnPos(ServerLevel world, Entity entity) {
