@@ -16,10 +16,10 @@ So even if something NEW comes up, it would be impossible to drop the
 same item twice because the source was destroyed.
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index d80fd4e2f41583f83c9527ccf4ce80afe851276a..10015beb7a2de890fe27bffde8f55c1dd78ce344 100644
+index 5b8e264098f1b713de15f714bae59d3efda365cf..4faba83eb73e0d313e9131794962b727f7628a50 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -2515,11 +2515,12 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -2630,11 +2630,12 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          } else {
              // CraftBukkit start - Capture drops for death event
              if (this instanceof net.minecraft.world.entity.LivingEntity && !((net.minecraft.world.entity.LivingEntity) this).forceDrops) {
@@ -28,14 +28,13 @@ index d80fd4e2f41583f83c9527ccf4ce80afe851276a..10015beb7a2de890fe27bffde8f55c1d
                  return null;
              }
              // CraftBukkit end
--            ItemEntity entityitem = new ItemEntity(this.level(), this.getX(), this.getY() + (double) yOffset, this.getZ(), stack);
-+            ItemEntity entityitem = new ItemEntity(this.level(), this.getX(), this.getY() + (double) yOffset, this.getZ(), stack.copy()); // Paper - copy so we can destroy original
+             ItemEntity entityitem = new ItemEntity(world, this.getX(), this.getY() + (double) yOffset, this.getZ(), stack);
 +            stack.setCount(0); // Paper - destroy this item - if this ever leaks due to game bugs, ensure it doesn't dupe
  
              entityitem.setDefaultPickUpDelay();
              // CraftBukkit start
-@@ -3335,6 +3336,12 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
-     public Entity changeDimension(DimensionTransition teleportTarget) {
+@@ -3462,6 +3463,12 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     public Entity teleport(TeleportTransition teleportTarget) {
          Level world = this.level();
  
 +        // Paper start - Fix item duplication and teleport issues
@@ -47,32 +46,31 @@ index d80fd4e2f41583f83c9527ccf4ce80afe851276a..10015beb7a2de890fe27bffde8f55c1d
          if (world instanceof ServerLevel worldserver) {
              if (!this.isRemoved()) {
                  // CraftBukkit start
-@@ -3377,6 +3384,11 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
- 
-                 if (entity2 != null) {
-                     if (this != entity2) {
-+                        // Paper start - Fix item duplication and teleport issues
-+                        if (this instanceof Leashable leashable) {
-+                            leashable.dropLeash(true, true); // Paper drop lead
-+                        }
-+                        // Paper end - Fix item duplication and teleport issues
-                         entity2.restoreFrom(this);
-                         this.removeAfterChangingDimensions();
-                         // CraftBukkit start - Forward the CraftEntity to the new entity
-@@ -3452,7 +3464,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -3550,6 +3557,11 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+             gameprofilerfiller.pop();
+             return null;
+         } else {
++            // Paper start - Fix item duplication and teleport issues
++            if (this instanceof Leashable leashable) {
++                leashable.dropLeash(true, true); // Paper drop lead
++            }
++            // Paper end - Fix item duplication and teleport issues
+             entity.restoreFrom(this);
+             this.removeAfterChangingDimensions();
+             // CraftBukkit start - Forward the CraftEntity to the new entity
+@@ -3662,6 +3674,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      }
  
-     public boolean canChangeDimensions(Level from, Level to) {
--        return true;
-+        return this.isAlive() && this.valid; // Paper - Fix item duplication and teleport issues
-     }
+     public boolean canTeleport(Level from, Level to) {
++        if (!this.isAlive() || !this.valid) return false; // Paper - Fix item duplication and teleport issues
+         if (from.dimension() == Level.END && to.dimension() == Level.OVERWORLD) {
+             Iterator iterator = this.getPassengers().iterator();
  
-     public float getBlockExplosionResistance(Explosion explosion, BlockGetter world, BlockPos pos, BlockState blockState, FluidState fluidState, float max) {
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 42c4adabe451cd32aa362075395a9fcc384ea788..8920099eb488c37b036b7bd97fbd4f7db505c77c 100644
+index 68e5f6f7013d6a014b9014d945cf3f7dc7a37cb2..65909e0a8f8b68f9a4dacefda9069c8263a96ada 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -1728,9 +1728,9 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1767,9 +1767,9 @@ public abstract class LivingEntity extends Entity implements Attackable {
                  // Paper start
                  org.bukkit.event.entity.EntityDeathEvent deathEvent = this.dropAllDeathLoot(worldserver, damageSource);
                  if (deathEvent == null || !deathEvent.isCancelled()) {
@@ -85,7 +83,7 @@ index 42c4adabe451cd32aa362075395a9fcc384ea788..8920099eb488c37b036b7bd97fbd4f7d
                      // Paper start - clear equipment if event is not cancelled
                      if (this instanceof Mob) {
                          for (EquipmentSlot slot : this.clearedEquipmentSlots) {
-@@ -1822,8 +1822,13 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1863,8 +1863,13 @@ public abstract class LivingEntity extends Entity implements Attackable {
              this.dropCustomDeathLoot(world, damageSource, flag);
              this.clearEquipmentSlots = prev; // Paper
          }
@@ -102,10 +100,10 @@ index 42c4adabe451cd32aa362075395a9fcc384ea788..8920099eb488c37b036b7bd97fbd4f7d
          this.drops = new ArrayList<>();
          // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
-index 92bb0c63330ad3a4cb13b2dc655020714e9b1ffd..cc1189c2d7dc57ba8f29aad4ba5d2a07362bcd5b 100644
+index e20565cf256aacd012a1722c5ebbf9016bc82e42..59fbfe8de2dc5ec020dd61a5e446b0b6f67d76e4 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
 +++ b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
-@@ -635,7 +635,7 @@ public class ArmorStand extends LivingEntity {
+@@ -633,7 +633,7 @@ public class ArmorStand extends LivingEntity {
          for (i = 0; i < this.handItems.size(); ++i) {
              itemstack = (ItemStack) this.handItems.get(i);
              if (!itemstack.isEmpty()) {
@@ -114,7 +112,7 @@ index 92bb0c63330ad3a4cb13b2dc655020714e9b1ffd..cc1189c2d7dc57ba8f29aad4ba5d2a07
                  this.handItems.set(i, ItemStack.EMPTY);
              }
          }
-@@ -643,7 +643,7 @@ public class ArmorStand extends LivingEntity {
+@@ -641,7 +641,7 @@ public class ArmorStand extends LivingEntity {
          for (i = 0; i < this.armorItems.size(); ++i) {
              itemstack = (ItemStack) this.armorItems.get(i);
              if (!itemstack.isEmpty()) {
@@ -124,10 +122,10 @@ index 92bb0c63330ad3a4cb13b2dc655020714e9b1ffd..cc1189c2d7dc57ba8f29aad4ba5d2a07
              }
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index 235ac5c12dab593da3a40e348a010ff626ce74a3..26f8a8cb18205bfb9fe9dc557097946987ddcb18 100644
+index 41f23ce732b6e90828b1bbda7f4b3470cd462c4a..0b9c96105bea9a0d1af17b7ecf4479d3596faa80 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -905,6 +905,11 @@ public class CraftEventFactory {
+@@ -903,6 +903,11 @@ public class CraftEventFactory {
      }
  
      public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, DamageSource damageSource, List<org.bukkit.inventory.ItemStack> drops) {
@@ -138,8 +136,8 @@ index 235ac5c12dab593da3a40e348a010ff626ce74a3..26f8a8cb18205bfb9fe9dc5570979469
 +        // Paper end
          CraftLivingEntity entity = (CraftLivingEntity) victim.getBukkitEntity();
          CraftDamageSource bukkitDamageSource = new CraftDamageSource(damageSource);
-         EntityDeathEvent event = new EntityDeathEvent(entity, bukkitDamageSource, drops, victim.getExpReward(damageSource.getEntity()));
-@@ -919,11 +924,13 @@ public class CraftEventFactory {
+         CraftWorld world = (CraftWorld) entity.getWorld();
+@@ -917,11 +922,13 @@ public class CraftEventFactory {
          playDeathSound(victim, event);
          // Paper end
          victim.expToDrop = event.getDroppedExp();
