@@ -8,19 +8,11 @@ diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/ma
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -0,0 +0,0 @@ import net.minecraft.world.level.storage.loot.LootTable;
- import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
- import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
- import net.minecraft.world.phys.AABB;
-+import net.minecraft.world.phys.EntityHitResult;
- import net.minecraft.world.phys.HitResult;
- import net.minecraft.world.phys.Vec3;
- import net.minecraft.world.scores.PlayerTeam;
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
          return this.level().clip(raytrace);
      }
  
-+    public @Nullable EntityHitResult getTargetEntity(int maxDistance) {
++    public @Nullable net.minecraft.world.phys.EntityHitResult getTargetEntity(int maxDistance) {
 +        if (maxDistance < 1 || maxDistance > 120) {
 +            throw new IllegalArgumentException("maxDistance must be between 1-120");
 +        }
@@ -32,7 +24,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        List<Entity> entityList = this.level().getEntities(this, getBoundingBox().expandTowards(direction.x * maxDistance, direction.y * maxDistance, direction.z * maxDistance).inflate(1.0D, 1.0D, 1.0D), EntitySelector.NO_SPECTATORS.and(Entity::isPickable));
 +
 +        double distance = 0.0D;
-+        EntityHitResult result = null;
++        net.minecraft.world.phys.EntityHitResult result = null;
 +
 +        for (Entity entity : entityList) {
 +            final double inflationAmount = (double) entity.getPickRadius();
@@ -43,7 +35,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                Vec3 rayTrace = rayTraceResult.get();
 +                double distanceTo = start.distanceToSqr(rayTrace);
 +                if (distanceTo < distance || distance == 0.0D) {
-+                    result = new EntityHitResult(entity, rayTrace);
++                    result = new net.minecraft.world.phys.EntityHitResult(entity, rayTrace);
 +                    distance = distanceTo;
 +                }
 +            }
@@ -59,13 +51,6 @@ diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java 
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-@@ -0,0 +0,0 @@
- package org.bukkit.craftbukkit.entity;
- 
-+import com.destroystokyo.paper.entity.TargetEntityInfo;
- import com.google.common.base.Preconditions;
- import com.google.common.collect.Sets;
- import java.util.ArrayList;
 @@ -0,0 +0,0 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
          }
          return null;
@@ -76,9 +61,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return rayTrace == null ? null : rayTrace.getEntity().getBukkitEntity();
 +    }
 +
-+    public TargetEntityInfo getTargetEntityInfo(int maxDistance, boolean ignoreBlocks) {
++    public com.destroystokyo.paper.entity.TargetEntityInfo getTargetEntityInfo(int maxDistance, boolean ignoreBlocks) {
 +        net.minecraft.world.phys.EntityHitResult rayTrace = rayTraceEntity(maxDistance, ignoreBlocks);
-+        return rayTrace == null ? null : new TargetEntityInfo(rayTrace.getEntity().getBukkitEntity(), new org.bukkit.util.Vector(rayTrace.getLocation().x, rayTrace.getLocation().y, rayTrace.getLocation().z));
++        return rayTrace == null ? null : new com.destroystokyo.paper.entity.TargetEntityInfo(rayTrace.getEntity().getBukkitEntity(), new org.bukkit.util.Vector(rayTrace.getLocation().x, rayTrace.getLocation().y, rayTrace.getLocation().z));
 +    }
 +
 +    @Override
