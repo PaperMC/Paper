@@ -125,10 +125,10 @@ index 72f2e81b9905a0d57ed8e2a88578f62d5235c456..7b58b2d6297800c2dcdbf7539e5ab8e7
  
      public static void registerCommands(final MinecraftServer server) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index ddc3da84c5a55d2cd977fcdb18121351606a6b3c..53bb62c1dcb487be915759d22e06aea80be54f36 100644
+index 5f84618775d66d50557fa71f77fa322c2d1da791..708552756a33339ce9eefe48c9999a2ec08f7e1c 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -258,6 +258,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -264,6 +264,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      private int playerIdleTimeout;
      private final long[] tickTimesNanos;
      private long aggregatedTickTimesNanos;
@@ -140,19 +140,19 @@ index ddc3da84c5a55d2cd977fcdb18121351606a6b3c..53bb62c1dcb487be915759d22e06aea8
      @Nullable
      private KeyPair keyPair;
      @Nullable
-@@ -1472,6 +1477,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-         this.aggregatedTickTimesNanos += j;
-         this.tickTimesNanos[k] = j;
-         this.smoothedTickTimeMillis = this.smoothedTickTimeMillis * 0.8F + (float) j / (float) TimeUtil.NANOSECONDS_PER_MILLISECOND * 0.19999999F;
+@@ -1538,6 +1543,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         this.aggregatedTickTimesNanos += k;
+         this.tickTimesNanos[l] = k;
+         this.smoothedTickTimeMillis = this.smoothedTickTimeMillis * 0.8F + (float) k / (float) TimeUtil.NANOSECONDS_PER_MILLISECOND * 0.19999999F;
 +        // Paper start - Add tick times API and /mspt command
 +        this.tickTimes5s.add(this.tickCount, j);
 +        this.tickTimes10s.add(this.tickCount, j);
 +        this.tickTimes60s.add(this.tickCount, j);
 +        // Paper end - Add tick times API and /mspt command
          this.logTickMethodTime(i);
-         this.profiler.pop();
-         org.spigotmc.WatchdogThread.tick(); // Spigot
-@@ -2855,4 +2865,30 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         gameprofilerfiller.pop();
+         co.aikar.timings.TimingsManager.FULL_SERVER_TICK.stopTiming(); // Paper
+@@ -2944,4 +2954,30 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public static record ServerResourcePackInfo(UUID id, String url, String hash, boolean isRequired, @Nullable Component prompt) {
  
      }
@@ -184,13 +184,14 @@ index ddc3da84c5a55d2cd977fcdb18121351606a6b3c..53bb62c1dcb487be915759d22e06aea8
 +    // Paper end - Add tick times API and /mspt command
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 9d07873c4a17549452ac8d9b6ac14d88cde185bc..0078d999c132e56c6af242718fc1b983caa8b147 100644
+index 0a4cb8376d23e07e4b7a0620e536d87fef0cab11..daa2def7026579d75899cce6d33b91b7649ee076 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -2688,6 +2688,16 @@ public final class CraftServer implements Server {
+@@ -2705,6 +2705,18 @@ public final class CraftServer implements Server {
          return CraftMagicNumbers.INSTANCE;
      }
  
++    // Paper start
 +    @Override
 +    public long[] getTickTimes() {
 +        return this.getServer().tickTimes5s.getTimes();
@@ -200,6 +201,7 @@ index 9d07873c4a17549452ac8d9b6ac14d88cde185bc..0078d999c132e56c6af242718fc1b983
 +    public double getAverageTickTime() {
 +        return this.getServer().tickTimes5s.getAverage();
 +    }
++    // Paper end
 +
      // Spigot start
      private final org.bukkit.Server.Spigot spigot = new org.bukkit.Server.Spigot()
