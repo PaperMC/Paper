@@ -5,7 +5,7 @@ Subject: [PATCH] Add PlayerItemFrameChangeEvent
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
-index fdb6898519acfb27baf25d8bbad2013956c1361f..3c6edc5ea44b7ec15d8fc7a2dca95a11a0d6108a 100644
+index c0deabf9d86d086fbd8cbaac5a02badf5c01c870..30af4cbb17148c247a46c0346419d6c838dbc9d2 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
 +++ b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
 @@ -1,6 +1,7 @@
@@ -16,7 +16,7 @@ index fdb6898519acfb27baf25d8bbad2013956c1361f..3c6edc5ea44b7ec15d8fc7a2dca95a11
  import net.minecraft.core.BlockPos;
  import net.minecraft.core.Direction;
  import net.minecraft.core.component.DataComponents;
-@@ -154,6 +155,13 @@ public class ItemFrame extends HangingEntity {
+@@ -166,6 +167,13 @@ public class ItemFrame extends HangingEntity {
                      return true;
                  }
                  // CraftBukkit end
@@ -27,23 +27,26 @@ index fdb6898519acfb27baf25d8bbad2013956c1361f..3c6edc5ea44b7ec15d8fc7a2dca95a11
 +                    this.setItem(ItemStack.fromBukkitCopy(event.getItemStack()), false);
 +                }
 +                // Paper end - Add PlayerItemFrameChangeEvent
-                 this.dropItem(source.getEntity(), false);
+                 this.dropItem(world, source.getEntity(), false);
                  this.gameEvent(GameEvent.BLOCK_CHANGE, source.getEntity());
                  this.playSound(this.getRemoveItemSound(), 1.0F, 1.0F);
-@@ -394,11 +402,24 @@ public class ItemFrame extends HangingEntity {
-                         }
-                     }
- 
--                    this.setItem(itemstack);
-+                    // Paper start - Add PlayerItemFrameChangeEvent
-+                    PlayerItemFrameChangeEvent event = new PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), itemstack.asBukkitCopy(), PlayerItemFrameChangeEvent.ItemFrameChangeAction.PLACE);
-+                    if (!event.callEvent()) {
-+                        return InteractionResult.FAIL;
-+                    }
-+                    this.setItem(ItemStack.fromBukkitCopy(event.getItemStack()));
-+                    // Paper end - Add PlayerItemFrameChangeEvent
-                     this.gameEvent(GameEvent.BLOCK_CHANGE, player);
-                     itemstack.consume(1, player);
+@@ -403,7 +411,13 @@ public class ItemFrame extends HangingEntity {
+                     if (worldmap != null && worldmap.isTrackedCountOverLimit(256)) {
+                         return InteractionResult.FAIL;
+                     } else {
+-                        this.setItem(itemstack);
++                        // Paper start - Add PlayerItemFrameChangeEvent
++                        PlayerItemFrameChangeEvent event = new PlayerItemFrameChangeEvent((org.bukkit.entity.Player) player.getBukkitEntity(), (org.bukkit.entity.ItemFrame) this.getBukkitEntity(), itemstack.asBukkitCopy(), PlayerItemFrameChangeEvent.ItemFrameChangeAction.PLACE);
++                        if (!event.callEvent()) {
++                            return InteractionResult.FAIL;
++                        }
++                        this.setItem(ItemStack.fromBukkitCopy(event.getItemStack()));
++                        // Paper end - Add PlayerItemFrameChangeEvent
+                         this.gameEvent(GameEvent.BLOCK_CHANGE, player);
+                         itemstack.consume(1, player);
+                         return InteractionResult.SUCCESS;
+@@ -412,6 +426,13 @@ public class ItemFrame extends HangingEntity {
+                     return InteractionResult.PASS;
                  }
              } else {
 +                // Paper start - Add PlayerItemFrameChangeEvent
