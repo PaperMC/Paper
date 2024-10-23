@@ -1,0 +1,279 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Yannick Lamprecht <yannicklamprecht@live.de>
+Date: Sat, 24 Feb 2024 15:29:32 +0100
+Subject: [PATCH] add biome change per player
+
+
+diff --git a/src/main/java/io/papermc/paper/event/packet/PlayerBiomesLoadEvent.java b/src/main/java/io/papermc/paper/event/packet/PlayerBiomesLoadEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7774a3e3b19bfcaae319ea9ee03e85091be03a8b
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/packet/PlayerBiomesLoadEvent.java
+@@ -0,0 +1,82 @@
++package io.papermc.paper.event.packet;
++
++import java.util.HashMap;
++import java.util.Map;
++import org.bukkit.BiomesSnapshot;
++import org.bukkit.Chunk;
++import org.bukkit.World;
++import org.bukkit.entity.Player;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.world.ChunkEvent;
++import org.bukkit.event.world.WorldEvent;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * Is called when a {@link Player} receives {@link org.bukkit.block.Biome}s
++ * <p>
++ * Can for example be used for replacing Biomes when the player receives the Biome list.
++ * <p>
++ * Should only be used for packet/clientside related stuff.
++ * Not intended for modifying server side state.
++ */
++public class PlayerBiomesLoadEvent extends ChunkEvent {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private final Player player;
++    private BiomesSnapshot biomesSnapshot;
++
++    @ApiStatus.Internal
++    public PlayerBiomesLoadEvent(@NotNull final Player player, Chunk chunk) {
++        super(chunk);
++        this.player = player;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static @NotNull HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++
++    /**
++     * Returns the player that is receiving the biomes
++     *
++     * @return the player
++     */
++    public @NotNull Player getPlayer() {
++        return player;
++    }
++
++    /**
++     * Returns a biomes snapshot for the given chunk, by default it won't be set.
++     *
++     * @return biome snapshot if one is set
++     */
++    public @Nullable BiomesSnapshot getBiomeSnapshot() {
++        return biomesSnapshot;
++    }
++
++    /**
++     * Sets the biome snapshot for the given chunk that will be sent as an override to the player
++     *
++     * @param biomesSnapshot the biome override
++     */
++    public void setBiomeSnapshot(@Nullable final BiomesSnapshot biomesSnapshot) {
++        this.biomesSnapshot = biomesSnapshot;
++    }
++
++    /**
++     * Returns if chunk biomes were overridden
++     *
++     * @return true if override was made, else false
++     */
++    public boolean hasOverrides() {
++        return biomesSnapshot != null;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/packet/PlayerChunkLoadEvent.java b/src/main/java/io/papermc/paper/event/packet/PlayerChunkLoadEvent.java
+index 3ddbc099a13df939b3912f30b54e7635840ba5a4..2933de0e9455720040619e52b7d4df66b5dbb717 100644
+--- a/src/main/java/io/papermc/paper/event/packet/PlayerChunkLoadEvent.java
++++ b/src/main/java/io/papermc/paper/event/packet/PlayerChunkLoadEvent.java
+@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
+  * Should only be used for packet/clientside related stuff.
+  * Not intended for modifying server side state.
+  */
+-public class PlayerChunkLoadEvent extends ChunkEvent {
++public class PlayerChunkLoadEvent extends PlayerBiomesLoadEvent {
+ 
+     private static final HandlerList HANDLER_LIST = new HandlerList();
+ 
+@@ -23,7 +23,7 @@ public class PlayerChunkLoadEvent extends ChunkEvent {
+ 
+     @ApiStatus.Internal
+     public PlayerChunkLoadEvent(@NotNull Chunk chunk, @NotNull Player player) {
+-        super(chunk);
++        super(player, chunk);
+         this.player = player;
+     }
+ 
+diff --git a/src/main/java/org/bukkit/BiomesSnapshot.java b/src/main/java/org/bukkit/BiomesSnapshot.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..bb8683127eca2b86b23efa81bff9c54a357e04d4
+--- /dev/null
++++ b/src/main/java/org/bukkit/BiomesSnapshot.java
+@@ -0,0 +1,74 @@
++package org.bukkit;
++
++import org.bukkit.block.Biome;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Represents a static, thread-safe snapshot of chunk of biomes.
++ * <p>
++ * Purpose is to allow clean, efficient copy of a biome data to be made, and
++ * then handed off for processing in another thread
++ */
++public interface BiomesSnapshot {
++
++    /**
++     * Gets the X-coordinate of this chunk
++     *
++     * @return X-coordinate
++     */
++    int getX();
++
++    /**
++     * Gets the Z-coordinate of this chunk
++     *
++     * @return Z-coordinate
++     */
++    int getZ();
++
++    /**
++     * Gets name of the world containing this chunk
++     *
++     * @return Parent World Name
++     */
++    @NotNull
++    String getWorldName();
++
++    /**
++     * Get biome at given coordinates
++     *
++     * @param x X-coordinate (0-15)
++     * @param y Y-coordinate (world minHeight (inclusive) - world maxHeight (exclusive))
++     * @param z Z-coordinate (0-15)
++     * @return Biome at given coordinate
++     */
++    @NotNull
++    Biome getBiome(int x, int y, int z);
++
++    /**
++     * Get biome at given coordinates
++     *
++     * @param x X-coordinate (0-15)
++     * @param y Y-coordinate (world minHeight (inclusive) - world maxHeight (exclusive))
++     * @param z Z-coordinate (0-15)
++     * @param biome the biome to set at the give coordinate
++     */
++    void setBiome(int x, int y, int z, @NotNull Biome biome);
++
++    /**
++     * Get raw biome temperature at given coordinates
++     *
++     * @param x X-coordinate (0-15)
++     * @param y Y-coordinate (world minHeight (inclusive) - world maxHeight (exclusive))
++     * @param z Z-coordinate (0-15)
++     * @return temperature at given coordinate
++     */
++    double getRawBiomeTemperature(int x, int y, int z);
++
++    /**
++     * Tests if this chunk contains the specified biome.
++     *
++     * @param biome biome to test
++     * @return if the biome is contained within
++     */
++    boolean contains(@NotNull Biome biome);
++}
+diff --git a/src/main/java/org/bukkit/ChunkSnapshot.java b/src/main/java/org/bukkit/ChunkSnapshot.java
+index dc765dea47a9a1c1520fb16ddb24f81413ed0dd1..983c2d22498ecf668b15d818556e27adba52a955 100644
+--- a/src/main/java/org/bukkit/ChunkSnapshot.java
++++ b/src/main/java/org/bukkit/ChunkSnapshot.java
+@@ -10,29 +10,7 @@ import org.jetbrains.annotations.NotNull;
+  * Purpose is to allow clean, efficient copy of a chunk data to be made, and
+  * then handed off for processing in another thread (e.g. map rendering)
+  */
+-public interface ChunkSnapshot {
+-
+-    /**
+-     * Gets the X-coordinate of this chunk
+-     *
+-     * @return X-coordinate
+-     */
+-    int getX();
+-
+-    /**
+-     * Gets the Z-coordinate of this chunk
+-     *
+-     * @return Z-coordinate
+-     */
+-    int getZ();
+-
+-    /**
+-     * Gets name of the world containing this chunk
+-     *
+-     * @return Parent World Name
+-     */
+-    @NotNull
+-    String getWorldName();
++public interface ChunkSnapshot extends BiomesSnapshot {
+ 
+     /**
+      * Get block type for block at corresponding coordinate in the chunk
+@@ -110,17 +88,6 @@ public interface ChunkSnapshot {
+     @Deprecated
+     Biome getBiome(int x, int z);
+ 
+-    /**
+-     * Get biome at given coordinates
+-     *
+-     * @param x X-coordinate (0-15)
+-     * @param y Y-coordinate (world minHeight (inclusive) - world maxHeight (exclusive))
+-     * @param z Z-coordinate (0-15)
+-     * @return Biome at given coordinate
+-     */
+-    @NotNull
+-    Biome getBiome(int x, int y, int z);
+-
+     /**
+      * Get raw biome temperature at given coordinates
+      *
+@@ -132,16 +99,6 @@ public interface ChunkSnapshot {
+     @Deprecated
+     double getRawBiomeTemperature(int x, int z);
+ 
+-    /**
+-     * Get raw biome temperature at given coordinates
+-     *
+-     * @param x X-coordinate (0-15)
+-     * @param y Y-coordinate (world minHeight (inclusive) - world maxHeight (exclusive))
+-     * @param z Z-coordinate (0-15)
+-     * @return temperature at given coordinate
+-     */
+-    double getRawBiomeTemperature(int x, int y, int z);
+-
+     /**
+      * Get world full time when chunk snapshot was captured
+      *
+@@ -164,12 +121,4 @@ public interface ChunkSnapshot {
+      * @return if the block is contained within
+      */
+     boolean contains(@NotNull BlockData block);
+-
+-    /**
+-     * Tests if this chunk contains the specified biome.
+-     *
+-     * @param biome biome to test
+-     * @return if the biome is contained within
+-     */
+-    boolean contains(@NotNull Biome biome);
+ }
