@@ -5,10 +5,10 @@ Subject: [PATCH] Add WorldGameRuleChangeEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/commands/GameRuleCommand.java b/src/main/java/net/minecraft/server/commands/GameRuleCommand.java
-index c8c358531dbc167e249bac2af246c5e34fbdd4df..10c1790226e25da3b9b599c9a40de57d5727ddc4 100644
+index 6fc70f07f9ba964ff6f5176367dab788decfc917..da0600ab3b0a983ac36cb777d21160bdaced7c52 100644
 --- a/src/main/java/net/minecraft/server/commands/GameRuleCommand.java
 +++ b/src/main/java/net/minecraft/server/commands/GameRuleCommand.java
-@@ -33,7 +33,7 @@ public class GameRuleCommand {
+@@ -36,7 +36,7 @@ public class GameRuleCommand {
          CommandSourceStack commandlistenerwrapper = (CommandSourceStack) context.getSource();
          T t0 = commandlistenerwrapper.getLevel().getGameRules().getRule(key); // CraftBukkit
  
@@ -18,10 +18,10 @@ index c8c358531dbc167e249bac2af246c5e34fbdd4df..10c1790226e25da3b9b599c9a40de57d
              return Component.translatable("commands.gamerule.set", key.getId(), t0.toString());
          }, true);
 diff --git a/src/main/java/net/minecraft/world/level/GameRules.java b/src/main/java/net/minecraft/world/level/GameRules.java
-index 0b46ad360be919e4aeb0ffc0eebae9fe712fb861..51e560d7856f230c5aa2dc32706c3a4996720aa5 100644
+index 7ea92a0b0f5d4eb6bd873e61c42bc0499d5d2028..09299e45552eb998fd02123c3921c0653f85083d 100644
 --- a/src/main/java/net/minecraft/world/level/GameRules.java
 +++ b/src/main/java/net/minecraft/world/level/GameRules.java
-@@ -293,10 +293,10 @@ public class GameRules {
+@@ -322,10 +322,10 @@ public class GameRules {
              this.type = type;
          }
  
@@ -35,7 +35,7 @@ index 0b46ad360be919e4aeb0ffc0eebae9fe712fb861..51e560d7856f230c5aa2dc32706c3a49
              this.onChanged(((CommandSourceStack) context.getSource()).getLevel()); // CraftBukkit - per-world
          }
  
-@@ -354,8 +354,11 @@ public class GameRules {
+@@ -383,8 +383,11 @@ public class GameRules {
          }
  
          @Override
@@ -49,7 +49,7 @@ index 0b46ad360be919e4aeb0ffc0eebae9fe712fb861..51e560d7856f230c5aa2dc32706c3a49
          }
  
          public boolean get() {
-@@ -427,8 +430,11 @@ public class GameRules {
+@@ -456,8 +459,11 @@ public class GameRules {
          }
  
          @Override
@@ -64,33 +64,35 @@ index 0b46ad360be919e4aeb0ffc0eebae9fe712fb861..51e560d7856f230c5aa2dc32706c3a49
  
          public int get() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 99fccedaab2600881683140e10ee17377375b911..f698ac90bd3086519f49e92451228415efaf5530 100644
+index 04ef1c3433d3ac8a58f0d460877e176668e0fc8f..5541a9f197777124dd908e3f56050b49df821acc 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -1887,8 +1887,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1899,9 +1899,14 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         if (rule == null || value == null) return false;
  
          if (!this.isGameRule(rule)) return false;
- 
 +        // Paper start - Add WorldGameRuleChangeEvent
 +        GameRule<?> gameRule = GameRule.getByName(rule);
 +        io.papermc.paper.event.world.WorldGameRuleChangeEvent event = new io.papermc.paper.event.world.WorldGameRuleChangeEvent(this, null, gameRule, value);
 +        if (!event.callEvent()) return false;
 +        // Paper end - Add WorldGameRuleChangeEvent
-         GameRules.Value<?> handle = this.getHandle().getGameRules().getRule(CraftWorld.getGameRulesNMS().get(rule));
+ 
+         GameRules.Value<?> handle = this.getHandle().getGameRules().getRule(this.getGameRulesNMS().get(rule));
 -        handle.deserialize(value);
 +        handle.deserialize(event.getValue()); // Paper - Add WorldGameRuleChangeEvent
          handle.onChanged(this.getHandle());
          return true;
      }
-@@ -1924,8 +1929,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1936,9 +1941,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         Preconditions.checkArgument(newValue != null, "GameRule value cannot be null");
  
          if (!this.isGameRule(rule.getName())) return false;
- 
 +        // Paper start - Add WorldGameRuleChangeEvent
 +        io.papermc.paper.event.world.WorldGameRuleChangeEvent event = new io.papermc.paper.event.world.WorldGameRuleChangeEvent(this, null, rule, String.valueOf(newValue));
 +        if (!event.callEvent()) return false;
 +        // Paper end - Add WorldGameRuleChangeEvent
-         GameRules.Value<?> handle = this.getHandle().getGameRules().getRule(CraftWorld.getGameRulesNMS().get(rule.getName()));
+ 
+         GameRules.Value<?> handle = this.getHandle().getGameRules().getRule(this.getGameRulesNMS().get(rule.getName()));
 -        handle.deserialize(newValue.toString());
 +        handle.deserialize(event.getValue()); // Paper - Add WorldGameRuleChangeEvent
          handle.onChanged(this.getHandle());
