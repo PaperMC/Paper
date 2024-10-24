@@ -28,7 +28,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import com.google.common.collect.Lists;
  import com.mojang.datafixers.DataFixer;
  import com.mojang.datafixers.util.Pair;
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
          ++TimingHistory.entityTicks; // Paper - timings
          // Spigot start
          co.aikar.timings.Timing timer; // Paper
@@ -50,41 +50,35 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          try {
          // Paper end - timings
          entity.setOldPosAndRot();
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
              return BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString();
          });
          gameprofilerfiller.incrementCounter("tickNonPassenger");
 +        if (isActive) { // Paper - EAR 2
-+            TimingHistory.activatedEntityTicks++;
          entity.tick();
          entity.postTick(); // CraftBukkit
 +        } else { entity.inactiveTick(); } // Paper - EAR 2
-         this.getProfiler().pop();
-+        } finally { timer.stopTiming(); } // Paper - timings
+         gameprofilerfiller.pop();
++        } finally { timer.stopTiming(); } // Paper - timings // EAR 2
          Iterator iterator = entity.getPassengers().iterator();
  
          while (iterator.hasNext()) {
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
+             Entity entity1 = (Entity) iterator.next();
  
-             this.tickPassenger(entity, entity1);
+-            this.tickPassenger(entity, entity1);
++            this.tickPassenger(entity, entity1, isActive); // Paper - EAR 2
          }
 -        } finally { timer.stopTiming(); } // Paper - timings
-+        // } finally { timer.stopTiming(); } // Paper - timings - move up
++        // } finally { timer.stopTiming(); } // Paper - timings // EAR 2
  
      }
  
-     private void tickPassenger(Entity vehicle, Entity passenger) {
+-    private void tickPassenger(Entity vehicle, Entity passenger) {
++    private void tickPassenger(Entity vehicle, Entity passenger, boolean isActive) { // Paper - EAR 2
          if (!passenger.isRemoved() && passenger.getVehicle() == vehicle) {
              if (passenger instanceof Player || this.entityTickList.contains(passenger)) {
-+                // Paper - EAR 2
-+                final boolean isActive = org.spigotmc.ActivationRange.checkIfActive(passenger);
-+                co.aikar.timings.Timing timer = isActive ? passenger.getType().passengerTickTimer.startTiming() : passenger.getType().passengerInactiveTickTimer.startTiming(); // Paper
-+                try {
-+                // Paper end
                  passenger.setOldPosAndRot();
-                 ++passenger.tickCount;
-                 ProfilerFiller gameprofilerfiller = this.getProfiler();
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
                      return BuiltInRegistries.ENTITY_TYPE.getKey(passenger.getType()).toString();
                  });
                  gameprofilerfiller.incrementCounter("tickPassenger");
@@ -93,23 +87,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  passenger.rideTick();
                  passenger.postTick(); // CraftBukkit
 +                } else {
-+                    passenger.setDeltaMovement(Vec3.ZERO);
-+                    passenger.inactiveTick();
-+                    // copied from inside of if (isPassenger()) of passengerTick, but that ifPassenger is unnecessary
-+                    vehicle.positionRider(passenger);
++                passenger.setDeltaMovement(Vec3.ZERO);
++                passenger.inactiveTick();
++                // copied from inside of if (isPassenger()) of passengerTick, but that ifPassenger is unnecessary
++                vehicle.positionRider(passenger);
 +                }
 +                // Paper end - EAR 2
                  gameprofilerfiller.pop();
                  Iterator iterator = passenger.getPassengers().iterator();
  
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
-                     this.tickPassenger(passenger, entity2);
+                 while (iterator.hasNext()) {
+                     Entity entity2 = (Entity) iterator.next();
+ 
+-                    this.tickPassenger(passenger, entity2);
++                    this.tickPassenger(passenger, entity2, isActive); // Paper - EAR 2
                  }
  
-+            } finally { timer.stopTiming(); }// Paper - EAR2 timings
              }
-         } else {
-             passenger.stopRiding();
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
@@ -126,9 +120,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          } else {
              this.wasOnFire = this.isOnFire();
-             if (movementType == MoverType.PISTON) {
-+                this.activatedTick = Math.max(this.activatedTick, MinecraftServer.currentTick + 20); // Paper
-+                this.activatedImmunityTick = Math.max(this.activatedImmunityTick, MinecraftServer.currentTick + 20);   // Paper
+             if (type == MoverType.PISTON) {
++                this.activatedTick = Math.max(this.activatedTick, MinecraftServer.currentTick + 20); // Paper - EAR 2
++                this.activatedImmunityTick = Math.max(this.activatedImmunityTick, MinecraftServer.currentTick + 20);   // Paper - EAR 2
                  movement = this.limitPistonMovement(movement);
                  if (movement.equals(Vec3.ZERO)) {
                      return;
@@ -137,14 +131,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  this.setDeltaMovement(Vec3.ZERO);
              }
 +            // Paper start - ignore movement changes while inactive.
-+            if (isTemporarilyActive && !(this instanceof ItemEntity) && movement == getDeltaMovement() && movementType == MoverType.SELF) {
++            if (isTemporarilyActive && !(this instanceof ItemEntity) && movement == getDeltaMovement() && type == MoverType.SELF) {
 +                setDeltaMovement(Vec3.ZERO);
-+                this.level.getProfiler().pop();
++                gameprofilerfiller.pop();
 +                return;
 +            }
 +            // Paper end
  
-             movement = this.maybeBackOffFromEdge(movement, movementType);
+             movement = this.maybeBackOffFromEdge(movement, type);
              Vec3 vec3d1 = this.collide(movement);
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -188,18 +182,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
 @@ -0,0 +0,0 @@ public class GoalSelector {
+     private final Map<Goal.Flag, WrappedGoal> lockedFlags = new EnumMap<>(Goal.Flag.class);
      private final Set<WrappedGoal> availableGoals = new ObjectLinkedOpenHashSet<>();
-     private final Supplier<ProfilerFiller> profiler;
      private final EnumSet<Goal.Flag> disabledFlags = EnumSet.noneOf(Goal.Flag.class);
-+    private int curRate;
++    private int curRate; // Paper - EAR 2
  
-     public GoalSelector(Supplier<ProfilerFiller> profiler) {
-         this.profiler = profiler;
+     public void addGoal(int priority, Goal goal) {
+         this.availableGoals.add(new WrappedGoal(priority, goal));
 @@ -0,0 +0,0 @@ public class GoalSelector {
          this.availableGoals.removeIf(goal -> predicate.test(goal.getGoal()));
      }
  
-+    // Paper start
++    // Paper start - EAR 2
 +    public boolean inactiveTick() {
 +        this.curRate++;
 +        return this.curRate % 3 == 0; // TODO newGoalRate was already unused in 1.20.4, check if this is correct
@@ -212,7 +206,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        return false;
 +    }
-+    // Paper end
++    // Paper end - EAR 2
      public void removeGoal(Goal goal) {
          for (WrappedGoal wrappedGoal : this.availableGoals) {
              if (wrappedGoal.getGoal() == goal && wrappedGoal.isRunning()) {
@@ -252,37 +246,37 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void inactiveTick() {
          // SPIGOT-3874, SPIGOT-3894, SPIGOT-3846, SPIGOT-5286 :(
 -        if (this.level().spigotConfig.tickInactiveVillagers && this.isEffectiveAi()) {
--            this.customServerAiStep();
+-            this.customServerAiStep((ServerLevel) this.level());
 +        // Paper start
 +        if (this.getUnhappyCounter() > 0) {
 +            this.setUnhappyCounter(this.getUnhappyCounter() - 1);
-         }
++        }
 +        if (this.isEffectiveAi()) {
 +            if (this.level().spigotConfig.tickInactiveVillagers) {
-+                this.customServerAiStep();
++                this.customServerAiStep(this.level().getMinecraftWorld());
 +            } else {
-+                this.customServerAiStep(true);
++                this.customServerAiStep(this.level().getMinecraftWorld(), true);
 +            }
-+        }
+         }
 +        maybeDecayGossip();
 +        // Paper end
-+
          super.inactiveTick();
      }
      // Spigot End
  
      @Override
-+    @Deprecated // Paper
-     protected void customServerAiStep() {
-+        // Paper start
-+        this.customServerAiStep(false);
+     protected void customServerAiStep(ServerLevel world) {
++        // Paper start - EAR 2
++        this.customServerAiStep(world, false);
 +    }
-+    protected void customServerAiStep(final boolean inactive) {
-+        // Paper end
-         this.level().getProfiler().push("villagerBrain");
--        this.getBrain().tick((ServerLevel) this.level(), this);
-+        if (!inactive) this.getBrain().tick((ServerLevel) this.level(), this); // Paper
-         this.level().getProfiler().pop();
++    protected void customServerAiStep(ServerLevel world, final boolean inactive) {
++        // Paper end - EAR 2
+         ProfilerFiller gameprofilerfiller = Profiler.get();
+ 
+         gameprofilerfiller.push("villagerBrain");
+-        this.getBrain().tick(world, this);
++        if (!inactive) this.getBrain().tick(world, this);
+         gameprofilerfiller.pop();
          if (this.assignProfessionWhenSpawned) {
              this.assignProfessionWhenSpawned = false;
 @@ -0,0 +0,0 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
@@ -290,17 +284,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
 -        if (!this.isNoAi() && this.random.nextInt(100) == 0) {
-+        if (!inactive && !this.isNoAi() && this.random.nextInt(100) == 0) { // Paper
-             Raid raid = ((ServerLevel) this.level()).getRaidAt(this.blockPosition());
++        if (!inactive && !this.isNoAi() && this.random.nextInt(100) == 0) { // Paper - EAR 2
+             Raid raid = world.getRaidAt(this.blockPosition());
  
              if (raid != null && raid.isActive() && !raid.isOver()) {
 @@ -0,0 +0,0 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
          if (this.getVillagerData().getProfession() == VillagerProfession.NONE && this.isTrading()) {
              this.stopTrading();
          }
-+        if (inactive) return; // Paper
++        if (inactive) return; // Paper - EAR 2
  
-         super.customServerAiStep();
+         super.customServerAiStep(world);
      }
 diff --git a/src/main/java/net/minecraft/world/entity/vehicle/MinecartHopper.java b/src/main/java/net/minecraft/world/entity/vehicle/MinecartHopper.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -344,7 +338,7 @@ diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public Map<BlockPos, BlockEntity> capturedTileEntities = new java.util.LinkedHashMap<>(); // Paper - Retain block place order when capturing blockstates
      public List<ItemEntity> captureDrops;
      public final it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<SpawnCategory> ticksPerSpawnCategory = new it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<>();
@@ -606,7 +600,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                return true;
 +                return 10; // Paper
              }
-         } else if ( !( (AbstractArrow) entity ).inGround )
+         } else if ( !( (AbstractArrow) entity ).isInGround() )
          {
 -            return true;
 +            return 1; // Paper
