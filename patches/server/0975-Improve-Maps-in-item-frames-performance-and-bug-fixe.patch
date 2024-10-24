@@ -13,10 +13,10 @@ custom renderers are in use, defaulting to the much simpler Vanilla system.
 Additionally, numerous issues to player position tracking on maps has been fixed.
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 376443dfc846f7511c60125cb7714757d15590ea..81eb2d57045dd9d692109b33fc10804ff3d68d54 100644
+index 03b07f36b32ad8239f82a9536a4c1b08ed12e9ca..e3085b4d106d5985078ab3820dd12bdb58ab5889 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -2496,6 +2496,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
+@@ -2358,6 +2358,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
                              {
                                  if ( iter.next().player == entity )
                                  {
@@ -24,30 +24,30 @@ index 376443dfc846f7511c60125cb7714757d15590ea..81eb2d57045dd9d692109b33fc10804f
                                      iter.remove();
                                  }
                              }
-diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index d0b51d96d6795b5fa03bc195b90324680545b752..09bcbc0ae36e4e69fee87a7e0c49acf496117a39 100644
---- a/src/main/java/net/minecraft/world/entity/player/Player.java
-+++ b/src/main/java/net/minecraft/world/entity/player/Player.java
-@@ -808,6 +808,14 @@ public abstract class Player extends LivingEntity {
-                 return null;
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 52b18f2c333b7535929bb4e52e65cf5fb0f5692f..b0cec2132c21abac64420e0d9a23b5346dfd9ee4 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -2811,6 +2811,14 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+                 this.awardStat(Stats.DROP);
              }
-             // CraftBukkit end
+ 
 +            // Paper start - remove player from map on drop
 +            if (itemstack.getItem() == Items.FILLED_MAP) {
 +                net.minecraft.world.level.saveddata.maps.MapItemSavedData worldmap = net.minecraft.world.item.MapItem.getSavedData(itemstack, this.level());
 +                if (worldmap != null) {
 +                    worldmap.tickCarriedBy(this, itemstack);
++                    }
 +                }
-+            }
 +            // Paper end
- 
              return entityitem;
          }
+     }
 diff --git a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java b/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
-index a43544704109f21bab230dd9bf0401e28f878582..6794466051dd4b725d579b2136c37844995a648e 100644
+index 2d5e7380e8a14cbc01ba48cd05deccc0c7f53430..ae321b3b8d98e42ef07fd1f0f738c1a2b428f6db 100644
 --- a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
 +++ b/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
-@@ -79,6 +79,7 @@ public class MapItemSavedData extends SavedData {
+@@ -80,6 +80,7 @@ public class MapItemSavedData extends SavedData {
      public final Map<String, MapDecoration> decorations = Maps.newLinkedHashMap();
      private final Map<String, MapFrame> frameMarkers = Maps.newHashMap();
      private int trackedDecorationCount;
@@ -69,9 +69,9 @@ index a43544704109f21bab230dd9bf0401e28f878582..6794466051dd4b725d579b2136c37844
          }
 +        worldmap.vanillaRender.buffer = abyte; // Paper
  
-         RegistryOps<Tag> registryops = registryLookup.createSerializationContext(NbtOps.INSTANCE);
+         RegistryOps<Tag> registryops = registries.createSerializationContext(NbtOps.INSTANCE);
          List<MapBanner> list = (List) MapBanner.LIST_CODEC.parse(registryops, nbt.get("banners")).resultOrPartial((s) -> {
-@@ -348,7 +351,7 @@ public class MapItemSavedData extends SavedData {
+@@ -367,7 +370,7 @@ public class MapItemSavedData extends SavedData {
              --this.trackedDecorationCount;
          }
  
@@ -80,7 +80,7 @@ index a43544704109f21bab230dd9bf0401e28f878582..6794466051dd4b725d579b2136c37844
      }
  
      public static void addTargetDecoration(ItemStack stack, BlockPos pos, String id, Holder<MapDecorationType> decorationType) {
-@@ -588,6 +591,21 @@ public class MapItemSavedData extends SavedData {
+@@ -621,6 +624,21 @@ public class MapItemSavedData extends SavedData {
  
      public class HoldingPlayer {
  
@@ -102,10 +102,10 @@ index a43544704109f21bab230dd9bf0401e28f878582..6794466051dd4b725d579b2136c37844
          public final Player player;
          private boolean dirtyData = true;
          private int minDirtyX;
-@@ -621,7 +639,9 @@ public class MapItemSavedData extends SavedData {
+@@ -654,7 +672,9 @@ public class MapItemSavedData extends SavedData {
          @Nullable
          Packet<?> nextUpdatePacket(MapId mapId) {
-             MapItemSavedData.MapPatch worldmap_b;
+             MapItemSavedData.MapPatch worldmap_c;
 -            org.bukkit.craftbukkit.map.RenderData render = MapItemSavedData.this.mapView.render((org.bukkit.craftbukkit.entity.CraftPlayer) this.player.getBukkitEntity()); // CraftBukkit
 +            if (!this.dirtyData && this.tick % 5 != 0) { this.tick++; return null; } // Paper - this won't end up sending, so don't render it!
 +            boolean vanillaMaps = shouldUseVanillaMap(); // Paper
@@ -113,7 +113,7 @@ index a43544704109f21bab230dd9bf0401e28f878582..6794466051dd4b725d579b2136c37844
  
              if (this.dirtyData) {
                  this.dirtyData = false;
-@@ -637,6 +657,8 @@ public class MapItemSavedData extends SavedData {
+@@ -670,6 +690,8 @@ public class MapItemSavedData extends SavedData {
                  // CraftBukkit start
                  java.util.Collection<MapDecoration> icons = new java.util.ArrayList<MapDecoration>();
  

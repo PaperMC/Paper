@@ -105,10 +105,10 @@ index 0000000000000000000000000000000000000000..b5580727eef106fa193e450038d1b20d
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/Bootstrap.java b/src/main/java/net/minecraft/server/Bootstrap.java
-index 061c89b985dafc79c808dd5f0e296b9fbac2fdfc..8c2f9f549b5155b8d8fecbc22164b334805381e2 100644
+index 4840893082cbcd9b00f79149df1a7805af279dcb..ffca3a7df1c5b344dbd77e1db997c76d22a31021 100644
 --- a/src/main/java/net/minecraft/server/Bootstrap.java
 +++ b/src/main/java/net/minecraft/server/Bootstrap.java
-@@ -76,6 +76,7 @@ public class Bootstrap {
+@@ -77,6 +77,7 @@ public class Bootstrap {
                      CauldronInteraction.bootStrap();
                      // Paper start
                      BuiltInRegistries.bootStrap(() -> {
@@ -117,7 +117,7 @@ index 061c89b985dafc79c808dd5f0e296b9fbac2fdfc..8c2f9f549b5155b8d8fecbc22164b334
                      // Paper end
                      CreativeModeTabs.validate();
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java b/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
-index 996899cb18e6c29665b9de7a1cc97c9a4187924b..68be0d51aa64b5d917fb53dbbbdf8966d4f4abd8 100644
+index 44e64d716eee71492f9a8d813934bb96463ece45..1fcc2b287ed723cf51720f80e68f18f4a15cf429 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
 @@ -206,7 +206,7 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
@@ -127,7 +127,7 @@ index 996899cb18e6c29665b9de7a1cc97c9a4187924b..68be0d51aa64b5d917fb53dbbbdf8966
 -            WorldGenerationContext worldgenerationcontext = new WorldGenerationContext(this, region);
 +            WorldGenerationContext worldgenerationcontext = new WorldGenerationContext(this, region, region.getMinecraftWorld()); // Paper - Flat bedrock generator settings
  
-             this.buildSurface(chunk, worldgenerationcontext, noiseConfig, structures, region.getBiomeManager(), region.registryAccess().registryOrThrow(Registries.BIOME), Blender.of(region));
+             this.buildSurface(chunk, worldgenerationcontext, noiseConfig, structures, region.getBiomeManager(), region.registryAccess().lookupOrThrow(Registries.BIOME), Blender.of(region));
          }
 @@ -234,7 +234,7 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
              return this.createNoiseChunk(ichunkaccess1, structureAccessor, Blender.of(chunkRegion), noiseConfig);
@@ -135,11 +135,11 @@ index 996899cb18e6c29665b9de7a1cc97c9a4187924b..68be0d51aa64b5d917fb53dbbbdf8966
          Aquifer aquifer = noisechunk.aquifer();
 -        CarvingContext carvingcontext = new CarvingContext(this, chunkRegion.registryAccess(), chunk.getHeightAccessorForGeneration(), noisechunk, noiseConfig, ((NoiseGeneratorSettings) this.settings.value()).surfaceRule());
 +        CarvingContext carvingcontext = new CarvingContext(this, chunkRegion.registryAccess(), chunk.getHeightAccessorForGeneration(), noisechunk, noiseConfig, ((NoiseGeneratorSettings) this.settings.value()).surfaceRule(), chunkRegion.getMinecraftWorld()); // Paper - Flat bedrock generator settings
-         CarvingMask carvingmask = ((ProtoChunk) chunk).getOrCreateCarvingMask(carverStep);
+         CarvingMask carvingmask = ((ProtoChunk) chunk).getOrCreateCarvingMask();
  
          for (int j = -8; j <= 8; ++j) {
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/WorldGenerationContext.java b/src/main/java/net/minecraft/world/level/levelgen/WorldGenerationContext.java
-index b99283c31193e2110f6e3f39c23dbfc2442bab2b..a34e53249668d917c9d77c6837b91360a2349bbc 100644
+index e3360e0a19b610586a6194df1880f15799400fc5..aeee3ea1a3aff45febed1bc7f15ea56570620a6c 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/WorldGenerationContext.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/WorldGenerationContext.java
 @@ -6,10 +6,13 @@ import net.minecraft.world.level.chunk.ChunkGenerator;
@@ -151,7 +151,7 @@ index b99283c31193e2110f6e3f39c23dbfc2442bab2b..a34e53249668d917c9d77c6837b91360
 -    public WorldGenerationContext(ChunkGenerator generator, LevelHeightAccessor world) {
 +    public WorldGenerationContext(ChunkGenerator generator, LevelHeightAccessor world) { this(generator, world, null); } // Paper - Flat bedrock generator settings
 +    public WorldGenerationContext(ChunkGenerator generator, LevelHeightAccessor world, @org.jetbrains.annotations.Nullable net.minecraft.world.level.Level level) { // Paper - Flat bedrock generator settings
-         this.minY = Math.max(world.getMinBuildHeight(), generator.getMinY());
+         this.minY = Math.max(world.getMinY(), generator.getMinY());
          this.height = Math.min(world.getHeight(), generator.getGenDepth());
 +        this.level = level; // Paper - Flat bedrock generator settings
      }
@@ -188,10 +188,10 @@ index 390bcf9c302effd9db42d7a0e65b5433cc2eadd6..b9e919d31e442f49300744395af3cf94
          this.noiseChunk = chunkNoiseSampler;
          this.randomState = noiseConfig;
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/placement/PlacementContext.java b/src/main/java/net/minecraft/world/level/levelgen/placement/PlacementContext.java
-index 640c2683c842655bbaee8f293f1c2613ef44844e..c7dfd844c7846281ceff0d443c0160054fd36c5c 100644
+index 298cedb398cc0dc362e02a2bd9db170a9595407f..4e7aa581c9afc20820b659bb1804f7cf460f0b97 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/placement/PlacementContext.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/placement/PlacementContext.java
-@@ -18,7 +18,7 @@ public class PlacementContext extends WorldGenerationContext {
+@@ -17,7 +17,7 @@ public class PlacementContext extends WorldGenerationContext {
      private final Optional<PlacedFeature> topFeature;
  
      public PlacementContext(WorldGenLevel world, ChunkGenerator generator, Optional<PlacedFeature> placedFeature) {
