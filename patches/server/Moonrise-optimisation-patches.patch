@@ -5981,6 +5981,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            ((ChunkSystemChunkHolder)((ChunkSystemServerLevel)this.world).moonrise$getChunkTaskScheduler().chunkHolderManager
 +                .getChunkHolder(chunkX, chunkZ).vanillaChunkHolder).moonrise$removeReceivedChunk(this.player);
 +            this.player.connection.send(new ClientboundForgetLevelChunkPacket(new ChunkPos(chunkX, chunkZ)));
++            // Paper start - PlayerChunkUnloadEvent
++            if (io.papermc.paper.event.packet.PlayerChunkUnloadEvent.getHandlerList().getRegisteredListeners().length > 0) {
++                new io.papermc.paper.event.packet.PlayerChunkUnloadEvent(player.getBukkitEntity().getWorld().getChunkAt(new ChunkPos(chunkX, chunkZ).longKey), player.getBukkitEntity()).callEvent();
++            }
++            // Paper end - PlayerChunkUnloadEvent
 +        }
 +
 +        private final SingleUserAreaMap<PlayerChunkLoaderData> broadcastMap = new SingleUserAreaMap<>(this) {
@@ -29064,7 +29069,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end - rewrite chunk system
          CraftEventFactory.callEntityRemoveEvent(this, cause);
          // CraftBukkit end
-         if (this.removalReason == null) {
+         final boolean alreadyRemoved = this.removalReason != null; // Paper - Folia schedulers
 @@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
              this.stopRiding();
          }
@@ -29073,7 +29078,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (this.removalReason != Entity.RemovalReason.UNLOADED_TO_CHUNK) { this.getPassengers().forEach(Entity::stopRiding); } // Paper - rewrite chunk system
          this.levelCallback.onRemove(entity_removalreason);
          this.onRemoval(entity_removalreason);
-     }
+         // Paper start - Folia schedulers
 @@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
  
      @Override
@@ -30656,6 +30661,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                        for (float f1 = 0.3F; f > 0.0F; f -= 0.22500001F) {
 -                            BlockPos blockposition = BlockPos.containing(d4, d5, d6);
 -                            BlockState iblockdata = this.level.getBlockState(blockposition);
+-                            if (!iblockdata.isDestroyable()) continue; // Paper - Protect Bedrock and End Portal/Frames from being destroyed
 -                            FluidState fluid = iblockdata.getFluidState(); // Paper - Perf: Optimize call to getFluid for explosions
 -
 -                            if (!this.level.isInWorldBounds(blockposition)) {
@@ -30681,9 +30687,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                                        net.minecraft.core.Direction direction = iblockdata.getValue(net.minecraft.world.level.block.piston.PistonHeadBlock.FACING);
 -                                        set.add(blockposition.relative(direction.getOpposite()));
 -                                    }
--                                }
--                                // Paper end - prevent headless pistons from forming
--                            }
 +        // use initial cache value that is most likely to be used: the source position
 +        final ca.spottedleaf.moonrise.patches.collisions.ExplosionBlockCache initialCache;
 +        {
@@ -30695,10 +30698,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +            initialCache = this.getOrCacheExplosionBlock(blockX, blockY, blockZ, key, true);
 +        }
- 
--                            d4 += d0 * 0.30000001192092896D;
--                            d5 += d1 * 0.30000001192092896D;
--                            d6 += d2 * 0.30000001192092896D;
++
 +        // only ~1/3rd of the loop iterations in vanilla will result in a ray, as it is iterating the perimeter of
 +        // a 16x16x16 cube
 +        // we can cache the rays and their normals as well, so that we eliminate the excess iterations / checks and
@@ -30741,17 +30741,32 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                if (cachedBlock.outOfWorld) {
 +                    break;
 +                }
++                final BlockState iblockdata = cachedBlock.blockState;
 +
 +                power -= cachedBlock.resistance;
 +
 +                if (power > 0.0f && cachedBlock.shouldExplode == null) {
 +                    // note: we expect shouldBlockExplode to be pure with respect to power, as Vanilla currently is.
 +                    // basically, it is unused, which allows us to cache the result
-+                    final boolean shouldExplode = this.damageCalculator.shouldBlockExplode((Explosion)(Object)this, this.level, cachedBlock.immutablePos, cachedBlock.blockState, power);
++                    final boolean shouldExplode = iblockdata.isDestroyable() && this.damageCalculator.shouldBlockExplode((Explosion)(Object)this, this.level, cachedBlock.immutablePos, cachedBlock.blockState, power); // Paper - Protect Bedrock and End Portal/Frames from being destroyed
 +                    cachedBlock.shouldExplode = shouldExplode ? Boolean.TRUE : Boolean.FALSE;
 +                    if (shouldExplode) {
 +                        if (this.fire || !cachedBlock.blockState.isAir()) {
 +                            ret.add(cachedBlock.immutablePos);
++                            // Paper start - prevent headless pistons from forming
++                            if (!io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowHeadlessPistons && iblockdata.getBlock() == Blocks.MOVING_PISTON) {
++                                net.minecraft.world.level.block.entity.BlockEntity extension = this.level.getBlockEntity(cachedBlock.immutablePos); // Paper - optimise collisions
++                                if (extension instanceof net.minecraft.world.level.block.piston.PistonMovingBlockEntity blockEntity && blockEntity.isSourcePiston()) {
++                                    net.minecraft.core.Direction direction = iblockdata.getValue(net.minecraft.world.level.block.piston.PistonHeadBlock.FACING);
++                                    ret.add(cachedBlock.immutablePos.relative(direction.getOpposite())); // Paper - optimise collisions
+                                 }
+-                                // Paper end - prevent headless pistons from forming
+                             }
+-
+-                            d4 += d0 * 0.30000001192092896D;
+-                            d5 += d1 * 0.30000001192092896D;
+-                            d6 += d2 * 0.30000001192092896D;
++                            // Paper end - prevent headless pistons from forming
                          }
                      }
                  }
@@ -32761,7 +32776,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end - rewrite chunk system
 +
      public RegionFile(RegionStorageInfo storageKey, Path directory, Path path, boolean dsync) throws IOException {
-         this(storageKey, directory, path, RegionFileVersion.getSelected(), dsync);
+         this(storageKey, directory, path, RegionFileVersion.getCompressionFormat(), dsync); // Paper - Configurable region compression format
      }
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
  
@@ -33416,11 +33431,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            final LevelChunkSection[] chunkSections = chunk.getSections();
 +            final ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray[] blockNibbles = ((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)chunk).starlight$getBlockNibbles();
 +            final ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray[] skyNibbles = ((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)chunk).starlight$getSkyNibbles();
-+
+ 
+-                if (flag || nibblearray2 != null || nibblearray3 != null) {
+-                    LevelChunkSection chunksection = flag ? achunksection[j].copy() : null;
 +            for (int lightSection = minLightSection; lightSection <= maxLightSection; ++lightSection) {
 +                final int lightSectionIdx = lightSection - minLightSection;
 +                final int blockSectionIdx = lightSection - minBlockSection;
-+
+ 
+-                    list.add(new SerializableChunkData.SectionData(i, chunksection, nibblearray2, nibblearray3));
 +                final LevelChunkSection chunkSection = (blockSectionIdx >= 0 && blockSectionIdx < chunkSections.length) ? chunkSections[blockSectionIdx].copy() : null;
 +                final ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray.SaveState blockNibble = blockNibbles[lightSectionIdx].getSaveState();
 +                final ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray.SaveState skyNibble = skyNibbles[lightSectionIdx].getSaveState();
@@ -33434,17 +33452,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    blockNibble == null ? null : (blockNibble.data == null ? null : new DataLayer(blockNibble.data)),
 +                    skyNibble == null ? null : (skyNibble.data == null ? null : new DataLayer(skyNibble.data))
 +                );
- 
--                if (flag || nibblearray2 != null || nibblearray3 != null) {
--                    LevelChunkSection chunksection = flag ? achunksection[j].copy() : null;
++
 +                if (blockNibble != null) {
 +                    ((ca.spottedleaf.moonrise.patches.starlight.storage.StarlightSectionData)(Object)sectionData).starlight$setBlockLightState(blockNibble.state);
-+                }
- 
--                    list.add(new SerializableChunkData.SectionData(i, chunksection, nibblearray2, nibblearray3));
+                 }
++
 +                if (skyNibble != null) {
 +                    ((ca.spottedleaf.moonrise.patches.starlight.storage.StarlightSectionData)(Object)sectionData).starlight$setSkyLightState(skyNibble.state);
-                 }
++                }
 +
 +                sections.add(sectionData);
              }
