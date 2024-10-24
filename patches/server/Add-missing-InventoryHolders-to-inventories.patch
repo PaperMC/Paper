@@ -180,28 +180,40 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/inventory/ItemCombinerMenu.java
 +++ b/src/main/java/net/minecraft/world/inventory/ItemCombinerMenu.java
 @@ -0,0 +0,0 @@ public abstract class ItemCombinerMenu extends AbstractContainerMenu {
+     protected final ContainerLevelAccess access;
      protected final Player player;
      protected final Container inputSlots;
-     private final List<Integer> inputSlotIndexes;
--    protected final ResultContainer resultSlots = new ResultContainer();
+-    protected final ResultContainer resultSlots = new ResultContainer() {
+-        @Override
+-        public void setChanged() {
+-            ItemCombinerMenu.this.slotsChanged(this);
+-        }
+-    };
 +    protected final ResultContainer resultSlots; // Paper - Add missing InventoryHolders; delay field init
      private final int resultSlotIndex;
  
-     protected abstract boolean mayPickup(Player player, boolean present);
+     protected boolean mayPickup(Player player, boolean present) {
 @@ -0,0 +0,0 @@ public abstract class ItemCombinerMenu extends AbstractContainerMenu {
-     public ItemCombinerMenu(@Nullable MenuType<?> type, int syncId, Inventory playerInventory, ContainerLevelAccess context) {
+     public ItemCombinerMenu(@Nullable MenuType<?> type, int syncId, Inventory playerInventory, ContainerLevelAccess context, ItemCombinerMenuSlotDefinition forgingSlotsManager) {
          super(type, syncId);
          this.access = context;
-+        this.resultSlots = new ResultContainer(this.createBlockHolder(this.access)); // Paper - Add missing InventoryHolders; delay field init
++        // Paper start - Add missing InventoryHolders; delay field init
++        this.resultSlots = new ResultContainer(this.createBlockHolder(this.access)) {
++            @Override
++            public void setChanged() {
++                ItemCombinerMenu.this.slotsChanged(this);
++            }
++        };
++        // Paper end - Add missing InventoryHolders; delay field init
          this.player = playerInventory.player;
-         ItemCombinerMenuSlotDefinition itemcombinermenuslotdefinition = this.createInputSlotDefinitions();
- 
+         this.inputSlots = this.createContainer(forgingSlotsManager.getNumOfInputSlots());
+         this.resultSlotIndex = forgingSlotsManager.getResultSlotIndex();
 @@ -0,0 +0,0 @@ public abstract class ItemCombinerMenu extends AbstractContainerMenu {
-     protected abstract ItemCombinerMenuSlotDefinition createInputSlotDefinitions();
+     public abstract void createResult();
  
      private SimpleContainer createContainer(int size) {
 -        return new SimpleContainer(size) {
-+        return new SimpleContainer(this.createBlockHolder(this.access), size) { // Paper - Add missing InventoryHolders
++        return new SimpleContainer(this.createBlockHolder(this.access), size) {
              @Override
              public void setChanged() {
                  super.setChanged();

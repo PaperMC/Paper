@@ -13,20 +13,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              return;
          }
 -        this.player.getInventory().pickSlot(packet.getSlot()); // Paper - Diff above if changed
-         // Paper end - validate pick item position
 +        // Paper start - Add PlayerPickItemEvent
++        // this.player.getInventory().pickSlot(packet.getSlot()); // Paper - Diff above if changed - moved down
 +        Player bukkitPlayer = this.player.getBukkitEntity();
 +        int targetSlot = this.player.getInventory().getSuitableHotbarSlot();
 +        int sourceSlot = packet.getSlot();
 +
 +        io.papermc.paper.event.player.PlayerPickItemEvent event = new io.papermc.paper.event.player.PlayerPickItemEvent(bukkitPlayer, targetSlot, sourceSlot);
 +        if (!event.callEvent()) return;
-+
-+        this.player.getInventory().pickSlot(event.getSourceSlot(), event.getTargetSlot());
 +        // Paper end - Add PlayerPickItemEvent
-         this.player.connection.send(new ClientboundContainerSetSlotPacket(-2, 0, this.player.getInventory().selected, this.player.getInventory().getItem(this.player.getInventory().selected)));
-         this.player.connection.send(new ClientboundContainerSetSlotPacket(-2, 0, packet.getSlot(), this.player.getInventory().getItem(packet.getSlot())));
-         this.player.connection.send(new ClientboundSetCarriedItemPacket(this.player.getInventory().selected));
++
++        this.player.getInventory().pickSlot(event.getSourceSlot(), event.getTargetSlot()); // Paper - Add PlayerPickItemEvent
+         // Paper end - validate pick item position
+         int i = this.player.getInventory().selected;
+ 
 diff --git a/src/main/java/net/minecraft/world/entity/player/Inventory.java b/src/main/java/net/minecraft/world/entity/player/Inventory.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Inventory.java

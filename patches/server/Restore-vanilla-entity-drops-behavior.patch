@@ -18,7 +18,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
 -        java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<>(this.getInventory().getContainerSize());
 +        List<DefaultDrop> loot = new java.util.ArrayList<>(this.getInventory().getContainerSize()); // Paper - Restore vanilla drops behavior
-         boolean keepInventory = this.level().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY) || this.isSpectator();
+         boolean keepInventory = this.serverLevel().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY) || this.isSpectator();
  
          if (!keepInventory) {
              for (ItemStack item : this.getInventory().getContents()) {
@@ -30,7 +30,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
          if (this.shouldDropLoot() && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) { // Paper - fix player loottables running when mob loot gamerule is false
          // SPIGOT-5071: manually add player loot tables (SPIGOT-5195 - ignores keepInventory rule)
-         this.dropFromLootTable(damageSource, this.lastHurtByPlayerTime > 0);
+         this.dropFromLootTable(this.serverLevel(), damageSource, this.lastHurtByPlayerTime > 0);
 -        this.dropCustomDeathLoot(this.serverLevel(), damageSource, flag);
 +        // Paper - Restore vanilla drops behaviour; custom death loot is a noop on server player, remove.
  
@@ -43,9 +43,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
  
      @Nullable
-     public ItemEntity spawnAtLocation(ItemStack stack, float yOffset) {
+     public ItemEntity spawnAtLocation(ServerLevel world, ItemStack stack, float yOffset) {
 +        // Paper start - Restore vanilla drops behavior
-+        return this.spawnAtLocation(stack, yOffset, null);
++        return this.spawnAtLocation(world, stack, yOffset, null);
 +    }
 +    public record DefaultDrop(Item item, org.bukkit.inventory.ItemStack stack, @Nullable java.util.function.Consumer<ItemStack> dropConsumer) {
 +        public DefaultDrop(final ItemStack stack, final java.util.function.Consumer<ItemStack> dropConsumer) {
@@ -61,12 +61,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +    @Nullable
-+    public ItemEntity spawnAtLocation(ItemStack stack, float yOffset, @Nullable java.util.function.Consumer<? super ItemEntity> delayedAddConsumer) {
++    public ItemEntity spawnAtLocation(ServerLevel world, ItemStack stack, float yOffset, @Nullable java.util.function.Consumer<? super ItemEntity> delayedAddConsumer) {
 +        // Paper end - Restore vanilla drops behavior
          if (stack.isEmpty()) {
              return null;
-         } else if (this.level().isClientSide) {
-@@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          } else {
              // CraftBukkit start - Capture drops for death event
              if (this instanceof net.minecraft.world.entity.LivingEntity && !((net.minecraft.world.entity.LivingEntity) this).forceDrops) {
@@ -82,7 +80,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  return null;
              }
              // CraftBukkit end
-             ItemEntity entityitem = new ItemEntity(this.level(), this.getX(), this.getY() + (double) yOffset, this.getZ(), stack.copy()); // Paper - copy so we can destroy original
+             ItemEntity entityitem = new ItemEntity(world, this.getX(), this.getY() + (double) yOffset, this.getZ(), stack);
              stack.setCount(0); // Paper - destroy this item - if this ever leaks due to game bugs, ensure it doesn't dupe
  
 -            entityitem.setDefaultPickUpDelay();
@@ -107,13 +105,13 @@ diff --git a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.jav
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
 +++ b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
-@@ -0,0 +0,0 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
+@@ -0,0 +0,0 @@ public class WitherBoss extends Monster implements RangedAttackMob {
      @Override
      protected void dropCustomDeathLoot(ServerLevel world, DamageSource source, boolean causedByPlayer) {
          super.dropCustomDeathLoot(world, source, causedByPlayer);
--        ItemEntity entityitem = this.spawnAtLocation((ItemLike) Items.NETHER_STAR);
--
-+        ItemEntity entityitem = this.spawnAtLocation(new net.minecraft.world.item.ItemStack(Items.NETHER_STAR), 0, ItemEntity::setExtendedLifetime); // Paper - Restore vanilla drops behavior; spawnAtLocation returns null so modify the item entity with a consumer
+-        ItemEntity entityitem = this.spawnAtLocation(world, (ItemLike) Items.NETHER_STAR);
++        ItemEntity entityitem = this.spawnAtLocation(world, new net.minecraft.world.item.ItemStack(Items.NETHER_STAR), 0, ItemEntity::setExtendedLifetime); // Paper - Restore vanilla drops behavior; spawnAtLocation returns null so modify the item entity with a consumer
+ 
          if (entityitem != null) {
 -            entityitem.setExtendedLifetime();
 +            entityitem.setExtendedLifetime(); // Paper - diff on change
@@ -175,15 +173,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return new Entity.DefaultDrop(CraftItemType.bukkitToMinecraft(stack.getType()), stack, null);
 +    };
 +
-+    public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, DamageSource damageSource, List<Entity.DefaultDrop> drops, Runnable lootCheck) { // Paper
++    public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, DamageSource damageSource, List<Entity.DefaultDrop> drops, Runnable lootCheck) { // Paper - Restore vanilla drops behavior
          // Paper end
          CraftLivingEntity entity = (CraftLivingEntity) victim.getBukkitEntity();
          CraftDamageSource bukkitDamageSource = new CraftDamageSource(damageSource);
--        EntityDeathEvent event = new EntityDeathEvent(entity, bukkitDamageSource, drops, victim.getExpReward(damageSource.getEntity()));
-+        EntityDeathEvent event = new EntityDeathEvent(entity, bukkitDamageSource, new io.papermc.paper.util.TransformingRandomAccessList<>(drops, Entity.DefaultDrop::stack, FROM_FUNCTION), victim.getExpReward(damageSource.getEntity())); // Paper - Restore vanilla drops behavior
-         populateFields(victim, event); // Paper - make cancellable
          CraftWorld world = (CraftWorld) entity.getWorld();
+-        EntityDeathEvent event = new EntityDeathEvent(entity, bukkitDamageSource, drops, victim.getExpReward(world.getHandle(), damageSource.getEntity()));
++        EntityDeathEvent event = new EntityDeathEvent(entity, bukkitDamageSource, new io.papermc.paper.util.TransformingRandomAccessList<>(drops, Entity.DefaultDrop::stack, FROM_FUNCTION), victim.getExpReward(world.getHandle(), damageSource.getEntity())); // Paper - Restore vanilla drops behavior, victim.getExpReward(world.getHandle(), damageSource.getEntity()));
+         populateFields(victim, event); // Paper - make cancellable
          Bukkit.getServer().getPluginManager().callEvent(event);
+ 
 @@ -0,0 +0,0 @@ public class CraftEventFactory {
          victim.expToDrop = event.getDroppedExp();
          lootCheck.run(); // Paper - advancement triggers before destroying items
@@ -193,7 +192,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        for (Entity.DefaultDrop drop : drops) {
 +            if (drop == null) continue;
 +            final org.bukkit.inventory.ItemStack stack = drop.stack();
-+            // Paper end - Restore vanilla drops behavior
++        // Paper end - Restore vanilla drops behavior
              if (stack == null || stack.getType() == Material.AIR || stack.getAmount() == 0) continue;
  
 -            world.dropItem(entity.getLocation(), stack); // Paper - note: dropItem already clones due to this being bukkit -> NMS
@@ -208,8 +207,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public static PlayerDeathEvent callPlayerDeathEvent(ServerPlayer victim, DamageSource damageSource, List<Entity.DefaultDrop> drops, net.kyori.adventure.text.Component deathMessage, boolean keepInventory) { // Paper - Adventure & Restore vanilla drops behavior
          CraftPlayer entity = victim.getBukkitEntity();
          CraftDamageSource bukkitDamageSource = new CraftDamageSource(damageSource);
--        PlayerDeathEvent event = new PlayerDeathEvent(entity, bukkitDamageSource, drops, victim.getExpReward(damageSource.getEntity()), 0, deathMessage);
-+        PlayerDeathEvent event = new PlayerDeathEvent(entity, bukkitDamageSource, new io.papermc.paper.util.TransformingRandomAccessList<>(drops, Entity.DefaultDrop::stack, FROM_FUNCTION), victim.getExpReward(damageSource.getEntity()), 0, deathMessage); // Paper - Restore vanilla drops behavior
+-        PlayerDeathEvent event = new PlayerDeathEvent(entity, bukkitDamageSource, drops, victim.getExpReward(victim.serverLevel(), damageSource.getEntity()), 0, deathMessage);
++        PlayerDeathEvent event = new PlayerDeathEvent(entity, bukkitDamageSource, new io.papermc.paper.util.TransformingRandomAccessList<>(drops, Entity.DefaultDrop::stack, FROM_FUNCTION), victim.getExpReward(victim.serverLevel(), damageSource.getEntity()), 0, deathMessage); // Paper - Restore vanilla drops behavior
          event.setKeepInventory(keepInventory);
          event.setKeepLevel(victim.keepLevel); // SPIGOT-2222: pre-set keepLevel
          populateFields(victim, event); // Paper - make cancellable
@@ -222,14 +221,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        for (Entity.DefaultDrop drop : drops) {
 +            if (drop == null) continue;
 +            final org.bukkit.inventory.ItemStack stack = drop.stack();
-+            // Paper end - Restore vanilla drops behavior
++        // Paper end - Restore vanilla drops behavior
              if (stack == null || stack.getType() == Material.AIR) continue;
  
 -            if (stack instanceof CraftItemStack craftItemStack && craftItemStack.isForInventoryDrop()) {
 -                victim.drop(CraftItemStack.asNMSCopy(stack), true, false, false); // SPIGOT-7800, SPIGOT-7801: Vanilla Behaviour for Player Inventory dropped items
 -            } else {
 -                victim.forceDrops = true;
--                victim.spawnAtLocation(CraftItemStack.asNMSCopy(stack)); // SPIGOT-7806: Vanilla Behaviour for items not related to Player Inventory dropped items
+-                victim.spawnAtLocation(victim.serverLevel(), CraftItemStack.asNMSCopy(stack)); // SPIGOT-7806: Vanilla Behaviour for items not related to Player Inventory dropped items
 -                victim.forceDrops = false;
 -            }
 +            drop.runConsumer(s -> victim.drop(CraftItemStack.unwrap(s), true, false, false)); // Paper - Restore vanilla drops behavior

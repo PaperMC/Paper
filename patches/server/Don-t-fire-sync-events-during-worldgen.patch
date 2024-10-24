@@ -22,7 +22,7 @@ diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/mai
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
      // CraftBukkit start
      private boolean addEntity(Entity entity, CreatureSpawnEvent.SpawnReason spawnReason) {
          org.spigotmc.AsyncCatcher.catchOp("entity add"); // Spigot
@@ -54,14 +54,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
      }
  
-     public static Optional<Entity> create(CompoundTag nbt, Level world) {
-+        // Paper start - Don't fire sync event during generation
+     public static Optional<Entity> create(CompoundTag nbt, Level world, EntitySpawnReason reason) {
++    // Paper start - Don't fire sync event during generation
 +        return create(nbt, world, false);
 +    }
-+    public static Optional<Entity> create(CompoundTag nbt, Level world, boolean generation) {
-+        // Paper end - Don't fire sync event during generation
++    public static Optional<Entity> create(CompoundTag nbt, Level world, EntitySpawnReason reason, boolean generation) {
++    // Paper end - Don't fire sync event during generation
          return Util.ifElse(EntityType.by(nbt).map((entitytypes) -> {
-             return entitytypes.create(world);
+             return entitytypes.create(world, reason);
          }), (entity) -> {
 +            if (generation) entity.generation = true; // Paper - Don't fire sync event during generation
              entity.load(nbt);
@@ -127,8 +127,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private static Optional<Entity> createEntityIgnoreException(ServerLevelAccessor world, CompoundTag nbt) {
          // CraftBukkit start
          // try {
--            return EntityType.create(nbt, world.getLevel());
-+            return EntityType.create(nbt, world.getLevel(), true); // Paper - Don't fire sync event during generation
+-            return EntityType.create(nbt, world.getLevel(), EntitySpawnReason.STRUCTURE);
++            return EntityType.create(nbt, world.getLevel(), EntitySpawnReason.STRUCTURE, true); // Paper - Don't fire sync event during generation
          // } catch (Exception exception) {
              // return Optional.empty();
          // }
@@ -141,25 +141,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 -    @Override
--    public void addFreshEntityWithPassengers(Entity arg0, CreatureSpawnEvent.SpawnReason arg1) {
--        this.handle.addFreshEntityWithPassengers(arg0, arg1);
--    }
--
--    @Override
 -    public void addFreshEntityWithPassengers(Entity entity) {
 -        this.handle.addFreshEntityWithPassengers(entity);
 -    }
+-
+-    @Override
+-    public void addFreshEntityWithPassengers(Entity entity, CreatureSpawnEvent.SpawnReason reason) {
+-        this.handle.addFreshEntityWithPassengers(entity, reason);
+-    }
 +    // Paper start - Don't fire sync event during generation; don't override these methods so all entities are run through addFreshEntity
-+    // @Override
-+    // public void addFreshEntityWithPassengers(Entity arg0, CreatureSpawnEvent.SpawnReason arg1) {
-+    //     this.handle.addFreshEntityWithPassengers(arg0, arg1);
-+    // }
-+    //
 +    // @Override
 +    // public void addFreshEntityWithPassengers(Entity entity) {
 +    //     this.handle.addFreshEntityWithPassengers(entity);
 +    // }
-+    // Paper end - Don't fire sync event during generation; don't override these methods
++    //
++    // @Override
++    // public void addFreshEntityWithPassengers(Entity entity, CreatureSpawnEvent.SpawnReason reason) {
++    //     this.handle.addFreshEntityWithPassengers(entity, reason);
++    // }
++    // Paper end - Don't fire sync event during generation; don't override these methods so all entities are run through addFreshEntity
  
      @Override
      public ServerLevel getMinecraftWorld() {
