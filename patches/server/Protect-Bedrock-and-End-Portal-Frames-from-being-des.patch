@@ -12,18 +12,6 @@ So protect them from a multitude of methods of destroying them.
 A config is provided if you rather let players use these exploits, and let
 them destroy the worlds End Portals and get on top of the nether easy.
 
-diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/Explosion.java
-+++ b/src/main/java/net/minecraft/world/level/Explosion.java
-@@ -0,0 +0,0 @@ public class Explosion {
-                         for (float f1 = 0.3F; f > 0.0F; f -= 0.22500001F) {
-                             BlockPos blockposition = BlockPos.containing(d4, d5, d6);
-                             BlockState iblockdata = this.level.getBlockState(blockposition);
-+                            if (!iblockdata.isDestroyable()) continue; // Paper - Protect Bedrock and End Portal/Frames from being destroyed
-                             FluidState fluid = iblockdata.getFluidState(); // Paper - Perf: Optimize call to getFluid for explosions
- 
-                             if (!this.level.isInWorldBounds(blockposition)) {
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
@@ -39,6 +27,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              CraftBlockState blockstate = this.capturedBlockStates.get(pos);
              if (blockstate == null) {
                  blockstate = CapturedBlockState.getTreeBlockState(this, pos, flags);
+diff --git a/src/main/java/net/minecraft/world/level/ServerExplosion.java b/src/main/java/net/minecraft/world/level/ServerExplosion.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/ServerExplosion.java
++++ b/src/main/java/net/minecraft/world/level/ServerExplosion.java
+@@ -0,0 +0,0 @@ public class ServerExplosion implements Explosion {
+                         for (float f1 = 0.3F; f > 0.0F; f -= 0.22500001F) {
+                             BlockPos blockposition = BlockPos.containing(d4, d5, d6);
+                             BlockState iblockdata = this.level.getBlockState(blockposition);
++                            if (!iblockdata.isDestroyable()) continue; // Paper - Protect Bedrock and End Portal/Frames from being destroyed
+                             FluidState fluid = iblockdata.getFluidState(); // Paper - Perf: Optimize call to getFluid for explosions
+ 
+                             if (!this.level.isInWorldBounds(blockposition)) {
 diff --git a/src/main/java/net/minecraft/world/level/block/Block.java b/src/main/java/net/minecraft/world/level/block/Block.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/Block.java
@@ -112,7 +112,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class BlockBehaviour implements FeatureElement {
      }
  
-     protected void onExplosionHit(BlockState state, Level world, BlockPos pos, Explosion explosion, BiConsumer<ItemStack, BlockPos> stackMerger) {
+     protected void onExplosionHit(BlockState state, ServerLevel world, BlockPos pos, Explosion explosion, BiConsumer<ItemStack, BlockPos> stackMerger) {
 -        if (!state.isAir() && explosion.getBlockInteraction() != Explosion.BlockInteraction.TRIGGER_BLOCK) {
 +        if (!state.isAir() && explosion.getBlockInteraction() != Explosion.BlockInteraction.TRIGGER_BLOCK && state.isDestroyable()) { // Paper - Protect Bedrock and End Portal/Frames from being destroyed
              Block block = state.getBlock();
@@ -148,7 +148,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return !this.isDestroyable() ? PushReaction.BLOCK : this.pushReaction; // Paper - Protect Bedrock and End Portal/Frames from being destroyed
          }
  
-         public boolean isSolidRender(BlockGetter world, BlockPos pos) {
+         public boolean isSolidRender() {
 diff --git a/src/main/java/net/minecraft/world/level/portal/PortalForcer.java b/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
