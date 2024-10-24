@@ -4,6 +4,686 @@ Date: Mon, 21 Oct 2024 12:21:54 -0700
 Subject: [PATCH] fixup! MC Utils
 
 
+diff --git a/src/main/java/ca/spottedleaf/moonrise/common/PlatformHooks.java b/src/main/java/ca/spottedleaf/moonrise/common/PlatformHooks.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/moonrise/common/PlatformHooks.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.moonrise.common;
++
++import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder;
++import com.mojang.datafixers.DataFixer;
++import net.minecraft.core.BlockPos;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.server.level.GenerationChunkHolder;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.server.level.ServerPlayer;
++import net.minecraft.util.datafix.DataFixTypes;
++import net.minecraft.world.entity.Entity;
++import net.minecraft.world.level.BlockGetter;
++import net.minecraft.world.level.ChunkPos;
++import net.minecraft.world.level.Level;
++import net.minecraft.world.level.block.state.BlockState;
++import net.minecraft.world.level.chunk.ChunkAccess;
++import net.minecraft.world.level.chunk.LevelChunk;
++import net.minecraft.world.level.chunk.ProtoChunk;
++import net.minecraft.world.level.chunk.storage.SerializableChunkData;
++import net.minecraft.world.level.entity.EntityTypeTest;
++import net.minecraft.world.phys.AABB;
++import java.util.List;
++import java.util.ServiceLoader;
++import java.util.function.Predicate;
++
++public interface PlatformHooks {
++    public static PlatformHooks get() {
++        return Holder.INSTANCE;
++    }
++
++    public String getBrand();
++
++    public int getLightEmission(final BlockState blockState, final BlockGetter world, final BlockPos pos);
++
++    public Predicate<BlockState> maybeHasLightEmission();
++
++    public boolean hasCurrentlyLoadingChunk();
++
++    public LevelChunk getCurrentlyLoadingChunk(final GenerationChunkHolder holder);
++
++    public void setCurrentlyLoading(final GenerationChunkHolder holder, final LevelChunk levelChunk);
++
++    public void chunkFullStatusComplete(final LevelChunk newChunk, final ProtoChunk original);
++
++    public boolean allowAsyncTicketUpdates();
++
++    public void onChunkHolderTicketChange(final ServerLevel world, final NewChunkHolder holder, final int oldLevel, final int newLevel);
++
++    public void chunkUnloadFromWorld(final LevelChunk chunk);
++
++    public void chunkSyncSave(final ServerLevel world, final ChunkAccess chunk, final SerializableChunkData data);
++
++    public void onChunkWatch(final ServerLevel world, final LevelChunk chunk, final ServerPlayer player);
++
++    public void onChunkUnWatch(final ServerLevel world, final ChunkPos chunk, final ServerPlayer player);
++
++    public void addToGetEntities(final Level world, final Entity entity, final AABB boundingBox, final Predicate<? super Entity> predicate,
++                                 final List<Entity> into);
++
++    public <T extends Entity> void addToGetEntities(final Level world, final EntityTypeTest<Entity, T> entityTypeTest,
++                                                    final AABB boundingBox, final Predicate<? super T> predicate,
++                                                    final List<? super T> into, final int maxCount);
++
++    public void entityMove(final Entity entity, final long oldSection, final long newSection);
++
++    public boolean screenEntity(final ServerLevel world, final Entity entity, final boolean fromDisk, final boolean event);
++
++    public boolean configFixMC224294();
++
++    public boolean configAutoConfigSendDistance();
++
++    public double configPlayerMaxLoadRate();
++
++    public double configPlayerMaxGenRate();
++
++    public double configPlayerMaxSendRate();
++
++    public int configPlayerMaxConcurrentLoads();
++
++    public int configPlayerMaxConcurrentGens();
++
++    public long configAutoSaveInterval();
++
++    public int configMaxAutoSavePerTick();
++
++    public boolean configFixMC159283();
++
++    // support for CB chunk mustNotSave
++    public boolean forceNoSave(final ChunkAccess chunk);
++
++    public CompoundTag convertNBT(final DataFixTypes type, final DataFixer dataFixer, final CompoundTag nbt,
++                                  final int fromVersion, final int toVersion);
++
++    public boolean hasMainChunkLoadHook();
++
++    public void mainChunkLoad(final ChunkAccess chunk, final SerializableChunkData chunkData);
++
++    public List<Entity> modifySavedEntities(final ServerLevel world, final int chunkX, final int chunkZ, final List<Entity> entities);
++
++    public void unloadEntity(final Entity entity);
++
++    public int modifyEntityTrackingRange(final Entity entity, final int currentRange);
++
++    public static final class Holder {
++        private Holder() {
++        }
++
++        private static final PlatformHooks INSTANCE;
++
++        static {
++            INSTANCE = ServiceLoader.load(PlatformHooks.class, PlatformHooks.class.getClassLoader()).findFirst()
++                .orElseThrow(() -> new RuntimeException("Failed to locate PlatformHooks"));
++        }
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/moonrise/common/list/EntityList.java b/src/main/java/ca/spottedleaf/moonrise/common/list/EntityList.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/ca/spottedleaf/moonrise/common/list/EntityList.java
++++ b/src/main/java/ca/spottedleaf/moonrise/common/list/EntityList.java
+@@ -0,0 +0,0 @@ import java.util.NoSuchElementException;
+  */
+ public final class EntityList implements Iterable<Entity> {
+ 
+-    protected final Int2IntOpenHashMap entityToIndex = new Int2IntOpenHashMap(2, 0.8f);
++    private final Int2IntOpenHashMap entityToIndex = new Int2IntOpenHashMap(2, 0.8f);
+     {
+         this.entityToIndex.defaultReturnValue(Integer.MIN_VALUE);
+     }
+ 
+-    protected static final Entity[] EMPTY_LIST = new Entity[0];
++    private static final Entity[] EMPTY_LIST = new Entity[0];
+ 
+-    protected Entity[] entities = EMPTY_LIST;
+-    protected int count;
++    private Entity[] entities = EMPTY_LIST;
++    private int count;
+ 
+     public int size() {
+         return this.count;
+@@ -0,0 +0,0 @@ public final class EntityList implements Iterable<Entity> {
+ 
+     @Override
+     public Iterator<Entity> iterator() {
+-        return new Iterator<Entity>() {
+-
+-            Entity lastRet;
+-            int current;
++        return new Iterator<>() {
++            private Entity lastRet;
++            private int current;
+ 
+             @Override
+             public boolean hasNext() {
+diff --git a/src/main/java/ca/spottedleaf/moonrise/common/list/IBlockDataList.java b/src/main/java/ca/spottedleaf/moonrise/common/list/IBlockDataList.java
+deleted file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- a/src/main/java/ca/spottedleaf/moonrise/common/list/IBlockDataList.java
++++ /dev/null
+@@ -0,0 +0,0 @@
+-package ca.spottedleaf.moonrise.common.list;
+-
+-import it.unimi.dsi.fastutil.longs.LongIterator;
+-import it.unimi.dsi.fastutil.shorts.Short2LongOpenHashMap;
+-import java.util.Arrays;
+-import net.minecraft.world.level.block.Block;
+-import net.minecraft.world.level.block.state.BlockState;
+-import net.minecraft.world.level.chunk.GlobalPalette;
+-
+-public final class IBlockDataList {
+-
+-    private static final GlobalPalette<BlockState> GLOBAL_PALETTE = new GlobalPalette<>(Block.BLOCK_STATE_REGISTRY);
+-
+-    // map of location -> (index | (location << 16) | (palette id << 32))
+-    private final Short2LongOpenHashMap map = new Short2LongOpenHashMap(2, 0.8f);
+-    {
+-        this.map.defaultReturnValue(Long.MAX_VALUE);
+-    }
+-
+-    private static final long[] EMPTY_LIST = new long[0];
+-
+-    private long[] byIndex = EMPTY_LIST;
+-    private int size;
+-
+-    public static int getLocationKey(final int x, final int y, final int z) {
+-        return (x & 15) | (((z & 15) << 4)) | ((y & 255) << (4 + 4));
+-    }
+-
+-    public static BlockState getBlockDataFromRaw(final long raw) {
+-        return GLOBAL_PALETTE.valueFor((int)(raw >>> 32));
+-    }
+-
+-    public static int getIndexFromRaw(final long raw) {
+-        return (int)(raw & 0xFFFF);
+-    }
+-
+-    public static int getLocationFromRaw(final long raw) {
+-        return (int)((raw >>> 16) & 0xFFFF);
+-    }
+-
+-    public static long getRawFromValues(final int index, final int location, final BlockState data) {
+-        return (long)index | ((long)location << 16) | (((long)GLOBAL_PALETTE.idFor(data)) << 32);
+-    }
+-
+-    public static long setIndexRawValues(final long value, final int index) {
+-        return value & ~(0xFFFF) | (index);
+-    }
+-
+-    public long add(final int x, final int y, final int z, final BlockState data) {
+-        return this.add(getLocationKey(x, y, z), data);
+-    }
+-
+-    public long add(final int location, final BlockState data) {
+-        final long curr = this.map.get((short)location);
+-
+-        if (curr == Long.MAX_VALUE) {
+-            final int index = this.size++;
+-            final long raw = getRawFromValues(index, location, data);
+-            this.map.put((short)location, raw);
+-
+-            if (index >= this.byIndex.length) {
+-                this.byIndex = Arrays.copyOf(this.byIndex, (int)Math.max(4L, this.byIndex.length * 2L));
+-            }
+-
+-            this.byIndex[index] = raw;
+-            return raw;
+-        } else {
+-            final int index = getIndexFromRaw(curr);
+-            final long raw = this.byIndex[index] = getRawFromValues(index, location, data);
+-
+-            this.map.put((short)location, raw);
+-
+-            return raw;
+-        }
+-    }
+-
+-    public long remove(final int x, final int y, final int z) {
+-        return this.remove(getLocationKey(x, y, z));
+-    }
+-
+-    public long remove(final int location) {
+-        final long ret = this.map.remove((short)location);
+-        final int index = getIndexFromRaw(ret);
+-        if (ret == Long.MAX_VALUE) {
+-            return ret;
+-        }
+-
+-        // move the entry at the end to this index
+-        final int endIndex = --this.size;
+-        final long end = this.byIndex[endIndex];
+-        if (index != endIndex) {
+-            // not empty after this call
+-            this.map.put((short)getLocationFromRaw(end), setIndexRawValues(end, index));
+-        }
+-        this.byIndex[index] = end;
+-        this.byIndex[endIndex] = 0L;
+-
+-        return ret;
+-    }
+-
+-    public int size() {
+-        return this.size;
+-    }
+-
+-    public long getRaw(final int index) {
+-        return this.byIndex[index];
+-    }
+-
+-    public int getLocation(final int index) {
+-        return getLocationFromRaw(this.getRaw(index));
+-    }
+-
+-    public BlockState getData(final int index) {
+-        return getBlockDataFromRaw(this.getRaw(index));
+-    }
+-
+-    public void clear() {
+-        this.size = 0;
+-        this.map.clear();
+-    }
+-
+-    public LongIterator getRawIterator() {
+-        return this.map.values().iterator();
+-    }
+-}
+\ No newline at end of file
+diff --git a/src/main/java/ca/spottedleaf/moonrise/common/list/IntList.java b/src/main/java/ca/spottedleaf/moonrise/common/list/IntList.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/moonrise/common/list/IntList.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.moonrise.common.list;
++
++import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
++import java.util.Arrays;
++
++public final class IntList {
++
++    private final Int2IntOpenHashMap map = new Int2IntOpenHashMap();
++    {
++        this.map.defaultReturnValue(Integer.MIN_VALUE);
++    }
++
++    private static final int[] EMPTY_LIST = new int[0];
++
++    private int[] byIndex = EMPTY_LIST;
++    private int count;
++
++    public int size() {
++        return this.count;
++    }
++
++    public void setMinCapacity(final int len) {
++        final int[] byIndex = this.byIndex;
++        if (byIndex.length < len) {
++            this.byIndex = Arrays.copyOf(byIndex, len);
++        }
++    }
++
++    public int getRaw(final int index) {
++        return this.byIndex[index];
++    }
++
++    public boolean add(final int value) {
++        final int count = this.count;
++        final int currIndex = this.map.putIfAbsent(value, count);
++
++        if (currIndex != Integer.MIN_VALUE) {
++            return false; // already in this list
++        }
++
++        int[] list = this.byIndex;
++
++        if (list.length == count) {
++            // resize required
++            list = this.byIndex = Arrays.copyOf(list, (int)Math.max(4L, count * 2L)); // overflow results in negative
++        }
++
++        list[count] = value;
++        this.count = count + 1;
++
++        return true;
++    }
++
++    public boolean remove(final int value) {
++        final int index = this.map.remove(value);
++        if (index == Integer.MIN_VALUE) {
++            return false;
++        }
++
++        // move the entry at the end to this index
++        final int endIndex = --this.count;
++        final int end = this.byIndex[endIndex];
++        if (index != endIndex) {
++            // not empty after this call
++            this.map.put(end, index);
++        }
++        this.byIndex[index] = end;
++        this.byIndex[endIndex] = 0;
++
++        return true;
++    }
++
++    public void clear() {
++        this.count = 0;
++        this.map.clear();
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/moonrise/common/list/ShortList.java b/src/main/java/ca/spottedleaf/moonrise/common/list/ShortList.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/moonrise/common/list/ShortList.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.moonrise.common.list;
++
++import it.unimi.dsi.fastutil.shorts.Short2ShortOpenHashMap;
++import java.util.Arrays;
++
++public final class ShortList {
++
++    private final Short2ShortOpenHashMap map = new Short2ShortOpenHashMap();
++    {
++        this.map.defaultReturnValue(Short.MIN_VALUE);
++    }
++
++    private static final short[] EMPTY_LIST = new short[0];
++
++    private short[] byIndex = EMPTY_LIST;
++    private short count;
++
++    public int size() {
++        return (int)this.count;
++    }
++
++    public short getRaw(final int index) {
++        return this.byIndex[index];
++    }
++
++    public void setMinCapacity(final int len) {
++        final short[] byIndex = this.byIndex;
++        if (byIndex.length < len) {
++            this.byIndex = Arrays.copyOf(byIndex, len);
++        }
++    }
++
++    public boolean add(final short value) {
++        final int count = (int)this.count;
++        final short currIndex = this.map.putIfAbsent(value, (short)count);
++
++        if (currIndex != Short.MIN_VALUE) {
++            return false; // already in this list
++        }
++
++        short[] list = this.byIndex;
++
++        if (list.length == count) {
++            // resize required
++            list = this.byIndex = Arrays.copyOf(list, (int)Math.max(4L, count * 2L)); // overflow results in negative
++        }
++
++        list[count] = value;
++        this.count = (short)(count + 1);
++
++        return true;
++    }
++
++    public boolean remove(final short value) {
++        final short index = this.map.remove(value);
++        if (index == Short.MIN_VALUE) {
++            return false;
++        }
++
++        // move the entry at the end to this index
++        final short endIndex = --this.count;
++        final short end = this.byIndex[endIndex];
++        if (index != endIndex) {
++            // not empty after this call
++            this.map.put(end, index);
++        }
++        this.byIndex[(int)index] = end;
++        this.byIndex[(int)endIndex] = (short)0;
++
++        return true;
++    }
++
++    public void clear() {
++        this.count = (short)0;
++        this.map.clear();
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/moonrise/common/misc/LazyRunnable.java b/src/main/java/ca/spottedleaf/moonrise/common/misc/LazyRunnable.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/moonrise/common/misc/LazyRunnable.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.moonrise.common.misc;
++
++import ca.spottedleaf.concurrentutil.util.ConcurrentUtil;
++import java.lang.invoke.VarHandle;
++
++public final class LazyRunnable implements Runnable {
++
++    private volatile Runnable toRun;
++    private static final VarHandle TO_RUN_HANDLE = ConcurrentUtil.getVarHandle(LazyRunnable.class, "toRun", Runnable.class);
++
++    public void setRunnable(final Runnable run) {
++        final Runnable prev = (Runnable)TO_RUN_HANDLE.compareAndExchange(this, (Runnable)null, run);
++        if (prev != null) {
++            throw new IllegalStateException("Runnable already set");
++        }
++    }
++
++    @Override
++    public void run() {
++        ((Runnable)TO_RUN_HANDLE.getVolatile(this)).run();
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/moonrise/common/misc/NearbyPlayers.java b/src/main/java/ca/spottedleaf/moonrise/common/misc/NearbyPlayers.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/ca/spottedleaf/moonrise/common/misc/NearbyPlayers.java
++++ b/src/main/java/ca/spottedleaf/moonrise/common/misc/NearbyPlayers.java
+@@ -0,0 +0,0 @@ import ca.spottedleaf.moonrise.common.list.ReferenceList;
+ import ca.spottedleaf.moonrise.common.util.CoordinateUtils;
+ import ca.spottedleaf.moonrise.common.util.MoonriseConstants;
+ import ca.spottedleaf.moonrise.common.util.ChunkSystem;
++import ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel;
++import ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkData;
+ import ca.spottedleaf.moonrise.patches.chunk_tick_iteration.ChunkTickConstants;
++import ca.spottedleaf.moonrise.patches.chunk_tick_iteration.ChunkTickServerLevel;
+ import it.unimi.dsi.fastutil.longs.Long2ReferenceOpenHashMap;
+ import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.server.level.ServerPlayer;
+ import net.minecraft.world.level.ChunkPos;
++import java.util.ArrayList;
+ 
+ public final class NearbyPlayers {
+ 
+@@ -0,0 +0,0 @@ public final class NearbyPlayers {
+         GENERAL_REALLY_SMALL,
+         TICK_VIEW_DISTANCE,
+         VIEW_DISTANCE,
+-        SPAWN_RANGE, // Moonrise - chunk tick iteration
++        // Moonrise start - chunk tick iteration
++        SPAWN_RANGE {
++            @Override
++            void addTo(final ServerPlayer player, final ServerLevel world, final int chunkX, final int chunkZ) {
++                ((ChunkTickServerLevel)world).moonrise$addPlayerTickingRequest(chunkX, chunkZ);
++            }
++
++            @Override
++            void removeFrom(final ServerPlayer player, final ServerLevel world, final int chunkX, final int chunkZ) {
++                ((ChunkTickServerLevel)world).moonrise$removePlayerTickingRequest(chunkX, chunkZ);
++            }
++        };
++        // Moonrise end - chunk tick iteration
++
++        void addTo(final ServerPlayer player, final ServerLevel world, final int chunkX, final int chunkZ) {
++
++        }
++
++        void removeFrom(final ServerPlayer player, final ServerLevel world, final int chunkX, final int chunkZ) {
++
++        }
+     }
+ 
+     private static final NearbyMapType[] MAP_TYPES = NearbyMapType.values();
+@@ -0,0 +0,0 @@ public final class NearbyPlayers {
+     private final ServerLevel world;
+     private final Reference2ReferenceOpenHashMap<ServerPlayer, TrackedPlayer[]> players = new Reference2ReferenceOpenHashMap<>();
+     private final Long2ReferenceOpenHashMap<TrackedChunk> byChunk = new Long2ReferenceOpenHashMap<>();
++    private final Long2ReferenceOpenHashMap<ReferenceList<ServerPlayer>>[] directByChunk = new Long2ReferenceOpenHashMap[TOTAL_MAP_TYPES];
++    {
++        for (int i = 0; i < this.directByChunk.length; ++i) {
++            this.directByChunk[i] = new Long2ReferenceOpenHashMap<>();
++        }
++    }
+ 
+     public NearbyPlayers(final ServerLevel world) {
+         this.world = world;
+@@ -0,0 +0,0 @@ public final class NearbyPlayers {
+         }
+     }
+ 
++    public void clear() {
++        if (this.players.isEmpty()) {
++            return;
++        }
++
++        for (final ServerPlayer player : new ArrayList<>(this.players.keySet())) {
++            this.removePlayer(player);
++        }
++    }
++
+     public void tickPlayer(final ServerPlayer player) {
+         final TrackedPlayer[] players = this.players.get(player);
+         if (players == null) {
+@@ -0,0 +0,0 @@ public final class NearbyPlayers {
+         return this.byChunk.get(CoordinateUtils.getChunkKey(pos));
+     }
+ 
+-    public ReferenceList<ServerPlayer> getPlayers(final BlockPos pos, final NearbyMapType type) {
+-        final TrackedChunk chunk = this.byChunk.get(CoordinateUtils.getChunkKey(pos));
++    public TrackedChunk getChunk(final int chunkX, final int chunkZ) {
++        return this.byChunk.get(CoordinateUtils.getChunkKey(chunkX, chunkZ));
++    }
+ 
+-        return chunk == null ? null : chunk.players[type.ordinal()];
++    public ReferenceList<ServerPlayer> getPlayers(final BlockPos pos, final NearbyMapType type) {
++        return this.directByChunk[type.ordinal()].get(CoordinateUtils.getChunkKey(pos));
+     }
+ 
+     public ReferenceList<ServerPlayer> getPlayers(final ChunkPos pos, final NearbyMapType type) {
+-        final TrackedChunk chunk = this.byChunk.get(CoordinateUtils.getChunkKey(pos));
+-
+-        return chunk == null ? null : chunk.players[type.ordinal()];
++        return this.directByChunk[type.ordinal()].get(CoordinateUtils.getChunkKey(pos));
+     }
+ 
+     public ReferenceList<ServerPlayer> getPlayersByChunk(final int chunkX, final int chunkZ, final NearbyMapType type) {
+-        final TrackedChunk chunk = this.byChunk.get(CoordinateUtils.getChunkKey(chunkX, chunkZ));
+-
+-        return chunk == null ? null : chunk.players[type.ordinal()];
++        return this.directByChunk[type.ordinal()].get(CoordinateUtils.getChunkKey(chunkX, chunkZ));
+     }
+ 
+     public ReferenceList<ServerPlayer> getPlayersByBlock(final int blockX, final int blockZ, final NearbyMapType type) {
+-        final TrackedChunk chunk = this.byChunk.get(CoordinateUtils.getChunkKey(blockX >> 4, blockZ >> 4));
+-
+-        return chunk == null ? null : chunk.players[type.ordinal()];
++        return this.directByChunk[type.ordinal()].get(CoordinateUtils.getChunkKey(blockX >> 4, blockZ >> 4));
+     }
+ 
+     public static final class TrackedChunk {
+ 
+         private static final ServerPlayer[] EMPTY_PLAYERS_ARRAY = new ServerPlayer[0];
+ 
++        private final long chunkKey;
++        private final NearbyPlayers nearbyPlayers;
+         private final ReferenceList<ServerPlayer>[] players = new ReferenceList[TOTAL_MAP_TYPES];
+         private int nonEmptyLists;
+         private long updateCount;
+ 
++        public TrackedChunk(final long chunkKey, final NearbyPlayers nearbyPlayers) {
++            this.chunkKey = chunkKey;
++            this.nearbyPlayers = nearbyPlayers;
++        }
++
+         public boolean isEmpty() {
+             return this.nonEmptyLists == 0;
+         }
+@@ -0,0 +0,0 @@ public final class NearbyPlayers {
+             final ReferenceList<ServerPlayer> list = this.players[idx];
+             if (list == null) {
+                 ++this.nonEmptyLists;
+-                (this.players[idx] = new ReferenceList<>(EMPTY_PLAYERS_ARRAY)).add(player);
++                final ReferenceList<ServerPlayer> players = (this.players[idx] = new ReferenceList<>(EMPTY_PLAYERS_ARRAY));
++                this.nearbyPlayers.directByChunk[idx].put(this.chunkKey, players);
++                players.add(player);
+                 return;
+             }
+ 
+@@ -0,0 +0,0 @@ public final class NearbyPlayers {
+ 
+             if (list.size() == 0) {
+                 this.players[idx] = null;
++                this.nearbyPlayers.directByChunk[idx].remove(this.chunkKey);
+                 --this.nonEmptyLists;
+             }
+         }
+@@ -0,0 +0,0 @@ public final class NearbyPlayers {
+         protected void addCallback(final ServerPlayer parameter, final int chunkX, final int chunkZ) {
+             final long chunkKey = CoordinateUtils.getChunkKey(chunkX, chunkZ);
+ 
+-            NearbyPlayers.this.byChunk.computeIfAbsent(chunkKey, (final long keyInMap) -> {
+-                return new TrackedChunk();
+-            }).addPlayer(parameter, this.type);
++            final TrackedChunk chunk = NearbyPlayers.this.byChunk.get(chunkKey);
++            final NearbyMapType type = this.type;
++            if (chunk != null) {
++                chunk.addPlayer(parameter, type);
++                type.addTo(parameter, NearbyPlayers.this.world, chunkX, chunkZ);
++            } else {
++                final TrackedChunk created = new TrackedChunk(chunkKey, NearbyPlayers.this);
++                NearbyPlayers.this.byChunk.put(chunkKey, created);
++                created.addPlayer(parameter, type);
++                type.addTo(parameter, NearbyPlayers.this.world, chunkX, chunkZ);
++
++                ((ChunkSystemLevel)NearbyPlayers.this.world).moonrise$requestChunkData(chunkKey).nearbyPlayers = created;
++            }
+         }
+ 
+         @Override
+@@ -0,0 +0,0 @@ public final class NearbyPlayers {
+                 throw new IllegalStateException("Chunk should exist at " + new ChunkPos(chunkKey));
+             }
+ 
+-            chunk.removePlayer(parameter, this.type);
++            final NearbyMapType type = this.type;
++            chunk.removePlayer(parameter, type);
++            type.removeFrom(parameter, NearbyPlayers.this.world, chunkX, chunkZ);
+ 
+             if (chunk.isEmpty()) {
+                 NearbyPlayers.this.byChunk.remove(chunkKey);
++                final ChunkData chunkData = ((ChunkSystemLevel)NearbyPlayers.this.world).moonrise$releaseChunkData(chunkKey);
++                if (chunkData != null) {
++                    chunkData.nearbyPlayers = null;
++                }
+             }
+         }
+     }
 diff --git a/src/main/java/ca/spottedleaf/moonrise/common/util/ChunkSystem.java b/src/main/java/ca/spottedleaf/moonrise/common/util/ChunkSystem.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/ca/spottedleaf/moonrise/common/util/ChunkSystem.java
@@ -13,6 +693,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
 +import ca.spottedleaf.concurrentutil.util.Priority;
++import ca.spottedleaf.moonrise.common.PlatformHooks;
  import ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel;
  import ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkSystemLevelChunk;
  import ca.spottedleaf.moonrise.patches.chunk_system.player.RegionizedPlayerChunkLoader;
@@ -55,9 +736,272 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -    public static boolean screenEntity(final ServerLevel level, final Entity entity) {
 +    public static boolean screenEntity(final ServerLevel level, final Entity entity, final boolean fromDisk, final boolean event) {
++        if (!PlatformHooks.get().screenEntity(level, entity, fromDisk, event)) {
++            return false;
++        }
          return true;
      }
  
+diff --git a/src/main/java/ca/spottedleaf/moonrise/common/util/MixinWorkarounds.java b/src/main/java/ca/spottedleaf/moonrise/common/util/MixinWorkarounds.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/ca/spottedleaf/moonrise/common/util/MixinWorkarounds.java
++++ b/src/main/java/ca/spottedleaf/moonrise/common/util/MixinWorkarounds.java
+@@ -0,0 +0,0 @@ package ca.spottedleaf.moonrise.common.util;
+ public final class MixinWorkarounds {
+ 
+     // mixins tries to find the owner of the clone() method, which doesn't exist and NPEs
++    // https://github.com/FabricMC/Mixin/pull/147
+     public static long[] clone(final long[] values) {
+         return values.clone();
+     }
+ 
++    public static byte[] clone(final byte[] values) {
++        return values.clone();
++    }
+ }
+diff --git a/src/main/java/ca/spottedleaf/moonrise/common/util/MoonriseCommon.java b/src/main/java/ca/spottedleaf/moonrise/common/util/MoonriseCommon.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/ca/spottedleaf/moonrise/common/util/MoonriseCommon.java
++++ b/src/main/java/ca/spottedleaf/moonrise/common/util/MoonriseCommon.java
+@@ -0,0 +0,0 @@
+ package ca.spottedleaf.moonrise.common.util;
+ 
+-import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedThreadPool;
++import ca.spottedleaf.concurrentutil.executor.thread.PrioritisedThreadPool;
++import ca.spottedleaf.moonrise.common.PlatformHooks;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+-import java.io.File;
++import java.util.concurrent.TimeUnit;
++import java.util.concurrent.atomic.AtomicInteger;
++import java.util.function.Consumer;
+ 
+ public final class MoonriseCommon {
+ 
+     private static final Logger LOGGER = LoggerFactory.getLogger(MoonriseCommon.class);
+ 
+-    // Paper start
+-    public static PrioritisedThreadPool WORKER_POOL;
+-    public static int WORKER_THREADS;
+-    public static void init(io.papermc.paper.configuration.GlobalConfiguration.ChunkSystem chunkSystem) {
+-        // Paper end
++    public static final PrioritisedThreadPool WORKER_POOL = new PrioritisedThreadPool(
++            new Consumer<>() {
++                private final AtomicInteger idGenerator = new AtomicInteger();
++
++                @Override
++                public void accept(Thread thread) {
++                    thread.setDaemon(true);
++                    thread.setName(PlatformHooks.get().getBrand() + " Common Worker #" + this.idGenerator.getAndIncrement());
++                    thread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
++                        @Override
++                        public void uncaughtException(final Thread thread, final Throwable throwable) {
++                            LOGGER.error("Uncaught exception in thread " + thread.getName(), throwable);
++                        }
++                    });
++                }
++            }
++    );
++    public static final long WORKER_QUEUE_HOLD_TIME = (long)(20.0e6); // 20ms
++    public static final int CLIENT_DIVISION = 0;
++    public static final PrioritisedThreadPool.ExecutorGroup RENDER_EXECUTOR_GROUP = MoonriseCommon.WORKER_POOL.createExecutorGroup(CLIENT_DIVISION, 0);
++    public static final int SERVER_DIVISION = 1;
++    public static final PrioritisedThreadPool.ExecutorGroup PARALLEL_GEN_GROUP = MoonriseCommon.WORKER_POOL.createExecutorGroup(SERVER_DIVISION, 0);
++    public static final PrioritisedThreadPool.ExecutorGroup RADIUS_AWARE_GROUP = MoonriseCommon.WORKER_POOL.createExecutorGroup(SERVER_DIVISION, 0);
++    public static final PrioritisedThreadPool.ExecutorGroup LOAD_GROUP         = MoonriseCommon.WORKER_POOL.createExecutorGroup(SERVER_DIVISION, 0);
++
++    public static void adjustWorkerThreads(final int configWorkerThreads, final int configIoThreads) {
+         int defaultWorkerThreads = Runtime.getRuntime().availableProcessors() / 2;
+         if (defaultWorkerThreads <= 4) {
+             defaultWorkerThreads = defaultWorkerThreads <= 3 ? 1 : 2;
+         } else {
+             defaultWorkerThreads = defaultWorkerThreads / 2;
+         }
+-        defaultWorkerThreads = Integer.getInteger("Paper.WorkerThreadCount", Integer.valueOf(defaultWorkerThreads)); // Paper
++        defaultWorkerThreads = Integer.getInteger(PlatformHooks.get().getBrand() + ".WorkerThreadCount", Integer.valueOf(defaultWorkerThreads));
+ 
+-        int workerThreads = chunkSystem.workerThreads; // Paper
++        int workerThreads = configWorkerThreads;
+ 
+         if (workerThreads <= 0) {
+             workerThreads = defaultWorkerThreads;
+         }
+ 
+-        WORKER_POOL = new PrioritisedThreadPool(
+-                "Paper Worker Pool", workerThreads, // Paper
+-                (final Thread thread, final Integer id) -> {
+-                    thread.setName("Paper Common Worker #" + id.intValue()); // Paper
++        final int ioThreads = Math.max(1, configIoThreads);
++
++        WORKER_POOL.adjustThreadCount(workerThreads);
++        IO_POOL.adjustThreadCount(ioThreads);
++
++        LOGGER.info(PlatformHooks.get().getBrand() + " is using " + workerThreads + " worker threads, " + ioThreads + " I/O threads");
++    }
++
++    public static final PrioritisedThreadPool IO_POOL = new PrioritisedThreadPool(
++            new Consumer<>() {
++                private final AtomicInteger idGenerator = new AtomicInteger();
++
++                @Override
++                public void accept(final Thread thread) {
++                    thread.setDaemon(true);
++                    thread.setName(PlatformHooks.get().getBrand() + " I/O Worker #" + this.idGenerator.getAndIncrement());
+                     thread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+                         @Override
+                         public void uncaughtException(final Thread thread, final Throwable throwable) {
+                             LOGGER.error("Uncaught exception in thread " + thread.getName(), throwable);
+                         }
+                     });
+-                }, (long)(20.0e6)); // 20ms
+-        WORKER_THREADS = workerThreads;
++                }
++            }
++    );
++    public static final long IO_QUEUE_HOLD_TIME = (long)(100.0e6); // 100ms
++    public static final PrioritisedThreadPool.ExecutorGroup CLIENT_PROFILER_IO_GROUP = IO_POOL.createExecutorGroup(CLIENT_DIVISION, 0);
++    public static final PrioritisedThreadPool.ExecutorGroup SERVER_REGION_IO_GROUP = IO_POOL.createExecutorGroup(SERVER_DIVISION, 0);
++
++    public static void haltExecutors() {
++        MoonriseCommon.WORKER_POOL.shutdown(false);
++        LOGGER.info("Awaiting termination of worker pool for up to 60s...");
++        if (!MoonriseCommon.WORKER_POOL.join(TimeUnit.SECONDS.toMillis(60L))) {
++            LOGGER.error("Worker pool did not shut down in time!");
++            MoonriseCommon.WORKER_POOL.halt(false);
++        }
++
++        MoonriseCommon.IO_POOL.shutdown(false);
++        LOGGER.info("Awaiting termination of I/O pool for up to 60s...");
++        if (!MoonriseCommon.IO_POOL.join(TimeUnit.SECONDS.toMillis(60L))) {
++            LOGGER.error("I/O pool did not shut down in time!");
++            MoonriseCommon.IO_POOL.halt(false);
++        }
+     }
+ 
+     private MoonriseCommon() {}
+diff --git a/src/main/java/ca/spottedleaf/moonrise/common/util/MoonriseConstants.java b/src/main/java/ca/spottedleaf/moonrise/common/util/MoonriseConstants.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/ca/spottedleaf/moonrise/common/util/MoonriseConstants.java
++++ b/src/main/java/ca/spottedleaf/moonrise/common/util/MoonriseConstants.java
+@@ -0,0 +0,0 @@
+ package ca.spottedleaf.moonrise.common.util;
+ 
++import ca.spottedleaf.moonrise.common.PlatformHooks;
++
+ public final class MoonriseConstants {
+ 
+-    public static final int MAX_VIEW_DISTANCE = 32;
++    public static final int MAX_VIEW_DISTANCE = Integer.getInteger(PlatformHooks.get().getBrand() + ".MaxViewDistance", 32);
+ 
+     private MoonriseConstants() {}
+ 
+diff --git a/src/main/java/ca/spottedleaf/moonrise/common/util/SimpleRandom.java b/src/main/java/ca/spottedleaf/moonrise/common/util/SimpleRandom.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/moonrise/common/util/SimpleRandom.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.moonrise.common.util;
++
++import net.minecraft.world.level.levelgen.LegacyRandomSource;
++
++/**
++ * Avoid costly CAS of superclass
++ */
++public final class SimpleRandom extends LegacyRandomSource {
++
++    private static final long MULTIPLIER = 25214903917L;
++    private static final long ADDEND = 11L;
++    private static final int BITS = 48;
++    private static final long MASK = (1L << BITS) - 1;
++
++    private long value;
++
++    public SimpleRandom(final long seed) {
++        super(0L);
++        this.value = seed;
++    }
++
++    @Override
++    public void setSeed(final long seed) {
++        this.value = (seed ^ MULTIPLIER) & MASK;
++    }
++
++    private long advanceSeed() {
++        return this.value = ((this.value * MULTIPLIER) + ADDEND) & MASK;
++    }
++
++    @Override
++    public int next(final int bits) {
++        return (int)(this.advanceSeed() >>> (BITS - bits));
++    }
++
++    @Override
++    public int nextInt() {
++        final long seed = this.advanceSeed();
++        return (int)(seed >>> (BITS - Integer.SIZE));
++    }
++
++    @Override
++    public int nextInt(final int bound) {
++        if (bound <= 0) {
++            throw new IllegalArgumentException();
++        }
++
++        // https://lemire.me/blog/2016/06/27/a-fast-alternative-to-the-modulo-reduction/
++        final long value = this.advanceSeed() >>> (BITS - Integer.SIZE);
++        return (int)((value * (long)bound) >>> Integer.SIZE);
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/moonrise/common/util/TickThread.java b/src/main/java/ca/spottedleaf/moonrise/common/util/TickThread.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/ca/spottedleaf/moonrise/common/util/TickThread.java
++++ b/src/main/java/ca/spottedleaf/moonrise/common/util/TickThread.java
+@@ -0,0 +0,0 @@ public class TickThread extends Thread {
+     }
+ 
+     public TickThread(final Runnable run, final String name) {
+-        this(run, name, ID_GENERATOR.incrementAndGet());
++        this(null, run, name);
+     }
+ 
+-    private TickThread(final Runnable run, final String name, final int id) {
+-        super(run, name);
++    public TickThread(final ThreadGroup group, final Runnable run, final String name) {
++        this(group, run, name, ID_GENERATOR.incrementAndGet());
++    }
++
++    private TickThread(final ThreadGroup group, final Runnable run, final String name, final int id) {
++        super(group, run, name);
+         this.id = id;
+     }
+ 
+diff --git a/src/main/java/ca/spottedleaf/moonrise/common/util/WorldUtil.java b/src/main/java/ca/spottedleaf/moonrise/common/util/WorldUtil.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/ca/spottedleaf/moonrise/common/util/WorldUtil.java
++++ b/src/main/java/ca/spottedleaf/moonrise/common/util/WorldUtil.java
+@@ -0,0 +0,0 @@ public final class WorldUtil {
+     // min, max are inclusive
+ 
+     public static int getMaxSection(final LevelHeightAccessor world) {
+-        return world.getMaxSection() - 1; // getMaxSection() is exclusive
++        return world.getMaxSectionY();
++    }
++
++    public static int getMaxSection(final Level world) {
++        return world.getMaxSectionY();
+     }
+ 
+     public static int getMinSection(final LevelHeightAccessor world) {
+-        return world.getMinSection();
++        return world.getMinSectionY();
++    }
++
++    public static int getMinSection(final Level world) {
++        return world.getMinSectionY();
+     }
+ 
+     public static int getMaxLightSection(final LevelHeightAccessor world) {
 diff --git a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
