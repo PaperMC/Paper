@@ -12,10 +12,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package ca.spottedleaf.moonrise.common;
 +
-+import ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder;
 +import com.mojang.datafixers.DataFixer;
 +import net.minecraft.core.BlockPos;
 +import net.minecraft.nbt.CompoundTag;
++import net.minecraft.server.level.ChunkHolder;
 +import net.minecraft.server.level.GenerationChunkHolder;
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.server.level.ServerPlayer;
@@ -56,7 +56,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public boolean allowAsyncTicketUpdates();
 +
-+    public void onChunkHolderTicketChange(final ServerLevel world, final NewChunkHolder holder, final int oldLevel, final int newLevel);
++    public void onChunkHolderTicketChange(final ServerLevel world, final ChunkHolder holder, final int oldLevel, final int newLevel);
 +
 +    public void chunkUnloadFromWorld(final LevelChunk chunk);
 +
@@ -694,11 +694,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -import ca.spottedleaf.concurrentutil.executor.standard.PrioritisedExecutor;
 +import ca.spottedleaf.concurrentutil.util.Priority;
 +import ca.spottedleaf.moonrise.common.PlatformHooks;
- import ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel;
- import ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkSystemLevelChunk;
- import ca.spottedleaf.moonrise.patches.chunk_system.player.RegionizedPlayerChunkLoader;
+ import com.mojang.logging.LogUtils;
+ import net.minecraft.server.level.ChunkHolder;
+ import net.minecraft.server.level.FullChunkStatus;
 @@ -0,0 +0,0 @@ public final class ChunkSystem {
-     private static final Logger LOGGER = LogUtils.getLogger();
+     }
  
      public static void scheduleChunkTask(final ServerLevel level, final int chunkX, final int chunkZ, final Runnable run) {
 -        scheduleChunkTask(level, chunkX, chunkZ, run, PrioritisedExecutor.Priority.NORMAL);
@@ -707,27 +707,47 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -    public static void scheduleChunkTask(final ServerLevel level, final int chunkX, final int chunkZ, final Runnable run, final PrioritisedExecutor.Priority priority) {
 +    public static void scheduleChunkTask(final ServerLevel level, final int chunkX, final int chunkZ, final Runnable run, final Priority priority) {
-         ((ChunkSystemServerLevel)level).moonrise$getChunkTaskScheduler().scheduleChunkTask(chunkX, chunkZ, run, priority);
+         level.chunkSource.mainThreadProcessor.execute(run);
      }
  
      public static void scheduleChunkLoad(final ServerLevel level, final int chunkX, final int chunkZ, final boolean gen,
 -                                         final ChunkStatus toStatus, final boolean addTicket, final PrioritisedExecutor.Priority priority,
 +                                         final ChunkStatus toStatus, final boolean addTicket, final Priority priority,
                                           final Consumer<ChunkAccess> onComplete) {
-         ((ChunkSystemServerLevel)level).moonrise$getChunkTaskScheduler().scheduleChunkLoad(chunkX, chunkZ, gen, toStatus, addTicket, priority, onComplete);
-     }
+         if (gen) {
+             scheduleChunkLoad(level, chunkX, chunkZ, toStatus, addTicket, priority, onComplete);
+@@ -0,0 +0,0 @@ public final class ChunkSystem {
  
+     private static long chunkLoadCounter = 0L;
      public static void scheduleChunkLoad(final ServerLevel level, final int chunkX, final int chunkZ, final ChunkStatus toStatus,
 -                                         final boolean addTicket, final PrioritisedExecutor.Priority priority, final Consumer<ChunkAccess> onComplete) {
 +                                         final boolean addTicket, final Priority priority, final Consumer<ChunkAccess> onComplete) {
-         ((ChunkSystemServerLevel)level).moonrise$getChunkTaskScheduler().scheduleChunkLoad(chunkX, chunkZ, toStatus, addTicket, priority, onComplete);
+         if (!org.bukkit.Bukkit.isPrimaryThread()) {
+             scheduleChunkTask(level, chunkX, chunkZ, () -> {
+                 scheduleChunkLoad(level, chunkX, chunkZ, toStatus, addTicket, priority, onComplete);
+@@ -0,0 +0,0 @@ public final class ChunkSystem {
+             }
+             loadCallback.accept(result.orElse(null));
+         }, (final Runnable r) -> {
+-            scheduleChunkTask(level, chunkX, chunkZ, r, PrioritisedExecutor.Priority.HIGHEST);
++            scheduleChunkTask(level, chunkX, chunkZ, r, Priority.HIGHEST);
+         });
      }
  
      public static void scheduleTickingState(final ServerLevel level, final int chunkX, final int chunkZ,
                                              final FullChunkStatus toStatus, final boolean addTicket,
 -                                            final PrioritisedExecutor.Priority priority, final Consumer<LevelChunk> onComplete) {
 +                                            final Priority priority, final Consumer<LevelChunk> onComplete) {
-         ((ChunkSystemServerLevel)level).moonrise$getChunkTaskScheduler().scheduleTickingState(chunkX, chunkZ, toStatus, addTicket, priority, onComplete);
+         // This method goes unused until the chunk system rewrite
+         if (toStatus == FullChunkStatus.INACCESSIBLE) {
+             throw new IllegalArgumentException("Cannot wait for INACCESSIBLE status");
+@@ -0,0 +0,0 @@ public final class ChunkSystem {
+             }
+             loadCallback.accept(result.orElse(null));
+         }, (final Runnable r) -> {
+-            scheduleChunkTask(level, chunkX, chunkZ, r, PrioritisedExecutor.Priority.HIGHEST);
++            scheduleChunkTask(level, chunkX, chunkZ, r, Priority.HIGHEST);
+         });
      }
  
 @@ -0,0 +0,0 @@ public final class ChunkSystem {
@@ -1002,6 +1022,211 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public static int getMaxLightSection(final LevelHeightAccessor world) {
+diff --git a/src/main/java/ca/spottedleaf/moonrise/paper/PaperHooks.java b/src/main/java/ca/spottedleaf/moonrise/paper/PaperHooks.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/moonrise/paper/PaperHooks.java
+@@ -0,0 +0,0 @@
++package ca.spottedleaf.moonrise.paper;
++
++import ca.spottedleaf.moonrise.common.PlatformHooks;
++import com.mojang.datafixers.DataFixer;
++import net.minecraft.core.BlockPos;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.server.level.ChunkHolder;
++import net.minecraft.server.level.GenerationChunkHolder;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.server.level.ServerPlayer;
++import net.minecraft.util.datafix.DataFixTypes;
++import net.minecraft.world.entity.Entity;
++import net.minecraft.world.level.BlockGetter;
++import net.minecraft.world.level.ChunkPos;
++import net.minecraft.world.level.Level;
++import net.minecraft.world.level.block.state.BlockState;
++import net.minecraft.world.level.chunk.ChunkAccess;
++import net.minecraft.world.level.chunk.LevelChunk;
++import net.minecraft.world.level.chunk.ProtoChunk;
++import net.minecraft.world.level.chunk.storage.SerializableChunkData;
++import net.minecraft.world.level.entity.EntityTypeTest;
++import net.minecraft.world.phys.AABB;
++import java.util.List;
++import java.util.function.Predicate;
++
++public final class PaperHooks implements PlatformHooks {
++
++    @Override
++    public String getBrand() {
++        return "Paper";
++    }
++
++    @Override
++    public int getLightEmission(final BlockState blockState, final BlockGetter world, final BlockPos pos) {
++        return blockState.getLightEmission();
++    }
++
++    @Override
++    public Predicate<BlockState> maybeHasLightEmission() {
++        return (final BlockState state) -> {
++            return state.getLightEmission() != 0;
++        };
++    }
++
++    @Override
++    public boolean hasCurrentlyLoadingChunk() {
++        return false;
++    }
++
++    @Override
++    public LevelChunk getCurrentlyLoadingChunk(final GenerationChunkHolder holder) {
++        return null;
++    }
++
++    @Override
++    public void setCurrentlyLoading(final GenerationChunkHolder holder, final LevelChunk levelChunk) {
++
++    }
++
++    @Override
++    public void chunkFullStatusComplete(final LevelChunk newChunk, final ProtoChunk original) {
++
++    }
++
++    @Override
++    public boolean allowAsyncTicketUpdates() {
++        return true;
++    }
++
++    @Override
++    public void onChunkHolderTicketChange(final ServerLevel world, final ChunkHolder holder, final int oldLevel, final int newLevel) {
++
++    }
++
++    @Override
++    public void chunkUnloadFromWorld(final LevelChunk chunk) {
++
++    }
++
++    @Override
++    public void chunkSyncSave(final ServerLevel world, final ChunkAccess chunk, final SerializableChunkData data) {
++
++    }
++
++    @Override
++    public void onChunkWatch(final ServerLevel world, final LevelChunk chunk, final ServerPlayer player) {
++
++    }
++
++    @Override
++    public void onChunkUnWatch(final ServerLevel world, final ChunkPos chunk, final ServerPlayer player) {
++
++    }
++
++    @Override
++    public void addToGetEntities(final Level world, final Entity entity, final AABB boundingBox, final Predicate<? super Entity> predicate, final List<Entity> into) {
++
++    }
++
++    @Override
++    public <T extends Entity> void addToGetEntities(final Level world, final EntityTypeTest<Entity, T> entityTypeTest, final AABB boundingBox, final Predicate<? super T> predicate, final List<? super T> into, final int maxCount) {
++
++    }
++
++    @Override
++    public void entityMove(final Entity entity, final long oldSection, final long newSection) {
++
++    }
++
++    @Override
++    public boolean screenEntity(final ServerLevel world, final Entity entity, final boolean fromDisk, final boolean event) {
++        return true;
++    }
++
++    @Override
++    public boolean configFixMC224294() {
++        return true;
++    }
++
++    @Override
++    public boolean configAutoConfigSendDistance() {
++
++    }
++
++    @Override
++    public double configPlayerMaxLoadRate() {
++
++    }
++
++    @Override
++    public double configPlayerMaxGenRate() {
++
++    }
++
++    @Override
++    public double configPlayerMaxSendRate() {
++
++    }
++
++    @Override
++    public int configPlayerMaxConcurrentLoads() {
++
++    }
++
++    @Override
++    public int configPlayerMaxConcurrentGens() {
++
++    }
++
++    @Override
++    public long configAutoSaveInterval() {
++
++    }
++
++    @Override
++    public int configMaxAutoSavePerTick() {
++
++    }
++
++    @Override
++    public boolean configFixMC159283() {
++        return true;
++    }
++
++    @Override
++    public boolean forceNoSave(final ChunkAccess chunk) {
++        return chunk instanceof LevelChunk levelChunk && levelChunk.mustNotSave;
++    }
++
++    @Override
++    public CompoundTag convertNBT(final DataFixTypes type, final DataFixer dataFixer, final CompoundTag nbt, final int fromVersion, final int toVersion) {
++        return type.update(dataFixer, nbt, fromVersion, toVersion);
++    }
++
++    @Override
++    public boolean hasMainChunkLoadHook() {
++        return false;
++    }
++
++    @Override
++    public void mainChunkLoad(final ChunkAccess chunk, final SerializableChunkData chunkData) {
++
++    }
++
++    @Override
++    public List<Entity> modifySavedEntities(final ServerLevel world, final int chunkX, final int chunkZ, final List<Entity> entities) {
++        return entities;
++    }
++
++    @Override
++    public void unloadEntity(final Entity entity) {
++        entity.setRemoved(Entity.RemovalReason.UNLOADED_TO_CHUNK, org.bukkit.event.entity.EntityRemoveEvent.Cause.UNLOAD);
++    }
++
++    @Override
++    public int modifyEntityTrackingRange(final Entity entity, final int currentRange) {
++        return org.spigotmc.TrackingRange.getEntityTrackingRange(entity, currentRange);
++    }
++}
 diff --git a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
@@ -1029,3 +1254,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
          // Paper end - chunk system hooks
          if (!this.addEntityUuid(entity)) {
+diff --git a/src/main/resources/META-INF/services/ca.spottedleaf.moonrise.common.PlatformHooks b/src/main/resources/META-INF/services/ca.spottedleaf.moonrise.common.PlatformHooks
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/resources/META-INF/services/ca.spottedleaf.moonrise.common.PlatformHooks
+@@ -0,0 +1 @@
++ca.spottedleaf.moonrise.paper.PaperHooks

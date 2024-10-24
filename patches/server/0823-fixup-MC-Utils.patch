@@ -1,0 +1,117 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Wed, 23 Oct 2024 22:13:41 -0700
+Subject: [PATCH] fixup! MC Utils
+
+
+diff --git a/src/main/java/ca/spottedleaf/moonrise/common/PlatformHooks.java b/src/main/java/ca/spottedleaf/moonrise/common/PlatformHooks.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/ca/spottedleaf/moonrise/common/PlatformHooks.java
++++ b/src/main/java/ca/spottedleaf/moonrise/common/PlatformHooks.java
+@@ -0,0 +0,0 @@
+ package ca.spottedleaf.moonrise.common;
+ 
++import com.mojang.datafixers.DSL;
+ import com.mojang.datafixers.DataFixer;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.nbt.CompoundTag;
+@@ -0,0 +0,0 @@ import net.minecraft.server.level.ChunkHolder;
+ import net.minecraft.server.level.GenerationChunkHolder;
+ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.server.level.ServerPlayer;
+-import net.minecraft.util.datafix.DataFixTypes;
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.level.BlockGetter;
+ import net.minecraft.world.level.ChunkPos;
+@@ -0,0 +0,0 @@ public interface PlatformHooks {
+     // support for CB chunk mustNotSave
+     public boolean forceNoSave(final ChunkAccess chunk);
+ 
+-    public CompoundTag convertNBT(final DataFixTypes type, final DataFixer dataFixer, final CompoundTag nbt,
++    public CompoundTag convertNBT(final DSL.TypeReference type, final DataFixer dataFixer, final CompoundTag nbt,
+                                   final int fromVersion, final int toVersion);
+ 
+     public boolean hasMainChunkLoadHook();
+@@ -0,0 +0,0 @@ public interface PlatformHooks {
+ 
+     public void unloadEntity(final Entity entity);
+ 
++    public void postLoadProtoChunk(final ServerLevel world, final ProtoChunk chunk);
++
+     public int modifyEntityTrackingRange(final Entity entity, final int currentRange);
+ 
+     public static final class Holder {
+diff --git a/src/main/java/ca/spottedleaf/moonrise/paper/PaperHooks.java b/src/main/java/ca/spottedleaf/moonrise/paper/PaperHooks.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/ca/spottedleaf/moonrise/paper/PaperHooks.java
++++ b/src/main/java/ca/spottedleaf/moonrise/paper/PaperHooks.java
+@@ -0,0 +0,0 @@
+ package ca.spottedleaf.moonrise.paper;
+ 
+ import ca.spottedleaf.moonrise.common.PlatformHooks;
++import com.mojang.datafixers.DSL;
+ import com.mojang.datafixers.DataFixer;
++import com.mojang.serialization.Dynamic;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.NbtOps;
+ import net.minecraft.server.level.ChunkHolder;
+ import net.minecraft.server.level.GenerationChunkHolder;
+ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.server.level.ServerPlayer;
+-import net.minecraft.util.datafix.DataFixTypes;
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.level.BlockGetter;
+ import net.minecraft.world.level.ChunkPos;
+@@ -0,0 +0,0 @@ public final class PaperHooks implements PlatformHooks {
+     }
+ 
+     @Override
+-    public CompoundTag convertNBT(final DataFixTypes type, final DataFixer dataFixer, final CompoundTag nbt, final int fromVersion, final int toVersion) {
+-        return type.update(dataFixer, nbt, fromVersion, toVersion);
++    public CompoundTag convertNBT(final DSL.TypeReference type, final DataFixer dataFixer, final CompoundTag nbt,
++                                  final int fromVersion, final int toVersion) {
++        return (CompoundTag)dataFixer.update(
++            type, new Dynamic<>(NbtOps.INSTANCE, nbt), fromVersion, toVersion
++        ).getValue();
+     }
+ 
+     @Override
+@@ -0,0 +0,0 @@ public final class PaperHooks implements PlatformHooks {
+         entity.setRemoved(Entity.RemovalReason.UNLOADED_TO_CHUNK, org.bukkit.event.entity.EntityRemoveEvent.Cause.UNLOAD);
+     }
+ 
++    @Override
++    public void postLoadProtoChunk(final ServerLevel world, final ProtoChunk chunk) {
++        net.minecraft.world.level.chunk.status.ChunkStatusTasks.postLoadProtoChunk(world, chunk.getEntities());
++    }
++
+     @Override
+     public int modifyEntityTrackingRange(final Entity entity, final int currentRange) {
+         return org.spigotmc.TrackingRange.getEntityTrackingRange(entity, currentRange);
+diff --git a/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java b/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
++++ b/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
+@@ -0,0 +0,0 @@ public class ChunkStatusTasks {
+         }, context.mainThreadExecutor());
+     }
+ 
+-    private static void postLoadProtoChunk(ServerLevel world, List<CompoundTag> entities) {
++    public static void postLoadProtoChunk(ServerLevel world, List<CompoundTag> entities) { // Paper - public
+         if (!entities.isEmpty()) {
+             // CraftBukkit start - these are spawned serialized (DefinedStructure) and we don't call an add event below at the moment due to ordering complexities
+             world.addWorldGenChunkEntities(EntityType.loadEntitiesRecursive(entities, world, EntitySpawnReason.LOAD).filter((entity) -> {
+diff --git a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
++++ b/src/main/java/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
+@@ -0,0 +0,0 @@ public class PersistentEntitySectionManager<T extends EntityAccess> implements A
+         // I don't want to know why this is a generic type.
+         Entity entityCasted = (Entity)entity;
+         boolean wasRemoved = entityCasted.isRemoved();
+-        boolean screened = ca.spottedleaf.moonrise.common.util.ChunkSystem.screenEntity((net.minecraft.server.level.ServerLevel)entityCasted.level(), entityCasted, existing, false);
++        boolean screened = ca.spottedleaf.moonrise.common.util.ChunkSystem.screenEntity((net.minecraft.server.level.ServerLevel)entityCasted.level(), entityCasted, existing, true);
+         if ((!wasRemoved && entityCasted.isRemoved()) || !screened) {
+             // removed by callback
+             return false;

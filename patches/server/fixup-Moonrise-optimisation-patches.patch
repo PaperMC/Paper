@@ -371,27 +371,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import net.minecraft.SharedConstants;
  import net.minecraft.nbt.CompoundTag;
  import net.minecraft.nbt.Tag;
+ import net.minecraft.server.level.ServerLevel;
+-import net.minecraft.util.datafix.DataFixTypes;
++import net.minecraft.util.datafix.fixes.References;
+ 
+ public final class ChunkSystemConverters {
+ 
 @@ -0,0 +0,0 @@ public final class ChunkSystemConverters {
      public static CompoundTag convertPoiCompoundTag(final CompoundTag data, final ServerLevel world) {
          final int dataVersion = getDataVersion(data, DEFAULT_POI_DATA_VERSION);
  
--        // Paper start - dataconverter
--        return ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(
--            ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.POI_CHUNK, data, dataVersion, getCurrentVersion()
--        );
--        // Paper end - dataconverter
-+        return PlatformHooks.get().convertNBT(DataFixTypes.POI_CHUNK, world.getServer().getFixerUpper(), data, dataVersion, getCurrentVersion());
+-        return DataFixTypes.POI_CHUNK.update(world.getServer().getFixerUpper(), data, dataVersion, getCurrentVersion());
++        return PlatformHooks.get().convertNBT(References.POI_CHUNK, world.getServer().getFixerUpper(), data, dataVersion, getCurrentVersion());
      }
  
      public static CompoundTag convertEntityChunkCompoundTag(final CompoundTag data, final ServerLevel world) {
          final int dataVersion = getDataVersion(data, DEFAULT_ENTITY_CHUNK_DATA_VERSION);
  
--        // Paper start - dataconverter
--        return ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(
--            ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.ENTITY_CHUNK, data, dataVersion, getCurrentVersion()
--        );
--        // Paper end - dataconverter
-+        return PlatformHooks.get().convertNBT(DataFixTypes.ENTITY_CHUNK, world.getServer().getFixerUpper(), data, dataVersion, getCurrentVersion());
+-        return DataFixTypes.ENTITY_CHUNK.update(world.getServer().getFixerUpper(), data, dataVersion, getCurrentVersion());
++        return PlatformHooks.get().convertNBT(References.ENTITY_CHUNK, world.getServer().getFixerUpper(), data, dataVersion, getCurrentVersion());
      }
  
      private ChunkSystemConverters() {}
@@ -3902,18 +3900,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
          final ListTag entitiesTag = new ListTag();
--        final java.util.Map<net.minecraft.world.entity.EntityType<?>, Integer> savedEntityCounts = new java.util.HashMap<>(); // Paper - Entity load/save limit per chunk
 -        for (final Entity entity : entities) {
--            // Paper start - Entity load/save limit per chunk
--            final EntityType<?> entityType = entity.getType();
--            final int saveLimit = world.paperConfig().chunks.entityPerChunkSaveLimit.getOrDefault(entityType, -1);
--            if (saveLimit > -1) {
--                if (savedEntityCounts.getOrDefault(entityType, 0) >= saveLimit) {
--                    continue;
--                }
--                savedEntityCounts.merge(entityType, 1, Integer::sum);
--            }
--            // Paper end - Entity load/save limit per chunk
 +        for (final Entity entity : PlatformHooks.get().modifySavedEntities(world, chunkPos.x, chunkPos.z, entities)) {
              CompoundTag compoundTag = new CompoundTag();
              if (entity.save(compoundTag)) {
@@ -3964,9 +3951,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    }
 -    // Paper end
 -
-     private List<Entity> getAllEntities() {
+-    private List<Entity> getAllEntities() {
++    public List<Entity> getAllEntities() {
          final int len = this.entities.size();
          if (len == 0) {
+             return new ArrayList<>();
 @@ -0,0 +0,0 @@ public final class ChunkEntitySlices {
              return false;
          }
@@ -4426,15 +4415,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.player.connection.send(this.updateClientChunkRadius(sendViewDistance));
              this.player.connection.send(this.updateClientSimulationDistance(tickViewDistance));
 @@ -0,0 +0,0 @@ public final class RegionizedPlayerChunkLoader {
+ 
              // now all tickets should be removed, which is all of our external state
          }
- 
--        // For external checks
--        public it.unimi.dsi.fastutil.longs.LongOpenHashSet getSentChunksRaw() {
++
 +        public LongOpenHashSet getSentChunksRaw() {
-             return this.sentChunks;
-         }
++            return this.sentChunks;
++        }
      }
+ }
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
@@ -6210,7 +6199,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  final ProtoChunk protoChunk = (ProtoChunk)this.fromChunk;
                  chunk = new LevelChunk(this.world, protoChunk, (final LevelChunk unused) -> {
 -                    ChunkStatusTasks.postLoadProtoChunk(world, protoChunk.getEntities(), protoChunk.getPos()); // Paper - pass chunk pos
-+                    ChunkStatusTasks.postLoadProtoChunk(world, protoChunk.getEntities());
++                    PlatformHooks.get().postLoadProtoChunk(world, protoChunk);
                  });
                  this.chunkHolder.replaceProtoChunk(new ImposterProtoChunk(chunk, false));
              }
@@ -10001,8 +9990,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/core/MappedRegistry.java
 +++ b/src/main/java/net/minecraft/core/MappedRegistry.java
 @@ -0,0 +0,0 @@ public class MappedRegistry<T> implements WritableRegistry<T> {
-     };
-     private final Object tagAdditionLock = new Object();
+         return this.getTags();
+     }
  
 +    // Paper start - fluid method optimisations
 +    private void injectFluidRegister(
@@ -10021,21 +10010,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this(key, lifecycle, false);
      }
 @@ -0,0 +0,0 @@ public class MappedRegistry<T> implements WritableRegistry<T> {
-         this.toId.put(value, i);
-         this.registrationInfos.put(key, info);
-         this.registryLifecycle = this.registryLifecycle.add(info.lifecycle());
-+        this.injectFluidRegister(key, value); // Paper - fluid method optimisations
-         return reference;
+             this.toId.put(value, i);
+             this.registrationInfos.put(key, info);
+             this.registryLifecycle = this.registryLifecycle.add(info.lifecycle());
++            this.injectFluidRegister(key, value); // Paper - fluid method optimisations
+             return reference;
+         }
      }
- 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         }
          // Spigot end
  
-         // Paper end - Improved watchdog support; move final shutdown items here
 -        ca.spottedleaf.moonrise.patches.chunk_system.io.RegionFileIOThread.deinit(); // Paper - rewrite chunk system
 +        // Paper start - rewrite chunk system
 +        LOGGER.info("Waiting for I/O tasks to complete...");
@@ -10045,22 +10034,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            ca.spottedleaf.moonrise.common.util.MoonriseCommon.haltExecutors();
 +        }
 +        // Paper end - rewrite chunk system
-         // Paper start - move final shutdown items here
-         Util.shutdownExecutors();
-         try {
+     }
+ 
+     public String getLocalIp() {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -0,0 +0,0 @@ public class ChunkHolder extends GenerationChunkHolder implements ca.spottedleaf
- 
-         if (ichunkaccess != null) {
-             ichunkaccess.setUnsaved(true);
+             return false;
+         } else {
+             ichunkaccess.markUnsaved();
 -            LevelChunk chunk = this.getChunkToSend(); // Paper - rewrite chunk system
 +            LevelChunk chunk = this.playersSentChunkTo.size() == 0 ? null : this.getChunkToSend(); // Paper - rewrite chunk system
  
-             if (chunk != null) {
-                 int j = this.lightEngine.getMinLightSection();
+             if (chunk == null) {
+                 return false;
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
@@ -10224,7 +10213,7 @@ diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/mai
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
      }
  
      // Paper start - optimise random ticking
@@ -10240,7 +10229,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          final ChunkPos cpos = chunk.getPos();
          final int offsetX = cpos.x << 4;
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
              final int offsetY = (sectionIndex + minSection) << 4;
              final LevelChunkSection section = sections[sectionIndex];
              final net.minecraft.world.level.chunk.PalettedContainer<net.minecraft.world.level.block.state.BlockState> states = section.states;
@@ -10289,7 +10278,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      }
                  }
              }
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
      // Paper end - optimise random ticking
  
      public void tickChunk(LevelChunk chunk, int randomTickSpeed) {
@@ -10297,8 +10286,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          ChunkPos chunkcoordintpair = chunk.getPos();
          boolean flag = this.isRaining();
          int j = chunkcoordintpair.getMinBlockX();
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
-         ProfilerFiller gameprofilerfiller = this.getProfiler();
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+         ProfilerFiller gameprofilerfiller = Profiler.get();
  
          gameprofilerfiller.push("thunder");
 -        if (!this.paperConfig().environment.disableThunder && flag && this.isThundering() && this.spigotConfig.thunderChance > 0 && this.random.nextInt(this.spigotConfig.thunderChance) == 0) { // Spigot // Paper - Option to disable thunder
@@ -10306,7 +10295,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              BlockPos blockposition = this.findLightningTargetAround(this.getBlockRandomPos(j, 0, k, 15));
  
              if (this.isRainingAt(blockposition)) {
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
  
          if (!this.paperConfig().environment.disableIceAndSnow) { // Paper - Option to disable ice and snow
          for (int l = 0; l < randomTickSpeed; ++l) {
@@ -10935,11 +10924,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                                if (collisionShape.isEmpty()) {
 +                                    continue;
 +                                }
++
++                                final AABB toCollide = boundingBox.move(-(double)blockX, -(double)blockY, -(double)blockZ);
  
 -                    if (ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.voxelShapeIntersectNoEmpty(collisionShape, toCollide)) {
 -                        return true;
-+                                final AABB toCollide = boundingBox.move(-(double)blockX, -(double)blockY, -(double)blockZ);
-+
 +                                final AABB singleAABB = ((ca.spottedleaf.moonrise.patches.collisions.shape.CollisionVoxelShape)collisionShape).moonrise$getSingleAABBRepresentation();
 +                                if (singleAABB != null) {
 +                                    if (ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.voxelShapeIntersect(singleAABB, toCollide)) {
@@ -10982,32 +10971,36 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            Vec3 vec3d = Vec3.ZERO;
 -            int k1 = 0;
 -            BlockPos.MutableBlockPos blockposition_mutableblockposition = new BlockPos.MutableBlockPos();
-+        }
- 
+-
 -            for (int l1 = i; l1 < j; ++l1) {
 -                for (int i2 = k; i2 < l; ++i2) {
 -                    for (int j2 = i1; j2 < j1; ++j2) {
 -                        blockposition_mutableblockposition.set(l1, i2, j2);
 -                        FluidState fluid = this.level().getFluidState(blockposition_mutableblockposition);
-+        final AABB boundingBox = this.getBoundingBox().deflate(1.0E-3);
- 
+-
 -                        if (fluid.is(tag)) {
 -                            double d2 = (double) ((float) i2 + fluid.getHeight(this.level(), blockposition_mutableblockposition));
-+        final Level world = this.level;
-+        final int minSection = ca.spottedleaf.moonrise.common.util.WorldUtil.getMinSection(world);
- 
+-
 -                            if (d2 >= axisalignedbb.minY) {
 -                                flag1 = true;
 -                                d1 = Math.max(d2 - axisalignedbb.minY, d1);
 -                                if (flag) {
 -                                    Vec3 vec3d1 = fluid.getFlow(this.level(), blockposition_mutableblockposition);
-+        final int minBlockX = Mth.floor(boundingBox.minX);
-+        final int minBlockY = Math.max((minSection << 4), Mth.floor(boundingBox.minY));
-+        final int minBlockZ = Mth.floor(boundingBox.minZ);
- 
+-
 -                                    if (d1 < 0.4D) {
 -                                        vec3d1 = vec3d1.scale(d1);
 -                                    }
++        }
++
++        final AABB boundingBox = this.getBoundingBox().deflate(1.0E-3);
++
++        final Level world = this.level;
++        final int minSection = ca.spottedleaf.moonrise.common.util.WorldUtil.getMinSection(world);
++
++        final int minBlockX = Mth.floor(boundingBox.minX);
++        final int minBlockY = Math.max((minSection << 4), Mth.floor(boundingBox.minY));
++        final int minBlockZ = Mth.floor(boundingBox.minZ);
++
 +        // note: bounds are exclusive in Vanilla, so we subtract 1 - our loop expects bounds to be inclusive
 +        final int maxBlockX = Mth.ceil(boundingBox.maxX) - 1;
 +        final int maxBlockY = Math.min((ca.spottedleaf.moonrise.common.util.WorldUtil.getMaxSection(world) << 4) | 15, Mth.ceil(boundingBox.maxY) - 1);
@@ -11015,9 +11008,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        final boolean isPushable = this.isPushedByFluid();
 +        final BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
- 
--                                    vec3d = vec3d.add(vec3d1);
--                                    ++k1;
++
 +        Vec3 pushVector = Vec3.ZERO;
 +        double totalPushes = 0.0;
 +        double maxHeightDiff = 0.0;
@@ -11037,7 +11028,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        for (int currChunkZ = minChunkZ; currChunkZ <= maxChunkZ; ++currChunkZ) {
 +            for (int currChunkX = minChunkX; currChunkX <= maxChunkX; ++currChunkX) {
 +                final net.minecraft.world.level.chunk.LevelChunkSection[] sections = chunkSource.getChunk(currChunkX, currChunkZ, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, false).getSections();
-+
+ 
+-                                    vec3d = vec3d.add(vec3d1);
+-                                    ++k1;
 +                // bound y
 +                for (int currChunkY = minChunkY; currChunkY <= maxChunkY; ++currChunkY) {
 +                    final int sectionIdx = currChunkY - minSection;
@@ -11066,10 +11059,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +                                if (fluidState.isEmpty() || !fluidState.is(fluid)) {
 +                                    continue;
-                                 }
--                                // CraftBukkit start - store last lava contact location
--                                if (tag == FluidTags.LAVA) {
--                                    this.lastLavaContact = blockposition_mutableblockposition.immutable();
++                                }
 +
 +                                mutablePos.set(currX | (currChunkX << 4), currY | (currChunkY << 4), currZ | (currChunkZ << 4));
 +
@@ -11085,7 +11075,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +                                if (!isPushable) {
 +                                    continue;
-+                                }
+                                 }
+-                                // CraftBukkit start - store last lava contact location
+-                                if (tag == FluidTags.LAVA) {
+-                                    this.lastLavaContact = blockposition_mutableblockposition.immutable();
 +
 +                                ++totalPushes;
 +
@@ -11154,7 +11147,7 @@ diff --git a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
-@@ -0,0 +0,0 @@ public class PoiManager extends SectionStorage<PoiSection> implements ca.spotted
+@@ -0,0 +0,0 @@ public class PoiManager extends SectionStorage<PoiSection, PoiSection.Packed> im
  
          ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(this.world, chunkX, chunkZ, "Accessing poi chunk off-main");
  
@@ -11164,7 +11157,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          return ret == null ? Optional.empty() : ret.getSectionForVanilla(chunkY);
      }
-@@ -0,0 +0,0 @@ public class PoiManager extends SectionStorage<PoiSection> implements ca.spotted
+@@ -0,0 +0,0 @@ public class PoiManager extends SectionStorage<PoiSection, PoiSection.Packed> im
      public final void moonrise$onUnload(final long coordinate) { // Paper - rewrite chunk system
          final int chunkX = ca.spottedleaf.moonrise.common.util.CoordinateUtils.getChunkX(coordinate);
          final int chunkZ = ca.spottedleaf.moonrise.common.util.CoordinateUtils.getChunkZ(coordinate);
@@ -11180,7 +11173,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.updateDistanceTracking(sectionPos);
          }
      }
-@@ -0,0 +0,0 @@ public class PoiManager extends SectionStorage<PoiSection> implements ca.spotted
+@@ -0,0 +0,0 @@ public class PoiManager extends SectionStorage<PoiSection, PoiSection.Packed> im
      public final void moonrise$loadInPoiChunk(final ca.spottedleaf.moonrise.patches.chunk_system.level.poi.PoiChunk poiChunk) {
          final int chunkX = poiChunk.chunkX;
          final int chunkZ = poiChunk.chunkZ;
@@ -11194,35 +11187,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              final PoiSection section = poiChunk.getSection(sectionY);
              if (section != null && !((ca.spottedleaf.moonrise.patches.chunk_system.level.poi.ChunkSystemPoiSection)section).moonrise$isEmpty()) {
                  this.onSectionLoad(SectionPos.asLong(chunkX, sectionY, chunkZ));
-@@ -0,0 +0,0 @@ public class PoiManager extends SectionStorage<PoiSection> implements ca.spotted
- 
-     @Override
-     public final net.minecraft.nbt.CompoundTag moonrise$read(final int chunkX, final int chunkZ) throws java.io.IOException {
--        if (!ca.spottedleaf.moonrise.patches.chunk_system.io.RegionFileIOThread.isRegionFileThread()) {
--            return ca.spottedleaf.moonrise.patches.chunk_system.io.RegionFileIOThread.loadData(
--                this.world, chunkX, chunkZ, ca.spottedleaf.moonrise.patches.chunk_system.io.RegionFileIOThread.RegionFileType.POI_DATA,
--                ca.spottedleaf.moonrise.patches.chunk_system.io.RegionFileIOThread.getIOBlockingPriorityForCurrentThread()
--            );
--        }
--        return this.moonrise$getRegionStorage().read(new ChunkPos(chunkX, chunkZ));
-+        return ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.loadData(
-+            this.world, chunkX, chunkZ, ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionFileType.POI_DATA,
-+            ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.getIOBlockingPriorityForCurrentThread()
-+        );
-     }
- 
-     @Override
-     public final void moonrise$write(final int chunkX, final int chunkZ, final net.minecraft.nbt.CompoundTag data) throws java.io.IOException {
--        if (!ca.spottedleaf.moonrise.patches.chunk_system.io.RegionFileIOThread.isRegionFileThread()) {
--            ca.spottedleaf.moonrise.patches.chunk_system.io.RegionFileIOThread.scheduleSave(this.world, chunkX, chunkZ, data, ca.spottedleaf.moonrise.patches.chunk_system.io.RegionFileIOThread.RegionFileType.POI_DATA);
--            return;
--        }
--        this.moonrise$getRegionStorage().write(new ChunkPos(chunkX, chunkZ), data);
-+        ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.scheduleSave(this.world, chunkX, chunkZ, data, ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionFileType.POI_DATA);
-     }
-     // Paper end - rewrite chunk system
- 
-@@ -0,0 +0,0 @@ public class PoiManager extends SectionStorage<PoiSection> implements ca.spotted
+@@ -0,0 +0,0 @@ public class PoiManager extends SectionStorage<PoiSection, PoiSection.Packed> im
      }
  
      public int sectionsToVillage(SectionPos pos) {
@@ -11240,7 +11205,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiSection.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiSection.java
 @@ -0,0 +0,0 @@ public class PoiSection implements ca.spottedleaf.moonrise.patches.chunk_system.
-     }
+     private boolean isValid;
  
      // Paper start - rewrite chunk system
 -    private final Optional<PoiSection> noAllocOptional = Optional.of((PoiSection)(Object)this);;
@@ -11387,12 +11352,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                    lastChunk = (LevelChunk)chunkSource.getChunk(newChunkX, newChunkZ, ChunkStatus.FULL, false);
 -                }
 +        final ChunkSource chunkSource = this.getChunkSource();
-+
+ 
+-                if (lastChunk == null) {
 +        for (int currChunkZ = minChunkZ; currChunkZ <= maxChunkZ; ++currChunkZ) {
 +            for (int currChunkX = minChunkX; currChunkX <= maxChunkX; ++currChunkX) {
 +                final ChunkAccess chunk = chunkSource.getChunk(currChunkX, currChunkZ, ChunkStatus.FULL, false);
- 
--                if (lastChunk == null) {
++
 +                if (chunk == null) {
                      continue;
                  }
@@ -11615,7 +11580,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      // Paper end - optimise random ticking
  
-     protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, java.util.concurrent.Executor executor) { // Paper - create paper world config & Anti-Xray
+     protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator) { // Paper - create paper world config
 +        // Paper start - getblock optimisations - cache world height/sections
 +        final DimensionType dimType = holder.value();
 +        this.minY = dimType.minY();
@@ -11628,6 +11593,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
          this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper - create paper world config
          this.generator = gen;
+@@ -0,0 +0,0 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+         if (slices == null) {
+             return new org.bukkit.entity.Entity[0];
+         }
+-        return slices.getChunkEntities();
++
++        List<org.bukkit.entity.Entity> ret = new java.util.ArrayList<>();
++        for (Entity entity : slices.getAllEntities()) {
++            org.bukkit.entity.Entity bukkit = entity.getBukkitEntity();
++            if (bukkit != null && bukkit.isValid()) {
++                ret.add(bukkit);
++            }
++        }
++
++        return ret.toArray(new org.bukkit.entity.Entity[0]);
+     }
+     // Paper end - rewrite chunk system
+ 
 diff --git a/src/main/java/net/minecraft/world/level/biome/BiomeManager.java b/src/main/java/net/minecraft/world/level/biome/BiomeManager.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/biome/BiomeManager.java
@@ -11647,7 +11630,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 @@ -0,0 +0,0 @@ public abstract class BlockBehaviour implements FeatureElement {
-         private boolean isRandomlyTicking;
+         private int lightBlock;
  
          // Paper start - rewrite chunk system
 -        private int opacityIfCached;
@@ -11719,7 +11702,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          protected BlockStateBase(Block block, Reference2ObjectArrayMap<Property<?>, Comparable<?>> propertyMap, MapCodec<BlockState> codec) {
 @@ -0,0 +0,0 @@ public abstract class BlockBehaviour implements FeatureElement {
-             this.legacySolid = this.calculateSolid();
+             this.lightBlock = ((Block) this.owner).getLightBlock(this.asState());
              // Paper start - rewrite chunk system
              this.isConditionallyFullOpaque = this.canOcclude & this.useShapeForLightOcclusion;
 -            this.opacityIfCached = this.cache == null || this.isConditionallyFullOpaque ? -1 : this.cache.lightBlock;
@@ -11790,8 +11773,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      };
      protected final O owner;
 -    private final Reference2ObjectArrayMap<Property<?>, Comparable<?>> values;
-+    private Reference2ObjectArrayMap<Property<?>, Comparable<?>> values; // Paper - optimise blockstate property access - remove final
-     private Table<Property<?>, Comparable<?>, S> neighbours;
++    private Reference2ObjectArrayMap<Property<?>, Comparable<?>> values;  // Paper - optimise blockstate property access - remove final
+     private Map<Property<?>, S[]> neighbours;
      protected final MapCodec<S> propertiesCodec;
  
 +    // Paper start - optimise blockstate property access
@@ -11845,21 +11828,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public <T extends Comparable<T>> Optional<T> getOptionalValue(Property<T> property) {
 @@ -0,0 +0,0 @@ public abstract class StateHolder<O, S> {
+ 
+     @Nullable
+     public <T extends Comparable<T>> T getNullableValue(Property<T> property) {
+-        Comparable<?> comparable = this.values.get(property);
+-        return comparable == null ? null : property.getValueClass().cast(comparable);
++        return property == null ? null : this.optimisedTable.get(this.tableIndex, property); // Paper - optimise blockstate property access
      }
  
      public <T extends Comparable<T>, V extends T> S setValue(Property<T> property, V value) {
 -        Comparable<?> comparable = this.values.get(property);
 -        if (comparable == null) {
 -            throw new IllegalArgumentException("Cannot set property " + property + " as it does not exist in " + this.owner);
--        } else if (comparable.equals(value)) {
--            return (S)this;
 -        } else {
--            S object = this.neighbours.get(property, value);
--            if (object == null) {
--                throw new IllegalArgumentException("Cannot set property " + property + " to " + value + " on " + this.owner + ", it is not an allowed value");
--            } else {
--                return object;
--            }
+-            return this.setValueInternal(property, value, comparable);
 +        // Paper start - optimise blockstate property access
 +        final S ret = this.optimisedTable.set(this.tableIndex, property, value);
 +        if (ret != null) {
@@ -11871,19 +11853,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public <T extends Comparable<T>, V extends T> S trySetValue(Property<T> property, V value) {
 -        Comparable<?> comparable = this.values.get(property);
--        if (comparable != null && !comparable.equals(value)) {
--            S object = this.neighbours.get(property, value);
--            if (object == null) {
--                throw new IllegalArgumentException("Cannot set property " + property + " to " + value + " on " + this.owner + ", it is not an allowed value");
--            } else {
--                return object;
--            }
--        } else {
--            return (S)this;
+-        return (S)(comparable == null ? this : this.setValueInternal(property, value, comparable));
 +        // Paper start - optimise blockstate property access
 +        if (property == null) {
 +            return (S)(StateHolder<O, S>)(Object)this;
-         }
++        }
 +        final S ret = this.optimisedTable.trySet(this.tableIndex, property, value, (S)(StateHolder<O, S>)(Object)this);
 +        if (ret != null) {
 +            return ret;
@@ -11892,33 +11866,44 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end - optimise blockstate property access
      }
  
+     private <T extends Comparable<T>, V extends T> S setValueInternal(Property<T> property, V newValue, Comparable<?> oldValue) {
+@@ -0,0 +0,0 @@ public abstract class StateHolder<O, S> {
+     }
+ 
      public void populateNeighbours(Map<Map<Property<?>, Comparable<?>>, S> states) {
+-        if (this.neighbours != null) {
+-            throw new IllegalStateException();
+-        } else {
+-            Map<Property<?>, S[]> map = new Reference2ObjectArrayMap<>(this.values.size());
 +        // Paper start - optimise blockstate property access
 +        final Map<Map<Property<?>, Comparable<?>>, S> map = states;
-+        if (true) {
-+            if (this.optimisedTable.isLoaded()) {
-+                return;
-+            }
-+            this.optimisedTable.loadInTable(map);
-+
-+            // de-duplicate the tables
-+            for (final Map.Entry<Map<Property<?>, Comparable<?>>, S> entry : map.entrySet()) {
-+                final S value = entry.getValue();
-+                ((StateHolder<O, S>)value).optimisedTable = this.optimisedTable;
-+            }
-+
-+            // remove values arrays
-+            for (final Map.Entry<Map<Property<?>, Comparable<?>>, S> entry : map.entrySet()) {
-+                final S value = entry.getValue();
-+                ((StateHolder<O, S>)value).values = null;
-+            }
-+
++        if (this.optimisedTable.isLoaded()) {
 +            return;
 +        }
-+        // Paper end - optimise blockstate property access
-         if (this.neighbours != null) {
-             throw new IllegalStateException();
-         } else {
++        this.optimisedTable.loadInTable(map);
+ 
+-            for (Entry<Property<?>, Comparable<?>> entry : this.values.entrySet()) {
+-                Property<?> property = entry.getKey();
+-                map.put(property, property.getPossibleValues().stream().map(value -> states.get(this.makeNeighbourValues(property, value))).toArray());
+-            }
++        // de-duplicate the tables
++        for (final Map.Entry<Map<Property<?>, Comparable<?>>, S> entry : map.entrySet()) {
++            final S value = entry.getValue();
++            ((StateHolder<O, S>)value).optimisedTable = this.optimisedTable;
++        }
+ 
+-            this.neighbours = map;
++        // remove values arrays
++        for (final Map.Entry<Map<Property<?>, Comparable<?>>, S> entry : map.entrySet()) {
++            final S value = entry.getValue();
++            ((StateHolder<O, S>)value).values = null;
+         }
++
++        return;
++        // Paper end  optimise blockstate property access
+     }
+ 
+     private Map<Property<?>, Comparable<?>> makeNeighbourValues(Property<?> property, Comparable<?> value) {
 @@ -0,0 +0,0 @@ public abstract class StateHolder<O, S> {
      }
  
@@ -11936,13 +11921,15 @@ diff --git a/src/main/java/net/minecraft/world/level/block/state/properties/Bool
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/properties/BooleanProperty.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/properties/BooleanProperty.java
-@@ -0,0 +0,0 @@ import com.google.common.collect.ImmutableSet;
- import java.util.Collection;
+@@ -0,0 +0,0 @@ package net.minecraft.world.level.block.state.properties;
+ import java.util.List;
  import java.util.Optional;
  
--public class BooleanProperty extends Property<Boolean> {
-+public class BooleanProperty extends Property<Boolean> implements ca.spottedleaf.moonrise.patches.blockstate_propertyaccess.PropertyAccess<Boolean> { // Paper - optimise blockstate property access
-     private final ImmutableSet<Boolean> values = ImmutableSet.of(true, false);
+-public final class BooleanProperty extends Property<Boolean> {
++public final class BooleanProperty extends Property<Boolean> implements ca.spottedleaf.moonrise.patches.blockstate_propertyaccess.PropertyAccess<Boolean> { // Paper - optimise blockstate property access
+     private static final List<Boolean> VALUES = List.of(true, false);
+     private static final int TRUE_INDEX = 0;
+     private static final int FALSE_INDEX = 1;
  
 +    // Paper start - optimise blockstate property access
 +    private static final Boolean[] BY_ID = new Boolean[]{ Boolean.FALSE, Boolean.TRUE };
@@ -11953,7 +11940,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - optimise blockstate property access
 +
-     protected BooleanProperty(String name) {
+     private BooleanProperty(String name) {
          super(name, Boolean.class);
 +        this.moonrise$setById(BY_ID); // Paper - optimise blockstate property access
      }
@@ -11967,10 +11954,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import java.util.stream.Collectors;
  import net.minecraft.util.StringRepresentable;
  
--public class EnumProperty<T extends Enum<T> & StringRepresentable> extends Property<T> {
-+public class EnumProperty<T extends Enum<T> & StringRepresentable> extends Property<T> implements ca.spottedleaf.moonrise.patches.blockstate_propertyaccess.PropertyAccess<T> { // Paper - optimise blockstate property access
-     private final ImmutableSet<T> values;
-     private final Map<String, T> names = Maps.newHashMap();
+-public final class EnumProperty<T extends Enum<T> & StringRepresentable> extends Property<T> {
++public final class EnumProperty<T extends Enum<T> & StringRepresentable> extends Property<T> implements ca.spottedleaf.moonrise.patches.blockstate_propertyaccess.PropertyAccess<T> { // Paper - optimise blockstate property access
+     private final List<T> values;
+     private final Map<String, T> names;
+     private final int[] ordinalToIndex;
  
 +    // Paper start - optimise blockstate property access
 +    private int[] idLookupTable;
@@ -11982,7 +11970,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    private void init() {
-+        final Collection<T> values = this.getPossibleValues();
++        final java.util.Collection<T> values = this.getPossibleValues();
 +        final Class<T> clazz = this.getValueClass();
 +
 +        int id = 0;
@@ -12000,12 +11988,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - optimise blockstate property access
 +
-     protected EnumProperty(String name, Class<T> type, Collection<T> values) {
+     private EnumProperty(String name, Class<T> type, List<T> values) {
          super(name, type);
-         this.values = ImmutableSet.copyOf(values);
-@@ -0,0 +0,0 @@ public class EnumProperty<T extends Enum<T> & StringRepresentable> extends Prope
+         if (values.isEmpty()) {
+@@ -0,0 +0,0 @@ public final class EnumProperty<T extends Enum<T> & StringRepresentable> extends
  
-             this.names.put(string, enum_);
+             this.names = builder.buildOrThrow();
          }
 +        this.init(); // Paper - optimise blockstate property access
      }
@@ -12015,13 +12003,13 @@ diff --git a/src/main/java/net/minecraft/world/level/block/state/properties/Inte
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/properties/IntegerProperty.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/properties/IntegerProperty.java
-@@ -0,0 +0,0 @@ import java.util.Collection;
+@@ -0,0 +0,0 @@ import java.util.List;
  import java.util.Optional;
- import java.util.Set;
+ import java.util.stream.IntStream;
  
--public class IntegerProperty extends Property<Integer> {
-+public class IntegerProperty extends Property<Integer> implements ca.spottedleaf.moonrise.patches.blockstate_propertyaccess.PropertyAccess<Integer> { // Paper - optimise blockstate property access
-     private final ImmutableSet<Integer> values;
+-public final class IntegerProperty extends Property<Integer> {
++public final class IntegerProperty extends Property<Integer> implements ca.spottedleaf.moonrise.patches.blockstate_propertyaccess.PropertyAccess<Integer> { // Paper - optimise blockstate property access
+     private final IntImmutableList values;
      public final int min;
      public final int max;
  
@@ -12047,12 +12035,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - optimise blockstate property access
 +
-     protected IntegerProperty(String name, int min, int max) {
+     private IntegerProperty(String name, int min, int max) {
          super(name, Integer.class);
          if (min < 0) {
-@@ -0,0 +0,0 @@ public class IntegerProperty extends Property<Integer> {
- 
-             this.values = ImmutableSet.copyOf(set);
+@@ -0,0 +0,0 @@ public final class IntegerProperty extends Property<Integer> {
+             this.max = max;
+             this.values = IntImmutableList.toList(IntStream.range(min, max + 1));
          }
 +        this.init(); // Paper - optimise blockstate property access
      }
@@ -12148,12 +12136,30 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      static final Logger LOGGER = LogUtils.getLogger();
      private static final TickingBlockEntity NULL_TICKER = new TickingBlockEntity() {
+@@ -0,0 +0,0 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
+              */
+             org.bukkit.Chunk bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
+             server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkLoadEvent(bukkitChunk, this.needsDecoration));
+-            ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(this.locX, this.locZ).getEntityChunk().callEntitiesLoadEvent(); // Paper - rewrite chunk system
++            org.bukkit.craftbukkit.event.CraftEventFactory.callEntitiesLoadEvent(this.level, this.chunkPos, ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(this.locX, this.locZ).getEntityChunk().getAllEntities()); // Paper - rewrite chunk system
+ 
+             if (this.needsDecoration) {
+                 try (co.aikar.timings.Timing ignored = this.level.timings.chunkLoadPopulate.startTiming()) { // Paper
+@@ -0,0 +0,0 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
+     public void unloadCallback() {
+         if (!this.loadedTicketLevel) { LOGGER.error("Double calling chunk unload!", new Throwable()); } // Paper
+         org.bukkit.Server server = this.level.getCraftServer();
+-        ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(this.locX, this.locZ).getEntityChunk().callEntitiesUnloadEvent(); // Paper - rewrite chunk system
++        org.bukkit.craftbukkit.event.CraftEventFactory.callEntitiesUnloadEvent(this.level, this.chunkPos, ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(this.locX, this.locZ).getEntityChunk().getAllEntities()); // Paper - rewrite chunk system
+         org.bukkit.Chunk bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
+         org.bukkit.event.world.ChunkUnloadEvent unloadEvent = new org.bukkit.event.world.ChunkUnloadEvent(bukkitChunk, true); // Paper - rewrite chunk system - force save to true so that mustNotSave is correctly set below
+         server.getPluginManager().callEvent(unloadEvent);
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
 @@ -0,0 +0,0 @@ public class LevelChunkSection implements ca.spottedleaf.moonrise.patches.block_
-     private PalettedContainer<Holder<Biome>> biomes;
+     private PalettedContainer<Holder<Biome>> biomes; // CraftBukkit - read/write
  
      // Paper start - block counting
 -    private static final it.unimi.dsi.fastutil.ints.IntArrayList FULL_LIST = new it.unimi.dsi.fastutil.ints.IntArrayList(16*16*16);
@@ -12384,7 +12390,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
 @@ -0,0 +0,0 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
-         // this.threadingDetector.checkAndUnlock(); // Paper - disable this
+             );
      }
  
 +    // Paper start - optimise palette reads
@@ -12414,25 +12420,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - optimise palette reads
 +
-     // Paper start - Anti-Xray - Add preset values
-     @Deprecated @io.papermc.paper.annotation.DoNotUse public static <T> Codec<PalettedContainer<T>> codecRW(IdMap<T> idList, Codec<T> entryCodec, PalettedContainer.Strategy paletteProvider, T defaultValue) { return PalettedContainer.codecRW(idList, entryCodec, paletteProvider, defaultValue, null); }
-     public static <T> Codec<PalettedContainer<T>> codecRW(IdMap<T> idList, Codec<T> entryCodec, PalettedContainer.Strategy paletteProvider, T defaultValue, T @org.jetbrains.annotations.Nullable [] presetValues) {
+     public PalettedContainer(
+         IdMap<T> idList,
+         PalettedContainer.Strategy paletteProvider,
 @@ -0,0 +0,0 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
-             }
-         }
-         // Paper end
+         this.registry = idList;
+         this.strategy = paletteProvider;
+         this.data = new PalettedContainer.Data<>(dataProvider, storage, dataProvider.factory().create(dataProvider.bits(), idList, this, paletteEntries));
 +        this.updateData(this.data); // Paper - optimise palette reads
      }
  
-     // Paper start - Anti-Xray - Add preset values
-@@ -0,0 +0,0 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+     private PalettedContainer(IdMap<T> idList, PalettedContainer.Strategy paletteProvider, PalettedContainer.Data<T> data) {
          this.registry = idList;
          this.strategy = paletteProvider;
          this.data = data;
 +        this.updateData(this.data); // Paper - optimise palette reads
      }
  
-     // Paper start - Anti-Xray - Add preset values
+     private PalettedContainer(PalettedContainer<T> container) {
 @@ -0,0 +0,0 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
          this.registry = idList;
          this.data = this.createOrReuseData(null, 0);
@@ -12446,9 +12451,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          data2.copyFrom(data.palette, data.storage);
          this.data = data2;
 +        this.updateData(this.data); // Paper - optimise palette reads
-         this.addPresetValues();
-         return object == null ? -1 : data2.palette.idFor(object);
-         // Paper end
+         return data2.palette.idFor(object);
+     }
+ 
 @@ -0,0 +0,0 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
      }
  
@@ -12483,9 +12488,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              buf.readLongArray(data.storage.getRaw());
              this.data = data;
 +            this.updateData(this.data); // Paper - optimise palette reads
-             this.addPresetValues(); // Paper - Anti-Xray - Add preset values (inefficient, but this isn't used by the server)
          } finally {
              this.release();
+         }
 @@ -0,0 +0,0 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
          void accept(T object, int count);
      }
@@ -12590,7 +12595,7 @@ diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.ja
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-@@ -0,0 +0,0 @@ import net.minecraft.nbt.NbtIo; // Paper
+@@ -0,0 +0,0 @@ import net.minecraft.util.profiling.jfr.JvmProfiler;
  import net.minecraft.world.level.ChunkPos;
  import org.slf4j.Logger;
  
@@ -12600,12 +12605,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private static final Logger LOGGER = LogUtils.getLogger();
      private static final int SECTOR_BYTES = 4096;
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
-     private final IntBuffer timestamps;
      @VisibleForTesting
      protected final RegionBitmap usedSectors;
+ 
 +    // Paper start - rewrite chunk system
 +    @Override
-+    public final ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionDataController.WriteData moonrise$startWrite(final CompoundTag data, final ChunkPos pos) throws IOException {
++    public final ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionDataController.WriteData moonrise$startWrite(final net.minecraft.nbt.CompoundTag data, final ChunkPos pos) throws IOException {
 +        final RegionFile.ChunkBuffer buffer = ((RegionFile)(Object)this).new ChunkBuffer(pos);
 +        ((ca.spottedleaf.moonrise.patches.chunk_system.storage.ChunkSystemChunkBuffer)buffer).moonrise$setWriteOnClose(false);
 +
@@ -12617,9 +12622,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        );
 +    }
 +    // Paper end - rewrite chunk system
-     // Paper start - Attempt to recalculate regionfile header if it is corrupt
-     private static long roundToSectors(long bytes) {
-         long sectors = bytes >>> 12; // 4096 = 2^12
++
+     public RegionFile(RegionStorageInfo storageKey, Path directory, Path path, boolean dsync) throws IOException {
+         this(storageKey, directory, path, RegionFileVersion.getSelected(), dsync);
+     }
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
  
      @Nullable
@@ -12638,9 +12644,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          if (!Files.isRegularFile(path, new LinkOption[0])) {
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
- 
      }
-     // Paper end
+ 
+     public static final int MAX_CHUNK_SIZE = 500 * 1024 * 1024; // Paper - don't write garbage data to disk if writing serialization fails
 -    private class ChunkBuffer extends ByteArrayOutputStream {
 +    private class ChunkBuffer extends ByteArrayOutputStream implements ca.spottedleaf.moonrise.patches.chunk_system.storage.ChunkSystemChunkBuffer { // Paper - rewrite chunk system
  
@@ -12788,10 +12794,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
      // Paper end - rewrite chunk system
-     // Paper start - recalculate region file headers
-     private final boolean isChunkData;
+ 
+     protected RegionFileStorage(RegionStorageInfo storageKey, Path directory, boolean dsync) { // Paper - protected
 @@ -0,0 +0,0 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
-         this.isChunkData = isChunkDataFolder(this.folder); // Paper - recalculate region file headers
+         this.info = storageKey;
      }
  
 +    // Paper start - rewrite chunk system
@@ -12860,8 +12866,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
      }
  
--    private boolean canPassThroughWall(Direction face, BlockGetter world, BlockPos pos, BlockState state, BlockPos fromPos, BlockState fromState) {
--        Object2ByteLinkedOpenHashMap object2bytelinkedopenhashmap;
+-    private static boolean canPassThroughWall(Direction face, BlockGetter world, BlockPos pos, BlockState state, BlockPos fromPos, BlockState fromState) {
+-        VoxelShape voxelshape = fromState.getCollisionShape(world, fromPos);
 +    // Paper start - fluid method optimisations
 +    private static boolean canPassThroughWall(final Direction direction, final BlockGetter level,
 +                                             final BlockPos fromPos, final BlockState fromState,
@@ -12871,56 +12877,71 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            return true;
 +        }
  
--        if (!state.getBlock().hasDynamicShape() && !fromState.getBlock().hasDynamicShape()) {
--            object2bytelinkedopenhashmap = (Object2ByteLinkedOpenHashMap) FlowingFluid.OCCLUSION_CACHE.get();
--        } else {
--            object2bytelinkedopenhashmap = null;
+-        if (voxelshape == Shapes.block()) {
 +        if (((ca.spottedleaf.moonrise.patches.collisions.block.CollisionBlockState)fromState).moonrise$occludesFullBlock() | ((ca.spottedleaf.moonrise.patches.collisions.block.CollisionBlockState)toState).moonrise$occludesFullBlock()) {
 +            // don't even try to cache simple cases
-+            return false;
-         }
+             return false;
+-        } else {
+-            VoxelShape voxelshape1 = state.getCollisionShape(world, pos);
+-
+-            if (voxelshape1 == Shapes.block()) {
+-                return false;
+-            } else if (voxelshape1 == Shapes.empty() && voxelshape == Shapes.empty()) {
+-                return true;
+-            } else {
+-                Object2ByteLinkedOpenHashMap object2bytelinkedopenhashmap;
+-
+-                if (!state.getBlock().hasDynamicShape() && !fromState.getBlock().hasDynamicShape()) {
+-                    object2bytelinkedopenhashmap = (Object2ByteLinkedOpenHashMap) FlowingFluid.OCCLUSION_CACHE.get();
+-                } else {
+-                    object2bytelinkedopenhashmap = null;
+-                }
++        }
  
--        Block.BlockStatePairKey block_a;
+-                FlowingFluid.BlockStatePairKey fluidtypeflowing_a;
 +        final ca.spottedleaf.moonrise.patches.collisions.util.FluidOcclusionCacheKey[] cache = ((ca.spottedleaf.moonrise.patches.collisions.block.CollisionBlockState)fromState).moonrise$hasCache() & ((ca.spottedleaf.moonrise.patches.collisions.block.CollisionBlockState)toState).moonrise$hasCache() ?
 +            COLLISION_OCCLUSION_CACHE.get() : null;
  
--        if (object2bytelinkedopenhashmap != null) {
--            block_a = new Block.BlockStatePairKey(state, fromState, face);
--            byte b0 = object2bytelinkedopenhashmap.getAndMoveToFirst(block_a);
+-                if (object2bytelinkedopenhashmap != null) {
+-                    fluidtypeflowing_a = new FlowingFluid.BlockStatePairKey(state, fromState, face);
+-                    byte b0 = object2bytelinkedopenhashmap.getAndMoveToFirst(fluidtypeflowing_a);
 +        final int keyIndex
 +            = (((ca.spottedleaf.moonrise.patches.collisions.block.CollisionBlockState)fromState).moonrise$uniqueId1() ^ ((ca.spottedleaf.moonrise.patches.collisions.block.CollisionBlockState)toState).moonrise$uniqueId2() ^ ((ca.spottedleaf.moonrise.patches.collisions.util.CollisionDirection)(Object)direction).moonrise$uniqueId())
 +            & (COLLISION_OCCLUSION_CACHE_SIZE - 1);
  
--            if (b0 != 127) {
--                return b0 != 0;
+-                    if (b0 != 127) {
+-                        return b0 != 0;
+-                    }
+-                } else {
+-                    fluidtypeflowing_a = null;
+-                }
+-
+-                boolean flag = !Shapes.mergedFaceOccludes(voxelshape1, voxelshape, face);
 +        if (cache != null) {
 +            final ca.spottedleaf.moonrise.patches.collisions.util.FluidOcclusionCacheKey cached = cache[keyIndex];
 +            if (cached != null && cached.first() == fromState && cached.second() == toState && cached.direction() == direction) {
 +                return cached.result();
-             }
--        } else {
--            block_a = null;
-         }
++            }
++        }
  
--        VoxelShape voxelshape = state.getCollisionShape(world, pos);
--        VoxelShape voxelshape1 = fromState.getCollisionShape(world, fromPos);
--        boolean flag = !Shapes.mergedFaceOccludes(voxelshape, voxelshape1, face);
+-                if (object2bytelinkedopenhashmap != null) {
+-                    if (object2bytelinkedopenhashmap.size() == 200) {
+-                        object2bytelinkedopenhashmap.removeLastByte();
+-                    }
 +        final VoxelShape shape1 = fromState.getCollisionShape(level, fromPos);
 +        final VoxelShape shape2 = toState.getCollisionShape(level, toPos);
  
--        if (object2bytelinkedopenhashmap != null) {
--            if (object2bytelinkedopenhashmap.size() == 200) {
--                object2bytelinkedopenhashmap.removeLastByte();
--            }
+-                    object2bytelinkedopenhashmap.putAndMoveToFirst(fluidtypeflowing_a, (byte) (flag ? 1 : 0));
+-                }
 +        final boolean result = !Shapes.mergedFaceOccludes(shape1, shape2, direction);
  
--            object2bytelinkedopenhashmap.putAndMoveToFirst(block_a, (byte) (flag ? 1 : 0));
+-                return flag;
+-            }
 +        if (cache != null) {
 +            // we can afford to replace in-use keys more often due to the excessive caching the collision patch does in mergedFaceOccludes
 +            cache[keyIndex] = new ca.spottedleaf.moonrise.patches.collisions.util.FluidOcclusionCacheKey(fromState, toState, direction, result);
          }
- 
--        return flag;
++
 +        return result;
      }
 +    // Paper end - fluid method optimisations
@@ -12951,7 +12972,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end - fluid method optimisations
      }
  
-     protected abstract boolean canConvertToSource(Level world);
+     protected abstract boolean canConvertToSource(ServerLevel world);
 diff --git a/src/main/java/net/minecraft/world/level/material/FluidState.java b/src/main/java/net/minecraft/world/level/material/FluidState.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/material/FluidState.java
@@ -13024,7 +13045,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return this.isRandomlyTicking; // Paper - fluid method optimisations
      }
  
-     public void randomTick(Level world, BlockPos pos, RandomSource random) {
+     public void randomTick(ServerLevel world, BlockPos pos, RandomSource random) {
 @@ -0,0 +0,0 @@ public final class FluidState extends StateHolder<Fluid, FluidState> {
      }
  
@@ -13072,30 +13093,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // Paper end - optimise collisions
      }
  
-@@ -0,0 +0,0 @@ public final class Shapes {
-     }
- 
-     public static VoxelShape getFaceShape(VoxelShape shape, Direction direction) {
--        return ((ca.spottedleaf.moonrise.patches.collisions.shape.CollisionVoxelShape)shape).moonrise$getFaceShapeClamped(direction); // Paper - optimise collisions
-+        if (shape == block()) {
-+            return block();
-+        } else {
-+            Direction.Axis axis = direction.getAxis();
-+            boolean bl;
-+            int i;
-+            if (direction.getAxisDirection() == Direction.AxisDirection.POSITIVE) {
-+                bl = DoubleMath.fuzzyEquals(shape.max(axis), 1.0, 1.0E-7);
-+                i = shape.shape.getSize(axis) - 1;
-+            } else {
-+                bl = DoubleMath.fuzzyEquals(shape.min(axis), 0.0, 1.0E-7);
-+                i = 0;
-+            }
-+
-+            return (VoxelShape)(!bl ? empty() : new SliceShape(shape, axis, i));
-+        }
-     }
- 
-     // Paper start - optimise collisions
 diff --git a/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java b/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java
@@ -13314,19 +13311,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          return AABB.clip(((VoxelShape)(Object)this).toAabbs(), from, to, offset);
 @@ -0,0 +0,0 @@ public abstract class VoxelShape implements ca.spottedleaf.moonrise.patches.coll
+         }
      }
  
-     private VoxelShape calculateFace(Direction direction) {
--        Direction.Axis axis = direction.getAxis();
--        DoubleList doubleList = this.getCoords(axis);
--        if (doubleList.size() == 2
--            && DoubleMath.fuzzyEquals(doubleList.getDouble(0), 0.0, 1.0E-7)
--            && DoubleMath.fuzzyEquals(doubleList.getDouble(1), 1.0, 1.0E-7)) {
+-    private VoxelShape calculateFace(Direction facing) {
+-        Direction.Axis axis = facing.getAxis();
+-        if (this.isCubeLikeAlong(axis)) {
 -            return this;
 -        } else {
--            Direction.AxisDirection axisDirection = direction.getAxisDirection();
+-            Direction.AxisDirection axisDirection = facing.getAxisDirection();
 -            int i = this.findIndex(axis, axisDirection == Direction.AxisDirection.POSITIVE ? 0.9999999 : 1.0E-7);
--            return new SliceShape(this, axis, i);
+-            SliceShape sliceShape = new SliceShape(this, axis, i);
+-            if (sliceShape.isEmpty()) {
+-                return Shapes.empty();
+-            } else {
+-                return (VoxelShape)(sliceShape.isCubeLike() ? Shapes.block() : sliceShape);
++    private VoxelShape calculateFace(Direction direction) {
 +        // Paper start - optimise collisions
 +        final Direction.Axis axis = direction.getAxis();
 +        switch (axis) {
@@ -13341,9 +13341,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +            default: {
 +                throw new IllegalStateException("Unknown axis: " + axis);
-+            }
+             }
          }
 +        // Paper end - optimise collisions
      }
  
-     // Paper start - optimise collisions
+     protected boolean isCubeLike() {
