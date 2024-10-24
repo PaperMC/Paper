@@ -1153,7 +1153,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          MinecraftTimings.bukkitSchedulerTimer.startTiming(); // Spigot // Paper
-         this.server.getScheduler().mainThreadHeartbeat(this.tickCount); // CraftBukkit
+         this.server.getScheduler().mainThreadHeartbeat(); // CraftBukkit
          MinecraftTimings.bukkitSchedulerTimer.stopTiming(); // Spigot // Paper
 +        // Paper start - Folia scheduler API
 +        ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) Bukkit.getGlobalRegionScheduler()).tick();
@@ -1170,15 +1170,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        });
 +        // Paper end - Folia scheduler API
          io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CALLBACK_MANAGER.handleQueue(this.tickCount); // Paper
-         this.profiler.push("commandFunctions");
+         gameprofilerfiller.push("commandFunctions");
          MinecraftTimings.commandFunctionsTimer.startTiming(); // Spigot // Paper
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -0,0 +0,0 @@ public abstract class PlayerList {
+         }
  
-         entityplayer.unRide();
          worldserver.removePlayerImmediately(entityplayer, Entity.RemovalReason.UNLOADED_WITH_PLAYER);
 +        entityplayer.retireScheduler(); // Paper - Folia schedulers
          entityplayer.getAdvancements().stopListening();
@@ -1203,16 +1203,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
          return this.bukkitEntity;
      }
- 
 +    // Paper start
 +    public CraftEntity getBukkitEntityRaw() {
 +        return this.bukkitEntity;
 +    }
 +    // Paper end
-+
-     @Override
-     public CommandSender getBukkitSender(CommandSourceStack wrapper) {
-         return this.getBukkitEntity();
+ 
+     // CraftBukkit - SPIGOT-6907: re-implement LivingEntity#setMaximumAir()
+     public int getDefaultMaxAirSupply() {
 @@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      public final void setRemoved(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
          CraftEventFactory.callEntityRemoveEvent(this, cause);
@@ -1222,9 +1220,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.removalReason = entity_removalreason;
          }
 @@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
- 
          this.getPassengers().forEach(Entity::stopRiding);
          this.levelCallback.onRemove(entity_removalreason);
+         this.onRemoval(entity_removalreason);
 +        // Paper start - Folia schedulers
 +        if (!(this instanceof ServerPlayer) && entity_removalreason != RemovalReason.CHANGED_DIMENSION && !alreadyRemoved) {
 +            // Players need to be special cased, because they are regularly removed from the world
