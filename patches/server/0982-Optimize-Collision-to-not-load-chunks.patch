@@ -14,22 +14,22 @@ movement will load only the chunk the player enters anyways and avoids loading
 massive amounts of surrounding chunks due to large AABB lookups.
 
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index db0a5c6258fa2b9a5d960f82f6b1f3bc2b386bc9..3a90dd1289d393426151d4457edaf99731cc34db 100644
+index cde19fddfc9b1c8edbc565bec4f043803651313e..4b9761e58f404eedf9db835fc923a88fc1896e96 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -869,6 +869,7 @@ public abstract class PlayerList {
-         Vec3 vec3d = dimensiontransition.pos();
+@@ -827,6 +827,7 @@ public abstract class PlayerList {
+         Vec3 vec3d = teleporttransition.position();
  
-         entityplayer1.forceSetPositionRotation(vec3d.x, vec3d.y, vec3d.z, dimensiontransition.yRot(), dimensiontransition.xRot());
+         entityplayer1.forceSetPositionRotation(vec3d.x, vec3d.y, vec3d.z, teleporttransition.yRot(), teleporttransition.xRot());
 +        worldserver.getChunkSource().addRegionTicket(net.minecraft.server.level.TicketType.POST_TELEPORT, new net.minecraft.world.level.ChunkPos(net.minecraft.util.Mth.floor(vec3d.x()) >> 4, net.minecraft.util.Mth.floor(vec3d.z()) >> 4), 1, entityplayer.getId()); // Paper
          // CraftBukkit end
-         if (dimensiontransition.missingRespawnBlock()) {
+         if (teleporttransition.missingRespawnBlock()) {
              entityplayer1.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.NO_RESPAWN_BLOCK_AVAILABLE, 0.0F));
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 242d9213d22cb552e48beee03aa2db141e39d1c4..52f3d0d4ce28cc6566166ae9a5a1b236ff8c027d 100644
+index f4b1a773bf809bde8cea919a418700f3d6850389..ea7100c8ac5da730d55136ac2ab608c2a7ac0ba8 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -250,6 +250,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -258,6 +258,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      // Paper end - Share random for entities to make them more random
      public org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason; // Paper - Entity#getEntitySpawnReason
  
@@ -38,10 +38,10 @@ index 242d9213d22cb552e48beee03aa2db141e39d1c4..52f3d0d4ce28cc6566166ae9a5a1b236
  
      public CraftEntity getBukkitEntity() {
 diff --git a/src/main/java/net/minecraft/world/level/BlockCollisions.java b/src/main/java/net/minecraft/world/level/BlockCollisions.java
-index 1c10835b59aaefa3a65ff64f784620bdc54ddcdc..cd89623a44f02d7db77f0d0f87545cf80841f403 100644
+index 12a14b8fdb079fd8c367e51299486761ebdaeb5b..b360594424118d9d11d00ea140160485048591ca 100644
 --- a/src/main/java/net/minecraft/world/level/BlockCollisions.java
 +++ b/src/main/java/net/minecraft/world/level/BlockCollisions.java
-@@ -66,18 +66,37 @@ public class BlockCollisions<T> extends AbstractIterator<T> {
+@@ -72,16 +72,37 @@ public class BlockCollisions<T> extends AbstractIterator<T> {
      @Override
      protected T computeNext() {
          while (this.cursor.advance()) {
@@ -58,8 +58,6 @@ index 1c10835b59aaefa3a65ff64f784620bdc54ddcdc..cd89623a44f02d7db77f0d0f87545cf8
 -                    this.pos.set(i, j, k);
 -                    BlockState blockState = blockGetter.getBlockState(this.pos);
 -                    if ((!this.onlySuffocatingBlocks || blockState.isSuffocating(blockGetter, this.pos))
--                        && (l != 1 || blockState.hasLargeCollisionShape())
--                        && (l != 2 || blockState.is(Blocks.MOVING_PISTON))) {
 +                // Paper start - ensure we don't load chunks
 +                // BlockGetter blockGetter = this.getChunk(i, k);
 +                if (true) {
@@ -70,7 +68,7 @@ index 1c10835b59aaefa3a65ff64f784620bdc54ddcdc..cd89623a44f02d7db77f0d0f87545cf8
 +                    if (this.collisionGetter instanceof net.minecraft.server.level.WorldGenRegion) {
 +                        BlockGetter blockGetter = this.getChunk(x, z);
 +                        if (blockGetter == null) {
-+                           continue;
++                            continue;
 +                        }
 +                        blockState = blockGetter.getBlockState(this.pos);
 +                    } else if ((!far && source instanceof net.minecraft.server.level.ServerPlayer) || (source != null && source.collisionLoadChunks)) {
@@ -84,21 +82,22 @@ index 1c10835b59aaefa3a65ff64f784620bdc54ddcdc..cd89623a44f02d7db77f0d0f87545cf8
 +                        }
 +                        continue;
 +                    }
-+                    if (/*(!this.onlySuffocatingBlocks || blockState.isSuffocating(blockGetter, this.pos)) &&*/ (l != 1 || blockState.hasLargeCollisionShape()) && (l != 2 || blockState.is(Blocks.MOVING_PISTON))) { // Paper - onlySuffocatingBlocks is only true on the client, so we don't care about it here
-+                        // Paper end
-                         VoxelShape voxelShape = blockState.getCollisionShape(this.collisionGetter, this.pos, this.context);
-                         if (voxelShape == Shapes.block()) {
-                             if (this.box.intersects((double)i, (double)j, (double)k, (double)i + 1.0, (double)j + 1.0, (double)k + 1.0)) {
++                    if (true // onlySuffocatingBlocks is only true on the client, so we don't care about it here
++                    // Paper end - ensure we don't load chunks
+                         && (l != 1 || blockState.hasLargeCollisionShape())
+                         && (l != 2 || blockState.is(Blocks.MOVING_PISTON))) {
+                         VoxelShape voxelShape = this.context.getCollisionShape(blockState, this.collisionGetter, this.pos);
 diff --git a/src/main/java/net/minecraft/world/level/CollisionGetter.java b/src/main/java/net/minecraft/world/level/CollisionGetter.java
-index e57cb7fe53e915d24246e44c7f49971f5b2ab2cf..1ad0c976c6e2d6d31397dff850a9de7c16d16fba 100644
+index 6b63dc10c0a4db8a484588a6d67911ea1023457e..f4c251c2bcfa96ba22e338b97a1de7f0abac5a6f 100644
 --- a/src/main/java/net/minecraft/world/level/CollisionGetter.java
 +++ b/src/main/java/net/minecraft/world/level/CollisionGetter.java
-@@ -44,11 +44,13 @@ public interface CollisionGetter extends BlockGetter {
+@@ -50,11 +50,13 @@ public interface CollisionGetter extends BlockGetter {
      }
  
-     default boolean noCollision(@Nullable Entity entity, AABB box) {
+     default boolean noCollision(@Nullable Entity entity, AABB box, boolean checkFluid) {
+-        for (VoxelShape voxelShape : checkFluid ? this.getBlockAndLiquidCollisions(entity, box) : this.getBlockCollisions(entity, box)) {
 +        try { if (entity != null) entity.collisionLoadChunks = true; // Paper
-         for (VoxelShape voxelShape : this.getBlockCollisions(entity, box)) {
++            for (VoxelShape voxelShape : checkFluid ? this.getBlockAndLiquidCollisions(entity, box) : this.getBlockCollisions(entity, box)) {
              if (!voxelShape.isEmpty()) {
                  return false;
              }

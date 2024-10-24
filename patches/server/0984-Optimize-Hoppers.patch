@@ -50,22 +50,22 @@ index 0000000000000000000000000000000000000000..5c42823726e70ce6c9d0121d07431548
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 999e9c8f842423e6f1a3e80902e9d076e01f6694..c13b4f39c19dd6a62ae39688bde5a4739b391e59 100644
+index 21660e4284cfabb333a3edf9224c892ef80b2403..dcf046dd1eb8c2b724c971c4adf4462895183f0a 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1719,6 +1719,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1724,6 +1724,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              ServerLevel worldserver = (ServerLevel) iterator.next();
              worldserver.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
              worldserver.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent
 +            net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = worldserver.paperConfig().hopper.disableMoveEvent || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper - Perf: Optimize Hoppers
  
-             this.profiler.push(() -> {
+             gameprofilerfiller.push(() -> {
                  String s = String.valueOf(worldserver);
 diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
-index 96b24c1415af531feef7d8ab4724f7fed3ae8388..eec0ec43590be7e8ae5b530a7404c98b5e23cb53 100644
+index 4f20e5bb143e152e19e5fb57f66d0344001ffbd9..888454ff588927e8accc215e7429f72bb286f5aa 100644
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
 +++ b/src/main/java/net/minecraft/world/item/ItemStack.java
-@@ -809,10 +809,16 @@ public final class ItemStack implements DataComponentHolder {
+@@ -876,10 +876,16 @@ public final class ItemStack implements DataComponentHolder {
      }
  
      public ItemStack copy() {
@@ -85,7 +85,7 @@ index 96b24c1415af531feef7d8ab4724f7fed3ae8388..eec0ec43590be7e8ae5b530a7404c98b
              itemstack.setPopTime(this.getPopTime());
              return itemstack;
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
-index a1d7ae987327382d9566860b991dc361225c7938..7dfabb11d3c8112f6daef35d204a2e324f4ddb5e 100644
+index b4aff394694417cff1930cf8fbd6696b9f9c9d01..fb00e5a02bb8c64e27d6d009068ba041098951d6 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
 @@ -38,6 +38,7 @@ import co.aikar.timings.MinecraftTimings; // Paper
@@ -96,7 +96,7 @@ index a1d7ae987327382d9566860b991dc361225c7938..7dfabb11d3c8112f6daef35d204a2e32
  
      public Timing tickTimer = MinecraftTimings.getTileEntityTimings(this); // Paper
      // CraftBukkit start - data containers
-@@ -229,6 +230,7 @@ public abstract class BlockEntity {
+@@ -230,6 +231,7 @@ public abstract class BlockEntity {
  
      public void setChanged() {
          if (this.level != null) {
@@ -105,7 +105,7 @@ index a1d7ae987327382d9566860b991dc361225c7938..7dfabb11d3c8112f6daef35d204a2e32
          }
  
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
-index 542a5501ac94f57810d34e0f769a9a7855604f91..cab403efd471bb61835224eea4e99570d34dcaaa 100644
+index b35b44f0776aeb95ef0eda666ba0b652c5e90274..5ebbdb94d9b91c442ff60eb6872f740ebd790fa0 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 @@ -156,6 +156,43 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
@@ -650,7 +650,7 @@ index 542a5501ac94f57810d34e0f769a9a7855604f91..cab403efd471bb61835224eea4e99570
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
-index 13c9a68b604d4c7c6e09e72b3cea7ab2214b06ab..e2752752417c50b06f7c15b7d00bda0eaad3b0ae 100644
+index fc657b6052d4310ad9c28988042c2cf37cf5d213..a459163bd7148a27c60e030479df4da91e957049 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
 @@ -53,7 +53,7 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc

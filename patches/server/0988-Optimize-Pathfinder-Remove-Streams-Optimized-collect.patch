@@ -16,10 +16,10 @@ This lets us get faster foreach iteration, as well as avoids map lookups on
 the values when needed.
 
 diff --git a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
-index 8a483c8d2a54617d78af19de32fa0ded71b3223a..18bbb3f8f99849333ff4bc020c8ce758a69312a5 100644
+index 17006cd22152cf942455437ff7b21a8645259578..cc7d94144e39f7dace7b569b4567def98396e8f9 100644
 --- a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
 +++ b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
-@@ -38,8 +38,12 @@ public class PathFinder {
+@@ -43,8 +43,12 @@ public class PathFinder {
          if (node == null) {
              return null;
          } else {
@@ -31,18 +31,19 @@ index 8a483c8d2a54617d78af19de32fa0ded71b3223a..18bbb3f8f99849333ff4bc020c8ce758
 +                map.add(new java.util.AbstractMap.SimpleEntry<>(this.nodeEvaluator.getTarget(pos.getX(), pos.getY(), pos.getZ()), pos));
 +            }
 +            // Paper end - Perf: remove streams and optimize collection
-             Path path = this.findPath(world.getProfiler(), node, map, followRange, distance, rangeMultiplier);
+             Path path = this.findPath(node, map, followRange, distance, rangeMultiplier);
              this.nodeEvaluator.done();
              return path;
-@@ -47,18 +51,19 @@ public class PathFinder {
+@@ -52,19 +56,20 @@ public class PathFinder {
      }
  
      @Nullable
--    private Path findPath(ProfilerFiller profiler, Node startNode, Map<Target, BlockPos> positions, float followRange, int distance, float rangeMultiplier) {
+-    private Path findPath(Node startNode, Map<Target, BlockPos> positions, float followRange, int distance, float rangeMultiplier) {
 +    // Paper start - Perf: remove streams and optimize collection
-+    private Path findPath(ProfilerFiller profiler, Node startNode, List<Map.Entry<Target, BlockPos>> positions, float followRange, int distance, float rangeMultiplier) {
-         profiler.push("find_path");
-         profiler.markForCharting(MetricCategory.PATH_FINDING);
++    private Path findPath(Node startNode, List<Map.Entry<Target, BlockPos>> positions, float followRange, int distance, float rangeMultiplier) {
+         ProfilerFiller profilerFiller = Profiler.get();
+         profilerFiller.push("find_path");
+         profilerFiller.markForCharting(MetricCategory.PATH_FINDING);
 -        Set<Target> set = positions.keySet();
 +        // Set<Target> set = positions.keySet();
          startNode.g = 0.0F;
@@ -59,7 +60,7 @@ index 8a483c8d2a54617d78af19de32fa0ded71b3223a..18bbb3f8f99849333ff4bc020c8ce758
          int j = (int)((float)this.maxVisitedNodes * rangeMultiplier);
  
          while (!this.openSet.isEmpty()) {
-@@ -69,14 +74,18 @@ public class PathFinder {
+@@ -75,14 +80,18 @@ public class PathFinder {
              Node node = this.openSet.pop();
              node.closed = true;
  
@@ -81,7 +82,7 @@ index 8a483c8d2a54617d78af19de32fa0ded71b3223a..18bbb3f8f99849333ff4bc020c8ce758
                  break;
              }
  
-@@ -91,7 +100,7 @@ public class PathFinder {
+@@ -97,7 +106,7 @@ public class PathFinder {
                      if (node2.walkedDistance < followRange && (!node2.inOpenSet() || g < node2.g)) {
                          node2.cameFrom = node;
                          node2.g = g;
@@ -90,7 +91,7 @@ index 8a483c8d2a54617d78af19de32fa0ded71b3223a..18bbb3f8f99849333ff4bc020c8ce758
                          if (node2.inOpenSet()) {
                              this.openSet.changeCost(node2, node2.g + node2.h);
                          } else {
-@@ -103,23 +112,32 @@ public class PathFinder {
+@@ -109,23 +118,32 @@ public class PathFinder {
              }
          }
  
@@ -109,7 +110,7 @@ index 8a483c8d2a54617d78af19de32fa0ded71b3223a..18bbb3f8f99849333ff4bc020c8ce758
 +            if (best == null || comparator.compare(path, best) < 0)
 +                best = path;
 +        }
-         profiler.pop();
+         profilerFiller.pop();
 -        return optional.isEmpty() ? null : optional.get();
 +        return best;
 +        // Paper end - Perf: remove streams and optimize collection
