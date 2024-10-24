@@ -65,10 +65,10 @@ index aee26dd78953ff43306aaa64161f5b9edcdd4b83..bb1a60180e58c1333e7bb33e8acf1b02
      }
  
 diff --git a/src/main/java/net/minecraft/world/damagesource/DamageSources.java b/src/main/java/net/minecraft/world/damagesource/DamageSources.java
-index caf1d79e2bbdd257a5439e2973653747e678805f..e34584e4780f343d6c946af5377088d53818e88e 100644
+index fddbdb7322a2063996a28c5c3d93c265188b1256..be87cb3cfa15a7d889118cdc4b87232e30749023 100644
 --- a/src/main/java/net/minecraft/world/damagesource/DamageSources.java
 +++ b/src/main/java/net/minecraft/world/damagesource/DamageSources.java
-@@ -264,13 +264,7 @@ public class DamageSources {
+@@ -270,13 +270,7 @@ public class DamageSources {
      }
  
      public DamageSource explosion(@Nullable Entity source, @Nullable Entity attacker) {
@@ -84,38 +84,38 @@ index caf1d79e2bbdd257a5439e2973653747e678805f..e34584e4780f343d6c946af5377088d5
  
      public DamageSource sonicBoom(Entity attacker) {
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index e88c88b6f87dddda8e8e3ed215a8f2c166afa3ef..62ef618aff33c98f96d0271bb2ab42235c941052 100644
+index 0223f2e282a85882645f4ed52891c566a268f37b..3d4bb855dec45685d6e336d913903341f0ca4a11 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -3262,7 +3262,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -3388,7 +3388,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
              return;
          }
  
--        if (!this.hurt(this.damageSources().lightningBolt().customEntityDamager(lightning), 5.0F)) {
-+        if (!this.hurt(this.damageSources().lightningBolt().customEventDamager(lightning), 5.0F)) { // Paper - fix DamageSource API
+-        if (!this.hurtServer(world, this.damageSources().lightningBolt().customEntityDamager(lightning), 5.0F)) {
++        if (!this.hurtServer(world, this.damageSources().lightningBolt().customEventDamager(lightning), 5.0F)) { // Paper - fix DamageSource API
              return;
          }
          // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Turtle.java b/src/main/java/net/minecraft/world/entity/animal/Turtle.java
-index 2e5ef2a680e294b49f29e8d7ba8bd0ed023c393c..4bfa947531c4a67989e18032754dabf4c69e989c 100644
+index 8e91f930e19a91db44274e4ecd98841362867609..79e1e911333d4a009c0b4e2462b41a0c146b9a06 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Turtle.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/Turtle.java
-@@ -334,7 +334,7 @@ public class Turtle extends Animal {
+@@ -341,7 +341,7 @@ public class Turtle extends Animal {
  
      @Override
      public void thunderHit(ServerLevel world, LightningBolt lightning) {
--        this.hurt(this.damageSources().lightningBolt().customEntityDamager(lightning), Float.MAX_VALUE); // CraftBukkit
-+        this.hurt(this.damageSources().lightningBolt().customEventDamager(lightning), Float.MAX_VALUE); // CraftBukkit // Paper - fix DamageSource API
+-        this.hurtServer(world, this.damageSources().lightningBolt().customEntityDamager(lightning), Float.MAX_VALUE); // CraftBukkit
++        this.hurtServer(world, this.damageSources().lightningBolt().customEventDamager(lightning), Float.MAX_VALUE); // CraftBukkit // Paper - fix DamageSource API
      }
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/BlockAttachedEntity.java b/src/main/java/net/minecraft/world/entity/decoration/BlockAttachedEntity.java
-index 7bc612890f941177da11da0ce047d5a74d8ebb33..270acce7411e5ada71eaa04c05efc888b295d9e3 100644
+index 608acb4f3cb8f9a0dc10b819ed4bf577c229dd2c..7ed127a0a0c0d6e7b726216c48ef37af4db37628 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/BlockAttachedEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/decoration/BlockAttachedEntity.java
-@@ -96,7 +96,7 @@ public abstract class BlockAttachedEntity extends Entity {
+@@ -108,7 +108,7 @@ public abstract class BlockAttachedEntity extends Entity {
          } else {
-             if (!this.isRemoved() && !this.level().isClientSide) {
+             if (!this.isRemoved()) {
                  // CraftBukkit start - fire break events
 -                Entity damager = (source.isDirect()) ? source.getDirectEntity() : source.getEntity();
 +                Entity damager = (!source.isDirect() && source.getEntity() != null) ? source.getEntity() : source.getDirectEntity(); // Paper - fix DamageSource API
@@ -123,20 +123,20 @@ index 7bc612890f941177da11da0ce047d5a74d8ebb33..270acce7411e5ada71eaa04c05efc888
                  if (damager != null) {
                      event = new HangingBreakByEntityEvent((Hanging) this.getBukkitEntity(), damager.getBukkitEntity(), source.is(DamageTypeTags.IS_EXPLOSION) ? HangingBreakEvent.RemoveCause.EXPLOSION : HangingBreakEvent.RemoveCause.ENTITY);
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Creeper.java b/src/main/java/net/minecraft/world/entity/monster/Creeper.java
-index 9bf11a8b44e696b6587bc775904a836d390e437b..d1041f2a4f1b3ea29ad532006e18cdc30c5019fa 100644
+index 7a18dc59aed5294cd442994aa2d34ea00b877f46..1906dfc22af208d6e801ad4a8f2f9e9702432691 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Creeper.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Creeper.java
-@@ -271,7 +271,7 @@ public class Creeper extends Monster implements PowerableMob {
+@@ -271,7 +271,7 @@ public class Creeper extends Monster {
              if (!event.isCancelled()) {
              // CraftBukkit end
              this.dead = true;
--            this.level().explode(this, net.minecraft.world.level.Explosion.getDefaultDamageSource(this.level(), this).customCausingEntityDamager(this.entityIgniter), null, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.MOB); // CraftBukkit
-+            this.level().explode(this, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.MOB); // CraftBukkit // Paper - fix DamageSource API (revert to vanilla, no, just no, don't change this)
+-            worldserver.explode(this, net.minecraft.world.level.Explosion.getDefaultDamageSource(this.level(), this).customCausingEntityDamager(this.entityIgniter), null, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.MOB); // CraftBukkit
++            worldserver.explode(this, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.MOB); // CraftBukkit // Paper - fix DamageSource API (revert to vanilla, no, just no, don't change this)
              this.spawnLingeringCloud();
-             this.triggerOnDeathMobEffects(Entity.RemovalReason.KILLED);
+             this.triggerOnDeathMobEffects(worldserver, Entity.RemovalReason.KILLED);
              this.discard(EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/EvokerFangs.java b/src/main/java/net/minecraft/world/entity/projectile/EvokerFangs.java
-index c75433bb0fcd4264148950467bf6b700296aca7b..820965950c8b6c868ee261cf9613665e583f092e 100644
+index c08074d43d105b30ed5093614062a3bcafadfb74..ccc72a2cf02a633655b95f961be310879d8f904f 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/EvokerFangs.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/EvokerFangs.java
 @@ -135,7 +135,7 @@ public class EvokerFangs extends Entity implements TraceableEntity {
@@ -149,28 +149,28 @@ index c75433bb0fcd4264148950467bf6b700296aca7b..820965950c8b6c868ee261cf9613665e
                  if (entityliving1.isAlliedTo((Entity) target)) {
                      return;
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownEnderpearl.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownEnderpearl.java
-index f43dd56182ced23cf1cf65c149c532a611cc933a..1aa5e57a4e6a4be60514d8808a2e6c973d93e798 100644
+index 080d886008e1f596733ea5331b32db35adef2e9b..5f790dd24f2bdae827c6dc597064b9b265089751 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/ThrownEnderpearl.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownEnderpearl.java
-@@ -89,7 +89,7 @@ public class ThrownEnderpearl extends ThrowableItemProjectile {
-                             // entity.changeDimension(new DimensionTransition(worldserver, this.position(), entity.getDeltaMovement(), entity.getYRot(), entity.getXRot(), DimensionTransition.DO_NOTHING)); // CraftBukkit - moved up
-                             entity.resetFallDistance();
-                             entityplayer.resetCurrentImpulseContext();
--                            entity.hurt(this.damageSources().fall().customEntityDamager(this), 5.0F); // CraftBukkit
-+                            entity.hurt(this.damageSources().fall().customEventDamager(this), 5.0F); // CraftBukkit // Paper - fix DamageSource API
-                             this.playSound(worldserver, this.position());
-                         }
-                     } else {
+@@ -170,7 +170,7 @@ public class ThrownEnderpearl extends ThrowableItemProjectile {
+                             if (entityplayer1 != null) {
+                                 entityplayer1.resetFallDistance();
+                                 entityplayer1.resetCurrentImpulseContext();
+-                                entityplayer1.hurtServer(entityplayer.serverLevel(), this.damageSources().enderPearl().customEntityDamager(this), 5.0F); // CraftBukkit
++                                entityplayer1.hurtServer(entityplayer.serverLevel(), this.damageSources().enderPearl().customEventDamager(this), 5.0F); // CraftBukkit // Paper - fix DamageSource API
+                             }
+ 
+                             this.playSound(worldserver, vec3d);
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/WitherSkull.java b/src/main/java/net/minecraft/world/entity/projectile/WitherSkull.java
-index 60eac9df10a9a395a1568925515d010eb51a64e5..55fd997a4e894eeab24de269d59e486196ffbe8d 100644
+index 8831af1000d17d5a60302e3b0c522b2d2f082484..4c47b30867e30d84908abf93dbefc252bc8c3453 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/WitherSkull.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/WitherSkull.java
 @@ -77,7 +77,7 @@ public class WitherSkull extends AbstractHurtingProjectile {
                      }
                  }
              } else {
--                flag = entity.hurt(this.damageSources().magic().customCausingEntity(this), 5.0F); // Paper - Fire EntityDamageByEntityEvent for unowned wither skulls
-+                flag = entity.hurt(this.damageSources().magic().customEventDamager(this), 5.0F); // Paper - Fire EntityDamageByEntityEvent for unowned wither skulls // Paper - fix DamageSource API
+-                flag = entity.hurtServer(worldserver, this.damageSources().magic().customCausingEntity(this), 5.0F); // Paper - Fire EntityDamageByEntityEvent for unowned wither skulls
++                flag = entity.hurtServer(worldserver, this.damageSources().magic().customEventDamager(this), 5.0F); // Paper - Fire EntityDamageByEntityEvent for unowned wither skulls // Paper - fix DamageSource API
              }
  
              if (flag && entity instanceof LivingEntity entityliving) {
@@ -220,10 +220,10 @@ index 4c6e15535fa40aad8cf1920f392589404f9ba79c..35eb95ef6fb6a0f7ea63351e90741c48
      }
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-index d407e9e8f1b530f00e632e0249514fb68d48316b..1b21fdab4269df375d2f445df3bd56f7b1fd2b15 100644
+index 89109bf9ad85b1859ce6ae0808ac0a1fb2cb6816..b0e7d1841d71e377d5ad596a22dfafb90d4f80cc 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
-@@ -1094,7 +1094,7 @@ public class CraftEventFactory {
+@@ -1092,7 +1092,7 @@ public class CraftEventFactory {
  
      private static EntityDamageEvent handleEntityDamageEvent(Entity entity, DamageSource source, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions, boolean cancelled) {
          CraftDamageSource bukkitDamageSource = new CraftDamageSource(source);
