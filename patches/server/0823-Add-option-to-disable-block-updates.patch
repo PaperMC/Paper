@@ -1,0 +1,179 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Boy <sivertpaulsen2@gmail.com>
+Date: Sun, 18 Jun 2023 17:45:33 +0200
+Subject: [PATCH] Add option to disable block updates
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/ChorusPlantBlock.java b/src/main/java/net/minecraft/world/level/block/ChorusPlantBlock.java
+index bf2790fae091ab9d7f4ec4b2ab0f103190c31984..5d3ca961b325a39efcd6b398a27f9a4d300b35e5 100644
+--- a/src/main/java/net/minecraft/world/level/block/ChorusPlantBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/ChorusPlantBlock.java
+@@ -38,6 +38,7 @@ public class ChorusPlantBlock extends PipeBlock {
+ 
+     @Override
+     public BlockState getStateForPlacement(BlockPlaceContext ctx) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableChorusPlantUpdates) return this.defaultBlockState(); // Paper - add option to disable block updates
+         return getStateWithConnections(ctx.getLevel(), ctx.getClickedPos(), this.defaultBlockState());
+     }
+ 
+@@ -68,6 +69,7 @@ public class ChorusPlantBlock extends PipeBlock {
+         BlockState neighborState,
+         RandomSource random
+     ) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableChorusPlantUpdates) return state; // Paper - add option to disable block updates
+         if (!state.canSurvive(world, pos)) {
+             tickView.scheduleTick(pos, this, 1);
+             return super.updateShape(state, world, tickView, pos, direction, neighborPos, neighborState, random);
+@@ -79,6 +81,7 @@ public class ChorusPlantBlock extends PipeBlock {
+ 
+     @Override
+     protected void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableChorusPlantUpdates) return; // Paper - add option to disable block updates
+         if (!state.canSurvive(world, pos)) {
+             world.destroyBlock(pos, true);
+         }
+@@ -86,6 +89,7 @@ public class ChorusPlantBlock extends PipeBlock {
+ 
+     @Override
+     protected boolean canSurvive(BlockState state, LevelReader world, BlockPos pos) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableChorusPlantUpdates) return true; // Paper - add option to disable block updates
+         BlockState blockState = world.getBlockState(pos.below());
+         boolean bl = !world.getBlockState(pos.above()).isAir() && !blockState.isAir();
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/HugeMushroomBlock.java b/src/main/java/net/minecraft/world/level/block/HugeMushroomBlock.java
+index 0e0441646bd21a14a8bea576e5400ce937ebea01..437ad7051bad2d7dccc1a9ae764bdc5dcbe88612 100644
+--- a/src/main/java/net/minecraft/world/level/block/HugeMushroomBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/HugeMushroomBlock.java
+@@ -45,6 +45,7 @@ public class HugeMushroomBlock extends Block {
+ 
+     @Override
+     public BlockState getStateForPlacement(BlockPlaceContext ctx) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableMushroomBlockUpdates) return this.defaultBlockState(); // Paper - add option to disable block updates
+         BlockGetter blockGetter = ctx.getLevel();
+         BlockPos blockPos = ctx.getClickedPos();
+         return this.defaultBlockState()
+@@ -67,6 +68,7 @@ public class HugeMushroomBlock extends Block {
+         BlockState neighborState,
+         RandomSource random
+     ) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableMushroomBlockUpdates) return state; // Paper - add option to disable block updates
+         return neighborState.is(this)
+             ? state.setValue(PROPERTY_BY_DIRECTION.get(direction), Boolean.valueOf(false))
+             : super.updateShape(state, world, tickView, pos, direction, neighborPos, neighborState, random);
+@@ -74,6 +76,7 @@ public class HugeMushroomBlock extends Block {
+ 
+     @Override
+     protected BlockState rotate(BlockState state, Rotation rotation) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableMushroomBlockUpdates) return state; // Paper - add option to disable block updates
+         return state.setValue(PROPERTY_BY_DIRECTION.get(rotation.rotate(Direction.NORTH)), state.getValue(NORTH))
+             .setValue(PROPERTY_BY_DIRECTION.get(rotation.rotate(Direction.SOUTH)), state.getValue(SOUTH))
+             .setValue(PROPERTY_BY_DIRECTION.get(rotation.rotate(Direction.EAST)), state.getValue(EAST))
+@@ -84,6 +87,7 @@ public class HugeMushroomBlock extends Block {
+ 
+     @Override
+     protected BlockState mirror(BlockState state, Mirror mirror) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableMushroomBlockUpdates) return state; // Paper - add option to disable block updates
+         return state.setValue(PROPERTY_BY_DIRECTION.get(mirror.mirror(Direction.NORTH)), state.getValue(NORTH))
+             .setValue(PROPERTY_BY_DIRECTION.get(mirror.mirror(Direction.SOUTH)), state.getValue(SOUTH))
+             .setValue(PROPERTY_BY_DIRECTION.get(mirror.mirror(Direction.EAST)), state.getValue(EAST))
+diff --git a/src/main/java/net/minecraft/world/level/block/NoteBlock.java b/src/main/java/net/minecraft/world/level/block/NoteBlock.java
+index 71fd7a467a4cb89cad8d2541366fd4add9115e04..6582db84c5307257f16c321453491cf24e40c9c7 100644
+--- a/src/main/java/net/minecraft/world/level/block/NoteBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/NoteBlock.java
+@@ -68,11 +68,13 @@ public class NoteBlock extends Block {
+ 
+     @Override
+     public BlockState getStateForPlacement(BlockPlaceContext ctx) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableNoteblockUpdates) return this.defaultBlockState(); // Paper - place without considering instrument
+         return this.setInstrument(ctx.getLevel(), ctx.getClickedPos(), this.defaultBlockState());
+     }
+ 
+     @Override
+     protected BlockState updateShape(BlockState state, LevelReader world, ScheduledTickAccess tickView, BlockPos pos, Direction direction, BlockPos neighborPos, BlockState neighborState, RandomSource random) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableNoteblockUpdates) return state; // Paper - prevent noteblock instrument from updating
+         boolean flag = direction.getAxis() == Direction.Axis.Y;
+ 
+         return flag ? this.setInstrument(world, pos, state) : super.updateShape(state, world, tickView, pos, direction, neighborPos, neighborState, random);
+@@ -80,6 +82,7 @@ public class NoteBlock extends Block {
+ 
+     @Override
+     protected void neighborChanged(BlockState state, Level world, BlockPos pos, Block sourceBlock, @Nullable Orientation wireOrientation, boolean notify) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableNoteblockUpdates) return; // Paper - prevent noteblock powered-state from updating
+         boolean flag1 = world.hasNeighborSignal(pos);
+ 
+         if (flag1 != (Boolean) state.getValue(NoteBlock.POWERED)) {
+@@ -116,7 +119,7 @@ public class NoteBlock extends Block {
+     @Override
+     protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult hit) {
+         if (!world.isClientSide) {
+-            state = (BlockState) state.cycle(NoteBlock.NOTE);
++            if (!io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableNoteblockUpdates) state = (BlockState) state.cycle(NoteBlock.NOTE); // Paper - prevent noteblock note from updating
+             world.setBlock(pos, state, 3);
+             this.playNote(player, state, world, pos);
+             player.awardStat(Stats.TUNE_NOTEBLOCK);
+diff --git a/src/main/java/net/minecraft/world/level/block/TripWireBlock.java b/src/main/java/net/minecraft/world/level/block/TripWireBlock.java
+index f079e5a9aa098225acf09ed9b4aa7ddbc2381270..74cce7874809dcbce2718ec3840bb6bb3127e871 100644
+--- a/src/main/java/net/minecraft/world/level/block/TripWireBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/TripWireBlock.java
+@@ -68,6 +68,7 @@ public class TripWireBlock extends Block {
+ 
+     @Override
+     public BlockState getStateForPlacement(BlockPlaceContext ctx) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableTripwireUpdates) return this.defaultBlockState(); // Paper - place tripwire without updating
+         Level world = ctx.getLevel();
+         BlockPos blockposition = ctx.getClickedPos();
+ 
+@@ -76,11 +77,13 @@ public class TripWireBlock extends Block {
+ 
+     @Override
+     protected BlockState updateShape(BlockState state, LevelReader world, ScheduledTickAccess tickView, BlockPos pos, Direction direction, BlockPos neighborPos, BlockState neighborState, RandomSource random) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableTripwireUpdates) return state; // Paper - prevent tripwire from updating
+         return direction.getAxis().isHorizontal() ? (BlockState) state.setValue((Property) TripWireBlock.PROPERTY_BY_DIRECTION.get(direction), this.shouldConnectTo(neighborState, direction)) : super.updateShape(state, world, tickView, pos, direction, neighborPos, neighborState, random);
+     }
+ 
+     @Override
+     protected void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableTripwireUpdates) return; // Paper - prevent adjacent tripwires from updating
+         if (!oldState.is(state.getBlock())) {
+             this.updateSource(world, pos, state);
+         }
+@@ -88,6 +91,7 @@ public class TripWireBlock extends Block {
+ 
+     @Override
+     protected void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean moved) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableTripwireUpdates) return; // Paper - prevent adjacent tripwires from updating
+         if (!moved && !state.is(newState.getBlock())) {
+             this.updateSource(world, pos, (BlockState) state.setValue(TripWireBlock.POWERED, true));
+         }
+@@ -95,6 +99,7 @@ public class TripWireBlock extends Block {
+ 
+     @Override
+     public BlockState playerWillDestroy(Level world, BlockPos pos, BlockState state, Player player) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableTripwireUpdates) return state; // Paper - prevent disarming tripwires
+         if (!world.isClientSide && !player.getMainHandItem().isEmpty() && player.getMainHandItem().is(Items.SHEARS)) {
+             world.setBlock(pos, (BlockState) state.setValue(TripWireBlock.DISARMED, true), 4);
+             world.gameEvent((Entity) player, (Holder) GameEvent.SHEAR, pos);
+@@ -104,6 +109,7 @@ public class TripWireBlock extends Block {
+     }
+ 
+     private void updateSource(Level world, BlockPos pos, BlockState state) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableTripwireUpdates) return; // Paper - prevent adjacent tripwires from updating
+         Direction[] aenumdirection = new Direction[]{Direction.SOUTH, Direction.WEST};
+         int i = aenumdirection.length;
+         int j = 0;
+@@ -141,6 +147,7 @@ public class TripWireBlock extends Block {
+ 
+     @Override
+     protected void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableTripwireUpdates) return; // Paper - prevent tripwires from detecting collision
+         if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
+         if (!world.isClientSide) {
+             if (!(Boolean) state.getValue(TripWireBlock.POWERED)) {
+@@ -151,6 +158,7 @@ public class TripWireBlock extends Block {
+ 
+     @Override
+     protected void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableTripwireUpdates) return; // Paper - prevent tripwire pressed check
+         if ((Boolean) world.getBlockState(pos).getValue(TripWireBlock.POWERED)) {
+             this.checkPressed(world, pos);
+         }
