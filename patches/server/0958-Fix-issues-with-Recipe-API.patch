@@ -1,0 +1,94 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 12 May 2024 15:49:36 -0700
+Subject: [PATCH] Fix issues with Recipe API
+
+
+diff --git a/src/main/java/net/minecraft/world/item/crafting/ShapedRecipe.java b/src/main/java/net/minecraft/world/item/crafting/ShapedRecipe.java
+index dd02af6574dd97404bc9c02c9ead84e1dd537efe..980fea65899ef5f37808506b822fd3de5830d2c7 100644
+--- a/src/main/java/net/minecraft/world/item/crafting/ShapedRecipe.java
++++ b/src/main/java/net/minecraft/world/item/crafting/ShapedRecipe.java
+@@ -98,7 +98,7 @@ public class ShapedRecipe implements CraftingRecipe {
+         char c = 'a';
+         for (Optional<Ingredient> list : this.pattern.ingredients()) {
+             RecipeChoice choice = CraftRecipe.toBukkit(list);
+-            if (choice != null) {
++            if (choice != RecipeChoice.empty()) { // Paper
+                 recipe.setIngredient(c, choice);
+             }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftRecipe.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftRecipe.java
+index a68e036a12b354c4f04b6596dfb9cd6e7663718b..d8af6522f7516de93e33cb9da8490f5ec14e7553 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftRecipe.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftRecipe.java
+@@ -38,6 +38,10 @@ public interface CraftRecipe extends Recipe {
+             stack = Ingredient.of(((RecipeChoice.MaterialChoice) bukkit).getChoices().stream().map((mat) -> CraftItemType.bukkitToMinecraft(mat)));
+         } else if (bukkit instanceof RecipeChoice.ExactChoice) {
+             stack = Ingredient.ofStacks(((RecipeChoice.ExactChoice) bukkit).getChoices().stream().map((mat) -> CraftItemStack.asNMSCopy(mat)));
++            // Paper start - support "empty" choices
++        } else if (bukkit == RecipeChoice.empty()) {
++            stack = Ingredient.of();
++            // Paper end
+         } else {
+             throw new IllegalArgumentException("Unknown recipe stack instance " + bukkit);
+         }
+@@ -58,7 +62,7 @@ public interface CraftRecipe extends Recipe {
+         List<Holder<Item>> items = list.items();
+ 
+         if (items.isEmpty()) {
+-            return null;
++            return RecipeChoice.empty(); // Paper - null breaks API contracts
+         }
+ 
+         if (list.isExact()) {
+diff --git a/src/test/java/io/papermc/paper/inventory/recipe/TestRecipeChoice.java b/src/test/java/io/papermc/paper/inventory/recipe/TestRecipeChoice.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..45ab2b6d32b29cb663df848534e1aa68293dd613
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/inventory/recipe/TestRecipeChoice.java
+@@ -0,0 +1,25 @@
++package io.papermc.paper.inventory.recipe;
++
++import java.util.Iterator;
++import org.bukkit.Bukkit;
++import org.bukkit.inventory.Recipe;
++import org.bukkit.support.environment.AllFeatures;
++import org.junit.jupiter.api.Test;
++
++import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
++import static org.junit.jupiter.api.Assertions.assertTrue;
++
++@AllFeatures
++class TestRecipeChoice {
++
++    @Test
++    void testRecipeChoices() {
++        final Iterator<Recipe> iter = Bukkit.recipeIterator();
++        boolean foundRecipes = false;
++        while (iter.hasNext()) {
++            foundRecipes = true;
++            assertDoesNotThrow(iter::next, "Failed to convert a recipe to Bukkit recipe!");
++        }
++        assertTrue(foundRecipes, "No recipes found!");
++    }
++}
+diff --git a/src/test/java/org/bukkit/support/DummyServerHelper.java b/src/test/java/org/bukkit/support/DummyServerHelper.java
+index 55c05c16a80c489cdda2fd03c943921d38d978e9..6855816ec5fd232b53622c316e45b3c081297085 100644
+--- a/src/test/java/org/bukkit/support/DummyServerHelper.java
++++ b/src/test/java/org/bukkit/support/DummyServerHelper.java
+@@ -92,6 +92,15 @@ public final class DummyServerHelper {
+         // Paper end - testing additions
+ 
+         io.papermc.paper.configuration.GlobalConfigTestingBase.setupGlobalConfigForTest(); // Paper - configuration files - setup global configuration test base
++
++        // Paper start - add test for recipe conversion
++        when(instance.recipeIterator()).thenAnswer(ignored ->
++            com.google.common.collect.Iterators.transform(
++                RegistryHelper.getDataPack().getRecipeManager().byType.entries().iterator(),
++                input -> input.getValue().toBukkitRecipe()
++            )
++        );
++        // Paper end - add test for recipe conversion
+         return instance;
+     }
+ }

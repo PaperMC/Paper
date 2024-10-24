@@ -120,10 +120,10 @@ index 0000000000000000000000000000000000000000..72483dedd3b1864fca3463d3ba3f6fad
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/core/component/DataComponents.java b/src/main/java/net/minecraft/core/component/DataComponents.java
-index c9aef759c1485da753e820f9b509117ca50a31e4..60757f8df706cba92350d73503b73913cff3bcfc 100644
+index a7f6a53cd1168bfc53b616cb0586a546fb9793e7..5e3bfd4a06b4a547a5f813f3d0c533fb7f4451f3 100644
 --- a/src/main/java/net/minecraft/core/component/DataComponents.java
 +++ b/src/main/java/net/minecraft/core/component/DataComponents.java
-@@ -138,10 +138,10 @@ public class DataComponents {
+@@ -180,10 +180,10 @@ public class DataComponents {
          "map_post_processing", builder -> builder.networkSynchronized(MapPostProcessing.STREAM_CODEC)
      );
      public static final DataComponentType<ChargedProjectiles> CHARGED_PROJECTILES = register(
@@ -136,7 +136,7 @@ index c9aef759c1485da753e820f9b509117ca50a31e4..60757f8df706cba92350d73503b73913
      );
      public static final DataComponentType<PotionContents> POTION_CONTENTS = register(
          "potion_contents", builder -> builder.persistent(PotionContents.CODEC).networkSynchronized(PotionContents.STREAM_CODEC).cacheEncoding()
-@@ -208,7 +208,7 @@ public class DataComponents {
+@@ -250,7 +250,7 @@ public class DataComponents {
          "pot_decorations", builder -> builder.persistent(PotDecorations.CODEC).networkSynchronized(PotDecorations.STREAM_CODEC).cacheEncoding()
      );
      public static final DataComponentType<ItemContainerContents> CONTAINER = register(
@@ -162,7 +162,7 @@ index 59c1c103545f04fd35e6932df64a9910a1d74cd7..56bde49e6b7790155b032d0be40961d5
          buf.writeByte(255);
      }
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetEquipmentPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetEquipmentPacket.java
-index 2ea7e90d582866b4e29db80836e250163d811763..d152871142d3def2ac04f50037db53b0527f7894 100644
+index e46030178b3b54168a3532def308a08b10888723..830bd76916e26a3a54954d3cf7b7520af52a2258 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSetEquipmentPacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundSetEquipmentPacket.java
 @@ -19,6 +19,13 @@ public class ClientboundSetEquipmentPacket implements Packet<ClientGamePacketLis
@@ -179,7 +179,7 @@ index 2ea7e90d582866b4e29db80836e250163d811763..d152871142d3def2ac04f50037db53b0
          this.entity = entityId;
          this.slots = equipmentList;
      }
-@@ -41,6 +48,7 @@ public class ClientboundSetEquipmentPacket implements Packet<ClientGamePacketLis
+@@ -40,6 +47,7 @@ public class ClientboundSetEquipmentPacket implements Packet<ClientGamePacketLis
          buf.writeVarInt(this.entity);
          int i = this.slots.size();
  
@@ -187,7 +187,7 @@ index 2ea7e90d582866b4e29db80836e250163d811763..d152871142d3def2ac04f50037db53b0
          for (int j = 0; j < i; j++) {
              Pair<EquipmentSlot, ItemStack> pair = this.slots.get(j);
              EquipmentSlot equipmentSlot = pair.getFirst();
-@@ -49,6 +57,7 @@ public class ClientboundSetEquipmentPacket implements Packet<ClientGamePacketLis
+@@ -48,6 +56,7 @@ public class ClientboundSetEquipmentPacket implements Packet<ClientGamePacketLis
              buf.writeByte(bl ? k | -128 : k);
              ItemStack.OPTIONAL_STREAM_CODEC.encode(buf, pair.getSecond());
          }
@@ -196,10 +196,10 @@ index 2ea7e90d582866b4e29db80836e250163d811763..d152871142d3def2ac04f50037db53b0
  
      @Override
 diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
-index 0e7ace92522fbd4cef7b2c2b8a0f8b86c2cce192..1d849ce4e2c85f149af25318b8ffb6dcef6c6788 100644
+index f3456aeeab7eee5b6d0383a4bf1338dd8cc95bb3..b2fd3e936559c8fcb8b02ae3ef63c4f3bd0edb08 100644
 --- a/src/main/java/net/minecraft/server/level/ServerEntity.java
 +++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
-@@ -349,7 +349,7 @@ public class ServerEntity {
+@@ -388,7 +388,7 @@ public class ServerEntity {
              }
  
              if (!list.isEmpty()) {
@@ -209,10 +209,10 @@ index 0e7ace92522fbd4cef7b2c2b8a0f8b86c2cce192..1d849ce4e2c85f149af25318b8ffb6dc
              ((LivingEntity) this.entity).detectEquipmentUpdatesPublic(); // CraftBukkit - SPIGOT-3789: sync again immediately after sending
          }
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 5215783353021583e7a726d281e4d1734398f073..0fe4c3ff5dd855aea58292c16ba9a2f5d23c00f5 100644
+index 7508434475ea93f9153f3976c5fa95c7678807e9..dc8f2d0bc3adc87088e7289a90c9186483e21cf4 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -2731,7 +2731,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2743,7 +2743,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                                  entity.refreshEntityData(ServerGamePacketListenerImpl.this.player);
                                  // SPIGOT-7136 - Allays
                                  if (entity instanceof Allay || entity instanceof net.minecraft.world.entity.animal.horse.AbstractHorse) { // Paper - Fix horse armor desync
@@ -222,10 +222,10 @@ index 5215783353021583e7a726d281e4d1734398f073..0fe4c3ff5dd855aea58292c16ba9a2f5
  
                                  ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote(); // Paper - fix slot desync - always refresh player inventory
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index b1e894e9a9cd87f7259302d15d5b5b0e2b32c4ea..7b6d067eb8b22a8e0a82a2969c92ba243230733a 100644
+index 6f9c4a5a87bdfb8ce32ce40c4a34997695d15ce3..5a992419f9847480ca6e431b5402d99ac411c15e 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -3353,7 +3353,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3462,7 +3462,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
              }
  
          });
