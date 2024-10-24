@@ -23635,7 +23635,7 @@ index 39c9c0dad159744da8322c3dfa3bfae448f73241..3ed19896a0e06fe834953e6450f23abd
      }
  
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index b9ab241b930edc63a39dbbcf14cd0b5edacb9ea9..3b5b6799b6e7832d7cc7d73afb5f2ca04fee6060 100644
+index b9ab241b930edc63a39dbbcf14cd0b5edacb9ea9..8dd9375f2ad2c65a773a3195aeff1f977e09e7e0 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -32,46 +32,125 @@ import net.minecraft.world.level.lighting.LevelLightEngine;
@@ -23795,7 +23795,7 @@ index b9ab241b930edc63a39dbbcf14cd0b5edacb9ea9..3b5b6799b6e7832d7cc7d73afb5f2ca0
          return this.getFullChunkNowUnchecked();
      }
  
-@@ -89,59 +168,60 @@ public class ChunkHolder extends GenerationChunkHolder {
+@@ -89,64 +168,65 @@ public class ChunkHolder extends GenerationChunkHolder {
      // CraftBukkit end
  
      public CompletableFuture<ChunkResult<LevelChunk>> getTickingChunkFuture() {
@@ -23878,6 +23878,12 @@ index b9ab241b930edc63a39dbbcf14cd0b5edacb9ea9..3b5b6799b6e7832d7cc7d73afb5f2ca0
  
      }
  
+     public boolean blockChanged(BlockPos pos) {
+-        LevelChunk chunk = this.getTickingChunk();
++        LevelChunk chunk = this.playersSentChunkTo.size() == 0 ? null : this.getChunkToSend(); // Paper - rewrite chunk system
+ 
+         if (chunk == null) {
+             return false;
 @@ -172,7 +252,7 @@ public class ChunkHolder extends GenerationChunkHolder {
              return false;
          } else {
@@ -31015,7 +31021,7 @@ index 95d30c2db7e291d65c24feb114b0f3598d280912..99fd67a78539133adf78d65e2c520ff3
  
          public Block getBlock() {
 diff --git a/src/main/java/net/minecraft/world/level/block/state/StateHolder.java b/src/main/java/net/minecraft/world/level/block/state/StateHolder.java
-index 422b364764e0df16ca250b4939d7b226e69c0840..2df28ffc731bd77e0d7af3541cfd3741aa5af83b 100644
+index 422b364764e0df16ca250b4939d7b226e69c0840..815ee11aa5ed3448ff255e9c36d769478de477bd 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/StateHolder.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/StateHolder.java
 @@ -15,7 +15,7 @@ import java.util.stream.Collectors;
@@ -31032,7 +31038,7 @@ index 422b364764e0df16ca250b4939d7b226e69c0840..2df28ffc731bd77e0d7af3541cfd3741
      };
      protected final O owner;
 -    private final Reference2ObjectArrayMap<Property<?>, Comparable<?>> values;
-+    private Reference2ObjectArrayMap<Property<?>, Comparable<?>> values;  // Paper - optimise blockstate property access - remove final
++    private Reference2ObjectArrayMap<Property<?>, Comparable<?>> values; // Paper - optimise blockstate property access - remove final
      private Map<Property<?>, S[]> neighbours;
      protected final MapCodec<S> propertiesCodec;
  
@@ -31859,7 +31865,7 @@ index 325d1e38a72a4b30f30261267e9adfb8a8726b11..86b018042590c3ce115555639e7791c5
  
      @Nullable
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
-index 52f44f14bbda60fe771c351e01e6ff470d7371e6..4167ed830382c6a76bb281e9d753919925c6bd00 100644
+index 52f44f14bbda60fe771c351e01e6ff470d7371e6..b85f354afa23ddf7e24facdb0516407ee2725bee 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
 @@ -13,7 +13,7 @@ import net.minecraft.world.level.block.Blocks;
@@ -31889,8 +31895,8 @@ index 52f44f14bbda60fe771c351e01e6ff470d7371e6..4167ed830382c6a76bb281e9d7539199
 +    private final ca.spottedleaf.moonrise.common.list.ShortList tickingBlocks = new ca.spottedleaf.moonrise.common.list.ShortList();
 +
 +    @Override
-+    public final int moonrise$getSpecialCollidingBlocks() {
-+        return this.specialCollidingBlocks;
++    public final boolean moonrise$hasSpecialCollidingBlocks() {
++        return this.specialCollidingBlocks != 0;
 +    }
 +
 +    @Override
