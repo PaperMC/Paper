@@ -31,18 +31,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                map.add(new java.util.AbstractMap.SimpleEntry<>(this.nodeEvaluator.getTarget(pos.getX(), pos.getY(), pos.getZ()), pos));
 +            }
 +            // Paper end - Perf: remove streams and optimize collection
-             Path path = this.findPath(world.getProfiler(), node, map, followRange, distance, rangeMultiplier);
+             Path path = this.findPath(node, map, followRange, distance, rangeMultiplier);
              this.nodeEvaluator.done();
              return path;
 @@ -0,0 +0,0 @@ public class PathFinder {
      }
  
      @Nullable
--    private Path findPath(ProfilerFiller profiler, Node startNode, Map<Target, BlockPos> positions, float followRange, int distance, float rangeMultiplier) {
+-    private Path findPath(Node startNode, Map<Target, BlockPos> positions, float followRange, int distance, float rangeMultiplier) {
 +    // Paper start - Perf: remove streams and optimize collection
-+    private Path findPath(ProfilerFiller profiler, Node startNode, List<Map.Entry<Target, BlockPos>> positions, float followRange, int distance, float rangeMultiplier) {
-         profiler.push("find_path");
-         profiler.markForCharting(MetricCategory.PATH_FINDING);
++    private Path findPath(Node startNode, List<Map.Entry<Target, BlockPos>> positions, float followRange, int distance, float rangeMultiplier) {
+         ProfilerFiller profilerFiller = Profiler.get();
+         profilerFiller.push("find_path");
+         profilerFiller.markForCharting(MetricCategory.PATH_FINDING);
 -        Set<Target> set = positions.keySet();
 +        // Set<Target> set = positions.keySet();
          startNode.g = 0.0F;
@@ -109,7 +110,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            if (best == null || comparator.compare(path, best) < 0)
 +                best = path;
 +        }
-         profiler.pop();
+         profilerFiller.pop();
 -        return optional.isEmpty() ? null : optional.get();
 +        return best;
 +        // Paper end - Perf: remove streams and optimize collection

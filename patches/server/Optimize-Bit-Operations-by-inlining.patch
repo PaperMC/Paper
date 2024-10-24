@@ -14,24 +14,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      };
      private static final Logger LOGGER = LogUtils.getLogger();
      public static final BlockPos ZERO = new BlockPos(0, 0, 0);
--    private static final int PACKED_X_LENGTH = 1 + Mth.log2(Mth.smallestEncompassingPowerOfTwo(30000000));
--    private static final int PACKED_Z_LENGTH = PACKED_X_LENGTH;
--    public static final int PACKED_Y_LENGTH = 64 - PACKED_X_LENGTH - PACKED_Z_LENGTH;
--    private static final long PACKED_X_MASK = (1L << PACKED_X_LENGTH) - 1L;
+-    public static final int PACKED_HORIZONTAL_LENGTH = 1 + Mth.log2(Mth.smallestEncompassingPowerOfTwo(30000000));
+-    public static final int PACKED_Y_LENGTH = 64 - 2 * PACKED_HORIZONTAL_LENGTH;
+-    private static final long PACKED_X_MASK = (1L << PACKED_HORIZONTAL_LENGTH) - 1L;
 -    private static final long PACKED_Y_MASK = (1L << PACKED_Y_LENGTH) - 1L;
--    private static final long PACKED_Z_MASK = (1L << PACKED_Z_LENGTH) - 1L;
--    private static final int Y_OFFSET = 0;
--    private static final int Z_OFFSET = PACKED_Y_LENGTH;
--    private static final int X_OFFSET = PACKED_Y_LENGTH + PACKED_Z_LENGTH;
+-    private static final long PACKED_Z_MASK = (1L << PACKED_HORIZONTAL_LENGTH) - 1L;
 +    // Paper start - Optimize Bit Operations by inlining
-+    private static final int PACKED_X_LENGTH = 26;
-+    private static final int PACKED_Z_LENGTH = 26;
++    private static final int PACKED_HORIZONTAL_LENGTH = 26;
 +    public static final int PACKED_Y_LENGTH = 12;
 +    private static final long PACKED_X_MASK = 67108863;
 +    private static final long PACKED_Y_MASK = 4095;
 +    private static final long PACKED_Z_MASK = 67108863;
+     private static final int Y_OFFSET = 0;
+-    private static final int Z_OFFSET = PACKED_Y_LENGTH;
+-    private static final int X_OFFSET = PACKED_Y_LENGTH + PACKED_HORIZONTAL_LENGTH;
+-    public static final int MAX_HORIZONTAL_COORDINATE = (1 << PACKED_HORIZONTAL_LENGTH) / 2 - 1;
 +    private static final int Z_OFFSET = 12;
 +    private static final int X_OFFSET = 38;
++    public static final int MAX_HORIZONTAL_COORDINATE = 33554431;
 +    // Paper end - Optimize Bit Operations by inlining
  
      public BlockPos(int x, int y, int z) {
@@ -51,7 +51,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public static int getX(long packedPos) {
--        return (int)(packedPos << 64 - X_OFFSET - PACKED_X_LENGTH >> 64 - PACKED_X_LENGTH);
+-        return (int)(packedPos << 64 - X_OFFSET - PACKED_HORIZONTAL_LENGTH >> 64 - PACKED_HORIZONTAL_LENGTH);
 +        return (int) (packedPos >> 38); // Paper - simplify/inline
      }
  
@@ -61,7 +61,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public static int getZ(long packedPos) {
--        return (int)(packedPos << 64 - Z_OFFSET - PACKED_Z_LENGTH >> 64 - PACKED_Z_LENGTH);
+-        return (int)(packedPos << 64 - Z_OFFSET - PACKED_HORIZONTAL_LENGTH >> 64 - PACKED_HORIZONTAL_LENGTH);
 +        return (int) ((packedPos << 26) >> 38);  // Paper - simplify/inline
      }
  
@@ -206,8 +206,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static Stream<SectionPos> aroundChunk(ChunkPos center, int radius, int minY, int maxY) {
 -        int i = center.x;
 -        int j = center.z;
--        return betweenClosedStream(i - radius, minY, j - radius, i + radius, maxY - 1, j + radius);
-+        return betweenClosedStream(center.x - radius, 0, center.z - radius, center.x + radius, 15, center.z + radius); // Paper - simplify/inline
+-        return betweenClosedStream(i - radius, minY, j - radius, i + radius, maxY, j + radius);
++        return betweenClosedStream(center.x - radius, minY, center.z - radius, center.x + radius, maxY, center.z + radius); // Paper - simplify/inline
      }
  
      public static Stream<SectionPos> betweenClosedStream(int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
