@@ -34,7 +34,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class BlockEntity {
          CompoundTag nbttagcompound = new CompoundTag();
  
-         this.saveAdditional(nbttagcompound, registryLookup);
+         this.saveAdditional(nbttagcompound, registries);
 +        // Paper start - store PDC here as well
 +        if (this.persistentDataContainer != null && !this.persistentDataContainer.isEmpty()) {
 +            nbttagcompound.put("PublicBukkitValues", this.persistentDataContainer.toTagCompound());
@@ -1066,8 +1066,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          <T> Applicator put(ItemMetaKeyType<T> key, T value) {
              this.builder.set(key.TYPE, value);
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
-     private CraftFoodComponent food;
      private CraftToolComponent tool;
+     private CraftEquippableComponent equippable;
      private CraftJukeboxComponent jukebox;
 -    private int damage;
 +    private Integer damage; // Paper - may not be set
@@ -1139,8 +1139,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      @Overridden
      boolean isEmpty() {
--        return !(this.hasDisplayName() || this.hasItemName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.build().isEmpty() || !this.removedTags.isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isHideTooltip() || this.isUnbreakable() || this.hasEnchantmentGlintOverride() || this.isFireResistant() || this.hasMaxStackSize() || this.hasRarity() || this.hasFood() || this.hasTool() || this.hasJukeboxPlayable() || this.hasDamage() || this.hasMaxDamage() || this.hasAttributeModifiers() || this.customTag != null || this.canPlaceOnPredicates != null || this.canBreakPredicates != null); // Paper
-+        return !(this.hasDisplayName() || this.hasItemName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.build().isEmpty() || !this.removedTags.isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isHideTooltip() || this.isUnbreakable() || this.hasEnchantmentGlintOverride() || this.isFireResistant() || this.hasMaxStackSize() || this.hasRarity() || this.hasFood() || this.hasTool() || this.hasJukeboxPlayable() || this.hasDamageValue() || this.hasMaxDamage() || this.hasAttributeModifiers() || this.customTag != null || this.canPlaceOnPredicates != null || this.canBreakPredicates != null); // Paper
+-        return !(this.hasDisplayName() || this.hasItemName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasEnchantable() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.build().isEmpty() || !this.removedTags.isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isHideTooltip() || this.hasTooltipStyle() || this.hasItemModel() || this.isUnbreakable() || this.hasEnchantmentGlintOverride() || this.isGlider() || this.hasDamageResistant() || this.hasMaxStackSize() || this.hasRarity() || this.hasUseRemainder() || this.hasUseCooldown() || this.hasFood() || this.hasTool() || this.hasJukeboxPlayable() || this.hasEquippable() || this.hasDamage() || this.hasMaxDamage() || this.hasAttributeModifiers() || this.customTag != null || this.canPlaceOnPredicates != null || this.canBreakPredicates != null); // Paper
++        return !(this.hasDisplayName() || this.hasItemName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasEnchantable() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.build().isEmpty() || !this.removedTags.isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isHideTooltip() || this.hasTooltipStyle() || this.hasItemModel() || this.isUnbreakable() || this.hasEnchantmentGlintOverride() || this.isGlider() || this.hasDamageResistant() || this.hasMaxStackSize() || this.hasRarity() || this.hasUseRemainder() || this.hasUseCooldown() || this.hasFood() || this.hasTool() || this.hasJukeboxPlayable() || this.hasEquippable() || this.hasDamageValue() || this.hasMaxDamage() || this.hasAttributeModifiers() || this.customTag != null || this.canPlaceOnPredicates != null || this.canBreakPredicates != null); // Paper
      }
  
      // Paper start
@@ -1177,15 +1177,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (lore == null) {
              this.lore = null;
          } else {
-@@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
- 
-     @Override
-     public FoodComponent getFood() {
--        return (this.hasFood()) ? new CraftFoodComponent(this.food) : new CraftFoodComponent(new FoodProperties(0, 0, false, 0, Optional.empty(), Collections.emptyList()));
-+        return (this.hasFood()) ? new CraftFoodComponent(this.food) : new CraftFoodComponent(new FoodProperties(0, 0, false, FoodProperties.DEFAULT_EAT_SECONDS, Optional.empty(), Collections.emptyList())); // Paper - create a valid food properties
-     }
- 
-     @Override
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      @Override
@@ -1282,7 +1273,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator() {}; // Paper - support updating profile after resolving it
          this.applyToItem(tag);
          DataComponentPatch patch = tag.build();
-         Tag nbt = DataComponentPatch.CODEC.encodeStart(MinecraftServer.getDefaultRegistryAccess().createSerializationContext(NbtOps.INSTANCE), patch).getOrThrow();
+         net.minecraft.nbt.Tag nbt = DataComponentPatch.CODEC.encodeStart(MinecraftServer.getDefaultRegistryAccess().createSerializationContext(NbtOps.INSTANCE), patch).getOrThrow();
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      @Override
@@ -1345,7 +1336,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
-                 && (this.hasCustomModelData() ? that.hasCustomModelData() && this.customModelData.equals(that.customModelData) : !that.hasCustomModelData())
+                 && (this.hasEnchantable() ? that.hasEnchantable() && this.enchantableValue.equals(that.enchantableValue) : !that.hasEnchantable())
                  && (this.hasBlockData() ? that.hasBlockData() && this.blockData.equals(that.blockData) : !that.hasBlockData())
                  && (this.hasRepairCost() ? that.hasRepairCost() && this.repairCost == that.repairCost : !that.hasRepairCost())
 -                && (this.hasAttributeModifiers() ? that.hasAttributeModifiers() && CraftMetaItem.compareModifiers(this.attributeModifiers, that.attributeModifiers) : !that.hasAttributeModifiers())
@@ -1354,8 +1345,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  && (this.removedTags.equals(that.removedTags))
                  && (Objects.equals(this.customTag, that.customTag))
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
-                 && (this.hasFood() ? that.hasFood() && this.food.equals(that.food) : !that.hasFood())
                  && (this.hasTool() ? that.hasTool() && this.tool.equals(that.tool) : !that.hasTool())
+                 && (this.hasEquippable() ? that.hasEquippable() && this.equippable.equals(that.equippable) : !that.hasEquippable())
                  && (this.hasJukeboxPlayable() ? that.hasJukeboxPlayable() && this.jukebox.equals(that.jukebox) : !that.hasJukeboxPlayable())
 -                && (this.hasDamage() ? that.hasDamage() && this.damage == that.damage : !that.hasDamage())
 +                && (Objects.equals(this.damage, that.damage)) // Paper - preserve empty/0 damage
@@ -1363,9 +1354,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  && (this.canPlaceOnPredicates != null ? that.canPlaceOnPredicates != null && this.canPlaceOnPredicates.equals(that.canPlaceOnPredicates) : that.canPlaceOnPredicates == null) // Paper
                  && (this.canBreakPredicates != null ? that.canBreakPredicates != null && this.canBreakPredicates.equals(that.canBreakPredicates) : that.canBreakPredicates == null) // Paper
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
-         hash = 61 * hash + (this.hasFood() ? this.food.hashCode() : 0);
          hash = 61 * hash + (this.hasTool() ? this.tool.hashCode() : 0);
          hash = 61 * hash + (this.hasJukeboxPlayable() ? this.jukebox.hashCode() : 0);
+         hash = 61 * hash + (this.hasEquippable() ? this.equippable.hashCode() : 0);
 -        hash = 61 * hash + (this.hasDamage() ? this.damage : 0);
 -        hash = 61 * hash + (this.hasMaxDamage() ? 1231 : 1237);
 -        hash = 61 * hash + (this.hasAttributeModifiers() ? this.attributeModifiers.hashCode() : 0);
@@ -1607,9 +1598,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private List<PotionEffect> customEffects;
 -    private Color color;
 +    private Integer color; // Paper - keep color component consistent with vanilla (top byte is ignored)
+     private String customName;
  
      CraftMetaPotion(CraftMetaItem meta) {
-         super(meta);
 @@ -0,0 +0,0 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
  
              potionContents.customColor().ifPresent((customColor) -> {
@@ -1625,9 +1616,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          Optional<Holder<Potion>> defaultPotion = (this.hasBasePotionType()) ? Optional.of(CraftPotionType.bukkitToMinecraftHolder(this.type)) : Optional.empty();
 -        Optional<Integer> potionColor = (this.hasColor()) ? Optional.of(this.color.asRGB()) : Optional.empty();
 +        Optional<Integer> potionColor = (this.hasColor()) ? Optional.of(this.color) : Optional.empty(); // Paper
+         Optional<String> customName = Optional.ofNullable(this.customName);
  
          List<MobEffectInstance> effectList = new ArrayList<>();
-         if (this.customEffects != null) {
 @@ -0,0 +0,0 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
  
      @Override
@@ -2036,34 +2027,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - General ItemMeta Fixes
  }
-diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftFoodComponent.java b/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftFoodComponent.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftFoodComponent.java
-+++ b/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftFoodComponent.java
-@@ -0,0 +0,0 @@ public final class CraftFoodComponent implements FoodComponent {
- 
-     @Override
-     public void setEatSeconds(float eatSeconds) {
-+        Preconditions.checkArgument(eatSeconds > 0, "Eat seconds must be positive"); // Paper - validate eat_seconds
-         this.handle = new FoodProperties(this.handle.nutrition(), this.handle.saturation(), this.handle.canAlwaysEat(), eatSeconds, this.handle.usingConvertsTo(), this.handle.effects());
-     }
- 
-@@ -0,0 +0,0 @@ public final class CraftFoodComponent implements FoodComponent {
- 
-     @Override
-     public void setUsingConvertsTo(ItemStack item) {
-+        Preconditions.checkArgument(item == null || !item.isEmpty(), "Item cannot be empty"); // Paper - validate using_converts_to
-         this.handle = new FoodProperties(this.handle.nutrition(), this.handle.saturation(), this.handle.canAlwaysEat(), this.handle.eatSeconds(), Optional.ofNullable(item).map(CraftItemStack::asNMSCopy), this.handle.effects());
-     }
- 
-@@ -0,0 +0,0 @@ public final class CraftFoodComponent implements FoodComponent {
- 
-     @Override
-     public FoodEffect addEffect(PotionEffect effect, float probability) {
-+        Preconditions.checkArgument(0 <= probability && probability <= 1, "Probability cannot be outside range [0,1]"); // Paper
-         List<FoodProperties.PossibleEffect> effects = new ArrayList<>(this.handle.effects());
- 
-         FoodProperties.PossibleEffect newEffect = new net.minecraft.world.food.FoodProperties.PossibleEffect(CraftPotionUtil.fromBukkit(effect), probability);
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftToolComponent.java b/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftToolComponent.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftToolComponent.java

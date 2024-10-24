@@ -8,9 +8,9 @@ diff --git a/src/main/java/net/minecraft/world/item/crafting/ShapedRecipe.java b
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/item/crafting/ShapedRecipe.java
 +++ b/src/main/java/net/minecraft/world/item/crafting/ShapedRecipe.java
-@@ -0,0 +0,0 @@ public class ShapedRecipe extends io.papermc.paper.inventory.recipe.RecipeBookEx
+@@ -0,0 +0,0 @@ public class ShapedRecipe implements CraftingRecipe {
          char c = 'a';
-         for (Ingredient list : this.pattern.ingredients()) {
+         for (Optional<Ingredient> list : this.pattern.ingredients()) {
              RecipeChoice choice = CraftRecipe.toBukkit(list);
 -            if (choice != null) {
 +            if (choice != RecipeChoice.empty()) { // Paper
@@ -22,49 +22,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftRecipe.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftRecipe.java
 @@ -0,0 +0,0 @@ public interface CraftRecipe extends Recipe {
+             stack = Ingredient.of(((RecipeChoice.MaterialChoice) bukkit).getChoices().stream().map((mat) -> CraftItemType.bukkitToMinecraft(mat)));
          } else if (bukkit instanceof RecipeChoice.ExactChoice) {
-             stack = new Ingredient(((RecipeChoice.ExactChoice) bukkit).getChoices().stream().map((mat) -> new net.minecraft.world.item.crafting.Ingredient.ItemValue(CraftItemStack.asNMSCopy(mat))));
-             stack.exact = true;
+             stack = Ingredient.ofStacks(((RecipeChoice.ExactChoice) bukkit).getChoices().stream().map((mat) -> CraftItemStack.asNMSCopy(mat)));
 +            // Paper start - support "empty" choices
 +        } else if (bukkit == RecipeChoice.empty()) {
-+            stack = Ingredient.EMPTY;
++            stack = Ingredient.of();
 +            // Paper end
          } else {
              throw new IllegalArgumentException("Unknown recipe stack instance " + bukkit);
          }
 @@ -0,0 +0,0 @@ public interface CraftRecipe extends Recipe {
-         list.getItems();
+         List<Holder<Item>> items = list.items();
  
-         if (list.itemStacks.length == 0) {
+         if (items.isEmpty()) {
 -            return null;
 +            return RecipeChoice.empty(); // Paper - null breaks API contracts
          }
  
-         if (list.exact) {
-diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftSmithingTransformRecipe.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftSmithingTransformRecipe.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftSmithingTransformRecipe.java
-+++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftSmithingTransformRecipe.java
-@@ -0,0 +0,0 @@ public class CraftSmithingTransformRecipe extends SmithingTransformRecipe implem
-     public void addToCraftingManager() {
-         ItemStack result = this.getResult();
- 
--        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toMinecraft(this.getKey()), new net.minecraft.world.item.crafting.SmithingTransformRecipe(this.toNMS(this.getTemplate(), false), this.toNMS(this.getBase(), false), this.toNMS(this.getAddition(), false), CraftItemStack.asNMSCopy(result), this.willCopyDataComponents()))); // Paper - Option to prevent data components copy
-+        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toMinecraft(this.getKey()), new net.minecraft.world.item.crafting.SmithingTransformRecipe(this.toNMS(this.getTemplate(), false), this.toNMS(this.getBase(), false), this.toNMS(this.getAddition(), false), CraftItemStack.asNMSCopy(result), this.willCopyDataComponents()))); // Paper - Option to prevent data components copy & support empty RecipeChoice
-     }
- }
-diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftSmithingTrimRecipe.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftSmithingTrimRecipe.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftSmithingTrimRecipe.java
-+++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftSmithingTrimRecipe.java
-@@ -0,0 +0,0 @@ public class CraftSmithingTrimRecipe extends SmithingTrimRecipe implements Craft
- 
-     @Override
-     public void addToCraftingManager() {
--        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toMinecraft(this.getKey()), new net.minecraft.world.item.crafting.SmithingTrimRecipe(this.toNMS(this.getTemplate(), false), this.toNMS(this.getBase(), false), this.toNMS(this.getAddition(), false), this.willCopyDataComponents()))); // Paper - Option to prevent data components copy
-+        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toMinecraft(this.getKey()), new net.minecraft.world.item.crafting.SmithingTrimRecipe(this.toNMS(this.getTemplate(), false), this.toNMS(this.getBase(), false), this.toNMS(this.getAddition(), false), this.willCopyDataComponents()))); // Paper - Option to prevent data components copy & support empty RecipeChoice
-     }
- }
+         if (list.isExact()) {
 diff --git a/src/test/java/io/papermc/paper/inventory/recipe/TestRecipeChoice.java b/src/test/java/io/papermc/paper/inventory/recipe/TestRecipeChoice.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
