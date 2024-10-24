@@ -1117,12 +1117,12 @@ index 0000000000000000000000000000000000000000..f09ce9c8547ef05153847245746473dd
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/core/MappedRegistry.java b/src/main/java/net/minecraft/core/MappedRegistry.java
-index edbbafd1705345282e5e6251eb71bfde5793b7d4..f22d22ebcedcc9c20225677844c86a1ad27c4211 100644
+index 71e04e5c1bc0722abf8ca2e0738bd60b6d7ae21c..063630c1ffcce099139c59d598fc5a210e21f640 100644
 --- a/src/main/java/net/minecraft/core/MappedRegistry.java
 +++ b/src/main/java/net/minecraft/core/MappedRegistry.java
-@@ -441,4 +441,12 @@ public class MappedRegistry<T> implements WritableRegistry<T> {
-     public HolderLookup.RegistryLookup<T> asLookup() {
-         return this.lookup;
+@@ -509,4 +509,12 @@ public class MappedRegistry<T> implements WritableRegistry<T> {
+ 
+         Stream<HolderSet.Named<T>> getTags();
      }
 +    // Paper start
 +    // used to clear intrusive holders from GameEvent, Item, Block, EntityType, and Fluid from unused instances of those types
@@ -1134,12 +1134,12 @@ index edbbafd1705345282e5e6251eb71bfde5793b7d4..f22d22ebcedcc9c20225677844c86a1a
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java b/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
-index 44b7927081b476813505cab6b3a2da2ec2942c54..0497318e8f647453f38f3a16a8be6bd9aa19253f 100644
+index 4638ba98dbbdb0f880337347be85a6e0fbed2191..12ba8bc0a946c107b076e2c995aca6a3aeb3811f 100644
 --- a/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
 +++ b/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
-@@ -288,6 +288,17 @@ public class BuiltInRegistries {
-         Registries.ENCHANTMENT_PROVIDER_TYPE, EnchantmentProviderTypes::bootstrap
-     );
+@@ -296,6 +296,17 @@ public class BuiltInRegistries {
+     public static final Registry<SlotDisplay.Type<?>> SLOT_DISPLAY = registerSimple(Registries.SLOT_DISPLAY, SlotDisplays::bootstrap);
+     public static final Registry<RecipeBookCategory> RECIPE_BOOK_CATEGORY = registerSimple(Registries.RECIPE_BOOK_CATEGORY, RecipeBookCategories::bootstrap);
      public static final Registry<? extends Registry<?>> REGISTRY = WRITABLE_REGISTRY;
 +    // Paper start - add built-in registry conversions
 +    public static final io.papermc.paper.registry.data.util.Conversions BUILT_IN_CONVERSIONS = new io.papermc.paper.registry.data.util.Conversions(new net.minecraft.resources.RegistryOps.RegistryInfoLookup() {
@@ -1155,7 +1155,7 @@ index 44b7927081b476813505cab6b3a2da2ec2942c54..0497318e8f647453f38f3a16a8be6bd9
  
      private static <T> Registry<T> registerSimple(ResourceKey<? extends Registry<T>> key, BuiltInRegistries.RegistryBootstrap<T> initializer) {
          return internalRegister(key, new MappedRegistry<>(key, Lifecycle.stable(), false), initializer);
-@@ -328,6 +339,7 @@ public class BuiltInRegistries {
+@@ -336,6 +347,7 @@ public class BuiltInRegistries {
      }
      public static void bootStrap(Runnable runnable) {
          // Paper end
@@ -1163,40 +1163,40 @@ index 44b7927081b476813505cab6b3a2da2ec2942c54..0497318e8f647453f38f3a16a8be6bd9
          createContents();
          runnable.run(); // Paper
          freeze();
-@@ -346,6 +358,7 @@ public class BuiltInRegistries {
-         REGISTRY.freeze();
+@@ -355,6 +367,7 @@ public class BuiltInRegistries {
  
          for (Registry<?> registry : REGISTRY) {
+             bindBootstrappedTagsToEmpty(registry);
 +            io.papermc.paper.registry.PaperRegistryListenerManager.INSTANCE.runFreezeListeners(registry.key(), BUILT_IN_CONVERSIONS); // Paper
              registry.freeze();
          }
      }
 diff --git a/src/main/java/net/minecraft/resources/RegistryDataLoader.java b/src/main/java/net/minecraft/resources/RegistryDataLoader.java
-index abadf4abe08dc3bb6612b42cbb3f7df3ffa28ce9..3053243866c655829fe2e980446b4abf1da6d37c 100644
+index 144a6f5b0c53110804d6d099fe857d25f107d938..f2236665eaf3e6d0f9d44605db3cd5afe0cced4e 100644
 --- a/src/main/java/net/minecraft/resources/RegistryDataLoader.java
 +++ b/src/main/java/net/minecraft/resources/RegistryDataLoader.java
-@@ -115,7 +115,7 @@ public class RegistryDataLoader {
-     );
- 
-     public static RegistryAccess.Frozen load(ResourceManager resourceManager, RegistryAccess registryManager, List<RegistryDataLoader.RegistryData<?>> entries) {
--        return load((loader, infoGetter) -> loader.loadFromResources(resourceManager, infoGetter), registryManager, entries);
-+        return load((loader, infoGetter, conversions) -> loader.loadFromResources(resourceManager, infoGetter, conversions), registryManager, entries); // Paper - pass conversions
+@@ -130,7 +130,7 @@ public class RegistryDataLoader {
+     public static RegistryAccess.Frozen load(
+         ResourceManager resourceManager, List<HolderLookup.RegistryLookup<?>> registries, List<RegistryDataLoader.RegistryData<?>> entries
+     ) {
+-        return load((loader, infoGetter) -> loader.loadFromResources(resourceManager, infoGetter), registries, entries);
++        return load((loader, infoGetter, conversions) -> loader.loadFromResources(resourceManager, infoGetter, conversions), registries, entries); // Paper - pass conversions
      }
  
      public static RegistryAccess.Frozen load(
-@@ -124,7 +124,7 @@ public class RegistryDataLoader {
-         RegistryAccess registryManager,
+@@ -139,7 +139,7 @@ public class RegistryDataLoader {
+         List<HolderLookup.RegistryLookup<?>> registries,
          List<RegistryDataLoader.RegistryData<?>> entries
      ) {
--        return load((loader, infoGetter) -> loader.loadFromNetwork(data, factory, infoGetter), registryManager, entries);
-+        return load((loader, infoGetter, conversions) -> loader.loadFromNetwork(data, factory, infoGetter, conversions), registryManager, entries); // Paper - pass conversions
+-        return load((loader, infoGetter) -> loader.loadFromNetwork(data, factory, infoGetter), registries, entries);
++        return load((loader, infoGetter, conversions) -> loader.loadFromNetwork(data, factory, infoGetter, conversions), registries, entries); // Paper - pass conversions
      }
  
      private static RegistryAccess.Frozen load(
-@@ -133,9 +133,11 @@ public class RegistryDataLoader {
+@@ -148,9 +148,11 @@ public class RegistryDataLoader {
          Map<ResourceKey<?>, Exception> map = new HashMap<>();
          List<RegistryDataLoader.Loader<?>> list = entries.stream().map(entry -> entry.create(Lifecycle.stable(), map)).collect(Collectors.toUnmodifiableList());
-         RegistryOps.RegistryInfoLookup registryInfoLookup = createContext(baseRegistryManager, list);
+         RegistryOps.RegistryInfoLookup registryInfoLookup = createContext(registries, list);
 -        list.forEach(loader -> loadable.apply((RegistryDataLoader.Loader<?>)loader, registryInfoLookup));
 +        final io.papermc.paper.registry.data.util.Conversions conversions = new io.papermc.paper.registry.data.util.Conversions(registryInfoLookup); // Paper - create conversions
 +        list.forEach(loader -> loadable.apply((RegistryDataLoader.Loader<?>)loader, registryInfoLookup, conversions));
@@ -1206,7 +1206,7 @@ index abadf4abe08dc3bb6612b42cbb3f7df3ffa28ce9..3053243866c655829fe2e980446b4abf
  
              try {
                  registry.freeze();
-@@ -193,13 +195,13 @@ public class RegistryDataLoader {
+@@ -238,13 +240,13 @@ public class RegistryDataLoader {
      }
  
      private static <E> void loadElementFromResource(
@@ -1222,7 +1222,7 @@ index abadf4abe08dc3bb6612b42cbb3f7df3ffa28ce9..3053243866c655829fe2e980446b4abf
          }
      }
  
-@@ -208,7 +210,8 @@ public class RegistryDataLoader {
+@@ -253,7 +255,8 @@ public class RegistryDataLoader {
          RegistryOps.RegistryInfoLookup infoGetter,
          WritableRegistry<E> registry,
          Decoder<E> elementDecoder,
@@ -1232,7 +1232,7 @@ index abadf4abe08dc3bb6612b42cbb3f7df3ffa28ce9..3053243866c655829fe2e980446b4abf
      ) {
          String string = Registries.elementsDirPath(registry.key());
          FileToIdConverter fileToIdConverter = FileToIdConverter.json(string);
-@@ -221,7 +224,7 @@ public class RegistryDataLoader {
+@@ -266,7 +269,7 @@ public class RegistryDataLoader {
              RegistrationInfo registrationInfo = REGISTRATION_INFO_CACHE.apply(resource.knownPackInfo());
  
              try {
@@ -1241,7 +1241,7 @@ index abadf4abe08dc3bb6612b42cbb3f7df3ffa28ce9..3053243866c655829fe2e980446b4abf
              } catch (Exception var15) {
                  errors.put(
                      resourceKey,
-@@ -237,7 +240,8 @@ public class RegistryDataLoader {
+@@ -284,7 +287,8 @@ public class RegistryDataLoader {
          RegistryOps.RegistryInfoLookup infoGetter,
          WritableRegistry<E> registry,
          Decoder<E> decoder,
@@ -1249,9 +1249,9 @@ index abadf4abe08dc3bb6612b42cbb3f7df3ffa28ce9..3053243866c655829fe2e980446b4abf
 +        Map<ResourceKey<?>, Exception> loadingErrors,
 +        io.papermc.paper.registry.data.util.Conversions conversions // Paper - pass conversions
      ) {
-         List<RegistrySynchronization.PackedRegistryEntry> list = data.get(registry.key());
-         if (list != null) {
-@@ -264,7 +268,7 @@ public class RegistryDataLoader {
+         RegistryDataLoader.NetworkedRegistryData networkedRegistryData = data.get(registry.key());
+         if (networkedRegistryData != null) {
+@@ -311,7 +315,7 @@ public class RegistryDataLoader {
  
                      try {
                          Resource resource = factory.getResourceOrThrow(resourceLocation);
@@ -1260,7 +1260,7 @@ index abadf4abe08dc3bb6612b42cbb3f7df3ffa28ce9..3053243866c655829fe2e980446b4abf
                      } catch (Exception var18) {
                          loadingErrors.put(resourceKey, new IllegalStateException("Failed to parse local data", var18));
                      }
-@@ -274,22 +278,23 @@ public class RegistryDataLoader {
+@@ -323,22 +327,23 @@ public class RegistryDataLoader {
      }
  
      static record Loader<T>(RegistryDataLoader.RegistryData<T> data, WritableRegistry<T> registry, Map<ResourceKey<?>, Exception> loadingErrors) {
@@ -1271,7 +1271,7 @@ index abadf4abe08dc3bb6612b42cbb3f7df3ffa28ce9..3053243866c655829fe2e980446b4abf
          }
  
          public void loadFromNetwork(
-             Map<ResourceKey<? extends Registry<?>>, List<RegistrySynchronization.PackedRegistryEntry>> data,
+             Map<ResourceKey<? extends Registry<?>>, RegistryDataLoader.NetworkedRegistryData> data,
              ResourceProvider factory,
 -            RegistryOps.RegistryInfoLookup infoGetter
 +            RegistryOps.RegistryInfoLookup infoGetter,
@@ -1288,41 +1288,42 @@ index abadf4abe08dc3bb6612b42cbb3f7df3ffa28ce9..3053243866c655829fe2e980446b4abf
 +        void apply(RegistryDataLoader.Loader<?> loader, RegistryOps.RegistryInfoLookup infoGetter, io.papermc.paper.registry.data.util.Conversions conversions); // Paper - pass conversions
      }
  
-     public static record RegistryData<T>(ResourceKey<? extends Registry<T>> key, Codec<T> elementCodec, boolean requiredNonEmpty) {
+     public static record NetworkedRegistryData(List<RegistrySynchronization.PackedRegistryEntry> elements, TagNetworkSerialization.NetworkPayload tags) {
 diff --git a/src/main/java/net/minecraft/server/ReloadableServerRegistries.java b/src/main/java/net/minecraft/server/ReloadableServerRegistries.java
-index 397bdacab9517354875ebc0bc68d35059b3c318b..908431652a0fea79b5a0cee1efd0c7a7d524b614 100644
+index 6fddef967b6314ca0158f5bd4b8898670ea5e9ec..b5ca1a0acb16d0cd8dccc854f309d425a48b070d 100644
 --- a/src/main/java/net/minecraft/server/ReloadableServerRegistries.java
 +++ b/src/main/java/net/minecraft/server/ReloadableServerRegistries.java
-@@ -47,15 +47,16 @@ public class ReloadableServerRegistries {
-     ) {
-         RegistryAccess.Frozen frozen = dynamicRegistries.getAccessForLoading(RegistryLayer.RELOADABLE);
-         RegistryOps<JsonElement> registryOps = new ReloadableServerRegistries.EmptyTagLookupWrapper(frozen).createSerializationContext(JsonOps.INSTANCE);
+@@ -50,8 +50,9 @@ public class ReloadableServerRegistries {
+         );
+         HolderLookup.Provider provider = HolderLookup.Provider.create(list.stream());
+         RegistryOps<JsonElement> registryOps = provider.createSerializationContext(JsonOps.INSTANCE);
 +        final io.papermc.paper.registry.data.util.Conversions conversions = new io.papermc.paper.registry.data.util.Conversions(registryOps.lookupProvider); // Paper
-         List<CompletableFuture<WritableRegistry<?>>> list = LootDataType.values()
--            .map(type -> scheduleElementParse((LootDataType<?>)type, registryOps, resourceManager, prepareExecutor))
-+            .map(type -> scheduleElementParse((LootDataType<?>)type, registryOps, resourceManager, prepareExecutor, conversions)) // Paper
+         List<CompletableFuture<WritableRegistry<?>>> list2 = LootDataType.values()
+-            .map(type -> scheduleRegistryLoad((LootDataType<?>)type, registryOps, resourceManager, prepareExecutor))
++            .map(type -> scheduleRegistryLoad((LootDataType<?>)type, registryOps, resourceManager, prepareExecutor, conversions)) // Paper
              .toList();
-         CompletableFuture<List<WritableRegistry<?>>> completableFuture = Util.sequence(list);
-         return completableFuture.thenApplyAsync(registries -> apply(dynamicRegistries, (List<WritableRegistry<?>>)registries), prepareExecutor);
+         CompletableFuture<List<WritableRegistry<?>>> completableFuture = Util.sequence(list2);
+         return completableFuture.thenApplyAsync(
+@@ -60,7 +61,7 @@ public class ReloadableServerRegistries {
      }
  
-     private static <T> CompletableFuture<WritableRegistry<?>> scheduleElementParse(
+     private static <T> CompletableFuture<WritableRegistry<?>> scheduleRegistryLoad(
 -        LootDataType<T> type, RegistryOps<JsonElement> ops, ResourceManager resourceManager, Executor prepareExecutor
 +        LootDataType<T> type, RegistryOps<JsonElement> ops, ResourceManager resourceManager, Executor prepareExecutor, io.papermc.paper.registry.data.util.Conversions conversions // Paper
      ) {
-         return CompletableFuture.supplyAsync(
-             () -> {
-@@ -66,7 +67,7 @@ public class ReloadableServerRegistries {
-                 SimpleJsonResourceReloadListener.scanDirectory(resourceManager, string, GSON, map);
-                 map.forEach(
-                     (id, json) -> type.deserialize(id, ops, json)
--                            .ifPresent(value -> writableRegistry.register(ResourceKey.create(type.registryKey(), id), (T)value, DEFAULT_REGISTRATION_INFO))
-+                            .ifPresent(value -> io.papermc.paper.registry.PaperRegistryListenerManager.INSTANCE.registerWithListeners(writableRegistry, ResourceKey.create(type.registryKey(), id), value, DEFAULT_REGISTRATION_INFO, conversions)) // Paper - register with listeners
-                 );
-                 return writableRegistry;
-             },
+         return CompletableFuture.supplyAsync(() -> {
+             WritableRegistry<T> writableRegistry = new MappedRegistry<>(type.registryKey(), Lifecycle.experimental());
+@@ -68,7 +69,7 @@ public class ReloadableServerRegistries {
+             Map<ResourceLocation, T> map = new HashMap<>();
+             String string = Registries.elementsDirPath(type.registryKey());
+             SimpleJsonResourceReloadListener.scanDirectory(resourceManager, string, ops, type.codec(), map);
+-            map.forEach((id, value) -> writableRegistry.register(ResourceKey.create(type.registryKey(), id), (T)value, DEFAULT_REGISTRATION_INFO));
++            map.forEach((id, value) -> io.papermc.paper.registry.PaperRegistryListenerManager.INSTANCE.registerWithListeners(writableRegistry, ResourceKey.create(type.registryKey(), id), value, DEFAULT_REGISTRATION_INFO, conversions)); // Paper - register with listeners
+             TagLoader.loadTagsForRegistry(resourceManager, writableRegistry);
+             return writableRegistry;
+         }, prepareExecutor);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
-index 4dff173bbed34a49c22532bbee2b35ebf5920d22..53c70846666b746af6706ed2e363fe388e463e56 100644
+index f8450a2abd1e96fac7827d252cc00038b9dee839..a812a42ea81b1543287e78ea55da6cbf4e0d27f8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
 @@ -167,11 +167,11 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
@@ -1358,7 +1359,7 @@ index 4dff173bbed34a49c22532bbee2b35ebf5920d22..53c70846666b746af6706ed2e363fe38
 +    // Paper end - RegistrySet API
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index 9f2ddd47dc0658db2f95ef80543fb9a4d2f94f9f..68a6cd43042e87501f5bd48565222638dd58a1cf 100644
+index b24ccbff89db873f5bdf62cbebcca0049b94a8d5..49b898ed5e9de2507a6a6aac61dea4fe902649ca 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 @@ -674,6 +674,21 @@ public final class CraftMagicNumbers implements UnsafeValues {
@@ -1433,7 +1434,7 @@ index 0000000000000000000000000000000000000000..47b8ebac8496179008b8932c5ca2aadc
 +    }
 +}
 diff --git a/src/test/java/org/bukkit/registry/RegistryClassTest.java b/src/test/java/org/bukkit/registry/RegistryClassTest.java
-index 575a06125e0b60b5bb8b6f85131f7d6cf86f5083..85f93d8c9b3a48b267e0575ba7fbb3b9f273e70c 100644
+index ea3d37f387bdb0dd5ae3fba9231ace31d0cebd64..c118c911972fe5a9f0c3e306009306f04ae2e821 100644
 --- a/src/test/java/org/bukkit/registry/RegistryClassTest.java
 +++ b/src/test/java/org/bukkit/registry/RegistryClassTest.java
 @@ -111,7 +111,7 @@ public class RegistryClassTest {
