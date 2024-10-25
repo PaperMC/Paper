@@ -61,6 +61,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.kyori.adventure.text.format.TextColor;
 +import net.kyori.adventure.text.format.TextDecoration;
 +import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
++import net.minecraft.commands.arguments.selector.SelectorPattern;
 +import net.minecraft.core.UUIDUtil;
 +import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.nbt.CompoundTag;
@@ -146,7 +147,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            @Subst("key") final String typeKey = isi.item.unwrapKey().orElseThrow().location().toString();
 +            return HoverEvent.ShowItem.showItem(Key.key(typeKey), isi.count, PaperAdventure.asAdventure(isi.getItemStack().getComponentsPatch()));
 +        }, si -> {
-+            final Item itemType = BuiltInRegistries.ITEM.get(PaperAdventure.asVanilla(si.item()));
++            final Item itemType = BuiltInRegistries.ITEM.getValue(PaperAdventure.asVanilla(si.item()));
 +            final Map<Key, DataComponentValue> dataComponentsMap = si.dataComponents();
 +            final ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.wrapAsHolder(itemType), si.count(), PaperAdventure.asVanilla(dataComponentsMap));
 +            return new net.minecraft.network.chat.HoverEvent.ItemStackInfo(stack);
@@ -315,7 +316,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    });
 +
 +    static final MapCodec<KeybindComponent> KEYBIND_COMPONENT_MAP_CODEC = KeybindContents.CODEC.xmap(k -> Component.keybind(k.getName()), k -> new KeybindContents(k.keybind()));
-+    static final MapCodec<ScoreComponent> SCORE_COMPONENT_INNER_MAP_CODEC = ScoreContents.INNER_CODEC.xmap(s -> Component.score(s.getName(), s.getObjective()), s -> new ScoreContents(s.name(), s.objective()));
++    static final MapCodec<ScoreComponent> SCORE_COMPONENT_INNER_MAP_CODEC = ScoreContents.INNER_CODEC.xmap(
++        s -> Component.score(s.name().map(SelectorPattern::pattern, Function.identity()), s.objective()),
++        s -> new ScoreContents(SelectorPattern.parse(s.name()).<Either<SelectorPattern, String>>map(Either::left).result().orElse(Either.right(s.name())), s.objective())
++    ); // TODO we might want to ask adventure for a nice way we can avoid parsing and flattening the SelectorPattern on every conversion.
 +    static final MapCodec<ScoreComponent> SCORE_COMPONENT_MAP_CODEC = SCORE_COMPONENT_INNER_MAP_CODEC.fieldOf("score");
 +    static final MapCodec<SelectorComponent> SELECTOR_COMPONENT_MAP_CODEC = mapCodec((instance) -> {
 +        return instance.group(
@@ -1580,7 +1584,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        final DataComponentPatch.Builder builder = DataComponentPatch.builder();
 +        map.forEach((key, dataComponentValue) -> {
-+            final DataComponentType<?> type = requireNonNull(BuiltInRegistries.DATA_COMPONENT_TYPE.get(asVanilla(key)));
++            final DataComponentType<?> type = requireNonNull(BuiltInRegistries.DATA_COMPONENT_TYPE.getValue(asVanilla(key)));
 +            if (dataComponentValue instanceof DataComponentValue.Removed) {
 +                builder.remove(type);
 +                return;
@@ -1895,7 +1899,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                GsonDataComponentValue.class,
 +                PaperAdventure.DataComponentValueImpl.class,
 +                (key, dataComponentValue) -> {
-+                    final @Nullable DataComponentType<?> type = BuiltInRegistries.DATA_COMPONENT_TYPE.get(PaperAdventure.asVanilla(key));
++                    final @Nullable DataComponentType<?> type = BuiltInRegistries.DATA_COMPONENT_TYPE.getValue(PaperAdventure.asVanilla(key));
 +                    if (type == null) {
 +                        throw new IllegalArgumentException("Unknown data component type: " + key);
 +                    }
@@ -1911,7 +1915,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                DataComponentValue.TagSerializable.class,
 +                PaperAdventure.DataComponentValueImpl.class,
 +                (key, tagSerializable) -> {
-+                    final @Nullable DataComponentType<?> type = BuiltInRegistries.DATA_COMPONENT_TYPE.get(PaperAdventure.asVanilla(key));
++                    final @Nullable DataComponentType<?> type = BuiltInRegistries.DATA_COMPONENT_TYPE.getValue(PaperAdventure.asVanilla(key));
 +                    if (type == null) {
 +                        throw new IllegalArgumentException("Unknown data component type: " + key);
 +                    }

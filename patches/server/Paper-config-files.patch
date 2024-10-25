@@ -3178,7 +3178,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    protected final Registry<R> registry() {
-+        return this.registryAccess.registryOrThrow(this.registryKey);
++        return this.registryAccess.lookupOrThrow(this.registryKey);
 +    }
 +
 +    protected abstract T convertFromResourceKey(ResourceKey<R> key) throws SerializationException;
@@ -3240,7 +3240,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    protected Holder<T> convertFromResourceKey(ResourceKey<T> key) throws SerializationException {
-+        return this.registry().getHolder(key).orElseThrow(() -> new SerializationException("Missing holder in " + this.registry().key() + " with key " + key));
++        return this.registry().get(key).orElseThrow(() -> new SerializationException("Missing holder in " + this.registry().key() + " with key " + key));
 +    }
 +
 +    @Override
@@ -3277,7 +3277,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    protected T convertFromResourceKey(ResourceKey<T> key) throws SerializationException {
-+        final T value = this.registry().get(key);
++        final T value = this.registry().getValue(key);
 +        if (value == null) {
 +            throw new SerializationException("Missing value in " + this.registry() + " with key " + key.location());
 +        }
@@ -3668,7 +3668,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        final Reference2LongMap<Holder<ConfiguredFeature<?, ?>>> features = Objects.requireNonNullElseGet(featureNode.get(new TypeToken<Reference2LongMap<Holder<ConfiguredFeature<?, ?>>>>() {}), Reference2LongOpenHashMap::new);
 +        final Random random = new SecureRandom();
 +        AtomicInteger counter = new AtomicInteger(0);
-+        MinecraftServer.getServer().registryAccess().registryOrThrow(Registries.CONFIGURED_FEATURE).holders().forEach(holder -> {
++        MinecraftServer.getServer().registryAccess().lookupOrThrow(Registries.CONFIGURED_FEATURE).listElements().forEach(holder -> {
 +            if (features.containsKey(holder)) {
 +                return;
 +            }
@@ -3805,7 +3805,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            )
 +            .addVersion(26, ConfigurationTransformation.builder().addAction(path("alt-item-despawn-rate", "items", ConfigurationTransformation.WILDCARD_OBJECT), (path, value) -> {
 +                String itemName = path.get(path.size() - 1).toString();
-+                final Optional<Holder.Reference<Item>> item = BuiltInRegistries.ITEM.getHolder(ResourceKey.create(Registries.ITEM, ResourceLocation.parse(itemName.toLowerCase(Locale.ROOT))));
++                final Optional<Holder.Reference<Item>> item = BuiltInRegistries.ITEM.get(ResourceKey.create(Registries.ITEM, ResourceLocation.parse(itemName.toLowerCase(Locale.ROOT))));
 +                if (item.isEmpty()) {
 +                    itemName = Material.valueOf(itemName).getKey().getKey();
 +                }
@@ -3837,7 +3837,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    Map<String, Integer> rebuild = new HashMap<>();
 +                    value.childrenMap().forEach((key, node) -> {
 +                        String itemName = key.toString();
-+                        final Optional<Holder.Reference<Item>> itemHolder = BuiltInRegistries.ITEM.getHolder(ResourceKey.create(Registries.ITEM, ResourceLocation.parse(itemName.toLowerCase(Locale.ROOT))));
++                        final Optional<Holder.Reference<Item>> itemHolder = BuiltInRegistries.ITEM.get(ResourceKey.create(Registries.ITEM, ResourceLocation.parse(itemName.toLowerCase(Locale.ROOT))));
 +                        final @Nullable String item;
 +                        if (itemHolder.isEmpty()) {
 +                            final @Nullable Material bukkitMat = Material.matchMaterial(itemName);
