@@ -9,7 +9,7 @@ on dropping the item instead of generalizing it for all dropped
 items like CB does.
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index b0b4bede6f25b8a0de54d954c7010021f87aadc3..52b18f2c333b7535929bb4e52e65cf5fb0f5692f 100644
+index 419fcb4cd97cf10a2601e02024b999a51a0ff952..df21cd1bd2a3dda7169edbea18bbfdf043db76f8 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -1235,20 +1235,20 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
@@ -28,7 +28,7 @@ index b0b4bede6f25b8a0de54d954c7010021f87aadc3..52b18f2c333b7535929bb4e52e65cf5f
                  }
              }
          }
-         if (this.shouldDropLoot() && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) { // Paper - fix player loottables running when mob loot gamerule is false
+         if (this.shouldDropLoot() && this.serverLevel().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) { // Paper - fix player loottables running when mob loot gamerule is false
          // SPIGOT-5071: manually add player loot tables (SPIGOT-5195 - ignores keepInventory rule)
          this.dropFromLootTable(this.serverLevel(), damageSource, this.lastHurtByPlayerTime > 0);
 -        this.dropCustomDeathLoot(this.serverLevel(), damageSource, flag);
@@ -37,7 +37,7 @@ index b0b4bede6f25b8a0de54d954c7010021f87aadc3..52b18f2c333b7535929bb4e52e65cf5f
          loot.addAll(this.drops);
          this.drops.clear(); // SPIGOT-5188: make sure to clear
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 1fb29f2c5e55d77eb5d04d423cf9f38a6e7d9f4c..0223f2e282a85882645f4ed52891c566a268f37b 100644
+index 1d66c35b1092b8101f0a803d8c087e5a958875b1..aac1d620bf4cd1f18243f8c53cd32ab16fdeb616 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -2678,19 +2678,45 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
@@ -86,10 +86,10 @@ index 1fb29f2c5e55d77eb5d04d423cf9f38a6e7d9f4c..0223f2e282a85882645f4ed52891c566
 -            entityitem.setDefaultPickUpDelay();
 +            entityitem.setDefaultPickUpDelay(); // Paper - diff on change (in dropConsumer)
              // Paper start - Call EntityDropItemEvent
-             return this.spawnAtLocation(entityitem);
+             return this.spawnAtLocation(world, entityitem);
          }
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index d37e6651b7be89b14ed5781e1a72fc1b8f50c103..0fcc5ed28b2371a62be57d7ea62f2e3dfedcf735 100644
+index 9bc6ed9fd8e5154d39fe12ffed1ecd5ec8e70df8..4b9108e48d052919bca000ddb54f9bf4589c33e6 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -291,7 +291,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
