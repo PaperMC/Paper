@@ -6,15 +6,18 @@ Subject: [PATCH] Add Shearable API
 
 diff --git a/src/main/java/io/papermc/paper/entity/PaperShearable.java b/src/main/java/io/papermc/paper/entity/PaperShearable.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bcf254e3c81cf1e401bddc850fb24ad29dcc127c
+index 0000000000000000000000000000000000000000..b02e2f2ea4f83615897cb4c66be8b29948097815
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/entity/PaperShearable.java
-@@ -0,0 +1,21 @@
+@@ -0,0 +1,25 @@
 +package io.papermc.paper.entity;
 +
 +import io.papermc.paper.adventure.PaperAdventure;
 +import net.kyori.adventure.sound.Sound;
++import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.world.entity.Shearable;
++import net.minecraft.world.item.ItemStack;
++import net.minecraft.world.item.Items;
 +import org.jetbrains.annotations.NotNull;
 +
 +public interface PaperShearable extends io.papermc.paper.entity.Shearable {
@@ -28,9 +31,20 @@ index 0000000000000000000000000000000000000000..bcf254e3c81cf1e401bddc850fb24ad2
 +
 +    @Override
 +    default void shear(@NotNull Sound.Source source) {
-+        this.getHandle().shear(PaperAdventure.asVanilla(source));
++        if (!(this.getHandle().level() instanceof final ServerLevel serverLevel)) return;
++        this.getHandle().shear(serverLevel, PaperAdventure.asVanilla(source), new ItemStack(Items.SHEARS));
 +    }
 +}
+diff --git a/src/main/java/net/minecraft/world/entity/Shearable.java b/src/main/java/net/minecraft/world/entity/Shearable.java
+index a3095eee48d8b87a35ad35da9c8a2a9ca20c92bc..35076593f3ccd651295ae1fc9bcf8256c19672dd 100644
+--- a/src/main/java/net/minecraft/world/entity/Shearable.java
++++ b/src/main/java/net/minecraft/world/entity/Shearable.java
+@@ -8,4 +8,5 @@ public interface Shearable {
+     void shear(ServerLevel world, SoundSource shearedSoundCategory, ItemStack shears);
+ 
+     boolean readyForShearing();
++    net.minecraft.world.level.Level level(); // Shearable API - expose default level needed for shearing.
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftBogged.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftBogged.java
 index 0139e85c0751564bb4d2847b7b2e48f75fee9e53..e8e4704304504e69c7964dcd4df8ce5db9e92bf6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftBogged.java

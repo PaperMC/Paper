@@ -3,6 +3,8 @@ From: Madeline Miller <mnmiller1@me.com>
 Date: Thu, 31 Dec 2020 12:48:19 +1000
 Subject: [PATCH] API to get Material from Boats and Minecarts
 
+== AT ==
+public net.minecraft.world.entity.vehicle.AbstractBoat getDropItem()Lnet/minecraft/world/item/Item;
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftBoat.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftBoat.java
 index c101d01b55472efc9fc2829b8c17db5377ed57ff..5d51a49228eaee94f91cd04843e27c7918ca8796 100644
@@ -23,37 +25,36 @@ index c101d01b55472efc9fc2829b8c17db5377ed57ff..5d51a49228eaee94f91cd04843e27c79
      public Status getStatus() {
          return CraftBoat.boatStatusFromNms(this.getHandle().status);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecart.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecart.java
-index ee010d53f8c671d17d68f3f43dca9978e23ac8ab..8920af5a0dfe737c1f38d906b53e6a278456d2aa 100644
+index ee010d53f8c671d17d68f3f43dca9978e23ac8ab..d35c1a10e58932b19c8053c5dacdc25fd7f22e8c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecart.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecart.java
-@@ -1,8 +1,10 @@
- package org.bukkit.craftbukkit.entity;
- 
+@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.entity;
  import net.minecraft.world.entity.vehicle.AbstractMinecart;
-+import net.minecraft.world.item.Items; // Paper
  import net.minecraft.world.level.block.Blocks;
  import net.minecraft.world.level.block.state.BlockState;
 +import org.bukkit.Material; // Paper
  import org.bukkit.block.data.BlockData;
  import org.bukkit.craftbukkit.CraftServer;
  import org.bukkit.craftbukkit.block.data.CraftBlockData;
-@@ -68,6 +70,22 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
+@@ -68,6 +69,24 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
          this.getHandle().setDerailedVelocityMod(derailed);
      }
  
 +    // Paper start
 +    @Override
 +    public Material getMinecartMaterial() {
-+         net.minecraft.world.item.Item minecartItem = switch (getHandle().getMinecartType()) {
-+            case CHEST -> Items.CHEST_MINECART;
-+            case FURNACE ->  Items.FURNACE_MINECART;
-+            case TNT ->  Items.TNT_MINECART;
-+            case HOPPER ->  Items.HOPPER_MINECART;
-+            case COMMAND_BLOCK ->  Items.COMMAND_BLOCK_MINECART;
-+            case RIDEABLE, SPAWNER ->  Items.MINECART;
-+        };
++        return CraftMagicNumbers.getMaterial(minecartEntityTypeToMaterial(this.getHandle().getType()));
++    }
 +
-+        return CraftMagicNumbers.getMaterial(minecartItem);
++    static net.minecraft.world.item.Item minecartEntityTypeToMaterial(final net.minecraft.world.entity.EntityType<?> type) {
++        if (type == net.minecraft.world.entity.EntityType.MINECART) return net.minecraft.world.item.Items.MINECART;
++        else if (type == net.minecraft.world.entity.EntityType.CHEST_MINECART) return net.minecraft.world.item.Items.CHEST_MINECART;
++        else if (type == net.minecraft.world.entity.EntityType.FURNACE_MINECART) return net.minecraft.world.item.Items.FURNACE_MINECART;
++        else if (type == net.minecraft.world.entity.EntityType.SPAWNER_MINECART) return net.minecraft.world.item.Items.MINECART;
++        else if (type == net.minecraft.world.entity.EntityType.COMMAND_BLOCK_MINECART) return net.minecraft.world.item.Items.COMMAND_BLOCK_MINECART;
++        else if (type == net.minecraft.world.entity.EntityType.HOPPER_MINECART) return net.minecraft.world.item.Items.HOPPER_MINECART;
++        else if (type == net.minecraft.world.entity.EntityType.TNT_MINECART) return net.minecraft.world.item.Items.TNT_MINECART;
++        else throw new UnsupportedOperationException("Server implementation is missing minecart material binding for entity type " + type.toShortString());
 +    }
 +    // Paper end
 +
