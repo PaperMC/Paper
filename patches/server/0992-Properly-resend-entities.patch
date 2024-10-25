@@ -1,0 +1,272 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Wed, 7 Dec 2022 17:25:19 -0500
+Subject: [PATCH] Properly resend entities
+
+This resolves some issues which caused entities to not be resent correctly.
+Entities that are interacted with need to be resent to the client, so we resend all the entity
+data to the player whilst making sure not to clear dirty entries from the tracker. This makes
+sure that values will be correctly updated to other players.
+
+This also adds utilities to aid in further preventing entity desyncs.
+
+This also also fixes the bug causing cancelling PlayerInteractEvent to cause items to continue
+to be used despite being cancelled on the server.
+
+For example, items being consumed but never finishing, shields being put up, etc.
+The underlying issue of this is that the client modifies their synced data values,
+and so we have to (forcibly) resend them in order for the client to reset their using item state.
+
+See: https://github.com/PaperMC/Paper/pull/1896
+
+== AT ==
+public net.minecraft.server.level.ChunkMap$TrackedEntity serverEntity
+
+diff --git a/src/main/java/net/minecraft/network/syncher/SynchedEntityData.java b/src/main/java/net/minecraft/network/syncher/SynchedEntityData.java
+index 02bf2705ca1c99023a83a22d92e1962181102297..0f99733660f91280e4c6262cf75b3c9cae86f65a 100644
+--- a/src/main/java/net/minecraft/network/syncher/SynchedEntityData.java
++++ b/src/main/java/net/minecraft/network/syncher/SynchedEntityData.java
+@@ -50,7 +50,7 @@ public class SynchedEntityData {
+         }
+     }
+ 
+-    private <T> SynchedEntityData.DataItem<T> getItem(EntityDataAccessor<T> key) {
++    public <T> SynchedEntityData.DataItem<T> getItem(EntityDataAccessor<T> key) { // Paper - public
+         return (SynchedEntityData.DataItem<T>) this.itemsById[key.id()]; // CraftBukkit - decompile error
+     }
+ 
+@@ -151,6 +151,20 @@ public class SynchedEntityData {
+         }
+     }
+ 
++    // Paper start
++    // We need to pack all as we cannot rely on "non default values" or "dirty" ones.
++    // Because these values can possibly be desynced on the client.
++    @Nullable
++    public List<SynchedEntityData.DataValue<?>> packAll() {
++        final List<SynchedEntityData.DataValue<?>> list = new ArrayList<>();
++        for (final DataItem<?> dataItem : this.itemsById) {
++            list.add(dataItem.value());
++        }
++
++        return list;
++    }
++    // Paper end
++
+     public static class DataItem<T> {
+ 
+         final EntityDataAccessor<T> accessor;
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+index f2dd272a01b4e946a6746865d55ebc9861f8361b..5d189ba60d40f5c42b2dacc339594ed067418e95 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -567,6 +567,7 @@ public class ServerPlayerGameMode {
+             }
+             // Paper end - extend Player Interact cancellation
+             player.getBukkitEntity().updateInventory(); // SPIGOT-2867
++            this.player.resyncUsingItem(this.player); // Paper - Properly cancel usable items
+             return (event.useItemInHand() != Event.Result.ALLOW) ? InteractionResult.SUCCESS : InteractionResult.PASS;
+         } else if (this.gameModeForPlayer == GameType.SPECTATOR) {
+             MenuProvider itileinventory = iblockdata.getMenuProvider(world, blockposition);
+@@ -618,6 +619,11 @@ public class ServerPlayerGameMode {
+ 
+                 return enuminteractionresult;
+             } else {
++                // Paper start - Properly cancel usable items; Cancel only if cancelled + if the interact result is different from default response
++                if (this.interactResult && this.interactResult != cancelledItem) {
++                    this.player.resyncUsingItem(this.player);
++                }
++                // Paper end - Properly cancel usable items
+                 return InteractionResult.PASS;
+             }
+         }
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 52eafd99ed63f5fc9596225cf45175b1287f20a1..e5db85f858ab376b225172e22b92b841f1f9546a 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1966,6 +1966,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+             }
+ 
+             if (cancelled) {
++                this.player.resyncUsingItem(this.player); // Paper - Properly cancel usable items
+                 this.player.getBukkitEntity().updateInventory(); // SPIGOT-2524
+                 return;
+             }
+@@ -2737,7 +2738,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+                             // Entity in bucket - SPIGOT-4048 and SPIGOT-6859a
+                             if ((entity instanceof Bucketable && entity instanceof LivingEntity && origItem != null && origItem.asItem() == Items.WATER_BUCKET) && (event.isCancelled() || ServerGamePacketListenerImpl.this.player.getInventory().getSelected() == null || ServerGamePacketListenerImpl.this.player.getInventory().getSelected().getItem() != origItem)) {
+-                                entity.getBukkitEntity().update(ServerGamePacketListenerImpl.this.player);
++                                entity.resendPossiblyDesyncedEntityData(ServerGamePacketListenerImpl.this.player); // Paper - The entire mob gets deleted, so resend it
+                                 ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote();
+                             }
+ 
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 59cc1702079f1d182bdbe8068aa37b5b979aa64d..90c469193ecf9d04dd9e3f1a38157d47c5094985 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -397,7 +397,7 @@ public abstract class PlayerList {
+         ((ServerLevel)player.level()).getChunkSource().chunkMap.addEntity(player); // Paper - Fire PlayerJoinEvent when Player is actually ready; track entity now
+         // CraftBukkit end
+ 
+-        player.refreshEntityData(player); // CraftBukkit - BungeeCord#2321, send complete data to self on spawn
++        //player.refreshEntityData(player); // CraftBukkit - BungeeCord#2321, send complete data to self on spawn // Paper - THIS IS NOT NEEDED ANYMORE
+ 
+         this.sendLevelInfo(player, worldserver1);
+ 
+@@ -908,12 +908,17 @@ public abstract class PlayerList {
+     }
+ 
+     public void sendActiveEffects(LivingEntity entity, ServerGamePacketListenerImpl networkHandler) {
++        // Paper start - collect packets
++        this.sendActiveEffects(entity, networkHandler::send);
++    }
++    public void sendActiveEffects(LivingEntity entity, java.util.function.Consumer<Packet<? super net.minecraft.network.protocol.game.ClientGamePacketListener>> packetConsumer) {
++        // Paper end - collect packets
+         Iterator iterator = entity.getActiveEffects().iterator();
+ 
+         while (iterator.hasNext()) {
+             MobEffectInstance mobeffect = (MobEffectInstance) iterator.next();
+ 
+-            networkHandler.send(new ClientboundUpdateMobEffectPacket(entity.getId(), mobeffect, false));
++            packetConsumer.accept(new ClientboundUpdateMobEffectPacket(entity.getId(), mobeffect, false)); // Paper - collect packets
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 87136591e2a8421b46e124b0093c56da87aec61b..7784ff17216a25c6dbf26648831c04734300dad1 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -598,13 +598,45 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+ 
+     // CraftBukkit start
+     public void refreshEntityData(ServerPlayer to) {
+-        List<SynchedEntityData.DataValue<?>> list = this.getEntityData().getNonDefaultValues();
++        List<SynchedEntityData.DataValue<?>> list = this.entityData.packAll(); // Paper - Update EVERYTHING not just not default
+ 
+-        if (list != null) {
++        if (list != null && to.getBukkitEntity().canSee(this.getBukkitEntity())) { // Paper
+             to.connection.send(new ClientboundSetEntityDataPacket(this.getId(), list));
+         }
+     }
+     // CraftBukkit end
++    // Paper start
++    // This method should only be used if the data of an entity could have become desynced
++    // due to interactions on the client.
++    public void resendPossiblyDesyncedEntityData(net.minecraft.server.level.ServerPlayer player) {
++        if (player.getBukkitEntity().canSee(this.getBukkitEntity())) {
++            ServerLevel world = (net.minecraft.server.level.ServerLevel)this.level();
++            net.minecraft.server.level.ChunkMap.TrackedEntity tracker = world == null ? null : world.getChunkSource().chunkMap.entityMap.get(this.getId());
++            if (tracker == null) {
++                return;
++            }
++            final net.minecraft.server.level.ServerEntity serverEntity = tracker.serverEntity;
++            final List<net.minecraft.network.protocol.Packet<? super net.minecraft.network.protocol.game.ClientGamePacketListener>> list = new java.util.ArrayList<>();
++            serverEntity.sendPairingData(player, list::add);
++            player.connection.send(new net.minecraft.network.protocol.game.ClientboundBundlePacket(list));
++        }
++    }
++
++    // This method allows you to specifically resend certain data accessor keys to the client
++    public void resendPossiblyDesyncedDataValues(List<EntityDataAccessor<?>> keys, ServerPlayer to) {
++        if (!to.getBukkitEntity().canSee(this.getBukkitEntity())) {
++            return;
++        }
++
++        final List<SynchedEntityData.DataValue<?>> values = new java.util.ArrayList<>(keys.size());
++        for (final EntityDataAccessor<?> key : keys) {
++            final SynchedEntityData.DataItem<?> synchedValue = this.entityData.getItem(key);
++            values.add(synchedValue.value());
++        }
++
++        to.connection.send(new ClientboundSetEntityDataPacket(this.id, values));
++    }
++    // Paper end
+ 
+     public boolean equals(Object object) {
+         return object instanceof Entity ? ((Entity) object).id == this.id : false;
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 52ca53b4795981080476fa9425e01f2c804ae6b7..ed84f06d64afb117e08e8c8b54e992c0159a4a77 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -4031,6 +4031,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         return ((Byte) this.entityData.get(LivingEntity.DATA_LIVING_ENTITY_FLAGS) & 2) > 0 ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
+     }
+ 
++    // Paper start - Properly cancel usable items
++    public void resyncUsingItem(ServerPlayer serverPlayer) {
++        this.resendPossiblyDesyncedDataValues(java.util.List.of(DATA_LIVING_ENTITY_FLAGS), serverPlayer);
++    }
++    // Paper end - Properly cancel usable items
+     private void updatingUsingItem() {
+         if (this.isUsingItem()) {
+             if (ItemStack.isSameItem(this.getItemInHand(this.getUsedItemHand()), this.useItem)) {
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Bucketable.java b/src/main/java/net/minecraft/world/entity/animal/Bucketable.java
+index 5a12f4c1de2d020e84af933d491397b38d227824..4eca5996a867086be22d22d99db81ab001467516 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Bucketable.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Bucketable.java
+@@ -108,8 +108,7 @@ public interface Bucketable {
+             itemstack1 = CraftItemStack.asNMSCopy(playerBucketFishEvent.getEntityBucket());
+             if (playerBucketFishEvent.isCancelled()) {
+                 ((ServerPlayer) player).containerMenu.sendAllDataToRemote(); // We need to update inventory to resync client's bucket
+-                entity.getBukkitEntity().update((ServerPlayer) player); // We need to play out these packets as the client assumes the fish is gone
+-                entity.refreshEntityData((ServerPlayer) player); // Need to send data such as the display name to client
++                entity.resendPossiblyDesyncedEntityData((ServerPlayer) player); // Paper
+                 return Optional.of(InteractionResult.FAIL);
+             }
+             entity.playSound(((Bucketable) entity).getPickupSound(), 1.0F, 1.0F);
+diff --git a/src/main/java/net/minecraft/world/item/component/SuspiciousStewEffects.java b/src/main/java/net/minecraft/world/item/component/SuspiciousStewEffects.java
+index 04760d8ba7c560bd9d11191c666715ae8c3e4bff..768f90682cd10045c16337fecc2702f57dfe8a50 100644
+--- a/src/main/java/net/minecraft/world/item/component/SuspiciousStewEffects.java
++++ b/src/main/java/net/minecraft/world/item/component/SuspiciousStewEffects.java
+@@ -47,9 +47,14 @@ public record SuspiciousStewEffects(List<SuspiciousStewEffects.Entry> effects) i
+     // CraftBukkit start
+     @Override
+     public void cancelUsingItem(net.minecraft.server.level.ServerPlayer entityplayer, ItemStack itemstack) {
++        final List<net.minecraft.network.protocol.Packet<? super net.minecraft.network.protocol.game.ClientGamePacketListener>> packets = new java.util.ArrayList<>(); // Paper - bundlize packets
+         for (SuspiciousStewEffects.Entry suspicioussteweffects_a : this.effects) {
+-            entityplayer.connection.send(new net.minecraft.network.protocol.game.ClientboundRemoveMobEffectPacket(entityplayer.getId(), suspicioussteweffects_a.effect()));
++            packets.add(new net.minecraft.network.protocol.game.ClientboundRemoveMobEffectPacket(entityplayer.getId(), suspicioussteweffects_a.effect())); // Paper - bundlize packets
+         }
++        // Paper start - bundlize packets
++        entityplayer.server.getPlayerList().sendActiveEffects(entityplayer, packets::add);
++        entityplayer.connection.send(new net.minecraft.network.protocol.game.ClientboundBundlePacket(packets));
++        // Paper end - bundlize packets
+     }
+     // CraftBukkit end
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index c1d3dd2bd217efd6914bceb1027fa12b06c22a55..ca95a36b0149d4b8a67c3b42316c5d9d0415f5dd 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -1013,7 +1013,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+             return;
+         }
+ 
+-        entityTracker.broadcast(this.getHandle().getAddEntityPacket(entityTracker.serverEntity));
++        // Paper start - resend possibly desynced entity instead of add entity packet
++        for (final ServerPlayerConnection connection : entityTracker.seenBy) {
++            this.getHandle().resendPossiblyDesyncedEntityData(connection.getPlayer());
++        }
++        // Paper end - resend possibly desynced entity instead of add entity packet
+     }
+ 
+     public void update(ServerPlayer player) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftItemFrame.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftItemFrame.java
+index f3a9b3380246fb2dd4b60a8d1a94c5dfed98d316..350ad61ab3fe66abd528e353b431a4a6dac17506 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftItemFrame.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftItemFrame.java
+@@ -39,9 +39,11 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
+     protected void update() {
+         super.update();
+ 
++        // Paper start, don't mark as dirty as this is handled in super.update()
+         // mark dirty, so that the client gets updated with item and rotation
+-        this.getHandle().getEntityData().markDirty(net.minecraft.world.entity.decoration.ItemFrame.DATA_ITEM);
+-        this.getHandle().getEntityData().markDirty(net.minecraft.world.entity.decoration.ItemFrame.DATA_ROTATION);
++        //this.getHandle().getEntityData().markDirty(net.minecraft.world.entity.decoration.ItemFrame.DATA_ITEM);
++        //this.getHandle().getEntityData().markDirty(net.minecraft.world.entity.decoration.ItemFrame.DATA_ROTATION);
++        // Paper end
+ 
+         // update redstone
+         if (!this.getHandle().generation) {

@@ -1,0 +1,168 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Wed, 16 Oct 2024 06:41:32 -0700
+Subject: [PATCH] Add proper async player disconnections
+
+Blocking can cause performance problems
+
+diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
+index 90a2c61c42cba7e38f167eccdd7a951a947963c4..fff8d15d44613a075b9793c2a41520212166eb3b 100644
+--- a/src/main/java/net/minecraft/network/Connection.java
++++ b/src/main/java/net/minecraft/network/Connection.java
+@@ -844,6 +844,14 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+ 
+     }
+ 
++    // Paper start - add proper async disconnect
++    public void enableAutoRead() {
++        if (this.channel != null) {
++            this.channel.config().setAutoRead(true);
++        }
++    }
++    // Paper end - add proper async disconnect
++
+     public void setupCompression(int compressionThreshold, boolean rejectsBadPackets) {
+         if (compressionThreshold >= 0) {
+             com.velocitypowered.natives.compression.VelocityCompressor compressor = com.velocitypowered.natives.util.Natives.compress.get().create(io.papermc.paper.configuration.GlobalConfiguration.get().misc.compressionLevel.or(-1)); // Paper - Use Velocity cipher
+diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+index fc242acade3ff06c9213428cde103cf078216382..b0bc66dc7248aae691dcab68b925b52a1695e63f 100644
+--- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+@@ -143,11 +143,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+             this.latency = (this.latency * 3 + i) / 4;
+             this.keepAlivePending = false;
+         } else if (!this.isSingleplayerOwner()) {
+-            // Paper start - This needs to be handled on the main thread for plugins
+-            server.submit(() -> {
+-                this.disconnect(ServerCommonPacketListenerImpl.TIMEOUT_DISCONNECTION_MESSAGE, PlayerKickEvent.Cause.TIMEOUT); // Paper - kick event cause
+-            });
+-            // Paper end - This needs to be handled on the main thread for plugins
++            this.disconnectAsync(ServerCommonPacketListenerImpl.TIMEOUT_DISCONNECTION_MESSAGE, PlayerKickEvent.Cause.TIMEOUT); // Paper - add proper async disconnect
+         }
+ 
+     }
+@@ -411,6 +407,31 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+         minecraftserver.scheduleOnMain(networkmanager::handleDisconnection); // Paper
+     }
+ 
++    // Paper start - add proper async disconnect
++    public void disconnectAsync(net.kyori.adventure.text.Component reason, PlayerKickEvent.Cause cause) {
++        this.disconnectAsync(io.papermc.paper.adventure.PaperAdventure.asVanilla(reason), cause);
++    }
++
++    public void disconnectAsync(Component reason, PlayerKickEvent.Cause cause) {
++        this.disconnectAsync(new DisconnectionDetails(reason), cause);
++    }
++
++    public void disconnectAsync(DisconnectionDetails disconnectionInfo, PlayerKickEvent.Cause cause) {
++        if (this.cserver.isPrimaryThread()) {
++            this.disconnect(disconnectionInfo, cause);
++            return;
++        }
++        this.connection.setReadOnly();
++        this.server.scheduleOnMain(() -> {
++            ServerCommonPacketListenerImpl.this.disconnect(disconnectionInfo, cause);
++            if (ServerCommonPacketListenerImpl.this.player.quitReason == null) {
++                // cancelled
++                ServerCommonPacketListenerImpl.this.connection.enableAutoRead();
++            }
++        });
++    }
++    // Paper end - add proper async disconnect
++
+     protected boolean isSingleplayerOwner() {
+         return this.server.isSingleplayerOwner(this.playerProfile());
+     }
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index bcf6c5ec1cb4be806d49f30f3404498018760f91..eef96e946b80064fe211039a65db4192ea7a52d3 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -769,7 +769,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         // PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel()); // Paper - AsyncTabCompleteEvent; run this async
+         // CraftBukkit start
+         if (!this.tabSpamThrottler.isIncrementAndUnderThreshold() && !this.server.getPlayerList().isOp(this.player.getGameProfile()) && !this.server.isSingleplayerOwner(this.player.getGameProfile())) { // Paper - configurable tab spam limits
+-            this.disconnect(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM); // Paper - Kick event cause
++            this.disconnectAsync(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM); // Paper - Kick event cause // Paper - add proper async disconnect
+             return;
+         }
+         // CraftBukkit end
+@@ -781,7 +781,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         // Paper start
+         final int index;
+         if (packet.getCommand().length() > 64 && ((index = packet.getCommand().indexOf(' ')) == -1 || index >= 64)) {
+-            this.disconnect(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM);
++            this.disconnectAsync(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM); // Paper - add proper async disconnect
+             return;
+         }
+         // Paper end
+@@ -1171,14 +1171,14 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+             if (byteTotal > byteAllowed) {
+                 ServerGamePacketListenerImpl.LOGGER.warn("{} tried to send a book too large. Book size: {} - Allowed: {} - Pages: {}", this.player.getScoreboardName(), byteTotal, byteAllowed, pageList.size());
+-                this.disconnect(Component.literal("Book too large!"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_ACTION); // Paper - kick event cause
++                this.disconnectAsync(Component.literal("Book too large!"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_ACTION); // Paper - kick event cause // Paper - add proper async disconnect
+                 return;
+             }
+         }
+         // Paper end - Book size limits
+         // CraftBukkit start
+         if (this.lastBookTick + 20 > MinecraftServer.currentTick) {
+-            this.disconnect(Component.literal("Book edited too quickly!"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_ACTION); // Paper - kick event cause
++            this.disconnectAsync(Component.literal("Book edited too quickly!"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_ACTION); // Paper - kick event cause // Paper - add proper async disconnect
+             return;
+         }
+         this.lastBookTick = MinecraftServer.currentTick;
+@@ -2304,7 +2304,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+     private void tryHandleChat(String s, Runnable runnable, boolean sync) { // CraftBukkit
+         if (ServerGamePacketListenerImpl.isChatMessageIllegal(s)) {
+-            this.disconnect((Component) Component.translatable("multiplayer.disconnect.illegal_characters"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_CHARACTERS); // Paper
++            this.disconnectAsync((Component) Component.translatable("multiplayer.disconnect.illegal_characters"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_CHARACTERS); // Paper // Paper - add proper async disconnect
+         } else if (this.player.isRemoved() || this.player.getChatVisibility() == ChatVisiblity.HIDDEN) { // CraftBukkit - dead men tell no tales
+             this.send(new ClientboundSystemChatPacket(Component.translatable("chat.disabled.options").withStyle(ChatFormatting.RED), false));
+         } else {
+@@ -2327,7 +2327,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+             if (optional.isEmpty()) {
+                 ServerGamePacketListenerImpl.LOGGER.warn("Failed to validate message acknowledgements from {}", this.player.getName().getString());
+-                this.disconnect(ServerGamePacketListenerImpl.CHAT_VALIDATION_FAILED, org.bukkit.event.player.PlayerKickEvent.Cause.CHAT_VALIDATION_FAILED); // Paper - kick event causes
++                this.disconnectAsync(ServerGamePacketListenerImpl.CHAT_VALIDATION_FAILED, org.bukkit.event.player.PlayerKickEvent.Cause.CHAT_VALIDATION_FAILED); // Paper - kick event causes // Paper - add proper async disconnect
+             }
+ 
+             return optional;
+@@ -2498,7 +2498,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         // this.chatSpamThrottler.increment();
+         if (!this.chatSpamThrottler.isIncrementAndUnderThreshold() && !this.server.getPlayerList().isOp(this.player.getGameProfile()) && !this.server.isSingleplayerOwner(this.player.getGameProfile())) {
+             // CraftBukkit end
+-            this.disconnect((Component) Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM); // Paper - kick event cause
++            this.disconnectAsync((Component) Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM); // Paper - kick event cause // Paper - add proper async disconnect
+         }
+ 
+     }
+@@ -2510,7 +2510,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         synchronized (this.lastSeenMessages) {
+             if (!this.lastSeenMessages.applyOffset(packet.offset())) {
+                 ServerGamePacketListenerImpl.LOGGER.warn("Failed to validate message acknowledgements from {}", this.player.getName().getString());
+-                this.disconnect(ServerGamePacketListenerImpl.CHAT_VALIDATION_FAILED, org.bukkit.event.player.PlayerKickEvent.Cause.CHAT_VALIDATION_FAILED); // Paper - kick event causes
++                this.disconnectAsync(ServerGamePacketListenerImpl.CHAT_VALIDATION_FAILED, org.bukkit.event.player.PlayerKickEvent.Cause.CHAT_VALIDATION_FAILED); // Paper - kick event causes // Paper - add proper async disconnect
+             }
+ 
+         }
+@@ -2658,7 +2658,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+             }
+ 
+             if (i > 4096) {
+-                this.disconnect((Component) Component.translatable("multiplayer.disconnect.too_many_pending_chats"), org.bukkit.event.player.PlayerKickEvent.Cause.TOO_MANY_PENDING_CHATS); // Paper - kick event cause
++                this.disconnectAsync((Component) Component.translatable("multiplayer.disconnect.too_many_pending_chats"), org.bukkit.event.player.PlayerKickEvent.Cause.TOO_MANY_PENDING_CHATS); // Paper - kick event cause // Paper - add proper async disconnect
+             }
+ 
+         }
+@@ -3267,7 +3267,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         // Paper start - auto recipe limit
+         if (!org.bukkit.Bukkit.isPrimaryThread()) {
+             if (!this.recipeSpamPackets.isIncrementAndUnderThreshold()) {
+-                this.disconnect(net.minecraft.network.chat.Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM); // Paper - kick event cause
++                this.disconnectAsync(net.minecraft.network.chat.Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM); // Paper - kick event cause // Paper - add proper async disconnect
+                 return;
+             }
+         }
