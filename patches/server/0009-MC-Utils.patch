@@ -3868,7 +3868,7 @@ index 0000000000000000000000000000000000000000..11b7f15755dde766140c29bedca456c8
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/common/util/WorldUtil.java b/src/main/java/ca/spottedleaf/moonrise/common/util/WorldUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..af9623240ff2d389aa7090623f507720e7dbab7d
+index 0000000000000000000000000000000000000000..561a1a3ff418393d0a0db58de91b336f4c33aa4e
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/moonrise/common/util/WorldUtil.java
 @@ -0,0 +1,54 @@
@@ -3882,11 +3882,11 @@ index 0000000000000000000000000000000000000000..af9623240ff2d389aa7090623f507720
 +    // min, max are inclusive
 +
 +    public static int getMaxSection(final LevelHeightAccessor world) {
-+        return world.getMaxSection() - 1; // getMaxSection() is exclusive
++        return world.getMaxSectionY() - 1; // getMaxSection() is exclusive
 +    }
 +
 +    public static int getMinSection(final LevelHeightAccessor world) {
-+        return world.getMinSection();
++        return world.getMinSectionY();
 +    }
 +
 +    public static int getMaxLightSection(final LevelHeightAccessor world) {
@@ -4288,7 +4288,7 @@ index 0000000000000000000000000000000000000000..f7114d5b8f2f93f62883e24da29afaf9
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
-index 5b9ca3d968fd4884b1b7f2c06477ae00c09f202e..5d0ef11671beb2381e0e1959f5e5f845789a2982 100644
+index 0842080f1840a83b34c2cc829dfddba78ba12157..2ff5a6517d717bbd4c944572040bd30866347341 100644
 --- a/src/main/java/net/minecraft/Util.java
 +++ b/src/main/java/net/minecraft/Util.java
 @@ -136,7 +136,7 @@ public class Util {
@@ -4538,7 +4538,7 @@ index 59bc334ade71c106e01e54db8d21fb65563dd3f1..b9ab241b930edc63a39dbbcf14cd0b5e
          }
  
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 952936754cbe5a6fae543d19432599e30eb495b0..88e98f49565a098debcea8d58368e53d7623f6b5 100644
+index 952936754cbe5a6fae543d19432599e30eb495b0..3bb6eaabe8f62b556a52b83227b48f8324a9d0f0 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -174,6 +174,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -4616,29 +4616,27 @@ index 952936754cbe5a6fae543d19432599e30eb495b0..88e98f49565a098debcea8d58368e53d
      }
  
      private void processUnloads(BooleanSupplier shouldKeepTicking) {
-@@ -568,9 +583,12 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -568,8 +583,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  this.scheduleUnload(pos, chunk);
              } else {
                  ChunkAccess ichunkaccess = chunk.getLatestChunk();
 -
 -                if (this.pendingUnloads.remove(pos, chunk) && ichunkaccess != null) {
--                    LevelChunk chunk1;
 +                // Paper start
 +                boolean removed;
 +                if ((removed = this.pendingUnloads.remove(pos, chunk)) && ichunkaccess != null) {
 +                    ca.spottedleaf.moonrise.common.util.ChunkSystem.onChunkHolderDelete(this.level, chunk);
 +                    // Paper end
-+                    LevelChunk chunk;
+                     LevelChunk chunk1;
  
                      if (ichunkaccess instanceof LevelChunk) {
-                         chunk1 = (LevelChunk) ichunkaccess;
 @@ -587,7 +605,9 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                      this.lightEngine.tryScheduleUpdate();
                      this.progressListener.onStatusChange(ichunkaccess.getPos(), (ChunkStatus) null);
                      this.nextChunkSaveTime.remove(ichunkaccess.getPos().toLong());
 -                }
 +                } else if (removed) { // Paper start
-+                    ca.spottedleaf.moonrise.common.util.ChunkSystem.onChunkHolderDelete(this.level, holder);
++                    ca.spottedleaf.moonrise.common.util.ChunkSystem.onChunkHolderDelete(this.level, chunk);
 +                } // Paper end
  
              }

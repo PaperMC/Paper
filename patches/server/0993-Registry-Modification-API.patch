@@ -1134,7 +1134,7 @@ index 71e04e5c1bc0722abf8ca2e0738bd60b6d7ae21c..063630c1ffcce099139c59d598fc5a21
 +    // Paper end
  }
 diff --git a/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java b/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
-index 4638ba98dbbdb0f880337347be85a6e0fbed2191..12ba8bc0a946c107b076e2c995aca6a3aeb3811f 100644
+index 4638ba98dbbdb0f880337347be85a6e0fbed2191..bc448f8511c629d1f13d4baf717a11e6a6ad24f9 100644
 --- a/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
 +++ b/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
 @@ -296,6 +296,17 @@ public class BuiltInRegistries {
@@ -1145,9 +1145,9 @@ index 4638ba98dbbdb0f880337347be85a6e0fbed2191..12ba8bc0a946c107b076e2c995aca6a3
 +    public static final io.papermc.paper.registry.data.util.Conversions BUILT_IN_CONVERSIONS = new io.papermc.paper.registry.data.util.Conversions(new net.minecraft.resources.RegistryOps.RegistryInfoLookup() {
 +        @Override
 +        public <T> java.util.Optional<net.minecraft.resources.RegistryOps.RegistryInfo<T>> lookup(final ResourceKey<? extends Registry<? extends T>> registryRef) {
-+            final Registry<T> registry = net.minecraft.server.RegistryLayer.STATIC_ACCESS.registryOrThrow(registryRef);
++            final Registry<T> registry = net.minecraft.server.RegistryLayer.STATIC_ACCESS.lookupOrThrow(registryRef);
 +            return java.util.Optional.of(
-+                new net.minecraft.resources.RegistryOps.RegistryInfo<>(registry.asLookup(), registry.asTagAddingLookup(), Lifecycle.experimental())
++                new net.minecraft.resources.RegistryOps.RegistryInfo<>(registry, registry, Lifecycle.experimental())
 +            );
 +        }
 +    });
@@ -1172,7 +1172,7 @@ index 4638ba98dbbdb0f880337347be85a6e0fbed2191..12ba8bc0a946c107b076e2c995aca6a3
          }
      }
 diff --git a/src/main/java/net/minecraft/resources/RegistryDataLoader.java b/src/main/java/net/minecraft/resources/RegistryDataLoader.java
-index 144a6f5b0c53110804d6d099fe857d25f107d938..f2236665eaf3e6d0f9d44605db3cd5afe0cced4e 100644
+index 61774165a25209ee6d26cf8d80149b220c3874e6..fdc88e52235a152dbe3cca273990b4b68f8daaf8 100644
 --- a/src/main/java/net/minecraft/resources/RegistryDataLoader.java
 +++ b/src/main/java/net/minecraft/resources/RegistryDataLoader.java
 @@ -130,7 +130,7 @@ public class RegistryDataLoader {
@@ -1323,7 +1323,7 @@ index 6fddef967b6314ca0158f5bd4b8898670ea5e9ec..b5ca1a0acb16d0cd8dccc854f309d425
              return writableRegistry;
          }, prepareExecutor);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
-index f8450a2abd1e96fac7827d252cc00038b9dee839..a812a42ea81b1543287e78ea55da6cbf4e0d27f8 100644
+index f8450a2abd1e96fac7827d252cc00038b9dee839..891ccc39d52331648a11b4e7cce78d4c848cdea0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
 @@ -167,11 +167,11 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
@@ -1348,18 +1348,18 @@ index f8450a2abd1e96fac7827d252cc00038b9dee839..a812a42ea81b1543287e78ea55da6cbf
 +    // Paper start - RegistrySet API
 +    @Override
 +    public boolean hasTag(final io.papermc.paper.registry.tag.TagKey<B> key) {
-+        return this.minecraftRegistry.getTag(net.minecraft.tags.TagKey.create(this.minecraftRegistry.key(), io.papermc.paper.adventure.PaperAdventure.asVanilla(key.key()))).isPresent();
++        return this.minecraftRegistry.get(net.minecraft.tags.TagKey.create(this.minecraftRegistry.key(), io.papermc.paper.adventure.PaperAdventure.asVanilla(key.key()))).isPresent();
 +    }
 +
 +    @Override
 +    public io.papermc.paper.registry.tag.Tag<B> getTag(final io.papermc.paper.registry.tag.TagKey<B> key) {
-+        final net.minecraft.core.HolderSet.Named<M> namedHolderSet = this.minecraftRegistry.getTag(io.papermc.paper.registry.PaperRegistries.toNms(key)).orElseThrow();
++        final net.minecraft.core.HolderSet.Named<M> namedHolderSet = this.minecraftRegistry.get(io.papermc.paper.registry.PaperRegistries.toNms(key)).orElseThrow();
 +        return new io.papermc.paper.registry.set.NamedRegistryKeySetImpl<>(key, namedHolderSet);
 +    }
 +    // Paper end - RegistrySet API
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index b24ccbff89db873f5bdf62cbebcca0049b94a8d5..49b898ed5e9de2507a6a6aac61dea4fe902649ca 100644
+index 8feba2bd411abe36e64a39a0c599c73d07c19e20..75b5ec1023e2cf974696ee077195b195025ddc74 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 @@ -674,6 +674,21 @@ public final class CraftMagicNumbers implements UnsafeValues {
@@ -1373,9 +1373,9 @@ index b24ccbff89db873f5bdf62cbebcca0049b94a8d5..49b898ed5e9de2507a6a6aac61dea4fe
 +            throw new UnsupportedOperationException(tagKey.registryKey() + " doesn't have tags");
 +        }
 +        final net.minecraft.resources.ResourceKey<? extends net.minecraft.core.Registry<M>> nmsKey = io.papermc.paper.registry.PaperRegistries.registryToNms(tagKey.registryKey());
-+        final net.minecraft.core.Registry<M> nmsRegistry = org.bukkit.craftbukkit.CraftRegistry.getMinecraftRegistry().registryOrThrow(nmsKey);
++        final net.minecraft.core.Registry<M> nmsRegistry = org.bukkit.craftbukkit.CraftRegistry.getMinecraftRegistry().lookupOrThrow(nmsKey);
 +        return nmsRegistry
-+            .getTag(io.papermc.paper.registry.PaperRegistries.toNms(tagKey))
++            .get(io.papermc.paper.registry.PaperRegistries.toNms(tagKey))
 +            .map(named -> new io.papermc.paper.registry.set.NamedRegistryKeySetImpl<>(tagKey, named))
 +            .orElse(null);
 +    }

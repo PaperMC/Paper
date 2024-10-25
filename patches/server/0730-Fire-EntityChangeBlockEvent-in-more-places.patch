@@ -7,17 +7,22 @@ Co-authored-by: ChristopheG <61288881+chrisgdt@users.noreply.github.com>
 Co-authored-by: maxcom1 <46265094+maxcom1@users.noreply.github.com>
 
 diff --git a/src/main/java/net/minecraft/world/effect/WeavingMobEffect.java b/src/main/java/net/minecraft/world/effect/WeavingMobEffect.java
-index e311f94918fb03e9d202cbae71b0909ea3219180..d090126dbe6b69489490e6b1e2d443fa171ddde6 100644
+index e311f94918fb03e9d202cbae71b0909ea3219180..b751748196b458c8a89d512fdd9f9632d25e8be8 100644
 --- a/src/main/java/net/minecraft/world/effect/WeavingMobEffect.java
 +++ b/src/main/java/net/minecraft/world/effect/WeavingMobEffect.java
-@@ -25,7 +25,7 @@ class WeavingMobEffect extends MobEffect {
+@@ -25,11 +25,11 @@ class WeavingMobEffect extends MobEffect {
      @Override
      public void onMobRemoved(ServerLevel world, LivingEntity entity, int amplifier, Entity.RemovalReason reason) {
          if (reason == Entity.RemovalReason.KILLED && (entity instanceof Player || world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING))) {
 -            this.spawnCobwebsRandomlyAround(world, entity.getRandom(), entity.blockPosition());
-+            this.spawnCobwebsRandomlyAround(entity, world, entity.getRandom(), entity.blockPosition()); // Paper - Fire EntityChangeBlockEvent in more places
++            this.spawnCobwebsRandomlyAround(world, entity.getRandom(), entity.blockPosition(), entity); // Paper - Fire EntityChangeBlockEvent in more places
          }
      }
+ 
+-    private void spawnCobwebsRandomlyAround(ServerLevel world, RandomSource random, BlockPos pos) {
++    private void spawnCobwebsRandomlyAround(ServerLevel world, RandomSource random, BlockPos pos, LivingEntity entity) { // Paper - Fire EntityChangeBlockEvent in more places
+         Set<BlockPos> set = Sets.newHashSet();
+         int i = this.maxCobwebs.applyAsInt(random);
  
 @@ -46,6 +46,7 @@ class WeavingMobEffect extends MobEffect {
          }
@@ -117,7 +122,7 @@ index 74c9966093377b67e31b50483c2f24b70734faf6..abff08f2d61014944235ffe2f5494a71
                      CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger((ServerPlayer)player, blockPos, itemStack);
                  }
 diff --git a/src/main/java/net/minecraft/world/item/EnderEyeItem.java b/src/main/java/net/minecraft/world/item/EnderEyeItem.java
-index 770467bd319f8e2fdf3d713591368aa825cfa5ae..b00a2fe4cefff26b65789829777b25bbc8e024fa 100644
+index 08cbf02bba3633a84cce90c202d13f2beb5b88a2..c71a426c47e0ebc57ecb8c9c1d171737a084ccab 100644
 --- a/src/main/java/net/minecraft/world/item/EnderEyeItem.java
 +++ b/src/main/java/net/minecraft/world/item/EnderEyeItem.java
 @@ -45,6 +45,11 @@ public class EnderEyeItem extends Item {
@@ -152,7 +157,7 @@ index 6c0fe41692c9d1fa50a4f421eb4735860a9ae0e9..d7924825823b2bf79ca3a26272de11ff
                  CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger(serverPlayer, blockPos, itemStack);
              }
 diff --git a/src/main/java/net/minecraft/world/item/PotionItem.java b/src/main/java/net/minecraft/world/item/PotionItem.java
-index 1c8fd643c32226d72d51abc869a49e256dd2432b..627439c3aa8171e9a54dbcb8842af50cc58f7f23 100644
+index 1c8fd643c32226d72d51abc869a49e256dd2432b..f19bd2c25d3c84d9f16cad38ac5c32736f0f3a8d 100644
 --- a/src/main/java/net/minecraft/world/item/PotionItem.java
 +++ b/src/main/java/net/minecraft/world/item/PotionItem.java
 @@ -42,6 +42,12 @@ public class PotionItem extends Item {
@@ -160,8 +165,8 @@ index 1c8fd643c32226d72d51abc869a49e256dd2432b..627439c3aa8171e9a54dbcb8842af50c
          BlockState blockState = level.getBlockState(blockPos);
          if (context.getClickedFace() != Direction.DOWN && blockState.is(BlockTags.CONVERTABLE_TO_MUD) && potionContents.is(Potions.WATER)) {
 +            // Paper start
-+            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entityhuman, blockposition, Blocks.MUD.defaultBlockState())) {
-+                entityhuman.containerMenu.sendAllDataToRemote();
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, blockPos, Blocks.MUD.defaultBlockState())) {
++                player.containerMenu.sendAllDataToRemote();
 +                return InteractionResult.PASS;
 +            }
 +            // Paper end
@@ -204,7 +209,7 @@ index c0377341227e8f4f1f7b1448580b3c7bc1b65f48..55c18f182166f4905d623d6f5e909eef
                      level.gameEvent(GameEvent.BLOCK_CHANGE, blockPos, GameEvent.Context.of(player, blockState3));
                      if (player != null) {
 diff --git a/src/main/java/net/minecraft/world/level/block/CakeBlock.java b/src/main/java/net/minecraft/world/level/block/CakeBlock.java
-index 7629b9212ded7155e94f67ca429f62271e5f5aa0..1104f620a050555f71d058711cc34fadb964222f 100644
+index 7629b9212ded7155e94f67ca429f62271e5f5aa0..648c2510beb162e73aed236a3169d0bbb8fc5050 100644
 --- a/src/main/java/net/minecraft/world/level/block/CakeBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/CakeBlock.java
 @@ -66,6 +66,12 @@ public class CakeBlock extends Block {
@@ -214,7 +219,7 @@ index 7629b9212ded7155e94f67ca429f62271e5f5aa0..1104f620a050555f71d058711cc34fad
 +                // Paper start - call change block event
 +                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, pos, CandleCakeBlock.byCandle(candleblock))) {
 +                    player.containerMenu.sendAllDataToRemote(); // update inv because candle could decrease
-+                    return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
++                    return InteractionResult.TRY_WITH_EMPTY_HAND;
 +                }
 +                // Paper end - call change block event
                  stack.consume(1, player);
@@ -245,7 +250,7 @@ index 7629b9212ded7155e94f67ca429f62271e5f5aa0..1104f620a050555f71d058711cc34fad
              world.gameEvent((Entity) player, (Holder) GameEvent.EAT, pos);
              if (i < 6) {
 diff --git a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java b/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
-index 2bcd246a26dad560cf69682b29983d320ebf1884..60bf63c2cff3ce8a1892ba5c2303738c35b83d79 100644
+index 2bcd246a26dad560cf69682b29983d320ebf1884..05b2eab26e2dc8e143e9fff2dcec40cfe927a197 100644
 --- a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
 @@ -243,6 +243,11 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
@@ -254,7 +259,7 @@ index 2bcd246a26dad560cf69682b29983d320ebf1884..60bf63c2cff3ce8a1892ba5c2303738c
                  BlockState iblockdata1 = ComposterBlock.addItem(player, state, world, pos, stack);
 +                // Paper start - handle cancelled events
 +                if (iblockdata1 == null) {
-+                    return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;
++                    return InteractionResult.PASS;
 +                }
 +                // Paper end
  
