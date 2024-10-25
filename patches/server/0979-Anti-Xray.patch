@@ -1519,7 +1519,7 @@ index 303e59be721d0e16e8822cf4e407595348ee7abf..51f74dd7b276e858889803d7f341d735
      int getSerializedSize();
  
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/SerializableChunkData.java b/src/main/java/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
-index b86b3bf713668999a21c4120b1d16c295531b2ad..eba3e34e5b129050bf6eaed6ce4e690357a3de20 100644
+index b86b3bf713668999a21c4120b1d16c295531b2ad..4bc7fa3324e9af3abce2acf960c7b0650aca2e36 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 @@ -79,7 +79,7 @@ import org.slf4j.Logger;
@@ -1539,7 +1539,14 @@ index b86b3bf713668999a21c4120b1d16c295531b2ad..eba3e34e5b129050bf6eaed6ce4e6903
          if (!nbt.contains("Status", 8)) {
              return null;
          } else {
-@@ -214,13 +215,17 @@ public record SerializableChunkData(Registry<Biome> biomeRegistry, ChunkPos chun
+@@ -208,19 +209,23 @@ public record SerializableChunkData(Registry<Biome> biomeRegistry, ChunkPos chun
+             Codec<PalettedContainer<Holder<Biome>>> codec = makeBiomeCodecRW(iregistry); // CraftBukkit - read/write
+ 
+             for (int i1 = 0; i1 < nbttaglist2.size(); ++i1) {
+-                CompoundTag nbttagcompound3 = nbttaglist2.getCompound(i1);
++                CompoundTag nbttagcompound3 = nbttaglist2.getCompound(i1); final CompoundTag sectionData = nbttagcompound3; // Paper - Anti-Xray - OBFHELPER
+                 byte b0 = nbttagcompound3.getByte("Y");
+                 LevelChunkSection chunksection;
  
                  if (b0 >= world.getMinSectionY() && b0 <= world.getMaxSectionY()) {
                      PalettedContainer datapaletteblock;
@@ -1550,7 +1557,7 @@ index b86b3bf713668999a21c4120b1d16c295531b2ad..eba3e34e5b129050bf6eaed6ce4e6903
                      if (nbttagcompound3.contains("block_states", 10)) {
 -                        datapaletteblock = (PalettedContainer) SerializableChunkData.BLOCK_STATE_CODEC.parse(NbtOps.INSTANCE, nbttagcompound3.getCompound("block_states")).promotePartial((s1) -> {
 +                        Codec<PalettedContainer<BlockState>> blockStateCodec = presetBlockStates == null ? BLOCK_STATE_CODEC : PalettedContainer.codecRW(Block.BLOCK_STATE_REGISTRY, BlockState.CODEC, PalettedContainer.Strategy.SECTION_STATES, Blocks.AIR.defaultBlockState(), presetBlockStates); // Paper - Anti-Xray
-+                        datapaletteblock = blockStateCodec.parse(NbtOps.INSTANCE, nbttagcompound1.getCompound("block_states")).promotePartial((s1) -> { // Paper - Anti-Xray
++                        datapaletteblock = blockStateCodec.parse(NbtOps.INSTANCE, sectionData.getCompound("block_states")).promotePartial((s1) -> { // Paper - Anti-Xray
                              logErrors(chunkcoordintpair, b0, s1);
                          }).getOrThrow(SerializableChunkData.ChunkReadException::new);
                      } else {
