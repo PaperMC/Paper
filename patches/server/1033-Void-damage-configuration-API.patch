@@ -5,26 +5,25 @@ Subject: [PATCH] Void damage configuration API
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index bc45c74987974b4828201e06fc8b1f3fbc0af8b4..4b54d0ea31062972e68ee8fafe3cfaf68f65a5cd 100644
+index 4f0ff0d333d2de1b4f6beac1ce25e214b971e387..2cf9490a116d70c00f00d41005b78d5b510f2162 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -931,8 +931,10 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -853,8 +853,9 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      }
  
      public void checkBelowWorld() {
 +        if (!this.level.getWorld().isVoidDamageEnabled()) return; // Paper - check if void damage is enabled on the world
-+
          // Paper start - Configurable nether ceiling damage
--        if (this.getY() < (double) (this.level.getMinBuildHeight() - 64) || (this.level.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER
-+        if (this.getY() < (double) (this.level.getMinBuildHeight() + this.level.getWorld().getVoidDamageMinBuildHeightOffset())  || (this.level.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER // Paper - use configured min build height offset
+-        if (this.getY() < (double) (this.level.getMinY() - 64) || (this.level.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER
++        if (this.getY() < (double) (this.level.getMinY() + this.level.getWorld().getVoidDamageMinBuildHeightOffset()) || (this.level.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER // Paper - use configured min build height offset
              && this.level.paperConfig().environment.netherCeilingVoidDamageHeight.test(v -> this.getY() >= v)
              && (!(this instanceof Player player) || !player.getAbilities().invulnerable))) {
              // Paper end - Configurable nether ceiling damage
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 30f4f1254fc295442d72d50479e8af635f2fe983..2aa6374cd4a96efd85899be8cd3172a8257bfe6b 100644
+index f57c830a7286eb8cab1061c8ddebe6abab1fcced..ed624f54bbd7f9fd5a1ddc12a856f41f03571ac9 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -2625,7 +2625,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -2702,7 +2702,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
  
      @Override
      protected void onBelowWorld() {
@@ -34,10 +33,10 @@ index 30f4f1254fc295442d72d50479e8af635f2fe983..2aa6374cd4a96efd85899be8cd3172a8
  
      protected void updateSwingTime() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 38b046da5acac8633db8618a2957187d291f5e73..33e4818ba5a90d78d69baad9f6b1be1b1382e9f3 100644
+index 36c3024c188197a777c8077704e1b64552c02d0a..38565ee35799bc8cdf3f224e0f92592a4a11300f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -163,6 +163,41 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -167,6 +167,41 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      private final Object2IntOpenHashMap<SpawnCategory> spawnCategoryLimit = new Object2IntOpenHashMap<>();
      private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftWorld.DATA_TYPE_REGISTRY);
      private net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
@@ -79,7 +78,7 @@ index 38b046da5acac8633db8618a2957187d291f5e73..33e4818ba5a90d78d69baad9f6b1be1b
  
      // Paper start - Provide fast information methods
      @Override
-@@ -271,6 +306,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -275,6 +310,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
              }
          }
          // Paper end - per world spawn limits
