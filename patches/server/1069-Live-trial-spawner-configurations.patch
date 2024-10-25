@@ -1,0 +1,254 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: tlm920 <timo@timomcgrath.com>
+Date: Thu, 24 Oct 2024 23:17:58 -0400
+Subject: [PATCH] Live trial spawner configurations
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftTrialSpawner.java b/src/main/java/org/bukkit/craftbukkit/block/CraftTrialSpawner.java
+index a9882f10eb4a3b33fa9d66a3b169bb8078370f94..a7ddde1e81b6c15d1acc731a354daad9f48f1488 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftTrialSpawner.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftTrialSpawner.java
+@@ -139,12 +139,24 @@ public class CraftTrialSpawner extends CraftBlockEntityState<TrialSpawnerBlockEn
+ 
+     @Override
+     public TrialSpawnerConfiguration getNormalConfiguration() {
+-       return this.normalConfig;
++        // Paper start - Live trial configurations
++        if (this.isSnapshot())
++            return this.normalConfig;
++        else {
++            return new LiveTrialSpawnerConfiguration(normalConfig, LiveTrialSpawnerConfiguration.Type.NORMAL);
++        }
++        // Paper End
+     }
+ 
+     @Override
+     public TrialSpawnerConfiguration getOminousConfiguration() {
+-       return this.ominousConfig;
++        // Paper start - Live trial configurations
++        if (this.isSnapshot())
++            return this.ominousConfig;
++        else {
++            return new LiveTrialSpawnerConfiguration(ominousConfig, LiveTrialSpawnerConfiguration.Type.OMINOUS);
++        }
++        // Paper End
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftTrialSpawnerConfiguration.java b/src/main/java/org/bukkit/craftbukkit/block/CraftTrialSpawnerConfiguration.java
+index 1e7a27bc783e68f9579d4d3c72ec165bde7175b9..7b4963107fc0680373934ffb2480b8ee7083dcc2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftTrialSpawnerConfiguration.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftTrialSpawnerConfiguration.java
+@@ -27,7 +27,7 @@ import org.bukkit.loot.LootTable;
+ import org.bukkit.spawner.TrialSpawnerConfiguration;
+ 
+ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration {
+-    private final TrialSpawnerBlockEntity snapshot;
++    protected final TrialSpawnerBlockEntity snapshot; // Paper - private -> protected
+ 
+     private int spawnRange;
+     private float totalMobs;
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/LiveTrialSpawnerConfiguration.java b/src/main/java/org/bukkit/craftbukkit/block/LiveTrialSpawnerConfiguration.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8f9075e7d5f45131a9cbfe0fe230fe7303b42d4f
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/block/LiveTrialSpawnerConfiguration.java
+@@ -0,0 +1,198 @@
++package org.bukkit.craftbukkit.block;
++
++import org.bukkit.block.spawner.SpawnRule;
++import org.bukkit.block.spawner.SpawnerEntry;
++import org.bukkit.entity.EntitySnapshot;
++import org.bukkit.entity.EntityType;
++import org.bukkit.loot.LootTable;
++import org.bukkit.spawner.TrialSpawnerConfiguration;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++import java.util.Collection;
++import java.util.List;
++import java.util.Map;
++
++/**
++ * Live blockstates do not need to be applied to have their changes reflected in game.
++ * However, Spigot's TrialSpawnerConfiguration is a full copy and only applies when updating.
++ * This class fixes it by recreating the internal record when a setter is called.
++ * */
++public class LiveTrialSpawnerConfiguration implements TrialSpawnerConfiguration {
++    private final CraftTrialSpawnerConfiguration snapshotConfiguration;
++    private final Type type;
++
++    public LiveTrialSpawnerConfiguration(CraftTrialSpawnerConfiguration snapshotConfiguration, Type type) {
++        this.snapshotConfiguration = snapshotConfiguration;
++        this.type = type;
++    }
++
++    private void syncInternalConfiguration() {
++        if (type == Type.NORMAL)
++            syncNormalConfiguration();
++        else
++            syncOminousConfiguration();
++    }
++
++    private void syncNormalConfiguration() {
++        snapshotConfiguration.snapshot.trialSpawner.normalConfig = snapshotConfiguration.toMinecraft();
++    }
++
++    private void syncOminousConfiguration() {
++        snapshotConfiguration.snapshot.trialSpawner.ominousConfig = snapshotConfiguration.toMinecraft();
++    }
++
++    @Override
++    public @Nullable EntityType getSpawnedType() {
++        return snapshotConfiguration.getSpawnedType();
++    }
++
++    @Override
++    public void setSpawnedType(@Nullable final EntityType creatureType) {
++        snapshotConfiguration.setSpawnedType(creatureType);
++        syncInternalConfiguration();
++    }
++
++    @Override
++    public int getDelay() {
++        return snapshotConfiguration.getDelay();
++    }
++
++    @Override
++    public void setDelay(final int delay) {
++        snapshotConfiguration.setDelay(delay);
++        syncInternalConfiguration();
++    }
++
++    @Override
++    public int getRequiredPlayerRange() {
++        return snapshotConfiguration.getRequiredPlayerRange();
++    }
++
++    @Override
++    public void setRequiredPlayerRange(final int requiredPlayerRange) {
++        snapshotConfiguration.setRequiredPlayerRange(requiredPlayerRange);
++        syncInternalConfiguration();
++    }
++
++    @Override
++    public int getSpawnRange() {
++        return snapshotConfiguration.getSpawnRange();
++    }
++
++    @Override
++    public void setSpawnRange(final int spawnRange) {
++        snapshotConfiguration.setSpawnRange(spawnRange);
++        syncInternalConfiguration();
++    }
++
++    @Override
++    public @Nullable EntitySnapshot getSpawnedEntity() {
++        return snapshotConfiguration.getSpawnedEntity();
++    }
++
++    @Override
++    public void setSpawnedEntity(@Nullable final EntitySnapshot snapshot) {
++        snapshotConfiguration.setSpawnedEntity(snapshot);
++        syncInternalConfiguration();
++    }
++
++    @Override
++    public void setSpawnedEntity(@NotNull final SpawnerEntry spawnerEntry) {
++        snapshotConfiguration.setSpawnedEntity(spawnerEntry);
++        syncInternalConfiguration();
++    }
++
++    @Override
++    public void addPotentialSpawn(@NotNull final EntitySnapshot snapshot, final int weight, @Nullable final SpawnRule spawnRule) {
++        snapshotConfiguration.addPotentialSpawn(snapshot, weight, spawnRule);
++        syncInternalConfiguration();
++    }
++
++    @Override
++    public void addPotentialSpawn(final @NotNull SpawnerEntry spawnerEntry) {
++        snapshotConfiguration.addPotentialSpawn(spawnerEntry);
++        syncInternalConfiguration();
++    }
++
++    @Override
++    public void setPotentialSpawns(final @NotNull Collection<SpawnerEntry> entries) {
++        snapshotConfiguration.setPotentialSpawns(entries);
++        syncInternalConfiguration();
++    }
++
++    @Override
++    public @NotNull List<SpawnerEntry> getPotentialSpawns() {
++        return snapshotConfiguration.getPotentialSpawns();
++    }
++
++    @Override
++    public float getBaseSpawnsBeforeCooldown() {
++        return snapshotConfiguration.getBaseSpawnsBeforeCooldown();
++    }
++
++    @Override
++    public void setBaseSpawnsBeforeCooldown(final float amount) {
++        snapshotConfiguration.setBaseSpawnsBeforeCooldown(amount);
++        syncInternalConfiguration();
++    }
++
++    @Override
++    public float getBaseSimultaneousEntities() {
++        return snapshotConfiguration.getBaseSimultaneousEntities();
++    }
++
++    @Override
++    public void setBaseSimultaneousEntities(final float amount) {
++        snapshotConfiguration.setBaseSimultaneousEntities(amount);
++        syncInternalConfiguration();
++    }
++
++    @Override
++    public float getAdditionalSpawnsBeforeCooldown() {
++        return snapshotConfiguration.getAdditionalSpawnsBeforeCooldown();
++    }
++
++    @Override
++    public void setAdditionalSpawnsBeforeCooldown(final float amount) {
++        snapshotConfiguration.setAdditionalSpawnsBeforeCooldown(amount);
++        syncInternalConfiguration();
++    }
++
++    @Override
++    public float getAdditionalSimultaneousEntities() {
++        return snapshotConfiguration.getAdditionalSimultaneousEntities();
++    }
++
++    @Override
++    public void setAdditionalSimultaneousEntities(final float amount) {
++        snapshotConfiguration.setAdditionalSimultaneousEntities(amount);
++        syncInternalConfiguration();
++    }
++
++    @Override
++    public @NotNull Map<LootTable, Integer> getPossibleRewards() {
++        return snapshotConfiguration.getPossibleRewards();
++    }
++
++    @Override
++    public void addPossibleReward(@NotNull final LootTable table, final int weight) {
++        snapshotConfiguration.addPossibleReward(table, weight);
++        syncInternalConfiguration();
++    }
++
++    @Override
++    public void removePossibleReward(@NotNull final LootTable table) {
++        snapshotConfiguration.removePossibleReward(table);
++        syncInternalConfiguration();
++    }
++
++    @Override
++    public void setPossibleRewards(@NotNull final Map<LootTable, Integer> rewards) {
++        snapshotConfiguration.setPossibleRewards(rewards);
++        syncInternalConfiguration();
++    }
++
++    public enum Type {
++        NORMAL, OMINOUS
++    }
++}
