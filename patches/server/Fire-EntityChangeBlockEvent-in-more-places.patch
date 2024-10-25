@@ -15,9 +15,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void onMobRemoved(ServerLevel world, LivingEntity entity, int amplifier, Entity.RemovalReason reason) {
          if (reason == Entity.RemovalReason.KILLED && (entity instanceof Player || world.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING))) {
 -            this.spawnCobwebsRandomlyAround(world, entity.getRandom(), entity.blockPosition());
-+            this.spawnCobwebsRandomlyAround(entity, world, entity.getRandom(), entity.blockPosition()); // Paper - Fire EntityChangeBlockEvent in more places
++            this.spawnCobwebsRandomlyAround(world, entity.getRandom(), entity.blockPosition(), entity); // Paper - Fire EntityChangeBlockEvent in more places
          }
      }
+ 
+-    private void spawnCobwebsRandomlyAround(ServerLevel world, RandomSource random, BlockPos pos) {
++    private void spawnCobwebsRandomlyAround(ServerLevel world, RandomSource random, BlockPos pos, LivingEntity entity) { // Paper - Fire EntityChangeBlockEvent in more places
+         Set<BlockPos> set = Sets.newHashSet();
+         int i = this.maxCobwebs.applyAsInt(random);
  
 @@ -0,0 +0,0 @@ class WeavingMobEffect extends MobEffect {
          }
@@ -160,8 +165,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          BlockState blockState = level.getBlockState(blockPos);
          if (context.getClickedFace() != Direction.DOWN && blockState.is(BlockTags.CONVERTABLE_TO_MUD) && potionContents.is(Potions.WATER)) {
 +            // Paper start
-+            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(entityhuman, blockposition, Blocks.MUD.defaultBlockState())) {
-+                entityhuman.containerMenu.sendAllDataToRemote();
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, blockPos, Blocks.MUD.defaultBlockState())) {
++                player.containerMenu.sendAllDataToRemote();
 +                return InteractionResult.PASS;
 +            }
 +            // Paper end
@@ -214,7 +219,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                // Paper start - call change block event
 +                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, pos, CandleCakeBlock.byCandle(candleblock))) {
 +                    player.containerMenu.sendAllDataToRemote(); // update inv because candle could decrease
-+                    return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
++                    return InteractionResult.TRY_WITH_EMPTY_HAND;
 +                }
 +                // Paper end - call change block event
                  stack.consume(1, player);
@@ -254,7 +259,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  BlockState iblockdata1 = ComposterBlock.addItem(player, state, world, pos, stack);
 +                // Paper start - handle cancelled events
 +                if (iblockdata1 == null) {
-+                    return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;
++                    return InteractionResult.PASS;
 +                }
 +                // Paper end
  
