@@ -93,20 +93,22 @@ index 4921fc085c9d60c74028ef390325e26c598e8df1..4941e0afff8df5f10f06c715b54bf58e
              case BALL:
                  return FireworkExplosion.Shape.SMALL_BALL;
 diff --git a/src/test/java/io/papermc/paper/world/TranslationKeyTest.java b/src/test/java/io/papermc/paper/world/TranslationKeyTest.java
-index 7f8b6462d2a1bbd39a870d2543bebc135f7eb45b..4001c73e833ebf17baa22463dd197cee8ad67266 100644
+index 7f8b6462d2a1bbd39a870d2543bebc135f7eb45b..e8d5c3eb8ad98b2082bdd33d96bfb1d7124ea186 100644
 --- a/src/test/java/io/papermc/paper/world/TranslationKeyTest.java
 +++ b/src/test/java/io/papermc/paper/world/TranslationKeyTest.java
-@@ -1,11 +1,29 @@
+@@ -1,11 +1,32 @@
  package io.papermc.paper.world;
  
  import com.destroystokyo.paper.ClientOption;
 +import java.util.Locale;
 +import java.util.Map;
-+import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.core.registries.Registries;
 +import net.minecraft.network.chat.contents.TranslatableContents;
 +import net.minecraft.resources.ResourceKey;
 +import net.minecraft.resources.ResourceLocation;
  import net.minecraft.world.entity.player.ChatVisiblity;
++import net.minecraft.world.flag.FeatureFlags;
++import net.minecraft.world.level.GameRules;
 +import net.minecraft.world.level.GameType;
 +import net.minecraft.world.level.biome.Biome;
  import org.bukkit.Difficulty;
@@ -115,6 +117,7 @@ index 7f8b6462d2a1bbd39a870d2543bebc135f7eb45b..4001c73e833ebf17baa22463dd197cee
 +import org.bukkit.GameRule;
 +import org.bukkit.MusicInstrument;
 +import org.bukkit.attribute.Attribute;
++import org.bukkit.craftbukkit.CraftWorld;
 +import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 +import org.bukkit.support.RegistryHelper;
 +import org.bukkit.support.environment.AllFeatures;
@@ -126,7 +129,7 @@ index 7f8b6462d2a1bbd39a870d2543bebc135f7eb45b..4001c73e833ebf17baa22463dd197cee
  public class TranslationKeyTest {
  
      @Test
-@@ -15,4 +33,69 @@ public class TranslationKeyTest {
+@@ -15,4 +36,70 @@ public class TranslationKeyTest {
              Assertions.assertEquals(ChatVisiblity.valueOf(chatVisibility.name()).getKey(), chatVisibility.translationKey(), chatVisibility + "'s translation key doesn't match");
          }
      }
@@ -140,8 +143,9 @@ index 7f8b6462d2a1bbd39a870d2543bebc135f7eb45b..4001c73e833ebf17baa22463dd197cee
 +
 +    @Test
 +    public void testGameruleKeys() {
++        final Map<String, GameRules.Key<?>> gameRules = CraftWorld.getGameRulesNMS(new GameRules(FeatureFlags.REGISTRY.allFlags()));
 +        for (GameRule<?> rule : GameRule.values()) {
-+            Assertions.assertEquals(org.bukkit.craftbukkit.CraftWorld.getGameRulesNMS().get(rule.getName()).getDescriptionId(), rule.translationKey(), rule.getName() + "'s translation doesn't match");
++            Assertions.assertEquals(gameRules.get(rule.getName()).getDescriptionId(), rule.translationKey(), rule.getName() + "'s translation doesn't match");
 +        }
 +    }
 +
@@ -189,7 +193,7 @@ index 7f8b6462d2a1bbd39a870d2543bebc135f7eb45b..4001c73e833ebf17baa22463dd197cee
 +
 +    @Test
 +    public void testMusicInstrument() {
-+        for (final ResourceLocation nms : BuiltInRegistries.INSTRUMENT.keySet()) {
++        for (final ResourceLocation nms : RegistryHelper.getRegistry().lookupOrThrow(Registries.INSTRUMENT).keySet()) {
 +            final MusicInstrument bukkit = MusicInstrument.getByKey(CraftNamespacedKey.fromMinecraft(nms));
 +            Assertions.assertNotNull(bukkit, "Missing bukkit instrument for " + nms);
 +            Assertions.assertEquals(nms.toLanguageKey("instrument"), bukkit.translationKey(), "translation key mismatch for " + bukkit);
