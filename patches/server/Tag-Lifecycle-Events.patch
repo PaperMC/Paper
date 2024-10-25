@@ -71,6 +71,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import com.google.common.collect.Collections2;
 +import com.google.common.collect.ImmutableMap;
++import com.google.common.collect.Lists;
 +import io.papermc.paper.adventure.PaperAdventure;
 +import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 +import io.papermc.paper.plugin.lifecycle.event.registrar.PaperRegistrar;
@@ -95,13 +96,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +@DefaultQualifier(NonNull.class)
 +public class PaperPostFlattenTagRegistrar<M, T> implements PaperRegistrar<BootstrapContext>, PostFlattenTagRegistrar<T> {
 +
-+    public final Map<ResourceLocation, Collection<M>> tags;
++    public final Map<ResourceLocation, List<M>> tags;
 +    private final Function<ResourceLocation, Optional<? extends M>> fromIdConverter;
 +    private final Function<M, ResourceLocation> toIdConverter;
 +    private final RegistryKey<T> registryKey;
 +
 +    public PaperPostFlattenTagRegistrar(
-+        final Map<ResourceLocation, Collection<M>> tags,
++        final Map<ResourceLocation, List<M>> tags,
 +        final TagEventConfig<M, T> config
 +    ) {
 +        this.tags = tags;
@@ -122,16 +123,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public Map<TagKey<T>, Collection<TypedKey<T>>> getAllTags() {
 +        final ImmutableMap.Builder<TagKey<T>, Collection<TypedKey<T>>> tags = ImmutableMap.builderWithExpectedSize(this.tags.size());
-+        for (final Map.Entry<ResourceLocation, Collection<M>> entry : this.tags.entrySet()) {
++        for (final Map.Entry<ResourceLocation, List<M>> entry : this.tags.entrySet()) {
 +            final TagKey<T> key = TagKey.create(this.registryKey, CraftNamespacedKey.fromMinecraft(entry.getKey()));
 +            tags.put(key, this.convert(entry.getValue()));
 +        }
 +        return tags.build();
 +    }
 +
-+    private Collection<TypedKey<T>> convert(final Collection<M> nms) {
-+        return Collections.unmodifiableCollection(
-+            Collections2.transform(nms, m -> this.convert(this.toIdConverter.apply(m)))
++    private List<TypedKey<T>> convert(final List<M> nms) {
++        return Collections.unmodifiableList(
++            Lists.transform(nms, m -> this.convert(this.toIdConverter.apply(m)))
 +        );
 +    }
 +
@@ -152,9 +153,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return this.tags.containsKey(PaperAdventure.asVanilla(tagKey.key()));
 +    }
 +
-+    private Collection<M> getNmsTag(final TagKey<T> tagKey, final boolean create) {
++    private List<M> getNmsTag(final TagKey<T> tagKey, final boolean create) {
 +        final ResourceLocation vanillaKey = PaperAdventure.asVanilla(tagKey.key());
-+        Collection<M> tag = this.tags.get(vanillaKey);
++        List<M> tag = this.tags.get(vanillaKey);
 +        if (tag == null) {
 +            if (create) {
 +                tag = this.tags.computeIfAbsent(vanillaKey, k -> new ArrayList<>());
@@ -172,7 +173,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public void addToTag(final TagKey<T> tagKey, final Collection<TypedKey<T>> values) {
-+        final Collection<M> nmsTag = new ArrayList<>(this.getNmsTag(tagKey, true));
++        final List<M> nmsTag = new ArrayList<>(this.getNmsTag(tagKey, true));
 +        for (final TypedKey<T> key : values) {
 +            nmsTag.add(this.convert(key));
 +        }
@@ -377,8 +378,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return Map.copyOf(registrar.tags);
 +    }
 +
-+    public <M, A> Map<ResourceLocation, Collection<M>> firePostFlattenEvent(
-+        final Map<ResourceLocation, Collection<M>> initial,
++    public <M, A> Map<ResourceLocation, List<M>> firePostFlattenEvent(
++        final Map<ResourceLocation, List<M>> initial,
 +        final @Nullable TagEventConfig<M, A> config
 +    ) {
 +        if (config == null || config.postFlatten() == null || !config.postFlatten().hasHandlers()) {
@@ -412,7 +413,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            preFlatten,
 +            postFlatten,
 +            cause,
-+            registry::getHolder,
++            registry::get,
 +            h -> ((Holder.Reference<M>) h).key().location(),
 +            PaperRegistries.registryFromNms(registry.key())
 +        );
@@ -459,6 +460,45 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    RegistryKey<A> apiRegistryKey
 +) {
 +}
+diff --git a/src/main/java/net/minecraft/resources/RegistryDataLoader.java b/src/main/java/net/minecraft/resources/RegistryDataLoader.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/resources/RegistryDataLoader.java
++++ b/src/main/java/net/minecraft/resources/RegistryDataLoader.java
+@@ -0,0 +0,0 @@ public class RegistryDataLoader {
+             }
+         }
+ 
+-        TagLoader.loadTagsForRegistry(resourceManager, registry);
++        TagLoader.loadTagsForRegistry(resourceManager, registry, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL); // Paper - tag lifecycle - add cause
+     }
+ 
+     static <E> void loadContentsFromNetwork(
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             return stream.<Pack>map(resourcepackrepository::getPack).filter(Objects::nonNull).map(Pack::open).collect(ImmutableList.toImmutableList()); // CraftBukkit - decompile error // Paper - decompile error // todo: is this needed anymore?
+         }, this).thenCompose((immutablelist) -> {
+             MultiPackResourceManager resourcemanager = new MultiPackResourceManager(PackType.SERVER_DATA, immutablelist);
+-            List<Registry.PendingTags<?>> list = TagLoader.loadTagsForExistingRegistries(resourcemanager, this.registries.compositeAccess());
++            List<Registry.PendingTags<?>> list = TagLoader.loadTagsForExistingRegistries(resourcemanager, this.registries.compositeAccess(), io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.RELOAD); // Paper - tag lifecycle - add cause
+ 
+             return ReloadableServerResources.loadResources(resourcemanager, this.registries, list, this.worldData.enabledFeatures(), this.isDedicatedServer() ? Commands.CommandSelection.DEDICATED : Commands.CommandSelection.INTEGRATED, this.getFunctionCompilationLevel(), this.executor, this).whenComplete((datapackresources, throwable) -> {
+                 if (throwable != null) {
+diff --git a/src/main/java/net/minecraft/server/ReloadableServerRegistries.java b/src/main/java/net/minecraft/server/ReloadableServerRegistries.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/ReloadableServerRegistries.java
++++ b/src/main/java/net/minecraft/server/ReloadableServerRegistries.java
+@@ -0,0 +0,0 @@ public class ReloadableServerRegistries {
+             String string = Registries.elementsDirPath(type.registryKey());
+             SimpleJsonResourceReloadListener.scanDirectory(resourceManager, string, ops, type.codec(), map);
+             map.forEach((id, value) -> io.papermc.paper.registry.PaperRegistryListenerManager.INSTANCE.registerWithListeners(writableRegistry, ResourceKey.create(type.registryKey(), id), value, DEFAULT_REGISTRATION_INFO, conversions)); // Paper - register with listeners
+-            TagLoader.loadTagsForRegistry(resourceManager, writableRegistry);
++            TagLoader.loadTagsForRegistry(resourceManager, writableRegistry, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.RELOAD); // Paper - tag life cycle - reload
+             return writableRegistry;
+         }, prepareExecutor);
+     }
 diff --git a/src/main/java/net/minecraft/server/ServerFunctionLibrary.java b/src/main/java/net/minecraft/server/ServerFunctionLibrary.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/ServerFunctionLibrary.java
@@ -472,66 +512,84 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  },
                  applyExecutor
              );
+diff --git a/src/main/java/net/minecraft/server/WorldLoader.java b/src/main/java/net/minecraft/server/WorldLoader.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/WorldLoader.java
++++ b/src/main/java/net/minecraft/server/WorldLoader.java
+@@ -0,0 +0,0 @@ public class WorldLoader {
+             CloseableResourceManager closeableResourceManager = pair.getSecond();
+             LayeredRegistryAccess<RegistryLayer> layeredRegistryAccess = RegistryLayer.createRegistryAccess();
+             List<Registry.PendingTags<?>> list = TagLoader.loadTagsForExistingRegistries(
+-                closeableResourceManager, layeredRegistryAccess.getLayer(RegistryLayer.STATIC)
++                closeableResourceManager, layeredRegistryAccess.getLayer(RegistryLayer.STATIC), io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL // Paper - tag lifecycle - add cause
+             );
+             RegistryAccess.Frozen frozen = layeredRegistryAccess.getAccessForLoading(RegistryLayer.WORLDGEN);
+             List<HolderLookup.RegistryLookup<?>> list2 = TagLoader.buildUpdatedLookups(frozen, list);
 diff --git a/src/main/java/net/minecraft/tags/TagLoader.java b/src/main/java/net/minecraft/tags/TagLoader.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/tags/TagLoader.java
 +++ b/src/main/java/net/minecraft/tags/TagLoader.java
 @@ -0,0 +0,0 @@ public class TagLoader<T> {
-         return list.isEmpty() ? Either.right(builder.build()) : Either.left(list);
+         return list.isEmpty() ? Either.right(List.copyOf(sequencedSet)) : Either.left(list);
      }
  
--    public Map<ResourceLocation, Collection<T>> build(Map<ResourceLocation, List<TagLoader.EntryWithSource>> tags) {
+-    public Map<ResourceLocation, List<T>> build(Map<ResourceLocation, List<TagLoader.EntryWithSource>> tags) {
 +    // Paper start - fire tag registrar events
-+    public Map<ResourceLocation, Collection<T>> build(Map<ResourceLocation, List<TagLoader.EntryWithSource>> tags, @Nullable io.papermc.paper.tag.TagEventConfig<T, ?> eventConfig) {
++    public Map<ResourceLocation, List<T>> build(Map<ResourceLocation, List<TagLoader.EntryWithSource>> tags, @Nullable io.papermc.paper.tag.TagEventConfig<T, ?> eventConfig) {
 +        tags = io.papermc.paper.tag.PaperTagListenerManager.INSTANCE.firePreFlattenEvent(tags, eventConfig);
-+        // Paper end - fire tag registrar events
-         final Map<ResourceLocation, Collection<T>> map = Maps.newHashMap();
++    // Paper end - fire tag registrar event
+         final Map<ResourceLocation, List<T>> map = new HashMap<>();
          TagEntry.Lookup<T> lookup = new TagEntry.Lookup<T>() {
              @Nullable
 @@ -0,0 +0,0 @@ public class TagLoader<T> {
                      )
-                     .ifRight(resolvedEntries -> map.put(id, (Collection<T>)resolvedEntries))
+                     .ifRight(values -> map.put(id, (List<T>)values))
          );
 -        return map;
 +        return io.papermc.paper.tag.PaperTagListenerManager.INSTANCE.firePostFlattenEvent(map, eventConfig); // Paper - fire tag registrar events
      }
  
--    public Map<ResourceLocation, Collection<T>> loadAndBuild(ResourceManager manager) {
--        return this.build(this.load(manager));
-+    // Paper start - fire tag registrar events
-+    public Map<ResourceLocation, Collection<T>> loadAndBuild(ResourceManager manager, @Nullable io.papermc.paper.tag.TagEventConfig<T, ?> eventConfig) {
-+        return this.build(this.load(manager), eventConfig);
-+        // Paper end - fire tag registrar events
+     public static <T> void loadTagsFromNetwork(TagNetworkSerialization.NetworkPayload tags, WritableRegistry<T> registry) {
+@@ -0,0 +0,0 @@ public class TagLoader<T> {
      }
  
-     public static record EntryWithSource(TagEntry entry, String source) {
-diff --git a/src/main/java/net/minecraft/tags/TagManager.java b/src/main/java/net/minecraft/tags/TagManager.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/tags/TagManager.java
-+++ b/src/main/java/net/minecraft/tags/TagManager.java
-@@ -0,0 +0,0 @@ public class TagManager implements PreparableReloadListener {
-     ) {
-         List<? extends CompletableFuture<? extends TagManager.LoadResult<?>>> list = this.registryAccess
-             .registries()
--            .map(registry -> this.createLoader(manager, prepareExecutor, (RegistryAccess.RegistryEntry<?>)registry))
-+            .map(registry -> this.createLoader(manager, prepareExecutor, (RegistryAccess.RegistryEntry<?>)registry, applyExecutor instanceof net.minecraft.server.MinecraftServer ? io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL : io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.RELOAD)) // Paper - add registrar event cause
-             .toList();
-         return CompletableFuture.allOf(list.toArray(CompletableFuture[]::new))
-             .thenCompose(synchronizer::wait)
-@@ -0,0 +0,0 @@ public class TagManager implements PreparableReloadListener {
- 
-     private <T> CompletableFuture<TagManager.LoadResult<T>> createLoader(
-         ResourceManager resourceManager, Executor prepareExecutor, RegistryAccess.RegistryEntry<T> requirement
-+        , io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause cause // Paper - add registrar event cause
-     ) {
-         ResourceKey<? extends Registry<T>> resourceKey = requirement.key();
-         Registry<T> registry = requirement.value();
-         TagLoader<Holder<T>> tagLoader = new TagLoader<>(registry::getHolder, Registries.tagsDirPath(resourceKey));
--        return CompletableFuture.supplyAsync(() -> new TagManager.LoadResult<>(resourceKey, tagLoader.loadAndBuild(resourceManager)), prepareExecutor);
-+        // Paper start - fire tag registrar events
-+        final io.papermc.paper.tag.TagEventConfig<Holder<T>, ?> config = io.papermc.paper.tag.PaperTagListenerManager.INSTANCE.createEventConfig(registry, cause);
-+        return CompletableFuture.supplyAsync(() -> new TagManager.LoadResult<>(resourceKey, tagLoader.loadAndBuild(resourceManager, config)), prepareExecutor);
-+        // Paper end - fire tag registrar events
+     public static List<Registry.PendingTags<?>> loadTagsForExistingRegistries(ResourceManager resourceManager, RegistryAccess registryManager) {
++    // Paper start - tag lifecycle - add cause
++        return loadTagsForExistingRegistries(resourceManager, registryManager, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL);
++    }
++    public static List<Registry.PendingTags<?>> loadTagsForExistingRegistries(ResourceManager resourceManager, RegistryAccess registryManager, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause cause) {
++    // Paper end - tag lifecycle - add cause
+         return registryManager.registries()
+-            .map(registry -> loadPendingTags(resourceManager, registry.value()))
++            .map(registry -> loadPendingTags(resourceManager, registry.value(), cause)) // Paper - tag lifecycle - add cause
+             .flatMap(Optional::stream)
+             .collect(Collectors.toUnmodifiableList());
      }
  
-     public static record LoadResult<T>(ResourceKey<? extends Registry<T>> key, Map<ResourceLocation, Collection<Holder<T>>> tags) {
+     public static <T> void loadTagsForRegistry(ResourceManager resourceManager, WritableRegistry<T> registry) {
++    // Paper start - tag lifecycle - add registrar event cause
++        loadTagsForRegistry(resourceManager, registry, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL);
++    }
++    public static <T> void loadTagsForRegistry(ResourceManager resourceManager, WritableRegistry<T> registry, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause cause) {
++    // Paper end - tag lifecycle - add registrar event cause
+         ResourceKey<? extends Registry<T>> resourceKey = registry.key();
+         TagLoader<Holder<T>> tagLoader = new TagLoader<>(TagLoader.ElementLookup.fromWritableRegistry(registry), Registries.tagsDirPath(resourceKey));
+-        tagLoader.build(tagLoader.load(resourceManager)).forEach((id, entries) -> registry.bindTag(TagKey.create(resourceKey, id), (List<Holder<T>>)entries));
++        tagLoader.build(tagLoader.load(resourceManager), io.papermc.paper.tag.PaperTagListenerManager.INSTANCE.createEventConfig(registry, cause)).forEach((id, entries) -> registry.bindTag(TagKey.create(resourceKey, id), (List<Holder<T>>)entries)); // Paper - tag lifecycle - add registrar event cause
+     }
+ 
+     private static <T> Map<TagKey<T>, List<Holder<T>>> wrapTags(ResourceKey<? extends Registry<T>> registryRef, Map<ResourceLocation, List<Holder<T>>> tags) {
+         return tags.entrySet().stream().collect(Collectors.toUnmodifiableMap(entry -> TagKey.create(registryRef, entry.getKey()), Entry::getValue));
+     }
+ 
+-    private static <T> Optional<Registry.PendingTags<T>> loadPendingTags(ResourceManager resourceManager, Registry<T> registry) {
++    private static <T> Optional<Registry.PendingTags<T>> loadPendingTags(ResourceManager resourceManager, Registry<T> registry, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause cause) { // Paper - add registrar event cause
+         ResourceKey<? extends Registry<T>> resourceKey = registry.key();
+         TagLoader<Holder<T>> tagLoader = new TagLoader<>(
+             (TagLoader.ElementLookup<Holder<T>>)TagLoader.ElementLookup.fromFrozenRegistry(registry), Registries.tagsDirPath(resourceKey)
+         );
+-        TagLoader.LoadResult<T> loadResult = new TagLoader.LoadResult<>(resourceKey, wrapTags(registry.key(), tagLoader.build(tagLoader.load(resourceManager))));
++        TagLoader.LoadResult<T> loadResult = new TagLoader.LoadResult<>(resourceKey, wrapTags(registry.key(), tagLoader.build(tagLoader.load(resourceManager), io.papermc.paper.tag.PaperTagListenerManager.INSTANCE.createEventConfig(registry, cause)))); // Paper - add registrar event cause
+         return loadResult.tags().isEmpty() ? Optional.empty() : Optional.of(registry.prepareTagReload(loadResult));
+     }
+ 
