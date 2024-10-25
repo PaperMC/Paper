@@ -102,11 +102,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import com.destroystokyo.paper.ClientOption;
 +import java.util.Locale;
 +import java.util.Map;
-+import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.core.registries.Registries;
 +import net.minecraft.network.chat.contents.TranslatableContents;
 +import net.minecraft.resources.ResourceKey;
 +import net.minecraft.resources.ResourceLocation;
  import net.minecraft.world.entity.player.ChatVisiblity;
++import net.minecraft.world.flag.FeatureFlags;
++import net.minecraft.world.level.GameRules;
 +import net.minecraft.world.level.GameType;
 +import net.minecraft.world.level.biome.Biome;
  import org.bukkit.Difficulty;
@@ -115,6 +117,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.bukkit.GameRule;
 +import org.bukkit.MusicInstrument;
 +import org.bukkit.attribute.Attribute;
++import org.bukkit.craftbukkit.CraftWorld;
 +import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 +import org.bukkit.support.RegistryHelper;
 +import org.bukkit.support.environment.AllFeatures;
@@ -140,8 +143,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Test
 +    public void testGameruleKeys() {
++        final Map<String, GameRules.Key<?>> gameRules = CraftWorld.getGameRulesNMS(new GameRules(FeatureFlags.REGISTRY.allFlags()));
 +        for (GameRule<?> rule : GameRule.values()) {
-+            Assertions.assertEquals(org.bukkit.craftbukkit.CraftWorld.getGameRulesNMS().get(rule.getName()).getDescriptionId(), rule.translationKey(), rule.getName() + "'s translation doesn't match");
++            Assertions.assertEquals(gameRules.get(rule.getName()).getDescriptionId(), rule.translationKey(), rule.getName() + "'s translation doesn't match");
 +        }
 +    }
 +
@@ -189,7 +193,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Test
 +    public void testMusicInstrument() {
-+        for (final ResourceLocation nms : BuiltInRegistries.INSTRUMENT.keySet()) {
++        for (final ResourceLocation nms : RegistryHelper.getRegistry().lookupOrThrow(Registries.INSTRUMENT).keySet()) {
 +            final MusicInstrument bukkit = MusicInstrument.getByKey(CraftNamespacedKey.fromMinecraft(nms));
 +            Assertions.assertNotNull(bukkit, "Missing bukkit instrument for " + nms);
 +            Assertions.assertEquals(nms.toLanguageKey("instrument"), bukkit.translationKey(), "translation key mismatch for " + bukkit);

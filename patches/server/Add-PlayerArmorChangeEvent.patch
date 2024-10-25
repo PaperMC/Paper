@@ -34,10 +34,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.ArrayList;
 +import java.util.List;
 +import java.util.stream.Stream;
++import net.minecraft.core.component.DataComponents;
 +import net.minecraft.world.entity.EquipmentSlot;
-+import net.minecraft.world.item.Equipable;
 +import net.minecraft.world.item.Item;
-+import net.minecraft.world.item.ItemStack;
++import net.minecraft.world.item.equipment.Equippable;
 +import org.bukkit.Material;
 +import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 +import org.bukkit.support.environment.AllFeatures;
@@ -65,23 +65,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @MethodSource("slotTypeParams")
 +    public void testSlotType(PlayerArmorChangeEvent.SlotType slotType, Material item) {
 +        final Item nmsItem = CraftMagicNumbers.getItem(item);
-+        final Equipable equipable = Equipable.get(new ItemStack(nmsItem));
-+        assertNotNull(equipable, item + " isn't equipable");
++        final Equippable equippable = nmsItem.components().get(DataComponents.EQUIPPABLE);
++        assertNotNull(equippable, item + " isn't equipable");
 +        final EquipmentSlot slot = switch (slotType) {
 +            case HEAD -> EquipmentSlot.HEAD;
 +            case CHEST -> EquipmentSlot.CHEST;
 +            case LEGS -> EquipmentSlot.LEGS;
 +            case FEET -> EquipmentSlot.FEET;
 +        };
-+        assertEquals(equipable.getEquipmentSlot(), slot, item + " isn't set to the right slot");
++        assertEquals(equippable.slot(), slot, item + " isn't set to the right slot");
 +    }
 +
 +    public static Stream<Object[]> equipableParams() {
 +        final List<Object[]> parameters = new ArrayList<>();
 +        for (final Item item : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
-+            final Equipable equipable = Equipable.get(new ItemStack(item));
-+            if (equipable != null) {
-+                parameters.add(new Object[]{equipable, item});
++            final Equippable equippable = item.components().get(DataComponents.EQUIPPABLE);
++            if (equippable != null) {
++                parameters.add(new Object[]{equippable, item});
 +            }
 +        }
 +        return parameters.stream();
@@ -89,8 +89,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @ParameterizedTest(name = "{argumentsWithNames}")
 +    @MethodSource("equipableParams")
-+    public void testEquipable(Equipable equipable, Item item) {
-+        final EquipmentSlot equipmentSlot = equipable.getEquipmentSlot();
++    public void testEquipable(Equippable equipable, Item item) {
++        final EquipmentSlot equipmentSlot = equipable.slot();
 +        PlayerArmorChangeEvent.SlotType slotType = switch (equipmentSlot) {
 +            case HEAD -> PlayerArmorChangeEvent.SlotType.HEAD;
 +            case CHEST -> PlayerArmorChangeEvent.SlotType.CHEST;
