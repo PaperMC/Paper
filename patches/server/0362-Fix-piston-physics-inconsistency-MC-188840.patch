@@ -32,7 +32,7 @@ This patch fixes https://bugs.mojang.com/browse/MC-188840
 This patch also fixes rail duping and carpet duping.
 
 diff --git a/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java b/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
-index 0b80940ed23a35e0412957a50d04907b676b0aca..e84501fdce7b94300b1f5d6d20e2db90b175454d 100644
+index 0b80940ed23a35e0412957a50d04907b676b0aca..0c6b517196d48ba4384eac240b7e580adfdbc4d4 100644
 --- a/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/piston/PistonBaseBlock.java
 @@ -419,13 +419,25 @@ public class PistonBaseBlock extends DirectionalBlock {
@@ -50,12 +50,13 @@ index 0b80940ed23a35e0412957a50d04907b676b0aca..e84501fdce7b94300b1f5d6d20e2db90
                  map.remove(blockposition3);
                  iblockdata2 = (BlockState) Blocks.MOVING_PISTON.defaultBlockState().setValue(PistonBaseBlock.FACING, dir);
                  world.setBlock(blockposition3, iblockdata2, 68);
+-                world.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(blockposition3, iblockdata2, (BlockState) list1.get(j), dir, extend, false));
 +                // Paper start - fix a variety of piston desync dupes
 +                if (!allowDesync) {
 +                    iblockdata1 = world.getBlockState(oldPos);
 +                    map.replace(oldPos, iblockdata1);
 +                }
-                 world.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(blockposition3, iblockdata2, (BlockState) list1.get(j), dir, extend, false));
++                world.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(blockposition3, iblockdata2, allowDesync ? (BlockState) list1.get(j) : iblockdata1, dir, extend, false));
 +                if (!allowDesync) {
 +                    world.setBlock(oldPos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_MOVE_BY_PISTON | 1024); // set air to prevent later physics updates from seeing this block
 +                }
