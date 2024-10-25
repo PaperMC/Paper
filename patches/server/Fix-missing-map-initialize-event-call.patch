@@ -21,22 +21,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start - Call missing map initialize event and set id
 +        final DimensionDataStorage storage = this.getServer().overworld().getDataStorage();
 +
-+        final net.minecraft.world.level.saveddata.SavedData existing = storage.cache.get(id.key());
-+        if (existing == null && !storage.cache.containsKey(id.key())) {
-+            final MapItemSavedData worldmap = (MapItemSavedData) this.getServer().overworld().getDataStorage().get(MapItemSavedData.factory(), id.key());
-+            storage.cache.put(id.key(), worldmap);
-+            if (worldmap != null) {
++        final Optional<net.minecraft.world.level.saveddata.SavedData> cacheEntry = storage.cache.get(id.key());
++        if (cacheEntry == null) { // Cache did not contain, try to load and may init
++            final MapItemSavedData worldmap = storage.get(MapItemSavedData.factory(), id.key()); // get populates the cache
++            if (worldmap != null) { // map was read, init it and return
 +                worldmap.id = id;
 +                new MapInitializeEvent(worldmap.mapView).callEvent();
 +                return worldmap;
 +            }
-+        } else if (existing instanceof MapItemSavedData mapItemSavedData) {
-+            mapItemSavedData.id = id;
++
++            return null; // Map does not exist, reading failed.
          }
 -        return worldmap;
 -        // CraftBukkit end
 +
-+        return existing instanceof MapItemSavedData data ? data : null;
++        // Cache entry exists, update it with the id ref and return.
++        if (cacheEntry.orElse(null) instanceof final MapItemSavedData mapItemSavedData) {
++            mapItemSavedData.id = id;
++            return mapItemSavedData;
++        }
++
++        return null;
 +        // Paper end - Call missing map initialize event and set id
      }
  
