@@ -1,6 +1,21 @@
 --- a/net/minecraft/world/level/GameRules.java
 +++ b/net/minecraft/world/level/GameRules.java
-@@ -58,7 +58,7 @@
+@@ -36,6 +36,14 @@
+ 
+ public class GameRules {
+ 
++    // Paper start - allow disabling gamerule limits
++    private static final boolean DISABLE_LIMITS = Boolean.getBoolean("paper.disableGameRuleLimits");
++
++    private static int limit(final int limit, final int unlimited) {
++        return DISABLE_LIMITS ? unlimited : limit;
++    }
++    // Paper end - allow disabling gamerule limits
++
+     public static final int DEFAULT_RANDOM_TICK_SPEED = 3;
+     static final Logger LOGGER = LogUtils.getLogger();
+     private static final Map<GameRules.Key<?>, GameRules.Type<?>> GAME_RULE_TYPES = Maps.newTreeMap(Comparator.comparing((gamerules_gamerulekey) -> {
+@@ -58,7 +66,7 @@
      public static final GameRules.Key<GameRules.BooleanValue> RULE_SENDCOMMANDFEEDBACK = GameRules.register("sendCommandFeedback", GameRules.Category.CHAT, GameRules.BooleanValue.create(true));
      public static final GameRules.Key<GameRules.BooleanValue> RULE_REDUCEDDEBUGINFO = GameRules.register("reducedDebugInfo", GameRules.Category.MISC, GameRules.BooleanValue.create(false, (minecraftserver, gamerules_gameruleboolean) -> {
          int i = gamerules_gameruleboolean.get() ? 22 : 23;
@@ -9,7 +24,7 @@
  
          while (iterator.hasNext()) {
              ServerPlayer entityplayer = (ServerPlayer) iterator.next();
-@@ -74,7 +74,7 @@
+@@ -74,7 +82,7 @@
      public static final GameRules.Key<GameRules.IntegerValue> RULE_MAX_ENTITY_CRAMMING = GameRules.register("maxEntityCramming", GameRules.Category.MOBS, GameRules.IntegerValue.create(24));
      public static final GameRules.Key<GameRules.BooleanValue> RULE_WEATHER_CYCLE = GameRules.register("doWeatherCycle", GameRules.Category.UPDATES, GameRules.BooleanValue.create(true));
      public static final GameRules.Key<GameRules.BooleanValue> RULE_LIMITED_CRAFTING = GameRules.register("doLimitedCrafting", GameRules.Category.PLAYER, GameRules.BooleanValue.create(false, (minecraftserver, gamerules_gameruleboolean) -> {
@@ -18,7 +33,7 @@
  
          while (iterator.hasNext()) {
              ServerPlayer entityplayer = (ServerPlayer) iterator.next();
-@@ -90,7 +90,7 @@
+@@ -90,7 +98,7 @@
      public static final GameRules.Key<GameRules.BooleanValue> RULE_DISABLE_RAIDS = GameRules.register("disableRaids", GameRules.Category.MOBS, GameRules.BooleanValue.create(false));
      public static final GameRules.Key<GameRules.BooleanValue> RULE_DOINSOMNIA = GameRules.register("doInsomnia", GameRules.Category.SPAWNING, GameRules.BooleanValue.create(true));
      public static final GameRules.Key<GameRules.BooleanValue> RULE_DO_IMMEDIATE_RESPAWN = GameRules.register("doImmediateRespawn", GameRules.Category.PLAYER, GameRules.BooleanValue.create(false, (minecraftserver, gamerules_gameruleboolean) -> {
@@ -27,11 +42,16 @@
  
          while (iterator.hasNext()) {
              ServerPlayer entityplayer = (ServerPlayer) iterator.next();
-@@ -123,12 +123,13 @@
-     public static final GameRules.Key<GameRules.IntegerValue> RULE_MINECART_MAX_SPEED = GameRules.register("minecartMaxSpeed", GameRules.Category.MISC, GameRules.IntegerValue.create(8, 1, 1000, FeatureFlagSet.of(FeatureFlags.MINECART_IMPROVEMENTS), (minecraftserver, gamerules_gameruleint) -> {
+@@ -120,15 +128,16 @@
+     public static final GameRules.Key<GameRules.BooleanValue> RULE_GLOBAL_SOUND_EVENTS = GameRules.register("globalSoundEvents", GameRules.Category.MISC, GameRules.BooleanValue.create(true));
+     public static final GameRules.Key<GameRules.BooleanValue> RULE_DO_VINES_SPREAD = GameRules.register("doVinesSpread", GameRules.Category.UPDATES, GameRules.BooleanValue.create(true));
+     public static final GameRules.Key<GameRules.BooleanValue> RULE_ENDER_PEARLS_VANISH_ON_DEATH = GameRules.register("enderPearlsVanishOnDeath", GameRules.Category.PLAYER, GameRules.BooleanValue.create(true));
+-    public static final GameRules.Key<GameRules.IntegerValue> RULE_MINECART_MAX_SPEED = GameRules.register("minecartMaxSpeed", GameRules.Category.MISC, GameRules.IntegerValue.create(8, 1, 1000, FeatureFlagSet.of(FeatureFlags.MINECART_IMPROVEMENTS), (minecraftserver, gamerules_gameruleint) -> {
++    public static final GameRules.Key<GameRules.IntegerValue> RULE_MINECART_MAX_SPEED = GameRules.register("minecartMaxSpeed", GameRules.Category.MISC, GameRules.IntegerValue.create(8, 1, limit(1000, Integer.MAX_VALUE), FeatureFlagSet.of(FeatureFlags.MINECART_IMPROVEMENTS), (minecraftserver, gamerules_gameruleint) -> { // Paper - allow disabling gamerule limits
      }));
-     public static final GameRules.Key<GameRules.IntegerValue> RULE_SPAWN_CHUNK_RADIUS = GameRules.register("spawnChunkRadius", GameRules.Category.MISC, GameRules.IntegerValue.create(2, 0, 32, FeatureFlagSet.of(), (minecraftserver, gamerules_gameruleint) -> {
+-    public static final GameRules.Key<GameRules.IntegerValue> RULE_SPAWN_CHUNK_RADIUS = GameRules.register("spawnChunkRadius", GameRules.Category.MISC, GameRules.IntegerValue.create(2, 0, 32, FeatureFlagSet.of(), (minecraftserver, gamerules_gameruleint) -> {
 -        ServerLevel worldserver = minecraftserver.overworld();
++    public static final GameRules.Key<GameRules.IntegerValue> RULE_SPAWN_CHUNK_RADIUS = GameRules.register("spawnChunkRadius", GameRules.Category.MISC, GameRules.IntegerValue.create(2, 0, limit(32, Integer.MAX_VALUE), FeatureFlagSet.of(), (minecraftserver, gamerules_gameruleint) -> { // Paper - allow disabling gamerule limits
 +        ServerLevel worldserver = minecraftserver; // CraftBukkit - per-world
  
          worldserver.setDefaultSpawnPos(worldserver.getSharedSpawnPos(), worldserver.getSharedSpawnAngle());
@@ -42,7 +62,7 @@
  
      private static <T extends GameRules.Value<T>> GameRules.Key<T> register(String name, GameRules.Category category, GameRules.Type<T> type) {
          GameRules.Key<T> gamerules_gamerulekey = new GameRules.Key<>(name, category);
-@@ -161,10 +162,21 @@
+@@ -161,10 +170,21 @@
      private GameRules(Map<GameRules.Key<?>, GameRules.Value<?>> rules, FeatureFlagSet enabledFeatures) {
          this.rules = rules;
          this.enabledFeatures = enabledFeatures;
@@ -65,7 +85,7 @@
  
          if (t0 == null) {
              throw new IllegalArgumentException("Tried to access invalid game rule");
-@@ -184,7 +196,7 @@
+@@ -184,7 +204,7 @@
  
      private void loadFromTag(DynamicLike<?> values) {
          this.rules.forEach((gamerules_gamerulekey, gamerules_gamerulevalue) -> {
@@ -74,7 +94,7 @@
  
              Objects.requireNonNull(gamerules_gamerulevalue);
              dataresult.ifSuccess(gamerules_gamerulevalue::deserialize);
-@@ -205,22 +217,22 @@
+@@ -205,22 +225,22 @@
  
      private <T extends GameRules.Value<T>> void callVisitorCap(GameRules.GameRuleTypeVisitor visitor, GameRules.Key<?> key, GameRules.Type<?> type) {
          if (type.requiredFeatures.isSubsetOf(this.enabledFeatures)) {
@@ -105,7 +125,7 @@
      }
  
      public boolean getBoolean(GameRules.Key<GameRules.BooleanValue> rule) {
-@@ -232,6 +244,10 @@
+@@ -232,6 +252,10 @@
      }
  
      public static final class Key<T extends GameRules.Value<T>> {
@@ -116,7 +136,7 @@
  
          final String id;
          private final GameRules.Category category;
-@@ -285,11 +301,11 @@
+@@ -285,11 +309,11 @@
  
          final Supplier<ArgumentType<?>> argument;
          private final Function<GameRules.Type<T>, T> constructor;
@@ -130,7 +150,7 @@
              this.argument = argumentType;
              this.constructor = ruleFactory;
              this.callback = changeCallback;
-@@ -302,7 +318,7 @@
+@@ -302,7 +326,7 @@
          }
  
          public T createRule() {
@@ -139,7 +159,7 @@
          }
  
          public void callVisitor(GameRules.GameRuleTypeVisitor consumer, GameRules.Key<T> key) {
-@@ -322,21 +338,21 @@
+@@ -322,21 +346,21 @@
              this.type = type;
          }
  
@@ -169,7 +189,7 @@
  
          public abstract String serialize();
  
-@@ -350,7 +366,7 @@
+@@ -350,7 +374,7 @@
  
          protected abstract T copy();
  
@@ -178,7 +198,7 @@
      }
  
      public interface GameRuleTypeVisitor {
-@@ -366,7 +382,7 @@
+@@ -366,7 +390,7 @@
  
          private boolean value;
  
@@ -187,7 +207,7 @@
              return new GameRules.Type<>(BoolArgumentType::bool, (gamerules_gameruledefinition) -> {
                  return new GameRules.BooleanValue(gamerules_gameruledefinition, initialValue);
              }, changeCallback, GameRules.GameRuleTypeVisitor::visitBoolean, FeatureFlagSet.of());
-@@ -383,17 +399,20 @@
+@@ -383,17 +407,20 @@
          }
  
          @Override
@@ -213,7 +233,7 @@
          }
  
          @Override
-@@ -402,7 +421,7 @@
+@@ -402,7 +429,7 @@
          }
  
          @Override
@@ -222,7 +242,7 @@
              this.value = Boolean.parseBoolean(value);
          }
  
-@@ -421,9 +440,9 @@
+@@ -421,9 +448,9 @@
              return new GameRules.BooleanValue(this.type, this.value);
          }
  
@@ -235,7 +255,7 @@
          }
      }
  
-@@ -431,13 +450,13 @@
+@@ -431,13 +458,13 @@
  
          private int value;
  
@@ -251,7 +271,7 @@
              return new GameRules.Type<>(() -> {
                  return IntegerArgumentType.integer(min, max);
              }, (gamerules_gameruledefinition) -> {
-@@ -456,17 +475,20 @@
+@@ -456,17 +483,20 @@
          }
  
          @Override
@@ -277,7 +297,7 @@
          }
  
          @Override
-@@ -475,7 +497,7 @@
+@@ -475,7 +505,7 @@
          }
  
          @Override
@@ -286,7 +306,7 @@
              this.value = IntegerValue.safeParse(value);
          }
  
-@@ -517,9 +539,9 @@
+@@ -517,9 +547,9 @@
              return new GameRules.IntegerValue(this.type, this.value);
          }
  

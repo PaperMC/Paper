@@ -80,7 +80,7 @@
 +    public final UUID uuid;
 +    public boolean hasPhysicsEvent = true; // Paper - BlockPhysicsEvent
 +    public boolean hasEntityMoveEvent; // Paper - Add EntityMoveEvent
-+
+ 
 +    public LevelChunk getChunkIfLoaded(int x, int z) {
 +        return this.chunkSource.getChunkAtIfLoadedImmediately(x, z); // Paper - Use getChunkIfLoadedImmediately
 +    }
@@ -142,7 +142,7 @@
 +
 +        this.loadChunks(minChunkX, minChunkZ, maxChunkX, maxChunkZ, priority, onLoad);
 +    }
- 
++
 +    public final void loadChunks(int minChunkX, int minChunkZ, int maxChunkX, int maxChunkZ,
 +                                 ca.spottedleaf.concurrentutil.util.Priority priority,
 +                                 java.util.function.Consumer<List<net.minecraft.world.level.chunk.ChunkAccess>> onLoad) {
@@ -615,19 +615,18 @@
 +        return this.addFreshEntity(entity, CreatureSpawnEvent.SpawnReason.DEFAULT);
      }
  
--    public boolean addWithUUID(Entity entity) {
--        return this.addEntity(entity);
 +    @Override
 +    public boolean addFreshEntity(Entity entity, CreatureSpawnEvent.SpawnReason reason) {
 +        return this.addEntity(entity, reason);
 +        // CraftBukkit end
-     }
- 
-+    public boolean addWithUUID(Entity entity) {
-+        // CraftBukkit start
-+        return this.addWithUUID(entity, CreatureSpawnEvent.SpawnReason.DEFAULT);
 +    }
 +
+     public boolean addWithUUID(Entity entity) {
+-        return this.addEntity(entity);
++        // CraftBukkit start
++        return this.addWithUUID(entity, CreatureSpawnEvent.SpawnReason.DEFAULT);
+     }
+ 
 +    public boolean addWithUUID(Entity entity, CreatureSpawnEvent.SpawnReason reason) {
 +        return this.addEntity(entity, reason);
 +        // CraftBukkit end
@@ -731,8 +730,8 @@
      public void removePlayerImmediately(ServerPlayer player, Entity.RemovalReason reason) {
 -        player.remove(reason);
 +        player.remove(reason, null); // CraftBukkit - add Bukkit remove cause
-+    }
-+
+     }
+ 
 +    // CraftBukkit start
 +    public boolean strikeLightning(Entity entitylightning) {
 +        return this.strikeLightning(entitylightning, LightningStrikeEvent.Cause.UNKNOWN);
@@ -746,9 +745,9 @@
 +        }
 +
 +        return this.addFreshEntity(entitylightning);
-     }
++    }
 +    // CraftBukkit end
- 
++
      @Override
      public void destroyBlockProgress(int entityId, BlockPos pos, int progress) {
          Iterator iterator = this.server.getPlayerList().getPlayers().iterator();
@@ -930,9 +929,12 @@
  
      public <T extends ParticleOptions> int sendParticles(T parameters, boolean force, boolean important, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speed) {
 -        ClientboundLevelParticlesPacket packetplayoutworldparticles = new ClientboundLevelParticlesPacket(parameters, force, important, x, y, z, (float) offsetX, (float) offsetY, (float) offsetZ, (float) speed, count);
+-        int j = 0;
 +        return this.sendParticlesSource(null, parameters, force, important, x, y, z, count, offsetX, offsetY, offsetZ, speed); // CraftBukkit - visibility api support
 +    }
-+
+ 
+-        for (int k = 0; k < this.players.size(); ++k) {
+-            ServerPlayer entityplayer = (ServerPlayer) this.players.get(k);
 +    // CraftBukkit start - visibility api support
 +    public <T extends ParticleOptions> int sendParticlesSource(ServerPlayer sender, T t0, boolean flag, boolean flag1, double d0, double d1, double d2, int i, double d3, double d4, double d5, double d6) {
 +        // Paper start - Particle API
@@ -942,15 +944,13 @@
 +        // Paper end - Particle API
 +        // CraftBukkit end
 +        ClientboundLevelParticlesPacket packetplayoutworldparticles = new ClientboundLevelParticlesPacket(t0, flag, flag1, d0, d1, d2, (float) d3, (float) d4, (float) d5, (float) d6, i);
-         int j = 0;
++        int j = 0;
  
--        for (int k = 0; k < this.players.size(); ++k) {
--            ServerPlayer entityplayer = (ServerPlayer) this.players.get(k);
+-            if (this.sendParticles(entityplayer, force, x, y, z, packetplayoutworldparticles)) {
 +        for (Player entityhuman : receivers) { // Paper - Particle API
 +            ServerPlayer entityplayer = (ServerPlayer) entityhuman; // Paper - Particle API
 +            if (sender != null && !entityplayer.getBukkitEntity().canSee(sender.getBukkitEntity())) continue; // CraftBukkit
- 
--            if (this.sendParticles(entityplayer, force, x, y, z, packetplayoutworldparticles)) {
++
 +            if (this.sendParticles(entityplayer, flag, d0, d1, d2, packetplayoutworldparticles)) {
                  ++j;
              }
@@ -1004,7 +1004,7 @@
          this.getServer().overworld().getDataStorage().set(id.key(), state);
      }
  
-@@ -1352,7 +1768,9 @@
+@@ -1352,18 +1768,28 @@
          float f1 = this.levelData.getSpawnAngle();
  
          if (!blockposition1.equals(pos) || f1 != angle) {
@@ -1014,7 +1014,28 @@
              this.getServer().getPlayerList().broadcastAll(new ClientboundSetDefaultSpawnPositionPacket(pos, angle));
          }
  
-@@ -1419,6 +1837,11 @@
+         if (this.lastSpawnChunkRadius > 1) {
+-            this.getChunkSource().removeRegionTicket(TicketType.START, new ChunkPos(blockposition1), this.lastSpawnChunkRadius, Unit.INSTANCE);
++            // Paper start - allow disabling gamerule limits
++            for (ChunkPos chunkPos : io.papermc.paper.util.MCUtil.getSpiralOutChunks(blockposition1, this.lastSpawnChunkRadius - 2)) {
++                this.getChunkSource().removeTicketAtLevel(TicketType.START, chunkPos, net.minecraft.server.level.ChunkLevel.ENTITY_TICKING_LEVEL, Unit.INSTANCE);
++            }
++            // Paper end - allow disabling gamerule limits
+         }
+ 
+         int i = this.getGameRules().getInt(GameRules.RULE_SPAWN_CHUNK_RADIUS) + 1;
+ 
+         if (i > 1) {
+-            this.getChunkSource().addRegionTicket(TicketType.START, new ChunkPos(pos), i, Unit.INSTANCE);
++            // Paper start - allow disabling gamerule limits
++            for (ChunkPos chunkPos : io.papermc.paper.util.MCUtil.getSpiralOutChunks(pos, i - 2)) {
++                this.getChunkSource().addTicketAtLevel(TicketType.START, chunkPos, net.minecraft.server.level.ChunkLevel.ENTITY_TICKING_LEVEL, Unit.INSTANCE);
++            }
++            // Paper end - allow disabling gamerule limits
+         }
+ 
+         this.lastSpawnChunkRadius = i;
+@@ -1419,6 +1845,11 @@
              });
              optional1.ifPresent((holder) -> {
                  this.getServer().execute(() -> {
@@ -1026,7 +1047,7 @@
                      this.getPoiManager().add(blockposition1, holder);
                      DebugPackets.sendPoiAddedPacket(this, blockposition1);
                  });
-@@ -1649,6 +2072,11 @@
+@@ -1649,6 +2080,11 @@
      @Override
      public void blockUpdated(BlockPos pos, Block block) {
          if (!this.isDebug()) {
@@ -1038,7 +1059,7 @@
              this.updateNeighborsAt(pos, block);
          }
  
-@@ -1668,12 +2096,12 @@
+@@ -1668,12 +2104,12 @@
      }
  
      public boolean isFlat() {
@@ -1053,7 +1074,7 @@
      }
  
      @Nullable
-@@ -1696,7 +2124,7 @@
+@@ -1696,7 +2132,7 @@
      private static <T> String getTypeCount(Iterable<T> items, Function<T, String> classifier) {
          try {
              Object2IntOpenHashMap<String> object2intopenhashmap = new Object2IntOpenHashMap();
@@ -1062,7 +1083,7 @@
  
              while (iterator.hasNext()) {
                  T t0 = iterator.next();
-@@ -1705,7 +2133,7 @@
+@@ -1705,7 +2141,7 @@
                  object2intopenhashmap.addTo(s, 1);
              }
  
@@ -1071,7 +1092,7 @@
                  String s1 = (String) entry.getKey();
  
                  return s1 + ":" + entry.getIntValue();
-@@ -1717,6 +2145,7 @@
+@@ -1717,6 +2153,7 @@
  
      @Override
      public LevelEntityGetter<Entity> getEntities() {
@@ -1079,7 +1100,7 @@
          return this.entityManager.getEntityGetter();
      }
  
-@@ -1802,6 +2231,27 @@
+@@ -1802,6 +2239,27 @@
          return this.serverLevelData.getGameRules();
      }
  
@@ -1107,7 +1128,7 @@
      @Override
      public CrashReportCategory fillReportDetails(CrashReport report) {
          CrashReportCategory crashreportsystemdetails = super.fillReportDetails(report);
-@@ -1828,6 +2278,7 @@
+@@ -1828,6 +2286,7 @@
          }
  
          public void onTickingStart(Entity entity) {
@@ -1115,7 +1136,7 @@
              ServerLevel.this.entityTickList.add(entity);
          }
  
-@@ -1836,14 +2287,15 @@
+@@ -1836,14 +2295,15 @@
          }
  
          public void onTrackingStart(Entity entity) {
@@ -1133,7 +1154,7 @@
                      String s = "onTrackingStart called during navigation iteration";
  
                      Util.logAndPauseIfInIde("onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration"));
-@@ -1864,9 +2316,58 @@
+@@ -1864,9 +2324,58 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
@@ -1192,7 +1213,7 @@
              ServerLevel.this.getChunkSource().removeEntity(entity);
              if (entity instanceof ServerPlayer entityplayer) {
                  ServerLevel.this.players.remove(entityplayer);
-@@ -1874,7 +2375,7 @@
+@@ -1874,7 +2383,7 @@
              }
  
              if (entity instanceof Mob entityinsentient) {
@@ -1201,7 +1222,7 @@
                      String s = "onTrackingStart called during navigation iteration";
  
                      Util.logAndPauseIfInIde("onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration"));
-@@ -1895,10 +2396,27 @@
+@@ -1895,10 +2404,27 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::remove);
