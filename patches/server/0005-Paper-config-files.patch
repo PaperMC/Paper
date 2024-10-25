@@ -3140,7 +3140,7 @@ index 0000000000000000000000000000000000000000..36ca88b677e1b55b41c52750948d5b6d
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryEntrySerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryEntrySerializer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9073c619f14feb7a14bf32a504eb935f6d4cfe2e
+index 0000000000000000000000000000000000000000..cb0de1a639578320fd38177a915bfa5d1e9a73bd
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryEntrySerializer.java
 @@ -0,0 +1,64 @@
@@ -3178,7 +3178,7 @@ index 0000000000000000000000000000000000000000..9073c619f14feb7a14bf32a504eb935f
 +    }
 +
 +    protected final Registry<R> registry() {
-+        return this.registryAccess.registryOrThrow(this.registryKey);
++        return this.registryAccess.lookupOrThrow(this.registryKey);
 +    }
 +
 +    protected abstract T convertFromResourceKey(ResourceKey<R> key) throws SerializationException;
@@ -3210,7 +3210,7 @@ index 0000000000000000000000000000000000000000..9073c619f14feb7a14bf32a504eb935f
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryHolderSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryHolderSerializer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..eeae35ede747e473ddba4ca1688f2f6cbc35ce7d
+index 0000000000000000000000000000000000000000..76f6219eac049afef7ce03cd30d7c3232b5b9b7c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryHolderSerializer.java
 @@ -0,0 +1,34 @@
@@ -3240,7 +3240,7 @@ index 0000000000000000000000000000000000000000..eeae35ede747e473ddba4ca1688f2f6c
 +
 +    @Override
 +    protected Holder<T> convertFromResourceKey(ResourceKey<T> key) throws SerializationException {
-+        return this.registry().getHolder(key).orElseThrow(() -> new SerializationException("Missing holder in " + this.registry().key() + " with key " + key));
++        return this.registry().get(key).orElseThrow(() -> new SerializationException("Missing holder in " + this.registry().key() + " with key " + key));
 +    }
 +
 +    @Override
@@ -3250,7 +3250,7 @@ index 0000000000000000000000000000000000000000..eeae35ede747e473ddba4ca1688f2f6c
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryValueSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryValueSerializer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..718377ce91a010a48b2b4a5e59e02ee8a42107a7
+index 0000000000000000000000000000000000000000..6831b7b72c5e1f79eff36019ca2ff56531c26df8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryValueSerializer.java
 @@ -0,0 +1,35 @@
@@ -3277,7 +3277,7 @@ index 0000000000000000000000000000000000000000..718377ce91a010a48b2b4a5e59e02ee8
 +
 +    @Override
 +    protected T convertFromResourceKey(ResourceKey<T> key) throws SerializationException {
-+        final T value = this.registry().get(key);
++        final T value = this.registry().getValue(key);
 +        if (value == null) {
 +            throw new SerializationException("Missing value in " + this.registry() + " with key " + key.location());
 +        }
@@ -3617,7 +3617,7 @@ index 0000000000000000000000000000000000000000..66073f7a6a96405348cc4044ad1e6922
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/transformation/world/FeatureSeedsGeneration.java b/src/main/java/io/papermc/paper/configuration/transformation/world/FeatureSeedsGeneration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6cdc40cb4a5f94654c874f9dbdb106fa0e4d41f3
+index 0000000000000000000000000000000000000000..cb1f5f65c098470dc8553b015d0f0f29f28ed956
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/transformation/world/FeatureSeedsGeneration.java
 @@ -0,0 +1,71 @@
@@ -3668,7 +3668,7 @@ index 0000000000000000000000000000000000000000..6cdc40cb4a5f94654c874f9dbdb106fa
 +        final Reference2LongMap<Holder<ConfiguredFeature<?, ?>>> features = Objects.requireNonNullElseGet(featureNode.get(new TypeToken<Reference2LongMap<Holder<ConfiguredFeature<?, ?>>>>() {}), Reference2LongOpenHashMap::new);
 +        final Random random = new SecureRandom();
 +        AtomicInteger counter = new AtomicInteger(0);
-+        MinecraftServer.getServer().registryAccess().registryOrThrow(Registries.CONFIGURED_FEATURE).holders().forEach(holder -> {
++        MinecraftServer.getServer().registryAccess().lookupOrThrow(Registries.CONFIGURED_FEATURE).listElements().forEach(holder -> {
 +            if (features.containsKey(holder)) {
 +                return;
 +            }
@@ -3694,7 +3694,7 @@ index 0000000000000000000000000000000000000000..6cdc40cb4a5f94654c874f9dbdb106fa
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/transformation/world/LegacyPaperWorldConfig.java b/src/main/java/io/papermc/paper/configuration/transformation/world/LegacyPaperWorldConfig.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3332531d902899a156179ef2e9ec85b2f42c1fd1
+index 0000000000000000000000000000000000000000..77e530830dc8ebc861b2e70f787f9b71524a54d2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/transformation/world/LegacyPaperWorldConfig.java
 @@ -0,0 +1,322 @@
@@ -3805,7 +3805,7 @@ index 0000000000000000000000000000000000000000..3332531d902899a156179ef2e9ec85b2
 +            )
 +            .addVersion(26, ConfigurationTransformation.builder().addAction(path("alt-item-despawn-rate", "items", ConfigurationTransformation.WILDCARD_OBJECT), (path, value) -> {
 +                String itemName = path.get(path.size() - 1).toString();
-+                final Optional<Holder.Reference<Item>> item = BuiltInRegistries.ITEM.getHolder(ResourceKey.create(Registries.ITEM, ResourceLocation.parse(itemName.toLowerCase(Locale.ROOT))));
++                final Optional<Holder.Reference<Item>> item = BuiltInRegistries.ITEM.get(ResourceKey.create(Registries.ITEM, ResourceLocation.parse(itemName.toLowerCase(Locale.ROOT))));
 +                if (item.isEmpty()) {
 +                    itemName = Material.valueOf(itemName).getKey().getKey();
 +                }
@@ -3837,7 +3837,7 @@ index 0000000000000000000000000000000000000000..3332531d902899a156179ef2e9ec85b2
 +                    Map<String, Integer> rebuild = new HashMap<>();
 +                    value.childrenMap().forEach((key, node) -> {
 +                        String itemName = key.toString();
-+                        final Optional<Holder.Reference<Item>> itemHolder = BuiltInRegistries.ITEM.getHolder(ResourceKey.create(Registries.ITEM, ResourceLocation.parse(itemName.toLowerCase(Locale.ROOT))));
++                        final Optional<Holder.Reference<Item>> itemHolder = BuiltInRegistries.ITEM.get(ResourceKey.create(Registries.ITEM, ResourceLocation.parse(itemName.toLowerCase(Locale.ROOT))));
 +                        final @Nullable String item;
 +                        if (itemHolder.isEmpty()) {
 +                            final @Nullable Material bukkitMat = Material.matchMaterial(itemName);
