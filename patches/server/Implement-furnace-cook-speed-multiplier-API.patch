@@ -6,6 +6,9 @@ Subject: [PATCH] Implement furnace cook speed multiplier API
 Fixed an issue where a furnace's cook-speed multiplier rounds down
 to the nearest Integer when updating its current cook time.
 
+== AT ==
+public net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity getTotalCookTime(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity;)I
+
 Co-authored-by: Eric Su <ericsu@alumni.usc.edu>
 
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
@@ -79,9 +82,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return fuelRegistry.burnDuration(stack);
      }
  
--    private static int getTotalCookTime(ServerLevel world, AbstractFurnaceBlockEntity furnace) {
+-    public static int getTotalCookTime(ServerLevel world, AbstractFurnaceBlockEntity furnace) {
 -        if (world == null) return 200; // CraftBukkit - SPIGOT-4302
-+    private static int getTotalCookTime(@Nullable ServerLevel world, AbstractFurnaceBlockEntity furnace, RecipeType<? extends AbstractCookingRecipe> recipeType, double cookSpeedMultiplier) { // Paper - cook speed multiplier API
++    public static int getTotalCookTime(@Nullable ServerLevel world, AbstractFurnaceBlockEntity furnace, RecipeType<? extends AbstractCookingRecipe> recipeType, double cookSpeedMultiplier) { // Paper - cook speed multiplier API
          SingleRecipeInput singlerecipeinput = new SingleRecipeInput(furnace.getItem(0));
  
 -        return (Integer) furnace.quickCheck.getRecipeFor(singlerecipeinput, world).map((recipeholder) -> {
@@ -130,7 +133,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        com.google.common.base.Preconditions.checkArgument(multiplier <= 200, "Furnace speed multiplier cannot more than 200");
 +        T snapshot = this.getSnapshot();
 +        snapshot.cookSpeedMultiplier = multiplier;
-+        snapshot.cookingTotalTime = AbstractFurnaceBlockEntity.getTotalCookTime(this.isPlaced() ? this.world.getHandle() : null, snapshot.recipeType, snapshot, snapshot.cookSpeedMultiplier); // Update the snapshot's current total cook time to scale with the newly set multiplier
++        snapshot.cookingTotalTime = AbstractFurnaceBlockEntity.getTotalCookTime(this.isPlaced() ? this.world.getHandle() : null, snapshot, snapshot.recipeType, snapshot.cookSpeedMultiplier); // Update the snapshot's current total cook time to scale with the newly set multiplier
 +    }
 +    // Paper end
  }
