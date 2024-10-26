@@ -1538,7 +1538,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public void setEquippable(EquippableComponent equippable) {
-        this.equippable = (equippable == null) ? null : new CraftEquippableComponent((CraftEquippableComponent) this.equippable);
+        this.equippable = (equippable == null) ? null : new CraftEquippableComponent((CraftEquippableComponent) equippable);
     }
 
     @Override
