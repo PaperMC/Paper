@@ -324,7 +324,11 @@ public enum EntityType implements Keyed, Translatable {
     MANGROVE_CHEST_BOAT("mangrove_chest_boat", MangroveChestBoat.class, -1),
     OAK_BOAT("oak_boat", OakBoat.class, -1),
     OAK_CHEST_BOAT("oak_chest_boat", OakChestBoat.class, -1),
+    @ApiStatus.Experimental
+    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_OAK_BOAT("pale_oak_boat", PaleOakBoat.class, -1),
+    @ApiStatus.Experimental
+    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_OAK_CHEST_BOAT("pale_oak_chest_boat", PaleOakChestBoat.class, -1),
     SPRUCE_BOAT("spruce_boat", SpruceBoat.class, -1),
     SPRUCE_CHEST_BOAT("spruce_chest_boat", SpruceChestBoat.class, -1),
