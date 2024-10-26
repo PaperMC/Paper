@@ -1180,6 +1180,32 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      @Override
+     public void setUseRemainder(ItemStack useRemainder) {
++        Preconditions.checkArgument(useRemainder == null || !useRemainder.isEmpty(), "Item cannot be empty"); // Paper
+         this.useRemainder = useRemainder;
+     }
+ 
+@@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+ 
+     @Override
+     public UseCooldownComponent getUseCooldown() {
+-        return (this.hasUseCooldown()) ? new CraftUseCooldownComponent(this.useCooldown) : new CraftUseCooldownComponent(new UseCooldown(0));
++        return (this.hasUseCooldown()) ? new CraftUseCooldownComponent(this.useCooldown) : new CraftUseCooldownComponent(new UseCooldown(1.0F)); // Paper - Create a valid use_cooldown component
+     }
+ 
+     @Override
+@@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+ 
+     @Override
+     public void setEquippable(EquippableComponent equippable) {
+-        this.equippable = (equippable == null) ? null : new CraftEquippableComponent((CraftEquippableComponent) this.equippable);
++        this.equippable = (equippable == null) ? null : new CraftEquippableComponent((CraftEquippableComponent) equippable); // Paper
+     }
+ 
+     @Override
+@@ -0,0 +0,0 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+ 
+     @Override
      public Multimap<Attribute, AttributeModifier> getAttributeModifiers(@Nullable EquipmentSlot slot) {
 -        this.checkAttributeList();
 +        if (this.attributeModifiers == null) return LinkedHashMultimap.create(); // Paper - don't change the components
@@ -2027,6 +2053,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - General ItemMeta Fixes
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftEquippableComponent.java b/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftEquippableComponent.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftEquippableComponent.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftEquippableComponent.java
+@@ -0,0 +0,0 @@ public final class CraftEquippableComponent implements EquippableComponent {
+ 
+     @Override
+     public void setAllowedEntities(Tag<EntityType> tag) {
+-        Preconditions.checkArgument(tag instanceof CraftEntityTag, "tag must be an entity tag");
++        Preconditions.checkArgument(tag == null || tag instanceof CraftEntityTag, "tag must be an entity tag"); // Paper
+ 
+         this.handle = new Equippable(this.handle.slot(), this.handle.equipSound(), this.handle.model(), this.handle.cameraOverlay(),
+                 (tag != null) ? Optional.of(((CraftEntityTag) tag).getHandle()) : Optional.empty(),
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftToolComponent.java b/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftToolComponent.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftToolComponent.java
@@ -2063,6 +2102,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              this.handle = new Tool.Rule(this.handle.blocks(), Optional.ofNullable(speed), this.handle.correctForDrops());
          }
  
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftUseCooldownComponent.java b/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftUseCooldownComponent.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftUseCooldownComponent.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftUseCooldownComponent.java
+@@ -0,0 +0,0 @@ public final class CraftUseCooldownComponent implements UseCooldownComponent {
+ 
+     @Override
+     public void setCooldownSeconds(float eatSeconds) {
+-        Preconditions.checkArgument(eatSeconds >= 0, "eatSeconds cannot be less than 0");
++        Preconditions.checkArgument(eatSeconds > 0, "eatSeconds must be positive"); // Paper
+ 
+         this.handle = new UseCooldown(eatSeconds, this.handle.cooldownGroup());
+     }
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/test/java/org/bukkit/craftbukkit/inventory/DeprecatedItemMetaCustomValueTest.java
