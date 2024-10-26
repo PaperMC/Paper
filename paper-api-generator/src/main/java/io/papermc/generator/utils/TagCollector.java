@@ -47,7 +47,7 @@ public final class TagCollector {
                     return;
                 }
 
-                result.put(entry.value().getTagNames()
+                result.put(entry.value().listTagIds()
                     .filter(tagKey -> tagKey.location().getPath().equals(path))
                     .findFirst()
                     .orElseThrow(), packId);

@@ -1,6 +1,5 @@
 package io.papermc.generator.types.goal;
 
-import com.destroystokyo.paper.entity.RangedEntity;
 import com.destroystokyo.paper.entity.ai.GoalKey;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
@@ -19,44 +18,10 @@ import io.papermc.generator.utils.Formatting;
 import io.papermc.generator.utils.Javadocs;
 import java.util.Comparator;
 import java.util.List;
-import javax.lang.model.element.Modifier;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import org.bukkit.NamespacedKey;
-import org.bukkit.entity.AbstractHorse;
-import org.bukkit.entity.Blaze;
-import org.bukkit.entity.Cat;
-import org.bukkit.entity.Creature;
-import org.bukkit.entity.Dolphin;
-import org.bukkit.entity.Drowned;
-import org.bukkit.entity.Enderman;
-import org.bukkit.entity.Evoker;
-import org.bukkit.entity.Fish;
-import org.bukkit.entity.Fox;
-import org.bukkit.entity.Ghast;
-import org.bukkit.entity.Llama;
 import org.bukkit.entity.Mob;
-import org.bukkit.entity.Monster;
-import org.bukkit.entity.Panda;
-import org.bukkit.entity.Parrot;
-import org.bukkit.entity.PigZombie;
-import org.bukkit.entity.PolarBear;
-import org.bukkit.entity.Rabbit;
-import org.bukkit.entity.Raider;
-import org.bukkit.entity.Ravager;
-import org.bukkit.entity.Shulker;
-import org.bukkit.entity.Silverfish;
-import org.bukkit.entity.SkeletonHorse;
-import org.bukkit.entity.Slime;
-import org.bukkit.entity.Spellcaster;
-import org.bukkit.entity.Spider;
-import org.bukkit.entity.Squid;
-import org.bukkit.entity.Tameable;
-import org.bukkit.entity.TraderLlama;
-import org.bukkit.entity.Turtle;
-import org.bukkit.entity.Vex;
-import org.bukkit.entity.Vindicator;
-import org.bukkit.entity.WanderingTrader;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.framework.qual.DefaultQualifier;
 import org.jetbrains.annotations.Nullable;
@@ -134,10 +99,4 @@ public class MobGoalGenerator extends SimpleGenerator {
     protected JavaFile.Builder file(JavaFile.Builder builder) {
         return builder;
     }
-
-    record DeprecatedEntry(Class<?> entity, String entryName, @Nullable String removalVersion,
-                           @Nullable String removedVersion) {
-
-    }
-
 }

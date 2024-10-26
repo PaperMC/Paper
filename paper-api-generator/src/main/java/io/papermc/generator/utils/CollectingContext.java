@@ -18,11 +18,11 @@ public record CollectingContext<T>(Set<ResourceKey<T>> registered,
     @Override
     public Holder.Reference<T> register(final ResourceKey<T> resourceKey, final @NonNull T t, final Lifecycle lifecycle) {
         this.registered.add(resourceKey);
-        return Holder.Reference.createStandAlone(this.registry.holderOwner(), resourceKey);
+        return Holder.Reference.createStandAlone(this.registry, resourceKey);
     }
 
     @Override
     public <S> HolderGetter<S> lookup(final ResourceKey<? extends Registry<? extends S>> resourceKey) {
-        return Main.REGISTRY_ACCESS.registryOrThrow(resourceKey).asLookup();
+        return Main.REGISTRY_ACCESS.lookupOrThrow(resourceKey);
     }
 }
