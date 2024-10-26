@@ -23,7 +23,7 @@ import org.jetbrains.annotations.ApiStatus;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.1")
+@GeneratedFrom("1.21.3")
 @ApiStatus.Experimental
 public final class GameEventKeys {
     /**

@@ -16,6 +16,7 @@ import io.papermc.paper.registry.tag.TagKey;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.kyori.adventure.key.Key;
@@ -105,16 +106,17 @@ public class GeneratedTagKeyType<T, A> extends SimpleGenerator {
         final TypeSpec.Builder typeBuilder = this.keyHolderType();
         final MethodSpec.Builder createMethod = this.createMethod(tagKey);
 
-        final Registry<T> registry = Main.REGISTRY_ACCESS.registryOrThrow(this.registryKey);
+        final Registry<T> registry = Main.REGISTRY_ACCESS.lookupOrThrow(this.registryKey);
 
         final AtomicBoolean allExperimental = new AtomicBoolean(true);
-        registry.getTagNames().sorted(Formatting.alphabeticKeyOrder(nmsTagKey -> nmsTagKey.location().getPath())).forEach(nmsTagKey -> {
+        registry.listTagIds().sorted(Formatting.alphabeticKeyOrder(nmsTagKey -> nmsTagKey.location().getPath())).forEach(nmsTagKey -> {
             final String fieldName = Formatting.formatKeyAsField(nmsTagKey.location().getPath());
             final FieldSpec.Builder fieldBuilder = FieldSpec.builder(tagKey, fieldName, PUBLIC, STATIC, FINAL)
                 .initializer("$N(key($S))", createMethod.build(), nmsTagKey.location().getPath())
                 .addJavadoc(Javadocs.getVersionDependentField("{@code $L}"), "#" + nmsTagKey.location());
-            if (Main.EXPERIMENTAL_TAGS.containsKey(nmsTagKey)) {
-                fieldBuilder.addAnnotations(experimentalAnnotations(MinecraftExperimental.Requires.TRADE_REBALANCE)); // Update for Experimental API
+            final String featureFlagName = Main.EXPERIMENTAL_TAGS.get(nmsTagKey);
+            if (featureFlagName != null) {
+                fieldBuilder.addAnnotations(experimentalAnnotations(MinecraftExperimental.Requires.valueOf(featureFlagName.toUpperCase(Locale.ENGLISH)))); // Update for Experimental API
             } else {
                 allExperimental.set(false);
             }

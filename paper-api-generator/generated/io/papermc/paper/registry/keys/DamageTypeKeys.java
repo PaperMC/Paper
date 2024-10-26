@@ -23,7 +23,7 @@ import org.jetbrains.annotations.ApiStatus;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.1")
+@GeneratedFrom("1.21.3")
 @ApiStatus.Experimental
 public final class DamageTypeKeys {
     /**
@@ -81,6 +81,13 @@ public final class DamageTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<DamageType> DRY_OUT = create(key("dry_out"));
+
+    /**
+     * {@code minecraft:ender_pearl}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DamageType> ENDER_PEARL = create(key("ender_pearl"));
 
     /**
      * {@code minecraft:explosion}
@@ -200,6 +207,13 @@ public final class DamageTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<DamageType> LIGHTNING_BOLT = create(key("lightning_bolt"));
+
+    /**
+     * {@code minecraft:mace_smash}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DamageType> MACE_SMASH = create(key("mace_smash"));
 
     /**
      * {@code minecraft:magic}
