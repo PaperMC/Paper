@@ -175,8 +175,6 @@ public class FieldRename {
             .change("SNOWMAN", "SNOW_GOLEM")
             .change("FISHING_HOOK", "FISHING_BOBBER")
             .change("LIGHTNING", "LIGHTNING_BOLT")
-            .change("BOAT", "OAK_BOAT")
-            .change("CHEST_BOAT", "OAK_CHEST_BOAT")
             .withKeyRename()
             .change("XP_ORB", "EXPERIENCE_ORB")
             .change("EYE_OF_ENDER_SIGNAL", "EYE_OF_ENDER")
@@ -191,6 +189,8 @@ public class FieldRename {
             .change("VILLAGER_GOLEM", "IRON_GOLEM")
             .change("ENDER_CRYSTAL", "END_CRYSTAL")
             .change("ZOMBIE_PIGMAN", "ZOMBIFIED_PIGLIN")
+            .change("BOAT", "OAK_BOAT")
+            .change("CHEST_BOAT", "OAK_CHEST_BOAT")
             .build();
 
     public static final BiFunction<NamespacedKey, ApiVersion, NamespacedKey> ENTITY_TYPE_RENAME = ENTITY_TYPE_DATA::getReplacement;
