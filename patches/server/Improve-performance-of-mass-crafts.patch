@@ -41,27 +41,27 @@ diff --git a/src/main/java/net/minecraft/world/inventory/CraftingMenu.java b/src
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/inventory/CraftingMenu.java
 +++ b/src/main/java/net/minecraft/world/inventory/CraftingMenu.java
-@@ -0,0 +0,0 @@ public class CraftingMenu extends RecipeBookMenu<CraftingInput, CraftingRecipe>
-             CraftingInput craftinginput = craftingInventory.asCraftInput();
-             ServerPlayer entityplayer = (ServerPlayer) player;
-             ItemStack itemstack = ItemStack.EMPTY;
-+            if (recipe == null) recipe = craftingInventory.getCurrentRecipe(); // Paper - Perf: Improve mass crafting; check last recipe used first
-             Optional<RecipeHolder<CraftingRecipe>> optional = world.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftinginput, world, recipe);
-             craftingInventory.setCurrentRecipe(optional.orElse(null)); // CraftBukkit
+@@ -0,0 +0,0 @@ public class CraftingMenu extends AbstractCraftingMenu {
+         CraftingInput craftinginput = craftingInventory.asCraftInput();
+         ServerPlayer entityplayer = (ServerPlayer) player;
+         ItemStack itemstack = ItemStack.EMPTY;
++        if (recipe == null) recipe = craftingInventory.getCurrentRecipe(); // Paper - Perf: Improve mass crafting; check last recipe used first
+         Optional<RecipeHolder<CraftingRecipe>> optional = world.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftinginput, world, recipe);
+         craftingInventory.setCurrentRecipe(optional.orElse(null)); // CraftBukkit
  
 diff --git a/src/main/java/net/minecraft/world/inventory/ResultSlot.java b/src/main/java/net/minecraft/world/inventory/ResultSlot.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/inventory/ResultSlot.java
 +++ b/src/main/java/net/minecraft/world/inventory/ResultSlot.java
 @@ -0,0 +0,0 @@ public class ResultSlot extends Slot {
-         CraftingInput craftingInput = positioned.input();
-         int i = positioned.left();
-         int j = positioned.top();
--        NonNullList<ItemStack> nonNullList = player.level().getRecipeManager().getRemainingItemsFor(RecipeType.CRAFTING, craftingInput, player.level());
-+        NonNullList<ItemStack> nonNullList = player.level().getRecipeManager().getRemainingItemsFor(RecipeType.CRAFTING, craftingInput, player.level(), this.craftSlots.getCurrentRecipe()); // Paper - Perf: Improve mass crafting; check last recipe used first
- 
-         for (int k = 0; k < craftingInput.height(); k++) {
-             for (int l = 0; l < craftingInput.width(); l++) {
+     private NonNullList<ItemStack> getRemainingItems(CraftingInput input, Level world) {
+         return world instanceof ServerLevel serverLevel
+             ? serverLevel.recipeAccess()
+-                .getRecipeFor(RecipeType.CRAFTING, input, serverLevel)
++                .getRecipeFor(RecipeType.CRAFTING, input, serverLevel, this.craftSlots.getCurrentRecipe()) // Paper - Perf: Improve mass crafting; check last recipe used first
+                 .map(recipe -> recipe.value().getRemainingItems(input))
+                 .orElseGet(() -> copyAllInputItems(input))
+             : CraftingRecipe.defaultCraftingReminder(input);
 diff --git a/src/main/java/net/minecraft/world/inventory/TransientCraftingContainer.java b/src/main/java/net/minecraft/world/inventory/TransientCraftingContainer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/inventory/TransientCraftingContainer.java
@@ -90,49 +90,3 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.currentRecipe = currentRecipe;
      }
  
-diff --git a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
-+++ b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
-@@ -0,0 +0,0 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
-     }
- 
-     public <I extends RecipeInput, T extends Recipe<I>> Optional<RecipeHolder<T>> getRecipeFor(RecipeType<T> type, I input, Level world, @Nullable RecipeHolder<T> recipe) {
--        // CraftBukkit start
--        List<RecipeHolder<T>> list = this.byType(type).stream().filter((recipeholder1) -> {
--            return recipeholder1.value().matches(input, world);
--        }).toList();
--        Optional<RecipeHolder<T>> recipe1 = (list.isEmpty() || input.isEmpty()) ? Optional.empty() : (recipe != null && recipe.value().matches(input, world) ? Optional.of(recipe) : Optional.of(list.getLast())); // CraftBukkit - SPIGOT-4638: last recipe gets priority
--        return recipe1;
--        // CraftBukkit end
-+        // Paper start - fix upstream's complete screw up of checking last used recipe
-+        if (input.isEmpty()) {
-+            return Optional.empty();
-+        } else if (recipe != null && recipe.value().matches(input, world)) {
-+            return Optional.of(recipe);
-+        } else {
-+            // CraftBukkit start
-+            List<RecipeHolder<T>> list = this.byType(type).stream().filter((recipeholder1) -> {
-+                return recipeholder1.value().matches(input, world);
-+            }).toList();
-+            return list.isEmpty() ? Optional.empty() : Optional.of(list.getLast()); // CraftBukkit - SPIGOT-4638: last recipe gets priority
-+            // CraftBukkit end
-+        }
-+        // Paper end
-     }
- 
-     public <I extends RecipeInput, T extends Recipe<I>> List<RecipeHolder<T>> getAllRecipesFor(RecipeType<T> type) {
-@@ -0,0 +0,0 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
-     }
- 
-     public <I extends RecipeInput, T extends Recipe<I>> NonNullList<ItemStack> getRemainingItemsFor(RecipeType<T> type, I input, Level world) {
--        Optional<RecipeHolder<T>> optional = this.getRecipeFor(type, input, world);
-+        // Paper start - Perf: improve performance of mass crafts
-+        return this.getRemainingItemsFor(type, input, world, null);
-+    }
-+    public <I extends RecipeInput, T extends Recipe<I>> NonNullList<ItemStack> getRemainingItemsFor(RecipeType<T> type, I input, Level world, @Nullable RecipeHolder<T> previousRecipe) {
-+        Optional<RecipeHolder<T>> optional = this.getRecipeFor(type, input, world, previousRecipe);
-+        // Paper end - Perf: improve performance of mass crafts
- 
-         if (optional.isPresent()) {
-             return ((RecipeHolder) optional.get()).value().getRemainingItems(input);
