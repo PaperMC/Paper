@@ -165,12 +165,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (this.metricsRecorder.isRecording()) {
              this.cancelRecordingMetrics();
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             ca.spottedleaf.moonrise.common.util.MoonriseCommon.haltExecutors();
          }
-         // Spigot end
- 
-+        // Paper end - Improved watchdog support; move final shutdown items here
-         ca.spottedleaf.moonrise.patches.chunk_system.io.RegionFileIOThread.deinit(); // Paper - rewrite chunk system
-+        // Paper start - move final shutdown items here
+         // Paper end - rewrite chunk system
++        // Paper start - Improved watchdog support - move final shutdown items here
 +        Util.shutdownExecutors();
 +        try {
 +            net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Use TerminalConsoleAppender
@@ -178,7 +176,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        io.papermc.paper.log.CustomLogManager.forceReset(); // Paper - Reset loggers after shutdown
 +        this.onServerExit();
-+        // Paper end - Improved watchdog support
++        // Paper end - Improved watchdog support - move final shutdown items here
      }
  
      public String getLocalIp() {
@@ -196,7 +194,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              // Spigot start
 +            // Paper start - Improved Watchdog Support
 +            LOGGER.info("Running delayed init tasks");
-+            this.server.getScheduler().mainThreadHeartbeat(this.tickCount); // run all 1 tick delay tasks during init,
++            this.server.getScheduler().mainThreadHeartbeat(); // run all 1 tick delay tasks during init,
 +            // this is going to be the first thing the tick process does anyways, so move done and run it after
 +            // everything is init before watchdog tick.
 +            // anything at 3+ won't be caught here but also will trip watchdog....
@@ -211,15 +209,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                  JvmProfiler.INSTANCE.onServerTick(this.smoothedTickTimeMillis);
              }
-         } catch (Throwable throwable) {
+         } catch (Throwable throwable2) {
 +            // Paper start
-+            if (throwable instanceof ThreadDeath) {
-+                MinecraftServer.LOGGER.error("Main thread terminated by WatchDog due to hard crash", throwable);
++            if (throwable2 instanceof ThreadDeath) {
++                MinecraftServer.LOGGER.error("Main thread terminated by WatchDog due to hard crash", throwable2);
 +                return;
 +            }
 +            // Paper end
-             MinecraftServer.LOGGER.error("Encountered an unexpected exception", throwable);
-             CrashReport crashreport = MinecraftServer.constructOrExtractCrashReport(throwable);
+             MinecraftServer.LOGGER.error("Encountered an unexpected exception", throwable2);
+             CrashReport crashreport = MinecraftServer.constructOrExtractCrashReport(throwable2);
  
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                      this.services.profileCache().clearExecutor();
@@ -255,8 +253,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-             this.worldData.setDataConfiguration(worlddataconfiguration);
-             this.resources.managers.updateRegistryTags();
+             this.resources.managers.updateStaticRegistryTags();
+             this.resources.managers.getRecipeManager().finalizeRecipeLoading(this.worldData.enabledFeatures());
              this.potionBrewing = this.potionBrewing.reload(this.worldData.enabledFeatures()); // Paper - Custom Potion Mixes
 -            this.getPlayerList().saveAll();
 +            // Paper start
@@ -321,13 +319,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
 +++ b/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
 @@ -0,0 +0,0 @@ public abstract class BlockableEventLoop<R extends Runnable> implements Profiler
-         try {
-             task.run();
-         } catch (Exception var3) {
-+            if (var3.getCause() instanceof ThreadDeath) throw var3; // Paper
-             LOGGER.error(LogUtils.FATAL_MARKER, "Error executing task on {}", this.name(), var3);
-         }
+     public static boolean isNonRecoverable(Throwable exception) {
+         return exception instanceof ReportedException reportedException
+             ? isNonRecoverable(reportedException.getCause())
+-            : exception instanceof OutOfMemoryError || exception instanceof StackOverflowError;
++            : exception instanceof OutOfMemoryError || exception instanceof StackOverflowError || exception instanceof ThreadDeath; // Paper
      }
+ }
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
