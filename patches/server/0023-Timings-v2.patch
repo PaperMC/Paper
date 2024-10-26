@@ -714,7 +714,7 @@ index f7197f1347251a37dd0f6d9ffa2f09bc3a4e1233..d0d36a57ec4896bcb74970f8fb24d8f3
                      } catch (Exception exception) {
                          if (exception instanceof ReportedException) {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 3322865949fe5ddaab2dffc39260b75093f0f204..638d648be24c9907bab6dcb671f42c4cf569e2d7 100644
+index 3322865949fe5ddaab2dffc39260b75093f0f204..a76e2f5d29315d21212ff121f0047bf1140ad5ef 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -203,7 +203,7 @@ import org.bukkit.craftbukkit.Main;
@@ -771,16 +771,15 @@ index 3322865949fe5ddaab2dffc39260b75093f0f204..638d648be24c9907bab6dcb671f42c4c
              });
          } finally {
              this.waitingForNextTick = false;
-@@ -1370,7 +1383,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-     }
+@@ -1371,6 +1384,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
      public void tickServer(BooleanSupplier shouldKeepTicking) {
--        org.spigotmc.WatchdogThread.tick(); // Spigot
+         org.spigotmc.WatchdogThread.tick(); // Spigot
 +        co.aikar.timings.TimingsManager.FULL_SERVER_TICK.startTiming(); // Paper
          long i = Util.getNanos();
          int j = this.pauseWhileEmptySeconds() * 20;
  
-@@ -1393,7 +1406,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1393,7 +1407,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              }
          }
  
@@ -796,7 +795,7 @@ index 3322865949fe5ddaab2dffc39260b75093f0f204..638d648be24c9907bab6dcb671f42c4c
          ++this.tickCount;
          this.tickRateManager.tick();
          this.tickChildren(shouldKeepTicking);
-@@ -1409,6 +1429,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1409,6 +1430,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
          ProfilerFiller gameprofilerfiller = Profiler.get();
  
@@ -808,7 +807,7 @@ index 3322865949fe5ddaab2dffc39260b75093f0f204..638d648be24c9907bab6dcb671f42c4c
          gameprofilerfiller.push("tallying");
          long k = Util.getNanos() - i;
          int l = this.tickCount % 100;
-@@ -1419,13 +1444,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1419,13 +1445,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          this.smoothedTickTimeMillis = this.smoothedTickTimeMillis * 0.8F + (float) k / (float) TimeUtil.NANOSECONDS_PER_MILLISECOND * 0.19999999F;
          this.logTickMethodTime(i);
          gameprofilerfiller.pop();
@@ -823,7 +822,7 @@ index 3322865949fe5ddaab2dffc39260b75093f0f204..638d648be24c9907bab6dcb671f42c4c
          MinecraftServer.LOGGER.debug("Autosave started");
          ProfilerFiller gameprofilerfiller = Profiler.get();
  
-@@ -1433,7 +1456,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1433,7 +1457,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          this.saveEverything(true, false, false);
          gameprofilerfiller.pop();
          MinecraftServer.LOGGER.debug("Autosave finished");
@@ -831,7 +830,7 @@ index 3322865949fe5ddaab2dffc39260b75093f0f204..638d648be24c9907bab6dcb671f42c4c
      }
  
      private void logTickMethodTime(long tickStartTime) {
-@@ -1506,26 +1528,26 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1506,26 +1529,26 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          this.getPlayerList().getPlayers().forEach((entityplayer) -> {
              entityplayer.connection.suspendFlushing();
          });
@@ -865,7 +864,7 @@ index 3322865949fe5ddaab2dffc39260b75093f0f204..638d648be24c9907bab6dcb671f42c4c
          // Send time updates to everyone, it will get the right time from the world the player is in.
          if (this.tickCount % 20 == 0) {
              for (int i = 0; i < this.getPlayerList().players.size(); ++i) {
-@@ -1533,7 +1555,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1533,7 +1556,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                  entityplayer.connection.send(new ClientboundSetTimePacket(entityplayer.level().getGameTime(), entityplayer.getPlayerTime(), entityplayer.serverLevel().getGameRules().getBoolean(GameRules.RULE_DAYLIGHT))); // Add support for per player time
              }
          }
@@ -874,7 +873,7 @@ index 3322865949fe5ddaab2dffc39260b75093f0f204..638d648be24c9907bab6dcb671f42c4c
  
          while (iterator.hasNext()) {
              ServerLevel worldserver = (ServerLevel) iterator.next();
-@@ -1569,24 +1591,24 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1569,24 +1592,24 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
  
          gameprofilerfiller.popPush("connection");
