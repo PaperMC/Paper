@@ -886,10 +886,10 @@ index d5a549f08b98c80a5cf0eef02cb8a389c32dfecb..92731b6b593289e9f583c9b705b219e8
                  BlockPos blockPos = path.getTarget();
                  Optional<Holder<PoiType>> optional = poiManager.getType(blockPos);
 diff --git a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
-index d7a6eab60bf26916f78f858e224573560e581fef..a908bf1dc5e821dcf6981a8c21076fb0bdc6516d 100644
+index 5930a430983061afddf20e3208ff2462ca1b78cd..63a94b6068fdaef8bb26675c2927cb729ced1dac 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
-@@ -268,36 +268,45 @@ public class PoiManager extends SectionStorage<PoiSection> implements ca.spotted
+@@ -254,36 +254,45 @@ public class PoiManager extends SectionStorage<PoiSection, PoiSection.Packed> im
      public Optional<BlockPos> find(
          Predicate<Holder<PoiType>> typePredicate, Predicate<BlockPos> posPredicate, BlockPos pos, int radius, PoiManager.Occupancy occupationStatus
      ) {
@@ -903,10 +903,10 @@ index d7a6eab60bf26916f78f858e224573560e581fef..a908bf1dc5e821dcf6981a8c21076fb0
      public Optional<BlockPos> findClosest(Predicate<Holder<PoiType>> typePredicate, BlockPos pos, int radius, PoiManager.Occupancy occupationStatus) {
 -        return this.getInRange(typePredicate, pos, radius, occupationStatus)
 -            .map(PoiRecord::getPos)
--            .min(Comparator.comparingDouble(blockPos2 -> blockPos2.distSqr(pos)));
+-            .min(Comparator.comparingDouble(poiPos -> poiPos.distSqr(pos)));
 +        // Paper start - re-route to faster logic
-+        BlockPos ret = io.papermc.paper.util.PoiAccess.findClosestPoiDataPosition(this, typePredicate, null, pos, radius, radius * radius, occupationStatus, false);
-+        return Optional.ofNullable(ret);
++        BlockPos closestPos = io.papermc.paper.util.PoiAccess.findClosestPoiDataPosition(this, typePredicate, null, pos, radius, radius * radius, occupationStatus, false);
++        return Optional.ofNullable(closestPos);
 +        // Paper end - re-route to faster logic
      }
  
@@ -929,27 +929,27 @@ index d7a6eab60bf26916f78f858e224573560e581fef..a908bf1dc5e821dcf6981a8c21076fb0
 -        return this.getInRange(typePredicate, pos, radius, occupationStatus)
 -            .map(PoiRecord::getPos)
 -            .filter(posPredicate)
--            .min(Comparator.comparingDouble(blockPos2 -> blockPos2.distSqr(pos)));
+-            .min(Comparator.comparingDouble(poiPos -> poiPos.distSqr(pos)));
 +        // Paper start - re-route to faster logic
-+        BlockPos ret = io.papermc.paper.util.PoiAccess.findClosestPoiDataPosition(this, typePredicate, posPredicate, pos, radius, radius * radius, occupationStatus, false);
-+        return Optional.ofNullable(ret);
++        BlockPos closestPos = io.papermc.paper.util.PoiAccess.findClosestPoiDataPosition(this, typePredicate, posPredicate, pos, radius, radius * radius, occupationStatus, false);
++        return Optional.ofNullable(closestPos);
 +        // Paper end - re-route to faster logic
      }
  
-     public Optional<BlockPos> take(Predicate<Holder<PoiType>> typePredicate, BiPredicate<Holder<PoiType>, BlockPos> biPredicate, BlockPos pos, int radius) {
+     public Optional<BlockPos> take(Predicate<Holder<PoiType>> typePredicate, BiPredicate<Holder<PoiType>, BlockPos> posPredicate, BlockPos pos, int radius) {
 -        return this.getInRange(typePredicate, pos, radius, PoiManager.Occupancy.HAS_SPACE)
--            .filter(poi -> biPredicate.test(poi.getPoiType(), poi.getPos()))
+-            .filter(poi -> posPredicate.test(poi.getPoiType(), poi.getPos()))
 -            .findFirst()
 +        // Paper start - re-route to faster logic
 +        final @javax.annotation.Nullable PoiRecord closest = io.papermc.paper.util.PoiAccess.findClosestPoiDataRecord(
-+            this, typePredicate, biPredicate, pos, radius, radius * radius, Occupancy.HAS_SPACE, false
++            this, typePredicate, posPredicate, pos, radius, radius * radius, Occupancy.HAS_SPACE, false
 +        );
 +        return Optional.ofNullable(closest)
 +            // Paper end - re-route to faster logic
              .map(poi -> {
                  poi.acquireTicket();
                  return poi.getPos();
-@@ -312,8 +321,21 @@ public class PoiManager extends SectionStorage<PoiSection> implements ca.spotted
+@@ -298,8 +307,21 @@ public class PoiManager extends SectionStorage<PoiSection, PoiSection.Packed> im
          int radius,
          RandomSource random
      ) {
@@ -974,7 +974,7 @@ index d7a6eab60bf26916f78f858e224573560e581fef..a908bf1dc5e821dcf6981a8c21076fb0
  
      public boolean release(BlockPos pos) {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiSection.java b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiSection.java
-index a6c0e89cb645693034f8e90ac2de8f2da457453c..11e895d837794d79a76303b912092096bd7d07a8 100644
+index 712cbfc100e8aaf612d1d651dae64f57f892a768..827991ee61406bcda3f4794dcc735c0e2e0e09af 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiSection.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiSection.java
 @@ -26,7 +26,7 @@ import org.slf4j.Logger;
@@ -987,10 +987,10 @@ index a6c0e89cb645693034f8e90ac2de8f2da457453c..11e895d837794d79a76303b912092096
      private boolean isValid;
  
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
-index c7ed3eb80f6e8b918434153093644776866aa220..21de1b95f2a5d136149447472e871f675760ba1a 100644
+index c3beb7fcad46a917d2b61bd0a0e98e5106056728..9b97fb2d125df4df715599aab27e074707731466 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
-@@ -81,11 +81,11 @@ public abstract class SectionStorage<R> implements AutoCloseable, ca.spottedleaf
+@@ -131,11 +131,11 @@ public class SectionStorage<R, P> implements AutoCloseable, ca.spottedleaf.moonr
      }
  
      @Nullable
@@ -1005,7 +1005,7 @@ index c7ed3eb80f6e8b918434153093644776866aa220..21de1b95f2a5d136149447472e871f67
              return Optional.empty();
          } else {
 diff --git a/src/main/java/net/minecraft/world/level/portal/PortalForcer.java b/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
-index fd04a50183ccb1f21fc6efa70256e1bb4db2d6d4..49f7ba292b82bac1643cc07aa576f3c37b8e8ab3 100644
+index 83d294f6f48b867d09ea0d339c779011bf4138a5..9204bb0538297f233442a86733a33e6d0eea8114 100644
 --- a/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
 +++ b/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
 @@ -53,17 +53,39 @@ public class PortalForcer {
