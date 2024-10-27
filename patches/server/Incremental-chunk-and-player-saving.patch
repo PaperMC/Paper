@@ -21,28 +21,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          }
  
          --this.ticksUntilAutosave;
--        // CraftBukkit start
--        if (this.autosavePeriod > 0 && this.ticksUntilAutosave <= 0) {
--            this.ticksUntilAutosave = this.autosavePeriod;
--            // CraftBukkit end
--            MinecraftServer.LOGGER.debug("Autosave started");
--            this.profiler.push("save");
--            this.saveEverything(true, false, false);
--            this.profiler.pop();
--            MinecraftServer.LOGGER.debug("Autosave finished");
+-        if (this.autosavePeriod > 0 && this.ticksUntilAutosave <= 0) { // CraftBukkit
+-            this.autoSave();
 +        // Paper start - Incremental chunk and player saving
++        final ProfilerFiller profiler = Profiler.get();
 +        int playerSaveInterval = io.papermc.paper.configuration.GlobalConfiguration.get().playerAutoSave.rate;
 +        if (playerSaveInterval < 0) {
 +            playerSaveInterval = autosavePeriod;
 +        }
-+        this.profiler.push("save");
++        profiler.push("save");
 +        final boolean fullSave = autosavePeriod > 0 && this.tickCount % autosavePeriod == 0;
 +        try {
 +            this.isSaving = true;
 +            if (playerSaveInterval > 0) {
 +                this.playerList.saveAll(playerSaveInterval);
 +            }
-+            for (ServerLevel level : this.getAllLevels()) {
++            for (final ServerLevel level : this.getAllLevels()) {
 +                if (level.paperConfig().chunks.autoSaveInterval.value() > 0) {
 +                    level.saveIncrementally(fullSave);
 +                }
@@ -50,16 +44,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        } finally {
 +            this.isSaving = false;
          }
-+        this.profiler.pop();
++        profiler.pop();
 +        // Paper end - Incremental chunk and player saving
-         // Paper start - move executeAll() into full server tick timing
-         try (co.aikar.timings.Timing ignored = MinecraftTimings.processTasksTimer.startTiming()) {
-             this.runAllTasks();
+ 
+         ProfilerFiller gameprofilerfiller = Profiler.get();
+ 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
          return !this.server.isUnderSpawnProtection(this, pos, player) && this.getWorldBorder().isWithinBounds(pos);
      }
  

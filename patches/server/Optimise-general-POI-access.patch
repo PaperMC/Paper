@@ -889,7 +889,7 @@ diff --git a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
-@@ -0,0 +0,0 @@ public class PoiManager extends SectionStorage<PoiSection> implements ca.spotted
+@@ -0,0 +0,0 @@ public class PoiManager extends SectionStorage<PoiSection, PoiSection.Packed> im
      public Optional<BlockPos> find(
          Predicate<Holder<PoiType>> typePredicate, Predicate<BlockPos> posPredicate, BlockPos pos, int radius, PoiManager.Occupancy occupationStatus
      ) {
@@ -903,10 +903,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public Optional<BlockPos> findClosest(Predicate<Holder<PoiType>> typePredicate, BlockPos pos, int radius, PoiManager.Occupancy occupationStatus) {
 -        return this.getInRange(typePredicate, pos, radius, occupationStatus)
 -            .map(PoiRecord::getPos)
--            .min(Comparator.comparingDouble(blockPos2 -> blockPos2.distSqr(pos)));
+-            .min(Comparator.comparingDouble(poiPos -> poiPos.distSqr(pos)));
 +        // Paper start - re-route to faster logic
-+        BlockPos ret = io.papermc.paper.util.PoiAccess.findClosestPoiDataPosition(this, typePredicate, null, pos, radius, radius * radius, occupationStatus, false);
-+        return Optional.ofNullable(ret);
++        BlockPos closestPos = io.papermc.paper.util.PoiAccess.findClosestPoiDataPosition(this, typePredicate, null, pos, radius, radius * radius, occupationStatus, false);
++        return Optional.ofNullable(closestPos);
 +        // Paper end - re-route to faster logic
      }
  
@@ -929,27 +929,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        return this.getInRange(typePredicate, pos, radius, occupationStatus)
 -            .map(PoiRecord::getPos)
 -            .filter(posPredicate)
--            .min(Comparator.comparingDouble(blockPos2 -> blockPos2.distSqr(pos)));
+-            .min(Comparator.comparingDouble(poiPos -> poiPos.distSqr(pos)));
 +        // Paper start - re-route to faster logic
-+        BlockPos ret = io.papermc.paper.util.PoiAccess.findClosestPoiDataPosition(this, typePredicate, posPredicate, pos, radius, radius * radius, occupationStatus, false);
-+        return Optional.ofNullable(ret);
++        BlockPos closestPos = io.papermc.paper.util.PoiAccess.findClosestPoiDataPosition(this, typePredicate, posPredicate, pos, radius, radius * radius, occupationStatus, false);
++        return Optional.ofNullable(closestPos);
 +        // Paper end - re-route to faster logic
      }
  
-     public Optional<BlockPos> take(Predicate<Holder<PoiType>> typePredicate, BiPredicate<Holder<PoiType>, BlockPos> biPredicate, BlockPos pos, int radius) {
+     public Optional<BlockPos> take(Predicate<Holder<PoiType>> typePredicate, BiPredicate<Holder<PoiType>, BlockPos> posPredicate, BlockPos pos, int radius) {
 -        return this.getInRange(typePredicate, pos, radius, PoiManager.Occupancy.HAS_SPACE)
--            .filter(poi -> biPredicate.test(poi.getPoiType(), poi.getPos()))
+-            .filter(poi -> posPredicate.test(poi.getPoiType(), poi.getPos()))
 -            .findFirst()
 +        // Paper start - re-route to faster logic
 +        final @javax.annotation.Nullable PoiRecord closest = io.papermc.paper.util.PoiAccess.findClosestPoiDataRecord(
-+            this, typePredicate, biPredicate, pos, radius, radius * radius, Occupancy.HAS_SPACE, false
++            this, typePredicate, posPredicate, pos, radius, radius * radius, Occupancy.HAS_SPACE, false
 +        );
 +        return Optional.ofNullable(closest)
 +            // Paper end - re-route to faster logic
              .map(poi -> {
                  poi.acquireTicket();
                  return poi.getPos();
-@@ -0,0 +0,0 @@ public class PoiManager extends SectionStorage<PoiSection> implements ca.spotted
+@@ -0,0 +0,0 @@ public class PoiManager extends SectionStorage<PoiSection, PoiSection.Packed> im
          int radius,
          RandomSource random
      ) {
@@ -990,7 +990,7 @@ diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorag
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
-@@ -0,0 +0,0 @@ public abstract class SectionStorage<R> implements AutoCloseable, ca.spottedleaf
+@@ -0,0 +0,0 @@ public class SectionStorage<R, P> implements AutoCloseable, ca.spottedleaf.moonr
      }
  
      @Nullable

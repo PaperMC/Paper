@@ -25,16 +25,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = worldserver.paperConfig().hopper.disableMoveEvent || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper - Perf: Optimize Hoppers
 +            worldserver.updateLagCompensationTick(); // Paper - lag compensation
  
-             this.profiler.push(() -> {
+             gameprofilerfiller.push(() -> {
                  String s = String.valueOf(worldserver);
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
-         return this.entityTickingChunks;
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+         );
      }
-     // Paper end - rewrite chunk system
+     // Paper end - chunk tick iteration
 +    // Paper start - lag compensation
 +    private long lagCompensationTick = net.minecraft.server.MinecraftServer.SERVER_INIT;
 +
@@ -78,13 +78,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (this.isUsingItem()) {
              if (ItemStack.isSameItem(this.getItemInHand(this.getUsedItemHand()), this.useItem)) {
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
-             this.triggerItemUseEffects(stack, 5);
-         }
  
+     protected void updateUsingItem(ItemStack stack) {
+         stack.onUseTick(this.level(), this, this.getUseItemRemainingTicks());
 -        if (--this.useItemRemaining == 0 && !this.level().isClientSide && !stack.useOnRelease()) {
 +        // Paper start - lag compensate eating
 +        // we add 1 to the expected time to avoid lag compensating when we should not
-+        boolean shouldLagCompensate = this.useItem.has(DataComponents.FOOD) && this.eatStartTime != -1 && (System.nanoTime() - this.eatStartTime) > ((1L + this.totalEatTimeTicks) * 50L * (1000L * 1000L));
++        final boolean shouldLagCompensate = this.useItem.has(DataComponents.FOOD) && this.eatStartTime != -1 && (System.nanoTime() - this.eatStartTime) > ((1L + this.totalEatTimeTicks) * 50L * (1000L * 1000L));
 +        if ((--this.useItemRemaining == 0 || shouldLagCompensate) && !this.level().isClientSide && !stack.useOnRelease()) {
 +            this.useItemRemaining = 0;
 +            // Paper end - lag compensate eating
