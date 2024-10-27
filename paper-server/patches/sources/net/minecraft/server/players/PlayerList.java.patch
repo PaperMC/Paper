@@ -405,7 +405,7 @@
  
          if (advancementdataplayer != null) {
              advancementdataplayer.save();
-@@ -334,95 +533,210 @@
+@@ -334,95 +533,216 @@
  
      }
  
@@ -488,7 +488,13 @@
              ThrownEnderpearl entityenderpearl = (ThrownEnderpearl) iterator.next();
  
 -            entityenderpearl.setRemoved(Entity.RemovalReason.UNLOADED_WITH_PLAYER);
++            // Paper start - Allow using old ender pearl behavior
++            if (!entityenderpearl.level().paperConfig().misc.legacyEnderPearlBehavior) {
 +            entityenderpearl.setRemoved(Entity.RemovalReason.UNLOADED_WITH_PLAYER, EntityRemoveEvent.Cause.PLAYER_QUIT); // CraftBukkit - add Bukkit remove cause
++            } else {
++                entityenderpearl.cachedOwner = null;
++            }
++            // Paper end - Allow using old ender pearl behavior
          }
  
 -        worldserver.removePlayerImmediately(player, Entity.RemovalReason.UNLOADED_WITH_PLAYER);
@@ -654,7 +660,7 @@
  
          if (entityplayer1 != null) {
              set.add(entityplayer1);
-@@ -431,72 +745,160 @@
+@@ -431,72 +751,160 @@
          Iterator iterator1 = set.iterator();
  
          while (iterator1.hasNext()) {
@@ -836,7 +842,7 @@
          return entityplayer1;
      }
  
-@@ -516,15 +918,32 @@
+@@ -516,15 +924,32 @@
      }
  
      public void sendPlayerPermissionLevel(ServerPlayer player) {
@@ -871,10 +877,14 @@
              this.sendAllPlayerInfoIn = 0;
          }
  
-@@ -541,6 +960,25 @@
+@@ -537,9 +962,28 @@
+             ServerPlayer entityplayer = (ServerPlayer) iterator.next();
  
-     }
- 
+             entityplayer.connection.send(packet);
++        }
++
++    }
++
 +    // CraftBukkit start - add a world/entity limited version
 +    public void broadcastAll(Packet packet, net.minecraft.world.entity.player.Player entityhuman) {
 +        for (int i = 0; i < this.players.size(); ++i) {
@@ -889,15 +899,14 @@
 +    public void broadcastAll(Packet packet, Level world) {
 +        for (int i = 0; i < world.players().size(); ++i) {
 +            ((ServerPlayer) world.players().get(i)).connection.send(packet);
-+        }
-+
-+    }
+         }
+ 
+     }
 +    // CraftBukkit end
-+
+ 
      public void broadcastAll(Packet<?> packet, ResourceKey<Level> dimension) {
          Iterator iterator = this.players.iterator();
- 
-@@ -554,7 +992,7 @@
+@@ -554,7 +998,7 @@
  
      }
  
@@ -906,7 +915,7 @@
          PlayerTeam scoreboardteam = source.getTeam();
  
          if (scoreboardteam != null) {
-@@ -573,7 +1011,7 @@
+@@ -573,7 +1017,7 @@
          }
      }
  
@@ -915,7 +924,7 @@
          PlayerTeam scoreboardteam = source.getTeam();
  
          if (scoreboardteam == null) {
-@@ -619,7 +1057,7 @@
+@@ -619,7 +1063,7 @@
      }
  
      public void deop(GameProfile profile) {
@@ -924,7 +933,7 @@
          ServerPlayer entityplayer = this.getPlayer(profile.getId());
  
          if (entityplayer != null) {
-@@ -629,6 +1067,11 @@
+@@ -629,6 +1073,11 @@
      }
  
      private void sendPlayerPermissionLevel(ServerPlayer player, int permissionLevel) {
@@ -936,7 +945,7 @@
          if (player.connection != null) {
              byte b0;
  
-@@ -643,35 +1086,52 @@
+@@ -643,36 +1092,53 @@
              player.connection.send(new ClientboundEntityEventPacket(player, b0));
          }
  
@@ -993,16 +1002,17 @@
 +    public void broadcast(@Nullable net.minecraft.world.entity.player.Player player, double x, double y, double z, double distance, ResourceKey<Level> worldKey, Packet<?> packet) {
          for (int i = 0; i < this.players.size(); ++i) {
              ServerPlayer entityplayer = (ServerPlayer) this.players.get(i);
-+
+ 
 +            // CraftBukkit start - Test if player receiving packet can see the source of the packet
 +            if (player != null && !entityplayer.getBukkitEntity().canSee(player.getBukkitEntity())) {
 +               continue;
 +            }
 +            // CraftBukkit end
- 
++
              if (entityplayer != player && entityplayer.level().dimension() == worldKey) {
                  double d4 = x - entityplayer.getX();
-@@ -687,10 +1147,12 @@
+                 double d5 = y - entityplayer.getY();
+@@ -687,10 +1153,12 @@
      }
  
      public void saveAll() {
@@ -1015,7 +1025,7 @@
      }
  
      public UserWhiteList getWhiteList() {
-@@ -712,15 +1174,19 @@
+@@ -712,15 +1180,19 @@
      public void reloadWhiteList() {}
  
      public void sendLevelInfo(ServerPlayer player, ServerLevel world) {
@@ -1039,7 +1049,7 @@
          }
  
          player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.LEVEL_CHUNKS_LOAD_START, 0.0F));
-@@ -729,8 +1195,16 @@
+@@ -729,8 +1201,16 @@
  
      public void sendAllPlayerInfo(ServerPlayer player) {
          player.inventoryMenu.sendAllDataToRemote();
@@ -1057,7 +1067,7 @@
      }
  
      public int getPlayerCount() {
-@@ -746,6 +1220,7 @@
+@@ -746,6 +1226,7 @@
      }
  
      public void setUsingWhiteList(boolean whitelistEnabled) {
@@ -1065,7 +1075,7 @@
          this.doWhiteList = whitelistEnabled;
      }
  
-@@ -786,12 +1261,36 @@
+@@ -786,11 +1267,35 @@
      }
  
      public void removeAll() {
@@ -1081,30 +1091,29 @@
 +        for (ServerPlayer player : this.players) {
 +            if (isRestarting) player.connection.disconnect(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(org.spigotmc.SpigotConfig.restartMessage), org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN); else // Paper - kick event cause (cause is never used here)
 +            player.connection.disconnect(java.util.Objects.requireNonNullElseGet(this.server.server.shutdownMessage(), net.kyori.adventure.text.Component::empty)); // CraftBukkit - add custom shutdown message // Paper - Adventure
-         }
++        }
 +        // CraftBukkit end
- 
++
 +        // Paper start - Configurable player collision; Remove collideRule team if it exists
 +        if (this.collideRuleTeamName != null) {
 +            final net.minecraft.world.scores.Scoreboard scoreboard = this.getServer().getLevel(Level.OVERWORLD).getScoreboard();
 +            final PlayerTeam team = scoreboard.getPlayersTeam(this.collideRuleTeamName);
 +            if (team != null) scoreboard.removePlayerTeam(team);
-+        }
+         }
 +        // Paper end - Configurable player collision
-     }
++    }
  
 +    // CraftBukkit start
 +    public void broadcastMessage(Component[] iChatBaseComponents) {
 +        for (Component component : iChatBaseComponents) {
 +            this.broadcastSystemMessage(component, false);
 +        }
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      public void broadcastSystemMessage(Component message, boolean overlay) {
          this.broadcastSystemMessage(message, (entityplayer) -> {
-             return message;
-@@ -819,24 +1318,43 @@
+@@ -819,24 +1324,43 @@
      }
  
      public void broadcastChatMessage(PlayerChatMessage message, ServerPlayer sender, ChatType.Bound params) {
@@ -1151,7 +1160,7 @@
          }
  
          if (flag1 && sender != null) {
-@@ -845,20 +1363,27 @@
+@@ -845,20 +1369,27 @@
  
      }
  
@@ -1184,7 +1193,7 @@
                  Path path = file2.toPath();
  
                  if (FileUtil.isPathNormalized(path) && FileUtil.isPathPortable(path) && path.startsWith(file.getPath()) && file2.isFile()) {
-@@ -867,7 +1392,7 @@
+@@ -867,7 +1398,7 @@
              }
  
              serverstatisticmanager = new ServerStatsCounter(this.server, file1);
@@ -1193,7 +1202,7 @@
          }
  
          return serverstatisticmanager;
-@@ -875,13 +1400,13 @@
+@@ -875,13 +1406,13 @@
  
      public PlayerAdvancements getPlayerAdvancements(ServerPlayer player) {
          UUID uuid = player.getUUID();
@@ -1209,7 +1218,7 @@
          }
  
          advancementdataplayer.setPlayer(player);
-@@ -932,15 +1457,39 @@
+@@ -932,15 +1463,39 @@
      }
  
      public void reloadResources() {

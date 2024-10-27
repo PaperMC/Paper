@@ -114,7 +114,7 @@
      @Nullable
      private Vec3 startingToFallPosition;
      @Nullable
-@@ -258,6 +293,34 @@
+@@ -258,7 +293,35 @@
      private final CommandSource commandSource;
      private int containerCounter;
      public boolean wonGame;
@@ -125,7 +125,7 @@
 +    public boolean queueHealthUpdatePacket;
 +    public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
 +    // Paper end - cancellable death event
-+
+ 
 +    // CraftBukkit start
 +    public CraftPlayer.TransferCookieConnection transferCookieConnection;
 +    public String displayName;
@@ -146,9 +146,10 @@
 +    public com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
 +    public @Nullable String clientBrandName = null; // Paper - Brand support
 +    public org.bukkit.event.player.PlayerQuitEvent.QuitReason quitReason = null; // Paper - Add API for quit reason; there are a lot of changes to do if we change all methods leading to the event
- 
++
      public ServerPlayer(MinecraftServer server, ServerLevel world, GameProfile profile, ClientInformation clientOptions) {
          super(world, world.getSharedSpawnPos(), world.getSharedSpawnAngle(), profile);
+         this.chatVisibility = ChatVisiblity.FULL;
 @@ -266,7 +329,7 @@
          this.canChatColor = true;
          this.lastActionTime = Util.getMillis();
@@ -228,8 +229,8 @@
 +        this.adventure$displayName = net.kyori.adventure.text.Component.text(this.getScoreboardName()); // Paper
 +        this.bukkitPickUpLoot = true;
 +        this.maxHealthCache = this.getMaxHealth();
-     }
- 
++    }
++
 +    // Use method to resend items in hands in case of client desync, because the item use got cancelled.
 +    // For example, when cancelling the leash event
 +    @Deprecated // Paper - this shouldn't be used, use the regular sendAllDataToRemote call to resync all
@@ -276,9 +277,9 @@
 +        }
 +
 +        return blockposition;
-+    }
+     }
 +    // CraftBukkit end
-+
+ 
      @Override
      public BlockPos adjustSpawnLocation(ServerLevel world, BlockPos basePos) {
          AABB axisalignedbb = this.getDimensions(Pose.STANDING).makeBoundingBox(Vec3.ZERO);
@@ -421,7 +422,15 @@
                      }
                  }
              }
-@@ -625,7 +805,7 @@
+@@ -618,6 +798,7 @@
+ 
+             while (iterator.hasNext()) {
+                 ThrownEnderpearl entityenderpearl = (ThrownEnderpearl) iterator.next();
++                if (entityenderpearl.level().paperConfig().misc.legacyEnderPearlBehavior) continue; // Paper - Allow using old ender pearl behavior
+ 
+                 if (entityenderpearl.isRemoved()) {
+                     ServerPlayer.LOGGER.warn("Trying to save removed ender pearl, skipping");
+@@ -625,7 +806,7 @@
                      CompoundTag nbttagcompound1 = new CompoundTag();
  
                      entityenderpearl.save(nbttagcompound1);
@@ -430,7 +439,7 @@
                      Logger logger = ServerPlayer.LOGGER;
  
                      Objects.requireNonNull(logger);
-@@ -651,7 +831,7 @@
+@@ -651,7 +832,7 @@
                  nbttaglist.forEach((nbtbase1) -> {
                      if (nbtbase1 instanceof CompoundTag nbttagcompound) {
                          if (nbttagcompound.contains("ender_pearl_dimension")) {
@@ -439,7 +448,7 @@
                              Logger logger = ServerPlayer.LOGGER;
  
                              Objects.requireNonNull(logger);
-@@ -684,7 +864,30 @@
+@@ -684,7 +865,30 @@
              }
          }
  
@@ -470,7 +479,7 @@
  
      public void setExperiencePoints(int points) {
          float f = (float) this.getXpNeededForNextLevel();
-@@ -744,6 +947,11 @@
+@@ -744,6 +948,11 @@
  
      @Override
      public void tick() {
@@ -482,7 +491,7 @@
          this.tickClientLoadTimeout();
          this.gameMode.tick();
          this.wardenSpawnTracker.tick();
-@@ -751,9 +959,13 @@
+@@ -751,9 +960,13 @@
              --this.invulnerableTime;
          }
  
@@ -499,7 +508,7 @@
              this.containerMenu = this.inventoryMenu;
          }
  
-@@ -807,7 +1019,7 @@
+@@ -807,7 +1020,7 @@
  
      public void doTick() {
          try {
@@ -508,7 +517,7 @@
                  super.tick();
              }
  
-@@ -820,7 +1032,7 @@
+@@ -820,7 +1033,7 @@
              }
  
              if (this.getHealth() != this.lastSentHealth || this.lastSentFood != this.foodData.getFoodLevel() || this.foodData.getSaturationLevel() == 0.0F != this.lastFoodSaturationZero) {
@@ -517,7 +526,7 @@
                  this.lastSentHealth = this.getHealth();
                  this.lastSentFood = this.foodData.getFoodLevel();
                  this.lastFoodSaturationZero = this.foodData.getSaturationLevel() == 0.0F;
-@@ -851,6 +1063,12 @@
+@@ -851,6 +1064,12 @@
                  this.updateScoreForCriteria(ObjectiveCriteria.EXPERIENCE, Mth.ceil((float) this.lastRecordedExperience));
              }
  
@@ -530,7 +539,7 @@
              if (this.experienceLevel != this.lastRecordedLevel) {
                  this.lastRecordedLevel = this.experienceLevel;
                  this.updateScoreForCriteria(ObjectiveCriteria.LEVEL, Mth.ceil((float) this.lastRecordedLevel));
-@@ -865,6 +1083,20 @@
+@@ -865,6 +1084,20 @@
                  CriteriaTriggers.LOCATION.trigger(this);
              }
  
@@ -551,7 +560,7 @@
          } catch (Throwable throwable) {
              CrashReport crashreport = CrashReport.forThrowable(throwable, "Ticking player");
              CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Player being ticked");
-@@ -893,7 +1125,7 @@
+@@ -893,7 +1126,7 @@
          if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.serverLevel().getGameRules().getBoolean(GameRules.RULE_NATURAL_REGENERATION)) {
              if (this.tickCount % 20 == 0) {
                  if (this.getHealth() < this.getMaxHealth()) {
@@ -560,7 +569,7 @@
                  }
  
                  float f = this.foodData.getSaturationLevel();
-@@ -946,19 +1178,105 @@
+@@ -946,19 +1179,105 @@
      }
  
      private void updateScoreForCriteria(ObjectiveCriteria criterion, int score) {
@@ -670,7 +679,7 @@
              this.connection.send(new ClientboundPlayerCombatKillPacket(this.getId(), ichatbasecomponent), PacketSendListener.exceptionallySend(() -> {
                  boolean flag1 = true;
                  String s = ichatbasecomponent.getString(256);
-@@ -988,12 +1306,23 @@
+@@ -988,12 +1307,23 @@
          if (this.serverLevel().getGameRules().getBoolean(GameRules.RULE_FORGIVE_DEAD_PLAYERS)) {
              this.tellNeutralMobsThatIDied();
          }
@@ -698,7 +707,7 @@
          LivingEntity entityliving = this.getKillCredit();
  
          if (entityliving != null) {
-@@ -1028,10 +1357,12 @@
+@@ -1028,10 +1358,12 @@
      public void awardKillScore(Entity entityKilled, DamageSource damageSource) {
          if (entityKilled != this) {
              super.awardKillScore(entityKilled, damageSource);
@@ -714,7 +723,7 @@
              } else {
                  this.awardStat(Stats.MOB_KILLS);
              }
-@@ -1049,7 +1380,8 @@
+@@ -1049,7 +1381,8 @@
              int i = scoreboardteam.getColor().getId();
  
              if (i >= 0 && i < criterions.length) {
@@ -724,7 +733,7 @@
              }
          }
  
-@@ -1062,8 +1394,8 @@
+@@ -1062,8 +1395,8 @@
          } else {
              Entity entity = source.getEntity();
  
@@ -735,7 +744,7 @@
  
                  if (!this.canHarmPlayer(entityhuman)) {
                      return false;
-@@ -1074,8 +1406,8 @@
+@@ -1074,8 +1407,8 @@
                  AbstractArrow entityarrow = (AbstractArrow) entity;
                  Entity entity1 = entityarrow.getOwner();
  
@@ -746,7 +755,7 @@
  
                      if (!this.canHarmPlayer(entityhuman1)) {
                          return false;
-@@ -1083,38 +1415,84 @@
+@@ -1083,38 +1416,84 @@
                  }
              }
  
@@ -839,7 +848,7 @@
      }
  
      public static Optional<ServerPlayer.RespawnPosAngle> findRespawnAndUseSpawnBlock(ServerLevel world, BlockPos pos, float spawnAngle, boolean spawnForced, boolean alive) {
-@@ -1129,11 +1507,11 @@
+@@ -1129,11 +1508,11 @@
              }
  
              return optional.map((vec3d) -> {
@@ -853,7 +862,7 @@
              });
          } else if (!spawnForced) {
              return Optional.empty();
-@@ -1142,7 +1520,7 @@
+@@ -1142,7 +1521,7 @@
              BlockState iblockdata1 = world.getBlockState(pos.above());
              boolean flag3 = iblockdata1.getBlock().isPossibleToRespawnInThis(iblockdata1);
  
@@ -862,7 +871,7 @@
          }
      }
  
-@@ -1160,6 +1538,7 @@
+@@ -1160,6 +1539,7 @@
      @Nullable
      @Override
      public ServerPlayer teleport(TeleportTransition teleportTarget) {
@@ -870,7 +879,7 @@
          if (this.isRemoved()) {
              return null;
          } else {
-@@ -1169,39 +1548,78 @@
+@@ -1169,39 +1549,78 @@
  
              ServerLevel worldserver = teleportTarget.newLevel();
              ServerLevel worldserver1 = this.serverLevel();
@@ -957,7 +966,7 @@
                  this.connection.resetPosition();
                  worldserver.addDuringTeleport(this);
                  gameprofilerfiller.pop();
-@@ -1215,12 +1633,35 @@
+@@ -1215,10 +1634,33 @@
                  this.lastSentExp = -1;
                  this.lastSentHealth = -1.0F;
                  this.lastSentFood = -1;
@@ -973,27 +982,25 @@
 +                // Paper end - Reset shield blocking on dimension change
                  return this;
              }
-         }
-     }
- 
++        }
++    }
++
 +    // CraftBukkit start
-     @Override
++    @Override
 +    public CraftPortalEvent callPortalEvent(Entity entity, Location exit, TeleportCause cause, int searchRadius, int creationRadius) {
 +        Location enter = this.getBukkitEntity().getLocation();
 +        PlayerPortalEvent event = new PlayerPortalEvent(this.getBukkitEntity(), enter, exit, cause, searchRadius, true, creationRadius);
 +        Bukkit.getServer().getPluginManager().callEvent(event);
 +        if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null) {
 +            return null;
-+        }
+         }
 +        return new CraftPortalEvent(event);
-+    }
-+    // CraftBukkit end
-+
-+    @Override
-     public void forceSetRotation(float yaw, float pitch) {
-         this.connection.send(new ClientboundPlayerRotationPacket(yaw, pitch));
      }
-@@ -1228,13 +1669,27 @@
++    // CraftBukkit end
+ 
+     @Override
+     public void forceSetRotation(float yaw, float pitch) {
+@@ -1228,13 +1670,27 @@
      public void triggerDimensionChangeTriggers(ServerLevel origin) {
          ResourceKey<Level> resourcekey = origin.dimension();
          ResourceKey<Level> resourcekey1 = this.level().dimension();
@@ -1024,7 +1031,7 @@
              this.enteredNetherPosition = null;
          }
  
-@@ -1251,36 +1706,63 @@
+@@ -1251,36 +1707,63 @@
          this.containerMenu.broadcastChanges();
      }
  
@@ -1103,7 +1110,7 @@
                          this.awardStat(Stats.SLEEP_IN_BED);
                          CriteriaTriggers.SLEPT_IN_BED.trigger(this);
                      });
-@@ -1293,9 +1775,8 @@
+@@ -1293,9 +1776,8 @@
                      return either;
                  }
              }
@@ -1114,7 +1121,7 @@
      }
  
      @Override
-@@ -1322,13 +1803,31 @@
+@@ -1322,13 +1804,31 @@
  
      @Override
      public void stopSleepInBed(boolean skipSleepTimer, boolean updateSleepingPlayers) {
@@ -1147,7 +1154,7 @@
          }
  
      }
-@@ -1341,7 +1840,7 @@
+@@ -1341,7 +1841,7 @@
  
      @Override
      public boolean isInvulnerableTo(ServerLevel world, DamageSource source) {
@@ -1156,7 +1163,7 @@
      }
  
      @Override
-@@ -1387,8 +1886,9 @@
+@@ -1387,8 +1887,9 @@
          this.connection.send(new ClientboundOpenSignEditorPacket(sign.getBlockPos(), front));
      }
  
@@ -1167,7 +1174,7 @@
      }
  
      @Override
-@@ -1396,13 +1896,44 @@
+@@ -1396,13 +1897,44 @@
          if (factory == null) {
              return OptionalInt.empty();
          } else {
@@ -1212,7 +1219,7 @@
              if (container == null) {
                  if (this.isSpectator()) {
                      this.displayClientMessage(Component.translatable("container.spectatorCantOpen").withStyle(ChatFormatting.RED), true);
-@@ -1410,9 +1941,11 @@
+@@ -1410,9 +1942,11 @@
  
                  return OptionalInt.empty();
              } else {
@@ -1226,7 +1233,7 @@
                  return OptionalInt.of(this.containerCounter);
              }
          }
-@@ -1425,15 +1958,26 @@
+@@ -1425,15 +1959,26 @@
  
      @Override
      public void openHorseInventory(AbstractHorse horse, Container inventory) {
@@ -1256,7 +1263,7 @@
          this.initMenu(this.containerMenu);
      }
  
-@@ -1456,9 +2000,28 @@
+@@ -1456,9 +2001,28 @@
  
      @Override
      public void closeContainer() {
@@ -1285,7 +1292,7 @@
  
      @Override
      public void doCloseContainer() {
-@@ -1485,19 +2048,19 @@
+@@ -1485,19 +2049,19 @@
                  i = Math.round((float) Math.sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ) * 100.0F);
                  if (i > 0) {
                      this.awardStat(Stats.SWIM_ONE_CM, i);
@@ -1308,7 +1315,7 @@
                  }
              } else if (this.onClimbable()) {
                  if (deltaY > 0.0D) {
-@@ -1508,13 +2071,13 @@
+@@ -1508,13 +2072,13 @@
                  if (i > 0) {
                      if (this.isSprinting()) {
                          this.awardStat(Stats.SPRINT_ONE_CM, i);
@@ -1325,7 +1332,7 @@
                      }
                  }
              } else if (this.isFallFlying()) {
-@@ -1557,7 +2120,7 @@
+@@ -1557,7 +2121,7 @@
      @Override
      public void awardStat(Stat<?> stat, int amount) {
          this.stats.increment(this, stat, amount);
@@ -1334,7 +1341,7 @@
              scoreaccess.add(amount);
          });
      }
-@@ -1565,7 +2128,7 @@
+@@ -1565,7 +2129,7 @@
      @Override
      public void resetStat(Stat<?> stat) {
          this.stats.setValue(this, stat, 0);
@@ -1343,7 +1350,7 @@
      }
  
      @Override
-@@ -1597,9 +2160,9 @@
+@@ -1597,9 +2161,9 @@
          super.jumpFromGround();
          this.awardStat(Stats.JUMP);
          if (this.isSprinting()) {
@@ -1355,7 +1362,7 @@
          }
  
      }
-@@ -1613,6 +2176,13 @@
+@@ -1613,6 +2177,13 @@
      public void disconnect() {
          this.disconnected = true;
          this.ejectPassengers();
@@ -1369,7 +1376,7 @@
          if (this.isSleeping()) {
              this.stopSleepInBed(true, false);
          }
-@@ -1625,6 +2195,7 @@
+@@ -1625,6 +2196,7 @@
  
      public void resetSentInfo() {
          this.lastSentHealth = -1.0E8F;
@@ -1377,7 +1384,7 @@
      }
  
      @Override
-@@ -1661,7 +2232,7 @@
+@@ -1661,7 +2233,7 @@
          this.onUpdateAbilities();
          if (alive) {
              this.getAttributes().assignBaseValues(oldPlayer.getAttributes());
@@ -1386,7 +1393,7 @@
              this.setHealth(oldPlayer.getHealth());
              this.foodData = oldPlayer.foodData;
              Iterator iterator = oldPlayer.getActiveEffects().iterator();
-@@ -1669,7 +2240,7 @@
+@@ -1669,7 +2241,7 @@
              while (iterator.hasNext()) {
                  MobEffectInstance mobeffect = (MobEffectInstance) iterator.next();
  
@@ -1395,7 +1402,7 @@
              }
  
              this.getInventory().replaceWith(oldPlayer.getInventory());
-@@ -1680,7 +2251,7 @@
+@@ -1680,7 +2252,7 @@
              this.portalProcess = oldPlayer.portalProcess;
          } else {
              this.getAttributes().assignBaseValues(oldPlayer.getAttributes());
@@ -1404,7 +1411,7 @@
              if (this.serverLevel().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY) || oldPlayer.isSpectator()) {
                  this.getInventory().replaceWith(oldPlayer.getInventory());
                  this.experienceLevel = oldPlayer.experienceLevel;
-@@ -1696,7 +2267,7 @@
+@@ -1696,7 +2268,7 @@
          this.lastSentExp = -1;
          this.lastSentHealth = -1.0F;
          this.lastSentFood = -1;
@@ -1413,7 +1420,7 @@
          this.seenCredits = oldPlayer.seenCredits;
          this.enteredNetherPosition = oldPlayer.enteredNetherPosition;
          this.chunkTrackingView = oldPlayer.chunkTrackingView;
-@@ -1752,19 +2323,19 @@
+@@ -1752,19 +2324,19 @@
      }
  
      @Override
@@ -1437,7 +1444,7 @@
          }
  
          return flag1;
-@@ -1799,10 +2370,18 @@
+@@ -1799,10 +2371,18 @@
      }
  
      public boolean setGameMode(GameType gameMode) {
@@ -1458,7 +1465,7 @@
          } else {
              this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, (float) gameMode.getId()));
              if (gameMode == GameType.SPECTATOR) {
-@@ -1818,7 +2397,7 @@
+@@ -1818,7 +2398,7 @@
  
              this.onUpdateAbilities();
              this.updateEffectVisibility();
@@ -1467,7 +1474,7 @@
          }
      }
  
-@@ -1861,8 +2440,13 @@
+@@ -1861,8 +2441,13 @@
      }
  
      public void sendChatMessage(OutgoingChatMessage message, boolean filterMaskEnabled, ChatType.Bound params) {
@@ -1482,7 +1489,7 @@
          }
  
      }
-@@ -1878,7 +2462,36 @@
+@@ -1878,7 +2463,36 @@
      }
  
      public void updateOptions(ClientInformation clientOptions) {
@@ -1519,7 +1526,7 @@
          this.requestedViewDistance = clientOptions.viewDistance();
          this.chatVisibility = clientOptions.chatVisibility();
          this.canChatColor = clientOptions.chatColors();
-@@ -1957,12 +2570,27 @@
+@@ -1957,12 +2571,27 @@
  
          this.camera = (Entity) (entity == null ? this : entity);
          if (entity1 != this.camera) {
@@ -1548,7 +1555,7 @@
              }
  
              if (entity != null) {
-@@ -1999,11 +2627,11 @@
+@@ -1999,11 +2628,11 @@
  
      @Nullable
      public Component getTabListDisplayName() {
@@ -1562,7 +1569,7 @@
      }
  
      @Override
-@@ -2045,12 +2673,44 @@
+@@ -2045,12 +2674,44 @@
          this.setRespawnPosition(player.getRespawnDimension(), player.getRespawnPosition(), player.getRespawnAngle(), player.isRespawnForced(), false);
      }
  
@@ -1609,7 +1616,7 @@
              }
  
              this.respawnPosition = pos;
-@@ -2064,6 +2724,7 @@
+@@ -2064,6 +2725,7 @@
              this.respawnForced = false;
          }
  
@@ -1617,7 +1624,7 @@
      }
  
      public SectionPos getLastSectionPos() {
-@@ -2088,18 +2749,44 @@
+@@ -2088,18 +2750,44 @@
      }
  
      @Override
@@ -1666,7 +1673,7 @@
                  }
  
                  this.awardStat(Stats.DROP);
-@@ -2115,6 +2802,11 @@
+@@ -2115,6 +2803,11 @@
              return null;
          } else {
              double d0 = this.getEyeY() - 0.30000001192092896D;
@@ -1678,7 +1685,7 @@
              ItemEntity entityitem = new ItemEntity(this.level(), this.getX(), d0, this.getZ(), stack);
  
              entityitem.setPickUpDelay(40);
-@@ -2166,6 +2858,16 @@
+@@ -2166,6 +2859,16 @@
      }
  
      public void loadGameTypes(@Nullable CompoundTag nbt) {
@@ -1695,7 +1702,7 @@
          this.gameMode.setGameModeForPlayer(this.calculateGameModeForNewPlayer(ServerPlayer.readPlayerMode(nbt, "playerGameType")), ServerPlayer.readPlayerMode(nbt, "previousPlayerGameType"));
      }
  
-@@ -2275,9 +2977,15 @@
+@@ -2275,9 +2978,15 @@
  
      @Override
      public void stopRiding() {
@@ -1712,7 +1719,12 @@
          if (entity instanceof LivingEntity entityliving) {
              Iterator iterator = entityliving.getActiveEffects().iterator();
  
-@@ -2375,16 +3083,161 @@
+@@ -2371,20 +3080,165 @@
+     }
+ 
+     public static long placeEnderPearlTicket(ServerLevel world, ChunkPos chunkPos) {
+-        world.getChunkSource().addRegionTicket(TicketType.ENDER_PEARL, chunkPos, 2, chunkPos);
++        if (!world.paperConfig().misc.legacyEnderPearlBehavior) world.getChunkSource().addRegionTicket(TicketType.ENDER_PEARL, chunkPos, 2, chunkPos); // Paper - Allow using old ender pearl behavior
          return TicketType.ENDER_PEARL.timeout();
      }
  
