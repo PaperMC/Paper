@@ -21,10 +21,10 @@ index 9966576652ed6007d2228237f292c1dc83ede485..9b3a6b336cb1344d4e74e0e4f7c50ffd
  paperweight {
 diff --git a/src/main/java/io/papermc/paper/SparksFly.java b/src/main/java/io/papermc/paper/SparksFly.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2955b7ec9832a5752ea4aff9fc9d34ae2f9ee83e
+index 0000000000000000000000000000000000000000..62e2d5704c348955bc8284dc2d54c933b7bcdd06
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/SparksFly.java
-@@ -0,0 +1,201 @@
+@@ -0,0 +1,211 @@
 +package io.papermc.paper;
 +
 +import io.papermc.paper.configuration.GlobalConfiguration;
@@ -34,6 +34,7 @@ index 0000000000000000000000000000000000000000..2955b7ec9832a5752ea4aff9fc9d34ae
 +import io.papermc.paper.util.MCUtil;
 +import java.util.Collection;
 +import java.util.List;
++import java.util.concurrent.ConcurrentLinkedQueue;
 +import java.util.logging.Level;
 +import java.util.logging.Logger;
 +import me.lucko.spark.paper.api.Compatibility;
@@ -59,11 +60,13 @@ index 0000000000000000000000000000000000000000..2955b7ec9832a5752ea4aff9fc9d34ae
 +
 +    private final Logger logger;
 +    private final PaperSparkModule spark;
++    private final ConcurrentLinkedQueue<Runnable> mainThreadTaskQueue;
 +
 +    private boolean enabled;
 +    private boolean disabledInConfigurationWarningLogged;
 +
 +    public SparksFly(final Server server) {
++        this.mainThreadTaskQueue = new ConcurrentLinkedQueue<>();
 +        this.logger = Logger.getLogger(ID);
 +        this.logger.log(Level.INFO, "This server bundles the spark profiler. For more information please visit https://docs.papermc.io/paper/profiling");
 +        this.spark = PaperSparkModule.create(Compatibility.VERSION_1_0, server, this.logger, new PaperScheduler() {
@@ -74,7 +77,7 @@ index 0000000000000000000000000000000000000000..2955b7ec9832a5752ea4aff9fc9d34ae
 +
 +            @Override
 +            public void executeSync(final Runnable runnable) {
-+                MCUtil.ensureMain(this.catching(runnable, "synchronous"));
++                SparksFly.this.mainThreadTaskQueue.offer(this.catching(runnable, "synchronous"));
 +            }
 +
 +            private Runnable catching(final Runnable runnable, final String type) {
@@ -109,6 +112,13 @@ index 0000000000000000000000000000000000000000..2955b7ec9832a5752ea4aff9fc9d34ae
 +                }
 +            }
 +        });
++    }
++
++    public void executeMainThreadTasks() {
++        Runnable task;
++        while ((task = this.mainThreadTaskQueue.poll()) != null) {
++            task.run();
++        }
 +    }
 +
 +    public void enableEarlyIfRequested() {
@@ -269,7 +279,7 @@ index 6b8ed8a0baaf4a57d20e57cec3400af5561ddd79..48604e7f96adc9e226e034054c5e2bad
      }
  
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 7a671772760152f26e5bb60ea2f2a7765c017c37..3fc6e7cb5e02792e5e87beb7525cde96bc45df1c 100644
+index 7a671772760152f26e5bb60ea2f2a7765c017c37..8a45960de3fd890991a1c75a103fec1adb03c0cb 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -765,6 +765,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -297,7 +307,21 @@ index 7a671772760152f26e5bb60ea2f2a7765c017c37..3fc6e7cb5e02792e5e87beb7525cde96
              org.spigotmc.WatchdogThread.tick();
              // Paper end - Improved Watchdog Support
              org.spigotmc.WatchdogThread.hasStarted = true; // Paper
-@@ -1638,6 +1642,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1627,17 +1631,21 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             }
+ 
+             if (this.emptyTicks >= j) {
++                this.server.spark.tickStart(); // Paper - spark
+                 if (this.emptyTicks == j) {
+                     MinecraftServer.LOGGER.info("Server empty for {} seconds, pausing", this.pauseWhileEmptySeconds());
+                     this.autoSave();
+                 }
+ 
+                 this.server.getScheduler().mainThreadHeartbeat(); // CraftBukkit
++                this.server.spark.executeMainThreadTasks(); // Paper - spark
+                 this.tickConnection();
++                this.server.spark.tickEnd(((double)(System.nanoTime() - lastTick) / 1000000D)); // Paper - spark
+                 return;
              }
          }
  
@@ -305,7 +329,13 @@ index 7a671772760152f26e5bb60ea2f2a7765c017c37..3fc6e7cb5e02792e5e87beb7525cde96
          new com.destroystokyo.paper.event.server.ServerTickStartEvent(this.tickCount+1).callEvent(); // Paper - Server Tick Events
          ++this.tickCount;
          this.tickRateManager.tick();
-@@ -1660,6 +1665,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1655,11 +1663,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         ProfilerFiller gameprofilerfiller = Profiler.get();
+ 
+         this.runAllTasks(); // Paper - move runAllTasks() into full server tick (previously for timings)
++        this.server.spark.executeMainThreadTasks(); // Paper - spark
+         // Paper start - Server Tick Events
+         long endTime = System.nanoTime();
          long remaining = (TICK_TIME - (endTime - lastTick)) - catchupTime;
          new com.destroystokyo.paper.event.server.ServerTickEndEvent(this.tickCount, ((double)(endTime - lastTick) / 1000000D), remaining).callEvent();
          // Paper end - Server Tick Events
