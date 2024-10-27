@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Josh Roy <10731363+JRoy@users.noreply.github.com>
+Date: Sun, 14 Aug 2022 12:23:11 -0400
+Subject: [PATCH] Add NamespacedKey biome methods
+
+Co-authored-by: Thonk <30448663+ExcessiveAmountsOfZombies@users.noreply.github.com>
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 1ab160c3d042be43df3bd19d095534b91c4c2f71..9f4124485dac3d029ec8247b64098042aa1a48d2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -587,6 +587,19 @@ public final class CraftMagicNumbers implements UnsafeValues {
+         var supplier = net.minecraft.world.entity.ai.attributes.DefaultAttributes.getSupplier((net.minecraft.world.entity.EntityType<? extends net.minecraft.world.entity.LivingEntity>) net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getValue(CraftNamespacedKey.toMinecraft(bukkitEntityKey)));
+         return new io.papermc.paper.attribute.UnmodifiableAttributeMap(supplier);
+     }
++
++    @Override
++    public org.bukkit.NamespacedKey getBiomeKey(org.bukkit.RegionAccessor accessor, int x, int y, int z) {
++        org.bukkit.craftbukkit.CraftRegionAccessor cra = (org.bukkit.craftbukkit.CraftRegionAccessor) accessor;
++        return org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(cra.getHandle().registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BIOME).getKey(cra.getHandle().getBiome(new net.minecraft.core.BlockPos(x, y, z)).value()));
++    }
++
++    @Override
++    public void setBiomeKey(org.bukkit.RegionAccessor accessor, int x, int y, int z, org.bukkit.NamespacedKey biomeKey) {
++        org.bukkit.craftbukkit.CraftRegionAccessor cra = (org.bukkit.craftbukkit.CraftRegionAccessor) accessor;
++        net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> biomeBase = cra.getHandle().registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BIOME).getOrThrow(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.BIOME, org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(biomeKey)));
++        cra.setBiome(x, y, z, biomeBase);
++    }
+     // Paper end
+ 
+     /**

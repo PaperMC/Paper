@@ -8,7 +8,7 @@ expose isRunning
 
 diff --git a/src/main/java/co/aikar/timings/FullServerTickHandler.java b/src/main/java/co/aikar/timings/FullServerTickHandler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3e747abde6fefae90f1c15cb00158bc5303cbe50
+index 0000000000000000000000000000000000000000..73b125979e2f2dfd13cbf689a90b29cc68a36e09
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/FullServerTickHandler.java
 @@ -0,0 +1,89 @@
@@ -94,7 +94,7 @@ index 0000000000000000000000000000000000000000..3e747abde6fefae90f1c15cb00158bc5
 +            TimingsManager.HISTORY.add(new TimingHistory());
 +            TimingsManager.resetTimings();
 +        }
-+        Bukkit.getUnsafe().reportTimings();
++        //Bukkit.getUnsafe().reportTimings();
 +    }
 +
 +    boolean isViolated() {
@@ -1275,10 +1275,10 @@ index 0000000000000000000000000000000000000000..df142a89b8c43acb81eb383eac0ef048
 +}
 diff --git a/src/main/java/co/aikar/timings/Timings.java b/src/main/java/co/aikar/timings/Timings.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e81d0bc309de877ed2b5da6122f55c162e9b5f10
+index 0000000000000000000000000000000000000000..95b7cdf0677ef71e6885fa78aa5c75bb500f5f53
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/Timings.java
-@@ -0,0 +1,331 @@
+@@ -0,0 +1,325 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1426,14 +1426,8 @@ index 0000000000000000000000000000000000000000..e81d0bc309de877ed2b5da6122f55c16
 +     * @param enabled Should timings be reported
 +     */
 +    public static void setTimingsEnabled(boolean enabled) {
-+        timingsEnabled = enabled;
-+        warnAboutDeprecationOnEnable();
-+        reset();
-+    }
-+
-+    private static void warnAboutDeprecationOnEnable() {
-+        if (timingsEnabled && !warnedAboutDeprecationOnEnable) {
-+            Bukkit.getLogger().warning(PlainTextComponentSerializer.plainText().serialize(deprecationMessage()));
++        if (enabled && !warnedAboutDeprecationOnEnable) {
++            Bukkit.getLogger().severe(PlainTextComponentSerializer.plainText().serialize(deprecationMessage()));
 +            warnedAboutDeprecationOnEnable = true;
 +        }
 +    }
@@ -1441,7 +1435,7 @@ index 0000000000000000000000000000000000000000..e81d0bc309de877ed2b5da6122f55c16
 +    public static Component deprecationMessage() {
 +        return Component.text()
 +            .color(TextColor.color(0xffc93a))
-+            .append(Component.text("[!] The timings profiler has been enabled but has been scheduled for removal from Paper in the future."))
++            .append(Component.text("[!] The timings profiler is in no-op mode and will be fully removed in a later update."))
 +            .append(Component.newline())
 +            .append(Component.text("    We recommend migrating to the spark profiler."))
 +            .append(Component.newline())
@@ -1612,10 +1606,10 @@ index 0000000000000000000000000000000000000000..e81d0bc309de877ed2b5da6122f55c16
 +
 diff --git a/src/main/java/co/aikar/timings/TimingsCommand.java b/src/main/java/co/aikar/timings/TimingsCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..95d87c9dbf2b237787294dfbe7fed87a36e6dedf
+index 0000000000000000000000000000000000000000..b83e5ff7ada8771fdf27ba9807c77ba6a4ce12da
 --- /dev/null
 +++ b/src/main/java/co/aikar/timings/TimingsCommand.java
-@@ -0,0 +1,126 @@
+@@ -0,0 +1,127 @@
 +/*
 + * This file is licensed under the MIT License (MIT).
 + *
@@ -1674,8 +1668,9 @@ index 0000000000000000000000000000000000000000..95d87c9dbf2b237787294dfbe7fed87a
 +        if (!testPermission(sender)) {
 +            return true;
 +        }
-+        if (false) {
++        if (true) {
 +            sender.sendMessage(Timings.deprecationMessage());
++            return true;
 +        }
 +        if (args.length < 1) {
 +            sender.sendMessage(text("Usage: " + this.usageMessage, NamedTextColor.RED));
@@ -2906,35 +2901,6 @@ index fa6ad07214d5e38866bf6bee9139c6c938e9f51a..57c9b560c77a56588870598acb543469
          /**
           * Sends the component to the player
           *
-diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index d8b346fe0f9634218954fe818d53272a0896af9c..12ef99f1c91b92a133611c5f5aeaaeebd02ce232 100644
---- a/src/main/java/org/bukkit/UnsafeValues.java
-+++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -40,6 +40,11 @@ public interface UnsafeValues {
-     net.kyori.adventure.text.Component resolveWithContext(net.kyori.adventure.text.Component component, org.bukkit.command.CommandSender context, org.bukkit.entity.Entity scoreboardSubject, boolean bypassPermissions) throws java.io.IOException;
-     // Paper end
- 
-+    /**
-+     * @deprecated Timings will be removed in the future
-+     */
-+    @Deprecated(forRemoval = true)
-+    void reportTimings(); // Paper
-     Material toLegacy(Material material);
- 
-     Material fromLegacy(Material material);
-@@ -151,4 +156,12 @@ public interface UnsafeValues {
-         return !Bukkit.getUnsafe().isSupportedApiVersion(plugin.getDescription().getAPIVersion());
-     }
-     // Paper end
-+
-+    // Paper start
-+    /**
-+     * @deprecated Timings will be removed in the future
-+     */
-+    @Deprecated(forRemoval = true)
-+    String getTimingsServerName();
-+    // Paper end
- }
 diff --git a/src/main/java/org/bukkit/command/BufferedCommandSender.java b/src/main/java/org/bukkit/command/BufferedCommandSender.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..45ed63797b13e114bf3795c80a6c3967d8eb2351
@@ -3508,7 +3474,7 @@ index 84befa1e5123038b80e0734622a5174634f5a982..22de066aef71ad2cf135d5b6f5d6f224
  
      @NotNull
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index 46c7be5fa69f13900860b9944523beea16f2409b..6018574cd15b802833613beefa88da15dc2730cb 100644
+index 46c7be5fa69f13900860b9944523beea16f2409b..f97669c8b58bc287fc289eeb098836ae314b053a 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 @@ -381,7 +381,6 @@ public final class SimplePluginManager implements PluginManager {
@@ -3559,9 +3525,11 @@ index 46c7be5fa69f13900860b9944523beea16f2409b..6018574cd15b802833613beefa88da15
      }
  
      /**
-@@ -933,7 +933,7 @@ public final class SimplePluginManager implements PluginManager {
+@@ -932,8 +932,9 @@ public final class SimplePluginManager implements PluginManager {
+      *
       * @param use True if per event timing code should be used
       */
++    @Deprecated(forRemoval = true)
      public void useTimings(boolean use) {
 -        useTimings = use;
 +        co.aikar.timings.Timings.setTimingsEnabled(use); // Paper

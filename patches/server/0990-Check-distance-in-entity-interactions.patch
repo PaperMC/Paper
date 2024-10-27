@@ -1,0 +1,68 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Mon, 2 Aug 2021 10:10:40 +0200
+Subject: [PATCH] Check distance in entity interactions
+
+
+diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
+index 57223285860f61119b6cf348aa78e59384a04e22..ccfe9ef24dce9f34613692adb13738d3ad0e7aac 100644
+--- a/src/main/java/net/minecraft/Util.java
++++ b/src/main/java/net/minecraft/Util.java
+@@ -128,6 +128,7 @@ public class Util {
+         .filter(fileSystemProvider -> fileSystemProvider.getScheme().equalsIgnoreCase("jar"))
+         .findFirst()
+         .orElseThrow(() -> new IllegalStateException("No jar file system provider found"));
++    public static final double COLLISION_EPSILON = 1.0E-7; // Paper - Check distance in entity interactions
+     private static Consumer<String> thePauser = message -> {
+     };
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index afa33711426ee28f70be216497941a10de3416ee..22f520414442c05986cc620208afaa895d8ee4fa 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -1467,7 +1467,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                 if (!source.is(DamageTypeTags.IS_PROJECTILE)) {
+                     Entity entity = source.getDirectEntity();
+ 
+-                    if (entity instanceof LivingEntity) {
++                    if (entity instanceof LivingEntity && entity.distanceToSqr(this) <= (200.0D * 200.0D)) { // Paper - Check distance in entity interactions
+                         LivingEntity entityliving = (LivingEntity) entity;
+ 
+                         this.blockUsingShield(entityliving);
+@@ -1591,6 +1591,14 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                         d0 = source.getSourcePosition().x() - this.getX();
+                         d1 = source.getSourcePosition().z() - this.getZ();
+                     }
++                    // Paper start - Check distance in entity interactions; see for loop in knockback method
++                    if (Math.abs(d0) > 200) {
++                        d0 = Math.random() - Math.random();
++                    }
++                    if (Math.abs(d1) > 200) {
++                        d1 = Math.random() - Math.random();
++                    }
++                    // Paper end - Check distance in entity interactions
+ 
+                     this.knockback(0.4000000059604645D, d0, d1, entity1, entity1 == null ? io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.DAMAGE : io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK); // CraftBukkit // Paper - knockback events
+                     if (!flag) {
+@@ -2426,7 +2434,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                 this.hurtCurrentlyUsedShield((float) -event.getDamage(DamageModifier.BLOCKING));
+                 Entity entity = damagesource.getDirectEntity();
+ 
+-                if (!damagesource.is(DamageTypeTags.IS_PROJECTILE) && entity instanceof LivingEntity) { // Paper - Fix shield disable inconsistency
++                if (!damagesource.is(DamageTypeTags.IS_PROJECTILE) && entity instanceof LivingEntity && entity.distanceToSqr(this) <= (200.0D * 200.0D)) { // Paper - Fix shield disable inconsistency & Check distance in entity interactions
+                     this.blockUsingShield((LivingEntity) entity);
+                 }
+             }
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/AbstractBoat.java b/src/main/java/net/minecraft/world/entity/vehicle/AbstractBoat.java
+index 3590f4bc1af829cdb6e0cfdc8fa6857197b9219e..1fdbef16cd29c8fc74578ac3328f985eca61088d 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/AbstractBoat.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/AbstractBoat.java
+@@ -674,7 +674,7 @@ public abstract class AbstractBoat extends VehicleEntity implements Leashable {
+             double d2 = (double) (this.getWaterLevelAbove() - this.getBbHeight()) + 0.101D;
+ 
+             if (this.level().noCollision(this, this.getBoundingBox().move(0.0D, d2 - this.getY(), 0.0D))) {
+-                this.setPos(this.getX(), d2, this.getZ());
++                this.move(MoverType.SELF, new Vec3(0.0D, d2 - this.getY(), 0.0D)); // Paper - Check distance in entity interactions // TODO Still needed??
+                 this.setDeltaMovement(this.getDeltaMovement().multiply(1.0D, 0.0D, 1.0D));
+                 this.lastYd = 0.0D;
+             }

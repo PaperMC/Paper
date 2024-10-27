@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 16 Jun 2022 14:22:56 -0700
+Subject: [PATCH] Don't broadcast messages to command blocks
+
+Previously the broadcast method would update the last output
+in command blocks, and if called asynchronously, would throw
+an error
+
+diff --git a/src/main/java/net/minecraft/world/level/BaseCommandBlock.java b/src/main/java/net/minecraft/world/level/BaseCommandBlock.java
+index a0e59b236dff1f861a0e987764a77ee203504412..5cb39f95bd2d45b6c18554605f01d2ebf6473428 100644
+--- a/src/main/java/net/minecraft/world/level/BaseCommandBlock.java
++++ b/src/main/java/net/minecraft/world/level/BaseCommandBlock.java
+@@ -178,6 +178,7 @@ public abstract class BaseCommandBlock implements CommandSource {
+     @Override
+     public void sendSystemMessage(Component message) {
+         if (this.trackOutput) {
++            org.spigotmc.AsyncCatcher.catchOp("sendSystemMessage to a command block"); // Paper - Don't broadcast messages to command blocks
+             SimpleDateFormat simpledateformat = BaseCommandBlock.TIME_FORMAT;
+             Date date = new Date();
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 2d16e96c7c329cde6369f1d5b739f60f1776bb4b..3deb58f3cd2e29b51944ac81cb3e0e52ec496242 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1928,7 +1928,7 @@ public final class CraftServer implements Server {
+         // Paper end
+         Set<CommandSender> recipients = new HashSet<>();
+         for (Permissible permissible : this.getPluginManager().getPermissionSubscriptions(permission)) {
+-            if (permissible instanceof CommandSender && permissible.hasPermission(permission)) {
++            if (permissible instanceof CommandSender && !(permissible instanceof org.bukkit.command.BlockCommandSender) && permissible.hasPermission(permission)) { // Paper - Don't broadcast messages to command blocks
+                 recipients.add((CommandSender) permissible);
+             }
+         }

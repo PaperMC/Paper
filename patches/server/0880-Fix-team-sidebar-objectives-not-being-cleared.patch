@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 23 Sep 2023 22:31:54 -0700
+Subject: [PATCH] Fix team sidebar objectives not being cleared
+
+Objectives displayed in team sidebars were not cleared when switching
+scoreboards. If a player's scoreboard has a displayed objective for the
+'gold' sidebar, and their scoreboard was switched to one where they
+still had a 'gold' team, it would still be displayed
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboardManager.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboardManager.java
+index c7ca6210d6ae37fe95068c9baa5fb654f95307e0..f3184be3853dfc4df4ae4b8af764dfef07628ef4 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboardManager.java
++++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboardManager.java
+@@ -87,8 +87,8 @@ public final class CraftScoreboardManager implements ScoreboardManager {
+ 
+         // Old objective tracking
+         HashSet<Objective> removed = new HashSet<>();
+-        for (int i = 0; i < 3; ++i) {
+-            Objective scoreboardobjective = oldboard.getDisplayObjective(net.minecraft.world.scores.DisplaySlot.BY_ID.apply(i));
++        for (net.minecraft.world.scores.DisplaySlot slot : net.minecraft.world.scores.DisplaySlot.values()) { // Paper - clear all display slots
++            Objective scoreboardobjective = oldboard.getDisplayObjective(slot); // Paper - clear all display slots
+             if (scoreboardobjective != null && !removed.contains(scoreboardobjective)) {
+                 entityplayer.connection.send(new ClientboundSetObjectivePacket(scoreboardobjective, 1));
+                 removed.add(scoreboardobjective);
