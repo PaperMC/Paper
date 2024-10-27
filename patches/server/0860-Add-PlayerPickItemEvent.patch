@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RodneyMKay <36546810+RodneyMKay@users.noreply.github.com>
+Date: Wed, 8 Sep 2021 21:34:01 +0200
+Subject: [PATCH] Add PlayerPickItemEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 688d6e51bc8b844ba7648cf1aed1bdd9629c1675..b840f7aac9c830b8aa0aa133bf43f87dfc598b2c 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -947,7 +947,17 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+             this.disconnect(Component.literal("Invalid hotbar selection (Hacking?)"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_ACTION); // Paper - kick event cause
+             return;
+         }
+-        this.player.getInventory().pickSlot(packet.getSlot()); // Paper - Diff above if changed
++        // Paper start - Add PlayerPickItemEvent
++        // this.player.getInventory().pickSlot(packet.getSlot()); // Paper - Diff above if changed - moved down
++        Player bukkitPlayer = this.player.getBukkitEntity();
++        int targetSlot = this.player.getInventory().getSuitableHotbarSlot();
++        int sourceSlot = packet.getSlot();
++
++        io.papermc.paper.event.player.PlayerPickItemEvent event = new io.papermc.paper.event.player.PlayerPickItemEvent(bukkitPlayer, targetSlot, sourceSlot);
++        if (!event.callEvent()) return;
++        // Paper end - Add PlayerPickItemEvent
++
++        this.player.getInventory().pickSlot(event.getSourceSlot(), event.getTargetSlot()); // Paper - Add PlayerPickItemEvent
+         // Paper end - validate pick item position
+         int i = this.player.getInventory().selected;
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/player/Inventory.java b/src/main/java/net/minecraft/world/entity/player/Inventory.java
+index 8bdc2dd7e6b6824f4df5dce8bff5e87fa73d3d3a..aaff1592876ac4a967e4fd47e4b6619a17d57867 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Inventory.java
++++ b/src/main/java/net/minecraft/world/entity/player/Inventory.java
+@@ -170,7 +170,13 @@ public class Inventory implements Container, Nameable {
+     }
+ 
+     public void pickSlot(int slot) {
+-        this.selected = this.getSuitableHotbarSlot();
++        // Paper start - Add PlayerPickItemEvent
++        pickSlot(slot, this.getSuitableHotbarSlot());
++    }
++
++    public void pickSlot(int slot, int targetSlot) {
++        this.selected = targetSlot;
++        // Paper end - Add PlayerPickItemEvent
+         ItemStack itemstack = (ItemStack) this.items.get(this.selected);
+ 
+         this.items.set(this.selected, (ItemStack) this.items.get(slot));

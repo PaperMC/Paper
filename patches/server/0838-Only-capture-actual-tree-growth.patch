@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 21 Aug 2021 18:53:03 -0700
+Subject: [PATCH] Only capture actual tree growth
+
+
+diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+index f8f570a97789ab16e57774f233506a289277d5d9..18304349c9ab24657c4152aff800dba969174665 100644
+--- a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
++++ b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+@@ -550,6 +550,7 @@ public interface DispenseItemBehavior {
+                     if (!fertilizeEvent.isCancelled()) {
+                         for (org.bukkit.block.BlockState blockstate : blocks) {
+                             blockstate.update(true);
++                            worldserver.checkCapturedTreeStateForObserverNotify(blockposition, (org.bukkit.craftbukkit.block.CraftBlockState) blockstate); // Paper - notify observers even if grow failed
+                         }
+                     }
+                 }
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index e9096a138175448279a03a55043982b6d83fbe12..0db41d36d5daf015c750fb0246ab3e5da1cd81a2 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -2198,6 +2198,16 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+         return range <= 0 ? 64.0 * 64.0 : range * range; // 64 is taken from default in ServerLevel#levelEvent
+     }
+     // Paper end - respect global sound events gamerule
++    // Paper start - notify observers even if grow failed
++    public void checkCapturedTreeStateForObserverNotify(final BlockPos pos, final org.bukkit.craftbukkit.block.CraftBlockState craftBlockState) {
++        // notify observers if the block state is the same and the Y level equals the original y level (for mega trees)
++        // blocks at the same Y level with the same state can be assumed to be saplings which trigger observers regardless of if the
++        // tree grew or not
++        if (craftBlockState.getPosition().getY() == pos.getY() && this.getBlockState(craftBlockState.getPosition()) == craftBlockState.getHandle()) {
++            this.notifyAndUpdatePhysics(craftBlockState.getPosition(), null, craftBlockState.getHandle(), craftBlockState.getHandle(), craftBlockState.getHandle(), craftBlockState.getFlag(), 512);
++        }
++    }
++    // Paper end - notify observers even if grow failed
+ 
+     @Override
+     public CrashReportCategory fillReportDetails(CrashReport report) {
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index f81b3e050f21ce10ea86892d9a6bee9a42561514..cb6bcf8b61793882252827309ffa99526244e445 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -469,6 +469,7 @@ public final class ItemStack implements DataComponentHolder {
+                     for (CraftBlockState blockstate : blocks) {
+                         // SPIGOT-7572 - Move fix for SPIGOT-7248 to CapturedBlockState, to allow bees in bee nest
+                         CapturedBlockState.setBlockState(blockstate);
++                        world.checkCapturedTreeStateForObserverNotify(blockposition, blockstate); // Paper - notify observers even if grow failed
+                     }
+                     entityhuman.awardStat(Stats.ITEM_USED.get(item)); // SPIGOT-7236 - award stat
+                 }
+diff --git a/src/main/java/net/minecraft/world/level/block/SaplingBlock.java b/src/main/java/net/minecraft/world/level/block/SaplingBlock.java
+index 2d7290ace5fc8890325a8ec623075ad32f9b1d44..d262a5a6da57ef9ba9a6fe0dfbc88f577105e74f 100644
+--- a/src/main/java/net/minecraft/world/level/block/SaplingBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/SaplingBlock.java
+@@ -86,6 +86,7 @@ public class SaplingBlock extends BushBlock implements BonemealableBlock {
+                     if (event == null || !event.isCancelled()) {
+                         for (BlockState blockstate : blocks) {
+                             CapturedBlockState.setBlockState(blockstate);
++                            world.checkCapturedTreeStateForObserverNotify(pos, (org.bukkit.craftbukkit.block.CraftBlockState) blockstate); // Paper - notify observers even if grow failed
+                         }
+                     }
+                 }
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+index 7afb933782cac7e1ad621e80211c13066c680ad7..6dceb6082538df6f6147254e861d1cec8af7ec50 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+@@ -572,6 +572,7 @@ public class CraftBlock implements Block {
+             if (!event.isCancelled()) {
+                 for (BlockState blockstate : blocks) {
+                     blockstate.update(true);
++                    world.checkCapturedTreeStateForObserverNotify(this.position, (org.bukkit.craftbukkit.block.CraftBlockState) blockstate); // Paper - notify observers even if grow failed
+                 }
+             }
+         }
