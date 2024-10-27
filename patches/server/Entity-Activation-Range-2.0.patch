@@ -20,36 +20,22 @@ diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/mai
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -0,0 +0,0 @@ package net.minecraft.server.level;
- 
- import com.google.common.annotations.VisibleForTesting;
- import co.aikar.timings.TimingHistory; // Paper
--import co.aikar.timings.Timings; // Paper
- import com.google.common.collect.Lists;
- import com.mojang.datafixers.DataFixer;
- import com.mojang.datafixers.util.Pair;
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
-         ++TimingHistory.entityTicks; // Paper - timings
+ 
+     public void tickNonPassenger(Entity entity) {
          // Spigot start
-         co.aikar.timings.Timing timer; // Paper
 -        if (!org.spigotmc.ActivationRange.checkIfActive(entity)) {
-+        /*if (!org.spigotmc.ActivationRange.checkIfActive(entity)) { // Paper - comment out - EAR 2, reimplement below
++        /*if (!org.spigotmc.ActivationRange.checkIfActive(entity)) { // Paper - comment out EAR 2
              entity.tickCount++;
-             timer = entity.getType().inactiveTickTimer.startTiming(); try { // Paper - timings
              entity.inactiveTick();
-             } finally { timer.stopTiming(); } // Paper
              return;
 -        }
 +        }*/ // Paper - comment out EAR 2
          // Spigot end
-         // Paper start- timings
--        TimingHistory.activatedEntityTicks++;
--        timer = entity.getVehicle() != null ? entity.getType().passengerTickTimer.startTiming() : entity.getType().tickTimer.startTiming();
-+        final boolean isActive = org.spigotmc.ActivationRange.checkIfActive(entity);
-+        timer = isActive ? entity.getType().tickTimer.startTiming() : entity.getType().inactiveTickTimer.startTiming(); // Paper
-         try {
-         // Paper end - timings
++        final boolean isActive = org.spigotmc.ActivationRange.checkIfActive(entity); // Paper - EAR 2
          entity.setOldPosAndRot();
+         ProfilerFiller gameprofilerfiller = Profiler.get();
+ 
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
              return BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString();
          });
@@ -59,7 +45,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          entity.postTick(); // CraftBukkit
 +        } else { entity.inactiveTick(); } // Paper - EAR 2
          gameprofilerfiller.pop();
-+        } finally { timer.stopTiming(); } // Paper - timings // EAR 2
          Iterator iterator = entity.getPassengers().iterator();
  
          while (iterator.hasNext()) {
@@ -68,8 +53,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            this.tickPassenger(entity, entity1);
 +            this.tickPassenger(entity, entity1, isActive); // Paper - EAR 2
          }
--        } finally { timer.stopTiming(); } // Paper - timings
-+        // } finally { timer.stopTiming(); } // Paper - timings // EAR 2
  
      }
  
@@ -408,26 +391,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  import net.minecraft.world.entity.projectile.FireworkRocketEntity;
  import net.minecraft.world.entity.projectile.ThrowableProjectile;
  import net.minecraft.world.entity.projectile.ThrownTrident;
- import net.minecraft.world.entity.raid.Raider;
-+import co.aikar.timings.MinecraftTimings;
-+import net.minecraft.world.entity.schedule.Activity;
- import net.minecraft.world.level.Level;
- import net.minecraft.world.phys.AABB;
--import co.aikar.timings.MinecraftTimings;
- 
- public class ActivationRange
- {
 @@ -0,0 +0,0 @@ public class ActivationRange
  
          AABB boundingBox = new AABB( 0, 0, 0, 0, 0, 0 );
      }
 +    // Paper start
 +
-+    static Activity[] VILLAGER_PANIC_IMMUNITIES = {
-+        Activity.HIDE,
-+        Activity.PRE_RAID,
-+        Activity.RAID,
-+        Activity.PANIC
++    static net.minecraft.world.entity.schedule.Activity[] VILLAGER_PANIC_IMMUNITIES = {
++        net.minecraft.world.entity.schedule.Activity.HIDE,
++        net.minecraft.world.entity.schedule.Activity.PRE_RAID,
++        net.minecraft.world.entity.schedule.Activity.RAID,
++        net.minecraft.world.entity.schedule.Activity.PANIC
 +    };
 +
 +    private static int checkInactiveWakeup(Entity entity) {
@@ -556,8 +530,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }
 +            // Paper end
          }
-         MinecraftTimings.entityActivationCheckTimer.stopTiming();
      }
+ 
 @@ -0,0 +0,0 @@ public class ActivationRange
       * @param entity
       * @return
@@ -620,7 +594,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              {
 -                return true;
 +                return 20; // Paper
-+            }
+             }
+-            if ( entity instanceof Villager && ( (Villager) entity ).canBreed() )
 +            // Paper start
 +            if (entity instanceof Bee) {
 +                Bee bee = (Bee)entity;
@@ -631,13 +606,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                ) {
 +                    return 20;
 +                }
-             }
--            if ( entity instanceof Villager && ( (Villager) entity ).canBreed() )
++            }
 +            if ( entity instanceof Villager ) {
 +                Brain<Villager> behaviorController = ((Villager) entity).getBrain();
 +
 +                if (config.villagersActiveForPanic) {
-+                    for (Activity activity : VILLAGER_PANIC_IMMUNITIES) {
++                    for (net.minecraft.world.entity.schedule.Activity activity : VILLAGER_PANIC_IMMUNITIES) {
 +                        if (behaviorController.isActive(activity)) {
 +                            return 20*5;
 +                        }
@@ -645,7 +619,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                }
 +
 +                if (config.villagersWorkImmunityAfter > 0 && inactiveFor >= config.villagersWorkImmunityAfter) {
-+                    if (behaviorController.isActive(Activity.WORK)) {
++                    if (behaviorController.isActive(net.minecraft.world.entity.schedule.Activity.WORK)) {
 +                        return config.villagersWorkImmunityFor;
 +                    }
 +                }
@@ -677,11 +651,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper start
 +            if (entity instanceof Mob && ((Mob) entity).targetSelector.hasTasks() ) {
 +                return 0;
-             }
++            }
 +            if (entity instanceof Pillager) {
 +                Pillager pillager = (Pillager) entity;
 +                // TODO:?
-+            }
+             }
 +            // Paper end
          }
          // SPIGOT-6644: Otherwise the target refresh tick will be missed

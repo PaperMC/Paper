@@ -8,25 +8,6 @@ This adds config options to specify the tick rate for sensors
  for those in order to be able to have some metrics as to which
  ones might need tweaking.
 
-diff --git a/src/main/java/co/aikar/timings/MinecraftTimings.java b/src/main/java/co/aikar/timings/MinecraftTimings.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/co/aikar/timings/MinecraftTimings.java
-+++ b/src/main/java/co/aikar/timings/MinecraftTimings.java
-@@ -0,0 +0,0 @@ public final class MinecraftTimings {
-         return Timings.ofSafe("Minecraft", "## tickEntity - " + entityType + " - " + type, tickEntityTimer);
-     }
- 
-+    public static Timing getBehaviorTimings(String type) {
-+        return Timings.ofSafe("## Behavior - " + type);
-+    }
-+
-+    public static Timing getSensorTimings(String type, int rate) {
-+        return Timings.ofSafe("## Sensor - " + type + " (Default rate: " + rate + ")");
-+    }
-+
-     /**
-      * Get a named timer for the specified tile entity type to track type specific timings.
-      * @param entity
 diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java b/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
@@ -37,7 +18,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final int maxDuration;
 +    // Paper start - configurable behavior tick rate and timings
 +    private final String configKey;
-+    private final co.aikar.timings.Timing timing;
 +    // Paper end - configurable behavior tick rate and timings
  
      public Behavior(Map<MemoryModuleType<?>, MemoryStatus> requiredMemoryState) {
@@ -53,7 +33,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            key = key.substring(lastSeparator + 1);
 +        }
 +        this.configKey = key.toLowerCase(java.util.Locale.ROOT);
-+        this.timing = co.aikar.timings.MinecraftTimings.getBehaviorTimings(configKey);
 +        // Paper end - configurable behavior tick rate and timings
      }
  
@@ -71,27 +50,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (this.hasRequiredMemories(entity) && this.checkExtraStartConditions(world, entity)) {
              this.status = Behavior.Status.RUNNING;
              int i = this.minDuration + world.getRandom().nextInt(this.maxDuration + 1 - this.minDuration);
-             this.endTimestamp = time + (long)i;
-+            this.timing.startTiming(); // Paper - behavior timings
-             this.start(world, entity, time);
-+            this.timing.stopTiming(); // Paper - behavior timings
-             return true;
-         } else {
-             return false;
-@@ -0,0 +0,0 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
- 
-     @Override
-     public final void tickOrStop(ServerLevel world, E entity, long time) {
-+        this.timing.startTiming(); // Paper - behavior timings
-         if (!this.timedOut(time) && this.canStillUse(world, entity, time)) {
-             this.tick(world, entity, time);
-         } else {
-             this.doStop(world, entity, time);
-         }
-+        this.timing.stopTiming(); // Paper - behavior timings
-     }
- 
-     protected void tick(ServerLevel world, E entity, long time) {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
@@ -102,7 +60,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private long timeToTick;
 +    // Paper start - configurable sensor tick rate and timings
 +    private final String configKey;
-+    private final co.aikar.timings.Timing timing;
 +    // Paper end
  
      public Sensor(int senseInterval) {
@@ -113,7 +70,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            key = key.substring(lastSeparator + 1);
 +        }
 +        this.configKey = key.toLowerCase(java.util.Locale.ROOT);
-+        this.timing = co.aikar.timings.MinecraftTimings.getSensorTimings(configKey, senseInterval);
 +        // Paper end
          this.scanRate = senseInterval;
          this.timeToTick = (long)RANDOM.nextInt(senseInterval);
@@ -125,11 +81,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            this.timeToTick = (long)this.scanRate;
 +            // Paper start - configurable sensor tick rate and timings
 +            this.timeToTick = java.util.Objects.requireNonNullElse(world.paperConfig().tickRates.sensor.get(entity.getType(), this.configKey), this.scanRate);
-+            this.timing.startTiming();
              this.updateTargetingConditionRanges(entity);
 +            // Paper end
              this.doTick(world, entity);
-+            this.timing.stopTiming(); // Paper - sensor timings
          }
      }
- 

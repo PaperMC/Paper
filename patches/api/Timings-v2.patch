@@ -94,7 +94,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            TimingsManager.HISTORY.add(new TimingHistory());
 +            TimingsManager.resetTimings();
 +        }
-+        Bukkit.getUnsafe().reportTimings();
++        //Bukkit.getUnsafe().reportTimings();
 +    }
 +
 +    boolean isViolated() {
@@ -1426,14 +1426,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     * @param enabled Should timings be reported
 +     */
 +    public static void setTimingsEnabled(boolean enabled) {
-+        timingsEnabled = enabled;
-+        warnAboutDeprecationOnEnable();
-+        reset();
-+    }
-+
-+    private static void warnAboutDeprecationOnEnable() {
-+        if (timingsEnabled && !warnedAboutDeprecationOnEnable) {
-+            Bukkit.getLogger().warning(PlainTextComponentSerializer.plainText().serialize(deprecationMessage()));
++        if (enabled && !warnedAboutDeprecationOnEnable) {
++            Bukkit.getLogger().severe(PlainTextComponentSerializer.plainText().serialize(deprecationMessage()));
 +            warnedAboutDeprecationOnEnable = true;
 +        }
 +    }
@@ -1441,7 +1435,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public static Component deprecationMessage() {
 +        return Component.text()
 +            .color(TextColor.color(0xffc93a))
-+            .append(Component.text("[!] The timings profiler has been enabled but has been scheduled for removal from Paper in the future."))
++            .append(Component.text("[!] The timings profiler is in no-op mode and will be fully removed in a later update."))
 +            .append(Component.newline())
 +            .append(Component.text("    We recommend migrating to the spark profiler."))
 +            .append(Component.newline())
@@ -1674,8 +1668,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        if (!testPermission(sender)) {
 +            return true;
 +        }
-+        if (false) {
++        if (true) {
 +            sender.sendMessage(Timings.deprecationMessage());
++            return true;
 +        }
 +        if (args.length < 1) {
 +            sender.sendMessage(text("Usage: " + this.usageMessage, NamedTextColor.RED));
@@ -2906,35 +2901,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          /**
           * Sends the component to the player
           *
-diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/UnsafeValues.java
-+++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -0,0 +0,0 @@ public interface UnsafeValues {
-     net.kyori.adventure.text.Component resolveWithContext(net.kyori.adventure.text.Component component, org.bukkit.command.CommandSender context, org.bukkit.entity.Entity scoreboardSubject, boolean bypassPermissions) throws java.io.IOException;
-     // Paper end
- 
-+    /**
-+     * @deprecated Timings will be removed in the future
-+     */
-+    @Deprecated(forRemoval = true)
-+    void reportTimings(); // Paper
-     Material toLegacy(Material material);
- 
-     Material fromLegacy(Material material);
-@@ -0,0 +0,0 @@ public interface UnsafeValues {
-         return !Bukkit.getUnsafe().isSupportedApiVersion(plugin.getDescription().getAPIVersion());
-     }
-     // Paper end
-+
-+    // Paper start
-+    /**
-+     * @deprecated Timings will be removed in the future
-+     */
-+    @Deprecated(forRemoval = true)
-+    String getTimingsServerName();
-+    // Paper end
- }
 diff --git a/src/main/java/org/bukkit/command/BufferedCommandSender.java b/src/main/java/org/bukkit/command/BufferedCommandSender.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -3560,8 +3526,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      /**
 @@ -0,0 +0,0 @@ public final class SimplePluginManager implements PluginManager {
+      *
       * @param use True if per event timing code should be used
       */
++    @Deprecated(forRemoval = true)
      public void useTimings(boolean use) {
 -        useTimings = use;
 +        co.aikar.timings.Timings.setTimingsEnabled(use); // Paper

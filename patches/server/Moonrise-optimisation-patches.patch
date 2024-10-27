@@ -23390,8 +23390,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -0,0 +0,0 @@ import org.bukkit.event.server.ServerLoadEvent;
+ // CraftBukkit end
  
- import co.aikar.timings.MinecraftTimings; // Paper
  
 -public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements ServerInfo, ChunkIOErrorReporter, CommandSource {
 +public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements ServerInfo, ChunkIOErrorReporter, CommandSource, ca.spottedleaf.moonrise.patches.chunk_system.server.ChunkSystemMinecraftServer { // Paper - rewrite chunk system
@@ -26436,12 +26436,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            ServerChunkCache.MainThreadExecutor chunkproviderserver_b = this.mainThreadProcessor;
 -
 -            Objects.requireNonNull(completablefuture);
--            if (!completablefuture.isDone()) { // Paper
--                com.destroystokyo.paper.io.SyncLoadFinder.logSyncLoad(this.level, x, z); // Paper - Add debug for sync chunk loads
--                this.level.timings.syncChunkLoad.startTiming(); // Paper
 -            chunkproviderserver_b.managedBlock(completablefuture::isDone);
--                this.level.timings.syncChunkLoad.stopTiming(); // Paper
--            } // Paper
+-            // com.destroystokyo.paper.io.SyncLoadFinder.logSyncLoad(this.level, x, z); // Paper - Add debug for sync chunk loads
 -            ChunkResult<ChunkAccess> chunkresult = (ChunkResult) completablefuture.join();
 -            ChunkAccess ichunkaccess1 = (ChunkAccess) chunkresult.orElse(null); // CraftBukkit - decompile error
 -
@@ -26622,9 +26618,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public void save(boolean flush) {
 -        this.runDistanceManagerUpdates();
 +        // Paper - rewrite chunk system
-         try (co.aikar.timings.Timing timed = level.timings.chunkSaveData.startTiming()) { // Paper - Timings
          this.chunkMap.saveAllChunks(flush);
-         } // Paper - Timings
+     }
+ 
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
      }
  
@@ -26647,13 +26643,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          gameprofilerfiller.push("purge");
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
+         this.runDistanceManagerUpdates();
          gameprofilerfiller.popPush("chunks");
          if (tickChunks) {
-             this.level.timings.chunks.startTiming(); // Paper - timings
 +            ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getPlayerChunkLoader().tick(); // Paper - rewrite chunk system
              this.tickChunks();
-             this.level.timings.chunks.stopTiming(); // Paper - timings
              this.chunkMap.tick();
+         }
 @@ -0,0 +0,0 @@ public class ServerChunkCache extends ChunkSource {
                      gameprofilerfiller.push("filteringTickingChunks");
                      this.collectTickingChunks(list);
@@ -27290,8 +27286,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
          }
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+ 
          gameprofilerfiller.popPush("tickBlocks");
-         timings.chunkTicksBlocks.startTiming(); // Paper
          if (randomTickSpeed > 0) {
 -            LevelChunkSection[] achunksection = chunk.getSections();
 -
@@ -27325,7 +27321,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            this.optimiseRandomTick(chunk, randomTickSpeed); // Paper - optimise random ticking
          }
  
-         timings.chunkTicksBlocks.stopTiming(); // Paper
+         gameprofilerfiller.pop();
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
          if (fluid1.is(fluid)) {
              fluid1.tick(this, pos, iblockdata);
@@ -27363,18 +27359,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          if (!savingDisabled) {
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+                 progressListener.progressStage(Component.translatable("menu.savingChunks"));
              }
  
-                 timings.worldSaveChunks.startTiming(); // Paper
 -            chunkproviderserver.save(flush);
-+            if (!close) { chunkproviderserver.save(flush); } // Paper - add close param
-                 timings.worldSaveChunks.stopTiming(); // Paper
-             }// Paper
 -            if (flush) {
 -                this.entityManager.saveAll();
 -            } else {
 -                this.entityManager.autoSave();
 -            }
++            if (!close) { chunkproviderserver.save(flush); } // Paper - add close param
 +            // Paper - rewrite chunk system
  
          }
@@ -31791,7 +31785,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            org.bukkit.craftbukkit.event.CraftEventFactory.callEntitiesLoadEvent(this.level, this.chunkPos, ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(this.locX, this.locZ).getEntityChunk().getAllEntities()); // Paper - rewrite chunk system
  
              if (this.needsDecoration) {
-                 try (co.aikar.timings.Timing ignored = this.level.timings.chunkLoadPopulate.startTiming()) { // Paper
+                 this.needsDecoration = false;
 @@ -0,0 +0,0 @@ public class LevelChunk extends ChunkAccess {
      }
  
