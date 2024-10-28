@@ -64,7 +64,7 @@ public interface Damageable extends Entity {
      * Sets the entity's absorption amount.
      * <p>
      * Note: The amount is capped to the value of
-     * {@link Attribute#GENERIC_MAX_ABSORPTION}. The effect of this method on
+     * {@link Attribute#MAX_ABSORPTION}. The effect of this method on
      * that attribute is currently unspecified and subject to change.
      *
      * @param amount new absorption amount from 0
@@ -77,7 +77,7 @@ public interface Damageable extends Entity {
      * Gets the maximum health this entity has.
      *
      * @return Maximum health
-     * @deprecated use {@link Attribute#GENERIC_MAX_HEALTH}.
+     * @deprecated use {@link Attribute#MAX_HEALTH}.
      */
     @Deprecated
     double getMaxHealth();
@@ -92,14 +92,14 @@ public interface Damageable extends Entity {
      * {@link Wither}, etc...} will have their bar scaled accordingly.
      *
      * @param health amount of health to set the maximum to
-     * @deprecated use {@link Attribute#GENERIC_MAX_HEALTH}.
+     * @deprecated use {@link Attribute#MAX_HEALTH}.
      */
     @Deprecated
     void setMaxHealth(double health);
 
     /**
      * Resets the max health to the original amount.
-     * @deprecated use {@link Attribute#GENERIC_MAX_HEALTH}.
+     * @deprecated use {@link Attribute#MAX_HEALTH}.
      */
     @Deprecated
     void resetMaxHealth();
