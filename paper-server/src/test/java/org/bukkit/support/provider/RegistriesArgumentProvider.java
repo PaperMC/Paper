@@ -6,6 +6,7 @@ import java.util.stream.Stream;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.effect.MobEffectList;
+import net.minecraft.world.entity.ai.attributes.AttributeBase;
 import net.minecraft.world.entity.animal.CatVariant;
 import net.minecraft.world.entity.animal.FrogVariant;
 import net.minecraft.world.entity.animal.WolfVariant;
@@ -18,11 +19,13 @@ import net.minecraft.world.level.saveddata.maps.MapDecorationType;
 import org.bukkit.GameEvent;
 import org.bukkit.JukeboxSong;
 import org.bukkit.MusicInstrument;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.block.BlockType;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.craftbukkit.CraftGameEvent;
 import org.bukkit.craftbukkit.CraftJukeboxSong;
 import org.bukkit.craftbukkit.CraftMusicInstrument;
+import org.bukkit.craftbukkit.attribute.CraftAttribute;
 import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.block.banner.CraftPatternType;
 import org.bukkit.craftbukkit.damage.CraftDamageType;
@@ -63,6 +66,7 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
 
     static {
         // Order: Bukkit class, Minecraft Registry key, CraftBukkit class, Minecraft class
+        register(Attribute.class, Registries.ATTRIBUTE, CraftAttribute.class, AttributeBase.class);
         register(Enchantment.class, Registries.ENCHANTMENT, CraftEnchantment.class, net.minecraft.world.item.enchantment.Enchantment.class);
         register(GameEvent.class, Registries.GAME_EVENT, CraftGameEvent.class, net.minecraft.world.level.gameevent.GameEvent.class);
         register(MusicInstrument.class, Registries.INSTRUMENT, CraftMusicInstrument.class, Instrument.class);

@@ -51,7 +51,6 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftFeatureFlag;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.attribute.CraftAttribute;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.damage.CraftDamageEffect;
 import org.bukkit.craftbukkit.damage.CraftDamageSourceBuilder;
@@ -368,7 +367,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public String getTranslationKey(final Attribute attribute) {
-        return CraftAttribute.bukkitToMinecraft(attribute).getDescriptionId();
+        return attribute.getTranslationKey();
     }
 
     @Override

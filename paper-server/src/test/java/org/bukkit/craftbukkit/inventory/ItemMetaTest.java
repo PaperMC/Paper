@@ -440,18 +440,18 @@ public class ItemMetaTest {
     public void testAttributeModifiers() {
         UUID sameUUID = UUID.randomUUID();
         ItemMeta itemMeta = Bukkit.getItemFactory().getItemMeta(Material.DIAMOND_PICKAXE);
-        itemMeta.addAttributeModifier(Attribute.GENERIC_ATTACK_SPEED, new AttributeModifier(sameUUID, "Test Modifier", 10, AttributeModifier.Operation.ADD_NUMBER));
+        itemMeta.addAttributeModifier(Attribute.ATTACK_SPEED, new AttributeModifier(sameUUID, "Test Modifier", 10, AttributeModifier.Operation.ADD_NUMBER));
 
         ItemMeta equalMeta = Bukkit.getItemFactory().getItemMeta(Material.DIAMOND_PICKAXE);
-        equalMeta.addAttributeModifier(Attribute.GENERIC_ATTACK_SPEED, new AttributeModifier(sameUUID, "Test Modifier", 10, AttributeModifier.Operation.ADD_NUMBER));
+        equalMeta.addAttributeModifier(Attribute.ATTACK_SPEED, new AttributeModifier(sameUUID, "Test Modifier", 10, AttributeModifier.Operation.ADD_NUMBER));
 
         assertThat(itemMeta.equals(equalMeta), is(true));
 
         ItemMeta itemMeta2 = Bukkit.getItemFactory().getItemMeta(Material.DIAMOND_PICKAXE);
-        itemMeta2.addAttributeModifier(Attribute.GENERIC_ATTACK_SPEED, new AttributeModifier(sameUUID, "Test Modifier", 10, AttributeModifier.Operation.ADD_NUMBER));
+        itemMeta2.addAttributeModifier(Attribute.ATTACK_SPEED, new AttributeModifier(sameUUID, "Test Modifier", 10, AttributeModifier.Operation.ADD_NUMBER));
 
         ItemMeta notEqualMeta2 = Bukkit.getItemFactory().getItemMeta(Material.DIAMOND_PICKAXE);
-        notEqualMeta2.addAttributeModifier(Attribute.GENERIC_ATTACK_SPEED, new AttributeModifier(sameUUID, "Test Modifier", 11, AttributeModifier.Operation.ADD_NUMBER));
+        notEqualMeta2.addAttributeModifier(Attribute.ATTACK_SPEED, new AttributeModifier(sameUUID, "Test Modifier", 11, AttributeModifier.Operation.ADD_NUMBER));
 
         assertThat(itemMeta2.equals(notEqualMeta2), is(false));
     }

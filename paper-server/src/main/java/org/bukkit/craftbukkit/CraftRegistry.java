@@ -22,6 +22,7 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
 import org.bukkit.block.BlockType;
 import org.bukkit.block.banner.PatternType;
+import org.bukkit.craftbukkit.attribute.CraftAttribute;
 import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.block.banner.CraftPatternType;
 import org.bukkit.craftbukkit.damage.CraftDamageType;
@@ -131,6 +132,9 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
      * @return the bukkit registry of the provided class
      */
     public static <B extends Keyed> Registry<?> createRegistry(Class<? super B> bukkitClass, IRegistryCustom registryHolder) {
+        if (bukkitClass == Attribute.class) {
+            return new CraftRegistry<>(Attribute.class, registryHolder.lookupOrThrow(Registries.ATTRIBUTE), CraftAttribute::new, FieldRename.ATTRIBUTE_RENAME);
+        }
         if (bukkitClass == Enchantment.class) {
             return new CraftRegistry<>(Enchantment.class, registryHolder.lookupOrThrow(Registries.ENCHANTMENT), CraftEnchantment::new, FieldRename.ENCHANTMENT_RENAME);
         }
@@ -213,10 +217,6 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
 
             if (bClass == Particle.class) {
                 return bukkit.get(FieldRename.PARTICLE_TYPE_RENAME.apply(namespacedKey, apiVersion));
-            }
-
-            if (bClass == Attribute.class) {
-                return bukkit.get(FieldRename.ATTRIBUTE_RENAME.apply(namespacedKey, apiVersion));
             }
         }
 

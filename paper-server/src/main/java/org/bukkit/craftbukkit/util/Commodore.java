@@ -87,7 +87,8 @@ public class Commodore {
             "org/bukkit/entity/Frog$Variant", "NOP",
             "org/bukkit/entity/Cat$Type", "NOP",
             "org/bukkit/map/MapCursor$Type", "NOP",
-            "org/bukkit/block/banner/PatternType", "NOP"
+            "org/bukkit/block/banner/PatternType", "NOP",
+            "org/bukkit/attribute/Attribute", "NOP"
     );
 
     private final List<Reroute> reroutes = new ArrayList<>(); // only for testing
