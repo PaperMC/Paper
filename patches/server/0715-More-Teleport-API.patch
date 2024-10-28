@@ -112,24 +112,18 @@ index 4e6afa243d6108cb946a8a7cf96c4036a3c2ac0c..a314e401ee8a306dc12a2d98a3d400ae
      private final org.bukkit.entity.Entity.Spigot spigot = new org.bukkit.entity.Entity.Spigot()
      {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index fe0c355f8203c9bfa30d2ec48392a5a1a3d616ae..baae7a129853a296273b7f295f58cbb99187da22 100644
+index fe0c355f8203c9bfa30d2ec48392a5a1a3d616ae..4c4b8c14b41816173466232113252ef1ba2bb2ee 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1303,13 +1303,102 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1303,13 +1303,96 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      @Override
      public void setRotation(float yaw, float pitch) {
 -        throw new UnsupportedOperationException("Cannot set rotation of players. Consider teleporting instead.");
 +        // Paper start - Teleport API
-+        Location targetLocation = this.getEyeLocation();
-+        targetLocation.setYaw(yaw);
-+        targetLocation.setPitch(pitch);
-+
-+        org.bukkit.util.Vector direction = targetLocation.getDirection();
-+        direction.multiply(9999999); // We need to move the target block.. FAR out
-+        targetLocation.add(direction);
-+        this.lookAt(targetLocation, io.papermc.paper.entity.LookAnchor.EYES);
-+        // Paper end
++        if (this.getHandle().connection == null) return;
++        this.getHandle().forceSetRotation(yaw, pitch);
++        // Paper end - Teleportation API
      }
  
      @Override
@@ -219,7 +213,7 @@ index fe0c355f8203c9bfa30d2ec48392a5a1a3d616ae..baae7a129853a296273b7f295f58cbb9
          location.checkFinite();
  
          ServerPlayer entity = this.getHandle();
-@@ -1322,7 +1411,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1322,7 +1405,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
              return false;
          }
  
@@ -228,7 +222,7 @@ index fe0c355f8203c9bfa30d2ec48392a5a1a3d616ae..baae7a129853a296273b7f295f58cbb9
              return false;
          }
  
-@@ -1331,7 +1420,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1331,7 +1414,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          // To = Players new Location if Teleport is Successful
          Location to = location;
          // Create & Call the Teleport Event.
@@ -237,7 +231,7 @@ index fe0c355f8203c9bfa30d2ec48392a5a1a3d616ae..baae7a129853a296273b7f295f58cbb9
          this.server.getPluginManager().callEvent(event);
  
          // Return False to inform the Plugin that the Teleport was unsuccessful/cancelled.
-@@ -1340,7 +1429,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1340,7 +1423,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
  
          // If this player is riding another entity, we must dismount before teleporting.
@@ -246,7 +240,7 @@ index fe0c355f8203c9bfa30d2ec48392a5a1a3d616ae..baae7a129853a296273b7f295f58cbb9
  
          // SPIGOT-5509: Wakeup, similar to riding
          if (this.isSleeping()) {
-@@ -1356,13 +1445,21 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1356,13 +1439,21 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          ServerLevel toWorld = ((CraftWorld) to.getWorld()).getHandle();
  
          // Close any foreign inventory
