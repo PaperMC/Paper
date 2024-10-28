@@ -15,13 +15,16 @@ import net.minecraft.world.entity.npc.VillagerType;
 import net.minecraft.world.inventory.Containers;
 import net.minecraft.world.item.Instrument;
 import net.minecraft.world.level.block.entity.EnumBannerPatternType;
+import net.minecraft.world.level.material.FluidType;
 import net.minecraft.world.level.saveddata.maps.MapDecorationType;
+import org.bukkit.Fluid;
 import org.bukkit.GameEvent;
 import org.bukkit.JukeboxSong;
 import org.bukkit.MusicInstrument;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.BlockType;
 import org.bukkit.block.banner.PatternType;
+import org.bukkit.craftbukkit.CraftFluid;
 import org.bukkit.craftbukkit.CraftGameEvent;
 import org.bukkit.craftbukkit.CraftJukeboxSong;
 import org.bukkit.craftbukkit.CraftMusicInstrument;
@@ -68,6 +71,7 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         // Order: Bukkit class, Minecraft Registry key, CraftBukkit class, Minecraft class
         register(Attribute.class, Registries.ATTRIBUTE, CraftAttribute.class, AttributeBase.class);
         register(Enchantment.class, Registries.ENCHANTMENT, CraftEnchantment.class, net.minecraft.world.item.enchantment.Enchantment.class);
+        register(Fluid.class, Registries.FLUID, CraftFluid.class, FluidType.class);
         register(GameEvent.class, Registries.GAME_EVENT, CraftGameEvent.class, net.minecraft.world.level.gameevent.GameEvent.class);
         register(MusicInstrument.class, Registries.INSTRUMENT, CraftMusicInstrument.class, Instrument.class);
         register(MenuType.class, Registries.MENU, CraftMenuType.class, Containers.class);
