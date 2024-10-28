@@ -50,7 +50,7 @@ public class EntityKnockbackEvent extends EntityEvent implements Cancellable {
      * Gets the raw force of the knockback. <br>
      * This value is based on factors such as the {@link Enchantment#KNOCKBACK}
      * level of an attacker and the
-     * {@link Attribute#GENERIC_KNOCKBACK_RESISTANCE} of the entity.
+     * {@link Attribute#KNOCKBACK_RESISTANCE} of the entity.
      *
      * @return the knockback force
      */
