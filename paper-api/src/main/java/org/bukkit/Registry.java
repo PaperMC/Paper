@@ -93,7 +93,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see Attribute
      */
-    Registry<Attribute> ATTRIBUTE = new SimpleRegistry<>(Attribute.class);
+    Registry<Attribute> ATTRIBUTE = Objects.requireNonNull(Bukkit.getRegistry(Attribute.class), "No registry present for Attribute. This is a bug.");
     /**
      * Server banner patterns.
      *

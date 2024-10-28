@@ -98,6 +98,7 @@ public interface UnsafeValues {
 
     String getTranslationKey(ItemStack itemStack);
 
+    @Deprecated(since = "1.21.3", forRemoval = true)
     String getTranslationKey(Attribute attribute);
 
     @Nullable
