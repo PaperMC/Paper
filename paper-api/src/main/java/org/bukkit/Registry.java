@@ -323,7 +323,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see Fluid
      */
-    Registry<Fluid> FLUID = new SimpleRegistry<>(Fluid.class);
+    Registry<Fluid> FLUID = Objects.requireNonNull(Bukkit.getRegistry(Fluid.class), "No registry present for Fluid. This is a bug.");
     /**
      * Frog variants.
      *
