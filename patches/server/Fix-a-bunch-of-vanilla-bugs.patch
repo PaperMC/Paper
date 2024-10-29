@@ -28,9 +28,6 @@ https://bugs.mojang.com/browse/MC-259571
 https://bugs.mojang.com/browse/MC-262422
   Fix lightning being able to hit spectators
 
-https://bugs.mojang.com/browse/MC-224454
-  Fix mobs attempting to pathfind through azalea blocks
-
 https://bugs.mojang.com/browse/MC-263999
   Fix mobs breaking doors not spawning block break particles
 
@@ -60,6 +57,7 @@ https://bugs.mojang.com/browse/MC-273635
 
 == AT ==
 public net/minecraft/world/entity/Mob leashInfoTag
+public net/minecraft/server/level/ChunkMap anyPlayerCloseEnoughForSpawning(Lnet/minecraft/world/level/ChunkPos;)Z
 
 Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
 Co-authored-by: Spottedleaf <Spottedleaf@users.noreply.github.com>
@@ -90,19 +88,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }
          }
  
-diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/level/ChunkMap.java
-+++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
- 
-     }
- 
--    boolean anyPlayerCloseEnoughForSpawning(ChunkPos pos) {
-+    public boolean anyPlayerCloseEnoughForSpawning(ChunkPos pos) { // Paper - public
-         // Spigot start
-         return this.anyPlayerCloseEnoughForSpawning(pos, false);
-     }
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
@@ -246,7 +231,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Nullable
 +    @Override
 +    public net.minecraft.world.entity.item.ItemEntity spawnAtLocation(ServerLevel serverLevel, ItemStack stack) {
-+        return this.spawnAtLocation(serverLevel, stack, getDirection().equals(Direction.DOWN) ? -0.6F : 0.0F);
++        return this.spawnAtLocation(serverLevel, stack, this.getDirection() == Direction.DOWN ? -0.6F : 0.0F);
 +    }
 +    // Paper end
 +
@@ -345,44 +330,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    public void reset() {
 +    public void reset(TrialSpawner logic) { // Paper - Fix TrialSpawner forgets assigned mob; MC-273635
          this.currentMobs.clear();
-         this.nextSpawnData = Optional.empty();
--        this.resetStatistics();
-+        this.resetStatistics(logic);
-     }
- 
--    public void resetStatistics() {
-+    public void resetStatistics(TrialSpawner logic) { // Paper - Fix TrialSpawner forgets assigned mob; MC-273635
-         this.detectedPlayers.clear();
-         this.totalMobsSpawned = 0;
-         this.nextMobSpawnsAt = 0L;
-         this.cooldownEndsAt = 0L;
-+        this.nextSpawnData = Optional.empty();
+-        this.nextSpawnData = Optional.empty();
 +        if (!logic.getConfig().spawnPotentialsDefinition().isEmpty()) this.nextSpawnData = Optional.empty(); // Paper - Fix TrialSpawner forgets assigned mob; MC-273635
+         this.resetStatistics();
      }
  
-     public boolean hasMobToSpawn(TrialSpawner logic, RandomSource random) {
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerState.java b/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerState.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerState.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerState.java
-@@ -0,0 +0,0 @@ public enum TrialSpawnerState implements StringRepresentable {
-             case INACTIVE -> trialSpawnerData.getOrCreateDisplayEntity(logic, world, WAITING_FOR_PLAYERS) == null ? this : WAITING_FOR_PLAYERS;
-             case WAITING_FOR_PLAYERS -> {
-                 if (!logic.canSpawnInLevel(world)) {
--                    trialSpawnerData.resetStatistics();
-+                    trialSpawnerData.resetStatistics(logic); // Paper - Fix TrialSpawner forgets assigned mob; MC-273635
-                     yield this;
-                 } else if (!trialSpawnerData.hasMobToSpawn(logic, world.random)) {
-                     yield INACTIVE;
-@@ -0,0 +0,0 @@ public enum TrialSpawnerState implements StringRepresentable {
-             }
-             case ACTIVE -> {
-                 if (!logic.canSpawnInLevel(world)) {
--                    trialSpawnerData.resetStatistics();
-+                    trialSpawnerData.resetStatistics(logic); // Paper - Fix TrialSpawner forgets assigned mob; MC-273635
-                     yield WAITING_FOR_PLAYERS;
-                 } else if (!trialSpawnerData.hasMobToSpawn(logic, world.random)) {
-                     yield INACTIVE;
 @@ -0,0 +0,0 @@ public enum TrialSpawnerState implements StringRepresentable {
                      yield ACTIVE;
                  } else if (trialSpawnerData.isCooldownFinished(world)) {
@@ -392,3 +348,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      yield WAITING_FOR_PLAYERS;
                  } else {
                      yield this;
+diff --git a/src/main/java/net/minecraft/world/level/portal/TeleportTransition.java b/src/main/java/net/minecraft/world/level/portal/TeleportTransition.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/portal/TeleportTransition.java
++++ b/src/main/java/net/minecraft/world/level/portal/TeleportTransition.java
+@@ -0,0 +0,0 @@ public record TeleportTransition(ServerLevel newLevel, Vec3 position, Vec3 delta
+     }
+ 
+     public TeleportTransition(ServerLevel worldserver, Entity entity, TeleportTransition.PostTeleportTransition teleporttransition_a, PlayerTeleportEvent.TeleportCause cause) {
+-        this(worldserver, findAdjustedSharedSpawnPos(worldserver, entity), Vec3.ZERO, 0.0F, 0.0F, false, false, Set.of(), teleporttransition_a, cause);
++        this(worldserver, findAdjustedSharedSpawnPos(worldserver, entity), Vec3.ZERO, worldserver.getSharedSpawnAngle(), 0.0F, false, false, Set.of(), teleporttransition_a, cause); // Paper - MC-200092 - fix first spawn pos yaw being ignored
+         // CraftBukkit end
+     }
+ 
+@@ -0,0 +0,0 @@ public record TeleportTransition(ServerLevel newLevel, Vec3 position, Vec3 delta
+     }
+ 
+     public static TeleportTransition missingRespawnBlock(ServerLevel world, Entity entity, TeleportTransition.PostTeleportTransition postDimensionTransition) {
+-        return new TeleportTransition(world, findAdjustedSharedSpawnPos(world, entity), Vec3.ZERO, 0.0F, 0.0F, true, false, Set.of(), postDimensionTransition);
++        return new TeleportTransition(world, findAdjustedSharedSpawnPos(world, entity), Vec3.ZERO, world.getSharedSpawnAngle(), 0.0F, true, false, Set.of(), postDimensionTransition); // Paper - MC-200092 - fix spawn pos yaw being ignored
+     }
+ 
+     private static Vec3 findAdjustedSharedSpawnPos(ServerLevel world, Entity entity) {
