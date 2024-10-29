@@ -17,24 +17,16 @@ outside of the buffer zone is owned. Then, the plugins may use
 the schedulers depending on the result of the ownership check.
 
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
-index d2dee700f2c5cc7d6a272e751a933901fe7a55b6..0cc1545cec32f7208d497c4553eecbd5d1749dbc 100644
+index d2dee700f2c5cc7d6a272e751a933901fe7a55b6..834b85f24df023642f8abf7213fe578ac8c17a3e 100644
 --- a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
-@@ -263,6 +263,30 @@ class PaperPluginInstanceManager {
+@@ -263,6 +263,22 @@ class PaperPluginInstanceManager {
                  + pluginName + " (Is it up to date?)", ex, plugin); // Paper
          }
  
 +        // Paper start - Folia schedulers
 +        try {
 +            this.server.getGlobalRegionScheduler().cancelTasks(plugin);
-+        } catch (Throwable ex) {
-+            this.handlePluginException("Error occurred (in the plugin loader) while cancelling global tasks for "
-+                + pluginName + " (Is it up to date?)", ex, plugin); // Paper
-+        }
-+
-+        try {
-+            ((io.papermc.paper.threadedregions.scheduler.FallbackRegionScheduler) this.server.getRegionScheduler())
-+                .getBackingScheduler().cancelTasks(plugin);
 +        } catch (Throwable ex) {
 +            this.handlePluginException("Error occurred (in the plugin loader) while cancelling global tasks for "
 +                + pluginName + " (Is it up to date?)", ex, plugin); // Paper
@@ -240,10 +232,10 @@ index 0000000000000000000000000000000000000000..c03608fec96b51e1867f43d8f42e5aef
 +}
 diff --git a/src/main/java/io/papermc/paper/threadedregions/scheduler/FallbackRegionScheduler.java b/src/main/java/io/papermc/paper/threadedregions/scheduler/FallbackRegionScheduler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..93b4d55ac10007dde7f97f8d529a40b8a53a0b10
+index 0000000000000000000000000000000000000000..94056d61a304ee012ae1828a33412516095f996f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/threadedregions/scheduler/FallbackRegionScheduler.java
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,30 @@
 +package io.papermc.paper.threadedregions.scheduler;
 +
 +import org.bukkit.World;
@@ -254,34 +246,24 @@ index 0000000000000000000000000000000000000000..93b4d55ac10007dde7f97f8d529a40b8
 +
 +public final class FallbackRegionScheduler implements RegionScheduler {
 +
-+    private final FoliaGlobalRegionScheduler scheduler;
-+
-+    public FallbackRegionScheduler() {
-+        this.scheduler = new FoliaGlobalRegionScheduler();
-+    }
-+
 +    @Override
 +    public void execute(@NotNull final Plugin plugin, @NotNull final World world, final int chunkX, final int chunkZ, @NotNull final Runnable run) {
-+        this.scheduler.execute(plugin, run);
++        plugin.getServer().getGlobalRegionScheduler().execute(plugin, run);
 +    }
 +
 +    @Override
 +    public @NotNull ScheduledTask run(@NotNull final Plugin plugin, @NotNull final World world, final int chunkX, final int chunkZ, @NotNull final Consumer<ScheduledTask> task) {
-+        return this.scheduler.run(plugin, task);
++        return plugin.getServer().getGlobalRegionScheduler().run(plugin, task);
 +    }
 +
 +    @Override
 +    public @NotNull ScheduledTask runDelayed(@NotNull final Plugin plugin, @NotNull final World world, final int chunkX, final int chunkZ, @NotNull final Consumer<ScheduledTask> task, final long delayTicks) {
-+        return this.scheduler.runDelayed(plugin, task, delayTicks);
++        return plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, task, delayTicks);
 +    }
 +
 +    @Override
 +    public @NotNull ScheduledTask runAtFixedRate(@NotNull final Plugin plugin, @NotNull final World world, final int chunkX, final int chunkZ, @NotNull final Consumer<ScheduledTask> task, final long initialDelayTicks, final long periodTicks) {
-+        return this.scheduler.runAtFixedRate(plugin, task, initialDelayTicks, periodTicks);
-+    }
-+
-+    public FoliaGlobalRegionScheduler getBackingScheduler() {
-+        return this.scheduler;
++        return plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(plugin, task, initialDelayTicks, periodTicks);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/threadedregions/scheduler/FoliaAsyncScheduler.java b/src/main/java/io/papermc/paper/threadedregions/scheduler/FoliaAsyncScheduler.java
@@ -1166,24 +1148,15 @@ index 0000000000000000000000000000000000000000..d306f911757a4d556c82c0070d4837db
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 8f7a808b0c89953a7f2932e68e2c85f9330469f2..9b1d491443600fa3a5f91e36742eef58a03e4ed5 100644
+index 8f7a808b0c89953a7f2932e68e2c85f9330469f2..be188079f12b3f7b394ae91db62cc17b1d0f4e79 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1498,6 +1498,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-                     this.autoSave();
-                 }
- 
-+                ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) Bukkit.getGlobalRegionScheduler()).tick(); // Folia scheduler API
-                 this.server.getScheduler().mainThreadHeartbeat(); // CraftBukkit
-                 this.tickConnection();
-                 return;
-@@ -1625,6 +1626,21 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1625,6 +1625,20 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              entityplayer.connection.suspendFlushing();
          });
          this.server.getScheduler().mainThreadHeartbeat(); // CraftBukkit
 +        // Paper start - Folia scheduler API
 +        ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) Bukkit.getGlobalRegionScheduler()).tick();
-+        ((io.papermc.paper.threadedregions.scheduler.FallbackRegionScheduler) Bukkit.getRegionScheduler()).getBackingScheduler().tick();
 +        getAllLevels().forEach(level -> {
 +            for (final Entity entity : level.getEntities().getAll()) {
 +                if (entity.isRemoved()) {
