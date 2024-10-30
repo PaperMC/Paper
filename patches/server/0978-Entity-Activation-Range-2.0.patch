@@ -17,10 +17,10 @@ Adds villagers as separate config
 public net.minecraft.world.entity.Entity isInsidePortal
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index ce148cf5930cdcf0163c7f6416cbbd89e4d22720..75c388a5c9de26f0053015619e6c19bcff219478 100644
+index ce148cf5930cdcf0163c7f6416cbbd89e4d22720..cd00b534e4c527e0b4a5ad78cde87c22c49b4c33 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -962,12 +962,13 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -962,11 +962,11 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
  
      public void tickNonPassenger(Entity entity) {
          // Spigot start
@@ -32,14 +32,13 @@ index ce148cf5930cdcf0163c7f6416cbbd89e4d22720..75c388a5c9de26f0053015619e6c19bc
 -        }
 +        }*/ // Paper - comment out EAR 2
          // Spigot end
-+        final boolean isActive = org.spigotmc.ActivationRange.checkIfActive(entity); // Paper - EAR 2
          entity.setOldPosAndRot();
          ProfilerFiller gameprofilerfiller = Profiler.get();
- 
-@@ -976,20 +977,22 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -976,20 +976,23 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
              return BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString();
          });
          gameprofilerfiller.incrementCounter("tickNonPassenger");
++        final boolean isActive = org.spigotmc.ActivationRange.checkIfActive(entity); // Paper - EAR 2
 +        if (isActive) { // Paper - EAR 2
          entity.tick();
          entity.postTick(); // CraftBukkit
@@ -350,7 +349,7 @@ index 46afba838cf12eeb1bbccaa260131a76f090364b..e1c9a961064887070b29207efd7af478
                              }
                          }
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index f8387277d915460d755bdd35198d2547d1a49bde..6ffe86aa887ebf96f21114a468e16376c2449911 100644
+index 05ad15fc40ccb7feed5c51ad0ad0a98bd0d02af6..133bcf639a45bd7fa1a2d02410ea3e8568265007 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
 @@ -1,26 +1,35 @@
@@ -651,11 +650,11 @@ index f8387277d915460d755bdd35198d2547d1a49bde..6ffe86aa887ebf96f21114a468e16376
 +            // Paper start
 +            if (entity instanceof Mob && ((Mob) entity).targetSelector.hasTasks() ) {
 +                return 0;
-+            }
+             }
 +            if (entity instanceof Pillager) {
 +                Pillager pillager = (Pillager) entity;
 +                // TODO:?
-             }
++            }
 +            // Paper end
          }
          // SPIGOT-6644: Otherwise the target refresh tick will be missed
@@ -689,7 +688,7 @@ index f8387277d915460d755bdd35198d2547d1a49bde..6ffe86aa887ebf96f21114a468e16376
  
          // Should this entity tick?
          if ( !isActive )
-@@ -245,15 +399,19 @@ public class ActivationRange
+@@ -245,11 +399,14 @@ public class ActivationRange
              if ( ( MinecraftServer.currentTick - entity.activatedTick - 1 ) % 20 == 0 )
              {
                  // Check immunities every 20 ticks.
@@ -706,14 +705,8 @@ index f8387277d915460d755bdd35198d2547d1a49bde..6ffe86aa887ebf96f21114a468e16376
                  }
 +                // Paper end
                  isActive = true;
-+
-             }
-             // Add a little performance juice to active entities. Skip 1/4 if not immune.
--        } else if ( !entity.defaultActivationState && (entity.tickCount + entity.getId()) % 4 == 0 && !ActivationRange.checkEntityImmunities( entity ) ) // Paper - Ensure checking item movement is offset from Spigot's entity activation range check
-+        } else if ( (entity.tickCount + entity.getId()) % 4 == 0 && ActivationRange.checkEntityImmunities( entity ) < 0 ) // Paper
-         {
-             isActive = false;
-         }
+             } else if (entity instanceof net.minecraft.world.entity.item.ItemEntity && (entity.tickCount + entity.getId()) % 4 == 0) { // Paper - Needed for item gravity, see ItemEntity tick
+                 isActive = true;
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 index 2b263246135c85aa225120519e9702a628773935..2c408fa4abcbe1171c58aee8799c8cf7867d0f0a 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
