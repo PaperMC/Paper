@@ -234,7 +234,7 @@ public class ActivationRange
     public static boolean checkIfActive(Entity entity)
     {
         // Never safe to skip fireworks or item gravity
-        if (entity instanceof FireworkRocketEntity || (entity instanceof ItemEntity && (entity.tickCount + entity.getId() + 1) % 4 == 0)) {
+        if (entity instanceof FireworkRocketEntity || (entity instanceof ItemEntity && (entity.tickCount + entity.getId()) % 4 == 0)) { // Paper - Needed for item gravity, see ItemEntity tick
             return true;
         }
 
@@ -253,11 +253,8 @@ public class ActivationRange
                 }
                 isActive = true;
             }
-            // Add a little performance juice to active entities. Skip 1/4 if not immune.
-        } else if ( !entity.defaultActivationState && entity.tickCount % 4 == 0 && !ActivationRange.checkEntityImmunities( entity ) )
-        {
-            isActive = false;
         }
+        // Paper - remove dumb tick skipping for active entities
         return isActive;
     }
 }
