@@ -109,6 +109,72 @@ index d555fd0b200c012f30ed0c0ec09a37b25a737b76..7a6d51020d9c6be33b4c34c0d6085595
          if (this.getItem().isEmpty()) {
              this.discard(null); // CraftBukkit - add Bukkit remove cause
          }
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
+index d8fcd6d1edec1f31a861fab4b86cbeb15ddc799d..d277f56fef882313d6d21f636fafae2f26630ad7 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
+@@ -93,6 +93,7 @@ public abstract class AbstractMinecart extends VehicleEntity {
+     private double flyingZ = 0.95;
+     public double maxSpeed = 0.4D;
+     // CraftBukkit end
++    public net.kyori.adventure.util.TriState frictionState = net.kyori.adventure.util.TriState.NOT_SET; // Paper - Friction API
+ 
+     protected AbstractMinecart(EntityType<?> type, Level world) {
+         super(type, world);
+@@ -552,6 +553,16 @@ public abstract class AbstractMinecart extends VehicleEntity {
+ 
+         this.flipped = nbt.getBoolean("FlippedRotation");
+         this.firstTick = nbt.getBoolean("HasTicked");
++        // Paper start - Friction API
++        if (nbt.contains("Paper.FrictionState")) {
++            String fs = nbt.getString("Paper.FrictionState");
++            try {
++                frictionState = net.kyori.adventure.util.TriState.valueOf(fs);
++            } catch (Exception ignored) {
++                com.mojang.logging.LogUtils.getLogger().error("Unknown friction state " + fs + " for " + this);
++            }
++        }
++        // Paper end - Friction API
+     }
+ 
+     @Override
+@@ -564,6 +575,12 @@ public abstract class AbstractMinecart extends VehicleEntity {
+ 
+         nbt.putBoolean("FlippedRotation", this.flipped);
+         nbt.putBoolean("HasTicked", this.firstTick);
++
++        // Paper start - Friction API
++        if (this.frictionState != net.kyori.adventure.util.TriState.NOT_SET) {
++            nbt.putString("Paper.FrictionState", this.frictionState.toString());
++        }
++        // Paper end - Friction API
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/NewMinecartBehavior.java b/src/main/java/net/minecraft/world/entity/vehicle/NewMinecartBehavior.java
+index 00b0004940339dc105fb95f813bd35b16f7a9fb4..a8718ee94cd6b9a20bd1e9a49d58d39e6f3f2a7a 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/NewMinecartBehavior.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/NewMinecartBehavior.java
+@@ -548,6 +548,7 @@ public class NewMinecartBehavior extends MinecartBehavior {
+ 
+     @Override
+     public double getSlowdownFactor() {
++        if (this.minecart.frictionState == net.kyori.adventure.util.TriState.FALSE) return 1; // Paper
+         return this.minecart.isVehicle() || !this.minecart.slowWhenEmpty ? 0.997D : 0.975D; // CraftBukkit - add !this.slowWhenEmpty
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/OldMinecartBehavior.java b/src/main/java/net/minecraft/world/entity/vehicle/OldMinecartBehavior.java
+index cf871c174091139c8ad1affb84f98fcd74b60dee..23cbafcc12f6e5f5755215a72879a6cab306ad18 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/OldMinecartBehavior.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/OldMinecartBehavior.java
+@@ -522,6 +522,7 @@ public class OldMinecartBehavior extends MinecartBehavior {
+ 
+     @Override
+     public double getSlowdownFactor() {
++        if (this.minecart.frictionState == net.kyori.adventure.util.TriState.FALSE) return 1; // Paper
+         return this.minecart.isVehicle() || !this.minecart.slowWhenEmpty ? 0.997D : 0.96D; // CraftBukkit - add !this.slowWhenEmpty
+     }
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftItem.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftItem.java
 index 1a291dd8a287db30e71dcb315599fc4b038764c4..30d62ee4d5cd2ddacb8783b5bbbf475d592b3e02 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftItem.java
@@ -153,4 +219,27 @@ index 1ceaa081231a617bd87331b308c24d9c7a8dcf2b..2fd4a3068d86a37cc18c9203448823c5
 +        this.getHandle().frictionState = state;
 +    }
 +    // Paper end - friction API
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecart.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecart.java
+index d35c1a10e58932b19c8053c5dacdc25fd7f22e8c..ab9d06a9a4951a5b8aa14d47818a3850433e92b8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecart.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecart.java
+@@ -137,4 +137,18 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
+     public int getDisplayBlockOffset() {
+         return this.getHandle().getDisplayOffset();
+     }
++
++    // Paper start - Friction API
++    @org.jetbrains.annotations.NotNull
++    @Override
++    public net.kyori.adventure.util.TriState getFrictionState() {
++        return this.getHandle().frictionState;
++    }
++
++    @Override
++    public void setFrictionState(@org.jetbrains.annotations.NotNull net.kyori.adventure.util.TriState state) {
++        java.util.Objects.requireNonNull(state, "state may not be null");
++        this.getHandle().frictionState = state;
++    }
++    // Paper end - Friction API
  }
