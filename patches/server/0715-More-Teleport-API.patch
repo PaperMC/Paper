@@ -5,18 +5,19 @@ Subject: [PATCH] More Teleport API
 
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index bc8f9bd50de3894e6262e13ed55252c98f22ed8a..4d64eedfbe5b967572b7140ddfb55efa1ccc3650 100644
+index bc8f9bd50de3894e6262e13ed55252c98f22ed8a..10f7e45f192ef50b9d9bf5fc83a8090efb2b1042 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1585,11 +1585,17 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1585,11 +1585,18 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
              return true; // CraftBukkit - Return event status
          }
  
 -        PlayerTeleportEvent event = new PlayerTeleportEvent(player, from.clone(), to.clone(), cause);
 +        // Paper start - Teleport API
-+        Set<io.papermc.paper.entity.TeleportFlag.Relative> relativeFlags = java.util.EnumSet.noneOf(io.papermc.paper.entity.TeleportFlag.Relative.class);
-+        for (Relative relativeArgument : set) {
-+            relativeFlags.add(org.bukkit.craftbukkit.entity.CraftPlayer.toApiRelativeFlag(relativeArgument));
++        final Set<io.papermc.paper.entity.TeleportFlag.Relative> relativeFlags = java.util.EnumSet.noneOf(io.papermc.paper.entity.TeleportFlag.Relative.class);
++        for (final Relative relativeArgument : set) {
++            final io.papermc.paper.entity.TeleportFlag.Relative flag = org.bukkit.craftbukkit.entity.CraftPlayer.deltaRelativeToAPI(relativeArgument);
++            if (flag != null) relativeFlags.add(flag);
 +        }
 +        PlayerTeleportEvent event = new PlayerTeleportEvent(player, from.clone(), to.clone(), cause, java.util.Set.copyOf(relativeFlags));
 +        // Paper end - Teleport API
@@ -112,10 +113,10 @@ index 4e6afa243d6108cb946a8a7cf96c4036a3c2ac0c..a314e401ee8a306dc12a2d98a3d400ae
      private final org.bukkit.entity.Entity.Spigot spigot = new org.bukkit.entity.Entity.Spigot()
      {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index fe0c355f8203c9bfa30d2ec48392a5a1a3d616ae..4c4b8c14b41816173466232113252ef1ba2bb2ee 100644
+index fe0c355f8203c9bfa30d2ec48392a5a1a3d616ae..59a95187d04d3f1578e05a7f9d18f617eac95278 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -1303,13 +1303,96 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1303,13 +1303,94 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      @Override
      public void setRotation(float yaw, float pitch) {
@@ -156,24 +157,22 @@ index fe0c355f8203c9bfa30d2ec48392a5a1a3d616ae..4c4b8c14b41816173466232113252ef1
 +        };
 +    }
 +
-+    public static net.minecraft.world.entity.Relative toNmsRelativeFlag(io.papermc.paper.entity.TeleportFlag.Relative apiFlag) {
++    public static net.minecraft.world.entity.Relative deltaRelativeToNMS(io.papermc.paper.entity.TeleportFlag.Relative apiFlag) {
 +        return switch (apiFlag) {
-+            case X -> net.minecraft.world.entity.Relative.X;
-+            case Y -> net.minecraft.world.entity.Relative.Y;
-+            case Z -> net.minecraft.world.entity.Relative.Z;
-+            case PITCH -> net.minecraft.world.entity.Relative.X_ROT;
-+            case YAW -> net.minecraft.world.entity.Relative.Y_ROT;
++            case VELOCITY_X -> net.minecraft.world.entity.Relative.DELTA_X;
++            case VELOCITY_Y -> net.minecraft.world.entity.Relative.DELTA_Y;
++            case VELOCITY_Z -> net.minecraft.world.entity.Relative.DELTA_Z;
++            case VELOCITY_ROTATION -> net.minecraft.world.entity.Relative.ROTATE_DELTA;
 +        };
 +    }
 +
-+    public static io.papermc.paper.entity.TeleportFlag.Relative toApiRelativeFlag(net.minecraft.world.entity.Relative nmsFlag) {
++    public static @org.jetbrains.annotations.Nullable io.papermc.paper.entity.TeleportFlag.Relative deltaRelativeToAPI(net.minecraft.world.entity.Relative nmsFlag) {
 +        return switch (nmsFlag) {
-+            case X -> io.papermc.paper.entity.TeleportFlag.Relative.X;
-+            case Y -> io.papermc.paper.entity.TeleportFlag.Relative.Y;
-+            case Z -> io.papermc.paper.entity.TeleportFlag.Relative.Z;
-+            case X_ROT -> io.papermc.paper.entity.TeleportFlag.Relative.PITCH;
-+            case Y_ROT -> io.papermc.paper.entity.TeleportFlag.Relative.YAW;
-+            default -> throw new RuntimeException("not yet"); // TODO figure out what to do with new flags
++            case DELTA_X -> io.papermc.paper.entity.TeleportFlag.Relative.VELOCITY_X;
++            case DELTA_Y -> io.papermc.paper.entity.TeleportFlag.Relative.VELOCITY_Y;
++            case DELTA_Z -> io.papermc.paper.entity.TeleportFlag.Relative.VELOCITY_Z;
++            case ROTATE_DELTA -> io.papermc.paper.entity.TeleportFlag.Relative.VELOCITY_ROTATION;
++            default -> null;
 +        };
 +    }
 +
@@ -213,7 +212,7 @@ index fe0c355f8203c9bfa30d2ec48392a5a1a3d616ae..4c4b8c14b41816173466232113252ef1
          location.checkFinite();
  
          ServerPlayer entity = this.getHandle();
-@@ -1322,7 +1405,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1322,7 +1403,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
              return false;
          }
  
@@ -222,7 +221,7 @@ index fe0c355f8203c9bfa30d2ec48392a5a1a3d616ae..4c4b8c14b41816173466232113252ef1
              return false;
          }
  
-@@ -1331,7 +1414,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1331,7 +1412,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          // To = Players new Location if Teleport is Successful
          Location to = location;
          // Create & Call the Teleport Event.
@@ -231,7 +230,7 @@ index fe0c355f8203c9bfa30d2ec48392a5a1a3d616ae..4c4b8c14b41816173466232113252ef1
          this.server.getPluginManager().callEvent(event);
  
          // Return False to inform the Plugin that the Teleport was unsuccessful/cancelled.
-@@ -1340,7 +1423,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1340,7 +1421,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
  
          // If this player is riding another entity, we must dismount before teleporting.
@@ -240,7 +239,7 @@ index fe0c355f8203c9bfa30d2ec48392a5a1a3d616ae..4c4b8c14b41816173466232113252ef1
  
          // SPIGOT-5509: Wakeup, similar to riding
          if (this.isSleeping()) {
-@@ -1356,13 +1439,21 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1356,13 +1437,21 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          ServerLevel toWorld = ((CraftWorld) to.getWorld()).getHandle();
  
          // Close any foreign inventory
@@ -255,7 +254,7 @@ index fe0c355f8203c9bfa30d2ec48392a5a1a3d616ae..4c4b8c14b41816173466232113252ef1
 +            // Paper start - Teleport API
 +            final Set<net.minecraft.world.entity.Relative> nms = java.util.EnumSet.noneOf(net.minecraft.world.entity.Relative.class);
 +            for (final io.papermc.paper.entity.TeleportFlag.Relative bukkit : relativeArguments) {
-+                nms.add(toNmsRelativeFlag(bukkit));
++                nms.add(deltaRelativeToNMS(bukkit));
 +            }
 +            entity.connection.internalTeleport(new net.minecraft.world.entity.PositionMoveRotation(
 +                io.papermc.paper.util.MCUtil.toVec3(to), net.minecraft.world.phys.Vec3.ZERO, to.getYaw(), to.getPitch()
