@@ -105,7 +105,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see Biome
      */
-    Registry<Biome> BIOME = new SimpleRegistry<>(Biome.class);
+    Registry<Biome> BIOME = Objects.requireNonNull(Bukkit.getRegistry(Biome.class), "No registry present for Biome. This is a bug.");
     /**
      * Server block types.
      *

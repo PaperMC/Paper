@@ -4,6 +4,7 @@ import com.google.common.collect.Multimap;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.block.Biome;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
@@ -133,4 +134,7 @@ public interface UnsafeValues {
 
     @ApiStatus.Internal
     <B extends Keyed> B get(Registry<B> registry, NamespacedKey key);
+
+    @ApiStatus.Internal
+    Biome getCustomBiome();
 }
