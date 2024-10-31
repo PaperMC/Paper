@@ -61,3 +61,51 @@ index c4db7c00c66e064993b8b2158f226d063eea798c..8192ccb01ed4efe9e987cab94952c172
      @Override
      public AbstractMinecart getHandle() {
          return (AbstractMinecart) this.entity;
+diff --git a/src/test/java/org/bukkit/craftbukkit/entity/CraftMinecartTest.java b/src/test/java/org/bukkit/craftbukkit/entity/CraftMinecartTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7dd69b97918100aacaa91dcec604990094134b2a
+--- /dev/null
++++ b/src/test/java/org/bukkit/craftbukkit/entity/CraftMinecartTest.java
+@@ -0,0 +1,42 @@
++package org.bukkit.craftbukkit.entity;
++
++import java.util.ArrayList;
++import java.util.List;
++import java.util.stream.Stream;
++import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.resources.ResourceLocation;
++import net.minecraft.world.entity.EntityType;
++import net.minecraft.world.item.Item;
++import net.minecraft.world.item.Items;
++import org.junit.jupiter.params.ParameterizedTest;
++import org.junit.jupiter.params.provider.Arguments;
++import org.junit.jupiter.params.provider.MethodSource;
++
++import static org.junit.jupiter.api.Assertions.*;
++
++class CraftMinecartTest {
++
++    private static Stream<Arguments> minecartTypesAsArguments() {
++
++        List<Arguments> arguments = new ArrayList<>();
++
++        BuiltInRegistries.ENTITY_TYPE.forEach(type -> {
++            if (type.toShortString().contains("minecart")) {
++                if (type == EntityType.SPAWNER_MINECART) arguments.add(Arguments.of(type, Items.MINECART));
++                else arguments.add(Arguments.of(type, BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("minecraft", type.toShortString())).get().value()));
++            }
++        });
++
++        return arguments.stream();
++
++    }
++
++    @ParameterizedTest
++    @MethodSource("minecartTypesAsArguments")
++    void minecartEntityTypeToMaterial(EntityType type, Item material) {
++
++        assertEquals(CraftMinecart.minecartEntityTypeToMaterial(type), material, "EntityType %s doesn't match the material %s.".formatted(type.toString(), material.toString()));
++
++    }
++
++}
