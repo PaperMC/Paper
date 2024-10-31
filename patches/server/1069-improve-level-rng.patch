@@ -29,6 +29,7 @@ index 507671476c3d2d92a2fdb05be24443af27d26dcf..b396d91d7ffd1e59493f0abe27b0530f
 @@ -1327,15 +1324,18 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      }
  
++    //Paper start - Use randValue instead of deprecated RNG
      public void playSound(@Nullable Player source, double x, double y, double z, SoundEvent sound, SoundSource category, float volume, float pitch) {
 -        this.playSeededSound(source, x, y, z, sound, category, volume, pitch, this.threadSafeRandom.nextLong());
 +        this.randValue++;
@@ -46,6 +47,7 @@ index 507671476c3d2d92a2fdb05be24443af27d26dcf..b396d91d7ffd1e59493f0abe27b0530f
 +        this.randValue++;
 +        this.playSeededSound(source, entity, BuiltInRegistries.SOUND_EVENT.wrapAsHolder(sound), category, volume, pitch, this.randValue);
      }
++    //Paper end - Use randValue instead of deprecated RNG
  
      public void playLocalSound(BlockPos pos, SoundEvent sound, SoundSource category, float volume, float pitch, boolean useDistance) {
 @@ -1950,10 +1950,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
@@ -54,6 +56,7 @@ index 507671476c3d2d92a2fdb05be24443af27d26dcf..b396d91d7ffd1e59493f0abe27b0530f
      public BlockPos getBlockRandomPos(int x, int y, int z, int l) {
 -        this.randValue = this.randValue * 3 + 1013904223;
 -        int i1 = this.randValue >> 2;
++        // Paper start - Improve random block selection
 +        this.randValue = (((long)(x ^ 16691) << 32 | ((z ^ 19391) & (1L<<32) - 1)) << 8 | ((this.randValue + 2319389831L) * 11 & 0xFF));
 +        long i1 = Long.reverse(randValue*randValue<<39);
 +        long i2 = Long.reverse(randValue*randValue<<41);
@@ -61,6 +64,7 @@ index 507671476c3d2d92a2fdb05be24443af27d26dcf..b396d91d7ffd1e59493f0abe27b0530f
  
 -        return new BlockPos(x + (i1 & 15), y + (i1 >> 16 & l), z + (i1 >> 8 & 15));
 +        return new BlockPos(x + ((int)i1 & 15), y + ((int)i2 & l), z + ((int)i3 & 15));
++        // Paper end - Improve random block selection
      }
  
      public boolean noSave() {
