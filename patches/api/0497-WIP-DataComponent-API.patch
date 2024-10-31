@@ -148,18 +148,23 @@ index 0000000000000000000000000000000000000000..3a0bca9f95d6f1ad2e160620bb47f702
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/DataComponentTypes.java b/src/main/java/io/papermc/paper/datacomponent/DataComponentTypes.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4a99e023e4593dc0ccc05b9af292b44d056f534e
+index 0000000000000000000000000000000000000000..a40b95ce0de70365bf1a1d339df96a483128abe1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/DataComponentTypes.java
-@@ -0,0 +1,324 @@
+@@ -0,0 +1,342 @@
 +package io.papermc.paper.datacomponent;
 +
 +import io.papermc.paper.datacomponent.item.BannerPatternLayers;
 +import io.papermc.paper.datacomponent.item.BlockItemDataProperties;
 +import io.papermc.paper.datacomponent.item.BundleContents;
 +import io.papermc.paper.datacomponent.item.ChargedProjectiles;
++import io.papermc.paper.datacomponent.item.Consumable;
 +import io.papermc.paper.datacomponent.item.CustomModelData;
++import io.papermc.paper.datacomponent.item.DamageResistant;
++import io.papermc.paper.datacomponent.item.DeathProtection;
 +import io.papermc.paper.datacomponent.item.DyedItemColor;
++import io.papermc.paper.datacomponent.item.Enchantable;
++import io.papermc.paper.datacomponent.item.Equippable;
 +import io.papermc.paper.datacomponent.item.Fireworks;
 +import io.papermc.paper.datacomponent.item.FoodProperties;
 +import io.papermc.paper.datacomponent.item.ItemAdventurePredicate;
@@ -174,6 +179,8 @@ index 0000000000000000000000000000000000000000..4a99e023e4593dc0ccc05b9af292b44d
 +import io.papermc.paper.datacomponent.item.MapDecorations;
 +import io.papermc.paper.datacomponent.item.MapId;
 +import io.papermc.paper.datacomponent.item.MapItemColor;
++import io.papermc.paper.datacomponent.item.UseCooldown;
++import io.papermc.paper.datacomponent.item.UseRemainder;
 +import io.papermc.paper.item.MapPostProcessing;
 +import io.papermc.paper.datacomponent.item.PotDecorations;
 +import io.papermc.paper.datacomponent.item.PotionContents;
@@ -193,6 +200,7 @@ index 0000000000000000000000000000000000000000..4a99e023e4593dc0ccc05b9af292b44d
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.Registry;
 +import org.bukkit.inventory.ItemRarity;
++import org.bukkit.inventory.meta.Repairable;
 +import org.checkerframework.checker.index.qual.NonNegative;
 +import org.checkerframework.checker.index.qual.Positive;
 +import org.checkerframework.common.value.qual.IntRange;
@@ -254,6 +262,7 @@ index 0000000000000000000000000000000000000000..4a99e023e4593dc0ccc05b9af292b44d
 +     * @see #CUSTOM_NAME
 +     */
 +    public static final DataComponentType.Valued<Component> ITEM_NAME = valued("item_name");
++    public static final DataComponentType.Valued<Key> ITEM_MODEL = valued("item_model");
 +    /**
 +     * Additional lines to include in an item's tooltip.
 +     */
@@ -320,14 +329,23 @@ index 0000000000000000000000000000000000000000..4a99e023e4593dc0ccc05b9af292b44d
 +     * When present, this item will behave as if a food (can be eaten).
 +     */
 +    public static final DataComponentType.Valued<FoodProperties> FOOD = valued("food");
++    public static final DataComponentType.Valued<Consumable> CONSUMABLE = valued("consumable");
++    public static final DataComponentType.Valued<UseRemainder> USE_REMAINDER = valued("use_remainder");
++    public static final DataComponentType.Valued<UseCooldown> USE_COOLDOWN = valued("use_cooldown");
 +    /**
 +     * If present, this item will not burn in fire.
 +     */
-+    public static final DataComponentType.NonValued FIRE_RESISTANT = unvalued("fire_resistant");
++    public static final DataComponentType.Valued<DamageResistant> DAMAGE_RESISTANT = valued("damage_resistant");
 +    /**
 +     * Controls the behavior of the item as a tool.
 +     */
 +    public static final DataComponentType.Valued<Tool> TOOL = valued("tool");
++    public static final DataComponentType.Valued<Enchantable> ENCHANTABLE = valued("enchantable");
++    public static final DataComponentType.Valued<Equippable> EQUIPPABLE = valued("equippable");
++    public static final DataComponentType.Valued<Repairable> REPAIRABLE = valued("repairable");
++    public static final DataComponentType.NonValued GLIDER = unvalued("glider");
++    public static final DataComponentType.Valued<Key> TOOLTIP_STYLE = valued("tooltip_style");
++    public static final DataComponentType.Valued<DeathProtection> DEATH_PROTECTION = valued("death_protection");
 +    /**
 +     * Stores list of enchantments and their levels for an Enchanted Book.
 +     * Unlike {@link #ENCHANTMENTS}, the effects provided by enchantments
@@ -760,6 +778,96 @@ index 0000000000000000000000000000000000000000..df663aeeb1ebe547fff956bdda4455bd
 +        @NonNull Builder addAll(@NonNull List<@NonNull ItemStack> stacks);
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/datacomponent/item/Consumable.java b/src/main/java/io/papermc/paper/datacomponent/item/Consumable.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..01d25b7c618926284c517e4fa67600416b8ef532
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datacomponent/item/Consumable.java
+@@ -0,0 +1,84 @@
++package io.papermc.paper.datacomponent.item;
++
++import io.papermc.paper.datacomponent.BuildableDataComponent;
++import io.papermc.paper.datacomponent.DataComponentBuilder;
++import java.util.Collection;
++import java.util.List;
++import io.papermc.paper.datacomponent.item.consumable.ConsumeEffect;
++import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
++import net.kyori.adventure.key.Key;
++import org.bukkit.inventory.ItemStack;
++import org.checkerframework.checker.index.qual.NonNegative;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Unmodifiable;
++
++/**
++ * Holds the properties for this item for when it is consumed.
++ * @see io.papermc.paper.datacomponent.DataComponentTypes#CONSUMABLE
++ */
++@ApiStatus.Experimental
++@ApiStatus.NonExtendable
++public interface Consumable extends BuildableDataComponent<Consumable, Consumable.Builder> {
++
++    @Contract(value = "-> new", pure = true)
++    static Consumable.@NonNull Builder consumable() {
++        return ItemComponentTypesBridge.bridge().consumable();
++    }
++
++    @Contract(pure = true)
++    @NonNegative
++    float consumeSeconds();
++
++    @Contract(pure = true)
++    ItemUseAnimation animation();
++
++    @Contract(pure = true)
++    @NonNull
++    Key sound();
++
++    @Contract(pure = true)
++    boolean hasConsumeParticles();
++
++    @Contract(pure = true)
++    @Unmodifiable
++    @NonNull
++    List<ConsumeEffect> consumeEffects();
++
++    /**
++     * Builder for {@link Consumable}.
++     */
++    @ApiStatus.Experimental
++    @ApiStatus.NonExtendable
++    interface Builder extends DataComponentBuilder<Consumable> {
++
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull
++        Builder consumeSeconds(@NonNegative float consumeSeconds);
++
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull
++        Builder animation(@NotNull ItemUseAnimation animation);
++
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull
++        Builder sound(@NonNull Key sound);
++
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull
++        Builder hasConsumeParticles(boolean hasConsumeParticles);
++
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull
++        Builder addEffect(@NonNull ConsumeEffect effect);
++
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull
++        Builder addEffects(@NonNull Collection<@NonNull ConsumeEffect> effects);
++    }
++
++
++}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/CustomModelData.java b/src/main/java/io/papermc/paper/datacomponent/item/CustomModelData.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..998eb257bf88f313a812802fd7dd45320893d224
@@ -792,6 +900,106 @@ index 0000000000000000000000000000000000000000..998eb257bf88f313a812802fd7dd4532
 +     */
 +    @Contract(pure = true)
 +    int id();
++}
+diff --git a/src/main/java/io/papermc/paper/datacomponent/item/DamageResistant.java b/src/main/java/io/papermc/paper/datacomponent/item/DamageResistant.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a6fd5b513b119bbf4e998a533bb36185d5cdfa92
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datacomponent/item/DamageResistant.java
+@@ -0,0 +1,35 @@
++package io.papermc.paper.datacomponent.item;
++
++import io.papermc.paper.datacomponent.DataComponentBuilder;
++import io.papermc.paper.registry.set.RegistryKeySet;
++import io.papermc.paper.registry.tag.TagKey;
++import org.bukkit.damage.DamageType;
++import org.bukkit.inventory.ItemStack;
++import org.bukkit.potion.PotionEffectType;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++
++/**
++ * Holds the contents of damage types that the item entity containing this item is invincible to.
++ * @see io.papermc.paper.datacomponent.DataComponentTypes#DAMAGE_RESISTANT
++ */
++@ApiStatus.Experimental
++@ApiStatus.NonExtendable
++public interface DamageResistant {
++
++    @Contract(value = "_ -> new", pure = true)
++    static @NonNull DamageResistant damageResistant(final @NonNull TagKey<DamageType> types) {
++        return ItemComponentTypesBridge.bridge().damageResistant(types);
++    }
++
++    /**
++     * The types that this damage type is invincible tp.
++     *
++     * @return item
++     */
++    @Contract(value = "-> new", pure = true)
++    @NonNull
++    TagKey<DamageType> types();
++
++}
+diff --git a/src/main/java/io/papermc/paper/datacomponent/item/DeathProtection.java b/src/main/java/io/papermc/paper/datacomponent/item/DeathProtection.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2ab52d15420122f6b8c05131a4fc0ccb25d8906c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datacomponent/item/DeathProtection.java
+@@ -0,0 +1,53 @@
++package io.papermc.paper.datacomponent.item;
++
++import io.papermc.paper.datacomponent.DataComponentBuilder;
++import java.util.Arrays;
++import java.util.Collection;
++import java.util.List;
++import io.papermc.paper.datacomponent.item.consumable.ConsumeEffect;
++import org.bukkit.inventory.ItemStack;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.Unmodifiable;
++
++/**
++ * Sets whether this item should protect the entity upon death, and what effects should be played.
++ * @see io.papermc.paper.datacomponent.DataComponentTypes#DEATH_PROTECTION
++ */
++@ApiStatus.Experimental
++@ApiStatus.NonExtendable
++public interface DeathProtection {
++
++    @Contract(value = "_ -> new", pure = true)
++    static @NonNull DeathProtection deathProtection(final @NonNull ConsumeEffect @NonNull... deathEffects) {
++        return deathProtection(Arrays.asList(deathEffects));
++    }
++
++    @Contract(value = "_ -> new", pure = true)
++    static @NonNull DeathProtection deathProtection(final @NonNull List<@NonNull ConsumeEffect> deathEffects) {
++        return deathProtection().addEffects(deathEffects).build();
++    }
++
++    @Contract(value = "-> new", pure = true)
++    static DeathProtection.@NonNull Builder deathProtection() {
++        return ItemComponentTypesBridge.bridge().deathProtection();
++    }
++
++    @Contract(value = "-> new", pure = true)
++    @NonNull @Unmodifiable List<@NonNull ConsumeEffect> deathEffects();
++
++    /**
++     * Builder for {@link DeathProtection}.
++     */
++    @ApiStatus.Experimental
++    @ApiStatus.NonExtendable
++    interface Builder extends DataComponentBuilder<DeathProtection> {
++
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull Builder addEffect(@NonNull ConsumeEffect effect);
++
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull Builder addEffects(@NonNull Collection<@NonNull ConsumeEffect> effects);
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/DyedItemColor.java b/src/main/java/io/papermc/paper/datacomponent/item/DyedItemColor.java
 new file mode 100644
@@ -849,6 +1057,218 @@ index 0000000000000000000000000000000000000000..78afe5d6f3796e2c1ee945c8bcac167c
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder color(@NonNull Color color);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/datacomponent/item/Enchantable.java b/src/main/java/io/papermc/paper/datacomponent/item/Enchantable.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..feced7acdac5219b6f5d6a7eab825c6e23db3899
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datacomponent/item/Enchantable.java
+@@ -0,0 +1,28 @@
++package io.papermc.paper.datacomponent.item;
++
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++
++/**
++ * Holds if an item is enchantable, allowing for enchantments of the type to be seen in an enchanting table.
++ * @see io.papermc.paper.datacomponent.DataComponentTypes#ENCHANTABLE
++ */
++@ApiStatus.Experimental
++@ApiStatus.NonExtendable
++public interface Enchantable {
++
++    @Contract(value = "_ -> new", pure = true)
++    static @NonNull Enchantable enchantable(final int level) {
++        return ItemComponentTypesBridge.bridge().enchantable(level);
++    }
++
++    /**
++     * Gets the current enchantment value level allowed,
++     * a higher value allows enchantments with a higher cost to be picked.
++     *
++     * @return the value
++     */
++    @Contract(pure = true)
++    int value();
++}
+diff --git a/src/main/java/io/papermc/paper/datacomponent/item/Equippable.java b/src/main/java/io/papermc/paper/datacomponent/item/Equippable.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ec6a408f858241cd96ef2c73db7b14914fab800e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datacomponent/item/Equippable.java
+@@ -0,0 +1,172 @@
++package io.papermc.paper.datacomponent.item;
++
++import io.papermc.paper.datacomponent.BuildableDataComponent;
++import io.papermc.paper.datacomponent.DataComponentBuilder;
++import io.papermc.paper.registry.set.RegistryKeySet;
++import net.kyori.adventure.key.Key;
++import org.bukkit.entity.EntityType;
++import org.bukkit.inventory.EquipmentSlot;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++
++
++/**
++ * Holds the equippable properties of an item.
++ * @see io.papermc.paper.datacomponent.DataComponentTypes#EQUIPPABLE
++ */
++@ApiStatus.Experimental
++@ApiStatus.NonExtendable
++public interface Equippable extends BuildableDataComponent<Equippable, Equippable.Builder> {
++
++    /**
++     * Creates a new {@link Equippable.Builder} instance.
++     * @param slot The slot for the new equppable to be equippable in.
++     *
++     * @return a new builder
++     */
++    @Contract(value = "_ -> new", pure = true)
++    static Equippable.@NonNull Builder equippable(@NonNull EquipmentSlot slot) {
++        return ItemComponentTypesBridge.bridge().equippable(slot);
++    }
++
++    /**
++     * Gets the equipment slot this item can be equipped in.
++     *
++     * @return the equipment slot
++     */
++    @Contract(pure = true)
++    @NonNull
++    EquipmentSlot slot();
++
++    /**
++     * Gets the equip sound key.
++     *
++     * @return the equip sound key
++     */
++    @Contract(pure = true)
++    @NonNull
++    Key equipSound();
++
++    /**
++     * Gets the model key if present.
++     *
++     * @return the model key or null
++     */
++    @Contract(pure = true)
++    @Nullable Key model();
++
++    /**
++     * Gets the camera overlay key if present.
++     *
++     * @return the camera overlay key or null
++     */
++    @Contract(pure = true)
++    @Nullable Key cameraOverlay();
++
++    /**
++     * Gets the set of allowed entities that can equip this item.
++     * May be null if all entities are allowed.
++     *
++     * @return the set of allowed entities
++     */
++    @Contract(pure = true)
++    @Nullable
++    RegistryKeySet<EntityType> allowedEntities();
++
++    /**
++     * Checks if the item is dispensable.
++     *
++     * @return true if dispensable, false otherwise
++     */
++    @Contract(pure = true)
++    boolean dispensable();
++
++    /**
++     * Checks if the item is swappable.
++     *
++     * @return true if swappable, false otherwise
++     */
++    @Contract(pure = true)
++    boolean swappable();
++
++    /**
++     * Checks if the item takes damage when the wearer is hurt.
++     *
++     * @return true if it damages on hurt, false otherwise
++     */
++    @Contract(pure = true)
++    boolean damageOnHurt();
++
++    /**
++     * Builder for {@link Equippable}.
++     */
++    @ApiStatus.Experimental
++    @ApiStatus.NonExtendable
++    interface Builder extends DataComponentBuilder<Equippable> {
++
++        /**
++         * Sets the equip sound key for this item.
++         *
++         * @param equipSound the equip sound key
++         * @return the builder for chaining
++         */
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull Builder equipSound(@NonNull Key equipSound);
++
++        /**
++         * Sets the model key for this item.
++         *
++         * @param model the model key, nullable
++         * @return the builder for chaining
++         */
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull Builder model(@Nullable Key model);
++
++        /**
++         * Sets the camera overlay key for this item.
++         *
++         * @param cameraOverlay the camera overlay key, nullable
++         * @return the builder for chaining
++         */
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull Builder cameraOverlay(@Nullable Key cameraOverlay);
++
++        /**
++         * Sets the allowed entities that can equip this item.
++         *
++         * @param allowedEntities the set of allowed entity types, or null if any
++         * @return the builder for chaining
++         */
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull Builder allowedEntities(@Nullable RegistryKeySet<EntityType> allowedEntities);
++
++        /**
++         * Sets whether the item is dispensable.
++         *
++         * @param dispensable true if dispensable
++         * @return the builder for chaining
++         */
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull Builder dispensable(boolean dispensable);
++
++        /**
++         * Sets whether the item is swappable.
++         *
++         * @param swappable true if swappable
++         * @return the builder for chaining
++         */
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull Builder swappable(boolean swappable);
++
++        /**
++         * Sets whether the item takes damage when the wearer is hurt.
++         *
++         * @param damageOnHurt true if it damages on hurt
++         * @return the builder for chaining
++         */
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull Builder damageOnHurt(boolean damageOnHurt);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/Fireworks.java b/src/main/java/io/papermc/paper/datacomponent/item/Fireworks.java
@@ -942,10 +1362,10 @@ index 0000000000000000000000000000000000000000..127ee7a9a89783df9eee78aa94ede739
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/FoodProperties.java b/src/main/java/io/papermc/paper/datacomponent/item/FoodProperties.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b28bdb326f6579840813c4c390c0fb65fa3f0cb5
+index 0000000000000000000000000000000000000000..d8aa7a006044324763bf27a074ecfaaad93b3628
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/FoodProperties.java
-@@ -0,0 +1,161 @@
+@@ -0,0 +1,92 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import io.papermc.paper.datacomponent.BuildableDataComponent;
@@ -999,57 +1419,6 @@ index 0000000000000000000000000000000000000000..b28bdb326f6579840813c4c390c0fb65
 +    boolean canAlwaysEat();
 +
 +    /**
-+     * The number of seconds that it takes to eat this food item.
-+     *
-+     * @return the number seconds to eat that food
-+     */
-+    @Contract(pure = true)
-+    float eatSeconds();
-+
-+    @Contract(pure = true)
-+    @Nullable ItemStack usingConvertsTo();
-+
-+    /**
-+     * List of effects to apply when eaten.
-+     *
-+     * @return effects
-+     */
-+    @NonNull @Unmodifiable List<@NonNull PossibleEffect> effects();
-+
-+    /**
-+     * Effect to possibly be applied when eaten.
-+     */
-+    @ApiStatus.NonExtendable
-+    interface PossibleEffect {
-+
-+        /**
-+         * Create a possible effect.
-+         *
-+         * @param effect the potion effect
-+         * @param probability the probability of this effect being applied, between 0 and 1 inclusive.
-+         * @return the possible effect
-+         */
-+        @Contract(value = "_, _ -> new", pure = true)
-+        static @NonNull PossibleEffect of(final @NonNull PotionEffect effect, final float probability) {
-+            return ItemComponentTypesBridge.bridge().foodEffect(effect, probability);
-+        }
-+
-+        /**
-+         * Effect instance.
-+         *
-+         * @return effect
-+         */
-+        @NonNull PotionEffect effect();
-+
-+        /**
-+         * Float between 0 and 1, chance for the effect to be applied.
-+         *
-+         * @return chance
-+         */
-+        float probability();
-+    }
-+
-+    /**
 +     * Builder for {@link FoodProperties}.
 +     */
 +    @ApiStatus.Experimental
@@ -1066,16 +1435,6 @@ index 0000000000000000000000000000000000000000..b28bdb326f6579840813c4c390c0fb65
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder canAlwaysEat(boolean canAlwaysEat);
-+
-+        /**
-+         * Set the seconds it takes to eat this food.
-+         *
-+         * @param eatSeconds the seconds, must be non-negative
-+         * @return the builder for chaining
-+         * @see #eatSeconds()
-+         */
-+        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder eatSeconds(@NonNegative float eatSeconds);
 +
 +        /**
 +         * Sets the saturation of the food.
@@ -1097,14 +1456,6 @@ index 0000000000000000000000000000000000000000..b28bdb326f6579840813c4c390c0fb65
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder nutrition(@NonNegative int nutrition);
 +
-+        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder usingConvertsTo(@Nullable ItemStack stack);
-+
-+        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder addEffect(@NonNull PossibleEffect effect);
-+
-+        @Contract(value = "_ -> this", mutates = "this")
-+        @NonNull Builder addEffects(@NonNull Collection<@NonNull PossibleEffect> effects);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/ItemAdventurePredicate.java b/src/main/java/io/papermc/paper/datacomponent/item/ItemAdventurePredicate.java
@@ -1320,14 +1671,15 @@ index 0000000000000000000000000000000000000000..79a7f5387142aa267655f6243a8f9291
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/ItemComponentTypesBridge.java b/src/main/java/io/papermc/paper/datacomponent/item/ItemComponentTypesBridge.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9ecd83fdc364700ef5aaf3ac63f41818f4a91a07
+index 0000000000000000000000000000000000000000..8e2c70fca8f28996bacde186057fc6ad4eb429bb
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/ItemComponentTypesBridge.java
-@@ -0,0 +1,92 @@
+@@ -0,0 +1,110 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import com.destroystokyo.paper.profile.PlayerProfile;
 +import io.papermc.paper.registry.set.RegistryKeySet;
++import io.papermc.paper.registry.tag.TagKey;
 +import io.papermc.paper.util.Filtered;
 +import java.util.Optional;
 +import java.util.ServiceLoader;
@@ -1335,9 +1687,12 @@ index 0000000000000000000000000000000000000000..9ecd83fdc364700ef5aaf3ac63f41818
 +import net.kyori.adventure.util.TriState;
 +import org.bukkit.JukeboxSong;
 +import org.bukkit.block.BlockType;
++import org.bukkit.damage.DamageType;
++import org.bukkit.inventory.EquipmentSlot;
++import org.bukkit.inventory.ItemStack;
++import org.bukkit.inventory.ItemType;
 +import org.bukkit.inventory.meta.trim.ArmorTrim;
 +import org.bukkit.map.MapCursor;
-+import org.bukkit.potion.PotionEffect;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.jetbrains.annotations.ApiStatus;
 +
@@ -1363,8 +1718,6 @@ index 0000000000000000000000000000000000000000..9ecd83fdc364700ef5aaf3ac63f41818
 +    ItemAttributeModifiers.Builder modifiers();
 +
 +    FoodProperties.Builder food();
-+
-+    FoodProperties.PossibleEffect foodEffect(PotionEffect effect, float probability);
 +
 +    DyedItemColor.Builder dyedItemColor();
 +
@@ -1414,7 +1767,23 @@ index 0000000000000000000000000000000000000000..9ecd83fdc364700ef5aaf3ac63f41818
 +
 +    MapId mapId(int id);
 +
-+    LockCode lockCode(String code);
++    UseRemainder useRemainder(ItemStack itemStack);
++
++    Consumable.Builder consumable();
++
++    UseCooldown.Builder useCooldown(final float seconds);
++
++    DamageResistant damageResistant(TagKey<DamageType> types);
++
++    Enchantable enchantable(int level);
++
++    Repairable repairable(RegistryKeySet<ItemType> types);
++
++    Equippable.Builder equippable(EquipmentSlot slot);
++
++    DeathProtection.Builder deathProtection();
++
++    OminiousBottleAmplifier ominiousBottleAmplifier(int amplifier);
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/ItemContainerContents.java b/src/main/java/io/papermc/paper/datacomponent/item/ItemContainerContents.java
 new file mode 100644
@@ -1701,7 +2070,7 @@ index 0000000000000000000000000000000000000000..26ca1143b74d4b0c4e48865dc94128ec
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/LockCode.java b/src/main/java/io/papermc/paper/datacomponent/item/LockCode.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6386d859ec06ffd23553767d8f87d85ed1e6a4df
+index 0000000000000000000000000000000000000000..e32e18010a3f3ed436547cfae86679ef00b21daa
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/LockCode.java
 @@ -0,0 +1,22 @@
@@ -1719,13 +2088,13 @@ index 0000000000000000000000000000000000000000..6386d859ec06ffd23553767d8f87d85e
 +@ApiStatus.Experimental
 +public interface LockCode {
 +
-+    @Contract(value = "_ -> new", pure = true)
-+    static @NonNull LockCode lockCode(final @NonNull String code) {
-+        return ItemComponentTypesBridge.bridge().lockCode(code);
-+    }
-+
-+    @Contract(pure = true)
-+    @NonNull String key();
++    // @Contract(value = "_ -> new", pure = true)
++    // static @NonNull LockCode lockCode(final @NonNull String code) {
++    //     return ItemComponentTypesBridge.bridge().lockCode(code);
++    // }
++    //
++    // @Contract(pure = true)
++    // @NonNull String key();
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/LodestoneTracker.java b/src/main/java/io/papermc/paper/datacomponent/item/LodestoneTracker.java
 new file mode 100644
@@ -2010,6 +2379,39 @@ index 0000000000000000000000000000000000000000..b385132b23c3f52f327f8a699fdb8cba
 +        @NonNull Builder color(@NonNull Color color);
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/datacomponent/item/OminiousBottleAmplifier.java b/src/main/java/io/papermc/paper/datacomponent/item/OminiousBottleAmplifier.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..73a14a0f9bf98bed1611eeb0285d9f89b76b401f
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datacomponent/item/OminiousBottleAmplifier.java
+@@ -0,0 +1,27 @@
++package io.papermc.paper.datacomponent.item;
++
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++
++/**
++ * Holds the custom model data.
++ * @see io.papermc.paper.datacomponent.DataComponentTypes#CUSTOM_MODEL_DATA
++ */
++@ApiStatus.Experimental
++@ApiStatus.NonExtendable
++public interface OminiousBottleAmplifier {
++
++    @Contract(value = "_ -> new", pure = true)
++    static @NonNull OminiousBottleAmplifier amplifier(final int amplifier) {
++        return ItemComponentTypesBridge.bridge().ominiousBottleAmplifier(amplifier);
++    }
++
++    /**
++     * Gets the bottle amplifier.
++     *
++     * @return the amplifier
++     */
++    @Contract(pure = true)
++    int amplifier();
++}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PotDecorations.java b/src/main/java/io/papermc/paper/datacomponent/item/PotDecorations.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..35958f84bf93270c53ad8b09483bab503d85aae3
@@ -2126,10 +2528,10 @@ index 0000000000000000000000000000000000000000..35958f84bf93270c53ad8b09483bab50
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PotionContents.java b/src/main/java/io/papermc/paper/datacomponent/item/PotionContents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e212f5401312c64c6c25af19ba9dc8e511157409
+index 0000000000000000000000000000000000000000..8e16affd83ad0cb94b275246e0da621fbb5fb787
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PotionContents.java
-@@ -0,0 +1,100 @@
+@@ -0,0 +1,118 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import io.papermc.paper.datacomponent.DataComponentBuilder;
@@ -2182,6 +2584,14 @@ index 0000000000000000000000000000000000000000..e212f5401312c64c6c25af19ba9dc8e5
 +    @Contract(pure = true)
 +    @NonNull @Unmodifiable List<@NonNull PotionEffect> customEffects();
 +
++    /**
++     * Overrides the visual name of the potion.
++     *
++     * @return name override, or {@code null} if not present
++     * @apiNote This is used in the display of tipped arrow and potion items.
++     */
++    @Contract(pure = true) @Nullable String customName();
++
 +    @ApiStatus.Experimental
 +    @ApiStatus.NonExtendable
 +    interface Builder extends DataComponentBuilder<PotionContents> {
@@ -2208,6 +2618,16 @@ index 0000000000000000000000000000000000000000..e212f5401312c64c6c25af19ba9dc8e5
 +        @NonNull Builder customColor(@Nullable Color color);
 +
 +        /**
++         * Sets the name override for this builder.
++         *
++         * @param name name
++         * @return the builder for chaining
++         * @see #customName()
++         */
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull Builder customName(@Nullable String name);
++
++        /**
 +         * Adds a custom effect instance to this builder.
 +         *
 +         * @param effect effect
@@ -2229,6 +2649,45 @@ index 0000000000000000000000000000000000000000..e212f5401312c64c6c25af19ba9dc8e5
 +        @Contract(value = "_ -> this", mutates = "this")
 +        @NonNull Builder addCustomEffects(@NonNull List<@NonNull PotionEffect> effects);
 +    }
++}
+diff --git a/src/main/java/io/papermc/paper/datacomponent/item/Repairable.java b/src/main/java/io/papermc/paper/datacomponent/item/Repairable.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..928e61eef3f33af0d76e258661a163557fdf40f8
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datacomponent/item/Repairable.java
+@@ -0,0 +1,33 @@
++package io.papermc.paper.datacomponent.item;
++
++import io.papermc.paper.datacomponent.DataComponentBuilder;
++import io.papermc.paper.registry.set.RegistryKeySet;
++import org.bukkit.damage.DamageType;
++import org.bukkit.inventory.ItemType;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++
++/**
++ * Holds if this item is repairable, and what item types it can be repaired with.
++ * @see io.papermc.paper.datacomponent.DataComponentTypes#REPAIRABLE
++ */
++@ApiStatus.Experimental
++@ApiStatus.NonExtendable
++public interface Repairable {
++
++    @Contract(value = "_ -> new", pure = true)
++    static @NonNull Repairable repairable(final @NonNull RegistryKeySet<ItemType> types) {
++        return ItemComponentTypesBridge.bridge().repairable(types);
++    }
++
++    /**
++     * The types that this item is repairable to.
++     *
++     * @return item
++     */
++    @Contract(value = "-> new", pure = true)
++    @NonNull
++    RegistryKeySet<ItemType> types();
++
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/ResolvableProfile.java b/src/main/java/io/papermc/paper/datacomponent/item/ResolvableProfile.java
 new file mode 100644
@@ -2729,6 +3188,137 @@ index 0000000000000000000000000000000000000000..a8ddecde35b427f594395a5df5420a20
 +    interface Builder extends ShownInTooltip.Builder<Builder>, DataComponentBuilder<Unbreakable> {
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/datacomponent/item/UseCooldown.java b/src/main/java/io/papermc/paper/datacomponent/item/UseCooldown.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..84ac174f53dfc84f9c20783b70c7fb5a679b1752
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datacomponent/item/UseCooldown.java
+@@ -0,0 +1,71 @@
++package io.papermc.paper.datacomponent.item;
++
++import io.papermc.paper.datacomponent.DataComponentBuilder;
++import java.util.List;
++import net.kyori.adventure.key.Key;
++import org.bukkit.Color;
++import org.bukkit.NamespacedKey;
++import org.bukkit.potion.PotionEffect;
++import org.bukkit.potion.PotionType;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.Unmodifiable;
++
++/**
++ * Holds the contents of cooldown information when an item is used.
++ * @see io.papermc.paper.datacomponent.DataComponentTypes#USE_COOLDOWN
++ */
++@ApiStatus.Experimental
++@ApiStatus.NonExtendable
++public interface UseCooldown {
++
++    /**
++     * Creates a new builder for use cooldown.
++     *
++     * @param seconds the duration in seconds; must be positive
++     * @return builder
++     */
++    @Contract(value = "_ -> new", pure = true)
++    static UseCooldown.@NonNull Builder useCooldown(float seconds) {
++        return ItemComponentTypesBridge.bridge().useCooldown(seconds);
++    }
++
++    /**
++     * The amount of seconds the cooldown will be active for.
++     *
++     * @return cooldown seconds
++     */
++    @Contract(pure = true)
++    float seconds();
++
++    /**
++     * The unique resource location to identify this cooldown group.
++     * <p>
++     * This allows items to share cooldowns with other items in the same cooldown group, if present.
++     *
++     * @return cooldown group, or null if not present
++     */
++    @Contract(pure = true)
++    @Nullable
++    Key cooldownGroup();
++
++    @ApiStatus.Experimental
++    @ApiStatus.NonExtendable
++    interface Builder extends DataComponentBuilder<UseCooldown> {
++
++        /**
++         * Sets a unique resource location for this cooldown group.
++         * <p>
++         * This allows items to share cooldowns with other items in the same cooldown group.
++         * </p>
++         *
++         * @param key the unique resource location; can be null
++         * @return the builder for chaining
++         * @see #cooldownGroup()
++         */
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull Builder cooldownGroup(@Nullable Key key);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/datacomponent/item/UseRemainder.java b/src/main/java/io/papermc/paper/datacomponent/item/UseRemainder.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c80d5bf7ddaa24de0c7d2f812f1538b020d3ad69
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datacomponent/item/UseRemainder.java
+@@ -0,0 +1,48 @@
++package io.papermc.paper.datacomponent.item;
++
++import io.papermc.paper.datacomponent.DataComponentBuilder;
++import org.bukkit.Color;
++import org.bukkit.inventory.ItemStack;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++
++/**
++ * Holds the contents of item transformation information when an item is used.
++ * @see io.papermc.paper.datacomponent.DataComponentTypes#USE_REMAINDER
++ */
++@ApiStatus.Experimental
++@ApiStatus.NonExtendable
++public interface UseRemainder {
++
++    @Contract(value = "_ -> new", pure = true)
++    static @NonNull UseRemainder useRemainder(final @NonNull ItemStack itemStack) {
++        return ItemComponentTypesBridge.bridge().useRemainder(itemStack);
++    }
++
++    /**
++     * The item that the item that is consumed is transformed into.
++     *
++     * @return item
++     */
++    @Contract(value = "-> new", pure = true)
++    @NonNull ItemStack transformInto();
++
++    /**
++     * Builder for {@link UseRemainder}.
++     */
++    @ApiStatus.Experimental
++    @ApiStatus.NonExtendable
++    interface Builder extends ShownInTooltip.Builder<Builder>, DataComponentBuilder<UseRemainder> {
++
++        /**
++         * Sets the transform item of this builder.
++         *
++         * @param itemStack item
++         * @return the builder for chaining
++         * @see #transformInto()
++         */
++        @Contract(value = "_ -> this", mutates = "this")
++        @NonNull Builder transformInto(@NonNull ItemStack itemStack);
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/WritableBookContent.java b/src/main/java/io/papermc/paper/datacomponent/item/WritableBookContent.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..eb6042af2d5d0c63f1adc56576a4e6b80bb31463
@@ -2993,6 +3583,289 @@ index 0000000000000000000000000000000000000000..a8f86b9ec871857106903715749bbbe4
 +        @NonNull Builder addFilteredPages(@NonNull Collection<@NonNull Filtered<@NonNull ? extends ComponentLike>> pages);
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/datacomponent/item/consumable/ApplyStatusEffectsConsumeEffect.java b/src/main/java/io/papermc/paper/datacomponent/item/consumable/ApplyStatusEffectsConsumeEffect.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d11d4563e20916000d2d4cb754e7c1e386386bfb
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datacomponent/item/consumable/ApplyStatusEffectsConsumeEffect.java
+@@ -0,0 +1,39 @@
++package io.papermc.paper.datacomponent.item.consumable;
++
++import org.bukkit.potion.PotionEffect;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.Contract;
++import java.util.List;
++
++/**
++ * Represents a consumable effect that applies effects based on a probability on consumption.
++ */
++public interface ApplyStatusEffectsConsumeEffect extends ConsumeEffect {
++
++    /**
++     * Creates a consume effect that gives status effects on consumption.
++     *
++     * @param effects     the potion effects to apply
++     * @param probability the probability of these effects being applied, between 0 and 1 inclusive.
++     * @return the effect
++     */
++    @Contract(value = "_, _ -> new", pure = true)
++    static @NonNull ApplyStatusEffectsConsumeEffect applyStatusEffects(final @NonNull List<PotionEffect> effects, final float probability) {
++        return ConsumableTypesBridge.bridge().applyStatusEffects(effects, probability);
++    }
++
++    /**
++     * Effect instances to grant
++     *
++     * @return effect
++     */
++    @NonNull List<PotionEffect> effects();
++
++    /**
++     * Float between 0 and 1, chance for the effect to be applied.
++     *
++     * @return chance
++     */
++    float probability();
++
++}
+diff --git a/src/main/java/io/papermc/paper/datacomponent/item/consumable/ClearAllStatusEffectsConsumeEffect.java b/src/main/java/io/papermc/paper/datacomponent/item/consumable/ClearAllStatusEffectsConsumeEffect.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..97208df2e8ffbb653a96da34534fd6a08e5a141c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datacomponent/item/consumable/ClearAllStatusEffectsConsumeEffect.java
+@@ -0,0 +1,22 @@
++package io.papermc.paper.datacomponent.item.consumable;
++
++import org.bukkit.potion.PotionEffect;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.Contract;
++import java.util.List;
++
++/**
++ * Represents a consumable effect that clears all effects on consumption.
++ */
++public interface ClearAllStatusEffectsConsumeEffect extends ConsumeEffect {
++
++    /**
++     * Creates a consume effect that clears all status effects.
++     *
++     * @return effect instance
++     */
++    @Contract(value = "-> new", pure = true)
++    static @NonNull ClearAllStatusEffectsConsumeEffect clearAllStatusEffects() {
++        return ConsumableTypesBridge.bridge().clearAllStatusEffects();
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/datacomponent/item/consumable/ConsumableTypesBridge.java b/src/main/java/io/papermc/paper/datacomponent/item/consumable/ConsumableTypesBridge.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e11b697e93126fa1b7342a4a872220130184374c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datacomponent/item/consumable/ConsumableTypesBridge.java
+@@ -0,0 +1,40 @@
++package io.papermc.paper.datacomponent.item.consumable;
++
++import com.destroystokyo.paper.profile.PlayerProfile;
++import io.papermc.paper.registry.set.RegistryKeySet;
++import io.papermc.paper.registry.tag.TagKey;
++import io.papermc.paper.util.Filtered;
++import net.kyori.adventure.key.Key;
++import net.kyori.adventure.util.TriState;
++import org.bukkit.JukeboxSong;
++import org.bukkit.block.BlockType;
++import org.bukkit.inventory.meta.trim.ArmorTrim;
++import org.bukkit.map.MapCursor;
++import org.bukkit.potion.PotionEffect;
++import org.bukkit.potion.PotionEffectType;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.jetbrains.annotations.ApiStatus;
++import java.util.List;
++import java.util.Optional;
++import java.util.ServiceLoader;
++
++@ApiStatus.Internal
++interface ConsumableTypesBridge {
++
++    Optional<ConsumableTypesBridge> BRIDGE = ServiceLoader.load(ConsumableTypesBridge.class).findFirst();
++
++    static ConsumableTypesBridge bridge() {
++        return BRIDGE.orElseThrow();
++    }
++
++    ApplyStatusEffectsConsumeEffect applyStatusEffects(List<PotionEffect> effectList, float probability);
++
++    RemoveStatusEffectsConsumeEffect removeStatusEffects(RegistryKeySet<PotionEffectType> potionEffectTypeTagKey);
++
++    ClearAllStatusEffectsConsumeEffect clearAllStatusEffects();
++
++    PlaySoundConsumeEffect playSoundEffect(Key sound);
++
++    TeleportRandomlyConsumeEffect teleportRandomlyEffect(float diameter);
++
++}
+diff --git a/src/main/java/io/papermc/paper/datacomponent/item/consumable/ConsumeEffect.java b/src/main/java/io/papermc/paper/datacomponent/item/consumable/ConsumeEffect.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..50b06f14d611fc189873f652d4769484ceea4703
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datacomponent/item/consumable/ConsumeEffect.java
+@@ -0,0 +1,18 @@
++package io.papermc.paper.datacomponent.item.consumable;
++
++import io.papermc.paper.datacomponent.item.Consumable;
++import org.bukkit.potion.PotionEffect;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++
++import java.util.List;
++
++/**
++ * Effect that occurs when consuming an item.
++ */
++@ApiStatus.NonExtendable
++public
++interface ConsumeEffect {
++
++}
+diff --git a/src/main/java/io/papermc/paper/datacomponent/item/consumable/ItemUseAnimation.java b/src/main/java/io/papermc/paper/datacomponent/item/consumable/ItemUseAnimation.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8cd6dbe4ea5ee3270b9428a9c29cbd88823d9f6c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datacomponent/item/consumable/ItemUseAnimation.java
+@@ -0,0 +1,17 @@
++package io.papermc.paper.datacomponent.item.consumable;
++
++/**
++ * Represents the hand animation that is used when a player is consuming this item.
++ */
++public enum ItemUseAnimation {
++    NONE,
++    EAT,
++    DRINK,
++    BLOCK,
++    BOW,
++    SPEAR,
++    CROSSBOW,
++    SPYGLASS,
++    TOOT_HORN,
++    BRUSH
++}
+diff --git a/src/main/java/io/papermc/paper/datacomponent/item/consumable/PlaySoundConsumeEffect.java b/src/main/java/io/papermc/paper/datacomponent/item/consumable/PlaySoundConsumeEffect.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..82c232a1acc1ec93303cc03c40dc855bd8c36284
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datacomponent/item/consumable/PlaySoundConsumeEffect.java
+@@ -0,0 +1,35 @@
++package io.papermc.paper.datacomponent.item.consumable;
++
++import net.kyori.adventure.key.Key;
++import org.bukkit.potion.PotionEffect;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.NotNull;
++import java.util.List;
++
++/**
++ * Represents a consumable effect that plays a sound on consumption.
++ */
++public interface PlaySoundConsumeEffect extends ConsumeEffect {
++
++    /**
++     * Creates a consume effect that plays a sound on consumption.
++     *
++     * @param key the sound effect to play
++     * @return the effect
++     */
++    @Contract(value = "_ -> new", pure = true)
++    static @NonNull PlaySoundConsumeEffect playSoundConsumeEffect(final @NotNull Key key) {
++        return ConsumableTypesBridge.bridge().playSoundEffect(key);
++    }
++
++    /**
++     * Sound effect to play in the world
++     *
++     * @return sound effect
++     */
++    @NonNull
++    Key sound();
++
++
++}
+diff --git a/src/main/java/io/papermc/paper/datacomponent/item/consumable/RemoveStatusEffectsConsumeEffect.java b/src/main/java/io/papermc/paper/datacomponent/item/consumable/RemoveStatusEffectsConsumeEffect.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9190034759052ef643181df12fdbf94d971cc07e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datacomponent/item/consumable/RemoveStatusEffectsConsumeEffect.java
+@@ -0,0 +1,36 @@
++package io.papermc.paper.datacomponent.item.consumable;
++
++
++import io.papermc.paper.registry.set.RegistryKeySet;
++import net.kyori.adventure.key.Key;
++import org.bukkit.inventory.ItemType;
++import org.bukkit.potion.PotionEffectType;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Represents a consumable effect that removes status effects on consumption
++ */
++public interface RemoveStatusEffectsConsumeEffect extends ConsumeEffect {
++
++    /**
++     * Creates a consume effect that gives status effects on consumption.
++     *
++     * @param key the sound effect to play
++     * @return the effect
++     */
++    @Contract(value = "_ -> new", pure = true)
++    static @NonNull RemoveStatusEffectsConsumeEffect removeEffects(final @NotNull RegistryKeySet<PotionEffectType> key) {
++        return ConsumableTypesBridge.bridge().removeStatusEffects(key);
++    }
++
++    /**
++     * Potion effects to remove
++     *
++     * @return effects
++     */
++    @NonNull
++    RegistryKeySet<PotionEffectType> removeEffects();
++
++}
+diff --git a/src/main/java/io/papermc/paper/datacomponent/item/consumable/TeleportRandomlyConsumeEffect.java b/src/main/java/io/papermc/paper/datacomponent/item/consumable/TeleportRandomlyConsumeEffect.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4f765f322a6ba69978411e453f772fc786b5cdf7
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datacomponent/item/consumable/TeleportRandomlyConsumeEffect.java
+@@ -0,0 +1,28 @@
++package io.papermc.paper.datacomponent.item.consumable;
++
++import io.papermc.paper.registry.set.RegistryKeySet;
++import org.bukkit.potion.PotionEffectType;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.jetbrains.annotations.Contract;
++
++public interface TeleportRandomlyConsumeEffect extends ConsumeEffect {
++
++    /**
++     * Creates a consume effect that randomly teleports the entity on consumption.
++     *
++     * @param diameter diameter of random teleportation
++     * @return the effect
++     */
++    @Contract(value = "_ -> new", pure = true)
++    static @NonNull TeleportRandomlyConsumeEffect teleportRandomlyEffect(final float diameter) {
++        return ConsumableTypesBridge.bridge().teleportRandomlyEffect(diameter);
++    }
++
++    /**
++     * The max range that the entity can be teleported to.
++     *
++     * @return teleportation diameter
++     */
++    float diameter();
++
++}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/package-info.java b/src/main/java/io/papermc/paper/datacomponent/package-info.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..3ddd1f787e97c22eee3e32bb2a9660a8e300d7f9
@@ -3017,7 +3890,7 @@ index 0000000000000000000000000000000000000000..5843768d0be2ae4a0219636ed7640727
 +    SCALE
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/RegistryKey.java b/src/main/java/io/papermc/paper/registry/RegistryKey.java
-index 2945dde566682f977e84fde5d473a6c69be24df1..530cbadc8b4871113dc9ebb24bc565a95a61fdae 100644
+index d8716f855806471728c35b3ec34efb808a5146cf..cf8a28a6e41fadeeffe358e5bcdc25bf6c351aea 100644
 --- a/src/main/java/io/papermc/paper/registry/RegistryKey.java
 +++ b/src/main/java/io/papermc/paper/registry/RegistryKey.java
 @@ -1,5 +1,6 @@
@@ -3027,13 +3900,10 @@ index 2945dde566682f977e84fde5d473a6c69be24df1..530cbadc8b4871113dc9ebb24bc565a9
  import net.kyori.adventure.key.Keyed;
  import org.bukkit.Art;
  import org.bukkit.Fluid;
-@@ -81,6 +82,10 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
+@@ -114,6 +115,7 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
+      * @see io.papermc.paper.registry.keys.MenuTypeKeys
       */
-     @ApiStatus.Experimental // Paper - already required for registry builders
-     RegistryKey<ItemType> ITEM = create("item");
-+    /**
-+     * Built-in registry for data component types.
-+     */
+     RegistryKey<MenuType> MENU = create("menu");
 +    RegistryKey<DataComponentType> DATA_COMPONENT_TYPE = create("data_component_type");
  
  
@@ -3075,10 +3945,10 @@ index 0000000000000000000000000000000000000000..6919f01a18bc0ab375d2e05412065243
 +    @Nullable T filtered();
 +}
 diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
-index 54704da43cf9c429f3914f0580246dde99aa93c0..87bc4ce78350d95b9337262ba585b44c77213722 100644
+index 615eb24ffdd8f6d55ccd4f21760b809c1098bc68..1b3e120bb9b10b65eb6225af8f08caed5973007d 100644
 --- a/src/main/java/org/bukkit/Material.java
 +++ b/src/main/java/org/bukkit/Material.java
-@@ -130,7 +130,7 @@ import org.jetbrains.annotations.Nullable;
+@@ -137,7 +137,7 @@ import org.jetbrains.annotations.Nullable;
  @SuppressWarnings({"DeprecatedIsStillUsed", "deprecation"}) // Paper
  public enum Material implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper
      //<editor-fold desc="Materials" defaultstate="collapsed">
@@ -3087,25 +3957,21 @@ index 54704da43cf9c429f3914f0580246dde99aa93c0..87bc4ce78350d95b9337262ba585b44c
      STONE(22948),
      GRANITE(21091),
      POLISHED_GRANITE(5477),
-@@ -5599,6 +5599,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
+@@ -5784,6 +5784,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
       */
      @ApiStatus.Internal
      @Nullable
 +    @org.jetbrains.annotations.Contract(pure = true) // Paper
      public ItemType asItemType() {
-         Material material = this;
-         if (isLegacy()) {
-@@ -5615,6 +5616,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
+         return itemType.get();
+     }
+@@ -5796,7 +5797,47 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
       */
      @ApiStatus.Internal
      @Nullable
 +    @org.jetbrains.annotations.Contract(pure = true) // Paper
      public BlockType asBlockType() {
-         Material material = this;
-         if (isLegacy()) {
-@@ -5622,4 +5624,43 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
-         }
-         return Registry.BLOCK.get(material.key);
+         return blockType.get();
      }
 +
 +    // Paper start - data component API
@@ -3148,23 +4014,22 @@ index 54704da43cf9c429f3914f0580246dde99aa93c0..87bc4ce78350d95b9337262ba585b44c
 +    // Paper end - data component API
  }
 diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
-index 20015393f91af405c99db2635a471fb6ff19e4bf..7ab29c3d0471d5eb2152ff749efc15ac9d24acf8 100644
+index b4ef3133fdd9d79a3381cf8f659ff561ab2b4fad..d3c9fb2fd625ed6ae4882c3b16b86f324f236161 100644
 --- a/src/main/java/org/bukkit/Registry.java
 +++ b/src/main/java/org/bukkit/Registry.java
-@@ -349,6 +349,8 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
-             return StreamSupport.stream(this.spliterator(), false);
-         }
-     };
-+
-+    Registry<io.papermc.paper.datacomponent.DataComponentType> DATA_COMPONENT_TYPE = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.DATA_COMPONENT_TYPE); // Paper
+@@ -370,6 +370,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+      */
+     Registry<org.bukkit.potion.PotionEffectType> POTION_EFFECT_TYPE = EFFECT;
      // Paper end - potion effect type registry
++    Registry<io.papermc.paper.datacomponent.DataComponentType> DATA_COMPONENT_TYPE = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.DATA_COMPONENT_TYPE); // Paper
      /**
       * Get the object by its key.
+      *
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index b3abe3bde05d4a360e31e490bff8a859dc2bd4a6..794b3cf36f6ce4fb2c7957a4b259f8adf63090f3 100644
+index b59222b8c262545d100a9fd28b3bf1d2a4cf4eb0..ef254ecf202e85afec2919baf6075ad44dbcab53 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
-@@ -1,10 +1,10 @@
+@@ -1,10 +1,11 @@
  package org.bukkit.inventory;
  
  import com.google.common.base.Preconditions;
@@ -3173,10 +4038,11 @@ index b3abe3bde05d4a360e31e490bff8a859dc2bd4a6..794b3cf36f6ce4fb2c7957a4b259f8ad
  import java.util.Locale;
  import java.util.Map;
 +import io.papermc.paper.datacomponent.DataComponentBuilder;
++import io.papermc.paper.datacomponent.DataComponentType;
  import org.bukkit.Bukkit;
  import org.bukkit.Material;
  import org.bukkit.NamespacedKey;
-@@ -1033,4 +1033,149 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -1137,4 +1138,173 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
          return Bukkit.getUnsafe().computeTooltipLines(this, tooltipContext, player);
      }
      // Paper end - expose itemstack tooltip lines
@@ -3245,6 +4111,30 @@ index b3abe3bde05d4a360e31e490bff8a859dc2bd4a6..794b3cf36f6ce4fb2c7957a4b259f8ad
 +    @Utility
 +    public <T> void setData(final io.papermc.paper.datacomponent.DataComponentType.@NotNull Valued<T> type, final @NotNull DataComponentBuilder<T> valueBuilder) {
 +        this.setData(type, valueBuilder.build());
++    }
++
++    /**
++     * Modifies the value of the specified data component type for this item stack based on the result
++     * of applying a given function to the current value.
++     *
++     * <p>If the function returns {@code null}, the data component type will be reset using
++     * {@link #unsetData(DataComponentType)}. Otherwise, the
++     * component value will be updated with the new result using {@link #setData(DataComponentType.Valued, Object)}.</p>
++     *
++     * @param <T>      the type of the data component's value
++     * @param type     the data component type to be modified
++     * @param consumer a function that takes the current component value (can be {@code null}) and
++     *                 returns the modified value (or {@code null} to unset)
++     */
++    @Utility
++    public <T> void editData(final io.papermc.paper.datacomponent.DataComponentType.@NotNull Valued<T> type, final @NotNull java.util.function.Function<@Nullable T, @Nullable T> consumer) {
++        T value = getData(type);
++        T newType = consumer.apply(value);
++        if (newType == null) {
++            unsetData(type);
++        } else {
++            setData(type, newType);
++        }
 +    }
 +
 +    /**
@@ -3327,10 +4217,10 @@ index b3abe3bde05d4a360e31e490bff8a859dc2bd4a6..794b3cf36f6ce4fb2c7957a4b259f8ad
 +    // Paper end - data component API
  }
 diff --git a/src/main/java/org/bukkit/inventory/ItemType.java b/src/main/java/org/bukkit/inventory/ItemType.java
-index 0168f0a14a3e899e84c5e36963ff79950ab580fb..6d0466a8a54531eaf51521b10047a27ef83d47b7 100644
+index 72803c00e4af576f286d2af34bf300ee554a7f3c..9769726ec1e227606a79ccab1e8e439ef9ec16c1 100644
 --- a/src/main/java/org/bukkit/inventory/ItemType.java
 +++ b/src/main/java/org/bukkit/inventory/ItemType.java
-@@ -2336,4 +2336,30 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
+@@ -2483,4 +2483,30 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
       */
      @Nullable ItemRarity getItemRarity();
      // Paper end - expand ItemRarity API
