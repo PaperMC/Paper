@@ -104,10 +104,10 @@ index 0f3d502a9680006bcdcd7d272240a2e5c3b46790..ffa1c48585fbbc1d30826d435043527f
 +    // Paper end - Use Velocity cipher
  }
 diff --git a/src/main/java/net/minecraft/network/CompressionDecoder.java b/src/main/java/net/minecraft/network/CompressionDecoder.java
-index a57e8516b3fafd7060dc1b30550164e74e17fc84..446c281da888686f50b5ff4f2496e8462722fd0a 100644
+index a57e8516b3fafd7060dc1b30550164e74e17fc84..3a853d7401a8275b1a3d525bbda8095de12d0038 100644
 --- a/src/main/java/net/minecraft/network/CompressionDecoder.java
 +++ b/src/main/java/net/minecraft/network/CompressionDecoder.java
-@@ -13,13 +13,20 @@ public class CompressionDecoder extends ByteToMessageDecoder {
+@@ -13,13 +13,21 @@ public class CompressionDecoder extends ByteToMessageDecoder {
      public static final int MAXIMUM_COMPRESSED_LENGTH = 2097152;
      public static final int MAXIMUM_UNCOMPRESSED_LENGTH = 8388608;
      private Inflater inflater;
@@ -116,6 +116,7 @@ index a57e8516b3fafd7060dc1b30550164e74e17fc84..446c281da888686f50b5ff4f2496e846
      private boolean validateDecompressed;
  
 +    // Paper start - Use Velocity cipher
++    @io.papermc.paper.annotation.DoNotUse
      public CompressionDecoder(int compressionThreshold, boolean rejectsBadPackets) {
 +        this(null, compressionThreshold, rejectsBadPackets);
 +    }
@@ -129,7 +130,7 @@ index a57e8516b3fafd7060dc1b30550164e74e17fc84..446c281da888686f50b5ff4f2496e846
      }
  
      protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
-@@ -38,14 +45,42 @@ public class CompressionDecoder extends ByteToMessageDecoder {
+@@ -38,14 +46,42 @@ public class CompressionDecoder extends ByteToMessageDecoder {
                      }
                  }
  
@@ -172,14 +173,14 @@ index a57e8516b3fafd7060dc1b30550164e74e17fc84..446c281da888686f50b5ff4f2496e846
      private void setupInflaterInput(ByteBuf buf) {
          ByteBuffer byteBuffer;
          if (buf.nioBufferCount() > 0) {
-@@ -82,7 +117,13 @@ public class CompressionDecoder extends ByteToMessageDecoder {
+@@ -82,7 +118,13 @@ public class CompressionDecoder extends ByteToMessageDecoder {
          }
      }
  
 -    public void setThreshold(int compressionThreshold, boolean rejectsBadPackets) {
 +    // Paper start - Use Velocity cipher
 +    public void setThreshold(com.velocitypowered.natives.compression.VelocityCompressor compressor, int compressionThreshold, boolean rejectsBadPackets) {
-+        if (this.compressor == null && compressor != null) {
++        if (this.compressor == null && compressor != null) { // Only re-configure once. Re-reconfiguring would require closing the native compressor.
 +            this.compressor = compressor;
 +            this.inflater = null;
 +        }
