@@ -14,9 +14,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 -        PlayerTeleportEvent event = new PlayerTeleportEvent(player, from.clone(), to.clone(), cause);
 +        // Paper start - Teleport API
-+        Set<io.papermc.paper.entity.TeleportFlag.Relative> relativeFlags = java.util.EnumSet.noneOf(io.papermc.paper.entity.TeleportFlag.Relative.class);
-+        for (Relative relativeArgument : set) {
-+            relativeFlags.add(org.bukkit.craftbukkit.entity.CraftPlayer.toApiRelativeFlag(relativeArgument));
++        final Set<io.papermc.paper.entity.TeleportFlag.Relative> relativeFlags = java.util.EnumSet.noneOf(io.papermc.paper.entity.TeleportFlag.Relative.class);
++        for (final Relative relativeArgument : set) {
++            final io.papermc.paper.entity.TeleportFlag.Relative flag = org.bukkit.craftbukkit.entity.CraftPlayer.deltaRelativeToAPI(relativeArgument);
++            if (flag != null) relativeFlags.add(flag);
 +        }
 +        PlayerTeleportEvent event = new PlayerTeleportEvent(player, from.clone(), to.clone(), cause, java.util.Set.copyOf(relativeFlags));
 +        // Paper end - Teleport API
@@ -156,24 +157,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        };
 +    }
 +
-+    public static net.minecraft.world.entity.Relative toNmsRelativeFlag(io.papermc.paper.entity.TeleportFlag.Relative apiFlag) {
++    public static net.minecraft.world.entity.Relative deltaRelativeToNMS(io.papermc.paper.entity.TeleportFlag.Relative apiFlag) {
 +        return switch (apiFlag) {
-+            case X -> net.minecraft.world.entity.Relative.X;
-+            case Y -> net.minecraft.world.entity.Relative.Y;
-+            case Z -> net.minecraft.world.entity.Relative.Z;
-+            case PITCH -> net.minecraft.world.entity.Relative.X_ROT;
-+            case YAW -> net.minecraft.world.entity.Relative.Y_ROT;
++            case VELOCITY_X -> net.minecraft.world.entity.Relative.DELTA_X;
++            case VELOCITY_Y -> net.minecraft.world.entity.Relative.DELTA_Y;
++            case VELOCITY_Z -> net.minecraft.world.entity.Relative.DELTA_Z;
++            case VELOCITY_ROTATION -> net.minecraft.world.entity.Relative.ROTATE_DELTA;
 +        };
 +    }
 +
-+    public static io.papermc.paper.entity.TeleportFlag.Relative toApiRelativeFlag(net.minecraft.world.entity.Relative nmsFlag) {
++    public static @org.jetbrains.annotations.Nullable io.papermc.paper.entity.TeleportFlag.Relative deltaRelativeToAPI(net.minecraft.world.entity.Relative nmsFlag) {
 +        return switch (nmsFlag) {
-+            case X -> io.papermc.paper.entity.TeleportFlag.Relative.X;
-+            case Y -> io.papermc.paper.entity.TeleportFlag.Relative.Y;
-+            case Z -> io.papermc.paper.entity.TeleportFlag.Relative.Z;
-+            case X_ROT -> io.papermc.paper.entity.TeleportFlag.Relative.PITCH;
-+            case Y_ROT -> io.papermc.paper.entity.TeleportFlag.Relative.YAW;
-+            default -> throw new RuntimeException("not yet"); // TODO figure out what to do with new flags
++            case DELTA_X -> io.papermc.paper.entity.TeleportFlag.Relative.VELOCITY_X;
++            case DELTA_Y -> io.papermc.paper.entity.TeleportFlag.Relative.VELOCITY_Y;
++            case DELTA_Z -> io.papermc.paper.entity.TeleportFlag.Relative.VELOCITY_Z;
++            case ROTATE_DELTA -> io.papermc.paper.entity.TeleportFlag.Relative.VELOCITY_ROTATION;
++            default -> null;
 +        };
 +    }
 +
@@ -255,7 +254,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            // Paper start - Teleport API
 +            final Set<net.minecraft.world.entity.Relative> nms = java.util.EnumSet.noneOf(net.minecraft.world.entity.Relative.class);
 +            for (final io.papermc.paper.entity.TeleportFlag.Relative bukkit : relativeArguments) {
-+                nms.add(toNmsRelativeFlag(bukkit));
++                nms.add(deltaRelativeToNMS(bukkit));
 +            }
 +            entity.connection.internalTeleport(new net.minecraft.world.entity.PositionMoveRotation(
 +                io.papermc.paper.util.MCUtil.toVec3(to), net.minecraft.world.phys.Vec3.ZERO, to.getYaw(), to.getPitch()
