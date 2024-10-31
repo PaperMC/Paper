@@ -102,7 +102,7 @@ index 52eafd99ed63f5fc9596225cf45175b1287f20a1..e5db85f858ab376b225172e22b92b841
                              }
  
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 751fc4b0fe60c6d26ea0f768f3d66031a4bad963..f6eed6cb2bd69c15aa36a8d8d9abdfda6d4a0622 100644
+index 751fc4b0fe60c6d26ea0f768f3d66031a4bad963..700ab5ef2f8ab1466c4f659cd34679dc809efbaf 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -396,7 +396,7 @@ public abstract class PlayerList {
@@ -114,6 +114,25 @@ index 751fc4b0fe60c6d26ea0f768f3d66031a4bad963..f6eed6cb2bd69c15aa36a8d8d9abdfda
  
          this.sendLevelInfo(player, worldserver1);
  
+@@ -907,12 +907,17 @@ public abstract class PlayerList {
+     }
+ 
+     public void sendActiveEffects(LivingEntity entity, ServerGamePacketListenerImpl networkHandler) {
++        // Paper start - collect packets
++        this.sendActiveEffects(entity, networkHandler::send);
++    }
++    public void sendActiveEffects(LivingEntity entity, java.util.function.Consumer<Packet<? super net.minecraft.network.protocol.game.ClientGamePacketListener>> packetConsumer) {
++        // Paper end - collect packets
+         Iterator iterator = entity.getActiveEffects().iterator();
+ 
+         while (iterator.hasNext()) {
+             MobEffectInstance mobeffect = (MobEffectInstance) iterator.next();
+ 
+-            networkHandler.send(new ClientboundUpdateMobEffectPacket(entity.getId(), mobeffect, false));
++            packetConsumer.accept(new ClientboundUpdateMobEffectPacket(entity.getId(), mobeffect, false)); // Paper - collect packets
+         }
+ 
+     }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
 index 7fbaaed892b39ca920b15e08d6c44943a69a35d7..ddfc4818f091802e5999c6b99e5bc57c6f370648 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
@@ -167,7 +186,7 @@ index 7fbaaed892b39ca920b15e08d6c44943a69a35d7..ddfc4818f091802e5999c6b99e5bc57c
      public boolean equals(Object object) {
          return object instanceof Entity ? ((Entity) object).id == this.id : false;
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 22f520414442c05986cc620208afaa895d8ee4fa..d19a9aa8f73b3a07e7d3d63efa5d411add163fa4 100644
+index 40697022b64100fcf7f5c079c6863cd0eabfb0b8..61d4515cce2b5ed73a2202d43b8f96bb63b9a459 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -4029,6 +4029,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -182,15 +201,6 @@ index 22f520414442c05986cc620208afaa895d8ee4fa..d19a9aa8f73b3a07e7d3d63efa5d411a
      private void updatingUsingItem() {
          if (this.isUsingItem()) {
              if (ItemStack.isSameItem(this.getItemInHand(this.getUsedItemHand()), this.useItem)) {
-@@ -4164,7 +4169,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
-                             this.stopUsingItem(); // Paper - event is using an item, clear active item to reset its use
-                             // Update client
-                             Consumable consumable = this.useItem.get(DataComponents.CONSUMABLE);
--                            if (consumable != null) {
-+                            if (false && consumable != null) { // Paper
-                                 consumable.cancelUsingItem(entityPlayer, this.useItem);
-                             }
-                             entityPlayer.getBukkitEntity().updateInventory();
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Bucketable.java b/src/main/java/net/minecraft/world/entity/animal/Bucketable.java
 index 5a12f4c1de2d020e84af933d491397b38d227824..4eca5996a867086be22d22d99db81ab001467516 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Bucketable.java
@@ -205,6 +215,72 @@ index 5a12f4c1de2d020e84af933d491397b38d227824..4eca5996a867086be22d22d99db81ab0
                  return Optional.of(InteractionResult.FAIL);
              }
              entity.playSound(((Bucketable) entity).getPickupSound(), 1.0F, 1.0F);
+diff --git a/src/main/java/net/minecraft/world/item/component/Consumable.java b/src/main/java/net/minecraft/world/item/component/Consumable.java
+index fe8618451e3a3f5185704f791723f7897870b6f2..6be5e7b0ce975702ae7c337a06faa59ff3414d64 100644
+--- a/src/main/java/net/minecraft/world/item/component/Consumable.java
++++ b/src/main/java/net/minecraft/world/item/component/Consumable.java
+@@ -97,10 +97,12 @@ public record Consumable(float consumeSeconds, ItemUseAnimation animation, Holde
+ 
+     // CraftBukkit start
+     public void cancelUsingItem(net.minecraft.server.level.ServerPlayer entityplayer, ItemStack itemstack) {
++        final java.util.List<net.minecraft.network.protocol.Packet<? super net.minecraft.network.protocol.game.ClientGamePacketListener>> packets = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>(); // Paper - properly resend entities - collect packets for bundle
+         itemstack.getAllOfType(ConsumableListener.class).forEach((consumablelistener) -> {
+-            consumablelistener.cancelUsingItem(entityplayer, itemstack);
++            consumablelistener.cancelUsingItem(entityplayer, itemstack, packets); // Paper - properly resend entities - collect packets for bundle
+         });
+-        entityplayer.server.getPlayerList().sendActivePlayerEffects(entityplayer);
++        entityplayer.server.getPlayerList().sendActiveEffects(entityplayer, packets::add); // Paper - properly resend entities - collect packets for bundle
++        entityplayer.connection.send(new net.minecraft.network.protocol.game.ClientboundBundlePacket(packets));
+     }
+     // CraftBukkit end
+ 
+diff --git a/src/main/java/net/minecraft/world/item/component/ConsumableListener.java b/src/main/java/net/minecraft/world/item/component/ConsumableListener.java
+index 03ff8a5aa5083d87d77b68371557cf4e97003114..c66475c7e20b5752dcc9263e44f541f9f2b8e6de 100644
+--- a/src/main/java/net/minecraft/world/item/component/ConsumableListener.java
++++ b/src/main/java/net/minecraft/world/item/component/ConsumableListener.java
+@@ -8,5 +8,5 @@ public interface ConsumableListener {
+ 
+     void onConsume(Level world, LivingEntity user, ItemStack stack, Consumable consumable);
+ 
+-    default void cancelUsingItem(net.minecraft.server.level.ServerPlayer entityplayer, ItemStack itemstack) {} // CraftBukkit
++    default void cancelUsingItem(net.minecraft.server.level.ServerPlayer entityplayer, ItemStack itemstack, java.util.List<net.minecraft.network.protocol.Packet<? super net.minecraft.network.protocol.game.ClientGamePacketListener>> collectedPackets) {} // CraftBukkit // Paper - properly resend entities - collect packets for bundle
+ }
+diff --git a/src/main/java/net/minecraft/world/item/component/OminousBottleAmplifier.java b/src/main/java/net/minecraft/world/item/component/OminousBottleAmplifier.java
+index 202d3c4741f3f6468a09bfd8e661b9823a332ea7..6b5723b817e48a4c231014f28e45b20754c2c090 100644
+--- a/src/main/java/net/minecraft/world/item/component/OminousBottleAmplifier.java
++++ b/src/main/java/net/minecraft/world/item/component/OminousBottleAmplifier.java
+@@ -28,8 +28,14 @@ public record OminousBottleAmplifier(int value) implements ConsumableListener, T
+ 
+     @Override
+     public void onConsume(Level world, LivingEntity user, ItemStack stack, Consumable consumable) {
+-        user.addEffect(new MobEffectInstance(MobEffects.BAD_OMEN, 120000, this.value, false, false, true));
++        user.addEffect(new MobEffectInstance(MobEffects.BAD_OMEN, 120000, this.value, false, false, true)); // Paper - properly resend entities - diff on change for below
+     }
++    // Paper start - properly resend entities - collect packets for bundle
++    @Override
++    public void cancelUsingItem(net.minecraft.server.level.ServerPlayer entityplayer, ItemStack itemstack, java.util.List<net.minecraft.network.protocol.Packet<? super net.minecraft.network.protocol.game.ClientGamePacketListener>> collectedPackets) {
++        collectedPackets.add(new net.minecraft.network.protocol.game.ClientboundRemoveMobEffectPacket(entityplayer.getId(), MobEffects.BAD_OMEN));
++    }
++    // Paper end - properly resend entities - collect packets for bundle
+ 
+     @Override
+     public void addToTooltip(Item.TooltipContext context, Consumer<Component> tooltip, TooltipFlag type) {
+diff --git a/src/main/java/net/minecraft/world/item/component/SuspiciousStewEffects.java b/src/main/java/net/minecraft/world/item/component/SuspiciousStewEffects.java
+index 04760d8ba7c560bd9d11191c666715ae8c3e4bff..021169d709964b1bb65e49bf3fcf3119f0749448 100644
+--- a/src/main/java/net/minecraft/world/item/component/SuspiciousStewEffects.java
++++ b/src/main/java/net/minecraft/world/item/component/SuspiciousStewEffects.java
+@@ -46,9 +46,9 @@ public record SuspiciousStewEffects(List<SuspiciousStewEffects.Entry> effects) i
+ 
+     // CraftBukkit start
+     @Override
+-    public void cancelUsingItem(net.minecraft.server.level.ServerPlayer entityplayer, ItemStack itemstack) {
++    public void cancelUsingItem(net.minecraft.server.level.ServerPlayer entityplayer, ItemStack itemstack, java.util.List<net.minecraft.network.protocol.Packet<? super net.minecraft.network.protocol.game.ClientGamePacketListener>> collectedPackets) { // Paper - properly resend entities - collect packets for bundle
+         for (SuspiciousStewEffects.Entry suspicioussteweffects_a : this.effects) {
+-            entityplayer.connection.send(new net.minecraft.network.protocol.game.ClientboundRemoveMobEffectPacket(entityplayer.getId(), suspicioussteweffects_a.effect()));
++            collectedPackets.add(new net.minecraft.network.protocol.game.ClientboundRemoveMobEffectPacket(entityplayer.getId(), suspicioussteweffects_a.effect())); // Paper - bundlize packets
+         }
+     }
+     // CraftBukkit end
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 index 7536ab5c22d97a074c08a95fff6bc756d61e387d..b0e49ad831f1ebc6b126bf82c5fddaebffb91312 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
