@@ -28,15 +28,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.core.Registry;
 +import net.minecraft.core.registries.Registries;
 +import net.minecraft.resources.ResourceKey;
++import org.bukkit.Fluid;
 +import org.bukkit.GameEvent;
 +import org.bukkit.JukeboxSong;
 +import org.bukkit.Keyed;
 +import org.bukkit.MusicInstrument;
++import org.bukkit.attribute.Attribute;
++import org.bukkit.block.Biome;
 +import org.bukkit.block.BlockType;
 +import org.bukkit.block.banner.PatternType;
++import org.bukkit.craftbukkit.CraftFluid;
 +import org.bukkit.craftbukkit.CraftGameEvent;
 +import org.bukkit.craftbukkit.CraftJukeboxSong;
 +import org.bukkit.craftbukkit.CraftMusicInstrument;
++import org.bukkit.craftbukkit.attribute.CraftAttribute;
++import org.bukkit.craftbukkit.block.CraftBiome;
 +import org.bukkit.craftbukkit.block.CraftBlockType;
 +import org.bukkit.craftbukkit.block.banner.CraftPatternType;
 +import org.bukkit.craftbukkit.damage.CraftDamageType;
@@ -98,6 +104,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            entry(Registries.VILLAGER_TYPE, RegistryKey.VILLAGER_TYPE, Villager.Type.class, CraftVillager.CraftType::new),
 +            entry(Registries.MAP_DECORATION_TYPE, RegistryKey.MAP_DECORATION_TYPE, MapCursor.Type.class, CraftMapCursor.CraftType::new),
 +            entry(Registries.MENU, RegistryKey.MENU, MenuType.class, CraftMenuType::new),
++            entry(Registries.ATTRIBUTE, RegistryKey.ATTRIBUTE, Attribute.class, CraftAttribute::new),
++            entry(Registries.FLUID, RegistryKey.FLUID, Fluid.class, CraftFluid::new),
 +
 +            // data-drivens
 +            entry(Registries.STRUCTURE, RegistryKey.STRUCTURE, Structure.class, CraftStructure::new).delayed(),
@@ -108,17 +116,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            entry(Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT, Enchantment.class, CraftEnchantment::new).withSerializationUpdater(FieldRename.ENCHANTMENT_RENAME).delayed(),
 +            entry(Registries.JUKEBOX_SONG, RegistryKey.JUKEBOX_SONG, JukeboxSong.class, CraftJukeboxSong::new).delayed(),
 +            entry(Registries.BANNER_PATTERN, RegistryKey.BANNER_PATTERN, PatternType.class, CraftPatternType::new).delayed(),
++            entry(Registries.BIOME, RegistryKey.BIOME, Biome.class, CraftBiome::new).delayed(),
 +
 +            // api-only
-+            apiOnly(Registries.BIOME, RegistryKey.BIOME, () -> org.bukkit.Registry.BIOME),
 +            apiOnly(Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT, () -> org.bukkit.Registry.ART),
-+            apiOnly(Registries.ATTRIBUTE, RegistryKey.ATTRIBUTE, () -> org.bukkit.Registry.ATTRIBUTE),
 +            apiOnly(Registries.ENTITY_TYPE, RegistryKey.ENTITY_TYPE, () -> org.bukkit.Registry.ENTITY_TYPE),
 +            apiOnly(Registries.PARTICLE_TYPE, RegistryKey.PARTICLE_TYPE, () -> org.bukkit.Registry.PARTICLE_TYPE),
 +            apiOnly(Registries.POTION, RegistryKey.POTION, () -> org.bukkit.Registry.POTION),
 +            apiOnly(Registries.SOUND_EVENT, RegistryKey.SOUND_EVENT, () -> org.bukkit.Registry.SOUNDS),
-+            apiOnly(Registries.MEMORY_MODULE_TYPE, RegistryKey.MEMORY_MODULE_TYPE, () -> (org.bukkit.Registry<MemoryKey<?>>) (org.bukkit.Registry) org.bukkit.Registry.MEMORY_MODULE_TYPE),
-+            apiOnly(Registries.FLUID, RegistryKey.FLUID, () -> org.bukkit.Registry.FLUID)
++            apiOnly(Registries.MEMORY_MODULE_TYPE, RegistryKey.MEMORY_MODULE_TYPE, () -> (org.bukkit.Registry<MemoryKey<?>>) (org.bukkit.Registry) org.bukkit.Registry.MEMORY_MODULE_TYPE)
 +        );
 +        final Map<RegistryKey<?>, RegistryEntry<?, ?>> byRegistryKey = new IdentityHashMap<>(REGISTRY_ENTRIES.size());
 +        final Map<ResourceKey<?>, RegistryEntry<?, ?>> byResourceKey = new IdentityHashMap<>(REGISTRY_ENTRIES.size());
@@ -758,8 +764,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -     * @return the bukkit registry of the provided class
 -     */
 -    public static <B extends Keyed> Registry<?> createRegistry(Class<? super B> bukkitClass, RegistryAccess registryHolder) {
+-        if (bukkitClass == Attribute.class) {
+-            return new CraftRegistry<>(Attribute.class, registryHolder.lookupOrThrow(Registries.ATTRIBUTE), CraftAttribute::new, FieldRename.ATTRIBUTE_RENAME);
+-        }
+-        if (bukkitClass == Biome.class) {
+-            return new CraftRegistry<>(Biome.class, registryHolder.lookupOrThrow(Registries.BIOME), CraftBiome::new, FieldRename.BIOME_RENAME);
+-        }
 -        if (bukkitClass == Enchantment.class) {
 -            return new CraftRegistry<>(Enchantment.class, registryHolder.lookupOrThrow(Registries.ENCHANTMENT), CraftEnchantment::new, FieldRename.ENCHANTMENT_RENAME);
+-        }
+-        if (bukkitClass == Fluid.class) {
+-            return new CraftRegistry<>(Fluid.class, registryHolder.lookupOrThrow(Registries.FLUID), CraftFluid::new, FieldRename.NONE);
 -        }
 -        if (bukkitClass == GameEvent.class) {
 -            return new CraftRegistry<>(GameEvent.class, registryHolder.lookupOrThrow(Registries.GAME_EVENT), CraftGameEvent::new, FieldRename.NONE);
@@ -1260,7 +1275,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      static {
 -        // Order: Bukkit class, Minecraft Registry key, CraftBukkit class, Minecraft class
+-        register(Attribute.class, Registries.ATTRIBUTE, CraftAttribute.class, net.minecraft.world.entity.ai.attributes.Attribute.class);
+-        register(Biome.class, Registries.BIOME, CraftBiome.class, net.minecraft.world.level.biome.Biome.class);
 -        register(Enchantment.class, Registries.ENCHANTMENT, CraftEnchantment.class, net.minecraft.world.item.enchantment.Enchantment.class);
+-        register(Fluid.class, Registries.FLUID, CraftFluid.class, net.minecraft.world.level.material.Fluid.class);
 -        register(GameEvent.class, Registries.GAME_EVENT, CraftGameEvent.class, net.minecraft.world.level.gameevent.GameEvent.class);
 -        register(MusicInstrument.class, Registries.INSTRUMENT, CraftMusicInstrument.class, Instrument.class);
 -        register(MenuType.class, Registries.MENU, CraftMenuType.class, net.minecraft.world.inventory.MenuType.class);
@@ -1282,7 +1300,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -        register(PatternType.class, Registries.BANNER_PATTERN, CraftPatternType.class, BannerPattern.class);
 -
 +        // Order: RegistryKey, Bukkit class, Minecraft Registry key, CraftBukkit class, Minecraft class
++        register(RegistryKey.ATTRIBUTE, Attribute.class, Registries.ATTRIBUTE, CraftAttribute.class, net.minecraft.world.entity.ai.attributes.Attribute.class);
++        register(RegistryKey.BIOME, Biome.class, Registries.BIOME, CraftBiome.class, net.minecraft.world.level.biome.Biome.class);
 +        register(RegistryKey.ENCHANTMENT, Enchantment.class, Registries.ENCHANTMENT, CraftEnchantment.class, net.minecraft.world.item.enchantment.Enchantment.class);
++        register(RegistryKey.FLUID, Fluid.class, Registries.FLUID, CraftFluid.class, net.minecraft.world.level.material.Fluid.class);
 +        register(RegistryKey.GAME_EVENT, GameEvent.class, Registries.GAME_EVENT, CraftGameEvent.class, net.minecraft.world.level.gameevent.GameEvent.class);
 +        register(RegistryKey.INSTRUMENT, MusicInstrument.class, Registries.INSTRUMENT, CraftMusicInstrument.class, Instrument.class);
 +        register(RegistryKey.MOB_EFFECT, PotionEffectType.class, Registries.MOB_EFFECT, CraftPotionEffectType.class, MobEffect.class);
