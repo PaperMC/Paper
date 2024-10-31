@@ -24,6 +24,7 @@ import org.bukkit.block.Biome;
 import org.bukkit.block.BlockType;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.craftbukkit.attribute.CraftAttribute;
+import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.block.banner.CraftPatternType;
 import org.bukkit.craftbukkit.damage.CraftDamageType;
@@ -136,6 +137,9 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         if (bukkitClass == Attribute.class) {
             return new CraftRegistry<>(Attribute.class, registryHolder.lookupOrThrow(Registries.ATTRIBUTE), CraftAttribute::new, FieldRename.ATTRIBUTE_RENAME);
         }
+        if (bukkitClass == Biome.class) {
+            return new CraftRegistry<>(Biome.class, registryHolder.lookupOrThrow(Registries.BIOME), CraftBiome::new, FieldRename.BIOME_RENAME);
+        }
         if (bukkitClass == Enchantment.class) {
             return new CraftRegistry<>(Enchantment.class, registryHolder.lookupOrThrow(Registries.ENCHANTMENT), CraftEnchantment::new, FieldRename.ENCHANTMENT_RENAME);
         }
@@ -210,10 +214,6 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
 
         if (bukkit instanceof Registry.SimpleRegistry<?> simple) {
             Class<?> bClass = simple.getType();
-
-            if (bClass == Biome.class) {
-                return bukkit.get(FieldRename.BIOME_RENAME.apply(namespacedKey, apiVersion));
-            }
 
             if (bClass == EntityType.class) {
                 return bukkit.get(FieldRename.ENTITY_TYPE_RENAME.apply(namespacedKey, apiVersion));

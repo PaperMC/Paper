@@ -89,6 +89,7 @@ public class Commodore {
             "org/bukkit/map/MapCursor$Type", "NOP",
             "org/bukkit/block/banner/PatternType", "NOP",
             "org/bukkit/attribute/Attribute", "NOP",
+            "org/bukkit/block/Biome", "NOP",
             "org/bukkit/Fluid", "NOP"
     );
 
