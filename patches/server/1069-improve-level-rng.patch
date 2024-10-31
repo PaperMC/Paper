@@ -1,0 +1,66 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: scriptlinestudios <scriptlinestudios@protonmail.com>
+Date: Thu, 31 Oct 2024 13:37:55 +0200
+Subject: [PATCH] improve level rng
+
+
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 507671476c3d2d92a2fdb05be24443af27d26dcf..b396d91d7ffd1e59493f0abe27b0530f74c6d3fc 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -123,16 +123,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+     public final Thread thread;
+     private final boolean isDebug;
+     private int skyDarken;
+-    protected int randValue = RandomSource.create().nextInt();
++    protected long randValue = RandomSource.create().nextLong();
+     protected final int addend = 1013904223;
+     protected float oRainLevel;
+     public float rainLevel;
+     protected float oThunderLevel;
+     public float thunderLevel;
+     public final RandomSource random = RandomSource.create();
+-    /** @deprecated */
+-    @Deprecated
+-    private final RandomSource threadSafeRandom = RandomSource.createThreadSafe();
+     private final Holder<DimensionType> dimensionTypeRegistration;
+     public final WritableLevelData levelData;
+     private final Supplier<ProfilerFiller> profiler;
+@@ -1327,15 +1324,18 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+     }
+ 
+     public void playSound(@Nullable Player source, double x, double y, double z, SoundEvent sound, SoundSource category, float volume, float pitch) {
+-        this.playSeededSound(source, x, y, z, sound, category, volume, pitch, this.threadSafeRandom.nextLong());
++        this.randValue++;
++        this.playSeededSound(source, x, y, z, sound, category, volume, pitch, this.randValue);
+     }
+ 
+     public void playSound(@Nullable Player source, double x, double y, double z, Holder<SoundEvent> sound, SoundSource category, float volume, float pitch) {
+-        this.playSeededSound(source, x, y, z, sound, category, volume, pitch, this.threadSafeRandom.nextLong());
++        this.randValue++;
++        this.playSeededSound(source, x, y, z, sound, category, volume, pitch, this.randValue);
+     }
+ 
+     public void playSound(@Nullable Player source, Entity entity, SoundEvent sound, SoundSource category, float volume, float pitch) {
+-        this.playSeededSound(source, entity, BuiltInRegistries.SOUND_EVENT.wrapAsHolder(sound), category, volume, pitch, this.threadSafeRandom.nextLong());
++        this.randValue++;
++        this.playSeededSound(source, entity, BuiltInRegistries.SOUND_EVENT.wrapAsHolder(sound), category, volume, pitch, this.randValue);
+     }
+ 
+     public void playLocalSound(BlockPos pos, SoundEvent sound, SoundSource category, float volume, float pitch, boolean useDistance) {
+@@ -1950,10 +1950,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+     public abstract RecipeManager getRecipeManager();
+ 
+     public BlockPos getBlockRandomPos(int x, int y, int z, int l) {
+-        this.randValue = this.randValue * 3 + 1013904223;
+-        int i1 = this.randValue >> 2;
++        this.randValue = (((long)(x ^ 16691) << 32 | ((z ^ 19391) & (1L<<32) - 1)) << 8 | ((this.randValue + 2319389831L) * 11 & 0xFF));
++        long i1 = Long.reverse(randValue*randValue<<39);
++        long i2 = Long.reverse(randValue*randValue<<41);
++        long i3 = Long.reverse(randValue*randValue<<23);
+ 
+-        return new BlockPos(x + (i1 & 15), y + (i1 >> 16 & l), z + (i1 >> 8 & 15));
++        return new BlockPos(x + ((int)i1 & 15), y + ((int)i2 & l), z + ((int)i3 & 15));
+     }
+ 
+     public boolean noSave() {
