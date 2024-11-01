@@ -7,10 +7,10 @@ Subject: [PATCH] Fix InventoryAction wrong for Bundles
 public net/minecraft/world/item/component/BundleContents$Mutable getMaxAmountToAdd(Lnet/minecraft/world/item/ItemStack;)I;
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index b13057c0792067cc6b0abdf0d64a9be2cc9389a4..8762e480f439598ab54e8621ac8a0358dfecfc14 100644
+index b5d5dbc50a7b8c40739a15f164ffd08fdc534f9c..4f4e3a027a1e67a0c93413c91afd525738c95056 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -3003,11 +3003,23 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -3041,11 +3041,23 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                                          ItemStack cursor = this.player.containerMenu.getCarried();
                                          if (clickedItem.isEmpty()) {
                                              if (!cursor.isEmpty()) {
@@ -36,13 +36,13 @@ index b13057c0792067cc6b0abdf0d64a9be2cc9389a4..8762e480f439598ab54e8621ac8a0358
                                              } else if (slot.mayPlace(cursor)) {
                                                  if (ItemStack.isSameItemSameComponents(clickedItem, cursor)) {
                                                      int toPlace = packet.getButtonNum() == 0 ? cursor.getCount() : 1;
-@@ -3023,7 +3035,34 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -3061,7 +3073,34 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
                                                          action = InventoryAction.PLACE_SOME;
                                                      }
                                                  } else if (cursor.getCount() <= slot.getMaxStackSize()) {
 -                                                    action = InventoryAction.SWAP_WITH_CURSOR;
 +                                                    // Paper start - Fix InventoryAction wrong for Bundles
-+                                                    if (cursor.is(Items.BUNDLE) && packet.getButtonNum() != 0) {
++                                                    if (cursor.is(Items.BUNDLE) && packet.getButtonNum() == 0) {
 +                                                        int toPickup = new net.minecraft.world.item.component.BundleContents.Mutable(cursor.get(DataComponents.BUNDLE_CONTENTS)).getMaxAmountToAdd(slot.getItem());
 +                                                        if (toPickup >= slot.getItem().getCount()) {
 +                                                            action = InventoryAction.PICKUP_ALL_INTO_BUNDLE;
@@ -53,7 +53,7 @@ index b13057c0792067cc6b0abdf0d64a9be2cc9389a4..8762e480f439598ab54e8621ac8a0358
 +                                                        } else {
 +                                                            action = InventoryAction.PICKUP_SOME_INTO_BUNDLE;
 +                                                        }
-+                                                    } else if (slot.getItem().is(Items.BUNDLE) && packet.getButtonNum() != 0) {
++                                                    } else if (slot.getItem().is(Items.BUNDLE) && packet.getButtonNum() == 0) {
 +                                                        int toPickup = new net.minecraft.world.item.component.BundleContents.Mutable(slot.getItem().get(DataComponents.BUNDLE_CONTENTS)).getMaxAmountToAdd(cursor);
 +                                                        if (toPickup >= cursor.getCount()) {
 +                                                            action = InventoryAction.PLACE_ALL_INTO_BUNDLE;
