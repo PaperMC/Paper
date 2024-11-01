@@ -4,7 +4,7 @@ Date: Sat, 15 Jun 2024 18:50:18 +0100
 Subject: [PATCH] Fix removing recipes from RecipeIterator
 
 == AT ==
-public net.minecraft.world.item.crafting.RecipeManager byName
+public net.minecraft.world.item.crafting.RecipeMap byKey
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/RecipeIterator.java b/src/main/java/org/bukkit/craftbukkit/inventory/RecipeIterator.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -14,7 +14,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
  public class RecipeIterator implements Iterator<Recipe> {
      private final Iterator<Map.Entry<RecipeType<?>, RecipeHolder<?>>> recipes;
-+    private Recipe currentRecipe; // Paper - fix removing recipes from RecipeIterator
++    private RecipeHolder<?> currentRecipe; // Paper - fix removing recipes from RecipeIterator
  
      public RecipeIterator() {
          this.recipes = MinecraftServer.getServer().getRecipeManager().recipes.byType.entries().iterator();
@@ -24,16 +24,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public Recipe next() {
 -        return this.recipes.next().getValue().toBukkitRecipe();
 +        // Paper start - fix removing recipes from RecipeIterator
-+        this.currentRecipe = this.recipes.next().getValue().toBukkitRecipe();
-+        return this.currentRecipe;
++        this.currentRecipe = this.recipes.next().getValue();
++        return this.currentRecipe.toBukkitRecipe();
 +        // Paper end - fix removing recipes from RecipeIterator
      }
  
      @Override
      public void remove() {
-+        // Paper start - fix removing recipes from RecipeIterator
-+        if (true) throw new UnsupportedOperationException();
-+        // Paper end - fix removing recipes from RecipeIterator
++        MinecraftServer.getServer().getRecipeManager().recipes.byKey.remove(this.currentRecipe.id()); // Paper - fix removing recipes from RecipeIterator
          this.recipes.remove();
      }
  }
