@@ -449,7 +449,14 @@ public final class GameEventKeys {
     private GameEventKeys() {
     }
 
-    private static @NonNull TypedKey<GameEvent> create(final @NonNull Key key) {
+    /**
+     * Creates a key for {@link GameEvent} in the registry {@code minecraft:game_event}.
+     *
+     * @param key the value's key in the registry
+     * @return a new typed key
+     */
+    @ApiStatus.Experimental
+    public static @NonNull TypedKey<GameEvent> create(final @NonNull Key key) {
         return TypedKey.create(RegistryKey.GAME_EVENT, key);
     }
 }
