@@ -32,5 +32,9 @@ public class RecipeIterator implements Iterator<Recipe> {
     public void remove() {
         MinecraftServer.getServer().getRecipeManager().recipes.byKey.remove(this.currentRecipe.id()); // Paper - fix removing recipes from RecipeIterator
         this.recipes.remove();
+        // Paper start - correctly reload recipes
+        MinecraftServer.getServer().getRecipeManager().finalizeRecipeLoading();
+        MinecraftServer.getServer().getPlayerList().reloadRecipes();
+        // Paper end - correctly reload recipes
     }
 }
