@@ -12,9 +12,18 @@ Mojira Issue: https://bugs.mojang.com/browse/MC-235045
 Feature patch
 
 diff --git a/src/main/java/net/minecraft/commands/CommandSourceStack.java b/src/main/java/net/minecraft/commands/CommandSourceStack.java
-index 3549ffea451b932602efb113844ba21a7bc72371..13bd145b1e8006a53c22f5dc0c78f29b540c7663 100644
+index 3549ffea451b932602efb113844ba21a7bc72371..31ba3e942e39a6f1fe848f937bf97ffa2b4102da 100644
 --- a/src/main/java/net/minecraft/commands/CommandSourceStack.java
 +++ b/src/main/java/net/minecraft/commands/CommandSourceStack.java
+@@ -370,7 +370,7 @@ public class CommandSourceStack implements ExecutionCommandSource<CommandSourceS
+ 
+     @Override
+     public Collection<String> getOnlinePlayerNames() {
+-        return Lists.newArrayList(this.server.getPlayerNames());
++        return this.entity instanceof ServerPlayer sourcePlayer ? this.getServer().getPlayerList().getPlayers().stream().filter(serverPlayer -> sourcePlayer.getBukkitEntity().canSee(serverPlayer.getBukkitEntity())).map(serverPlayer -> serverPlayer.getGameProfile().getName()).toList() : Lists.newArrayList(this.server.getPlayerNames()); // Paper - Make CommandSourceStack respect hidden players
+     }
+ 
+     @Override
 @@ -454,4 +454,20 @@ public class CommandSourceStack implements ExecutionCommandSource<CommandSourceS
          return this.source.getBukkitSender(this);
      }
@@ -62,7 +71,7 @@ index b1571c162fd8ab7239a7f4aafea5187feb694761..1e7b99a82184f73aa31cb2e0d4e52a80
                  }
  
 diff --git a/src/main/java/net/minecraft/commands/arguments/EntityArgument.java b/src/main/java/net/minecraft/commands/arguments/EntityArgument.java
-index 3281ea4dca20d2bb22b2b1c6b9abb1329bc829c1..716d37ea7c398c4f15f362c7759daca9d3fe32cb 100644
+index 3281ea4dca20d2bb22b2b1c6b9abb1329bc829c1..8a927df7e5cb3a9304ac8f3e497a0ca7e758396f 100644
 --- a/src/main/java/net/minecraft/commands/arguments/EntityArgument.java
 +++ b/src/main/java/net/minecraft/commands/arguments/EntityArgument.java
 @@ -139,7 +139,7 @@ public class EntityArgument implements ArgumentType<EntitySelector> {
@@ -74,27 +83,6 @@ index 3281ea4dca20d2bb22b2b1c6b9abb1329bc829c1..716d37ea7c398c4f15f362c7759daca9
              // Paper end - Fix EntityArgument permissions
  
              try {
-@@ -149,7 +149,19 @@ public class EntityArgument implements ArgumentType<EntitySelector> {
-             }
- 
-             return argumentparserselector.fillSuggestions(suggestionsbuilder, (suggestionsbuilder1) -> {
--                Collection<String> collection = icompletionprovider.getOnlinePlayerNames();
-+                // Paper start - tell clients to ask server for suggestions for EntityArguments
-+                final Collection<String> collection;
-+                if (icompletionprovider instanceof CommandSourceStack commandSourceStack && commandSourceStack.getEntity() instanceof ServerPlayer sourcePlayer) {
-+                    collection = new java.util.ArrayList<>();
-+                    for (final ServerPlayer player : commandSourceStack.getServer().getPlayerList().getPlayers()) {
-+                        if (sourcePlayer.getBukkitEntity().canSee(player.getBukkitEntity())) {
-+                            collection.add(player.getGameProfile().getName());
-+                        }
-+                    }
-+                } else {
-+                    collection = icompletionprovider.getOnlinePlayerNames();
-+                }
-+                // Paper end - tell clients to ask server for suggestions for EntityArguments
-                 Iterable<String> iterable = this.playersOnly ? collection : Iterables.concat(collection, icompletionprovider.getSelectedEntities());
- 
-                 SharedSuggestionProvider.suggest((Iterable) iterable, suggestionsbuilder1);
 diff --git a/src/main/java/net/minecraft/commands/arguments/selector/EntitySelectorParser.java b/src/main/java/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
 index 9d31e29ec62f437e642ed60da69c4b106bd9e770..ce200e673b54c66cfdf34657db28d3eee28dc4e0 100644
 --- a/src/main/java/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
