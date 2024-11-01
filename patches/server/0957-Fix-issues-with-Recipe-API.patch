@@ -18,21 +18,33 @@ index dd02af6574dd97404bc9c02c9ead84e1dd537efe..980fea65899ef5f37808506b822fd3de
              }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftRecipe.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftRecipe.java
-index a30950287646524c4906574d193ec7ce94b4eb34..e89fecf25555195314998e5317baa3a49be61aa3 100644
+index a30950287646524c4906574d193ec7ce94b4eb34..3592091c6d1371224e82e1f95b003951ad2f8779 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftRecipe.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftRecipe.java
-@@ -38,6 +38,10 @@ public interface CraftRecipe extends Recipe {
+@@ -21,7 +21,7 @@ public interface CraftRecipe extends Recipe {
+     void addToCraftingManager();
+ 
+     default Optional<Ingredient> toNMSOptional(RecipeChoice bukkit, boolean requireNotEmpty) {
+-        return (bukkit == null) ? Optional.empty() : Optional.of(this.toNMS(bukkit, requireNotEmpty));
++        return (bukkit == null || bukkit == RecipeChoice.empty()) ? Optional.empty() : Optional.of(this.toNMS(bukkit, requireNotEmpty)); // Paper - support "empty" choices
+     }
+ 
+     default Ingredient toNMS(RecipeChoice bukkit, boolean requireNotEmpty) {
+@@ -38,6 +38,13 @@ public interface CraftRecipe extends Recipe {
              stack = Ingredient.of(((RecipeChoice.MaterialChoice) bukkit).getChoices().stream().map((mat) -> CraftItemType.bukkitToMinecraft(mat)));
          } else if (bukkit instanceof RecipeChoice.ExactChoice) {
              stack = Ingredient.ofStacks(((RecipeChoice.ExactChoice) bukkit).getChoices().stream().map((mat) -> CraftItemStack.asNMSCopy(mat)).toList());
-+            // Paper start - support "empty" choices
++            // Paper start - support "empty" choices - legacy method that spigot might incorrectly call
++            // Their impl of Ingredient.of() will error, ingredients need at least one entry.
++            // Callers running into this exception may have passed an incorrect empty() recipe choice to a non-empty slot or
++            // spigot calls this method in a wrong place.
 +        } else if (bukkit == RecipeChoice.empty()) {
-+            stack = Ingredient.of();
-+            // Paper end
++            throw new IllegalArgumentException("This ingredient cannot be empty");
++            // Paper end - support "empty" choices
          } else {
              throw new IllegalArgumentException("Unknown recipe stack instance " + bukkit);
          }
-@@ -51,14 +55,14 @@ public interface CraftRecipe extends Recipe {
+@@ -51,14 +58,14 @@ public interface CraftRecipe extends Recipe {
      }
  
      public static RecipeChoice toBukkit(Optional<Ingredient> list) {
