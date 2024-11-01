@@ -11,7 +11,7 @@ import kotlin.io.path.*
 plugins {
     java
     `maven-publish`
-    id("io.papermc.paperweight.core") version "1.7.7"
+    id("io.papermc.paperweight.core") version "2.0.0-SNAPSHOT"
 }
 
 allprojects {
@@ -53,59 +53,21 @@ subprojects {
     }
 }
 
-val spigotDecompiler: Configuration by configurations.creating
-
-repositories {
-    mavenCentral()
-    maven(paperMavenPublicUrl) {
-        content {
-            onlyForConfigurations(
-                configurations.paperclip.name,
-                spigotDecompiler.name,
-            )
-        }
-    }
-}
-
 dependencies {
-    paramMappings("net.fabricmc:yarn:1.21.4+build.1:mergedv2")
-    remapper("net.fabricmc:tiny-remapper:0.10.3:fat")
-    decompiler("org.vineflower:vineflower:1.10.1")
-    spigotDecompiler("io.papermc:patched-spigot-fernflower:0.1+build.13")
-    paperclip("io.papermc:paperclip:3.0.3")
+    mache("io.papermc:mache:1.21.4+build.3")
 }
 
 paperweight {
-    minecraftVersion = providers.gradleProperty("mcVersion")
-    serverProject = project(":paper-server")
-
-    paramMappingsRepo = paperMavenPublicUrl
-    remapRepo = paperMavenPublicUrl
-    decompileRepo = paperMavenPublicUrl
-
-    craftBukkit {
-        fernFlowerJar = layout.file(spigotDecompiler.elements.map { it.single().asFile })
-    }
+    softSpoon = true
+    minecraftVersion = "1.21.4"
+    // macheOldPath = file("F:\\Projects\\PaperTooling\\mache\\versions\\1.21.4\\src\\main\\java")
+    // gitFilePatches = true
 
     paper {
-        spigotApiPatchDir = layout.projectDirectory.dir("patches/api")
-        spigotServerPatchDir = layout.projectDirectory.dir("patches/server")
-
-        mappingsPatch = layout.projectDirectory.file("build-data/mappings-patch.tiny")
-        reobfMappingsPatch = layout.projectDirectory.file("build-data/reobf-mappings-patch.tiny")
-
-        reobfPackagesToFix.addAll(
-            "co.aikar.timings",
-            "com.destroystokyo.paper",
-            "com.mojang",
-            "io.papermc.paper",
-            "ca.spottedleaf",
-            "net.kyori.adventure.bossbar",
-            "net.minecraft",
-            "org.bukkit.craftbukkit",
-            "org.spigotmc",
-        )
+        paperServerDir = file("paper-server")
     }
+
+    serverProject = project(":paper-server")
 }
 
 tasks.generateDevelopmentBundle {

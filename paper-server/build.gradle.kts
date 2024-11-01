@@ -78,9 +78,6 @@ dependencies {
     // Paper end - spark
 }
 
-paperweight {
-    craftBukkitPackageVersion.set("v1_21_R3") // also needs to be updated in MappingEnvironment
-}
 
 tasks.jar {
     archiveClassifier.set("dev")
@@ -107,7 +104,6 @@ tasks.jar {
             "Build-Time" to Instant.now().toString(),
             "Git-Branch" to gitBranch, // Paper
             "Git-Commit" to gitHash, // Paper
-            "CraftBukkit-Package-Version" to paperweight.craftBukkitPackageVersion.get(), // Paper
         )
         for (tld in setOf("net", "com", "org")) {
             attributes("$tld/bukkit", "Sealed" to true)
@@ -127,27 +123,27 @@ publishing {
 }
 
 // Paper start
-val scanJar = tasks.register("scanJarForBadCalls", io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
-    badAnnotations.add("Lio/papermc/paper/annotation/DoNotUse;")
-    jarToScan.set(tasks.serverJar.flatMap { it.archiveFile })
-    classpath.from(configurations.compileClasspath)
-}
-tasks.check {
-    dependsOn(scanJar)
-}
+// val scanJar = tasks.register("scanJarForBadCalls", io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
+//     badAnnotations.add("Lio/papermc/paper/annotation/DoNotUse;")
+//     jarToScan.set(tasks.serverJar.flatMap { it.archiveFile })
+//     classpath.from(configurations.compileClasspath)
+// }
+// tasks.check {
+//     dependsOn(scanJar)
+// }
 // Paper end
 // Paper start - use TCA for console improvements
-tasks.serverJar {
-    from(alsoShade.elements.map {
-        it.map { f ->
-            if (f.asFile.isFile) {
-                zipTree(f.asFile)
-            } else {
-                f.asFile
-            }
-        }
-    })
-}
+// tasks.serverJar {
+//     from(alsoShade.elements.map {
+//         it.map { f ->
+//             if (f.asFile.isFile) {
+//                 zipTree(f.asFile)
+//             } else {
+//                 f.asFile
+//             }
+//         }
+//     })
+// }
 // Paper end - use TCA for console improvements
 
 tasks.test {
@@ -204,22 +200,22 @@ fun TaskContainer.registerRunTask(
     block(this)
 }
 
-val runtimeClasspathWithoutVanillaServer = configurations.runtimeClasspath.flatMap { it.elements }
-    .zip(configurations.vanillaServer.map { it.singleFile.absolutePath }) { runtime, vanilla ->
-        runtime.filterNot { it.asFile.absolutePath == vanilla }
-    }
-
-tasks.registerRunTask("runServer") {
-    description = "Spin up a test server from the Mojang mapped server jar"
-    classpath(tasks.includeMappings.flatMap { it.outputJar })
-    classpath(runtimeClasspathWithoutVanillaServer)
-}
-
-tasks.registerRunTask("runReobfServer") {
-    description = "Spin up a test server from the reobfJar output jar"
-    classpath(tasks.reobfJar.flatMap { it.outputJar })
-    classpath(runtimeClasspathWithoutVanillaServer)
-}
+// val runtimeClasspathWithoutVanillaServer = configurations.runtimeClasspath.flatMap { it.elements }
+//     .zip(configurations.vanillaServer.map { it.singleFile.absolutePath }) { runtime, vanilla ->
+//         runtime.filterNot { it.asFile.absolutePath == vanilla }
+//     }
+//
+// tasks.registerRunTask("runServer") {
+//     description = "Spin up a test server from the Mojang mapped server jar"
+//     classpath(tasks.includeMappings.flatMap { it.outputJar })
+//     classpath(runtimeClasspathWithoutVanillaServer)
+// }
+//
+// tasks.registerRunTask("runReobfServer") {
+//     description = "Spin up a test server from the reobfJar output jar"
+//     classpath(tasks.reobfJar.flatMap { it.outputJar })
+//     classpath(runtimeClasspathWithoutVanillaServer)
+// }
 
 tasks.registerRunTask("runDevServer") {
     description = "Spin up a test server without assembling a jar"
@@ -232,18 +228,18 @@ tasks.registerRunTask("runBundler") {
     classpath(rootProject.tasks.named<io.papermc.paperweight.tasks.CreateBundlerJar>("createMojmapBundlerJar").flatMap { it.outputZip })
     mainClass.set(null as String?)
 }
-tasks.registerRunTask("runReobfBundler") {
-    description = "Spin up a test server from the reobf bundler jar"
-    classpath(rootProject.tasks.named<io.papermc.paperweight.tasks.CreateBundlerJar>("createReobfBundlerJar").flatMap { it.outputZip })
-    mainClass.set(null as String?)
-}
+// tasks.registerRunTask("runReobfBundler") {
+//     description = "Spin up a test server from the reobf bundler jar"
+//     classpath(rootProject.tasks.named<io.papermc.paperweight.tasks.CreateBundlerJar>("createReobfBundlerJar").flatMap { it.outputZip })
+//     mainClass.set(null as String?)
+// }
 tasks.registerRunTask("runPaperclip") {
     description = "Spin up a test server from the Mojang mapped Paperclip jar"
     classpath(rootProject.tasks.named<io.papermc.paperweight.tasks.CreatePaperclipJar>("createMojmapPaperclipJar").flatMap { it.outputZip })
     mainClass.set(null as String?)
 }
-tasks.registerRunTask("runReobfPaperclip") {
-    description = "Spin up a test server from the reobf Paperclip jar"
-    classpath(rootProject.tasks.named<io.papermc.paperweight.tasks.CreatePaperclipJar>("createReobfPaperclipJar").flatMap { it.outputZip })
-    mainClass.set(null as String?)
-}
+// tasks.registerRunTask("runReobfPaperclip") {
+//     description = "Spin up a test server from the reobf Paperclip jar"
+//     classpath(rootProject.tasks.named<io.papermc.paperweight.tasks.CreatePaperclipJar>("createReobfPaperclipJar").flatMap { it.outputZip })
+//     mainClass.set(null as String?)
+// }
