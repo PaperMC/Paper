@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import net.minecraft.server.level.WorldServer;
 import net.minecraft.world.entity.vehicle.EntityMinecartAbstract;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.IBlockData;
@@ -28,7 +29,7 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
 
     @Override
     public double getMaxSpeed() {
-        return getHandle().maxSpeed;
+        return getHandle().getBehavior().getMaxSpeed((WorldServer) getHandle().level());
     }
 
     @Override
