@@ -31,19 +31,15 @@ public interface Minecart extends Vehicle {
      * velocity.
      *
      * @return The max speed
-     * @see GameRule#MINECART_MAX_SPEED
      */
-    @Deprecated
     public double getMaxSpeed();
 
     /**
      * Sets the maximum speed of a minecart. Must be nonnegative. Default is
-     * 0.4D.
+     * 0.4D or {@link GameRule#MINECART_MAX_SPEED}.
      *
      * @param speed The max speed
-     * @see GameRule#MINECART_MAX_SPEED
      */
-    @Deprecated
     public void setMaxSpeed(double speed);
 
     /**
