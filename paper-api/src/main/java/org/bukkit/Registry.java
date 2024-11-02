@@ -87,7 +87,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see Art
      */
-    Registry<Art> ART = new SimpleRegistry<>(Art.class);
+    Registry<Art> ART = Objects.requireNonNull(Bukkit.getRegistry(Art.class), "No registry present for Art. This is a bug.");
     /**
      * Attribute.
      *
