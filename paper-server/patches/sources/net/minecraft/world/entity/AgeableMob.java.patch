@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/AgeableMob.java
 +++ b/net/minecraft/world/entity/AgeableMob.java
-@@ -21,6 +21,7 @@
+@@ -21,12 +21,38 @@
      protected int age;
      protected int forcedAge;
      protected int forcedAgeTimer;
@@ -8,7 +8,38 @@
  
      protected AgeableMob(EntityType<? extends AgeableMob> type, Level world) {
          super(type, world);
-@@ -104,6 +105,7 @@
+     }
+ 
++    // Spigot start
+     @Override
++    public void inactiveTick()
++    {
++        super.inactiveTick();
++        if ( this.level().isClientSide || this.ageLocked )
++        { // CraftBukkit
++            this.refreshDimensions();
++        } else
++        {
++            int i = this.getAge();
++
++            if ( i < 0 )
++            {
++                ++i;
++                this.setAge( i );
++            } else if ( i > 0 )
++            {
++                --i;
++                this.setAge( i );
++            }
++        }
++    }
++    // Spigot end
++
++    @Override
+     public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, EntitySpawnReason spawnReason, @Nullable SpawnGroupData entityData) {
+         if (entityData == null) {
+             entityData = new AgeableMob.AgeableMobGroupData(true);
+@@ -104,6 +130,7 @@
          super.addAdditionalSaveData(nbt);
          nbt.putInt("Age", this.getAge());
          nbt.putInt("ForcedAge", this.forcedAge);
@@ -16,7 +47,7 @@
      }
  
      @Override
-@@ -111,6 +113,7 @@
+@@ -111,6 +138,7 @@
          super.readAdditionalSaveData(nbt);
          this.setAge(nbt.getInt("Age"));
          this.forcedAge = nbt.getInt("ForcedAge");
@@ -24,7 +55,7 @@
      }
  
      @Override
-@@ -125,7 +128,7 @@
+@@ -125,7 +153,7 @@
      @Override
      public void aiStep() {
          super.aiStep();

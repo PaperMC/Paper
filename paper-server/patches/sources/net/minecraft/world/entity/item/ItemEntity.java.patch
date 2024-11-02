@@ -94,7 +94,7 @@
  
              this.hasImpulse |= this.updateInWaterStateAndDoFluidPushing();
              if (!this.level().isClientSide) {
-@@ -201,8 +214,14 @@
+@@ -201,12 +214,40 @@
                  }
              }
  
@@ -110,8 +110,34 @@
 +                this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
              }
  
++        }
++    }
++
++    // Spigot start - copied from above
++    @Override
++    public void inactiveTick() {
++        // CraftBukkit start - Use wall time for pickup and despawn timers
++        int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
++        if (this.pickupDelay != 32767) this.pickupDelay -= elapsedTicks;
++        if (this.age != -32768) this.age += elapsedTicks;
++        this.lastTick = MinecraftServer.currentTick;
++        // CraftBukkit end
++
++        if (!this.level().isClientSide && this.age >= this.level().spigotConfig.itemDespawnRate) { // Spigot
++            // CraftBukkit start - fire ItemDespawnEvent
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
++                this.age = 0;
++                return;
++            }
++            // CraftBukkit end
++            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
          }
-@@ -229,7 +248,10 @@
+     }
++    // Spigot end
+ 
+     @Override
+     public BlockPos getBlockPosBelowThatAffectsMyMovement() {
+@@ -229,7 +270,10 @@
  
      private void mergeWithNeighbours() {
          if (this.isMergable()) {
@@ -123,7 +149,7 @@
                  return entityitem != this && entityitem.isMergable();
              });
              Iterator iterator = list.iterator();
-@@ -259,7 +281,7 @@
+@@ -259,7 +303,7 @@
          ItemStack itemstack1 = other.getItem();
  
          if (Objects.equals(this.target, other.target) && ItemEntity.areMergable(itemstack, itemstack1)) {
@@ -132,7 +158,7 @@
                  ItemEntity.merge(this, itemstack, other, itemstack1);
              } else {
                  ItemEntity.merge(other, itemstack1, this, itemstack);
-@@ -287,11 +309,16 @@
+@@ -287,11 +331,16 @@
      }
  
      private static void merge(ItemEntity targetEntity, ItemStack targetStack, ItemEntity sourceEntity, ItemStack sourceStack) {
@@ -150,7 +176,7 @@
          }
  
      }
-@@ -320,12 +347,17 @@
+@@ -320,12 +369,17 @@
          } else if (!this.getItem().canBeHurtBy(source)) {
              return false;
          } else {
@@ -169,7 +195,7 @@
              }
  
              return true;
-@@ -382,22 +414,62 @@
+@@ -382,22 +436,62 @@
          }
  
          if (this.getItem().isEmpty()) {
@@ -186,7 +212,7 @@
              ItemStack itemstack = this.getItem();
              Item item = itemstack.getItem();
              int i = itemstack.getCount();
-+
+ 
 +            // CraftBukkit start - fire PlayerPickupItemEvent
 +            int canHold = player.getInventory().canHold(itemstack);
 +            int remaining = i - canHold;
@@ -201,7 +227,7 @@
 +                    itemstack.setCount(i); // SPIGOT-5294 - restore count
 +                    return;
 +                }
- 
++
 +                // Call newer event afterwards
 +                EntityPickupItemEvent entityEvent = new EntityPickupItemEvent((Player) player.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
 +                entityEvent.setCancelled(!entityEvent.getEntity().getCanPickupItems());
@@ -235,7 +261,7 @@
                      itemstack.setCount(i);
                  }
  
-@@ -492,7 +564,7 @@
+@@ -492,7 +586,7 @@
  
      public void makeFakeItem() {
          this.setNeverPickUp();

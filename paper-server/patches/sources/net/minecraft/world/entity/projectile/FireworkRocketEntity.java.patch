@@ -10,7 +10,37 @@
  
  public class FireworkRocketEntity extends Projectile implements ItemSupplier {
  
-@@ -152,7 +155,7 @@
+@@ -84,7 +87,29 @@
+         this.setOwner(entity);
+     }
+ 
++    // Spigot Start - copied from tick
+     @Override
++    public void inactiveTick() {
++        this.life += 1;
++
++        if (this.life > this.lifetime) {
++            Level world = this.level();
++
++            if (world instanceof ServerLevel) {
++                ServerLevel worldserver = (ServerLevel) world;
++
++                // CraftBukkit start
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
++                    this.explode(worldserver);
++                }
++                // CraftBukkit end
++            }
++        }
++        super.inactiveTick();
++    }
++    // Spigot End
++
++    @Override
+     protected void defineSynchedData(SynchedEntityData.Builder builder) {
+         builder.define(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, FireworkRocketEntity.getDefaultItem());
+         builder.define(FireworkRocketEntity.DATA_ATTACHED_TO_TARGET, OptionalInt.empty());
+@@ -152,7 +177,7 @@
          }
  
          if (!this.noPhysics && this.isAlive() && movingobjectposition.getType() != HitResult.Type.MISS) {
@@ -19,7 +49,7 @@
              this.hasImpulse = true;
          }
  
-@@ -172,7 +175,11 @@
+@@ -172,7 +197,11 @@
              if (world instanceof ServerLevel) {
                  ServerLevel worldserver = (ServerLevel) world;
  
@@ -32,7 +62,7 @@
              }
          }
  
-@@ -182,7 +189,7 @@
+@@ -182,7 +211,7 @@
          world.broadcastEntityEvent(this, (byte) 17);
          this.gameEvent(GameEvent.EXPLODE, this.getOwner());
          this.dealExplosionDamage(world);
@@ -41,7 +71,7 @@
      }
  
      @Override
-@@ -191,7 +198,11 @@
+@@ -191,7 +220,11 @@
          Level world = this.level();
  
          if (world instanceof ServerLevel worldserver) {
@@ -54,7 +84,7 @@
          }
  
      }
-@@ -205,7 +216,11 @@
+@@ -205,7 +238,11 @@
  
          if (world instanceof ServerLevel worldserver) {
              if (this.hasExplosion()) {
