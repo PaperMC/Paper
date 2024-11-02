@@ -28416,7 +28416,7 @@ index 50040c497a819cd1229042ab3cb057d34a32cacc..1f9c436a632e4f110be61cf76fcfc3b7
 +    // Paper end - block counting
  }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index e5466be840ef32e4fa17c0e9446c4d0b30a56e26..88543de6e51acbe76b89aef4a84de20337d616e4 100644
+index 0b7aea178cd6097a7dfefd1435b70333c6a2e0ff..6cdb0460c2d232f022ee6ea8dcbe4dcb69b63c75 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -175,7 +175,7 @@ import org.bukkit.event.player.PlayerTeleportEvent;
@@ -33280,7 +33280,7 @@ index 93972352cd4881dccba9b90ccc8dcced3563e340..c3beb7fcad46a917d2b61bd0a0e98e51
  
      static record PackedChunk<T>(Int2ObjectMap<T> sectionsByY, boolean versionChanged) {
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/SerializableChunkData.java b/src/main/java/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
-index 4bc7fa3324e9af3abce2acf960c7b0650aca2e36..e939810f3cc094a4b17f0b60a441773997cb788f 100644
+index 4bc7fa3324e9af3abce2acf960c7b0650aca2e36..0296f52fb2c871adbf2ce73a64d8f77fab826cd7 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 @@ -129,7 +129,7 @@ public record SerializableChunkData(Registry<Biome> biomeRegistry, ChunkPos chun
@@ -33311,7 +33311,7 @@ index 4bc7fa3324e9af3abce2acf960c7b0650aca2e36..e939810f3cc094a4b17f0b60a4417739
              }
  
              // CraftBukkit - ChunkBukkitValues
-@@ -254,6 +264,47 @@ public record SerializableChunkData(Registry<Biome> biomeRegistry, ChunkPos chun
+@@ -254,6 +264,59 @@ public record SerializableChunkData(Registry<Biome> biomeRegistry, ChunkPos chun
          }
      }
  
@@ -33324,33 +33324,45 @@ index 4bc7fa3324e9af3abce2acf960c7b0650aca2e36..e939810f3cc094a4b17f0b60a4417739
 +        final ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray[] blockNibbles = ca.spottedleaf.moonrise.patches.starlight.light.StarLightEngine.getFilledEmptyLight(world);
 +        final ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray[] skyNibbles = ca.spottedleaf.moonrise.patches.starlight.light.StarLightEngine.getFilledEmptyLight(world);
 +
-+        for (final SerializableChunkData.SectionData sectionData : this.sectionData) {
-+            final int y = sectionData.y();
-+            final DataLayer blockLight = sectionData.blockLight();
-+            final DataLayer skyLight = sectionData.skyLight();
-+
-+            final int blockState = ((ca.spottedleaf.moonrise.patches.starlight.storage.StarlightSectionData)(Object)sectionData).starlight$getBlockLightState();
-+            final int skyState = ((ca.spottedleaf.moonrise.patches.starlight.storage.StarlightSectionData)(Object)sectionData).starlight$getSkyLightState();
-+
-+            if (blockState >= 0) {
-+                if (blockLight != null) {
-+                    blockNibbles[y - minSection] = new ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray(ca.spottedleaf.moonrise.common.util.MixinWorkarounds.clone(blockLight.getData()), blockState); // clone for data safety
-+                } else {
-+                    blockNibbles[y - minSection] = new ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray(null, blockState);
-+                }
-+            }
-+
-+            if (skyState >= 0 && hasSkyLight) {
-+                if (skyLight != null) {
-+                    skyNibbles[y - minSection] = new ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray(ca.spottedleaf.moonrise.common.util.MixinWorkarounds.clone(skyLight.getData()), skyState); // clone for data safety
-+                } else {
-+                    skyNibbles[y - minSection] = new ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray(null, skyState);
-+                }
-+            }
++        if (!this.lightCorrect) {
++            ((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)ret).starlight$setBlockNibbles(blockNibbles);
++            ((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)ret).starlight$setSkyNibbles(skyNibbles);
++            return ret;
 +        }
 +
-+        ((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)ret).starlight$setBlockNibbles(blockNibbles);
-+        ((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)ret).starlight$setSkyNibbles(skyNibbles);
++        try {
++            for (final SerializableChunkData.SectionData sectionData : this.sectionData) {
++                final int y = sectionData.y();
++                final DataLayer blockLight = sectionData.blockLight();
++                final DataLayer skyLight = sectionData.skyLight();
++
++                final int blockState = ((ca.spottedleaf.moonrise.patches.starlight.storage.StarlightSectionData)(Object)sectionData).starlight$getBlockLightState();
++                final int skyState = ((ca.spottedleaf.moonrise.patches.starlight.storage.StarlightSectionData)(Object)sectionData).starlight$getSkyLightState();
++
++                if (blockState >= 0) {
++                    if (blockLight != null) {
++                        blockNibbles[y - minSection] = new ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray(ca.spottedleaf.moonrise.common.util.MixinWorkarounds.clone(blockLight.getData()), blockState); // clone for data safety
++                    } else {
++                        blockNibbles[y - minSection] = new ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray(null, blockState);
++                    }
++                }
++
++                if (skyState >= 0 && hasSkyLight) {
++                    if (skyLight != null) {
++                        skyNibbles[y - minSection] = new ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray(ca.spottedleaf.moonrise.common.util.MixinWorkarounds.clone(skyLight.getData()), skyState); // clone for data safety
++                    } else {
++                        skyNibbles[y - minSection] = new ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray(null, skyState);
++                    }
++                }
++            }
++
++            ((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)ret).starlight$setBlockNibbles(blockNibbles);
++            ((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)ret).starlight$setSkyNibbles(skyNibbles);
++        } catch (final Throwable thr) {
++            ret.setLightCorrect(false);
++
++            LOGGER.error("Failed to parse light data for chunk " + ret.getPos() + " in world '" + ca.spottedleaf.moonrise.common.util.WorldUtil.getWorldName(world) + "'", thr);
++        }
 +
 +        return ret;
 +    }
@@ -33359,7 +33371,7 @@ index 4bc7fa3324e9af3abce2acf960c7b0650aca2e36..e939810f3cc094a4b17f0b60a4417739
      public ProtoChunk read(ServerLevel world, PoiManager poiStorage, RegionStorageInfo key, ChunkPos expectedPos) {
          if (!Objects.equals(expectedPos, this.chunkPos)) {
              SerializableChunkData.LOGGER.error("Chunk file at {} is in the wrong location; relocating. (Expected {}, got {})", new Object[]{expectedPos, expectedPos, this.chunkPos});
-@@ -275,7 +326,7 @@ public record SerializableChunkData(Registry<Biome> biomeRegistry, ChunkPos chun
+@@ -275,7 +338,7 @@ public record SerializableChunkData(Registry<Biome> biomeRegistry, ChunkPos chun
  
              if (serializablechunkdata_b.chunkSection != null) {
                  achunksection[world.getSectionIndexFromSectionY(serializablechunkdata_b.y)] = serializablechunkdata_b.chunkSection;
@@ -33368,7 +33380,7 @@ index 4bc7fa3324e9af3abce2acf960c7b0650aca2e36..e939810f3cc094a4b17f0b60a4417739
              }
  
              boolean flag2 = serializablechunkdata_b.blockLight != null;
-@@ -352,7 +403,7 @@ public record SerializableChunkData(Registry<Biome> biomeRegistry, ChunkPos chun
+@@ -352,7 +415,7 @@ public record SerializableChunkData(Registry<Biome> biomeRegistry, ChunkPos chun
          }
  
          if (chunktype == ChunkType.LEVELCHUNK) {
@@ -33377,7 +33389,7 @@ index 4bc7fa3324e9af3abce2acf960c7b0650aca2e36..e939810f3cc094a4b17f0b60a4417739
          } else {
              ProtoChunk protochunk1 = (ProtoChunk) object;
              Iterator iterator2 = this.entities.iterator();
-@@ -382,7 +433,7 @@ public record SerializableChunkData(Registry<Biome> biomeRegistry, ChunkPos chun
+@@ -382,7 +445,7 @@ public record SerializableChunkData(Registry<Biome> biomeRegistry, ChunkPos chun
                  protochunk1.setCarvingMask(new CarvingMask(this.carvingMask, ((ChunkAccess) object).getMinY()));
              }
  
@@ -33386,7 +33398,7 @@ index 4bc7fa3324e9af3abce2acf960c7b0650aca2e36..e939810f3cc094a4b17f0b60a4417739
          }
      }
  
-@@ -405,24 +456,48 @@ public record SerializableChunkData(Registry<Biome> biomeRegistry, ChunkPos chun
+@@ -405,24 +468,48 @@ public record SerializableChunkData(Registry<Biome> biomeRegistry, ChunkPos chun
              throw new IllegalArgumentException("Chunk can't be serialized: " + String.valueOf(chunk));
          } else {
              ChunkPos chunkcoordintpair = chunk.getPos();
@@ -33410,21 +33422,21 @@ index 4bc7fa3324e9af3abce2acf960c7b0650aca2e36..e939810f3cc094a4b17f0b60a4417739
 +            final LevelChunkSection[] chunkSections = chunk.getSections();
 +            final ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray[] blockNibbles = ((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)chunk).starlight$getBlockNibbles();
 +            final ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray[] skyNibbles = ((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)chunk).starlight$getSkyNibbles();
- 
--                if (flag || nibblearray2 != null || nibblearray3 != null) {
--                    LevelChunkSection chunksection = flag ? achunksection[j].copy() : null;
++
 +            for (int lightSection = minLightSection; lightSection <= maxLightSection; ++lightSection) {
 +                final int lightSectionIdx = lightSection - minLightSection;
 +                final int blockSectionIdx = lightSection - minBlockSection;
  
--                    list.add(new SerializableChunkData.SectionData(i, chunksection, nibblearray2, nibblearray3));
+-                if (flag || nibblearray2 != null || nibblearray3 != null) {
+-                    LevelChunkSection chunksection = flag ? achunksection[j].copy() : null;
 +                final LevelChunkSection chunkSection = (blockSectionIdx >= 0 && blockSectionIdx < chunkSections.length) ? chunkSections[blockSectionIdx].copy() : null;
 +                final ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray.SaveState blockNibble = blockNibbles[lightSectionIdx].getSaveState();
 +                final ca.spottedleaf.moonrise.patches.starlight.light.SWMRNibbleArray.SaveState skyNibble = skyNibbles[lightSectionIdx].getSaveState();
-+
+ 
+-                    list.add(new SerializableChunkData.SectionData(i, chunksection, nibblearray2, nibblearray3));
 +                if (chunkSection == null && blockNibble == null && skyNibble == null) {
 +                    continue;
-+                }
+                 }
 +
 +                final SerializableChunkData.SectionData sectionData = new SerializableChunkData.SectionData(
 +                    lightSection, chunkSection,
@@ -33434,7 +33446,7 @@ index 4bc7fa3324e9af3abce2acf960c7b0650aca2e36..e939810f3cc094a4b17f0b60a4417739
 +
 +                if (blockNibble != null) {
 +                    ((ca.spottedleaf.moonrise.patches.starlight.storage.StarlightSectionData)(Object)sectionData).starlight$setBlockLightState(blockNibble.state);
-                 }
++                }
 +
 +                if (skyNibble != null) {
 +                    ((ca.spottedleaf.moonrise.patches.starlight.storage.StarlightSectionData)(Object)sectionData).starlight$setSkyLightState(skyNibble.state);
@@ -33446,7 +33458,7 @@ index 4bc7fa3324e9af3abce2acf960c7b0650aca2e36..e939810f3cc094a4b17f0b60a4417739
  
              List<CompoundTag> list1 = new ArrayList(chunk.getBlockEntitiesPos().size());
              Iterator iterator = chunk.getBlockEntitiesPos().iterator();
-@@ -521,8 +596,8 @@ public record SerializableChunkData(Registry<Biome> biomeRegistry, ChunkPos chun
+@@ -521,8 +608,8 @@ public record SerializableChunkData(Registry<Biome> biomeRegistry, ChunkPos chun
          Iterator iterator = this.sectionData.iterator();
  
          while (iterator.hasNext()) {
@@ -33457,7 +33469,7 @@ index 4bc7fa3324e9af3abce2acf960c7b0650aca2e36..e939810f3cc094a4b17f0b60a4417739
              LevelChunkSection chunksection = serializablechunkdata_b.chunkSection;
  
              if (chunksection != null) {
-@@ -538,6 +613,19 @@ public record SerializableChunkData(Registry<Biome> biomeRegistry, ChunkPos chun
+@@ -538,6 +625,19 @@ public record SerializableChunkData(Registry<Biome> biomeRegistry, ChunkPos chun
                  nbttagcompound1.putByteArray("SkyLight", serializablechunkdata_b.skyLight.getData());
              }
  
@@ -33477,7 +33489,7 @@ index 4bc7fa3324e9af3abce2acf960c7b0650aca2e36..e939810f3cc094a4b17f0b60a4417739
              if (!nbttagcompound1.isEmpty()) {
                  nbttagcompound1.putByte("Y", (byte) serializablechunkdata_b.y);
                  nbttaglist.add(nbttagcompound1);
-@@ -577,6 +665,14 @@ public record SerializableChunkData(Registry<Biome> biomeRegistry, ChunkPos chun
+@@ -577,6 +677,14 @@ public record SerializableChunkData(Registry<Biome> biomeRegistry, ChunkPos chun
              nbttagcompound.put("ChunkBukkitValues", this.persistentDataContainer);
          }
          // CraftBukkit end
@@ -33492,7 +33504,7 @@ index 4bc7fa3324e9af3abce2acf960c7b0650aca2e36..e939810f3cc094a4b17f0b60a4417739
          return nbttagcompound;
      }
  
-@@ -763,7 +859,67 @@ public record SerializableChunkData(Registry<Biome> biomeRegistry, ChunkPos chun
+@@ -763,7 +871,67 @@ public record SerializableChunkData(Registry<Biome> biomeRegistry, ChunkPos chun
          return nbttaglist;
      }
  
@@ -35994,7 +36006,7 @@ index f65cc95ab28e8a3b21eac2b16bd9ebe97e56e571..0074bc0e7147dc3a8c538e796f14ac9b
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index f3ec7e48f0c1ff3476886a7d64cc0dcc4edeab5f..ca92d377a774ee46d13e108c528ce78941f906ec 100644
+index 02ee599dff305d63b44c724a2f6807d91362f675..97ebe3852f34b88e727083b539d94de62dc1ca80 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1432,7 +1432,7 @@ public final class CraftServer implements Server {
