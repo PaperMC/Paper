@@ -242,7 +242,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see Sound
      */
-    Registry<Sound> SOUNDS = new SimpleRegistry<>(Sound.class);
+    Registry<Sound> SOUNDS = Objects.requireNonNull(Bukkit.getRegistry(Sound.class), "No registry present for Sound. This is a bug.");
     /**
      * Trim materials.
      *
