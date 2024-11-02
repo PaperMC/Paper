@@ -80,17 +80,18 @@ public class Commodore {
             "org/spigotmc/event/entity/EntityDismountEvent", "org/bukkit/event/entity/EntityDismountEvent"
     );
 
-    private static final Map<String, String> CLASS_TO_INTERFACE = Map.of(
-            "org/bukkit/inventory/InventoryView", "org/bukkit/craftbukkit/inventory/CraftAbstractInventoryView",
-            "org/bukkit/entity/Villager$Type", "NOP",
-            "org/bukkit/entity/Villager$Profession", "NOP",
-            "org/bukkit/entity/Frog$Variant", "NOP",
-            "org/bukkit/entity/Cat$Type", "NOP",
-            "org/bukkit/map/MapCursor$Type", "NOP",
-            "org/bukkit/block/banner/PatternType", "NOP",
-            "org/bukkit/attribute/Attribute", "NOP",
-            "org/bukkit/block/Biome", "NOP",
-            "org/bukkit/Fluid", "NOP"
+    private static final Map<String, String> CLASS_TO_INTERFACE = Map.ofEntries(
+            Map.entry("org/bukkit/inventory/InventoryView", "org/bukkit/craftbukkit/inventory/CraftAbstractInventoryView"),
+            Map.entry("org/bukkit/entity/Villager$Type", "NOP"),
+            Map.entry("org/bukkit/entity/Villager$Profession", "NOP"),
+            Map.entry("org/bukkit/entity/Frog$Variant", "NOP"),
+            Map.entry("org/bukkit/entity/Cat$Type", "NOP"),
+            Map.entry("org/bukkit/map/MapCursor$Type", "NOP"),
+            Map.entry("org/bukkit/block/banner/PatternType", "NOP"),
+            Map.entry("org/bukkit/attribute/Attribute", "NOP"),
+            Map.entry("org/bukkit/block/Biome", "NOP"),
+            Map.entry("org/bukkit/Fluid", "NOP"),
+            Map.entry("org/bukkit/Sound", "NOP")
     );
 
     private final List<Reroute> reroutes = new ArrayList<>(); // only for testing
