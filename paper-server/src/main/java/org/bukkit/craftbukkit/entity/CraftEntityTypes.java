@@ -491,7 +491,13 @@ public final class CraftEntityTypes {
     }
 
     private static <R extends EntityMinecartAbstract> Function<SpawnData, R> createMinecart(EntityTypes<R> entityTypes) {
-        return spawnData -> EntityMinecartAbstract.createMinecart(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), entityTypes, EntitySpawnReason.TRIGGERED, ItemStack.EMPTY, null);
+        return spawnData -> {
+            if (spawnData.normalWorld()) {
+                return EntityMinecartAbstract.createMinecart(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), entityTypes, EntitySpawnReason.TRIGGERED, ItemStack.EMPTY, null);
+            } else {
+                return combine(fromEntityType(entityTypes), (spawnData2, entity) -> entity.setInitialPos(spawnData.x(), spawnData.y(), spawnData.z())).apply(spawnData);
+            }
+        };
     }
 
     private static <R extends net.minecraft.world.entity.Entity> Function<SpawnData, R> createAndMove(EntityTypes<R> entityTypes) {
