@@ -15,6 +15,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import org.bukkit.Art;
 import org.bukkit.Fluid;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -48,6 +49,7 @@ public class EnumEvil {
 
     static {
         // Add Classes which got changed here
+        REGISTRIES.put(Art.class, new LegacyRegistryData(Registry.ART, Art::valueOf));
         REGISTRIES.put(Attribute.class, new LegacyRegistryData(Registry.ATTRIBUTE, Attribute::valueOf));
         REGISTRIES.put(Biome.class, new LegacyRegistryData(Registry.BIOME, Biome::valueOf));
         REGISTRIES.put(Fluid.class, new LegacyRegistryData(Registry.FLUID, Fluid::valueOf));

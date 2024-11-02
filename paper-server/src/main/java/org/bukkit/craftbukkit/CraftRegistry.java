@@ -11,6 +11,7 @@ import net.minecraft.core.IRegistry;
 import net.minecraft.core.IRegistryCustom;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
+import org.bukkit.Art;
 import org.bukkit.Fluid;
 import org.bukkit.GameEvent;
 import org.bukkit.JukeboxSong;
@@ -135,6 +136,9 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
      * @return the bukkit registry of the provided class
      */
     public static <B extends Keyed> Registry<?> createRegistry(Class<? super B> bukkitClass, IRegistryCustom registryHolder) {
+        if (bukkitClass == Art.class) {
+            return new CraftRegistry<>(Art.class, registryHolder.lookupOrThrow(Registries.PAINTING_VARIANT), CraftArt::new, FieldRename.NONE);
+        }
         if (bukkitClass == Attribute.class) {
             return new CraftRegistry<>(Attribute.class, registryHolder.lookupOrThrow(Registries.ATTRIBUTE), CraftAttribute::new, FieldRename.ATTRIBUTE_RENAME);
         }

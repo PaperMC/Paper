@@ -5,7 +5,6 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 import com.google.common.collect.Lists;
 import java.util.Collections;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +57,7 @@ public class ArtTest {
 
     @Test
     public void testCraftArtToBukkit() {
-        Map<Art, Holder<PaintingVariant>> cache = new EnumMap(Art.class);
+        Map<Art, Holder<PaintingVariant>> cache = new HashMap<>();
         for (Holder<PaintingVariant> enumArt : CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT).asHolderIdMap()) {
             Art art = CraftArt.minecraftHolderToBukkit(enumArt);
             assertNotNull(art, "Could not CraftArt.NotchToBukkit " + enumArt);

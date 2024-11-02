@@ -88,6 +88,7 @@ public class Commodore {
             Map.entry("org/bukkit/entity/Cat$Type", "NOP"),
             Map.entry("org/bukkit/map/MapCursor$Type", "NOP"),
             Map.entry("org/bukkit/block/banner/PatternType", "NOP"),
+            Map.entry("org/bukkit/Art", "NOP"),
             Map.entry("org/bukkit/attribute/Attribute", "NOP"),
             Map.entry("org/bukkit/block/Biome", "NOP"),
             Map.entry("org/bukkit/Fluid", "NOP"),

@@ -11,6 +11,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeBase;
 import net.minecraft.world.entity.animal.CatVariant;
 import net.minecraft.world.entity.animal.FrogVariant;
 import net.minecraft.world.entity.animal.WolfVariant;
+import net.minecraft.world.entity.decoration.PaintingVariant;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.VillagerType;
 import net.minecraft.world.inventory.Containers;
@@ -19,6 +20,7 @@ import net.minecraft.world.level.biome.BiomeBase;
 import net.minecraft.world.level.block.entity.EnumBannerPatternType;
 import net.minecraft.world.level.material.FluidType;
 import net.minecraft.world.level.saveddata.maps.MapDecorationType;
+import org.bukkit.Art;
 import org.bukkit.Fluid;
 import org.bukkit.GameEvent;
 import org.bukkit.JukeboxSong;
@@ -28,6 +30,7 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
 import org.bukkit.block.BlockType;
 import org.bukkit.block.banner.PatternType;
+import org.bukkit.craftbukkit.CraftArt;
 import org.bukkit.craftbukkit.CraftFluid;
 import org.bukkit.craftbukkit.CraftGameEvent;
 import org.bukkit.craftbukkit.CraftJukeboxSong;
@@ -75,6 +78,7 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
 
     static {
         // Order: Bukkit class, Minecraft Registry key, CraftBukkit class, Minecraft class
+        register(Art.class, Registries.PAINTING_VARIANT, CraftArt.class, PaintingVariant.class);
         register(Attribute.class, Registries.ATTRIBUTE, CraftAttribute.class, AttributeBase.class);
         register(Biome.class, Registries.BIOME, CraftBiome.class, BiomeBase.class);
         register(Enchantment.class, Registries.ENCHANTMENT, CraftEnchantment.class, net.minecraft.world.item.enchantment.Enchantment.class);
