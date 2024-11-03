@@ -11,7 +11,7 @@ floating in the air.
 This can replace many uses of BlockPhysicsEvent
 
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 924b496aaaa19c7ef69498730725ae9287e46e28..0f4b9b5d3e34b5e08f9ca2f78c5e8bcec9f5a85e 100644
+index 924b496aaaa19c7ef69498730725ae9287e46e28..aaae30cdef271c85cfb7850b0d811e5f4b8d4874 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -24,6 +24,7 @@ import net.minecraft.core.registries.Registries;
@@ -22,7 +22,15 @@ index 924b496aaaa19c7ef69498730725ae9287e46e28..0f4b9b5d3e34b5e08f9ca2f78c5e8bce
  import net.minecraft.server.MinecraftServer;
  import net.minecraft.server.level.FullChunkStatus;
  import net.minecraft.server.level.ServerLevel;
-@@ -574,9 +575,26 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -170,6 +171,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     private int tileTickPosition;
+     public final Map<ServerExplosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
+     public java.util.ArrayDeque<net.minecraft.world.level.block.RedstoneTorchBlock.Toggle> redstoneUpdateInfos; // Paper - Faster redstone torch rapid clock removal; Move from Map in BlockRedstoneTorch to here
++    public int expToDrop; // Paper - BlockDestroyEvent
+ 
+     public CraftWorld getWorld() {
+         return this.world;
+@@ -574,9 +576,26 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
              return false;
          } else {
              FluidState fluid = this.getFluidState(pos);
@@ -51,3 +59,116 @@ index 924b496aaaa19c7ef69498730725ae9287e46e28..0f4b9b5d3e34b5e08f9ca2f78c5e8bce
              }
  
              if (drop) {
+diff --git a/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java b/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java
+index 4a5badc4bb1e2c29016735e9df93c7ac4d3f363d..c7b5360f4a9fec9567fedbc18409d801f8abcccf 100644
+--- a/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BaseRailBlock.java
+@@ -81,7 +81,18 @@ public abstract class BaseRailBlock extends Block implements SimpleWaterloggedBl
+         if (!world.isClientSide && world.getBlockState(pos).is(this)) {
+             RailShape railShape = state.getValue(this.getShapeProperty());
+             if (shouldBeRemoved(pos, world, railShape)) {
+-                dropResources(state, world, pos);
++                // Paper start - BlockDestroyEvent
++                com.destroystokyo.paper.event.block.BlockDestroyEvent event = new com.destroystokyo.paper.event.block.BlockDestroyEvent(org.bukkit.craftbukkit.block.CraftBlock.at(world, pos), world.getFluidState(pos).createLegacyBlock().createCraftBlockData(), state.createCraftBlockData(), 0, true);
++                event.setPlayEffect(false);
++                if (!event.callEvent())
++                    return;
++                world.expToDrop = event.getExpToDrop();
++                if (event.playEffect())
++                    world.levelEvent(2001, pos, Block.getId(((org.bukkit.craftbukkit.block.data.CraftBlockData) event.getEffectBlock()).getState()));
++                if (event.willDrop())
++                    dropResources(state, world, pos);
++                world.expToDrop = 0;
++                // Paper end - BlockDestroyEvent
+                 world.removeBlock(pos, notify);
+             } else {
+                 this.updateState(state, world, pos, sourceBlock);
+@@ -89,6 +100,13 @@ public abstract class BaseRailBlock extends Block implements SimpleWaterloggedBl
+         }
+     }
+ 
++    // Paper start - BlockDestroyEvent
++    @Override
++    public int getExpDrop(final BlockState iblockdata, final net.minecraft.server.level.ServerLevel worldserver, final BlockPos blockposition, final net.minecraft.world.item.ItemStack itemstack, final boolean flag) {
++        return worldserver.expToDrop;
++    }
++    // Paper end - BlockDestroyEvent
++
+     private static boolean shouldBeRemoved(BlockPos pos, Level world, RailShape shape) {
+         if (!canSupportRigidBlock(world, pos.below())) {
+             return true;
+diff --git a/src/main/java/net/minecraft/world/level/block/DiodeBlock.java b/src/main/java/net/minecraft/world/level/block/DiodeBlock.java
+index aa1e81f349831473163c1f1814e89e3c602afc15..5c7f4fe7a5d589b7d03fe63c84d869b01456f341 100644
+--- a/src/main/java/net/minecraft/world/level/block/DiodeBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/DiodeBlock.java
+@@ -98,7 +98,18 @@ public abstract class DiodeBlock extends HorizontalDirectionalBlock {
+         } else {
+             BlockEntity tileentity = state.hasBlockEntity() ? world.getBlockEntity(pos) : null;
+ 
+-            dropResources(state, world, pos, tileentity);
++            // Paper start - BlockDestroyEvent
++            com.destroystokyo.paper.event.block.BlockDestroyEvent event = new com.destroystokyo.paper.event.block.BlockDestroyEvent(org.bukkit.craftbukkit.block.CraftBlock.at(world, pos), world.getFluidState(pos).createLegacyBlock().createCraftBlockData(), state.createCraftBlockData(), 0, true);
++            event.setPlayEffect(false);
++            if (!event.callEvent())
++                return;
++            world.expToDrop = event.getExpToDrop();
++            if (event.playEffect())
++                world.levelEvent(2001, pos, Block.getId(((org.bukkit.craftbukkit.block.data.CraftBlockData) event.getEffectBlock()).getState()));
++            if (event.willDrop())
++                dropResources(state, world, pos, tileentity);;
++            world.expToDrop = 0;
++            // Paper end - BlockDestroyEvent
+             world.removeBlock(pos, false);
+             Direction[] aenumdirection = Direction.values();
+             int i = aenumdirection.length;
+@@ -112,6 +123,13 @@ public abstract class DiodeBlock extends HorizontalDirectionalBlock {
+         }
+     }
+ 
++    // Paper start - BlockDestroyEvent
++    @Override
++    public int getExpDrop(final BlockState iblockdata, final ServerLevel worldserver, final BlockPos blockposition, final ItemStack itemstack, final boolean flag) {
++        return worldserver.expToDrop;
++    }
++    // Paper end - BlockDestroyEvent
++
+     protected void checkTickOnNeighbor(Level world, BlockPos pos, BlockState state) {
+         if (!this.isLocked(world, pos, state)) {
+             boolean flag = (Boolean) state.getValue(DiodeBlock.POWERED);
+diff --git a/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java b/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
+index 6561e24087dc2b9975f2ee7a3737d453354e4fcc..1e2d82e29d22d291644a5bc9a7dc97d1ccf92f53 100644
+--- a/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
+@@ -365,13 +365,31 @@ public class RedStoneWireBlock extends Block {
+                 if (state.canSurvive(world, pos)) {
+                     this.updatePowerStrength(world, pos, state, wireOrientation, false);
+                 } else {
+-                    dropResources(state, world, pos);
++                    // Paper start - BlockDestroyEvent
++                    com.destroystokyo.paper.event.block.BlockDestroyEvent event = new com.destroystokyo.paper.event.block.BlockDestroyEvent(org.bukkit.craftbukkit.block.CraftBlock.at(world, pos), world.getFluidState(pos).createLegacyBlock().createCraftBlockData(), state.createCraftBlockData(), 0, true);
++                    event.setPlayEffect(false);
++                    if (!event.callEvent())
++                        return;
++                    world.expToDrop = event.getExpToDrop();
++                    if (event.playEffect())
++                        world.levelEvent(2001, pos, Block.getId(((org.bukkit.craftbukkit.block.data.CraftBlockData) event.getEffectBlock()).getState()));
++                    if (event.willDrop())
++                        dropResources(state, world, pos);
++                    world.expToDrop = 0;
++                    // Paper end - BlockDestroyEvent
+                     world.removeBlock(pos, false);
+                 }
+             }
+         }
+     }
+ 
++    // Paper start - BlockDestroyEvent
++    @Override
++    public int getExpDrop(final BlockState iblockdata, final net.minecraft.server.level.ServerLevel worldserver, final BlockPos blockposition, final net.minecraft.world.item.ItemStack itemstack, final boolean flag) {
++        return worldserver.expToDrop;
++    }
++    // Paper end - BlockDestroyEvent
++
+     private static boolean useExperimentalEvaluator(Level world) {
+         return world.enabledFeatures().contains(FeatureFlags.REDSTONE_EXPERIMENTS);
+     }
