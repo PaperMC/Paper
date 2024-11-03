@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import net.minecraft.commands.CommandDispatcher;
 import net.minecraft.commands.CommandListenerWrapper;
+import net.minecraft.server.level.EntityPlayer;
 import net.minecraft.server.level.WorldServer;
 import net.minecraft.world.entity.vehicle.EntityMinecartCommandBlock;
 import org.bukkit.Location;
@@ -65,6 +66,10 @@ public final class VanillaCommandWrapper extends BukkitCommand {
         if (sender instanceof CraftEntity entity) {
             if (sender instanceof CommandMinecart) {
                 return ((EntityMinecartCommandBlock) ((CraftMinecartCommand) sender).getHandle()).getCommandBlock().createCommandSourceStack();
+            }
+
+            if (sender instanceof EntityPlayer player) {
+                return player.createCommandSourceStack();
             }
 
             return entity.getHandle().createCommandSourceStackForNameResolution((WorldServer) entity.getHandle().level());
