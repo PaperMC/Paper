@@ -8,10 +8,12 @@ import io.papermc.paper.registry.RegistryKey;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
+import org.bukkit.Art;
 import org.bukkit.Fluid;
 import org.bukkit.GameEvent;
 import org.bukkit.JukeboxSong;
 import org.bukkit.MusicInstrument;
+import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
 import org.bukkit.block.BlockType;
@@ -49,6 +51,7 @@ public interface Generators {
         simpleKey("MenuTypeKeys", MenuType.class, Registries.MENU, RegistryKey.MENU, false),
         simpleKey("AttributeKeys", Attribute.class, Registries.ATTRIBUTE, RegistryKey.ATTRIBUTE, false),
         simpleKey("FluidKeys", Fluid.class, Registries.FLUID, RegistryKey.FLUID, false),
+        simpleKey("SoundEventKeys", Sound.class, Registries.SOUND_EVENT, RegistryKey.SOUND_EVENT, false),
 
         // data-driven
         simpleKey("BiomeKeys", Biome.class, Registries.BIOME, RegistryKey.BIOME, true),
@@ -60,6 +63,7 @@ public interface Generators {
         simpleKey("EnchantmentKeys", Enchantment.class, Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT, false),
         simpleKey("JukeboxSongKeys", JukeboxSong.class, Registries.JUKEBOX_SONG, RegistryKey.JUKEBOX_SONG, true),
         simpleKey("BannerPatternKeys", PatternType.class, Registries.BANNER_PATTERN, RegistryKey.BANNER_PATTERN, true),
+        simpleKey("PaintingVariantKeys", Art.class, Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT, true),
 
         // tags
         simpleTagKey("EnchantmentTagKeys", Enchantment.class, Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT),

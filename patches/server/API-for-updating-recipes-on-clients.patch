@@ -15,7 +15,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper start - API for updating recipes on clients
 +        this.reloadAdvancementData();
 +        this.reloadTagData();
-+        this.reloadRecipeData();
++        this.reloadRecipes();
 +    }
 +    public void reloadAdvancementData() {
 +        // Paper end - API for updating recipes on clients
@@ -30,12 +30,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    public void reloadTagData() {
          this.broadcastAll(new ClientboundUpdateTagsPacket(TagNetworkSerialization.serializeTagsToNetwork(this.registries)));
-+    }
-+    public void reloadRecipeData() {
+         // CraftBukkit start
+-        this.reloadRecipes();
++        // this.reloadRecipes(); // Paper - do not reload recipes just because tag data was reloaded
 +        // Paper end - API for updating recipes on clients
-         RecipeManager craftingmanager = this.server.getRecipeManager();
-         ClientboundUpdateRecipesPacket packetplayoutrecipeupdate = new ClientboundUpdateRecipesPacket(craftingmanager.getSynchronizedItemProperties(), craftingmanager.getSynchronizedStonecutterRecipes());
-         Iterator iterator1 = this.players.iterator();
+     }
+ 
+     public void reloadRecipes() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
@@ -52,7 +53,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public void updateRecipes() {
-+        this.playerList.reloadRecipeData();
++        this.playerList.reloadRecipes();
 +    }
 +    // Paper end - API for updating recipes on clients
 +
@@ -79,7 +80,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          toAdd.addToCraftingManager();
 +        // Paper start - API for updating recipes on clients
 +        if (true || resendRecipes) { // Always needs to be resent now... TODO
-+            this.playerList.reloadRecipeData();
++            this.playerList.reloadRecipes();
 +        }
 +        // Paper end - API for updating recipes on clients
          return true;
@@ -103,7 +104,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        final ResourceKey<net.minecraft.world.item.crafting.Recipe<?>> minecraftKey = CraftRecipe.toMinecraft(recipeKey);
 +        final boolean removed = this.getServer().getRecipeManager().removeRecipe(minecraftKey);
 +        if (removed/* && resendRecipes*/) { // TODO Always need to resend them rn - deprecate this method?
-+            this.playerList.reloadRecipeData();
++            this.playerList.reloadRecipes();
 +        }
 +        return removed;
 +        // Paper end - resend recipes on successful removal
