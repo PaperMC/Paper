@@ -12,10 +12,10 @@ public net.minecraft.server.RegistryLayer STATIC_ACCESS
 
 diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistries.java b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9657c35ffbcc12061b394b97c97224e699c99b4f
+index 0000000000000000000000000000000000000000..39120c63ed25d45a4083523fbfe79d871f4d892e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
-@@ -0,0 +1,152 @@
+@@ -0,0 +1,156 @@
 +package io.papermc.paper.registry;
 +
 +import io.papermc.paper.adventure.PaperAdventure;
@@ -28,19 +28,23 @@ index 0000000000000000000000000000000000000000..9657c35ffbcc12061b394b97c97224e6
 +import net.minecraft.core.Registry;
 +import net.minecraft.core.registries.Registries;
 +import net.minecraft.resources.ResourceKey;
++import org.bukkit.Art;
 +import org.bukkit.Fluid;
 +import org.bukkit.GameEvent;
 +import org.bukkit.JukeboxSong;
 +import org.bukkit.Keyed;
 +import org.bukkit.MusicInstrument;
++import org.bukkit.Sound;
 +import org.bukkit.attribute.Attribute;
 +import org.bukkit.block.Biome;
 +import org.bukkit.block.BlockType;
 +import org.bukkit.block.banner.PatternType;
++import org.bukkit.craftbukkit.CraftArt;
 +import org.bukkit.craftbukkit.CraftFluid;
 +import org.bukkit.craftbukkit.CraftGameEvent;
 +import org.bukkit.craftbukkit.CraftJukeboxSong;
 +import org.bukkit.craftbukkit.CraftMusicInstrument;
++import org.bukkit.craftbukkit.CraftSound;
 +import org.bukkit.craftbukkit.attribute.CraftAttribute;
 +import org.bukkit.craftbukkit.block.CraftBiome;
 +import org.bukkit.craftbukkit.block.CraftBlockType;
@@ -106,6 +110,7 @@ index 0000000000000000000000000000000000000000..9657c35ffbcc12061b394b97c97224e6
 +            entry(Registries.MENU, RegistryKey.MENU, MenuType.class, CraftMenuType::new),
 +            entry(Registries.ATTRIBUTE, RegistryKey.ATTRIBUTE, Attribute.class, CraftAttribute::new),
 +            entry(Registries.FLUID, RegistryKey.FLUID, Fluid.class, CraftFluid::new),
++            entry(Registries.SOUND_EVENT, RegistryKey.SOUND_EVENT, Sound.class, CraftSound::new),
 +
 +            // data-drivens
 +            entry(Registries.BIOME, RegistryKey.BIOME, Biome.class, CraftBiome::new).delayed(),
@@ -117,13 +122,12 @@ index 0000000000000000000000000000000000000000..9657c35ffbcc12061b394b97c97224e6
 +            entry(Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT, Enchantment.class, CraftEnchantment::new).withSerializationUpdater(FieldRename.ENCHANTMENT_RENAME).delayed(),
 +            entry(Registries.JUKEBOX_SONG, RegistryKey.JUKEBOX_SONG, JukeboxSong.class, CraftJukeboxSong::new).delayed(),
 +            entry(Registries.BANNER_PATTERN, RegistryKey.BANNER_PATTERN, PatternType.class, CraftPatternType::new).delayed(),
++            entry(Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT, Art.class, CraftArt::new).delayed(),
 +
 +            // api-only
-+            apiOnly(Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT, () -> org.bukkit.Registry.ART),
 +            apiOnly(Registries.ENTITY_TYPE, RegistryKey.ENTITY_TYPE, () -> org.bukkit.Registry.ENTITY_TYPE),
 +            apiOnly(Registries.PARTICLE_TYPE, RegistryKey.PARTICLE_TYPE, () -> org.bukkit.Registry.PARTICLE_TYPE),
 +            apiOnly(Registries.POTION, RegistryKey.POTION, () -> org.bukkit.Registry.POTION),
-+            apiOnly(Registries.SOUND_EVENT, RegistryKey.SOUND_EVENT, () -> org.bukkit.Registry.SOUNDS),
 +            apiOnly(Registries.MEMORY_MODULE_TYPE, RegistryKey.MEMORY_MODULE_TYPE, () -> (org.bukkit.Registry<MemoryKey<?>>) (org.bukkit.Registry) org.bukkit.Registry.MEMORY_MODULE_TYPE)
 +        );
 +        final Map<RegistryKey<?>, RegistryEntry<?, ?>> byRegistryKey = new IdentityHashMap<>(REGISTRY_ENTRIES.size());
@@ -749,10 +753,10 @@ index 8e8d6214adbd21a221147f0fc0d91cd9c06a080c..6fddef967b6314ca0158f5bd4b889867
              String string = Registries.elementsDirPath(type.registryKey());
              SimpleJsonResourceReloadListener.scanDirectory(resourceManager, string, ops, type.codec(), map);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
-index d7e3371ebc08b5534c259ea45d89a969dfbe491a..16985dc1f54d64c44f96b045012612f16ba9ae8a 100644
+index 0d091c7b328fb70a82f5b5ded7dec61b7cd3d59a..249f0dcad04a35244da6dab837a461bb42aad00a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
-@@ -125,90 +125,12 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+@@ -127,96 +127,12 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
                  + ", this can happen if a plugin creates its own registry entry with out properly registering it.");
      }
  
@@ -764,6 +768,9 @@ index d7e3371ebc08b5534c259ea45d89a969dfbe491a..16985dc1f54d64c44f96b045012612f1
 -     * @return the bukkit registry of the provided class
 -     */
 -    public static <B extends Keyed> Registry<?> createRegistry(Class<? super B> bukkitClass, RegistryAccess registryHolder) {
+-        if (bukkitClass == Art.class) {
+-            return new CraftRegistry<>(Art.class, registryHolder.lookupOrThrow(Registries.PAINTING_VARIANT), CraftArt::new, FieldRename.NONE);
+-        }
 -        if (bukkitClass == Attribute.class) {
 -            return new CraftRegistry<>(Attribute.class, registryHolder.lookupOrThrow(Registries.ATTRIBUTE), CraftAttribute::new, FieldRename.ATTRIBUTE_RENAME);
 -        }
@@ -787,6 +794,9 @@ index d7e3371ebc08b5534c259ea45d89a969dfbe491a..16985dc1f54d64c44f96b045012612f1
 -        }
 -        if (bukkitClass == PotionEffectType.class) {
 -            return new CraftRegistry<>(PotionEffectType.class, registryHolder.lookupOrThrow(Registries.MOB_EFFECT), CraftPotionEffectType::new, FieldRename.NONE);
+-        }
+-        if (bukkitClass == Sound.class) {
+-            return new CraftRegistry<>(Sound.class, registryHolder.lookupOrThrow(Registries.SOUND_EVENT), CraftSound::new, FieldRename.NONE);
 -        }
 -        if (bukkitClass == Structure.class) {
 -            return new CraftRegistry<>(Structure.class, registryHolder.lookupOrThrow(Registries.STRUCTURE), CraftStructure::new, FieldRename.NONE);
@@ -846,7 +856,7 @@ index d7e3371ebc08b5534c259ea45d89a969dfbe491a..16985dc1f54d64c44f96b045012612f1
          }
  
          if (bukkit instanceof Registry.SimpleRegistry<?> simple) {
-@@ -226,23 +148,21 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+@@ -234,23 +150,21 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
          return bukkit.get(namespacedKey);
      }
  
@@ -930,10 +940,10 @@ index 091e11934bddb180f0b2e51efb3921c62275d41d..12fe2f8d0dcb715545e071023490a321
      // PatternType
      private static final FieldRenameData PATTERN_TYPE_DATA = FieldRenameData.Builder.newBuilder()
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
-index 9a6857f325d72c1b5ce403c3240e0b1a3f43bc38..e4b79d92a8c41eb37d989248425b1e5a963b476c 100644
+index 61d617d4abb9c9cf5c711459aa98c8b173597a9a..c9b789c2a904c2caff516ee9aeff4a6b368766f4 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
-@@ -218,20 +218,10 @@ public class Commodore {
+@@ -220,20 +220,10 @@ public class Commodore {
  
      public byte[] convert(byte[] b, final String pluginName, final ApiVersion pluginVersion, final Set<String> activeCompatibilities) {
          final boolean modern = pluginVersion.isNewerThanOrSameAs(ApiVersion.FLATTENING);
@@ -954,7 +964,7 @@ index 9a6857f325d72c1b5ce403c3240e0b1a3f43bc38..e4b79d92a8c41eb37d989248425b1e5a
  
          visitor = io.papermc.paper.pluginremap.reflect.ReflectionRemapper.visitor(visitor); // Paper
          cr.accept(new ClassRemapper(new ClassVisitor(Opcodes.ASM9, visitor) {
-@@ -298,15 +288,6 @@ public class Commodore {
+@@ -300,15 +290,6 @@ public class Commodore {
  
              @Override
              public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
@@ -1259,7 +1269,7 @@ index bbd5dd5b27937ddc3d8c57f2b604331495b0f311..626c3033e36897846fe84a77d05e2e91
          CraftRegistry.setMinecraftRegistry(RegistryHelper.getRegistry());
      }
 diff --git a/src/test/java/org/bukkit/support/provider/RegistriesArgumentProvider.java b/src/test/java/org/bukkit/support/provider/RegistriesArgumentProvider.java
-index c0e02198200c93e3d0ff2461d267e856db087532..bbabfad54c58f74cb5d70cbce4d140ad69a56abb 100644
+index bfec6280e8b753a29ad2d9eb88808beb79ec65ea..b717a5ffa567781b0687bbe238b62844214db284 100644
 --- a/src/test/java/org/bukkit/support/provider/RegistriesArgumentProvider.java
 +++ b/src/test/java/org/bukkit/support/provider/RegistriesArgumentProvider.java
 @@ -1,6 +1,7 @@
@@ -1270,11 +1280,12 @@ index c0e02198200c93e3d0ff2461d267e856db087532..bbabfad54c58f74cb5d70cbce4d140ad
  import java.util.List;
  import java.util.stream.Stream;
  import net.minecraft.core.registries.Registries;
-@@ -67,39 +68,38 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
+@@ -73,41 +74,40 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
      private static final List<Arguments> DATA = Lists.newArrayList();
  
      static {
 -        // Order: Bukkit class, Minecraft Registry key, CraftBukkit class, Minecraft class
+-        register(Art.class, Registries.PAINTING_VARIANT, CraftArt.class, PaintingVariant.class);
 -        register(Attribute.class, Registries.ATTRIBUTE, CraftAttribute.class, net.minecraft.world.entity.ai.attributes.Attribute.class);
 -        register(Biome.class, Registries.BIOME, CraftBiome.class, net.minecraft.world.level.biome.Biome.class);
 -        register(Enchantment.class, Registries.ENCHANTMENT, CraftEnchantment.class, net.minecraft.world.item.enchantment.Enchantment.class);
@@ -1283,6 +1294,7 @@ index c0e02198200c93e3d0ff2461d267e856db087532..bbabfad54c58f74cb5d70cbce4d140ad
 -        register(MusicInstrument.class, Registries.INSTRUMENT, CraftMusicInstrument.class, Instrument.class);
 -        register(MenuType.class, Registries.MENU, CraftMenuType.class, net.minecraft.world.inventory.MenuType.class);
 -        register(PotionEffectType.class, Registries.MOB_EFFECT, CraftPotionEffectType.class, MobEffect.class);
+-        register(Sound.class, Registries.SOUND_EVENT, CraftSound.class, SoundEvent.class);
 -        register(Structure.class, Registries.STRUCTURE, CraftStructure.class, net.minecraft.world.level.levelgen.structure.Structure.class);
 -        register(StructureType.class, Registries.STRUCTURE_TYPE, CraftStructureType.class, net.minecraft.world.level.levelgen.structure.StructureType.class);
 -        register(Villager.Type.class, Registries.VILLAGER_TYPE, CraftVillager.CraftType.class, VillagerType.class);
@@ -1300,6 +1312,7 @@ index c0e02198200c93e3d0ff2461d267e856db087532..bbabfad54c58f74cb5d70cbce4d140ad
 -        register(PatternType.class, Registries.BANNER_PATTERN, CraftPatternType.class, BannerPattern.class);
 -
 +        // Order: RegistryKey, Bukkit class, Minecraft Registry key, CraftBukkit class, Minecraft class
++        register(RegistryKey.PAINTING_VARIANT, Art.class, Registries.PAINTING_VARIANT, CraftArt.class, PaintingVariant.class);
 +        register(RegistryKey.ATTRIBUTE, Attribute.class, Registries.ATTRIBUTE, CraftAttribute.class, net.minecraft.world.entity.ai.attributes.Attribute.class);
 +        register(RegistryKey.BIOME, Biome.class, Registries.BIOME, CraftBiome.class, net.minecraft.world.level.biome.Biome.class);
 +        register(RegistryKey.ENCHANTMENT, Enchantment.class, Registries.ENCHANTMENT, CraftEnchantment.class, net.minecraft.world.item.enchantment.Enchantment.class);
@@ -1307,6 +1320,7 @@ index c0e02198200c93e3d0ff2461d267e856db087532..bbabfad54c58f74cb5d70cbce4d140ad
 +        register(RegistryKey.GAME_EVENT, GameEvent.class, Registries.GAME_EVENT, CraftGameEvent.class, net.minecraft.world.level.gameevent.GameEvent.class);
 +        register(RegistryKey.INSTRUMENT, MusicInstrument.class, Registries.INSTRUMENT, CraftMusicInstrument.class, Instrument.class);
 +        register(RegistryKey.MOB_EFFECT, PotionEffectType.class, Registries.MOB_EFFECT, CraftPotionEffectType.class, MobEffect.class);
++        register(RegistryKey.SOUND_EVENT, Sound.class, Registries.SOUND_EVENT, CraftSound.class, SoundEvent.class);
 +        register(RegistryKey.STRUCTURE, Structure.class, Registries.STRUCTURE, CraftStructure.class, net.minecraft.world.level.levelgen.structure.Structure.class);
 +        register(RegistryKey.STRUCTURE_TYPE, StructureType.class, Registries.STRUCTURE_TYPE, CraftStructureType.class, net.minecraft.world.level.levelgen.structure.StructureType.class);
 +        register(RegistryKey.VILLAGER_TYPE, Villager.Type.class, Registries.VILLAGER_TYPE, CraftVillager.CraftType.class, VillagerType.class);
