@@ -1,0 +1,68 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Mon, 4 Nov 2024 20:23:02 +0000
+Subject: [PATCH] Manually reset attribute map on restoring player instance
+
+Spigots reuse of the entity instances causes the server to try to copy
+a players existing attributes back onto itself, which causes an error.
+
+We'll manually clear the applicable attribute modifiers, but, in the long run,
+we should just revert out of the broken behavior of trying to reuse ServerPlayer
+instances.
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index cffbd3300967e5d80b5973b35a76235bb2aa1b73..bce4a59c82c8fd90501a51d4dd45113256df225f 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -2285,8 +2285,11 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player imple
+         this.gameMode.setGameModeForPlayer(oldPlayer.gameMode.getGameModeForPlayer(), oldPlayer.gameMode.getPreviousGameModeForPlayer());
+         this.onUpdateAbilities();
+         if (alive) {
+-            this.getAttributes().assignBaseValues(oldPlayer.getAttributes());
+-            this.getAttributes().assignPermanentModifiers(oldPlayer.getAttributes());
++            // Paper start - deal with upstream stupidity around attribute modifiers and recycling entity instances.
++            //this.getAttributes().assignBaseValues(oldPlayer.getAttributes());
++            //this.getAttributes().assignPermanentModifiers(oldPlayer.getAttributes());
++            this.getAttributes().removeAllTransientModifiers();
++            // Paper end
+             this.setHealth(oldPlayer.getHealth());
+             this.foodData = oldPlayer.foodData;
+             Iterator iterator = oldPlayer.getActiveEffects().iterator();
+@@ -2304,7 +2307,10 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player imple
+             this.setScore(oldPlayer.getScore());
+             this.portalProcess = oldPlayer.portalProcess;
+         } else {
+-            this.getAttributes().assignBaseValues(oldPlayer.getAttributes());
++            // Paper start - deal with upstream stupidity around attribute modifiers and recycling entity instances.
++            //this.getAttributes().assignBaseValues(oldPlayer.getAttributes());
++            this.getAttributes().removeAllModifiers();
++            // Paper end
+             // this.setHealth(this.getMaxHealth()); // CraftBukkit
+             if (this.serverLevel().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY) || oldPlayer.isSpectator()) {
+                 this.getInventory().replaceWith(oldPlayer.getInventory());
+diff --git a/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeMap.java b/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeMap.java
+index 94d04a20f97405e02d7cccaabadc7a7e86e336f7..684392007e6fd1f0a328bc5f59929fcabe1f1a6e 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeMap.java
++++ b/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeMap.java
+@@ -156,5 +156,21 @@ public class AttributeMap {
+         attributes.put(attributeBase, attributeModifiable);
+     }
+     // Paper - end - living entity allow attribute registration
++    // Paper start - deal with upstream stupidity around attribute modifiers and recycling entity instances.
++    public void removeAllModifiers() {
++        this.attributes.values().forEach(AttributeInstance::removeModifiers);
++    }
++
++    public void removeAllTransientModifiers() {
++        this.attributes.values().forEach(attributeInstance -> {
++            final Set<AttributeModifier> permanentModifiers = attributeInstance.getPermanentModifiers();
++            attributeInstance.getModifiers().forEach(modifier -> {
++                if (!permanentModifiers.contains(modifier)) {
++                    attributeInstance.removeModifier(modifier.id());
++                }
++            });
++        });
++    }
++    // Paper end
+ 
+ }
