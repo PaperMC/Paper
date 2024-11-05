@@ -1,12 +1,11 @@
 package org.bukkit.tag;
 
-import java.util.Objects;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Tag;
 import org.bukkit.damage.DamageType;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Vanilla {@link DamageType} {@link Tag tags}.
@@ -32,7 +31,10 @@ public final class DamageTypeTags {
     public static final Tag<DamageType> BYPASSES_INVULNERABILITY = getTag("bypasses_invulnerability");
     /**
      * Vanilla tag representing damage types which bypass cooldowns.
+     * <br>
+     * <b>Note:</b> this can be null unless a datapack add values to this tag because vanilla not has any values for this.
      */
+    @Nullable
     public static final Tag<DamageType> BYPASSES_COOLDOWN = getTag("bypasses_cooldown");
     /**
      * Vanilla tag representing damage types which bypass effects.
@@ -158,9 +160,9 @@ public final class DamageTypeTags {
     @ApiStatus.Internal
     public static final String REGISTRY_DAMAGE_TYPES = "damage_types";
 
-    @NotNull
+    @Nullable
     private static Tag<DamageType> getTag(String key) {
-        return Objects.requireNonNull(Bukkit.getTag(REGISTRY_DAMAGE_TYPES, NamespacedKey.minecraft(key), DamageType.class));
+        return Bukkit.getTag(REGISTRY_DAMAGE_TYPES, NamespacedKey.minecraft(key), DamageType.class);
     }
 
     private DamageTypeTags() {
