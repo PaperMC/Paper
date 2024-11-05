@@ -8,8 +8,8 @@ import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.MinecraftExperimental;
 import org.bukkit.inventory.ItemType;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Vanilla keys for {@link RegistryKey#ITEM}.
@@ -25,6 +25,7 @@ import org.jetbrains.annotations.ApiStatus;
         "SpellCheckingInspection"
 })
 @GeneratedFrom("1.21.3")
+@NullMarked
 @ApiStatus.Experimental
 public final class ItemTypeTagKeys {
     /**
@@ -1236,7 +1237,7 @@ public final class ItemTypeTagKeys {
      * @return a new tag key
      */
     @ApiStatus.Experimental
-    public static @NonNull TagKey<ItemType> create(final @NonNull Key key) {
+    public static TagKey<ItemType> create(final Key key) {
         return TagKey.create(RegistryKey.ITEM, key);
     }
 }

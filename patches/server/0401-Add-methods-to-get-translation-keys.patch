@@ -10,6 +10,27 @@ public org.bukkit.craftbukkit.inventory.CraftMetaFirework getNBT(Lorg/bukkit/Fir
 
 Co-authored-by: MeFisto94 <MeFisto94@users.noreply.github.com>
 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftMusicInstrument.java b/src/main/java/org/bukkit/craftbukkit/CraftMusicInstrument.java
+index fa0a3f895f12a33938222d354caf13857bdd6955..fb8f68f1aedfb26e4d95fe5bad87f0f2cc91c287 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftMusicInstrument.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftMusicInstrument.java
+@@ -68,6 +68,16 @@ public class CraftMusicInstrument extends MusicInstrument implements Handleable<
+         return this.key;
+     }
+ 
++    // Paper start - add translationKey methods
++    @Override
++    public @NotNull String translationKey() {
++        if (!(this.getHandle().description().getContents() instanceof final net.minecraft.network.chat.contents.TranslatableContents translatableContents)) {
++            throw new UnsupportedOperationException("Description isn't translatable!"); // Paper
++        }
++        return translatableContents.getKey();
++    }
++    // Paper end - add translationKey methods
++
+     @Override
+     public boolean equals(Object other) {
+         if (this == other) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttribute.java b/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttribute.java
 index 8797a47be16b85dc69a28a56bb355bee7d6b1a78..9ab615347e241ac264fb70f43306075907420885 100644
 --- a/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttribute.java
@@ -109,7 +130,7 @@ index 4921fc085c9d60c74028ef390325e26c598e8df1..4941e0afff8df5f10f06c715b54bf58e
              case BALL:
                  return FireworkExplosion.Shape.SMALL_BALL;
 diff --git a/src/test/java/io/papermc/paper/world/TranslationKeyTest.java b/src/test/java/io/papermc/paper/world/TranslationKeyTest.java
-index 7f8b6462d2a1bbd39a870d2543bebc135f7eb45b..e8d5c3eb8ad98b2082bdd33d96bfb1d7124ea186 100644
+index 7f8b6462d2a1bbd39a870d2543bebc135f7eb45b..c843de24f06dcdee474e9a21d0a3dc54b7b3557a 100644
 --- a/src/test/java/io/papermc/paper/world/TranslationKeyTest.java
 +++ b/src/test/java/io/papermc/paper/world/TranslationKeyTest.java
 @@ -1,11 +1,32 @@
@@ -145,7 +166,7 @@ index 7f8b6462d2a1bbd39a870d2543bebc135f7eb45b..e8d5c3eb8ad98b2082bdd33d96bfb1d7
  public class TranslationKeyTest {
  
      @Test
-@@ -15,4 +36,70 @@ public class TranslationKeyTest {
+@@ -15,4 +36,61 @@ public class TranslationKeyTest {
              Assertions.assertEquals(ChatVisiblity.valueOf(chatVisibility.name()).getKey(), chatVisibility.translationKey(), chatVisibility + "'s translation key doesn't match");
          }
      }
@@ -204,15 +225,6 @@ index 7f8b6462d2a1bbd39a870d2543bebc135f7eb45b..e8d5c3eb8ad98b2082bdd33d96bfb1d7
 +        for (Map.Entry<ResourceKey<Biome>, Biome> nms : RegistryHelper.getBiomes().entrySet()) {
 +            org.bukkit.block.Biome bukkit = org.bukkit.block.Biome.valueOf(nms.getKey().location().getPath().toUpperCase(Locale.ROOT));
 +            Assertions.assertEquals(nms.getKey().location().toLanguageKey("biome"), bukkit.translationKey(), "translation key mismatch for " + bukkit);
-+        }
-+    }
-+
-+    @Test
-+    public void testMusicInstrument() {
-+        for (final ResourceLocation nms : RegistryHelper.getRegistry().lookupOrThrow(Registries.INSTRUMENT).keySet()) {
-+            final MusicInstrument bukkit = MusicInstrument.getByKey(CraftNamespacedKey.fromMinecraft(nms));
-+            Assertions.assertNotNull(bukkit, "Missing bukkit instrument for " + nms);
-+            Assertions.assertEquals(nms.toLanguageKey("instrument"), bukkit.translationKey(), "translation key mismatch for " + bukkit);
 +        }
 +    }
  }

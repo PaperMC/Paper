@@ -7,8 +7,8 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.generator.structure.StructureType;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Vanilla keys for {@link RegistryKey#STRUCTURE_TYPE}.
@@ -24,6 +24,7 @@ import org.jetbrains.annotations.ApiStatus;
         "SpellCheckingInspection"
 })
 @GeneratedFrom("1.21.3")
+@NullMarked
 @ApiStatus.Experimental
 public final class StructureTypeKeys {
     /**
@@ -141,7 +142,7 @@ public final class StructureTypeKeys {
     private StructureTypeKeys() {
     }
 
-    private static @NonNull TypedKey<StructureType> create(final @NonNull Key key) {
+    private static TypedKey<StructureType> create(final Key key) {
         return TypedKey.create(RegistryKey.STRUCTURE_TYPE, key);
     }
 }
