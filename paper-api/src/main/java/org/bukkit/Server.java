@@ -1566,6 +1566,24 @@ public interface Server extends PluginMessageRecipient {
     public int getIdleTimeout();
 
     /**
+     * Gets the pause when empty threshold seconds. To save resources, the
+     * pause most functions after this time if there are no players online.
+     *
+     * @return the pause threshold in seconds
+     */
+    public int getPauseWhenEmptyTime();
+
+    /**
+     * Sets the pause when empty threshold seconds. To save resources, the
+     * pause most functions after this time if there are no players online.
+     * <p>
+     * A value of less than 0 will disable the setting
+     *
+     * @param seconds the pause threshold in seconds
+     */
+    public void setPauseWhenEmptyTime(int seconds);
+
+    /**
      * Create a ChunkData for use in a generator.
      *
      * See {@link ChunkGenerator#generateChunkData(org.bukkit.World, java.util.Random, int, int, org.bukkit.generator.ChunkGenerator.BiomeGrid)}
