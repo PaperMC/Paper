@@ -3,6 +3,8 @@ From: Andrew Steinborn <git@steinborn.me>
 Date: Mon, 26 Jul 2021 02:15:17 -0400
 Subject: [PATCH] Use Velocity compression and cipher natives
 
+== AT ==
+private-f net.minecraft.network.CompressionDecoder inflater
 
 diff --git a/build.gradle.kts b/build.gradle.kts
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -108,12 +110,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class CompressionDecoder extends ByteToMessageDecoder {
      public static final int MAXIMUM_COMPRESSED_LENGTH = 2097152;
      public static final int MAXIMUM_UNCOMPRESSED_LENGTH = 8388608;
-     private final Inflater inflater;
+     private Inflater inflater;
 +    private com.velocitypowered.natives.compression.VelocityCompressor compressor; // Paper - Use Velocity cipher
      private int threshold;
      private boolean validateDecompressed;
  
 +    // Paper start - Use Velocity cipher
++    @io.papermc.paper.annotation.DoNotUse
      public CompressionDecoder(int compressionThreshold, boolean rejectsBadPackets) {
 +        this(null, compressionThreshold, rejectsBadPackets);
 +    }
@@ -175,7 +178,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 -    public void setThreshold(int compressionThreshold, boolean rejectsBadPackets) {
-+    public void setThreshold(com.velocitypowered.natives.compression.VelocityCompressor compressor, int compressionThreshold, boolean rejectsBadPackets) { // Paper - Use Velocity cipher
++    // Paper start - Use Velocity cipher
++    public void setThreshold(com.velocitypowered.natives.compression.VelocityCompressor compressor, int compressionThreshold, boolean rejectsBadPackets) {
++        if (this.compressor == null && compressor != null) { // Only re-configure once. Re-reconfiguring would require closing the native compressor.
++            this.compressor = compressor;
++            this.inflater = null;
++        }
++    // Paper end - Use Velocity cipher
          this.threshold = compressionThreshold;
          this.validateDecompressed = rejectsBadPackets;
      }
@@ -324,8 +333,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                packetdecompressor.setThreshold(compressionThreshold, rejectsBadPackets);
 +                packetdecompressor.setThreshold(compressor, compressionThreshold, rejectsBadPackets); // Paper - Use Velocity cipher
              } else {
-                 this.channel.pipeline().addAfter("splitter", "decompress", new CompressionDecoder(compressionThreshold, rejectsBadPackets));
+-                this.channel.pipeline().addAfter("splitter", "decompress", new CompressionDecoder(compressionThreshold, rejectsBadPackets));
++                this.channel.pipeline().addAfter("splitter", "decompress", new CompressionDecoder(compressor, compressionThreshold, rejectsBadPackets)); // Paper - Use Velocity cipher
              }
+ 
+             channelhandler = this.channel.pipeline().get("compress");
 @@ -0,0 +0,0 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
  
                  packetcompressor.setThreshold(compressionThreshold);
