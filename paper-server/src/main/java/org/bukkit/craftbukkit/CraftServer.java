@@ -2293,6 +2293,16 @@ public final class CraftServer implements Server {
     }
 
     @Override
+    public int getPauseWhenEmptyTime() {
+        return this.getProperties().pauseWhenEmptySeconds;
+    }
+
+    @Override
+    public void setPauseWhenEmptyTime(int seconds) {
+        this.getProperties().pauseWhenEmptySeconds = seconds;
+    }
+
+    @Override
     public ChunkGenerator.ChunkData createChunkData(World world) {
         Preconditions.checkArgument(world != null, "World cannot be null");
         WorldServer handle = ((CraftWorld) world).getHandle();
