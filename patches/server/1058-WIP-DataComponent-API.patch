@@ -2731,12 +2731,13 @@ index 0000000000000000000000000000000000000000..cb19491e0f43e075d76415cad2b8a441
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperPotionContents.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperPotionContents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..329ee9ffd2e5d02556ce712102318a277e028557
+index 0000000000000000000000000000000000000000..20cf1ecdc3ec4928aac00c12517a2475c1b1e8e1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperPotionContents.java
-@@ -0,0 +1,109 @@
+@@ -0,0 +1,111 @@
 +package io.papermc.paper.datacomponent.item;
 +
++import com.google.common.base.Preconditions;
 +import java.util.ArrayList;
 +import java.util.Collections;
 +import java.util.List;
@@ -2813,6 +2814,7 @@ index 0000000000000000000000000000000000000000..329ee9ffd2e5d02556ce712102318a27
 +
 +        @Override
 +        public Builder customName(final @Nullable String name) {
++            Preconditions.checkArgument(name == null || name.length() <= Short.MAX_VALUE, "Custom name is longer than %s characters", Short.MAX_VALUE);
 +            this.customName = name;
 +            return this;
 +        }
@@ -3852,7 +3854,7 @@ index 12220f78ffaf06433ada72fd0c7f22b97d55287d..e1c6f514f45a02d7401b5390aefd0a49
              // data-drivens
              entry(Registries.STRUCTURE, RegistryKey.STRUCTURE, Structure.class, CraftStructure::new).delayed(),
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index 756c73a401437566258813946fa10c7caa8f2469..1222918237c3bc30a984f34cda99728499da069b 100644
+index 756c73a401437566258813946fa10c7caa8f2469..528b6705b714376766bcab507781323a7a3e90b9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 @@ -206,7 +206,7 @@ public final class CraftItemStack extends ItemStack {
@@ -3946,7 +3948,7 @@ index 756c73a401437566258813946fa10c7caa8f2469..1222918237c3bc30a984f34cda997284
      }
  
      static Map<Enchantment, Integer> getEnchantments(net.minecraft.world.item.ItemStack item) {
-@@ -526,4 +545,130 @@ public final class CraftItemStack extends ItemStack {
+@@ -526,4 +545,140 @@ public final class CraftItemStack extends ItemStack {
          return this.pdcView;
      }
      // Paper end - pdc
@@ -4031,7 +4033,7 @@ index 756c73a401437566258813946fa10c7caa8f2469..1222918237c3bc30a984f34cda997284
 +    }
 +
 +    @Override
-+    public boolean matchesWithoutData(final ItemStack item, final java.util.Collection<io.papermc.paper.datacomponent.DataComponentType> exclude, final boolean ignoreCount) {
++    public boolean matchesWithoutData(final ItemStack item, final io.papermc.paper.registry.set.RegistrySet<io.papermc.paper.datacomponent.DataComponentType> exclude, final boolean ignoreCount) {
 +        // Extracted from base equals
 +        if (!(item instanceof final org.bukkit.inventory.ItemStack bukkit)) return false;
 +        final CraftItemStack craftStack = getCraftStack(bukkit);
@@ -4050,9 +4052,19 @@ index 756c73a401437566258813946fa10c7caa8f2469..1222918237c3bc30a984f34cda997284
 +
 +            // It can be assumed that the prototype is equal since the type is the same. This way all we need to check is the patch
 +
++            // Flatten registry set into registry elements
++            java.util.Collection<io.papermc.paper.datacomponent.DataComponentType> excludeTypes;
++            if (exclude instanceof io.papermc.paper.registry.set.RegistryKeySet<io.papermc.paper.datacomponent.DataComponentType> keySet) {
++                excludeTypes = keySet.resolve(org.bukkit.Registry.DATA_COMPONENT_TYPE);
++            } else if (exclude instanceof io.papermc.paper.registry.set.RegistryValueSet<io.papermc.paper.datacomponent.DataComponentType> valueSet) {
++                excludeTypes = valueSet.values();
++            } else {
++                throw new UnsupportedOperationException();
++            }
++
 +            // Collect all the NMS types into a set
 +            java.util.Set<net.minecraft.core.component.DataComponentType<?>> skippingTypes = exclude.isEmpty() ? java.util.Set.of() : new java.util.HashSet<>(exclude.size()); // micro op
-+            for (io.papermc.paper.datacomponent.DataComponentType api : exclude) {
++            for (io.papermc.paper.datacomponent.DataComponentType api : excludeTypes) {
 +                net.minecraft.core.component.DataComponentType<?> type = io.papermc.paper.datacomponent.PaperComponentType.bukkitToMinecraft(api);
 +                skippingTypes.add(type);
 +            }
@@ -4161,22 +4173,25 @@ index 0000000000000000000000000000000000000000..852ab097181491735fb9ee5ee4f70e4c
 +io.papermc.paper.datacomponent.item.consumable.ConsumableTypesBridgeImpl
 diff --git a/src/test/java/io/papermc/paper/item/ItemStackDataComponentEqualsTest.java b/src/test/java/io/papermc/paper/item/ItemStackDataComponentEqualsTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9fc9756aff2248d7684e20f37e9202375b5ac71d
+index 0000000000000000000000000000000000000000..451ebde6856d2f128c623c42bf8f88d31683f407
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/item/ItemStackDataComponentEqualsTest.java
-@@ -0,0 +1,71 @@
+@@ -0,0 +1,85 @@
 +package io.papermc.paper.item;
 +
 +import io.papermc.paper.datacomponent.DataComponentTypes;
++import io.papermc.paper.registry.RegistryKey;
++import io.papermc.paper.registry.keys.DataComponentTypeKeys;
++import io.papermc.paper.registry.set.RegistrySet;
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.Material;
 +import org.bukkit.inventory.ItemStack;
-+import org.bukkit.support.environment.Normal;
++import org.bukkit.support.environment.AllFeatures;
 +import org.junit.jupiter.api.Assertions;
++import org.junit.jupiter.api.Disabled;
 +import org.junit.jupiter.api.Test;
-+import java.util.Set;
 +
-+@Normal
++@AllFeatures
 +class ItemStackDataComponentEqualsTest {
 +
 +    @Test
@@ -4189,7 +4204,7 @@ index 0000000000000000000000000000000000000000..9fc9756aff2248d7684e20f37e920237
 +        item2.setData(DataComponentTypes.MAX_STACK_SIZE, 32);
 +        item2.setData(DataComponentTypes.ITEM_NAME, Component.text("HI"));
 +
-+        Assertions.assertTrue(item1.matchesWithoutData(item2, Set.of()));
++        Assertions.assertTrue(item1.matchesWithoutData(item2, RegistrySet.keySet(RegistryKey.DATA_COMPONENT_TYPE)));
 +    }
 +
 +    @Test
@@ -4200,7 +4215,7 @@ index 0000000000000000000000000000000000000000..9fc9756aff2248d7684e20f37e920237
 +        ItemStack item2 = ItemStack.of(Material.STONE, 1);
 +        item2.setData(DataComponentTypes.MAX_STACK_SIZE, 2);
 +
-+        Assertions.assertFalse(item1.matchesWithoutData(item2, Set.of(DataComponentTypes.MAX_STACK_SIZE)));
++        Assertions.assertFalse(item1.matchesWithoutData(item2, RegistrySet.keySet(RegistryKey.DATA_COMPONENT_TYPE, DataComponentTypeKeys.MAX_STACK_SIZE)));
 +    }
 +
 +    @Test
@@ -4211,7 +4226,18 @@ index 0000000000000000000000000000000000000000..9fc9756aff2248d7684e20f37e920237
 +        ItemStack item2 = ItemStack.of(Material.STONE, 1);
 +        item2.setData(DataComponentTypes.MAX_STACK_SIZE, 2);
 +
-+        Assertions.assertTrue(item1.matchesWithoutData(item2, Set.of(DataComponentTypes.MAX_STACK_SIZE), true));
++        Assertions.assertTrue(item1.matchesWithoutData(item2, RegistrySet.keySet(RegistryKey.DATA_COMPONENT_TYPE, DataComponentTypeKeys.MAX_STACK_SIZE), true));
++    }
++
++    @Test
++    @Disabled // todo look into that
++    public void testEqualWithoutComponent() {
++        ItemStack item1 = ItemStack.of(Material.STONE, 1);
++
++        ItemStack item2 = ItemStack.of(Material.STONE, 1);
++        item2.setData(DataComponentTypes.MAX_STACK_SIZE, 2);
++
++        Assertions.assertFalse(item1.matchesWithoutData(item2, RegistrySet.keySet(RegistryKey.DATA_COMPONENT_TYPE, DataComponentTypeKeys.WRITTEN_BOOK_CONTENT)));
 +    }
 +
 +    @Test
@@ -4222,7 +4248,7 @@ index 0000000000000000000000000000000000000000..9fc9756aff2248d7684e20f37e920237
 +        ItemStack item2 = ItemStack.of(Material.STONE, 1);
 +        item2.setData(DataComponentTypes.MAX_STACK_SIZE, 1);
 +
-+        Assertions.assertTrue(item1.matchesWithoutData(item2, Set.of(), true));
++        Assertions.assertTrue(item1.matchesWithoutData(item2, RegistrySet.keySet(RegistryKey.DATA_COMPONENT_TYPE), true));
 +    }
 +
 +    @Test
@@ -4233,12 +4259,12 @@ index 0000000000000000000000000000000000000000..9fc9756aff2248d7684e20f37e920237
 +
 +        ItemStack otherOakLeavesItem = ItemStack.of(Material.OAK_LEAVES, 2);
 +
-+        Assertions.assertTrue(oakLeaves.matchesWithoutData(otherOakLeavesItem, Set.of(DataComponentTypes.HIDE_TOOLTIP, DataComponentTypes.MAX_STACK_SIZE), true));
++        Assertions.assertTrue(oakLeaves.matchesWithoutData(otherOakLeavesItem, RegistrySet.keySet(RegistryKey.DATA_COMPONENT_TYPE, DataComponentTypeKeys.HIDE_TOOLTIP, DataComponentTypeKeys.MAX_STACK_SIZE), true));
 +    }
 +}
 diff --git a/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java b/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e4d9f65ae99427bd3277c7de5da404bf101e3b79
+index 0000000000000000000000000000000000000000..9b0dfd087937b761038b58437e13ce967976164a
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java
 @@ -0,0 +1,374 @@
@@ -4299,7 +4325,7 @@ index 0000000000000000000000000000000000000000..e4d9f65ae99427bd3277c7de5da404bf
 +import org.bukkit.inventory.meta.trim.ArmorTrim;
 +import org.bukkit.inventory.meta.trim.TrimMaterial;
 +import org.bukkit.inventory.meta.trim.TrimPattern;
-+import org.bukkit.support.environment.Normal;
++import org.bukkit.support.environment.AllFeatures;
 +import org.junit.jupiter.api.Assertions;
 +import org.junit.jupiter.api.Test;
 +import java.util.List;
@@ -4307,7 +4333,7 @@ index 0000000000000000000000000000000000000000..e4d9f65ae99427bd3277c7de5da404bf
 +import java.util.function.BiConsumer;
 +import java.util.function.Function;
 +
-+@Normal
++@AllFeatures
 +class ItemStackDataComponentTest {
 +
 +    @Test
@@ -4618,7 +4644,7 @@ index 0000000000000000000000000000000000000000..e4d9f65ae99427bd3277c7de5da404bf
 +}
 diff --git a/src/test/java/io/papermc/paper/item/MetaComparisonTest.java b/src/test/java/io/papermc/paper/item/MetaComparisonTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..957b08ec2d44cb05a9eff33d4529d016fb7af2ed
+index 0000000000000000000000000000000000000000..1225ad95a204434ef6af5e6e92593cbbafc31b4a
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/item/MetaComparisonTest.java
 @@ -0,0 +1,284 @@
@@ -4644,7 +4670,7 @@ index 0000000000000000000000000000000000000000..957b08ec2d44cb05a9eff33d4529d016
 +import org.bukkit.inventory.meta.SkullMeta;
 +import org.bukkit.potion.PotionEffect;
 +import org.bukkit.potion.PotionEffectType;
-+import org.bukkit.support.environment.Normal;
++import org.bukkit.support.environment.AllFeatures;
 +import org.junit.jupiter.api.Assertions;
 +import org.junit.jupiter.api.Disabled;
 +import org.junit.jupiter.api.Test;
@@ -4653,7 +4679,7 @@ index 0000000000000000000000000000000000000000..957b08ec2d44cb05a9eff33d4529d016
 +import java.util.function.Consumer;
 +
 +// TODO: This should technically be used to compare legacy meta vs the newly implemented
-+@Normal
++@AllFeatures
 +public class MetaComparisonTest {
 +
 +    private static final ItemFactory FACTORY = CraftItemFactory.instance();

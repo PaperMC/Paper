@@ -4,8 +4,12 @@ import io.papermc.generator.types.GeneratedKeyType;
 import io.papermc.generator.types.GeneratedTagKeyType;
 import io.papermc.generator.types.SourceGenerator;
 import io.papermc.generator.types.goal.MobGoalGenerator;
+import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.registry.RegistryKey;
+import java.util.Set;
+import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import org.bukkit.Art;
@@ -32,7 +36,10 @@ import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.bukkit.map.MapCursor;
 import org.bukkit.potion.PotionEffectType;
+import org.checkerframework.framework.qual.DefaultQualifier;
+import org.jspecify.annotations.NonNull;
 
+@DefaultQualifier(NonNull.class)
 public interface Generators {
 
     SourceGenerator[] API = {
@@ -51,6 +58,22 @@ public interface Generators {
         simpleKey("AttributeKeys", Attribute.class, Registries.ATTRIBUTE, RegistryKey.ATTRIBUTE, false),
         simpleKey("FluidKeys", Fluid.class, Registries.FLUID, RegistryKey.FLUID, false),
         simpleKey("SoundEventKeys", Sound.class, Registries.SOUND_EVENT, RegistryKey.SOUND_EVENT, false),
+        new GeneratedKeyType<>("DataComponentTypeKeys", DataComponentType.class, "io.papermc.paper.registry.keys", Registries.DATA_COMPONENT_TYPE, RegistryKey.DATA_COMPONENT_TYPE, false) {
+
+            private static final Set<net.minecraft.core.component.DataComponentType<?>> UNSUPPORTED_TYPES = Set.of(
+                DataComponents.CUSTOM_DATA,
+                DataComponents.DEBUG_STICK_STATE, // Block Property API
+                DataComponents.ENTITY_DATA,
+                DataComponents.BUCKET_ENTITY_DATA,
+                DataComponents.BLOCK_ENTITY_DATA,
+                DataComponents.BEES
+            );
+
+            @Override
+            protected boolean canPrintKey(Holder.Reference<net.minecraft.core.component.DataComponentType<?>> reference) {
+                return !UNSUPPORTED_TYPES.contains(reference.value());
+            }
+        },
 
         // data-driven
         simpleKey("BiomeKeys", Biome.class, Registries.BIOME, RegistryKey.BIOME, true),
