@@ -10,8 +10,13 @@ We'll manually clear the applicable attribute modifiers, but, in the long run,
 we should just revert out of the broken behavior of trying to reuse ServerPlayer
 instances.
 
+== AT ==
+protected net.minecraft.world.entity.LivingEntity lastHandItemStacks
+protected net.minecraft.world.entity.LivingEntity lastArmorItemStacks
+protected net.minecraft.world.entity.LivingEntity lastBodyItemStack
+
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index cffbd3300967e5d80b5973b35a76235bb2aa1b73..bce4a59c82c8fd90501a51d4dd45113256df225f 100644
+index cffbd3300967e5d80b5973b35a76235bb2aa1b73..40fd2f093363b9436d53cde2831dcb1a78e48121 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -2285,8 +2285,11 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player imple
@@ -40,6 +45,35 @@ index cffbd3300967e5d80b5973b35a76235bb2aa1b73..bce4a59c82c8fd90501a51d4dd451132
              // this.setHealth(this.getMaxHealth()); // CraftBukkit
              if (this.serverLevel().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY) || oldPlayer.isSpectator()) {
                  this.getInventory().replaceWith(oldPlayer.getInventory());
+@@ -2328,6 +2334,12 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player imple
+         this.setShoulderEntityLeft(oldPlayer.getShoulderEntityLeft());
+         this.setShoulderEntityRight(oldPlayer.getShoulderEntityRight());
+         this.setLastDeathLocation(oldPlayer.getLastDeathLocation());
++        // Paper start - deal with upstream stupidity around attribute modifiers and recycling entity instances.
++        this.lastArmorItemStacks.clear();
++        this.lastHandItemStacks.clear();
++        this.lastBodyItemStack = ItemStack.EMPTY;
++        this.collectEquipmentChanges(false);
++        // Paper end - deal with upstream stupidity around attribute modifiers and recycling entity instances.
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 1a93006d252ebfe5571904d8be1ceb62079db35a..5c40dfbb920cc3d83c27657784f3e2f5f5f9de5d 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3369,6 +3369,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
+ 
+     @Nullable
+     private Map<EquipmentSlot, ItemStack> collectEquipmentChanges() {
++    // Paper start - deal with upstream stupidity around attribute modifiers and recycling entity instances.
++        return collectEquipmentChanges(true);
++    }
++    protected Map<EquipmentSlot, ItemStack> collectEquipmentChanges(boolean fireEvent) {
++    // Paper end - deal with upstream stupidity around attribute modifiers and recycling entity instances.
+         Map<EquipmentSlot, ItemStack> map = null;
+         Iterator iterator = EquipmentSlot.VALUES.iterator();
+ 
 diff --git a/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeMap.java b/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeMap.java
 index 94d04a20f97405e02d7cccaabadc7a7e86e336f7..684392007e6fd1f0a328bc5f59929fcabe1f1a6e 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeMap.java
