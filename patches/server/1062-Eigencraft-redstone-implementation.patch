@@ -25,10 +25,10 @@ Co-authored-by: egg82 <phantom_zero@ymail.com>
 
 diff --git a/src/main/java/com/destroystokyo/paper/util/RedstoneWireTurbo.java b/src/main/java/com/destroystokyo/paper/util/RedstoneWireTurbo.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9f17170179cc99d84ad25a1e838aff3d8cc66f93
+index 0000000000000000000000000000000000000000..e7d510af3e415064fd483f0220d5f6a4cd0b9f63
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/RedstoneWireTurbo.java
-@@ -0,0 +1,958 @@
+@@ -0,0 +1,961 @@
 +package com.destroystokyo.paper.util;
 +
 +import java.util.List;
@@ -467,7 +467,7 @@ index 0000000000000000000000000000000000000000..9f17170179cc99d84ad25a1e838aff3d
 +        // UpdateNode object.
 +        BlockState newState;
 +        if (old_current_change) {
-+            newState = wire.calculateCurrentChanges(worldIn, pos, pos, oldState);
++            newState = wire.calculateCurrentChanges(worldIn, pos, oldState);
 +        } else {
 +            // Looking up block state is slow.  This accelerator includes a version of
 +            // calculateCurrentChanges that uses cahed wire values for a
@@ -692,7 +692,10 @@ index 0000000000000000000000000000000000000000..9f17170179cc99d84ad25a1e838aff3d
 +                    // call BlockStateBase#neighborChanged directly. This change mostly
 +                    // restores old behavior, at the cost of bypassing the
 +                    // max-chained-neighbor-updates server property.
-+                    worldIn.getBlockState(upd.self).handleNeighborChanged(worldIn, upd.self, wire, upd.parent, false);
++                    // The Orientation parameter is (for now) only used by redstone wire
++                    // while these updates are dispatched to non-wires only, so we can
++                    // pass null.
++                    worldIn.getBlockState(upd.self).handleNeighborChanged(worldIn, upd.self, wire, null, false);
 +                }
 +            }
 +
@@ -793,7 +796,7 @@ index 0000000000000000000000000000000000000000..9f17170179cc99d84ad25a1e838aff3d
 +        // Check this block's neighbors and see if its power level needs to change
 +        // Use the calculateCurrentChanges method in BlockRedstoneWire since we have no
 +        // cached block states at this point.
-+        final BlockState newState = wire.calculateCurrentChanges(worldIn, pos, pos, state);
++        final BlockState newState = wire.calculateCurrentChanges(worldIn, pos, state);
 +
 +        // If no change, exit
 +        if (newState == state) {
@@ -972,7 +975,7 @@ index 0000000000000000000000000000000000000000..9f17170179cc99d84ad25a1e838aff3d
 +            BlockPos neighborPos = pos.relative(dir);
 +            BlockState neighborState = level.getBlockState(neighborPos);
 +
-+            BlockState newState = neighborState.updateShape(dir.getOpposite(), state, level, neighborPos, pos);
++            BlockState newState = neighborState.updateShape(level, level, neighborPos, dir.getOpposite(), pos, state, level.getRandom());
 +            Block.updateOrDestroy(neighborState, newState, level, neighborPos, Block.UPDATE_CLIENTS);
 +        }
 +    }
@@ -988,10 +991,10 @@ index 0000000000000000000000000000000000000000..9f17170179cc99d84ad25a1e838aff3d
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java b/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
-index c73bf0b36252796ca93c500affa2be568e3f6c9e..18ed178223cca85dbba65b1e07741622e266d318 100644
+index 2a3be00d41eda68f7d5383b240759561c4663f8d..09b8f5335cb7651d90f4d1ca61b2ec5aa324e443 100644
 --- a/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
-@@ -258,6 +258,116 @@ public class RedStoneWireBlock extends Block {
+@@ -290,6 +290,60 @@ public class RedStoneWireBlock extends Block {
          return floor.isFaceSturdy(world, pos, Direction.UP) || floor.is(Blocks.HOPPER);
      }
  
@@ -1004,142 +1007,91 @@ index c73bf0b36252796ca93c500affa2be568e3f6c9e..18ed178223cca85dbba65b1e07741622
 +     * this.neighborChanged and a few other methods in this class.
 +     * Note: Added 'source' argument so as to help determine direction of information flow
 +     */
-+    private void updateSurroundingRedstone(Level worldIn, BlockPos pos, BlockState state, BlockPos source) {
++    private void updateSurroundingRedstone(Level worldIn, BlockPos pos, BlockState state, @Nullable Orientation orientation, boolean blockAdded) {
 +        if (worldIn.paperConfig().misc.redstoneImplementation == io.papermc.paper.configuration.WorldConfiguration.Misc.RedstoneImplementation.EIGENCRAFT) {
++            // since 24w33a the source pos is no longer given, but instead an Orientation parameter
++            // when this is not null, it can be used to find the source pos, which the turbo uses
++            // to find the direction of information flow
++            BlockPos source = null;
++            if (orientation != null) {
++                source = pos.relative(orientation.getFront().getOpposite());
++            }
 +            turbo.updateSurroundingRedstone(worldIn, pos, state, source);
 +            return;
 +        }
-+        updatePowerStrength(worldIn, pos, state);
++        updatePowerStrength(worldIn, pos, state, orientation, blockAdded);
 +    }
 +
 +    /*
-+     * Slightly modified method to compute redstone wire power levels from neighboring blocks.
-+     * Modifications cut the number of power level changes by about 45% from vanilla, and this
-+     * optimization synergizes well with the breadth-first search implemented in
-+     * RedstoneWireTurbo.
-+     * Note:  RedstoneWireTurbo contains a faster version of this code.
-+     * Note:  Made this public so that RedstoneWireTurbo can access it.
++     * This method computes a wire's target strength and updates the given block state.
++     * It uses the DefaultRedstoneWireEvaluator for this, which is identical to code
++     * that was present in this class prior to the introduction of the experimental redstone
++     * changes in 24w33a.
++     * The previous implementation of this method in this patch had optimizations that have
++     * not been relevant since 1.13, thus it has been greatly simplified.
 +     */
-+    public BlockState calculateCurrentChanges(Level worldIn, BlockPos pos1, BlockPos pos2, BlockState state) {
-+        BlockState iblockstate = state;
-+        int i = state.getValue(POWER);
-+        int j = 0;
-+        j = this.getPower(j, worldIn.getBlockState(pos2));
-+        this.shouldSignal = false;
-+        int k = worldIn.getBestNeighborSignal(pos1);
-+        this.shouldSignal = true;
++    public BlockState calculateCurrentChanges(Level level, BlockPos pos, BlockState state) {
++        int oldPower = state.getValue(POWER);
++        int newPower = ((DefaultRedstoneWireEvaluator) evaluator).calculateTargetStrength(level, pos);
++        if (oldPower != newPower) {
++            org.bukkit.event.block.BlockRedstoneEvent event = new org.bukkit.event.block.BlockRedstoneEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), oldPower, newPower);
++            level.getCraftServer().getPluginManager().callEvent(event);
 +
-+        if (worldIn.paperConfig().misc.redstoneImplementation == io.papermc.paper.configuration.WorldConfiguration.Misc.RedstoneImplementation.VANILLA) {
-+            // This code is totally redundant to if statements just below the loop.
-+            if (k > 0 && k > j - 1) {
-+                j = k;
-+            }
-+        }
++            newPower = event.getNewCurrent();
 +
-+        int l = 0;
-+
-+        // The variable 'k' holds the maximum redstone power value of any adjacent blocks.
-+        // If 'k' has the highest level of all neighbors, then the power level of this
-+        // redstone wire will be set to 'k'.  If 'k' is already 15, then nothing inside the
-+        // following loop can affect the power level of the wire.  Therefore, the loop is
-+        // skipped if k is already 15.
-+        if (worldIn.paperConfig().misc.redstoneImplementation == io.papermc.paper.configuration.WorldConfiguration.Misc.RedstoneImplementation.VANILLA || k < 15) {
-+            for (Direction enumfacing : Direction.Plane.HORIZONTAL) {
-+                BlockPos blockpos = pos1.relative(enumfacing);
-+                boolean flag = blockpos.getX() != pos2.getX() || blockpos.getZ() != pos2.getZ();
-+
-+                if (flag) {
-+                    l = this.getPower(l, worldIn.getBlockState(blockpos));
-+                }
-+
-+                if (worldIn.getBlockState(blockpos).isRedstoneConductor(worldIn, blockpos) && !worldIn.getBlockState(pos1.above()).isRedstoneConductor(worldIn, pos1)) {
-+                    if (flag && pos1.getY() >= pos2.getY()) {
-+                        l = this.getPower(l, worldIn.getBlockState(blockpos.above()));
-+                    }
-+                } else if (!worldIn.getBlockState(blockpos).isRedstoneConductor(worldIn, blockpos) && flag && pos1.getY() <= pos2.getY()) {
-+                    l = this.getPower(l, worldIn.getBlockState(blockpos.below()));
-+                }
-+            }
-+        }
-+
-+        if (worldIn.paperConfig().misc.redstoneImplementation == io.papermc.paper.configuration.WorldConfiguration.Misc.RedstoneImplementation.VANILLA) {
-+            // The old code would decrement the wire value only by 1 at a time.
-+            if (l > j) {
-+                j = l - 1;
-+            } else if (j > 0) {
-+                --j;
-+            } else {
-+                j = 0;
-+            }
-+
-+            if (k > j - 1) {
-+                j = k;
-+            }
-+        } else {
-+            // The new code sets this RedstoneWire block's power level to the highest neighbor
-+            // minus 1.  This usually results in wire power levels dropping by 2 at a time.
-+            // This optimization alone has no impact on update order, only the number of updates.
-+            j = l - 1;
-+
-+            // If 'l' turns out to be zero, then j will be set to -1, but then since 'k' will
-+            // always be in the range of 0 to 15, the following if will correct that.
-+            if (k > j) j = k;
-+        }
-+
-+        if (i != j) {
-+            org.bukkit.event.block.BlockRedstoneEvent event = new org.bukkit.event.block.BlockRedstoneEvent(org.bukkit.craftbukkit.block.CraftBlock.at(worldIn, pos1), i, j);
-+            worldIn.getCraftServer().getPluginManager().callEvent(event);
-+
-+            j = event.getNewCurrent();
-+            state = state.setValue(POWER, j);
-+
-+            if (worldIn.getBlockState(pos1) == iblockstate) {
++            if (level.getBlockState(pos) == state) {
++                state = state.setValue(POWER, newPower);
 +                // [Space Walker] suppress shape updates and emit those manually to
 +                // bypass the new neighbor update stack.
-+                if (worldIn.setBlock(pos1, state, Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_CLIENTS))
-+                    turbo.updateNeighborShapes(worldIn, pos1, state);
++                if (level.setBlock(pos, state, Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_CLIENTS)) {
++                    turbo.updateNeighborShapes(level, pos, state);
++                }
 +            }
 +        }
-+
 +        return state;
 +    }
 +    // Paper end
 +
-     private void updatePowerStrength(Level world, BlockPos pos, BlockState state) {
-         int i = this.calculateTargetStrength(world, pos);
- 
-@@ -327,6 +437,7 @@ public class RedStoneWireBlock extends Block {
-         return Math.max(i, j - 1);
-     }
- 
-+    private int getPower(int min, BlockState iblockdata) { return Math.max(min, getWireSignal(iblockdata)); } // Paper - Optimize redstone
-     private int getWireSignal(BlockState state) {
-         return state.is((Block) this) ? (Integer) state.getValue(RedStoneWireBlock.POWER) : 0;
-     }
-@@ -349,7 +460,7 @@ public class RedStoneWireBlock extends Block {
+     private void updatePowerStrength(Level world, BlockPos pos, BlockState state, @Nullable Orientation orientation, boolean blockAdded) {
+         if (useExperimentalEvaluator(world)) {
+             new ExperimentalRedstoneWireEvaluator(this).updatePowerStrength(world, pos, state, orientation, blockAdded);
+@@ -318,7 +372,7 @@ public class RedStoneWireBlock extends Block {
      @Override
      protected void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
          if (!oldState.is(state.getBlock()) && !world.isClientSide) {
--            this.updatePowerStrength(world, pos, state);
-+            this.updateSurroundingRedstone(world, pos, state, null); // Paper - Optimize redstone
-             Iterator iterator = Direction.Plane.VERTICAL.iterator();
+-            this.updatePowerStrength(world, pos, state, null, true);
++            this.updateSurroundingRedstone(world, pos, state, null, true); // Paper - Optimize redstone
  
-             while (iterator.hasNext()) {
-@@ -376,7 +487,7 @@ public class RedStoneWireBlock extends Block {
-                     world.updateNeighborsAt(pos.relative(enumdirection), this);
+             for (Direction direction : Direction.Plane.VERTICAL) {
+                 world.updateNeighborsAt(pos.relative(direction), this);
+@@ -337,7 +391,7 @@ public class RedStoneWireBlock extends Block {
+                     world.updateNeighborsAt(pos.relative(direction), this);
                  }
  
--                this.updatePowerStrength(world, pos, state);
-+                this.updateSurroundingRedstone(world, pos, state, null); // Paper - Optimize redstone
+-                this.updatePowerStrength(world, pos, state, null, false);
++                this.updateSurroundingRedstone(world, pos, state, null, false); // Paper - Optimize redstone
                  this.updateNeighborsOfNeighboringWires(world, pos);
              }
          }
-@@ -411,7 +522,7 @@ public class RedStoneWireBlock extends Block {
-     protected void neighborChanged(BlockState state, Level world, BlockPos pos, Block sourceBlock, BlockPos sourcePos, boolean notify) {
+@@ -363,7 +417,7 @@ public class RedStoneWireBlock extends Block {
          if (!world.isClientSide) {
-             if (state.canSurvive(world, pos)) {
--                this.updatePowerStrength(world, pos, state);
-+                this.updateSurroundingRedstone(world, pos, state, sourcePos); // Paper - Optimize redstone
-             } else {
-                 dropResources(state, world, pos);
-                 world.removeBlock(pos, false);
+             if (sourceBlock != this || !useExperimentalEvaluator(world)) {
+                 if (state.canSurvive(world, pos)) {
+-                    this.updatePowerStrength(world, pos, state, wireOrientation, false);
++                    this.updateSurroundingRedstone(world, pos, state, wireOrientation, false); // Paper - Optimize redstone
+                 } else {
+                     dropResources(state, world, pos);
+                     world.removeBlock(pos, false);
+diff --git a/src/main/java/net/minecraft/world/level/redstone/DefaultRedstoneWireEvaluator.java b/src/main/java/net/minecraft/world/level/redstone/DefaultRedstoneWireEvaluator.java
+index f8be1f6bc6f144db5265844f46f0a2cb8cc213fe..3df778f3c9a633f07c7bd1736423384afce3edf7 100644
+--- a/src/main/java/net/minecraft/world/level/redstone/DefaultRedstoneWireEvaluator.java
++++ b/src/main/java/net/minecraft/world/level/redstone/DefaultRedstoneWireEvaluator.java
+@@ -61,7 +61,7 @@ public class DefaultRedstoneWireEvaluator extends RedstoneWireEvaluator {
+ 
+     }
+ 
+-    private int calculateTargetStrength(Level world, BlockPos pos) {
++    public int calculateTargetStrength(Level world, BlockPos pos) { // Paper - Optimize redstone
+         int i = this.getBlockSignal(world, pos);
+ 
+         return i == 15 ? i : Math.max(i, this.getIncomingWireSignal(world, pos));
