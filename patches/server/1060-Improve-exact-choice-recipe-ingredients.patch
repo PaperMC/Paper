@@ -80,10 +80,10 @@ index 0000000000000000000000000000000000000000..5bcc814d5a1b88991e9c1324b88a919c
 +}
 diff --git a/src/main/java/io/papermc/paper/inventory/recipe/StackedContentsExtrasMap.java b/src/main/java/io/papermc/paper/inventory/recipe/StackedContentsExtrasMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5fd886a7763de3336ab2c0fdc82a748a31e7cc45
+index 0000000000000000000000000000000000000000..bdb876a0e687d4b9e885118523e91185a164b27c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/inventory/recipe/StackedContentsExtrasMap.java
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,67 @@
 +package io.papermc.paper.inventory.recipe;
 +
 +import it.unimi.dsi.fastutil.objects.Object2IntMap;
@@ -99,14 +99,15 @@ index 0000000000000000000000000000000000000000..5fd886a7763de3336ab2c0fdc82a748a
 +public final class StackedContentsExtrasMap {
 +
 +    private final StackedContents<ItemOrExact> contents;
++    public Object2IntMap<ItemOrExact.Item> regularRemoved = new Object2IntOpenHashMap<>(); // needed for re-using the regular contents (for ShapelessRecipe)
 +    public final ObjectSet<ItemStack> exactIngredients = new ObjectOpenCustomHashSet<>(ItemStackLinkedSet.TYPE_AND_TAG);
 +
-+    public StackedContentsExtrasMap(final StackedContents<ItemOrExact> contents, final Recipe<?> recipe) {
++    public StackedContentsExtrasMap(final StackedContents<ItemOrExact> contents) {
 +        this.contents = contents;
-+        this.initialize(recipe);
 +    }
 +
-+    private void initialize(final Recipe<?> recipe) {
++    public void initialize(final Recipe<?> recipe) {
++        this.exactIngredients.clear();
 +        for (final StackedContents.IngredientInfo<ItemOrExact> info : recipe.placementInfo().unpackedIngredients()) {
 +            if (info.isExact()) {
 +                this.exactIngredients.addAll(info.allowedItems().stream().map(o -> ((ItemOrExact.Exact) o).stack()).toList());
@@ -114,7 +115,6 @@ index 0000000000000000000000000000000000000000..5fd886a7763de3336ab2c0fdc82a748a
 +        }
 +    }
 +
-+    public Object2IntMap<ItemOrExact.Item> regularRemoved = new Object2IntOpenHashMap<>();
 +    public void accountInput(final CraftingInput input) {
 +        // similar logic to the CraftingInput constructor
 +        for (final ItemStack item : input.items()) {
@@ -139,6 +139,8 @@ index 0000000000000000000000000000000000000000..5fd886a7763de3336ab2c0fdc82a748a
 +        for (final Object2IntMap.Entry<ItemOrExact.Item> entry : this.regularRemoved.object2IntEntrySet()) {
 +            this.contents.amounts.addTo(entry.getKey(), entry.getIntValue());
 +        }
++        this.exactIngredients.clear();
++        this.regularRemoved.clear();
 +    }
 +
 +    public boolean accountStack(final ItemStack stack, final int count) {
@@ -239,7 +241,7 @@ index 3bc7c9b3df5547c6564696fce67417c96ffdebf9..9ad3c4510f0e0530dfbbc3ba7e6d19b7
          }
      }
 diff --git a/src/main/java/net/minecraft/world/entity/player/StackedItemContents.java b/src/main/java/net/minecraft/world/entity/player/StackedItemContents.java
-index cc6c5cf0d1034ed074b6c354c307a0c2613f85c7..34ae7ff3bc05990c698cb48b2d9bb39d0f5a1632 100644
+index cc6c5cf0d1034ed074b6c354c307a0c2613f85c7..3f075c5c12f7ce331200fddb1b6602380d6f5f3e 100644
 --- a/src/main/java/net/minecraft/world/entity/player/StackedItemContents.java
 +++ b/src/main/java/net/minecraft/world/entity/player/StackedItemContents.java
 @@ -12,9 +12,14 @@ import net.minecraft.world.item.crafting.PlacementInfo;
@@ -258,7 +260,7 @@ index cc6c5cf0d1034ed074b6c354c307a0c2613f85c7..34ae7ff3bc05990c698cb48b2d9bb39d
          if (Inventory.isUsableForCrafting(item)) {
              this.accountStack(item);
          }
-@@ -27,39 +32,54 @@ public class StackedItemContents {
+@@ -27,39 +32,56 @@ public class StackedItemContents {
      public void accountStack(ItemStack item, int maxCount) {
          if (!item.isEmpty()) {
              int i = Math.min(maxCount, item.getCount());
@@ -273,24 +275,26 @@ index cc6c5cf0d1034ed074b6c354c307a0c2613f85c7..34ae7ff3bc05990c698cb48b2d9bb39d
 -        return new StackedContents.IngredientInfo<>(list);
 +    // Paper start - Improve exact choice recipe ingredients
 +    public void initializeExtras(final Recipe<?> recipe, @Nullable final net.minecraft.world.item.crafting.CraftingInput input) {
-+        this.extrasMap = new io.papermc.paper.inventory.recipe.StackedContentsExtrasMap(this.raw, recipe);
++        if (this.extrasMap == null) {
++            this.extrasMap = new io.papermc.paper.inventory.recipe.StackedContentsExtrasMap(this.raw);
++        }
++        this.extrasMap.initialize(recipe);
 +        if (input != null) this.extrasMap.accountInput(input);
-     }
- 
--    public boolean canCraft(Recipe<?> recipe, @Nullable StackedContents.Output<Holder<Item>> itemCallback) {
++    }
++
 +    public void resetExtras() {
 +        if (this.extrasMap != null && !this.raw.amounts.isEmpty()) {
 +            this.extrasMap.resetExtras();
 +        }
-+        this.extrasMap = null;
 +    }
 +
 +    public static StackedContents.IngredientInfo<io.papermc.paper.inventory.recipe.ItemOrExact> convertIngredientContents(Stream<io.papermc.paper.inventory.recipe.ItemOrExact> items, boolean isExact) {
 +        List<io.papermc.paper.inventory.recipe.ItemOrExact> list = items.sorted(Comparator.comparingInt(item -> isExact ? ItemStack.hashItemAndComponents(((io.papermc.paper.inventory.recipe.ItemOrExact.Exact) item).stack()) : BuiltInRegistries.ITEM.getId(((io.papermc.paper.inventory.recipe.ItemOrExact.Item) item).item().value()))).toList();
 +        return new StackedContents.IngredientInfo<>(list, isExact);
 +        // Paper end - Improve exact choice recipe ingredients
-+    }
-+
+     }
+ 
+-    public boolean canCraft(Recipe<?> recipe, @Nullable StackedContents.Output<Holder<Item>> itemCallback) {
 +    public boolean canCraft(Recipe<?> recipe, @Nullable StackedContents.Output<io.papermc.paper.inventory.recipe.ItemOrExact> itemCallback) { // Paper - Improve exact choice recipe ingredients
          return this.canCraft(recipe, 1, itemCallback);
      }
