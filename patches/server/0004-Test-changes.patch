@@ -3,21 +3,44 @@ From: Jake Potrebic <jake.m.potrebic@gmail.com>
 Date: Mon, 13 Feb 2023 14:14:56 -0800
 Subject: [PATCH] Test changes
 
+- configure mockito agent to address changes in newer java versions see https://openjdk.org/jeps/451
+
 Co-authored-by: yannnicklamprecht <yannicklamprecht@live.de>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index d4a5229b4df544ff60cdaee80c8ae301faf2a235..41b000aaa71dca3fb392ae657be16e05bd37a178 100644
+index d4a5229b4df544ff60cdaee80c8ae301faf2a235..dac5e12f59723cdbd0d42a153c57d71ce185d0e8 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -23,6 +23,7 @@ dependencies {
+@@ -5,6 +5,18 @@ plugins {
+     `maven-publish`
+ }
+ 
++// Paper start - configure mockito agent that is needed in newer java versions
++val mockitoAgent = configurations.register("mockitoAgent")
++abstract class MockitoAgentProvider : CommandLineArgumentProvider {
++    @get:CompileClasspath
++    abstract val fileCollection: ConfigurableFileCollection
++
++    override fun asArguments(): Iterable<String> {
++        return listOf("-javaagent:" + fileCollection.files.single().absolutePath)
++    }
++}
++// Paper end - configure mockito agent that is needed in newer java versions
++
+ dependencies {
+     implementation(project(":paper-api"))
+     implementation("jline:jline:2.12.1")
+@@ -22,7 +34,9 @@ dependencies {
+     testImplementation("org.junit.platform:junit-platform-suite-engine:1.10.0")
      testImplementation("org.hamcrest:hamcrest:2.2")
      testImplementation("org.mockito:mockito-core:5.14.1")
++    mockitoAgent("org.mockito:mockito-core:5.14.1") { isTransitive = false } // Paper - configure mockito agent that is needed in newer java versions
      testImplementation("org.ow2.asm:asm-tree:9.7.1")
 +    testImplementation("org.junit-pioneer:junit-pioneer:2.2.0") // Paper - CartesianTest
  }
  
  paperweight {
-@@ -56,6 +57,12 @@ tasks.jar {
+@@ -56,6 +70,12 @@ tasks.jar {
      }
  }
  
@@ -30,6 +53,18 @@ index d4a5229b4df544ff60cdaee80c8ae301faf2a235..41b000aaa71dca3fb392ae657be16e05
  publishing {
      publications.create<MavenPublication>("maven") {
      }
+@@ -79,6 +99,11 @@ tasks.test {
+         forkEvery = 1
+         excludeTags("Slow")
+     }
++    // Paper start - configure mockito agent that is needed in newer java versions
++    val provider = objects.newInstance<MockitoAgentProvider>()
++    provider.fileCollection.from(mockitoAgent)
++    jvmArgumentProviders.add(provider)
++    // Paper end - configure mockito agent that is needed in newer java versions
+ }
+ 
+ fun TaskContainer.registerRunTask(
 diff --git a/src/test/java/io/papermc/paper/registry/RegistryKeyTest.java b/src/test/java/io/papermc/paper/registry/RegistryKeyTest.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..d8857a05858585113bc7efde3416748effb53d01
