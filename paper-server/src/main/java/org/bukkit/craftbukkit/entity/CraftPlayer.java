@@ -626,22 +626,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof OfflinePlayer)) {
-            return false;
-        }
-        OfflinePlayer other = (OfflinePlayer) obj;
-        if ((this.getUniqueId() == null) || (other.getUniqueId() == null)) {
-            return false;
-        }
-
-        boolean uuidEquals = this.getUniqueId().equals(other.getUniqueId());
-        boolean idEquals = true;
-
-        if (other instanceof CraftPlayer) {
-            idEquals = this.getEntityId() == ((CraftPlayer) other).getEntityId();
-        }
-
-        return uuidEquals && idEquals;
+        // Long-term, this should just use the super equals... for now, check the UUID
+        if (obj == this) return true;
+        if (!(obj instanceof OfflinePlayer other)) return false;
+        return this.getUniqueId().equals(other.getUniqueId());
     }
 
     @Override
@@ -2052,7 +2040,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public int hashCode() {
         if (this.hash == 0 || this.hash == 485) {
-            this.hash = 97 * 5 + (this.getUniqueId() != null ? this.getUniqueId().hashCode() : 0);
+            this.hash = 97 * 5 + this.getUniqueId().hashCode();
         }
         return this.hash;
     }

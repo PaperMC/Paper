@@ -437,7 +437,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public UUID getUniqueId() {
-        return this.getHandle().getUUID();
+        return this.entity.getUUID();
     }
 
     @Override
@@ -496,21 +496,17 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-        if (this.getClass() != obj.getClass()) {
-            return false;
-        }
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+
         final CraftEntity other = (CraftEntity) obj;
-        return (this.getEntityId() == other.getEntityId());
+        return this.entity == other.entity; // There should never be duplicate entities with differing references
     }
 
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 29 * hash + this.getEntityId();
-        return hash;
+        // The UUID and thus hash code should never change (unlike the entity id)
+        return this.getUniqueId().hashCode();
     }
 
     @Override
