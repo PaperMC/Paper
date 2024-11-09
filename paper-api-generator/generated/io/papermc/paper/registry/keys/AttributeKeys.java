@@ -7,8 +7,8 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.attribute.Attribute;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Vanilla keys for {@link RegistryKey#ATTRIBUTE}.
@@ -24,6 +24,7 @@ import org.jetbrains.annotations.ApiStatus;
         "SpellCheckingInspection"
 })
 @GeneratedFrom("1.21.3")
+@NullMarked
 @ApiStatus.Experimental
 public final class AttributeKeys {
     /**
@@ -253,7 +254,7 @@ public final class AttributeKeys {
     private AttributeKeys() {
     }
 
-    private static @NonNull TypedKey<Attribute> create(final @NonNull Key key) {
+    private static TypedKey<Attribute> create(final Key key) {
         return TypedKey.create(RegistryKey.ATTRIBUTE, key);
     }
 }

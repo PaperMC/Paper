@@ -39,7 +39,6 @@ public interface Generators {
         // built-ins
         simpleKey("GameEventKeys", GameEvent.class, Registries.GAME_EVENT, RegistryKey.GAME_EVENT, true),
         simpleKey("StructureTypeKeys", StructureType.class, Registries.STRUCTURE_TYPE, RegistryKey.STRUCTURE_TYPE, false),
-        simpleKey("InstrumentKeys", MusicInstrument.class, Registries.INSTRUMENT, RegistryKey.INSTRUMENT, false),
         simpleKey("MobEffectKeys", PotionEffectType.class, Registries.MOB_EFFECT, RegistryKey.MOB_EFFECT, false),
         simpleKey("BlockTypeKeys", BlockType.class, Registries.BLOCK, RegistryKey.BLOCK, false),
         simpleKey("ItemTypeKeys", ItemType.class, Registries.ITEM, RegistryKey.ITEM, false),
@@ -60,10 +59,11 @@ public interface Generators {
         simpleKey("TrimPatternKeys", TrimPattern.class, Registries.TRIM_PATTERN, RegistryKey.TRIM_PATTERN, true),
         simpleKey("DamageTypeKeys", DamageType.class, Registries.DAMAGE_TYPE, RegistryKey.DAMAGE_TYPE, true),
         simpleKey("WolfVariantKeys", Wolf.Variant.class, Registries.WOLF_VARIANT, RegistryKey.WOLF_VARIANT, true),
-        simpleKey("EnchantmentKeys", Enchantment.class, Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT, false),
+        simpleKey("EnchantmentKeys", Enchantment.class, Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT, true),
         simpleKey("JukeboxSongKeys", JukeboxSong.class, Registries.JUKEBOX_SONG, RegistryKey.JUKEBOX_SONG, true),
         simpleKey("BannerPatternKeys", PatternType.class, Registries.BANNER_PATTERN, RegistryKey.BANNER_PATTERN, true),
         simpleKey("PaintingVariantKeys", Art.class, Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT, true),
+        simpleKey("InstrumentKeys", MusicInstrument.class, Registries.INSTRUMENT, RegistryKey.INSTRUMENT, true),
 
         // tags
         simpleTagKey("EnchantmentTagKeys", Enchantment.class, Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT),

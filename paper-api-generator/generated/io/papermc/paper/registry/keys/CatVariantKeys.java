@@ -7,8 +7,8 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.entity.Cat;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Vanilla keys for {@link RegistryKey#CAT_VARIANT}.
@@ -24,6 +24,7 @@ import org.jetbrains.annotations.ApiStatus;
         "SpellCheckingInspection"
 })
 @GeneratedFrom("1.21.3")
+@NullMarked
 @ApiStatus.Experimental
 public final class CatVariantKeys {
     /**
@@ -106,7 +107,7 @@ public final class CatVariantKeys {
     private CatVariantKeys() {
     }
 
-    private static @NonNull TypedKey<Cat.Type> create(final @NonNull Key key) {
+    private static TypedKey<Cat.Type> create(final Key key) {
         return TypedKey.create(RegistryKey.CAT_VARIANT, key);
     }
 }

@@ -50,10 +50,8 @@ public class MobGoalGenerator extends SimpleGenerator {
             .addAnnotations(Annotations.CLASS_HEADER)
             .addJavadoc(CLASS_HEADER);
 
-        TypeName mobType = ParameterizedTypeName.get(ClassName.get(Class.class), type)
-            .annotated(Annotations.NOT_NULL);
-        TypeName keyType = TypeName.get(String.class)
-            .annotated(Annotations.NOT_NULL);
+        TypeName mobType = ParameterizedTypeName.get(ClassName.get(Class.class), type);
+        TypeName keyType = TypeName.get(String.class);
 
         ParameterSpec keyParam = ParameterSpec.builder(keyType, "key", FINAL).build();
         ParameterSpec typeParam = ParameterSpec.builder(mobType, "type", FINAL).build();
@@ -63,7 +61,7 @@ public class MobGoalGenerator extends SimpleGenerator {
             .addParameter(typeParam)
             .addCode("return $T.of($N, $T.minecraft($N));", GoalKey.class, typeParam, NamespacedKey.class, keyParam)
             .addTypeVariable(type)
-            .returns(ParameterizedTypeName.get(ClassName.get(GoalKey.class), type).annotated(Annotations.NOT_NULL));
+            .returns(ParameterizedTypeName.get(ClassName.get(GoalKey.class), type));
 
         List<Class<Goal>> classes;
         try (ScanResult scanResult = new ClassGraph().enableAllInfo().whitelistPackages("net.minecraft").scan()) {

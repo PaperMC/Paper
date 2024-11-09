@@ -8,8 +8,8 @@ import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.MinecraftExperimental;
 import org.bukkit.block.Biome;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Vanilla keys for {@link RegistryKey#BIOME}.
@@ -25,6 +25,7 @@ import org.jetbrains.annotations.ApiStatus;
         "SpellCheckingInspection"
 })
 @GeneratedFrom("1.21.3")
+@NullMarked
 @ApiStatus.Experimental
 public final class BiomeKeys {
     /**
@@ -494,7 +495,7 @@ public final class BiomeKeys {
      * @return a new typed key
      */
     @ApiStatus.Experimental
-    public static @NonNull TypedKey<Biome> create(final @NonNull Key key) {
+    public static TypedKey<Biome> create(final Key key) {
         return TypedKey.create(RegistryKey.BIOME, key);
     }
 }
