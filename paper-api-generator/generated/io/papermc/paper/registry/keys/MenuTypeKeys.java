@@ -7,8 +7,8 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.inventory.MenuType;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Vanilla keys for {@link RegistryKey#MENU}.
@@ -24,6 +24,7 @@ import org.jetbrains.annotations.ApiStatus;
         "SpellCheckingInspection"
 })
 @GeneratedFrom("1.21.3")
+@NullMarked
 @ApiStatus.Experimental
 public final class MenuTypeKeys {
     /**
@@ -204,7 +205,7 @@ public final class MenuTypeKeys {
     private MenuTypeKeys() {
     }
 
-    private static @NonNull TypedKey<MenuType> create(final @NonNull Key key) {
+    private static TypedKey<MenuType> create(final Key key) {
         return TypedKey.create(RegistryKey.MENU, key);
     }
 }

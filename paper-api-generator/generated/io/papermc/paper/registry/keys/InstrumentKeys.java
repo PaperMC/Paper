@@ -7,8 +7,8 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.MusicInstrument;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Vanilla keys for {@link RegistryKey#INSTRUMENT}.
@@ -24,6 +24,7 @@ import org.jetbrains.annotations.ApiStatus;
         "SpellCheckingInspection"
 })
 @GeneratedFrom("1.21.3")
+@NullMarked
 @ApiStatus.Experimental
 public final class InstrumentKeys {
     /**
@@ -85,7 +86,14 @@ public final class InstrumentKeys {
     private InstrumentKeys() {
     }
 
-    private static @NonNull TypedKey<MusicInstrument> create(final @NonNull Key key) {
+    /**
+     * Creates a key for {@link MusicInstrument} in the registry {@code minecraft:instrument}.
+     *
+     * @param key the value's key in the registry
+     * @return a new typed key
+     */
+    @ApiStatus.Experimental
+    public static TypedKey<MusicInstrument> create(final Key key) {
         return TypedKey.create(RegistryKey.INSTRUMENT, key);
     }
 }
