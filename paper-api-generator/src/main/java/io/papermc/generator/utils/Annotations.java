@@ -7,9 +7,9 @@ import java.util.List;
 import io.papermc.paper.generated.GeneratedFrom;
 import net.minecraft.SharedConstants;
 import org.bukkit.MinecraftExperimental;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
 
 public final class Annotations {
 
@@ -46,7 +46,7 @@ public final class Annotations {
 
     @ApiStatus.Experimental
     public static final AnnotationSpec EXPERIMENTAL_API_ANNOTATION = AnnotationSpec.builder(ApiStatus.Experimental.class).build();
-    public static final AnnotationSpec NOT_NULL = AnnotationSpec.builder(NonNull.class).build();
+    public static final AnnotationSpec NULL_MARKED = AnnotationSpec.builder(NullMarked.class).build();
     private static final AnnotationSpec SUPPRESS_WARNINGS = AnnotationSpec.builder(SuppressWarnings.class)
         .addMember("value", "$S", "unused")
         .addMember("value", "$S", "SpellCheckingInspection")
@@ -56,7 +56,8 @@ public final class Annotations {
         .build();
     public static final Iterable<AnnotationSpec> CLASS_HEADER = List.of(
         SUPPRESS_WARNINGS,
-        GENERATED_FROM
+        GENERATED_FROM,
+        NULL_MARKED
     );
 
     private Annotations() {
