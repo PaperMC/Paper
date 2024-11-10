@@ -712,12 +712,10 @@
          if (flush) {
              Iterator iterator1 = this.getAllLevels().iterator();
  
-@@ -626,20 +939,48 @@
-     @Override
-     public void close() {
+@@ -628,18 +941,46 @@
          this.stopServer();
-+    }
-+
+     }
+ 
 +    // CraftBukkit start
 +    private boolean hasStopped = false;
 +    private boolean hasLoggedStop = false; // Paper - Debugging
@@ -726,9 +724,9 @@
 +        synchronized (this.stopLock) {
 +            return this.hasStopped;
 +        }
-     }
++    }
 +    // CraftBukkit end
- 
++
      public void stopServer() {
 +        // CraftBukkit start - prevent double stopping on multiple threads
 +        synchronized(this.stopLock) {
@@ -858,14 +856,14 @@
      protected void runServer() {
          try {
              if (!this.initServer()) {
-@@ -727,8 +1143,26 @@
+@@ -727,9 +1143,27 @@
              }
  
              this.nextTickTimeNanos = Util.getNanos();
 -            this.statusIcon = (ServerStatus.Favicon) this.loadStatusIcon().orElse((Object) null);
 +            this.statusIcon = (ServerStatus.Favicon) this.loadStatusIcon().orElse(null); // CraftBukkit - decompile error
              this.status = this.buildServerStatus();
-+
+ 
 +            this.server.spark.enableBeforePlugins(); // Paper - spark
 +            // Spigot start
 +            org.spigotmc.WatchdogThread.hasStarted = true; // Paper
@@ -883,9 +881,10 @@
 +                LOGGER.info("*************************************************************************************");
 +            }
 +            // Paper end - Add onboarding message for initial server start
- 
++
              while (this.running) {
                  long i;
+ 
 @@ -744,12 +1178,31 @@
                      if (j > MinecraftServer.OVERLOADED_THRESHOLD_NANOS + 20L * i && this.nextTickTimeNanos - this.lastOverloadWarningNanos >= MinecraftServer.OVERLOADED_WARNING_INTERVAL_NANOS + 100L * i) {
                          long k = j / i;
@@ -1122,13 +1121,13 @@
          gameprofilerfiller.popPush("levels");
 -        Iterator iterator = this.getAllLevels().iterator();
 +        //Iterator iterator = this.getAllLevels().iterator(); // Paper - Throw exception on world create while being ticked; moved down
-+
+ 
 +        // CraftBukkit start
 +        // Run tasks that are waiting on processing
 +        while (!this.processQueue.isEmpty()) {
 +            this.processQueue.remove().run();
 +        }
- 
++
 +        // Send time updates to everyone, it will get the right time from the world the player is in.
 +        // Paper start - Perf: Optimize time updates
 +        for (final ServerLevel level : this.getAllLevels()) {
@@ -1381,18 +1380,15 @@
  
                      try {
                          arraylist = Lists.newArrayList(NativeModuleLister.listModules());
-@@ -2105,9 +2705,24 @@
-         if (bufferedwriter != null) {
-             bufferedwriter.close();
-         }
-+
-+    }
+@@ -2108,6 +2708,21 @@
+ 
+     }
  
 +    // CraftBukkit start
 +    public boolean isDebugging() {
 +        return false;
-     }
- 
++    }
++
 +    public static MinecraftServer getServer() {
 +        return SERVER; // Paper
 +    }
@@ -1435,15 +1431,17 @@
      }
  
      public boolean logIPs() {
-@@ -2379,4 +3000,30 @@
-     public static record ServerResourcePackInfo(UUID id, String url, String hash, boolean isRequired, @Nullable Component prompt) {
- 
+@@ -2377,6 +2998,38 @@
      }
+ 
+     public static record ServerResourcePackInfo(UUID id, String url, String hash, boolean isRequired, @Nullable Component prompt) {
++
++    }
 +
 +    // Paper start - Add tick times API and /mspt command
 +    public static class TickTimes {
 +        private final long[] times;
-+
+ 
 +        public TickTimes(int length) {
 +            times = new long[length];
 +        }
@@ -1463,6 +1461,12 @@
 +            }
 +            return ((double) total / (double) times.length) * 1.0E-6D;
 +        }
-+    }
+     }
 +    // Paper end - Add tick times API and /mspt command
++
++    // Paper start - API to check if the server is sleeping
++    public boolean isTickPaused() {
++        return this.emptyTicks > 0 && this.emptyTicks >= this.pauseWhileEmptySeconds() * 20;
++    }
++    // Paper end - API to check if the server is sleeping
  }

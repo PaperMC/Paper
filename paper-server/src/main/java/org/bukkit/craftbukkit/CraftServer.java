@@ -3258,4 +3258,11 @@ public final class CraftServer implements Server {
         return this.potionBrewer;
     }
     // Paper end
+
+    // Paper start - API to check if the server is sleeping
+    @Override
+    public boolean isPaused() {
+        return this.console.isTickPaused();
+    }
+    // Paper end - API to check if the server is sleeping
 }
