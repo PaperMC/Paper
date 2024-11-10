@@ -16,7 +16,7 @@ protected net.minecraft.world.entity.LivingEntity lastArmorItemStacks
 protected net.minecraft.world.entity.LivingEntity lastBodyItemStack
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index cffbd3300967e5d80b5973b35a76235bb2aa1b73..40fd2f093363b9436d53cde2831dcb1a78e48121 100644
+index cffbd3300967e5d80b5973b35a76235bb2aa1b73..88de7566297b0be7d5f7d8868f76a0b5ac42dfcf 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -2285,8 +2285,11 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player imple
@@ -26,9 +26,9 @@ index cffbd3300967e5d80b5973b35a76235bb2aa1b73..40fd2f093363b9436d53cde2831dcb1a
 -            this.getAttributes().assignBaseValues(oldPlayer.getAttributes());
 -            this.getAttributes().assignPermanentModifiers(oldPlayer.getAttributes());
 +            // Paper start - deal with upstream stupidity around attribute modifiers and recycling entity instances.
-+            //this.getAttributes().assignBaseValues(oldPlayer.getAttributes());
-+            //this.getAttributes().assignPermanentModifiers(oldPlayer.getAttributes());
-+            this.getAttributes().removeAllTransientModifiers();
++            // this.getAttributes().assignBaseValues(oldPlayer.getAttributes());
++            // this.getAttributes().assignPermanentModifiers(oldPlayer.getAttributes());
++            // this.getAttributes().removeAllTransientModifiers(); Currently not implemented as it would loose API added attribute modifiers, awaiting addition of new API
 +            // Paper end
              this.setHealth(oldPlayer.getHealth());
              this.foodData = oldPlayer.foodData;
@@ -39,21 +39,24 @@ index cffbd3300967e5d80b5973b35a76235bb2aa1b73..40fd2f093363b9436d53cde2831dcb1a
          } else {
 -            this.getAttributes().assignBaseValues(oldPlayer.getAttributes());
 +            // Paper start - deal with upstream stupidity around attribute modifiers and recycling entity instances.
-+            //this.getAttributes().assignBaseValues(oldPlayer.getAttributes());
-+            this.getAttributes().removeAllModifiers();
++            // this.getAttributes().assignBaseValues(oldPlayer.getAttributes());
++            // this.getAttributes().removeAllModifiers(); // Currently not implemented as it would loose API added attribute modifiers, awaiting addition of new API
 +            // Paper end
              // this.setHealth(this.getMaxHealth()); // CraftBukkit
              if (this.serverLevel().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY) || oldPlayer.isSpectator()) {
                  this.getInventory().replaceWith(oldPlayer.getInventory());
-@@ -2328,6 +2334,12 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player imple
+@@ -2328,6 +2334,15 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player imple
          this.setShoulderEntityLeft(oldPlayer.getShoulderEntityLeft());
          this.setShoulderEntityRight(oldPlayer.getShoulderEntityRight());
          this.setLastDeathLocation(oldPlayer.getLastDeathLocation());
 +        // Paper start - deal with upstream stupidity around attribute modifiers and recycling entity instances.
++        /*
++        Currently not implemented as modifiers are *not* actually removed, deviating from vanilla.
 +        this.lastArmorItemStacks.clear();
 +        this.lastHandItemStacks.clear();
 +        this.lastBodyItemStack = ItemStack.EMPTY;
-+        this.collectEquipmentChanges(false);
++        this.skipNextCollectEquipmentEvent = false; // Implement
++        */
 +        // Paper end - deal with upstream stupidity around attribute modifiers and recycling entity instances.
      }
  
