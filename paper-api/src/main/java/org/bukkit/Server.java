@@ -2591,4 +2591,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      */
     public boolean isGlobalTickThread();
     // Paper end - Folia region threading API
+
+    // Paper start - API to check if the server is sleeping
+    /**
+     * Returns whether the server is sleeping/paused.
+     */
+    boolean isPaused();
+    // Paper end - API to check if the server is sleeping
 }
