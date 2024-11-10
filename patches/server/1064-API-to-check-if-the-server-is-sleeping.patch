@@ -1,0 +1,66 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Abel <abelvanhulst@gmail.com>
+Date: Sun, 10 Nov 2024 16:32:34 +0100
+Subject: [PATCH] API to check if the server is sleeping
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 64b56abf8900d0424100da460fc68ac964394793..176d668a84ae63d6fc1d8af444fd9e5e1361188c 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -332,6 +332,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public volatile Thread shutdownThread; // Paper
+     public volatile boolean abnormalExit = false; // Paper
+     public static final long SERVER_INIT = System.nanoTime(); // Paper - Lag compensation
++    private static boolean paused = false; // Paper - API to check if the server is sleeping
+ 
+     public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
+         AtomicReference<S> atomicreference = new AtomicReference();
+@@ -1614,9 +1615,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+     public void onServerExit() {}
+ 
+-    public boolean isPaused() {
+-        return false;
++    // Paper start - API to check if the server is sleeping
++    public static boolean isPaused() {
++        return paused;
+     }
++    // Paper end - API to check if the server is sleeping
+ 
+     public void tickServer(BooleanSupplier shouldKeepTicking) {
+         org.spigotmc.WatchdogThread.tick(); // Spigot
+@@ -1634,6 +1637,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 this.server.spark.tickStart(); // Paper - spark
+                 if (this.emptyTicks == j) {
+                     MinecraftServer.LOGGER.info("Server empty for {} seconds, pausing", this.pauseWhileEmptySeconds());
++                    paused = true; // Paper - API to check if the server is sleeping
+                     this.autoSave();
+                 }
+ 
+@@ -1655,6 +1659,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             }
+         }
+ 
++        if (!this.playerList.players.isEmpty()) paused = false; // Paper - API to check if the server is sleeping
++
+         this.server.spark.tickStart(); // Paper - spark
+         new com.destroystokyo.paper.event.server.ServerTickStartEvent(this.tickCount+1).callEvent(); // Paper - Server Tick Events
+         ++this.tickCount;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index dfddcfb1fe1679adaecf75375757dca720e76ce1..417cec302d66906017fdb202934d4e43e9132e09 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -3246,4 +3246,12 @@ public final class CraftServer implements Server {
+         return this.potionBrewer;
+     }
+     // Paper end
++
++    // Paper start - API to check if the server is sleeping
++    @Override
++    public boolean isPaused() {
++
++        return net.minecraft.server.MinecraftServer.isPaused();
++    }
++    // Paper end - API to check if the server is sleeping
+ }
