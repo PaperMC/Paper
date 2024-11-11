@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Barnaby <22575741+barnabwhy@users.noreply.github.com>
+Date: Sat, 29 Jun 2024 12:04:48 +0100
+Subject: [PATCH] Optimise color distance check in MapPalette by removing
+ floating point math
+
+
+diff --git a/src/main/java/org/bukkit/map/MapPalette.java b/src/main/java/org/bukkit/map/MapPalette.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/map/MapPalette.java
++++ b/src/main/java/org/bukkit/map/MapPalette.java
+@@ -0,0 +0,0 @@ public final class MapPalette {
+     }
+ 
+     private static double getDistance(@NotNull Color c1, @NotNull Color c2) {
+-        double rmean = (c1.getRed() + c2.getRed()) / 2.0;
+-        double r = c1.getRed() - c2.getRed();
+-        double g = c1.getGreen() - c2.getGreen();
++        // Paper start - Optimize color distance calculation by removing floating point math
++        int rsum = c1.getRed() + c2.getRed(); // Use sum instead of mean for no division
++        int r = c1.getRed() - c2.getRed();
++        int g = c1.getGreen() - c2.getGreen();
+         int b = c1.getBlue() - c2.getBlue();
+-        double weightR = 2 + rmean / 256.0;
+-        double weightG = 4.0;
+-        double weightB = 2 + (255 - rmean) / 256.0;
++        // All weights are 512x their original to avoid floating point division
++        int weightR = 1024 + rsum;
++        int weightG = 2048;
++        int weightB = 1024 + (255*2 - rsum);
++
++        // Division by 256 here is unnecessary as this won't change the result of the sort
+         return weightR * r * r + weightG * g * g + weightB * b * b;
++        // Paper end
+     }
+ 
+     @NotNull
