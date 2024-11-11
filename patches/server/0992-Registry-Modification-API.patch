@@ -14,15 +14,15 @@ diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistries.java b/src/
 index c6969f968b45eff2aeb44e647712abda10c7c113..d34ffad8a36abbb215491d74ae8d9b490a0bc64f 100644
 --- a/src/main/java/io/papermc/paper/registry/PaperRegistries.java
 +++ b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
-@@ -2,6 +2,7 @@ package io.papermc.paper.registry;
- 
+@@ -3,6 +3,7 @@ package io.papermc.paper.registry;
+ import com.google.common.base.Preconditions;
  import io.papermc.paper.adventure.PaperAdventure;
  import io.papermc.paper.registry.entry.RegistryEntry;
 +import io.papermc.paper.registry.tag.TagKey;
  import java.util.Collections;
  import java.util.IdentityHashMap;
  import java.util.List;
-@@ -68,6 +69,7 @@ import org.checkerframework.framework.qual.DefaultQualifier;
+@@ -69,6 +70,7 @@ import org.checkerframework.framework.qual.DefaultQualifier;
  
  import static io.papermc.paper.registry.entry.RegistryEntry.apiOnly;
  import static io.papermc.paper.registry.entry.RegistryEntry.entry;
@@ -30,7 +30,7 @@ index c6969f968b45eff2aeb44e647712abda10c7c113..d34ffad8a36abbb215491d74ae8d9b49
  
  @DefaultQualifier(NonNull.class)
  public final class PaperRegistries {
-@@ -151,6 +153,15 @@ public final class PaperRegistries {
+@@ -152,6 +154,15 @@ public final class PaperRegistries {
          return ResourceKey.create((ResourceKey<? extends Registry<M>>) PaperRegistries.registryToNms(typedKey.registryKey()), PaperAdventure.asVanilla(typedKey.key()));
      }
  
@@ -286,6 +286,38 @@ index 0000000000000000000000000000000000000000..69e946173407eb05b18a2b19b0d45cbb
 +        return this.freezeEventTypes.getOrCreate(type.registryKey(), RegistryLifecycleEventType::new);
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/registry/PaperSimpleRegistry.java b/src/main/java/io/papermc/paper/registry/PaperSimpleRegistry.java
+index 6d134ace042758da722960cbcb48e52508dafd61..cc39bc68d29055ef6429f08f975412bd9fe68dbc 100644
+--- a/src/main/java/io/papermc/paper/registry/PaperSimpleRegistry.java
++++ b/src/main/java/io/papermc/paper/registry/PaperSimpleRegistry.java
+@@ -1,6 +1,10 @@
+ package io.papermc.paper.registry;
+ 
++import io.papermc.paper.registry.set.NamedRegistryKeySetImpl;
++import io.papermc.paper.registry.tag.Tag;
++import io.papermc.paper.registry.tag.TagKey;
+ import java.util.function.Predicate;
++import net.minecraft.core.HolderSet;
+ import net.minecraft.core.registries.BuiltInRegistries;
+ import org.bukkit.Keyed;
+ import org.bukkit.Particle;
+@@ -35,4 +39,16 @@ public class PaperSimpleRegistry<T extends Enum<T> & Keyed, M> extends Registry.
+         super(type, predicate);
+         this.nmsRegistry = nmsRegistry;
+     }
++
++    @Override
++    public boolean hasTag(final TagKey<T> key) {
++        final net.minecraft.tags.TagKey<M> nmsKey = PaperRegistries.toNms(key);
++        return this.nmsRegistry.get(nmsKey).isPresent();
++    }
++
++    @Override
++    public Tag<T> getTag(final TagKey<T> key) {
++        final HolderSet.Named<M> namedHolderSet = this.nmsRegistry.get(PaperRegistries.toNms(key)).orElseThrow();
++        return new NamedRegistryKeySetImpl<>(key, namedHolderSet);
++    }
+ }
 diff --git a/src/main/java/io/papermc/paper/registry/WritableCraftRegistry.java b/src/main/java/io/papermc/paper/registry/WritableCraftRegistry.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..78317c7ab42a666f19634593a8f3b696700764c8
@@ -1365,32 +1397,6 @@ index 45c78c113e881b277e1216293ad918ee40b44325..8314059455d91f01b986c5c0a239f418
 +    }
 +    // Paper end - RegistrySet API
  }
-diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index f0556a207f6d9d1766ef0d9753355f7fa5052dc1..f55733b7a56ac21cb297971b9e854ef54001ca26 100644
---- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-+++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -666,6 +666,21 @@ public final class CraftMagicNumbers implements UnsafeValues {
-     }
-     // Paper end - lifecycle event API
- 
-+    // Paper start - hack to get tags for non server-backed registries
-+    @Override
-+    public <A extends Keyed, M> io.papermc.paper.registry.tag.Tag<A> getTag(final io.papermc.paper.registry.tag.TagKey<A> tagKey) { // TODO remove Keyed
-+        if (tagKey.registryKey() != io.papermc.paper.registry.RegistryKey.ENTITY_TYPE && tagKey.registryKey() != io.papermc.paper.registry.RegistryKey.FLUID) {
-+            throw new UnsupportedOperationException(tagKey.registryKey() + " doesn't have tags");
-+        }
-+        final net.minecraft.resources.ResourceKey<? extends net.minecraft.core.Registry<M>> nmsKey = io.papermc.paper.registry.PaperRegistries.registryToNms(tagKey.registryKey());
-+        final net.minecraft.core.Registry<M> nmsRegistry = org.bukkit.craftbukkit.CraftRegistry.getMinecraftRegistry().lookupOrThrow(nmsKey);
-+        return nmsRegistry
-+            .get(io.papermc.paper.registry.PaperRegistries.toNms(tagKey))
-+            .map(named -> new io.papermc.paper.registry.set.NamedRegistryKeySetImpl<>(tagKey, named))
-+            .orElse(null);
-+    }
-+    // Paper end - hack to get tags for non server-backed registries
-+
-     /**
-      * This helper class represents the different NBT Tags.
-      * <p>
 diff --git a/src/main/resources/META-INF/services/io.papermc.paper.registry.event.RegistryEventTypeProvider b/src/main/resources/META-INF/services/io.papermc.paper.registry.event.RegistryEventTypeProvider
 new file mode 100644
 index 0000000000000000000000000000000000000000..8bee1a5ed877a04e4d027593df1f42cefdd824e7
