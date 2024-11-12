@@ -13,18 +13,20 @@ import org.jetbrains.annotations.Nullable;
 public interface UseCooldownComponent extends ConfigurationSerializable {
 
     /**
-     * Gets the time in seconds it will take for this item to be eaten.
+     * Gets the time in seconds it will take for an item in this cooldown group
+     * to be available to use again.
      *
-     * @return eat time
+     * @return cooldown time
      */
     float getCooldownSeconds();
 
     /**
-     * Sets the time in seconds it will take for this item to be eaten.
+     * Sets the time in seconds it will take for an item in this cooldown group
+     * to be available to use again.
      *
-     * @param eatSeconds new eat time, must be positive
+     * @param cooldown new eat time, must be greater than 0
      */
-    void setCooldownSeconds(float eatSeconds);
+    void setCooldownSeconds(float cooldown);
 
     /**
      * Gets the custom cooldown group to be used for similar items, if set.
