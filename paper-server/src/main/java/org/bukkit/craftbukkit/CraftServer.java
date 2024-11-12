@@ -3264,5 +3264,10 @@ public final class CraftServer implements Server {
     public boolean isPaused() {
         return this.console.isTickPaused();
     }
+
+    @Override
+    public void allowPausing(final Plugin plugin, final boolean value) {
+        this.console.addPluginAllowingSleep(plugin.getName(), value);
+    }
     // Paper end - API to check if the server is sleeping
 }
