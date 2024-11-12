@@ -54,10 +54,10 @@ public final class CraftUseCooldownComponent implements UseCooldownComponent {
     }
 
     @Override
-    public void setCooldownSeconds(float eatSeconds) {
-        Preconditions.checkArgument(eatSeconds >= 0, "eatSeconds cannot be less than 0");
+    public void setCooldownSeconds(float cooldown) {
+        Preconditions.checkArgument(cooldown > 0, "cooldown must be greater than 0");
 
-        handle = new UseCooldown(eatSeconds, handle.cooldownGroup());
+        handle = new UseCooldown(cooldown, handle.cooldownGroup());
     }
 
     @Override
