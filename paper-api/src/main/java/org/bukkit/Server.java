@@ -2597,5 +2597,14 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Returns whether the server is sleeping/paused.
      */
     boolean isPaused();
+
+    /**
+     * Allows or disallows the server to sleep/pause.
+     * If any plugin disallows pausing, the server will never pause.
+     *
+     * @param plugin The {@link org.bukkit.plugin.Plugin} that's allowing or disallowing pausing.
+     * @param value Whether to allow sleeping of the server (defaults to true).
+     */
+    void allowPausing(@NotNull org.bukkit.plugin.Plugin plugin, boolean value);
     // Paper end - API to check if the server is sleeping
 }
