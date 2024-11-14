@@ -38,7 +38,7 @@ index 64b56abf8900d0424100da460fc68ac964394793..e7f94f28efa2df5f4d85ac293bd56f41
 +
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index dfddcfb1fe1679adaecf75375757dca720e76ce1..141a0b5d4866457da1cea08c7635a3b0c38fc228 100644
+index dfddcfb1fe1679adaecf75375757dca720e76ce1..e3322be7098c3ee9ccc76836c33a88991912b6a1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -25,6 +25,7 @@ import java.net.InetAddress;
@@ -49,24 +49,33 @@ index dfddcfb1fe1679adaecf75375757dca720e76ce1..141a0b5d4866457da1cea08c7635a3b0
  import java.util.HashSet;
  import java.util.Iterator;
  import java.util.LinkedHashMap;
-@@ -313,6 +314,7 @@ public final class CraftServer implements Server {
+@@ -258,6 +259,7 @@ import org.bukkit.scoreboard.Criteria;
+ import org.bukkit.structure.StructureManager;
+ import org.bukkit.util.StringUtil;
+ import org.bukkit.util.permissions.DefaultPermissions;
++import org.jetbrains.annotations.NotNull;
+ import org.yaml.snakeyaml.LoaderOptions;
+ import org.yaml.snakeyaml.Yaml;
+ import org.yaml.snakeyaml.constructor.SafeConstructor;
+@@ -313,6 +315,7 @@ public final class CraftServer implements Server {
      private final io.papermc.paper.logging.SysoutCatcher sysoutCatcher = new io.papermc.paper.logging.SysoutCatcher(); // Paper
      private final io.papermc.paper.potion.PaperPotionBrewer potionBrewer; // Paper - Custom Potion Mixes
      public final io.papermc.paper.SparksFly spark; // Paper - spark
-+    public Map<org.bukkit.plugin.java.JavaPlugin, Boolean> pluginsAllowingSleeping = new HashMap<>(); // Paper - API to allow/disallow tick sleeping
++    private List<org.bukkit.plugin.java.JavaPlugin> pluginsBlockingSleep = new ArrayList<>(); // Paper - API to allow/disallow tick sleeping
  
      // Paper start - Folia region threading API
      private final io.papermc.paper.threadedregions.scheduler.FallbackRegionScheduler regionizedScheduler = new io.papermc.paper.threadedregions.scheduler.FallbackRegionScheduler();
-@@ -3246,4 +3248,13 @@ public final class CraftServer implements Server {
+@@ -3246,4 +3249,14 @@ public final class CraftServer implements Server {
          return this.potionBrewer;
      }
      // Paper end
 +
 +    // Paper start - API to allow/disallow tick sleeping
 +    @Override
-+    public void allowPausing(final org.bukkit.plugin.java.JavaPlugin plugin, final boolean value) {
-+        pluginsAllowingSleeping.put(plugin, value);
-+        console.allowPausing(!pluginsAllowingSleeping.containsValue(false));
++    public void allowPausing(final org.bukkit.plugin.java.@NotNull JavaPlugin plugin, final boolean value) {
++        if (!value) pluginsBlockingSleep.add(plugin);
++        else pluginsBlockingSleep.remove(plugin);
++        console.allowPausing(pluginsBlockingSleep.isEmpty());
 +    }
 +    // Paper end - API to allow/disallow tick sleeping
 +
