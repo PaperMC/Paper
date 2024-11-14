@@ -4160,6 +4160,68 @@ index 0000000000000000000000000000000000000000..852ab097181491735fb9ee5ee4f70e4c
 +++ b/src/main/resources/META-INF/services/io.papermc.paper.datacomponent.item.consumable.ConsumableTypesBridge
 @@ -0,0 +1 @@
 +io.papermc.paper.datacomponent.item.consumable.ConsumableTypesBridgeImpl
+diff --git a/src/test/java/io/papermc/paper/datacomponent/DataComponentTypesTest.java b/src/test/java/io/papermc/paper/datacomponent/DataComponentTypesTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e7aa11bcddc2d4f1747a6fe68b22c42d1b9f0e24
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/datacomponent/DataComponentTypesTest.java
+@@ -0,0 +1,56 @@
++package io.papermc.paper.datacomponent;
++
++import com.google.common.collect.Collections2;
++import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
++import net.minecraft.core.registries.Registries;
++import net.minecraft.resources.ResourceLocation;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
++import org.bukkit.support.RegistryHelper;
++import org.bukkit.support.environment.AllFeatures;
++import org.junit.jupiter.api.Assertions;
++import org.junit.jupiter.api.Test;
++import java.lang.reflect.Field;
++import java.util.Set;
++import java.util.function.Predicate;
++import java.util.stream.Collectors;
++
++@AllFeatures
++public class DataComponentTypesTest {
++
++    private static final Set<ResourceLocation> NOT_IN_API = Set.of(
++        ResourceLocation.parse("custom_data"),
++        ResourceLocation.parse("entity_data"),
++        ResourceLocation.parse("bees"),
++        ResourceLocation.parse("debug_stick_state"),
++        ResourceLocation.parse("block_entity_data"),
++        ResourceLocation.parse("bucket_entity_data")
++    );
++
++    @Test
++    public void testAllDataComponentsAreMapped() throws IllegalAccessException {
++        final Set<ResourceLocation> vanillaDataComponentTypes = new ObjectOpenHashSet<>(
++            RegistryHelper.getRegistry()
++                .lookupOrThrow(Registries.DATA_COMPONENT_TYPE)
++                .keySet()
++        );
++
++        for (final Field declaredField : DataComponentTypes.class.getDeclaredFields()) {
++            if (!DataComponentType.class.isAssignableFrom(declaredField.getType())) continue;
++
++            final DataComponentType dataComponentType = (DataComponentType) declaredField.get(null);
++            if (!vanillaDataComponentTypes.remove(CraftNamespacedKey.toMinecraft(dataComponentType.getKey()))) {
++                Assertions.fail("API defined component type " + dataComponentType.key().asMinimalString() + " is unknown to vanilla registry");
++            }
++        }
++
++        if (!vanillaDataComponentTypes.containsAll(NOT_IN_API)) {
++            Assertions.fail("API defined data components that were marked as not-yet-implemented: " + NOT_IN_API.stream().filter(Predicate.not(vanillaDataComponentTypes::contains)).map(ResourceLocation::toString).collect(Collectors.joining(", ")));
++        }
++
++        vanillaDataComponentTypes.removeAll(NOT_IN_API);
++        if (!vanillaDataComponentTypes.isEmpty()) {
++            Assertions.fail("API did not define following vanilla data component types: " + String.join(", ", Collections2.transform(vanillaDataComponentTypes, ResourceLocation::toString)));
++        }
++    }
++
++}
 diff --git a/src/test/java/io/papermc/paper/item/ItemStackDataComponentEqualsTest.java b/src/test/java/io/papermc/paper/item/ItemStackDataComponentEqualsTest.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..6a287dcd4b42fa494117ae3f07def596c69d29da
@@ -4262,10 +4324,10 @@ index 0000000000000000000000000000000000000000..6a287dcd4b42fa494117ae3f07def596
 +}
 diff --git a/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java b/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9b0dfd087937b761038b58437e13ce967976164a
+index 0000000000000000000000000000000000000000..220bf2bb666255d7a69e0035ff996474403b7907
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java
-@@ -0,0 +1,374 @@
+@@ -0,0 +1,371 @@
 +package io.papermc.paper.item;
 +
 +import io.papermc.paper.datacomponent.DataComponentType;
@@ -4430,10 +4492,10 @@ index 0000000000000000000000000000000000000000..9b0dfd087937b761038b58437e13ce96
 +    void testItemAttributes() {
 +        final ItemStack stack = new ItemStack(Material.STONE);
 +        AttributeModifier modifier = new AttributeModifier(NamespacedKey.minecraft("test"), 5, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ANY);
-+        stack.setData(DataComponentTypes.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.itemAttributes().showInTooltip(false).addModifier(Attribute.GENERIC_ATTACK_DAMAGE, modifier).build());
++        stack.setData(DataComponentTypes.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.itemAttributes().showInTooltip(false).addModifier(Attribute.ATTACK_DAMAGE, modifier).build());
 +
 +        Assertions.assertTrue(stack.getItemMeta().hasItemFlag(ItemFlag.HIDE_ATTRIBUTES));
-+        Assertions.assertEquals(modifier, ((List<AttributeModifier>) stack.getItemMeta().getAttributeModifiers(Attribute.GENERIC_ATTACK_DAMAGE)).getFirst());
++        Assertions.assertEquals(modifier, ((List<AttributeModifier>) stack.getItemMeta().getAttributeModifiers(Attribute.ATTACK_DAMAGE)).getFirst());
 +        stack.unsetData(DataComponentTypes.ATTRIBUTE_MODIFIERS);
 +        Assertions.assertNull(stack.getItemMeta().getAttributeModifiers());
 +    }
@@ -4469,7 +4531,6 @@ index 0000000000000000000000000000000000000000..9b0dfd087937b761038b58437e13ce96
 +        meta = stack.getItemMeta();
 +        Assertions.assertFalse(meta.hasFood());
 +    }
-+
 +
 +    @Test
 +    void testTool() {
@@ -4526,8 +4587,6 @@ index 0000000000000000000000000000000000000000..9b0dfd087937b761038b58437e13ce96
 +        meta = stack.getItemMeta();
 +        Assertions.assertFalse(meta.hasJukeboxPlayable());
 +    }
-+
-+
 +
 +    @Test
 +    void testDyedColor() {
