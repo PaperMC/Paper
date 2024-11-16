@@ -153,10 +153,10 @@ index 0000000000000000000000000000000000000000..e2266d86a4dd1bf20346e48c428f8baf
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/DataComponentTypes.java b/src/main/java/io/papermc/paper/datacomponent/DataComponentTypes.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d442d0069b3de59e819900fc66ef77afcd812356
+index 0000000000000000000000000000000000000000..e79737ae012179fc7c89b14af8801b8b09fa042b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/DataComponentTypes.java
-@@ -0,0 +1,345 @@
+@@ -0,0 +1,344 @@
 +package io.papermc.paper.datacomponent;
 +
 +import io.papermc.paper.datacomponent.item.BannerPatternLayers;
@@ -222,7 +222,6 @@ index 0000000000000000000000000000000000000000..d442d0069b3de59e819900fc66ef77af
 +@ApiStatus.Experimental
 +public final class DataComponentTypes {
 +
-+    // public static final DataComponentType.Valued<BinaryTagHolder> CUSTOM_DATA = valued("custom_data");
 +    /**
 +     * Controls the maximum stacking size of this item.
 +     * <br>
@@ -923,7 +922,7 @@ index 0000000000000000000000000000000000000000..6cbd73cb2a11f4858b44a2f57d2fe0ac
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/DeathProtection.java b/src/main/java/io/papermc/paper/datacomponent/item/DeathProtection.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d7983ca5c45ddfa68766cdfe89956ceebe4b8da7
+index 0000000000000000000000000000000000000000..87c2220708af7db06348994ad5940c7cecd9f691
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/DeathProtection.java
 @@ -0,0 +1,48 @@
@@ -972,7 +971,7 @@ index 0000000000000000000000000000000000000000..d7983ca5c45ddfa68766cdfe89956cee
 +        Builder addEffect(ConsumeEffect effect);
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        Builder addEffects(Collection<ConsumeEffect> effects);
++        Builder addEffects(List<ConsumeEffect> effects);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/DyedItemColor.java b/src/main/java/io/papermc/paper/datacomponent/item/DyedItemColor.java
@@ -1562,10 +1561,10 @@ index 0000000000000000000000000000000000000000..0309ae59ab7945ddfb5410930d161e2c
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/ItemAttributeModifiers.java b/src/main/java/io/papermc/paper/datacomponent/item/ItemAttributeModifiers.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..add54d898ad207ddf88f3a840342ab60a83bf565
+index 0000000000000000000000000000000000000000..e8fad9f40ba037f28102437097e2b44ace488ff0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/ItemAttributeModifiers.java
-@@ -0,0 +1,85 @@
+@@ -0,0 +1,86 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import io.papermc.paper.datacomponent.DataComponentBuilder;
@@ -1644,11 +1643,12 @@ index 0000000000000000000000000000000000000000..add54d898ad207ddf88f3a840342ab60
 +         *
 +         * @param attribute attribute
 +         * @param modifier modifier
++         * @param equipmentSlotGroup the slot group this modifier applies to (overrides any slot group in the modifier)
 +         * @return the builder for chaining
 +         * @see #modifiers()
 +         */
-+        @Contract(value = "_, _ -> this", mutates = "this")
-+        Builder addModifier(Attribute attribute, AttributeModifier modifier);
++        @Contract(value = "_, _, _ -> this", mutates = "this")
++        Builder addModifier(Attribute attribute, AttributeModifier modifier, EquipmentSlotGroup equipmentSlotGroup);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/ItemComponentTypesBridge.java b/src/main/java/io/papermc/paper/datacomponent/item/ItemComponentTypesBridge.java
@@ -2131,7 +2131,7 @@ index 0000000000000000000000000000000000000000..b919672ceea74ae09324653847b30fde
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/MapDecorations.java b/src/main/java/io/papermc/paper/datacomponent/item/MapDecorations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ec3a1cdcafe5b21989de8d87f0f592936e5db409
+index 0000000000000000000000000000000000000000..1e611f1f918c33f8d89ad23cf2fc44a127af233c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/MapDecorations.java
 @@ -0,0 +1,121 @@
@@ -2165,6 +2165,11 @@ index 0000000000000000000000000000000000000000..ec3a1cdcafe5b21989de8d87f0f59293
 +        return ItemComponentTypesBridge.bridge().mapDecorations();
 +    }
 +
++    @Contract(value = "_, _, _, _ -> new", pure = true)
++    static DecorationEntry decorationEntry(final MapCursor.Type type, final double x, final double z, final float rotation) {
++        return ItemComponentTypesBridge.bridge().decorationEntry(type, x, z, rotation);
++    }
++
 +    /**
 +     * Gets the decoration entry with the given id.
 +     *
@@ -2188,11 +2193,6 @@ index 0000000000000000000000000000000000000000..ec3a1cdcafe5b21989de8d87f0f59293
 +    @ApiStatus.Experimental
 +    @ApiStatus.NonExtendable
 +    interface DecorationEntry {
-+
-+        @Contract(value = "_, _, _, _ -> new", pure = true)
-+        static DecorationEntry of(final MapCursor.Type type, final double x, final double z, final float rotation) {
-+            return ItemComponentTypesBridge.bridge().decorationEntry(type, x, z, rotation);
-+        }
 +
 +        /**
 +         * Type of decoration.
@@ -2491,7 +2491,7 @@ index 0000000000000000000000000000000000000000..6da78b8735a6cadd1282fa2fafd8b0f7
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PotionContents.java b/src/main/java/io/papermc/paper/datacomponent/item/PotionContents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7f46b2d891855719ff48b8f45f23bc4cdb14a7d4
+index 0000000000000000000000000000000000000000..7cf05b382319064d45433a7e2678f65c25d11b14
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PotionContents.java
 @@ -0,0 +1,120 @@
@@ -2549,9 +2549,9 @@ index 0000000000000000000000000000000000000000..7f46b2d891855719ff48b8f45f23bc4c
 +    @Unmodifiable List<PotionEffect> customEffects();
 +
 +    /**
-+     * Overrides the visual name of the potion.
++     * Suffix to the translation key of the potion item.
 +     *
-+     * @return name override, or {@code null} if not present
++     * @return translation key suffix, or {@code null} if not present
 +     * @apiNote This is used in the display of tipped arrow and potion items.
 +     */
 +    @Contract(pure = true)
@@ -2583,7 +2583,7 @@ index 0000000000000000000000000000000000000000..7f46b2d891855719ff48b8f45f23bc4c
 +        Builder customColor(@Nullable Color color);
 +
 +        /**
-+         * Sets the name override for this builder.
++         * Sets the suffix to the translation key of the potion item.
 +         *
 +         * @param name name
 +         * @return the builder for chaining
@@ -3185,10 +3185,10 @@ index 0000000000000000000000000000000000000000..498eb479dce406d2b0b470b327eac827
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/UseCooldown.java b/src/main/java/io/papermc/paper/datacomponent/item/UseCooldown.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5840f12286aedfb89d3fc4882508e11a706f5f6b
+index 0000000000000000000000000000000000000000..57fc55ad1def2bb14fc0a95ee3c0c157b0ac53fb
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/UseCooldown.java
-@@ -0,0 +1,66 @@
+@@ -0,0 +1,65 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import io.papermc.paper.datacomponent.DataComponentBuilder;
@@ -3234,8 +3234,7 @@ index 0000000000000000000000000000000000000000..5840f12286aedfb89d3fc4882508e11a
 +     * @return cooldown group, or null if not present
 +     */
 +    @Contract(pure = true)
-+    @Nullable
-+    Key cooldownGroup();
++    @Nullable Key cooldownGroup();
 +
 +    @ApiStatus.Experimental
 +    @ApiStatus.NonExtendable
@@ -3294,15 +3293,14 @@ index 0000000000000000000000000000000000000000..50e42e073311332142980828d0beec18
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/WritableBookContent.java b/src/main/java/io/papermc/paper/datacomponent/item/WritableBookContent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..30a02149a02042316885b92e39e7ab6c5abbabf2
+index 0000000000000000000000000000000000000000..e1218114932d6965b073102920d7c4773496ec99
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/WritableBookContent.java
-@@ -0,0 +1,81 @@
+@@ -0,0 +1,80 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import io.papermc.paper.datacomponent.DataComponentBuilder;
 +import io.papermc.paper.util.Filtered;
-+import java.util.Collection;
 +import java.util.List;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
@@ -3356,7 +3354,7 @@ index 0000000000000000000000000000000000000000..30a02149a02042316885b92e39e7ab6c
 +         * @see #pages()
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
-+        Builder addPages(Collection<String> pages);
++        Builder addPages(List<String> pages);
 +
 +        /**
 +         * Adds a filterable page that can be written to for this builder.
@@ -3376,20 +3374,19 @@ index 0000000000000000000000000000000000000000..30a02149a02042316885b92e39e7ab6c
 +         * @see #pages()
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
-+        Builder addFilteredPages(Collection<Filtered<String>> pages);
++        Builder addFilteredPages(List<Filtered<String>> pages);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/WrittenBookContent.java b/src/main/java/io/papermc/paper/datacomponent/item/WrittenBookContent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..86915d2c1435d4a5df2bce0318bdf169d03f28ec
+index 0000000000000000000000000000000000000000..173ec331286635942145e55956ccf6bcc64535e4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/WrittenBookContent.java
-@@ -0,0 +1,173 @@
+@@ -0,0 +1,172 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import io.papermc.paper.datacomponent.DataComponentBuilder;
 +import io.papermc.paper.util.Filtered;
-+import java.util.Collection;
 +import java.util.List;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.ComponentLike;
@@ -3535,7 +3532,7 @@ index 0000000000000000000000000000000000000000..86915d2c1435d4a5df2bce0318bdf169
 +         * @see #pages()
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
-+        Builder addPages(Collection<? extends ComponentLike> page);
++        Builder addPages(List<? extends ComponentLike> page);
 +
 +        /**
 +         * Adds a filterable page to this book.
@@ -3555,7 +3552,7 @@ index 0000000000000000000000000000000000000000..86915d2c1435d4a5df2bce0318bdf169
 +         * @see #pages()
 +         */
 +        @Contract(value = "_ -> this", mutates = "this")
-+        Builder addFilteredPages(Collection<Filtered<? extends ComponentLike>> pages);
++        Builder addFilteredPages(List<Filtered<? extends ComponentLike>> pages);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/consumable/ConsumableTypesBridge.java b/src/main/java/io/papermc/paper/datacomponent/item/consumable/ConsumableTypesBridge.java
