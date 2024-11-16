@@ -3808,16 +3808,16 @@ index 9b39e33514b15a9d07104e2ad826d0da11f569d6..116857b4479565b602b94d227ee32dc2
  
 diff --git a/src/main/java/io/papermc/paper/util/Filtered.java b/src/main/java/io/papermc/paper/util/Filtered.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6919f01a18bc0ab375d2e0541206524304243d19
+index 0000000000000000000000000000000000000000..54e1a383c4eeb595417ea6e9e4e9527a8ffd9a99
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/Filtered.java
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,32 @@
 +package io.papermc.paper.util;
 +
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jetbrains.annotations.Contract;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
 +/**
 + * Denotes that this type is filterable by the client, and may be shown differently
@@ -3826,35 +3826,28 @@ index 0000000000000000000000000000000000000000..6919f01a18bc0ab375d2e05412065243
 + * @param <T> type of value
 + */
 +@ApiStatus.Experimental
++@NullMarked
 +public interface Filtered<T> {
 +
 +    @Contract(value = "_, _ -> new", pure = true)
-+    static <T> @NonNull Filtered<T> of(final @NonNull T raw, final @Nullable T filtered) {
++    static <T> Filtered<T> of(final T raw, final @Nullable T filtered) {
 +        @ApiStatus.Internal
-+        record Instance<T>(T raw, T filtered) implements Filtered<T> {}
++        record Instance<T>(T raw, @Nullable T filtered) implements Filtered<T> {}
 +
 +        return new Instance<>(raw, filtered);
 +    }
 +
 +    @Contract(pure = true)
-+    @NonNull T raw();
++    T raw();
 +
 +    @Contract(pure = true)
-+    @Nullable T filtered();
++    @Nullable
++    T filtered();
 +}
 diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
-index 615eb24ffdd8f6d55ccd4f21760b809c1098bc68..1b3e120bb9b10b65eb6225af8f08caed5973007d 100644
+index 615eb24ffdd8f6d55ccd4f21760b809c1098bc68..a4ce05b36ff1879503d5aa5f5426286444d9ecb8 100644
 --- a/src/main/java/org/bukkit/Material.java
 +++ b/src/main/java/org/bukkit/Material.java
-@@ -137,7 +137,7 @@ import org.jetbrains.annotations.Nullable;
- @SuppressWarnings({"DeprecatedIsStillUsed", "deprecation"}) // Paper
- public enum Material implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper
-     //<editor-fold desc="Materials" defaultstate="collapsed">
--    AIR(9648, 0),
-+    AIR(9648, 64), // Paper - air technically stacks to 64
-     STONE(22948),
-     GRANITE(21091),
-     POLISHED_GRANITE(5477),
 @@ -5784,6 +5784,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
       */
      @ApiStatus.Internal
@@ -3924,23 +3917,10 @@ index 7cf7c6d05aa6cbf3f0c8612831404552c6a7b84a..c60e31425efd7b863941f5538faef6c0
       * Get the object by its key.
       *
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index b59222b8c262545d100a9fd28b3bf1d2a4cf4eb0..0fcc5361558cc5718931415f4d42ae91f3a38def 100644
+index b59222b8c262545d100a9fd28b3bf1d2a4cf4eb0..49e0f703faacca92af6b97c0241c6bace9af99ca 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
-@@ -1,10 +1,11 @@
- package org.bukkit.inventory;
- 
- import com.google.common.base.Preconditions;
--import com.google.common.collect.ImmutableMap;
- import java.util.LinkedHashMap;
- import java.util.Locale;
- import java.util.Map;
-+import io.papermc.paper.datacomponent.DataComponentBuilder;
-+import io.papermc.paper.datacomponent.DataComponentType;
- import org.bukkit.Bukkit;
- import org.bukkit.Material;
- import org.bukkit.NamespacedKey;
-@@ -1137,4 +1138,173 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -1137,4 +1137,173 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
          return Bukkit.getUnsafe().computeTooltipLines(this, tooltipContext, player);
      }
      // Paper end - expose itemstack tooltip lines
@@ -4007,7 +3987,7 @@ index b59222b8c262545d100a9fd28b3bf1d2a4cf4eb0..0fcc5361558cc5718931415f4d42ae91
 +     * @param <T> value type
 +     */
 +    @Utility
-+    public <T> void setData(final io.papermc.paper.datacomponent.DataComponentType.@NotNull Valued<T> type, final @NotNull DataComponentBuilder<T> valueBuilder) {
++    public <T> void setData(final io.papermc.paper.datacomponent.DataComponentType.@NotNull Valued<T> type, final @NotNull io.papermc.paper.datacomponent.DataComponentBuilder<T> valueBuilder) {
 +        this.setData(type, valueBuilder.build());
 +    }
 +
