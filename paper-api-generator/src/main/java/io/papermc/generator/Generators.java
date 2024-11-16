@@ -58,22 +58,6 @@ public interface Generators {
         simpleKey("AttributeKeys", Attribute.class, Registries.ATTRIBUTE, RegistryKey.ATTRIBUTE, false),
         simpleKey("FluidKeys", Fluid.class, Registries.FLUID, RegistryKey.FLUID, false),
         simpleKey("SoundEventKeys", Sound.class, Registries.SOUND_EVENT, RegistryKey.SOUND_EVENT, false),
-        new GeneratedKeyType<>("DataComponentTypeKeys", DataComponentType.class, "io.papermc.paper.registry.keys", Registries.DATA_COMPONENT_TYPE, RegistryKey.DATA_COMPONENT_TYPE, false) {
-
-            private static final Set<net.minecraft.core.component.DataComponentType<?>> UNSUPPORTED_TYPES = Set.of(
-                DataComponents.CUSTOM_DATA,
-                DataComponents.DEBUG_STICK_STATE, // Block Property API
-                DataComponents.ENTITY_DATA,
-                DataComponents.BUCKET_ENTITY_DATA,
-                DataComponents.BLOCK_ENTITY_DATA,
-                DataComponents.BEES
-            );
-
-            @Override
-            protected boolean canPrintKey(Holder.Reference<net.minecraft.core.component.DataComponentType<?>> reference) {
-                return !UNSUPPORTED_TYPES.contains(reference.value());
-            }
-        },
 
         // data-driven
         simpleKey("BiomeKeys", Biome.class, Registries.BIOME, RegistryKey.BIOME, true),
