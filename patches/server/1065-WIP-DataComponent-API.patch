@@ -242,7 +242,7 @@ index 0000000000000000000000000000000000000000..870d17851699f46275f4d443ca2880f7
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/ComponentUtils.java b/src/main/java/io/papermc/paper/datacomponent/ComponentUtils.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e89d822750112321f5c300fa48c3acbe9c2f3b37
+index 0000000000000000000000000000000000000000..c95ffef54d7149cd8bb220533dddade515e48c8c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/ComponentUtils.java
 @@ -0,0 +1,39 @@
@@ -250,11 +250,11 @@ index 0000000000000000000000000000000000000000..e89d822750112321f5c300fa48c3acbe
 +
 +import com.google.common.collect.Collections2;
 +import com.google.common.collect.Lists;
++import io.papermc.paper.adventure.PaperAdventure;
 +import java.util.Collection;
 +import java.util.Collections;
 +import java.util.List;
 +import java.util.function.Function;
-+import io.papermc.paper.adventure.PaperAdventure;
 +import net.kyori.adventure.key.Key;
 +import net.minecraft.core.Holder;
 +import net.minecraft.core.registries.BuiltInRegistries;
@@ -647,13 +647,15 @@ index 0000000000000000000000000000000000000000..b57bff1a82bbf32c001f27dad94d80b1
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperBannerPatternLayers.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperBannerPatternLayers.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a73e2cc309e806006eed36994bb6b5c82ee8a4b3
+index 0000000000000000000000000000000000000000..9fde759d57bb9f54e32ce2e7ac36876079013c2b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperBannerPatternLayers.java
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,62 @@
 +package io.papermc.paper.datacomponent.item;
 +
++import io.papermc.paper.registry.RegistryAccess;
 +import io.papermc.paper.registry.RegistryKey;
++import io.papermc.paper.util.MCUtil;
 +import java.util.List;
 +import java.util.Objects;
 +import java.util.Optional;
@@ -663,28 +665,27 @@ index 0000000000000000000000000000000000000000..a73e2cc309e806006eed36994bb6b5c8
 +import org.bukkit.craftbukkit.CraftRegistry;
 +import org.bukkit.craftbukkit.block.banner.CraftPatternType;
 +import org.bukkit.craftbukkit.util.Handleable;
-+
-+import static io.papermc.paper.datacomponent.ComponentUtils.transform;
++import org.jetbrains.annotations.Unmodifiable;
 +
 +public record PaperBannerPatternLayers(
-+    net.minecraft.world.level.block.entity.BannerPatternLayers impl,
-+    List<Pattern> patterns
++    net.minecraft.world.level.block.entity.BannerPatternLayers impl
 +) implements BannerPatternLayers, Handleable<net.minecraft.world.level.block.entity.BannerPatternLayers> {
 +
-+    public PaperBannerPatternLayers(final net.minecraft.world.level.block.entity.BannerPatternLayers impl) {
-+        this(impl, convert(impl));
-+    }
-+
 +    private static List<Pattern> convert(final net.minecraft.world.level.block.entity.BannerPatternLayers nmsPatterns) {
-+        return transform(nmsPatterns.layers(), input -> {
-+            final Optional<PatternType> type = CraftRegistry.unwrapAndConvertHolder(RegistryKey.BANNER_PATTERN, input.pattern());
-+            return new Pattern(Objects.requireNonNull(DyeColor.getByWoolData((byte) input.color().getId())), type.orElseThrow(() -> new IllegalStateException("Custom banner patterns are not supported yet in the API!")));
++        return MCUtil.transformUnmodifiable(nmsPatterns.layers(), input -> {
++            final Optional<PatternType> type = CraftRegistry.unwrapAndConvertHolder(RegistryAccess.registryAccess().getRegistry(RegistryKey.BANNER_PATTERN), input.pattern());
++            return new Pattern(Objects.requireNonNull(DyeColor.getByWoolData((byte) input.color().getId())), type.orElseThrow(() -> new IllegalStateException("Inline banner patterns are not supported yet in the API!")));
 +        });
 +    }
 +
 +    @Override
 +    public net.minecraft.world.level.block.entity.BannerPatternLayers getHandle() {
 +        return this.impl;
++    }
++
++    @Override
++    public @Unmodifiable List<Pattern> patterns() {
++        return convert(impl);
 +    }
 +
 +    static final class BuilderImpl implements BannerPatternLayers.Builder {
@@ -714,14 +715,13 @@ index 0000000000000000000000000000000000000000..a73e2cc309e806006eed36994bb6b5c8
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperBlockItemDataProperties.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperBlockItemDataProperties.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b8f9183c1082011a61a90d98785682a60f8abfe4
+index 0000000000000000000000000000000000000000..5757e16c5948a6897bc61005ea7260940a49abfe
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperBlockItemDataProperties.java
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,50 @@
 +package io.papermc.paper.datacomponent.item;
 +
-+import java.util.Collections;
-+import java.util.HashMap;
++import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 +import java.util.Map;
 +import net.minecraft.world.item.component.BlockItemStateProperties;
 +import net.minecraft.world.level.block.Block;
@@ -738,7 +738,6 @@ index 0000000000000000000000000000000000000000..b8f9183c1082011a61a90d98785682a6
 +
 +    @Override
 +    public BlockData createBlockData(final BlockType blockType) {
-+        //Preconditions.checkArgument(blockType.isBlock(), "%s is not a block", blockType);
 +        final Block block = CraftBlockType.bukkitToMinecraftNew(blockType);
 +        final BlockState defaultState = block.defaultBlockState();
 +        return this.impl.apply(defaultState).createCraftBlockData();
@@ -757,7 +756,7 @@ index 0000000000000000000000000000000000000000..b8f9183c1082011a61a90d98785682a6
 +
 +    static final class BuilderImpl implements BlockItemDataProperties.Builder {
 +
-+        private final Map<String, String> properties = new HashMap<>();
++        private final Map<String, String> properties = new Object2ObjectOpenHashMap<>();
 +
 +        // TODO when BlockProperty API is merged
 +
@@ -766,27 +765,25 @@ index 0000000000000000000000000000000000000000..b8f9183c1082011a61a90d98785682a6
 +            if (this.properties.isEmpty()) {
 +                return new PaperBlockItemDataProperties(BlockItemStateProperties.EMPTY);
 +            }
-+            return new PaperBlockItemDataProperties(new BlockItemStateProperties(Collections.unmodifiableMap(this.properties)));
++            return new PaperBlockItemDataProperties(new BlockItemStateProperties(new Object2ObjectOpenHashMap<>(this.properties)));
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperBundleContents.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperBundleContents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e43179f2a6f0094a07339dd666ea2360111de5c1
+index 0000000000000000000000000000000000000000..a59a98bdb15d2f4595d5ea651bfdf62542d80b2b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperBundleContents.java
-@@ -0,0 +1,53 @@
+@@ -0,0 +1,51 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import com.google.common.base.Preconditions;
-+import java.util.ArrayList;
-+import java.util.Collections;
++import io.papermc.paper.util.MCUtil;
++import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 +import java.util.List;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.bukkit.inventory.ItemStack;
-+
-+import static io.papermc.paper.datacomponent.ComponentUtils.transform;
 +
 +public record PaperBundleContents(
 +    net.minecraft.world.item.component.BundleContents impl
@@ -799,16 +796,16 @@ index 0000000000000000000000000000000000000000..e43179f2a6f0094a07339dd666ea2360
 +
 +    @Override
 +    public List<ItemStack> contents() {
-+        return transform((List<net.minecraft.world.item.ItemStack>) this.impl.itemsCopy(), CraftItemStack::asCraftMirror);
++        return MCUtil.transformUnmodifiable((List<net.minecraft.world.item.ItemStack>) this.impl.items(), CraftItemStack::asBukkitCopy);
 +    }
 +
 +    static final class BuilderImpl implements BundleContents.Builder {
 +
-+        private final List<net.minecraft.world.item.ItemStack> items = new ArrayList<>();
++        private final List<net.minecraft.world.item.ItemStack> items = new ObjectArrayList<>();
 +
 +        @Override
 +        public BundleContents.Builder add(final ItemStack stack) {
-+            Preconditions.checkNotNull(stack);
++            Preconditions.checkNotNull(stack, "stack cannot be null");
 +            Preconditions.checkArgument(!stack.isEmpty(), "stack cannot be empty");
 +            this.items.add(CraftItemStack.asNMSCopy(stack));
 +            return this;
@@ -825,26 +822,25 @@ index 0000000000000000000000000000000000000000..e43179f2a6f0094a07339dd666ea2360
 +            if (this.items.isEmpty()) {
 +                return new PaperBundleContents(net.minecraft.world.item.component.BundleContents.EMPTY);
 +            }
-+            return new PaperBundleContents(new net.minecraft.world.item.component.BundleContents(Collections.unmodifiableList(this.items)));
++            return new PaperBundleContents(new net.minecraft.world.item.component.BundleContents(new ObjectArrayList<>(this.items)));
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperChargedProjectiles.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperChargedProjectiles.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d8fde7f3766ab22171b92e333b97d59abeac20d6
+index 0000000000000000000000000000000000000000..3aa8b905748f2b82e1c464272d4b9da0c20086ad
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperChargedProjectiles.java
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,51 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import com.google.common.base.Preconditions;
++import io.papermc.paper.util.MCUtil;
 +import java.util.ArrayList;
 +import java.util.List;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.bukkit.inventory.ItemStack;
-+
-+import static io.papermc.paper.datacomponent.ComponentUtils.transform;
 +
 +public record PaperChargedProjectiles(
 +    net.minecraft.world.item.component.ChargedProjectiles impl
@@ -857,7 +853,7 @@ index 0000000000000000000000000000000000000000..d8fde7f3766ab22171b92e333b97d59a
 +
 +    @Override
 +    public List<ItemStack> projectiles() {
-+        return transform(this.impl.getItems() /*makes copies internally*/, CraftItemStack::asCraftMirror);
++        return MCUtil.transformUnmodifiable(this.impl.getItems() /*makes copies internally*/, CraftItemStack::asCraftMirror);
 +    }
 +
 +    static final class BuilderImpl implements ChargedProjectiles.Builder {
@@ -866,7 +862,7 @@ index 0000000000000000000000000000000000000000..d8fde7f3766ab22171b92e333b97d59a
 +
 +        @Override
 +        public ChargedProjectiles.Builder add(final ItemStack stack) {
-+            Preconditions.checkNotNull(stack);
++            Preconditions.checkNotNull(stack, "stack cannot be null");
 +            Preconditions.checkArgument(!stack.isEmpty(), "stack cannot be empty");
 +            this.items.add(CraftItemStack.asNMSCopy(stack));
 +            return this;
@@ -889,10 +885,10 @@ index 0000000000000000000000000000000000000000..d8fde7f3766ab22171b92e333b97d59a
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperConsumable.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperConsumable.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9765f3033b9e8a52b10ade559e710420d65637c0
+index 0000000000000000000000000000000000000000..9badd3859745c0090c782fdccdd6fe8830f36b49
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperConsumable.java
-@@ -0,0 +1,144 @@
+@@ -0,0 +1,134 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import com.google.common.base.Preconditions;
@@ -900,8 +896,8 @@ index 0000000000000000000000000000000000000000..9765f3033b9e8a52b10ade559e710420
 +import io.papermc.paper.datacomponent.item.consumable.ConsumeEffect;
 +import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 +import io.papermc.paper.datacomponent.item.consumable.PaperConsumableEffects;
-+import java.util.ArrayList;
-+import java.util.Collection;
++import io.papermc.paper.util.MCUtil;
++import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 +import java.util.List;
 +import net.kyori.adventure.key.Key;
 +import net.minecraft.core.Holder;
@@ -913,19 +909,9 @@ index 0000000000000000000000000000000000000000..9765f3033b9e8a52b10ade559e710420
 +import org.checkerframework.checker.index.qual.NonNegative;
 +import org.jetbrains.annotations.Unmodifiable;
 +
-+import static io.papermc.paper.datacomponent.ComponentUtils.transform;
-+
 +public record PaperConsumable(
-+    net.minecraft.world.item.component.Consumable impl,
-+    List<ConsumeEffect> consumeEffects
++    net.minecraft.world.item.component.Consumable impl
 +) implements Consumable, Handleable<net.minecraft.world.item.component.Consumable> {
-+
-+    public PaperConsumable(final net.minecraft.world.item.component.Consumable impl) {
-+        this(
-+            impl,
-+            transform(impl.onConsumeEffects(), PaperConsumableEffects::fromNms)
-+        );
-+    }
 +
 +    private static final ItemUseAnimation[] VALUES = ItemUseAnimation.values();
 +
@@ -956,7 +942,7 @@ index 0000000000000000000000000000000000000000..9765f3033b9e8a52b10ade559e710420
 +
 +    @Override
 +    public @Unmodifiable List<ConsumeEffect> consumeEffects() {
-+        return this.consumeEffects;
++        return MCUtil.transformUnmodifiable(impl.onConsumeEffects(), PaperConsumableEffects::fromNms);
 +    }
 +
 +    @Override
@@ -976,7 +962,7 @@ index 0000000000000000000000000000000000000000..9765f3033b9e8a52b10ade559e710420
 +        private net.minecraft.world.item.ItemUseAnimation consumeAnimation = net.minecraft.world.item.ItemUseAnimation.EAT;
 +        private Holder<SoundEvent> eatSound = SoundEvents.GENERIC_EAT;
 +        private boolean hasConsumeParticles = true;
-+        private final List<net.minecraft.world.item.consume_effects.ConsumeEffect> effects = new ArrayList<>();
++        private final List<net.minecraft.world.item.consume_effects.ConsumeEffect> effects = new ObjectArrayList<>();
 +
 +        @Override
 +        public Builder consumeSeconds(final @NonNegative float consumeSeconds) {
@@ -993,7 +979,7 @@ index 0000000000000000000000000000000000000000..9765f3033b9e8a52b10ade559e710420
 +
 +        @Override
 +        public Builder sound(final Key sound) {
-+            ResourceLocation keySound = PaperAdventure.asVanilla(sound);
++            final ResourceLocation keySound = PaperAdventure.asVanilla(sound);
 +            this.eatSound = BuiltInRegistries.SOUND_EVENT.wrapAsHolder(
 +                BuiltInRegistries.SOUND_EVENT.getOptional(keySound).orElse(
 +                    SoundEvent.createVariableRangeEvent(keySound)
@@ -1016,8 +1002,8 @@ index 0000000000000000000000000000000000000000..9765f3033b9e8a52b10ade559e710420
 +        }
 +
 +        @Override
-+        public Builder addEffects(final Collection<ConsumeEffect> effects) {
-+            for (ConsumeEffect effect : effects) {
++        public Builder addEffects(final List<ConsumeEffect> effects) {
++            for (final ConsumeEffect effect : effects) {
 +                this.effects.add(PaperConsumableEffects.toNms(effect));
 +            }
 +            return this;
@@ -1031,7 +1017,7 @@ index 0000000000000000000000000000000000000000..9765f3033b9e8a52b10ade559e710420
 +                    this.consumeAnimation,
 +                    this.eatSound,
 +                    this.hasConsumeParticles,
-+                    this.effects
++                    new ObjectArrayList<>(this.effects)
 +                )
 +            );
 +        }
@@ -1090,35 +1076,32 @@ index 0000000000000000000000000000000000000000..adc986c8b3d65e3fb91a8951048194bb
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperDeathProtection.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperDeathProtection.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a4bd56c252f63af0ef79fd6798375b0423054606
+index 0000000000000000000000000000000000000000..6184acced73d8e99c0fa8b0df03680ad9b84f689
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperDeathProtection.java
-@@ -0,0 +1,53 @@
+@@ -0,0 +1,50 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import io.papermc.paper.datacomponent.item.consumable.ConsumeEffect;
 +import io.papermc.paper.datacomponent.item.consumable.PaperConsumableEffects;
++import io.papermc.paper.util.MCUtil;
 +import java.util.ArrayList;
 +import java.util.List;
 +import org.bukkit.craftbukkit.util.Handleable;
-+
-+import static io.papermc.paper.datacomponent.ComponentUtils.transform;
++import org.jetbrains.annotations.Unmodifiable;
 +
 +public record PaperDeathProtection(
-+    net.minecraft.world.item.component.DeathProtection impl,
-+    List<ConsumeEffect> deathEffects
++    net.minecraft.world.item.component.DeathProtection impl
 +) implements DeathProtection, Handleable<net.minecraft.world.item.component.DeathProtection> {
-+
-+    public PaperDeathProtection(final net.minecraft.world.item.component.DeathProtection impl) {
-+        this(
-+            impl,
-+            transform(impl.deathEffects(), PaperConsumableEffects::fromNms)
-+        );
-+    }
 +
 +    @Override
 +    public net.minecraft.world.item.component.DeathProtection getHandle() {
 +        return this.impl;
++    }
++
++    @Override
++    public @Unmodifiable List<ConsumeEffect> deathEffects() {
++        return MCUtil.transformUnmodifiable(impl.deathEffects(), PaperConsumableEffects::fromNms);
 +    }
 +
 +    static final class BuilderImpl implements Builder {
@@ -1133,7 +1116,7 @@ index 0000000000000000000000000000000000000000..a4bd56c252f63af0ef79fd6798375b04
 +
 +        @Override
 +        public Builder addEffects(final List<ConsumeEffect> effects) {
-+            for (ConsumeEffect effect : effects) {
++            for (final ConsumeEffect effect : effects) {
 +                this.effects.add(PaperConsumableEffects.toNms(effect));
 +            }
 +            return this;
@@ -1207,10 +1190,10 @@ index 0000000000000000000000000000000000000000..2407d79e2e77e8be6de8e65769efc4d7
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperEnchantable.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperEnchantable.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e3f95b6b28e0e9b3aa9c6005471a65b055724b4e
+index 0000000000000000000000000000000000000000..422e1a4d606481f0dc68843fbbc8126ccfda1cc3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperEnchantable.java
-@@ -0,0 +1,19 @@
+@@ -0,0 +1,18 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import org.bukkit.craftbukkit.util.Handleable;
@@ -1224,7 +1207,6 @@ index 0000000000000000000000000000000000000000..e3f95b6b28e0e9b3aa9c6005471a65b0
 +        return this.impl;
 +    }
 +
-+
 +    @Override
 +    public int value() {
 +        return this.impl.value();
@@ -1232,17 +1214,18 @@ index 0000000000000000000000000000000000000000..e3f95b6b28e0e9b3aa9c6005471a65b0
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperEquippable.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperEquippable.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9b2b12ffdad22d9059fa70078d4c9ccdbd22040b
+index 0000000000000000000000000000000000000000..dbf8d060ab20b9cf31f209f26a8ad4d0cf05d6db
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperEquippable.java
-@@ -0,0 +1,162 @@
+@@ -0,0 +1,169 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import io.papermc.paper.adventure.PaperAdventure;
-+import io.papermc.paper.datacomponent.ComponentUtils;
 +import io.papermc.paper.registry.RegistryKey;
 +import io.papermc.paper.registry.set.PaperRegistrySets;
 +import io.papermc.paper.registry.set.RegistryKeySet;
++import io.papermc.paper.util.MCUtil;
++import java.util.Optional;
 +import net.kyori.adventure.key.Key;
 +import net.minecraft.core.Holder;
 +import net.minecraft.core.HolderSet;
@@ -1255,8 +1238,7 @@ index 0000000000000000000000000000000000000000..9b2b12ffdad22d9059fa70078d4c9ccd
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.bukkit.entity.EntityType;
 +import org.bukkit.inventory.EquipmentSlot;
-+import java.util.Optional;
-+import org.jspecify.annotations.Nullable;
++import org.checkerframework.checker.nullness.qual.Nullable;
 +
 +public record PaperEquippable(
 +    net.minecraft.world.item.equipment.Equippable impl
@@ -1343,7 +1325,7 @@ index 0000000000000000000000000000000000000000..9b2b12ffdad22d9059fa70078d4c9ccd
 +
 +        @Override
 +        public Builder equipSound(final Key equipSound) {
-+            this.equipSound = ComponentUtils.keyToSound(equipSound);
++            this.equipSound = MCUtil.keyToSound(equipSound);
 +            return this;
 +        }
 +
@@ -1392,7 +1374,14 @@ index 0000000000000000000000000000000000000000..9b2b12ffdad22d9059fa70078d4c9ccd
 +        public Equippable build() {
 +            return new PaperEquippable(
 +                new net.minecraft.world.item.equipment.Equippable(
-+                    this.equipmentSlot, this.equipSound, this.model, this.cameraOverlay, this.allowedEntities, this.dispensable, this.swappable, this.damageOnHurt
++                    this.equipmentSlot,
++                    this.equipSound,
++                    this.model,
++                    this.cameraOverlay,
++                    this.allowedEntities,
++                    this.dispensable,
++                    this.swappable,
++                    this.damageOnHurt
 +                )
 +            );
 +        }
@@ -1400,39 +1389,34 @@ index 0000000000000000000000000000000000000000..9b2b12ffdad22d9059fa70078d4c9ccd
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperFireworks.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperFireworks.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fe42d8f5f0cb1127b248c78892479e743eea4b24
+index 0000000000000000000000000000000000000000..d7002c97086b55af851faaf8c65ad05c75381b02
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperFireworks.java
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,73 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import com.google.common.base.Preconditions;
-+import java.util.ArrayList;
-+import java.util.Collections;
++import io.papermc.paper.util.MCUtil;
++import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 +import java.util.List;
 +import net.minecraft.world.item.component.FireworkExplosion;
 +import org.bukkit.FireworkEffect;
 +import org.bukkit.craftbukkit.inventory.CraftMetaFirework;
 +import org.bukkit.craftbukkit.util.Handleable;
-+
-+import static io.papermc.paper.datacomponent.ComponentUtils.addAndConvert;
-+import static io.papermc.paper.datacomponent.ComponentUtils.transform;
++import org.jetbrains.annotations.Unmodifiable;
 +
 +public record PaperFireworks(
-+    net.minecraft.world.item.component.Fireworks impl,
-+    List<FireworkEffect> effects
++    net.minecraft.world.item.component.Fireworks impl
 +) implements Fireworks, Handleable<net.minecraft.world.item.component.Fireworks> {
-+
-+    public PaperFireworks(final net.minecraft.world.item.component.Fireworks impl) {
-+        this(
-+            impl,
-+            transform(impl.explosions(), CraftMetaFirework::getEffect)
-+        );
-+    }
 +
 +    @Override
 +    public net.minecraft.world.item.component.Fireworks getHandle() {
 +        return this.impl;
++    }
++
++    @Override
++    public @Unmodifiable List<FireworkEffect> effects() {
++        return MCUtil.transformUnmodifiable(impl.explosions(), CraftMetaFirework::getEffect);
 +    }
 +
 +    @Override
@@ -1442,7 +1426,7 @@ index 0000000000000000000000000000000000000000..fe42d8f5f0cb1127b248c78892479e74
 +
 +    static final class BuilderImpl implements Fireworks.Builder {
 +
-+        private final List<FireworkExplosion> effects = new ArrayList<>();
++        private final List<FireworkExplosion> effects = new ObjectArrayList<>();
 +        private int duration = 0; // default set from nms Fireworks component
 +
 +        @Override
@@ -1472,22 +1456,22 @@ index 0000000000000000000000000000000000000000..fe42d8f5f0cb1127b248c78892479e74
 +                net.minecraft.world.item.component.Fireworks.MAX_EXPLOSIONS,
 +                this.effects.size() + effects.size()
 +            );
-+            addAndConvert(this.effects, effects, CraftMetaFirework::getExplosion);
++            MCUtil.addAndConvert(this.effects, effects, CraftMetaFirework::getExplosion);
 +            return this;
 +        }
 +
 +        @Override
 +        public Fireworks build() {
-+            return new PaperFireworks(new net.minecraft.world.item.component.Fireworks(this.duration, Collections.unmodifiableList(this.effects)));
++            return new PaperFireworks(new net.minecraft.world.item.component.Fireworks(this.duration, new ObjectArrayList<>(this.effects)));
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperFoodProperties.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperFoodProperties.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..78a307dbe432efb56e3492c6a880be44a2ddd41b
+index 0000000000000000000000000000000000000000..2a043bb9001048f66d3a6aa8cb896b35bd2df606
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperFoodProperties.java
-@@ -0,0 +1,73 @@
+@@ -0,0 +1,72 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import com.google.common.base.Preconditions;
@@ -1496,7 +1480,6 @@ index 0000000000000000000000000000000000000000..78a307dbe432efb56e3492c6a880be44
 +public record PaperFoodProperties(
 +    net.minecraft.world.food.FoodProperties impl
 +) implements FoodProperties, Handleable<net.minecraft.world.food.FoodProperties> {
-+
 +
 +    @Override
 +    public int nutrition() {
@@ -1526,7 +1509,6 @@ index 0000000000000000000000000000000000000000..78a307dbe432efb56e3492c6a880be44
 +        return this.impl;
 +    }
 +
-+
 +    static final class BuilderImpl implements FoodProperties.Builder {
 +
 +        private boolean canAlwaysEat = false;
@@ -1538,6 +1520,7 @@ index 0000000000000000000000000000000000000000..78a307dbe432efb56e3492c6a880be44
 +            this.canAlwaysEat = canAlwaysEat;
 +            return this;
 +        }
++
 +        @Override
 +        public FoodProperties.Builder saturation(final float saturation) {
 +            this.saturation = saturation;
@@ -1563,36 +1546,29 @@ index 0000000000000000000000000000000000000000..78a307dbe432efb56e3492c6a880be44
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperItemAdventurePredicate.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperItemAdventurePredicate.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f69c8d0720d3cd106cad09441f5e883ea4b12aab
+index 0000000000000000000000000000000000000000..c7e40bd15b7063f155b2065927e8201f80fb6d0e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperItemAdventurePredicate.java
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,75 @@
 +package io.papermc.paper.datacomponent.item;
 +
-+import java.util.ArrayList;
-+import java.util.Collections;
-+import java.util.List;
-+import java.util.Optional;
 +import io.papermc.paper.block.BlockPredicate;
 +import io.papermc.paper.registry.RegistryKey;
 +import io.papermc.paper.registry.set.PaperRegistrySets;
++import io.papermc.paper.util.MCUtil;
++import it.unimi.dsi.fastutil.objects.ObjectArrayList;
++import java.util.List;
++import java.util.Optional;
 +import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.core.registries.Registries;
 +import org.bukkit.craftbukkit.util.Handleable;
 +
-+import static io.papermc.paper.datacomponent.ComponentUtils.transform;
-+
 +public record PaperItemAdventurePredicate(
-+    net.minecraft.world.item.AdventureModePredicate impl,
-+    List<BlockPredicate> predicates
++    net.minecraft.world.item.AdventureModePredicate impl
 +) implements ItemAdventurePredicate, Handleable<net.minecraft.world.item.AdventureModePredicate> {
 +
-+    public PaperItemAdventurePredicate(final net.minecraft.world.item.AdventureModePredicate itemModifiers) {
-+        this(itemModifiers, convert(itemModifiers));
-+    }
-+
 +    private static List<BlockPredicate> convert(final net.minecraft.world.item.AdventureModePredicate nmsModifiers) {
-+        return transform(nmsModifiers.predicates, nms -> BlockPredicate.predicate()
++        return MCUtil.transformUnmodifiable(nmsModifiers.predicates, nms -> BlockPredicate.predicate()
 +            .blocks(nms.blocks().map(blocks -> PaperRegistrySets.convertToApi(RegistryKey.BLOCK, blocks)).orElse(null)).build());
 +    }
 +
@@ -1608,17 +1584,17 @@ index 0000000000000000000000000000000000000000..f69c8d0720d3cd106cad09441f5e883e
 +
 +    @Override
 +    public PaperItemAdventurePredicate showInTooltip(final boolean showInTooltip) {
-+        return new PaperItemAdventurePredicate(this.impl.withTooltip(showInTooltip), this.predicates);
++        return new PaperItemAdventurePredicate(this.impl.withTooltip(showInTooltip));
 +    }
 +
 +    @Override
 +    public List<BlockPredicate> predicates() {
-+        return this.predicates;
++        return convert(this.impl);
 +    }
 +
 +    static final class BuilderImpl implements ItemAdventurePredicate.Builder {
 +
-+        private final List<net.minecraft.advancements.critereon.BlockPredicate> predicates = new ArrayList<>();
++        private final List<net.minecraft.advancements.critereon.BlockPredicate> predicates = new ObjectArrayList<>();
 +        private boolean showInTooltip = net.minecraft.world.item.component.ItemAttributeModifiers.EMPTY.showInTooltip();
 +
 +        @Override
@@ -1631,7 +1607,7 @@ index 0000000000000000000000000000000000000000..f69c8d0720d3cd106cad09441f5e883e
 +
 +        @Override
 +        public Builder addPredicates(final List<BlockPredicate> predicates) {
-+            for (BlockPredicate predicate : predicates) {
++            for (final BlockPredicate predicate : predicates) {
 +                this.addPredicate(predicate);
 +            }
 +            return this;
@@ -1645,7 +1621,7 @@ index 0000000000000000000000000000000000000000..f69c8d0720d3cd106cad09441f5e883e
 +
 +        @Override
 +        public ItemAdventurePredicate build() {
-+            return new PaperItemAdventurePredicate(new net.minecraft.world.item.AdventureModePredicate(Collections.unmodifiableList(this.predicates), this.showInTooltip));
++            return new PaperItemAdventurePredicate(new net.minecraft.world.item.AdventureModePredicate(new ObjectArrayList<>(this.predicates), this.showInTooltip));
 +        }
 +    }
 +}
@@ -1719,15 +1695,15 @@ index 0000000000000000000000000000000000000000..5d060c907f4b1bc2bae063ca1e3baf35
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperItemAttributeModifiers.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperItemAttributeModifiers.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..57a953eafda8a1b957022ce60c3fff64347427b0
+index 0000000000000000000000000000000000000000..47ca2b8eb1c1483b6049cf18c7d8a40dd20e7cab
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperItemAttributeModifiers.java
-@@ -0,0 +1,94 @@
+@@ -0,0 +1,97 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import com.google.common.base.Preconditions;
-+import java.util.ArrayList;
-+import java.util.Collections;
++import io.papermc.paper.util.MCUtil;
++import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 +import java.util.List;
 +import org.bukkit.attribute.Attribute;
 +import org.bukkit.attribute.AttributeModifier;
@@ -1737,20 +1713,14 @@ index 0000000000000000000000000000000000000000..57a953eafda8a1b957022ce60c3fff64
 +import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.bukkit.inventory.EquipmentSlotGroup;
-+
-+import static io.papermc.paper.datacomponent.ComponentUtils.transform;
++import org.jetbrains.annotations.Unmodifiable;
 +
 +public record PaperItemAttributeModifiers(
-+    net.minecraft.world.item.component.ItemAttributeModifiers impl,
-+    List<Entry> modifiers
++    net.minecraft.world.item.component.ItemAttributeModifiers impl
 +) implements ItemAttributeModifiers, Handleable<net.minecraft.world.item.component.ItemAttributeModifiers> {
 +
-+    public PaperItemAttributeModifiers(final net.minecraft.world.item.component.ItemAttributeModifiers itemModifiers) {
-+        this(itemModifiers, convert(itemModifiers));
-+    }
-+
 +    private static List<Entry> convert(final net.minecraft.world.item.component.ItemAttributeModifiers nmsModifiers) {
-+        return transform(nmsModifiers.modifiers(), nms -> new PaperEntry(
++        return MCUtil.transformUnmodifiable(nmsModifiers.modifiers(), nms -> new PaperEntry(
 +            CraftAttribute.minecraftHolderToBukkit(nms.attribute()),
 +            CraftAttributeInstance.convert(nms.modifier(), nms.slot())
 +        ));
@@ -1768,17 +1738,26 @@ index 0000000000000000000000000000000000000000..57a953eafda8a1b957022ce60c3fff64
 +
 +    @Override
 +    public ItemAttributeModifiers showInTooltip(final boolean showInTooltip) {
-+        return new PaperItemAttributeModifiers(this.impl.withTooltip(showInTooltip), this.modifiers);
++        return new PaperItemAttributeModifiers(this.impl.withTooltip(showInTooltip));
 +    }
 +
-+    // TODO maybe move to API as package-private so they can create Entry objects? not sure if needed
++    @Override
++    public @Unmodifiable List<Entry> modifiers() {
++        return convert(this.impl);
++    }
++
 +    public record PaperEntry(Attribute attribute, AttributeModifier modifier) implements ItemAttributeModifiers.Entry {
 +    }
 +
 +    static final class BuilderImpl implements ItemAttributeModifiers.Builder {
 +
-+        private final List<net.minecraft.world.item.component.ItemAttributeModifiers.Entry> entries = new ArrayList<>();
++        private final List<net.minecraft.world.item.component.ItemAttributeModifiers.Entry> entries = new ObjectArrayList<>();
 +        private boolean showInTooltip = net.minecraft.world.item.component.ItemAttributeModifiers.EMPTY.showInTooltip();
++
++        @Override
++        public Builder addModifier(final Attribute attribute, final AttributeModifier modifier) {
++            return this.addModifier(attribute, modifier, modifier.getSlotGroup());
++        }
 +
 +        @Override
 +        public ItemAttributeModifiers.Builder addModifier(final Attribute attribute, final AttributeModifier modifier, final EquipmentSlotGroup equipmentSlotGroup) {
@@ -1811,7 +1790,7 @@ index 0000000000000000000000000000000000000000..57a953eafda8a1b957022ce60c3fff64
 +            }
 +
 +            return new PaperItemAttributeModifiers(new net.minecraft.world.item.component.ItemAttributeModifiers(
-+                Collections.unmodifiableList(this.entries),
++                new ObjectArrayList<>(this.entries),
 +                this.showInTooltip
 +            ));
 +        }
@@ -1819,22 +1798,19 @@ index 0000000000000000000000000000000000000000..57a953eafda8a1b957022ce60c3fff64
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperItemContainerContents.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperItemContainerContents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c86e45feefd607091a48a8fd86b102983f863a75
+index 0000000000000000000000000000000000000000..e65603e711ecd08039361d291a0aac761a2f9349
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperItemContainerContents.java
-@@ -0,0 +1,68 @@
+@@ -0,0 +1,65 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import com.google.common.base.Preconditions;
-+import java.util.ArrayList;
++import io.papermc.paper.util.MCUtil;
++import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 +import java.util.List;
-+import java.util.function.Function;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.bukkit.inventory.ItemStack;
-+
-+import static io.papermc.paper.datacomponent.ComponentUtils.addAndConvert;
-+import static io.papermc.paper.datacomponent.ComponentUtils.transform;
 +
 +public record PaperItemContainerContents(
 +    net.minecraft.world.item.component.ItemContainerContents impl
@@ -1847,12 +1823,12 @@ index 0000000000000000000000000000000000000000..c86e45feefd607091a48a8fd86b10298
 +
 +    @Override
 +    public List<ItemStack> contents() {
-+        return transform(this.impl.items, CraftItemStack::asCraftMirror);
++        return MCUtil.transformUnmodifiable(this.impl.items, CraftItemStack::asBukkitCopy);
 +    }
 +
 +    static final class BuilderImpl implements ItemContainerContents.Builder {
 +
-+        private final List<net.minecraft.world.item.ItemStack> items = new ArrayList<>();
++        private final List<net.minecraft.world.item.ItemStack> items = new ObjectArrayList<>();
 +
 +        @Override
 +        public ItemContainerContents.Builder add(final ItemStack stack) {
@@ -1875,7 +1851,7 @@ index 0000000000000000000000000000000000000000..c86e45feefd607091a48a8fd86b10298
 +                net.minecraft.world.item.component.ItemContainerContents.MAX_SIZE,
 +                this.items.size() + stacks.size()
 +            );
-+            addAndConvert(this.items, stacks, itemStack -> {
++            MCUtil.addAndConvert(this.items, stacks, itemStack -> {
 +                Preconditions.checkNotNull(itemStack, "Cannot pass null itemstacks!");
 +                return CraftItemStack.asNMSCopy(itemStack);
 +            });
@@ -1887,23 +1863,24 @@ index 0000000000000000000000000000000000000000..c86e45feefd607091a48a8fd86b10298
 +            if (this.items.isEmpty()) {
 +                return new PaperItemContainerContents(net.minecraft.world.item.component.ItemContainerContents.EMPTY);
 +            }
-+            return new PaperItemContainerContents(net.minecraft.world.item.component.ItemContainerContents.fromItems(this.items)); // todo expose container slot?
++            return new PaperItemContainerContents(net.minecraft.world.item.component.ItemContainerContents.fromItems(this.items));
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperItemEnchantments.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperItemEnchantments.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9c857e2cfc1d1f981a17d2736bcdf8ca64e25788
+index 0000000000000000000000000000000000000000..3cfb18f6a4868ff32e2b118c5833b1b9864e967c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperItemEnchantments.java
-@@ -0,0 +1,91 @@
+@@ -0,0 +1,92 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import com.google.common.base.Preconditions;
++import it.unimi.dsi.fastutil.objects.Object2IntMap;
++import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 +import java.util.Collections;
 +import java.util.HashMap;
 +import java.util.Map;
-+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 +import net.minecraft.core.Holder;
 +import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
 +import org.bukkit.craftbukkit.util.Handleable;
@@ -1911,7 +1888,7 @@ index 0000000000000000000000000000000000000000..9c857e2cfc1d1f981a17d2736bcdf8ca
 +
 +public record PaperItemEnchantments(
 +    net.minecraft.world.item.enchantment.ItemEnchantments impl,
-+    Map<Enchantment, Integer> enchantments
++    Map<Enchantment, Integer> enchantments // API values are stored externally as the concept of a lazy key transformer map does not make much sense
 +) implements ItemEnchantments, Handleable<net.minecraft.world.item.enchantment.ItemEnchantments> {
 +
 +    public PaperItemEnchantments(final net.minecraft.world.item.enchantment.ItemEnchantments itemEnchantments) {
@@ -1926,7 +1903,7 @@ index 0000000000000000000000000000000000000000..9c857e2cfc1d1f981a17d2736bcdf8ca
 +        for (final Object2IntMap.Entry<Holder<net.minecraft.world.item.enchantment.Enchantment>> entry : itemEnchantments.entrySet()) {
 +            map.put(CraftEnchantment.minecraftHolderToBukkit(entry.getKey()), entry.getIntValue());
 +        }
-+        return Collections.unmodifiableMap(map); // TODO look into making a "transforming" map
++        return Collections.unmodifiableMap(map); // TODO look into making a "transforming" map maybe?
 +    }
 +
 +    @Override
@@ -1946,7 +1923,7 @@ index 0000000000000000000000000000000000000000..9c857e2cfc1d1f981a17d2736bcdf8ca
 +
 +    static final class BuilderImpl implements ItemEnchantments.Builder {
 +
-+        private final Map<Enchantment, Integer> enchantments = new HashMap<>();
++        private final Map<Enchantment, Integer> enchantments = new Object2ObjectOpenHashMap<>();
 +        private boolean showInTooltip = true;
 +
 +        @Override
@@ -1975,22 +1952,22 @@ index 0000000000000000000000000000000000000000..9c857e2cfc1d1f981a17d2736bcdf8ca
 +
 +        @Override
 +        public ItemEnchantments build() {
-+            net.minecraft.world.item.enchantment.ItemEnchantments initialEnchantments = net.minecraft.world.item.enchantment.ItemEnchantments.EMPTY.withTooltip(this.showInTooltip);
++            final net.minecraft.world.item.enchantment.ItemEnchantments initialEnchantments = net.minecraft.world.item.enchantment.ItemEnchantments.EMPTY.withTooltip(this.showInTooltip);
 +            if (this.enchantments.isEmpty()) {
 +                return new PaperItemEnchantments(initialEnchantments);
 +            }
 +
 +            final net.minecraft.world.item.enchantment.ItemEnchantments.Mutable mutable = new net.minecraft.world.item.enchantment.ItemEnchantments.Mutable(initialEnchantments);
-+            this.enchantments.forEach((enchantment, level) -> {
-+                mutable.set(CraftEnchantment.bukkitToMinecraftHolder(enchantment), level);
-+            });
++            this.enchantments.forEach((enchantment, level) ->
++                mutable.set(CraftEnchantment.bukkitToMinecraftHolder(enchantment), level)
++            );
 +            return new PaperItemEnchantments(mutable.toImmutable());
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperItemLore.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperItemLore.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6ca84a457393bf53ce8091424ab4e4e442168cdc
+index 0000000000000000000000000000000000000000..8f58b6869bb79428288a4be05424ace4d77c3845
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperItemLore.java
 @@ -0,0 +1,77 @@
@@ -1998,37 +1975,37 @@ index 0000000000000000000000000000000000000000..6ca84a457393bf53ce8091424ab4e4e4
 +
 +import com.google.common.base.Preconditions;
 +import io.papermc.paper.adventure.PaperAdventure;
++import io.papermc.paper.util.MCUtil;
++import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 +import java.util.ArrayList;
-+import java.util.Collections;
 +import java.util.List;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.ComponentLike;
 +import org.bukkit.craftbukkit.util.Handleable;
-+
-+import static io.papermc.paper.datacomponent.ComponentUtils.transform;
++import org.jetbrains.annotations.Unmodifiable;
 +
 +public record PaperItemLore(
-+    net.minecraft.world.item.component.ItemLore impl,
-+    List<Component> lines,
-+    List<Component> styledLines
++    net.minecraft.world.item.component.ItemLore impl
 +) implements ItemLore, Handleable<net.minecraft.world.item.component.ItemLore> {
-+
-+    public PaperItemLore(final net.minecraft.world.item.component.ItemLore impl) {
-+        this(
-+            impl,
-+            transform(impl.lines(), PaperAdventure::asAdventure),
-+            transform(impl.styledLines(), PaperAdventure::asAdventure)
-+        );
-+    }
 +
 +    @Override
 +    public net.minecraft.world.item.component.ItemLore getHandle() {
 +        return this.impl;
 +    }
 +
++    @Override
++    public @Unmodifiable List<Component> lines() {
++        return MCUtil.transformUnmodifiable(impl.lines(), PaperAdventure::asAdventure);
++    }
++
++    @Override
++    public @Unmodifiable List<Component> styledLines() {
++        return MCUtil.transformUnmodifiable(impl.styledLines(), PaperAdventure::asAdventure);
++    }
++
 +    static final class BuilderImpl implements ItemLore.Builder {
 +
-+        private List<Component> lines = new ArrayList<>();
++        private List<Component> lines = new ObjectArrayList<>();
 +
 +        private static void validateLineCount(final int current, final int add) {
 +            final int newSize = current + add;
@@ -2066,47 +2043,42 @@ index 0000000000000000000000000000000000000000..6ca84a457393bf53ce8091424ab4e4e4
 +            if (this.lines.isEmpty()) {
 +                return new PaperItemLore(net.minecraft.world.item.component.ItemLore.EMPTY);
 +            }
-+            final List<net.minecraft.network.chat.Component> lines = PaperAdventure.asVanilla(this.lines);
-+            return new PaperItemLore(new net.minecraft.world.item.component.ItemLore(Collections.unmodifiableList(lines)));
++
++            return new PaperItemLore(new net.minecraft.world.item.component.ItemLore(PaperAdventure.asVanilla(this.lines))); // asVanilla does a list clone
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperItemTool.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperItemTool.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0a1511f3d028bf04c3e2cc39e3ca7d5d25bf3f6a
+index 0000000000000000000000000000000000000000..538a61eaa02c029b4d92f938e0ffde8aa6cf027c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperItemTool.java
-@@ -0,0 +1,101 @@
+@@ -0,0 +1,100 @@
 +package io.papermc.paper.datacomponent.item;
 +
-+import java.util.ArrayList;
-+import java.util.Collection;
-+import java.util.List;
-+import java.util.Optional;
 +import com.google.common.base.Preconditions;
 +import io.papermc.paper.registry.RegistryKey;
 +import io.papermc.paper.registry.set.PaperRegistrySets;
 +import io.papermc.paper.registry.set.RegistryKeySet;
++import io.papermc.paper.util.MCUtil;
++import it.unimi.dsi.fastutil.objects.ObjectArrayList;
++import java.util.Collection;
++import java.util.List;
++import java.util.Optional;
 +import net.kyori.adventure.util.TriState;
 +import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.core.registries.Registries;
 +import org.bukkit.block.BlockType;
 +import org.bukkit.craftbukkit.util.Handleable;
-+import org.jspecify.annotations.Nullable;
-+
-+import static io.papermc.paper.datacomponent.ComponentUtils.transform;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.jetbrains.annotations.Unmodifiable;
 +
 +public record PaperItemTool(
-+    net.minecraft.world.item.component.Tool impl,
-+    List<Tool.Rule> rules
++    net.minecraft.world.item.component.Tool impl
 +) implements Tool, Handleable<net.minecraft.world.item.component.Tool> {
 +
-+    public PaperItemTool(final net.minecraft.world.item.component.Tool tool) {
-+        this(tool, convert(tool));
-+    }
-+
-+    private static List<Tool.Rule> convert(final net.minecraft.world.item.component.Tool tool) {
-+        return transform(tool.rules(), nms -> new PaperRule(
++    private static List<Tool.Rule> convert(final List<net.minecraft.world.item.component.Tool.Rule> tool) {
++        return MCUtil.transformUnmodifiable(tool, nms -> new PaperRule(
 +            PaperRegistrySets.convertToApi(RegistryKey.BLOCK, nms.blocks()),
 +            nms.speed().orElse(null),
 +            TriState.byBoolean(nms.correctForDrops().orElse(null))
@@ -2119,6 +2091,11 @@ index 0000000000000000000000000000000000000000..0a1511f3d028bf04c3e2cc39e3ca7d5d
 +    }
 +
 +    @Override
++    public @Unmodifiable List<Rule> rules() {
++        return convert(this.impl.rules());
++    }
++
++    @Override
 +    public float defaultMiningSpeed() {
 +        return this.impl.defaultMiningSpeed();
 +    }
@@ -2128,7 +2105,6 @@ index 0000000000000000000000000000000000000000..0a1511f3d028bf04c3e2cc39e3ca7d5d
 +        return this.impl.damagePerBlock();
 +    }
 +
-+    // TODO maybe move to API as package-private so they can create Entry objects? not sure if needed
 +    record PaperRule(RegistryKeySet<BlockType> blocks, @Nullable Float speed, TriState correctForDrops) implements Rule {
 +
 +        public static PaperRule fromUnsafe(final RegistryKeySet<BlockType> blocks, final @Nullable Float speed, final TriState correctForDrops) {
@@ -2139,7 +2115,7 @@ index 0000000000000000000000000000000000000000..0a1511f3d028bf04c3e2cc39e3ca7d5d
 +
 +    static final class BuilderImpl implements Builder {
 +
-+        private final List<net.minecraft.world.item.component.Tool.Rule> rules = new ArrayList<>();
++        private final List<net.minecraft.world.item.component.Tool.Rule> rules = new ObjectArrayList<>();
 +        private int damage = 1;
 +        private float miningSpeed = 1.0F;
 +
@@ -2174,13 +2150,13 @@ index 0000000000000000000000000000000000000000..0a1511f3d028bf04c3e2cc39e3ca7d5d
 +
 +        @Override
 +        public Tool build() {
-+            return new PaperItemTool(new net.minecraft.world.item.component.Tool(this.rules, this.miningSpeed, this.damage));
++            return new PaperItemTool(new net.minecraft.world.item.component.Tool(new ObjectArrayList<>(this.rules), this.miningSpeed, this.damage));
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperJukeboxPlayable.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperJukeboxPlayable.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..083075dd4f59b2ef20ca71ba93ffcf76b715a7a4
+index 0000000000000000000000000000000000000000..eb7209d42e7c44ae7c9b31663aa94ed6cc77f592
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperJukeboxPlayable.java
 @@ -0,0 +1,58 @@
@@ -2220,7 +2196,7 @@ index 0000000000000000000000000000000000000000..083075dd4f59b2ef20ca71ba93ffcf76
 +        private JukeboxSong song;
 +        private boolean showInTooltip = true;
 +
-+        BuilderImpl(JukeboxSong song) {
++        BuilderImpl(final JukeboxSong song) {
 +            this.song = song;
 +        }
 +
@@ -2303,14 +2279,14 @@ index 0000000000000000000000000000000000000000..5b97249f6ae90bc1a10c2089e39f0640
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperMapDecorations.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperMapDecorations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d360c13524a61ab4f82d5b4fd4fa36d881902b55
+index 0000000000000000000000000000000000000000..322a1285b0c5127abb67ccab478f1b16b44d0be4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperMapDecorations.java
 @@ -0,0 +1,97 @@
 +package io.papermc.paper.datacomponent.item;
 +
++import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 +import java.util.Collections;
-+import java.util.HashMap;
 +import java.util.Map;
 +import java.util.Set;
 +import org.bukkit.craftbukkit.map.CraftMapCursor;
@@ -2344,7 +2320,7 @@ index 0000000000000000000000000000000000000000..d360c13524a61ab4f82d5b4fd4fa36d8
 +        }
 +
 +        final Set<Map.Entry<String, net.minecraft.world.item.component.MapDecorations.Entry>> entries = this.impl.decorations().entrySet();
-+        final Map<String, DecorationEntry> decorations = new HashMap<>(entries.size());
++        final Map<String, DecorationEntry> decorations = new Object2ObjectOpenHashMap<>(entries.size());
 +        for (final Map.Entry<String, net.minecraft.world.item.component.MapDecorations.Entry> entry : entries) {
 +            decorations.put(entry.getKey(), new PaperDecorationEntry(entry.getValue()));
 +        }
@@ -2381,7 +2357,7 @@ index 0000000000000000000000000000000000000000..d360c13524a61ab4f82d5b4fd4fa36d8
 +
 +    static final class BuilderImpl implements Builder {
 +
-+        private final Map<String, net.minecraft.world.item.component.MapDecorations.Entry> entries = new HashMap<>();
++        private final Map<String, net.minecraft.world.item.component.MapDecorations.Entry> entries = new Object2ObjectOpenHashMap<>();
 +
 +        @Override
 +        public MapDecorations.Builder put(final String id, final DecorationEntry entry) {
@@ -2400,7 +2376,7 @@ index 0000000000000000000000000000000000000000..d360c13524a61ab4f82d5b4fd4fa36d8
 +            if (this.entries.isEmpty()) {
 +                return new PaperMapDecorations(net.minecraft.world.item.component.MapDecorations.EMPTY);
 +            }
-+            return new PaperMapDecorations(new net.minecraft.world.item.component.MapDecorations(Collections.unmodifiableMap(this.entries)));
++            return new PaperMapDecorations(new net.minecraft.world.item.component.MapDecorations(new Object2ObjectOpenHashMap<>(this.entries)));
 +        }
 +    }
 +}
@@ -2496,10 +2472,10 @@ index 0000000000000000000000000000000000000000..a7ed2aa21d0384384a4c5830ead544cb
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperPotDecorations.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperPotDecorations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..36caca9b857db75e8bdc5beefe9d1c2ad748a3c9
+index 0000000000000000000000000000000000000000..bde757b51d0ae6a36870c789d416ec0e05c4cadf
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperPotDecorations.java
-@@ -0,0 +1,87 @@
+@@ -0,0 +1,83 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import java.util.Optional;
@@ -2546,28 +2522,24 @@ index 0000000000000000000000000000000000000000..36caca9b857db75e8bdc5beefe9d1c2a
 +
 +        @Override
 +        public PotDecorations.Builder back(final @Nullable ItemType back) {
-+            //Preconditions.checkArgument(back == null, "%s is not an item", back);
 +            this.back = back;
 +            return this;
 +        }
 +
 +        @Override
 +        public PotDecorations.Builder left(final @Nullable ItemType left) {
-+            //Preconditions.checkArgument(left == null, "%s is not an item", left);
 +            this.left = left;
 +            return this;
 +        }
 +
 +        @Override
 +        public PotDecorations.Builder right(final @Nullable ItemType right) {
-+            //Preconditions.checkArgument(right == null, "%s is not an item", right);
 +            this.right = right;
 +            return this;
 +        }
 +
 +        @Override
 +        public PotDecorations.Builder front(final @Nullable ItemType front) {
-+            //Preconditions.checkArgument(front == null, "%s is not an item", front);
 +            this.front = front;
 +            return this;
 +        }
@@ -2589,15 +2561,15 @@ index 0000000000000000000000000000000000000000..36caca9b857db75e8bdc5beefe9d1c2a
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperPotionContents.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperPotionContents.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0a3894a9f538d659d4410d070417f96c1cd9d789
+index 0000000000000000000000000000000000000000..196297175610644a5a4cad8e619303b4517df274
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperPotionContents.java
-@@ -0,0 +1,108 @@
+@@ -0,0 +1,103 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import com.google.common.base.Preconditions;
-+import java.util.ArrayList;
-+import java.util.Collections;
++import io.papermc.paper.util.MCUtil;
++import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 +import java.util.List;
 +import java.util.Optional;
 +import net.minecraft.world.effect.MobEffectInstance;
@@ -2607,25 +2579,21 @@ index 0000000000000000000000000000000000000000..0a3894a9f538d659d4410d070417f96c
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.bukkit.potion.PotionEffect;
 +import org.bukkit.potion.PotionType;
-+import org.jspecify.annotations.Nullable;
-+
-+import static io.papermc.paper.datacomponent.ComponentUtils.transform;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.jetbrains.annotations.Unmodifiable;
 +
 +public record PaperPotionContents(
-+    net.minecraft.world.item.alchemy.PotionContents impl,
-+    List<PotionEffect> customEffects
++    net.minecraft.world.item.alchemy.PotionContents impl
 +) implements PotionContents, Handleable<net.minecraft.world.item.alchemy.PotionContents> {
-+
-+    public PaperPotionContents(final net.minecraft.world.item.alchemy.PotionContents impl) {
-+        this(
-+            impl,
-+            transform(impl.customEffects(), CraftPotionUtil::toBukkit)
-+        );
-+    }
 +
 +    @Override
 +    public net.minecraft.world.item.alchemy.PotionContents getHandle() {
 +        return this.impl;
++    }
++
++    @Override
++    public @Unmodifiable List<PotionEffect> customEffects() {
++        return MCUtil.transformUnmodifiable(impl.customEffects(), CraftPotionUtil::toBukkit);
 +    }
 +
 +    @Override
@@ -2644,13 +2612,12 @@ index 0000000000000000000000000000000000000000..0a3894a9f538d659d4410d070417f96c
 +
 +    @Override
 +    public @Nullable String customName() {
-+        return this.impl.customName()
-+            .orElse(null);
++        return this.impl.customName().orElse(null);
 +    }
 +
 +    static final class BuilderImpl implements PotionContents.Builder {
 +
-+        private final List<MobEffectInstance> customEffects = new ArrayList<>();
++        private final List<MobEffectInstance> customEffects = new ObjectArrayList<>();
 +        private @Nullable PotionType type;
 +        private @Nullable Color color;
 +        private @Nullable String customName;
@@ -2695,7 +2662,7 @@ index 0000000000000000000000000000000000000000..0a3894a9f538d659d4410d070417f96c
 +            return new PaperPotionContents(new net.minecraft.world.item.alchemy.PotionContents(
 +                Optional.ofNullable(this.type).map(CraftPotionType::bukkitToMinecraftHolder),
 +                Optional.ofNullable(this.color).map(Color::asARGB),
-+                Collections.unmodifiableList(this.customEffects),
++                new ObjectArrayList<>(this.customEffects),
 +                Optional.ofNullable(this.customName)
 +            ));
 +        }
@@ -2731,7 +2698,7 @@ index 0000000000000000000000000000000000000000..96345e051c4aa77820e857a02768b684
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperResolvableProfile.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperResolvableProfile.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5e6672768470dc21ad3e14bc9a9ae3dd435205ff
+index 0000000000000000000000000000000000000000..2c59b17f58502402c3234289b38da28672244cbb
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperResolvableProfile.java
 @@ -0,0 +1,105 @@
@@ -2743,27 +2710,19 @@ index 0000000000000000000000000000000000000000..5e6672768470dc21ad3e14bc9a9ae3dd
 +import com.google.common.base.Preconditions;
 +import com.mojang.authlib.properties.Property;
 +import com.mojang.authlib.properties.PropertyMap;
++import io.papermc.paper.util.MCUtil;
 +import java.util.Collection;
 +import java.util.Optional;
 +import java.util.UUID;
 +import java.util.concurrent.CompletableFuture;
 +import net.minecraft.util.StringUtil;
 +import org.bukkit.craftbukkit.util.Handleable;
-+import org.jspecify.annotations.Nullable;
-+
-+import static io.papermc.paper.datacomponent.ComponentUtils.transform;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.jetbrains.annotations.Unmodifiable;
 +
 +public record PaperResolvableProfile(
-+    net.minecraft.world.item.component.ResolvableProfile impl,
-+    Collection<ProfileProperty> properties
++    net.minecraft.world.item.component.ResolvableProfile impl
 +) implements ResolvableProfile, Handleable<net.minecraft.world.item.component.ResolvableProfile> {
-+
-+    public PaperResolvableProfile(final net.minecraft.world.item.component.ResolvableProfile impl) {
-+        this(
-+            impl,
-+            transform(impl.properties().values(), input -> new ProfileProperty(input.name(), input.value(), input.signature()))
-+        );
-+    }
 +
 +    static PaperResolvableProfile toApi(final PlayerProfile profile) {
 +        return new PaperResolvableProfile(new net.minecraft.world.item.component.ResolvableProfile(CraftPlayerProfile.asAuthlibCopy(profile)));
@@ -2782,6 +2741,11 @@ index 0000000000000000000000000000000000000000..5e6672768470dc21ad3e14bc9a9ae3dd
 +    @Override
 +    public @Nullable String name() {
 +        return this.impl.name().orElse(null);
++    }
++
++    @Override
++    public @Unmodifiable Collection<ProfileProperty> properties() {
++        return MCUtil.transformUnmodifiable(impl.properties().values(), input -> new ProfileProperty(input.name(), input.value(), input.signature()));
 +    }
 +
 +    @Override
@@ -2814,9 +2778,9 @@ index 0000000000000000000000000000000000000000..5e6672768470dc21ad3e14bc9a9ae3dd
 +        @Override
 +        public ResolvableProfile.Builder addProperty(final ProfileProperty property) {
 +            // ProfileProperty constructor already has specific validations
-+            Property newProperty = new Property(property.getName(), property.getValue(), property.getSignature());
++            final Property newProperty = new Property(property.getName(), property.getValue(), property.getSignature());
 +            if (!this.propertyMap.containsEntry(property.getName(), newProperty)) { // underlying map is a multimap that doesn't allow duplicate key-value pair
-+                int newSize = this.propertyMap.size() + 1;
++                final int newSize = this.propertyMap.size() + 1;
 +                Preconditions.checkArgument(newSize <= 16, "Cannot have more than 16 properties, was %s", newSize);
 +            }
 +
@@ -2832,10 +2796,13 @@ index 0000000000000000000000000000000000000000..5e6672768470dc21ad3e14bc9a9ae3dd
 +
 +        @Override
 +        public ResolvableProfile build() {
++            final PropertyMap shallowCopy = new PropertyMap();
++            shallowCopy.putAll(this.propertyMap);
++
 +            return new PaperResolvableProfile(new net.minecraft.world.item.component.ResolvableProfile(
 +                Optional.ofNullable(this.name),
 +                Optional.ofNullable(this.uuid),
-+                this.propertyMap
++                shallowCopy
 +            ));
 +        }
 +    }
@@ -2907,43 +2874,40 @@ index 0000000000000000000000000000000000000000..1ee469b3b690a877e066dbca79706678
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperSuspiciousStewEffects.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperSuspiciousStewEffects.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dc82cd6c888c7284835daf094a6aa7888728e4d8
+index 0000000000000000000000000000000000000000..69801d8f22945b9818299d8e770fe80a28da7018
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperSuspiciousStewEffects.java
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,58 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import io.papermc.paper.potion.SuspiciousEffectEntry;
-+import java.util.ArrayList;
++import io.papermc.paper.util.MCUtil;
++import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 +import java.util.Collection;
-+import java.util.Collections;
 +import java.util.List;
 +import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 +import org.bukkit.craftbukkit.util.Handleable;
++import org.jetbrains.annotations.Unmodifiable;
 +
-+import static io.papermc.paper.datacomponent.ComponentUtils.transform;
 +import static io.papermc.paper.potion.SuspiciousEffectEntry.create;
 +
 +public record PaperSuspiciousStewEffects(
-+    net.minecraft.world.item.component.SuspiciousStewEffects impl,
-+    List<SuspiciousEffectEntry> effects
++    net.minecraft.world.item.component.SuspiciousStewEffects impl
 +) implements SuspiciousStewEffects, Handleable<net.minecraft.world.item.component.SuspiciousStewEffects> {
-+
-+    public PaperSuspiciousStewEffects(final net.minecraft.world.item.component.SuspiciousStewEffects impl) {
-+        this(
-+            impl,
-+            transform(impl.effects(), entry -> create(CraftPotionEffectType.minecraftHolderToBukkit(entry.effect()), entry.duration()))
-+        );
-+    }
 +
 +    @Override
 +    public net.minecraft.world.item.component.SuspiciousStewEffects getHandle() {
 +        return this.impl;
 +    }
 +
++    @Override
++    public @Unmodifiable List<SuspiciousEffectEntry> effects() {
++        return MCUtil.transformUnmodifiable(impl.effects(), entry -> create(CraftPotionEffectType.minecraftHolderToBukkit(entry.effect()), entry.duration()));
++    }
++
 +    static final class BuilderImpl implements Builder {
 +
-+        private final List<net.minecraft.world.item.component.SuspiciousStewEffects.Entry> effects = new ArrayList<>();
++        private final List<net.minecraft.world.item.component.SuspiciousStewEffects.Entry> effects = new ObjectArrayList<>();
 +
 +        @Override
 +        public Builder add(final SuspiciousEffectEntry entry) {
@@ -2965,8 +2929,9 @@ index 0000000000000000000000000000000000000000..dc82cd6c888c7284835daf094a6aa788
 +            if (this.effects.isEmpty()) {
 +                return new PaperSuspiciousStewEffects(net.minecraft.world.item.component.SuspiciousStewEffects.EMPTY);
 +            }
++
 +            return new PaperSuspiciousStewEffects(
-+                new net.minecraft.world.item.component.SuspiciousStewEffects(Collections.unmodifiableList(this.effects))
++                new net.minecraft.world.item.component.SuspiciousStewEffects(new ObjectArrayList<>(this.effects))
 +            );
 +        }
 +    }
@@ -3018,17 +2983,17 @@ index 0000000000000000000000000000000000000000..edeb3308af4c359d1930fdbc54177274
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperUseCooldown.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperUseCooldown.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b4d8984f846eadba3403dd18b351161f6cff62a4
+index 0000000000000000000000000000000000000000..1aeab920faaf5653ddb8e77372060fb8d3226641
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperUseCooldown.java
 @@ -0,0 +1,56 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import io.papermc.paper.adventure.PaperAdventure;
++import java.util.Optional;
 +import net.kyori.adventure.key.Key;
 +import net.minecraft.resources.ResourceLocation;
 +import org.bukkit.craftbukkit.util.Handleable;
-+import java.util.Optional;
 +import org.jspecify.annotations.Nullable;
 +
 +public record PaperUseCooldown(
@@ -3080,10 +3045,10 @@ index 0000000000000000000000000000000000000000..b4d8984f846eadba3403dd18b351161f
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperUseRemainder.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperUseRemainder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..873492f0acfecb87246502785add85eebfb0ee8c
+index 0000000000000000000000000000000000000000..c2c04506940704c2ec9a5e6bb469c4771e2d49c2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperUseRemainder.java
-@@ -0,0 +1,21 @@
+@@ -0,0 +1,20 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -3099,7 +3064,6 @@ index 0000000000000000000000000000000000000000..873492f0acfecb87246502785add85ee
 +        return this.impl;
 +    }
 +
-+
 +    @Override
 +    public ItemStack transformInto() {
 +        return CraftItemStack.asBukkitCopy(this.impl.convertInto());
@@ -3107,44 +3071,41 @@ index 0000000000000000000000000000000000000000..873492f0acfecb87246502785add85ee
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperWritableBookContent.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperWritableBookContent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a66a16956e5e88a0b2a0388abc726023669034ed
+index 0000000000000000000000000000000000000000..a254d6a3af97891aafd22903cd138afdbaf8177e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperWritableBookContent.java
-@@ -0,0 +1,108 @@
+@@ -0,0 +1,105 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import com.google.common.base.Preconditions;
 +import io.papermc.paper.util.Filtered;
-+import java.util.ArrayList;
-+import java.util.Collections;
++import io.papermc.paper.util.MCUtil;
++import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 +import java.util.List;
 +import java.util.Optional;
 +import net.minecraft.server.network.Filterable;
 +import org.bukkit.craftbukkit.util.Handleable;
++import org.jetbrains.annotations.Unmodifiable;
 +
-+import static io.papermc.paper.datacomponent.ComponentUtils.transform;
 +import static io.papermc.paper.util.Filtered.of;
 +
 +public record PaperWritableBookContent(
-+    net.minecraft.world.item.component.WritableBookContent impl,
-+    List<Filtered<String>> pages
++    net.minecraft.world.item.component.WritableBookContent impl
 +) implements WritableBookContent, Handleable<net.minecraft.world.item.component.WritableBookContent> {
-+
-+    public PaperWritableBookContent(final net.minecraft.world.item.component.WritableBookContent impl) {
-+        this(
-+            impl,
-+            transform(impl.pages(), input -> of(input.raw(), input.filtered().orElse(null)))
-+        );
-+    }
 +
 +    @Override
 +    public net.minecraft.world.item.component.WritableBookContent getHandle() {
 +        return this.impl;
 +    }
 +
++    @Override
++    public @Unmodifiable List<Filtered<String>> pages() {
++        return MCUtil.transformUnmodifiable(impl.pages(), input -> of(input.raw(), input.filtered().orElse(null)));
++    }
++
 +    static final class BuilderImpl implements WritableBookContent.Builder {
 +
-+        private final List<Filterable<String>> pages = new ArrayList<>();
++        private final List<Filterable<String>> pages = new ObjectArrayList<>();
 +
 +        private static void validatePageLength(final String page) {
 +            Preconditions.checkArgument(
@@ -3214,24 +3175,24 @@ index 0000000000000000000000000000000000000000..a66a16956e5e88a0b2a0388abc726023
 +            }
 +
 +            return new PaperWritableBookContent(
-+                new net.minecraft.world.item.component.WritableBookContent(Collections.unmodifiableList(this.pages))
++                new net.minecraft.world.item.component.WritableBookContent(new ObjectArrayList<>(this.pages))
 +            );
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperWrittenBookContent.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperWrittenBookContent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2d9b50a41efbfd1b91b82eff3c7818351af0693f
+index 0000000000000000000000000000000000000000..567725dd0b4dfdb50a73de2557dbe0f576c6150e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperWrittenBookContent.java
-@@ -0,0 +1,188 @@
+@@ -0,0 +1,183 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import com.google.common.base.Preconditions;
 +import io.papermc.paper.adventure.PaperAdventure;
 +import io.papermc.paper.util.Filtered;
-+import java.util.ArrayList;
-+import java.util.Collections;
++import io.papermc.paper.util.MCUtil;
++import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 +import java.util.List;
 +import java.util.Optional;
 +import net.kyori.adventure.text.Component;
@@ -3240,27 +3201,14 @@ index 0000000000000000000000000000000000000000..2d9b50a41efbfd1b91b82eff3c781835
 +import net.minecraft.server.network.Filterable;
 +import net.minecraft.util.GsonHelper;
 +import org.bukkit.craftbukkit.util.Handleable;
-+import org.jspecify.annotations.NullMarked;
++import org.jetbrains.annotations.Unmodifiable;
 +
 +import static io.papermc.paper.adventure.PaperAdventure.asAdventure;
 +import static io.papermc.paper.adventure.PaperAdventure.asVanilla;
-+import static io.papermc.paper.datacomponent.ComponentUtils.transform;
 +
-+@NullMarked
 +public record PaperWrittenBookContent(
-+    net.minecraft.world.item.component.WrittenBookContent impl,
-+    List<Filtered<Component>> pages
++    net.minecraft.world.item.component.WrittenBookContent impl
 +) implements WrittenBookContent, Handleable<net.minecraft.world.item.component.WrittenBookContent> {
-+
-+    public PaperWrittenBookContent(final net.minecraft.world.item.component.WrittenBookContent impl) {
-+        this(
-+            impl,
-+            transform(
-+                impl.pages(),
-+                page -> Filtered.of(asAdventure(page.raw()), page.filtered().map(PaperAdventure::asAdventure).orElse(null))
-+            )
-+        );
-+    }
 +
 +    @Override
 +    public net.minecraft.world.item.component.WrittenBookContent getHandle() {
@@ -3283,13 +3231,21 @@ index 0000000000000000000000000000000000000000..2d9b50a41efbfd1b91b82eff3c781835
 +    }
 +
 +    @Override
++    public @Unmodifiable List<Filtered<Component>> pages() {
++        return MCUtil.transformUnmodifiable(
++            impl.pages(),
++            page -> Filtered.of(asAdventure(page.raw()), page.filtered().map(PaperAdventure::asAdventure).orElse(null))
++        );
++    }
++
++    @Override
 +    public boolean resolved() {
 +        return this.impl.resolved();
 +    }
 +
 +    static final class BuilderImpl implements WrittenBookContent.Builder {
 +
-+        private final List<Filterable<net.minecraft.network.chat.Component>> pages = new ArrayList<>();
++        private final List<Filterable<net.minecraft.network.chat.Component>> pages = new ObjectArrayList<>();
 +        private Filterable<String> title;
 +        private String author;
 +        private int generation = 0;
@@ -3407,7 +3363,7 @@ index 0000000000000000000000000000000000000000..2d9b50a41efbfd1b91b82eff3c781835
 +                this.title,
 +                this.author,
 +                this.generation,
-+                Collections.unmodifiableList(this.pages),
++                new ObjectArrayList<>(this.pages),
 +                this.resolved
 +            ));
 +        }
@@ -3415,19 +3371,19 @@ index 0000000000000000000000000000000000000000..2d9b50a41efbfd1b91b82eff3c781835
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/consumable/ConsumableTypesBridgeImpl.java b/src/main/java/io/papermc/paper/datacomponent/item/consumable/ConsumableTypesBridgeImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9bc9dc80dde84abb7839ddee8130b6ee09ce53db
+index 0000000000000000000000000000000000000000..c96cb39cf21ebe33d09733affc3cb031d94213f2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/consumable/ConsumableTypesBridgeImpl.java
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,66 @@
 +package io.papermc.paper.datacomponent.item.consumable;
 +
 +import com.google.common.base.Preconditions;
-+import java.util.ArrayList;
-+import java.util.List;
 +import com.google.common.collect.Lists;
-+import io.papermc.paper.datacomponent.ComponentUtils;
 +import io.papermc.paper.registry.set.PaperRegistrySets;
 +import io.papermc.paper.registry.set.RegistryKeySet;
++import java.util.ArrayList;
++import java.util.List;
++import io.papermc.paper.util.MCUtil;
 +import net.kyori.adventure.key.Key;
 +import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.core.registries.Registries;
@@ -3435,8 +3391,10 @@ index 0000000000000000000000000000000000000000..9bc9dc80dde84abb7839ddee8130b6ee
 +import org.bukkit.potion.PotionEffect;
 +import org.bukkit.potion.PotionEffectType;
 +import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +@ApiStatus.Internal
++@NullMarked
 +public class ConsumableTypesBridgeImpl implements ConsumableTypesBridge {
 +
 +    @Override
@@ -3470,7 +3428,7 @@ index 0000000000000000000000000000000000000000..9bc9dc80dde84abb7839ddee8130b6ee
 +    public ConsumeEffect.PlaySound playSoundEffect(final Key sound) {
 +        return new PaperPlaySound(
 +            new net.minecraft.world.item.consume_effects.PlaySoundConsumeEffect(
-+                ComponentUtils.keyToSound(sound)
++                MCUtil.keyToSound(sound)
 +            )
 +        );
 +    }
@@ -3714,7 +3672,7 @@ index f8c6da955e4bd0e480c7b581d2a4325738f9dd6f..ee1fce58c6e57dd93a30ee66e7488a92
              // data-drivens
              entry(Registries.BIOME, RegistryKey.BIOME, Biome.class, CraftBiome::new).delayed(),
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index 756c73a401437566258813946fa10c7caa8f2469..fc18f72260f3dc1643c35169aad3ad32fa7a19dd 100644
+index 756c73a401437566258813946fa10c7caa8f2469..f89c660e07d791fbe06c11ae81f9eb638c0013d5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 @@ -206,7 +206,7 @@ public final class CraftItemStack extends ItemStack {
@@ -3893,7 +3851,7 @@ index 756c73a401437566258813946fa10c7caa8f2469..fc18f72260f3dc1643c35169aad3ad32
 +    }
 +
 +    @Override
-+    public boolean matchesWithoutData(final ItemStack item, final java.util.Collection<io.papermc.paper.datacomponent.DataComponentType> exclude, final boolean ignoreCount) {
++    public boolean matchesWithoutData(final ItemStack item, final java.util.Set<io.papermc.paper.datacomponent.DataComponentType> exclude, final boolean ignoreCount) {
 +        // Extracted from base equals
 +        final CraftItemStack craftStack = getCraftStack(item);
 +        if (this.handle == craftStack.handle) return true;
@@ -4012,10 +3970,10 @@ index 0000000000000000000000000000000000000000..852ab097181491735fb9ee5ee4f70e4c
 +io.papermc.paper.datacomponent.item.consumable.ConsumableTypesBridgeImpl
 diff --git a/src/test/java/io/papermc/paper/datacomponent/DataComponentTypesTest.java b/src/test/java/io/papermc/paper/datacomponent/DataComponentTypesTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e7aa11bcddc2d4f1747a6fe68b22c42d1b9f0e24
+index 0000000000000000000000000000000000000000..1d707114f53e80bf278dc640c55b515d85f03120
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/datacomponent/DataComponentTypesTest.java
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,58 @@
 +package io.papermc.paper.datacomponent;
 +
 +import com.google.common.collect.Collections2;
@@ -4041,7 +3999,9 @@ index 0000000000000000000000000000000000000000..e7aa11bcddc2d4f1747a6fe68b22c42d
 +        ResourceLocation.parse("bees"),
 +        ResourceLocation.parse("debug_stick_state"),
 +        ResourceLocation.parse("block_entity_data"),
-+        ResourceLocation.parse("bucket_entity_data")
++        ResourceLocation.parse("bucket_entity_data"),
++        ResourceLocation.parse("lock"),
++        ResourceLocation.parse("creative_slot_lock")
 +    );
 +
 +    @Test
@@ -4074,16 +4034,14 @@ index 0000000000000000000000000000000000000000..e7aa11bcddc2d4f1747a6fe68b22c42d
 +}
 diff --git a/src/test/java/io/papermc/paper/item/ItemStackDataComponentEqualsTest.java b/src/test/java/io/papermc/paper/item/ItemStackDataComponentEqualsTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6a287dcd4b42fa494117ae3f07def596c69d29da
+index 0000000000000000000000000000000000000000..4ee0491763341232844a99aa528310a3b3dca1d5
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/item/ItemStackDataComponentEqualsTest.java
-@@ -0,0 +1,94 @@
+@@ -0,0 +1,92 @@
 +package io.papermc.paper.item;
 +
 +import io.papermc.paper.datacomponent.DataComponentTypes;
-+import io.papermc.paper.registry.RegistryKey;
-+import io.papermc.paper.registry.keys.DataComponentTypeKeys;
-+import io.papermc.paper.registry.set.RegistrySet;
++import java.util.Set;
 +import net.kyori.adventure.text.Component;
 +import org.bukkit.Material;
 +import org.bukkit.inventory.ItemStack;
@@ -4104,7 +4062,7 @@ index 0000000000000000000000000000000000000000..6a287dcd4b42fa494117ae3f07def596
 +        item2.setData(DataComponentTypes.MAX_STACK_SIZE, 32);
 +        item2.setData(DataComponentTypes.ITEM_NAME, Component.text("HI"));
 +
-+        Assertions.assertTrue(item1.matchesWithoutData(item2, RegistrySet.keySet(RegistryKey.DATA_COMPONENT_TYPE)));
++        Assertions.assertTrue(item1.matchesWithoutData(item2, Set.of()));
 +    }
 +
 +    @Test
@@ -4115,7 +4073,7 @@ index 0000000000000000000000000000000000000000..6a287dcd4b42fa494117ae3f07def596
 +        ItemStack item2 = ItemStack.of(Material.STONE, 1);
 +        item2.setData(DataComponentTypes.MAX_STACK_SIZE, 2);
 +
-+        Assertions.assertFalse(item1.matchesWithoutData(item2, RegistrySet.keySet(RegistryKey.DATA_COMPONENT_TYPE, DataComponentTypeKeys.MAX_STACK_SIZE)));
++        Assertions.assertFalse(item1.matchesWithoutData(item2, Set.of(DataComponentTypes.MAX_STACK_SIZE)));
 +    }
 +
 +    @Test
@@ -4126,7 +4084,7 @@ index 0000000000000000000000000000000000000000..6a287dcd4b42fa494117ae3f07def596
 +        ItemStack item2 = ItemStack.of(Material.STONE, 1);
 +        item2.setData(DataComponentTypes.MAX_STACK_SIZE, 2);
 +
-+        Assertions.assertTrue(item1.matchesWithoutData(item2, RegistrySet.keySet(RegistryKey.DATA_COMPONENT_TYPE, DataComponentTypeKeys.MAX_STACK_SIZE), true));
++        Assertions.assertTrue(item1.matchesWithoutData(item2, Set.of(DataComponentTypes.MAX_STACK_SIZE), true));
 +    }
 +
 +    @Test
@@ -4136,7 +4094,7 @@ index 0000000000000000000000000000000000000000..6a287dcd4b42fa494117ae3f07def596
 +        ItemStack item2 = ItemStack.of(Material.STONE, 1);
 +        item2.setData(DataComponentTypes.MAX_STACK_SIZE, 2);
 +
-+        Assertions.assertFalse(item1.matchesWithoutData(item2, RegistrySet.keySet(RegistryKey.DATA_COMPONENT_TYPE, DataComponentTypeKeys.WRITTEN_BOOK_CONTENT)));
++        Assertions.assertFalse(item1.matchesWithoutData(item2, Set.of(DataComponentTypes.WRITTEN_BOOK_CONTENT)));
 +    }
 +
 +    @Test
@@ -4147,7 +4105,7 @@ index 0000000000000000000000000000000000000000..6a287dcd4b42fa494117ae3f07def596
 +        ItemStack item2 = ItemStack.of(Material.STONE, 1);
 +        item2.unsetData(DataComponentTypes.MAX_STACK_SIZE);
 +
-+        Assertions.assertTrue(item1.matchesWithoutData(item2, RegistrySet.keySet(RegistryKey.DATA_COMPONENT_TYPE)));
++        Assertions.assertTrue(item1.matchesWithoutData(item2, Set.of()));
 +    }
 +
 +    @Test
@@ -4158,7 +4116,7 @@ index 0000000000000000000000000000000000000000..6a287dcd4b42fa494117ae3f07def596
 +        ItemStack item2 = ItemStack.of(Material.STONE, 1);
 +        item2.setData(DataComponentTypes.MAX_STACK_SIZE, 1);
 +
-+        Assertions.assertTrue(item1.matchesWithoutData(item2, RegistrySet.keySet(RegistryKey.DATA_COMPONENT_TYPE), true));
++        Assertions.assertTrue(item1.matchesWithoutData(item2, Set.of(), true));
 +    }
 +
 +    @Test
@@ -4169,12 +4127,12 @@ index 0000000000000000000000000000000000000000..6a287dcd4b42fa494117ae3f07def596
 +
 +        ItemStack otherOakLeavesItem = ItemStack.of(Material.OAK_LEAVES, 2);
 +
-+        Assertions.assertTrue(oakLeaves.matchesWithoutData(otherOakLeavesItem, RegistrySet.keySet(RegistryKey.DATA_COMPONENT_TYPE, DataComponentTypeKeys.HIDE_TOOLTIP, DataComponentTypeKeys.MAX_STACK_SIZE), true));
++        Assertions.assertTrue(oakLeaves.matchesWithoutData(otherOakLeavesItem, Set.of(DataComponentTypes.HIDE_TOOLTIP, DataComponentTypes.MAX_STACK_SIZE), true));
 +    }
 +}
 diff --git a/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java b/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..220bf2bb666255d7a69e0035ff996474403b7907
+index 0000000000000000000000000000000000000000..5825be69af0b949ce28d6bde28bef68935db0d45
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java
 @@ -0,0 +1,371 @@
@@ -4388,12 +4346,12 @@ index 0000000000000000000000000000000000000000..220bf2bb666255d7a69e0035ff996474
 +            .damagePerBlock(1)
 +            .defaultMiningSpeed(2F)
 +            .addRules(List.of(
-+                Tool.Rule.rule(
++                Tool.rule(
 +                    RegistrySet.keySetFromValues(RegistryKey.BLOCK, List.of(BlockType.STONE, BlockType.GRAVEL)),
 +                    2F,
 +                    TriState.TRUE
 +                ),
-+                Tool.Rule.rule(
++                Tool.rule(
 +                    RegistryAccess.registryAccess().getRegistry(RegistryKey.BLOCK).getTag(TagKey.create(RegistryKey.BLOCK, NamespacedKey.minecraft("bamboo_blocks"))),
 +                    2F,
 +                    TriState.TRUE

@@ -776,7 +776,7 @@ index 0000000000000000000000000000000000000000..d0a6e7db06f540e13ac00e8da3acabd9
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/Consumable.java b/src/main/java/io/papermc/paper/datacomponent/item/Consumable.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..55ba9e1d09a35d9c9a034f928d6b9383517eb775
+index 0000000000000000000000000000000000000000..a448fedb63ffce18b9f6a1bd0fecfc5cd90224a6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/Consumable.java
 @@ -0,0 +1,70 @@
@@ -847,7 +847,7 @@ index 0000000000000000000000000000000000000000..55ba9e1d09a35d9c9a034f928d6b9383
 +        Builder addEffect(ConsumeEffect effect);
 +
 +        @Contract(value = "_ -> this", mutates = "this")
-+        Builder addEffects(Collection<ConsumeEffect> effects);
++        Builder addEffects(List<ConsumeEffect> effects);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/CustomModelData.java b/src/main/java/io/papermc/paper/datacomponent/item/CustomModelData.java
@@ -1561,10 +1561,10 @@ index 0000000000000000000000000000000000000000..0309ae59ab7945ddfb5410930d161e2c
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/ItemAttributeModifiers.java b/src/main/java/io/papermc/paper/datacomponent/item/ItemAttributeModifiers.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e8fad9f40ba037f28102437097e2b44ace488ff0
+index 0000000000000000000000000000000000000000..948505d38121d54df62e6a67d4597bc7d42c356f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/ItemAttributeModifiers.java
-@@ -0,0 +1,86 @@
+@@ -0,0 +1,98 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import io.papermc.paper.datacomponent.DataComponentBuilder;
@@ -1579,6 +1579,7 @@ index 0000000000000000000000000000000000000000..e8fad9f40ba037f28102437097e2b44a
 +
 +/**
 + * Holds attribute modifiers applied to any item.
++ *
 + * @see io.papermc.paper.datacomponent.DataComponentTypes#ATTRIBUTE_MODIFIERS
 + */
 +@NullMarked
@@ -1642,7 +1643,18 @@ index 0000000000000000000000000000000000000000..e8fad9f40ba037f28102437097e2b44a
 +         * Adds a modifier to this builder.
 +         *
 +         * @param attribute attribute
-+         * @param modifier modifier
++         * @param modifier  modifier
++         * @return the builder for chaining
++         * @see #modifiers()
++         */
++        @Contract(value = "_, _, _ -> this", mutates = "this")
++        Builder addModifier(Attribute attribute, AttributeModifier modifier);
++
++        /**
++         * Adds a modifier to this builder.
++         *
++         * @param attribute          attribute
++         * @param modifier           modifier
 +         * @param equipmentSlotGroup the slot group this modifier applies to (overrides any slot group in the modifier)
 +         * @return the builder for chaining
 +         * @see #modifiers()
@@ -3845,9 +3857,18 @@ index 0000000000000000000000000000000000000000..54e1a383c4eeb595417ea6e9e4e9527a
 +    T filtered();
 +}
 diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
-index 615eb24ffdd8f6d55ccd4f21760b809c1098bc68..a4ce05b36ff1879503d5aa5f5426286444d9ecb8 100644
+index 615eb24ffdd8f6d55ccd4f21760b809c1098bc68..c7ce8fa1ff9feda66d5a4e497112a24ff51c9d2b 100644
 --- a/src/main/java/org/bukkit/Material.java
 +++ b/src/main/java/org/bukkit/Material.java
+@@ -137,7 +137,7 @@ import org.jetbrains.annotations.Nullable;
+ @SuppressWarnings({"DeprecatedIsStillUsed", "deprecation"}) // Paper
+ public enum Material implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper
+     //<editor-fold desc="Materials" defaultstate="collapsed">
+-    AIR(9648, 0),
++    AIR(9648, 64), // Paper - air stacks to 64
+     STONE(22948),
+     GRANITE(21091),
+     POLISHED_GRANITE(5477),
 @@ -5784,6 +5784,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
       */
      @ApiStatus.Internal
@@ -3917,7 +3938,7 @@ index 7cf7c6d05aa6cbf3f0c8612831404552c6a7b84a..c60e31425efd7b863941f5538faef6c0
       * Get the object by its key.
       *
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index b59222b8c262545d100a9fd28b3bf1d2a4cf4eb0..49e0f703faacca92af6b97c0241c6bace9af99ca 100644
+index b59222b8c262545d100a9fd28b3bf1d2a4cf4eb0..8aa3051be46fd560e8e28843ca6129c13134c7ab 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
 @@ -1137,4 +1137,173 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
@@ -4076,7 +4097,7 @@ index b59222b8c262545d100a9fd28b3bf1d2a4cf4eb0..49e0f703faacca92af6b97c0241c6bac
 +     * @param excludeTypes the data component types to ignore
 +     * @return {@code true} if the provided item is equal, ignoring the provided components
 +     */
-+    public boolean matchesWithoutData(final @NotNull ItemStack item, final @NotNull java.util.Collection<io.papermc.paper.datacomponent.@NotNull DataComponentType> excludeTypes) {
++    public boolean matchesWithoutData(final @NotNull ItemStack item, final @NotNull java.util.Set<io.papermc.paper.datacomponent.@NotNull DataComponentType> excludeTypes) {
 +        return this.matchesWithoutData(item, excludeTypes, false);
 +    }
 +
@@ -4089,7 +4110,7 @@ index b59222b8c262545d100a9fd28b3bf1d2a4cf4eb0..49e0f703faacca92af6b97c0241c6bac
 +     * @param ignoreCount ignore the count of the item
 +     * @return {@code true} if the provided item is equal, ignoring the provided components
 +     */
-+    public boolean matchesWithoutData(final @NotNull ItemStack item, final @NotNull java.util.Collection<io.papermc.paper.datacomponent.@NotNull DataComponentType> excludeTypes, final boolean ignoreCount) {
++    public boolean matchesWithoutData(final @NotNull ItemStack item, final @NotNull java.util.Set<io.papermc.paper.datacomponent.@NotNull DataComponentType> excludeTypes, final boolean ignoreCount) {
 +        return this.craftDelegate.matchesWithoutData(item, excludeTypes, ignoreCount);
 +    }
 +    // Paper end - data component API
