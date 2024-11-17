@@ -234,7 +234,7 @@ index 975a9e35303bec29aedfbd554c38e4331cdfb174..fd9f6c17448a4d87f940eb8f544ecb96
              this.spawnAtLocation(worldserver1, itemstack1, this.getEyeHeight());
              this.forceDrops = false; // CraftBukkit
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Bogged.java b/src/main/java/net/minecraft/world/entity/monster/Bogged.java
-index 9d416f775fa19ad1978c7c9c9e0d5bc16728879d..18dae37d65552077aa3825c76f433bbd31152db9 100644
+index be029746905aeba218684b883282649089657de3..975477663b6d76a69c006a89e440e21471b39b89 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Bogged.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Bogged.java
 @@ -27,6 +27,7 @@ import net.minecraft.world.item.Items;
@@ -257,7 +257,7 @@ index 9d416f775fa19ad1978c7c9c9e0d5bc16728879d..18dae37d65552077aa3825c76f433bbd
 +                org.bukkit.event.player.PlayerShearEntityEvent event = CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemstack, hand, drops);
 +                if (event != null) {
 +                    if (event.isCancelled()) {
-+                        this.getEntityData().markDirty(Bogged.DATA_SHEARED); // CraftBukkit - mark dirty to restore sheared state to clients
++                        // this.getEntityData().markDirty(Bogged.DATA_SHEARED); // CraftBukkit - mark dirty to restore sheared state to clients // Paper - no longer needed
 +                        return InteractionResult.PASS;
 +                    }
 +                    drops = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops());
@@ -269,7 +269,7 @@ index 9d416f775fa19ad1978c7c9c9e0d5bc16728879d..18dae37d65552077aa3825c76f433bbd
                  this.gameEvent(GameEvent.SHEAR, player);
                  itemstack.hurtAndBreak(1, player, getSlotForHand(hand));
              }
-@@ -139,13 +147,32 @@ public class Bogged extends AbstractSkeleton implements Shearable {
+@@ -139,14 +147,33 @@ public class Bogged extends AbstractSkeleton implements Shearable {
  
      @Override
      public void shear(ServerLevel world, SoundSource shearedSoundCategory, ItemStack shears) {
@@ -296,15 +296,16 @@ index 9d416f775fa19ad1978c7c9c9e0d5bc16728879d..18dae37d65552077aa3825c76f433bbd
      }
  
 -    private void spawnShearedMushrooms(ServerLevel world, ItemStack shears) {
--        this.dropFromShearingLootTable(world, BuiltInLootTables.BOGGED_SHEAR, shears, (worldserver1, itemstack1) -> {
 +    // Paper start - custom shear drops
 +    private void spawnShearedMushrooms(ServerLevel world, ItemStack shears, java.util.List<ItemStack> drops) {
 +        final ServerLevel worldserver1 = world; // Named for lambda consumption
+         this.forceDrops = true; // Paper - Add missing forceDrop toggles
+-        this.dropFromShearingLootTable(world, BuiltInLootTables.BOGGED_SHEAR, shears, (worldserver1, itemstack1) -> {
 +        drops.forEach(itemstack1 -> {
 +    // Paper end - custom shear drops
              this.spawnAtLocation(worldserver1, itemstack1, this.getBbHeight());
          });
-     }
+         this.forceDrops = false; // Paper - Add missing forceDrop toggles
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 index 1c87019f5eb8e51accef3dc7ee949cdf2bec8f72..ea4e1bf4bfe003c102ecce5958131aa86ec83864 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
