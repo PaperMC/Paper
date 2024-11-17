@@ -25,7 +25,7 @@ Other changes:
 Co-Authored-By: Emilia Kond <emilia@rymiel.space>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 220d2696bf40d1657c87d049f563ccfffed2e8ad..c808f36b30d0f8edb8365875039fd20b8c20007d 100644
+index 220d2696bf40d1657c87d049f563ccfffed2e8ad..99e44684a3f6340ed3c0f73c690a9d4d51872f0d 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -5,6 +5,12 @@ plugins {
@@ -41,13 +41,14 @@ index 220d2696bf40d1657c87d049f563ccfffed2e8ad..c808f36b30d0f8edb8365875039fd20b
  // Paper start - configure mockito agent that is needed in newer java versions
  val mockitoAgent = configurations.register("mockitoAgent")
  abstract class MockitoAgentProvider : CommandLineArgumentProvider {
-@@ -19,7 +25,21 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
+@@ -19,7 +25,22 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
  
  dependencies {
      implementation(project(":paper-api"))
 -    implementation("jline:jline:2.12.1")
 +    // Paper start
-+    implementation("org.jline:jline-terminal-jansi:3.21.0")
++    implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
++    implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
 +    implementation("net.minecrell:terminalconsoleappender:1.3.0")
 +    implementation("net.kyori:adventure-text-serializer-ansi:4.17.0") // Keep in sync with adventureVersion from Paper-API build file
 +    /*
@@ -64,7 +65,7 @@ index 220d2696bf40d1657c87d049f563ccfffed2e8ad..c808f36b30d0f8edb8365875039fd20b
      implementation("org.apache.logging.log4j:log4j-iostreams:2.22.1") // Paper - remove exclusion
      implementation("org.ow2.asm:asm-commons:9.7.1")
      implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT") // Paper - config files
-@@ -92,6 +112,19 @@ tasks.check {
+@@ -92,6 +113,19 @@ tasks.check {
      dependsOn(scanJar)
  }
  // Paper end
@@ -401,7 +402,7 @@ index 1333daa8666fe2ec4033a2f57ba6b716fcdd5343..8daa027a94602d7d556cf4fbfc8fcd97
  
          this.bans = new UserBanList(PlayerList.USERBANLIST_FILE);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index c3fc8b1abe843a19347509947f4b864c1b417800..e497da2dba83779c4ad1c45cea133bddadf61446 100644
+index c3774d9a253d4fda80f63d4040722ab5c1c94be4..41aa22f431c989d60dde5c85ca2821d5bcf613af 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -43,7 +43,7 @@ import java.util.logging.Level;
@@ -428,7 +429,7 @@ index c3fc8b1abe843a19347509947f4b864c1b417800..e497da2dba83779c4ad1c45cea133bdd
      @Override
      public PluginCommand getPluginCommand(String name) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 2e33acc428dbfd3e123dfd6ef90bc020b8a08daf..4a99cf5a146abe0d2b40ffc1189fdc5540f14d55 100644
+index 41ceea1093edbf777f9ebe252114be7f75438420..b6e449c2f29b0a201e5e7495de81d21a19f67a25 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -13,7 +13,6 @@ import java.util.logging.Logger;
@@ -467,11 +468,12 @@ index 2e33acc428dbfd3e123dfd6ef90bc020b8a08daf..4a99cf5a146abe0d2b40ffc1189fdc55
                  }
  
                  if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
-@@ -231,6 +241,7 @@ public class Main {
+@@ -231,6 +241,8 @@ public class Main {
                      }
                  }
  
 +                System.setProperty("library.jansi.version", "Paper"); // Paper - set meaningless jansi version to prevent git builds from crashing on Windows
++                System.setProperty("jdk.console", "java.base"); // Paper - revert default console provider back to java.base so we can have our own jline
                  System.out.println("Loading libraries, please wait...");
                  net.minecraft.server.Main.main(options);
              } catch (Throwable t) {
