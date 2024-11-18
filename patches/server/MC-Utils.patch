@@ -4697,10 +4697,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.util;
 +
++import com.google.common.collect.Collections2;
++import com.google.common.collect.Lists;
 +import com.google.common.util.concurrent.ThreadFactoryBuilder;
++import io.papermc.paper.adventure.PaperAdventure;
 +import io.papermc.paper.math.BlockPosition;
 +import io.papermc.paper.math.FinePosition;
 +import io.papermc.paper.math.Position;
++import java.util.Collection;
++import java.util.Collections;
 +import java.util.List;
 +import java.util.concurrent.CompletableFuture;
 +import java.util.concurrent.ExecutionException;
@@ -4709,11 +4714,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.concurrent.TimeUnit;
 +import java.util.function.BiConsumer;
 +import java.util.function.Consumer;
++import java.util.function.Function;
 +import java.util.function.Supplier;
++import net.kyori.adventure.key.Key;
 +import net.minecraft.core.BlockPos;
++import net.minecraft.core.Holder;
 +import net.minecraft.core.Vec3i;
++import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.resources.ResourceKey;
++import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.server.MinecraftServer;
++import net.minecraft.sounds.SoundEvent;
 +import net.minecraft.world.level.ChunkPos;
 +import net.minecraft.world.level.Level;
 +import net.minecraft.world.phys.Vec3;
@@ -4883,6 +4894,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public static NamespacedKey fromResourceKey(final ResourceKey<?> key) {
 +        return CraftNamespacedKey.fromMinecraft(key.location());
++    }
++
++    public static Holder<SoundEvent> keyToSound(Key key) {
++        ResourceLocation soundId = PaperAdventure.asVanilla(key);
++        return BuiltInRegistries.SOUND_EVENT.wrapAsHolder(BuiltInRegistries.SOUND_EVENT.getOptional(soundId).orElse(SoundEvent.createVariableRangeEvent(soundId)));
++    }
++
++    public static <A, M> List<A> transformUnmodifiable(final List<? extends M> nms, final Function<? super M, ? extends A> converter) {
++        return Collections.unmodifiableList(Lists.transform(nms, converter::apply));
++    }
++
++    public static <A, M> Collection<A> transformUnmodifiable(final Collection<? extends M> nms, final Function<? super M, ? extends A> converter) {
++        return Collections.unmodifiableCollection(Collections2.transform(nms, converter::apply));
++    }
++
++    public static <A, M, C extends Collection<M>> void addAndConvert(final C target, final Collection<A> toAdd, final Function<? super A, ? extends M> converter) {
++        for (final A value : toAdd) {
++            target.add(converter.apply(value));
++        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/util/StackWalkerUtil.java b/src/main/java/io/papermc/paper/util/StackWalkerUtil.java
@@ -6309,6 +6339,28 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static net.minecraft.world.item.ItemStack asNMSCopy(ItemStack original) {
          if (original instanceof CraftItemStack) {
              CraftItemStack stack = (CraftItemStack) original;
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftLocation.java b/src/main/java/org/bukkit/craftbukkit/util/CraftLocation.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftLocation.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftLocation.java
+@@ -0,0 +0,0 @@ public final class CraftLocation {
+         return new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+     }
+ 
++    // Paper start
++    public static net.minecraft.core.GlobalPos toGlobalPos(Location location) {
++        return net.minecraft.core.GlobalPos.of(((org.bukkit.craftbukkit.CraftWorld) location.getWorld()).getHandle().dimension(), toBlockPosition(location));
++    }
++
++    public static Location fromGlobalPos(net.minecraft.core.GlobalPos globalPos) {
++        BlockPos pos = globalPos.pos();
++        return new org.bukkit.Location(net.minecraft.server.MinecraftServer.getServer().getLevel(globalPos.dimension()).getWorld(), pos.getX(), pos.getY(), pos.getZ());
++    }
++    // Paper end
++
+     public static Vec3 toVec3D(Location location) {
+         return new Vec3(location.getX(), location.getY(), location.getZ());
+     }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/DelegatedGeneratorAccess.java b/src/main/java/org/bukkit/craftbukkit/util/DelegatedGeneratorAccess.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/DelegatedGeneratorAccess.java
