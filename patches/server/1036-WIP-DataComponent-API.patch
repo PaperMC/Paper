@@ -51,10 +51,10 @@ index 0000000000000000000000000000000000000000..4a49f65cae1354afbcd4afda07581790
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/ComponentAdapters.java b/src/main/java/io/papermc/paper/datacomponent/ComponentAdapters.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..870d17851699f46275f4d443ca2880f78d7574bb
+index 0000000000000000000000000000000000000000..c11de1f077c51483c61af6492f998781df866b88
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/ComponentAdapters.java
-@@ -0,0 +1,170 @@
+@@ -0,0 +1,168 @@
 +package io.papermc.paper.datacomponent;
 +
 +import io.papermc.paper.adventure.PaperAdventure;
@@ -124,7 +124,6 @@ index 0000000000000000000000000000000000000000..870d17851699f46275f4d443ca2880f7
 +    static final Map<ResourceKey<DataComponentType<?>>, ComponentAdapter<?, ?>> ADAPTERS = new HashMap<>();
 +
 +    public static void bootstrap() {
-+        //noinspection deprecation
 +        registerIdentity(DataComponents.MAX_STACK_SIZE);
 +        registerIdentity(DataComponents.MAX_DAMAGE);
 +        registerIdentity(DataComponents.DAMAGE);
@@ -132,7 +131,6 @@ index 0000000000000000000000000000000000000000..870d17851699f46275f4d443ca2880f7
 +        register(DataComponents.CUSTOM_NAME, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
 +        register(DataComponents.ITEM_NAME, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
 +        register(DataComponents.ITEM_MODEL, CraftNamespacedKey::fromMinecraft, CraftNamespacedKey::toMinecraft);
-+
 +        register(DataComponents.LORE, PaperItemLore::new);
 +        register(DataComponents.RARITY, nms -> ItemRarity.valueOf(nms.name()), api -> Rarity.valueOf(api.name()));
 +        register(DataComponents.ENCHANTMENTS, PaperItemEnchantments::new);
@@ -190,7 +188,7 @@ index 0000000000000000000000000000000000000000..870d17851699f46275f4d443ca2880f7
 +        register(DataComponents.CONTAINER, PaperItemContainerContents::new);
 +        register(DataComponents.BLOCK_STATE, PaperBlockItemDataProperties::new);
 +        // bees
-+        //register(DataComponents.LOCK, PaperLockCode::new);
++        // register(DataComponents.LOCK, PaperLockCode::new);
 +        register(DataComponents.CONTAINER_LOOT, PaperSeededContainerLoot::new);
 +
 +        // TODO: REMOVE THIS... we want to build the PR... so lets just make things UNTYPED!
@@ -3657,7 +3655,7 @@ index f8c6da955e4bd0e480c7b581d2a4325738f9dd6f..ee1fce58c6e57dd93a30ee66e7488a92
              // data-drivens
              entry(Registries.BIOME, RegistryKey.BIOME, Biome.class, CraftBiome::new).delayed(),
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index 756c73a401437566258813946fa10c7caa8f2469..71c017fd98001c7f78b1bf19e9956703617c0e37 100644
+index 756c73a401437566258813946fa10c7caa8f2469..bfddaa146c1bcb6a3fdd43773ec06f91a259b200 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 @@ -206,7 +206,7 @@ public final class CraftItemStack extends ItemStack {
@@ -3854,7 +3852,7 @@ index 756c73a401437566258813946fa10c7caa8f2469..71c017fd98001c7f78b1bf19e9956703
 +
 +        // It can be assumed that the prototype is equal since the type is the same. This way all we need to check is the patch
 +
-+        // Fast path when excluded types is empty to not flatten the set
++        // Fast path when excluded types is empty
 +        if (exclude.isEmpty()) {
 +            return left.getComponentsPatch().equals(right.getComponentsPatch());
 +        }
@@ -3918,27 +3916,6 @@ index a944803771d514572f94b4e98a6d4435a009c078..82cb8cd1635c279326cec8454f1906ce
          IntList colors = CraftMetaFirework.addColors(effect.getColors());
          IntList fadeColors = CraftMetaFirework.addColors(effect.getFadeColors());
  
-diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftLocation.java b/src/main/java/org/bukkit/craftbukkit/util/CraftLocation.java
-index 097996d3955ab5126b71f7bff1dd2c62becb5ffd..2e75620e803868ad3c254d11e6265062b2542249 100644
---- a/src/main/java/org/bukkit/craftbukkit/util/CraftLocation.java
-+++ b/src/main/java/org/bukkit/craftbukkit/util/CraftLocation.java
-@@ -40,6 +40,16 @@ public final class CraftLocation {
-         return new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-     }
- 
-+    // Paper start - todo move in the right patch
-+    public static net.minecraft.core.GlobalPos toGlobalPos(Location location) {
-+        return net.minecraft.core.GlobalPos.of(((org.bukkit.craftbukkit.CraftWorld) location.getWorld()).getHandle().dimension(), toBlockPosition(location));
-+    }
-+
-+    public static Location fromGlobalPos(net.minecraft.core.GlobalPos globalPos) {
-+        return new org.bukkit.Location(net.minecraft.server.MinecraftServer.getServer().getLevel(globalPos.dimension()).getWorld(), globalPos.pos().getX(), globalPos.pos().getY(), globalPos.pos().getZ());
-+    }
-+    // Paper end
-+
-     public static Vec3 toVec3D(Location location) {
-         return new Vec3(location.getX(), location.getY(), location.getZ());
-     }
 diff --git a/src/main/resources/META-INF/services/io.papermc.paper.datacomponent.item.ItemComponentTypesBridge b/src/main/resources/META-INF/services/io.papermc.paper.datacomponent.item.ItemComponentTypesBridge
 new file mode 100644
 index 0000000000000000000000000000000000000000..0fd276c2fdbba784c1cd95105553996b4ba2460e
