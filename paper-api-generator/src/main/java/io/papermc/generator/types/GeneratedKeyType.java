@@ -139,7 +139,7 @@ public class GeneratedKeyType<T, A> extends SimpleGenerator {
         final Set<ResourceKey<T>> experimental = this.collectExperimentalKeys(registry);
 
         boolean allExperimental = true;
-        for (final Holder.Reference<T> reference : registry.listElements().filter(this::canPrintKey).sorted(Formatting.alphabeticKeyOrder(reference -> reference.key().location().getPath())).toList()) {
+        for (final Holder.Reference<T> reference : registry.listElements().sorted(Formatting.alphabeticKeyOrder(reference -> reference.key().location().getPath())).toList()) {
             final ResourceKey<T> key = reference.key();
             final String keyPath = key.location().getPath();
             String fieldName = Formatting.formatKeyAsField(keyPath);
@@ -164,10 +164,6 @@ public class GeneratedKeyType<T, A> extends SimpleGenerator {
             typeBuilder.addAnnotation(EXPERIMENTAL_API_ANNOTATION); // TODO experimental API
         }
         return typeBuilder.addMethod(createMethod.build()).build();
-    }
-
-    protected boolean canPrintKey(Holder.Reference<T> reference) {
-        return true;
     }
 
     // todo at some point this should be per feature data pack not all merged
