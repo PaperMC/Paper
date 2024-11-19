@@ -1,6 +1,9 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.world.InventoryUtils;
+import net.minecraft.world.entity.player.EntityHuman;
+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
@@ -16,7 +19,8 @@ public abstract class CraftAbstractInventoryView implements InventoryView {
         if (inventory != null) {
             inventory.setItem(convertSlot(slot), item);
         } else if (item != null) {
-            getPlayer().getWorld().dropItemNaturally(getPlayer().getLocation(), item);
+            EntityHuman handle = ((CraftHumanEntity) getPlayer()).getHandle();
+            InventoryUtils.dropItemStack(handle.level(), handle.getX(), handle.getY(), handle.getZ(), CraftItemStack.asNMSCopy(item));
         }
     }
 
