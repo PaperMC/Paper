@@ -8831,7 +8831,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            this.chunkHolderManager.processTicketUpdates();
 +        }
 +
-+        final Consumer<ChunkAccess> loadCallback = (final ChunkAccess chunk) -> {
++        final Consumer<ChunkAccess> loadCallback = onComplete == null && !addTicket ? null : (final ChunkAccess chunk) -> {
 +            try {
 +                if (onComplete != null) {
 +                    onComplete.accept(chunk);
@@ -8868,7 +8868,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                        if (!chunkHolder.upgradeGenTarget(toStatus)) {
 +                            this.schedule(chunkX, chunkZ, toStatus, chunkHolder, tasks);
 +                        }
-+                        chunkHolder.addStatusConsumer(toStatus, loadCallback);
++                        if (loadCallback != null) {
++                            chunkHolder.addStatusConsumer(toStatus, loadCallback);
++                        }
 +                    }
 +                }
 +            } finally {
@@ -8882,7 +8884,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            tasks.get(i).schedule();
 +        }
 +
-+        if (!scheduled) {
++        if (loadCallback != null && !scheduled) {
 +            // couldn't schedule
 +            try {
 +                loadCallback.accept(chunk);
