@@ -5,7 +5,7 @@ Subject: [PATCH] API to allow/disallow tick sleeping
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 64b56abf8900d0424100da460fc68ac964394793..6641fa9b1ae55e45f3089d2b18a49c75be98b287 100644
+index 64b56abf8900d0424100da460fc68ac964394793..167249a55a65ecdc793725cc6366ffc72d14b8bc 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -332,6 +332,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -23,7 +23,7 @@ index 64b56abf8900d0424100da460fc68ac964394793..6641fa9b1ae55e45f3089d2b18a49c75
 +        removeDisabledPluginsBlockingSleep(); // Paper - API to allow/disallow tick sleeping
          if (j > 0) {
 -            if (this.playerList.getPlayerCount() == 0 && !this.tickRateManager.isSprinting()) {
-+            if (this.playerList.getPlayerCount() == 0 && !this.tickRateManager.isSprinting() && pluginsBlockingSleep.isEmpty()) { // Paper - API to allow/disallow tick sleeping
++            if (this.playerList.getPlayerCount() == 0 && !this.tickRateManager.isSprinting() && this.pluginsBlockingSleep.isEmpty()) { // Paper - API to allow/disallow tick sleeping
                  ++this.emptyTicks;
              } else {
                  this.emptyTicks = 0;
@@ -34,12 +34,12 @@ index 64b56abf8900d0424100da460fc68ac964394793..6641fa9b1ae55e45f3089d2b18a49c75
 +
 +    // Paper start - API to allow/disallow tick sleeping
 +    public void addPluginAllowingSleep(String pluginName, boolean value) {
-+        if (!value) { pluginsBlockingSleep.add(pluginName); }
-+        else { pluginsBlockingSleep.remove(pluginName); }
++        if (!value) { this.pluginsBlockingSleep.add(pluginName); }
++        else { this.pluginsBlockingSleep.remove(pluginName); }
 +    }
 +    private void removeDisabledPluginsBlockingSleep() {
-+        if (pluginsBlockingSleep.isEmpty()) { return; }
-+        pluginsBlockingSleep.removeIf(plugin -> (
++        if (this.pluginsBlockingSleep.isEmpty()) { return; }
++        this.pluginsBlockingSleep.removeIf(plugin -> (
 +            io.papermc.paper.plugin.manager.PaperPluginManagerImpl.getInstance().isPluginEnabled(plugin)
 +        ));
 +    }
