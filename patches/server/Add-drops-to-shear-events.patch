@@ -257,7 +257,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                org.bukkit.event.player.PlayerShearEntityEvent event = CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemstack, hand, drops);
 +                if (event != null) {
 +                    if (event.isCancelled()) {
-+                        this.getEntityData().markDirty(Bogged.DATA_SHEARED); // CraftBukkit - mark dirty to restore sheared state to clients
++                        // this.getEntityData().markDirty(Bogged.DATA_SHEARED); // CraftBukkit - mark dirty to restore sheared state to clients // Paper - no longer needed
 +                        return InteractionResult.PASS;
 +                    }
 +                    drops = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops());
@@ -296,15 +296,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 -    private void spawnShearedMushrooms(ServerLevel world, ItemStack shears) {
--        this.dropFromShearingLootTable(world, BuiltInLootTables.BOGGED_SHEAR, shears, (worldserver1, itemstack1) -> {
 +    // Paper start - custom shear drops
 +    private void spawnShearedMushrooms(ServerLevel world, ItemStack shears, java.util.List<ItemStack> drops) {
 +        final ServerLevel worldserver1 = world; // Named for lambda consumption
+         this.forceDrops = true; // Paper - Add missing forceDrop toggles
+-        this.dropFromShearingLootTable(world, BuiltInLootTables.BOGGED_SHEAR, shears, (worldserver1, itemstack1) -> {
 +        drops.forEach(itemstack1 -> {
 +    // Paper end - custom shear drops
              this.spawnAtLocation(worldserver1, itemstack1, this.getBbHeight());
          });
-     }
+         this.forceDrops = false; // Paper - Add missing forceDrop toggles
 diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
