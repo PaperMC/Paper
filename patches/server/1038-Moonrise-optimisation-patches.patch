@@ -8246,10 +8246,10 @@ index 0000000000000000000000000000000000000000..91a6f57f35fc1553159cca138a0619e7
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..877e48375ac987169011051108c6c5102f8c0590
+index 0000000000000000000000000000000000000000..b0bfe655922877676948d9b6ff3fa5a6ebb7a640
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java
-@@ -0,0 +1,1036 @@
+@@ -0,0 +1,1038 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.PrioritisedExecutor;
@@ -8831,7 +8831,7 @@ index 0000000000000000000000000000000000000000..877e48375ac987169011051108c6c510
 +            this.chunkHolderManager.processTicketUpdates();
 +        }
 +
-+        final Consumer<ChunkAccess> loadCallback = (final ChunkAccess chunk) -> {
++        final Consumer<ChunkAccess> loadCallback = onComplete == null && !addTicket ? null : (final ChunkAccess chunk) -> {
 +            try {
 +                if (onComplete != null) {
 +                    onComplete.accept(chunk);
@@ -8868,7 +8868,9 @@ index 0000000000000000000000000000000000000000..877e48375ac987169011051108c6c510
 +                        if (!chunkHolder.upgradeGenTarget(toStatus)) {
 +                            this.schedule(chunkX, chunkZ, toStatus, chunkHolder, tasks);
 +                        }
-+                        chunkHolder.addStatusConsumer(toStatus, loadCallback);
++                        if (loadCallback != null) {
++                            chunkHolder.addStatusConsumer(toStatus, loadCallback);
++                        }
 +                    }
 +                }
 +            } finally {
@@ -8882,7 +8884,7 @@ index 0000000000000000000000000000000000000000..877e48375ac987169011051108c6c510
 +            tasks.get(i).schedule();
 +        }
 +
-+        if (!scheduled) {
++        if (loadCallback != null && !scheduled) {
 +            // couldn't schedule
 +            try {
 +                loadCallback.accept(chunk);
