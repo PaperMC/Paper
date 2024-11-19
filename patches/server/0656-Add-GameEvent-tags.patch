@@ -1,0 +1,81 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 3 Jan 2021 20:03:35 -0800
+Subject: [PATCH] Add GameEvent tags
+
+
+diff --git a/src/main/java/io/papermc/paper/CraftGameEventTag.java b/src/main/java/io/papermc/paper/CraftGameEventTag.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..874c420e60b6be09c806d64f40cf63663ffddc07
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/CraftGameEventTag.java
+@@ -0,0 +1,35 @@
++package io.papermc.paper;
++
++import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.core.registries.Registries;
++import net.minecraft.resources.ResourceKey;
++import net.minecraft.tags.TagKey;
++import org.bukkit.GameEvent;
++import org.bukkit.craftbukkit.tag.CraftTag;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.Collections;
++import java.util.IdentityHashMap;
++import java.util.Map;
++import java.util.Objects;
++import java.util.Set;
++import java.util.stream.Collectors;
++
++public class CraftGameEventTag extends CraftTag<net.minecraft.world.level.gameevent.GameEvent, GameEvent> {
++
++    public CraftGameEventTag(net.minecraft.core.Registry<net.minecraft.world.level.gameevent.GameEvent> registry, TagKey<net.minecraft.world.level.gameevent.GameEvent> tag) {
++        super(registry, tag);
++    }
++
++    private static final Map<GameEvent, ResourceKey<net.minecraft.world.level.gameevent.GameEvent>> KEY_CACHE = Collections.synchronizedMap(new IdentityHashMap<>());
++    @Override
++    public boolean isTagged(@NotNull GameEvent gameEvent) {
++        return registry.getOrThrow(KEY_CACHE.computeIfAbsent(gameEvent, event -> ResourceKey.create(Registries.GAME_EVENT, CraftNamespacedKey.toMinecraft(event.getKey())))).is(tag);
++    }
++
++    @Override
++    public @NotNull Set<GameEvent> getValues() {
++        return getHandle().stream().map((nms) -> Objects.requireNonNull(GameEvent.getByKey(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.GAME_EVENT.getKey(nms.value()))), nms + " is not a recognized game event")).collect(Collectors.toUnmodifiableSet());
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 188e3066d6659b5e45cec0b50dcbd5d20659830a..72f8d3a89396f9289f5b451b24cc181e7ac3222e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -2709,6 +2709,15 @@ public final class CraftServer implements Server {
+                     return (org.bukkit.Tag<T>) new CraftDamageTag(damageRegistry, damageTagKey);
+                 }
+             }
++            // Paper start
++            case org.bukkit.Tag.REGISTRY_GAME_EVENTS -> {
++                Preconditions.checkArgument(clazz == org.bukkit.GameEvent.class, "Game Event namespace must have GameEvent type");
++                TagKey<net.minecraft.world.level.gameevent.GameEvent> gameEventTagKey = TagKey.create(net.minecraft.core.registries.Registries.GAME_EVENT, key);
++                if (net.minecraft.core.registries.BuiltInRegistries.GAME_EVENT.get(gameEventTagKey).isPresent()) {
++                    return (org.bukkit.Tag<T>) new io.papermc.paper.CraftGameEventTag(net.minecraft.core.registries.BuiltInRegistries.GAME_EVENT, gameEventTagKey);
++                }
++            }
++            // Paper end
+             default -> throw new IllegalArgumentException();
+         }
+ 
+@@ -2746,6 +2755,13 @@ public final class CraftServer implements Server {
+                 net.minecraft.core.Registry<DamageType> damageTags = CraftRegistry.getMinecraftRegistry(Registries.DAMAGE_TYPE);
+                 return damageTags.getTags().map(pair -> (org.bukkit.Tag<T>) new CraftDamageTag(damageTags, pair.key())).collect(ImmutableList.toImmutableList());
+             }
++            // Paper start
++            case org.bukkit.Tag.REGISTRY_GAME_EVENTS -> {
++                Preconditions.checkArgument(clazz == org.bukkit.GameEvent.class);
++                net.minecraft.core.Registry<net.minecraft.world.level.gameevent.GameEvent> gameEvents = net.minecraft.core.registries.BuiltInRegistries.GAME_EVENT;
++                return gameEvents.getTags().map(pair -> (org.bukkit.Tag<T>) new io.papermc.paper.CraftGameEventTag(gameEvents, pair.key())).collect(ImmutableList.toImmutableList());
++            }
++            // Paper end
+             default -> throw new IllegalArgumentException();
+         }
+     }

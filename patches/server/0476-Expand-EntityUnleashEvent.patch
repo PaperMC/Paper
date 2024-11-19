@@ -1,0 +1,158 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Fri, 29 Jan 2021 15:13:11 +0100
+Subject: [PATCH] Expand EntityUnleashEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 0832d43ca1be2581bcda9fc32d3359689d8c0384..bac2165553262bc3b26cddd607d83ca15807e9d2 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -2690,12 +2690,15 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+             if (leashable.getLeashHolder() == player) {
+                 if (!this.level().isClientSide()) {
+                     // CraftBukkit start - fire PlayerUnleashEntityEvent
+-                    if (CraftEventFactory.callPlayerUnleashEntityEvent(this, player, hand).isCancelled()) {
++                    // Paper start - Expand EntityUnleashEvent
++                    org.bukkit.event.player.PlayerUnleashEntityEvent event = CraftEventFactory.callPlayerUnleashEntityEvent(this, player, hand, !player.hasInfiniteMaterials());
++                    if (event.isCancelled()) {
++                        // Paper end - Expand EntityUnleashEvent
+                         ((ServerPlayer) player).connection.send(new ClientboundSetEntityLinkPacket(this, leashable.getLeashHolder()));
+                         return InteractionResult.PASS;
+                     }
+                     // CraftBukkit end
+-                    leashable.dropLeash(true, !player.hasInfiniteMaterials());
++                    leashable.dropLeash(true, event.isDropLeash()); // Paper - Expand EntityUnleashEvent
+                     this.gameEvent(GameEvent.ENTITY_INTERACT, player);
+                 }
+ 
+@@ -3660,9 +3663,12 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+ 
+     protected void removeAfterChangingDimensions() {
+         this.setRemoved(Entity.RemovalReason.CHANGED_DIMENSION, null); // CraftBukkit - add Bukkit remove cause
+-        if (this instanceof Leashable leashable) {
+-            this.level().getCraftServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.UNKNOWN)); // CraftBukkit
+-            leashable.dropLeash(true, false);
++        if (this instanceof Leashable leashable && leashable.isLeashed()) { // Paper - only call if it is leashed
++            // Paper start - Expand EntityUnleashEvent
++            final EntityUnleashEvent event = new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.UNKNOWN, false); // CraftBukkit
++            event.callEvent();
++            leashable.dropLeash(true, event.isDropLeash());
++            // Paper end - Expand EntityUnleashEvent
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/Leashable.java b/src/main/java/net/minecraft/world/entity/Leashable.java
+index dc39ecc3e1aada638337d31bfe68b400c6454af7..b7721ed97305d1cd6725935f965c2effc1bef5a1 100644
+--- a/src/main/java/net/minecraft/world/entity/Leashable.java
++++ b/src/main/java/net/minecraft/world/entity/Leashable.java
+@@ -167,8 +167,11 @@ public interface Leashable {
+ 
+         if (leashable_a != null && leashable_a.leashHolder != null) {
+             if (!entity.isAlive() || !leashable_a.leashHolder.isAlive()) {
+-                world.getCraftServer().getPluginManager().callEvent(new EntityUnleashEvent(entity.getBukkitEntity(), (!entity.isAlive()) ? UnleashReason.PLAYER_UNLEASH : UnleashReason.HOLDER_GONE)); // CraftBukkit
+-                Leashable.dropLeash(entity, true, world.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS) && !entity.pluginRemoved); // CraftBukkit - SPIGOT-7487: Don't drop leash, when the holder was removed by a plugin
++                // Paper start - Expand EntityUnleashEvent
++                final EntityUnleashEvent event = new EntityUnleashEvent(entity.getBukkitEntity(), (!entity.isAlive()) ? UnleashReason.PLAYER_UNLEASH : UnleashReason.HOLDER_GONE, world.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS) && !entity.pluginRemoved);
++                event.callEvent();
++                Leashable.dropLeash(entity, true, event.isDropLeash()); // CraftBukkit - SPIGOT-7487: Don't drop leash, when the holder was removed by a plugin
++                // Paper end - Expand EntityUnleashEvent
+             }
+ 
+             Entity entity1 = ((Leashable) entity).getLeashHolder();
+@@ -199,11 +202,16 @@ public interface Leashable {
+ 
+     default void leashTooFarBehaviour() {
+         // CraftBukkit start
++        boolean dropLeash = true; // Paper
+         if (this instanceof Entity entity) {
+-            entity.level().getCraftServer().getPluginManager().callEvent(new EntityUnleashEvent(entity.getBukkitEntity(), EntityUnleashEvent.UnleashReason.DISTANCE));
++            // Paper start - Expand EntityUnleashEvent
++            final EntityUnleashEvent event = new EntityUnleashEvent(entity.getBukkitEntity(), EntityUnleashEvent.UnleashReason.DISTANCE, true);
++            if (!event.callEvent()) return;
++            dropLeash = event.isDropLeash();
++            // Paper end - Expand EntityUnleashEvent
+         }
+         // CraftBukkit end
+-        this.dropLeash(true, true);
++        this.dropLeash(true, dropLeash); // Paper
+     }
+ 
+     default void closeRangeLeashBehaviour(Entity entity) {}
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index a8ab3c03a6f96658ce2a3f5758225954a36de6a9..ac7a52e77fd2fcbe9f95709b95ba54f8c2a6514b 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -1613,8 +1613,11 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+         boolean flag1 = super.startRiding(entity, force);
+ 
+         if (flag1 && this.isLeashed()) {
+-            this.level().getCraftServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.UNKNOWN)); // CraftBukkit
+-            this.dropLeash(true, true);
++            // Paper start - Expand EntityUnleashEvent
++            EntityUnleashEvent event = new EntityUnleashEvent(this.getBukkitEntity(), EntityUnleashEvent.UnleashReason.UNKNOWN, true);
++            if (!event.callEvent()) { return flag1; }
++            this.dropLeash(true, event.isDropLeash());
++            // Paper end - Expand EntityUnleashEvent
+         }
+ 
+         return flag1;
+diff --git a/src/main/java/net/minecraft/world/entity/TamableAnimal.java b/src/main/java/net/minecraft/world/entity/TamableAnimal.java
+index d2785628368b65854b6e1f35005c478d490a2f8c..cd565d1a8dab8d45196e4d29cab3d93a3ca619eb 100644
+--- a/src/main/java/net/minecraft/world/entity/TamableAnimal.java
++++ b/src/main/java/net/minecraft/world/entity/TamableAnimal.java
+@@ -99,7 +99,11 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
+     public boolean handleLeashAtDistance(Entity leashHolder, float distance) {
+         if (this.isInSittingPose()) {
+             if (distance > (float) this.level().paperConfig().misc.maxLeashDistance.or(Leashable.LEASH_TOO_FAR_DIST)) { // Paper - Configurable max leash distance
+-                this.dropLeash(true, true);
++                // Paper start - Expand EntityUnleashEvent
++                org.bukkit.event.entity.EntityUnleashEvent event = new org.bukkit.event.entity.EntityUnleashEvent(this.getBukkitEntity(), org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.DISTANCE, true);
++                if (!event.callEvent()) return false;
++                this.dropLeash(true, event.isDropLeash());
++                // Paper end - Expand EntityUnleashEvent
+             }
+ 
+             return false;
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java b/src/main/java/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java
+index 4b44830ef5d08887274ebb39e2780606fe3a76b4..d3a7953a3f42a0020342845e9107c6991637b050 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java
+@@ -119,13 +119,18 @@ public class LeashFenceKnotEntity extends BlockAttachedEntity {
+ 
+                         if (leashable1.isLeashed() && leashable1.getLeashHolder() == this) {
+                             // CraftBukkit start
++                            boolean dropLeash = !player.hasInfiniteMaterials();
+                             if (leashable1 instanceof Entity leashed) {
+-                                if (CraftEventFactory.callPlayerUnleashEntityEvent(leashed, player, hand).isCancelled()) {
++                                // Paper start - Expand EntityUnleashEvent
++                                org.bukkit.event.player.PlayerUnleashEntityEvent event = CraftEventFactory.callPlayerUnleashEntityEvent(leashed, player, hand, dropLeash);
++                                dropLeash = event.isDropLeash();
++                                if (event.isCancelled()) {
++                                    // Paper end - Expand EntityUnleashEvent
+                                     die = false;
+                                     continue;
+                                 }
+                             }
+-                            leashable1.dropLeash(true, !player.getAbilities().instabuild); // false -> survival mode boolean
++                            leashable1.dropLeash(true, dropLeash); // false -> survival mode boolean // Paper - Expand EntityUnleashEvent
+                             // CraftBukkit end
+                             flag1 = true;
+                         }
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 6d1d3451054af05e2381d70d71b99869f37c0901..697c69b60aa45b6a229f3bec77dc728e50a895ce 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1596,8 +1596,10 @@ public class CraftEventFactory {
+         Bukkit.getPluginManager().callEvent(new PlayerRecipeBookSettingsChangeEvent(player.getBukkitEntity(), bukkitType, open, filter));
+     }
+ 
+-    public static PlayerUnleashEntityEvent callPlayerUnleashEntityEvent(Entity entity, net.minecraft.world.entity.player.Player player, InteractionHand enumhand) {
+-        PlayerUnleashEntityEvent event = new PlayerUnleashEntityEvent(entity.getBukkitEntity(), (Player) player.getBukkitEntity(), CraftEquipmentSlot.getHand(enumhand));
++    // Paper start - Expand EntityUnleashEvent
++    public static PlayerUnleashEntityEvent callPlayerUnleashEntityEvent(Entity entity, net.minecraft.world.entity.player.Player player, InteractionHand enumhand, boolean dropLeash) {
++        PlayerUnleashEntityEvent event = new PlayerUnleashEntityEvent(entity.getBukkitEntity(), (Player) player.getBukkitEntity(), CraftEquipmentSlot.getHand(enumhand), dropLeash);
++        // Paper end - Expand EntityUnleashEvent
+         entity.level().getCraftServer().getPluginManager().callEvent(event);
+         return event;
+     }

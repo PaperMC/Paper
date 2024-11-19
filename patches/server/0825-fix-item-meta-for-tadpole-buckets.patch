@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 11 Jul 2023 11:22:30 -0700
+Subject: [PATCH] fix item meta for tadpole buckets
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemMetas.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemMetas.java
+index 4f5568707d725195ee19b65274454fec8bf99d64..d29f4dd9808e2001c79535d663ca77d6840f6092 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemMetas.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemMetas.java
+@@ -265,7 +265,7 @@ public final class CraftItemMetas {
+         if (itemType == ItemType.SUSPICIOUS_STEW) {
+             return CraftItemMetas.asType(CraftItemMetas.SUSPICIOUS_STEW_META_DATA);
+         }
+-        if (itemType == ItemType.COD_BUCKET || itemType == ItemType.PUFFERFISH_BUCKET
++        if (itemType == ItemType.COD_BUCKET || itemType == ItemType.PUFFERFISH_BUCKET || itemType == ItemType.TADPOLE_BUCKET // Paper
+                 || itemType == ItemType.SALMON_BUCKET || itemType == ItemType.ITEM_FRAME
+                 || itemType == ItemType.GLOW_ITEM_FRAME || itemType == ItemType.PAINTING) {
+             return CraftItemMetas.asType(CraftItemMetas.ENTITY_TAG_META_DATA);
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
+index 27af7ca9d62bdb4a24be5af139c181d7bc271ba5..3ff0340c40e9dc9a6e690de15ccade7a0c4e8f02 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
+@@ -19,6 +19,7 @@ public class CraftMetaEntityTag extends CraftMetaItem {
+             Material.COD_BUCKET,
+             Material.PUFFERFISH_BUCKET,
+             Material.SALMON_BUCKET,
++            Material.TADPOLE_BUCKET, // Paper
+             Material.ITEM_FRAME,
+             Material.GLOW_ITEM_FRAME,
+             Material.PAINTING
+diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
+index 6cc54035af870b75f45d836e5b60f5d9240dd7d0..c27f37fd8a0e90b1440bfd4329d044eb8df629d2 100644
+--- a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
++++ b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaTest.java
+@@ -209,6 +209,27 @@ public class ItemMetaTest {
+         }
+     }
+ 
++    // Paper start - check entity tag metas
++    private static final java.util.Set<Class<?>> ENTITY_TAG_METAS = java.util.Set.of(
++        CraftMetaEntityTag.class,
++        CraftMetaTropicalFishBucket.class,
++        CraftMetaAxolotlBucket.class
++    );
++    @Test
++    public void testEntityTagMeta() {
++        for (final Item item : BuiltInRegistries.ITEM) {
++            if (item instanceof net.minecraft.world.item.HangingEntityItem || item instanceof net.minecraft.world.item.MobBucketItem) {
++                ItemStack stack = new ItemStack(CraftItemType.minecraftToBukkit(item));
++                assertTrue(ENTITY_TAG_METAS.contains(stack.getItemMeta().getClass()), "missing entity tag meta handling for " + item);
++                stack = CraftItemStack.asNewCraftStack(net.minecraft.world.item.Items.STONE);
++                stack.editMeta(meta -> meta.displayName(net.kyori.adventure.text.Component.text("hello")));
++                stack.setType(CraftItemType.minecraftToBukkit(item));
++                assertTrue(ENTITY_TAG_METAS.contains(stack.getItemMeta().getClass()), "missing entity tag meta handling for " + item);
++            }
++        }
++    }
++    // Paper end
++
+     @Test
+     public void testEachExtraData() {
+         final List<StackProvider> providers = Arrays.asList(

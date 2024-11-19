@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Fri, 4 Mar 2022 20:35:19 +0100
+Subject: [PATCH] Fix falling block spawn methods
+
+Restores the API behavior from previous versions of the server
+- Do not call API events
+- Do not replace the existing block in the world
+
+== AT ==
+public net.minecraft.world.entity.item.FallingBlockEntity <init>(Lnet/minecraft/world/level/Level;DDDLnet/minecraft/world/level/block/state/BlockState;)V
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 83771925dc7009d56fc3c8283d75880c7e61296a..9b7304ea9a4f226872d13e64722adb267f727806 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -1385,7 +1385,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         Preconditions.checkArgument(material != null, "Material cannot be null");
+         Preconditions.checkArgument(material.isBlock(), "Material.%s must be a block", material);
+ 
+-        FallingBlockEntity entity = FallingBlockEntity.fall(this.world, BlockPos.containing(location.getX(), location.getY(), location.getZ()), CraftBlockType.bukkitToMinecraft(material).defaultBlockState(), SpawnReason.CUSTOM);
++        // Paper start - restore API behavior for spawning falling blocks
++        FallingBlockEntity entity = new FallingBlockEntity(this.world, location.getX(), location.getY(), location.getZ(), CraftBlockType.bukkitToMinecraft(material).defaultBlockState()); // Paper
++        entity.time = 1;
++
++        this.world.addFreshEntity(entity, SpawnReason.CUSTOM);
++        // Paper end - restore API behavior for spawning falling blocks
+         return (FallingBlock) entity.getBukkitEntity();
+     }
+ 
+@@ -1394,7 +1399,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         Preconditions.checkArgument(location != null, "Location cannot be null");
+         Preconditions.checkArgument(data != null, "BlockData cannot be null");
+ 
+-        FallingBlockEntity entity = FallingBlockEntity.fall(this.world, BlockPos.containing(location.getX(), location.getY(), location.getZ()), ((CraftBlockData) data).getState(), SpawnReason.CUSTOM);
++        // Paper start - restore API behavior for spawning falling blocks
++        FallingBlockEntity entity = new FallingBlockEntity(this.world, location.getX(), location.getY(), location.getZ(), ((CraftBlockData) data).getState());
++        entity.time = 1;
++
++        this.world.addFreshEntity(entity, SpawnReason.CUSTOM);
++        // Paper end - restore API behavior for spawning falling blocks
+         return (FallingBlock) entity.getBukkitEntity();
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java
+index f8ce309c6ec8c294378d2cd9bc542e43338f8376..0bafd3b1a55154c8e9eb37c96df9f5985640a675 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java
+@@ -440,7 +440,7 @@ public final class CraftEntityTypes {
+         register(new EntityTypeData<>(EntityType.TNT, TNTPrimed.class, CraftTNTPrimed::new, spawnData -> new PrimedTnt(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), null)));
+         register(new EntityTypeData<>(EntityType.FALLING_BLOCK, FallingBlock.class, CraftFallingBlock::new, spawnData -> {
+             BlockPos pos = BlockPos.containing(spawnData.x(), spawnData.y(), spawnData.z());
+-            return FallingBlockEntity.fall(spawnData.minecraftWorld(), pos, spawnData.world().getBlockState(pos));
++            return new FallingBlockEntity(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), spawnData.world().getBlockState(pos)); // Paper - create falling block entities correctly
+         }));
+         register(new EntityTypeData<>(EntityType.FIREWORK_ROCKET, Firework.class, CraftFirework::new, spawnData -> new FireworkRocketEntity(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), net.minecraft.world.item.ItemStack.EMPTY)));
+         register(new EntityTypeData<>(EntityType.EVOKER_FANGS, EvokerFangs.class, CraftEvokerFangs::new, spawnData -> new net.minecraft.world.entity.projectile.EvokerFangs(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), (float) Math.toRadians(spawnData.yaw()), 0, null)));
