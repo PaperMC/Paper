@@ -26285,7 +26285,7 @@ index 65206fdfa5b94eaca139e433b4865c16b16641f3..bf4463bcb5dc439ac5a3fa08dd60845a
      }
  }
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 0a895055ec7f61d3cb52d303bbe3f89486a322e7..38ac7fd8e68f535a5e9bdd816997e865b7694af1 100644
+index 0a895055ec7f61d3cb52d303bbe3f89486a322e7..10a9406e96ab0ab2404c0e0a9bef08e86a6a12a2 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -52,7 +52,7 @@ import net.minecraft.world.level.storage.DimensionDataStorage;
@@ -26486,13 +26486,13 @@ index 0a895055ec7f61d3cb52d303bbe3f89486a322e7..38ac7fd8e68f535a5e9bdd816997e865
 +
 +        if (ret != null || !ca.spottedleaf.moonrise.common.util.TickThread.isTickThread()) {
 +            return ret;
-+        }
+         }
 +
 +        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder holder = ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler()
 +            .chunkHolderManager.getChunkHolder(chunkX, chunkZ);
 +        if (holder == null) {
 +            return ret;
-         }
++        }
 +
 +        return ca.spottedleaf.moonrise.common.PlatformHooks.get().getCurrentlyLoadingChunk(holder.vanillaChunkHolder);
 +        // Paper end - rewrite chunk system
@@ -26554,15 +26554,15 @@ index 0a895055ec7f61d3cb52d303bbe3f89486a322e7..38ac7fd8e68f535a5e9bdd816997e865
 +                    ret.complete(ChunkResult.of(chunk));
 +                }
 +            };
-+
+ 
+-    private boolean chunkAbsent(@Nullable ChunkHolder holder, int maxLevel) {
+-        return holder == null || holder.oldTicketLevel > maxLevel; // CraftBukkit using oldTicketLevel for isLoaded checks
 +            ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().scheduleChunkLoad(
 +                chunkX, chunkZ, leastStatus, true,
 +                ca.spottedleaf.concurrentutil.util.Priority.HIGHER,
 +                complete
 +            );
- 
--    private boolean chunkAbsent(@Nullable ChunkHolder holder, int maxLevel) {
--        return holder == null || holder.oldTicketLevel > maxLevel; // CraftBukkit using oldTicketLevel for isLoaded checks
++
 +            return ret;
 +        } else {
 +            // can return now
@@ -26675,6 +26675,15 @@ index 0a895055ec7f61d3cb52d303bbe3f89486a322e7..38ac7fd8e68f535a5e9bdd816997e865
                      this.tickChunks(gameprofilerfiller, j, list);
                      gameprofilerfiller.pop();
                  } finally {
+@@ -448,7 +512,7 @@ public class ServerChunkCache extends ChunkSource {
+ 
+         while (iterator.hasNext()) {
+             ChunkHolder playerchunk = (ChunkHolder) iterator.next();
+-            LevelChunk chunk = playerchunk.getTickingChunk();
++            LevelChunk chunk = playerchunk.getChunkToSend(); // Paper - rewrite chunk system
+ 
+             if (chunk != null) {
+                 playerchunk.broadcastChanges(chunk);
 @@ -460,14 +524,26 @@ public class ServerChunkCache extends ChunkSource {
      }
  
