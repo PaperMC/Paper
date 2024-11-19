@@ -5,20 +5,10 @@ Subject: [PATCH] API to allow/disallow tick sleeping
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 64b56abf8900d0424100da460fc68ac964394793..5540994697d987898557d49e28dc1dc9f4a5e8db 100644
+index 64b56abf8900d0424100da460fc68ac964394793..6641fa9b1ae55e45f3089d2b18a49c75be98b287 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -3,9 +3,6 @@ package net.minecraft.server;
- import com.google.common.base.Preconditions;
- import com.google.common.base.Splitter;
- import com.google.common.collect.ImmutableList;
--import co.aikar.timings.Timings;
--import com.destroystokyo.paper.event.server.PaperServerListPingEvent;
--import com.google.common.base.Stopwatch;
- import com.google.common.collect.Lists;
- import com.google.common.collect.Maps;
- import com.google.common.collect.Sets;
-@@ -332,6 +329,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -332,6 +332,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public volatile Thread shutdownThread; // Paper
      public volatile boolean abnormalExit = false; // Paper
      public static final long SERVER_INIT = System.nanoTime(); // Paper - Lag compensation
@@ -26,28 +16,29 @@ index 64b56abf8900d0424100da460fc68ac964394793..5540994697d987898557d49e28dc1dc9
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
-@@ -1624,7 +1622,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1623,8 +1624,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         long i = Util.getNanos();
          int j = this.pauseWhileEmptySeconds() * 20;
  
++        removeDisabledPluginsBlockingSleep(); // Paper - API to allow/disallow tick sleeping
          if (j > 0) {
 -            if (this.playerList.getPlayerCount() == 0 && !this.tickRateManager.isSprinting()) {
-+            removeDisabledPluginsBlockingSleep(); // Paper - API to allow/disallow tick sleeping
 +            if (this.playerList.getPlayerCount() == 0 && !this.tickRateManager.isSprinting() && pluginsBlockingSleep.isEmpty()) { // Paper - API to allow/disallow tick sleeping
                  ++this.emptyTicks;
              } else {
                  this.emptyTicks = 0;
-@@ -3186,4 +3185,18 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -3186,4 +3188,18 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
      }
      // Paper end - Add tick times API and /mspt command
 +
 +    // Paper start - API to allow/disallow tick sleeping
 +    public void addPluginAllowingSleep(String pluginName, boolean value) {
-+        if (!value) pluginsBlockingSleep.add(pluginName);
-+        else pluginsBlockingSleep.remove(pluginName);
++        if (!value) { pluginsBlockingSleep.add(pluginName); }
++        else { pluginsBlockingSleep.remove(pluginName); }
 +    }
 +    private void removeDisabledPluginsBlockingSleep() {
-+        if (pluginsBlockingSleep.isEmpty()) return;
++        if (pluginsBlockingSleep.isEmpty()) { return; }
 +        pluginsBlockingSleep.removeIf(plugin -> (
 +            io.papermc.paper.plugin.manager.PaperPluginManagerImpl.getInstance().isPluginEnabled(plugin)
 +        ));
@@ -56,7 +47,7 @@ index 64b56abf8900d0424100da460fc68ac964394793..5540994697d987898557d49e28dc1dc9
 +
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index dfddcfb1fe1679adaecf75375757dca720e76ce1..5586c9cbdaeec81dffbf27f0cae46f19cdf75624 100644
+index 806e56cb60235a99f468d36a059fdbd54c2d46e3..b528cb3715f5b14fec6f43a9cc5540421277dc11 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -258,6 +258,7 @@ import org.bukkit.scoreboard.Criteria;
@@ -74,7 +65,7 @@ index dfddcfb1fe1679adaecf75375757dca720e76ce1..5586c9cbdaeec81dffbf27f0cae46f19
 +
 +    // Paper start - API to allow/disallow tick sleeping
 +    @Override
-+    public void allowPausing(final @NotNull org.bukkit.plugin.java.JavaPlugin plugin, final boolean value) {
++    public void allowPausing(final @NotNull org.bukkit.plugin.Plugin plugin, final boolean value) {
 +        console.addPluginAllowingSleep(plugin.getName(), value);
 +    }
 +    // Paper end - API to allow/disallow tick sleeping
