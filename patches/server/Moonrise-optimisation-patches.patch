@@ -87,7 +87,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -    private static long chunkLoadCounter = 0L;
      public static void scheduleChunkLoad(final ServerLevel level, final int chunkX, final int chunkZ, final ChunkStatus toStatus,
                                           final boolean addTicket, final Priority priority, final Consumer<ChunkAccess> onComplete) {
--        if (!org.bukkit.Bukkit.isPrimaryThread()) {
+-        if (!org.bukkit.Bukkit.isOwnedByCurrentRegion(level.getWorld(), chunkX, chunkZ)) {
 -            scheduleChunkTask(level, chunkX, chunkZ, () -> {
 -                scheduleChunkLoad(level, chunkX, chunkZ, toStatus, addTicket, priority, onComplete);
 -            }, priority);
@@ -153,7 +153,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            throw new IllegalArgumentException("Cannot wait for INACCESSIBLE status");
 -        }
 -
--        if (!org.bukkit.Bukkit.isPrimaryThread()) {
+-        if (!org.bukkit.Bukkit.isOwnedByCurrentRegion(level.getWorld(), chunkX, chunkZ)) {
 -            scheduleChunkTask(level, chunkX, chunkZ, () -> {
 -                scheduleTickingState(level, chunkX, chunkZ, toStatus, addTicket, priority, onComplete);
 -            }, priority);
@@ -26821,17 +26821,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            });
 -            return;
 -        }
--        List<net.minecraft.world.level.chunk.ChunkAccess> ret = new java.util.ArrayList<>();
--        it.unimi.dsi.fastutil.ints.IntArrayList ticketLevels = new it.unimi.dsi.fastutil.ints.IntArrayList();
--
 +        // Paper - rewrite chunk system
          int minBlockX = Mth.floor(axisalignedbb.minX - 1.0E-7D) - 3;
-         int maxBlockX = Mth.floor(axisalignedbb.maxX + 1.0E-7D) + 3;
+         int minBlockZ = Mth.floor(axisalignedbb.minZ - 1.0E-7D) - 3;
  
 @@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
-         int minChunkZ = minBlockZ >> 4;
-         int maxChunkZ = maxBlockZ >> 4;
- 
+     public final void loadChunks(int minChunkX, int minChunkZ, int maxChunkX, int maxChunkZ,
+                                  ca.spottedleaf.concurrentutil.util.Priority priority,
+                                  java.util.function.Consumer<List<net.minecraft.world.level.chunk.ChunkAccess>> onLoad) {
+-        List<net.minecraft.world.level.chunk.ChunkAccess> ret = new java.util.ArrayList<>();
+-        it.unimi.dsi.fastutil.ints.IntArrayList ticketLevels = new it.unimi.dsi.fastutil.ints.IntArrayList();
 -        ServerChunkCache chunkProvider = this.getChunkSource();
 +        this.moonrise$loadChunksAsync(minChunkX, maxChunkX, minChunkZ, maxChunkZ, priority, onLoad); // Paper - rewrite chunk system
 +    }
@@ -26874,7 +26873,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder.ChunkCompletion lastCompletion = newChunkHolder.getLastChunkCompletion();
 +        return lastCompletion == null ? null : lastCompletion.chunk();
 +    }
-+
+ 
+-        int requiredChunks = (maxChunkX - minChunkX + 1) * (maxChunkZ - minChunkZ + 1);
+-        int[] loadedChunks = new int[1];
 +    @Override
 +    public final ChunkAccess moonrise$getSpecificChunkIfLoaded(final int chunkX, final int chunkZ, final net.minecraft.world.level.chunk.status.ChunkStatus leastStatus) {
 +        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder newChunkHolder = this.moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(chunkX, chunkZ);
@@ -26883,26 +26884,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +        return newChunkHolder.getChunkIfPresentUnchecked(leastStatus);
 +    }
- 
--        int requiredChunks = (maxChunkX - minChunkX + 1) * (maxChunkZ - minChunkZ + 1);
--        int[] loadedChunks = new int[1];
++
 +    @Override
 +    public final void moonrise$midTickTasks() {
 +        ((ca.spottedleaf.moonrise.patches.chunk_system.server.ChunkSystemMinecraftServer)this.server).moonrise$executeMidTickTasks();
 +    }
- 
--        Long holderIdentifier = Long.valueOf(chunkProvider.chunkFutureAwaitCounter++);
++
 +    @Override
 +    public final ChunkAccess moonrise$syncLoadNonFull(final int chunkX, final int chunkZ, final net.minecraft.world.level.chunk.status.ChunkStatus status) {
 +        return this.moonrise$getChunkTaskScheduler().syncLoadNonFull(chunkX, chunkZ, status);
 +    }
  
--        java.util.function.Consumer<net.minecraft.world.level.chunk.ChunkAccess> consumer = (net.minecraft.world.level.chunk.ChunkAccess chunk) -> {
+-        Long holderIdentifier = Long.valueOf(chunkProvider.chunkFutureAwaitCounter++);
 +    @Override
 +    public final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler moonrise$getChunkTaskScheduler() {
 +        return this.chunkTaskScheduler;
 +    }
-+
+ 
+-        java.util.function.Consumer<net.minecraft.world.level.chunk.ChunkAccess> consumer = (net.minecraft.world.level.chunk.ChunkAccess chunk) -> {
 +    @Override
 +    public final ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.RegionDataController  moonrise$getChunkDataController() {
 +        return this.chunkDataController;
@@ -36084,11 +36083,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public Collection<Plugin> getPluginChunkTickets(int x, int z) {
          DistanceManager chunkDistanceManager = this.world.getChunkSource().chunkMap.distanceManager;
 -        SortedArraySet<Ticket<?>> tickets = chunkDistanceManager.tickets.get(ChunkPos.asLong(x, z));
- 
+-
 -        if (tickets == null) {
 -            return Collections.emptyList();
 -        }
--
+ 
 -        ImmutableList.Builder<Plugin> ret = ImmutableList.builder();
 -        for (Ticket<?> ticket : tickets) {
 -            if (ticket.getType() == TicketType.PLUGIN_TICKET) {

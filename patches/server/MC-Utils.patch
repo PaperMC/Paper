@@ -3378,7 +3378,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private static long chunkLoadCounter = 0L;
 +    public static void scheduleChunkLoad(final ServerLevel level, final int chunkX, final int chunkZ, final ChunkStatus toStatus,
 +                                         final boolean addTicket, final Priority priority, final Consumer<ChunkAccess> onComplete) {
-+        if (!org.bukkit.Bukkit.isPrimaryThread()) {
++        if (!org.bukkit.Bukkit.isOwnedByCurrentRegion(level.getWorld(), chunkX, chunkZ)) {
 +            scheduleChunkTask(level, chunkX, chunkZ, () -> {
 +                scheduleChunkLoad(level, chunkX, chunkZ, toStatus, addTicket, priority, onComplete);
 +            }, priority);
@@ -3443,7 +3443,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            throw new IllegalArgumentException("Cannot wait for INACCESSIBLE status");
 +        }
 +
-+        if (!org.bukkit.Bukkit.isPrimaryThread()) {
++        if (!org.bukkit.Bukkit.isOwnedByCurrentRegion(level.getWorld(), chunkX, chunkZ)) {
 +            scheduleChunkTask(level, chunkX, chunkZ, () -> {
 +                scheduleTickingState(level, chunkX, chunkZ, toStatus, addTicket, priority, onComplete);
 +            }, priority);
@@ -5501,21 +5501,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            });
 +            return;
 +        }
-+        List<net.minecraft.world.level.chunk.ChunkAccess> ret = new java.util.ArrayList<>();
-+        it.unimi.dsi.fastutil.ints.IntArrayList ticketLevels = new it.unimi.dsi.fastutil.ints.IntArrayList();
-+
 +        int minBlockX = Mth.floor(axisalignedbb.minX - 1.0E-7D) - 3;
-+        int maxBlockX = Mth.floor(axisalignedbb.maxX + 1.0E-7D) + 3;
-+
 +        int minBlockZ = Mth.floor(axisalignedbb.minZ - 1.0E-7D) - 3;
++
++        int maxBlockX = Mth.floor(axisalignedbb.maxX + 1.0E-7D) + 3;
 +        int maxBlockZ = Mth.floor(axisalignedbb.maxZ + 1.0E-7D) + 3;
 +
 +        int minChunkX = minBlockX >> 4;
-+        int maxChunkX = maxBlockX >> 4;
-+
 +        int minChunkZ = minBlockZ >> 4;
++
++        int maxChunkX = maxBlockX >> 4;
 +        int maxChunkZ = maxBlockZ >> 4;
 +
++        this.loadChunks(minChunkX, minChunkZ, maxChunkX, maxChunkZ, priority, onLoad);
++    }
++
++    public final void loadChunks(int minChunkX, int minChunkZ, int maxChunkX, int maxChunkZ,
++                                 ca.spottedleaf.concurrentutil.util.Priority priority,
++                                 java.util.function.Consumer<List<net.minecraft.world.level.chunk.ChunkAccess>> onLoad) {
++        List<net.minecraft.world.level.chunk.ChunkAccess> ret = new java.util.ArrayList<>();
++        it.unimi.dsi.fastutil.ints.IntArrayList ticketLevels = new it.unimi.dsi.fastutil.ints.IntArrayList();
 +        ServerChunkCache chunkProvider = this.getChunkSource();
 +
 +        int requiredChunks = (maxChunkX - minChunkX + 1) * (maxChunkZ - minChunkZ + 1);
@@ -6224,31 +6229,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
      // Spigot end
 +    // Paper start
-+    public java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(int x, int z, boolean gen, boolean urgent) {
-+        if (Bukkit.isPrimaryThread()) {
-+            net.minecraft.world.level.chunk.LevelChunk immediate = this.world.getChunkSource().getChunkAtIfLoadedImmediately(x, z);
-+            if (immediate != null) {
-+                return java.util.concurrent.CompletableFuture.completedFuture(new CraftChunk(immediate));
++    @Override
++    public void getChunkAtAsync(int x, int z, boolean gen, boolean urgent, @NotNull Consumer<? super Chunk> cb) {
++        ca.spottedleaf.moonrise.common.util.ChunkSystem.scheduleChunkLoad(
++            this.getHandle(), x, z, gen, ChunkStatus.FULL, true,
++            urgent ? ca.spottedleaf.concurrentutil.util.Priority.HIGHER : ca.spottedleaf.concurrentutil.util.Priority.NORMAL,
++            (ChunkAccess chunk) -> {
++                cb.accept(chunk == null ? null : new CraftChunk((net.minecraft.world.level.chunk.LevelChunk)chunk));
 +            }
-+        }
++        );
 +
-+        ca.spottedleaf.concurrentutil.util.Priority priority;
-+        if (urgent) {
-+            priority = ca.spottedleaf.concurrentutil.util.Priority.HIGHER;
-+        } else {
-+            priority = ca.spottedleaf.concurrentutil.util.Priority.NORMAL;
-+        }
++    }
 +
-+        java.util.concurrent.CompletableFuture<Chunk> ret = new java.util.concurrent.CompletableFuture<>();
-+
-+        ca.spottedleaf.moonrise.common.util.ChunkSystem.scheduleChunkLoad(this.getHandle(), x, z, gen, ChunkStatus.FULL, true, priority, (c) -> {
-+            net.minecraft.server.MinecraftServer.getServer().scheduleOnMain(() -> {
-+                net.minecraft.world.level.chunk.LevelChunk chunk = (net.minecraft.world.level.chunk.LevelChunk)c;
-+                ret.complete(chunk == null ? null : new CraftChunk(chunk));
-+            });
-+        });
-+
-+        return ret;
++    @Override
++    public void getChunksAtAsync(int minX, int minZ, int maxX, int maxZ, boolean urgent, Runnable cb) {
++        this.getHandle().loadChunks(
++            minX, minZ, maxX, maxZ,
++            urgent ? ca.spottedleaf.concurrentutil.util.Priority.HIGHER : ca.spottedleaf.concurrentutil.util.Priority.NORMAL,
++            (List<ChunkAccess> chunks) -> {
++                cb.run();
++            }
++        );
 +    }
 +
 +    @Override

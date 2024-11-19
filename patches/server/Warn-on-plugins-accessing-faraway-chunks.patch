@@ -43,9 +43,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @Override
      public Chunk getChunkAt(int x, int z) {
 +        warnUnsafeChunk("getting a faraway chunk", x, z); // Paper
-         // Paper start - add ticket to hold chunk for a little while longer if plugin accesses it
-         net.minecraft.world.level.chunk.LevelChunk chunk = this.world.getChunkSource().getChunkAtIfLoadedImmediately(x, z);
-         if (chunk == null) {
+         net.minecraft.world.level.chunk.LevelChunk chunk = (net.minecraft.world.level.chunk.LevelChunk) this.world.getChunk(x, z, ChunkStatus.FULL, true);
+         return new CraftChunk(chunk);
+     }
 @@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
          if (!unloadChunk0(x, z, false)) {
              return false;
@@ -87,10 +87,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          return this.world.getChunk(x >> 4, z >> 4).getHeight(CraftHeightMap.toNMS(heightMap), x, z);
      }
 @@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
-     // Spigot end
      // Paper start
-     public java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(int x, int z, boolean gen, boolean urgent) {
+     @Override
+     public void getChunkAtAsync(int x, int z, boolean gen, boolean urgent, @NotNull Consumer<? super Chunk> cb) {
 +        warnUnsafeChunk("getting a faraway chunk async", x, z); // Paper
-         if (Bukkit.isPrimaryThread()) {
-             net.minecraft.world.level.chunk.LevelChunk immediate = this.world.getChunkSource().getChunkAtIfLoadedImmediately(x, z);
-             if (immediate != null) {
+         ca.spottedleaf.moonrise.common.util.ChunkSystem.scheduleChunkLoad(
+             this.getHandle(), x, z, gen, ChunkStatus.FULL, true,
+             urgent ? ca.spottedleaf.concurrentutil.util.Priority.HIGHER : ca.spottedleaf.concurrentutil.util.Priority.NORMAL,
+@@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+ 
+     @Override
+     public void getChunksAtAsync(int minX, int minZ, int maxX, int maxZ, boolean urgent, Runnable cb) {
++        warnUnsafeChunk("getting a faraway chunk async", minX, minZ); // Paper
++        warnUnsafeChunk("getting a faraway chunk async", maxX, maxZ); // Paper
+         this.getHandle().loadChunks(
+             minX, minZ, maxX, maxZ,
+             urgent ? ca.spottedleaf.concurrentutil.util.Priority.HIGHER : ca.spottedleaf.concurrentutil.util.Priority.NORMAL,
