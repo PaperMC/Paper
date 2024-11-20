@@ -569,8 +569,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkArgument(loc != null, "Location cannot be null");
         Preconditions.checkArgument(item != null, "ItemStack cannot be null");
 
-        double xs = 0.5D + MathHelper.nextDouble(world.random, -0.25D, 0.25D);
-        double ys = 0.5D + MathHelper.nextDouble(world.random, -0.25D, 0.25D) - ((double) EntityTypes.ITEM.getHeight() / 2.0D);
+        double xs = MathHelper.nextDouble(world.random, -0.25D, 0.25D);
+        double ys = MathHelper.nextDouble(world.random, -0.25D, 0.25D) - ((double) EntityTypes.ITEM.getHeight() / 2.0D);
         double zs = MathHelper.nextDouble(world.random, -0.25D, 0.25D);
         loc = loc.clone().add(xs, ys, zs);
         return dropItem(loc, item, function);
