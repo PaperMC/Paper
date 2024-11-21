@@ -57,7 +57,7 @@ index 0000000000000000000000000000000000000000..4a49f65cae1354afbcd4afda07581790
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/ComponentAdapters.java b/src/main/java/io/papermc/paper/datacomponent/ComponentAdapters.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6a589572df8319233ca4d7e4cef89a9c376b5b2b
+index 0000000000000000000000000000000000000000..ee7adf16febfb508b14ff1453e73c75a42be7d26
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/ComponentAdapters.java
 @@ -0,0 +1,171 @@
@@ -183,8 +183,8 @@ index 0000000000000000000000000000000000000000..6a589572df8319233ca4d7e4cef89a9c
 +        register(DataComponents.OMINOUS_BOTTLE_AMPLIFIER, PaperOminousBottleAmplifier::new);
 +        register(DataComponents.JUKEBOX_PLAYABLE, PaperJukeboxPlayable::new);
 +        register(DataComponents.RECIPES,
-+            nms -> transformUnmodifiable(nms, key -> PaperAdventure.asAdventure(key.location())),
-+            api -> transformUnmodifiable(api, key -> ResourceKey.create(Registries.RECIPE, PaperAdventure.asVanilla(key)))
++            nms -> transformUnmodifiable(nms, PaperAdventure::asAdventureKey),
++            api -> transformUnmodifiable(api, key -> PaperAdventure.asVanilla(Registries.RECIPE, key))
 +        );
 +        register(DataComponents.LODESTONE_TRACKER, PaperLodestoneTracker::new);
 +        register(DataComponents.FIREWORK_EXPLOSION, CraftMetaFirework::getEffect, CraftMetaFirework::getExplosion);
@@ -832,7 +832,7 @@ index 0000000000000000000000000000000000000000..2129dd67fd02a13f6e6fbdfb07505dc6
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperConsumable.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperConsumable.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ba67548f664ee673e7a951b7a0e45bc792e1e985
+index 0000000000000000000000000000000000000000..59089df6188ac48be7cb2001e9dda9a98274644f
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperConsumable.java
 @@ -0,0 +1,132 @@
@@ -928,7 +928,7 @@ index 0000000000000000000000000000000000000000..ba67548f664ee673e7a951b7a0e45bc7
 +        @Override
 +        public Builder sound(final Key sound) {
 +            this.eatSound = BuiltInRegistries.SOUND_EVENT.getOrThrow(
-+                ResourceKey.create(Registries.SOUND_EVENT, PaperAdventure.asVanilla(sound))
++                PaperAdventure.asVanilla(Registries.SOUND_EVENT, sound)
 +            );
 +
 +            return this;
@@ -1159,7 +1159,7 @@ index 0000000000000000000000000000000000000000..422e1a4d606481f0dc68843fbbc8126c
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperEquippable.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperEquippable.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dbf0ce70e408c5531f8b6acf429673c971232d3a
+index 0000000000000000000000000000000000000000..7c97fa52f09aa516970ddff779d578eefffdf386
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperEquippable.java
 @@ -0,0 +1,172 @@
@@ -1271,7 +1271,7 @@ index 0000000000000000000000000000000000000000..dbf0ce70e408c5531f8b6acf429673c9
 +        @Override
 +        public Builder equipSound(final Key equipSound) {
 +            this.equipSound = BuiltInRegistries.SOUND_EVENT.getOrThrow(
-+                ResourceKey.create(Registries.SOUND_EVENT, PaperAdventure.asVanilla(equipSound))
++                PaperAdventure.asVanilla(Registries.SOUND_EVENT, equipSound)
 +            );
 +
 +            return this;
@@ -2104,10 +2104,10 @@ index 0000000000000000000000000000000000000000..538a61eaa02c029b4d92f938e0ffde8a
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperJukeboxPlayable.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperJukeboxPlayable.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..48da3b1935bd425abd8522339db919c7d1bafeb9
+index 0000000000000000000000000000000000000000..5e6a1c24e886dce996880f08ef239366d60bd495
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperJukeboxPlayable.java
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,63 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import net.minecraft.core.registries.Registries;
@@ -2138,7 +2138,10 @@ index 0000000000000000000000000000000000000000..48da3b1935bd425abd8522339db919c7
 +
 +    @Override
 +    public JukeboxSong jukeboxSong() {
-+        return CraftJukeboxSong.minecraftHolderToBukkit(CraftRegistry.getMinecraftRegistry(Registries.JUKEBOX_SONG).getOrThrow(this.impl.song().key()));
++        return this.impl.song()
++            .unwrap(CraftRegistry.getMinecraftRegistry())
++            .map(CraftJukeboxSong::minecraftHolderToBukkit)
++            .orElseThrow();
 +    }
 +
 +    static final class BuilderImpl implements JukeboxPlayable.Builder {
@@ -3319,10 +3322,10 @@ index 0000000000000000000000000000000000000000..037a6695bdb8ee6e3c119fa79000c4ea
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/consumable/ConsumableTypesBridgeImpl.java b/src/main/java/io/papermc/paper/datacomponent/item/consumable/ConsumableTypesBridgeImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..93ac03bf2b97b786a6db219115ce7674d225b423
+index 0000000000000000000000000000000000000000..cfde98f6f1c69f728d42a8fd7c5d48b2872831e6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/consumable/ConsumableTypesBridgeImpl.java
-@@ -0,0 +1,69 @@
+@@ -0,0 +1,67 @@
 +package io.papermc.paper.datacomponent.item.consumable;
 +
 +import com.google.common.base.Preconditions;
@@ -3377,9 +3380,7 @@ index 0000000000000000000000000000000000000000..93ac03bf2b97b786a6db219115ce7674
 +    public ConsumeEffect.PlaySound playSoundEffect(final Key sound) {
 +        return new PaperPlaySound(
 +            new net.minecraft.world.item.consume_effects.PlaySoundConsumeEffect(
-+                BuiltInRegistries.SOUND_EVENT.getOrThrow(
-+                    ResourceKey.create(Registries.SOUND_EVENT, PaperAdventure.asVanilla(sound))
-+                )
++                BuiltInRegistries.SOUND_EVENT.getOrThrow(PaperAdventure.asVanilla(Registries.SOUND_EVENT, sound))
 +            )
 +        );
 +    }
@@ -4071,12 +4072,13 @@ index 0000000000000000000000000000000000000000..4ee0491763341232844a99aa528310a3
 +}
 diff --git a/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java b/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5825be69af0b949ce28d6bde28bef68935db0d45
+index 0000000000000000000000000000000000000000..12df56d514356609d5c6b8ab7b565385413c1069
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java
-@@ -0,0 +1,371 @@
+@@ -0,0 +1,419 @@
 +package io.papermc.paper.item;
 +
++import com.mojang.datafixers.util.Either;
 +import io.papermc.paper.datacomponent.DataComponentType;
 +import io.papermc.paper.datacomponent.DataComponentTypes;
 +import io.papermc.paper.datacomponent.item.ChargedProjectiles;
@@ -4098,8 +4100,18 @@ index 0000000000000000000000000000000000000000..5825be69af0b949ce28d6bde28bef689
 +import io.papermc.paper.registry.RegistryKey;
 +import io.papermc.paper.registry.set.RegistrySet;
 +import io.papermc.paper.registry.tag.TagKey;
++import java.util.List;
++import java.util.Map;
++import java.util.function.BiConsumer;
++import java.util.function.Function;
++import net.kyori.adventure.key.Key;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.util.TriState;
++import net.minecraft.core.component.DataComponents;
++import net.minecraft.core.registries.Registries;
++import net.minecraft.world.item.EitherHolder;
++import net.minecraft.world.item.Items;
++import net.minecraft.world.item.JukeboxSongs;
 +import org.bukkit.Color;
 +import org.bukkit.FireworkEffect;
 +import org.bukkit.JukeboxSong;
@@ -4111,6 +4123,7 @@ index 0000000000000000000000000000000000000000..5825be69af0b949ce28d6bde28bef689
 +import org.bukkit.block.BlockState;
 +import org.bukkit.block.BlockType;
 +import org.bukkit.block.DecoratedPot;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
 +import org.bukkit.enchantments.Enchantment;
 +import org.bukkit.inventory.EquipmentSlotGroup;
 +import org.bukkit.inventory.ItemFlag;
@@ -4123,6 +4136,7 @@ index 0000000000000000000000000000000000000000..5825be69af0b949ce28d6bde28bef689
 +import org.bukkit.inventory.meta.Damageable;
 +import org.bukkit.inventory.meta.FireworkMeta;
 +import org.bukkit.inventory.meta.ItemMeta;
++import org.bukkit.inventory.meta.KnowledgeBookMeta;
 +import org.bukkit.inventory.meta.LeatherArmorMeta;
 +import org.bukkit.inventory.meta.MapMeta;
 +import org.bukkit.inventory.meta.Repairable;
@@ -4132,13 +4146,10 @@ index 0000000000000000000000000000000000000000..5825be69af0b949ce28d6bde28bef689
 +import org.bukkit.inventory.meta.trim.ArmorTrim;
 +import org.bukkit.inventory.meta.trim.TrimMaterial;
 +import org.bukkit.inventory.meta.trim.TrimPattern;
++import org.bukkit.support.RegistryHelper;
 +import org.bukkit.support.environment.AllFeatures;
 +import org.junit.jupiter.api.Assertions;
 +import org.junit.jupiter.api.Test;
-+import java.util.List;
-+import java.util.Map;
-+import java.util.function.BiConsumer;
-+import java.util.function.Function;
 +
 +@AllFeatures
 +class ItemStackDataComponentTest {
@@ -4406,6 +4417,44 @@ index 0000000000000000000000000000000000000000..5825be69af0b949ce28d6bde28bef689
 +        stack.unsetData(DataComponentTypes.POT_DECORATIONS);
 +        decoratedPot = (DecoratedPot) ((BlockStateMeta) stack.getItemMeta()).getBlockState();
 +        Assertions.assertTrue(decoratedPot.getSherds().values().stream().allMatch((m) -> m.asItemType() == ItemType.BRICK));
++    }
++
++    @Test
++    void testRecipes() {
++        final ItemStack stack = new ItemStack(Material.KNOWLEDGE_BOOK);
++        stack.setData(DataComponentTypes.RECIPES, List.of(Key.key("paper:fun_recipe")));
++
++        final ItemMeta itemMeta = stack.getItemMeta();
++        Assertions.assertInstanceOf(KnowledgeBookMeta.class, itemMeta);
++
++        final List<NamespacedKey> recipes = ((KnowledgeBookMeta) itemMeta).getRecipes();
++        Assertions.assertEquals(recipes, List.of(new NamespacedKey("paper", "fun_recipe")));
++    }
++
++    @Test
++    void testJukeboxWithEitherKey() {
++        final ItemStack apiStack = CraftItemStack.asBukkitCopy(new net.minecraft.world.item.ItemStack(Items.MUSIC_DISC_5));
++        final JukeboxPlayable data = apiStack.getData(DataComponentTypes.JUKEBOX_PLAYABLE);
++
++        Assertions.assertNotNull(data);
++        Assertions.assertEquals(JukeboxSong.FIVE, data.jukeboxSong());
++    }
++
++    @Test
++    void testJukeboxWithEitherHolder() {
++        final net.minecraft.world.item.ItemStack internalStack = new net.minecraft.world.item.ItemStack(Items.STONE);
++        internalStack.set(DataComponents.JUKEBOX_PLAYABLE, new net.minecraft.world.item.JukeboxPlayable(
++            EitherHolder.fromEither(
++                Either.left(RegistryHelper.getRegistry().lookupOrThrow(Registries.JUKEBOX_SONG).getOrThrow(JukeboxSongs.FIVE))
++            ),
++            true
++        ));
++
++        final ItemStack apiStack = CraftItemStack.asBukkitCopy(internalStack);
++        final JukeboxPlayable data = apiStack.getData(DataComponentTypes.JUKEBOX_PLAYABLE);
++
++        Assertions.assertNotNull(data);
++        Assertions.assertEquals(JukeboxSong.FIVE, data.jukeboxSong());
 +    }
 +
 +    private static <T, M extends ItemMeta> void testWithMeta(final ItemStack stack, final DataComponentType.Valued<T> type, final T value, final Class<M> metaType, final Function<M, T> metaGetter, final BiConsumer<M, T> metaSetter) {
