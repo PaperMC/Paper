@@ -1161,16 +1161,15 @@ index 0000000000000000000000000000000000000000..2fd6c3e65354071af71c7d8ebb97b559
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..dad43ebc570beecc6e3fafaf1e2f87fc88691800
+index 0000000000000000000000000000000000000000..8ec506a1ae40f2e4b01af9b34a0b98be8653b460
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
-@@ -0,0 +1,495 @@
+@@ -0,0 +1,505 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.brigadier.StringReader;
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
 +import com.mojang.serialization.JavaOps;
-+import com.mojang.serialization.JsonOps;
 +import io.netty.util.AttributeKey;
 +import java.io.IOException;
 +import java.util.ArrayList;
@@ -1334,11 +1333,22 @@ index 0000000000000000000000000000000000000000..dad43ebc570beecc6e3fafaf1e2f87fc
 +        return asAdventure(key.location());
 +    }
 +
-+    public static ResourceLocation asVanillaNullable(final Key key) {
++    public static @Nullable ResourceLocation asVanillaNullable(final Key key) {
 +        if (key == null) {
 +            return null;
 +        }
 +        return asVanilla(key);
++    }
++
++    public static Holder<SoundEvent> resolveSound(final Key key) {
++        ResourceLocation id = asVanilla(key);
++        Optional<Holder.Reference<SoundEvent>> vanilla = BuiltInRegistries.SOUND_EVENT.get(id);
++        if (vanilla.isPresent()) {
++            return vanilla.get();
++        }
++
++        // sound is not known so not in the registry but might be used by the client with a resource pack
++        return Holder.direct(SoundEvent.createVariableRangeEvent(id));
 +    }
 +
 +    // Component

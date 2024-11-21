@@ -832,10 +832,10 @@ index 0000000000000000000000000000000000000000..2129dd67fd02a13f6e6fbdfb07505dc6
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperConsumable.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperConsumable.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..59089df6188ac48be7cb2001e9dda9a98274644f
+index 0000000000000000000000000000000000000000..0bc2bad71d6945ca24f37008effc903a84466004
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperConsumable.java
-@@ -0,0 +1,132 @@
+@@ -0,0 +1,126 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import com.google.common.base.Preconditions;
@@ -848,9 +848,6 @@ index 0000000000000000000000000000000000000000..59089df6188ac48be7cb2001e9dda9a9
 +import java.util.List;
 +import net.kyori.adventure.key.Key;
 +import net.minecraft.core.Holder;
-+import net.minecraft.core.registries.BuiltInRegistries;
-+import net.minecraft.core.registries.Registries;
-+import net.minecraft.resources.ResourceKey;
 +import net.minecraft.sounds.SoundEvent;
 +import net.minecraft.sounds.SoundEvents;
 +import org.bukkit.craftbukkit.util.Handleable;
@@ -927,10 +924,7 @@ index 0000000000000000000000000000000000000000..59089df6188ac48be7cb2001e9dda9a9
 +
 +        @Override
 +        public Builder sound(final Key sound) {
-+            this.eatSound = BuiltInRegistries.SOUND_EVENT.getOrThrow(
-+                PaperAdventure.asVanilla(Registries.SOUND_EVENT, sound)
-+            );
-+
++            this.eatSound = PaperAdventure.resolveSound(sound);
 +            return this;
 +        }
 +
@@ -1159,10 +1153,10 @@ index 0000000000000000000000000000000000000000..422e1a4d606481f0dc68843fbbc8126c
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperEquippable.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperEquippable.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..7c97fa52f09aa516970ddff779d578eefffdf386
+index 0000000000000000000000000000000000000000..ab7947bddfad12d8ae7abcda34f17c3335082a01
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperEquippable.java
-@@ -0,0 +1,172 @@
+@@ -0,0 +1,168 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import io.papermc.paper.adventure.PaperAdventure;
@@ -1175,7 +1169,6 @@ index 0000000000000000000000000000000000000000..7c97fa52f09aa516970ddff779d578ee
 +import net.minecraft.core.HolderSet;
 +import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.core.registries.Registries;
-+import net.minecraft.resources.ResourceKey;
 +import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.sounds.SoundEvent;
 +import net.minecraft.sounds.SoundEvents;
@@ -1269,11 +1262,8 @@ index 0000000000000000000000000000000000000000..7c97fa52f09aa516970ddff779d578ee
 +        }
 +
 +        @Override
-+        public Builder equipSound(final Key equipSound) {
-+            this.equipSound = BuiltInRegistries.SOUND_EVENT.getOrThrow(
-+                PaperAdventure.asVanilla(Registries.SOUND_EVENT, equipSound)
-+            );
-+
++        public Builder equipSound(final Key sound) {
++            this.equipSound = PaperAdventure.resolveSound(sound);
 +            return this;
 +        }
 +
@@ -2104,13 +2094,12 @@ index 0000000000000000000000000000000000000000..538a61eaa02c029b4d92f938e0ffde8a
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperJukeboxPlayable.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperJukeboxPlayable.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5e6a1c24e886dce996880f08ef239366d60bd495
+index 0000000000000000000000000000000000000000..c43ccf7ccc6157389fce9f9746d5297f0eab1b6e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperJukeboxPlayable.java
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,62 @@
 +package io.papermc.paper.datacomponent.item;
 +
-+import net.minecraft.core.registries.Registries;
 +import net.minecraft.world.item.EitherHolder;
 +import org.bukkit.JukeboxSong;
 +import org.bukkit.craftbukkit.CraftJukeboxSong;
@@ -3322,10 +3311,10 @@ index 0000000000000000000000000000000000000000..037a6695bdb8ee6e3c119fa79000c4ea
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/consumable/ConsumableTypesBridgeImpl.java b/src/main/java/io/papermc/paper/datacomponent/item/consumable/ConsumableTypesBridgeImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cfde98f6f1c69f728d42a8fd7c5d48b2872831e6
+index 0000000000000000000000000000000000000000..e11e7b36c0b0b499a6149c44ca2ad9f331d1b863
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/consumable/ConsumableTypesBridgeImpl.java
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,64 @@
 +package io.papermc.paper.datacomponent.item.consumable;
 +
 +import com.google.common.base.Preconditions;
@@ -3338,7 +3327,6 @@ index 0000000000000000000000000000000000000000..cfde98f6f1c69f728d42a8fd7c5d48b2
 +import net.kyori.adventure.key.Key;
 +import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.core.registries.Registries;
-+import net.minecraft.resources.ResourceKey;
 +import org.bukkit.craftbukkit.potion.CraftPotionUtil;
 +import org.bukkit.potion.PotionEffect;
 +import org.bukkit.potion.PotionEffectType;
@@ -3379,9 +3367,7 @@ index 0000000000000000000000000000000000000000..cfde98f6f1c69f728d42a8fd7c5d48b2
 +    @Override
 +    public ConsumeEffect.PlaySound playSoundEffect(final Key sound) {
 +        return new PaperPlaySound(
-+            new net.minecraft.world.item.consume_effects.PlaySoundConsumeEffect(
-+                BuiltInRegistries.SOUND_EVENT.getOrThrow(PaperAdventure.asVanilla(Registries.SOUND_EVENT, sound))
-+            )
++            new net.minecraft.world.item.consume_effects.PlaySoundConsumeEffect(PaperAdventure.resolveSound(sound))
 +        );
 +    }
 +
@@ -4072,13 +4058,12 @@ index 0000000000000000000000000000000000000000..4ee0491763341232844a99aa528310a3
 +}
 diff --git a/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java b/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..12df56d514356609d5c6b8ab7b565385413c1069
+index 0000000000000000000000000000000000000000..06597cc8ba23e0e1e439af5b6cbc2a7fac3c4022
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/item/ItemStackDataComponentTest.java
-@@ -0,0 +1,419 @@
+@@ -0,0 +1,416 @@
 +package io.papermc.paper.item;
 +
-+import com.mojang.datafixers.util.Either;
 +import io.papermc.paper.datacomponent.DataComponentType;
 +import io.papermc.paper.datacomponent.DataComponentTypes;
 +import io.papermc.paper.datacomponent.item.ChargedProjectiles;
@@ -4444,9 +4429,7 @@ index 0000000000000000000000000000000000000000..12df56d514356609d5c6b8ab7b565385
 +    void testJukeboxWithEitherHolder() {
 +        final net.minecraft.world.item.ItemStack internalStack = new net.minecraft.world.item.ItemStack(Items.STONE);
 +        internalStack.set(DataComponents.JUKEBOX_PLAYABLE, new net.minecraft.world.item.JukeboxPlayable(
-+            EitherHolder.fromEither(
-+                Either.left(RegistryHelper.getRegistry().lookupOrThrow(Registries.JUKEBOX_SONG).getOrThrow(JukeboxSongs.FIVE))
-+            ),
++            new EitherHolder<>(RegistryHelper.getRegistry().lookupOrThrow(Registries.JUKEBOX_SONG).getOrThrow(JukeboxSongs.FIVE)),
 +            true
 +        ));
 +
@@ -4497,14 +4480,16 @@ index 0000000000000000000000000000000000000000..12df56d514356609d5c6b8ab7b565385
 +}
 diff --git a/src/test/java/io/papermc/paper/item/MetaComparisonTest.java b/src/test/java/io/papermc/paper/item/MetaComparisonTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1225ad95a204434ef6af5e6e92593cbbafc31b4a
+index 0000000000000000000000000000000000000000..7cda79980729770695451adcd03b1886f60d86e3
 --- /dev/null
 +++ b/src/test/java/io/papermc/paper/item/MetaComparisonTest.java
-@@ -0,0 +1,284 @@
+@@ -0,0 +1,281 @@
 +package io.papermc.paper.item;
 +
 +import com.destroystokyo.paper.profile.CraftPlayerProfile;
 +import com.destroystokyo.paper.profile.PlayerProfile;
++import java.util.UUID;
++import java.util.function.Consumer;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.event.HoverEvent;
 +import net.kyori.adventure.text.format.NamedTextColor;
@@ -4527,9 +4512,6 @@ index 0000000000000000000000000000000000000000..1225ad95a204434ef6af5e6e92593cbb
 +import org.junit.jupiter.api.Assertions;
 +import org.junit.jupiter.api.Disabled;
 +import org.junit.jupiter.api.Test;
-+
-+import java.util.UUID;
-+import java.util.function.Consumer;
 +
 +// TODO: This should technically be used to compare legacy meta vs the newly implemented
 +@AllFeatures
@@ -4771,9 +4753,7 @@ index 0000000000000000000000000000000000000000..1225ad95a204434ef6af5e6e92593cbb
 +        );
 +    }
 +
-+    private void testSetAndGet(org.bukkit.inventory.ItemStack itemStack,
-+                               Consumer<ItemMeta> set,
-+                               Consumer<ItemMeta> get) {
++    private void testSetAndGet(ItemStack itemStack, Consumer<ItemMeta> set, Consumer<ItemMeta> get) {
 +        ItemMeta craftMeta = CraftItemStack.getItemMeta(CraftItemStack.asNMSCopy(itemStack)); // TODO: This should be converted to use the old meta when this is added.
 +        ItemMeta paperMeta = CraftItemStack.getItemMeta(CraftItemStack.asNMSCopy(itemStack));
 +        // Test craft meta
