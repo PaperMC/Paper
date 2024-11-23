@@ -13,7 +13,7 @@ public net.minecraft.world.item.ItemStackLinkedSet TYPE_AND_TAG
 
 diff --git a/src/main/java/io/papermc/paper/inventory/recipe/ItemOrExact.java b/src/main/java/io/papermc/paper/inventory/recipe/ItemOrExact.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5bcc814d5a1b88991e9c1324b88a919ca199fcda
+index 0000000000000000000000000000000000000000..caaad8f54fb892dfd6c7d4e02ab9c32997f89a6a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/inventory/recipe/ItemOrExact.java
 @@ -0,0 +1,63 @@
@@ -26,7 +26,7 @@ index 0000000000000000000000000000000000000000..5bcc814d5a1b88991e9c1324b88a919c
 +
 +    int getMaxStackSize();
 +
-+    boolean is(ItemStack stack);
++    boolean matches(ItemStack stack);
 +
 +    record Item(Holder<net.minecraft.world.item.Item> item) implements ItemOrExact {
 +
@@ -40,8 +40,8 @@ index 0000000000000000000000000000000000000000..5bcc814d5a1b88991e9c1324b88a919c
 +        }
 +
 +        @Override
-+        public boolean is(final ItemStack stack) {
-+            return stack.is(this.item);
++        public boolean matches(final ItemStack stack) {
++            return stack.is(this.item) && stack.getComponentsPatch().isEmpty();
 +        }
 +
 +        @Override
@@ -64,7 +64,7 @@ index 0000000000000000000000000000000000000000..5bcc814d5a1b88991e9c1324b88a919c
 +        }
 +
 +        @Override
-+        public boolean is(final ItemStack stack) {
++        public boolean matches(final ItemStack stack) {
 +            return ItemStack.isSameItemSameComponents(this.stack, stack);
 +        }
 +
@@ -196,7 +196,7 @@ index 462a970ffa610bc1eb3c813dafb768c014d077d1..1afb544fb028b645821063ba1eaa9e3c
          if (i == -1) {
              return -1;
 diff --git a/src/main/java/net/minecraft/world/entity/player/Inventory.java b/src/main/java/net/minecraft/world/entity/player/Inventory.java
-index ad82e5aeb565b23c3ec565fa60e1f31d1710bd4e..0e214d502998e9eb959952b257844529992df0df 100644
+index ad82e5aeb565b23c3ec565fa60e1f31d1710bd4e..0990bcf65f484b9a019c91fcdae1783bac6388da 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Inventory.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Inventory.java
 @@ -201,11 +201,11 @@ public class Inventory implements Container, Nameable {
@@ -209,7 +209,7 @@ index ad82e5aeb565b23c3ec565fa60e1f31d1710bd4e..0e214d502998e9eb959952b257844529
              ItemStack itemstack = (ItemStack) this.items.get(i);
  
 -            if (!itemstack.isEmpty() && itemstack.is(item) && Inventory.isUsableForCrafting(itemstack)) {
-+            if (!itemstack.isEmpty() && item.is(itemstack) && (!(item instanceof io.papermc.paper.inventory.recipe.ItemOrExact.Item) || isUsableForCrafting(itemstack))) { // Paper - Improve exact choice recipe ingredients
++            if (!itemstack.isEmpty() && item.matches(itemstack) && (!(item instanceof io.papermc.paper.inventory.recipe.ItemOrExact.Item) || isUsableForCrafting(itemstack))) { // Paper - Improve exact choice recipe ingredients
                  return i;
              }
          }
