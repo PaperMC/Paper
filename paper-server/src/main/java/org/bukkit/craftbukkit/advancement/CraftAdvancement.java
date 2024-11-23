@@ -5,6 +5,7 @@ import java.util.Collections;
 import net.minecraft.advancements.AdvancementHolder;
 import org.bukkit.NamespacedKey;
 import org.bukkit.advancement.AdvancementDisplay;
+import org.bukkit.advancement.AdvancementRequirements;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 
 public class CraftAdvancement implements org.bukkit.advancement.Advancement {
@@ -27,6 +28,11 @@ public class CraftAdvancement implements org.bukkit.advancement.Advancement {
     @Override
     public Collection<String> getCriteria() {
         return Collections.unmodifiableCollection(handle.value().criteria().keySet());
+    }
+
+    @Override
+    public AdvancementRequirements getRequirements() {
+        return new CraftAdvancementRequirements(handle.value().requirements());
     }
 
     @Override
