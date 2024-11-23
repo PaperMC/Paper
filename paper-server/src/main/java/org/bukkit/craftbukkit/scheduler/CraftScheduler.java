@@ -444,11 +444,7 @@ public class CraftScheduler implements BukkitScheduler {
     }
 
     private void addTask(final CraftTask task) {
-        final AtomicReference<CraftTask> tail = this.tail;
-        CraftTask tailTask = tail.get();
-        while (!tail.compareAndSet(tailTask, task)) {
-            tailTask = tail.get();
-        }
+        final CraftTask tailTask = this.tail.getAndSet(task);
         tailTask.setNext(task);
     }
 
