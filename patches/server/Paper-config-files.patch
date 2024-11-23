@@ -132,23 +132,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.leangen.geantyref.TypeToken;
 +import io.papermc.paper.configuration.constraint.Constraint;
 +import io.papermc.paper.configuration.constraint.Constraints;
-+import net.minecraft.core.RegistryAccess;
-+import net.minecraft.resources.ResourceLocation;
-+import net.minecraft.server.level.ServerLevel;
-+import net.minecraft.world.level.GameRules;
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.jetbrains.annotations.MustBeInvokedByOverriders;
-+import org.slf4j.Logger;
-+import org.spongepowered.configurate.CommentedConfigurationNode;
-+import org.spongepowered.configurate.ConfigurateException;
-+import org.spongepowered.configurate.ConfigurationNode;
-+import org.spongepowered.configurate.ConfigurationOptions;
-+import org.spongepowered.configurate.NodePath;
-+import org.spongepowered.configurate.objectmapping.ObjectMapper;
-+import org.spongepowered.configurate.serialize.SerializationException;
-+import org.spongepowered.configurate.util.CheckedFunction;
-+import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
-+
 +import java.io.IOException;
 +import java.lang.reflect.Type;
 +import java.nio.file.AccessDeniedException;
@@ -159,6 +142,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.NoSuchElementException;
 +import java.util.Objects;
 +import java.util.function.UnaryOperator;
++import net.minecraft.core.RegistryAccess;
++import net.minecraft.resources.ResourceLocation;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.world.level.GameRules;
++import org.jetbrains.annotations.MustBeInvokedByOverriders;
++import org.jspecify.annotations.Nullable;
++import org.slf4j.Logger;
++import org.spongepowered.configurate.CommentedConfigurationNode;
++import org.spongepowered.configurate.ConfigurateException;
++import org.spongepowered.configurate.ConfigurationNode;
++import org.spongepowered.configurate.ConfigurationOptions;
++import org.spongepowered.configurate.objectmapping.ObjectMapper;
++import org.spongepowered.configurate.serialize.SerializationException;
++import org.spongepowered.configurate.util.CheckedFunction;
++import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 +
 +public abstract class Configurations<G, W> {
 +
@@ -501,7 +499,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.kyori.adventure.text.format.NamedTextColor;
 +import net.minecraft.network.protocol.Packet;
 +import net.minecraft.network.protocol.game.ServerboundPlaceRecipePacket;
-+import org.checkerframework.checker.nullness.qual.Nullable;
++import org.jspecify.annotations.Nullable;
 +import org.slf4j.Logger;
 +import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 +import org.spongepowered.configurate.objectmapping.meta.Comment;
@@ -829,15 +827,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.configuration;
 +
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.spongepowered.configurate.objectmapping.meta.NodeResolver;
-+
 +import java.lang.annotation.Documented;
 +import java.lang.annotation.ElementType;
 +import java.lang.annotation.Retention;
 +import java.lang.annotation.RetentionPolicy;
 +import java.lang.annotation.Target;
 +import java.lang.reflect.AnnotatedElement;
++import org.jspecify.annotations.Nullable;
++import org.spongepowered.configurate.objectmapping.meta.NodeResolver;
 +
 +@Documented
 +@Retention(RetentionPolicy.RUNTIME)
@@ -903,6 +900,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 +import it.unimi.dsi.fastutil.objects.Reference2LongMap;
 +import it.unimi.dsi.fastutil.objects.Reference2LongOpenHashMap;
++import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
++import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 +import java.io.File;
 +import java.io.IOException;
 +import java.lang.reflect.Type;
@@ -925,8 +924,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import org.apache.commons.lang3.RandomStringUtils;
 +import org.bukkit.configuration.ConfigurationSection;
 +import org.bukkit.configuration.file.YamlConfiguration;
-+import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.jetbrains.annotations.VisibleForTesting;
++import org.jspecify.annotations.Nullable;
 +import org.slf4j.Logger;
 +import org.spigotmc.SpigotConfig;
 +import org.spigotmc.SpigotWorldConfig;
@@ -1108,6 +1107,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                .serializers(serializers -> serializers
 +                    .register(new TypeToken<Reference2IntMap<?>>() {}, new FastutilMapSerializer.SomethingToPrimitive<Reference2IntMap<?>>(Reference2IntOpenHashMap::new, Integer.TYPE))
 +                    .register(new TypeToken<Reference2LongMap<?>>() {}, new FastutilMapSerializer.SomethingToPrimitive<Reference2LongMap<?>>(Reference2LongOpenHashMap::new, Long.TYPE))
++                    .register(new TypeToken<Reference2ObjectMap<?, ?>>() {}, new FastutilMapSerializer.SomethingToSomething<Reference2ObjectMap<?, ?>>(Reference2ObjectOpenHashMap::new))
 +                    .register(new TypeToken<Table<?, ?, ?>>() {}, new TableSerializer())
 +                    .register(DespawnRange.class, DespawnRange.SERIALIZER)
 +                    .register(StringRepresentableSerializer::isValidFor, new StringRepresentableSerializer())
@@ -1436,6 +1436,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.configuration.legacy.RequiresSpigotInitialization;
 +import io.papermc.paper.configuration.mapping.MergeMap;
 +import io.papermc.paper.configuration.serializer.NbtPathSerializer;
++import io.papermc.paper.configuration.serializer.collections.MapSerializer;
 +import io.papermc.paper.configuration.transformation.world.FeatureSeedsGeneration;
 +import io.papermc.paper.configuration.type.BooleanOrDefault;
 +import io.papermc.paper.configuration.type.DespawnRange;
@@ -1451,6 +1452,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 +import it.unimi.dsi.fastutil.objects.Reference2LongMap;
 +import it.unimi.dsi.fastutil.objects.Reference2LongOpenHashMap;
++import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
++import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 +import java.util.Arrays;
 +import java.util.IdentityHashMap;
 +import java.util.List;
@@ -1627,6 +1630,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    );
 +                }
 +            }
++
++            @MapSerializer.ThrowExceptions
++            public Reference2ObjectMap<EntityType<?>, IntOr.Disabled> despawnTime = Util.make(new Reference2ObjectOpenHashMap<>(), map -> {
++                map.put(EntityType.SNOWBALL, IntOr.Disabled.DISABLED);
++                map.put(EntityType.LLAMA_SPIT, IntOr.Disabled.DISABLED);
++            });
 +
 +            @PostProcess
 +            public void precomputeDespawnDistances() throws SerializationException {
@@ -2058,7 +2067,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.lang.annotation.RetentionPolicy;
 +import java.lang.annotation.Target;
 +import java.lang.reflect.Type;
-+import org.checkerframework.checker.nullness.qual.Nullable;
++import org.jspecify.annotations.Nullable;
 +import org.spongepowered.configurate.objectmapping.meta.Constraint;
 +import org.spongepowered.configurate.serialize.SerializationException;
 +
@@ -2101,7 +2110,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.configuration.legacy;
 +
-+import org.checkerframework.checker.nullness.qual.Nullable;
++import org.jspecify.annotations.Nullable;
 +import org.spigotmc.SpigotWorldConfig;
 +import org.spongepowered.configurate.ConfigurationNode;
 +import org.spongepowered.configurate.objectmapping.meta.NodeResolver;
@@ -2138,10 +2147,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import com.google.common.collect.HashBasedTable;
 +import com.google.common.collect.Table;
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.spigotmc.SpigotWorldConfig;
-+import org.spongepowered.configurate.objectmapping.meta.NodeResolver;
-+
 +import java.lang.annotation.Documented;
 +import java.lang.annotation.ElementType;
 +import java.lang.annotation.Retention;
@@ -2149,8 +2154,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.lang.annotation.Target;
 +import java.lang.reflect.AnnotatedElement;
 +import java.lang.reflect.Constructor;
-+import java.util.Map;
-+import java.util.concurrent.ConcurrentHashMap;
++import org.jspecify.annotations.Nullable;
++import org.spigotmc.SpigotWorldConfig;
++import org.spongepowered.configurate.objectmapping.meta.NodeResolver;
 +
 +@Documented
 +@Retention(RetentionPolicy.RUNTIME)
@@ -2227,14 +2233,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package io.papermc.paper.configuration.mapping;
 +
 +import io.papermc.paper.configuration.ConfigurationPart;
-+import io.papermc.paper.configuration.Configurations;
-+import io.papermc.paper.configuration.PaperConfigurations;
 +import io.papermc.paper.configuration.WorldConfiguration;
 +import java.lang.reflect.AnnotatedType;
 +import java.lang.reflect.Field;
 +import java.util.Collections;
 +import java.util.Map;
-+import org.checkerframework.checker.nullness.qual.Nullable;
++import org.jspecify.annotations.Nullable;
 +import org.spongepowered.configurate.objectmapping.FieldDiscoverer;
 +import org.spongepowered.configurate.serialize.SerializationException;
 +
@@ -2291,7 +2295,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.Iterator;
 +import java.util.Map;
 +import java.util.Objects;
-+import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.spongepowered.configurate.objectmapping.FieldDiscoverer;
 +import org.spongepowered.configurate.serialize.SerializationException;
 +
@@ -2323,7 +2326,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                Map.Entry<Field, Object> entry = iter.next();
 +                if (entry.getKey().isAnnotationPresent(MergeMap.class) && Map.class.isAssignableFrom(entry.getKey().getType()) && intermediate.get(entry.getKey()) instanceof Map<?, ?> map) {
 +                    iter.remove();
-+                    @Nullable Map<Object, Object> existingMap = (Map<Object, Object>) entry.getKey().get(instance);
++                    Map<Object, Object> existingMap = (Map<Object, Object>) entry.getKey().get(instance);
 +                    if (existingMap != null) {
 +                        existingMap.putAll(map);
 +                    } else {
@@ -2364,7 +2367,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.HashMap;
 +import java.util.Map;
 +import java.util.function.Supplier;
-+import org.checkerframework.checker.nullness.qual.Nullable;
++import org.jspecify.annotations.Nullable;
 +import org.spongepowered.configurate.serialize.SerializationException;
 +import org.spongepowered.configurate.util.CheckedFunction;
 +import org.spongepowered.configurate.util.CheckedSupplier;
@@ -2400,7 +2403,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                final Constructor<?> constructor;
 +                final CheckedSupplier<Object, ReflectiveOperationException> instanceSupplier;
 +                if (type.getEnclosingClass() != null && !Modifier.isStatic(type.getModifiers())) {
-+                    final @Nullable Object instance = this.instanceMap.get(type.getEnclosingClass());
++                    final Object instance = this.instanceMap.get(type.getEnclosingClass());
 +                    if (instance == null) {
 +                        throw new SerializationException("Cannot create a new instance of an inner class " + type.getName() + " without an instance of its enclosing class " + type.getEnclosingClass().getName());
 +                    }
@@ -2453,18 +2456,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +@Retention(RetentionPolicy.RUNTIME)
 +public @interface MergeMap {
 +}
+diff --git a/src/main/java/io/papermc/paper/configuration/mapping/package-info.java b/src/main/java/io/papermc/paper/configuration/mapping/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/mapping/package-info.java
+@@ -0,0 +0,0 @@
++@NullMarked
++package io.papermc.paper.configuration.mapping;
++
++import org.jspecify.annotations.NullMarked;
 diff --git a/src/main/java/io/papermc/paper/configuration/package-info.java b/src/main/java/io/papermc/paper/configuration/package-info.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/package-info.java
 @@ -0,0 +0,0 @@
-+@DefaultQualifier(NonNull.class)
++@NullMarked
 +package io.papermc.paper.configuration;
 +
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.framework.qual.DefaultQualifier;
-\ No newline at end of file
++import org.jspecify.annotations.NullMarked;
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/ComponentSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/ComponentSerializer.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -2546,16 +2557,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import com.mojang.logging.LogUtils;
 +import io.leangen.geantyref.TypeToken;
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.slf4j.Logger;
-+import org.spongepowered.configurate.serialize.ScalarSerializer;
-+import org.spongepowered.configurate.serialize.SerializationException;
-+import org.spongepowered.configurate.util.EnumLookup;
-+
 +import java.lang.reflect.Type;
 +import java.util.Arrays;
 +import java.util.List;
 +import java.util.function.Predicate;
++import org.jspecify.annotations.Nullable;
++import org.slf4j.Logger;
++import org.spongepowered.configurate.serialize.ScalarSerializer;
++import org.spongepowered.configurate.serialize.SerializationException;
++import org.spongepowered.configurate.util.EnumLookup;
 +
 +import static io.leangen.geantyref.GenericTypeReflector.erase;
 +
@@ -2575,14 +2585,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public @Nullable Enum<?> deserialize(final Type type, final Object obj) throws SerializationException {
 +        final String enumConstant = obj.toString();
 +        final Class<? extends Enum> typeClass = erase(type).asSubclass(Enum.class);
-+        @Nullable Enum<?> ret = EnumLookup.lookupEnum(typeClass, enumConstant);
++        Enum<?> ret = EnumLookup.lookupEnum(typeClass, enumConstant);
 +        if (ret == null) {
 +            ret = EnumLookup.lookupEnum(typeClass, enumConstant.replace("-", "_"));
 +        }
 +        if (ret == null) {
 +            boolean longer = typeClass.getEnumConstants().length > 10;
 +            List<String> options = Arrays.stream(typeClass.getEnumConstants()).limit(10L).map(Enum::name).toList();
-+            LOGGER.error("Invalid enum constant provided, expected one of [" + String.join(", " ,options) + (longer ? ", ..." : "") + "], but got " + enumConstant);
++            LOGGER.error("Invalid enum constant provided, expected one of [{}{}], but got {}", String.join(", ", options), longer ? ", ..." : "", enumConstant);
 +        }
 +        return ret;
 +    }
@@ -2664,16 +2674,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.leangen.geantyref.TypeToken;
 +import io.papermc.paper.configuration.serializer.collections.MapSerializer;
 +import io.papermc.paper.util.ObfHelper;
-+import net.minecraft.network.protocol.Packet;
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.slf4j.Logger;
-+import org.spongepowered.configurate.serialize.ScalarSerializer;
-+import org.spongepowered.configurate.serialize.SerializationException;
-+
 +import java.lang.reflect.Type;
 +import java.util.List;
 +import java.util.Map;
 +import java.util.function.Predicate;
++import net.minecraft.network.protocol.Packet;
++import org.jspecify.annotations.Nullable;
++import org.slf4j.Logger;
++import org.spongepowered.configurate.serialize.ScalarSerializer;
++import org.spongepowered.configurate.serialize.SerializationException;
 +
 +@SuppressWarnings("Convert2Diamond")
 +public final class PacketClassSerializer extends ScalarSerializer<Class<? extends Packet<?>>> implements MapSerializer.WriteBack {
@@ -2703,14 +2712,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @SuppressWarnings("unchecked")
 +    @Override
 +    public Class<? extends Packet<?>> deserialize(final Type type, final Object obj) throws SerializationException {
-+        @Nullable Class<?> packetClass = null;
++        Class<?> packetClass = null;
 +        for (final String subpackage : SUBPACKAGES) {
 +            final String fullClassName = "net.minecraft.network.protocol." + subpackage + "." + obj;
 +            try {
 +                packetClass = Class.forName(fullClassName);
 +                break;
 +            } catch (final ClassNotFoundException ex) {
-+                final @Nullable String spigotClassName = MOJANG_TO_OBF.get(fullClassName);
++                final String spigotClassName = MOJANG_TO_OBF.get(fullClassName);
 +                if (spigotClassName != null) {
 +                    try {
 +                        packetClass = Class.forName(spigotClassName);
@@ -2750,17 +2759,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.configuration.serializer;
 +
-+import net.minecraft.util.StringRepresentable;
-+import net.minecraft.world.entity.MobCategory;
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.spongepowered.configurate.serialize.ScalarSerializer;
-+import org.spongepowered.configurate.serialize.SerializationException;
-+
 +import java.lang.reflect.Type;
 +import java.util.Collections;
 +import java.util.Map;
 +import java.util.function.Function;
 +import java.util.function.Predicate;
++import net.minecraft.util.StringRepresentable;
++import net.minecraft.world.entity.MobCategory;
++import org.jspecify.annotations.Nullable;
++import org.spongepowered.configurate.serialize.ScalarSerializer;
++import org.spongepowered.configurate.serialize.SerializationException;
 +
 +public final class StringRepresentableSerializer extends ScalarSerializer<StringRepresentable> {
 +    private static final Map<Type, Function<String, StringRepresentable>> TYPES = Collections.synchronizedMap(Map.ofEntries(
@@ -2810,44 +2818,53 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import io.leangen.geantyref.GenericTypeReflector;
 +import io.leangen.geantyref.TypeFactory;
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.spongepowered.configurate.ConfigurationNode;
-+import org.spongepowered.configurate.serialize.SerializationException;
-+import org.spongepowered.configurate.serialize.TypeSerializer;
-+
++import java.lang.annotation.Annotation;
++import java.lang.reflect.AnnotatedParameterizedType;
++import java.lang.reflect.AnnotatedType;
 +import java.lang.reflect.ParameterizedType;
 +import java.lang.reflect.Type;
 +import java.util.Collections;
 +import java.util.Map;
 +import java.util.function.Function;
++import org.jspecify.annotations.Nullable;
++import org.spongepowered.configurate.ConfigurationNode;
++import org.spongepowered.configurate.serialize.SerializationException;
++import org.spongepowered.configurate.serialize.TypeSerializer;
 +
 +@SuppressWarnings("rawtypes")
-+public abstract class FastutilMapSerializer<M extends Map<?, ?>> implements TypeSerializer<M> {
-+    private final Function<Map, ? extends M> factory;
++public abstract class FastutilMapSerializer<M extends Map<?, ?>> implements TypeSerializer.Annotated<M> {
 +
-+    protected FastutilMapSerializer(final Function<Map, ? extends M> factory) {
++    private final Function<? super Map, ? extends M> factory;
++
++    protected FastutilMapSerializer(final Function<? super Map, ? extends M> factory) {
 +        this.factory = factory;
 +    }
 +
 +    @Override
-+    public M deserialize(final Type type, final ConfigurationNode node) throws SerializationException {
-+        @Nullable final Map map = (Map) node.get(this.createBaseMapType((ParameterizedType) type));
++    public M deserialize(final AnnotatedType annotatedType, final ConfigurationNode node) throws SerializationException {
++        final Map map = (Map) node.get(this.createAnnotatedMapType((AnnotatedParameterizedType) annotatedType));
 +        return this.factory.apply(map == null ? Collections.emptyMap() : map);
 +    }
 +
 +    @Override
-+    public void serialize(final Type type, @Nullable final M obj, final ConfigurationNode node) throws SerializationException {
++    public void serialize(final AnnotatedType annotatedType, final @Nullable M obj, final ConfigurationNode node) throws SerializationException {
 +        if (obj == null || obj.isEmpty()) {
 +            node.raw(null);
 +        } else {
-+            final Type baseMapType = this.createBaseMapType((ParameterizedType) type);
++            final AnnotatedType baseMapType = this.createAnnotatedMapType((AnnotatedParameterizedType) annotatedType);
 +            node.set(baseMapType, obj);
 +        }
++    }
++
++    private AnnotatedType createAnnotatedMapType(final AnnotatedParameterizedType type) {
++        final Type baseType = this.createBaseMapType((ParameterizedType) type.getType());
++        return GenericTypeReflector.annotate(baseType, type.getAnnotations());
 +    }
 +
 +    protected abstract Type createBaseMapType(final ParameterizedType type);
 +
 +    public static final class SomethingToPrimitive<M extends Map<?, ?>> extends FastutilMapSerializer<M> {
++
 +        private final Type primitiveType;
 +
 +        public SomethingToPrimitive(final Function<Map, ? extends M> factory, final Type primitiveType) {
@@ -2862,6 +2879,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    public static final class PrimitiveToSomething<M extends Map<?, ?>> extends FastutilMapSerializer<M> {
++
 +        private final Type primitiveType;
 +
 +        public PrimitiveToSomething(final Function<Map, ? extends M> factory, final Type primitiveType) {
@@ -2872,6 +2890,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        @Override
 +        protected Type createBaseMapType(final ParameterizedType type) {
 +            return TypeFactory.parameterizedClass(Map.class, GenericTypeReflector.box(this.primitiveType), type.getActualTypeArguments()[0]);
++        }
++    }
++
++    public static final class SomethingToSomething<M extends Map<?, ?>> extends FastutilMapSerializer<M> {
++
++        public SomethingToSomething(final Function<? super Map, ? extends M> factory) {
++            super(factory);
++        }
++
++        @Override
++        protected Type createBaseMapType(final ParameterizedType type) {
++            return TypeFactory.parameterizedClass(Map.class, type.getActualTypeArguments()[0], type.getActualTypeArguments()[1]);
 +        }
 +    }
 +}
@@ -2885,15 +2915,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import com.mojang.logging.LogUtils;
 +import io.leangen.geantyref.TypeToken;
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.slf4j.Logger;
-+import org.spongepowered.configurate.BasicConfigurationNode;
-+import org.spongepowered.configurate.ConfigurationNode;
-+import org.spongepowered.configurate.ConfigurationOptions;
-+import org.spongepowered.configurate.NodePath;
-+import org.spongepowered.configurate.serialize.SerializationException;
-+import org.spongepowered.configurate.serialize.TypeSerializer;
-+
++import java.lang.annotation.Retention;
++import java.lang.annotation.RetentionPolicy;
++import java.lang.reflect.AnnotatedType;
 +import java.lang.reflect.ParameterizedType;
 +import java.lang.reflect.Type;
 +import java.util.Collections;
@@ -2901,27 +2925,45 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.LinkedHashMap;
 +import java.util.Map;
 +import java.util.Set;
++import org.jspecify.annotations.Nullable;
++import org.slf4j.Logger;
++import org.spongepowered.configurate.BasicConfigurationNode;
++import org.spongepowered.configurate.ConfigurationNode;
++import org.spongepowered.configurate.ConfigurationOptions;
++import org.spongepowered.configurate.NodePath;
++import org.spongepowered.configurate.serialize.SerializationException;
++import org.spongepowered.configurate.serialize.TypeSerializer;
++import org.spongepowered.configurate.serialize.TypeSerializerCollection;
 +
 +import static java.util.Objects.requireNonNull;
 +
 +/**
 + * Map serializer that does not throw errors on individual entry serialization failures.
 + */
-+public class MapSerializer implements TypeSerializer<Map<?, ?>> {
++public class MapSerializer implements TypeSerializer.Annotated<Map<?, ?>> {
 +
 +    public static final TypeToken<Map<?, ?>> TYPE = new TypeToken<Map<?, ?>>() {};
 +
 +    private static final Logger LOGGER = LogUtils.getClassLogger();
 +
 +    private final boolean clearInvalids;
++    private final TypeSerializer<Map<?, ?>> fallback;
 +
 +    public MapSerializer(boolean clearInvalids) {
 +        this.clearInvalids = clearInvalids;
++        this.fallback = requireNonNull(TypeSerializerCollection.defaults().get(TYPE), "Could not find default Map<?, ?> serializer");
 +    }
 +
++    @Retention(RetentionPolicy.RUNTIME)
++    public @interface ThrowExceptions {}
++
 +    @Override
-+    public Map<?, ?> deserialize(Type type, ConfigurationNode node) throws SerializationException {
++    public Map<?, ?> deserialize(AnnotatedType annotatedType, ConfigurationNode node) throws SerializationException {
++        if (annotatedType.isAnnotationPresent(ThrowExceptions.class)) {
++            return this.fallback.deserialize(annotatedType, node);
++        }
 +        final Map<Object, Object> map = new LinkedHashMap<>();
++        final Type type = annotatedType.getType();
 +        if (node.isMap()) {
 +            if (!(type instanceof ParameterizedType parameterizedType)) {
 +                throw new SerializationException(type, "Raw types are not supported for collections");
@@ -2975,7 +3017,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
-+    public void serialize(Type type, @Nullable Map<?, ?> obj, ConfigurationNode node) throws SerializationException {
++    public void serialize(AnnotatedType annotatedType, @Nullable Map<?, ?> obj, ConfigurationNode node) throws SerializationException {
++        if (annotatedType.isAnnotationPresent(ThrowExceptions.class)) {
++            this.fallback.serialize(annotatedType, obj, node);
++            return;
++        }
++        final Type type = annotatedType.getType();
 +        if (!(type instanceof ParameterizedType parameterizedType)) {
 +            throw new SerializationException(type, "Raw types are not supported for collections");
 +        }
@@ -3036,7 +3083,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
-+    public @Nullable Map<?, ?> emptyValue(Type specificType, ConfigurationOptions options) {
++    public @Nullable Map<?, ?> emptyValue(AnnotatedType specificType, ConfigurationOptions options) {
++        if (specificType.isAnnotationPresent(ThrowExceptions.class)) {
++            return this.fallback.emptyValue(specificType, options);
++        }
 +        return new LinkedHashMap<>();
 +    }
 +
@@ -3055,17 +3105,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import com.google.common.collect.ImmutableTable;
 +import com.google.common.collect.Table;
 +import io.leangen.geantyref.TypeFactory;
-+import org.checkerframework.checker.nullness.qual.Nullable;
++import java.lang.reflect.ParameterizedType;
++import java.lang.reflect.Type;
++import java.util.Map;
++import java.util.Objects;
++import org.jspecify.annotations.Nullable;
 +import org.spongepowered.configurate.BasicConfigurationNode;
 +import org.spongepowered.configurate.ConfigurationNode;
 +import org.spongepowered.configurate.ConfigurationOptions;
 +import org.spongepowered.configurate.serialize.SerializationException;
 +import org.spongepowered.configurate.serialize.TypeSerializer;
-+
-+import java.lang.reflect.ParameterizedType;
-+import java.lang.reflect.Type;
-+import java.util.Map;
-+import java.util.Objects;
 +
 +public class TableSerializer implements TypeSerializer<Table<?, ?, ?>> {
 +    private static final int ROW_TYPE_ARGUMENT_INDEX = 0;
@@ -3087,13 +3136,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        final Type columnType = type.getActualTypeArguments()[COLUMN_TYPE_ARGUMENT_INDEX];
 +        final Type valueType = type.getActualTypeArguments()[VALUE_TYPE_ARGUMENT_INDEX];
 +
-+        final @Nullable TypeSerializer<R> rowKeySerializer = (TypeSerializer<R>) node.options().serializers().get(rowType);
++        final TypeSerializer<R> rowKeySerializer = (TypeSerializer<R>) node.options().serializers().get(rowType);
 +        if (rowKeySerializer == null) {
 +            throw new SerializationException("Could not find serializer for table row type " + rowType);
 +        }
 +
 +        final Type mapType = TypeFactory.parameterizedClass(Map.class, columnType, valueType);
-+        final @Nullable TypeSerializer<Map<C, V>> columnValueSerializer = (TypeSerializer<Map<C, V>>) node.options().serializers().get(mapType);
++        final TypeSerializer<Map<C, V>> columnValueSerializer = (TypeSerializer<Map<C, V>>) node.options().serializers().get(mapType);
 +        if (columnValueSerializer == null) {
 +            throw new SerializationException("Could not find serializer for table column-value map " + type);
 +        }
@@ -3108,7 +3157,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
-+    public void serialize(final Type type, @Nullable final Table<?, ?, ?> table, final ConfigurationNode node) throws SerializationException {
++    public void serialize(final Type type, final @Nullable Table<?, ?, ?> table, final ConfigurationNode node) throws SerializationException {
 +        if (table != null) {
 +            this.serialize0(table, (ParameterizedType) type, node);
 +        }
@@ -3120,7 +3169,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        final Type columnType = type.getActualTypeArguments()[COLUMN_TYPE_ARGUMENT_INDEX];
 +        final Type valueType = type.getActualTypeArguments()[VALUE_TYPE_ARGUMENT_INDEX];
 +
-+        final @Nullable TypeSerializer rowKeySerializer = node.options().serializers().get(rowType);
++        final TypeSerializer rowKeySerializer = node.options().serializers().get(rowType);
 +        if (rowKeySerializer == null) {
 +            throw new SerializationException("Could not find a serializer for table row type " + rowType);
 +        }
@@ -3138,6 +3187,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return ImmutableTable.of();
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/configuration/serializer/collections/package-info.java b/src/main/java/io/papermc/paper/configuration/serializer/collections/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/serializer/collections/package-info.java
+@@ -0,0 +0,0 @@
++@NullMarked
++package io.papermc.paper.configuration.serializer.collections;
++
++import org.jspecify.annotations.NullMarked;
+diff --git a/src/main/java/io/papermc/paper/configuration/serializer/package-info.java b/src/main/java/io/papermc/paper/configuration/serializer/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/serializer/package-info.java
+@@ -0,0 +0,0 @@
++@NullMarked
++package io.papermc.paper.configuration.serializer;
++
++import org.jspecify.annotations.NullMarked;
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryEntrySerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryEntrySerializer.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -3153,7 +3222,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.core.RegistryAccess;
 +import net.minecraft.resources.ResourceKey;
 +import net.minecraft.resources.ResourceLocation;
-+import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.spongepowered.configurate.serialize.ScalarSerializer;
 +import org.spongepowered.configurate.serialize.SerializationException;
 +
@@ -3201,7 +3269,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    private ResourceKey<R> deserializeKey(final Object input) throws SerializationException {
-+        final @Nullable ResourceLocation key = ResourceLocation.tryParse(input.toString());
++        final ResourceLocation key = ResourceLocation.tryParse(input.toString());
 +        if (key == null) {
 +            throw new SerializationException("Could not create a key from " + input);
 +        }
@@ -3289,6 +3357,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return this.registry().getResourceKey(value).orElseThrow();
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/configuration/serializer/registry/package-info.java b/src/main/java/io/papermc/paper/configuration/serializer/registry/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/serializer/registry/package-info.java
+@@ -0,0 +0,0 @@
++@NullMarked
++package io.papermc.paper.configuration.serializer.registry;
++
++import org.jspecify.annotations.NullMarked;
 diff --git a/src/main/java/io/papermc/paper/configuration/transformation/Transformations.java b/src/main/java/io/papermc/paper/configuration/transformation/Transformations.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -3346,6 +3424,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import com.mojang.logging.LogUtils;
 +import io.papermc.paper.configuration.Configuration;
++import java.util.function.Predicate;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.format.NamedTextColor;
 +import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -3353,13 +3432,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.network.protocol.game.ServerboundPlaceRecipePacket;
 +import org.bukkit.ChatColor;
 +import org.bukkit.configuration.file.YamlConfiguration;
-+import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.slf4j.Logger;
 +import org.spongepowered.configurate.ConfigurationNode;
 +import org.spongepowered.configurate.transformation.ConfigurationTransformation;
 +import org.spongepowered.configurate.transformation.TransformAction;
-+
-+import java.util.function.Predicate;
 +
 +import static org.spongepowered.configurate.NodePath.path;
 +
@@ -3425,7 +3501,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            .addAction(path("allow-perm-block-break-exploits"), (path, value) -> new Object[]{"settings", "unsupported-settings", "allow-permanent-block-break-exploits"})
 +            .addAction(path("settings", "unsupported-settings", "allow-tnt-duplication"), TransformAction.rename("allow-piston-duplication"))
 +            .addAction(path("settings", "save-player-data"), (path, value) -> {
-+                final @Nullable Object val = value.raw();
++                final Object val = value.raw();
 +                if (val instanceof Boolean bool) {
 +                    spigotConfiguration.set("players.disable-saving", !bool);
 +                }
@@ -3433,7 +3509,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                return null;
 +            })
 +            .addAction(path("settings", "log-named-entity-deaths"), (path, value) -> {
-+                final @Nullable Object val = value.raw();
++                final Object val = value.raw();
 +                if (val instanceof Boolean bool && !bool) {
 +                    spigotConfiguration.set("settings.log-named-deaths", false);
 +                }
@@ -3461,7 +3537,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            .addAction(path("packet-limiter", "limits", "all"), (path, value) -> new Object[]{"packet-limiter", "all-packets"})
 +            .addAction(path("packet-limiter", "limits"), (path, value) -> new Object[]{"packet-limiter", "overrides"})
 +            .addAction(path("packet-limiter", "overrides", ConfigurationTransformation.WILDCARD_OBJECT), (path, value) -> {
-+                final @Nullable Object keyValue = value.key();
++                final Object keyValue = value.key();
 +                if (keyValue != null && keyValue.toString().equals("PacketPlayInAutoRecipe")) { // add special cast to handle the default for moj-mapped servers that upgrade the config
 +                    return path.with(path.size() - 1, ServerboundPlaceRecipePacket.class.getSimpleName()).array();
 +                }
@@ -3520,7 +3596,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    private static void miniMessageWithTranslatable(final ConfigurationTransformation.Builder builder, final Predicate<String> englishCheck, final Component component, final String... strPath) {
 +        builder.addAction(path((Object[]) strPath), (path, value) -> {
-+            final @Nullable Object val = value.raw();
++            final Object val = value.raw();
 +            if (val != null) {
 +                final String strVal = val.toString();
 +                if (!englishCheck.test(strVal)) {
@@ -3535,7 +3611,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private static void miniMessage(final ConfigurationTransformation.Builder builder, final String... strPath) {
 +        builder.addAction(path((Object[]) strPath), (path, value) -> {
-+            final @Nullable Object val = value.raw();
++            final Object val = value.raw();
 +            if (val != null) {
 +                value.set(miniMessage(val.toString()));
 +            }
@@ -3565,6 +3641,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        });
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/configuration/transformation/global/package-info.java b/src/main/java/io/papermc/paper/configuration/transformation/global/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/transformation/global/package-info.java
+@@ -0,0 +0,0 @@
++@NullMarked
++package io.papermc.paper.configuration.transformation.global;
++
++import org.jspecify.annotations.NullMarked;
 diff --git a/src/main/java/io/papermc/paper/configuration/transformation/global/versioned/V29_LogIPs.java b/src/main/java/io/papermc/paper/configuration/transformation/global/versioned/V29_LogIPs.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -3576,7 +3662,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.Properties;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.dedicated.DedicatedServer;
-+import org.checkerframework.checker.nullness.qual.Nullable;
++import org.jspecify.annotations.Nullable;
 +import org.spongepowered.configurate.ConfigurateException;
 +import org.spongepowered.configurate.ConfigurationNode;
 +import org.spongepowered.configurate.NodePath;
@@ -3615,6 +3701,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +}
+diff --git a/src/main/java/io/papermc/paper/configuration/transformation/global/versioned/package-info.java b/src/main/java/io/papermc/paper/configuration/transformation/global/versioned/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/transformation/global/versioned/package-info.java
+@@ -0,0 +0,0 @@
++@NullMarked
++package io.papermc.paper.configuration.transformation.global.versioned;
++
++import org.jspecify.annotations.NullMarked;
+diff --git a/src/main/java/io/papermc/paper/configuration/transformation/package-info.java b/src/main/java/io/papermc/paper/configuration/transformation/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/transformation/package-info.java
+@@ -0,0 +0,0 @@
++@NullMarked
++package io.papermc.paper.configuration.transformation;
++
++import org.jspecify.annotations.NullMarked;
 diff --git a/src/main/java/io/papermc/paper/configuration/transformation/world/FeatureSeedsGeneration.java b/src/main/java/io/papermc/paper/configuration/transformation/world/FeatureSeedsGeneration.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -3633,7 +3739,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
-+import org.checkerframework.checker.nullness.qual.Nullable;
++import org.jspecify.annotations.Nullable;
 +import org.slf4j.Logger;
 +import org.spongepowered.configurate.ConfigurateException;
 +import org.spongepowered.configurate.ConfigurationNode;
@@ -3702,6 +3808,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import io.papermc.paper.configuration.Configuration;
 +import io.papermc.paper.configuration.WorldConfiguration;
++import java.util.HashMap;
++import java.util.List;
++import java.util.Locale;
++import java.util.Map;
++import java.util.Optional;
 +import net.minecraft.core.Holder;
 +import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.core.registries.Registries;
@@ -3710,15 +3821,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.world.entity.MobCategory;
 +import net.minecraft.world.item.Item;
 +import org.bukkit.Material;
-+import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.spongepowered.configurate.transformation.ConfigurationTransformation;
 +import org.spongepowered.configurate.transformation.TransformAction;
-+
-+import java.util.HashMap;
-+import java.util.List;
-+import java.util.Locale;
-+import java.util.Map;
-+import java.util.Optional;
 +
 +import static io.papermc.paper.configuration.transformation.Transformations.moveFromRoot;
 +import static io.papermc.paper.configuration.transformation.Transformations.moveFromRootAndRename;
@@ -3758,14 +3862,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            }).build())
 +            .addVersion(19, ConfigurationTransformation.builder()
 +                .addAction(path("anti-xray", "hidden-blocks"), (path, value) -> {
-+                    @Nullable final List<String> hiddenBlocks = value.getList(String.class);
++                    final List<String> hiddenBlocks = value.getList(String.class);
 +                    if (hiddenBlocks != null) {
 +                        hiddenBlocks.remove("lit_redstone_ore");
 +                    }
 +                    return null;
 +                })
 +                .addAction(path("anti-xray", "replacement-blocks"), (path, value) -> {
-+                    @Nullable final List<String> replacementBlocks = value.getList(String.class);
++                    final List<String> replacementBlocks = value.getList(String.class);
 +                    if (replacementBlocks != null) {
 +                        final int index = replacementBlocks.indexOf("planks");
 +                        if (index != -1) {
@@ -3838,9 +3942,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    value.childrenMap().forEach((key, node) -> {
 +                        String itemName = key.toString();
 +                        final Optional<Holder.Reference<Item>> itemHolder = BuiltInRegistries.ITEM.get(ResourceKey.create(Registries.ITEM, ResourceLocation.parse(itemName.toLowerCase(Locale.ROOT))));
-+                        final @Nullable String item;
++                        final String item;
 +                        if (itemHolder.isEmpty()) {
-+                            final @Nullable Material bukkitMat = Material.matchMaterial(itemName);
++                            final Material bukkitMat = Material.matchMaterial(itemName);
 +                            item = bukkitMat != null ? bukkitMat.getKey().getKey() : null;
 +                        } else {
 +                            item = itemHolder.get().unwrapKey().orElseThrow().location().getPath();
@@ -3976,7 +4080,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        builder.addAction(path("feature-seeds", ConfigurationTransformation.WILDCARD_OBJECT), (path, value) -> {
 +            final String key = path.array()[path.size() - 1].toString();
-+            if (!key.equals("generate-random-seeds-for-all")) {
++            if (!"generate-random-seeds-for-all".equals(key)) {
 +                return new Object[]{"feature-seeds", "features", key};
 +            }
 +            return null;
@@ -3994,7 +4098,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        });
 +
 +        builder.addAction(path("redstone-implementation"), (path, value) -> {
-+            if (value.require(String.class).equalsIgnoreCase("alternate-current")) {
++            if ("alternate-current".equalsIgnoreCase(value.require(String.class))) {
 +                value.set("alternate_current");
 +            }
 +            return new Object[]{"misc", "redstone-implementation"};
@@ -4020,6 +4124,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        moveFromRootAndRename(builder, path("game-mechanics", oldKey), newKey, parents);
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/configuration/transformation/world/package-info.java b/src/main/java/io/papermc/paper/configuration/transformation/world/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/transformation/world/package-info.java
+@@ -0,0 +0,0 @@
++@NullMarked
++package io.papermc.paper.configuration.transformation.world;
++
++import org.jspecify.annotations.NullMarked;
 diff --git a/src/main/java/io/papermc/paper/configuration/transformation/world/versioned/V29_ZeroWorldHeight.java b/src/main/java/io/papermc/paper/configuration/transformation/world/versioned/V29_ZeroWorldHeight.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -4029,7 +4143,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package io.papermc.paper.configuration.transformation.world.versioned;
 +
 +import io.papermc.paper.configuration.type.number.IntOr;
-+import org.checkerframework.checker.nullness.qual.Nullable;
++import org.jspecify.annotations.Nullable;
 +import org.spongepowered.configurate.ConfigurateException;
 +import org.spongepowered.configurate.ConfigurationNode;
 +import org.spongepowered.configurate.NodePath;
@@ -4116,7 +4230,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import io.papermc.paper.configuration.Configurations;
 +import net.minecraft.world.level.GameRules;
-+import org.checkerframework.checker.nullness.qual.Nullable;
++import org.jspecify.annotations.Nullable;
 +import org.spongepowered.configurate.ConfigurationNode;
 +import org.spongepowered.configurate.NodePath;
 +import org.spongepowered.configurate.transformation.ConfigurationTransformation;
@@ -4167,6 +4281,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        }
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/configuration/transformation/world/versioned/package-info.java b/src/main/java/io/papermc/paper/configuration/transformation/world/versioned/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/transformation/world/versioned/package-info.java
+@@ -0,0 +0,0 @@
++@NullMarked
++package io.papermc.paper.configuration.transformation.world.versioned;
++
++import org.jspecify.annotations.NullMarked;
 diff --git a/src/main/java/io/papermc/paper/configuration/type/BooleanOrDefault.java b/src/main/java/io/papermc/paper/configuration/type/BooleanOrDefault.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -4175,14 +4299,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.configuration.type;
 +
-+import org.apache.commons.lang3.BooleanUtils;
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.spongepowered.configurate.serialize.ScalarSerializer;
-+import org.spongepowered.configurate.serialize.SerializationException;
-+
 +import java.lang.reflect.Type;
 +import java.util.Locale;
 +import java.util.function.Predicate;
++import org.apache.commons.lang3.BooleanUtils;
++import org.jspecify.annotations.Nullable;
++import org.spongepowered.configurate.serialize.ScalarSerializer;
++import org.spongepowered.configurate.serialize.SerializationException;
 +
 +public record BooleanOrDefault(@Nullable Boolean value) {
 +    private static final String DEFAULT_VALUE = "default";
@@ -4217,7 +4340,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        @Override
 +        protected Object serialize(BooleanOrDefault item, Predicate<Class<?>> typeSupported) {
-+            final @Nullable Boolean value = item.value;
++            final Boolean value = item.value;
 +            if (value != null) {
 +                return value.toString();
 +            } else {
@@ -4236,7 +4359,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import io.papermc.paper.configuration.type.number.IntOr;
 +import java.lang.reflect.Type;
-+import org.checkerframework.checker.nullness.qual.Nullable;
++import org.jspecify.annotations.Nullable;
 +import org.spongepowered.configurate.ConfigurationNode;
 +import org.spongepowered.configurate.serialize.SerializationException;
 +import org.spongepowered.configurate.serialize.TypeSerializer;
@@ -4349,20 +4472,19 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.configuration.type;
 +
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.spongepowered.configurate.serialize.ScalarSerializer;
-+import org.spongepowered.configurate.serialize.SerializationException;
-+
 +import java.lang.reflect.Type;
 +import java.util.Objects;
 +import java.util.function.Predicate;
 +import java.util.regex.Pattern;
++import org.jspecify.annotations.Nullable;
++import org.spongepowered.configurate.serialize.ScalarSerializer;
++import org.spongepowered.configurate.serialize.SerializationException;
 +
 +public final class Duration {
 +
 +    private static final Pattern SPACE = Pattern.compile(" ");
 +    private static final Pattern NOT_NUMERIC = Pattern.compile("[^-\\d.]");
-+    public static final Serializer SERIALIZER = new Serializer();
++    public static final ScalarSerializer<Duration> SERIALIZER = new Serializer();
 +
 +    private final long seconds;
 +    private final String value;
@@ -4752,17 +4874,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.configuration.type.fallback;
 +
-+import net.minecraft.server.MinecraftServer;
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.spigotmc.SpigotWorldConfig;
-+import org.spongepowered.configurate.serialize.ScalarSerializer;
-+import org.spongepowered.configurate.serialize.SerializationException;
-+
 +import java.lang.reflect.Type;
 +import java.util.HashMap;
 +import java.util.Map;
 +import java.util.function.Predicate;
 +import java.util.function.Supplier;
++import net.minecraft.server.MinecraftServer;
++import org.spigotmc.SpigotWorldConfig;
++import org.spongepowered.configurate.serialize.ScalarSerializer;
++import org.spongepowered.configurate.serialize.SerializationException;
 +
 +import static io.leangen.geantyref.GenericTypeReflector.erase;
 +
@@ -4789,7 +4909,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public FallbackValue deserialize(Type type, Object obj) throws SerializationException {
-+        final @Nullable FallbackCreator<?> creator = REGISTRY.get(erase(type));
++        final FallbackCreator<?> creator = REGISTRY.get(erase(type));
 +        if (creator == null) {
 +            throw new SerializationException(type + " does not have a FallbackCreator registered");
 +        }
@@ -4821,6 +4941,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return value < 0 ?  OptionalInt.empty() : OptionalInt.of(value);
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/configuration/type/fallback/package-info.java b/src/main/java/io/papermc/paper/configuration/type/fallback/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/type/fallback/package-info.java
+@@ -0,0 +0,0 @@
++@NullMarked
++package io.papermc.paper.configuration.type.fallback;
++
++import org.jspecify.annotations.NullMarked;
 diff --git a/src/main/java/io/papermc/paper/configuration/type/number/BelowZeroToEmpty.java b/src/main/java/io/papermc/paper/configuration/type/number/BelowZeroToEmpty.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -5073,6 +5203,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    protected abstract boolean belowZero(O value);
 +}
+diff --git a/src/main/java/io/papermc/paper/configuration/type/number/package-info.java b/src/main/java/io/papermc/paper/configuration/type/number/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/type/number/package-info.java
+@@ -0,0 +0,0 @@
++@NullMarked
++package io.papermc.paper.configuration.type.number;
++
++import org.jspecify.annotations.NullMarked;
+diff --git a/src/main/java/io/papermc/paper/configuration/type/package-info.java b/src/main/java/io/papermc/paper/configuration/type/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/type/package-info.java
+@@ -0,0 +0,0 @@
++@NullMarked
++package io.papermc.paper.configuration.type;
++
++import org.jspecify.annotations.NullMarked;
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/Main.java
