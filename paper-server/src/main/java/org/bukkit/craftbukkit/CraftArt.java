@@ -75,6 +75,22 @@ public class CraftArt implements Art, Handleable<PaintingVariant> {
         return this.paintingVariant.height();
     }
 
+    // Paper start - Expand Art API
+    @Override
+    public net.kyori.adventure.text.Component title() {
+        return this.paintingVariant.title().map(io.papermc.paper.adventure.PaperAdventure::asAdventure).orElse(null);
+    }
+
+    @Override
+    public net.kyori.adventure.text.Component author() {
+        return this.paintingVariant.author().map(io.papermc.paper.adventure.PaperAdventure::asAdventure).orElse(null);
+    }
+
+    public net.kyori.adventure.key.Key assetId() {
+        return io.papermc.paper.adventure.PaperAdventure.asAdventure(this.paintingVariant.assetId());
+    }
+    // Paper end - Expand Art API
+
     @Override
     public int getId() {
         return CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT).getId(this.paintingVariant);
