@@ -206,8 +206,45 @@ index 3470755c65a2db38e679adc35d3d43f7fef5468d..1fe3a5e2f5c15fddfbcd503a061ebf75
      public static <T extends Keyed> Registry<T> getRegistry(@NotNull Class<T> tClass) {
          return server.getRegistry(tClass);
      }
+diff --git a/src/main/java/org/bukkit/Particle.java b/src/main/java/org/bukkit/Particle.java
+index 37e7862be843da4f48ac061fb1625854fd671b2a..cdc09d18088af3100cb731702edb7e6bffdeb502 100644
+--- a/src/main/java/org/bukkit/Particle.java
++++ b/src/main/java/org/bukkit/Particle.java
+@@ -162,28 +162,23 @@ public enum Particle implements Keyed {
+ 
+     private final NamespacedKey key;
+     private final Class<?> dataType;
+-    final boolean register;
++    // Paper - all particles are registered
+ 
+     Particle(String key) {
+         this(key, Void.class);
+     }
+ 
+-    Particle(String key, boolean register) {
+-        this(key, Void.class, register);
+-    }
++    // Paper - all particles are registered
+ 
+     Particle(String key, /*@NotNull*/ Class<?> data) {
+-        this(key, data, true);
+-    }
+-
+-    Particle(String key, /*@NotNull*/ Class<?> data, boolean register) {
++        // Paper - all particles are registered
+         if (key != null) {
+             this.key = NamespacedKey.minecraft(key);
+         } else {
+             this.key = null;
+         }
+         dataType = data;
+-        this.register = register;
++        // Paper - all particles are registered
+     }
+ 
+     /**
 diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
-index b4f297f90e3c1deaa1fc3f4418418588ab19b6c5..46dce7c2a543f6b165975565ea9d40654a132b9b 100644
+index b4f297f90e3c1deaa1fc3f4418418588ab19b6c5..d03bdf6617ce66950e335f0afb52c19b2e2a14e2 100644
 --- a/src/main/java/org/bukkit/Registry.java
 +++ b/src/main/java/org/bukkit/Registry.java
 @@ -86,26 +86,32 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
@@ -256,7 +293,7 @@ index b4f297f90e3c1deaa1fc3f4418418588ab19b6c5..46dce7c2a543f6b165975565ea9d4065
      /**
       * Custom boss bars.
       *
-@@ -155,13 +161,15 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+@@ -155,25 +161,29 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
       *
       * @see Cat.Type
       */
@@ -274,7 +311,11 @@ index b4f297f90e3c1deaa1fc3f4418418588ab19b6c5..46dce7c2a543f6b165975565ea9d4065
      /**
       * Server entity types.
       *
-@@ -172,8 +180,10 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+      * @see EntityType
+      */
+-    Registry<EntityType> ENTITY_TYPE = new SimpleRegistry<>(EntityType.class, (entity) -> entity != EntityType.UNKNOWN);
++    Registry<EntityType> ENTITY_TYPE = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.ENTITY_TYPE); // Paper
+     /**
       * Server instruments.
       *
       * @see MusicInstrument
@@ -295,7 +336,7 @@ index b4f297f90e3c1deaa1fc3f4418418588ab19b6c5..46dce7c2a543f6b165975565ea9d4065
      /**
       * Default server loot tables.
       *
-@@ -200,13 +210,13 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+@@ -200,25 +210,25 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
       * @see MenuType
       */
      @ApiStatus.Experimental
@@ -310,6 +351,20 @@ index b4f297f90e3c1deaa1fc3f4418418588ab19b6c5..46dce7c2a543f6b165975565ea9d4065
 +    Registry<PotionEffectType> EFFECT = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.MOB_EFFECT); // Paper
      /**
       * Server particles.
+      *
+      * @see Particle
+      */
+-    Registry<Particle> PARTICLE_TYPE = new SimpleRegistry<>(Particle.class, (par) -> par.register);
++    Registry<Particle> PARTICLE_TYPE = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.PARTICLE_TYPE); // Paper
+     /**
+      * Server potions.
+      *
+      * @see PotionType
+      */
+-    Registry<PotionType> POTION = new SimpleRegistry<>(PotionType.class);
++    Registry<PotionType> POTION = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.POTION); // Paper
+     /**
+      * Server statistics.
       *
 @@ -229,58 +239,67 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
       * Server structures.
@@ -428,6 +483,15 @@ index b4f297f90e3c1deaa1fc3f4418418588ab19b6c5..46dce7c2a543f6b165975565ea9d4065
      /**
       * Get the object by its key.
       *
+@@ -396,7 +417,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+         return (namespacedKey != null) ? get(namespacedKey) : null;
+     }
+ 
+-    static final class SimpleRegistry<T extends Enum<T> & Keyed> implements Registry<T> {
++    class SimpleRegistry<T extends Enum<T> & Keyed> implements Registry<T> { // Paper - remove final
+ 
+         private final Class<T> type;
+         private final Map<NamespacedKey, T> map;
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
 index 6bc43f3a5748a1b83aa4c4d462df3cbc9220c267..cad9c18dbe56ffcef377f0b1162bc880fc56aa6c 100644
 --- a/src/main/java/org/bukkit/Server.java
