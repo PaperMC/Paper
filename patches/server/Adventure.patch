@@ -1170,7 +1170,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import com.mojang.brigadier.StringReader;
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
 +import com.mojang.serialization.JavaOps;
-+import com.mojang.serialization.JsonOps;
 +import io.netty.util.AttributeKey;
 +import java.io.IOException;
 +import java.util.ArrayList;
@@ -1223,6 +1222,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
 +import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 +import net.minecraft.resources.RegistryOps;
++import net.minecraft.resources.ResourceKey;
 +import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.server.network.Filterable;
 +import net.minecraft.sounds.SoundEvent;
@@ -1322,11 +1322,33 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return ResourceLocation.fromNamespaceAndPath(key.namespace(), key.value());
 +    }
 +
-+    public static ResourceLocation asVanillaNullable(final Key key) {
++    public static <T> ResourceKey<T> asVanilla(
++        final ResourceKey<? extends net.minecraft.core.Registry<T>> registry,
++        final Key key
++    ) {
++        return ResourceKey.create(registry, asVanilla(key));
++    }
++
++    public static Key asAdventureKey(final ResourceKey<?> key) {
++        return asAdventure(key.location());
++    }
++
++    public static @Nullable ResourceLocation asVanillaNullable(final Key key) {
 +        if (key == null) {
 +            return null;
 +        }
 +        return asVanilla(key);
++    }
++
++    public static Holder<SoundEvent> resolveSound(final Key key) {
++        ResourceLocation id = asVanilla(key);
++        Optional<Holder.Reference<SoundEvent>> vanilla = BuiltInRegistries.SOUND_EVENT.get(id);
++        if (vanilla.isPresent()) {
++            return vanilla.get();
++        }
++
++        // sound is not known so not in the registry but might be used by the client with a resource pack
++        return Holder.direct(SoundEvent.createVariableRangeEvent(id));
 +    }
 +
 +    // Component
