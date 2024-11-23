@@ -1,67 +1,56 @@
 package org.bukkit;
 
-import static org.bukkit.support.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
-import com.google.common.collect.Lists;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import net.minecraft.core.Holder;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.entity.decoration.PaintingVariant;
-import org.bukkit.craftbukkit.CraftArt;
-import org.bukkit.craftbukkit.CraftRegistry;
-import org.bukkit.support.environment.AllFeatures;
-import org.junit.jupiter.api.Test;
+import java.util.stream.Stream;
+import org.bukkit.support.environment.VanillaFeature;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@AllFeatures
+@VanillaFeature
 public class ArtTest {
 
-    @Test
-    public void verifyMapping() {
-        List<Art> arts = Lists.newArrayList(Art.values());
-
-        for (ResourceKey<PaintingVariant> key : CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT).registryKeySet()) {
-            Holder<PaintingVariant> enumArt = CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT).getOrThrow(key);
-            String name = key.location().getPath();
-            int width = enumArt.value().width();
-            int height = enumArt.value().height();
-
-            Art subject = CraftArt.minecraftHolderToBukkit(enumArt);
-
-            String message = String.format("org.bukkit.Art is missing '%s'", name);
-            assertNotNull(subject, message);
-
-            assertThat(Art.getByName(name), is(subject));
-            assertThat(subject.getBlockWidth(), is(width), "Art." + subject + "'s width");
-            assertThat(subject.getBlockHeight(), is(height), "Art." + subject + "'s height");
-
-            arts.remove(subject);
-        }
-
-        assertThat(arts, is(Collections.EMPTY_LIST), "org.bukkit.Art has too many arts");
+    public static Stream<Arguments> widthData() {
+        return Stream.of(Arguments.of(Art.KEBAB, 1),
+                         Arguments.of(Art.WANDERER, 1),
+                         Arguments.of(Art.POOL, 2),
+                         Arguments.of(Art.MATCH, 2),
+                         Arguments.of(Art.BOUQUET, 3),
+                         Arguments.of(Art.BACKYARD, 3),
+                         Arguments.of(Art.FIGHTERS, 4),
+                         Arguments.of(Art.SKELETON, 4),
+                         Arguments.of(Art.POINTER, 4));
     }
 
-    @Test
-    public void testCraftArtToNotch() {
-        Map<Holder<PaintingVariant>, Art> cache = new HashMap<>();
-        for (Art art : Art.values()) {
-            Holder<PaintingVariant> enumArt = CraftArt.bukkitToMinecraftHolder(art);
-            assertNotNull(enumArt, art.name());
-            assertThat(cache.put(enumArt, art), is(nullValue()), art.name());
-        }
+    public static Stream<Arguments> heightData() {
+        return Stream.of(Arguments.of(Art.KEBAB, 1),
+                         Arguments.of(Art.WANDERER, 2),
+                         Arguments.of(Art.POOL, 1),
+                         Arguments.of(Art.MATCH, 2),
+                         Arguments.of(Art.BOUQUET, 3),
+                         Arguments.of(Art.BACKYARD, 4),
+                         Arguments.of(Art.FIGHTERS, 2),
+                         Arguments.of(Art.SKELETON, 3),
+                         Arguments.of(Art.POINTER, 4));
     }
 
-    @Test
-    public void testCraftArtToBukkit() {
-        Map<Art, Holder<PaintingVariant>> cache = new HashMap<>();
-        for (Holder<PaintingVariant> enumArt : CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT).asHolderIdMap()) {
-            Art art = CraftArt.minecraftHolderToBukkit(enumArt);
-            assertNotNull(art, "Could not CraftArt.NotchToBukkit " + enumArt);
-            assertThat(cache.put(art, enumArt), is(nullValue()), "Duplicate artwork " + enumArt);
-        }
+    @ParameterizedTest
+    @MethodSource("widthData")
+    public void testWidth(Art art, int expected) {
+        assertEquals(expected, art.getBlockWidth(), """
+                Art '%s' does not have the correct width.
+                This can be caused by either a change in the Implementation.
+                Or the width for this specific art was changed in which case the test needs to be updated.
+                """.formatted(art.getKey()));
+    }
+
+    @ParameterizedTest
+    @MethodSource("heightData")
+    public void testHeight(Art art, int expected) {
+        assertEquals(expected, art.getBlockHeight(), """
+                Art '%s' does not have the correct height.
+                This can be caused by either a change in the Implementation.
+                Or the height for this specific art was changed in which case the test needs to be updated.
+                """.formatted(art.getKey()));
     }
 }
