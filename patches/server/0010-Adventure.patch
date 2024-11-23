@@ -1161,16 +1161,15 @@ index 0000000000000000000000000000000000000000..2fd6c3e65354071af71c7d8ebb97b559
 +}
 diff --git a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..610003a668c4a7fe53e3477accc6bafb8479b936
+index 0000000000000000000000000000000000000000..8ec506a1ae40f2e4b01af9b34a0b98be8653b460
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
-@@ -0,0 +1,483 @@
+@@ -0,0 +1,505 @@
 +package io.papermc.paper.adventure;
 +
 +import com.mojang.brigadier.StringReader;
 +import com.mojang.brigadier.exceptions.CommandSyntaxException;
 +import com.mojang.serialization.JavaOps;
-+import com.mojang.serialization.JsonOps;
 +import io.netty.util.AttributeKey;
 +import java.io.IOException;
 +import java.util.ArrayList;
@@ -1223,6 +1222,7 @@ index 0000000000000000000000000000000000000000..610003a668c4a7fe53e3477accc6bafb
 +import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
 +import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 +import net.minecraft.resources.RegistryOps;
++import net.minecraft.resources.ResourceKey;
 +import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.server.network.Filterable;
 +import net.minecraft.sounds.SoundEvent;
@@ -1322,11 +1322,33 @@ index 0000000000000000000000000000000000000000..610003a668c4a7fe53e3477accc6bafb
 +        return ResourceLocation.fromNamespaceAndPath(key.namespace(), key.value());
 +    }
 +
-+    public static ResourceLocation asVanillaNullable(final Key key) {
++    public static <T> ResourceKey<T> asVanilla(
++        final ResourceKey<? extends net.minecraft.core.Registry<T>> registry,
++        final Key key
++    ) {
++        return ResourceKey.create(registry, asVanilla(key));
++    }
++
++    public static Key asAdventureKey(final ResourceKey<?> key) {
++        return asAdventure(key.location());
++    }
++
++    public static @Nullable ResourceLocation asVanillaNullable(final Key key) {
 +        if (key == null) {
 +            return null;
 +        }
 +        return asVanilla(key);
++    }
++
++    public static Holder<SoundEvent> resolveSound(final Key key) {
++        ResourceLocation id = asVanilla(key);
++        Optional<Holder.Reference<SoundEvent>> vanilla = BuiltInRegistries.SOUND_EVENT.get(id);
++        if (vanilla.isPresent()) {
++            return vanilla.get();
++        }
++
++        // sound is not known so not in the registry but might be used by the client with a resource pack
++        return Holder.direct(SoundEvent.createVariableRangeEvent(id));
 +    }
 +
 +    // Component
