@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 8 Aug 2023 17:29:33 -0700
+Subject: [PATCH] Fix race condition on UpgradeData.BlockFixers class init
+
+The CHUNKY_FIXERS field is modified during the constructors
+of the BlockFixers, but the code that uses CHUNKY_FIXERS does
+not properly ensure that BlockFixers has been initialised before
+using it, leading to a possible race condition where instances of
+BlockFixers are accessed before they have initialised correctly.
+
+We can force the class to initialise fully before accessing the
+field by calling any method on the class, and for convenience
+we use values().
+
+diff --git a/src/main/java/net/minecraft/world/level/chunk/UpgradeData.java b/src/main/java/net/minecraft/world/level/chunk/UpgradeData.java
+index ce3d79ebc7f933d0b34b3f8f71bbec872076847a..ce84851c0c2bf9a066fd5e07be8635d3dcaea0b9 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/UpgradeData.java
++++ b/src/main/java/net/minecraft/world/level/chunk/UpgradeData.java
+@@ -153,6 +153,7 @@ public class UpgradeData {
+             Fluid fluid = tick.type() == Fluids.EMPTY ? level.getFluidState(tick.pos()).getType() : tick.type();
+             level.scheduleTick(tick.pos(), fluid, tick.delay(), tick.priority());
+         });
++        UpgradeData.BlockFixers.values(); // Paper - force the class init so that we don't access CHUNKY_FIXERS before all BlockFixers are initialised
+         CHUNKY_FIXERS.forEach(logic -> logic.processChunk(level));
+     }
+ 

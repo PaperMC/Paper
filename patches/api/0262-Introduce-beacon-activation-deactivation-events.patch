@@ -1,0 +1,103 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spyridon Pagkalos <spyridon@ender.gr>
+Date: Thu, 25 Mar 2021 20:25:47 +0200
+Subject: [PATCH] Introduce beacon activation/deactivation events
+
+
+diff --git a/src/main/java/io/papermc/paper/event/block/BeaconActivatedEvent.java b/src/main/java/io/papermc/paper/event/block/BeaconActivatedEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..380538656e675fdfaf9077da8ff48dc5c427a657
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/block/BeaconActivatedEvent.java
+@@ -0,0 +1,41 @@
++package io.papermc.paper.event.block;
++
++import org.bukkit.block.Beacon;
++import org.bukkit.block.Block;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.block.BlockEvent;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Called when a beacon is activated.
++ * Activation occurs when the beacon beam becomes visible.
++ */
++@NullMarked
++public class BeaconActivatedEvent extends BlockEvent {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    @ApiStatus.Internal
++    public BeaconActivatedEvent(final Block block) {
++        super(block);
++    }
++
++    /**
++     * Returns the beacon that was activated.
++     *
++     * @return the beacon that was activated.
++     */
++    public Beacon getBeacon() {
++        return (Beacon) this.block.getState();
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/block/BeaconDeactivatedEvent.java b/src/main/java/io/papermc/paper/event/block/BeaconDeactivatedEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4e5b2b2413e2aae03132ecd76123cd93dfbd77ce
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/block/BeaconDeactivatedEvent.java
+@@ -0,0 +1,44 @@
++package io.papermc.paper.event.block;
++
++import org.bukkit.Material;
++import org.bukkit.block.Beacon;
++import org.bukkit.block.Block;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.block.BlockEvent;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
++
++/**
++ * Called when a beacon is deactivated, either because its base block(s) or itself were destroyed.
++ */
++@NullMarked
++public class BeaconDeactivatedEvent extends BlockEvent {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    @ApiStatus.Internal
++    public BeaconDeactivatedEvent(final Block block) {
++        super(block);
++    }
++
++    /**
++     * Returns the beacon that was deactivated.
++     * This will return {@code null} if the beacon does not exist.
++     * (which can occur after the deactivation of a now broken beacon)
++     *
++     * @return The beacon that got deactivated, or {@code null} if it does not exist.
++     */
++    public @Nullable Beacon getBeacon() {
++        return this.block.getType() == Material.BEACON ? (Beacon) this.block.getState() : null;
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}

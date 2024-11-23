@@ -1,0 +1,125 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 22 May 2024 10:00:19 -0700
+Subject: [PATCH] Fix equipment slot and group API
+
+Adds the following:
+- Add missing 'body' slot group
+- Expose LivingEntity#canUseSlot
+
+Co-authored-by: SoSeDiK <mrsosedik@gmail.com>
+
+diff --git a/src/main/java/org/bukkit/attribute/AttributeModifier.java b/src/main/java/org/bukkit/attribute/AttributeModifier.java
+index def473b6424da1e81448bd492b7fef46691eaf8c..027a7d3b6feb52f6c3424edc0820d29fdaf6ebae 100644
+--- a/src/main/java/org/bukkit/attribute/AttributeModifier.java
++++ b/src/main/java/org/bukkit/attribute/AttributeModifier.java
+@@ -130,6 +130,7 @@ public class AttributeModifier implements ConfigurationSerializable, Keyed {
+      */
+     @Nullable
+     @Deprecated
++    @io.papermc.paper.annotation.DoNotUse // Paper
+     public EquipmentSlot getSlot() {
+         return slot == EquipmentSlotGroup.ANY ? null : slot.getExample();
+     }
+diff --git a/src/main/java/org/bukkit/entity/LivingEntity.java b/src/main/java/org/bukkit/entity/LivingEntity.java
+index 51a428473e702be3ab79bd1e579d1114f747791b..68c08e7a212bc3e3885f9b5a4d9aef85fcb3b029 100644
+--- a/src/main/java/org/bukkit/entity/LivingEntity.java
++++ b/src/main/java/org/bukkit/entity/LivingEntity.java
+@@ -1457,4 +1457,15 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
+      */
+     void setBodyYaw(float bodyYaw);
+     // Paper end - body yaw API
++
++    // Paper start - Expose canUseSlot
++    /**
++     * Checks whether this entity can use the equipment slot.
++     * <br>For example, not all entities may have {@link org.bukkit.inventory.EquipmentSlot#BODY}.
++     *
++     * @param slot equipment slot
++     * @return whether this entity can use the equipment slot
++     */
++    boolean canUseEquipmentSlot(org.bukkit.inventory.@NotNull EquipmentSlot slot);
++    // Paper end - Expose canUseSlot
+ }
+diff --git a/src/main/java/org/bukkit/inventory/EntityEquipment.java b/src/main/java/org/bukkit/inventory/EntityEquipment.java
+index 1b34286fb6cbedb3841c84c499eb626f61885126..91cd0a918b640df7e75f6e40f3c6bd3689d4ff40 100644
+--- a/src/main/java/org/bukkit/inventory/EntityEquipment.java
++++ b/src/main/java/org/bukkit/inventory/EntityEquipment.java
+@@ -15,6 +15,8 @@ public interface EntityEquipment {
+      *
+      * @param slot the slot to put the ItemStack
+      * @param item the ItemStack to set
++     * @throws IllegalArgumentException if the slot is invalid for the entity
++     * @see org.bukkit.entity.LivingEntity#canUseEquipmentSlot(EquipmentSlot)
+      */
+     public void setItem(@NotNull EquipmentSlot slot, @Nullable ItemStack item);
+ 
+@@ -23,7 +25,9 @@ public interface EntityEquipment {
+      *
+      * @param slot the slot to put the ItemStack
+      * @param item the ItemStack to set
+-     * @param silent whether or not the equip sound should be silenced
++     * @param silent whether the equip sound should be silenced
++     * @throws IllegalArgumentException if the slot is invalid for the entity
++     * @see org.bukkit.entity.LivingEntity#canUseEquipmentSlot(EquipmentSlot)
+      */
+     public void setItem(@NotNull EquipmentSlot slot, @Nullable ItemStack item, boolean silent);
+ 
+@@ -32,6 +36,8 @@ public interface EntityEquipment {
+      *
+      * @param slot the slot to get the ItemStack
+      * @return the ItemStack in the given slot
++     * @throws IllegalArgumentException if the slot is invalid for the entity
++     * @see org.bukkit.entity.LivingEntity#canUseEquipmentSlot(EquipmentSlot)
+      */
+     @NotNull
+     public ItemStack getItem(@NotNull EquipmentSlot slot);
+diff --git a/src/main/java/org/bukkit/inventory/EquipmentSlot.java b/src/main/java/org/bukkit/inventory/EquipmentSlot.java
+index c1c69ba4c361740f0ad422a7840a7f0f055c186a..1bedf9b7ee16729397e1fa2915dd76a1c6fbe212 100644
+--- a/src/main/java/org/bukkit/inventory/EquipmentSlot.java
++++ b/src/main/java/org/bukkit/inventory/EquipmentSlot.java
+@@ -15,7 +15,7 @@ public enum EquipmentSlot {
+     /**
+      * Only for certain entities such as horses and wolves.
+      */
+-    BODY(() -> EquipmentSlotGroup.ARMOR);
++    BODY(() -> EquipmentSlotGroup.BODY); // Paper - add missing slot type
+ 
+     private final Supplier<EquipmentSlotGroup> group; // Supplier because of class loading order, since EquipmentSlot and EquipmentSlotGroup reference each other on class init
+ 
+diff --git a/src/main/java/org/bukkit/inventory/EquipmentSlotGroup.java b/src/main/java/org/bukkit/inventory/EquipmentSlotGroup.java
+index 0019c8d91eefbfb44e76b9f929b25cd189295b79..2ba475ee5e976a6f5451021be17697345b29110a 100644
+--- a/src/main/java/org/bukkit/inventory/EquipmentSlotGroup.java
++++ b/src/main/java/org/bukkit/inventory/EquipmentSlotGroup.java
+@@ -25,7 +25,8 @@ public final class EquipmentSlotGroup implements Predicate<EquipmentSlot> {
+     public static final EquipmentSlotGroup LEGS = get("legs", EquipmentSlot.LEGS);
+     public static final EquipmentSlotGroup CHEST = get("chest", EquipmentSlot.CHEST);
+     public static final EquipmentSlotGroup HEAD = get("head", EquipmentSlot.HEAD);
+-    public static final EquipmentSlotGroup ARMOR = get("armor", (test) -> test == EquipmentSlot.FEET || test == EquipmentSlot.LEGS || test == EquipmentSlot.CHEST || test == EquipmentSlot.HEAD, EquipmentSlot.CHEST);
++    public static final EquipmentSlotGroup ARMOR = get("armor", (test) -> test == EquipmentSlot.FEET || test == EquipmentSlot.LEGS || test == EquipmentSlot.CHEST || test == EquipmentSlot.HEAD || test == EquipmentSlot.BODY, EquipmentSlot.CHEST);  // Paper - add missing slot type
++    public static final EquipmentSlotGroup BODY = get("body", EquipmentSlot.BODY); // Paper - add missing slot group
+     //
+     private final String key;
+     private final Predicate<EquipmentSlot> predicate;
+diff --git a/src/main/java/org/bukkit/inventory/PlayerInventory.java b/src/main/java/org/bukkit/inventory/PlayerInventory.java
+index 2c54660dc1fbc7c1232096797a23cae1262888e9..bcfcf963063e7c0fdc711febef2df2d0ff12776d 100644
+--- a/src/main/java/org/bukkit/inventory/PlayerInventory.java
++++ b/src/main/java/org/bukkit/inventory/PlayerInventory.java
+@@ -95,6 +95,8 @@ public interface PlayerInventory extends Inventory {
+      * @param slot the slot to put the ItemStack
+      * @param item the ItemStack to set
+      *
++     * @throws IllegalArgumentException if the slot is invalid for the player
++     * @see org.bukkit.entity.LivingEntity#canUseEquipmentSlot(EquipmentSlot)
+      * @see #setItem(int, ItemStack)
+      */
+     public void setItem(@NotNull EquipmentSlot slot, @Nullable ItemStack item);
+@@ -105,6 +107,8 @@ public interface PlayerInventory extends Inventory {
+      * @param slot the slot to get the ItemStack
+      *
+      * @return the ItemStack in the given slot
++     * @throws IllegalArgumentException if the slot is invalid for the player
++     * @see org.bukkit.entity.LivingEntity#canUseEquipmentSlot(EquipmentSlot)
+      */
+     @NotNull // Paper
+     public ItemStack getItem(@NotNull EquipmentSlot slot);

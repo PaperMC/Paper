@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Mon, 19 Sep 2022 00:13:02 +0100
+Subject: [PATCH] Mitigate effects of WorldCreator#keepSpawnLoaded ret type
+ change
+
+TODO: Remove in 1.21?
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
+index 5a7aa491e0846ca8133bc4bb6e74b93cff85fb17..2a2e37a7c67cac657712fc20746a892097a3c4be 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
+@@ -463,6 +463,12 @@ public class Commodore {
+                             super.visitMethodInsn(Opcodes.INVOKEVIRTUAL, runtimeCbPkgPrefix() + "advancement/CraftAdvancement", "getDisplay0", desc, false);
+                             return;
+                         }
++                        if (owner.equals("org/bukkit/WorldCreator") && name.equals("keepSpawnLoaded") && desc.equals("(Lnet/kyori/adventure/util/TriState;)V")) {
++                            super.visitMethodInsn(opcode, owner, name, "(Lnet/kyori/adventure/util/TriState;)Lorg/bukkit/WorldCreator;", itf);
++                            // new method has a return, so, make sure we pop it
++                            super.visitInsn(Opcodes.POP);
++                            return;
++                        }
+                         // Paper end
+ 
+                         // Paper start - ItemFactory#getSpawnEgg (paper had original method that returned ItemStack, upstream added identical but returned Material)

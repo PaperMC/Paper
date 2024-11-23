@@ -5,7 +5,7 @@ PS1="$"
 
 function changelog() {
     base=$(git ls-tree HEAD $1  | cut -d' ' -f3 | cut -f1)
-    cd $1 && git log --oneline ${base}...HEAD | sed -E 's/(^[0-9a-f]{8,}( SPIGOT-[0-9]{1,4},?)* |Revert ")#([0-9]+)/\1PR-\3/'
+    cd $1 && git log --oneline ${base}...HEAD | sed -E 's/(^[0-9a-f]{8,}( (SPIGOT-[0-9]{1,4}|MC-[0-9]{1,6}),?)* |Revert ")#([0-9]+)/\1PR-\4/'
 }
 bukkit=$(changelog work/Bukkit)
 cb=$(changelog work/CraftBukkit)

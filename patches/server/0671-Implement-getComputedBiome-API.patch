@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Mon, 14 Mar 2022 22:46:05 -0700
+Subject: [PATCH] Implement getComputedBiome API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
+index ca35e93239eea09b3d0dc6ef18f58743e633996b..a7748f4b7c5a1630937c702b3fd5fded93793d64 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
+@@ -77,6 +77,13 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
+         return CraftBiome.minecraftHolderToBukkit(this.getHandle().getNoiseBiome(x >> 2, y >> 2, z >> 2));
+     }
+ 
++    // Paper start
++    @Override
++    public Biome getComputedBiome(int x, int y, int z) {
++        return CraftBiome.minecraftHolderToBukkit(this.getHandle().getBiome(new BlockPos(x, y, z)));
++    }
++    // Paper end
++
+     @Override
+     public void setBiome(Location location, Biome biome) {
+         this.setBiome(location.getBlockX(), location.getBlockY(), location.getBlockZ(), biome);
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+index d5b495b5a3ca7f4411d1a700f7149042a16509f1..68fcec085334383808b2117a49220f4d8239220b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+@@ -340,6 +340,13 @@ public class CraftBlock implements Block {
+         return this.getWorld().getBiome(this.getX(), this.getY(), this.getZ());
+     }
+ 
++    // Paper start
++    @Override
++    public Biome getComputedBiome() {
++        return this.getWorld().getComputedBiome(this.getX(), this.getY(), this.getZ());
++    }
++    // Paper end
++
+     @Override
+     public void setBiome(Biome bio) {
+         this.getWorld().setBiome(this.getX(), this.getY(), this.getZ(), bio);
+diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CraftLimitedRegion.java b/src/main/java/org/bukkit/craftbukkit/generator/CraftLimitedRegion.java
+index 2c7b64bd7071cb803a042152d497982d753e0b5d..a23269e3bdb83f85a1d08d5f7b54742025223ada 100644
+--- a/src/main/java/org/bukkit/craftbukkit/generator/CraftLimitedRegion.java
++++ b/src/main/java/org/bukkit/craftbukkit/generator/CraftLimitedRegion.java
+@@ -166,6 +166,14 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
+         return super.getBiome(x, y, z);
+     }
+ 
++    // Paper start
++    @Override
++    public Biome getComputedBiome(int x, int y, int z) {
++        Preconditions.checkArgument(this.isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
++        return super.getComputedBiome(x, y, z);
++    }
++    // Paper end
++
+     @Override
+     public void setBiome(int x, int y, int z, Holder<net.minecraft.world.level.biome.Biome> biomeBase) {
+         Preconditions.checkArgument(this.isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);

@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Wed, 26 Oct 2022 13:13:12 -0700
+Subject: [PATCH] Fix EntityArgument and EntitySelectorParser permissions to
+ align with EntitySelector#checkPermissions
+
+Fixes where the user has permission for selectors but not their
+suggestions, which especially matters when we force suggestions to
+the server for this type
+
+diff --git a/src/main/java/net/minecraft/commands/arguments/EntityArgument.java b/src/main/java/net/minecraft/commands/arguments/EntityArgument.java
+index a327939abe2cce22747366051b6b7aaa2db3a8cc..3281ea4dca20d2bb22b2b1c6b9abb1329bc829c1 100644
+--- a/src/main/java/net/minecraft/commands/arguments/EntityArgument.java
++++ b/src/main/java/net/minecraft/commands/arguments/EntityArgument.java
+@@ -135,7 +135,12 @@ public class EntityArgument implements ArgumentType<EntitySelector> {
+             StringReader stringreader = new StringReader(suggestionsbuilder.getInput());
+ 
+             stringreader.setCursor(suggestionsbuilder.getStart());
+-            EntitySelectorParser argumentparserselector = new EntitySelectorParser(stringreader, EntitySelectorParser.allowSelectors(icompletionprovider));
++            // Paper start - Fix EntityArgument permissions
++            final boolean permission = object instanceof CommandSourceStack stack
++                    ? stack.bypassSelectorPermissions || stack.hasPermission(2, "minecraft.command.selector")
++                    : icompletionprovider.hasPermission(2);
++            EntitySelectorParser argumentparserselector = new EntitySelectorParser(stringreader, permission);
++            // Paper end - Fix EntityArgument permissions
+ 
+             try {
+                 argumentparserselector.parse();
+diff --git a/src/main/java/net/minecraft/commands/arguments/selector/EntitySelectorParser.java b/src/main/java/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
+index dd50a530439576f56f245ff0b7eb090f9f0c9180..9d31e29ec62f437e642ed60da69c4b106bd9e770 100644
+--- a/src/main/java/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
++++ b/src/main/java/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
+@@ -133,7 +133,7 @@ public class EntitySelectorParser {
+         boolean flag;
+ 
+         if (source instanceof SharedSuggestionProvider icompletionprovider) {
+-            if (icompletionprovider.hasPermission(2)) {
++            if (source instanceof net.minecraft.commands.CommandSourceStack stack ? stack.bypassSelectorPermissions || stack.hasPermission(2, "minecraft.command.selector") : icompletionprovider.hasPermission(2)) { // Paper - Fix EntityArgument permissions
+                 flag = true;
+                 return flag;
+             }

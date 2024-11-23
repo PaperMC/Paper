@@ -1,0 +1,83 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 29 Sep 2018 16:08:23 -0500
+Subject: [PATCH] Turtle API
+
+== AT ==
+public net.minecraft.world.entity.animal.Turtle getHomePos()Lnet/minecraft/core/BlockPos;
+public net.minecraft.world.entity.animal.Turtle setHasEgg(Z)V
+public net.minecraft.world.entity.animal.Turtle isGoingHome()Z
+public net.minecraft.world.entity.animal.Turtle setGoingHome(Z)V
+public net.minecraft.world.entity.animal.Turtle isTravelling()Z
+public net.minecraft.world.entity.animal.Turtle setTravelling(Z)V
+
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Turtle.java b/src/main/java/net/minecraft/world/entity/animal/Turtle.java
+index a2c5042e99a8f4cd45d502320cf1c06e8af0bd0e..ed7f5eb9b3b700c2f817d61ee0bf8a6952731510 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Turtle.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Turtle.java
+@@ -494,14 +494,17 @@ public class Turtle extends Animal {
+ 
+             if (!this.turtle.isInWater() && this.isReachedTarget()) {
+                 if (this.turtle.layEggCounter < 1) {
+-                    this.turtle.setLayingEgg(true);
++                    this.turtle.setLayingEgg(new com.destroystokyo.paper.event.entity.TurtleStartDiggingEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity(), io.papermc.paper.util.MCUtil.toLocation(this.turtle.level(), this.blockPos)).callEvent()); // Paper - Turtle API
+                 } else if (this.turtle.layEggCounter > this.adjustedTickDelay(200)) {
+                     Level world = this.turtle.level();
+ 
+-                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.turtle, this.blockPos.above(), (BlockState) Blocks.TURTLE_EGG.defaultBlockState().setValue(TurtleEggBlock.EGGS, this.turtle.random.nextInt(4) + 1))) { // CraftBukkit
++                    // Paper start - Turtle API
++                    int eggCount = this.turtle.random.nextInt(4) + 1;
++                    com.destroystokyo.paper.event.entity.TurtleLayEggEvent layEggEvent = new com.destroystokyo.paper.event.entity.TurtleLayEggEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity(), io.papermc.paper.util.MCUtil.toLocation(this.turtle.level(), this.blockPos.above()), eggCount);
++                    if (layEggEvent.callEvent() && org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.turtle, this.blockPos.above(), Blocks.TURTLE_EGG.defaultBlockState().setValue(TurtleEggBlock.EGGS, layEggEvent.getEggCount()))) {
+                     world.playSound((Player) null, blockposition, SoundEvents.TURTLE_LAY_EGG, SoundSource.BLOCKS, 0.3F, 0.9F + world.random.nextFloat() * 0.2F);
+                     BlockPos blockposition1 = this.blockPos.above();
+-                    BlockState iblockdata = (BlockState) Blocks.TURTLE_EGG.defaultBlockState().setValue(TurtleEggBlock.EGGS, this.turtle.random.nextInt(4) + 1);
++                    BlockState iblockdata = (BlockState) Blocks.TURTLE_EGG.defaultBlockState().setValue(TurtleEggBlock.EGGS, layEggEvent.getEggCount()); // Paper
+ 
+                     world.setBlock(blockposition1, iblockdata, 3);
+                     world.gameEvent((Holder) GameEvent.BLOCK_PLACE, blockposition1, GameEvent.Context.of(this.turtle, iblockdata));
+@@ -571,7 +574,7 @@ public class Turtle extends Animal {
+ 
+         @Override
+         public boolean canUse() {
+-            return this.turtle.isBaby() ? false : (this.turtle.hasEgg() ? true : (this.turtle.getRandom().nextInt(reducedTickDelay(700)) != 0 ? false : !this.turtle.getHomePos().closerToCenterThan(this.turtle.position(), 64.0D)));
++            return this.turtle.isBaby() ? false : (this.turtle.hasEgg() ? true : (this.turtle.getRandom().nextInt(reducedTickDelay(700)) != 0 ? false : !this.turtle.getHomePos().closerToCenterThan(this.turtle.position(), 64.0D))) && new com.destroystokyo.paper.event.entity.TurtleGoHomeEvent((org.bukkit.entity.Turtle) this.turtle.getBukkitEntity()).callEvent(); // Paper - Turtle API
+         }
+ 
+         @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftTurtle.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftTurtle.java
+index fac0317ff945db991e761ac8973f0d3d41ade26b..d44e6f4bb682d18c1497eee9fb2802f2bda6e840 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftTurtle.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftTurtle.java
+@@ -28,4 +28,31 @@ public class CraftTurtle extends CraftAnimals implements Turtle {
+     public boolean isLayingEgg() {
+         return this.getHandle().isLayingEgg();
+     }
++
++    // Paper start
++    @Override
++    public org.bukkit.Location getHome() {
++        return io.papermc.paper.util.MCUtil.toLocation(this.getHandle().level(), this.getHandle().getHomePos());
++    }
++
++    @Override
++    public void setHome(org.bukkit.Location location) {
++        this.getHandle().setHomePos(io.papermc.paper.util.MCUtil.toBlockPosition(location));
++    }
++
++    @Override
++    public boolean isGoingHome() {
++        return this.getHandle().isGoingHome();
++    }
++
++    @Override
++    public boolean isDigging() {
++        return this.getHandle().isLayingEgg();
++    }
++
++    @Override
++    public void setHasEgg(boolean hasEgg) {
++        this.getHandle().setHasEgg(hasEgg);
++    }
++    // Paper end
+ }

@@ -1,0 +1,65 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Max Lee <max@themoep.de>
+Date: Thu, 27 May 2021 14:52:30 -0700
+Subject: [PATCH] Fix invulnerable end crystals
+
+MC-108513
+
+diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EndCrystal.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EndCrystal.java
+index 671e8aa7ecc2b3fcc98af62356ff690a2604bcb0..7cb3d69a69e0e3ef4b7f9f9c8b1eb67edb5d116d 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EndCrystal.java
++++ b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EndCrystal.java
+@@ -30,6 +30,7 @@ public class EndCrystal extends Entity {
+     private static final EntityDataAccessor<Optional<BlockPos>> DATA_BEAM_TARGET = SynchedEntityData.defineId(EndCrystal.class, EntityDataSerializers.OPTIONAL_BLOCK_POS);
+     private static final EntityDataAccessor<Boolean> DATA_SHOW_BOTTOM = SynchedEntityData.defineId(EndCrystal.class, EntityDataSerializers.BOOLEAN);
+     public int time;
++    public boolean generatedByDragonFight = false; // Paper - Fix invulnerable end crystals
+ 
+     public EndCrystal(EntityType<? extends EndCrystal> type, Level world) {
+         super(type, world);
+@@ -68,6 +69,17 @@ public class EndCrystal extends Entity {
+                 }
+                 // CraftBukkit end
+             }
++            // Paper start - Fix invulnerable end crystals
++            if (this.level().paperConfig().unsupportedSettings.fixInvulnerableEndCrystalExploit && this.generatedByDragonFight && this.isInvulnerable()) {
++                if (!java.util.Objects.equals(((ServerLevel) this.level()).uuid, this.getOriginWorld())
++                    || ((ServerLevel) this.level()).getDragonFight() == null
++                    || ((ServerLevel) this.level()).getDragonFight().respawnStage == null
++                    || ((ServerLevel) this.level()).getDragonFight().respawnStage.ordinal() > net.minecraft.world.level.dimension.end.DragonRespawnAnimation.SUMMONING_DRAGON.ordinal()) {
++                    this.setInvulnerable(false);
++                    this.setBeamTarget(null);
++                }
++            }
++            // Paper end - Fix invulnerable end crystals
+         }
+ 
+     }
+@@ -79,6 +91,7 @@ public class EndCrystal extends Entity {
+         }
+ 
+         nbt.putBoolean("ShowBottom", this.showsBottom());
++        if (this.generatedByDragonFight) nbt.putBoolean("Paper.GeneratedByDragonFight", this.generatedByDragonFight); // Paper - Fix invulnerable end crystals
+     }
+ 
+     @Override
+@@ -87,6 +100,7 @@ public class EndCrystal extends Entity {
+         if (nbt.contains("ShowBottom", 1)) {
+             this.setShowBottom(nbt.getBoolean("ShowBottom"));
+         }
++        if (nbt.contains("Paper.GeneratedByDragonFight", 1)) this.generatedByDragonFight = nbt.getBoolean("Paper.GeneratedByDragonFight"); // Paper - Fix invulnerable end crystals
+ 
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/feature/SpikeFeature.java b/src/main/java/net/minecraft/world/level/levelgen/feature/SpikeFeature.java
+index 6f0cd7121bf191d8fd01baf4c9b87df7f4f44564..fe5b2bcfaa243c3089f3df83ec1ae0948a63d1eb 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/feature/SpikeFeature.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/feature/SpikeFeature.java
+@@ -115,6 +115,7 @@ public class SpikeFeature extends Feature<SpikeConfiguration> {
+             endCrystal.moveTo(
+                 (double)spike.getCenterX() + 0.5, (double)(spike.getHeight() + 1), (double)spike.getCenterZ() + 0.5, random.nextFloat() * 360.0F, 0.0F
+             );
++            endCrystal.generatedByDragonFight = true; // Paper - Fix invulnerable end crystals
+             world.addFreshEntity(endCrystal);
+             BlockPos blockPos2 = endCrystal.blockPosition();
+             this.setBlock(world, blockPos2.below(), Blocks.BEDROCK.defaultBlockState());

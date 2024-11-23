@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 5 Jun 2018 23:00:29 -0400
+Subject: [PATCH] ItemStack#getMaxItemUseDuration
+
+Allows you to determine how long it takes to use a usable/consumable item
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+index aea09533fada5bd3d42e2cc147921167a5e7c1a5..60062ea5b18b95a14c459f2f3a0743c1e1ac0f12 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+@@ -225,6 +225,21 @@ public final class CraftItemStack extends ItemStack {
+         return (this.handle == null) ? Material.AIR.getMaxStackSize() : this.handle.getMaxStackSize();
+     }
+ 
++    // Paper start
++    @Override
++    public int getMaxItemUseDuration(final org.bukkit.entity.LivingEntity entity) {
++        if (handle == null) {
++            return 0;
++        }
++
++        // Make sure plugins calling the old method don't blow up
++        if (entity == null && (handle.is(net.minecraft.world.item.Items.CROSSBOW) || handle.is(net.minecraft.world.item.Items.GOAT_HORN))) {
++            throw new UnsupportedOperationException("This item requires an entity to determine the max use duration");
++        }
++        return handle.getUseDuration(entity != null ? ((org.bukkit.craftbukkit.entity.CraftLivingEntity) entity).getHandle() : null);
++    }
++    // Paper end
++
+     @Override
+     public void addUnsafeEnchantment(Enchantment ench, int level) {
+         Preconditions.checkArgument(ench != null, "Enchantment cannot be null");

@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sun, 18 Jun 2023 23:04:46 -0700
+Subject: [PATCH] Do not read tile entities in chunks that are positioned
+ outside of the chunk
+
+The tile entities are not accessible and so should not be loaded.
+This can happen as a result of users moving regionfiles around,
+which would cause a crash on Folia but would appear to function
+fine on Paper.
+
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/SerializableChunkData.java b/src/main/java/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
+index d7a204216332ccbd6bece23bd507be0366ea4d61..b86b3bf713668999a21c4120b1d16c295531b2ad 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
+@@ -363,6 +363,13 @@ public record SerializableChunkData(Registry<Biome> biomeRegistry, ChunkPos chun
+ 
+             while (iterator2.hasNext()) {
+                 nbttagcompound = (CompoundTag) iterator2.next();
++                // Paper start - do not read tile entities positioned outside the chunk
++                final BlockPos blockposition = BlockEntity.getPosFromTag(nbttagcompound);
++                if ((blockposition.getX() >> 4) != chunkPos.x || (blockposition.getZ() >> 4) != chunkPos.z) {
++                    LOGGER.warn("Tile entity serialized in chunk {} in world '{}' positioned at {} is located outside of the chunk", chunkPos, world.getWorld().getName(), blockposition);
++                    continue;
++                }
++                // Paper end - do not read tile entities positioned outside the chunk
+                 protochunk1.setBlockEntityNbt(nbttagcompound);
+             }
+ 
+@@ -616,6 +623,13 @@ public record SerializableChunkData(Registry<Biome> biomeRegistry, ChunkPos chun
+                     chunk.setBlockEntityNbt(nbttagcompound);
+                 } else {
+                     BlockPos blockposition = BlockEntity.getPosFromTag(nbttagcompound);
++                    // Paper start - do not read tile entities positioned outside the chunk
++                    ChunkPos chunkPos = chunk.getPos();
++                    if ((blockposition.getX() >> 4) != chunkPos.x || (blockposition.getZ() >> 4) != chunkPos.z) {
++                        LOGGER.warn("Tile entity serialized in chunk " + chunkPos + " in world '" + world.getWorld().getName() + "' positioned at " + blockposition + " is located outside of the chunk");
++                        continue;
++                    }
++                    // Paper end - do not read tile entities positioned outside the chunk
+                     BlockEntity tileentity = BlockEntity.loadStatic(blockposition, chunk.getBlockState(blockposition), nbttagcompound, world.registryAccess());
+ 
+                     if (tileentity != null) {

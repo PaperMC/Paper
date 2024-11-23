@@ -1,0 +1,174 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Wed, 22 Apr 2020 23:13:49 +0200
+Subject: [PATCH] Add villager reputation API
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/entity/villager/Reputation.java b/src/main/java/com/destroystokyo/paper/entity/villager/Reputation.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..cbbf70507c2df922e75b686c36500f6f85f92db6
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/entity/villager/Reputation.java
+@@ -0,0 +1,56 @@
++package com.destroystokyo.paper.entity.villager;
++
++import com.google.common.base.Preconditions;
++import java.util.EnumMap;
++import java.util.Map;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * A reputation score for a player on a villager.
++ */
++@NullMarked
++public final class Reputation {
++
++    private final Map<ReputationType, Integer> reputation;
++
++    public Reputation() {
++        this(new EnumMap<>(ReputationType.class));
++    }
++
++    public Reputation(final Map<ReputationType, Integer> reputation) {
++        Preconditions.checkNotNull(reputation, "reputation cannot be null");
++        this.reputation = reputation;
++    }
++
++    /**
++     * Gets the reputation value for a specific {@link ReputationType}.
++     *
++     * @param type The {@link ReputationType type} of reputation to get.
++     * @return The value of the {@link ReputationType type}.
++     */
++    public int getReputation(final ReputationType type) {
++        Preconditions.checkNotNull(type, "the reputation type cannot be null");
++        return this.reputation.getOrDefault(type, 0);
++    }
++
++    /**
++     * Sets the reputation value for a specific {@link ReputationType}.
++     *
++     * @param type The {@link ReputationType type} of reputation to set.
++     * @param value The value of the {@link ReputationType type}.
++     */
++    public void setReputation(final ReputationType type, final int value) {
++        Preconditions.checkNotNull(type, "the reputation type cannot be null");
++        this.reputation.put(type, value);
++    }
++
++    /**
++     * Gets if a reputation value is currently set for a specific {@link ReputationType}.
++     *
++     * @param type The {@link ReputationType type} to check
++     * @return If there is a value for this {@link ReputationType type} set.
++     */
++    public boolean hasReputationSet(final ReputationType type) {
++        return this.reputation.containsKey(type);
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/entity/villager/ReputationType.java b/src/main/java/com/destroystokyo/paper/entity/villager/ReputationType.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5600fcdc9795a9f49091db48d73bbd4964b8b737
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/entity/villager/ReputationType.java
+@@ -0,0 +1,36 @@
++package com.destroystokyo.paper.entity.villager;
++
++/**
++ * A type of reputation gained with a {@link org.bukkit.entity.Villager Villager}.
++ * <p>
++ * All types but {@link #MAJOR_POSITIVE} are shared to other villagers.
++ */
++public enum ReputationType {
++    /**
++     * A gossip with a majorly negative effect. This is only gained through killing a nearby
++     * villager.
++     */
++    MAJOR_NEGATIVE,
++
++    /**
++     * A gossip with a minor negative effect. This is only gained through damaging a villager.
++     */
++    MINOR_NEGATIVE,
++
++    /**
++     * A gossip with a minor positive effect. This is only gained through curing a zombie
++     * villager.
++     */
++    MINOR_POSITIVE,
++
++    /**
++     * A gossip with a major positive effect. This is only gained through curing a zombie
++     * villager.
++     */
++    MAJOR_POSITIVE,
++
++    /**
++     * A gossip with a minor positive effect. This is only gained through trading with a villager.
++     */
++    TRADING,
++}
+diff --git a/src/main/java/org/bukkit/entity/Villager.java b/src/main/java/org/bukkit/entity/Villager.java
+index 5a61175ccfe67c0a3c55cc2b84772fa8f6e6a6cb..98a7c5c549e797100f6aaf440606ef31a2be1e3b 100644
+--- a/src/main/java/org/bukkit/entity/Villager.java
++++ b/src/main/java/org/bukkit/entity/Villager.java
+@@ -3,6 +3,8 @@ package org.bukkit.entity;
+ import com.google.common.base.Preconditions;
+ import com.google.common.collect.Lists;
+ import java.util.Locale;
++import java.util.Map; // Paper
++import java.util.UUID; // Paper
+ import org.bukkit.Keyed;
+ import org.bukkit.Location;
+ import org.bukkit.NamespacedKey;
+@@ -281,4 +283,50 @@ public interface Villager extends AbstractVillager {
+             return Lists.newArrayList(Registry.VILLAGER_PROFESSION).toArray(new Profession[0]);
+         }
+     }
++
++    // Paper start - Add villager reputation API
++    /**
++     * Get the {@link com.destroystokyo.paper.entity.villager.Reputation reputation}
++     * for a specific player by {@link UUID}.
++     *
++     * @param uniqueId The {@link UUID} of the player to get the reputation of.
++     * @return The player's copied reputation with this villager.
++     */
++    @NotNull
++    public com.destroystokyo.paper.entity.villager.Reputation getReputation(@NotNull UUID uniqueId);
++
++    /**
++     * Get all {@link com.destroystokyo.paper.entity.villager.Reputation reputations}
++     * for all players mapped by their {@link UUID unique IDs}.
++     *
++     * @return All {@link com.destroystokyo.paper.entity.villager.Reputation reputations} for all players
++     * in a copied map.
++     */
++    @NotNull
++    public Map<UUID, com.destroystokyo.paper.entity.villager.Reputation> getReputations();
++
++    /**
++     * Set the {@link com.destroystokyo.paper.entity.villager.Reputation reputation}
++     * for a specific player by {@link UUID}.
++     *
++     * @param uniqueId The {@link UUID} of the player to set the reputation of.
++     * @param reputation The {@link com.destroystokyo.paper.entity.villager.Reputation reputation} to set.
++     */
++    public void setReputation(@NotNull UUID uniqueId, @NotNull com.destroystokyo.paper.entity.villager.Reputation reputation);
++
++    /**
++     * Set all {@link com.destroystokyo.paper.entity.villager.Reputation reputations}
++     * for all players mapped by their {@link UUID unique IDs}.
++     *
++     * @param reputations All {@link com.destroystokyo.paper.entity.villager.Reputation reputations}
++     * for all players mapped by their {@link UUID unique IDs}.
++     */
++    public void setReputations(@NotNull Map<UUID, com.destroystokyo.paper.entity.villager.Reputation> reputations);
++
++    /**
++     * Clear all reputations from this villager. This removes every single
++     * reputation regardless of its impact and the player associated.
++     */
++    public void clearReputations();
++    // Paper end
+ }

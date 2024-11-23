@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 16 Jan 2022 10:34:02 -0800
+Subject: [PATCH] Fix xp reward for baby zombies
+
+The field that tracks the xpReward was not
+getting reset if the death was cancelled
+so this resets it after each call to
+Zombie#getExperienceReward
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Zombie.java b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+index a835ec6e063dd247a008da84446f8647f38d89d4..94b3ba2688676e92d9d093b63d92cab39d5d2f02 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Zombie.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+@@ -174,11 +174,16 @@ public class Zombie extends Monster {
+ 
+     @Override
+     protected int getBaseExperienceReward(ServerLevel world) {
++        final int previousReward = this.xpReward; // Paper - store previous value to reset after calculating XP reward
+         if (this.isBaby()) {
+             this.xpReward = (int) ((double) this.xpReward * 2.5D);
+         }
+ 
+-        return super.getBaseExperienceReward(world);
++        // Paper start - store previous value to reset after calculating XP reward
++        int reward = super.getBaseExperienceReward(world);
++        this.xpReward = previousReward;
++        return reward;
++        // Paper end - store previous value to reset after calculating XP reward
+     }
+ 
+     @Override

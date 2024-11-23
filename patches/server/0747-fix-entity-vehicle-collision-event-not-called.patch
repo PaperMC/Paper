@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: lukas81298 <lukas81298@gmail.com>
+Date: Tue, 12 Jan 2021 14:41:38 +0100
+Subject: [PATCH] fix entity vehicle collision event not called
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
+index 7e7a78ebbf128f7d29cf9eb349f25230c9c7d5d0..f88c1becd08e7b10f228624160b85f89a379fbeb 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
+@@ -157,7 +157,15 @@ public abstract class AbstractMinecart extends VehicleEntity {
+ 
+     @Override
+     public boolean canCollideWith(Entity other) {
+-        return AbstractBoat.canVehicleCollide(this, other);
++        // Paper start - fix VehicleEntityCollisionEvent not called when colliding with player
++        boolean collides = AbstractBoat.canVehicleCollide(this, other);
++        if (!collides) {
++            return false;
++        }
++        org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent((org.bukkit.entity.Vehicle) getBukkitEntity(), other.getBukkitEntity());
++
++        return collisionEvent.callEvent();
++        // Paper end - fix VehicleEntityCollisionEvent not called when colliding with player
+     }
+ 
+     @Override

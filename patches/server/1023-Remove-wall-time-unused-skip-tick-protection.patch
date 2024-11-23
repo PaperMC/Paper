@@ -1,0 +1,163 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bjarne Koll <git@lynxplay.dev>
+Date: Mon, 16 Sep 2024 23:07:29 +0200
+Subject: [PATCH] Remove wall-time / unused skip tick protection
+
+Spigot still maintains some partial implementation of "tick skipping", a
+practice in which the MinecraftServer.currentTick field is updated not
+by an increment of one per actual tick, but instead set to
+System.currentTimeMillis() / 50. This behaviour means that the tracked
+tick may "skip" a tick value in case a previous tick took more than the
+expected 50ms.
+
+To compensate for this in important paths, spigot/craftbukkit
+implements "wall-time". Instead of incrementing/decrementing ticks on
+block entities/entities by one for each call to their tick() method,
+they instead increment/decrement important values, like
+an ItemEntity's age or pickupDelay, by the difference of
+`currentTick - lastTick`, where `lastTick` is the value of
+`currentTick` during the last tick() call.
+
+These "fixes" however do not play nicely with minecraft's simulation
+distance as entities/block entities implementing the above behaviour
+would "catch up" their values when moving from a non-ticking chunk to a
+ticking one as their `lastTick` value remains stuck on the last tick in
+a ticking chunk and hence lead to a large "catch up" once ticked again.
+
+Paper completely removes the "tick skipping" behaviour (See patch
+"Further-improve-server-tick-loop"), making the above precautions
+completely unnecessary, which also rids paper of the previous described
+incompatibility with non-ticking chunks.
+
+diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+index 4ce041726661dbbd19f36a516f2fd7f5e3307ef0..0f086af57a5ff08c264dcbf89a8c3931ec73a609 100644
+--- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
++++ b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+@@ -60,7 +60,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+     @Nullable
+     public UUID target;
+     public final float bobOffs;
+-    private int lastTick = MinecraftServer.currentTick - 1; // CraftBukkit
++    // private int lastTick = MinecraftServer.currentTick - 1; // CraftBukkit // Paper - remove anti tick skipping measures / wall time
+     public boolean canMobPickup = true; // Paper - Item#canEntityPickup
+     private int despawnRate = -1; // Paper - Alternative item-despawn-rate
+     public net.kyori.adventure.util.TriState frictionState = net.kyori.adventure.util.TriState.NOT_SET; // Paper - Friction API
+@@ -153,12 +153,11 @@ public class ItemEntity extends Entity implements TraceableEntity {
+             this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+         } else {
+             super.tick();
+-            // CraftBukkit start - Use wall time for pickup and despawn timers
+-            int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
+-            if (this.pickupDelay != 32767) this.pickupDelay -= elapsedTicks;
+-            if (this.age != -32768) this.age += elapsedTicks;
+-            this.lastTick = MinecraftServer.currentTick;
+-            // CraftBukkit end
++            // Paper start - remove anti tick skipping measures / wall time - revert to vanilla
++            if (this.pickupDelay > 0 && this.pickupDelay != 32767) {
++                --this.pickupDelay;
++            }
++            // Paper end - remove anti tick skipping measures / wall time - revert to vanilla
+ 
+             this.xo = this.getX();
+             this.yo = this.getY();
+@@ -212,7 +211,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+                 this.mergeWithNeighbours();
+             }
+ 
+-            /* CraftBukkit start - moved up
++            // Paper - remove anti tick skipping measures / wall time - revert to vanilla /* CraftBukkit start - moved up
+             if (this.age != -32768) {
+                 ++this.age;
+             }
+@@ -243,12 +242,14 @@ public class ItemEntity extends Entity implements TraceableEntity {
+     // Spigot start - copied from above
+     @Override
+     public void inactiveTick() {
+-        // CraftBukkit start - Use wall time for pickup and despawn timers
+-        int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
+-        if (this.pickupDelay != 32767) this.pickupDelay -= elapsedTicks;
+-        if (this.age != -32768) this.age += elapsedTicks;
+-        this.lastTick = MinecraftServer.currentTick;
+-        // CraftBukkit end
++        // Paper start - remove anti tick skipping measures / wall time - copied from above
++        if (this.pickupDelay > 0 && this.pickupDelay != 32767) {
++            --this.pickupDelay;
++        }
++        if (this.age != -32768) {
++            ++this.age;
++        }
++        // Paper end - remove anti tick skipping measures / wall time - copied from above
+ 
+         if (!this.level().isClientSide && this.age >= this.despawnRate) { // Spigot // Paper - Alternative item-despawn-rate
+             // CraftBukkit start - fire ItemDespawnEvent
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Zombie.java b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+index 94b3ba2688676e92d9d093b63d92cab39d5d2f02..a12461907278cfbfa3b1c0aa74b9f07a31768b8a 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Zombie.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+@@ -98,7 +98,7 @@ public class Zombie extends Monster {
+     private boolean canBreakDoors;
+     private int inWaterTime;
+     public int conversionTime;
+-    private int lastTick = MinecraftServer.currentTick; // CraftBukkit - add field
++    // private int lastTick = MinecraftServer.currentTick; // CraftBukkit - add field // Paper - remove anti tick skipping measures / wall time
+     private boolean shouldBurnInDay = true; // Paper - Add more Zombie API
+ 
+     public Zombie(EntityType<? extends Zombie> type, Level world) {
+@@ -217,10 +217,7 @@ public class Zombie extends Monster {
+     public void tick() {
+         if (!this.level().isClientSide && this.isAlive() && !this.isNoAi()) {
+             if (this.isUnderWaterConverting()) {
+-                // CraftBukkit start - Use wall time instead of ticks for conversion
+-                int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
+-                this.conversionTime -= elapsedTicks;
+-                // CraftBukkit end
++                --this.conversionTime; // Paper - remove anti tick skipping measures / wall time
+                 if (this.conversionTime < 0) {
+                     this.doUnderWaterConversion();
+                 }
+@@ -237,7 +234,7 @@ public class Zombie extends Monster {
+         }
+ 
+         super.tick();
+-        this.lastTick = MinecraftServer.currentTick; // CraftBukkit
++        // this.lastTick = MinecraftServer.currentTick; // CraftBukkit // Paper - remove anti tick skipping measures / wall time
+     }
+ 
+     @Override
+@@ -278,7 +275,7 @@ public class Zombie extends Monster {
+     }
+     // Paper end - Add more Zombie API
+     public void startUnderWaterConversion(int ticksUntilWaterConversion) {
+-        this.lastTick = MinecraftServer.currentTick; // CraftBukkit
++        // this.lastTick = MinecraftServer.currentTick; // CraftBukkit // Paper - remove anti tick skipping measures / wall time
+         this.conversionTime = ticksUntilWaterConversion;
+         this.getEntityData().set(Zombie.DATA_DROWNED_CONVERSION_ID, true);
+     }
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
+index 2bafacd7bc56186d9105d2031180f8c4a6940018..4ea29e8f2b39d7b44e0461d6a2cdd3fc257abd44 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
+@@ -55,7 +55,7 @@ public class BrewingStandBlockEntity extends BaseContainerBlockEntity implements
+     public int fuel;
+     protected final ContainerData dataAccess;
+     // CraftBukkit start - add fields and methods
+-    private int lastTick = MinecraftServer.currentTick;
++    // private int lastTick = MinecraftServer.currentTick; // Paper - remove anti tick skipping measures / wall time
+     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
+     private int maxStack = MAX_STACK;
+ 
+@@ -170,12 +170,10 @@ public class BrewingStandBlockEntity extends BaseContainerBlockEntity implements
+         boolean flag1 = blockEntity.brewTime > 0;
+         ItemStack itemstack1 = (ItemStack) blockEntity.items.get(3);
+ 
+-        // CraftBukkit start - Use wall time instead of ticks for brewing
+-        int elapsedTicks = MinecraftServer.currentTick - blockEntity.lastTick;
+-        blockEntity.lastTick = MinecraftServer.currentTick;
++        // Paper - remove anti tick skipping measures / wall time
+ 
+         if (flag1) {
+-            blockEntity.brewTime -= elapsedTicks;
++            --blockEntity.brewTime; // Paper - remove anti tick skipping measures / wall time - revert to vanilla
+             boolean flag2 = blockEntity.brewTime <= 0; // == -> <=
+             // CraftBukkit end
+ 

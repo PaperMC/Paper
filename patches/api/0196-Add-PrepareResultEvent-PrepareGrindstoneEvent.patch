@@ -1,0 +1,206 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 3 Jul 2020 11:58:56 -0500
+Subject: [PATCH] Add PrepareResultEvent / PrepareGrindstoneEvent
+
+Adds a new event for all crafting stations that generate a result slot item
+
+Anvil, Grindstone and Smithing now extend this event
+
+Grindstone is a backwards compat from a previous PrepareGrindstoneEvent
+
+diff --git a/src/main/java/com/destroystokyo/paper/event/inventory/PrepareGrindstoneEvent.java b/src/main/java/com/destroystokyo/paper/event/inventory/PrepareGrindstoneEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f75933948cdf0aa0c9bb2f06da5418f164af1148
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/inventory/PrepareGrindstoneEvent.java
+@@ -0,0 +1,31 @@
++package com.destroystokyo.paper.event.inventory;
++
++import org.bukkit.Warning;
++import org.bukkit.inventory.GrindstoneInventory;
++import org.bukkit.inventory.InventoryView;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++/**
++ * Called when an item is put in a slot for grinding in a Grindstone
++ *
++ * @deprecated use {@link org.bukkit.event.inventory.PrepareGrindstoneEvent}
++ */
++@Deprecated(since = "1.16.1")
++@Warning
++public class PrepareGrindstoneEvent extends PrepareResultEvent {
++
++    @ApiStatus.Internal
++    public PrepareGrindstoneEvent(@NotNull InventoryView inventory, @Nullable ItemStack result) {
++        super(inventory, result);
++    }
++
++    @NotNull
++    @Override
++    public GrindstoneInventory getInventory() {
++        return (GrindstoneInventory) super.getInventory();
++    }
++
++}
+diff --git a/src/main/java/com/destroystokyo/paper/event/inventory/PrepareResultEvent.java b/src/main/java/com/destroystokyo/paper/event/inventory/PrepareResultEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8ca7858613bb78ee1f9453b55fc38e00414fefb5
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/inventory/PrepareResultEvent.java
+@@ -0,0 +1,42 @@
++package com.destroystokyo.paper.event.inventory;
++
++import org.bukkit.event.inventory.PrepareInventoryResultEvent;
++import org.bukkit.inventory.InventoryView;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
++
++/**
++ * Called when an item is put in an inventory containing a result slot
++ */
++@NullMarked
++public class PrepareResultEvent extends PrepareInventoryResultEvent {
++
++    // HandlerList on PrepareInventoryResultEvent to ensure api compat
++
++    @ApiStatus.Internal
++    public PrepareResultEvent(final InventoryView inventory, final @Nullable ItemStack result) {
++        super(inventory, result);
++    }
++
++    /**
++     * Get result item, may be {@code null}.
++     *
++     * @return result item
++     */
++    @Override
++    public @Nullable ItemStack getResult() {
++        return super.getResult();
++    }
++
++    /**
++     * Set result item, may be {@code null}.
++     *
++     * @param result result item
++     */
++    @Override
++    public void setResult(final @Nullable ItemStack result) {
++        super.setResult(result);
++    }
++}
+diff --git a/src/main/java/org/bukkit/event/inventory/PrepareAnvilEvent.java b/src/main/java/org/bukkit/event/inventory/PrepareAnvilEvent.java
+index 8a5be3f0322ac19aeac3f00df54add0e73bc87ed..d2b4b2e9385e7c1e0e1e42886481b99ecc8dcf8e 100644
+--- a/src/main/java/org/bukkit/event/inventory/PrepareAnvilEvent.java
++++ b/src/main/java/org/bukkit/event/inventory/PrepareAnvilEvent.java
+@@ -10,9 +10,9 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * Called when an item is put in a slot for repair by an anvil.
+  */
+-public class PrepareAnvilEvent extends PrepareInventoryResultEvent {
++public class PrepareAnvilEvent extends com.destroystokyo.paper.event.inventory.PrepareResultEvent {
+ 
+-    private static final HandlerList handlers = new HandlerList();
++    // Paper - move HandlerList to PrepareInventoryResultEvent
+ 
+     public PrepareAnvilEvent(@NotNull AnvilView inventory, @Nullable ItemStack result) {
+         super(inventory, result);
+@@ -44,14 +44,5 @@ public class PrepareAnvilEvent extends PrepareInventoryResultEvent {
+         return (AnvilView) super.getView();
+     }
+ 
+-    @NotNull
+-    @Override
+-    public HandlerList getHandlers() {
+-        return handlers;
+-    }
+-
+-    @NotNull
+-    public static HandlerList getHandlerList() {
+-        return handlers;
+-    }
++    // Paper - move HandlerList to PrepareInventoryResultEvent
+ }
+diff --git a/src/main/java/org/bukkit/event/inventory/PrepareGrindstoneEvent.java b/src/main/java/org/bukkit/event/inventory/PrepareGrindstoneEvent.java
+index fb172479ce28edbf969b9492236e30fb04395bf9..a7e03600099b8d6a117b8f5455fee24eed03e3a3 100644
+--- a/src/main/java/org/bukkit/event/inventory/PrepareGrindstoneEvent.java
++++ b/src/main/java/org/bukkit/event/inventory/PrepareGrindstoneEvent.java
+@@ -10,9 +10,9 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * Called when an item is put in a slot for repair or unenchanting in a grindstone.
+  */
+-public class PrepareGrindstoneEvent extends PrepareInventoryResultEvent {
++public class PrepareGrindstoneEvent extends com.destroystokyo.paper.event.inventory.PrepareGrindstoneEvent { // Paper
+ 
+-    private static final HandlerList handlers = new HandlerList();
++    // Paper - move HandlerList to PrepareInventoryResultEvent
+ 
+     public PrepareGrindstoneEvent(@NotNull InventoryView inventory, @Nullable ItemStack result) {
+         super(inventory, result);
+@@ -24,14 +24,5 @@ public class PrepareGrindstoneEvent extends PrepareInventoryResultEvent {
+         return (GrindstoneInventory) super.getInventory();
+     }
+ 
+-    @NotNull
+-    @Override
+-    public HandlerList getHandlers() {
+-        return handlers;
+-    }
+-
+-    @NotNull
+-    public static HandlerList getHandlerList() {
+-        return handlers;
+-    }
++    // Paper - move HandlerList to PrepareInventoryResultEvent
+ }
+diff --git a/src/main/java/org/bukkit/event/inventory/PrepareInventoryResultEvent.java b/src/main/java/org/bukkit/event/inventory/PrepareInventoryResultEvent.java
+index b543bc17fb9354d1939c67c1fb6c92d88fdbe4ec..0b58ffff39845b658dee7c35dcae6cdb333f20b3 100644
+--- a/src/main/java/org/bukkit/event/inventory/PrepareInventoryResultEvent.java
++++ b/src/main/java/org/bukkit/event/inventory/PrepareInventoryResultEvent.java
+@@ -8,7 +8,9 @@ import org.jetbrains.annotations.Nullable;
+ 
+ /**
+  * Called when an item is put in a slot and the result is calculated.
++ * @deprecated use {@link com.destroystokyo.paper.event.inventory.PrepareResultEvent}
+  */
++@Deprecated @org.bukkit.Warning(false) // Paper
+ public class PrepareInventoryResultEvent extends InventoryEvent {
+ 
+     private static final HandlerList handlers = new HandlerList();
+diff --git a/src/main/java/org/bukkit/event/inventory/PrepareSmithingEvent.java b/src/main/java/org/bukkit/event/inventory/PrepareSmithingEvent.java
+index 901774e03f8789dddff4e7695ac599ff69cc97a5..8d7924fa81e9b53514fa534f0572fd7effef73c4 100644
+--- a/src/main/java/org/bukkit/event/inventory/PrepareSmithingEvent.java
++++ b/src/main/java/org/bukkit/event/inventory/PrepareSmithingEvent.java
+@@ -10,9 +10,9 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * Called when an item is put in a slot for upgrade by a Smithing Table.
+  */
+-public class PrepareSmithingEvent extends PrepareInventoryResultEvent {
++public class PrepareSmithingEvent extends com.destroystokyo.paper.event.inventory.PrepareResultEvent {
+ 
+-    private static final HandlerList handlers = new HandlerList();
++    // Paper - move HandlerList ot PrepareInventoryResultEvent
+ 
+     public PrepareSmithingEvent(@NotNull InventoryView inventory, @Nullable ItemStack result) {
+         super(inventory, result);
+@@ -24,14 +24,5 @@ public class PrepareSmithingEvent extends PrepareInventoryResultEvent {
+         return (SmithingInventory) super.getInventory();
+     }
+ 
+-    @NotNull
+-    @Override
+-    public HandlerList getHandlers() {
+-        return handlers;
+-    }
+-
+-    @NotNull
+-    public static HandlerList getHandlerList() {
+-        return handlers;
+-    }
++    // Paper - move HandlerList to PrepareInventoryResultEvent
+ }

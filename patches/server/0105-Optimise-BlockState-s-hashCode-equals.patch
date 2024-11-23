@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alfie Cleveland <alfeh@me.com>
+Date: Fri, 19 Aug 2016 01:52:56 +0100
+Subject: [PATCH] Optimise BlockState's hashCode/equals
+
+These are singleton "single instance" objects. We can rely on
+object identity checks safely.
+
+Use a simpler optimized hashcode
+
+diff --git a/src/main/java/net/minecraft/world/level/block/state/properties/EnumProperty.java b/src/main/java/net/minecraft/world/level/block/state/properties/EnumProperty.java
+index e0259a3f66248b011276b6bc5135c5fc96446640..85a197232be9377c0313ec00e8f935551e2c60e0 100644
+--- a/src/main/java/net/minecraft/world/level/block/state/properties/EnumProperty.java
++++ b/src/main/java/net/minecraft/world/level/block/state/properties/EnumProperty.java
+@@ -59,8 +59,7 @@ public final class EnumProperty<T extends Enum<T> & StringRepresentable> extends
+         return this.ordinalToIndex[enum_.ordinal()];
+     }
+ 
+-    @Override
+-    public boolean equals(Object object) {
++    public boolean equals_unused(Object object) { // Paper - Perf: Optimize hashCode/equals
+         if (this == object) {
+             return true;
+         } else {
+diff --git a/src/main/java/net/minecraft/world/level/block/state/properties/IntegerProperty.java b/src/main/java/net/minecraft/world/level/block/state/properties/IntegerProperty.java
+index 96798f09abe9676679bb25c74942810919e71924..55a87592a99105dbf57b26fb6ccba695295fce24 100644
+--- a/src/main/java/net/minecraft/world/level/block/state/properties/IntegerProperty.java
++++ b/src/main/java/net/minecraft/world/level/block/state/properties/IntegerProperty.java
+@@ -28,8 +28,7 @@ public final class IntegerProperty extends Property<Integer> {
+         return this.values;
+     }
+ 
+-    @Override
+-    public boolean equals(Object object) {
++    public boolean equals_unused(Object object) { // Paper - Perf: Optimize hashCode/equals
+         if (this == object) {
+             return true;
+         } else {
+diff --git a/src/main/java/net/minecraft/world/level/block/state/properties/Property.java b/src/main/java/net/minecraft/world/level/block/state/properties/Property.java
+index e2bf1055d9ee09c29884505112ccc748cc049bfc..fcf04c5c58ff35d38c5bf0df562ae2f8dc98a0ee 100644
+--- a/src/main/java/net/minecraft/world/level/block/state/properties/Property.java
++++ b/src/main/java/net/minecraft/world/level/block/state/properties/Property.java
+@@ -72,7 +72,7 @@ public abstract class Property<T extends Comparable<T>> {
+ 
+     @Override
+     public boolean equals(Object object) {
+-        return this == object || object instanceof Property<?> property && this.clazz.equals(property.clazz) && this.name.equals(property.name);
++        return this == object; // Paper - Perf: Optimize hashCode/equals
+     }
+ 
+     @Override

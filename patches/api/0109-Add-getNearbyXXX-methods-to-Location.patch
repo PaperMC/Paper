@@ -1,0 +1,258 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Mon, 18 Jun 2018 00:41:46 -0500
+Subject: [PATCH] Add "getNearbyXXX" methods to Location
+
+
+diff --git a/src/main/java/org/bukkit/Location.java b/src/main/java/org/bukkit/Location.java
+index 3bcc8266d6b1de3c3f964ffad9820bf1b94bbd00..df88bc77a3fa2506adf17eddc6300ac65774df6f 100644
+--- a/src/main/java/org/bukkit/Location.java
++++ b/src/main/java/org/bukkit/Location.java
+@@ -12,6 +12,15 @@ import org.bukkit.util.Vector;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+ 
++// Paper start
++import java.util.Collection;
++import java.util.Collections;
++import java.util.function.Predicate;
++import org.bukkit.entity.Entity;
++import org.bukkit.entity.LivingEntity;
++import org.bukkit.entity.Player;
++// Paper end
++
+ /**
+  * Represents a 3-dimensional position in a world.
+  * <br>
+@@ -560,6 +569,231 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
+     }
+     // Paper end - expand Location API
+ 
++    // Paper start - additional getNearbyEntities API
++    /**
++     * Returns a list of entities within a bounding box centered around a Location.
++     * <p>
++     * Some implementations may impose artificial restrictions on the size of the search bounding box.
++     *
++     * @param x 1/2 the size of the box along the x-axis
++     * @param y 1/2 the size of the box along the y-axis
++     * @param z 1/2 the size of the box along the z-axis
++     * @return the collection of entities near location. This will always be a non-null collection.
++     */
++    public @NotNull Collection<Entity> getNearbyEntities(final double x, final double y, final double z) {
++        final World world = this.getWorld();
++        if (world == null) {
++            throw new IllegalArgumentException("Location has no world");
++        }
++        return world.getNearbyEntities(this, x, y, z);
++    }
++
++    /**
++     * Gets nearby players within the specified radius (bounding box)
++     * @param radius X Radius
++     * @return the collection of entities near location. This will always be a non-null collection.
++     */
++    public @NotNull Collection<LivingEntity> getNearbyLivingEntities(final double radius) {
++        return this.getNearbyEntitiesByType(LivingEntity.class, radius, radius, radius);
++    }
++
++    /**
++     * Gets nearby players within the specified radius (bounding box)
++     * @param xzRadius X/Z Radius
++     * @param yRadius Y Radius
++     * @return the collection of living entities near location. This will always be a non-null collection.
++     */
++    public @NotNull Collection<LivingEntity> getNearbyLivingEntities(final double xzRadius, final double yRadius) {
++        return this.getNearbyEntitiesByType(LivingEntity.class, xzRadius, yRadius, xzRadius);
++    }
++
++    /**
++     * Gets nearby players within the specified radius (bounding box)
++     * @param xRadius X Radius
++     * @param yRadius Y Radius
++     * @param zRadius Z radius
++     * @return the collection of living entities near location. This will always be a non-null collection.
++     */
++    public @NotNull Collection<LivingEntity> getNearbyLivingEntities(final double xRadius, final double yRadius, final double zRadius) {
++        return this.getNearbyEntitiesByType(LivingEntity.class, xRadius, yRadius, zRadius);
++    }
++
++    /**
++     * Gets nearby players within the specified radius (bounding box)
++     * @param radius Radius
++     * @param predicate a predicate used to filter results
++     * @return the collection of living entities near location. This will always be a non-null collection.
++     */
++    public @NotNull Collection<LivingEntity> getNearbyLivingEntities(final double radius, final @Nullable Predicate<? super LivingEntity> predicate) {
++        return this.getNearbyEntitiesByType(LivingEntity.class, radius, radius, radius, predicate);
++    }
++
++    /**
++     * Gets nearby players within the specified radius (bounding box)
++     * @param xzRadius X/Z Radius
++     * @param yRadius Y Radius
++     * @param predicate a predicate used to filter results
++     * @return the collection of living entities near location. This will always be a non-null collection.
++     */
++    public @NotNull Collection<LivingEntity> getNearbyLivingEntities(final double xzRadius, final double yRadius, final @Nullable Predicate<? super LivingEntity> predicate) {
++        return this.getNearbyEntitiesByType(LivingEntity.class, xzRadius, yRadius, xzRadius, predicate);
++    }
++
++    /**
++     * Gets nearby players within the specified radius (bounding box)
++     * @param xRadius X Radius
++     * @param yRadius Y Radius
++     * @param zRadius Z radius
++     * @param predicate a predicate used to filter results
++     * @return the collection of living entities near location. This will always be a non-null collection.
++     */
++    public @NotNull Collection<LivingEntity> getNearbyLivingEntities(final double xRadius, final double yRadius, final double zRadius, final @Nullable Predicate<? super LivingEntity> predicate) {
++        return this.getNearbyEntitiesByType(LivingEntity.class, xRadius, yRadius, zRadius, predicate);
++    }
++
++    /**
++     * Gets nearby players within the specified radius (bounding box)
++     * @param radius X/Y/Z Radius
++     * @return the collection of players near location. This will always be a non-null collection.
++     */
++    public @NotNull Collection<Player> getNearbyPlayers(final double radius) {
++        return this.getNearbyEntitiesByType(Player.class, radius, radius, radius);
++    }
++
++    /**
++     * Gets nearby players within the specified radius (bounding box)
++     * @param xzRadius X/Z Radius
++     * @param yRadius Y Radius
++     * @return the collection of players near location. This will always be a non-null collection.
++     */
++    public @NotNull Collection<Player> getNearbyPlayers(final double xzRadius, final double yRadius) {
++        return this.getNearbyEntitiesByType(Player.class, xzRadius, yRadius, xzRadius);
++    }
++
++    /**
++     * Gets nearby players within the specified radius (bounding box)
++     * @param xRadius X Radius
++     * @param yRadius Y Radius
++     * @param zRadius Z Radius
++     * @return the collection of players near location. This will always be a non-null collection.
++     */
++    public @NotNull Collection<Player> getNearbyPlayers(final double xRadius, final double yRadius, final double zRadius) {
++        return this.getNearbyEntitiesByType(Player.class, xRadius, yRadius, zRadius);
++    }
++
++    /**
++     * Gets nearby players within the specified radius (bounding box)
++     * @param radius X/Y/Z Radius
++     * @param predicate a predicate used to filter results
++     * @return the collection of players near location. This will always be a non-null collection.
++     */
++    public @NotNull Collection<Player> getNearbyPlayers(final double radius, final @Nullable Predicate<? super Player> predicate) {
++        return this.getNearbyEntitiesByType(Player.class, radius, radius, radius, predicate);
++    }
++
++    /**
++     * Gets nearby players within the specified radius (bounding box)
++     * @param xzRadius X/Z Radius
++     * @param yRadius Y Radius
++     * @param predicate a predicate used to filter results
++     * @return the collection of players near location. This will always be a non-null collection.
++     */
++    public @NotNull Collection<Player> getNearbyPlayers(final double xzRadius, final double yRadius, final @Nullable Predicate<? super Player> predicate) {
++        return this.getNearbyEntitiesByType(Player.class, xzRadius, yRadius, xzRadius, predicate);
++    }
++
++    /**
++     * Gets nearby players within the specified radius (bounding box)
++     * @param xRadius X Radius
++     * @param yRadius Y Radius
++     * @param zRadius Z Radius
++     * @param predicate a predicate used to filter results
++     * @return the collection of players near location. This will always be a non-null collection.
++     */
++    public @NotNull Collection<Player> getNearbyPlayers(final double xRadius, final double yRadius, final double zRadius, final @Nullable Predicate<? super Player> predicate) {
++        return this.getNearbyEntitiesByType(Player.class, xRadius, yRadius, zRadius, predicate);
++    }
++
++    /**
++     * Gets all nearby entities of the specified type, within the specified radius (bounding box)
++     * @param clazz Type to filter by
++     * @param radius X/Y/Z radius to search within
++     * @param <T> the entity type
++     * @return the collection of entities of type clazz near location. This will always be a non-null collection.
++     */
++    public @NotNull <T extends Entity> Collection<T> getNearbyEntitiesByType(final @Nullable Class<? extends T> clazz, final double radius) {
++        return this.getNearbyEntitiesByType(clazz, radius, radius, radius, null);
++    }
++
++    /**
++     * Gets all nearby entities of the specified type, within the specified radius, with x and x radius matching (bounding box)
++     * @param clazz Type to filter by
++     * @param xzRadius X/Z radius to search within
++     * @param yRadius Y radius to search within
++     * @param <T> the entity type
++     * @return the collection of entities near location. This will always be a non-null collection.
++     */
++    public @NotNull <T extends Entity> Collection<T> getNearbyEntitiesByType(final @Nullable Class<? extends T> clazz, final double xzRadius, final double yRadius) {
++        return this.getNearbyEntitiesByType(clazz, xzRadius, yRadius, xzRadius, null);
++    }
++
++    /**
++     * Gets all nearby entities of the specified type, within the specified radius (bounding box)
++     * @param clazz Type to filter by
++     * @param xRadius X Radius
++     * @param yRadius Y Radius
++     * @param zRadius Z Radius
++     * @param <T> the entity type
++     * @return the collection of entities near location. This will always be a non-null collection.
++     */
++    public @NotNull <T extends Entity> Collection<T> getNearbyEntitiesByType(final @Nullable Class<? extends T> clazz, final double xRadius, final double yRadius, final double zRadius) {
++        return this.getNearbyEntitiesByType(clazz, xRadius, yRadius, zRadius, null);
++    }
++
++    /**
++     * Gets all nearby entities of the specified type, within the specified radius (bounding box)
++     * @param clazz Type to filter by
++     * @param radius X/Y/Z radius to search within
++     * @param predicate a predicate used to filter results
++     * @param <T> the entity type
++     * @return the collection of entities near location. This will always be a non-null collection.
++     */
++    public @NotNull <T extends Entity> Collection<T> getNearbyEntitiesByType(final @Nullable Class<? extends T> clazz, final double radius, final @Nullable Predicate<? super T> predicate) {
++        return this.getNearbyEntitiesByType(clazz, radius, radius, radius, predicate);
++    }
++
++    /**
++     * Gets all nearby entities of the specified type, within the specified radius, with x and x radius matching (bounding box)
++     * @param clazz Type to filter by
++     * @param xzRadius X/Z radius to search within
++     * @param yRadius Y radius to search within
++     * @param predicate a predicate used to filter results
++     * @param <T> the entity type
++     * @return the collection of entities near location. This will always be a non-null collection.
++     */
++    public @NotNull <T extends Entity> Collection<T> getNearbyEntitiesByType(final @Nullable Class<? extends T> clazz, final double xzRadius, final double yRadius, final @Nullable Predicate<? super T> predicate) {
++        return this.getNearbyEntitiesByType(clazz, xzRadius, yRadius, xzRadius, predicate);
++    }
++
++    /**
++     * Gets all nearby entities of the specified type, within the specified radius (bounding box)
++     * @param clazz Type to filter by
++     * @param xRadius X Radius
++     * @param yRadius Y Radius
++     * @param zRadius Z Radius
++     * @param predicate a predicate used to filter results
++     * @param <T> the entity type
++     * @return the collection of entities near location. This will always be a non-null collection.
++     */
++    public @NotNull <T extends Entity> Collection<T> getNearbyEntitiesByType(final @Nullable Class<? extends Entity> clazz, final double xRadius, final double yRadius, final double zRadius, final @Nullable Predicate<? super T> predicate) {
++        final World world = this.getWorld();
++        if (world == null) {
++            throw new IllegalArgumentException("Location has no world");
++        }
++        return world.getNearbyEntitiesByType(clazz, this, xRadius, yRadius, zRadius, predicate);
++    }
++    // Paper end - additional getNearbyEntities API
++
+     @Override
+     public boolean equals(Object obj) {
+         if (obj == null) {

@@ -1,0 +1,56 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Mon, 12 Aug 2024 18:38:19 +0200
+Subject: [PATCH] Improve StandardMessenger exception messages
+
+
+diff --git a/src/main/java/org/bukkit/plugin/messaging/ChannelNameTooLongException.java b/src/main/java/org/bukkit/plugin/messaging/ChannelNameTooLongException.java
+index 80ef8a2a342ff9dc16c98b5254cadd539f6ea0d9..ea73d9cd9d9d84731c083089d0b9913b4b1f92b6 100644
+--- a/src/main/java/org/bukkit/plugin/messaging/ChannelNameTooLongException.java
++++ b/src/main/java/org/bukkit/plugin/messaging/ChannelNameTooLongException.java
+@@ -9,7 +9,9 @@ public class ChannelNameTooLongException extends RuntimeException {
+         super("Attempted to send a Plugin Message to a channel that was too large. The maximum length a channel may be is " + Messenger.MAX_CHANNEL_SIZE + " chars.");
+     }
+ 
+-    public ChannelNameTooLongException(String channel) {
+-        super("Attempted to send a Plugin Message to a channel that was too large. The maximum length a channel may be is " + Messenger.MAX_CHANNEL_SIZE + " chars (attempted " + channel.length() + " - '" + channel + ".");
++    // Paper start
++    public ChannelNameTooLongException(int length, String shortenedChannel) {
++        super("Attempted to send a Plugin Message to a channel that was too large. The maximum length a channel may be is " + Messenger.MAX_CHANNEL_SIZE + " chars (attempted " + length + " - '" + shortenedChannel + ".");
++        // Paper end
+     }
+ }
+diff --git a/src/main/java/org/bukkit/plugin/messaging/StandardMessenger.java b/src/main/java/org/bukkit/plugin/messaging/StandardMessenger.java
+index 6fda7f3aa68e76af64362e9afed70fc6a5e92986..230ecf9f9752b0369da3ba7aa6ce68b34a0814c5 100644
+--- a/src/main/java/org/bukkit/plugin/messaging/StandardMessenger.java
++++ b/src/main/java/org/bukkit/plugin/messaging/StandardMessenger.java
+@@ -496,19 +496,26 @@ public class StandardMessenger implements Messenger {
+         if (channel.equals("bungeecord:main")) {
+             return "BungeeCord";
+         }
++        // Paper start - improve error message
+         if (channel.length() > Messenger.MAX_CHANNEL_SIZE) {
+-            throw new ChannelNameTooLongException(channel);
++            throw new ChannelNameTooLongException(channel.length(), shortened(channel));
+         }
+         if (channel.indexOf(':') == -1) {
+-            throw new IllegalArgumentException("Channel must contain : separator (attempted to use " + channel + ")");
++            throw new IllegalArgumentException("Channel must contain : separator (attempted to use " + shortened(channel) + ")");
+         }
+         if (!channel.toLowerCase(Locale.ROOT).equals(channel)) {
+             // TODO: use NamespacedKey validation here
+-            throw new IllegalArgumentException("Channel must be entirely lowercase (attempted to use " + channel + ")");
++            throw new IllegalArgumentException("Channel must be entirely lowercase (attempted to use " + shortened(channel) + ")");
+         }
+         return channel;
+     }
+ 
++    private static String shortened(String channel) {
++        channel = org.apache.commons.lang3.StringUtils.normalizeSpace(channel);
++        return channel.length() > 32 ? channel.substring(0, 32) + "..." : channel;
++    }
++    // Paper end - improve error message
++
+     /**
+      * Validates the input of a Plugin Message, ensuring the arguments are all
+      * valid.

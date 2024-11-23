@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Sun, 11 Feb 2018 10:43:46 +0000
+Subject: [PATCH] Extend Player Interact cancellation
+
+GUIs are opened on the client, meaning that the server cannot block them from opening,
+However, it is possible to close these GUIs from the server.
+
+Flower pots are also not updated on the client when interaction is cancelled, this patch
+also resolves this.
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+index 73b6aa34ad2579d79f388c5660cdfbef41a769f2..4c8189a2a7edea824545a24dccb376b8eceac001 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -525,7 +525,11 @@ public class ServerPlayerGameMode {
+ 
+                 // send a correcting update to the client for the block above as well, this because of replaceable blocks (such as grass, sea grass etc)
+                 player.connection.send(new ClientboundBlockUpdatePacket(world, blockposition.above()));
++            // Paper start - extend Player Interact cancellation // TODO: consider merging this into the extracted method
++            } else if (iblockdata.is(Blocks.JIGSAW) || iblockdata.is(Blocks.STRUCTURE_BLOCK) || iblockdata.getBlock() instanceof net.minecraft.world.level.block.CommandBlock) {
++                player.connection.send(new net.minecraft.network.protocol.game.ClientboundContainerClosePacket(this.player.containerMenu.containerId));
+             }
++            // Paper end - extend Player Interact cancellation
+             player.getBukkitEntity().updateInventory(); // SPIGOT-2867
+             return (event.useItemInHand() != Event.Result.ALLOW) ? InteractionResult.SUCCESS : InteractionResult.PASS;
+         } else if (this.gameModeForPlayer == GameType.SPECTATOR) {

@@ -1,0 +1,72 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bjarne Koll <git@lynxplay.dev>
+Date: Sat, 6 Nov 2021 23:15:20 +0100
+Subject: [PATCH] Fix setPatternColor on tropical fish bucket meta
+
+Prior to this commit, the tropical fish bucket meta would set the body
+color to the previous metas pattern colour when updating the pattern
+colour.
+
+This commit hence simply fixes this by using the proper body colour
+value when updating the pattern color.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java
+index 8169d08c1bccf7c9896bb083eba388f918fac6c9..a514fe98d3d2b65d2cfd029079c69189bcb99c01 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java
+@@ -128,7 +128,7 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
+         if (this.variant == null) {
+             this.variant = 0;
+         }
+-        this.variant = CraftTropicalFish.getData(color, this.getPatternColor(), this.getPattern());
++        this.variant = CraftTropicalFish.getData(color, this.getBodyColor(), this.getPattern()); // Paper - properly set tropical fish pattern color without mutating body color
+     }
+ 
+     @Override
+diff --git a/src/test/java/io/papermc/paper/inventory/CraftMetaTropicalFishBucketTest.java b/src/test/java/io/papermc/paper/inventory/CraftMetaTropicalFishBucketTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..68a557cedbffb41f27ba21096e2ae5eebbf13f5c
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/inventory/CraftMetaTropicalFishBucketTest.java
+@@ -0,0 +1,41 @@
++package io.papermc.paper.inventory;
++
++import org.bukkit.DyeColor;
++import org.bukkit.Material;
++import org.bukkit.entity.TropicalFish;
++import org.bukkit.inventory.ItemStack;
++import org.bukkit.inventory.meta.TropicalFishBucketMeta;
++import org.bukkit.support.environment.AllFeatures;
++import org.junit.jupiter.api.Assertions;
++import org.junit.jupiter.api.Test;
++
++@AllFeatures
++public class CraftMetaTropicalFishBucketTest {
++
++    @Test
++    public void testAllCombinations() {
++        final var rawMeta = new ItemStack(Material.TROPICAL_FISH_BUCKET).getItemMeta();
++        Assertions.assertTrue(rawMeta instanceof TropicalFishBucketMeta, "Meta was not a tropical fish bucket");
++
++        final var meta = (TropicalFishBucketMeta) rawMeta;
++
++        for (final var bodyColor : DyeColor.values()) {
++            for (final var pattern : TropicalFish.Pattern.values()) {
++                for (final var patternColor : DyeColor.values()) {
++                    meta.setBodyColor(bodyColor);
++                    Assertions.assertEquals(bodyColor, meta.getBodyColor(), "Body color did not match post body color!");
++
++                    meta.setPattern(pattern);
++                    Assertions.assertEquals(pattern, meta.getPattern(), "Pattern did not match post pattern!");
++                    Assertions.assertEquals(bodyColor, meta.getBodyColor(), "Body color did not match post pattern!");
++
++                    meta.setPatternColor(patternColor);
++                    Assertions.assertEquals(pattern, meta.getPattern(), "Pattern did not match post pattern color!");
++                    Assertions.assertEquals(bodyColor, meta.getBodyColor(), "Body color did not match post pattern color!");
++                    Assertions.assertEquals(patternColor, meta.getPatternColor(), "Pattern color did not match post pattern color!");
++                }
++            }
++        }
++    }
++
++}

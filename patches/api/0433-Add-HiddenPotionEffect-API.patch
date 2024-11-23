@@ -1,0 +1,170 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tamion <70228790+notTamion@users.noreply.github.com>
+Date: Sun, 5 Nov 2023 09:50:48 +0100
+Subject: [PATCH] Add HiddenPotionEffect API
+
+
+diff --git a/src/main/java/org/bukkit/entity/LivingEntity.java b/src/main/java/org/bukkit/entity/LivingEntity.java
+index 4aab0144601788a7902c9fdabb68744d9e33a345..51a428473e702be3ab79bd1e579d1114f747791b 100644
+--- a/src/main/java/org/bukkit/entity/LivingEntity.java
++++ b/src/main/java/org/bukkit/entity/LivingEntity.java
+@@ -591,6 +591,9 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
+ 
+     /**
+      * Adds the given {@link PotionEffect} to the living entity.
++     * <p>
++     * Note: {@link PotionEffect#getHiddenPotionEffect()} is ignored when
++     * adding the effect to the entity.
+      *
+      * @param effect PotionEffect to be added
+      * @return whether the effect could be added
+@@ -615,6 +618,9 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
+     /**
+      * Attempts to add all of the given {@link PotionEffect} to the living
+      * entity.
++     * <p>
++     * Note: {@link PotionEffect#getHiddenPotionEffect()} is ignored when
++     * adding the effect to the entity.
+      *
+      * @param effects the effects to add
+      * @return whether all of the effects could be added
+diff --git a/src/main/java/org/bukkit/potion/PotionEffect.java b/src/main/java/org/bukkit/potion/PotionEffect.java
+index 575156c089e45a3d6a43ca6b7adfbc7b473a60ab..704b6d615e7490d433b703f5a6a8d3c40aa6425e 100644
+--- a/src/main/java/org/bukkit/potion/PotionEffect.java
++++ b/src/main/java/org/bukkit/potion/PotionEffect.java
+@@ -28,6 +28,7 @@ public class PotionEffect implements ConfigurationSerializable {
+      */
+     public static final int INFINITE_DURATION = -1;
+ 
++    private static final String HIDDEN_EFFECT = "hidden_effect"; // Paper
+     private static final String AMPLIFIER = "amplifier";
+     private static final String DURATION = "duration";
+     private static final String TYPE = "effect";
+@@ -40,6 +41,7 @@ public class PotionEffect implements ConfigurationSerializable {
+     private final boolean ambient;
+     private final boolean particles;
+     private final boolean icon;
++    private final PotionEffect hiddenEffect; // Paper
+ 
+     /**
+      * Creates a potion effect.
+@@ -50,8 +52,11 @@ public class PotionEffect implements ConfigurationSerializable {
+      * @param ambient the ambient status, see {@link PotionEffect#isAmbient()}
+      * @param particles the particle status, see {@link PotionEffect#hasParticles()}
+      * @param icon the icon status, see {@link PotionEffect#hasIcon()}
++     * @param hiddenEffect the hidden PotionEffect
++     * @hidden Internal-- hidden effects are only shown internally
+      */
+-    public PotionEffect(@NotNull PotionEffectType type, int duration, int amplifier, boolean ambient, boolean particles, boolean icon) {
++    @org.jetbrains.annotations.ApiStatus.Internal // Paper
++    public PotionEffect(@NotNull PotionEffectType type, int duration, int amplifier, boolean ambient, boolean particles, boolean icon, @Nullable PotionEffect hiddenEffect) { // Paper
+         Preconditions.checkArgument(type != null, "effect type cannot be null");
+         this.type = type;
+         this.duration = duration;
+@@ -59,6 +64,23 @@ public class PotionEffect implements ConfigurationSerializable {
+         this.ambient = ambient;
+         this.particles = particles;
+         this.icon = icon;
++        // Paper start
++        this.hiddenEffect = hiddenEffect;
++    }
++
++    /**
++     * Creates a potion effect.
++     * @param type effect type
++     * @param duration measured in ticks, see {@link
++     *     PotionEffect#getDuration()}
++     * @param amplifier the amplifier, see {@link PotionEffect#getAmplifier()}
++     * @param ambient the ambient status, see {@link PotionEffect#isAmbient()}
++     * @param particles the particle status, see {@link PotionEffect#hasParticles()}
++     * @param icon the icon status, see {@link PotionEffect#hasIcon()}
++     */
++    public PotionEffect(@NotNull PotionEffectType type, int duration, int amplifier, boolean ambient, boolean particles, boolean icon) {
++        this(type, duration, amplifier, ambient, particles, icon, null);
++        // Paper end
+     }
+ 
+     /**
+@@ -106,7 +128,7 @@ public class PotionEffect implements ConfigurationSerializable {
+      * @param map the map to deserialize from
+      */
+     public PotionEffect(@NotNull Map<String, Object> map) {
+-        this(getEffectType(map), getInt(map, DURATION), getInt(map, AMPLIFIER), getBool(map, AMBIENT, false), getBool(map, PARTICLES, true), getBool(map, ICON, getBool(map, PARTICLES, true)));
++        this(getEffectType(map), getInt(map, DURATION), getInt(map, AMPLIFIER), getBool(map, AMBIENT, false), getBool(map, PARTICLES, true), getBool(map, ICON, getBool(map, PARTICLES, true)), (PotionEffect) map.get(HIDDEN_EFFECT)); // Paper
+     }
+ 
+     // Paper start
+@@ -134,6 +156,19 @@ public class PotionEffect implements ConfigurationSerializable {
+     public PotionEffect withIcon(boolean icon) {
+         return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);
+     }
++
++    /**
++     * Returns the PotionEffect that will become active
++     * after the current PotionEffect has run out.
++     * <p>
++     * Note: This value is only applicable to type applied to living entities.
++     *
++     * @return The hidden PotionEffect.
++     */
++    @Nullable
++    public PotionEffect getHiddenPotionEffect() {
++        return hiddenEffect;
++    }
+     // Paper end
+ 
+     @NotNull
+@@ -170,19 +205,27 @@ public class PotionEffect implements ConfigurationSerializable {
+     @Override
+     @NotNull
+     public Map<String, Object> serialize() {
+-        return ImmutableMap.<String, Object>builder()
++        ImmutableMap.Builder<String, Object> builder = ImmutableMap.<String, Object>builder() // Paper
+             .put(TYPE, type.getKey().toString())
+             .put(DURATION, duration)
+             .put(AMPLIFIER, amplifier)
+             .put(AMBIENT, ambient)
+             .put(PARTICLES, particles)
+-            .put(ICON, icon)
+-            .build();
++            .put(ICON, icon);
++        // Paper start
++        if (this.hiddenEffect != null) {
++            builder.put(HIDDEN_EFFECT, this.hiddenEffect);
++        }
++        return builder.build();
++        // Paper end
+     }
+ 
+     /**
+      * Attempts to add the effect represented by this object to the given
+      * {@link LivingEntity}.
++     * <p>
++     * Note: {@link PotionEffect#getHiddenPotionEffect()} is ignored when
++     * adding the effect to the entity.
+      *
+      * @param entity The entity to add this effect to
+      * @return Whether the effect could be added
+@@ -201,7 +244,7 @@ public class PotionEffect implements ConfigurationSerializable {
+             return false;
+         }
+         PotionEffect that = (PotionEffect) obj;
+-        return this.type.equals(that.type) && this.ambient == that.ambient && this.amplifier == that.amplifier && this.duration == that.duration && this.particles == that.particles && this.icon == that.icon;
++        return this.type.equals(that.type) && this.ambient == that.ambient && this.amplifier == that.amplifier && this.duration == that.duration && this.particles == that.particles && this.icon == that.icon && java.util.Objects.equals(this.hiddenEffect, that.hiddenEffect); // Paper
+     }
+ 
+     /**
+@@ -306,11 +349,12 @@ public class PotionEffect implements ConfigurationSerializable {
+         hash ^= 0x22222222 >> (ambient ? 1 : -1);
+         hash ^= 0x22222222 >> (particles ? 1 : -1);
+         hash ^= 0x22222222 >> (icon ? 1 : -1);
++        if (hiddenEffect != null) hash = hash * 31 + hiddenEffect.hashCode(); // Paper
+         return hash;
+     }
+ 
+     @Override
+     public String toString() {
+-        return type.getName() + (ambient ? ":(" : ":") + duration + "t-x" + amplifier + (ambient ? ")" : "");
++        return "PotionEffect{" + "amplifier=" + amplifier + ", duration=" + duration + ", type=" + type + ", ambient=" + ambient + ", particles=" + particles + ", icon=" + icon + ", hiddenEffect=" + hiddenEffect + '}'; // Paper
+     }
+ }

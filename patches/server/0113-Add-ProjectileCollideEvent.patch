@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Techcable <Techcable@outlook.com>
+Date: Fri, 16 Dec 2016 21:25:39 -0600
+Subject: [PATCH] Add ProjectileCollideEvent
+
+Deprecated now and replaced with ProjectileHitEvent
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 00267c18a1a6fba610b271770112a55efe732955..0a3c89dba691760c7e0be58914003cc438269a03 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1321,6 +1321,16 @@ public class CraftEventFactory {
+         Bukkit.getPluginManager().callEvent(crafterCraftEvent);
+         return crafterCraftEvent;
+     }
++    // Paper start
++    @Deprecated
++    public static com.destroystokyo.paper.event.entity.ProjectileCollideEvent callProjectileCollideEvent(Entity entity, EntityHitResult position) {
++        Projectile projectile = (Projectile) entity.getBukkitEntity();
++        org.bukkit.entity.Entity collided = position.getEntity().getBukkitEntity();
++        com.destroystokyo.paper.event.entity.ProjectileCollideEvent event = new com.destroystokyo.paper.event.entity.ProjectileCollideEvent(projectile, collided);
++        Bukkit.getPluginManager().callEvent(event);
++        return event;
++    }
++    // Paper end
+ 
+     public static ProjectileLaunchEvent callProjectileLaunchEvent(Entity entity) {
+         Projectile bukkitEntity = (Projectile) entity.getBukkitEntity();
+@@ -1346,8 +1356,15 @@ public class CraftEventFactory {
+         if (position.getType() == HitResult.Type.ENTITY) {
+             hitEntity = ((EntityHitResult) position).getEntity().getBukkitEntity();
+         }
++        // Paper start - legacy event
++        boolean cancelled = false;
++        if (hitEntity != null && position instanceof EntityHitResult entityHitResult) {
++            cancelled = callProjectileCollideEvent(entity, entityHitResult).isCancelled();
++        }
++        // Paper end
+ 
+         ProjectileHitEvent event = new ProjectileHitEvent((Projectile) entity.getBukkitEntity(), hitEntity, hitBlock, hitFace);
++        event.setCancelled(cancelled); // Paper - propagate legacy event cancellation to modern event
+         entity.level().getCraftServer().getPluginManager().callEvent(event);
+         return event;
+     }

@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Sun, 14 May 2023 00:47:28 -0400
+Subject: [PATCH] Avoid Lazy Initialization for Enum Fields
+
+This patch is meant to get rid of any instances of lazy initialization that Minecraft introduces for enums.
+This has the possibility to create race condition issues, and generally don't make sense to be lazily done anyways.
+
+diff --git a/src/main/java/com/mojang/math/OctahedralGroup.java b/src/main/java/com/mojang/math/OctahedralGroup.java
+index 0a3b6b8e250bd35530c05a1cdaf2eb8a9af4c72b..9aa82fc757c67a9456b2bdec744c0cb474d64df6 100644
+--- a/src/main/java/com/mojang/math/OctahedralGroup.java
++++ b/src/main/java/com/mojang/math/OctahedralGroup.java
+@@ -110,6 +110,7 @@ public enum OctahedralGroup implements StringRepresentable {
+         this.permutation = axisTransformation;
+         this.transformation = new Matrix3f().scaling(flipX ? -1.0F : 1.0F, flipY ? -1.0F : 1.0F, flipZ ? -1.0F : 1.0F);
+         this.transformation.mul(axisTransformation.transformation());
++        this.initializeRotationDirections(); // Paper - Avoid Lazy Initialization for Enum Fields
+     }
+ 
+     private BooleanList packInversions() {
+@@ -138,7 +139,7 @@ public enum OctahedralGroup implements StringRepresentable {
+         return this.name;
+     }
+ 
+-    public Direction rotate(Direction direction) {
++    public void initializeRotationDirections() { // Paper - Avoid Lazy Initialization for Enum Fields
+         if (this.rotatedDirections == null) {
+             this.rotatedDirections = Maps.newEnumMap(Direction.class);
+             Direction.Axis[] axiss = Direction.Axis.values();
+@@ -153,6 +154,10 @@ public enum OctahedralGroup implements StringRepresentable {
+             }
+         }
+ 
++    // Paper start - Avoid Lazy Initialization for Enum Fields
++    }
++    public Direction rotate(Direction direction) {
++    // Paper end - Avoid Lazy Initialization for Enum Fields
+         return this.rotatedDirections.get(direction);
+     }
+ 

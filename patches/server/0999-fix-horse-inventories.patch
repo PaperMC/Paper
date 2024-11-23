@@ -1,0 +1,215 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 6 Jul 2024 13:57:10 -0700
+Subject: [PATCH] fix horse inventories
+
+Horse inventories now combine 2 inventories (like
+result inventories).
+
+== AT ==
+public net/minecraft/world/inventory/HorseInventoryMenu SLOT_BODY_ARMOR
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractHorse.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractHorse.java
+index 9bcc0931510607b8fbd01233e2b3c346369b214d..467693a60786688b753cebac3b0a88898e332eee 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractHorse.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractHorse.java
+@@ -112,7 +112,7 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
+ 
+     @Override
+     public AbstractHorseInventory getInventory() {
+-        return new CraftSaddledInventory(getHandle().inventory);
++        return new CraftSaddledInventory(getHandle().inventory, this.getHandle().getBodyArmorAccess()); // Paper - use both inventories
+     }
+ 
+     // Paper start - Horse API
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryAbstractHorse.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryAbstractHorse.java
+index 4946da593713f4d11d88ac1bb68a089f2f6d5ae0..54e81472259dc13dfc7b2af6b211628c39435890 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryAbstractHorse.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryAbstractHorse.java
+@@ -6,17 +6,106 @@ import org.bukkit.inventory.ItemStack;
+ 
+ public class CraftInventoryAbstractHorse extends CraftInventory implements AbstractHorseInventory {
+ 
+-    public CraftInventoryAbstractHorse(Container inventory) {
++    // Paper start - combine both horse inventories
++    private final Container bodyArmor;
++    public CraftInventoryAbstractHorse(Container inventory, final Container bodyArmor) {
+         super(inventory);
++        this.bodyArmor = bodyArmor;
++        // Paper end - combine both horse inventories
+     }
+ 
+     @Override
+     public ItemStack getSaddle() {
+-        return this.getItem(0);
++        return this.getItem(net.minecraft.world.entity.animal.horse.AbstractHorse.INV_SLOT_SADDLE); // Paper
+     }
+ 
+     @Override
+     public void setSaddle(ItemStack stack) {
+-        this.setItem(0, stack);
++        this.setItem(net.minecraft.world.entity.animal.horse.AbstractHorse.INV_SLOT_SADDLE, stack); // Paper
+     }
++
++    // Paper start - combine both horse inventories
++    public Container getMainInventory() {
++        return this.inventory;
++    }
++
++    public Container getArmorInventory() {
++        return this.bodyArmor;
++    }
++
++    public ItemStack getArmor() {
++        return this.getItem(net.minecraft.world.inventory.HorseInventoryMenu.SLOT_BODY_ARMOR);
++    }
++
++    public void setArmor(ItemStack armor) {
++        this.setItem(net.minecraft.world.inventory.HorseInventoryMenu.SLOT_BODY_ARMOR, armor);
++    }
++
++    @Override
++    public int getSize() {
++        return this.getMainInventory().getContainerSize() + this.getArmorInventory().getContainerSize();
++    }
++
++    @Override
++    public boolean isEmpty() {
++        return this.getMainInventory().isEmpty() && this.getArmorInventory().isEmpty();
++    }
++
++    @Override
++    public ItemStack[] getContents() {
++        ItemStack[] items = new ItemStack[this.getSize()];
++
++        items[net.minecraft.world.entity.animal.horse.AbstractHorse.INV_SLOT_SADDLE] = this.getSaddle();
++        items[net.minecraft.world.inventory.HorseInventoryMenu.SLOT_BODY_ARMOR] = this.getArmor();
++
++        for (int i = net.minecraft.world.inventory.HorseInventoryMenu.SLOT_BODY_ARMOR + 1; i < items.length; i++) {
++            net.minecraft.world.item.ItemStack item = this.getMainInventory().getItem(i - 1);
++            items[i] = item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
++        }
++
++        return items;
++    }
++
++    @Override
++    public void setContents(ItemStack[] items) {
++        com.google.common.base.Preconditions.checkArgument(items.length <= this.getSize(), "Invalid inventory size (%s); expected %s or less", items.length, this.getSize());
++
++        this.setSaddle(org.apache.commons.lang3.ArrayUtils.get(items, net.minecraft.world.entity.animal.horse.AbstractHorse.INV_SLOT_SADDLE));
++        this.setArmor(org.apache.commons.lang3.ArrayUtils.get(items, net.minecraft.world.inventory.HorseInventoryMenu.SLOT_BODY_ARMOR));
++
++        for (int i = net.minecraft.world.inventory.HorseInventoryMenu.SLOT_BODY_ARMOR + 1; i < this.getSize(); i++) {
++            net.minecraft.world.item.ItemStack item = i >= items.length ? net.minecraft.world.item.ItemStack.EMPTY : CraftItemStack.asNMSCopy(items[i]);
++            this.getMainInventory().setItem(i - 1, item);
++        }
++    }
++
++    @Override
++    public ItemStack getItem(final int index) {
++        if (index == net.minecraft.world.inventory.HorseInventoryMenu.SLOT_BODY_ARMOR) {
++            final net.minecraft.world.item.ItemStack item = this.getArmorInventory().getItem(0);
++            return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
++        } else {
++            int shiftedIndex = index;
++            if (index > net.minecraft.world.inventory.HorseInventoryMenu.SLOT_BODY_ARMOR) {
++                shiftedIndex--;
++            }
++
++            final net.minecraft.world.item.ItemStack item = this.getMainInventory().getItem(shiftedIndex);
++            return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
++        }
++    }
++
++    @Override
++    public void setItem(final int index, final ItemStack item) {
++        if (index == net.minecraft.world.inventory.HorseInventoryMenu.SLOT_BODY_ARMOR) {
++            this.getArmorInventory().setItem(0, CraftItemStack.asNMSCopy(item));
++        } else {
++            int shiftedIndex = index;
++            if (index > net.minecraft.world.inventory.HorseInventoryMenu.SLOT_BODY_ARMOR) {
++                shiftedIndex--;
++            }
++            this.getMainInventory().setItem(shiftedIndex, CraftItemStack.asNMSCopy(item));
++        }
++    }
++    // Paper end - combine both horse inventories
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryHorse.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryHorse.java
+index 07a304edc2a7b3450a55728e78a4fe37febdbadc..ebf0da48378b9376b3be2ca731315485003f6a89 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryHorse.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryHorse.java
+@@ -6,21 +6,9 @@ import org.bukkit.inventory.ItemStack;
+ 
+ public class CraftInventoryHorse extends CraftSaddledInventory implements HorseInventory {
+ 
+-    private final Container bodyArmorInventory;
+-
++    // Paper start - properly combine both inventories
+     public CraftInventoryHorse(Container inventory, Container bodyArmorInventory) {
+-        super(inventory);
+-        this.bodyArmorInventory = bodyArmorInventory;
+-    }
+-
+-    @Override
+-    public ItemStack getArmor() {
+-        net.minecraft.world.item.ItemStack item = this.bodyArmorInventory.getItem(0);
+-        return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
+-    }
+-
+-    @Override
+-    public void setArmor(ItemStack stack) {
+-        this.bodyArmorInventory.setItem(0, CraftItemStack.asNMSCopy(stack));
++        super(inventory, bodyArmorInventory);
+     }
++    // Paper end - properly combine both inventories
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryLlama.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryLlama.java
+index dcbc80646ebfc384c4f6ab1beee46a4b71a67af8..0804b642d966f2cb09f4101410e2ff1d154ea594 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryLlama.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryLlama.java
+@@ -6,21 +6,19 @@ import org.bukkit.inventory.LlamaInventory;
+ 
+ public class CraftInventoryLlama extends CraftInventoryAbstractHorse implements LlamaInventory {
+ 
+-    private final Container bodyArmorInventory;
+-
++    // Paper start - properly combine both inventories
+     public CraftInventoryLlama(Container inventory, Container bodyArmorInventory) {
+-        super(inventory);
+-        this.bodyArmorInventory = bodyArmorInventory;
++        super(inventory, bodyArmorInventory);
++        // Paper end - properly combine both inventories
+     }
+ 
+     @Override
+     public ItemStack getDecor() {
+-        net.minecraft.world.item.ItemStack item = this.bodyArmorInventory.getItem(0);
+-        return item.isEmpty() ? null : CraftItemStack.asCraftMirror(item);
++        return this.getArmor(); // Paper
+     }
+ 
+     @Override
+     public void setDecor(ItemStack stack) {
+-        this.bodyArmorInventory.setItem(0, CraftItemStack.asNMSCopy(stack));
++        this.setArmor(stack); // Paper
+     }
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftSaddledInventory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftSaddledInventory.java
+index 3a617c07d445bacf5a13e0e3ff6481823cfc8477..1c100c7c210485c1d3510745de7d18f58ba72557 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftSaddledInventory.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftSaddledInventory.java
+@@ -5,8 +5,10 @@ import org.bukkit.inventory.SaddledHorseInventory;
+ 
+ public class CraftSaddledInventory extends CraftInventoryAbstractHorse implements SaddledHorseInventory {
+ 
+-    public CraftSaddledInventory(Container inventory) {
+-        super(inventory);
++    // Paper start - combine both inventories
++    public CraftSaddledInventory(Container inventory, final Container bodyArmor) {
++        super(inventory, bodyArmor);
++        // Paper end - combine both inventories
+     }
+ 
+ }

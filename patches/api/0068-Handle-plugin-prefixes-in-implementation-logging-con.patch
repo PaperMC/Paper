@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Minecrell <minecrell@minecrell.net>
+Date: Thu, 21 Sep 2017 16:14:13 +0200
+Subject: [PATCH] Handle plugin prefixes in implementation logging
+ configuration
+
+Currently, plugin prefixes are prepended to the log message in
+the PluginLogger before passing the message to the underlying
+logging framework. This is bad design because they need to be
+stripped manually when using custom appenders to log messages
+in a different format.
+
+Additionally, it makes integration of alternative logging APIs hard
+because all logging must go through the PluginLogger. Avoid using
+PluginLogger and create a regular logger using the plugin name.
+The implementation should handle plugin prefixes by displaying
+logger names when appropriate.
+
+diff --git a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
+index 7f17337b9f0fb60fa1c91c47af496c03290d1b1c..801578de8599d6b546cde63b3f2655fab48eee03 100644
+--- a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
++++ b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
+@@ -47,7 +47,7 @@ public abstract class JavaPlugin extends PluginBase {
+     private boolean naggable = true;
+     private FileConfiguration newConfig = null;
+     private File configFile = null;
+-    private PluginLogger logger = null;
++    private Logger logger = null; // Paper - PluginLogger -> Logger
+ 
+     public JavaPlugin() {
+         // Paper start
+@@ -304,8 +304,8 @@ public abstract class JavaPlugin extends PluginBase {
+         this.dataFolder = dataFolder;
+         this.classLoader = classLoader;
+         this.configFile = new File(dataFolder, "config.yml");
+-        this.logger = new PluginLogger(this);
+         this.pluginMeta = configuration; // Paper
++        this.logger = Logger.getLogger(description.getPrefix() != null ? description.getPrefix() : description.getName()); // Paper - Handle plugin prefix in implementation
+     }
+ 
+     /**

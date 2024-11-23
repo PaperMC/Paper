@@ -1,0 +1,91 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Tue, 21 May 2024 13:18:00 -0700
+Subject: [PATCH] Allow Bukkit plugin to use Paper PluginLoader API
+
+
+diff --git a/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java b/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
+index c5465431ce35d264d8510af45e73d058b333c60b..a857e46fa6f0c212db93193e1fdd8b0ea9c33c38 100644
+--- a/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
++++ b/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
+@@ -260,6 +260,13 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
+     private Set<PluginAwareness> awareness = ImmutableSet.of();
+     private String apiVersion = null;
+     private List<String> libraries = ImmutableList.of();
++    // Paper start - plugin loader api
++    private String paperPluginLoader;
++    @org.jetbrains.annotations.ApiStatus.Internal @org.jetbrains.annotations.Nullable
++    public String getPaperPluginLoader() {
++        return this.paperPluginLoader;
++    }
++    // Paper end - plugin loader api
+     // Paper start - oh my goddddd
+     /**
+      * Don't use this.
+@@ -1233,6 +1240,23 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
+         } else {
+             libraries = ImmutableList.<String>of();
+         }
++        // Paper start - plugin loader api
++        if (map.containsKey("paper-plugin-loader")) {
++            this.paperPluginLoader = map.get("paper-plugin-loader").toString();
++        }
++
++        /*
++        Allow skipping the Bukkit/Spigot 'libraries' list. By default, both the 'libraries'
++        list and the 'paper-plugin-loader' will contribute libraries. It may be desired to only
++        use one or the other. (i.e. 'libraries' on Spigot and 'paper-plugin-loader' on Paper)
++        */
++        if (map.containsKey("paper-skip-libraries")) {
++            String skip = map.get("paper-skip-libraries").toString();
++            if (skip.equalsIgnoreCase("true")) {
++                this.libraries = ImmutableList.of();
++            }
++        }
++        // Paper end - plugin loader api
+ 
+         try {
+             lazyPermissions = (Map<?, ?>) map.get("permissions");
+diff --git a/src/main/java/org/bukkit/plugin/java/LibraryLoader.java b/src/main/java/org/bukkit/plugin/java/LibraryLoader.java
+index 8e1b6be2462aaa692efa1f72986921a6dc357196..c66252802c51174bc26f266cb5cdecdd856ff220 100644
+--- a/src/main/java/org/bukkit/plugin/java/LibraryLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/LibraryLoader.java
+@@ -84,7 +84,13 @@ public class LibraryLoader
+     @Nullable
+     public ClassLoader createLoader(@NotNull PluginDescriptionFile desc)
+     {
+-        if ( desc.getLibraries().isEmpty() )
++        // Paper start - plugin loader api
++        return this.createLoader(desc, null);
++    }
++    @Nullable
++    public ClassLoader createLoader(@NotNull PluginDescriptionFile desc, java.util.@Nullable List<java.nio.file.Path> paperLibraryPaths) {
++        if ( desc.getLibraries().isEmpty() && paperLibraryPaths == null )
++        // Paper end - plugin loader api
+         {
+             return null;
+         }
+@@ -103,17 +109,20 @@ public class LibraryLoader
+         }
+ 
+         DependencyResult result;
+-        try
++        if (!dependencies.isEmpty()) try // Paper - plugin loader api
+         {
+             result = repository.resolveDependencies( session, new DependencyRequest( new CollectRequest( (Dependency) null, dependencies, repositories ), null ) );
+         } catch ( DependencyResolutionException ex )
+         {
+             throw new RuntimeException( "Error resolving libraries", ex );
+-        }
++        } else result = null; // Paper - plugin loader api
+ 
+         List<URL> jarFiles = new ArrayList<>();
+         List<java.nio.file.Path> jarPaths = new ArrayList<>(); // Paper - remap libraries
+-        for ( ArtifactResult artifact : result.getArtifactResults() )
++        // Paper start - plugin loader api
++        if (paperLibraryPaths != null) jarPaths.addAll(paperLibraryPaths);
++        if (result != null) for ( ArtifactResult artifact : result.getArtifactResults() )
++        // Paper end - plugin loader api
+         {
+             // Paper start - remap libraries
+             jarPaths.add(artifact.getArtifact().getFile().toPath());

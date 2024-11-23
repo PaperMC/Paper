@@ -1,0 +1,271 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 12 Jun 2024 10:29:40 -0700
+Subject: [PATCH] Make a PDC view accessible directly from ItemStack
+
+
+diff --git a/src/main/java/io/papermc/paper/persistence/PaperPersistentDataContainerView.java b/src/main/java/io/papermc/paper/persistence/PaperPersistentDataContainerView.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..122c32e82b299cafd7d0c6a9f4818523470c9f05
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/persistence/PaperPersistentDataContainerView.java
+@@ -0,0 +1,120 @@
++package io.papermc.paper.persistence;
++
++import com.google.common.base.Preconditions;
++import java.io.ByteArrayOutputStream;
++import java.io.DataOutputStream;
++import java.io.IOException;
++import java.util.Collections;
++import java.util.HashSet;
++import java.util.Set;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.NbtIo;
++import net.minecraft.nbt.Tag;
++import org.bukkit.NamespacedKey;
++import org.bukkit.craftbukkit.persistence.CraftPersistentDataAdapterContext;
++import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
++import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
++import org.bukkit.persistence.PersistentDataAdapterContext;
++import org.bukkit.persistence.PersistentDataContainer;
++import org.bukkit.persistence.PersistentDataType;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
++
++@NullMarked
++public abstract class PaperPersistentDataContainerView implements PersistentDataContainerView {
++
++    protected final CraftPersistentDataTypeRegistry registry;
++    protected final CraftPersistentDataAdapterContext adapterContext;
++
++    public PaperPersistentDataContainerView(final CraftPersistentDataTypeRegistry registry) {
++        this.registry = registry;
++        this.adapterContext = new CraftPersistentDataAdapterContext(this.registry);
++    }
++
++    public abstract @Nullable Tag getTag(final String key);
++
++    public abstract CompoundTag toTagCompound();
++
++    @Override
++    public <P, C> boolean has(final NamespacedKey key, final PersistentDataType<P, C> type) {
++        Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
++        Preconditions.checkArgument(type != null, "The provided type cannot be null");
++
++        final Tag value = this.getTag(key.toString());
++        if (value == null) {
++            return false;
++        }
++
++        return this.registry.isInstanceOf(type, value);
++    }
++
++    @Override
++    public boolean has(final NamespacedKey key) {
++        Preconditions.checkArgument(key != null, "The provided key for the custom value was null"); // Paper
++        return this.getTag(key.toString()) != null;
++    }
++
++    @Override
++    public <P, C> @Nullable C get(final NamespacedKey key, final PersistentDataType<P, C> type) {
++        Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
++        Preconditions.checkArgument(type != null, "The provided type cannot be null");
++
++        final Tag value = this.getTag(key.toString());
++        if (value == null) {
++            return null;
++        }
++
++        return type.fromPrimitive(this.registry.extract(type, value), this.adapterContext);
++    }
++
++    @Override
++    public <P, C> C getOrDefault(final NamespacedKey key, final PersistentDataType<P, C> type, final C defaultValue) {
++        final C c = this.get(key, type);
++        return c != null ? c : defaultValue;
++    }
++
++    @Override
++    public Set<NamespacedKey> getKeys() {
++        final Set<String> names = this.toTagCompound().getAllKeys();
++        final Set<NamespacedKey> keys = new HashSet<>(names.size());
++        names.forEach(key -> {
++            final String[] keyPart = key.split(":", 2);
++            if (keyPart.length == 2) {
++                keys.add(new NamespacedKey(keyPart[0], keyPart[1]));
++            }
++        });
++        return Collections.unmodifiableSet(keys);
++    }
++
++    @Override
++    public boolean isEmpty() {
++        return this.toTagCompound().isEmpty();
++    }
++
++    @Override
++    public void copyTo(final PersistentDataContainer other, final boolean replace) {
++        Preconditions.checkArgument(other != null, "The target container cannot be null");
++        final CraftPersistentDataContainer target = (CraftPersistentDataContainer) other;
++        final CompoundTag tag = this.toTagCompound();
++        for (final String key : tag.getAllKeys()) {
++            if (replace || !target.getRaw().containsKey(key)) {
++                target.getRaw().put(key, tag.get(key).copy());
++            }
++        }
++    }
++
++    @Override
++    public PersistentDataAdapterContext getAdapterContext() {
++        return this.adapterContext;
++    }
++
++    @Override
++    public byte[] serializeToBytes() throws IOException {
++        final CompoundTag root = this.toTagCompound();
++        final ByteArrayOutputStream byteArrayOutput = new ByteArrayOutputStream();
++        try (final DataOutputStream dataOutput = new DataOutputStream(byteArrayOutput)) {
++            NbtIo.write(root, dataOutput);
++            return byteArrayOutput.toByteArray();
++        }
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+index 49d2deac8d42a505b75f2196ef895a5564b62cac..756c73a401437566258813946fa10c7caa8f2469 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+@@ -496,4 +496,34 @@ public final class CraftItemStack extends ItemStack {
+         return mirrored;
+     }
+     // Paper end
++
++    // Paper start - pdc
++    private net.minecraft.nbt.CompoundTag getPdcTag() {
++        if (this.handle == null) {
++            return new net.minecraft.nbt.CompoundTag();
++        }
++        final net.minecraft.world.item.component.CustomData customData = this.handle.getOrDefault(DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.EMPTY);
++        // getUnsafe is OK here because we are only ever *reading* the data so immutability is preserved
++        //noinspection deprecation
++        return customData.getUnsafe().getCompound("PublicBukkitValues");
++    }
++
++    private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
++    private final io.papermc.paper.persistence.PaperPersistentDataContainerView pdcView = new io.papermc.paper.persistence.PaperPersistentDataContainerView(REGISTRY) {
++
++        @Override
++        public net.minecraft.nbt.CompoundTag toTagCompound() {
++            return CraftItemStack.this.getPdcTag();
++        }
++
++        @Override
++        public net.minecraft.nbt.Tag getTag(final String key) {
++            return CraftItemStack.this.getPdcTag().get(key);
++        }
++    };
++    @Override
++    public io.papermc.paper.persistence.PersistentDataContainerView getPersistentDataContainer() {
++        return this.pdcView;
++    }
++    // Paper end - pdc
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java b/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
+index f55fdd57ced259ad5a95878840e98ffaa3db2e05..9d867f1659433ea15f281c8b441db7e339013100 100644
+--- a/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
++++ b/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
+@@ -16,11 +16,10 @@ import org.bukkit.persistence.PersistentDataContainer;
+ import org.bukkit.persistence.PersistentDataType;
+ import org.jetbrains.annotations.NotNull;
+ 
+-public class CraftPersistentDataContainer implements PersistentDataContainer {
++public class CraftPersistentDataContainer extends io.papermc.paper.persistence.PaperPersistentDataContainerView implements PersistentDataContainer { // Paper - split up view and mutable
+ 
+     private final Map<String, Tag> customDataTags = new HashMap<>();
+-    private final CraftPersistentDataTypeRegistry registry;
+-    private final CraftPersistentDataAdapterContext adapterContext;
++    // Paper - move to PersistentDataContainerView
+ 
+     public CraftPersistentDataContainer(Map<String, Tag> customTags, CraftPersistentDataTypeRegistry registry) {
+         this(registry);
+@@ -28,10 +27,15 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+     }
+ 
+     public CraftPersistentDataContainer(CraftPersistentDataTypeRegistry registry) {
+-        this.registry = registry;
+-        this.adapterContext = new CraftPersistentDataAdapterContext(this.registry);
++        super(registry); // Paper - move to PersistentDataContainerView
+     }
+ 
++    // Paper start
++    @Override
++    public Tag getTag(final String key) {
++        return this.customDataTags.get(key);
++    }
++    // Paper end
+ 
+     @Override
+     public <T, Z> void set(@NotNull NamespacedKey key, @NotNull PersistentDataType<T, Z> type, @NotNull Z value) {
+@@ -42,44 +46,7 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+         this.customDataTags.put(key.toString(), this.registry.wrap(type, type.toPrimitive(value, this.adapterContext)));
+     }
+ 
+-    @Override
+-    public <T, Z> boolean has(@NotNull NamespacedKey key, @NotNull PersistentDataType<T, Z> type) {
+-        Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
+-        Preconditions.checkArgument(type != null, "The provided type cannot be null");
+-
+-        Tag value = this.customDataTags.get(key.toString());
+-        if (value == null) {
+-            return false;
+-        }
+-
+-        return this.registry.isInstanceOf(type, value);
+-    }
+-
+-    @Override
+-    public boolean has(NamespacedKey key) {
+-        Preconditions.checkArgument(key != null, "The provided key for the custom value was null"); // Paper
+-        return this.customDataTags.get(key.toString()) != null;
+-    }
+-
+-    @Override
+-    public <T, Z> Z get(@NotNull NamespacedKey key, @NotNull PersistentDataType<T, Z> type) {
+-        Preconditions.checkArgument(key != null, "The NamespacedKey key cannot be null");
+-        Preconditions.checkArgument(type != null, "The provided type cannot be null");
+-
+-        Tag value = this.customDataTags.get(key.toString());
+-        if (value == null) {
+-            return null;
+-        }
+-
+-        return type.fromPrimitive(this.registry.extract(type, value), this.adapterContext);
+-    }
+-
+-    @NotNull
+-    @Override
+-    public <T, Z> Z getOrDefault(@NotNull NamespacedKey key, @NotNull PersistentDataType<T, Z> type, @NotNull Z defaultValue) {
+-        Z z = this.get(key, type);
+-        return z != null ? z : defaultValue;
+-    }
++    // Paper - move to PersistentDataContainerView
+ 
+     @NotNull
+     @Override
+@@ -186,16 +153,7 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+     // Paper end
+ 
+     // Paper start - byte array serialization
+-    @Override
+-    public byte[] serializeToBytes() throws java.io.IOException {
+-        final net.minecraft.nbt.CompoundTag root = this.toTagCompound();
+-        final java.io.ByteArrayOutputStream byteArrayOutput = new java.io.ByteArrayOutputStream();
+-        try (final java.io.DataOutputStream dataOutput = new java.io.DataOutputStream(byteArrayOutput)) {
+-            net.minecraft.nbt.NbtIo.write(root, dataOutput);
+-            return byteArrayOutput.toByteArray();
+-        }
+-    }
+-
++    // Paper - move to PersistentDataContainerView
+     @Override
+     public void readFromBytes(final byte[] bytes, final boolean clear) throws java.io.IOException {
+         if (clear) {

@@ -1,0 +1,129 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Noah van der Aa <ndvdaa@gmail.com>
+Date: Sat, 7 Aug 2021 15:11:27 +0200
+Subject: [PATCH] Add CompostItemEvent and EntityCompostItemEvent
+
+
+diff --git a/src/main/java/io/papermc/paper/event/block/CompostItemEvent.java b/src/main/java/io/papermc/paper/event/block/CompostItemEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..03497ac2489b159716811f03ab68e345ff864fa6
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/block/CompostItemEvent.java
+@@ -0,0 +1,66 @@
++package io.papermc.paper.event.block;
++
++import org.bukkit.block.Block;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.block.BlockEvent;
++import org.bukkit.event.inventory.InventoryMoveItemEvent;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Called when an item is about to be composted by a hopper.
++ * To prevent hoppers from moving items into composters, cancel the {@link InventoryMoveItemEvent}.
++ */
++@NullMarked
++public class CompostItemEvent extends BlockEvent {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private final ItemStack item;
++    private boolean willRaiseLevel;
++
++    @ApiStatus.Internal
++    public CompostItemEvent(final Block composter, final ItemStack item, final boolean willRaiseLevel) {
++        super(composter);
++        this.item = item;
++        this.willRaiseLevel = willRaiseLevel;
++    }
++
++    /**
++     * Gets the item that was used on the composter.
++     *
++     * @return the item
++     */
++    public ItemStack getItem() {
++        return this.item;
++    }
++
++    /**
++     * Gets whether the composter will rise a level.
++     *
++     * @return {@code true} if successful
++     */
++    public boolean willRaiseLevel() {
++        return this.willRaiseLevel;
++    }
++
++    /**
++     * Sets whether the composter will rise a level.
++     *
++     * @param willRaiseLevel {@code true} if the composter should rise a level
++     */
++    public void setWillRaiseLevel(final boolean willRaiseLevel) {
++        this.willRaiseLevel = willRaiseLevel;
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/event/entity/EntityCompostItemEvent.java b/src/main/java/io/papermc/paper/event/entity/EntityCompostItemEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..213d957fdc68aa32d77424c84c5cf3b244cd4314
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/entity/EntityCompostItemEvent.java
+@@ -0,0 +1,45 @@
++package io.papermc.paper.event.entity;
++
++import io.papermc.paper.event.block.CompostItemEvent;
++import org.bukkit.block.Block;
++import org.bukkit.entity.Entity;
++import org.bukkit.event.Cancellable;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Called when an item is about to be composted by an entity.
++ */
++@NullMarked
++public class EntityCompostItemEvent extends CompostItemEvent implements Cancellable {
++
++    private final Entity entity;
++    private boolean cancelled;
++
++    @ApiStatus.Internal
++    public EntityCompostItemEvent(final Entity entity, final Block composter, final ItemStack item, final boolean willRaiseLevel) {
++        super(composter, item, willRaiseLevel);
++        this.entity = entity;
++    }
++
++    /**
++     * Gets the entity that interacted with the composter.
++     *
++     * @return the entity that composted an item.
++     */
++    public Entity getEntity() {
++        return this.entity;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    @Override
++    public void setCancelled(final boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++}

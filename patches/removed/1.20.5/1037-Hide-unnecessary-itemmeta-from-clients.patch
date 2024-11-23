@@ -1,0 +1,171 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Noah van der Aa <ndvdaa@gmail.com>
+Date: Tue, 3 Aug 2021 17:28:27 +0200
+Subject: [PATCH] Hide unnecessary itemmeta from clients
+
+TODO: Needs updating for data components
+
+diff --git a/src/main/java/io/papermc/paper/util/ItemStackObfuscator.java b/src/main/java/io/papermc/paper/util/ItemStackObfuscator.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..12156aa7305fa26e34ee74eacd490fd9b97a7a7f
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/ItemStackObfuscator.java
+@@ -0,0 +1,111 @@
++package io.papermc.paper.util;
++
++import net.minecraft.core.component.DataComponentMap;
++import net.minecraft.core.component.DataComponents;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.ListTag;
++import net.minecraft.world.item.ItemStack;
++import net.minecraft.world.item.Items;
++import net.minecraft.world.item.component.BundleContents;
++import net.minecraft.world.item.component.CustomData;
++import net.minecraft.world.item.enchantment.EnchantmentHelper;
++import net.minecraft.world.item.enchantment.Enchantments;
++import net.minecraft.world.item.enchantment.ItemEnchantments;
++import net.minecraft.world.level.Level;
++import java.util.List;
++
++public class ItemStackObfuscator {
++
++    // Paper start - Hide unnecessary item meta
++    public static ItemStack stripMeta(final ItemStack itemStack, final boolean copyItemStack, Level level) {
++        if (itemStack.isEmpty() || (itemStack.getComponentsPatch().isEmpty() && itemStack.getCount() < 2)) {
++            return itemStack;
++        }
++
++        final ItemStack copy = copyItemStack ? itemStack.copy() : itemStack;
++        if (level.paperConfig().anticheat.obfuscation.items.hideDurability) {
++            // Only show damage values for elytra's, since they show a different texture when broken.
++            if (!copy.is(Items.ELYTRA) || copy.getDamageValue() < copy.getMaxDamage() - 1) {
++                copy.setDamageValue(0);
++            }
++        }
++
++        final DataComponentMap components = copy.getComponents();
++        if (level.paperConfig().anticheat.obfuscation.items.hideItemmeta) {
++            // Some resource packs show different textures when there is more than one item. Since this shouldn't provide a big advantage,
++            // we'll tell the client if there's one or (more than) two items.
++            copy.setCount(copy.getCount() > 1 ? 2 : 1);
++
++            // We can't just strip out display, leather helmets still use the display.color tag.
++            copy.remove(DataComponents.CUSTOM_NAME);
++            copy.remove(DataComponents.ITEM_NAME);
++            copy.remove(DataComponents.LORE);
++            copy.remove(DataComponents.RARITY); // affects name only
++
++
++            ItemEnchantments enchantments = copy.getEnchantments();
++            if (!enchantments.isEmpty()) {
++                ItemEnchantments.Mutable mutableEnchantments = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
++                if (EnchantmentHelper.getItemEnchantmentLevel(Enchantments.SOUL_SPEED, itemStack) > 0) {
++                    mutableEnchantments.set(Enchantments.SOUL_SPEED, 1);
++                }
++                if (mutableEnchantments.keySet().isEmpty()) {
++                    copy.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true); // Add a glint override if there are no enchantments present-- this is so we still get a fake glow
++                }
++
++                copy.set(DataComponents.ENCHANTMENTS, mutableEnchantments.toImmutable());
++            }
++            copy.remove(DataComponents.ATTRIBUTE_MODIFIERS);
++            copy.remove(DataComponents.UNBREAKABLE);
++            copy.remove(DataComponents.CUSTOM_DATA); // Persistent data container (remove everything)
++
++            // Books
++            copy.remove(DataComponents.WRITABLE_BOOK_CONTENT);
++            copy.remove(DataComponents.WRITTEN_BOOK_CONTENT);
++
++            // Filled maps
++            copy.remove(DataComponents.MAP_ID);
++            copy.remove(DataComponents.MAP_POST_PROCESSING);
++        }
++
++        if (level.paperConfig().anticheat.obfuscation.items.hideItemmetaWithVisualEffects) {
++            // Lodestone compasses
++            copy.remove(DataComponents.LODESTONE_TRACKER);
++            copy.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true); // override the glint -- simulate
++        }
++
++        return copy;
++    }
++    // Paper end - Hide unnecessary item meta
++    // Paper start - prevent oversized data
++    public static ItemStack sanitizeItemStack(final ItemStack itemStack, final boolean copyItemStack) {
++        if (itemStack.isEmpty() || itemStack.getComponentsPatch().isEmpty()) {
++            return itemStack;
++        }
++
++        final ItemStack copy = copyItemStack ? itemStack.copy() : itemStack;
++        final DataComponentMap components = copy.getComponents();
++
++        final BundleContents contents = components.get(DataComponents.BUNDLE_CONTENTS);
++        if (copy.is(Items.BUNDLE) && contents != null && !contents.isEmpty()) {
++            // Bundles change their texture based on their fullness.
++            // TODO: Check this
++            int sizeUsed = 0;
++            for (ItemStack item : contents.items()) {
++                int scale = 64 / item.getMaxStackSize();
++                sizeUsed += scale * item.getCount();
++            }
++            // Now we add a single fake item that uses the same amount of slots as all other items.
++            copy.set(DataComponents.BUNDLE_CONTENTS, new BundleContents(List.of(new ItemStack(Items.PAPER, sizeUsed))));
++        }
++
++
++        CustomData blockEntityData = components.get(DataComponents.BLOCK_ENTITY_DATA);
++        copy.set(DataComponents.BLOCK_ENTITY_DATA, blockEntityData.update((tag) -> {
++            tag.remove("Items");
++        }));
++
++        return copy;
++    }
++    // Paper end - prevent oversized data
++}
+diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
+index 4f103f731623a8570238a6867fda1c5f83fca4e4..332972fae1b1760328dd50d0b4fcb072003adaeb 100644
+--- a/src/main/java/net/minecraft/server/level/ServerEntity.java
++++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
+@@ -348,7 +348,10 @@ public class ServerEntity {
+                 ItemStack itemstack = ((LivingEntity) this.entity).getItemBySlot(enumitemslot);
+ 
+                 if (!itemstack.isEmpty()) {
+-                    list.add(Pair.of(enumitemslot, itemstack.copy()));
++                    // Paper start - prevent oversized data
++                    final ItemStack sanitized = io.papermc.paper.util.ItemStackObfuscator.sanitizeItemStack(itemstack.copy(), false);
++                    list.add(Pair.of(enumitemslot, io.papermc.paper.util.ItemStackObfuscator.stripMeta(sanitized, false, this.level))); // Paper - Hide unnecessary item meta
++                    // Paper end - prevent oversized data
+                 }
+             }
+ 
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index a771f78f63e4f26c0ba411a3c355f8dfbb5f4a61..fb870aec24d83ddf1f696f7834b3037e2f30b84c 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2808,8 +2808,8 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                                 // Refresh the current entity metadata
+                                 entity.refreshEntityData(ServerGamePacketListenerImpl.this.player);
+                                 // SPIGOT-7136 - Allays
+-                                if (entity instanceof Allay) {
+-                                    ServerGamePacketListenerImpl.this.send(new ClientboundSetEquipmentPacket(entity.getId(), Arrays.stream(net.minecraft.world.entity.EquipmentSlot.values()).map((slot) -> Pair.of(slot, ((LivingEntity) entity).getItemBySlot(slot).copy())).collect(Collectors.toList())));
++                                if (entity instanceof Allay allay) { // Paper - Hide unnecessary item meta
++                                    ServerGamePacketListenerImpl.this.send(new ClientboundSetEquipmentPacket(entity.getId(), Arrays.stream(net.minecraft.world.entity.EquipmentSlot.values()).map((slot) -> Pair.of(slot, io.papermc.paper.util.ItemStackObfuscator.stripMeta(allay.getItemBySlot(slot), true, allay.level()))).collect(Collectors.toList()))); // Paper - Hide unnecessary item meta
+                                     ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote();
+                                 }
+                             }
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 1ba83df3c2717dbd027b02d4d69e50091977d35f..716ce0ee330dd96effc8ca5642090ecd022d3304 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3299,7 +3299,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         equipmentChanges.forEach((enumitemslot, itemstack) -> {
+             ItemStack itemstack1 = itemstack.copy();
+ 
+-            list.add(Pair.of(enumitemslot, itemstack1));
++            // Paper start - prevent oversized data
++            ItemStack toSend = io.papermc.paper.util.ItemStackObfuscator.sanitizeItemStack(itemstack1, true);
++            list.add(Pair.of(enumitemslot, io.papermc.paper.util.ItemStackObfuscator.stripMeta(toSend, toSend == itemstack1, this.level()))); // Paper - Hide unnecessary item meta
++            // Paper end - prevent oversized data
+             switch (enumitemslot.getType()) {
+                 case HAND:
+                     this.setLastHandItem(enumitemslot, itemstack1);

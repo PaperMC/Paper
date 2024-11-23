@@ -1,0 +1,114 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 1 Oct 2021 08:04:39 -0700
+Subject: [PATCH] Add missing team sidebar display slots
+
+== AT ==
+public org.bukkit.craftbukkit.scoreboard.CraftScoreboardTranslations
+public org.bukkit.craftbukkit.scoreboard.CraftScoreboardTranslations toBukkitSlot(Lnet/minecraft/world/scores/DisplaySlot;)Lorg/bukkit/scoreboard/DisplaySlot;
+public org.bukkit.craftbukkit.scoreboard.CraftScoreboardTranslations fromBukkitSlot(Lorg/bukkit/scoreboard/DisplaySlot;)Lnet/minecraft/world/scores/DisplaySlot;
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/legacy/FieldRename.java b/src/main/java/org/bukkit/craftbukkit/legacy/FieldRename.java
+index 12fe2f8d0dcb715545e071023490a32125b9c4a4..fe29c08270854d37a4b111f66ebf261260200f28 100644
+--- a/src/main/java/org/bukkit/craftbukkit/legacy/FieldRename.java
++++ b/src/main/java/org/bukkit/craftbukkit/legacy/FieldRename.java
+@@ -35,6 +35,7 @@ public class FieldRename {
+         }
+ 
+         return switch (owner) {
++            case "org/bukkit/scoreboard/DisplaySlot" -> FieldRename.convertDisplaySlot(from); // Paper - DisplaySlot
+             case "org/bukkit/block/banner/PatternType" -> FieldRename.convertPatternTypeName(apiVersion, from);
+             case "org/bukkit/enchantments/Enchantment" -> FieldRename.convertEnchantmentName(apiVersion, from);
+             case "org/bukkit/block/Biome" -> FieldRename.convertBiomeName(apiVersion, from);
+@@ -60,6 +61,16 @@ public class FieldRename {
+     //}
+     // Paper end
+ 
++    // Paper start - DisplaySlot
++    @DoNotReroute
++    public static String convertDisplaySlot(final String from) {
++        if (from.startsWith("SIDEBAR_") && !from.startsWith("SIDEBAR_TEAM_")) {
++            return from.replace("SIDEBAR_", "SIDEBAR_TEAM_");
++        }
++        return from;
++    }
++    // Paper end - DisplaySlot
++
+     // PatternType
+     private static final FieldRenameData PATTERN_TYPE_DATA = FieldRenameData.Builder.newBuilder()
+             .forVersionsBefore(ApiVersion.FIELD_NAME_PARITY)
+diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboardTranslations.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboardTranslations.java
+index 73c5ffff70605b32188a9bb5fb6c0ee04cb66efe..711d227f5ee6d63356a94a0567968da48e9f284c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboardTranslations.java
++++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScoreboardTranslations.java
+@@ -7,35 +7,22 @@ import org.bukkit.scoreboard.RenderType;
+ 
+ public final class CraftScoreboardTranslations {
+     static final int MAX_DISPLAY_SLOT = 19;
++    @Deprecated // Paper
+     static final ImmutableBiMap<DisplaySlot, String> SLOTS = ImmutableBiMap.<DisplaySlot, String>builder()
+             .put(DisplaySlot.BELOW_NAME, "below_name")
+             .put(DisplaySlot.PLAYER_LIST, "list")
+             .put(DisplaySlot.SIDEBAR, "sidebar")
+-            .put(DisplaySlot.SIDEBAR_BLACK, "sidebar.team.black")
+-            .put(DisplaySlot.SIDEBAR_DARK_BLUE, "sidebar.team.dark_blue")
+-            .put(DisplaySlot.SIDEBAR_DARK_GREEN, "sidebar.team.dark_green")
+-            .put(DisplaySlot.SIDEBAR_DARK_AQUA, "sidebar.team.dark_aqua")
+-            .put(DisplaySlot.SIDEBAR_DARK_RED, "sidebar.team.dark_red")
+-            .put(DisplaySlot.SIDEBAR_DARK_PURPLE, "sidebar.team.dark_purple")
+-            .put(DisplaySlot.SIDEBAR_GOLD, "sidebar.team.gold")
+-            .put(DisplaySlot.SIDEBAR_GRAY, "sidebar.team.gray")
+-            .put(DisplaySlot.SIDEBAR_DARK_GRAY, "sidebar.team.dark_gray")
+-            .put(DisplaySlot.SIDEBAR_BLUE, "sidebar.team.blue")
+-            .put(DisplaySlot.SIDEBAR_GREEN, "sidebar.team.green")
+-            .put(DisplaySlot.SIDEBAR_AQUA, "sidebar.team.aqua")
+-            .put(DisplaySlot.SIDEBAR_RED, "sidebar.team.red")
+-            .put(DisplaySlot.SIDEBAR_LIGHT_PURPLE, "sidebar.team.light_purple")
+-            .put(DisplaySlot.SIDEBAR_YELLOW, "sidebar.team.yellow")
+-            .put(DisplaySlot.SIDEBAR_WHITE, "sidebar.team.white")
+             .buildOrThrow();
+ 
+     private CraftScoreboardTranslations() {}
+ 
+     public static DisplaySlot toBukkitSlot(net.minecraft.world.scores.DisplaySlot minecraft) {
++        if (true) return DisplaySlot.NAMES.value(minecraft.getSerializedName()); // Paper
+         return CraftScoreboardTranslations.SLOTS.inverse().get(minecraft.getSerializedName());
+     }
+ 
+     public static net.minecraft.world.scores.DisplaySlot fromBukkitSlot(DisplaySlot slot) {
++        if (true) return net.minecraft.world.scores.DisplaySlot.CODEC.byName(slot.getId()); // Paper
+         return net.minecraft.world.scores.DisplaySlot.CODEC.byName(CraftScoreboardTranslations.SLOTS.get(slot));
+     }
+ 
+diff --git a/src/test/java/io/papermc/paper/scoreboard/DisplaySlotTest.java b/src/test/java/io/papermc/paper/scoreboard/DisplaySlotTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..345c96bfb6c559b41c2b6682067198a74d35b440
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/scoreboard/DisplaySlotTest.java
+@@ -0,0 +1,26 @@
++package io.papermc.paper.scoreboard;
++
++import org.bukkit.craftbukkit.scoreboard.CraftScoreboardTranslations;
++import org.bukkit.scoreboard.DisplaySlot;
++import org.bukkit.support.environment.Normal;
++import org.junit.jupiter.api.Test;
++
++import static org.junit.jupiter.api.Assertions.assertNotNull;
++
++@Normal
++public class DisplaySlotTest {
++
++    @Test
++    public void testBukkitToMinecraftDisplaySlots() {
++        for (DisplaySlot bukkitSlot : DisplaySlot.values()) {
++            assertNotNull(CraftScoreboardTranslations.fromBukkitSlot(bukkitSlot));
++        }
++    }
++
++    @Test
++    public void testMinecraftToBukkitDisplaySlots() {
++        for (net.minecraft.world.scores.DisplaySlot nmsSlot : net.minecraft.world.scores.DisplaySlot.values()) {
++            assertNotNull(CraftScoreboardTranslations.toBukkitSlot(nmsSlot));
++        }
++    }
++}

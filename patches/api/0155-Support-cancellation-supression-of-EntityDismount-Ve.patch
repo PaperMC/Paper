@@ -1,0 +1,107 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Sun, 18 Nov 2018 15:53:43 +0000
+Subject: [PATCH] Support cancellation supression of EntityDismount/VehicleExit
+ events"
+
+Entities must be dismounted before teleportation in order to avoid
+multiple issues in the server with regards to teleportation, shamefully,
+too many plugins rely on the events firing, which means that not firing
+these events caues more issues than it solves;
+
+In order to counteract this, Entity dismount/exit vehicle events have
+been modified to supress cancellation (and has a method to allow plugins
+to check if this has been set), noting that cancellation will be silently
+surpressed given that plugins are not expecting this event to not be cancellable.
+
+This is a far from ideal scenario, however: given the current state of this
+event and other alternatives causing issues elsewhere, I believe that
+this is going to be the best soultion all around.
+
+Improvements/suggestions welcome!
+
+diff --git a/src/main/java/org/bukkit/event/entity/EntityDismountEvent.java b/src/main/java/org/bukkit/event/entity/EntityDismountEvent.java
+index 00c3f50532392455070ae77ee4ad77cbf8d8827c..91188d77ff350aef20c3bde2bd27a8096825f337 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityDismountEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityDismountEvent.java
+@@ -13,10 +13,18 @@ public class EntityDismountEvent extends EntityEvent implements Cancellable {
+     private static final HandlerList handlers = new HandlerList();
+     private boolean cancelled;
+     private final Entity dismounted;
++    private final boolean isCancellable; // Paper
+ 
+     public EntityDismountEvent(@NotNull Entity what, @NotNull Entity dismounted) {
++        // Paper start
++        this(what, dismounted, true);
++    }
++
++    public EntityDismountEvent(@NotNull Entity what, @NotNull Entity dismounted, boolean isCancellable) {
++        // Paper end
+         super(what);
+         this.dismounted = dismounted;
++        this.isCancellable = isCancellable; // Paper
+     }
+ 
+     /**
+@@ -36,9 +44,18 @@ public class EntityDismountEvent extends EntityEvent implements Cancellable {
+ 
+     @Override
+     public void setCancelled(boolean cancel) {
++        // Paper start
++        if (cancel && !this.isCancellable) {
++            return;
++        }
+         this.cancelled = cancel;
+     }
+ 
++    public boolean isCancellable() {
++        return this.isCancellable;
++        // Paper end
++    }
++
+     @NotNull
+     @Override
+     public HandlerList getHandlers() {
+diff --git a/src/main/java/org/bukkit/event/vehicle/VehicleExitEvent.java b/src/main/java/org/bukkit/event/vehicle/VehicleExitEvent.java
+index 963b9ead4ca0426b2e95c5641b0e89317c48853d..39f6afd2f9cbcff6a74a91a21dcc3e29d2497dd8 100644
+--- a/src/main/java/org/bukkit/event/vehicle/VehicleExitEvent.java
++++ b/src/main/java/org/bukkit/event/vehicle/VehicleExitEvent.java
+@@ -13,10 +13,18 @@ public class VehicleExitEvent extends VehicleEvent implements Cancellable {
+     private static final HandlerList handlers = new HandlerList();
+     private boolean cancelled;
+     private final LivingEntity exited;
++    private final boolean isCancellable; // Paper
+ 
+-    public VehicleExitEvent(@NotNull final Vehicle vehicle, @NotNull final LivingEntity exited) {
++    public VehicleExitEvent(@NotNull final Vehicle vehicle, @NotNull final LivingEntity exited, boolean isCancellable) { // Paper
+         super(vehicle);
+         this.exited = exited;
++        // Paper start
++        this.isCancellable = isCancellable;
++    }
++
++    public VehicleExitEvent(@NotNull final Vehicle vehicle, @NotNull final LivingEntity exited) {
++        this(vehicle, exited, true);
++        // Paper end
+     }
+ 
+     /**
+@@ -36,9 +44,18 @@ public class VehicleExitEvent extends VehicleEvent implements Cancellable {
+ 
+     @Override
+     public void setCancelled(boolean cancel) {
++        // Paper start
++        if (cancel && !isCancellable) {
++            return;
++        }
+         this.cancelled = cancel;
+     }
+ 
++    public boolean isCancellable() {
++        return isCancellable;
++        // Paper end
++    }
++
+     @NotNull
+     @Override
+     public HandlerList getHandlers() {

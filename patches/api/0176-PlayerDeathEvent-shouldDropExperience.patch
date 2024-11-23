@@ -1,0 +1,80 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Tue, 24 Dec 2019 00:35:31 +0000
+Subject: [PATCH] PlayerDeathEvent#shouldDropExperience
+
+
+diff --git a/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java b/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
+index edf14dac359e996f76e0af551a81a4dd8e48bd6c..bba3821d1215eb00489f841195c890a3f3353912 100644
+--- a/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
++++ b/src/main/java/org/bukkit/event/entity/PlayerDeathEvent.java
+@@ -17,6 +17,7 @@ public class PlayerDeathEvent extends EntityDeathEvent {
+     private int newTotalExp = 0;
+     private boolean keepLevel = false;
+     private boolean keepInventory = false;
++    private boolean doExpDrop; // Paper - shouldDropExperience API
+     // Paper start - adventure
+     @org.jetbrains.annotations.ApiStatus.Internal
+     public PlayerDeathEvent(final @NotNull Player player, final @NotNull DamageSource damageSource, final @NotNull List<ItemStack> drops, final int droppedExp, final @Nullable net.kyori.adventure.text.Component deathMessage) {
+@@ -30,11 +31,18 @@ public class PlayerDeathEvent extends EntityDeathEvent {
+ 
+     @org.jetbrains.annotations.ApiStatus.Internal
+     public PlayerDeathEvent(final @NotNull Player player, final @NotNull DamageSource damageSource, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, final @Nullable net.kyori.adventure.text.Component deathMessage) {
++        // Paper start - shouldDropExperience API
++        this(player, damageSource, drops, droppedExp, newExp, newTotalExp, newLevel, deathMessage, true);
++    }
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public PlayerDeathEvent(final @NotNull Player player, final @NotNull DamageSource damageSource, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, final @Nullable net.kyori.adventure.text.Component deathMessage, final boolean doExpDrop) {
++        // Paper end - shouldDropExperience API
+         super(player, damageSource, drops, droppedExp);
+         this.newExp = newExp;
+         this.newTotalExp = newTotalExp;
+         this.newLevel = newLevel;
+         this.deathMessage = deathMessage;
++        this.doExpDrop = doExpDrop; // Paper - shouldDropExperience API
+     }
+     // Paper end - adventure
+ 
+@@ -50,11 +58,19 @@ public class PlayerDeathEvent extends EntityDeathEvent {
+ 
+     @Deprecated // Paper
+     public PlayerDeathEvent(@NotNull final Player player, @NotNull DamageSource damageSource, @NotNull final List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, @Nullable final String deathMessage) {
++        // Paper start - shouldDropExperience API
++        this(player, damageSource, drops, droppedExp, newExp, newTotalExp, newLevel, deathMessage, true);
++    }
++
++    @Deprecated // Paper
++    public PlayerDeathEvent(@NotNull final Player player, final @NotNull DamageSource damageSource, @NotNull final List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, @Nullable final String deathMessage, boolean doExpDrop) {
++        // Paper end - shouldDropExperience API
+         super(player, damageSource, drops, droppedExp);
+         this.newExp = newExp;
+         this.newTotalExp = newTotalExp;
+         this.newLevel = newLevel;
+         this.deathMessage = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserializeOrNull(deathMessage); // Paper
++        this.doExpDrop = doExpDrop; // Paper - shouldDropExperience API
+     }
+ 
+     @Deprecated // Paper
+@@ -92,6 +108,22 @@ public class PlayerDeathEvent extends EntityDeathEvent {
+     }
+     // Paper end
+ 
++    // Paper start - shouldDropExperience API
++    /**
++     * @return should experience be dropped from this death
++     */
++    public boolean shouldDropExperience() {
++        return doExpDrop;
++    }
++
++    /**
++     * @param doExpDrop sets if experience should be dropped from this death
++     */
++    public void setShouldDropExperience(boolean doExpDrop) {
++        this.doExpDrop = doExpDrop;
++    }
++    // Paper end - shouldDropExperience API
++
+     @NotNull
+     @Override
+     public Player getEntity() {

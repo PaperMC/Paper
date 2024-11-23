@@ -43,7 +43,7 @@ ysl3000 <yannicklamprecht@live.de>
 Machine_Maker <machine@machinemaker.me>
 Ivan Pekov <ivan@mrivanplays.com>
 Camotoy <20743703+Camotoy@users.noreply.github.com>
-Bjarne Koll <lynxplay101@gmail.com>
+Bjarne Koll <git@lynxplay.dev>
 MeFisto94 <MeFisto94@users.noreply.github.com>
 Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
 LemonCaramel <admin@caramel.moe>
@@ -63,4 +63,6 @@ Ollie <69084614+olijeffers0n@users.noreply.github.com>
 Oliwier Miodun <naczs@blueflow.pl>
 aerulion <aerulion@gmail.com>
 Lukas Planz <lukas.planz@web.de>
+granny <contact@granny.dev>
+mja00 <me@mja00.dev>
 ```

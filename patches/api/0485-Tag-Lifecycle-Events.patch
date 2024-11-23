@@ -1,0 +1,412 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 20 Jun 2024 09:40:53 -0700
+Subject: [PATCH] Tag Lifecycle Events
+
+
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProvider.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProvider.java
+index e15e09c2a4d3f43db6a0159fa8af6179362ea8d6..ece6b72c5a93c1faf3de971ee97a1f40d8c4e4e9 100644
+--- a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProvider.java
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEventTypeProvider.java
+@@ -21,4 +21,6 @@ interface LifecycleEventTypeProvider {
+     <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Monitorable<O, E> monitor(String name, Class<? extends O> ownerType);
+ 
+     <O extends LifecycleEventOwner, E extends LifecycleEvent> LifecycleEventType.Prioritizable<O, E> prioritized(String name, Class<? extends O> ownerType);
++
++    TagEventTypeProvider tagProvider();
+ }
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEvents.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEvents.java
+index ab6b262cf0d2d17962ed012b2ea7b8f1db8bc576..b65c5fd5443cef80989d55bf684191f849afa0e7 100644
+--- a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEvents.java
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/LifecycleEvents.java
+@@ -26,6 +26,12 @@ public final class LifecycleEvents {
+      */
+     public static final LifecycleEventType.Prioritizable<LifecycleEventOwner, ReloadableRegistrarEvent<Commands>> COMMANDS = prioritized("commands", LifecycleEventOwner.class);
+ 
++    /**
++     * These events are for registering tags to the server's tag system. You can register a handler for these events
++     * only in {@link io.papermc.paper.plugin.bootstrap.PluginBootstrap#bootstrap(BootstrapContext)}.
++     */
++    public static final TagEventTypeProvider TAGS = LifecycleEventTypeProvider.provider().tagProvider();
++
+     //<editor-fold desc="helper methods" defaultstate="collapsed">
+     @ApiStatus.Internal
+     static <E extends LifecycleEvent> LifecycleEventType.Monitorable<Plugin, E> plugin(final String name) {
+diff --git a/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/TagEventTypeProvider.java b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/TagEventTypeProvider.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..843ce7848c6f3c94b1d8609922bb256138bdb4d4
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/lifecycle/event/types/TagEventTypeProvider.java
+@@ -0,0 +1,41 @@
++package io.papermc.paper.plugin.lifecycle.event.types;
++
++import io.papermc.paper.plugin.bootstrap.BootstrapContext;
++import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent;
++import io.papermc.paper.registry.RegistryKey;
++import io.papermc.paper.tag.PostFlattenTagRegistrar;
++import io.papermc.paper.tag.PreFlattenTagRegistrar;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Provides event types for tag registration.
++ *
++ * @see PreFlattenTagRegistrar
++ * @see PostFlattenTagRegistrar
++ */
++@ApiStatus.Experimental
++@NullMarked
++@ApiStatus.NonExtendable
++public interface TagEventTypeProvider {
++
++    /**
++     * Get a prioritizable, reloadable registrar event for tags before they are flattened.
++     *
++     * @param registryKey the registry key for the tag type
++     * @return the registry event type
++     * @param <T> the type of value in the tag
++     * @see PreFlattenTagRegistrar
++     */
++    <T> LifecycleEventType.Prioritizable<BootstrapContext, ReloadableRegistrarEvent<PreFlattenTagRegistrar<T>>> preFlatten(RegistryKey<T> registryKey);
++
++    /**
++     * Get a prioritizable, reloadable registrar event for tags after they are flattened.
++     *
++     * @param registryKey the registry key for the tag type
++     * @return the registry event type
++     * @param <T> the type of value in the tag
++     * @see PostFlattenTagRegistrar
++     */
++    <T> LifecycleEventType.Prioritizable<BootstrapContext, ReloadableRegistrarEvent<PostFlattenTagRegistrar<T>>> postFlatten(RegistryKey<T> registryKey);
++}
+diff --git a/src/main/java/io/papermc/paper/tag/PostFlattenTagRegistrar.java b/src/main/java/io/papermc/paper/tag/PostFlattenTagRegistrar.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..22db9446ca12e7c8e6381e322649ef574d877359
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/tag/PostFlattenTagRegistrar.java
+@@ -0,0 +1,104 @@
++package io.papermc.paper.tag;
++
++import io.papermc.paper.plugin.lifecycle.event.registrar.Registrar;
++import io.papermc.paper.registry.RegistryKey;
++import io.papermc.paper.registry.TypedKey;
++import io.papermc.paper.registry.tag.TagKey;
++import java.util.Collection;
++import java.util.Map;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.Unmodifiable;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Registrar for tags after they have been flattened. Flattened
++ * tags are tags which have any nested tags resolved to the tagged
++ * values the nested tags point to. This registrar, being a post-flatten
++ * registrar, allows for modification after that flattening has happened, when
++ * tags only point to individual entries and not other nested tags.
++ * <p>
++ * An example of a custom enchant being registered to the vanilla
++ * {@code #minecraft:in_enchanting_table} tag.
++ * <pre>{@code
++ * class YourBootstrapClass implements PluginBootstrap {
++ *
++ *     @Override
++ *     public void bootstrap(BootstrapContext context) {
++ *         LifecycleEventManager<BootstrapContext> manager = context.getLifecycleManager();
++ *         manager.registerEventHandler(LifecycleEvents.TAGS.postFlatten(RegistryKey.ENCHANTMENT), event -> {
++ *             final PostFlattenTagRegistrar<Enchantment> registrar = event.registrar();
++ *             registrar.addToTag(
++ *                 EnchantmentTagKeys.IN_ENCHANTING_TABLE,
++ *                 Set.of(CUSTOM_ENCHANT)
++ *             );
++ *         });
++ *     }
++ * }
++ * }</pre>
++ *
++ * @param <T> the type of value in the tag
++ * @see PreFlattenTagRegistrar
++ */
++@ApiStatus.Experimental
++@NullMarked
++@ApiStatus.NonExtendable
++public interface PostFlattenTagRegistrar<T> extends Registrar {
++
++    /**
++     * Get the registry key for this tag registrar.
++     *
++     * @return the registry key
++     */
++    RegistryKey<T> registryKey();
++
++    /**
++     * Get a copy of all tags currently held in this registrar.
++     *
++     * @return an immutable map of all tags
++     */
++    @Contract(value = "-> new", pure = true)
++    @Unmodifiable Map<TagKey<T>, Collection<TypedKey<T>>> getAllTags();
++
++    /**
++     * Checks if this registrar has a tag with the given key.
++     *
++     * @param tagKey the key to check for
++     * @return true if the tag exists, false otherwise
++     */
++    @Contract(pure = true)
++    boolean hasTag(TagKey<T> tagKey);
++
++    /**
++     * Get the tag with the given key. Use {@link #hasTag(TagKey)} to check
++     * if a tag exists first.
++     *
++     * @param tagKey the key of the tag to get
++     * @return an immutable list of tag entries
++     * @throws java.util.NoSuchElementException if the tag does not exist
++     * @see #hasTag(TagKey)
++     */
++    @Contract(value = "_ -> new", pure = true)
++    @Unmodifiable Collection<TypedKey<T>> getTag(TagKey<T> tagKey);
++
++    /**
++     * Adds values to the given tag. If the tag does not exist, it will be created.
++     *
++     * @param tagKey the key of the tag to add to
++     * @param values the values to add
++     * @see #setTag(TagKey, Collection)
++     */
++    @Contract(mutates = "this")
++    void addToTag(TagKey<T> tagKey, Collection<TypedKey<T>> values);
++
++    /**
++     * Sets the values of the given tag. If the tag does not exist, it will be created.
++     * If the tag does exist, it will be overwritten.
++     *
++     * @param tagKey the key of the tag to set
++     * @param values the values to set
++     * @see #addToTag(TagKey, Collection)
++     */
++    @Contract(mutates = "this")
++    void setTag(TagKey<T> tagKey, Collection<TypedKey<T>> values);
++}
+diff --git a/src/main/java/io/papermc/paper/tag/PreFlattenTagRegistrar.java b/src/main/java/io/papermc/paper/tag/PreFlattenTagRegistrar.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8d8a00e4d965bf2e76b1924f5dc8973c6469e3a1
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/tag/PreFlattenTagRegistrar.java
+@@ -0,0 +1,103 @@
++package io.papermc.paper.tag;
++
++import io.papermc.paper.plugin.lifecycle.event.registrar.Registrar;
++import io.papermc.paper.registry.RegistryKey;
++import io.papermc.paper.registry.tag.TagKey;
++import java.util.Collection;
++import java.util.List;
++import java.util.Map;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.Unmodifiable;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Registrar for tags before they are flattened. Flattened
++ * tags are tags which have any nested tags resolved to the tagged
++ * values the nested tags point to. This registrar, being a pre-flatten
++ * registrar, allows for modification before that flattening has happened, when
++ * tags both point to individual entries and other nested tags.
++ * <p>
++ * An example of a tag being created in a pre-flatten registrar:
++ * <pre>{@code
++ * class YourBootstrapClass implements PluginBootstrap {
++ *
++ *     @Override
++ *     public void bootstrap(BootstrapContext context) {
++ *         LifecycleEventManager<BootstrapContext> manager = context.getLifecycleManager();
++ *         manager.registerEventHandler(LifecycleEvents.TAGS.preFlatten(RegistryKey.ITEM), event -> {
++ *             final PreFlattenTagRegistrar<ItemType> registrar = event.registrar();
++ *             registrar.setTag(AXE_PICKAXE, Set.of(
++ *                 TagEntry.tagEntry(ItemTypeTagKeys.PICKAXES),
++ *                 TagEntry.tagEntry(ItemTypeTagKeys.AXES)
++ *             ));
++ *         });
++ *     }
++ * }
++ * }</pre>
++ *
++ * @param <T> the type of value in the tag
++ * @see PostFlattenTagRegistrar
++ */
++@ApiStatus.Experimental
++@NullMarked
++@ApiStatus.NonExtendable
++public interface PreFlattenTagRegistrar<T> extends Registrar {
++
++    /**
++     * Get the registry key for this tag registrar.
++     *
++     * @return the registry key
++     */
++    RegistryKey<T> registryKey();
++
++    /**
++     * Get a copy of all tags currently held in this registrar.
++     *
++     * @return an immutable map of all tags
++     */
++    @Contract(value = "-> new", pure = true)
++    @Unmodifiable Map<TagKey<T>, Collection<TagEntry<T>>> getAllTags();
++
++    /**
++     * Checks if this registrar has a tag with the given key.
++     *
++     * @param tagKey the key to check for
++     * @return true if the tag exists, false otherwise
++     */
++    @Contract(pure = true)
++    boolean hasTag(TagKey<T> tagKey);
++
++    /**
++     * Get the tag with the given key. Use {@link #hasTag(TagKey)} to check
++     * if a tag exists first.
++     *
++     * @param tagKey the key of the tag to get
++     * @return an immutable list of tag entries
++     * @throws java.util.NoSuchElementException if the tag does not exist
++     * @see #hasTag(TagKey)
++     */
++    @Contract(value = "_ -> new", pure = true)
++    @Unmodifiable List<TagEntry<T>> getTag(TagKey<T> tagKey);
++
++    /**
++     * Adds entries to the given tag. If the tag does not exist, it will be created.
++     *
++     * @param tagKey the key of the tag to add to
++     * @param entries the entries to add
++     * @see #setTag(TagKey, Collection)
++     */
++    @Contract(mutates = "this")
++    void addToTag(TagKey<T> tagKey, Collection<TagEntry<T>> entries);
++
++    /**
++     * Sets the entries of the given tag. If the tag does not exist, it will be created.
++     * If the tag does exist, it will be overwritten.
++     *
++     * @param tagKey the key of the tag to set
++     * @param entries the entries to set
++     * @see #addToTag(TagKey, Collection)
++     */
++    @Contract(mutates = "this")
++    void setTag(TagKey<T> tagKey, Collection<TagEntry<T>> entries);
++}
+diff --git a/src/main/java/io/papermc/paper/tag/TagEntry.java b/src/main/java/io/papermc/paper/tag/TagEntry.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..efa52b387eb6ab476c3a785b46e7647a1da4a343
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/tag/TagEntry.java
+@@ -0,0 +1,90 @@
++package io.papermc.paper.tag;
++
++import io.papermc.paper.registry.TypedKey;
++import io.papermc.paper.registry.tag.TagKey;
++import net.kyori.adventure.key.Keyed;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * An entry is a pre-flattened tag. Represents
++ * either an individual registry entry or a whole tag.
++ *
++ * @param <T> the type of value in the tag
++ * @see PreFlattenTagRegistrar
++ */
++@ApiStatus.Experimental
++@NullMarked
++@ApiStatus.NonExtendable
++public interface TagEntry<T> extends Keyed {
++
++    /**
++     * Create required tag entry for a single value.
++     *
++     * @param entryKey the key of the entry
++     * @return a new tag entry for a value
++     * @param <T> the type of value
++     */
++    @Contract(value = "_ -> new", pure = true)
++    static <T> TagEntry<T> valueEntry(final TypedKey<T> entryKey) {
++        return valueEntry(entryKey, true);
++    }
++
++    /**
++     * Create tag entry for a single value.
++     *
++     * @param entryKey the key of the entry
++     * @param isRequired if this entry is required (see {@link #isRequired()})
++     * @return a new tag entry for a value
++     * @param <T> the type of value
++     */
++    @Contract(value = "_, _ -> new", pure = true)
++    static <T> TagEntry<T> valueEntry(final TypedKey<T> entryKey, final boolean isRequired) {
++        return new TagEntryImpl<>(entryKey.key(), false, isRequired);
++    }
++
++    /**
++     * Create a required tag entry for a nested tag.
++     *
++     * @param tagKey they key for the tag
++     * @return a new tag entry for a tag
++     * @param <T> the type of value
++     */
++    @Contract(value = "_ -> new", pure = true)
++    static <T> TagEntry<T> tagEntry(final TagKey<T> tagKey) {
++        return tagEntry(tagKey, true);
++    }
++
++    /**
++     * Create a tag entry for a nested tag.
++     *
++     * @param tagKey they key for the tag
++     * @param isRequired if this entry is required (see {@link #isRequired()})
++     * @return a new tag entry for a tag
++     * @param <T> the type of value
++     */
++    @Contract(value = "_, _ -> new", pure = true)
++    static <T> TagEntry<T> tagEntry(final TagKey<T> tagKey, final boolean isRequired) {
++        return new TagEntryImpl<>(tagKey.key(), true, isRequired);
++    }
++
++    /**
++     * Returns if this entry represents a tag.
++     *
++     * @return true if this entry is a tag, false if it is an individual entry
++     */
++    @Contract(pure = true)
++    boolean isTag();
++
++    /**
++     * Returns if this entry is required. If an entry is required,
++     * the value or tag must exist on the server in order for the tag
++     * to load correctly. A missing value will prevent the tag holding
++     * that missing value from being created.
++     *
++     * @return true if this entry is required, false if it is optional
++     */
++    @Contract(pure = true)
++    boolean isRequired();
++}
+diff --git a/src/main/java/io/papermc/paper/tag/TagEntryImpl.java b/src/main/java/io/papermc/paper/tag/TagEntryImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8d46a330ca47d9ca0ed2c35e696841f7a387f7cd
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/tag/TagEntryImpl.java
+@@ -0,0 +1,10 @@
++package io.papermc.paper.tag;
++
++import net.kyori.adventure.key.Key;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++@NullMarked
++@ApiStatus.Internal
++record TagEntryImpl<T>(Key key, boolean isTag, boolean isRequired) implements TagEntry<T> {
++}

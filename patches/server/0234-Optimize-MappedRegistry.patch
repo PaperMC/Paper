@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 26 Aug 2018 20:49:50 -0400
+Subject: [PATCH] Optimize MappedRegistry
+
+Use larger initial sizes to increase bucket capacity on the BiMap
+
+BiMap.get was seen to be using a good bit of CPU time.
+
+diff --git a/src/main/java/net/minecraft/core/MappedRegistry.java b/src/main/java/net/minecraft/core/MappedRegistry.java
+index ecfb5efd6256ab212c28fa5eaa7005d6c7f80125..71e04e5c1bc0722abf8ca2e0738bd60b6d7ae21c 100644
+--- a/src/main/java/net/minecraft/core/MappedRegistry.java
++++ b/src/main/java/net/minecraft/core/MappedRegistry.java
+@@ -33,11 +33,11 @@ import net.minecraft.util.RandomSource;
+ public class MappedRegistry<T> implements WritableRegistry<T> {
+     private final ResourceKey<? extends Registry<T>> key;
+     private final ObjectList<Holder.Reference<T>> byId = new ObjectArrayList<>(256);
+-    private final Reference2IntMap<T> toId = Util.make(new Reference2IntOpenHashMap<>(), map -> map.defaultReturnValue(-1));
+-    private final Map<ResourceLocation, Holder.Reference<T>> byLocation = new HashMap<>();
+-    private final Map<ResourceKey<T>, Holder.Reference<T>> byKey = new HashMap<>();
+-    private final Map<T, Holder.Reference<T>> byValue = new IdentityHashMap<>();
+-    private final Map<ResourceKey<T>, RegistrationInfo> registrationInfos = new IdentityHashMap<>();
++    private final Reference2IntMap<T> toId = Util.make(new Reference2IntOpenHashMap<>(2048), map -> map.defaultReturnValue(-1)); // Paper - Perf: Use bigger expected size to reduce collisions
++    private final Map<ResourceLocation, Holder.Reference<T>> byLocation = new HashMap<>(2048); // Paper - Perf: Use bigger expected size to reduce collisions
++    private final Map<ResourceKey<T>, Holder.Reference<T>> byKey = new HashMap<>(2048); // Paper - Perf: Use bigger expected size to reduce collisions
++    private final Map<T, Holder.Reference<T>> byValue = new IdentityHashMap<>(2048); // Paper - Perf: Use bigger expected size to reduce collisions
++    private final Map<ResourceKey<T>, RegistrationInfo> registrationInfos = new IdentityHashMap<>(2048); // Paper - Perf: Use bigger expected size to reduce collisions
+     private Lifecycle registryLifecycle;
+     private final Map<TagKey<T>, HolderSet.Named<T>> frozenTags = new IdentityHashMap<>();
+     MappedRegistry.TagSet<T> allTags = MappedRegistry.TagSet.unbound();

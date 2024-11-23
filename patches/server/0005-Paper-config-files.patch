@@ -15,17 +15,17 @@ public net.minecraft.server.dedicated.DedicatedServerProperties reload(Lnet/mine
 public net.minecraft.world.level.NaturalSpawner SPAWNING_CATEGORIES
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 844eff88c9ad95871900c2d8aa3136b3f2928bf9..3aca132fcbd7dce2b26ac17f8e365d5f22d61e8d 100644
+index dac5e12f59723cdbd0d42a153c57d71ce185d0e8..220d2696bf40d1657c87d049f563ccfffed2e8ad 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -12,6 +12,7 @@ dependencies {
-     implementation("org.apache.logging.log4j:log4j-iostreams:2.19.0") // Paper - remove exclusion
-     implementation("org.ow2.asm:asm:9.5")
-     implementation("org.ow2.asm:asm-commons:9.5") // Paper - ASM event executor generation
+@@ -22,6 +22,7 @@ dependencies {
+     implementation("jline:jline:2.12.1")
+     implementation("org.apache.logging.log4j:log4j-iostreams:2.22.1") // Paper - remove exclusion
+     implementation("org.ow2.asm:asm-commons:9.7.1")
 +    implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT") // Paper - config files
      implementation("commons-lang:commons-lang:2.6")
-     runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.1")
-     runtimeOnly("com.mysql:mysql-connector-j:8.1.0")
+     runtimeOnly("org.xerial:sqlite-jdbc:3.46.1.3")
+     runtimeOnly("com.mysql:mysql-connector-j:9.1.0")
 diff --git a/src/main/java/com/destroystokyo/paper/PaperConfig.java b/src/main/java/com/destroystokyo/paper/PaperConfig.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..ef41cf3a7d1e6f2bfe81e0fb865d2f969bbc77c1
@@ -121,18 +121,21 @@ index 0000000000000000000000000000000000000000..042478cf7ce150f1f1bc5cddd7fa40f8
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/Configurations.java b/src/main/java/io/papermc/paper/configuration/Configurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9ef6712c70fcd8912a79f3f61e351aac09572cf3
+index 0000000000000000000000000000000000000000..d9502ba028a96f9cc846f9ed428bd8066b857ca3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/Configurations.java
-@@ -0,0 +1,311 @@
+@@ -0,0 +1,360 @@
 +package io.papermc.paper.configuration;
 +
++import com.google.common.base.Preconditions;
 +import com.mojang.logging.LogUtils;
 +import io.leangen.geantyref.TypeToken;
 +import io.papermc.paper.configuration.constraint.Constraint;
 +import io.papermc.paper.configuration.constraint.Constraints;
++import net.minecraft.core.RegistryAccess;
 +import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.server.level.ServerLevel;
++import net.minecraft.world.level.GameRules;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.jetbrains.annotations.MustBeInvokedByOverriders;
 +import org.slf4j.Logger;
@@ -140,6 +143,7 @@ index 0000000000000000000000000000000000000000..9ef6712c70fcd8912a79f3f61e351aac
 +import org.spongepowered.configurate.ConfigurateException;
 +import org.spongepowered.configurate.ConfigurationNode;
 +import org.spongepowered.configurate.ConfigurationOptions;
++import org.spongepowered.configurate.NodePath;
 +import org.spongepowered.configurate.objectmapping.ObjectMapper;
 +import org.spongepowered.configurate.serialize.SerializationException;
 +import org.spongepowered.configurate.util.CheckedFunction;
@@ -160,7 +164,7 @@ index 0000000000000000000000000000000000000000..9ef6712c70fcd8912a79f3f61e351aac
 +
 +    private static final Logger LOGGER = LogUtils.getClassLogger();
 +    public static final String WORLD_DEFAULTS = "__world_defaults__";
-+    public static final ResourceLocation WORLD_DEFAULTS_KEY = new ResourceLocation("configurations", WORLD_DEFAULTS);
++    public static final ResourceLocation WORLD_DEFAULTS_KEY = ResourceLocation.fromNamespaceAndPath("configurations", WORLD_DEFAULTS);
 +    protected final Path globalFolder;
 +    protected final Class<G> globalConfigClass;
 +    protected final Class<W> worldConfigClass;
@@ -196,6 +200,10 @@ index 0000000000000000000000000000000000000000..9ef6712c70fcd8912a79f3f61e351aac
 +
 +    protected abstract boolean isConfigType(final Type type);
 +
++    protected abstract int globalConfigVersion();
++
++    protected abstract int worldConfigVersion();
++
 +    protected ObjectMapper.Factory.Builder createGlobalObjectMapperFactoryBuilder() {
 +        return this.createObjectMapper();
 +    }
@@ -205,9 +213,9 @@ index 0000000000000000000000000000000000000000..9ef6712c70fcd8912a79f3f61e351aac
 +        return this.createLoaderBuilder();
 +    }
 +
-+    static <T> CheckedFunction<ConfigurationNode, T, SerializationException> creator(Class<T> type, boolean refreshNode) {
++    static <T> CheckedFunction<ConfigurationNode, T, SerializationException> creator(final Class<? extends T> type, final boolean refreshNode) {
 +        return node -> {
-+            T instance = node.require(type);
++            final T instance = node.require(type);
 +            if (refreshNode) {
 +                node.set(type, instance);
 +            }
@@ -224,7 +232,7 @@ index 0000000000000000000000000000000000000000..9ef6712c70fcd8912a79f3f61e351aac
 +        };
 +    }
 +
-+    public G initializeGlobalConfiguration() throws ConfigurateException {
++    public G initializeGlobalConfiguration(final RegistryAccess registryAccess) throws ConfigurateException {
 +        return this.initializeGlobalConfiguration(creator(this.globalConfigClass, true));
 +    }
 +
@@ -245,10 +253,12 @@ index 0000000000000000000000000000000000000000..9ef6712c70fcd8912a79f3f61e351aac
 +            .path(configFile)
 +            .build();
 +        final ConfigurationNode node;
-+        if (Files.exists(configFile)) {
-+            node = loader.load();
-+        } else {
++        if (Files.notExists(configFile)) {
 +            node = CommentedConfigurationNode.root(loader.defaultOptions());
++            node.node(Configuration.VERSION_FIELD).raw(this.globalConfigVersion());
++        } else {
++            node = loader.load();
++            this.verifyGlobalConfigVersion(node);
 +        }
 +        this.applyGlobalConfigTransformations(node);
 +        final G instance = creator.apply(node);
@@ -256,18 +266,29 @@ index 0000000000000000000000000000000000000000..9ef6712c70fcd8912a79f3f61e351aac
 +        return instance;
 +    }
 +
++    protected void verifyGlobalConfigVersion(final ConfigurationNode globalNode) {
++        final ConfigurationNode version = globalNode.node(Configuration.VERSION_FIELD);
++        if (version.virtual()) {
++            LOGGER.warn("The global config file didn't have a version set, assuming latest");
++            version.raw(this.globalConfigVersion());
++        } else if (version.getInt() > this.globalConfigVersion()) {
++            LOGGER.error("Loading a newer configuration than is supported ({} > {})! You may have to backup & delete your global config file to start the server.", version.getInt(), this.globalConfigVersion());
++        }
++    }
++
 +    protected void applyGlobalConfigTransformations(final ConfigurationNode node) throws ConfigurateException {
 +    }
 +
 +    @MustBeInvokedByOverriders
-+    protected ContextMap.Builder createDefaultContextMap() {
++    protected ContextMap.Builder createDefaultContextMap(final RegistryAccess registryAccess) {
 +        return ContextMap.builder()
 +            .put(WORLD_NAME, WORLD_DEFAULTS)
-+            .put(WORLD_KEY, WORLD_DEFAULTS_KEY);
++            .put(WORLD_KEY, WORLD_DEFAULTS_KEY)
++            .put(REGISTRY_ACCESS, registryAccess);
 +    }
 +
-+    public void initializeWorldDefaultsConfiguration() throws ConfigurateException {
-+        final ContextMap contextMap = this.createDefaultContextMap()
++    public void initializeWorldDefaultsConfiguration(final RegistryAccess registryAccess) throws ConfigurateException {
++        final ContextMap contextMap = this.createDefaultContextMap(registryAccess)
 +            .put(FIRST_DEFAULT)
 +            .build();
 +        final Path configFile = this.globalFolder.resolve(this.defaultWorldConfigFileName);
@@ -275,12 +296,14 @@ index 0000000000000000000000000000000000000000..9ef6712c70fcd8912a79f3f61e351aac
 +        final YamlConfigurationLoader loader = result.loader();
 +        final ConfigurationNode node = loader.load();
 +        if (result.isNewFile()) { // add version to new files
-+            node.node(Configuration.VERSION_FIELD).raw(WorldConfiguration.CURRENT_VERSION);
++            node.node(Configuration.VERSION_FIELD).raw(this.worldConfigVersion());
++        } else {
++            this.verifyWorldConfigVersion(contextMap, node);
 +        }
-+        this.applyWorldConfigTransformations(contextMap, node);
++        this.applyWorldConfigTransformations(contextMap, node, null);
 +        final W instance = node.require(this.worldConfigClass);
 +        node.set(this.worldConfigClass, instance);
-+        trySaveFileNode(loader, node, configFile.toString());
++        this.trySaveFileNode(loader, node, configFile.toString());
 +    }
 +
 +    private DefaultWorldLoader createDefaultWorldLoader(final boolean requireFile, final ContextMap contextMap, final Path configFile) {
@@ -315,8 +338,9 @@ index 0000000000000000000000000000000000000000..9ef6712c70fcd8912a79f3f61e351aac
 +    }
 +
 +    protected W createWorldConfig(final ContextMap contextMap, final CheckedFunction<ConfigurationNode, W, SerializationException> creator) throws IOException {
++        Preconditions.checkArgument(!contextMap.isDefaultWorldContext(), "cannot create world map with default world context");
 +        final Path defaultsConfigFile = this.globalFolder.resolve(this.defaultWorldConfigFileName);
-+        final YamlConfigurationLoader defaultsLoader = this.createDefaultWorldLoader(true, this.createDefaultContextMap().build(), defaultsConfigFile).loader();
++        final YamlConfigurationLoader defaultsLoader = this.createDefaultWorldLoader(true, this.createDefaultContextMap(contextMap.require(REGISTRY_ACCESS)).build(), defaultsConfigFile).loader();
 +        final ConfigurationNode defaultsNode = defaultsLoader.load();
 +
 +        boolean newFile = false;
@@ -334,16 +358,39 @@ index 0000000000000000000000000000000000000000..9ef6712c70fcd8912a79f3f61e351aac
 +            .build();
 +        final ConfigurationNode worldNode = worldLoader.load();
 +        if (newFile) { // set the version field if new file
-+            worldNode.node(Configuration.VERSION_FIELD).set(WorldConfiguration.CURRENT_VERSION);
++            worldNode.node(Configuration.VERSION_FIELD).set(this.worldConfigVersion());
++        } else {
++            this.verifyWorldConfigVersion(contextMap, worldNode);
 +        }
-+        this.applyWorldConfigTransformations(contextMap, worldNode);
++        this.applyWorldConfigTransformations(contextMap, worldNode, defaultsNode);
 +        this.applyDefaultsAwareWorldConfigTransformations(contextMap, worldNode, defaultsNode);
-+        trySaveFileNode(worldLoader, worldNode, worldConfigFile.toString()); // save before loading node NOTE: don't save the backing node after loading it, or you'll fill up the world-specific config
++        this.trySaveFileNode(worldLoader, worldNode, worldConfigFile.toString()); // save before loading node NOTE: don't save the backing node after loading it, or you'll fill up the world-specific config
 +        worldNode.mergeFrom(defaultsNode);
 +        return creator.apply(worldNode);
 +    }
 +
-+    protected void applyWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode node) throws ConfigurateException {
++    protected void verifyWorldConfigVersion(final ContextMap contextMap, final ConfigurationNode worldNode) {
++        final ConfigurationNode version = worldNode.node(Configuration.VERSION_FIELD);
++        final String worldName = contextMap.require(WORLD_NAME);
++        if (version.virtual()) {
++            if (worldName.equals(WORLD_DEFAULTS)) {
++                LOGGER.warn("The world defaults config file didn't have a version set, assuming latest");
++            } else {
++                LOGGER.warn("The world config file for " + worldName + " didn't have a version set, assuming latest");
++            }
++            version.raw(this.worldConfigVersion());
++        } else if (version.getInt() > this.worldConfigVersion()) {
++            String msg = "Loading a newer configuration than is supported ({} > {})! ";
++            if (worldName.equals(WORLD_DEFAULTS)) {
++                msg += "You may have to backup & delete the world defaults config file to start the server.";
++            } else {
++                msg += "You may have to backup & delete the " + worldName + " config file to start the server.";
++            }
++            LOGGER.error(msg, version.getInt(), this.worldConfigVersion());
++        }
++    }
++
++    protected void applyWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode node, final @Nullable ConfigurationNode defaultsNode) throws ConfigurateException {
 +    }
 +
 +    protected void applyDefaultsAwareWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode worldNode, final ConfigurationNode defaultsNode) throws ConfigurateException {
@@ -423,6 +470,8 @@ index 0000000000000000000000000000000000000000..9ef6712c70fcd8912a79f3f61e351aac
 +    public static final ContextKey<String> WORLD_NAME = new ContextKey<>(String.class, "world name"); // TODO remove when we deprecate level names
 +    public static final ContextKey<ResourceLocation> WORLD_KEY = new ContextKey<>(ResourceLocation.class, "world key");
 +    public static final ContextKey<Void> FIRST_DEFAULT = new ContextKey<>(Void.class, "first default");
++    public static final ContextKey<RegistryAccess> REGISTRY_ACCESS = new ContextKey<>(RegistryAccess.class, "registry access");
++    public static final ContextKey<GameRules> GAME_RULES = new ContextKey<>(GameRules.class, "game rules");
 +
 +    public record ContextKey<T>(TypeToken<T> type, String name) {
 +
@@ -438,15 +487,15 @@ index 0000000000000000000000000000000000000000..9ef6712c70fcd8912a79f3f61e351aac
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..73a34b4e378e6012a01c8ac8b092248298be6648
+index 0000000000000000000000000000000000000000..f0d470d7770e119f734b9e72021c806d0ea8ecbd
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-@@ -0,0 +1,309 @@
+@@ -0,0 +1,330 @@
 +package io.papermc.paper.configuration;
 +
-+import co.aikar.timings.MinecraftTimings;
 +import com.mojang.logging.LogUtils;
 +import io.papermc.paper.configuration.constraint.Constraints;
++import io.papermc.paper.configuration.type.number.DoubleOr;
 +import io.papermc.paper.configuration.type.number.IntOr;
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.format.NamedTextColor;
@@ -460,9 +509,9 @@ index 0000000000000000000000000000000000000000..73a34b4e378e6012a01c8ac8b0922482
 +import org.spongepowered.configurate.objectmapping.meta.Required;
 +import org.spongepowered.configurate.objectmapping.meta.Setting;
 +
-+import java.util.List;
 +import java.util.Map;
 +import java.util.Objects;
++import java.util.OptionalInt;
 +
 +@SuppressWarnings({"CanBeFinal", "FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
 +public class GlobalConfiguration extends ConfigurationPart {
@@ -471,6 +520,45 @@ index 0000000000000000000000000000000000000000..73a34b4e378e6012a01c8ac8b0922482
 +    private static GlobalConfiguration instance;
 +    public static GlobalConfiguration get() {
 +        return instance;
++    }
++
++    public ChunkLoadingBasic chunkLoadingBasic;
++
++    public class ChunkLoadingBasic extends ConfigurationPart {
++        @Comment("The maximum rate in chunks per second that the server will send to any individual player. Set to -1 to disable this limit.")
++        public double playerMaxChunkSendRate = 75.0;
++
++        @Comment(
++            "The maximum rate at which chunks will load for any individual player. " +
++            "Note that this setting also affects chunk generations, since a chunk load is always first issued to test if a" +
++            "chunk is already generated. Set to -1 to disable this limit."
++        )
++        public double playerMaxChunkLoadRate = 100.0;
++
++        @Comment("The maximum rate at which chunks will generate for any individual player. Set to -1 to disable this limit.")
++        public double playerMaxChunkGenerateRate = -1.0;
++    }
++
++    public ChunkLoadingAdvanced chunkLoadingAdvanced;
++
++    public class ChunkLoadingAdvanced extends ConfigurationPart {
++        @Comment(
++            "Set to true if the server will match the chunk send radius that clients have configured" +
++            "in their view distance settings if the client is less-than the server's send distance."
++        )
++        public boolean autoConfigSendDistance = true;
++
++        @Comment(
++            "Specifies the maximum amount of concurrent chunk loads that an individual player can have." +
++            "Set to 0 to let the server configure it automatically per player, or set it to -1 to disable the limit."
++        )
++        public int playerMaxConcurrentChunkLoads = 0;
++
++        @Comment(
++            "Specifies the maximum amount of concurrent chunk generations that an individual player can have." +
++            "Set to 0 to let the server configure it automatically per player, or set it to -1 to disable the limit."
++        )
++        public int playerMaxConcurrentChunkGenerates = 0;
 +    }
 +    static void set(GlobalConfiguration instance) {
 +        GlobalConfiguration.instance = instance;
@@ -495,27 +583,11 @@ index 0000000000000000000000000000000000000000..73a34b4e378e6012a01c8ac8b0922482
 +        public boolean useDisplayNameInQuitMessage = false;
 +    }
 +
-+    @Deprecated(forRemoval = true)
-+    public Timings timings;
++    public Spark spark;
 +
-+    @Deprecated(forRemoval = true)
-+    public class Timings extends ConfigurationPart {
++    public class Spark extends ConfigurationPart {
 +        public boolean enabled = true;
-+        public boolean verbose = true;
-+        public String url = "https://timings.aikar.co/";
-+        public boolean serverNamePrivacy = false;
-+        public List<String> hiddenConfigEntries = List.of(
-+            "database",
-+            "proxies.velocity.secret"
-+        );
-+        public int historyInterval = 300;
-+        public int historyLength = 3600;
-+        public String serverName = "Unknown Server";
-+
-+        @PostProcess
-+        private void postProcess() {
-+            MinecraftTimings.processConfig(this);
-+        }
++        public boolean enableImmediately = false;
 +    }
 +
 +    public Proxies proxies;
@@ -531,12 +603,19 @@ index 0000000000000000000000000000000000000000..73a34b4e378e6012a01c8ac8b0922482
 +
 +        public class Velocity extends ConfigurationPart {
 +            public boolean enabled = false;
-+            public boolean onlineMode = false;
++            public boolean onlineMode = true;
 +            public String secret = "";
 +
 +            @PostProcess
 +            private void postProcess() {
-+                if (this.enabled && this.secret.isEmpty()) {
++                if (!this.enabled) return;
++
++                final String environmentSourcedVelocitySecret = System.getenv("PAPER_VELOCITY_SECRET");
++                if (environmentSourcedVelocitySecret != null && !environmentSourcedVelocitySecret.isEmpty()) {
++                    this.secret = environmentSourcedVelocitySecret;
++                }
++
++                if (this.secret.isEmpty()) {
 +                    LOGGER.error("Velocity is enabled, but no secret key was specified. A secret key is required. Disabling velocity...");
 +                    this.enabled = false;
 +                }
@@ -573,24 +652,13 @@ index 0000000000000000000000000000000000000000..73a34b4e378e6012a01c8ac8b0922482
 +        public int incomingPacketThreshold = 300;
 +    }
 +
-+    public ChunkLoading chunkLoading;
-+
-+    public class ChunkLoading extends ConfigurationPart {
-+        public int minLoadRadius = 2;
-+        public int maxConcurrentSends = 2;
-+        public boolean autoconfigSendDistance = true;
-+        public double targetPlayerChunkSendRate = 100.0;
-+        public double globalMaxChunkSendRate = -1.0;
-+        public boolean enableFrustumPriority = false;
-+        public double globalMaxChunkLoadRate = -1.0;
-+        public double playerMaxConcurrentLoads = 20.0;
-+        public double globalMaxConcurrentLoads = 500.0;
-+        public double playerMaxChunkLoadRate = -1.0;
-+    }
-+
 +    public UnsupportedSettings unsupportedSettings;
 +
 +    public class UnsupportedSettings extends ConfigurationPart {
++        @Comment("This setting controls if the broken behavior of disarmed tripwires not breaking should be allowed. This also allows for dupes")
++        public boolean allowTripwireDisarmingExploits = false;
++        @Comment("This setting allows for exploits related to end portals, for example sand duping")
++        public boolean allowUnsafeEndPortalTeleportation = false;
 +        @Comment("This setting controls if players should be able to break bedrock, end portals and other intended to be permanent blocks.")
 +        public boolean allowPermanentBlockBreakExploits = false;
 +        @Comment("This setting controls if player should be able to use TNT duplication, but this also allows duplicating carpet, rails and potentially other items")
@@ -598,8 +666,8 @@ index 0000000000000000000000000000000000000000..73a34b4e378e6012a01c8ac8b0922482
 +        public boolean performUsernameValidation = true;
 +        @Comment("This setting controls if players should be able to create headless pistons.")
 +        public boolean allowHeadlessPistons = false;
-+        @Comment("This setting controls if grindstones should be able to output overstacked items (such as cursed books).")
-+        public boolean allowGrindstoneOverstacking = false;
++        @Comment("This setting controls if the vanilla damage tick should be skipped if damage was blocked via a shield.")
++        public boolean skipVanillaDamageTickWhenShieldBlocked = false;
 +        @Comment("This setting controls what compression format is used for region files.")
 +        public CompressionFormat compressionFormat = CompressionFormat.ZLIB;
 +
@@ -628,7 +696,7 @@ index 0000000000000000000000000000000000000000..73a34b4e378e6012a01c8ac8b0922482
 +
 +    public class Scoreboards extends ConfigurationPart {
 +        public boolean trackPluginScoreboards = false;
-+        public boolean saveEmptyScoreboardTeams = false;
++        public boolean saveEmptyScoreboardTeams = true;
 +    }
 +
 +    @SuppressWarnings("unused") // used in postProcess
@@ -642,7 +710,7 @@ index 0000000000000000000000000000000000000000..73a34b4e378e6012a01c8ac8b0922482
 +
 +        @PostProcess
 +        private void postProcess() {
-+            io.papermc.paper.chunk.system.scheduling.ChunkTaskScheduler.init(this);
++
 +        }
 +    }
 +
@@ -662,7 +730,7 @@ index 0000000000000000000000000000000000000000..73a34b4e378e6012a01c8ac8b0922482
 +        public BookSize bookSize;
 +
 +        public class BookSize extends ConfigurationPart {
-+            public int pageMax = 2560; // TODO this appears to be a duplicate setting with one above
++            public IntOr.Disabled pageMax = new IntOr.Disabled(OptionalInt.of(2560)); // TODO this appears to be a duplicate setting with one above
 +            public double totalMultiplier = 0.98D; // TODO this should probably be merged into the above inner class
 +        }
 +        public boolean resolveSelectorsInBooks = false;
@@ -740,6 +808,8 @@ index 0000000000000000000000000000000000000000..73a34b4e378e6012a01c8ac8b0922482
 +        public boolean useDimensionTypeForCustomSpawners = false;
 +        public boolean strictAdvancementDimensionCheck = false;
 +        public IntOr.Default compressionLevel = IntOr.Default.USE_DEFAULT;
++        @Comment("Defines the leniency distance added on the server to the interaction range of a player when validating interact packets.")
++        public DoubleOr.Default clientInteractionLeniencyDistance = DoubleOr.Default.USE_DEFAULT;
 +    }
 +
 +    public BlockUpdates blockUpdates;
@@ -791,10 +861,10 @@ index 0000000000000000000000000000000000000000..69add4a7f1147015806bc9b63a8340d1
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9e8b8de907654050c51400286af971caca87d6bd
+index 0000000000000000000000000000000000000000..1029b6de6f36b08bf634b4056ef5701383f6f258
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
-@@ -0,0 +1,457 @@
+@@ -0,0 +1,467 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.base.Suppliers;
@@ -820,13 +890,15 @@ index 0000000000000000000000000000000000000000..9e8b8de907654050c51400286af971ca
 +import io.papermc.paper.configuration.transformation.world.LegacyPaperWorldConfig;
 +import io.papermc.paper.configuration.transformation.world.versioned.V29_ZeroWorldHeight;
 +import io.papermc.paper.configuration.transformation.world.versioned.V30_RenameFilterNbtFromSpawnEgg;
++import io.papermc.paper.configuration.transformation.world.versioned.V31_SpawnLoadedRangeToGameRule;
 +import io.papermc.paper.configuration.type.BooleanOrDefault;
++import io.papermc.paper.configuration.type.DespawnRange;
 +import io.papermc.paper.configuration.type.Duration;
 +import io.papermc.paper.configuration.type.DurationOrDisabled;
 +import io.papermc.paper.configuration.type.EngineMode;
++import io.papermc.paper.configuration.type.fallback.FallbackValueSerializer;
 +import io.papermc.paper.configuration.type.number.DoubleOr;
 +import io.papermc.paper.configuration.type.number.IntOr;
-+import io.papermc.paper.configuration.type.fallback.FallbackValueSerializer;
 +import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 +import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 +import it.unimi.dsi.fastutil.objects.Reference2LongMap;
@@ -840,16 +912,20 @@ index 0000000000000000000000000000000000000000..9e8b8de907654050c51400286af971ca
 +import java.util.List;
 +import java.util.function.Function;
 +import java.util.function.Supplier;
++import net.minecraft.core.RegistryAccess;
 +import net.minecraft.core.registries.Registries;
 +import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.world.entity.EntityType;
 +import net.minecraft.world.item.Item;
++import net.minecraft.world.level.GameRules;
++import net.minecraft.world.level.block.Block;
 +import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 +import org.apache.commons.lang3.RandomStringUtils;
 +import org.bukkit.configuration.ConfigurationSection;
 +import org.bukkit.configuration.file.YamlConfiguration;
++import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.jetbrains.annotations.VisibleForTesting;
 +import org.slf4j.Logger;
 +import org.spigotmc.SpigotConfig;
@@ -941,6 +1017,16 @@ index 0000000000000000000000000000000000000000..9e8b8de907654050c51400286af971ca
 +    }
 +
 +    @Override
++    protected int globalConfigVersion() {
++        return GlobalConfiguration.CURRENT_VERSION;
++    }
++
++    @Override
++    protected int worldConfigVersion() {
++        return WorldConfiguration.CURRENT_VERSION;
++    }
++
++    @Override
 +    protected YamlConfigurationLoader.Builder createLoaderBuilder() {
 +        return super.createLoaderBuilder()
 +            .defaultOptions(PaperConfigurations::defaultOptions);
@@ -951,6 +1037,14 @@ index 0000000000000000000000000000000000000000..9e8b8de907654050c51400286af971ca
 +            .register(MapSerializer.TYPE, new MapSerializer(false))
 +            .register(new EnumValueSerializer())
 +            .register(new ComponentSerializer())
++            .register(IntOr.Default.SERIALIZER)
++            .register(IntOr.Disabled.SERIALIZER)
++            .register(DoubleOr.Default.SERIALIZER)
++            .register(DoubleOr.Disabled.SERIALIZER)
++            .register(BooleanOrDefault.SERIALIZER)
++            .register(Duration.SERIALIZER)
++            .register(DurationOrDisabled.SERIALIZER)
++            .register(NbtPathSerializer.SERIALIZER)
 +        );
 +    }
 +
@@ -974,20 +1068,19 @@ index 0000000000000000000000000000000000000000..9e8b8de907654050c51400286af971ca
 +            .header(GLOBAL_HEADER)
 +            .serializers(builder -> builder
 +                .register(new PacketClassSerializer())
-+                .register(IntOr.Default.SERIALIZER)
 +            );
 +    }
 +
 +    @Override
-+    public GlobalConfiguration initializeGlobalConfiguration() throws ConfigurateException {
-+        GlobalConfiguration configuration = super.initializeGlobalConfiguration();
++    public GlobalConfiguration initializeGlobalConfiguration(final RegistryAccess registryAccess) throws ConfigurateException {
++        GlobalConfiguration configuration = super.initializeGlobalConfiguration(registryAccess);
 +        GlobalConfiguration.set(configuration);
 +        return configuration;
 +    }
 +
 +    @Override
-+    protected ContextMap.Builder createDefaultContextMap() {
-+        return super.createDefaultContextMap()
++    protected ContextMap.Builder createDefaultContextMap(final RegistryAccess registryAccess) {
++        return super.createDefaultContextMap(registryAccess)
 +            .put(SPIGOT_WORLD_CONFIG_CONTEXT_KEY, SPIGOT_WORLD_DEFAULTS);
 +    }
 +
@@ -1008,6 +1101,7 @@ index 0000000000000000000000000000000000000000..9e8b8de907654050c51400286af971ca
 +
 +    @Override
 +    protected YamlConfigurationLoader.Builder createWorldConfigLoaderBuilder(final ContextMap contextMap) {
++        final RegistryAccess access = contextMap.require(REGISTRY_ACCESS);
 +        return super.createWorldConfigLoaderBuilder(contextMap)
 +            .defaultOptions(options -> options
 +                .header(contextMap.require(WORLD_NAME).equals(WORLD_DEFAULTS) ? WORLD_DEFAULTS_HEADER : WORLD_HEADER.apply(contextMap))
@@ -1015,34 +1109,22 @@ index 0000000000000000000000000000000000000000..9e8b8de907654050c51400286af971ca
 +                    .register(new TypeToken<Reference2IntMap<?>>() {}, new FastutilMapSerializer.SomethingToPrimitive<Reference2IntMap<?>>(Reference2IntOpenHashMap::new, Integer.TYPE))
 +                    .register(new TypeToken<Reference2LongMap<?>>() {}, new FastutilMapSerializer.SomethingToPrimitive<Reference2LongMap<?>>(Reference2LongOpenHashMap::new, Long.TYPE))
 +                    .register(new TypeToken<Table<?, ?, ?>>() {}, new TableSerializer())
++                    .register(DespawnRange.class, DespawnRange.SERIALIZER)
 +                    .register(StringRepresentableSerializer::isValidFor, new StringRepresentableSerializer())
-+                    .register(IntOr.Default.SERIALIZER)
-+                    .register(IntOr.Disabled.SERIALIZER)
-+                    .register(DoubleOr.Default.SERIALIZER)
-+                    .register(BooleanOrDefault.SERIALIZER)
-+                    .register(Duration.SERIALIZER)
-+                    .register(DurationOrDisabled.SERIALIZER)
 +                    .register(EngineMode.SERIALIZER)
-+                    .register(NbtPathSerializer.SERIALIZER)
 +                    .register(FallbackValueSerializer.create(contextMap.require(SPIGOT_WORLD_CONFIG_CONTEXT_KEY).get(), MinecraftServer::getServer))
-+                    .register(new RegistryValueSerializer<>(new TypeToken<EntityType<?>>() {}, Registries.ENTITY_TYPE, true))
-+                    .register(new RegistryValueSerializer<>(Item.class, Registries.ITEM, true))
-+                    .register(new RegistryHolderSerializer<>(new TypeToken<ConfiguredFeature<?, ?>>() {}, Registries.CONFIGURED_FEATURE, false))
-+                    .register(new RegistryHolderSerializer<>(Item.class, Registries.ITEM, true))
++                    .register(new RegistryValueSerializer<>(new TypeToken<EntityType<?>>() {}, access, Registries.ENTITY_TYPE, true))
++                    .register(new RegistryValueSerializer<>(Item.class, access, Registries.ITEM, true))
++                    .register(new RegistryValueSerializer<>(Block.class, access, Registries.BLOCK, true))
++                    .register(new RegistryHolderSerializer<>(new TypeToken<ConfiguredFeature<?, ?>>() {}, access, Registries.CONFIGURED_FEATURE, false))
 +                )
 +            );
 +    }
 +
 +    @Override
-+    protected void applyWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode node) throws ConfigurateException {
-+        final ConfigurationNode version = node.node(Configuration.VERSION_FIELD);
-+        final String world = contextMap.require(WORLD_NAME);
-+        if (version.virtual()) {
-+            LOGGER.warn("The world config file for " + world + " didn't have a version set, assuming latest");
-+            version.raw(WorldConfiguration.CURRENT_VERSION);
-+        }
-+        ConfigurationTransformation.Builder builder = ConfigurationTransformation.builder();
-+        for (NodePath path : RemovedConfigurations.REMOVED_WORLD_PATHS) {
++    protected void applyWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode node, final @Nullable ConfigurationNode defaultsNode) throws ConfigurateException {
++        final ConfigurationTransformation.Builder builder = ConfigurationTransformation.builder();
++        for (final NodePath path : RemovedConfigurations.REMOVED_WORLD_PATHS) {
 +            builder.addAction(path, TransformAction.remove());
 +        }
 +        builder.build().apply(node);
@@ -1050,6 +1132,7 @@ index 0000000000000000000000000000000000000000..9e8b8de907654050c51400286af971ca
 +        final ConfigurationTransformation.VersionedBuilder versionedBuilder = Transformations.versionedBuilder();
 +        V29_ZeroWorldHeight.apply(versionedBuilder);
 +        V30_RenameFilterNbtFromSpawnEgg.apply(versionedBuilder);
++        V31_SpawnLoadedRangeToGameRule.apply(versionedBuilder, contextMap, defaultsNode);
 +        // ADD FUTURE VERSIONED TRANSFORMS TO versionedBuilder HERE
 +        versionedBuilder.build().apply(node);
 +    }
@@ -1068,21 +1151,16 @@ index 0000000000000000000000000000000000000000..9e8b8de907654050c51400286af971ca
 +        versionedBuilder.build().apply(node);
 +    }
 +
-+    private static final List<Transformations.DefaultsAware> DEFAULT_AWARE_TRANSFORMATIONS = List.of(FeatureSeedsGeneration::apply);
++    private static final List<Transformations.DefaultsAware> DEFAULT_AWARE_TRANSFORMATIONS = List.of(
++        FeatureSeedsGeneration::apply
++    );
 +
 +    @Override
 +    protected void applyDefaultsAwareWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode worldNode, final ConfigurationNode defaultsNode) throws ConfigurateException {
 +        final ConfigurationTransformation.Builder builder = ConfigurationTransformation.builder();
 +        // ADD FUTURE TRANSFORMS HERE (these transforms run after the defaults have been merged into the node)
 +        DEFAULT_AWARE_TRANSFORMATIONS.forEach(transform -> transform.apply(builder, contextMap, defaultsNode));
-+
-+        ConfigurationTransformation transformation;
-+        try {
-+            transformation = builder.build(); // build throws IAE if no actions were provided (bad zml)
-+        } catch (IllegalArgumentException ignored) {
-+            return;
-+        }
-+        transformation.apply(worldNode);
++        builder.build().apply(worldNode);
 +    }
 +
 +    @Override
@@ -1103,7 +1181,7 @@ index 0000000000000000000000000000000000000000..9e8b8de907654050c51400286af971ca
 +    public void reloadConfigs(MinecraftServer server) {
 +        try {
 +            this.initializeGlobalConfiguration(reloader(this.globalConfigClass, GlobalConfiguration.get()));
-+            this.initializeWorldDefaultsConfiguration();
++            this.initializeWorldDefaultsConfiguration(server.registryAccess());
 +            for (ServerLevel level : server.getAllLevels()) {
 +                this.createWorldConfig(createWorldContextMap(level), reloader(this.worldConfigClass, level.paperConfig()));
 +            }
@@ -1113,15 +1191,17 @@ index 0000000000000000000000000000000000000000..9e8b8de907654050c51400286af971ca
 +    }
 +
 +    private static ContextMap createWorldContextMap(ServerLevel level) {
-+        return createWorldContextMap(level.convertable.levelDirectory.path(), level.serverLevelData.getLevelName(), level.dimension().location(), level.spigotConfig);
++        return createWorldContextMap(level.convertable.levelDirectory.path(), level.serverLevelData.getLevelName(), level.dimension().location(), level.spigotConfig, level.registryAccess(), level.getGameRules());
 +    }
 +
-+    public static ContextMap createWorldContextMap(Path dir, String levelName, ResourceLocation worldKey, SpigotWorldConfig spigotConfig) {
++    public static ContextMap createWorldContextMap(final Path dir, final String levelName, final ResourceLocation worldKey, final SpigotWorldConfig spigotConfig, final RegistryAccess registryAccess, final GameRules gameRules) {
 +        return ContextMap.builder()
 +            .put(WORLD_DIRECTORY, dir)
 +            .put(WORLD_NAME, levelName)
 +            .put(WORLD_KEY, worldKey)
 +            .put(SPIGOT_WORLD_CONFIG_CONTEXT_KEY, Suppliers.ofInstance(spigotConfig))
++            .put(REGISTRY_ACCESS, registryAccess)
++            .put(GAME_RULES, gameRules)
 +            .build();
 +    }
 +
@@ -1254,10 +1334,10 @@ index 0000000000000000000000000000000000000000..9e8b8de907654050c51400286af971ca
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/RemovedConfigurations.java b/src/main/java/io/papermc/paper/configuration/RemovedConfigurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..351fbbc577556ebbd62222615801a96b7c115822
+index 0000000000000000000000000000000000000000..279b24c689b9979884b65df7eb1f059024f0feac
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/RemovedConfigurations.java
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,83 @@
 +package io.papermc.paper.configuration;
 +
 +import org.spongepowered.configurate.NodePath;
@@ -1311,8 +1391,12 @@ index 0000000000000000000000000000000000000000..351fbbc577556ebbd62222615801a96b
 +        path("tnt-explosion-volume"),
 +        path("entities", "spawning", "despawn-ranges", "soft"),
 +        path("entities", "spawning", "despawn-ranges", "hard"),
-+        path("fixes", "fix-curing-zombie-villager-discount-exploit")
++        path("fixes", "fix-curing-zombie-villager-discount-exploit"),
++        path("entities", "mob-effects", "undead-immune-to-certain-effects"),
++        path("entities", "entities-target-with-follow-range")
 +    };
++    // spawn.keep-spawn-loaded and spawn.keep-spawn-loaded-range are no longer used, but kept
++    // in the world default config for compatibility with old worlds being migrated to use the gamerule
 +
 +    NodePath[] REMOVED_GLOBAL_PATHS = {
 +        path("data-value-allowed-items"),
@@ -1332,16 +1416,17 @@ index 0000000000000000000000000000000000000000..351fbbc577556ebbd62222615801a96b
 +        path("baby-zombie-movement-speed"),
 +        path("limit-player-interactions"),
 +        path("warnWhenSettingExcessiveVelocity"),
-+        path("logging", "use-rgb-for-named-text-colors")
++        path("logging", "use-rgb-for-named-text-colors"),
++        path("unsupported-settings", "allow-grindstone-overstacking")
 +    };
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ed79d30f33b2674863b2d73b1abdb48433c33412
+index 0000000000000000000000000000000000000000..dad3fcc689ec806f985122a7cbd501a7d0fd0d36
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
-@@ -0,0 +1,538 @@
+@@ -0,0 +1,581 @@
 +package io.papermc.paper.configuration;
 +
 +import com.google.common.collect.HashBasedTable;
@@ -1349,11 +1434,11 @@ index 0000000000000000000000000000000000000000..ed79d30f33b2674863b2d73b1abdb484
 +import com.mojang.logging.LogUtils;
 +import io.papermc.paper.configuration.legacy.MaxEntityCollisionsInitializer;
 +import io.papermc.paper.configuration.legacy.RequiresSpigotInitialization;
-+import io.papermc.paper.configuration.legacy.SpawnLoadedRangeInitializer;
 +import io.papermc.paper.configuration.mapping.MergeMap;
 +import io.papermc.paper.configuration.serializer.NbtPathSerializer;
 +import io.papermc.paper.configuration.transformation.world.FeatureSeedsGeneration;
 +import io.papermc.paper.configuration.type.BooleanOrDefault;
++import io.papermc.paper.configuration.type.DespawnRange;
 +import io.papermc.paper.configuration.type.Duration;
 +import io.papermc.paper.configuration.type.DurationOrDisabled;
 +import io.papermc.paper.configuration.type.EngineMode;
@@ -1367,8 +1452,10 @@ index 0000000000000000000000000000000000000000..ed79d30f33b2674863b2d73b1abdb484
 +import it.unimi.dsi.fastutil.objects.Reference2LongMap;
 +import it.unimi.dsi.fastutil.objects.Reference2LongOpenHashMap;
 +import java.util.Arrays;
++import java.util.IdentityHashMap;
 +import java.util.List;
 +import java.util.Map;
++import java.util.OptionalDouble;
 +import java.util.function.Function;
 +import java.util.stream.Collectors;
 +import net.minecraft.Util;
@@ -1384,8 +1471,6 @@ index 0000000000000000000000000000000000000000..ed79d30f33b2674863b2d73b1abdb484
 +import net.minecraft.world.entity.MobCategory;
 +import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 +import net.minecraft.world.entity.decoration.HangingEntity;
-+import net.minecraft.world.entity.decoration.ItemFrame;
-+import net.minecraft.world.entity.decoration.Painting;
 +import net.minecraft.world.entity.item.ItemEntity;
 +import net.minecraft.world.entity.monster.Vindicator;
 +import net.minecraft.world.entity.monster.Zombie;
@@ -1393,23 +1478,27 @@ index 0000000000000000000000000000000000000000..ed79d30f33b2674863b2d73b1abdb484
 +import net.minecraft.world.item.Item;
 +import net.minecraft.world.item.Items;
 +import net.minecraft.world.level.NaturalSpawner;
++import net.minecraft.world.level.block.Block;
++import net.minecraft.world.level.block.Blocks;
 +import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 +import org.slf4j.Logger;
 +import org.spigotmc.SpigotWorldConfig;
-+import org.spigotmc.TrackingRange;
 +import org.spongepowered.configurate.objectmapping.ConfigSerializable;
++import org.spongepowered.configurate.objectmapping.meta.Comment;
 +import org.spongepowered.configurate.objectmapping.meta.PostProcess;
 +import org.spongepowered.configurate.objectmapping.meta.Required;
 +import org.spongepowered.configurate.objectmapping.meta.Setting;
++import org.spongepowered.configurate.serialize.SerializationException;
 +
 +@SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
 +public class WorldConfiguration extends ConfigurationPart {
 +    private static final Logger LOGGER = LogUtils.getClassLogger();
-+    static final int CURRENT_VERSION = 30; // (when you change the version, change the comment, so it conflicts on rebases): rename filter bad nbt from spawn eggs
++    static final int CURRENT_VERSION = 31; // (when you change the version, change the comment, so it conflicts on rebases): migrate spawn loaded configs to gamerule
 +
-+    private transient final SpigotWorldConfig spigotConfig;
-+    private transient final ResourceLocation worldKey;
-+    WorldConfiguration(SpigotWorldConfig spigotConfig, ResourceLocation worldKey) {
++    private final transient SpigotWorldConfig spigotConfig;
++    private final transient ResourceLocation worldKey;
++
++    WorldConfiguration(final SpigotWorldConfig spigotConfig, final ResourceLocation worldKey) {
 +        this.spigotConfig = spigotConfig;
 +        this.worldKey = worldKey;
 +    }
@@ -1445,21 +1534,43 @@ index 0000000000000000000000000000000000000000..ed79d30f33b2674863b2d73b1abdb484
 +            public int updateRadius = 2;
 +            public boolean lavaObscures = false;
 +            public boolean usePermission = false;
-+            public List<String> hiddenBlocks = List.of("copper_ore", "deepslate_copper_ore", "raw_copper_block", "gold_ore", "deepslate_gold_ore", "iron_ore", "deepslate_iron_ore", "raw_iron_block",
-+                "coal_ore", "deepslate_coal_ore", "lapis_ore", "deepslate_lapis_ore", "mossy_cobblestone", "obsidian", "chest", "diamond_ore", "deepslate_diamond_ore",
-+                "redstone_ore", "deepslate_redstone_ore", "clay", "emerald_ore", "deepslate_emerald_ore", "ender_chest"); // TODO update type to List<Block>
-+            public List<String> replacementBlocks = List.of("stone", "oak_planks", "deepslate"); // TODO update type to List<Block>
++            public List<Block> hiddenBlocks = List.of(
++                //<editor-fold desc="Anti-Xray Hidden Blocks" defaultstate="collapsed">
++                Blocks.COPPER_ORE,
++                Blocks.DEEPSLATE_COPPER_ORE,
++                Blocks.RAW_COPPER_BLOCK,
++                Blocks.GOLD_ORE,
++                Blocks.DEEPSLATE_GOLD_ORE,
++                Blocks.IRON_ORE,
++                Blocks.DEEPSLATE_IRON_ORE,
++                Blocks.RAW_IRON_BLOCK,
++                Blocks.COAL_ORE,
++                Blocks.DEEPSLATE_COAL_ORE,
++                Blocks.LAPIS_ORE,
++                Blocks.DEEPSLATE_LAPIS_ORE,
++                Blocks.MOSSY_COBBLESTONE,
++                Blocks.OBSIDIAN,
++                Blocks.CHEST,
++                Blocks.DIAMOND_ORE,
++                Blocks.DEEPSLATE_DIAMOND_ORE,
++                Blocks.REDSTONE_ORE,
++                Blocks.DEEPSLATE_REDSTONE_ORE,
++                Blocks.CLAY,
++                Blocks.EMERALD_ORE,
++                Blocks.DEEPSLATE_EMERALD_ORE,
++                Blocks.ENDER_CHEST
++                //</editor-fold>
++            );
++            public List<Block> replacementBlocks = List.of(Blocks.STONE, Blocks.OAK_PLANKS, Blocks.DEEPSLATE);
 +        }
 +    }
 +
 +    public Entities entities;
 +
 +    public class Entities extends ConfigurationPart {
-+        public boolean entitiesTargetWithFollowRange = false;
 +        public MobEffects mobEffects;
 +
 +        public class MobEffects extends ConfigurationPart {
-+            public boolean undeadImmuneToCertainEffects = true;
 +            public boolean spidersImmuneToPoisonEffect = true;
 +            public ImmuneToWitherEffect immuneToWitherEffect;
 +
@@ -1502,10 +1613,29 @@ index 0000000000000000000000000000000000000000..ed79d30f33b2674863b2d73b1abdb484
 +            @MergeMap
 +            public Reference2IntMap<MobCategory> spawnLimits = Util.make(new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length), map -> Arrays.stream(NaturalSpawner.SPAWNING_CATEGORIES).forEach(mobCategory -> map.put(mobCategory, -1)));
 +            @MergeMap
-+            public Map<MobCategory, DespawnRange> despawnRanges = Arrays.stream(MobCategory.values()).collect(Collectors.toMap(Function.identity(), category -> new DespawnRange(category.getNoDespawnDistance(), category.getDespawnDistance())));
++            public Map<MobCategory, DespawnRangePair> despawnRanges = Arrays.stream(MobCategory.values()).collect(Collectors.toMap(Function.identity(), category -> DespawnRangePair.createDefault()));
++            public DespawnRange.Shape despawnRangeShape = DespawnRange.Shape.ELLIPSOID;
++            @MergeMap
++            public Reference2IntMap<MobCategory> ticksPerSpawn = Util.make(new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length), map -> Arrays.stream(NaturalSpawner.SPAWNING_CATEGORIES).forEach(mobCategory -> map.put(mobCategory, -1)));
 +
 +            @ConfigSerializable
-+            public record DespawnRange(@Required int soft, @Required int hard) {
++            public record DespawnRangePair(@Required DespawnRange hard, @Required DespawnRange soft) {
++                public static DespawnRangePair createDefault() {
++                    return new DespawnRangePair(
++                        new DespawnRange(IntOr.Default.USE_DEFAULT),
++                        new DespawnRange(IntOr.Default.USE_DEFAULT)
++                    );
++                }
++            }
++
++            @PostProcess
++            public void precomputeDespawnDistances() throws SerializationException {
++                for (Map.Entry<MobCategory, DespawnRangePair> entry : this.despawnRanges.entrySet()) {
++                    final MobCategory category = entry.getKey();
++                    final DespawnRangePair range = entry.getValue();
++                    range.hard().preComputed(category.getDespawnDistance(), category.getSerializedName());
++                    range.soft().preComputed(category.getNoDespawnDistance(), category.getSerializedName());
++                }
 +            }
 +
 +            public WaterAnimalSpawnHeight wateranimalSpawnHeight;
@@ -1579,38 +1709,15 @@ index 0000000000000000000000000000000000000000..ed79d30f33b2674863b2d73b1abdb484
 +            public boolean piglinsGuardChests = true;
 +            public double babyZombieMovementModifier = 0.5;
 +            public boolean allowSpiderWorldBorderClimbing = true;
-+            public DoorBreakingDifficulty doorBreakingDifficulty;
 +
-+            public class DoorBreakingDifficulty extends ConfigurationPart { // TODO convert to map at some point
-+                public List<Difficulty> zombie = Arrays.stream(Difficulty.values()).filter(Zombie.DOOR_BREAKING_PREDICATE).toList();
-+                public List<Difficulty> husk = Arrays.stream(Difficulty.values()).filter(Zombie.DOOR_BREAKING_PREDICATE).toList();
-+                @Setting("zombie_villager")
-+                public List<Difficulty> zombieVillager = Arrays.stream(Difficulty.values()).filter(Zombie.DOOR_BREAKING_PREDICATE).toList();
-+                @Setting("zombified_piglin")
-+                public List<Difficulty> zombified_piglin = Arrays.stream(Difficulty.values()).filter(Zombie.DOOR_BREAKING_PREDICATE).toList();
-+                public List<Difficulty> vindicator = Arrays.stream(Difficulty.values()).filter(Vindicator.DOOR_BREAKING_PREDICATE).toList();
-+
-+                // TODO remove when this becomes a proper map
-+                public List<Difficulty> get(EntityType<?> type) {
-+                    return this.getOrDefault(type, null);
++            private static final List<EntityType<?>> ZOMBIE_LIKE = List.of(EntityType.ZOMBIE, EntityType.HUSK, EntityType.ZOMBIE_VILLAGER, EntityType.ZOMBIFIED_PIGLIN);
++            @MergeMap
++            public Map<EntityType<?>, List<Difficulty>> doorBreakingDifficulty = Util.make(new IdentityHashMap<>(), map -> {
++                for (final EntityType<?> type : ZOMBIE_LIKE) {
++                    map.put(type, Arrays.stream(Difficulty.values()).filter(Zombie.DOOR_BREAKING_PREDICATE).toList());
 +                }
-+
-+                public List<Difficulty> getOrDefault(EntityType<?> type, List<Difficulty> fallback) {
-+                    if (type == EntityType.ZOMBIE) {
-+                        return this.zombie;
-+                    } else if (type == EntityType.HUSK) {
-+                        return this.husk;
-+                    } else if (type == EntityType.ZOMBIE_VILLAGER) {
-+                        return this.zombieVillager;
-+                    } else if (type == EntityType.ZOMBIFIED_PIGLIN) {
-+                        return this.zombified_piglin;
-+                    } else if (type == EntityType.VINDICATOR) {
-+                        return this.vindicator;
-+                    } else {
-+                        return fallback;
-+                    }
-+                }
-+            }
++                map.put(EntityType.VINDICATOR, Arrays.stream(Difficulty.values()).filter(Vindicator.DOOR_BREAKING_PREDICATE).toList());
++            });
 +
 +            public boolean disableCreeperLingeringEffect = false;
 +            public boolean enderDragonsDeathAlwaysPlacesDragonEgg = false;
@@ -1631,6 +1738,8 @@ index 0000000000000000000000000000000000000000..ed79d30f33b2674863b2d73b1abdb484
 +
 +            public boolean disablePlayerCrits = false;
 +            public boolean nerfPigmenFromNetherPortals = false;
++            @Comment("Prevents merging items that are not on the same y level, preventing potential visual artifacts.")
++            public boolean onlyMergeItemsHorizontally = false;
 +            public PillagerPatrols pillagerPatrols;
 +
 +            public class PillagerPatrols extends ConfigurationPart {
@@ -1697,6 +1806,7 @@ index 0000000000000000000000000000000000000000..ed79d30f33b2674863b2d73b1abdb484
 +        public int maxRefills = -1;
 +        public Duration refreshMin = Duration.of("12h");
 +        public Duration refreshMax = Duration.of("2d");
++        public boolean retainUnlootedShulkerBoxLootTableOnNonPlayerBreak = true;
 +    }
 +
 +    public MaxGrowthHeight maxGrowthHeight;
@@ -1728,6 +1838,8 @@ index 0000000000000000000000000000000000000000..ed79d30f33b2674863b2d73b1abdb484
 +        public boolean disableExplosionKnockback = false;
 +        public boolean generateFlatBedrock = false;
 +        public FrostedIce frostedIce;
++        public DoubleOr.Disabled voidDamageAmount = new DoubleOr.Disabled(OptionalDouble.of(4));
++        public double voidDamageMinBuildHeightOffset = -64.0;
 +
 +        public class FrostedIce extends ConfigurationPart {
 +            public boolean enabled = true;
@@ -1755,14 +1867,14 @@ index 0000000000000000000000000000000000000000..ed79d30f33b2674863b2d73b1abdb484
 +        public boolean portalSearchVanillaDimensionScaling = true;
 +        public boolean disableTeleportationSuffocationCheck = false;
 +        public IntOr.Disabled netherCeilingVoidDamageHeight = IntOr.Disabled.DISABLED;
++        public int maxFluidTicks = 65536;
++        public int maxBlockTicks = 65536;
++        public boolean locateStructuresOutsideWorldBorder = false;
 +    }
 +
 +    public Spawn spawn;
 +
 +    public class Spawn extends ConfigurationPart {
-+        @RequiresSpigotInitialization(SpawnLoadedRangeInitializer.class)
-+        public short keepSpawnLoadedRange = 10;
-+        public boolean keepSpawnLoaded = true;
 +        public boolean allowUsingSignsInsideSpawnProtection = false;
 +    }
 +
@@ -1777,7 +1889,7 @@ index 0000000000000000000000000000000000000000..ed79d30f33b2674863b2d73b1abdb484
 +
 +    public class Fixes extends ConfigurationPart {
 +        public boolean fixItemsMergingThroughWalls = false;
-+        public boolean disableUnloadedChunkEnderpearlExploit = true;
++        public boolean disableUnloadedChunkEnderpearlExploit = false;
 +        public boolean preventTntFromMovingInWater = false;
 +        public boolean splitOverstackedLoot = true;
 +        public IntOr.Disabled fallingBlockHeightNerf = IntOr.Disabled.DISABLED;
@@ -1788,6 +1900,7 @@ index 0000000000000000000000000000000000000000..ed79d30f33b2674863b2d73b1abdb484
 +
 +    public class UnsupportedSettings extends ConfigurationPart {
 +        public boolean fixInvulnerableEndCrystalExploit = true;
++        public boolean disableWorldTickingWhenEmpty = false;
 +    }
 +
 +    public Hopper hopper;
@@ -1842,6 +1955,8 @@ index 0000000000000000000000000000000000000000..ed79d30f33b2674863b2d73b1abdb484
 +        public int grassSpread = 1;
 +        public int containerUpdate = 1;
 +        public int mobSpawner = 1;
++        public int wetFarmland = 1;
++        public int dryFarmland = 1;
 +        public Table<EntityType<?>, String, Integer> sensor = Util.make(HashBasedTable.create(), table -> table.put(EntityType.VILLAGER, "secondarypoisensor", 40));
 +        public Table<EntityType<?>, String, Integer> behavior = Util.make(HashBasedTable.create(), table -> table.put(EntityType.VILLAGER, "validatenearbypoi", -1));
 +    }
@@ -1862,6 +1977,13 @@ index 0000000000000000000000000000000000000000..ed79d30f33b2674863b2d73b1abdb484
 +        }
 +    }
 +
++    public CommandBlocks commandBlocks;
++
++    public class CommandBlocks extends ConfigurationPart {
++        public int permissionsLevel = 2;
++        public boolean forceFollowPermLevel = true;
++    }
++
 +    public Misc misc;
 +
 +    public class Misc extends ConfigurationPart {
@@ -1869,14 +1991,20 @@ index 0000000000000000000000000000000000000000..ed79d30f33b2674863b2d73b1abdb484
 +        public boolean updatePathfindingOnBlockUpdate = true;
 +        public boolean showSignClickCommandFailureMsgsToPlayer = false;
 +        public RedstoneImplementation redstoneImplementation = RedstoneImplementation.VANILLA;
++        public AlternateCurrentUpdateOrder alternateCurrentUpdateOrder = AlternateCurrentUpdateOrder.HORIZONTAL_FIRST_OUTWARD;
 +        public boolean disableEndCredits = false;
-+        public float maxLeashDistance = 10f;
++        public DoubleOr.Default maxLeashDistance = DoubleOr.Default.USE_DEFAULT;
 +        public boolean disableSprintInterruptionOnAttack = false;
 +        public int shieldBlockingDelay = 5;
 +        public boolean disableRelativeProjectileVelocity = false;
++        public boolean legacyEnderPearlBehavior = false;
 +
 +        public enum RedstoneImplementation {
 +            VANILLA, EIGENCRAFT, ALTERNATE_CURRENT
++        }
++
++        public enum AlternateCurrentUpdateOrder {
++        	HORIZONTAL_FIRST_OUTWARD, HORIZONTAL_FIRST_INWARD, VERTICAL_FIRST_OUTWARD, VERTICAL_FIRST_INWARD
 +        }
 +    }
 +}
@@ -2749,7 +2877,7 @@ index 0000000000000000000000000000000000000000..4af710e144b70933d750c22edfe484c1
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/collections/MapSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/collections/MapSerializer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9b5075c39a4ef931cdb99e9aee8a33c6d88c2a2e
+index 0000000000000000000000000000000000000000..e7e997796ec47c742cc1f98e61db75a4231e6f98
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/serializer/collections/MapSerializer.java
 @@ -0,0 +1,162 @@
@@ -2841,7 +2969,7 @@ index 0000000000000000000000000000000000000000..9b5075c39a4ef931cdb99e9aee8a33c6
 +            return serializer.deserialize(type, node);
 +        } catch (SerializationException ex) {
 +            ex.initPath(node::path);
-+            LOGGER.error("Could not deserialize {} {} into {} at {}", mapPart, node.raw(), type, path);
++            LOGGER.error("Could not deserialize {} {} into {} at {}: {}", mapPart, node.raw(), type, path, ex.rawMessage());
 +        }
 +        return null;
 +    }
@@ -2902,7 +3030,7 @@ index 0000000000000000000000000000000000000000..9b5075c39a4ef931cdb99e9aee8a33c6
 +            return true;
 +        } catch (SerializationException ex) {
 +            ex.initPath(node::path);
-+            LOGGER.error("Could not serialize {} {} from {} at {}", mapPart, object, type, path);
++            LOGGER.error("Could not serialize {} {} from {} at {}: {}", mapPart, object, type, path, ex.rawMessage());
 +        }
 +        return false;
 +    }
@@ -3012,43 +3140,45 @@ index 0000000000000000000000000000000000000000..36ca88b677e1b55b41c52750948d5b6d
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryEntrySerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryEntrySerializer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..18da824fd003c110083a6c08d5db75578171433c
+index 0000000000000000000000000000000000000000..cb0de1a639578320fd38177a915bfa5d1e9a73bd
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryEntrySerializer.java
-@@ -0,0 +1,62 @@
+@@ -0,0 +1,64 @@
 +package io.papermc.paper.configuration.serializer.registry;
 +
 +import io.leangen.geantyref.TypeToken;
++import java.lang.reflect.Type;
++import java.util.function.Predicate;
 +import net.minecraft.core.Registry;
++import net.minecraft.core.RegistryAccess;
 +import net.minecraft.resources.ResourceKey;
 +import net.minecraft.resources.ResourceLocation;
-+import net.minecraft.server.MinecraftServer;
 +import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.spongepowered.configurate.serialize.ScalarSerializer;
 +import org.spongepowered.configurate.serialize.SerializationException;
 +
-+import java.lang.reflect.Type;
-+import java.util.function.Predicate;
-+
 +abstract class RegistryEntrySerializer<T, R> extends ScalarSerializer<T> {
 +
++    private final RegistryAccess registryAccess;
 +    private final ResourceKey<? extends Registry<R>> registryKey;
 +    private final boolean omitMinecraftNamespace;
 +
-+    protected RegistryEntrySerializer(TypeToken<T> type, ResourceKey<? extends Registry<R>> registryKey, boolean omitMinecraftNamespace) {
++    protected RegistryEntrySerializer(TypeToken<T> type, final RegistryAccess registryAccess, ResourceKey<? extends Registry<R>> registryKey, boolean omitMinecraftNamespace) {
 +        super(type);
++        this.registryAccess = registryAccess;
 +        this.registryKey = registryKey;
 +        this.omitMinecraftNamespace = omitMinecraftNamespace;
 +    }
 +
-+    protected RegistryEntrySerializer(Class<T> type, ResourceKey<? extends Registry<R>> registryKey, boolean omitMinecraftNamespace) {
++    protected RegistryEntrySerializer(Class<T> type, final RegistryAccess registryAccess, ResourceKey<? extends Registry<R>> registryKey, boolean omitMinecraftNamespace) {
 +        super(type);
++        this.registryAccess = registryAccess;
 +        this.registryKey = registryKey;
 +        this.omitMinecraftNamespace = omitMinecraftNamespace;
 +    }
 +
 +    protected final Registry<R> registry() {
-+        return MinecraftServer.getServer().registryAccess().registryOrThrow(this.registryKey); // TODO don't depend on MinecraftServer#getServer
++        return this.registryAccess.lookupOrThrow(this.registryKey);
 +    }
 +
 +    protected abstract T convertFromResourceKey(ResourceKey<R> key) throws SerializationException;
@@ -3080,7 +3210,7 @@ index 0000000000000000000000000000000000000000..18da824fd003c110083a6c08d5db7557
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryHolderSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryHolderSerializer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c03c1f277ff8167e8b3e4bfa0f4dfc86834f82f3
+index 0000000000000000000000000000000000000000..76f6219eac049afef7ce03cd30d7c3232b5b9b7c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryHolderSerializer.java
 @@ -0,0 +1,34 @@
@@ -3089,28 +3219,28 @@ index 0000000000000000000000000000000000000000..c03c1f277ff8167e8b3e4bfa0f4dfc86
 +import com.google.common.base.Preconditions;
 +import io.leangen.geantyref.TypeFactory;
 +import io.leangen.geantyref.TypeToken;
++import java.util.function.Function;
 +import net.minecraft.core.Holder;
 +import net.minecraft.core.Registry;
++import net.minecraft.core.RegistryAccess;
 +import net.minecraft.resources.ResourceKey;
 +import org.spongepowered.configurate.serialize.SerializationException;
-+
-+import java.util.function.Function;
 +
 +public final class RegistryHolderSerializer<T> extends RegistryEntrySerializer<Holder<T>, T> {
 +
 +    @SuppressWarnings("unchecked")
-+    public RegistryHolderSerializer(TypeToken<T> typeToken, ResourceKey<? extends Registry<T>> registryKey, boolean omitMinecraftNamespace) {
-+        super((TypeToken<Holder<T>>) TypeToken.get(TypeFactory.parameterizedClass(Holder.class, typeToken.getType())), registryKey, omitMinecraftNamespace);
++    public RegistryHolderSerializer(TypeToken<T> typeToken, final RegistryAccess registryAccess, ResourceKey<? extends Registry<T>> registryKey, boolean omitMinecraftNamespace) {
++        super((TypeToken<Holder<T>>) TypeToken.get(TypeFactory.parameterizedClass(Holder.class, typeToken.getType())), registryAccess, registryKey, omitMinecraftNamespace);
 +    }
 +
-+    public RegistryHolderSerializer(Class<T> type, ResourceKey<? extends Registry<T>> registryKey, boolean omitMinecraftNamespace) {
-+        this(TypeToken.get(type), registryKey, omitMinecraftNamespace);
++    public RegistryHolderSerializer(Class<T> type, final RegistryAccess registryAccess, ResourceKey<? extends Registry<T>> registryKey, boolean omitMinecraftNamespace) {
++        this(TypeToken.get(type), registryAccess, registryKey, omitMinecraftNamespace);
 +        Preconditions.checkArgument(type.getTypeParameters().length == 0, "%s must have 0 type parameters", type);
 +    }
 +
 +    @Override
 +    protected Holder<T> convertFromResourceKey(ResourceKey<T> key) throws SerializationException {
-+        return this.registry().getHolder(key).orElseThrow(() -> new SerializationException("Missing holder in " + this.registry().key() + " with key " + key));
++        return this.registry().get(key).orElseThrow(() -> new SerializationException("Missing holder in " + this.registry().key() + " with key " + key));
 +    }
 +
 +    @Override
@@ -3120,14 +3250,15 @@ index 0000000000000000000000000000000000000000..c03c1f277ff8167e8b3e4bfa0f4dfc86
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryValueSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryValueSerializer.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..10d3dd361cd26dc849ebd53c1235aa8e4f7af04d
+index 0000000000000000000000000000000000000000..6831b7b72c5e1f79eff36019ca2ff56531c26df8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/serializer/registry/RegistryValueSerializer.java
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,35 @@
 +package io.papermc.paper.configuration.serializer.registry;
 +
 +import io.leangen.geantyref.TypeToken;
 +import net.minecraft.core.Registry;
++import net.minecraft.core.RegistryAccess;
 +import net.minecraft.resources.ResourceKey;
 +import org.spongepowered.configurate.serialize.SerializationException;
 +
@@ -3136,17 +3267,17 @@ index 0000000000000000000000000000000000000000..10d3dd361cd26dc849ebd53c1235aa8e
 + */
 +public final class RegistryValueSerializer<T> extends RegistryEntrySerializer<T, T> {
 +
-+    public RegistryValueSerializer(TypeToken<T> type, ResourceKey<? extends Registry<T>> registryKey, boolean omitMinecraftNamespace) {
-+        super(type, registryKey, omitMinecraftNamespace);
++    public RegistryValueSerializer(TypeToken<T> type, final RegistryAccess registryAccess, ResourceKey<? extends Registry<T>> registryKey, boolean omitMinecraftNamespace) {
++        super(type, registryAccess, registryKey, omitMinecraftNamespace);
 +    }
 +
-+    public RegistryValueSerializer(Class<T> type, ResourceKey<? extends Registry<T>> registryKey, boolean omitMinecraftNamespace) {
-+        super(type, registryKey, omitMinecraftNamespace);
++    public RegistryValueSerializer(Class<T> type, final RegistryAccess registryAccess, ResourceKey<? extends Registry<T>> registryKey, boolean omitMinecraftNamespace) {
++        super(type, registryAccess, registryKey, omitMinecraftNamespace);
 +    }
 +
 +    @Override
 +    protected T convertFromResourceKey(ResourceKey<T> key) throws SerializationException {
-+        final T value = this.registry().get(key);
++        final T value = this.registry().getValue(key);
 +        if (value == null) {
 +            throw new SerializationException("Missing value in " + this.registry() + " with key " + key.location());
 +        }
@@ -3436,12 +3567,13 @@ index 0000000000000000000000000000000000000000..ef0e834c164b0ccc1a61b349348e6799
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/transformation/global/versioned/V29_LogIPs.java b/src/main/java/io/papermc/paper/configuration/transformation/global/versioned/V29_LogIPs.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f250ea5acd2edce924ee52b8ec16a23261f5e90d
+index 0000000000000000000000000000000000000000..66073f7a6a96405348cc4044ad1e6922158b13ba
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/transformation/global/versioned/V29_LogIPs.java
-@@ -0,0 +1,46 @@
+@@ -0,0 +1,44 @@
 +package io.papermc.paper.configuration.transformation.global.versioned;
 +
++import java.util.Properties;
 +import net.minecraft.server.MinecraftServer;
 +import net.minecraft.server.dedicated.DedicatedServer;
 +import org.checkerframework.checker.nullness.qual.Nullable;
@@ -3450,8 +3582,6 @@ index 0000000000000000000000000000000000000000..f250ea5acd2edce924ee52b8ec16a232
 +import org.spongepowered.configurate.NodePath;
 +import org.spongepowered.configurate.transformation.ConfigurationTransformation;
 +import org.spongepowered.configurate.transformation.TransformAction;
-+
-+import java.util.Properties;
 +
 +import static org.spongepowered.configurate.NodePath.path;
 +
@@ -3464,18 +3594,17 @@ index 0000000000000000000000000000000000000000..f250ea5acd2edce924ee52b8ec16a232
 +    private V29_LogIPs() {
 +    }
 +
-+    public static void apply(ConfigurationTransformation.VersionedBuilder builder) {
++    public static void apply(final ConfigurationTransformation.VersionedBuilder builder) {
 +        builder.addVersion(VERSION, ConfigurationTransformation.builder().addAction(PATH, INSTANCE).build());
 +    }
 +
-+    @Nullable
 +    @Override
-+    public Object[] visitPath(final NodePath path, final ConfigurationNode value) throws ConfigurateException {
-+        DedicatedServer server = ((DedicatedServer) MinecraftServer.getServer());
++    public Object @Nullable [] visitPath(final NodePath path, final ConfigurationNode value) throws ConfigurateException {
++        final DedicatedServer server = ((DedicatedServer) MinecraftServer.getServer());
 +
-+        boolean val = value.getBoolean(server.settings.getProperties().logIPs);
++        final boolean val = value.getBoolean(server.settings.getProperties().logIPs);
 +        server.settings.update((config) -> {
-+            Properties newProps = new Properties(config.properties);
++            final Properties newProps = new Properties(config.properties);
 +            newProps.setProperty("log-ips", String.valueOf(val));
 +            return config.reload(server.registryAccess(), newProps, server.options);
 +        });
@@ -3488,7 +3617,7 @@ index 0000000000000000000000000000000000000000..f250ea5acd2edce924ee52b8ec16a232
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/transformation/world/FeatureSeedsGeneration.java b/src/main/java/io/papermc/paper/configuration/transformation/world/FeatureSeedsGeneration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1326aae8f95ab11f840abdee0c8c7a557705fd73
+index 0000000000000000000000000000000000000000..cb1f5f65c098470dc8553b015d0f0f29f28ed956
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/transformation/world/FeatureSeedsGeneration.java
 @@ -0,0 +1,71 @@
@@ -3539,7 +3668,7 @@ index 0000000000000000000000000000000000000000..1326aae8f95ab11f840abdee0c8c7a55
 +        final Reference2LongMap<Holder<ConfiguredFeature<?, ?>>> features = Objects.requireNonNullElseGet(featureNode.get(new TypeToken<Reference2LongMap<Holder<ConfiguredFeature<?, ?>>>>() {}), Reference2LongOpenHashMap::new);
 +        final Random random = new SecureRandom();
 +        AtomicInteger counter = new AtomicInteger(0);
-+        MinecraftServer.getServer().registryAccess().registryOrThrow(Registries.CONFIGURED_FEATURE).holders().forEach(holder -> {
++        MinecraftServer.getServer().registryAccess().lookupOrThrow(Registries.CONFIGURED_FEATURE).listElements().forEach(holder -> {
 +            if (features.containsKey(holder)) {
 +                return;
 +            }
@@ -3558,14 +3687,14 @@ index 0000000000000000000000000000000000000000..1326aae8f95ab11f840abdee0c8c7a55
 +
 +
 +    public static void apply(final ConfigurationTransformation.Builder builder, final Configurations.ContextMap contextMap, final ConfigurationNode defaultsNode) {
-+        if (!contextMap.isDefaultWorldContext() && defaultsNode.node(FEATURE_SEEDS_KEY, GENERATE_KEY).getBoolean(false)) {
++        if (defaultsNode.node(FEATURE_SEEDS_KEY, GENERATE_KEY).getBoolean(false)) {
 +            builder.addAction(path(), new FeatureSeedsGeneration(contextMap.require(Configurations.WORLD_KEY)));
 +        }
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/transformation/world/LegacyPaperWorldConfig.java b/src/main/java/io/papermc/paper/configuration/transformation/world/LegacyPaperWorldConfig.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..edaa6ef28c1f9a2239439698708897008fea2f7e
+index 0000000000000000000000000000000000000000..77e530830dc8ebc861b2e70f787f9b71524a54d2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/transformation/world/LegacyPaperWorldConfig.java
 @@ -0,0 +1,322 @@
@@ -3676,7 +3805,7 @@ index 0000000000000000000000000000000000000000..edaa6ef28c1f9a223943969870889700
 +            )
 +            .addVersion(26, ConfigurationTransformation.builder().addAction(path("alt-item-despawn-rate", "items", ConfigurationTransformation.WILDCARD_OBJECT), (path, value) -> {
 +                String itemName = path.get(path.size() - 1).toString();
-+                final Optional<Holder.Reference<Item>> item = BuiltInRegistries.ITEM.getHolder(ResourceKey.create(Registries.ITEM, new ResourceLocation(itemName.toLowerCase(Locale.ENGLISH))));
++                final Optional<Holder.Reference<Item>> item = BuiltInRegistries.ITEM.get(ResourceKey.create(Registries.ITEM, ResourceLocation.parse(itemName.toLowerCase(Locale.ROOT))));
 +                if (item.isEmpty()) {
 +                    itemName = Material.valueOf(itemName).getKey().getKey();
 +                }
@@ -3708,7 +3837,7 @@ index 0000000000000000000000000000000000000000..edaa6ef28c1f9a223943969870889700
 +                    Map<String, Integer> rebuild = new HashMap<>();
 +                    value.childrenMap().forEach((key, node) -> {
 +                        String itemName = key.toString();
-+                        final Optional<Holder.Reference<Item>> itemHolder = BuiltInRegistries.ITEM.getHolder(ResourceKey.create(Registries.ITEM, new ResourceLocation(itemName.toLowerCase(Locale.ENGLISH))));
++                        final Optional<Holder.Reference<Item>> itemHolder = BuiltInRegistries.ITEM.get(ResourceKey.create(Registries.ITEM, ResourceLocation.parse(itemName.toLowerCase(Locale.ROOT))));
 +                        final @Nullable String item;
 +                        if (itemHolder.isEmpty()) {
 +                            final @Nullable Material bukkitMat = Material.matchMaterial(itemName);
@@ -3977,9 +4106,70 @@ index 0000000000000000000000000000000000000000..d08b65234192d5b639cead675114f64b
 +        builder.addVersion(VERSION, ConfigurationTransformation.builder().addAction(OLD_PATH, rename(NEW_PATH)).build());
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/configuration/transformation/world/versioned/V31_SpawnLoadedRangeToGameRule.java b/src/main/java/io/papermc/paper/configuration/transformation/world/versioned/V31_SpawnLoadedRangeToGameRule.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d872b1948df52759fed9c3d892aed6abfdfc8068
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/transformation/world/versioned/V31_SpawnLoadedRangeToGameRule.java
+@@ -0,0 +1,55 @@
++package io.papermc.paper.configuration.transformation.world.versioned;
++
++import io.papermc.paper.configuration.Configurations;
++import net.minecraft.world.level.GameRules;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.spongepowered.configurate.ConfigurationNode;
++import org.spongepowered.configurate.NodePath;
++import org.spongepowered.configurate.transformation.ConfigurationTransformation;
++import org.spongepowered.configurate.transformation.TransformAction;
++
++import static org.spongepowered.configurate.NodePath.path;
++
++public final class V31_SpawnLoadedRangeToGameRule implements TransformAction {
++
++    private static final int VERSION = 31;
++    private static final String SPAWN = "spawn";
++    private static final String KEEP_SPAWN_LOADED_RANGE = "keep-spawn-loaded-range";
++    private static final String KEEP_SPAWN_LOADED = "keep-spawn-loaded";
++
++    private final GameRules gameRules;
++    private final ConfigurationNode defaultsNode;
++
++    private V31_SpawnLoadedRangeToGameRule(final GameRules gameRules, final ConfigurationNode defaultsNode) {
++        this.gameRules = gameRules;
++        this.defaultsNode = defaultsNode;
++    }
++
++    @Override
++    public Object @Nullable [] visitPath(final NodePath path, final ConfigurationNode value) {
++        final ConfigurationNode worldSpawnNode = value.node(SPAWN);
++        final ConfigurationNode worldLoadedNode = worldSpawnNode.node(KEEP_SPAWN_LOADED);
++        final boolean keepLoaded = worldLoadedNode.getBoolean(this.defaultsNode.node(SPAWN, KEEP_SPAWN_LOADED).getBoolean());
++        worldLoadedNode.raw(null);
++        final ConfigurationNode worldRangeNode = worldSpawnNode.node(KEEP_SPAWN_LOADED_RANGE);
++        final int range = worldRangeNode.getInt(this.defaultsNode.node(SPAWN, KEEP_SPAWN_LOADED_RANGE).getInt());
++        worldRangeNode.raw(null);
++        if (worldSpawnNode.empty()) {
++            worldSpawnNode.raw(null);
++        }
++        if (!keepLoaded) {
++            this.gameRules.getRule(GameRules.RULE_SPAWN_CHUNK_RADIUS).set(0, null);
++        } else {
++            this.gameRules.getRule(GameRules.RULE_SPAWN_CHUNK_RADIUS).set(range, null);
++        }
++        return null;
++    }
++
++    public static void apply(final ConfigurationTransformation.VersionedBuilder builder, final Configurations.ContextMap contextMap, final @Nullable ConfigurationNode defaultsNode) {
++        if (defaultsNode != null) {
++            builder.addVersion(VERSION, ConfigurationTransformation.builder().addAction(path(), new V31_SpawnLoadedRangeToGameRule(contextMap.require(Configurations.GAME_RULES), defaultsNode)).build());
++        } else {
++            builder.addVersion(VERSION, ConfigurationTransformation.empty()); // increment version of default world config
++        }
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/configuration/type/BooleanOrDefault.java b/src/main/java/io/papermc/paper/configuration/type/BooleanOrDefault.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5f03dcdff99bcd33bf789b0dd5521e39afbe09bf
+index 0000000000000000000000000000000000000000..a3eaa47cfcfc4fd2a607f9b375230fada35620d3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/type/BooleanOrDefault.java
 @@ -0,0 +1,53 @@
@@ -4015,7 +4205,7 @@ index 0000000000000000000000000000000000000000..5f03dcdff99bcd33bf789b0dd5521e39
 +                    return USE_DEFAULT;
 +                }
 +                try {
-+                    return new BooleanOrDefault(BooleanUtils.toBoolean(string.toLowerCase(Locale.ENGLISH), "true", "false"));
++                    return new BooleanOrDefault(BooleanUtils.toBoolean(string.toLowerCase(Locale.ROOT), "true", "false"));
 +                } catch (IllegalArgumentException ex) {
 +                    throw new SerializationException(BooleanOrDefault.class, obj + "(" + type + ") is not a boolean or '" + DEFAULT_VALUE + "'", ex);
 +                }
@@ -4032,6 +4222,121 @@ index 0000000000000000000000000000000000000000..5f03dcdff99bcd33bf789b0dd5521e39
 +                return value.toString();
 +            } else {
 +                return DEFAULT_VALUE;
++            }
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/configuration/type/DespawnRange.java b/src/main/java/io/papermc/paper/configuration/type/DespawnRange.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8a792a000e924b3ddc572edc788598811e9ef71c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/type/DespawnRange.java
+@@ -0,0 +1,109 @@
++package io.papermc.paper.configuration.type;
++
++import io.papermc.paper.configuration.type.number.IntOr;
++import java.lang.reflect.Type;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.spongepowered.configurate.ConfigurationNode;
++import org.spongepowered.configurate.serialize.SerializationException;
++import org.spongepowered.configurate.serialize.TypeSerializer;
++
++/*
++(x/a)^2 + (y/b)^2 + (z/c)^2 < 1
++a == c
++ac = horizontal limit
++b = vertical limit
++x^2/ac^2 + y^2/b^2 + z^2/ac^2 < 1
++(x^2 + z^2)/ac^2 + y^2/b^2 < 1
++x^2 + z^2 + (y^2 * (ac^2/b^2)) < ac^2
++ */
++public final class DespawnRange {
++
++    public static final TypeSerializer<DespawnRange> SERIALIZER = new Serializer();
++
++    private final IntOr.Default horizontalLimit;
++    private final IntOr.Default verticalLimit;
++    private final boolean wasDefinedViaLongSyntax;
++
++    // cached values
++    private double preComputedHorizontalLimitSquared; // ac^2
++    private double preComputedHorizontalLimitSquaredOverVerticalLimitSquared; // ac^2/b^2
++    private int preComputedVanillaDefaultLimit;
++
++    public DespawnRange(final IntOr.Default generalLimit) {
++        this(generalLimit, generalLimit, false);
++    }
++
++    public DespawnRange(final IntOr.Default horizontalLimit, final IntOr.Default verticalLimit, final boolean wasDefinedViaLongSyntax) {
++        this.horizontalLimit = horizontalLimit;
++        this.verticalLimit = verticalLimit;
++        this.wasDefinedViaLongSyntax = wasDefinedViaLongSyntax;
++    }
++
++    public void preComputed(int defaultDistanceLimit, String identifier) throws SerializationException {
++        if (this.verticalLimit.or(defaultDistanceLimit) <= 0) {
++            throw new SerializationException("Vertical limit must be greater than 0 for " + identifier);
++        }
++        if (this.horizontalLimit.or(defaultDistanceLimit) <= 0) {
++            throw new SerializationException("Horizontal limit must be greater than 0 for " + identifier);
++        }
++        this.preComputedVanillaDefaultLimit = defaultDistanceLimit;
++        this.preComputedHorizontalLimitSquared = Math.pow(this.horizontalLimit.or(defaultDistanceLimit), 2);
++        if (!this.horizontalLimit.isDefined() && !this.verticalLimit.isDefined()) {
++            this.preComputedHorizontalLimitSquaredOverVerticalLimitSquared = 1.0;
++        } else {
++            this.preComputedHorizontalLimitSquaredOverVerticalLimitSquared = this.preComputedHorizontalLimitSquared / Math.pow(this.verticalLimit.or(defaultDistanceLimit), 2);
++        }
++    }
++
++    public boolean shouldDespawn(final Shape shape, final double dxSqr, final double dySqr, final double dzSqr, final double dy) {
++        if (shape == Shape.ELLIPSOID) {
++            return dxSqr + dzSqr + (dySqr * this.preComputedHorizontalLimitSquaredOverVerticalLimitSquared) > this.preComputedHorizontalLimitSquared;
++        } else {
++            return dxSqr + dzSqr > this.preComputedHorizontalLimitSquared || dy > this.verticalLimit.or(this.preComputedVanillaDefaultLimit);
++        }
++    }
++
++    public boolean wasDefinedViaLongSyntax() {
++        return this.wasDefinedViaLongSyntax;
++    }
++
++    public enum Shape {
++        CYLINDER, ELLIPSOID
++    }
++
++    static final class Serializer implements TypeSerializer<DespawnRange> {
++
++        public static final String HORIZONTAL = "horizontal";
++        public static final String VERTICAL = "vertical";
++
++        @Override
++        public DespawnRange deserialize(final Type type, final ConfigurationNode node) throws SerializationException {
++            if (node.hasChild(HORIZONTAL) && node.hasChild(VERTICAL)) {
++                return new DespawnRange(
++                    node.node(HORIZONTAL).require(IntOr.Default.class),
++                    node.node(VERTICAL).require(IntOr.Default.class),
++                    true
++                );
++            } else if (node.hasChild(HORIZONTAL) || node.hasChild(VERTICAL)) {
++                throw new SerializationException(node, DespawnRange.class, "Expected both horizontal and vertical despawn ranges to be defined");
++            } else {
++                return new DespawnRange(node.require(IntOr.Default.class));
++            }
++        }
++
++        @Override
++        public void serialize(final Type type, final @Nullable DespawnRange despawnRange, final ConfigurationNode node) throws SerializationException {
++            if (despawnRange == null) {
++                node.raw(null);
++                return;
++            }
++
++            if (despawnRange.wasDefinedViaLongSyntax()) {
++                node.node(HORIZONTAL).set(despawnRange.horizontalLimit);
++                node.node(VERTICAL).set(despawnRange.verticalLimit);
++            } else {
++                node.set(despawnRange.verticalLimit);
 +            }
 +        }
 +    }
@@ -4535,14 +4840,15 @@ index 0000000000000000000000000000000000000000..31068170086aeac51a2adb952b19672e
 +}
 diff --git a/src/main/java/io/papermc/paper/configuration/type/number/DoubleOr.java b/src/main/java/io/papermc/paper/configuration/type/number/DoubleOr.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5833c06b0707906ab7d10786ecd115f20e42e925
+index 0000000000000000000000000000000000000000..0e7205e6ba9b207082c8c530142f0b832dcd242d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/type/number/DoubleOr.java
-@@ -0,0 +1,59 @@
+@@ -0,0 +1,74 @@
 +package io.papermc.paper.configuration.type.number;
 +
 +import com.google.common.base.Preconditions;
 +import java.util.OptionalDouble;
++import java.util.function.DoublePredicate;
 +import java.util.function.Function;
 +import java.util.function.Predicate;
 +import org.spongepowered.configurate.serialize.ScalarSerializer;
@@ -4563,6 +4869,20 @@ index 0000000000000000000000000000000000000000..5833c06b0707906ab7d10786ecd115f2
 +        private static final String DEFAULT_VALUE = "default";
 +        public static final Default USE_DEFAULT = new Default(OptionalDouble.empty());
 +        public static final ScalarSerializer<Default> SERIALIZER = new Serializer<>(Default.class, Default::new, DEFAULT_VALUE, USE_DEFAULT);
++    }
++
++    record Disabled(OptionalDouble value) implements DoubleOr {
++        private static final String DISABLED_VALUE = "disabled";
++        public static final Disabled DISABLED = new Disabled(OptionalDouble.empty());
++        public static final ScalarSerializer<Disabled> SERIALIZER = new Serializer<>(Disabled.class, Disabled::new, DISABLED_VALUE, DISABLED);
++
++        public boolean test(DoublePredicate predicate) {
++            return this.value.isPresent() && predicate.test(this.value.getAsDouble());
++        }
++
++        public boolean enabled() {
++            return this.value.isPresent();
++        }
 +    }
 +
 +    final class Serializer<T extends DoubleOr> extends OptionalNumSerializer<T, OptionalDouble> {
@@ -4600,10 +4920,10 @@ index 0000000000000000000000000000000000000000..5833c06b0707906ab7d10786ecd115f2
 +
 diff --git a/src/main/java/io/papermc/paper/configuration/type/number/IntOr.java b/src/main/java/io/papermc/paper/configuration/type/number/IntOr.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..09f16e5dde565801b153bd6705637c5f71427c8a
+index 0000000000000000000000000000000000000000..73a7b664923121daedac8f01a26253438da68119
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/configuration/type/number/IntOr.java
-@@ -0,0 +1,81 @@
+@@ -0,0 +1,85 @@
 +package io.papermc.paper.configuration.type.number;
 +
 +import com.google.common.base.Preconditions;
@@ -4624,6 +4944,10 @@ index 0000000000000000000000000000000000000000..09f16e5dde565801b153bd6705637c5f
 +    }
 +
 +    OptionalInt value();
++
++    default boolean isDefined() {
++        return this.value().isPresent();
++    }
 +
 +    default int intValue() {
 +        return this.value().orElseThrow();
@@ -4750,61 +5074,63 @@ index 0000000000000000000000000000000000000000..614aba60bb07946a144650fd3aedb316
 +    protected abstract boolean belowZero(O value);
 +}
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index 2ac60ea28ce722cdef61cfdc69bbbdf391628238..9cfdd5d8c1650d9c9bdfbc07980239e507ff942d 100644
+index fc5c42e77a76b0ca946b13435144584b9c4bfafa..9bd6056bba6ba48bada7e9cd5883b0a171b0bbc4 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
-@@ -139,6 +139,10 @@ public class Main {
-             dedicatedserversettings.forceSave();
+@@ -129,6 +129,10 @@ public class Main {
+             RegionFileVersion.configure(dedicatedserversettings.getProperties().regionFileComression);
              Path path2 = Paths.get("eula.txt");
              Eula eula = new Eula(path2);
-+            // Paper start - load config files for access below if needed
++            // Paper start - load config files early for access below if needed
 +            org.bukkit.configuration.file.YamlConfiguration bukkitConfiguration = io.papermc.paper.configuration.PaperConfigurations.loadLegacyConfigFile((File) optionset.valueOf("bukkit-settings"));
 +            org.bukkit.configuration.file.YamlConfiguration spigotConfiguration = io.papermc.paper.configuration.PaperConfigurations.loadLegacyConfigFile((File) optionset.valueOf("spigot-settings"));
-+            // Paper end
++            // Paper end - load config files early for access below if needed
  
              if (optionset.has("initSettings")) { // CraftBukkit
                  // CraftBukkit start - SPIGOT-5761: Create bukkit.yml and commands.yml if not present
-@@ -173,7 +177,7 @@ public class Main {
+@@ -163,7 +167,7 @@ public class Main {
              }
  
              File file = (File) optionset.valueOf("universe"); // CraftBukkit
 -            Services services = Services.create(new YggdrasilAuthenticationService(Proxy.NO_PROXY), file);
-+            Services services = Services.create(new YggdrasilAuthenticationService(Proxy.NO_PROXY), file, optionset); // Paper
++            Services services = Services.create(new YggdrasilAuthenticationService(Proxy.NO_PROXY), file, optionset); // Paper - pass OptionSet to load paper config files
              // CraftBukkit start
              String s = (String) Optional.ofNullable((String) optionset.valueOf("world")).orElse(dedicatedserversettings.getProperties().levelName);
              LevelStorageSource convertable = LevelStorageSource.createDefault(file.toPath());
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 0e7c2e2d796aa2f29ab9a0d44a52f833b1ee6f77..7fca1f7a7ba2a6f6238eddc134f78f9abdc1531b 100644
+index c54fae06acd566742cea3aef537ad1b4e2b7414a..3fc0abef2c4e2c8ceb3b8c4f02c59700aa3d0803 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -289,6 +289,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -320,6 +320,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      private static final int SAMPLE_INTERVAL = 100;
      public final double[] recentTps = new double[ 3 ];
      // Spigot end
-+    public final io.papermc.paper.configuration.PaperConfigurations paperConfigurations;
++    public final io.papermc.paper.configuration.PaperConfigurations paperConfigurations; // Paper - add paper configuration files
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
-@@ -379,6 +380,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -420,6 +421,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
          Runtime.getRuntime().addShutdownHook(new org.bukkit.craftbukkit.util.ServerShutdownThread(this));
          // CraftBukkit end
-+        this.paperConfigurations = services.paperConfigurations(); // Paper
++        this.paperConfigurations = services.paperConfigurations(); // Paper - add paper configuration files
      }
  
      private void readScoreboard(DimensionDataStorage persistentStateManager) {
 diff --git a/src/main/java/net/minecraft/server/Services.java b/src/main/java/net/minecraft/server/Services.java
-index 71e7beac6cf1e0f813d5ff3e9c51c13491be7139..f1cc27809c1e8612f7c4fa912f5e39c07b09d808 100644
+index dfbb04800d6f1dcbb909fcdfeb1ebf1a5efa6a48..5928e5f1934b8e247ba516595018ed5c633d3b5d 100644
 --- a/src/main/java/net/minecraft/server/Services.java
 +++ b/src/main/java/net/minecraft/server/Services.java
-@@ -10,14 +10,30 @@ import javax.annotation.Nullable;
+@@ -10,16 +10,32 @@ import javax.annotation.Nullable;
  import net.minecraft.server.players.GameProfileCache;
  import net.minecraft.util.SignatureValidator;
  
--public record Services(MinecraftSessionService sessionService, ServicesKeySet servicesKeySet, GameProfileRepository profileRepository, GameProfileCache profileCache) {
-+// Paper start
-+public record Services(MinecraftSessionService sessionService, ServicesKeySet servicesKeySet, GameProfileRepository profileRepository, GameProfileCache profileCache, @javax.annotation.Nullable io.papermc.paper.configuration.PaperConfigurations paperConfigurations) {
 +
+ public record Services(
+-    MinecraftSessionService sessionService, ServicesKeySet servicesKeySet, GameProfileRepository profileRepository, GameProfileCache profileCache
++    MinecraftSessionService sessionService, ServicesKeySet servicesKeySet, GameProfileRepository profileRepository, GameProfileCache profileCache, @javax.annotation.Nullable io.papermc.paper.configuration.PaperConfigurations paperConfigurations // Paper - add paper configuration files
+ ) {
++    // Paper start - add paper configuration files
 +    public Services(MinecraftSessionService sessionService, ServicesKeySet servicesKeySet, GameProfileRepository profileRepository, GameProfileCache profileCache) {
 +        this(sessionService, servicesKeySet, profileRepository, profileCache, null);
 +    }
@@ -4813,114 +5139,114 @@ index 71e7beac6cf1e0f813d5ff3e9c51c13491be7139..f1cc27809c1e8612f7c4fa912f5e39c0
 +    public io.papermc.paper.configuration.PaperConfigurations paperConfigurations() {
 +        return java.util.Objects.requireNonNull(this.paperConfigurations);
 +    }
-+    // Paper end
++    // Paper end - add paper configuration files
      private static final String USERID_CACHE_FILE = "usercache.json";
  
 -    public static Services create(YggdrasilAuthenticationService authenticationService, File rootDirectory) {
-+    public static Services create(YggdrasilAuthenticationService authenticationService, File rootDirectory, joptsimple.OptionSet optionSet) throws Exception { // Paper
++    public static Services create(YggdrasilAuthenticationService authenticationService, File rootDirectory, joptsimple.OptionSet optionSet) throws Exception { // Paper - add optionset to load paper config files
          MinecraftSessionService minecraftSessionService = authenticationService.createMinecraftSessionService();
          GameProfileRepository gameProfileRepository = authenticationService.createProfileRepository();
          GameProfileCache gameProfileCache = new GameProfileCache(gameProfileRepository, new File(rootDirectory, "usercache.json"));
 -        return new Services(minecraftSessionService, authenticationService.getServicesKeySet(), gameProfileRepository, gameProfileCache);
-+        // Paper start
++        // Paper start - load paper config files from cli options
 +        final java.nio.file.Path legacyConfigPath = ((File) optionSet.valueOf("paper-settings")).toPath();
 +        final java.nio.file.Path configDirPath = ((File) optionSet.valueOf("paper-settings-directory")).toPath();
 +        io.papermc.paper.configuration.PaperConfigurations paperConfigurations = io.papermc.paper.configuration.PaperConfigurations.setup(legacyConfigPath, configDirPath, rootDirectory.toPath(), (File) optionSet.valueOf("spigot-settings"));
 +        return new Services(minecraftSessionService, authenticationService.getServicesKeySet(), gameProfileRepository, gameProfileCache, paperConfigurations);
-+        // Paper end
++        // Paper end - load paper config files from cli options
      }
  
      @Nullable
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index e62eb92b63c027dfa431f8cc241ab968a3abf3f4..65ea4d909059387e6718ea68a3d9408556d26cbe 100644
+index abde0c14bf0998830f1f9a7661e9eab8b35c7b85..ca095f9d6c985b066a393debc6529973a3616397 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -183,6 +183,10 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -199,6 +199,10 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          org.spigotmc.SpigotConfig.init((java.io.File) this.options.valueOf("spigot-settings"));
          org.spigotmc.SpigotConfig.registerCommands();
          // Spigot end
-+        // Paper start
-+        paperConfigurations.initializeGlobalConfiguration();
-+        paperConfigurations.initializeWorldDefaultsConfiguration();
-+        // Paper end
++        // Paper start - initialize global and world-defaults configuration
++        this.paperConfigurations.initializeGlobalConfiguration(this.registryAccess());
++        this.paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
++        // Paper end - initialize global and world-defaults configuration
  
          this.setPvpAllowed(dedicatedserverproperties.pvp);
          this.setFlightAllowed(dedicatedserverproperties.allowFlight);
 diff --git a/src/main/java/net/minecraft/server/dedicated/Settings.java b/src/main/java/net/minecraft/server/dedicated/Settings.java
-index 37ab411817008d4e6194e177d88d50931e53b42e..ca23639f15107ccd43b874ae38fa37279b827a8f 100644
+index 6d89a5414f46a0c30badb4fcd25bc6cb6d18db3a..0ec3b546db0cf3858dd9cd9ea067d1d6713a8491 100644
 --- a/src/main/java/net/minecraft/server/dedicated/Settings.java
 +++ b/src/main/java/net/minecraft/server/dedicated/Settings.java
 @@ -119,6 +119,7 @@ public abstract class Settings<T extends Settings<T>> {
          try {
              // CraftBukkit start - Don't attempt writing to file if it's read only
              if (path.toFile().exists() && !path.toFile().canWrite()) {
-+                Settings.LOGGER.warn("Can not write to file {}, skipping.", path); // Paper
++                Settings.LOGGER.warn("Can not write to file {}, skipping.", path); // Paper - log message file is read-only
                  return;
              }
              // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index c8e5e99d46c711efa90e446689e55267c70c7254..10968eb004ee01c4fb72aeb93f058747b02998b9 100644
+index a0b4ca006ba51da1a91d10b8e8d4a1b12a5a37d3..a17846ccd8581c3d6da962e977623aaab8314ec7 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -234,7 +234,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
-         // Holder holder = worlddimension.type(); // CraftBukkit - decompile error
+@@ -241,7 +241,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
  
-         // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
--        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env);
-+        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig))); // Paper
+     // Add env and gen to constructor, IWorldDataServer -> WorldDataServer
+     public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PrimaryLevelData iworlddataserver, ResourceKey<Level> resourcekey, LevelStem worlddimension, ChunkProgressListener worldloadlistener, boolean flag, long i, List<CustomSpawner> list, boolean flag1, @Nullable RandomSequences randomsequences, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
+-        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env);
++        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess(), iworlddataserver.getGameRules()))); // Paper - create paper world configs
          this.pvpMode = minecraftserver.isPvpAllowed();
          this.convertable = convertable_conversionsession;
          this.uuid = WorldUUID.getUUID(convertable_conversionsession.levelDirectory.path().toFile());
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 4dfb372f8c8f60b6aad18ea9b6334e1a7c9bc4ed..9f877007869ef984d2c95bd8e3d773a2b98f202c 100644
+index 9cf0c141fefe67893828e300cba4f8a8545ba25f..c8e49c1904c80c4ede40ca5c26efad9b12e247d1 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -155,6 +155,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -157,6 +157,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public final it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<SpawnCategory> ticksPerSpawnCategory = new it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<>();
      public boolean populating;
      public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
-+    // Paper start
++    // Paper start - add paper world config
 +    private final io.papermc.paper.configuration.WorldConfiguration paperConfig;
 +    public io.papermc.paper.configuration.WorldConfiguration paperConfig() {
 +        return this.paperConfig;
 +    }
-+    // Paper end
++    // Paper end - add paper world config
  
      public final SpigotTimings.WorldTimingsHandler timings; // Spigot
      public static BlockPos lastPhysicsProblem; // Spigot
-@@ -172,8 +178,9 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -174,8 +180,9 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
  
      public abstract ResourceKey<LevelStem> getTypeKey();
  
--    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env) {
-+    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator) { // Paper
+-    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env) {
++    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator) { // Paper - create paper world config
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
-+        this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper
++        this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper - create paper world config
          this.generator = gen;
          this.world = new CraftWorld((ServerLevel) this, gen, biomeProvider, env);
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index b72a4c4e0d65646290545bf4bae99853c01f592e..b8844bc5fa43ad85230d9c80ae7602306cd22b27 100644
+index 60805f6a2badca9b9cdfa54a9273ceba6311b16c..6c8a69b7c1b45549b2c388a8df2258184c587309 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -918,6 +918,7 @@ public final class CraftServer implements Server {
+@@ -967,6 +967,7 @@ public final class CraftServer implements Server {
          }
  
          org.spigotmc.SpigotConfig.init((File) this.console.options.valueOf("spigot-settings")); // Spigot
 +        this.console.paperConfigurations.reloadConfigs(this.console);
          for (ServerLevel world : this.console.getAllLevels()) {
              world.serverLevelData.setDifficulty(config.difficulty);
-             world.setSpawnSettings(config.spawnMonsters, config.spawnAnimals);
+             world.setSpawnSettings(config.spawnMonsters);
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 5456b4fa5491bed89183024aea6ef99f4fad4688..3523f8851472890c97e628e22df883b91ba603fe 100644
+index 17e10c4373b4281cc74b748c4a1e173e36eb9196..755b1d77418ecae0dc9ec5197275d0cd914e7bee 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
-@@ -141,6 +141,19 @@ public class Main {
+@@ -142,6 +142,19 @@ public class Main {
                          .defaultsTo(new File("spigot.yml"))
                          .describedAs("Yml file");
                  // Spigot End
 +
-+                // Paper Start
++                // Paper start
 +                acceptsAll(asList("paper-dir", "paper-settings-directory"), "Directory for Paper settings")
 +                    .withRequiredArg()
 +                    .ofType(File.class)
@@ -4936,7 +5262,7 @@ index 5456b4fa5491bed89183024aea6ef99f4fad4688..3523f8851472890c97e628e22df883b9
          };
  
 diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
-index 32feb7c02cff0d54384317f11b75be46dea337c4..d10b1d3a134e11fa8417fa3c845f088d8fc1f71c 100644
+index 038fd72710b3084c17d52d4cce087a5bd0aa3a01..e42677a14ec8e1a42747603fb4112822e326fb70 100644
 --- a/src/main/java/org/spigotmc/SpigotConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotConfig.java
 @@ -96,7 +96,7 @@ public class SpigotConfig
@@ -4949,7 +5275,7 @@ index 32feb7c02cff0d54384317f11b75be46dea337c4..d10b1d3a134e11fa8417fa3c845f088d
          for ( Method method : clazz.getDeclaredMethods() )
          {
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index 974e679ff20193f85fccb6e779a7ba791d0c5db4..8491ff48051224204b58d273c4971d16ab8867c1 100644
+index a6d2ce801b236b046b94913bccf7eccfc561f35a..8bc7a9da0eb345e65f42461e2fb22731eb80790a 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 @@ -58,8 +58,14 @@ public class SpigotWorldConfig
@@ -4969,6 +5295,47 @@ index 974e679ff20193f85fccb6e779a7ba791d0c5db4..8491ff48051224204b58d273c4971d16
      }
  
      public <T> List getList(String path, T def)
+@@ -138,14 +144,14 @@ public class SpigotWorldConfig
+     public double itemMerge;
+     private void itemMerge()
+     {
+-        this.itemMerge = this.getDouble("merge-radius.item", 2.5 );
++        this.itemMerge = this.getDouble("merge-radius.item", 0.5 );
+         this.log( "Item Merge Radius: " + this.itemMerge );
+     }
+ 
+     public double expMerge;
+     private void expMerge()
+     {
+-        this.expMerge = this.getDouble("merge-radius.exp", 3.0 );
++        this.expMerge = this.getDouble("merge-radius.exp", -1 );
+         this.log( "Experience Merge Radius: " + this.expMerge );
+     }
+ 
+@@ -197,7 +203,7 @@ public class SpigotWorldConfig
+ 
+     public int animalActivationRange = 32;
+     public int monsterActivationRange = 32;
+-    public int raiderActivationRange = 48;
++    public int raiderActivationRange = 64;
+     public int miscActivationRange = 16;
+     public boolean tickInactiveVillagers = true;
+     public boolean ignoreSpectatorActivation = false;
+@@ -212,10 +218,10 @@ public class SpigotWorldConfig
+         this.log( "Entity Activation Range: An " + this.animalActivationRange + " / Mo " + this.monsterActivationRange + " / Ra " + this.raiderActivationRange + " / Mi " + this.miscActivationRange + " / Tiv " + this.tickInactiveVillagers + " / Isa " + this.ignoreSpectatorActivation );
+     }
+ 
+-    public int playerTrackingRange = 48;
+-    public int animalTrackingRange = 48;
+-    public int monsterTrackingRange = 48;
+-    public int miscTrackingRange = 32;
++    public int playerTrackingRange = 128;
++    public int animalTrackingRange = 96;
++    public int monsterTrackingRange = 96;
++    public int miscTrackingRange = 96;
+     public int displayTrackingRange = 128;
+     public int otherTrackingRange = 64;
+     private void trackingRange()
 diff --git a/src/test/java/io/papermc/paper/configuration/GlobalConfigTestingBase.java b/src/test/java/io/papermc/paper/configuration/GlobalConfigTestingBase.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0396589795da1f83ddf62426236dde9a3afa1376
@@ -4995,15 +5362,15 @@ index 0000000000000000000000000000000000000000..0396589795da1f83ddf62426236dde9a
 +        }
 +    }
 +}
-diff --git a/src/test/java/org/bukkit/support/AbstractTestingBase.java b/src/test/java/org/bukkit/support/AbstractTestingBase.java
-index c3c0dff6497ba47604c29a9ff7bcc4692e9ba757..6dd31027808cd309b6ee5ece9fe73d251c03b7cf 100644
---- a/src/test/java/org/bukkit/support/AbstractTestingBase.java
-+++ b/src/test/java/org/bukkit/support/AbstractTestingBase.java
-@@ -63,6 +63,7 @@ public abstract class AbstractTestingBase {
+diff --git a/src/test/java/org/bukkit/support/DummyServerHelper.java b/src/test/java/org/bukkit/support/DummyServerHelper.java
+index 0a6ba289a94468b67d282a199250142e1e86f075..bdfa164ea21cba91b30b965d65d47112111a1209 100644
+--- a/src/test/java/org/bukkit/support/DummyServerHelper.java
++++ b/src/test/java/org/bukkit/support/DummyServerHelper.java
+@@ -91,6 +91,7 @@ public final class DummyServerHelper {
+         when(instance.getPluginManager()).thenReturn(pluginManager);
+         // Paper end - testing additions
  
-         DummyServer.setup();
-         DummyEnchantments.setup();
-+        io.papermc.paper.configuration.GlobalConfigTestingBase.setupGlobalConfigForTest(); // Paper
- 
-         CraftRegistry.setMinecraftRegistry(REGISTRY_CUSTOM);
- 
++        io.papermc.paper.configuration.GlobalConfigTestingBase.setupGlobalConfigForTest(); // Paper - configuration files - setup global configuration test base
+         return instance;
+     }
+ }

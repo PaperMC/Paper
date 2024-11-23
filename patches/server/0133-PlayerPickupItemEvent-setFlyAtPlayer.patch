@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sun, 7 May 2017 06:26:09 -0500
+Subject: [PATCH] PlayerPickupItemEvent#setFlyAtPlayer
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+index 95d43e451f3343a9a9488b23695908235b55d6c5..92b52ccca3ec7aaab1ffcdc1b85bf6b3e507087f 100644
+--- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
++++ b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+@@ -452,6 +452,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+             // CraftBukkit start - fire PlayerPickupItemEvent
+             int canHold = player.getInventory().canHold(itemstack);
+             int remaining = i - canHold;
++            boolean flyAtPlayer = false; // Paper
+ 
+             if (this.pickupDelay <= 0 && canHold > 0) {
+                 itemstack.setCount(canHold);
+@@ -459,8 +460,14 @@ public class ItemEntity extends Entity implements TraceableEntity {
+                 PlayerPickupItemEvent playerEvent = new PlayerPickupItemEvent((Player) player.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
+                 playerEvent.setCancelled(!playerEvent.getPlayer().getCanPickupItems());
+                 this.level().getCraftServer().getPluginManager().callEvent(playerEvent);
++                flyAtPlayer = playerEvent.getFlyAtPlayer(); // Paper
+                 if (playerEvent.isCancelled()) {
+                     itemstack.setCount(i); // SPIGOT-5294 - restore count
++                    // Paper start
++                    if (flyAtPlayer) {
++                        player.take(this, i);
++                    }
++                    // Paper end
+                     return;
+                 }
+ 
+@@ -490,6 +497,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+             // CraftBukkit end
+ 
+             if (this.pickupDelay == 0 && (this.target == null || this.target.equals(player.getUUID())) && player.getInventory().add(itemstack)) {
++                if (flyAtPlayer) // Paper - PlayerPickupItemEvent
+                 player.take(this, i);
+                 if (itemstack.isEmpty()) {
+                     this.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause

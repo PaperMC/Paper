@@ -1,0 +1,219 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <blake.galbreath@gmail.com>
+Date: Fri, 19 Apr 2019 12:41:13 -0500
+Subject: [PATCH] Mob Spawner API Enhancements
+
+== AT ==
+public net.minecraft.world.level.BaseSpawner isNearPlayer(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;)Z
+public net.minecraft.world.level.BaseSpawner delay(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;)V
+public net.minecraft.world.level.BaseSpawner setNextSpawnData(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/SpawnData;)V
+
+diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+index 299137519dba07c8b2cb35437742b5d40eb9e5d2..56dbe701a93eb9f1309bec92e5d3b310860a4dc5 100644
+--- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
++++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+@@ -237,7 +237,13 @@ public abstract class BaseSpawner {
+     }
+ 
+     public void load(@Nullable Level world, BlockPos pos, CompoundTag nbt) {
++        // Paper start - use larger int if set
++        if (nbt.contains("Paper.Delay")) {
++            this.spawnDelay = nbt.getInt("Paper.Delay");
++        } else {
+         this.spawnDelay = nbt.getShort("Delay");
++        }
++        // Paper end
+         boolean flag = nbt.contains("SpawnData", 10);
+ 
+         if (flag) {
+@@ -260,9 +266,15 @@ public abstract class BaseSpawner {
+             this.spawnPotentials = SimpleWeightedRandomList.single(this.nextSpawnData != null ? this.nextSpawnData : new SpawnData());
+         }
+ 
++        // Paper start - use ints if set
++        if (nbt.contains("Paper.MinSpawnDelay", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
++            this.minSpawnDelay = nbt.getInt("Paper.MinSpawnDelay");
++            this.maxSpawnDelay = nbt.getInt("Paper.MaxSpawnDelay");
++            this.spawnCount = nbt.getShort("SpawnCount");
++        } else // Paper end
+         if (nbt.contains("MinSpawnDelay", 99)) {
+-            this.minSpawnDelay = nbt.getShort("MinSpawnDelay");
+-            this.maxSpawnDelay = nbt.getShort("MaxSpawnDelay");
++            this.minSpawnDelay = nbt.getInt("MinSpawnDelay"); // Paper - short -> int
++            this.maxSpawnDelay = nbt.getInt("MaxSpawnDelay"); // Paper - short -> int
+             this.spawnCount = nbt.getShort("SpawnCount");
+         }
+ 
+@@ -279,9 +291,20 @@ public abstract class BaseSpawner {
+     }
+ 
+     public CompoundTag save(CompoundTag nbt) {
+-        nbt.putShort("Delay", (short) this.spawnDelay);
+-        nbt.putShort("MinSpawnDelay", (short) this.minSpawnDelay);
+-        nbt.putShort("MaxSpawnDelay", (short) this.maxSpawnDelay);
++        // Paper start
++        if (spawnDelay > Short.MAX_VALUE) {
++            nbt.putInt("Paper.Delay", this.spawnDelay);
++        }
++        nbt.putShort("Delay", (short) Math.min(Short.MAX_VALUE, this.spawnDelay));
++
++        if (minSpawnDelay > Short.MAX_VALUE || maxSpawnDelay > Short.MAX_VALUE) {
++            nbt.putInt("Paper.MinSpawnDelay", this.minSpawnDelay);
++            nbt.putInt("Paper.MaxSpawnDelay", this.maxSpawnDelay);
++        }
++
++        nbt.putShort("MinSpawnDelay", (short) Math.min(Short.MAX_VALUE, this.minSpawnDelay));
++        nbt.putShort("MaxSpawnDelay", (short) Math.min(Short.MAX_VALUE, this.maxSpawnDelay));
++        // Paper end
+         nbt.putShort("SpawnCount", (short) this.spawnCount);
+         nbt.putShort("MaxNearbyEntities", (short) this.maxNearbyEntities);
+         nbt.putShort("RequiredPlayerRange", (short) this.requiredPlayerRange);
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
+index 9b2b6697d0b64da2bc99dc646f552c2689d5a1fc..146dde200845abcbe11015dda2c826a1aa711e42 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftCreatureSpawner.java
+@@ -29,7 +29,7 @@ import org.bukkit.craftbukkit.entity.CraftEntityType;
+ import org.bukkit.entity.EntitySnapshot;
+ import org.bukkit.entity.EntityType;
+ 
+-public class CraftCreatureSpawner extends CraftBlockEntityState<SpawnerBlockEntity> implements CreatureSpawner {
++public class CraftCreatureSpawner extends CraftBlockEntityState<SpawnerBlockEntity> implements CreatureSpawner, org.bukkit.craftbukkit.spawner.PaperSharedSpawnerLogic { // Paper - more spawner API
+ 
+     public CraftCreatureSpawner(World world, SpawnerBlockEntity tileEntity) {
+         super(world, tileEntity);
+@@ -291,4 +291,38 @@ public class CraftCreatureSpawner extends CraftBlockEntityState<SpawnerBlockEnti
+                 new HashMap<>(nms.slotDropChances().entrySet().stream().collect(Collectors.toMap((entry) -> CraftEquipmentSlot.getSlot(entry.getKey()), Map.Entry::getValue)))
+         )).orElse(null);
+     }
++
++    // Paper start - more spawner API
++    @Override
++    public boolean isActivated() {
++        requirePlaced();
++        return org.bukkit.craftbukkit.spawner.PaperSharedSpawnerLogic.super.isActivated();
++    }
++
++    @Override
++    public void resetTimer() {
++        requirePlaced();
++        org.bukkit.craftbukkit.spawner.PaperSharedSpawnerLogic.super.resetTimer();
++    }
++
++    @Override
++    public void setNextSpawnData(final SpawnData spawnData) {
++        this.getSpawner().setNextSpawnData(this.isPlaced() ? this.getInternalWorld() : null, this.getInternalPosition(), spawnData);
++    }
++
++    @Override
++    public BaseSpawner getSpawner() {
++        return this.getSnapshot().getSpawner();
++    }
++
++    @Override
++    public net.minecraft.core.BlockPos getInternalPosition() {
++        return this.getPosition();
++    }
++
++    @Override
++    public net.minecraft.world.level.Level getInternalWorld() {
++        return this.world.getHandle();
++    }
++    // Paper end - more spawner API
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartMobSpawner.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartMobSpawner.java
+index 72e34dbfadcebb26a0707ce095b0d270f4d1d97c..e8ece01669373ecf6552d33b2ed72668524e2650 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartMobSpawner.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartMobSpawner.java
+@@ -16,7 +16,7 @@ import org.bukkit.entity.EntitySnapshot;
+ import org.bukkit.entity.EntityType;
+ import org.bukkit.entity.minecart.SpawnerMinecart;
+ 
+-final class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMinecart {
++final class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMinecart, org.bukkit.craftbukkit.spawner.PaperSharedSpawnerLogic { // Paper - more spawner API
+     CraftMinecartMobSpawner(CraftServer server, MinecartSpawner entity) {
+         super(server, entity);
+     }
+@@ -171,4 +171,21 @@ final class CraftMinecartMobSpawner extends CraftMinecart implements SpawnerMine
+     public String toString() {
+         return "CraftMinecartMobSpawner";
+     }
++
++    // Paper start - more spawner API
++    @Override
++    public net.minecraft.world.level.BaseSpawner getSpawner() {
++        return this.getHandle().getSpawner();
++    }
++
++    @Override
++    public net.minecraft.world.level.Level getInternalWorld() {
++        return this.getHandle().level();
++    }
++
++    @Override
++    public net.minecraft.core.BlockPos getInternalPosition() {
++        return this.getHandle().blockPosition();
++    }
++    // Paper end - more spawner API
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/spawner/PaperSharedSpawnerLogic.java b/src/main/java/org/bukkit/craftbukkit/spawner/PaperSharedSpawnerLogic.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b1d08dc4c4257a6f5cd70dfdddade58ff7eedb4b
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/spawner/PaperSharedSpawnerLogic.java
+@@ -0,0 +1,56 @@
++package org.bukkit.craftbukkit.spawner;
++
++import com.google.common.base.Preconditions;
++import java.util.Optional;
++import net.minecraft.core.BlockPos;
++import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.world.entity.Entity;
++import net.minecraft.world.entity.EntityType;
++import net.minecraft.world.level.BaseSpawner;
++import net.minecraft.world.level.Level;
++import net.minecraft.world.level.SpawnData;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.inventory.ItemStack;
++import org.bukkit.spawner.Spawner;
++
++/**
++ * A common parent interface for both the {@link org.bukkit.craftbukkit.block.CraftCreatureSpawner} and minecart mob spawner.
++ */
++public interface PaperSharedSpawnerLogic extends Spawner {
++
++    BaseSpawner getSpawner();
++
++    Level getInternalWorld();
++
++    BlockPos getInternalPosition();
++
++    default boolean isActivated() {
++        return this.getSpawner().isNearPlayer(this.getInternalWorld(), this.getInternalPosition());
++    }
++
++    default void resetTimer() {
++        this.getSpawner().delay(this.getInternalWorld(), this.getInternalPosition());
++    }
++
++    default void setNextSpawnData(SpawnData spawnData) {
++        this.getSpawner().setNextSpawnData(this.getInternalWorld(), this.getInternalPosition(), spawnData);
++    }
++
++    default void setSpawnedItem(final ItemStack itemStack) {
++        Preconditions.checkArgument(itemStack != null && !itemStack.getType().isAir(), "spawners cannot spawn air");
++
++        final net.minecraft.world.item.ItemStack item = CraftItemStack.asNMSCopy(itemStack);
++        final CompoundTag entity = new CompoundTag();
++        entity.putString(Entity.ID_TAG, BuiltInRegistries.ENTITY_TYPE.getKey(EntityType.ITEM).toString());
++        entity.put("Item", item.save(this.getInternalWorld().registryAccess()));
++
++        this.setNextSpawnData(
++            new net.minecraft.world.level.SpawnData(
++                entity,
++                java.util.Optional.empty(),
++                Optional.ofNullable(this.getSpawner().nextSpawnData).flatMap(SpawnData::equipment)
++            )
++        );
++    }
++}

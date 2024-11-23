@@ -8,7 +8,7 @@ apply if there are changes made to it from upstream - thus notifying us
 that changes were made.
 
 diff --git a/.gitignore b/.gitignore
-index 3df8c60ab5cd1454660980883f80668d535b742b..37c3a00659ce21623be07317f4f6a45bf990d799 100644
+index 37dab9e868dbfb019c271a547d975a48ad1cb571..3811c0d849a3eb028ed1a6b7a2d4747f7f570448 100644
 --- a/.gitignore
 +++ b/.gitignore
 @@ -1,3 +1,6 @@
@@ -18,7 +18,7 @@ index 3df8c60ab5cd1454660980883f80668d535b742b..37c3a00659ce21623be07317f4f6a45b
  # Eclipse stuff
  /.classpath
  /.project
-@@ -38,3 +41,7 @@ dependency-reduced-pom.xml
+@@ -39,3 +42,7 @@ dependency-reduced-pom.xml
  
  /src/main/resources/achievement
  /src/main/resources/lang
@@ -28,39 +28,43 @@ index 3df8c60ab5cd1454660980883f80668d535b742b..37c3a00659ce21623be07317f4f6a45b
 +/.factorypath
 diff --git a/build.gradle.kts b/build.gradle.kts
 new file mode 100644
-index 0000000000000000000000000000000000000000..3be7f53046d821d6777481b92b3aa6e3df51ed8f
+index 0000000000000000000000000000000000000000..6ef457b8ea6ff9b89cb74ecbdca20731d9f94e97
 --- /dev/null
 +++ b/build.gradle.kts
-@@ -0,0 +1,140 @@
+@@ -0,0 +1,131 @@
 +import io.papermc.paperweight.util.*
 +
 +plugins {
 +    java
 +    `maven-publish`
-+    id("com.github.johnrengelman.shadow")
 +}
 +
 +dependencies {
 +    implementation(project(":paper-api"))
 +    implementation("jline:jline:2.12.1")
-+    implementation("org.apache.logging.log4j:log4j-iostreams:2.19.0") {
++    implementation("org.apache.logging.log4j:log4j-iostreams:2.22.1") {
 +        exclude(group = "org.apache.logging.log4j", module = "log4j-api")
 +    }
-+    implementation("org.ow2.asm:asm:9.5")
++    implementation("org.ow2.asm:asm-commons:9.7.1")
 +    implementation("commons-lang:commons-lang:2.6")
-+    runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.1")
-+    runtimeOnly("com.mysql:mysql-connector-j:8.1.0")
++    runtimeOnly("org.xerial:sqlite-jdbc:3.46.1.3")
++    runtimeOnly("com.mysql:mysql-connector-j:9.1.0")
 +
-+    runtimeOnly("org.apache.maven:maven-resolver-provider:3.8.5")
-+    runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.3")
-+    runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.7.3")
++    runtimeOnly("org.apache.maven:maven-resolver-provider:3.9.6")
++    runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.18")
++    runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.9.18")
 +
-+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
++    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
++    testImplementation("org.junit.platform:junit-platform-suite-engine:1.10.0")
 +    testImplementation("org.hamcrest:hamcrest:2.2")
-+    testImplementation("org.mockito:mockito-core:5.5.0")
++    testImplementation("org.mockito:mockito-core:5.14.1")
++    testImplementation("org.ow2.asm:asm-tree:9.7.1")
 +}
 +
-+val craftbukkitPackageVersion = "1_20_R2" // Paper
++paperweight {
++    craftBukkitPackageVersion.set("v1_21_R2") // also needs to be updated in MappingEnvironment
++}
++
 +tasks.jar {
 +    archiveClassifier.set("dev")
 +
@@ -86,33 +90,16 @@ index 0000000000000000000000000000000000000000..3be7f53046d821d6777481b92b3aa6e3
 +
 +publishing {
 +    publications.create<MavenPublication>("maven") {
-+        artifact(tasks.shadowJar)
-+    }
-+}
-+
-+relocation {
-+    // Order matters here - e.g. craftbukkit proper must be relocated before any of the libs are relocated into the cb package
-+    relocate("org.bukkit.craftbukkit" to "org.bukkit.craftbukkit.v$craftbukkitPackageVersion") {
-+        exclude("org.bukkit.craftbukkit.Main*")
-+    }
-+}
-+
-+tasks.shadowJar {
-+    configurations = listOf(project.configurations.vanillaServer.get())
-+    archiveClassifier.set("mojang-mapped")
-+
-+    for (relocation in relocation.relocations.get()) {
-+        relocate(relocation.fromPackage, relocation.toPackage) {
-+            for (exclude in relocation.excludes) {
-+                exclude(exclude)
-+            }
-+        }
 +    }
 +}
 +
 +tasks.test {
-+    exclude("org/bukkit/craftbukkit/inventory/ItemStack*Test.class")
-+    useJUnitPlatform()
++    include("**/**TestSuite.class")
++    workingDir = temporaryDir
++    useJUnitPlatform {
++        forkEvery = 1
++        excludeTags("Slow")
++    }
 +}
 +
 +fun TaskContainer.registerRunTask(
@@ -125,7 +112,11 @@ index 0000000000000000000000000000000000000000..3be7f53046d821d6777481b92b3aa6e3
 +    workingDir = rootProject.layout.projectDirectory
 +        .dir(providers.gradleProperty("paper.runWorkDir").getOrElse("run"))
 +        .asFile
-+    javaLauncher.set(project.javaToolchains.defaultJavaLauncher(project))
++    javaLauncher.set(project.javaToolchains.launcherFor {
++        languageVersion.set(JavaLanguageVersion.of(21))
++        vendor.set(JvmVendorSpec.JETBRAINS)
++    })
++    jvmArgs("-XX:+AllowEnhancedClassRedefinition", "-XX:+AllowRedefinitionToAddDeleteMethods")
 +
 +    if (rootProject.childProjects["test-plugin"] != null) {
 +        val testPluginJar = rootProject.project(":test-plugin").tasks.jar.flatMap { it.archiveFile }
@@ -156,9 +147,9 @@ index 0000000000000000000000000000000000000000..3be7f53046d821d6777481b92b3aa6e3
 +        runtime.filterNot { it.asFile.absolutePath == vanilla }
 +    }
 +
-+tasks.registerRunTask("runShadow") {
-+    description = "Spin up a test server from the shadowJar archiveFile"
-+    classpath(tasks.shadowJar.flatMap { it.archiveFile })
++tasks.registerRunTask("runServerJar") {
++    description = "Spin up a test server from the serverJar archiveFile"
++    classpath(tasks.serverJar.flatMap { it.archiveFile })
 +    classpath(runtimeClasspathWithoutVanillaServer)
 +}
 +
@@ -174,17 +165,17 @@ index 0000000000000000000000000000000000000000..3be7f53046d821d6777481b92b3aa6e3
 +}
 diff --git a/pom.xml b/pom.xml
 deleted file mode 100644
-index 2410a3cb98fc8d643043c7e3a85c880d4a9f2aa4..0000000000000000000000000000000000000000
+index c2973479d13a5d2898523cf5f246db39c2ea48e6..0000000000000000000000000000000000000000
 --- a/pom.xml
 +++ /dev/null
-@@ -1,602 +0,0 @@
+@@ -1,691 +0,0 @@
 -<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 -         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 -    <modelVersion>4.0.0</modelVersion>
 -    <groupId>org.spigotmc</groupId>
 -    <artifactId>spigot</artifactId>
 -    <packaging>jar</packaging>
--    <version>1.20.2-R0.1-SNAPSHOT</version>
+-    <version>1.21.3-R0.1-SNAPSHOT</version>
 -    <name>Spigot</name>
 -    <url>https://www.spigotmc.org/</url>
 -
@@ -197,12 +188,12 @@ index 2410a3cb98fc8d643043c7e3a85c880d4a9f2aa4..00000000000000000000000000000000
 -
 -    <properties>
 -        <skipTests>true</skipTests>
+-        <groups>AllFeatures,Bundle,Legacy,Normal,VanillaFeature</groups>
 -        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 -        <api.version>unknown</api.version>
 -        <bt.name>git</bt.name>
--        <minecraft_version>1_20_R2</minecraft_version>
--        <maven.compiler.source>17</maven.compiler.source>
--        <maven.compiler.target>17</maven.compiler.target>
+-        <minecraft_version>1_21_R2</minecraft_version>
+-        <maven.compiler.release>21</maven.compiler.release>
 -    </properties>
 -
 -    <repositories>
@@ -235,50 +226,110 @@ index 2410a3cb98fc8d643043c7e3a85c880d4a9f2aa4..00000000000000000000000000000000
 -        <dependency>
 -            <groupId>org.apache.logging.log4j</groupId>
 -            <artifactId>log4j-iostreams</artifactId>
--            <version>2.19.0</version>
+-            <version>2.22.1</version>
 -            <scope>compile</scope>
 -        </dependency>
 -        <dependency>
 -            <groupId>org.ow2.asm</groupId>
--            <artifactId>asm</artifactId>
--            <version>9.5</version>
+-            <artifactId>asm-commons</artifactId>
+-            <version>9.7.1</version>
 -            <scope>compile</scope>
 -        </dependency>
--        <!-- Mojang depends -->
+-        <!-- Start Mojang depends -->
+-        <dependency>
+-            <groupId>com.fasterxml.jackson.core</groupId>
+-            <artifactId>jackson-annotations</artifactId>
+-            <version>2.13.4</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>com.fasterxml.jackson.core</groupId>
+-            <artifactId>jackson-core</artifactId>
+-            <version>2.13.4</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>com.fasterxml.jackson.core</groupId>
+-            <artifactId>jackson-databind</artifactId>
+-            <version>2.13.4.2</version>
+-            <scope>compile</scope>
+-        </dependency>
 -        <dependency>
 -            <groupId>com.github.oshi</groupId>
 -            <artifactId>oshi-core</artifactId>
--            <version>6.4.5</version>
+-            <version>6.4.10</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>com.github.stephenc.jcip</groupId>
+-            <artifactId>jcip-annotations</artifactId>
+-            <version>1.0-1</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>com.microsoft.azure</groupId>
+-            <artifactId>msal4j</artifactId>
+-            <version>1.15.0</version>
 -            <scope>compile</scope>
 -        </dependency>
 -        <dependency>
 -            <groupId>com.mojang</groupId>
 -            <artifactId>authlib</artifactId>
--            <version>5.0.47</version>
+-            <version>6.0.55</version>
 -            <scope>compile</scope>
 -        </dependency>
 -        <dependency>
 -            <groupId>com.mojang</groupId>
 -            <artifactId>brigadier</artifactId>
--            <version>1.1.8</version>
+-            <version>1.3.10</version>
 -            <scope>compile</scope>
 -        </dependency>
 -        <dependency>
 -            <groupId>com.mojang</groupId>
 -            <artifactId>datafixerupper</artifactId>
--            <version>6.0.8</version>
+-            <version>8.0.16</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>com.mojang</groupId>
+-            <artifactId>jtracy</artifactId>
+-            <version>1.0.29</version>
 -            <scope>compile</scope>
 -        </dependency>
 -        <dependency>
 -            <groupId>com.mojang</groupId>
 -            <artifactId>logging</artifactId>
--            <version>1.1.1</version>
+-            <version>1.4.9</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>com.nimbusds</groupId>
+-            <artifactId>content-type</artifactId>
+-            <version>2.3</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>com.nimbusds</groupId>
+-            <artifactId>lang-tag</artifactId>
+-            <version>1.7</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>com.nimbusds</groupId>
+-            <artifactId>nimbus-jose-jwt</artifactId>
+-            <version>9.37.3</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>com.nimbusds</groupId>
+-            <artifactId>oauth2-oidc-sdk</artifactId>
+-            <version>11.9.1</version>
 -            <scope>compile</scope>
 -        </dependency>
 -        <dependency>
 -            <groupId>commons-io</groupId>
 -            <artifactId>commons-io</artifactId>
--            <version>2.13.0</version>
+-            <version>2.15.1</version>
 -            <scope>compile</scope>
 -        </dependency>
 -        <dependency>
@@ -352,13 +403,25 @@ index 2410a3cb98fc8d643043c7e3a85c880d4a9f2aa4..00000000000000000000000000000000
 -        <dependency>
 -            <groupId>net.java.dev.jna</groupId>
 -            <artifactId>jna</artifactId>
--            <version>5.13.0</version>
+-            <version>5.14.0</version>
 -            <scope>compile</scope>
 -        </dependency>
 -        <dependency>
 -            <groupId>net.java.dev.jna</groupId>
 -            <artifactId>jna-platform</artifactId>
--            <version>5.13.0</version>
+-            <version>5.14.0</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>net.minidev</groupId>
+-            <artifactId>accessors-smart</artifactId>
+-            <version>2.5.0</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>net.minidev</groupId>
+-            <artifactId>json-smart</artifactId>
+-            <version>2.5.0</version>
 -            <scope>compile</scope>
 -        </dependency>
 -        <dependency>
@@ -370,27 +433,40 @@ index 2410a3cb98fc8d643043c7e3a85c880d4a9f2aa4..00000000000000000000000000000000
 -        <dependency>
 -            <groupId>org.apache.commons</groupId>
 -            <artifactId>commons-lang3</artifactId>
--            <version>3.13.0</version>
+-            <version>3.14.0</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>org.apache.logging.log4j</groupId>
+-            <artifactId>log4j-api</artifactId>
+-            <version>2.22.1</version>
 -            <scope>compile</scope>
 -        </dependency>
 -        <dependency>
 -            <groupId>org.apache.logging.log4j</groupId>
 -            <artifactId>log4j-core</artifactId>
--            <version>2.19.0</version>
+-            <version>2.22.1</version>
 -            <scope>compile</scope>
 -        </dependency>
 -        <dependency>
 -            <groupId>org.apache.logging.log4j</groupId>
 -            <artifactId>log4j-slf4j2-impl</artifactId>
--            <version>2.19.0</version>
+-            <version>2.22.1</version>
+-            <scope>compile</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>org.lz4</groupId>
+-            <artifactId>lz4-java</artifactId>
+-            <version>1.8.0</version>
 -            <scope>compile</scope>
 -        </dependency>
 -        <dependency>
 -            <groupId>org.slf4j</groupId>
 -            <artifactId>slf4j-api</artifactId>
--            <version>2.0.7</version>
+-            <version>2.0.9</version>
 -            <scope>compile</scope>
 -        </dependency>
+-        <!-- End Mojang depends -->
 -        <!-- deprecated API depend -->
 -        <dependency>
 -            <groupId>commons-lang</groupId>
@@ -414,46 +490,52 @@ index 2410a3cb98fc8d643043c7e3a85c880d4a9f2aa4..00000000000000000000000000000000
 -        <dependency>
 -            <groupId>org.xerial</groupId>
 -            <artifactId>sqlite-jdbc</artifactId>
--            <version>3.42.0.1</version>
+-            <version>3.46.1.3</version>
 -            <scope>runtime</scope>
 -        </dependency>
 -        <dependency>
 -            <groupId>com.mysql</groupId>
 -            <artifactId>mysql-connector-j</artifactId>
--            <version>8.1.0</version>
+-            <version>9.1.0</version>
 -            <scope>runtime</scope>
 -        </dependency>
 -        <!-- add these back in as they are not exposed by the API -->
 -        <dependency>
 -            <groupId>org.apache.maven</groupId>
 -            <artifactId>maven-resolver-provider</artifactId>
--            <version>3.8.5</version>
+-            <version>3.9.6</version>
 -            <scope>runtime</scope>
 -        </dependency>
 -        <dependency>
 -            <groupId>org.apache.maven.resolver</groupId>
 -            <artifactId>maven-resolver-connector-basic</artifactId>
--            <version>1.7.3</version>
+-            <version>1.9.18</version>
 -            <scope>runtime</scope>
 -        </dependency>
 -        <dependency>
 -            <groupId>org.apache.maven.resolver</groupId>
 -            <artifactId>maven-resolver-transport-http</artifactId>
--            <version>1.7.3</version>
+-            <version>1.9.18</version>
 -            <scope>runtime</scope>
 -        </dependency>
 -        <!-- annotations -->
 -        <dependency>
 -            <groupId>org.jetbrains</groupId>
 -            <artifactId>annotations-java5</artifactId>
--            <version>24.0.1</version>
+-            <version>24.1.0</version>
 -            <scope>provided</scope>
 -        </dependency>
 -        <!-- testing -->
 -        <dependency>
 -            <groupId>org.junit.jupiter</groupId>
 -            <artifactId>junit-jupiter</artifactId>
--            <version>5.10.0</version>
+-            <version>5.10.2</version>
+-            <scope>test</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>org.junit.platform</groupId>
+-            <artifactId>junit-platform-suite-engine</artifactId>
+-            <version>1.10.0</version>
 -            <scope>test</scope>
 -        </dependency>
 -        <dependency>
@@ -465,7 +547,13 @@ index 2410a3cb98fc8d643043c7e3a85c880d4a9f2aa4..00000000000000000000000000000000
 -        <dependency>
 -            <groupId>org.mockito</groupId>
 -            <artifactId>mockito-core</artifactId>
--            <version>5.5.0</version>
+-            <version>5.14.1</version>
+-            <scope>test</scope>
+-        </dependency>
+-        <dependency>
+-            <groupId>org.ow2.asm</groupId>
+-            <artifactId>asm-tree</artifactId>
+-            <version>9.7.1</version>
 -            <scope>test</scope>
 -        </dependency>
 -    </dependencies>
@@ -520,7 +608,7 @@ index 2410a3cb98fc8d643043c7e3a85c880d4a9f2aa4..00000000000000000000000000000000
 -            <plugin>
 -                <groupId>org.apache.maven.plugins</groupId>
 -                <artifactId>maven-jar-plugin</artifactId>
--                <version>3.3.0</version>
+-                <version>3.4.1</version>
 -                <configuration>
 -                    <archive>
 -                        <manifest>
@@ -562,7 +650,7 @@ index 2410a3cb98fc8d643043c7e3a85c880d4a9f2aa4..00000000000000000000000000000000
 -            <plugin>
 -                <groupId>org.apache.maven.plugins</groupId>
 -                <artifactId>maven-shade-plugin</artifactId>
--                <version>3.5.0</version>
+-                <version>3.5.3</version>
 -                <executions>
 -                    <execution>
 -                        <phase>package</phase>
@@ -593,7 +681,7 @@ index 2410a3cb98fc8d643043c7e3a85c880d4a9f2aa4..00000000000000000000000000000000
 -            <plugin>
 -                <groupId>net.md-5</groupId>
 -                <artifactId>specialsource-maven-plugin</artifactId>
--                <version>2.0.2</version>
+-                <version>2.0.3</version>
 -                <executions>
 -                    <execution>
 -                        <phase>package</phase>
@@ -639,7 +727,7 @@ index 2410a3cb98fc8d643043c7e3a85c880d4a9f2aa4..00000000000000000000000000000000
 -            <plugin>
 -                <groupId>org.apache.maven.plugins</groupId>
 -                <artifactId>maven-assembly-plugin</artifactId>
--                <version>3.6.0</version>
+-                <version>3.7.1</version>
 -                <executions>
 -                    <execution>
 -                        <phase>package</phase>
@@ -666,30 +754,22 @@ index 2410a3cb98fc8d643043c7e3a85c880d4a9f2aa4..00000000000000000000000000000000
 -            <plugin>
 -                <groupId>org.apache.maven.plugins</groupId>
 -                <artifactId>maven-compiler-plugin</artifactId>
--                <version>3.11.0</version>
+-                <version>3.13.0</version>
 -                <configuration>
--                    <!-- we use the Eclipse compiler as it doesn't need a JDK -->
--                    <compilerId>eclipse</compilerId>
 -                    <!-- default changed with version 3.11.0 -->
 -                    <showWarnings>false</showWarnings>
 -                </configuration>
--                <dependencies>
--                    <dependency>
--                        <groupId>org.codehaus.plexus</groupId>
--                        <artifactId>plexus-compiler-eclipse</artifactId>
--                        <version>2.13.0</version>
--                    </dependency>
--                </dependencies>
 -            </plugin>
 -            <plugin>
 -                <groupId>org.apache.maven.plugins</groupId>
 -                <artifactId>maven-surefire-plugin</artifactId>
--                <version>3.1.0</version>
+-                <version>3.2.5</version>
 -                <configuration>
 -                    <workingDirectory>${basedir}/target/test-server</workingDirectory>
--                    <excludes>
--                        <exclude>org/bukkit/craftbukkit/inventory/ItemStack*Test.java</exclude>
--                    </excludes>
+-                    <reuseForks>false</reuseForks>
+-                    <includes>
+-                        <include>**/*TestSuite.java</include>
+-                    </includes>
 -                </configuration>
 -            </plugin>
 -        </plugins>
@@ -713,7 +793,7 @@ index 2410a3cb98fc8d643043c7e3a85c880d4a9f2aa4..00000000000000000000000000000000
 -                    <plugin>
 -                        <groupId>org.apache.maven.plugins</groupId>
 -                        <artifactId>maven-checkstyle-plugin</artifactId>
--                        <version>3.3.0</version>
+-                        <version>3.3.1</version>
 -                        <executions>
 -                            <execution>
 -                                <phase>test-compile</phase>

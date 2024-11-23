@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: egg82 <eggys82@gmail.com>
+Date: Sat, 11 Sep 2021 22:55:14 +0200
+Subject: [PATCH] Add root/admin user detection
+
+This patch detects whether or not the server is currently executing as a privileged user and spits out a warning.
+The warning serves as a sort-of PSA for newer server admins who don't understand the risks of running as root.
+We've seen plenty of bad/malicious plugins hit markets, and there's been a few close-calls with exploits in the past.
+Hopefully this helps mitigate some potential damage to servers, even if it is just a warning.
+
+Co-authored-by: Noah van der Aa <ndvdaa@gmail.com>
+
+diff --git a/src/main/java/io/papermc/paper/util/ServerEnvironment.java b/src/main/java/io/papermc/paper/util/ServerEnvironment.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..68098dfe716e93aafcca4d8d5b5a81d8648b3654
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/ServerEnvironment.java
+@@ -0,0 +1,23 @@
++package io.papermc.paper.util;
++
++import com.sun.security.auth.module.NTSystem;
++import com.sun.security.auth.module.UnixSystem;
++import java.util.Set;
++import org.apache.commons.lang.SystemUtils;
++
++public class ServerEnvironment {
++    private static final boolean RUNNING_AS_ROOT_OR_ADMIN;
++    private static final String WINDOWS_HIGH_INTEGRITY_LEVEL = "S-1-16-12288";
++
++    static {
++        if (SystemUtils.IS_OS_WINDOWS) {
++            RUNNING_AS_ROOT_OR_ADMIN = Set.of(new NTSystem().getGroupIDs()).contains(WINDOWS_HIGH_INTEGRITY_LEVEL);
++        } else {
++            RUNNING_AS_ROOT_OR_ADMIN = new UnixSystem().getUid() == 0;
++        }
++    }
++
++    public static boolean userIsRootOrAdmin() {
++        return RUNNING_AS_ROOT_OR_ADMIN;
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index 21d6f728d6ecd35a05933e9406a386c36135a456..ac7fc2497b860a143ef08498f5f477a373a29be7 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -193,6 +193,16 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+             DedicatedServer.LOGGER.warn("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
+         }
+ 
++        // Paper start - detect running as root
++        if (io.papermc.paper.util.ServerEnvironment.userIsRootOrAdmin()) {
++            DedicatedServer.LOGGER.warn("****************************");
++            DedicatedServer.LOGGER.warn("YOU ARE RUNNING THIS SERVER AS AN ADMINISTRATIVE OR ROOT USER. THIS IS NOT ADVISED.");
++            DedicatedServer.LOGGER.warn("YOU ARE OPENING YOURSELF UP TO POTENTIAL RISKS WHEN DOING THIS.");
++            DedicatedServer.LOGGER.warn("FOR MORE INFORMATION, SEE https://madelinemiller.dev/blog/root-minecraft-server/");
++            DedicatedServer.LOGGER.warn("****************************");
++        }
++        // Paper end - detect running as root
++
+         DedicatedServer.LOGGER.info("Loading properties");
+         DedicatedServerProperties dedicatedserverproperties = this.settings.getProperties();
+ 

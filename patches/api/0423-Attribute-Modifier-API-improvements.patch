@@ -1,0 +1,88 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TonytheMacaroni <tonythemacaroni123@gmail.com>
+Date: Thu, 9 Nov 2023 20:35:35 -0500
+Subject: [PATCH] Attribute Modifier API improvements
+
+Co-authored-by: Malfrador <malfrador@gmail.com>
+
+diff --git a/src/main/java/org/bukkit/attribute/AttributeInstance.java b/src/main/java/org/bukkit/attribute/AttributeInstance.java
+index f08ee26cc4d479e1bfc5264b8cbe721315de91f2..f1fa86ddf1f50a357c9e94cc61261d8c96a2da6f 100644
+--- a/src/main/java/org/bukkit/attribute/AttributeInstance.java
++++ b/src/main/java/org/bukkit/attribute/AttributeInstance.java
+@@ -39,6 +39,42 @@ public interface AttributeInstance {
+     @NotNull
+     Collection<AttributeModifier> getModifiers();
+ 
++    // Paper start
++    /**
++     * Gets the modifier with the corresponding key.
++     *
++     * @param key the jey of the modifier
++     * @return the modifier, if it exists
++     */
++    @org.jetbrains.annotations.Nullable AttributeModifier getModifier(@NotNull net.kyori.adventure.key.Key key);
++
++    /**
++     * Remove a modifier with the corresponding key from this instance.
++     *
++     * @param key the key of the modifier
++     */
++    void removeModifier(@NotNull net.kyori.adventure.key.Key key);
++
++    /**
++     * Gets the modifier with the corresponding UUID.
++     *
++     * @param uuid the UUID of the modifier
++     * @return the modifier, if it exists
++     * @deprecated use {@link #getModifier(net.kyori.adventure.key.Key)}, modifiers are no longer stored by UUID
++     */
++    @Deprecated(forRemoval = true, since = "1.21")
++    @org.jetbrains.annotations.Nullable AttributeModifier getModifier(@NotNull java.util.UUID uuid);
++
++    /**
++     * Remove a modifier with the corresponding UUID from this instance.
++     *
++     * @param uuid the UUID of the modifier
++     * @deprecated use {@link #removeModifier(net.kyori.adventure.key.Key)}, modifiers are no longer stored by UUID
++     */
++    @Deprecated(forRemoval = true, since = "1.21")
++    void removeModifier(@NotNull java.util.UUID uuid);
++    // Paper end
++
+     /**
+      * Add a modifier to this instance.
+      *
+@@ -46,6 +82,16 @@ public interface AttributeInstance {
+      */
+     void addModifier(@NotNull AttributeModifier modifier);
+ 
++    // Paper start - Transient modifier API
++    /**
++     * Add a transient modifier to this instance.
++     * Transient modifiers are not persisted (saved with the NBT data)
++     *
++     * @param modifier to add
++     */
++    void addTransientModifier(@NotNull AttributeModifier modifier);
++    // Paper end
++
+     /**
+      * Remove a modifier from this instance.
+      *
+diff --git a/src/main/java/org/bukkit/attribute/AttributeModifier.java b/src/main/java/org/bukkit/attribute/AttributeModifier.java
+index 8c53ac6b4381f3cf8b5e989c8b2a3ba77bd4e475..def473b6424da1e81448bd492b7fef46691eaf8c 100644
+--- a/src/main/java/org/bukkit/attribute/AttributeModifier.java
++++ b/src/main/java/org/bukkit/attribute/AttributeModifier.java
+@@ -48,6 +48,12 @@ public class AttributeModifier implements ConfigurationSerializable, Keyed {
+         this(NamespacedKey.fromString(uuid.toString()), amount, operation, slot);
+     }
+ 
++    // Paper start - Add constructor without EquipmentSlotGroup
++    public AttributeModifier(@NotNull NamespacedKey key, double amount, @NotNull Operation operation) {
++        this(key, amount, operation, EquipmentSlotGroup.ANY);
++    }
++    // Paper end
++
+     public AttributeModifier(@NotNull NamespacedKey key, double amount, @NotNull Operation operation, @NotNull EquipmentSlotGroup slot) {
+         Preconditions.checkArgument(key != null, "Key cannot be null");
+         Preconditions.checkArgument(operation != null, "Operation cannot be null");

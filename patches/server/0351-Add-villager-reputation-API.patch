@@ -1,0 +1,122 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Wed, 22 Apr 2020 23:29:20 +0200
+Subject: [PATCH] Add villager reputation API
+
+== AT ==
+public net.minecraft.world.entity.ai.gossip.GossipContainer$EntityGossips
+public net.minecraft.world.entity.ai.gossip.GossipContainer$EntityGossips <init>()V
+public net.minecraft.world.entity.ai.gossip.GossipContainer gossips
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/gossip/GossipContainer.java b/src/main/java/net/minecraft/world/entity/ai/gossip/GossipContainer.java
+index f06a5f0d9c5c877ddf963254d3124f5fe2d67282..aa32804bc9affe9a615d3ffaa513f6f09aab3f32 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/gossip/GossipContainer.java
++++ b/src/main/java/net/minecraft/world/entity/ai/gossip/GossipContainer.java
+@@ -216,6 +216,43 @@ public class GossipContainer {
+         public void remove(GossipType gossipType) {
+             this.entries.removeInt(gossipType);
+         }
++
++        // Paper start - Add villager reputation API
++        private static final GossipType[] TYPES = GossipType.values();
++        public com.destroystokyo.paper.entity.villager.Reputation getPaperReputation() {
++            Map<com.destroystokyo.paper.entity.villager.ReputationType, Integer> map = new java.util.EnumMap<>(com.destroystokyo.paper.entity.villager.ReputationType.class);
++            for (Object2IntMap.Entry<GossipType> type : this.entries.object2IntEntrySet()) {
++                map.put(toApi(type.getKey()), type.getIntValue());
++            }
++
++            return new com.destroystokyo.paper.entity.villager.Reputation(map);
++        }
++
++        public void assignFromPaperReputation(com.destroystokyo.paper.entity.villager.Reputation rep) {
++            for (GossipType type : TYPES) {
++                com.destroystokyo.paper.entity.villager.ReputationType api = toApi(type);
++
++                if (rep.hasReputationSet(api)) {
++                    int reputation = rep.getReputation(api);
++                    if (reputation == 0) {
++                        this.entries.removeInt(type);
++                    } else {
++                        this.entries.put(type, reputation);
++                    }
++                }
++            }
++        }
++
++        private static com.destroystokyo.paper.entity.villager.ReputationType toApi(GossipType type) {
++            return switch (type) {
++                case MAJOR_NEGATIVE -> com.destroystokyo.paper.entity.villager.ReputationType.MAJOR_NEGATIVE;
++                case MINOR_NEGATIVE -> com.destroystokyo.paper.entity.villager.ReputationType.MINOR_NEGATIVE;
++                case MINOR_POSITIVE -> com.destroystokyo.paper.entity.villager.ReputationType.MINOR_POSITIVE;
++                case MAJOR_POSITIVE -> com.destroystokyo.paper.entity.villager.ReputationType.MAJOR_POSITIVE;
++                case TRADING -> com.destroystokyo.paper.entity.villager.ReputationType.TRADING;
++            };
++        }
++        // Paper end - Add villager reputation API
+     }
+ 
+     static record GossipEntry(UUID target, GossipType type, int value) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java
+index ded319d10a5907b96abfd5620036b66a9aa3b3f7..45c44c46edee9f46b8e197f1f54ea2779bf1184c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftVillager.java
+@@ -21,6 +21,13 @@ import org.bukkit.entity.ZombieVillager;
+ import org.bukkit.event.entity.CreatureSpawnEvent;
+ import org.bukkit.event.entity.EntityTransformEvent;
+ 
++// Paper start
++import com.destroystokyo.paper.entity.villager.Reputation;
++import com.google.common.collect.Maps;
++import java.util.Map;
++import java.util.UUID;
++// Paper end
++
+ public class CraftVillager extends CraftAbstractVillager implements Villager {
+ 
+     public CraftVillager(CraftServer server, net.minecraft.world.entity.npc.Villager entity) {
+@@ -299,4 +306,45 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
+             return this.getKey().hashCode();
+         }
+     }
++
++    // Paper start - Add villager reputation API
++    @Override
++    public Reputation getReputation(UUID uniqueId) {
++        net.minecraft.world.entity.ai.gossip.GossipContainer.EntityGossips rep = getHandle().getGossips().gossips.get(uniqueId);
++        if (rep == null) {
++            return new Reputation(new java.util.EnumMap<>(com.destroystokyo.paper.entity.villager.ReputationType.class));
++        }
++
++        return rep.getPaperReputation();
++    }
++
++    @Override
++    public Map<UUID, Reputation> getReputations() {
++        return getHandle().getGossips().gossips.entrySet()
++            .stream()
++            .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getPaperReputation()));
++    }
++
++    @Override
++    public void setReputation(UUID uniqueId, Reputation reputation) {
++        net.minecraft.world.entity.ai.gossip.GossipContainer.EntityGossips nmsReputation =
++            getHandle().getGossips().gossips.computeIfAbsent(
++                uniqueId,
++                key -> new net.minecraft.world.entity.ai.gossip.GossipContainer.EntityGossips()
++            );
++        nmsReputation.assignFromPaperReputation(reputation);
++    }
++
++    @Override
++    public void setReputations(Map<UUID, Reputation> reputations) {
++        for (Map.Entry<UUID, Reputation> entry : reputations.entrySet()) {
++            setReputation(entry.getKey(), entry.getValue());
++        }
++    }
++
++    @Override
++    public void clearReputations() {
++        getHandle().getGossips().gossips.clear();
++    }
++    // Paper end
+ }

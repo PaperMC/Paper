@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: kashike <kashike@vq.lc>
+Date: Fri, 9 Jun 2017 07:24:24 -0700
+Subject: [PATCH] Add configuration option to prevent player names from being
+ suggested
+
+
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index 41a645a040561d3dca83a3c1f2ca7cdfb4f7550b..0bd1480af001c86bc526875229f4ffa4e9945491 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -2412,6 +2412,16 @@ public final class Bukkit {
+     public static boolean reloadCommandAliases() {
+         return server.reloadCommandAliases();
+     }
++
++    /**
++     * Checks if player names should be suggested when a command returns {@code null} as
++     * their tab completion result.
++     *
++     * @return true if player names should be suggested
++     */
++    public static boolean suggestPlayerNamesWhenNullTabCompletions() {
++        return server.suggestPlayerNamesWhenNullTabCompletions();
++    }
+     // Paper end
+ 
+     @NotNull
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 72a472f048107181bc84599836fc2fc64c89ea8a..376712ee54e06fbc9e5f11016ca7ba6d9ae42b32 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -2100,4 +2100,14 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+     void reloadPermissions(); // Paper
+ 
+     boolean reloadCommandAliases(); // Paper
++
++    // Paper start - allow preventing player name suggestions by default
++    /**
++     * Checks if player names should be suggested when a command returns {@code null} as
++     * their tab completion result.
++     *
++     * @return true if player names should be suggested
++     */
++    boolean suggestPlayerNamesWhenNullTabCompletions();
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/command/Command.java b/src/main/java/org/bukkit/command/Command.java
+index 17d3da22e8fcdf73a587b17a0cdac3b23ded3567..8a298b655f4eaf5116994f98572a20e83a23838c 100644
+--- a/src/main/java/org/bukkit/command/Command.java
++++ b/src/main/java/org/bukkit/command/Command.java
+@@ -107,7 +107,7 @@ public abstract class Command {
+         Preconditions.checkArgument(args != null, "Arguments cannot be null");
+         Preconditions.checkArgument(alias != null, "Alias cannot be null");
+ 
+-        if (args.length == 0) {
++        if (args.length == 0 || !sender.getServer().suggestPlayerNamesWhenNullTabCompletions()) { // Paper - allow preventing player name suggestions by default) {
+             return ImmutableList.of();
+         }
+ 

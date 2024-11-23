@@ -1,0 +1,877 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 2 Mar 2022 13:36:21 -0800
+Subject: [PATCH] Registry Modification API
+
+
+diff --git a/src/main/java/io/papermc/paper/registry/RegistryBuilder.java b/src/main/java/io/papermc/paper/registry/RegistryBuilder.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..379e2638aca243bacac777cf59982f9d0e601f3e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/RegistryBuilder.java
+@@ -0,0 +1,15 @@
++package io.papermc.paper.registry;
++
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * To be implemented by any type used for modifying registries.
++ *
++ * @param <T> registry value type
++ */
++@ApiStatus.Experimental
++@NullMarked
++@ApiStatus.NonExtendable
++public interface RegistryBuilder<T> {
++}
+diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEvent.java b/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..56468b311e40a6d1aa03c6d31328952b92e95027
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEvent.java
+@@ -0,0 +1,48 @@
++package io.papermc.paper.registry.event;
++
++import io.papermc.paper.registry.RegistryBuilder;
++import io.papermc.paper.registry.TypedKey;
++import io.papermc.paper.registry.tag.Tag;
++import io.papermc.paper.registry.tag.TagKey;
++import org.bukkit.Keyed;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Event object for {@link RegistryEventProvider#entryAdd()}. This
++ * event is fired right before a specific entry is registered in/added to registry.
++ * It provides a way for plugins to modify parts of this entry.
++ *
++ * @param <T> registry entry type
++ * @param <B> registry entry builder type
++ */
++@ApiStatus.Experimental
++@NullMarked
++@ApiStatus.NonExtendable
++public interface RegistryEntryAddEvent<T, B extends RegistryBuilder<T>> extends RegistryEvent<T> {
++
++    /**
++     * Gets the builder for the entry being added to the registry.
++     *
++     * @return the object builder
++     */
++    B builder();
++
++    /**
++     * Gets the key for this entry in the registry.
++     *
++     * @return the key
++     */
++    TypedKey<T> key();
++
++    /**
++     * Gets or creates a tag for the given tag key. This tag
++     * is then required to be filled either from the built-in or
++     * custom datapack.
++     *
++     * @param tagKey the tag key
++     * @return the tag
++     * @param <V> the tag value type
++     */
++    <V extends Keyed> Tag<V> getOrCreateTag(TagKey<V> tagKey);
++}
+diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEvent.java b/src/main/java/io/papermc/paper/registry/event/RegistryEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3a8643c06d751bf3e4bff4d95b62c675ecdf0f16
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/event/RegistryEvent.java
+@@ -0,0 +1,24 @@
++package io.papermc.paper.registry.event;
++
++import io.papermc.paper.plugin.lifecycle.event.LifecycleEvent;
++import io.papermc.paper.registry.RegistryKey;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Base type for all registry events.
++ *
++ * @param <T> registry entry type
++ */
++@ApiStatus.Experimental
++@NullMarked
++@ApiStatus.NonExtendable
++public interface RegistryEvent<T> extends LifecycleEvent {
++
++    /**
++     * Get the key for the registry this event pertains to.
++     *
++     * @return the registry key
++     */
++    RegistryKey<T> registryKey();
++}
+diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEventProvider.java b/src/main/java/io/papermc/paper/registry/event/RegistryEventProvider.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8518e93829318cbfe0eb70f558cb86a7b5742514
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/event/RegistryEventProvider.java
+@@ -0,0 +1,57 @@
++package io.papermc.paper.registry.event;
++
++import io.papermc.paper.plugin.bootstrap.BootstrapContext;
++import io.papermc.paper.plugin.lifecycle.event.handler.LifecycleEventHandler;
++import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEventType;
++import io.papermc.paper.registry.RegistryBuilder;
++import io.papermc.paper.registry.RegistryKey;
++import io.papermc.paper.registry.event.type.RegistryEntryAddEventType;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Provider for registry events for a specific registry.
++ * <p>
++ * Supported events are:
++ * <ul>
++ *     <li>{@link RegistryEntryAddEvent} (via {@link #entryAdd()})</li>
++ *     <li>{@link RegistryFreezeEvent} (via {@link #freeze()})</li>
++ * </ul>
++ *
++ * @param <T> registry entry type
++ * @param <B> registry entry builder type
++ */
++@ApiStatus.Experimental
++@NullMarked
++@ApiStatus.NonExtendable
++public interface RegistryEventProvider<T, B extends RegistryBuilder<T>> {
++
++    /**
++     * Gets the event type for {@link RegistryEntryAddEvent} which is fired just before
++     * an object is added to a registry.
++     * <p>
++     * Can be used in {@link io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager#registerEventHandler(LifecycleEventType, LifecycleEventHandler)}
++     * to register a handler for {@link RegistryEntryAddEvent}.
++     *
++     * @return the registry entry add event type
++     */
++    RegistryEntryAddEventType<T, B> entryAdd();
++
++    /**
++     * Gets the event type for {@link RegistryFreezeEvent} which is fired just before
++     * a registry is frozen. It allows for the registration of new objects.
++     * <p>
++     * Can be used in {@link io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager#registerEventHandler(LifecycleEventType, LifecycleEventHandler)}
++     * to register a handler for {@link RegistryFreezeEvent}.
++     *
++     * @return the registry freeze event type
++     */
++    LifecycleEventType.Prioritizable<BootstrapContext, RegistryFreezeEvent<T, B>> freeze();
++
++    /**
++     * Gets the registry key associated with this event type provider.
++     *
++     * @return the registry key
++     */
++    RegistryKey<T> registryKey();
++}
+diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEventProviderImpl.java b/src/main/java/io/papermc/paper/registry/event/RegistryEventProviderImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8d9afd49077090d30f13b217b71100c73137d120
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/event/RegistryEventProviderImpl.java
+@@ -0,0 +1,29 @@
++package io.papermc.paper.registry.event;
++
++import io.papermc.paper.plugin.bootstrap.BootstrapContext;
++import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEventType;
++import io.papermc.paper.registry.RegistryBuilder;
++import io.papermc.paper.registry.RegistryKey;
++import io.papermc.paper.registry.event.type.RegistryEntryAddEventType;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++@ApiStatus.Internal
++@NullMarked
++record RegistryEventProviderImpl<T, B extends RegistryBuilder<T>>(RegistryKey<T> registryKey) implements RegistryEventProvider<T, B> {
++
++    static <T, B extends RegistryBuilder<T>> RegistryEventProvider<T, B> create(final RegistryKey<T> registryKey) {
++        return new RegistryEventProviderImpl<>(registryKey);
++    }
++
++    @Override
++    public RegistryEntryAddEventType<T, B> entryAdd() {
++        return RegistryEventTypeProvider.provider().registryEntryAdd(this);
++    }
++
++    @Override
++    public LifecycleEventType.Prioritizable<BootstrapContext, RegistryFreezeEvent<T, B>> freeze() {
++        return RegistryEventTypeProvider.provider().registryFreeze(this);
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEventTypeProvider.java b/src/main/java/io/papermc/paper/registry/event/RegistryEventTypeProvider.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d807bd2f42c98e37a96cf110ad77820dfffc8398
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/event/RegistryEventTypeProvider.java
+@@ -0,0 +1,24 @@
++package io.papermc.paper.registry.event;
++
++import io.papermc.paper.plugin.bootstrap.BootstrapContext;
++import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEventType;
++import io.papermc.paper.registry.RegistryBuilder;
++import io.papermc.paper.registry.event.type.RegistryEntryAddEventType;
++import java.util.Optional;
++import java.util.ServiceLoader;
++import org.jetbrains.annotations.ApiStatus;
++
++@ApiStatus.Internal
++interface RegistryEventTypeProvider {
++
++    Optional<RegistryEventTypeProvider> PROVIDER = ServiceLoader.load(RegistryEventTypeProvider.class)
++        .findFirst();
++
++    static RegistryEventTypeProvider provider() {
++        return PROVIDER.orElseThrow(() -> new IllegalStateException("Could not find a %s service implementation".formatted(RegistryEventTypeProvider.class.getSimpleName())));
++    }
++
++    <T, B extends RegistryBuilder<T>> RegistryEntryAddEventType<T, B> registryEntryAdd(RegistryEventProvider<T, B> type);
++
++    <T, B extends RegistryBuilder<T>> LifecycleEventType.Prioritizable<BootstrapContext, RegistryFreezeEvent<T, B>> registryFreeze(RegistryEventProvider<T, B> type);
++}
+diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEvents.java b/src/main/java/io/papermc/paper/registry/event/RegistryEvents.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..91ae9c0d3ec55ce417d4b447bf3d1b0d0c174b5e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/event/RegistryEvents.java
+@@ -0,0 +1,16 @@
++package io.papermc.paper.registry.event;
++
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Holds providers for {@link RegistryEntryAddEvent} and {@link RegistryFreezeEvent}
++ * handlers for each applicable registry.
++ */
++@ApiStatus.Experimental
++@NullMarked
++public final class RegistryEvents {
++
++    private RegistryEvents() {
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEvent.java b/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..59e8ca6c5b7fa0424ad9b2c74545ec53444b5fcb
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEvent.java
+@@ -0,0 +1,40 @@
++package io.papermc.paper.registry.event;
++
++import io.papermc.paper.registry.RegistryBuilder;
++import io.papermc.paper.registry.tag.Tag;
++import io.papermc.paper.registry.tag.TagKey;
++import org.bukkit.Keyed;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Event object for {@link RegistryEventProvider#freeze()}. This
++ * event is fired right before a registry is frozen disallowing further changes.
++ * It provides a way for plugins to add new objects to the registry.
++ *
++ * @param <T> registry entry type
++ * @param <B> registry entry builder type
++ */
++@ApiStatus.Experimental
++@NullMarked
++@ApiStatus.NonExtendable
++public interface RegistryFreezeEvent<T, B extends RegistryBuilder<T>> extends RegistryEvent<T> {
++
++    /**
++     * Get the writable registry.
++     *
++     * @return a writable registry
++     */
++    WritableRegistry<T, B> registry();
++
++    /**
++     * Gets or creates a tag for the given tag key. This tag
++     * is then required to be filled either from the built-in or
++     * custom datapack.
++     *
++     * @param tagKey the tag key
++     * @return the tag
++     * @param <V> the tag value type
++     */
++    <V extends Keyed> Tag<V> getOrCreateTag(TagKey<V> tagKey);
++}
+diff --git a/src/main/java/io/papermc/paper/registry/event/WritableRegistry.java b/src/main/java/io/papermc/paper/registry/event/WritableRegistry.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..744f455b14cdc9131497024088da4ca0e8fc39dc
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/event/WritableRegistry.java
+@@ -0,0 +1,28 @@
++package io.papermc.paper.registry.event;
++
++import io.papermc.paper.registry.RegistryBuilder;
++import io.papermc.paper.registry.TypedKey;
++import java.util.function.Consumer;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * A registry which supports registering new objects.
++ *
++ * @param <T> registry entry type
++ * @param <B> registry entry builder type
++ */
++@ApiStatus.Experimental
++@NullMarked
++@ApiStatus.NonExtendable
++public interface WritableRegistry<T, B extends RegistryBuilder<T>> {
++
++    /**
++     * Register a new value with the specified key. This will
++     * fire a {@link RegistryEntryAddEvent} for the new entry.
++     *
++     * @param key the entry's key (must be unique from others)
++     * @param value a consumer for the entry's builder
++     */
++    void register(TypedKey<T> key, Consumer<? super B> value);
++}
+diff --git a/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddConfiguration.java b/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddConfiguration.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d9bde790f74982c6cd5870aee35fec8a0c49fc83
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddConfiguration.java
+@@ -0,0 +1,43 @@
++package io.papermc.paper.registry.event.type;
++
++import io.papermc.paper.plugin.bootstrap.BootstrapContext;
++import io.papermc.paper.plugin.lifecycle.event.handler.configuration.PrioritizedLifecycleEventHandlerConfiguration;
++import io.papermc.paper.registry.TypedKey;
++import java.util.function.Predicate;
++import org.jetbrains.annotations.Contract;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Specific configuration for {@link io.papermc.paper.registry.event.RegistryEntryAddEvent}s.
++ *
++ * @param <T> registry entry type
++ */
++@NullMarked
++public interface RegistryEntryAddConfiguration<T> extends PrioritizedLifecycleEventHandlerConfiguration<BootstrapContext> {
++
++    /**
++     * Only call the handler if the value being added matches the specified key.
++     *
++     * @param key the key to match
++     * @return this configuration
++     */
++    @Contract(value = "_ -> this", mutates = "this")
++    default RegistryEntryAddConfiguration<T> filter(final TypedKey<T> key) {
++        return this.filter(key::equals);
++    }
++
++    /**
++     * Only call the handler if the value being added passes the provided filter.
++     *
++     * @param filter the predicate to match the key against
++     * @return this configuration
++     */
++    @Contract(value = "_ -> this", mutates = "this")
++    RegistryEntryAddConfiguration<T> filter(Predicate<TypedKey<T>> filter);
++
++    @Override
++    RegistryEntryAddConfiguration<T> priority(int priority);
++
++    @Override
++    RegistryEntryAddConfiguration<T> monitor();
++}
+diff --git a/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddEventType.java b/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddEventType.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..93447ef58933f37fe12c4507c9a0b233be4c6c0b
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddEventType.java
+@@ -0,0 +1,20 @@
++package io.papermc.paper.registry.event.type;
++
++import io.papermc.paper.plugin.bootstrap.BootstrapContext;
++import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEventType;
++import io.papermc.paper.registry.RegistryBuilder;
++import io.papermc.paper.registry.event.RegistryEntryAddEvent;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Lifecycle event type for {@link RegistryEntryAddEvent}s.
++ *
++ * @param <T> registry entry type
++ * @param <B> registry entry builder type
++ */
++@ApiStatus.Experimental
++@NullMarked
++@ApiStatus.NonExtendable
++public interface RegistryEntryAddEventType<T, B extends RegistryBuilder<T>> extends LifecycleEventType<BootstrapContext, RegistryEntryAddEvent<T, B>, RegistryEntryAddConfiguration<T>> {
++}
+diff --git a/src/main/java/io/papermc/paper/registry/set/RegistryKeySet.java b/src/main/java/io/papermc/paper/registry/set/RegistryKeySet.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d5a5e332abc861d8509a5df7b57319f72e6b5449
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/set/RegistryKeySet.java
+@@ -0,0 +1,51 @@
++package io.papermc.paper.registry.set;
++
++import io.papermc.paper.registry.TypedKey;
++import java.util.Collection;
++import java.util.Iterator;
++import org.bukkit.Keyed;
++import org.bukkit.Registry;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Unmodifiable;
++import org.jspecify.annotations.NullMarked;
++
++@ApiStatus.Experimental
++@NullMarked
++@ApiStatus.NonExtendable
++public non-sealed interface RegistryKeySet<T extends Keyed> extends Iterable<TypedKey<T>>, RegistrySet<T> { // TODO remove Keyed
++
++    @Override
++    default int size() {
++        return this.values().size();
++    }
++
++    /**
++     * Get the keys for the values in this set.
++     *
++     * @return the keys
++     */
++    @Unmodifiable Collection<TypedKey<T>> values();
++
++    /**
++     * Resolve this set into a collection of values. Prefer using
++     * {@link #values()}.
++     *
++     * @param registry the registry to resolve the values from (must match {@link #registryKey()})
++     * @return the resolved values
++     * @see RegistryKeySet#values()
++     */
++    @Unmodifiable Collection<T> resolve(final Registry<T> registry);
++
++    /**
++     * Checks if this set contains the value with the given key.
++     *
++     * @param valueKey the key to check
++     * @return true if the value is in this set
++     */
++    boolean contains(TypedKey<T> valueKey);
++
++    @Override
++    default Iterator<TypedKey<T>> iterator() {
++        return this.values().iterator();
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/set/RegistryKeySetImpl.java b/src/main/java/io/papermc/paper/registry/set/RegistryKeySetImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fe4a0817d7ac4a9f958a6156d6ae3ac1c96f58cd
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/set/RegistryKeySetImpl.java
+@@ -0,0 +1,52 @@
++package io.papermc.paper.registry.set;
++
++import com.google.common.base.Preconditions;
++import io.papermc.paper.registry.RegistryAccess;
++import io.papermc.paper.registry.RegistryKey;
++import io.papermc.paper.registry.TypedKey;
++import java.util.ArrayList;
++import java.util.Collection;
++import java.util.Collections;
++import java.util.List;
++import org.bukkit.Keyed;
++import org.bukkit.NamespacedKey;
++import org.bukkit.Registry;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
++
++@ApiStatus.Internal
++@NullMarked
++record RegistryKeySetImpl<T extends @Nullable Keyed>(RegistryKey<T> registryKey, List<TypedKey<T>> values) implements RegistryKeySet<T> { // TODO remove Keyed
++
++    static <T extends Keyed> RegistryKeySet<T> create(final RegistryKey<T> registryKey, final Iterable<? extends T> values) { // TODO remove Keyed
++        final Registry<T> registry = RegistryAccess.registryAccess().getRegistry(registryKey);
++        final ArrayList<TypedKey<T>> keys = new ArrayList<>();
++        for (final T value : values) {
++            final NamespacedKey key = registry.getKey(value);
++            Preconditions.checkArgument(key != null, value + " does not have a key in " + registryKey);
++            keys.add(TypedKey.create(registryKey, key));
++        }
++        return new RegistryKeySetImpl<>(registryKey, keys);
++    }
++
++    RegistryKeySetImpl {
++        values = List.copyOf(values);
++    }
++
++    @Override
++    public boolean contains(final TypedKey<T> valueKey) {
++        return this.values.contains(valueKey);
++    }
++
++    @Override
++    public Collection<T> resolve(final Registry<T> registry) {
++        final List<T> values = new ArrayList<>(this.values.size());
++        for (final TypedKey<T> key : this.values) {
++            final T value = registry.get(key.key());
++            Preconditions.checkState(value != null, "Trying to access unbound TypedKey: " + key);
++            values.add(value);
++        }
++        return Collections.unmodifiableList(values);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/set/RegistrySet.java b/src/main/java/io/papermc/paper/registry/set/RegistrySet.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c6fdeb05242418d20472aeed8cb61bfe937911c8
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/set/RegistrySet.java
+@@ -0,0 +1,113 @@
++package io.papermc.paper.registry.set;
++
++import com.google.common.collect.Lists;
++import io.papermc.paper.registry.RegistryKey;
++import io.papermc.paper.registry.TypedKey;
++import io.papermc.paper.registry.tag.Tag;
++import org.bukkit.Keyed;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Represents a collection tied to a registry.
++ * <p>
++ * There are 2<!--3--> types of registry sets:
++ * <ul>
++ *     <li>{@link Tag} which is a tag from vanilla or a datapack.
++ *     These are obtained via {@link org.bukkit.Registry#getTag(io.papermc.paper.registry.tag.TagKey)}.</li>
++ *     <li>{@link RegistryKeySet} which is a set of of keys linked to values that are present in the registry. These are
++ *     created via {@link #keySet(RegistryKey, Iterable)} or {@link #keySetFromValues(RegistryKey, Iterable)}.</li>
++ *     <!-- <li>{@link RegistryValueSet} which is a set of values which are anonymous (don't have keys in the registry). These are
++ *     created via {@link #valueSet(RegistryKey, Iterable)}.</li>-->
++ * </ul>
++ *
++ * @param <T> registry value type
++ */
++@ApiStatus.Experimental
++@NullMarked
++public sealed interface RegistrySet<T> permits RegistryKeySet, RegistryValueSet {
++
++    // TODO uncomment when direct holder sets need to be exposed to the API
++    // /**
++    //  * Creates a {@link RegistryValueSet} from anonymous values.
++    //  * <p>All values provided <b>must not</b> have keys in the given registry.</p>
++    //  *
++    //  * @param registryKey the registry key for the type of these values
++    //  * @param values the values
++    //  * @return a new registry set
++    //  * @param <T> the type of the values
++    //  */
++    // @Contract(value = "_, _ -> new", pure = true)
++    // static <T> RegistryValueSet<T> valueSet(final RegistryKey<T> registryKey, final Iterable<? extends T> values) {
++    //     return RegistryValueSetImpl.create(registryKey, values);
++    // }
++
++    /**
++     * Creates a {@link RegistryKeySet} from registry-backed values.
++     * <p>All values provided <b>must</b> have keys in the given registry.
++     * <!--For anonymous values, use {@link #valueSet(RegistryKey, Iterable)}--></p>
++     * <p>If references to actual objects are not available yet, use {@link #keySet(RegistryKey, Iterable)} to
++     * create an equivalent {@link RegistryKeySet} using just {@link TypedKey TypedKeys}.</p>
++     *
++     * @param registryKey the registry key for the owner of these values
++     * @param values the values
++     * @return a new registry set
++     * @param <T> the type of the values
++     * @throws IllegalArgumentException if the registry isn't available yet or if any value doesn't have a key in that registry
++     */
++    @Contract(value = "_, _ -> new", pure = true)
++    static <T extends Keyed> RegistryKeySet<T> keySetFromValues(final RegistryKey<T> registryKey, final Iterable<? extends T> values) { // TODO remove Keyed
++        return RegistryKeySetImpl.create(registryKey, values);
++    }
++
++    /**
++     * Creates a direct {@link RegistrySet} from {@link TypedKey TypedKeys}.
++     *
++     * @param registryKey the registry key for the owner of these keys
++     * @param keys the keys for the values
++     * @return a new registry set
++     * @param <T> the type of the values
++     */
++    @SafeVarargs
++    static <T extends Keyed> RegistryKeySet<T> keySet(final RegistryKey<T> registryKey, final TypedKey<T>... keys) { // TODO remove Keyed
++        return keySet(registryKey, Lists.newArrayList(keys));
++    }
++
++    /**
++     * Creates a direct {@link RegistrySet} from {@link TypedKey TypedKeys}.
++     *
++     * @param registryKey the registry key for the owner of these keys
++     * @param keys the keys for the values
++     * @return a new registry set
++     * @param <T> the type of the values
++     */
++    @SuppressWarnings("BoundedWildcard")
++    @Contract(value = "_, _ -> new", pure = true)
++    static <T extends Keyed> RegistryKeySet<T> keySet(final RegistryKey<T> registryKey, final Iterable<TypedKey<T>> keys) { // TODO remove Keyed
++        return new RegistryKeySetImpl<>(registryKey, Lists.newArrayList(keys));
++    }
++
++    /**
++     * Get the registry key for this set.
++     *
++     * @return the registry key
++     */
++    RegistryKey<T> registryKey();
++
++    /**
++     * Get the size of this set.
++     *
++     * @return the size
++     */
++    int size();
++
++    /**
++     * Checks if the registry set is empty.
++     *
++     * @return true, if empty
++     */
++    default boolean isEmpty() {
++        return this.size() == 0;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/set/RegistryValueSet.java b/src/main/java/io/papermc/paper/registry/set/RegistryValueSet.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9f7761535c30c376dad64678fa2ee24bbb041e06
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/set/RegistryValueSet.java
+@@ -0,0 +1,35 @@
++package io.papermc.paper.registry.set;
++
++import java.util.Collection;
++import java.util.Iterator;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Unmodifiable;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * A collection of anonymous values relating to a registry. These
++ * are values of the same type as the registry, but will not be found
++ * in the registry, hence, anonymous.
++ * @param <T> registry value type
++ */
++@ApiStatus.Experimental
++@NullMarked
++public sealed interface RegistryValueSet<T> extends Iterable<T>, RegistrySet<T> permits RegistryValueSetImpl {
++
++    @Override
++    default int size() {
++        return this.values().size();
++    }
++
++    /**
++     * Get the collection of values in this direct set.
++     *
++     * @return the values
++     */
++    @Unmodifiable Collection<T> values();
++
++    @Override
++    default Iterator<T> iterator() {
++        return this.values().iterator();
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/set/RegistryValueSetImpl.java b/src/main/java/io/papermc/paper/registry/set/RegistryValueSetImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1bcc6b4b9ff0090570d4f39a49e10e1fa03edb7d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/set/RegistryValueSetImpl.java
+@@ -0,0 +1,20 @@
++package io.papermc.paper.registry.set;
++
++import com.google.common.collect.Lists;
++import io.papermc.paper.registry.RegistryKey;
++import java.util.List;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++@ApiStatus.Internal
++@NullMarked
++record RegistryValueSetImpl<T>(RegistryKey<T> registryKey, List<T> values) implements RegistryValueSet<T> {
++
++    RegistryValueSetImpl {
++        values = List.copyOf(values);
++    }
++
++    static <T> RegistryValueSet<T> create(final RegistryKey<T> registryKey, final Iterable<? extends T> values) {
++        return new RegistryValueSetImpl<>(registryKey, Lists.newArrayList(values));
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/tag/Tag.java b/src/main/java/io/papermc/paper/registry/tag/Tag.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..245eb1074ce2930e4d9ff42a5df49004d08bbac2
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/tag/Tag.java
+@@ -0,0 +1,26 @@
++package io.papermc.paper.registry.tag;
++
++import io.papermc.paper.registry.set.RegistryKeySet;
++import org.bukkit.Keyed;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * A named {@link RegistryKeySet} which are created
++ * via the datapack tag system.
++ *
++ * @param <T>
++ * @see org.bukkit.Tag
++ * @see org.bukkit.Registry#getTag(TagKey)
++ */
++@ApiStatus.Experimental
++@NullMarked
++public interface Tag<T extends Keyed> extends RegistryKeySet<T> { // TODO remove Keyed
++
++    /**
++     * Get the identifier for this named set.
++     *
++     * @return the tag key identifier
++     */
++    TagKey<T> tagKey();
++}
+diff --git a/src/main/java/io/papermc/paper/registry/tag/TagKey.java b/src/main/java/io/papermc/paper/registry/tag/TagKey.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f84d95b29fd2c0a52d2769fa9d3e2326ebc8aa3f
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/tag/TagKey.java
+@@ -0,0 +1,33 @@
++package io.papermc.paper.registry.tag;
++
++import io.papermc.paper.registry.RegistryKey;
++import net.kyori.adventure.key.Key;
++import net.kyori.adventure.key.Keyed;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++import org.jspecify.annotations.NullMarked;
++
++@ApiStatus.Experimental
++@NullMarked
++public sealed interface TagKey<T> extends Keyed permits TagKeyImpl {
++
++    /**
++     * Creates a new tag key for a registry.
++     *
++     * @param registryKey the registry for the tag
++     * @param key the specific key for the tag
++     * @return a new tag key
++     * @param <T> the registry value type
++     */
++    @Contract(value = "_, _ -> new", pure = true)
++    static <T> TagKey<T> create(final RegistryKey<T> registryKey, final Key key) {
++        return new TagKeyImpl<>(registryKey, key);
++    }
++
++    /**
++     * Get the registry key for this tag key.
++     *
++     * @return the registry key
++     */
++    RegistryKey<T> registryKey();
++}
+diff --git a/src/main/java/io/papermc/paper/registry/tag/TagKeyImpl.java b/src/main/java/io/papermc/paper/registry/tag/TagKeyImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..bf49125acc8a0508bf59674bba3ed3505ee9481a
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/tag/TagKeyImpl.java
+@@ -0,0 +1,16 @@
++package io.papermc.paper.registry.tag;
++
++import io.papermc.paper.registry.RegistryKey;
++import net.kyori.adventure.key.Key;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++@ApiStatus.Internal
++@NullMarked
++record TagKeyImpl<T>(RegistryKey<T> registryKey, Key key) implements TagKey<T> {
++
++    @Override
++    public String toString() {
++        return "#" + this.key + " (in " + this.registryKey + ")";
++    }
++}
+diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
+index c3d49f9c640eb390f507f9521a389cb7c172983a..87907918c42b11780b285b6d82e7297628a07376 100644
+--- a/src/main/java/org/bukkit/Registry.java
++++ b/src/main/java/org/bukkit/Registry.java
+@@ -384,6 +384,27 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+      */
+     @Nullable
+     T get(@NotNull NamespacedKey key);
++    // Paper start
++    /**
++     * Get the object by its key.
++     *
++     * @param key non-null key
++     * @return item or null if it does not exist
++     */
++    default @Nullable T get(final net.kyori.adventure.key.@NotNull Key key) {
++        return key instanceof final NamespacedKey nsKey ? this.get(nsKey) : this.get(new NamespacedKey(key.namespace(), key.value()));
++    }
++
++    /**
++     * Get the object by its typed key.
++     *
++     * @param typedKey non-null typed key
++     * @return item or null if it does not exist
++     */
++    default @Nullable T get(final io.papermc.paper.registry.@NotNull TypedKey<T> typedKey) {
++        return this.get(typedKey.key());
++    }
++    // Paper end
+ 
+     // Paper start - improve Registry
+     /**
+@@ -458,6 +479,34 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+     }
+     // Paper end - improve Registry
+ 
++    // Paper start - RegistrySet API
++    /**
++     * Checks if this registry has a tag with the given key.
++     *
++     * @param key the key to check for
++     * @return true if this registry has a tag with the given key, false otherwise
++     * @see #getTag(io.papermc.paper.registry.tag.TagKey)
++     */
++    @ApiStatus.Experimental
++    default boolean hasTag(final io.papermc.paper.registry.tag.@NotNull TagKey<T> key) {
++        throw new UnsupportedOperationException(this + " doesn't have tags");
++    }
++
++    /**
++     * Gets the named registry set (tag) for the given key.
++     *
++     * @param key the key to get the tag for
++     * @return the tag for the key
++     * @throws java.util.NoSuchElementException if no tag with the given key is found
++     * @throws UnsupportedOperationException if this registry doesn't have or support tags
++     * @see #hasTag(io.papermc.paper.registry.tag.TagKey)
++     */
++    @ApiStatus.Experimental
++    default @NotNull io.papermc.paper.registry.tag.Tag<T> getTag(final io.papermc.paper.registry.tag.@NotNull TagKey<T> key) {
++        throw new UnsupportedOperationException(this + " doesn't have tags");
++    }
++    // Paper end - RegistrySet API
++
+     /**
+      * Get the object by its key.
+      *

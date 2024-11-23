@@ -1,0 +1,72 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 22 Apr 2021 00:28:11 -0700
+Subject: [PATCH] add get-set drop chance to EntityEquipment
+
+== AT ==
+public net.minecraft.world.entity.Mob getEquipmentDropChance(Lnet/minecraft/world/entity/EquipmentSlot;)F
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftEntityEquipment.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftEntityEquipment.java
+index cb704cef3845727c465fe3ea7210a11545da56c8..fdcc414f4fa246082ad0732133c870d915ae3084 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftEntityEquipment.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftEntityEquipment.java
+@@ -244,15 +244,22 @@ public class CraftEntityEquipment implements EntityEquipment {
+     public void setBootsDropChance(float chance) {
+         this.setDropChance(net.minecraft.world.entity.EquipmentSlot.FEET, chance);
+     }
++    // Paper start
++    @Override
++    public float getDropChance(EquipmentSlot slot) {
++        return getDropChance(CraftEquipmentSlot.getNMS(slot));
++    }
++
++    @Override
++    public void setDropChance(EquipmentSlot slot, float chance) {
++        setDropChance(CraftEquipmentSlot.getNMS(slot), chance);
++    }
++    // Paper end
+ 
+     private void setDropChance(net.minecraft.world.entity.EquipmentSlot slot, float chance) {
+         Preconditions.checkArgument(this.entity.getHandle() instanceof Mob, "Cannot set drop chance for non-Mob entity");
+ 
+-        if (slot == net.minecraft.world.entity.EquipmentSlot.MAINHAND || slot == net.minecraft.world.entity.EquipmentSlot.OFFHAND) {
+-            ((Mob) this.entity.getHandle()).handDropChances[slot.getIndex()] = chance;
+-        } else {
+-            ((Mob) this.entity.getHandle()).armorDropChances[slot.getIndex()] = chance;
+-        }
++        ((Mob) this.entity.getHandle()).setDropChance(slot, chance); // Paper - use setter on Mob
+     }
+ 
+     private float getDropChance(net.minecraft.world.entity.EquipmentSlot slot) {
+@@ -260,10 +267,6 @@ public class CraftEntityEquipment implements EntityEquipment {
+             return 1;
+         }
+ 
+-        if (slot == net.minecraft.world.entity.EquipmentSlot.MAINHAND || slot == net.minecraft.world.entity.EquipmentSlot.OFFHAND) {
+-            return ((Mob) this.entity.getHandle()).handDropChances[slot.getIndex()];
+-        } else {
+-            return ((Mob) this.entity.getHandle()).armorDropChances[slot.getIndex()];
+-        }
++        return ((Mob) this.entity.getHandle()).getEquipmentDropChance(slot); // Paper - use getter on Mob
+     }
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryPlayer.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryPlayer.java
+index f039c5041e783ef55e19194cb7db7610429b1d96..107fa1d4bd977d17dc062da280dda46eb3c5f81c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryPlayer.java
+@@ -353,4 +353,15 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
+     public void setBootsDropChance(float chance) {
+         throw new UnsupportedOperationException("Cannot set drop chance for PlayerInventory");
+     }
++    // Paper start
++    @Override
++    public float getDropChance(EquipmentSlot slot) {
++        return 1;
++    }
++
++    @Override
++    public void setDropChance(EquipmentSlot slot, float chance) {
++        throw new UnsupportedOperationException("Cannot set drop chance for PlayerInventory");
++    }
++    // Paper end
+ }

@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: giacomo <32515303+giacomozama@users.noreply.github.com>
+Date: Sat, 10 Oct 2020 12:15:33 +0200
+Subject: [PATCH] Fix bell block entity memory leak
+
+BellBlockEntity has a list of entities (entitiesAtRing) that was not being cleared at the right time, causing leaks whenever a bell would be rung near a crowd of entities.
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BellBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BellBlockEntity.java
+index e1adfd10a2f67687b7123d20d31eb7d059a3e1e3..86dac3f82da065bf79d94da9df192f51ce4665e2 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BellBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BellBlockEntity.java
+@@ -63,6 +63,11 @@ public class BellBlockEntity extends BlockEntity {
+ 
+         if (blockEntity.ticks >= 50) {
+             blockEntity.shaking = false;
++            // Paper start - Fix bell block entity memory leak
++            if (!blockEntity.resonating) {
++                blockEntity.nearbyEntities.clear();
++            }
++            // Paper end - Fix bell block entity memory leak
+             blockEntity.ticks = 0;
+         }
+ 
+@@ -76,6 +81,7 @@ public class BellBlockEntity extends BlockEntity {
+                 ++blockEntity.resonationTicks;
+             } else {
+                 bellEffect.run(world, pos, blockEntity.nearbyEntities);
++                blockEntity.nearbyEntities.clear(); // Paper - Fix bell block entity memory leak
+                 blockEntity.resonating = false;
+             }
+         }
+@@ -125,6 +131,7 @@ public class BellBlockEntity extends BlockEntity {
+             }
+         }
+ 
++        this.nearbyEntities.removeIf(e -> !e.isAlive()); // Paper - Fix bell block entity memory leak
+     }
+ 
+     private static boolean areRaidersNearby(BlockPos pos, List<LivingEntity> hearingEntities) {

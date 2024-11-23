@@ -1,0 +1,72 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Wed, 25 Nov 2020 23:21:32 -0800
+Subject: [PATCH] Add TargetHitEvent API
+
+
+diff --git a/src/main/java/io/papermc/paper/event/block/TargetHitEvent.java b/src/main/java/io/papermc/paper/event/block/TargetHitEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6555bf7f4485eacd8d35113d5b21b73f0693a950
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/block/TargetHitEvent.java
+@@ -0,0 +1,60 @@
++package io.papermc.paper.event.block;
++
++import com.google.common.base.Preconditions;
++import org.bukkit.block.Block;
++import org.bukkit.block.BlockFace;
++import org.bukkit.entity.Projectile;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.entity.ProjectileHitEvent;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Range;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Called when a Target Block is hit by a projectile.
++ * <p>
++ * Cancelling this event will stop the Target from emitting a redstone signal,
++ * and in the case that the shooter is a player, will stop them from receiving
++ * advancement criteria.
++ */
++@NullMarked
++public class TargetHitEvent extends ProjectileHitEvent {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private int signalStrength;
++
++    @ApiStatus.Internal
++    public TargetHitEvent(final Projectile projectile, final Block block, final BlockFace blockFace, final int signalStrength) {
++        super(projectile, null, block, blockFace);
++        this.signalStrength = signalStrength;
++    }
++
++    /**
++     * Gets the strength of the redstone signal to be emitted by the Target block
++     *
++     * @return the strength of the redstone signal to be emitted
++     */
++    public @Range(from = 0, to = 15) int getSignalStrength() {
++        return this.signalStrength;
++    }
++
++    /**
++     * Sets the strength of the redstone signal to be emitted by the Target block
++     *
++     * @param signalStrength the strength of the redstone signal to be emitted
++     */
++    public void setSignalStrength(final @Range(from = 0, to = 15) int signalStrength) {
++        Preconditions.checkArgument(signalStrength >= 0 && signalStrength <= 15, "Signal strength out of range (%s), must be in range [0,15]", signalStrength);
++        this.signalStrength = signalStrength;
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}

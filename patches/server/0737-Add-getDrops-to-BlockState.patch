@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MelnCat <melncatuwu@gmail.com>
+Date: Fri, 12 Aug 2022 23:24:37 -0700
+Subject: [PATCH] Add getDrops to BlockState
+
+Originally added isPreferredTool to BlockData but
+upstream added that.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockState.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockState.java
+index e96023b71845526383288917e8d7c5759a4c0e9b..fa63a6cfcfcc4eee4503a82d85333c139c8c8b2b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockState.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockState.java
+@@ -347,5 +347,24 @@ public class CraftBlockState implements BlockState {
+     public boolean isCollidable() {
+         return this.data.getBlock().hasCollision;
+     }
++
++    @Override
++    public java.util.Collection<org.bukkit.inventory.ItemStack> getDrops(org.bukkit.inventory.ItemStack item, org.bukkit.entity.Entity entity) {
++        this.requirePlaced();
++        net.minecraft.world.item.ItemStack nms = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(item);
++
++        // Modelled off EntityHuman#hasBlock
++        if (item == null || !data.requiresCorrectToolForDrops() || nms.isCorrectToolForDrops(data)) {
++            return net.minecraft.world.level.block.Block.getDrops(
++                data,
++                world.getHandle(),
++                position,
++                world.getHandle().getBlockEntity(position), entity == null ? null :
++                    ((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle(), nms
++            ).stream().map(org.bukkit.craftbukkit.inventory.CraftItemStack::asBukkitCopy).toList();
++        } else {
++            return java.util.Collections.emptyList();
++        }
++    }
+     // Paper end
+ }

@@ -6,14 +6,14 @@ Subject: [PATCH] Use a Shared Random for Entities
 Reduces memory usage and provides ensures more randomness, Especially since a lot of garbage entity objects get created.
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index a8608e7b3dae15a54185d720c01a49d3a7e59994..fc39c3742e852bc9f4131b1ade62c32b318bdb02 100644
+index 0c2389e73e98ec48ed636f616a36e6e1cefa7b93..27a0f0651ac961c06626df1e4beb5525b4dacd48 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -162,6 +162,79 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -184,6 +184,79 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          return tag.contains("Bukkit.updateLevel") && tag.getInt("Bukkit.updateLevel") >= level;
      }
  
-+    // Paper start
++    // Paper start - Share random for entities to make them more random
 +    public static RandomSource SHARED_RANDOM = new RandomRandomSource();
 +    private static final class RandomRandomSource extends java.util.Random implements net.minecraft.world.level.levelgen.BitRandomSource {
 +        private boolean locked = false;
@@ -84,30 +84,30 @@ index a8608e7b3dae15a54185d720c01a49d3a7e59994..fc39c3742e852bc9f4131b1ade62c32b
 +            return super.nextGaussian();
 +        }
 +    }
-+    // Paper end
++    // Paper end - Share random for entities to make them more random
 +
      private CraftEntity bukkitEntity;
  
      public CraftEntity getBukkitEntity() {
-@@ -406,7 +479,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -374,7 +447,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          this.bb = Entity.INITIAL_AABB;
          this.stuckSpeedMultiplier = Vec3.ZERO;
          this.nextStep = 1.0F;
 -        this.random = RandomSource.create();
-+        this.random = SHARED_RANDOM; // Paper
++        this.random = SHARED_RANDOM; // Paper - Share random for entities to make them more random
          this.remainingFireTicks = -this.getFireImmuneTicks();
          this.fluidHeight = new Object2DoubleArrayMap(2);
          this.fluidOnEyes = new HashSet();
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Squid.java b/src/main/java/net/minecraft/world/entity/animal/Squid.java
-index 891d8b4c8cb73d5e310970066831ab3e2af14e91..f60c4cd0543fd5d50fa7e2c1a9e8381227adb540 100644
+index bcccd7d808a3bef4acafe2e6b484ba0ed8059507..f9fdc600dc680c55219fcbf9bc8f151a733a093c 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Squid.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/Squid.java
-@@ -44,7 +44,7 @@ public class Squid extends WaterAnimal {
+@@ -46,7 +46,7 @@ public class Squid extends AgeableWaterCreature {
  
      public Squid(EntityType<? extends Squid> type, Level world) {
          super(type, world);
 -        this.random.setSeed((long)this.getId());
-+        //this.random.setSeed((long)this.getId()); // Paper - we set the random to shared, do not clobber the seed
++        //this.random.setSeed((long)this.getId()); // Paper - Share random for entities to make them more random
          this.tentacleSpeed = 1.0F / (this.random.nextFloat() + 1.0F) * 0.2F;
      }
  

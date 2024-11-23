@@ -1,0 +1,485 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bjarne Koll <git@lynxplay.dev>
+Date: Thu, 13 Jun 2024 23:45:32 +0200
+Subject: [PATCH] Add registry entry and builders
+
+Feature patch
+
+diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistries.java b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
+index 3ec2aa5da045b62809afd2c13fc9ae74189dbdad..82fc79fb78be6e5d77060717e28d75cb9e8c388b 100644
+--- a/src/main/java/io/papermc/paper/registry/PaperRegistries.java
++++ b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
+@@ -2,6 +2,8 @@ package io.papermc.paper.registry;
+ 
+ import com.google.common.base.Preconditions;
+ import io.papermc.paper.adventure.PaperAdventure;
++import io.papermc.paper.registry.data.PaperEnchantmentRegistryEntry;
++import io.papermc.paper.registry.data.PaperGameEventRegistryEntry;
+ import io.papermc.paper.registry.entry.RegistryEntry;
+ import io.papermc.paper.registry.tag.TagKey;
+ import java.util.Collections;
+@@ -81,7 +83,7 @@ public final class PaperRegistries {
+     static {
+         REGISTRY_ENTRIES = List.of(
+             // built-ins
+-            entry(Registries.GAME_EVENT, RegistryKey.GAME_EVENT, GameEvent.class, CraftGameEvent::new),
++            writable(Registries.GAME_EVENT, RegistryKey.GAME_EVENT, GameEvent.class, CraftGameEvent::new, PaperGameEventRegistryEntry.PaperBuilder::new),
+             entry(Registries.STRUCTURE_TYPE, RegistryKey.STRUCTURE_TYPE, StructureType.class, CraftStructureType::new),
+             entry(Registries.MOB_EFFECT, RegistryKey.MOB_EFFECT, PotionEffectType.class, CraftPotionEffectType::new),
+             entry(Registries.BLOCK, RegistryKey.BLOCK, BlockType.class, CraftBlockType::new),
+@@ -103,7 +105,7 @@ public final class PaperRegistries {
+             entry(Registries.TRIM_PATTERN, RegistryKey.TRIM_PATTERN, TrimPattern.class, CraftTrimPattern::new).delayed(),
+             entry(Registries.DAMAGE_TYPE, RegistryKey.DAMAGE_TYPE, DamageType.class, CraftDamageType::new).delayed(),
+             entry(Registries.WOLF_VARIANT, RegistryKey.WOLF_VARIANT, Wolf.Variant.class, CraftWolf.CraftVariant::new).delayed(),
+-            entry(Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT, Enchantment.class, CraftEnchantment::new).withSerializationUpdater(FieldRename.ENCHANTMENT_RENAME).delayed(),
++            writable(Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT, Enchantment.class, CraftEnchantment::new, PaperEnchantmentRegistryEntry.PaperBuilder::new).withSerializationUpdater(FieldRename.ENCHANTMENT_RENAME).delayed(),
+             entry(Registries.JUKEBOX_SONG, RegistryKey.JUKEBOX_SONG, JukeboxSong.class, CraftJukeboxSong::new).delayed(),
+             entry(Registries.BANNER_PATTERN, RegistryKey.BANNER_PATTERN, PatternType.class, CraftPatternType::new).delayed(),
+             entry(Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT, Art.class, CraftArt::new).delayed(),
+diff --git a/src/main/java/io/papermc/paper/registry/data/PaperEnchantmentRegistryEntry.java b/src/main/java/io/papermc/paper/registry/data/PaperEnchantmentRegistryEntry.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..481f5f0cfae1fada3bc3f873fb7e04c3086ea9bf
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/data/PaperEnchantmentRegistryEntry.java
+@@ -0,0 +1,234 @@
++package io.papermc.paper.registry.data;
++
++import com.google.common.base.Preconditions;
++import com.google.common.collect.Iterables;
++import com.google.common.collect.Lists;
++import io.papermc.paper.registry.PaperRegistryBuilder;
++import io.papermc.paper.registry.RegistryKey;
++import io.papermc.paper.registry.TypedKey;
++import io.papermc.paper.registry.data.util.Checks;
++import io.papermc.paper.registry.data.util.Conversions;
++import io.papermc.paper.registry.set.PaperRegistrySets;
++import io.papermc.paper.registry.set.RegistryKeySet;
++import java.util.Collections;
++import java.util.List;
++import java.util.Optional;
++import java.util.OptionalInt;
++import net.minecraft.core.HolderSet;
++import net.minecraft.core.component.DataComponentMap;
++import net.minecraft.core.registries.Registries;
++import net.minecraft.network.chat.Component;
++import net.minecraft.world.entity.EquipmentSlotGroup;
++import net.minecraft.world.item.Item;
++import net.minecraft.world.item.enchantment.Enchantment;
++import org.bukkit.craftbukkit.CraftEquipmentSlot;
++import org.bukkit.inventory.ItemType;
++import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jetbrains.annotations.Range;
++
++import static io.papermc.paper.registry.data.util.Checks.asArgument;
++import static io.papermc.paper.registry.data.util.Checks.asArgumentMin;
++import static io.papermc.paper.registry.data.util.Checks.asConfigured;
++
++@DefaultQualifier(NonNull.class)
++public class PaperEnchantmentRegistryEntry implements EnchantmentRegistryEntry {
++
++    // Top level
++    protected @MonotonicNonNull Component description;
++
++    // Definition
++    protected @MonotonicNonNull HolderSet<Item> supportedItems;
++    protected @Nullable HolderSet<Item> primaryItems;
++    protected OptionalInt weight = OptionalInt.empty();
++    protected OptionalInt maxLevel = OptionalInt.empty();
++    protected Enchantment.@MonotonicNonNull Cost minimumCost;
++    protected Enchantment.@MonotonicNonNull Cost maximumCost;
++    protected OptionalInt anvilCost = OptionalInt.empty();
++    protected @MonotonicNonNull List<EquipmentSlotGroup> activeSlots;
++
++    // Exclusive
++    protected HolderSet<Enchantment> exclusiveWith = HolderSet.empty(); // Paper added default to empty.
++
++    // Effects
++    protected DataComponentMap effects;
++
++    protected final Conversions conversions;
++
++    public PaperEnchantmentRegistryEntry(
++        final Conversions conversions,
++        final TypedKey<org.bukkit.enchantments.Enchantment> ignoredKey,
++        final @Nullable Enchantment internal
++    ) {
++        this.conversions = conversions;
++        if (internal == null) {
++            this.effects = DataComponentMap.EMPTY;
++            return;
++        }
++
++        // top level
++        this.description = internal.description();
++
++        // definition
++        final Enchantment.EnchantmentDefinition definition = internal.definition();
++        this.supportedItems = definition.supportedItems();
++        this.primaryItems = definition.primaryItems().orElse(null);
++        this.weight = OptionalInt.of(definition.weight());
++        this.maxLevel = OptionalInt.of(definition.maxLevel());
++        this.minimumCost = definition.minCost();
++        this.maximumCost = definition.maxCost();
++        this.anvilCost = OptionalInt.of(definition.anvilCost());
++        this.activeSlots = definition.slots();
++
++        // exclusive
++        this.exclusiveWith = internal.exclusiveSet();
++
++        // effects
++        this.effects = internal.effects();
++    }
++
++    @Override
++    public net.kyori.adventure.text.Component description() {
++        return this.conversions.asAdventure(asConfigured(this.description, "description"));
++    }
++
++    @Override
++    public RegistryKeySet<ItemType> supportedItems() {
++        return PaperRegistrySets.convertToApi(RegistryKey.ITEM, asConfigured(this.supportedItems, "supportedItems"));
++    }
++
++    @Override
++    public @Nullable RegistryKeySet<ItemType> primaryItems() {
++        return this.primaryItems == null ? null : PaperRegistrySets.convertToApi(RegistryKey.ITEM, this.primaryItems);
++    }
++
++    @Override
++    public @Range(from = 1, to = 1024) int weight() {
++        return asConfigured(this.weight, "weight");
++    }
++
++    @Override
++    public @Range(from = 1, to = 255) int maxLevel() {
++        return asConfigured(this.maxLevel, "maxLevel");
++    }
++
++    @Override
++    public EnchantmentCost minimumCost() {
++        final Enchantment.@MonotonicNonNull Cost cost = asConfigured(this.minimumCost, "minimumCost");
++        return EnchantmentRegistryEntry.EnchantmentCost.of(cost.base(), cost.perLevelAboveFirst());
++    }
++
++    @Override
++    public EnchantmentCost maximumCost() {
++        final Enchantment.@MonotonicNonNull Cost cost = asConfigured(this.maximumCost, "maximumCost");
++        return EnchantmentRegistryEntry.EnchantmentCost.of(cost.base(), cost.perLevelAboveFirst());
++    }
++
++    @Override
++    public @Range(from = 0, to = Integer.MAX_VALUE) int anvilCost() {
++        return asConfigured(this.anvilCost, "anvilCost");
++    }
++
++    @Override
++    public List<org.bukkit.inventory.EquipmentSlotGroup> activeSlots() {
++        return Collections.unmodifiableList(Lists.transform(asConfigured(this.activeSlots, "activeSlots"), CraftEquipmentSlot::getSlot));
++    }
++
++    @Override
++    public RegistryKeySet<org.bukkit.enchantments.Enchantment> exclusiveWith() {
++        return PaperRegistrySets.convertToApi(RegistryKey.ENCHANTMENT, this.exclusiveWith);
++    }
++
++    public static final class PaperBuilder extends PaperEnchantmentRegistryEntry implements EnchantmentRegistryEntry.Builder,
++        PaperRegistryBuilder<Enchantment, org.bukkit.enchantments.Enchantment> {
++
++        public PaperBuilder(final Conversions conversions, final TypedKey<org.bukkit.enchantments.Enchantment> key, final @Nullable Enchantment internal) {
++            super(conversions, key, internal);
++        }
++
++        @Override
++        public Builder description(final net.kyori.adventure.text.Component description) {
++            this.description = this.conversions.asVanilla(asArgument(description, "description"));
++            return this;
++        }
++
++        @Override
++        public Builder supportedItems(final RegistryKeySet<ItemType> supportedItems) {
++            this.supportedItems = PaperRegistrySets.convertToNms(Registries.ITEM, this.conversions.lookup(), asArgument(supportedItems, "supportedItems"));
++            return this;
++        }
++
++        @Override
++        public Builder primaryItems(final @Nullable RegistryKeySet<ItemType> primaryItems) {
++            this.primaryItems = primaryItems == null ? null : PaperRegistrySets.convertToNms(Registries.ITEM, this.conversions.lookup(), primaryItems);
++            return this;
++        }
++
++        @Override
++        public Builder weight(final @Range(from = 1, to = 1024) int weight) {
++            this.weight = OptionalInt.of(Checks.asArgumentRange(weight, "weight", 1, 1024));
++            return this;
++        }
++
++        @Override
++        public Builder maxLevel(final @Range(from = 1, to = 255) int maxLevel) {
++            this.maxLevel = OptionalInt.of(Checks.asArgumentRange(maxLevel, "maxLevel", 1, 255));
++            return this;
++        }
++
++        @Override
++        public Builder minimumCost(final EnchantmentCost minimumCost) {
++            final EnchantmentCost validCost = asArgument(minimumCost, "minimumCost");
++            this.minimumCost = Enchantment.dynamicCost(validCost.baseCost(), validCost.additionalPerLevelCost());
++            return this;
++        }
++
++        @Override
++        public Builder maximumCost(final EnchantmentCost maximumCost) {
++            final EnchantmentCost validCost = asArgument(maximumCost, "maximumCost");
++            this.maximumCost = Enchantment.dynamicCost(validCost.baseCost(), validCost.additionalPerLevelCost());
++            return this;
++        }
++
++        @Override
++        public Builder anvilCost(final @Range(from = 0, to = Integer.MAX_VALUE) int anvilCost) {
++            Preconditions.checkArgument(anvilCost >= 0, "anvilCost must be non-negative");
++            this.anvilCost = OptionalInt.of(asArgumentMin(anvilCost, "anvilCost", 0));
++            return this;
++        }
++
++        @Override
++        public Builder activeSlots(final Iterable<org.bukkit.inventory.EquipmentSlotGroup> activeSlots) {
++            this.activeSlots = Lists.newArrayList(Iterables.transform(asArgument(activeSlots, "activeSlots"), CraftEquipmentSlot::getNMSGroup));
++            return this;
++        }
++
++        @Override
++        public Builder exclusiveWith(final RegistryKeySet<org.bukkit.enchantments.Enchantment> exclusiveWith) {
++            this.exclusiveWith = PaperRegistrySets.convertToNms(Registries.ENCHANTMENT, this.conversions.lookup(), asArgument(exclusiveWith, "exclusiveWith"));
++            return this;
++        }
++
++        @Override
++        public Enchantment build() {
++            final Enchantment.EnchantmentDefinition def = new Enchantment.EnchantmentDefinition(
++                asConfigured(this.supportedItems, "supportedItems"),
++                Optional.ofNullable(this.primaryItems),
++                this.weight(),
++                this.maxLevel(),
++                asConfigured(this.minimumCost, "minimumCost"),
++                asConfigured(this.maximumCost, "maximumCost"),
++                this.anvilCost(),
++                Collections.unmodifiableList(asConfigured(this.activeSlots, "activeSlots"))
++            );
++            return new Enchantment(
++                asConfigured(this.description, "description"),
++                def,
++                this.exclusiveWith,
++                this.effects
++            );
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/data/PaperGameEventRegistryEntry.java b/src/main/java/io/papermc/paper/registry/data/PaperGameEventRegistryEntry.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..18f9463ae23ba2d9c65ffb7531a87c925a5a8d6f
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/data/PaperGameEventRegistryEntry.java
+@@ -0,0 +1,57 @@
++package io.papermc.paper.registry.data;
++
++import io.papermc.paper.registry.PaperRegistryBuilder;
++import io.papermc.paper.registry.data.util.Conversions;
++import java.util.OptionalInt;
++import net.minecraft.world.level.gameevent.GameEvent;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jetbrains.annotations.Range;
++
++import static io.papermc.paper.registry.data.util.Checks.asArgumentMin;
++import static io.papermc.paper.registry.data.util.Checks.asConfigured;
++
++@DefaultQualifier(NonNull.class)
++public class PaperGameEventRegistryEntry implements GameEventRegistryEntry {
++
++    protected OptionalInt range = OptionalInt.empty();
++
++    public PaperGameEventRegistryEntry(
++        final Conversions ignoredConversions,
++        final io.papermc.paper.registry.TypedKey<org.bukkit.GameEvent> ignoredKey,
++        final @Nullable GameEvent nms
++    ) {
++        if (nms == null) return;
++
++        this.range = OptionalInt.of(nms.notificationRadius());
++    }
++
++    @Override
++    public @Range(from = 0, to = Integer.MAX_VALUE) int range() {
++        return asConfigured(this.range, "range");
++    }
++
++    public static final class PaperBuilder extends PaperGameEventRegistryEntry implements GameEventRegistryEntry.Builder,
++        PaperRegistryBuilder<GameEvent, org.bukkit.GameEvent> {
++
++        public PaperBuilder(
++            final Conversions conversions,
++            final io.papermc.paper.registry.TypedKey<org.bukkit.GameEvent> key,
++            final @Nullable GameEvent nms
++        ) {
++            super(conversions, key, nms);
++        }
++
++        @Override
++        public GameEventRegistryEntry.Builder range(final @Range(from = 0, to = Integer.MAX_VALUE) int range) {
++            this.range = OptionalInt.of(asArgumentMin(range, "range", 0));
++            return this;
++        }
++
++        @Override
++        public GameEvent build() {
++            return new GameEvent(this.range());
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/data/util/Checks.java b/src/main/java/io/papermc/paper/registry/data/util/Checks.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3241a94731fe8163876614efdcf30f8b551535af
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/data/util/Checks.java
+@@ -0,0 +1,48 @@
++package io.papermc.paper.registry.data.util;
++
++import java.util.OptionalInt;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public final class Checks {
++
++    public static <T> T asConfigured(final @Nullable T value, final String field) {
++        if (value == null) {
++            throw new IllegalStateException(field + " has not been configured");
++        }
++        return value;
++    }
++
++    public static int asConfigured(final OptionalInt value, final String field) {
++        if (value.isEmpty()) {
++            throw new IllegalStateException(field + " has not been configured");
++        }
++        return value.getAsInt();
++    }
++
++    public static <T> T asArgument(final @Nullable T value, final String field) {
++        if (value == null) {
++            throw new IllegalArgumentException("argument " + field + " cannot be null");
++        }
++        return value;
++    }
++
++    public static int asArgumentRange(final int value, final String field, final int min, final int max) {
++        if (value < min || value > max) {
++            throw new IllegalArgumentException("argument " + field + " must be [" + min + ", " + max + "]");
++        }
++        return value;
++    }
++
++    public static int asArgumentMin(final int value, final String field, final int min) {
++        if (value < min) {
++            throw new IllegalArgumentException("argument " + field + " must be [" + min + ",+inf)");
++        }
++        return value;
++    }
++
++    private Checks() {
++    }
++}
+diff --git a/src/main/java/net/minecraft/world/level/gameevent/GameEvent.java b/src/main/java/net/minecraft/world/level/gameevent/GameEvent.java
+index cc3c56224e64816b885c0131ce2a800a2efe3113..7acd9c71c5c4b487e792b8c36a8e52e10b691e98 100644
+--- a/src/main/java/net/minecraft/world/level/gameevent/GameEvent.java
++++ b/src/main/java/net/minecraft/world/level/gameevent/GameEvent.java
+@@ -85,7 +85,7 @@ public record GameEvent(int notificationRadius) {
+     }
+ 
+     private static Holder.Reference<GameEvent> register(String id, int range) {
+-        return Registry.registerForHolder(BuiltInRegistries.GAME_EVENT, ResourceLocation.withDefaultNamespace(id), new GameEvent(range));
++        return io.papermc.paper.registry.PaperRegistryListenerManager.INSTANCE.registerForHolderWithListeners(BuiltInRegistries.GAME_EVENT, ResourceLocation.withDefaultNamespace(id), new GameEvent(range)); // Paper - run with listeners
+     }
+ 
+     public static record Context(@Nullable Entity sourceEntity, @Nullable BlockState affectedState) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftGameEvent.java b/src/main/java/org/bukkit/craftbukkit/CraftGameEvent.java
+index ac9b4328cd55a68664a3f71186bc9a7be7cd9658..ea9fe1f8b1a1685ea975eba0ca418a831006065a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftGameEvent.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftGameEvent.java
+@@ -18,10 +18,12 @@ public class CraftGameEvent extends GameEvent implements Handleable<net.minecraf
+     }
+ 
+     private final NamespacedKey key;
++    private final net.minecraft.resources.ResourceKey<net.minecraft.world.level.gameevent.GameEvent> handleKey; // Paper
+     private final net.minecraft.world.level.gameevent.GameEvent handle;
+ 
+     public CraftGameEvent(NamespacedKey key, net.minecraft.world.level.gameevent.GameEvent handle) {
+         this.key = key;
++        this.handleKey = net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.GAME_EVENT, org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(key)); // Paper
+         this.handle = handle;
+     }
+ 
+@@ -30,6 +32,18 @@ public class CraftGameEvent extends GameEvent implements Handleable<net.minecraf
+         return this.handle;
+     }
+ 
++    // Paper start
++    @Override
++    public int getRange() {
++        return this.handle.notificationRadius();
++    }
++
++    @Override
++    public int getVibrationLevel() {
++        return net.minecraft.world.level.gameevent.vibrations.VibrationSystem.getGameEventFrequency(this.handleKey);
++    }
++    // Paper end
++
+     @NotNull
+     @Override
+     public NamespacedKey getKey() {
+diff --git a/src/test/java/io/papermc/paper/registry/RegistryBuilderTest.java b/src/test/java/io/papermc/paper/registry/RegistryBuilderTest.java
+index ceef7b5864deb1d7c6aa5630febe86ba9427bdc4..4d4632da6bf1bde85115dde2e2f7e353bd392176 100644
+--- a/src/test/java/io/papermc/paper/registry/RegistryBuilderTest.java
++++ b/src/test/java/io/papermc/paper/registry/RegistryBuilderTest.java
+@@ -1,11 +1,16 @@
+ package io.papermc.paper.registry;
+ 
++import io.papermc.paper.registry.data.PaperEnchantmentRegistryEntry;
++import io.papermc.paper.registry.data.PaperGameEventRegistryEntry;
+ import io.papermc.paper.registry.data.util.Conversions;
+ import java.util.List;
+ import java.util.Map;
+ import net.minecraft.core.Registry;
++import net.minecraft.core.registries.Registries;
+ import net.minecraft.resources.RegistryOps;
+ import net.minecraft.resources.ResourceKey;
++import net.minecraft.world.item.enchantment.Enchantment;
++import net.minecraft.world.level.gameevent.GameEvent;
+ import org.bukkit.support.RegistryHelper;
+ import org.bukkit.support.environment.AllFeatures;
+ import org.junit.jupiter.api.Disabled;
+@@ -14,16 +19,18 @@ import org.junit.jupiter.params.provider.Arguments;
+ import org.junit.jupiter.params.provider.MethodSource;
+ 
+ import static org.junit.jupiter.api.Assertions.assertEquals;
++import static org.junit.jupiter.params.provider.Arguments.arguments;
+ 
+ @AllFeatures
+ class RegistryBuilderTest {
+ 
+     static List<Arguments> registries() {
+         return List.of(
++            arguments(Registries.ENCHANTMENT, (PaperRegistryBuilder.Filler<Enchantment, org.bukkit.enchantments.Enchantment, PaperEnchantmentRegistryEntry.PaperBuilder>) PaperEnchantmentRegistryEntry.PaperBuilder::new),
++            arguments(Registries.GAME_EVENT, (PaperRegistryBuilder.Filler<GameEvent, org.bukkit.GameEvent, PaperGameEventRegistryEntry.PaperBuilder>) PaperGameEventRegistryEntry.PaperBuilder::new)
+         );
+     }
+ 
+-    @Disabled
+     @ParameterizedTest
+     @MethodSource("registries")
+     <M, T> void testEquality(final ResourceKey<? extends Registry<M>> resourceKey, final PaperRegistryBuilder.Filler<M, T, ?> filler) {

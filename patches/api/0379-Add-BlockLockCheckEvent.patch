@@ -1,0 +1,242 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 21 May 2022 20:59:56 -0700
+Subject: [PATCH] Add BlockLockCheckEvent
+
+
+diff --git a/src/main/java/io/papermc/paper/block/LockableTileState.java b/src/main/java/io/papermc/paper/block/LockableTileState.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f309961e0e96b6baacc4fe6d80dabd6c7c5d2e1d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/block/LockableTileState.java
+@@ -0,0 +1,11 @@
++package io.papermc.paper.block;
++
++import org.bukkit.Nameable;
++import org.bukkit.block.Lockable;
++import org.bukkit.block.TileState;
++
++/**
++ * Interface for tile entities that are lockable.
++ */
++public interface LockableTileState extends TileState, Lockable, Nameable {
++}
+diff --git a/src/main/java/io/papermc/paper/event/block/BlockLockCheckEvent.java b/src/main/java/io/papermc/paper/event/block/BlockLockCheckEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f08d390f0ee9357dcc229d7a2520da602677d9ef
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/block/BlockLockCheckEvent.java
+@@ -0,0 +1,187 @@
++package io.papermc.paper.event.block;
++
++import com.google.common.base.Preconditions;
++import io.papermc.paper.block.LockableTileState;
++import java.util.Objects;
++import net.kyori.adventure.sound.Sound;
++import net.kyori.adventure.text.Component;
++import org.bukkit.block.Block;
++import org.bukkit.block.BlockState;
++import org.bukkit.entity.Player;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.block.BlockEvent;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
++
++/**
++ * Called when the server tries to check the lock on a lockable block entity.
++ * <br>
++ * See {@link #setResult(Result)} to change behavior
++ */
++@NullMarked
++public class BlockLockCheckEvent extends BlockEvent {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private final Player player;
++    private @Nullable Component lockedMessage;
++    private @Nullable Sound lockedSound;
++    private @Nullable ItemStack itemStack;
++    private Result result = Result.DEFAULT;
++
++    @ApiStatus.Internal
++    public BlockLockCheckEvent(final Block block, final Player player, final Component lockedMessage, final Sound lockedSound) {
++        super(block);
++        this.player = player;
++        this.lockedMessage = lockedMessage;
++        this.lockedSound = lockedSound;
++    }
++
++    /**
++     * Gets the snapshot {@link LockableTileState} of the block entity
++     * whose lock is being checked.
++     *
++     * @return the snapshot block state.
++     */
++    public LockableTileState getBlockState() {
++        final BlockState blockState = this.getBlock().getState();
++        Preconditions.checkState(blockState instanceof LockableTileState, "Block state of lock-checked block is no longer a lockable tile state!");
++        return (LockableTileState) blockState;
++    }
++
++    /**
++     * Get the player involved this lock check.
++     *
++     * @return the player
++     */
++    public Player getPlayer() {
++        return this.player;
++    }
++
++    /**
++     * Gets the itemstack that will be used as the key itemstack. Initially
++     * this will be the item in the player's main hand but an override can be set
++     * with {@link #setKeyItem(ItemStack)}. Use {@link #isUsingCustomKeyItemStack()}
++     * to check if a custom key stack has been set.
++     *
++     * @return the item being used as the key item
++     * @see #isUsingCustomKeyItemStack()
++     */
++    public ItemStack getKeyItem() {
++        return Objects.requireNonNullElseGet(this.itemStack, this.player.getInventory()::getItemInMainHand);
++    }
++
++    /**
++     * Sets the itemstack that will be used as the key item.
++     *
++     * @param stack the stack to use as a key
++     * @see #resetKeyItem() to clear a custom key item
++     */
++    public void setKeyItem(final ItemStack stack) {
++        Preconditions.checkArgument(stack != null, "stack cannot be null");
++        this.itemStack = stack;
++    }
++
++    /**
++     * Reset the key stack to the default (the player's main hand).
++     */
++    public void resetKeyItem() {
++        this.itemStack = null;
++    }
++
++    /**
++     * Checks if a custom key stack has been set.
++     *
++     * @return {@code true} if a custom key itemstack has been set
++     */
++    public boolean isUsingCustomKeyItemStack() {
++        return this.itemStack != null;
++    }
++
++    /**
++     * Gets the result of this event.
++     *
++     * @return the result
++     * @see #setResult(Result)
++     */
++    public Result getResult() {
++        return this.result;
++    }
++
++    /**
++     * Gets the result of this event. {@link Result#DEFAULT} is the default
++     * allowing the vanilla logic to check the lock of this block. Set to {@link Result#ALLOW}
++     * or {@link Result#DENY} to override that behavior.
++     * <p>
++     * Setting this to {@link Result#ALLOW} bypasses the spectator check.
++     *
++     * @param result the result of this event
++     */
++    public void setResult(final Result result) {
++        this.result = result;
++    }
++
++    /**
++     * Shorthand method to set the {@link #getResult()} to {@link Result#DENY},
++     * the locked message and locked sound.
++     *
++     * @param lockedMessage the message to show if locked (or {@code null} for none)
++     * @param lockedSound   the sound to play if locked (or {@code null} for none)
++     */
++    public void denyWithMessageAndSound(final @Nullable Component lockedMessage, final @Nullable Sound lockedSound) {
++        this.result = Result.DENY;
++        this.lockedMessage = lockedMessage;
++        this.lockedSound = lockedSound;
++    }
++
++    /**
++     * Gets the locked message that will be sent if the
++     * player cannot open the block.
++     *
++     * @return the locked message (or {@code null} if none)
++     */
++    public @Nullable Component getLockedMessage() {
++        return this.lockedMessage;
++    }
++
++    /**
++     * Sets the locked message that will be sent if the
++     * player cannot open the block.
++     *
++     * @param lockedMessage the locked message (or {@code null} for none)
++     */
++    public void setLockedMessage(final @Nullable Component lockedMessage) {
++        this.lockedMessage = lockedMessage;
++    }
++
++    /**
++     * Gets the locked sound that will play if the
++     * player cannot open the block.
++     *
++     * @return the locked sound (or {@code null} if none)
++     */
++    public @Nullable Sound getLockedSound() {
++        return this.lockedSound;
++    }
++
++    /**
++     * Sets the locked sound that will play if the
++     * player cannot open the block.
++     *
++     * @param lockedSound the locked sound (or {@code null} for none)
++     */
++    public void setLockedSound(final @Nullable Sound lockedSound) {
++        this.lockedSound = lockedSound;
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}
+diff --git a/src/main/java/org/bukkit/block/Beacon.java b/src/main/java/org/bukkit/block/Beacon.java
+index 7d212c409035ccb8b22d4ffc322b4a1aea367627..79c04b840adb768f7a38e95a82f79287f42681f5 100644
+--- a/src/main/java/org/bukkit/block/Beacon.java
++++ b/src/main/java/org/bukkit/block/Beacon.java
+@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * Represents a captured state of a beacon.
+  */
+-public interface Beacon extends TileState, Lockable, Nameable {
++public interface Beacon extends io.papermc.paper.block.LockableTileState { // Paper
+ 
+     /**
+      * Returns the list of players within the beacon's range of effect.
+diff --git a/src/main/java/org/bukkit/block/Container.java b/src/main/java/org/bukkit/block/Container.java
+index bc06199f0a1cc43e0bdfd5b11fa170badd46e180..a67ee0cb0cd2cbab8dab375e2fe44168c250bcb7 100644
+--- a/src/main/java/org/bukkit/block/Container.java
++++ b/src/main/java/org/bukkit/block/Container.java
+@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
+ /**
+  * Represents a captured state of a container block.
+  */
+-public interface Container extends TileState, BlockInventoryHolder, Lockable, Nameable {
++public interface Container extends io.papermc.paper.block.LockableTileState, BlockInventoryHolder { // Paper
+ 
+     /**
+      * Gets the inventory of the block represented by this block state.

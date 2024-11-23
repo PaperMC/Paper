@@ -1,0 +1,175 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Warrior <50800980+Warriorrrr@users.noreply.github.com>
+Date: Sat, 19 Nov 2022 19:46:44 +0100
+Subject: [PATCH] Add /paper dumplisteners command
+
+
+diff --git a/src/main/java/co/aikar/timings/TimedEventExecutor.java b/src/main/java/co/aikar/timings/TimedEventExecutor.java
+index a3ad690691eb5537a565d7ba684354acfec5ee2d..157617933a772451f6c073d97afaf305769b4d40 100644
+--- a/src/main/java/co/aikar/timings/TimedEventExecutor.java
++++ b/src/main/java/co/aikar/timings/TimedEventExecutor.java
+@@ -84,4 +84,10 @@ public class TimedEventExecutor implements EventExecutor {
+             executor.execute(listener, event);
+         }
+     }
++
++    @Override
++    @NotNull
++    public String toString() {
++        return "TimedEventExecutor['" + this.executor.toString() + "']";
++    }
+ }
+diff --git a/src/main/java/com/destroystokyo/paper/event/executor/MethodHandleEventExecutor.java b/src/main/java/com/destroystokyo/paper/event/executor/MethodHandleEventExecutor.java
+index 5a702481d28d90cb503faad0d9b9c3231bbff940..2a169d2f6fdada6c361ee4291abb38446d45d654 100644
+--- a/src/main/java/com/destroystokyo/paper/event/executor/MethodHandleEventExecutor.java
++++ b/src/main/java/com/destroystokyo/paper/event/executor/MethodHandleEventExecutor.java
+@@ -18,10 +18,12 @@ public class MethodHandleEventExecutor implements EventExecutor {
+ 
+     private final Class<? extends Event> eventClass;
+     private final MethodHandle handle;
++    private final @Nullable Method method;
+ 
+     public MethodHandleEventExecutor(final Class<? extends Event> eventClass, final MethodHandle handle) {
+         this.eventClass = eventClass;
+         this.handle = handle;
++        this.method = null;
+     }
+ 
+     public MethodHandleEventExecutor(final Class<? extends Event> eventClass, final Method m) {
+@@ -32,6 +34,7 @@ public class MethodHandleEventExecutor implements EventExecutor {
+         } catch (final IllegalAccessException e) {
+             throw new AssertionError("Unable to set accessible", e);
+         }
++        this.method = m;
+     }
+ 
+     @Override
+@@ -43,4 +46,9 @@ public class MethodHandleEventExecutor implements EventExecutor {
+             SneakyThrow.sneaky(t);
+         }
+     }
++
++    @Override
++    public String toString() {
++        return "MethodHandleEventExecutor['" + this.method + "']";
++    }
+ }
+diff --git a/src/main/java/com/destroystokyo/paper/event/executor/StaticMethodHandleEventExecutor.java b/src/main/java/com/destroystokyo/paper/event/executor/StaticMethodHandleEventExecutor.java
+index bbdb5b472df116b71c459bdc6cc4b74267ea0f5e..e98962b6c6651c580684d8580484de87b5ad65a5 100644
+--- a/src/main/java/com/destroystokyo/paper/event/executor/StaticMethodHandleEventExecutor.java
++++ b/src/main/java/com/destroystokyo/paper/event/executor/StaticMethodHandleEventExecutor.java
+@@ -19,6 +19,7 @@ public class StaticMethodHandleEventExecutor implements EventExecutor {
+ 
+     private final Class<? extends Event> eventClass;
+     private final MethodHandle handle;
++    private final Method method;
+ 
+     public StaticMethodHandleEventExecutor(final Class<? extends Event> eventClass, final Method m) {
+         Preconditions.checkArgument(Modifier.isStatic(m.getModifiers()), "Not a static method: %s", m);
+@@ -30,6 +31,7 @@ public class StaticMethodHandleEventExecutor implements EventExecutor {
+         } catch (final IllegalAccessException e) {
+             throw new AssertionError("Unable to set accessible", e);
+         }
++        this.method = m;
+     }
+ 
+     @Override
+@@ -41,4 +43,9 @@ public class StaticMethodHandleEventExecutor implements EventExecutor {
+             SneakyThrow.sneaky(throwable);
+         }
+     }
++
++    @Override
++    public String toString() {
++        return "StaticMethodHandleEventExecutor['" + this.method + "']";
++    }
+ }
+diff --git a/src/main/java/org/bukkit/event/HandlerList.java b/src/main/java/org/bukkit/event/HandlerList.java
+index ed78cca71f83b296d082d0af147ca8d622c7606a..2292bd460ce2be113beb4ba6b4eb19350060f01c 100644
+--- a/src/main/java/org/bukkit/event/HandlerList.java
++++ b/src/main/java/org/bukkit/event/HandlerList.java
+@@ -33,6 +33,13 @@ public class HandlerList {
+      */
+     private static ArrayList<HandlerList> allLists = new ArrayList<HandlerList>();
+ 
++    // Paper start
++    /**
++     * Event types which have instantiated a {@link HandlerList}.
++     */
++    private static final java.util.Set<String> EVENT_TYPES = java.util.concurrent.ConcurrentHashMap.newKeySet();
++    // Paper end
++
+     /**
+      * Bake all handler lists. Best used just after all normal event
+      * registration is complete, ie just after all plugins are loaded if
+@@ -94,6 +101,12 @@ public class HandlerList {
+      * The HandlerList is then added to meta-list for use in bakeAll()
+      */
+     public HandlerList() {
++        // Paper start
++        java.lang.StackWalker.getInstance(java.util.EnumSet.of(java.lang.StackWalker.Option.RETAIN_CLASS_REFERENCE), 4)
++            .walk(s -> s.filter(f -> Event.class.isAssignableFrom(f.getDeclaringClass())).findFirst())
++            .map(f -> f.getDeclaringClass().getName())
++            .ifPresent(EVENT_TYPES::add);
++        // Paper end
+         handlerslots = new EnumMap<EventPriority, ArrayList<RegisteredListener>>(EventPriority.class);
+         for (EventPriority o : EventPriority.values()) {
+             handlerslots.put(o, new ArrayList<RegisteredListener>());
+diff --git a/src/main/java/org/bukkit/plugin/EventExecutor.java b/src/main/java/org/bukkit/plugin/EventExecutor.java
+index 5fa52419f21d8e8b3d8f9aafd248b05774a28348..60e086be70529e0804280b24a2a3e7ae72d8d363 100644
+--- a/src/main/java/org/bukkit/plugin/EventExecutor.java
++++ b/src/main/java/org/bukkit/plugin/EventExecutor.java
+@@ -70,9 +70,18 @@ public interface EventExecutor {
+             try {
+                 EventExecutor asmExecutor = executorClass.newInstance();
+                 // Define a wrapper to conform to bukkit stupidity (passing in events that don't match and wrapper exception)
+-                return (listener, event) -> {
+-                    if (!eventClass.isInstance(event)) return;
+-                    asmExecutor.execute(listener, event);
++                return new EventExecutor() {
++                    @Override
++                    public void execute(@NotNull Listener listener, @NotNull Event event) throws EventException {
++                        if (!eventClass.isInstance(event)) return;
++                        asmExecutor.execute(listener, event);
++                    }
++
++                    @Override
++                    @NotNull
++                    public String toString() {
++                        return "ASMEventExecutor['" + m + "']";
++                    }
+                 };
+             } catch (InstantiationException | IllegalAccessException e) {
+                 throw new AssertionError("Unable to initialize generated event executor", e);
+diff --git a/src/main/java/org/bukkit/plugin/RegisteredListener.java b/src/main/java/org/bukkit/plugin/RegisteredListener.java
+index 419aec56b0e3fa8bcec2ea7f340caa3456b57d00..3b3d9642a8d63798dc28f2f8df77f0466451cbff 100644
+--- a/src/main/java/org/bukkit/plugin/RegisteredListener.java
++++ b/src/main/java/org/bukkit/plugin/RegisteredListener.java
+@@ -78,4 +78,27 @@ public class RegisteredListener {
+     public boolean isIgnoringCancelled() {
+         return ignoreCancelled;
+     }
++
++    // Paper start
++    /**
++     * Get the executor for this registration.
++     *
++     * @return executor
++     */
++    @NotNull
++    public EventExecutor getExecutor() {
++        return this.executor;
++    }
++
++    @Override
++    public String toString() {
++        return "RegisteredListener{"
++            + "plugin=\"" + this.plugin.getName()
++            + "\", listener=\"" + this.listener
++            + "\", executor=\"" + this.executor
++            + "\", priority=\"" + this.priority.name() + " (" + this.priority.getSlot() + ")"
++            + "\", ignoringCancelled=" + this.ignoreCancelled
++            + "}";
++    }
++    // Paper end
+ }

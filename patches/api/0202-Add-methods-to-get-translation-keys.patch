@@ -1,0 +1,582 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 11 Aug 2020 19:17:46 +0200
+Subject: [PATCH] Add methods to get translation keys
+
+Co-authored-by: MeFisto94 <MeFisto94@users.noreply.github.com>
+
+diff --git a/src/main/java/org/bukkit/Difficulty.java b/src/main/java/org/bukkit/Difficulty.java
+index f35801783538d3377b04131b8bf6effd7eb8e1a5..427ce8cfd6f63e5c7ec7b264b15ab4111b947729 100644
+--- a/src/main/java/org/bukkit/Difficulty.java
++++ b/src/main/java/org/bukkit/Difficulty.java
+@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * Represents the various difficulty levels that are available.
+  */
+-public enum Difficulty {
++public enum Difficulty implements net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
+     /**
+      * Players regain health over time, hostile mobs don't spawn, the hunger
+      * bar does not deplete.
+@@ -51,6 +51,12 @@ public enum Difficulty {
+         return value;
+     }
+ 
++    // Paper start
++    @Override
++    public @org.jetbrains.annotations.NotNull String translationKey() {
++        return "options.difficulty." + this.name().toLowerCase(java.util.Locale.ENGLISH);
++    }
++    // Paper end
+     /**
+      * Gets the Difficulty represented by the specified value
+      *
+diff --git a/src/main/java/org/bukkit/FireworkEffect.java b/src/main/java/org/bukkit/FireworkEffect.java
+index bf7db5b3e7c2ac15016a48e520fba674726718ee..637fa73d4366c2d88e2716e5c8d3465706d788a7 100644
+--- a/src/main/java/org/bukkit/FireworkEffect.java
++++ b/src/main/java/org/bukkit/FireworkEffect.java
+@@ -18,28 +18,44 @@ public final class FireworkEffect implements ConfigurationSerializable {
+     /**
+      * The type or shape of the effect.
+      */
+-    public enum Type {
++    public enum Type implements net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
+         /**
+          * A small ball effect.
+          */
+-        BALL,
++        BALL("small_ball"), // Paper - add name
+         /**
+          * A large ball effect.
+          */
+-        BALL_LARGE,
++        BALL_LARGE("large_ball"), // Paper - add name
+         /**
+          * A star-shaped effect.
+          */
+-        STAR,
++        STAR("star"), // Paper - add name
+         /**
+          * A burst effect.
+          */
+-        BURST,
++        BURST("burst"), // Paper - add name
+         /**
+          * A creeper-face effect.
+          */
+-        CREEPER,
++        CREEPER("creeper"), // Paper - add name
+         ;
++        // Paper start
++        /**
++         * The name map.
++         */
++        public static final net.kyori.adventure.util.Index<String, org.bukkit.FireworkEffect.Type> NAMES = net.kyori.adventure.util.Index.create(Type.class, type -> type.name);
++        private final String name;
++
++        Type(final String name) {
++            this.name = name;
++        }
++
++        @Override
++        public @NotNull String translationKey() {
++            return "item.minecraft.firework_star.shape." + this.name;
++        }
++        // Paper end
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/GameMode.java b/src/main/java/org/bukkit/GameMode.java
+index 81e45984a88fc84acd0f76d825abf4ddaed0ac3b..fdc42a79c5af30fdade41ee99245e6641f353571 100644
+--- a/src/main/java/org/bukkit/GameMode.java
++++ b/src/main/java/org/bukkit/GameMode.java
+@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
+  * Represents the various type of game modes that {@link HumanEntity}s may
+  * have
+  */
+-public enum GameMode {
++public enum GameMode implements net.kyori.adventure.translation.Translatable { // Paper - implement Translatable
+     /**
+      * Creative mode may fly, build instantly, become invulnerable and create
+      * free items.
+@@ -35,9 +35,18 @@ public enum GameMode {
+ 
+     private final int value;
+     private static final Map<Integer, GameMode> BY_ID = Maps.newHashMap();
++    // Paper start - translation keys
++    private final String translationKey;
++
++    @Override
++    public @org.jetbrains.annotations.NotNull String translationKey() {
++        return this.translationKey;
++    }
++    // Paper end
+ 
+     private GameMode(final int value) {
+         this.value = value;
++        this.translationKey = "gameMode." +  this.name().toLowerCase(java.util.Locale.ENGLISH); // Paper
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/GameRule.java b/src/main/java/org/bukkit/GameRule.java
+index b3211a705acc26449675727823aa42ae6bacac4f..8b6584fae0a9d5cccbe350d889fa8b4a14c78ca3 100644
+--- a/src/main/java/org/bukkit/GameRule.java
++++ b/src/main/java/org/bukkit/GameRule.java
+@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
+  *
+  * @param <T> type of rule (Boolean or Integer)
+  */
+-public final class GameRule<T> {
++public final class GameRule<T> implements net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
+ 
+     private static Map<String, GameRule<?>> gameRules = new HashMap<>();
+     // Boolean rules
+@@ -366,4 +366,11 @@ public final class GameRule<T> {
+     public static GameRule<?>[] values() {
+         return gameRules.values().toArray(new GameRule<?>[gameRules.size()]);
+     }
++
++    // Paper start
++    @Override
++    public @NotNull String translationKey() {
++        return "gamerule." + this.name;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
+index 309a79cbe65498c90d9e135607bc246688ac6274..8820dd330cee4f8463f2f39f84d4be0762558368 100644
+--- a/src/main/java/org/bukkit/Material.java
++++ b/src/main/java/org/bukkit/Material.java
+@@ -135,7 +135,7 @@ import org.jetbrains.annotations.Nullable;
+  * An enum of all material IDs accepted by the official server and client
+  */
+ @SuppressWarnings({"DeprecatedIsStillUsed", "deprecation"}) // Paper
+-public enum Material implements Keyed, Translatable {
++public enum Material implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper
+     //<editor-fold desc="Materials" defaultstate="collapsed">
+     AIR(9648, 0),
+     STONE(22948),
+@@ -4863,6 +4863,17 @@ public enum Material implements Keyed, Translatable {
+     }
+     // Paper end
+ 
++    // Paper start - add Translatable
++    @Override
++    public @NotNull String translationKey() {
++        if (this.isItem()) {
++            return java.util.Objects.requireNonNull(this.asItemType()).translationKey();
++        } else {
++            return java.util.Objects.requireNonNull(this.asBlockType()).translationKey();
++        }
++    }
++    // Paper end - add Translatable
++
+     /**
+      * Do not use for any reason.
+      *
+@@ -5612,9 +5623,11 @@ public enum Material implements Keyed, Translatable {
+      * material
+      * @see #getBlockTranslationKey()
+      * @see #getItemTranslationKey()
++     * @deprecated use {@link #translationKey()}
+      */
+     @Override
+     @NotNull
++    @Deprecated(forRemoval = true) // Paper
+     public String getTranslationKey() {
+         if (this.isItem()) {
+             return asItemType().getTranslationKey();
+diff --git a/src/main/java/org/bukkit/MusicInstrument.java b/src/main/java/org/bukkit/MusicInstrument.java
+index 807e89d026bffae521ead39c514a872ae4d406b3..f87364de1bf24ee78e0d823d9081a5f352934405 100644
+--- a/src/main/java/org/bukkit/MusicInstrument.java
++++ b/src/main/java/org/bukkit/MusicInstrument.java
+@@ -6,7 +6,7 @@ import java.util.Collections;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+ 
+-public abstract class MusicInstrument implements Keyed {
++public abstract class MusicInstrument implements Keyed, net.kyori.adventure.translation.Translatable { // Paper - translation keys
+ 
+     public static final MusicInstrument PONDER_GOAT_HORN = getInstrument("ponder_goat_horn");
+     public static final MusicInstrument SING_GOAT_HORN = getInstrument("sing_goat_horn");
+@@ -46,4 +46,14 @@ public abstract class MusicInstrument implements Keyed {
+     private static MusicInstrument getInstrument(@NotNull String key) {
+         return Registry.INSTRUMENT.getOrThrow(NamespacedKey.minecraft(key));
+     }
++
++    // Paper start - mark translation key as deprecated
++    /**
++     * @deprecated this method assumes that the instrument description
++     * always be a translatable component which is not guaranteed.
++     */
++    @Override
++    @Deprecated(forRemoval = true)
++    public abstract @NotNull String translationKey();
++    // Paper end - mark translation key as deprecated
+ }
+diff --git a/src/main/java/org/bukkit/Translatable.java b/src/main/java/org/bukkit/Translatable.java
+index e3faa2c675c85a9cbdbbb1debec0ff81c58a1bbd..fd1629c2d2028a88fb3d56b0aeb833d17235080a 100644
+--- a/src/main/java/org/bukkit/Translatable.java
++++ b/src/main/java/org/bukkit/Translatable.java
+@@ -5,14 +5,18 @@ import org.jetbrains.annotations.NotNull;
+ /**
+  * Represents an object with a text representation that can be translated by the
+  * Minecraft client.
++ * @deprecated use {@link net.kyori.adventure.translation.Translatable}
+  */
++@Deprecated(forRemoval = true) // Paper
+ public interface Translatable {
+ 
+     /**
+      * Get the translation key, suitable for use in a translation component.
+      *
+      * @return the translation key
++     * @deprecated look for a {@code translationKey()} method instead
+      */
+     @NotNull
++    @Deprecated(forRemoval = true) // Paper
+     String getTranslationKey();
+ }
+diff --git a/src/main/java/org/bukkit/attribute/Attribute.java b/src/main/java/org/bukkit/attribute/Attribute.java
+index 951c23491390c2c8693d415598ef2de712189220..21f9998b472dc18eb308554f5cdf467f6675f2f0 100644
+--- a/src/main/java/org/bukkit/attribute/Attribute.java
++++ b/src/main/java/org/bukkit/attribute/Attribute.java
+@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
+ /**
+  * Types of attributes which may be present on an {@link Attributable}.
+  */
+-public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable {
++public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
+ 
+     /**
+      * Maximum health of an Entity.
+diff --git a/src/main/java/org/bukkit/block/Biome.java b/src/main/java/org/bukkit/block/Biome.java
+index f46932a12f46895ae10b63f7fbb54750da1bd2ba..b352886e697a1c9869226b583da5240592575064 100644
+--- a/src/main/java/org/bukkit/block/Biome.java
++++ b/src/main/java/org/bukkit/block/Biome.java
+@@ -22,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
+  * There may be additional biomes present in the server, for example from a {@link DataPack}
+  * which can be accessed via {@link Registry#BIOME}.
+  */
+-public interface Biome extends OldEnum<Biome>, Keyed {
++public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
+ 
+     Biome OCEAN = getBiome("ocean");
+     Biome PLAINS = getBiome("plains");
+@@ -131,4 +131,11 @@ public interface Biome extends OldEnum<Biome>, Keyed {
+     static Biome[] values() {
+         return Lists.newArrayList(Registry.BIOME).toArray(new Biome[0]);
+     }
++
++    // Paper start
++    @Override
++    default @NotNull String translationKey() {
++        return "biome.minecraft." + this.getKey().getKey();
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/block/Block.java b/src/main/java/org/bukkit/block/Block.java
+index 745413357506fa7399f8ba44dfe222d1f0c919f1..25db31b2e9a6d75f0c59f75237842f9ad7d1c350 100644
+--- a/src/main/java/org/bukkit/block/Block.java
++++ b/src/main/java/org/bukkit/block/Block.java
+@@ -32,7 +32,7 @@ import org.jetbrains.annotations.Nullable;
+  * (i.e. lighting and power) may not be able to be safely accessed during world
+  * generation when used in cases like BlockPhysicsEvent!!!!
+  */
+-public interface Block extends Metadatable, Translatable {
++public interface Block extends Metadatable, Translatable, net.kyori.adventure.translation.Translatable { // Paper - translatable
+ 
+     /**
+      * Gets the metadata for this block
+@@ -682,5 +682,12 @@ public interface Block extends Metadatable, Translatable {
+      * @return the sound group for this block
+      */
+     @NotNull org.bukkit.SoundGroup getBlockSoundGroup();
++
++    /**
++     * @deprecated use {@link #translationKey()}
++     */
++    @NotNull
++    @Deprecated(forRemoval = true)
++    String getTranslationKey();
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/block/BlockType.java b/src/main/java/org/bukkit/block/BlockType.java
+index 5ba088456e2c647a719c4ee1e6f006f5c1cca651..aebd34785bb2070389ad2e2803fa9ff803b318c5 100644
+--- a/src/main/java/org/bukkit/block/BlockType.java
++++ b/src/main/java/org/bukkit/block/BlockType.java
+@@ -129,7 +129,7 @@ import org.jetbrains.annotations.Nullable;
+  * changes may occur. Do not use this API in plugins.
+  */
+ @ApiStatus.Internal
+-public interface BlockType extends Keyed, Translatable {
++public interface BlockType extends Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper - add translatable
+ 
+     /**
+      * Typed represents a subtype of {@link BlockType}s that have a known block
+@@ -3641,4 +3641,13 @@ public interface BlockType extends Keyed, Translatable {
+     @Nullable
+     @Deprecated
+     Material asMaterial();
++
++    // Paper start - add Translatable
++    /**
++     * @deprecated use {@link #translationKey()} and {@link net.kyori.adventure.text.Component#translatable(net.kyori.adventure.translation.Translatable)}
++     */
++    @Deprecated(forRemoval = true)
++    @Override
++    @NotNull String getTranslationKey();
++    // Paper end - add Translatable
+ }
+diff --git a/src/main/java/org/bukkit/enchantments/Enchantment.java b/src/main/java/org/bukkit/enchantments/Enchantment.java
+index 25985a3872ac142c0a3b2fb2dc5387ecdd3ff5b3..269a7b42479c053e3320b6a0f9ca2013cfe4bdad 100644
+--- a/src/main/java/org/bukkit/enchantments/Enchantment.java
++++ b/src/main/java/org/bukkit/enchantments/Enchantment.java
+@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * The various type of enchantments that may be added to armour or weapons
+  */
+-public abstract class Enchantment implements Keyed, Translatable {
++public abstract class Enchantment implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
+     /**
+      * Provides protection against environmental damage
+      */
+@@ -324,6 +324,16 @@ public abstract class Enchantment implements Keyed, Translatable {
+     public abstract net.kyori.adventure.text.@NotNull Component displayName(int level);
+     // Paper end
+ 
++    // Paper start - mark translation key as deprecated
++    /**
++     * @deprecated this method assumes that the enchantments description
++     * always be a translatable component which is not guaranteed.
++     */
++    @Override
++    @Deprecated(forRemoval = true)
++    public abstract @NotNull String translationKey();
++    // Paper end - mark translation key as deprecated
++
+     /**
+      * Gets the Enchantment at the specified key
+      *
+diff --git a/src/main/java/org/bukkit/enchantments/EnchantmentWrapper.java b/src/main/java/org/bukkit/enchantments/EnchantmentWrapper.java
+index c4f86ba1037f3f0e5d697a0962d71d6f8c7c1fbe..ac0371285370594d4de1554871b19bbcd2311730 100644
+--- a/src/main/java/org/bukkit/enchantments/EnchantmentWrapper.java
++++ b/src/main/java/org/bukkit/enchantments/EnchantmentWrapper.java
+@@ -26,5 +26,10 @@ public abstract class EnchantmentWrapper extends Enchantment {
+     public net.kyori.adventure.text.Component displayName(int level) {
+         return getEnchantment().displayName(level);
+     }
++
++    @Override
++    public @NotNull String translationKey() {
++        return getEnchantment().translationKey();
++    }
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/entity/EntityType.java b/src/main/java/org/bukkit/entity/EntityType.java
+index e758a13ea84f472dcdf7fe31e2ea23c0e554c4c7..a5e5c252405a7b940afbb6715abcda7ec9007dd3 100644
+--- a/src/main/java/org/bukkit/entity/EntityType.java
++++ b/src/main/java/org/bukkit/entity/EntityType.java
+@@ -45,7 +45,7 @@ import org.jetbrains.annotations.Contract;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+ 
+-public enum EntityType implements Keyed, Translatable {
++public enum EntityType implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper - translatable
+ 
+     // These strings MUST match the strings in nms.EntityTypes and are case sensitive.
+     /**
+@@ -474,10 +474,22 @@ public enum EntityType implements Keyed, Translatable {
+ 
+     @Override
+     @NotNull
++    @Deprecated(forRemoval = true) // Paper
+     public String getTranslationKey() {
+         return Bukkit.getUnsafe().getTranslationKey(this);
+     }
+ 
++    // Paper start
++    /**
++     * @throws IllegalArgumentException if the entity does not have a translation key (is probably a custom entity)
++     */
++    @Override
++    public @NotNull String translationKey() {
++        Preconditions.checkArgument(this != UNKNOWN, "UNKNOWN entities do not have translation keys");
++        return org.bukkit.Bukkit.getUnsafe().getTranslationKey(this);
++    }
++    // Paper end
++
+     /**
+      * Gets if this EntityType is enabled by feature in a world.
+      *
+diff --git a/src/main/java/org/bukkit/entity/Villager.java b/src/main/java/org/bukkit/entity/Villager.java
+index 98a7c5c549e797100f6aaf440606ef31a2be1e3b..163f1afde2e04fdf4dddb894da62b301b52ed539 100644
+--- a/src/main/java/org/bukkit/entity/Villager.java
++++ b/src/main/java/org/bukkit/entity/Villager.java
+@@ -181,7 +181,7 @@ public interface Villager extends AbstractVillager {
+      * Represents the various different Villager professions there may be.
+      * Villagers have different trading options depending on their profession,
+      */
+-    interface Profession extends OldEnum<Profession>, Keyed {
++    interface Profession extends OldEnum<Profession>, Keyed, net.kyori.adventure.translation.Translatable {
+ 
+         Profession NONE = getProfession("none");
+         /**
+@@ -282,6 +282,13 @@ public interface Villager extends AbstractVillager {
+         static Profession[] values() {
+             return Lists.newArrayList(Registry.VILLAGER_PROFESSION).toArray(new Profession[0]);
+         }
++
++        // Paper start
++        @Override
++        default @NotNull String translationKey() {
++            return "entity.minecraft.villager." + this.getKey().getKey();
++        }
++        // Paper end
+     }
+ 
+     // Paper start - Add villager reputation API
+diff --git a/src/main/java/org/bukkit/inventory/CreativeCategory.java b/src/main/java/org/bukkit/inventory/CreativeCategory.java
+index 5bd252c0ae3b09fe141d131360c67bb9bfbf5422..78587d9fabe6371a23a7963917b054dbe7603694 100644
+--- a/src/main/java/org/bukkit/inventory/CreativeCategory.java
++++ b/src/main/java/org/bukkit/inventory/CreativeCategory.java
+@@ -3,51 +3,64 @@ package org.bukkit.inventory;
+ /**
+  * Represents a category in the creative inventory.
+  */
+-public enum CreativeCategory {
++public enum CreativeCategory implements net.kyori.adventure.translation.Translatable { // Paper
+ 
+     /**
+      * An assortment of building blocks including dirt, bricks, planks, ores
+      * slabs, etc.
+      */
+-    BUILDING_BLOCKS,
++    BUILDING_BLOCKS("buildingBlocks"), // Paper
+     /**
+      * Blocks and items typically used for decorative purposes including
+      * candles, saplings, flora, fauna, fences, walls, carpets, etc.
+      */
+-    DECORATIONS,
++    DECORATIONS("decorations"), // Paper
+     /**
+      * Blocks used and associated with redstone contraptions including buttons,
+      * levers, pressure plates, redstone components, pistons, etc.
+      */
+-    REDSTONE,
++    REDSTONE("redstone"), // Paper
+     /**
+      * Items pertaining to transportation including minecarts, rails, boats,
+      * elytra, etc.
+      */
+-    TRANSPORTATION,
++    TRANSPORTATION("transportation"), // Paper
+     /**
+      * Miscellaneous items and blocks that do not fit into other categories
+      * including gems, dyes, spawn eggs, discs, banner patterns, etc.
+      */
+-    MISC,
++    MISC("misc"), // Paper
+     /**
+      * Food items consumable by the player including meats, berries, edible
+      * drops from creatures, etc.
+      */
+-    FOOD,
++    FOOD("food"), // Paper
+     /**
+      * Equipment items meant for general utility including pickaxes, axes, hoes,
+      * flint and steel, and useful enchantment books for said tools.
+      */
+-    TOOLS,
++    TOOLS("tools"), // Paper
+     /**
+      * Equipment items meant for combat including armor, swords, bows, tipped
+      * arrows, and useful enchantment books for said equipment.
+      */
+-    COMBAT,
++    COMBAT("combat"), // Paper
+     /**
+      * All items related to brewing and potions including all types of potions,
+      * their variants, and ingredients to brew them.
+      */
+-    BREWING;
++    BREWING("brewing"); // Paper
++    // Paper start
++    private final String translationKey;
++
++    CreativeCategory(String translationKey) {
++        this.translationKey = "itemGroup." + translationKey;
++    }
++
++    @Override
++    public @org.jetbrains.annotations.NotNull String translationKey() {
++        return this.translationKey;
++    }
++    // Paper end
++
+ }
+diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
+index af09398e0864d338da530495bfd577db8adbe65a..60eec8a12f01562678732bcf38ac407e70d74965 100644
+--- a/src/main/java/org/bukkit/inventory/ItemStack.java
++++ b/src/main/java/org/bukkit/inventory/ItemStack.java
+@@ -27,7 +27,7 @@ import org.jetbrains.annotations.Nullable;
+  * use this class to encapsulate Materials for which {@link Material#isItem()}
+  * returns false.</b>
+  */
+-public class ItemStack implements Cloneable, ConfigurationSerializable, Translatable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem> { // Paper
++public class ItemStack implements Cloneable, ConfigurationSerializable, Translatable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem>, net.kyori.adventure.translation.Translatable { // Paper
+     private Material type = Material.AIR;
+     private int amount = 0;
+     private MaterialData data = null;
+@@ -628,6 +628,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+ 
+     @Override
+     @NotNull
++    @Deprecated(forRemoval = true) // Paper
+     public String getTranslationKey() {
+         return Bukkit.getUnsafe().getTranslationKey(this);
+     }
+@@ -982,5 +983,16 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+         ItemMeta itemMeta = getItemMeta();
+         return itemMeta != null && itemMeta.hasItemFlag(flag);
+     }
++
++    /**
++     * {@inheritDoc}
++     * <p>
++     * This is not the same as getting the translation key
++     * for the material of this itemstack.
++     */
++    @Override
++    public @NotNull String translationKey() {
++        return Bukkit.getUnsafe().getTranslationKey(this);
++    }
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/inventory/ItemType.java b/src/main/java/org/bukkit/inventory/ItemType.java
+index 88e1883dffb64974f5ec60acbf2828cfb9de9439..49e5a9ea7cf5e4d7a4333d2cffa4e44b1a436403 100644
+--- a/src/main/java/org/bukkit/inventory/ItemType.java
++++ b/src/main/java/org/bukkit/inventory/ItemType.java
+@@ -48,7 +48,7 @@ import org.jetbrains.annotations.Nullable;
+  * changes may occur. Do not use this API in plugins.
+  */
+ @ApiStatus.Internal
+-public interface ItemType extends Keyed, Translatable {
++public interface ItemType extends Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper - add Translatable
+ 
+     /**
+      * Typed represents a subtype of {@link ItemType}s that have a known item meta type
+@@ -2448,4 +2448,13 @@ public interface ItemType extends Keyed, Translatable {
+     @Nullable
+     @Deprecated
+     Material asMaterial();
++
++    // Paper start - add Translatable
++    /**
++     * @deprecated use {@link #translationKey()} and {@link net.kyori.adventure.text.Component#translatable(net.kyori.adventure.translation.Translatable)}
++     */
++    @Deprecated(forRemoval = true)
++    @Override
++    @NotNull String getTranslationKey();
++    // Paper end - add Translatable
+ }

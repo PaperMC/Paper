@@ -1,0 +1,126 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sat, 11 Jul 2020 05:09:28 -0700
+Subject: [PATCH] Fix GameProfileCache concurrency
+
+Separate lookup and state access locks prevent lookups
+from stalling simple state access/write calls
+
+diff --git a/src/main/java/net/minecraft/server/players/GameProfileCache.java b/src/main/java/net/minecraft/server/players/GameProfileCache.java
+index 774d81c702edb76a2f6184d4dc53687de6734a79..34b4166adfae8ff7d1eb73d56a72931b005330a7 100644
+--- a/src/main/java/net/minecraft/server/players/GameProfileCache.java
++++ b/src/main/java/net/minecraft/server/players/GameProfileCache.java
+@@ -60,6 +60,11 @@ public class GameProfileCache {
+     @Nullable
+     private Executor executor;
+ 
++    // Paper start - Fix GameProfileCache concurrency
++    protected final java.util.concurrent.locks.ReentrantLock stateLock = new java.util.concurrent.locks.ReentrantLock();
++    protected final java.util.concurrent.locks.ReentrantLock lookupLock = new java.util.concurrent.locks.ReentrantLock();
++    // Paper end - Fix GameProfileCache concurrency
++
+     public GameProfileCache(GameProfileRepository profileRepository, File cacheFile) {
+         this.profileRepository = profileRepository;
+         this.file = cacheFile;
+@@ -67,11 +72,13 @@ public class GameProfileCache {
+     }
+ 
+     private void safeAdd(GameProfileCache.GameProfileInfo entry) {
++        try { this.stateLock.lock(); // Paper - Fix GameProfileCache concurrency
+         GameProfile gameprofile = entry.getProfile();
+ 
+         entry.setLastAccess(this.getNextOperation());
+         this.profilesByName.put(gameprofile.getName().toLowerCase(Locale.ROOT), entry);
+         this.profilesByUUID.put(gameprofile.getId(), entry);
++        } finally { this.stateLock.unlock(); } // Paper - Fix GameProfileCache concurrency
+     }
+ 
+     private static Optional<GameProfile> lookupGameProfile(GameProfileRepository repository, String name) {
+@@ -128,17 +135,20 @@ public class GameProfileCache {
+ 
+     // Paper start
+     public @Nullable GameProfile getProfileIfCached(String name) {
++        try { this.stateLock.lock(); // Paper - Fix GameProfileCache concurrency
+         GameProfileCache.GameProfileInfo entry = this.profilesByName.get(name.toLowerCase(Locale.ROOT));
+         if (entry == null) {
+             return null;
+         }
+         entry.setLastAccess(this.getNextOperation());
+         return entry.getProfile();
++        } finally { this.stateLock.unlock(); } // Paper - Fix GameProfileCache concurrency
+     }
+     // Paper end
+ 
+     public Optional<GameProfile> get(String name) {
+         String s1 = name.toLowerCase(Locale.ROOT);
++        boolean stateLocked = true; try { this.stateLock.lock(); // Paper - Fix GameProfileCache concurrency
+         GameProfileCache.GameProfileInfo usercache_usercacheentry = (GameProfileCache.GameProfileInfo) this.profilesByName.get(s1);
+         boolean flag = false;
+ 
+@@ -154,8 +164,12 @@ public class GameProfileCache {
+         if (usercache_usercacheentry != null) {
+             usercache_usercacheentry.setLastAccess(this.getNextOperation());
+             optional = Optional.of(usercache_usercacheentry.getProfile());
++            stateLocked = false; this.stateLock.unlock(); // Paper - Fix GameProfileCache concurrency
+         } else {
++            stateLocked = false; this.stateLock.unlock(); // Paper - Fix GameProfileCache concurrency
++            try { this.lookupLock.lock(); // Paper - Fix GameProfileCache concurrency
+             optional = GameProfileCache.lookupGameProfile(this.profileRepository, name); // CraftBukkit - use correct case for offline players
++            } finally { this.lookupLock.unlock(); } // Paper - Fix GameProfileCache concurrency
+             if (optional.isPresent()) {
+                 this.add((GameProfile) optional.get());
+                 flag = false;
+@@ -167,6 +181,7 @@ public class GameProfileCache {
+         }
+ 
+         return optional;
++        } finally { if (stateLocked) {  this.stateLock.unlock(); } } // Paper - Fix GameProfileCache concurrency
+     }
+ 
+     public CompletableFuture<Optional<GameProfile>> getAsync(String username) {
+@@ -191,6 +206,7 @@ public class GameProfileCache {
+     }
+ 
+     public Optional<GameProfile> get(UUID uuid) {
++        try { this.stateLock.lock(); // Paper - Fix GameProfileCache concurrency
+         GameProfileCache.GameProfileInfo usercache_usercacheentry = (GameProfileCache.GameProfileInfo) this.profilesByUUID.get(uuid);
+ 
+         if (usercache_usercacheentry == null) {
+@@ -199,6 +215,7 @@ public class GameProfileCache {
+             usercache_usercacheentry.setLastAccess(this.getNextOperation());
+             return Optional.of(usercache_usercacheentry.getProfile());
+         }
++        } finally { this.stateLock.unlock(); } // Paper - Fix GameProfileCache concurrency
+     }
+ 
+     public void setExecutor(Executor executor) {
+@@ -279,7 +296,7 @@ public class GameProfileCache {
+         JsonArray jsonarray = new JsonArray();
+         DateFormat dateformat = GameProfileCache.createDateFormat();
+ 
+-        this.getTopMRUProfiles(org.spigotmc.SpigotConfig.userCacheCap).forEach((usercache_usercacheentry) -> { // Spigot
++        this.listTopMRUProfiles(org.spigotmc.SpigotConfig.userCacheCap).forEach((usercache_usercacheentry) -> { // Spigot // Paper - Fix GameProfileCache concurrency
+             jsonarray.add(GameProfileCache.writeGameProfile(usercache_usercacheentry, dateformat));
+         });
+         String s = this.gson.toJson(jsonarray);
+@@ -320,8 +337,19 @@ public class GameProfileCache {
+     }
+ 
+     private Stream<GameProfileCache.GameProfileInfo> getTopMRUProfiles(int limit) {
+-        return ImmutableList.copyOf(this.profilesByUUID.values()).stream().sorted(Comparator.comparing(GameProfileCache.GameProfileInfo::getLastAccess).reversed()).limit((long) limit);
++        // Paper start - Fix GameProfileCache concurrency
++        return this.listTopMRUProfiles(limit).stream();
++    }
++
++    private List<GameProfileCache.GameProfileInfo> listTopMRUProfiles(int limit) {
++        try {
++            this.stateLock.lock();
++            return this.profilesByUUID.values().stream().sorted(Comparator.comparing(GameProfileCache.GameProfileInfo::getLastAccess).reversed()).limit(limit).toList();
++        } finally {
++            this.stateLock.unlock();
++        }
+     }
++    // Paper end - Fix GameProfileCache concurrency
+ 
+     private static JsonElement writeGameProfile(GameProfileCache.GameProfileInfo entry, DateFormat dateFormat) {
+         JsonObject jsonobject = new JsonObject();

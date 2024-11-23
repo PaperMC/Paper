@@ -1,0 +1,113 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Minecrell <minecrell@minecrell.net>
+Date: Thu, 21 Sep 2017 19:41:20 +0200
+Subject: [PATCH] Add workaround for plugins modifying the parent of the plugin
+ logger
+
+Essentials uses a custom logger name ("Essentials") instead of the
+plugin logger. Log messages are redirected to the plugin logger by
+setting the parent of the "Essentials" logger to the plugin logger.
+
+With our changes, the plugin logger is now also called "Essentials",
+resulting in an infinite loop. Make sure plugins can't change the
+parent of the plugin logger to avoid this.
+
+diff --git a/src/main/java/com/destroystokyo/paper/utils/PaperPluginLogger.java b/src/main/java/com/destroystokyo/paper/utils/PaperPluginLogger.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c78a359566a11904d2dd41098ced556a91a7fa36
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/utils/PaperPluginLogger.java
+@@ -0,0 +1,46 @@
++package com.destroystokyo.paper.utils;
++
++import io.papermc.paper.plugin.configuration.PluginMeta;
++import java.util.logging.Level;
++import java.util.logging.LogManager;
++import java.util.logging.Logger;
++import org.bukkit.plugin.PluginDescriptionFile;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Prevents plugins (e.g. Essentials) from changing the parent of the plugin logger.
++ */
++@NullMarked
++public class PaperPluginLogger extends Logger {
++
++    @Deprecated(forRemoval = true)
++    public static Logger getLogger(final PluginDescriptionFile description) {
++        return getLogger((PluginMeta) description);
++    }
++
++    public static Logger getLogger(final PluginMeta meta) {
++        Logger logger = new PaperPluginLogger(meta);
++        if (!LogManager.getLogManager().addLogger(logger)) {
++            // Disable this if it's going to happen across reloads anyways...
++            //logger.log(Level.WARNING, "Could not insert plugin logger - one was already found: {}", LogManager.getLogManager().getLogger(this.getName()));
++            logger = LogManager.getLogManager().getLogger(meta.getLoggerPrefix() != null ? meta.getLoggerPrefix() : meta.getName());
++        }
++
++        return logger;
++    }
++
++    private PaperPluginLogger(final PluginMeta meta) {
++        super(meta.getLoggerPrefix() != null ? meta.getLoggerPrefix() : meta.getName(), null);
++    }
++
++    @Override
++    public void setParent(final Logger parent) {
++        if (this.getParent() != null) {
++            this.warning("Ignoring attempt to change parent of plugin logger");
++        } else {
++            this.log(Level.FINE, "Setting plugin logger parent to {0}", parent);
++            super.setParent(parent);
++        }
++    }
++
++}
+diff --git a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
+index 801578de8599d6b546cde63b3f2655fab48eee03..2d64fc065d53dcd8c01d05215c3e63aaf4428177 100644
+--- a/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
++++ b/src/main/java/org/bukkit/plugin/java/JavaPlugin.java
+@@ -292,10 +292,10 @@ public abstract class JavaPlugin extends PluginBase {
+             .orElseThrow();
+     }
+     public final void init(@NotNull PluginLoader loader, @NotNull Server server, @NotNull PluginDescriptionFile description, @NotNull File dataFolder, @NotNull File file, @NotNull ClassLoader classLoader) {
+-        init(server, description, dataFolder, file, classLoader, description);
++        init(server, description, dataFolder, file, classLoader, description, com.destroystokyo.paper.utils.PaperPluginLogger.getLogger(description));
+         this.pluginMeta = description;
+     }
+-    public final void init(@NotNull Server server, @NotNull PluginDescriptionFile description, @NotNull File dataFolder, @NotNull File file, @NotNull ClassLoader classLoader, @Nullable io.papermc.paper.plugin.configuration.PluginMeta configuration) {
++    public final void init(@NotNull Server server, @NotNull PluginDescriptionFile description, @NotNull File dataFolder, @NotNull File file, @NotNull ClassLoader classLoader, @Nullable io.papermc.paper.plugin.configuration.PluginMeta configuration, @NotNull Logger logger) {
+     // Paper end
+         this.loader = DummyPluginLoaderImplHolder.INSTANCE; // Paper
+         this.server = server;
+@@ -305,7 +305,7 @@ public abstract class JavaPlugin extends PluginBase {
+         this.classLoader = classLoader;
+         this.configFile = new File(dataFolder, "config.yml");
+         this.pluginMeta = configuration; // Paper
+-        this.logger = Logger.getLogger(description.getPrefix() != null ? description.getPrefix() : description.getName()); // Paper - Handle plugin prefix in implementation
++        this.logger = logger; // Paper
+     }
+ 
+     /**
+diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+index 58d20eff7e0da2d7fcb1609d55e4284715355634..8c5597e02d71c8db66e9cd11f0a41776eb471c46 100644
+--- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+@@ -67,6 +67,7 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
+         this.url = file.toURI().toURL();
+         this.libraryLoader = libraryLoader;
+ 
++        this.logger = com.destroystokyo.paper.utils.PaperPluginLogger.getLogger(description); // Paper - Register logger early
+         // Paper start
+         this.dependencyContext = dependencyContext;
+         this.classLoaderGroup = io.papermc.paper.plugin.provider.classloader.PaperClassLoaderStorage.instance().registerSpigotGroup(this);
+@@ -262,7 +263,7 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
+         pluginState = new IllegalStateException("Initial initialization");
+         this.pluginInit = javaPlugin;
+ 
+-        javaPlugin.init(null, org.bukkit.Bukkit.getServer(), description, dataFolder, file, this); // Paper
++        javaPlugin.init(org.bukkit.Bukkit.getServer(), description, dataFolder, file, this, description, this.logger); // Paper
+     }
+ 
+     // Paper start

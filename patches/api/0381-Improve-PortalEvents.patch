@@ -1,0 +1,225 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 15 Dec 2022 10:33:34 -0800
+Subject: [PATCH] Improve PortalEvents
+
+
+diff --git a/src/main/java/org/bukkit/PortalType.java b/src/main/java/org/bukkit/PortalType.java
+index 427cfbb8b542215c5d9993056e0cadf18ab9bd4b..e6120b83259c15189bbbf6b6dd13fbe7ccdf073d 100644
+--- a/src/main/java/org/bukkit/PortalType.java
++++ b/src/main/java/org/bukkit/PortalType.java
+@@ -14,6 +14,12 @@ public enum PortalType {
+      * This is an Ender portal.
+      */
+     ENDER,
++    // Paper start
++    /**
++     * This is an end gateway
++     */
++    END_GATEWAY,
++    // Paper end
+ 
+     /**
+      * This is a custom Plugin portal.
+diff --git a/src/main/java/org/bukkit/event/entity/EntityPortalEnterEvent.java b/src/main/java/org/bukkit/event/entity/EntityPortalEnterEvent.java
+index 6818e9f0ba32ca1a1e612703f7526b29f5a6438f..d3724db0a5a67cde15b05fecd32b2ca370cca998 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityPortalEnterEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityPortalEnterEvent.java
+@@ -7,14 +7,25 @@ import org.jetbrains.annotations.NotNull;
+ 
+ /**
+  * Called when an entity comes into contact with a portal
++ * <p>
++ * Cancelling this event prevents any further processing of the portal for that tick.
++ * @see io.papermc.paper.event.entity.EntityInsideBlockEvent
+  */
+-public class EntityPortalEnterEvent extends EntityEvent {
++public class EntityPortalEnterEvent extends EntityEvent implements org.bukkit.event.Cancellable { // Paper
+     private static final HandlerList handlers = new HandlerList();
+     private final Location location;
+ 
++    @Deprecated(since = "1.21") @io.papermc.paper.annotation.DoNotUse // Paper
+     public EntityPortalEnterEvent(@NotNull final Entity entity, @NotNull final Location location) {
++        // Paper start
++        this(entity, location, org.bukkit.PortalType.CUSTOM);
++    }
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public EntityPortalEnterEvent(@NotNull final Entity entity, @NotNull final Location location, @NotNull final org.bukkit.PortalType portalType) {
++        // Paper end
+         super(entity);
+         this.location = location;
++        this.portalType = portalType; // Paper
+     }
+ 
+     /**
+@@ -27,6 +38,30 @@ public class EntityPortalEnterEvent extends EntityEvent {
+         return location;
+     }
+ 
++    // Paper start
++    private boolean cancelled = false;
++    private final org.bukkit.PortalType portalType;
++
++    /**
++     * Get the portal type.
++     *
++     * @return the portal type
++     */
++    public org.bukkit.@NotNull PortalType getPortalType() {
++        return this.portalType;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    @Override
++    public void setCancelled(final boolean cancel) {
++        this.cancelled = cancel;
++    }
++    // Paper end
++
+     @NotNull
+     @Override
+     public HandlerList getHandlers() {
+diff --git a/src/main/java/org/bukkit/event/entity/EntityPortalEvent.java b/src/main/java/org/bukkit/event/entity/EntityPortalEvent.java
+index d70400236b08217ba675e560877f951ea4f143ca..4544e7e155619a6ae31cbb2999ae3dedfd3b5f4b 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityPortalEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityPortalEvent.java
+@@ -3,6 +3,7 @@ package org.bukkit.event.entity;
+ import org.bukkit.Location;
+ import org.bukkit.entity.Entity;
+ import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.ApiStatus;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+ 
+@@ -17,23 +18,68 @@ public class EntityPortalEvent extends EntityTeleportEvent {
+     private int searchRadius = 128;
+     private boolean canCreatePortal = true;
+     private int creationRadius = 16;
++    private final org.bukkit.PortalType type; // Paper
+ 
+     public EntityPortalEvent(@NotNull final Entity entity, @NotNull final Location from, @Nullable final Location to) {
+-        super(entity, from, to);
++        this(entity, from, to, 128); // Paper
+     }
+ 
+     public EntityPortalEvent(@NotNull Entity entity, @NotNull Location from, @Nullable Location to, int searchRadius) {
+         super(entity, from, to);
+         this.searchRadius = searchRadius;
++        this.type = org.bukkit.PortalType.CUSTOM; // Paper
+     }
+ 
+     public EntityPortalEvent(@NotNull Entity entity, @NotNull Location from, @Nullable Location to, int searchRadius, boolean canCreatePortal, int creationRadius) {
++        // Paper start
++        this(entity, from, to, searchRadius, canCreatePortal, creationRadius, org.bukkit.PortalType.CUSTOM);
++    }
++
++    @ApiStatus.Internal
++    public EntityPortalEvent(@NotNull Entity entity, @NotNull Location from, @Nullable Location to, int searchRadius, boolean canCreatePortal, int creationRadius, final @NotNull org.bukkit.PortalType portalType) {
+         super(entity, from, to);
++        this.type = portalType;
++        // Paper end
+         this.searchRadius = searchRadius;
+         this.canCreatePortal = canCreatePortal;
+         this.creationRadius = creationRadius;
+     }
+ 
++    // Paper start
++    /**
++     * Get the portal type relating to this event.
++     *
++     * @return the portal type
++     */
++    public @NotNull org.bukkit.PortalType getPortalType() {
++        return this.type;
++    }
++    /**
++     * For {@link org.bukkit.PortalType#NETHER}, this is initially just the starting point
++     * for the search for a portal to teleport to. It will initially just be the {@link #getFrom()}
++     * scaled for dimension scaling and clamped to be inside the world border.
++     * <p>
++     * For {@link org.bukkit.PortalType#ENDER}, this will initially be the exact destination
++     * either, the world spawn for <i>end->any world</i> or end spawn for <i>any world->end</i>.
++     *
++     * @return starting point for search or exact destination
++     */
++    @Override
++    public @Nullable Location getTo() {
++        return super.getTo();
++    }
++
++    /**
++     * See the description of {@link #getTo()}.
++     * @param to starting point for search or exact destination
++     *           or null to cancel
++     */
++    @Override
++    public void setTo(@Nullable final Location to) {
++        super.setTo(to);
++    }
++    // Paper end
++
+     /**
+      * Set the Block radius to search in for available portals.
+      *
+diff --git a/src/main/java/org/bukkit/event/player/PlayerPortalEvent.java b/src/main/java/org/bukkit/event/player/PlayerPortalEvent.java
+index 57eeeafae84f83a939925820e827769749ff27ec..929a997671de8202efb9da97fbf9b4a0bf7c37e8 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerPortalEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerPortalEvent.java
+@@ -32,6 +32,53 @@ public class PlayerPortalEvent extends PlayerTeleportEvent {
+         this.canCreatePortal = canCreatePortal;
+         this.creationRadius = creationRadius;
+     }
++    // Paper start
++    /**
++     * For {@link TeleportCause#NETHER_PORTAL}, this is initially just the starting point
++     * for the search for a portal to teleport to. It will initially just be the {@link #getFrom()}
++     * scaled for dimension scaling and clamped to be inside the world border.
++     * <p>
++     * For {@link TeleportCause#END_PORTAL}, this will initially be the exact destination
++     * either, the world spawn for <i>end->any world</i> or end spawn for <i>any world->end</i>.
++     *
++     * @return starting point for search or exact destination
++     */
++    @Override
++    public @NotNull Location getTo() {
++        return super.getTo();
++    }
++
++    /**
++     * See the description of {@link #getTo()}.
++     * @param to starting point for search or exact destination
++     */
++    @Override
++    public void setTo(@NotNull final Location to) {
++        super.setTo(to);
++    }
++
++    /**
++     * No effect
++     * @return no effect
++     * @deprecated No effect
++     */
++    @Deprecated
++    @Override
++    public boolean willDismountPlayer() {
++        return super.willDismountPlayer();
++    }
++
++    /**
++     * No effect
++     * @return no effect
++     * @deprecated No effect
++     */
++    @Deprecated
++    @Override
++    public @NotNull java.util.Set<io.papermc.paper.entity.TeleportFlag.@NotNull Relative> getRelativeTeleportationFlags() {
++        return super.getRelativeTeleportationFlags();
++    }
++    // Paper end
+ 
+     /**
+      * Set the Block radius to search in for available portals.

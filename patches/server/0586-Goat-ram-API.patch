@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Seggan <segganew@gmail.com>
+Date: Thu, 5 Aug 2021 13:10:27 -0400
+Subject: [PATCH] Goat ram API
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java b/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
+index cccf0084d273eaded91abe249d39a843f11d351b..14e02f9b0169db8388c515a68315ad5cc3f13d22 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
++++ b/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
+@@ -395,4 +395,15 @@ public class Goat extends Animal {
+     public static boolean checkGoatSpawnRules(EntityType<? extends Animal> entityType, LevelAccessor world, EntitySpawnReason spawnReason, BlockPos pos, RandomSource random) {
+         return world.getBlockState(pos.below()).is(BlockTags.GOATS_SPAWNABLE_ON) && isBrightEnoughToSpawn(world, pos);
+     }
++
++    // Paper start - Goat ram API
++    public void ram(net.minecraft.world.entity.LivingEntity entity) {
++        Brain<Goat> brain = this.getBrain();
++        brain.setMemory(MemoryModuleType.RAM_TARGET, entity.position());
++        brain.eraseMemory(MemoryModuleType.RAM_COOLDOWN_TICKS);
++        brain.eraseMemory(MemoryModuleType.BREED_TARGET);
++        brain.eraseMemory(MemoryModuleType.TEMPTING_PLAYER);
++        brain.setActiveActivityIfPossible(net.minecraft.world.entity.schedule.Activity.RAM);
++    }
++    // Paper end - Goat ram API
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftGoat.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftGoat.java
+index 65fcb36e849da6949c123a6f3672b485036f368e..2c21de478bff9cdf13ba46cd041831d54c11e924 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftGoat.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftGoat.java
+@@ -48,4 +48,11 @@ public class CraftGoat extends CraftAnimals implements Goat {
+     public void setScreaming(boolean screaming) {
+         this.getHandle().setScreamingGoat(screaming);
+     }
++
++    // Paper start - Goat ram API
++    @Override
++    public void ram(@org.jetbrains.annotations.NotNull org.bukkit.entity.LivingEntity entity) {
++        this.getHandle().ram(((CraftLivingEntity) entity).getHandle());
++    }
++    // Paper end
+ }

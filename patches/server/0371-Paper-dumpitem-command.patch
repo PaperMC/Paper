@@ -1,0 +1,158 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 28 Jun 2020 19:27:20 -0400
+Subject: [PATCH] Paper dumpitem command
+
+Let's you quickly view the item in your hands NBT data
+
+diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
+index 3010d57efcc97fb409bfe43b1fc9af198c099a67..cdad0fd5257ae842f83b9c1c98b4565b468d4f54 100644
+--- a/src/main/java/io/papermc/paper/command/PaperCommand.java
++++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
+@@ -39,6 +39,7 @@ public final class PaperCommand extends Command {
+         commands.put(Set.of("version"), new VersionCommand());
+         commands.put(Set.of("dumpplugins"), new DumpPluginsCommand());
+         commands.put(Set.of("syncloadinfo"), new SyncLoadInfoCommand());
++        commands.put(Set.of("dumpitem"), new DumpItemCommand());
+ 
+         return commands.entrySet().stream()
+             .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
+diff --git a/src/main/java/io/papermc/paper/command/subcommands/DumpItemCommand.java b/src/main/java/io/papermc/paper/command/subcommands/DumpItemCommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b4b90c1bda72f845756b46e2316d952361989697
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/subcommands/DumpItemCommand.java
+@@ -0,0 +1,133 @@
++package io.papermc.paper.command.subcommands;
++
++import io.papermc.paper.adventure.PaperAdventure;
++import io.papermc.paper.command.CommandUtil;
++import io.papermc.paper.command.PaperSubcommand;
++import java.util.ArrayList;
++import java.util.Collections;
++import java.util.IdentityHashMap;
++import java.util.List;
++import java.util.Map;
++import java.util.Optional;
++import java.util.Set;
++import java.util.function.Consumer;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.ComponentLike;
++import net.kyori.adventure.text.JoinConfiguration;
++import net.kyori.adventure.text.TextComponent;
++import net.minecraft.core.Registry;
++import net.minecraft.core.RegistryAccess;
++import net.minecraft.core.component.DataComponentMap;
++import net.minecraft.core.component.DataComponentPatch;
++import net.minecraft.core.component.DataComponentType;
++import net.minecraft.core.component.TypedDataComponent;
++import net.minecraft.core.registries.Registries;
++import net.minecraft.nbt.NbtOps;
++import net.minecraft.nbt.NbtUtils;
++import net.minecraft.nbt.SnbtPrinterTagVisitor;
++import net.minecraft.nbt.Tag;
++import net.minecraft.resources.RegistryOps;
++import net.minecraft.world.item.ItemStack;
++import org.bukkit.command.CommandSender;
++import org.bukkit.craftbukkit.CraftServer;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.entity.Player;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++import static net.kyori.adventure.text.Component.join;
++import static net.kyori.adventure.text.Component.text;
++import static net.kyori.adventure.text.Component.textOfChildren;
++import static net.kyori.adventure.text.event.ClickEvent.copyToClipboard;
++import static net.kyori.adventure.text.format.NamedTextColor.AQUA;
++import static net.kyori.adventure.text.format.NamedTextColor.GRAY;
++import static net.kyori.adventure.text.format.NamedTextColor.RED;
++import static net.kyori.adventure.text.format.NamedTextColor.WHITE;
++import static net.kyori.adventure.text.format.NamedTextColor.YELLOW;
++import static net.kyori.adventure.text.format.TextColor.color;
++import static net.kyori.adventure.text.format.TextDecoration.ITALIC;
++
++@DefaultQualifier(NonNull.class)
++public final class DumpItemCommand implements PaperSubcommand {
++    @Override
++    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
++        this.doDumpItem(sender, args.length > 0 && "all".equals(args[0]));
++        return true;
++    }
++
++    @SuppressWarnings({"unchecked", "OptionalAssignedToNull", "rawtypes"})
++    private void doDumpItem(final CommandSender sender, final boolean includeAllComponents) {
++        if (!(sender instanceof final Player player)) {
++            sender.sendMessage("Only players can use this command");
++            return;
++        }
++        final ItemStack itemStack = CraftItemStack.asNMSCopy(player.getInventory().getItemInMainHand());
++        final TextComponent.Builder visualOutput = Component.text();
++        final StringBuilder itemCommandBuilder = new StringBuilder();
++        final String itemName = itemStack.getItemHolder().unwrapKey().orElseThrow().location().toString();
++        itemCommandBuilder.append(itemName);
++        visualOutput.append(text(itemName, YELLOW)); // item type
++        final Set<DataComponentType<?>> referencedComponentTypes = Collections.newSetFromMap(new IdentityHashMap<>());
++        final DataComponentPatch patch = itemStack.getComponentsPatch();
++        referencedComponentTypes.addAll(patch.entrySet().stream().map(Map.Entry::getKey).toList());
++        final DataComponentMap prototype = itemStack.getItem().components();
++        if (includeAllComponents) {
++            referencedComponentTypes.addAll(prototype.keySet());
++        }
++
++        final RegistryAccess.Frozen access = ((CraftServer) sender.getServer()).getServer().registryAccess();
++        final RegistryOps<Tag> ops = access.createSerializationContext(NbtOps.INSTANCE);
++        final Registry<DataComponentType<?>> registry = access.lookupOrThrow(Registries.DATA_COMPONENT_TYPE);
++        final List<ComponentLike> componentComponents = new ArrayList<>();
++        final List<String> commandComponents = new ArrayList<>();
++        for (final DataComponentType<?> type : referencedComponentTypes) {
++            final String path = registry.getResourceKey(type).orElseThrow().location().getPath();
++            final @Nullable Optional<?> patchedValue = patch.get(type);
++            final @Nullable TypedDataComponent<?> prototypeValue = prototype.getTyped(type);
++            if (patchedValue != null) {
++                if (patchedValue.isEmpty()) {
++                    componentComponents.add(text().append(text('!', RED), text(path, AQUA)));
++                    commandComponents.add("!" + path);
++                } else {
++                    final Tag serialized = (Tag) ((DataComponentType) type).codecOrThrow().encodeStart(ops, patchedValue.get()).getOrThrow();
++                    writeComponentValue(componentComponents::add, commandComponents::add, path, serialized);
++                }
++            } else if (includeAllComponents && prototypeValue != null) {
++                final Tag serialized = prototypeValue.encodeValue(ops).getOrThrow();
++                writeComponentValue(componentComponents::add, commandComponents::add, path, serialized);
++            }
++        }
++        if (!componentComponents.isEmpty()) {
++            visualOutput.append(
++                text("[", color(0x8910CE)),
++                join(JoinConfiguration.separator(text(",", GRAY)), componentComponents),
++                text("]", color(0x8910CE))
++            );
++            itemCommandBuilder
++                .append("[")
++                .append(String.join(",", commandComponents))
++                .append("]");
++        }
++        player.sendMessage(visualOutput.build().compact());
++        final Component copyMsg = text("Click to copy item definition to clipboard for use with /give", GRAY, ITALIC);
++        sender.sendMessage(copyMsg.clickEvent(copyToClipboard(itemCommandBuilder.toString())));
++    }
++
++    private static void writeComponentValue(final Consumer<Component> visualOutput, final Consumer<String> commandOutput, final String path, final Tag serialized) {
++        visualOutput.accept(textOfChildren(
++            text(path, color(0xFF7FD7)),
++            text("=", WHITE),
++            PaperAdventure.asAdventure(NbtUtils.toPrettyComponent(serialized))
++        ));
++        commandOutput.accept(path + "=" + new SnbtPrinterTagVisitor("", 0, new ArrayList<>()).visit(serialized));
++    }
++
++    @Override
++    public List<String> tabComplete(final CommandSender sender, final String subCommand, final String[] args) {
++        if (args.length == 1) {
++            return CommandUtil.getListMatchingLast(sender, args, "all");
++        }
++        return Collections.emptyList();
++    }
++}

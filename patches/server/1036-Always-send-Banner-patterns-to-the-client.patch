@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Sun, 20 Oct 2024 18:23:59 +0100
+Subject: [PATCH] Always send Banner patterns to the client
+
+The mojang client will not remove patterns from a Banner when none
+are sent inside of an update packet, given that this is not an expected
+flow for them, this is not all too surprising. So, we shall resort to always
+sending the patterns over the network for update packets.
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BannerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BannerBlockEntity.java
+index 98bc87fe5d153cc4927f7e1b4a02f61d9dd019a0..9528935a120f7d5a1fdb1a796854478e8a83f833 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BannerBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BannerBlockEntity.java
+@@ -63,7 +63,7 @@ public class BannerBlockEntity extends BlockEntity implements Nameable {
+     @Override
+     protected void saveAdditional(CompoundTag nbt, HolderLookup.Provider registries) {
+         super.saveAdditional(nbt, registries);
+-        if (!this.patterns.equals(BannerPatternLayers.EMPTY)) {
++        if (!this.patterns.equals(BannerPatternLayers.EMPTY) || serialisingForNetwork.get()) { // Paper - always send patterns to client
+             nbt.put("patterns", (Tag) BannerPatternLayers.CODEC.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE), this.patterns).getOrThrow());
+         }
+ 
+@@ -95,9 +95,18 @@ public class BannerBlockEntity extends BlockEntity implements Nameable {
+         return ClientboundBlockEntityDataPacket.create(this);
+     }
+ 
++    // Paper start - always send patterns to client
++    ThreadLocal<Boolean> serialisingForNetwork = ThreadLocal.withInitial(() -> Boolean.FALSE);
+     @Override
+     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
++        final Boolean wasSerialisingForNetwork = serialisingForNetwork.get();
++        try {
++            serialisingForNetwork.set(Boolean.TRUE);
+         return this.saveWithoutMetadata(registries);
++        } finally {
++            serialisingForNetwork.set(wasSerialisingForNetwork);
++        }
++        // Paper end - always send patterns to client
+     }
+ 
+     public BannerPatternLayers getPatterns() {

@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 20 Mar 2022 22:06:47 -0700
+Subject: [PATCH] Cache resource keys and optimize reference Holder tags set
+
+TagKeys are always interned, so we can use a reference hash set for them
+
+diff --git a/src/main/java/net/minecraft/core/Holder.java b/src/main/java/net/minecraft/core/Holder.java
+index 94671ea227b59a8f820425c401712e6aeb8b2b10..e91c4e26c25980645941ca8fbdcc3a9d02e31063 100644
+--- a/src/main/java/net/minecraft/core/Holder.java
++++ b/src/main/java/net/minecraft/core/Holder.java
+@@ -230,7 +230,7 @@ public interface Holder<T> {
+         }
+ 
+         void bindTags(Collection<TagKey<T>> tags) {
+-            this.tags = Set.copyOf(tags);
++            this.tags = java.util.Collections.unmodifiableSet(new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<>(tags)); // Paper
+         }
+ 
+         @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityType.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityType.java
+index 6cf8af0c85231de9955282d4abaa0607ec9a195c..d230cbc26f61d8ac5880825aca4dfab197c20401 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityType.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityType.java
+@@ -25,11 +25,11 @@ public class CraftEntityType {
+         return bukkit;
+     }
+ 
++    private static final java.util.Map<EntityType, net.minecraft.resources.ResourceKey<net.minecraft.world.entity.EntityType<?>>> KEY_CACHE = java.util.Collections.synchronizedMap(new java.util.EnumMap<>(EntityType.class)); // Paper
+     public static net.minecraft.world.entity.EntityType<?> bukkitToMinecraft(EntityType bukkit) {
+         Preconditions.checkArgument(bukkit != null);
+-
+         return CraftRegistry.getMinecraftRegistry(Registries.ENTITY_TYPE)
+-                .getOptional(CraftNamespacedKey.toMinecraft(bukkit.getKey())).orElseThrow();
++                .getOptional(KEY_CACHE.computeIfAbsent(bukkit, type -> net.minecraft.resources.ResourceKey.create(Registries.ENTITY_TYPE, CraftNamespacedKey.toMinecraft(type.getKey())))).orElseThrow();
+     }
+ 
+     public static Holder<net.minecraft.world.entity.EntityType<?>> bukkitToMinecraftHolder(EntityType bukkit) {

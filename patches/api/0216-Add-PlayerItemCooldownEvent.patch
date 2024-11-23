@@ -1,0 +1,133 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Tue, 25 Aug 2020 13:45:15 +0200
+Subject: [PATCH] Add PlayerItemCooldownEvent
+
+
+diff --git a/src/main/java/io/papermc/paper/event/player/PlayerItemCooldownEvent.java b/src/main/java/io/papermc/paper/event/player/PlayerItemCooldownEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..165dcf8b68da5dc01eaa83b3bffd7a2bbf0df526
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/PlayerItemCooldownEvent.java
+@@ -0,0 +1,34 @@
++package io.papermc.paper.event.player;
++
++import org.bukkit.Material;
++import org.bukkit.NamespacedKey;
++import org.bukkit.entity.Player;
++import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Fired when a player receives an item cooldown when using an item.
++ *
++ * @see PlayerItemGroupCooldownEvent for a more general event when applied to a group of items
++ */
++@NullMarked
++public class PlayerItemCooldownEvent extends PlayerItemGroupCooldownEvent {
++
++    private final Material type;
++
++    @ApiStatus.Internal
++    public PlayerItemCooldownEvent(final Player player, final Material type, final NamespacedKey cooldownGroup, final int cooldown) {
++        super(player, cooldownGroup, cooldown);
++        this.type = type;
++    }
++
++    /**
++     * Get the material of the item affected by the cooldown.
++     *
++     * @return material affected by the cooldown
++     */
++    public Material getType() {
++        return this.type;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/player/PlayerItemGroupCooldownEvent.java b/src/main/java/io/papermc/paper/event/player/PlayerItemGroupCooldownEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e66aed33b165b86cc5e51eb5c29159232be4a9ef
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/PlayerItemGroupCooldownEvent.java
+@@ -0,0 +1,81 @@
++package io.papermc.paper.event.player;
++
++import com.google.common.base.Preconditions;
++import org.bukkit.NamespacedKey;
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.player.PlayerEvent;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Fired when a player receives an item cooldown.
++ *
++ * @see PlayerItemCooldownEvent for a more specific event when applied to a specific item.
++ */
++@NullMarked
++public class PlayerItemGroupCooldownEvent extends PlayerEvent implements Cancellable {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private final NamespacedKey cooldownGroup;
++    private int cooldown;
++
++    private boolean cancelled;
++
++    @ApiStatus.Internal
++    public PlayerItemGroupCooldownEvent(final Player player, final NamespacedKey cooldownGroup, final int cooldown) {
++        super(player);
++        this.cooldownGroup = cooldownGroup;
++        this.cooldown = cooldown;
++    }
++
++    /**
++     * Get the cooldown group as defined by an item's {@link org.bukkit.inventory.meta.components.UseCooldownComponent}.
++     *
++     * @return cooldown group
++     */
++    public NamespacedKey getCooldownGroup() {
++        return this.cooldownGroup;
++    }
++
++    /**
++     * Gets the cooldown in ticks.
++     *
++     * @return cooldown in ticks
++     */
++    public int getCooldown() {
++        return this.cooldown;
++    }
++
++    /**
++     * Sets the cooldown of the material in ticks.
++     * Setting the cooldown to 0 results in removing an already existing cooldown for the material.
++     *
++     * @param cooldown cooldown in ticks, has to be a positive number
++     */
++    public void setCooldown(final int cooldown) {
++        Preconditions.checkArgument(cooldown >= 0, "The cooldown has to be equal to or greater than 0!");
++        this.cooldown = cooldown;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    @Override
++    public void setCancelled(final boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}

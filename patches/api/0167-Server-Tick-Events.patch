@@ -1,0 +1,116 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 27 Mar 2019 21:58:55 -0400
+Subject: [PATCH] Server Tick Events
+
+Fires event at start and end of a server tick
+
+diff --git a/src/main/java/com/destroystokyo/paper/event/server/ServerTickEndEvent.java b/src/main/java/com/destroystokyo/paper/event/server/ServerTickEndEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c879588693c930226049e60393f2f23aad1588b9
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/server/ServerTickEndEvent.java
+@@ -0,0 +1,62 @@
++package com.destroystokyo.paper.event.server;
++
++import org.bukkit.event.Event;
++import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Called when the server has finished ticking the main loop
++ */
++@NullMarked
++public class ServerTickEndEvent extends Event {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private final int tickNumber;
++    private final double tickDuration;
++    private final long timeEnd;
++
++    @ApiStatus.Internal
++    public ServerTickEndEvent(final int tickNumber, final double tickDuration, final long timeRemaining) {
++        this.tickNumber = tickNumber;
++        this.tickDuration = tickDuration;
++        this.timeEnd = System.nanoTime() + timeRemaining;
++    }
++
++    /**
++     * @return What tick this was since start (first tick = 1)
++     */
++    public int getTickNumber() {
++        return this.tickNumber;
++    }
++
++    /**
++     * @return Time in milliseconds of how long this tick took
++     */
++    public double getTickDuration() {
++        return this.tickDuration;
++    }
++
++    /**
++     * Amount of nanoseconds remaining before the next tick should start.
++     * <p>
++     * If this value is negative, then that means the server has exceeded the tick time limit and TPS has been lost.
++     * <p>
++     * Method will continuously return the updated time remaining value. (return value is not static)
++     *
++     * @return Amount of nanoseconds remaining before the next tick should start
++     */
++    public long getTimeRemaining() {
++        return this.timeEnd - System.nanoTime();
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}
+diff --git a/src/main/java/com/destroystokyo/paper/event/server/ServerTickStartEvent.java b/src/main/java/com/destroystokyo/paper/event/server/ServerTickStartEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..890153657ea5b756a8a3a038d6b53857e0d17fea
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/server/ServerTickStartEvent.java
+@@ -0,0 +1,35 @@
++package com.destroystokyo.paper.event.server;
++
++import org.bukkit.event.Event;
++import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++@NullMarked
++public class ServerTickStartEvent extends Event {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private final int tickNumber;
++
++    @ApiStatus.Internal
++    public ServerTickStartEvent(final int tickNumber) {
++        this.tickNumber = tickNumber;
++    }
++
++    /**
++     * @return What tick this is going be since start (first tick = 1)
++     */
++    public int getTickNumber() {
++        return this.tickNumber;
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}

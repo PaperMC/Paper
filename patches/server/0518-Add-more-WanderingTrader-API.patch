@@ -1,0 +1,65 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: HexedHero <6012891+HexedHero@users.noreply.github.com>
+Date: Thu, 6 May 2021 14:56:43 +0100
+Subject: [PATCH] Add more WanderingTrader API
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/npc/WanderingTrader.java b/src/main/java/net/minecraft/world/entity/npc/WanderingTrader.java
+index 8034588a9a87b907c35e28e220280d463f34554e..a65fba5621c067c453858efb7fee64cbee1e7916 100644
+--- a/src/main/java/net/minecraft/world/entity/npc/WanderingTrader.java
++++ b/src/main/java/net/minecraft/world/entity/npc/WanderingTrader.java
+@@ -62,6 +62,10 @@ public class WanderingTrader extends net.minecraft.world.entity.npc.AbstractVill
+     @Nullable
+     private BlockPos wanderTarget;
+     private int despawnDelay;
++    // Paper start - Add more WanderingTrader API
++    public boolean canDrinkPotion = true;
++    public boolean canDrinkMilk = true;
++    // Paper end - Add more WanderingTrader API
+ 
+     public WanderingTrader(EntityType<? extends WanderingTrader> type, Level world) {
+         super(type, world);
+@@ -72,10 +76,10 @@ public class WanderingTrader extends net.minecraft.world.entity.npc.AbstractVill
+     protected void registerGoals() {
+         this.goalSelector.addGoal(0, new FloatGoal(this));
+         this.goalSelector.addGoal(0, new UseItemGoal<>(this, PotionContents.createItemStack(Items.POTION, Potions.INVISIBILITY), SoundEvents.WANDERING_TRADER_DISAPPEARED, (entityvillagertrader) -> {
+-            return this.level().isNight() && !entityvillagertrader.isInvisible();
++            return this.canDrinkPotion && this.level().isNight() && !entityvillagertrader.isInvisible(); // Paper - Add more WanderingTrader API
+         }));
+         this.goalSelector.addGoal(0, new UseItemGoal<>(this, new ItemStack(Items.MILK_BUCKET), SoundEvents.WANDERING_TRADER_REAPPEARED, (entityvillagertrader) -> {
+-            return this.level().isDay() && entityvillagertrader.isInvisible();
++            return this.canDrinkMilk && this.level().isDay() && entityvillagertrader.isInvisible(); // Paper - Add more WanderingTrader API
+         }));
+         this.goalSelector.addGoal(1, new TradeWithPlayerGoal(this));
+         this.goalSelector.addGoal(1, new AvoidEntityGoal<>(this, Zombie.class, 8.0F, 0.5D, 0.5D));
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftWanderingTrader.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftWanderingTrader.java
+index 08194a78c2170e971ee8ff440b276ed3590e8c4a..0e597394a3dd08f022614fc9777302fea581eb55 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftWanderingTrader.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftWanderingTrader.java
+@@ -28,4 +28,26 @@ public class CraftWanderingTrader extends CraftAbstractVillager implements Wande
+     public void setDespawnDelay(int despawnDelay) {
+         this.getHandle().setDespawnDelay(despawnDelay);
+     }
++
++    // Paper start - Add more WanderingTrader API
++    @Override
++    public void setCanDrinkPotion(boolean bool) {
++        getHandle().canDrinkPotion = bool;
++    }
++
++    @Override
++    public boolean canDrinkPotion() {
++        return getHandle().canDrinkPotion;
++    }
++
++    @Override
++    public void setCanDrinkMilk(boolean bool) {
++        getHandle().canDrinkMilk = bool;
++    }
++
++    @Override
++    public boolean canDrinkMilk() {
++        return getHandle().canDrinkMilk;
++    }
++    // Paper end
+ }

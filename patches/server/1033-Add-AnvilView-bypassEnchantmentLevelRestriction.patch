@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Doc <nachito94@msn.com>
+Date: Sun, 6 Oct 2024 16:46:36 -0300
+Subject: [PATCH] Add AnvilView#bypassEnchantmentLevelRestriction
+
+Anvils, by default, limit applied enchantment levels to their respective
+maximum level. The added API enables plugins to disable this behaviour,
+allowing enchantments that are overleveled to be applied via the anvil.
+
+diff --git a/src/main/java/net/minecraft/world/inventory/AnvilMenu.java b/src/main/java/net/minecraft/world/inventory/AnvilMenu.java
+index ae0ba6b0e1f0bee3c3a701b22725171e499b97a3..286ae002e1711ad9e800b7f2091988d66cd572a7 100644
+--- a/src/main/java/net/minecraft/world/inventory/AnvilMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/AnvilMenu.java
+@@ -54,6 +54,7 @@ public class AnvilMenu extends ItemCombinerMenu {
+     public int maximumRepairCost = 40;
+     private CraftAnvilView bukkitEntity;
+     // CraftBukkit end
++    public boolean bypassEnchantmentLevelRestriction = false; // Paper - bypass anvil level restrictions
+ 
+     public AnvilMenu(int syncId, Inventory inventory) {
+         this(syncId, inventory, ContainerLevelAccess.NULL);
+@@ -233,7 +234,7 @@ public class AnvilMenu extends ItemCombinerMenu {
+                             flag2 = true;
+                         } else {
+                             flag1 = true;
+-                            if (i2 > enchantment.getMaxLevel()) {
++                            if (i2 > enchantment.getMaxLevel() && !this.bypassEnchantmentLevelRestriction) { // Paper - bypass anvil level restrictions
+                                 i2 = enchantment.getMaxLevel();
+                             }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/view/CraftAnvilView.java b/src/main/java/org/bukkit/craftbukkit/inventory/view/CraftAnvilView.java
+index fdc2bd4c3ee5f762a72df39c87215e3a15f47db2..f86c95a13dff012de5db3e41ac261e9e8d44d9f3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/view/CraftAnvilView.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/view/CraftAnvilView.java
+@@ -50,6 +50,18 @@ public class CraftAnvilView extends CraftInventoryView<AnvilMenu, AnvilInventory
+         this.container.maximumRepairCost = cost;
+     }
+ 
++    // Paper start
++    @Override
++    public boolean bypassesEnchantmentLevelRestriction() {
++        return this.container.bypassEnchantmentLevelRestriction;
++    }
++
++    @Override
++    public void bypassEnchantmentLevelRestriction(final boolean bypassEnchantmentLevelRestriction) {
++        this.container.bypassEnchantmentLevelRestriction = bypassEnchantmentLevelRestriction;
++    }
++    // Paper end
++
+     public void updateFromLegacy(CraftInventoryAnvil legacy) {
+         if (legacy.isRepairCostSet()) {
+             this.setRepairCost(legacy.getRepairCost());

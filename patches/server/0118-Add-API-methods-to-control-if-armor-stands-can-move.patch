@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: kashike <kashike@vq.lc>
+Date: Wed, 21 Dec 2016 11:47:25 -0600
+Subject: [PATCH] Add API methods to control if armor stands can move
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
+index c3a4b967a73a1a04192850a6880d42ebd22c2a14..aea97a30a9226275f8fbf9cb2c15d5ddf36371ac 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
+@@ -107,6 +107,7 @@ public class ArmorStand extends LivingEntity {
+     public Rotations rightArmPose;
+     public Rotations leftLegPose;
+     public Rotations rightLegPose;
++    public boolean canMove = true; // Paper
+ 
+     public ArmorStand(EntityType<? extends ArmorStand> type, Level world) {
+         super(type, world);
+@@ -946,4 +947,13 @@ public class ArmorStand extends LivingEntity {
+     public boolean canBeSeenByAnyone() {
+         return !this.isInvisible() && !this.isMarker();
+     }
++
++    // Paper start
++    @Override
++    public void move(net.minecraft.world.entity.MoverType type, Vec3 movement) {
++        if (this.canMove) {
++            super.move(type, movement);
++        }
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
+index 9ed8d228729d067f21f34224458d141988845348..56fcd9dd40e6a63e1af5fbd470ece0d6100292a2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
+@@ -222,4 +222,15 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
+     public boolean hasEquipmentLock(EquipmentSlot equipmentSlot, LockType lockType) {
+         return (this.getHandle().disabledSlots & (1 << CraftEquipmentSlot.getNMS(equipmentSlot).getFilterBit(lockType.ordinal() * 8))) != 0;
+     }
++    // Paper start
++    @Override
++    public boolean canMove() {
++        return getHandle().canMove;
++    }
++
++    @Override
++    public void setCanMove(boolean move) {
++        getHandle().canMove = move;
++    }
++    // Paper end
+ }

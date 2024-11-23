@@ -1,0 +1,296 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Brokkonaut <hannos17@gmx.de>
+Date: Mon, 18 Jun 2018 15:40:39 +0200
+Subject: [PATCH] Add entity knockback events
+
+- EntityKnockbackEvent
+- EntityPushedByEntityAttackEvent
+- EntityKnockbackByEntityEvent
+
+Co-authored-by: aerulion <aerulion@gmail.com>
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+
+diff --git a/src/main/java/com/destroystokyo/paper/event/entity/EntityKnockbackByEntityEvent.java b/src/main/java/com/destroystokyo/paper/event/entity/EntityKnockbackByEntityEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6f376e1ac0f2f44255993b3d5b144f5559d13cc3
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/entity/EntityKnockbackByEntityEvent.java
+@@ -0,0 +1,52 @@
++package com.destroystokyo.paper.event.entity;
++
++import io.papermc.paper.event.entity.EntityKnockbackEvent;
++import io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent;
++import org.bukkit.entity.Entity;
++import org.bukkit.entity.LivingEntity;
++import org.bukkit.util.Vector;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Fired when an Entity is knocked back by the hit of another Entity. The acceleration
++ * vector can be modified. If this event is cancelled, the entity is not knocked back.
++ */
++@NullMarked
++public class EntityKnockbackByEntityEvent extends EntityPushedByEntityAttackEvent {
++
++    private final float knockbackStrength;
++
++    @ApiStatus.Internal
++    public EntityKnockbackByEntityEvent(final LivingEntity entity, final Entity hitBy, final EntityKnockbackEvent.Cause cause, final float knockbackStrength, final Vector knockback) {
++        super(entity, cause, hitBy, knockback);
++        this.knockbackStrength = knockbackStrength;
++    }
++
++    /**
++     * @return the entity which was knocked back
++     */
++    @Override
++    public LivingEntity getEntity() {
++        return (LivingEntity) super.getEntity();
++    }
++
++    /**
++     * @return the original knockback strength.
++     * @apiNote this value doesn't necessarily relate to {@link #getKnockback()}.
++     */
++    @ApiStatus.Obsolete(since = "1.20.6")
++    public float getKnockbackStrength() {
++        return this.knockbackStrength;
++    }
++
++    /**
++     * Gets the causing entity. Same as {@link #getPushedBy()}.
++     *
++     * @return the Entity which hit
++     */
++    public Entity getHitBy() {
++        return super.getPushedBy();
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/event/entity/EntityKnockbackEvent.java b/src/main/java/io/papermc/paper/event/entity/EntityKnockbackEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..bc120d4928dc41ea827e2a06f7d30d0e3d484ce0
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/entity/EntityKnockbackEvent.java
+@@ -0,0 +1,117 @@
++package io.papermc.paper.event.entity;
++
++import com.google.common.base.Preconditions;
++import org.bukkit.entity.Entity;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.entity.EntityEvent;
++import org.bukkit.util.Vector;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Called when an entity receives knockback.
++ * @see EntityPushedByEntityAttackEvent
++ * @see com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent
++ */
++@NullMarked
++public class EntityKnockbackEvent extends EntityEvent implements Cancellable {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private final Cause cause;
++    protected Vector knockback;
++    private boolean cancelled;
++
++    @ApiStatus.Internal
++    public EntityKnockbackEvent(final Entity entity, final EntityKnockbackEvent.Cause cause, final Vector knockback) {
++        super(entity);
++        this.cause = cause;
++        this.knockback = knockback;
++    }
++
++    /**
++     * Gets the cause of the knockback.
++     *
++     * @return the cause of the knockback
++     */
++    public EntityKnockbackEvent.Cause getCause() {
++        return this.cause;
++    }
++
++    /**
++     * Gets the knockback force that will be applied to the entity. <br>
++     * This value is read-only, changes made to it <b>will not</b> have any
++     * effect on the final knockback received. Use {@link #setKnockback(Vector)}
++     * to make changes.
++     *
++     * @return the knockback
++     */
++    public Vector getKnockback() {
++        return this.knockback.clone();
++    }
++
++    /**
++     * Sets the knockback force that will be applied to the entity.
++     *
++     * @param knockback the knockback
++     */
++    public void setKnockback(final Vector knockback) {
++        Preconditions.checkArgument(knockback != null, "knockback");
++        this.knockback = knockback.clone();
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    @Override
++    public void setCancelled(final boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++
++    /**
++     * An enum to specify the cause of the knockback.
++     */
++    public enum Cause {
++
++        /**
++         * Knockback caused by non-entity damage.
++         */
++        DAMAGE,
++        /**
++         * Knockback caused by an attacking entity.
++         */
++        ENTITY_ATTACK,
++        /**
++         * Knockback caused by an explosion.
++         */
++        EXPLOSION,
++        /**
++         * Knockback caused by the target blocking with a shield.
++         */
++        SHIELD_BLOCK,
++        /**
++         * Knockback caused by a sweeping attack.
++         */
++        SWEEP_ATTACK,
++        /**
++         * A generic push.
++         */
++        PUSH,
++        /**
++         * Knockback with an unknown cause.
++         */
++        UNKNOWN
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/entity/EntityPushedByEntityAttackEvent.java b/src/main/java/io/papermc/paper/event/entity/EntityPushedByEntityAttackEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7655c3694b9d6b37206fc46bf892004686e0a7dd
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/entity/EntityPushedByEntityAttackEvent.java
+@@ -0,0 +1,67 @@
++package io.papermc.paper.event.entity;
++
++import org.bukkit.entity.Entity;
++import org.bukkit.event.Cancellable;
++import org.bukkit.util.Vector;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Fired when an entity is pushed by another entity's attack. The acceleration vector can be
++ * modified. If this event is cancelled, the entity will not get pushed.
++ * <p>
++ * Note: Some entities might trigger this multiple times on the same entity
++ * as multiple acceleration calculations are done.
++ */
++@NullMarked
++public class EntityPushedByEntityAttackEvent extends EntityKnockbackEvent implements Cancellable {
++
++    private final Entity pushedBy;
++
++    @ApiStatus.Internal
++    public EntityPushedByEntityAttackEvent(final Entity entity, final EntityKnockbackEvent.Cause cause, final Entity pushedBy, final Vector knockback) {
++        super(entity, cause, knockback);
++        this.pushedBy = pushedBy;
++    }
++
++    /**
++     * Gets the entity which pushed the affected entity.
++     *
++     * @return the pushing entity
++     */
++    public Entity getPushedBy() {
++        return this.pushedBy;
++    }
++
++    /**
++     * Gets the acceleration that will be applied to the affected entity.
++     *
++     * @return the acceleration vector
++     * @deprecated use {@link #getKnockback()}
++     */
++    @Deprecated(since = "1.20.6", forRemoval = true)
++    public Vector getAcceleration() {
++        return this.knockback; // TODO Clone in 1.21 to not instantly break what was technically already modifiable (call super.getKnockback())
++    }
++
++    /**
++     * Sets the relative acceleration that will be applied to the affected entity.
++     *
++     * @param acceleration the new acceleration vector
++     * @deprecated use {@link #setKnockback(Vector)}
++     */
++    @Deprecated(since = "1.20.6", forRemoval = true)
++    public void setAcceleration(final Vector acceleration) {
++        super.setKnockback(acceleration);
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return super.isCancelled();
++    }
++
++    @Override
++    public void setCancelled(final boolean cancel) {
++        super.setCancelled(cancel);
++    }
++}
+diff --git a/src/main/java/org/bukkit/event/entity/EntityKnockbackByEntityEvent.java b/src/main/java/org/bukkit/event/entity/EntityKnockbackByEntityEvent.java
+index 3f17290c0863cc1d452bb50c524c18b6ab255d70..bd44bc5ed9e20148f9b2ab3d2049187280f3eb18 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityKnockbackByEntityEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityKnockbackByEntityEvent.java
+@@ -7,7 +7,10 @@ import org.jetbrains.annotations.NotNull;
+ 
+ /**
+  * Called when an entity receives knockback from another entity.
++ *
++ * @deprecated use {@link com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent}
+  */
++@Deprecated(forRemoval = true) // Paper
+ public class EntityKnockbackByEntityEvent extends EntityKnockbackEvent {
+ 
+     private final Entity source;
+diff --git a/src/main/java/org/bukkit/event/entity/EntityKnockbackEvent.java b/src/main/java/org/bukkit/event/entity/EntityKnockbackEvent.java
+index 9355efbbd4625e34d6c9d26bcbd02272202dec79..753e6f30da4f3dc9d5ed7d1b40d30b602b8c8c9e 100644
+--- a/src/main/java/org/bukkit/event/entity/EntityKnockbackEvent.java
++++ b/src/main/java/org/bukkit/event/entity/EntityKnockbackEvent.java
+@@ -11,7 +11,10 @@ import org.jetbrains.annotations.NotNull;
+ 
+ /**
+  * Called when a living entity receives knockback.
++ *
++ * @deprecated use {@link io.papermc.paper.event.entity.EntityKnockbackEvent}
+  */
++@Deprecated(forRemoval = true) // Paper
+ public class EntityKnockbackEvent extends EntityEvent implements Cancellable {
+ 
+     private static final HandlerList handlers = new HandlerList();

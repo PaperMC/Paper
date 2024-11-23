@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William <admin@domnian.com>
+Date: Fri, 18 Mar 2016 03:30:17 -0400
+Subject: [PATCH] Allow Reloading of Custom Permissions
+
+https://github.com/PaperMC/Paper/issues/49
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 248de665ebf0e1ddfb10616f6213fa344cd88d40..a8ee4d5b932e42367df9e74dacd0e3f1fdbe7d11 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -2818,5 +2818,23 @@ public final class CraftServer implements Server {
+         }
+         return this.adventure$audiences;
+     }
++
++    @Override
++    public void reloadPermissions() {
++        pluginManager.clearPermissions();
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().misc.loadPermissionsYmlBeforePlugins) loadCustomPermissions();
++        for (Plugin plugin : pluginManager.getPlugins()) {
++            for (Permission perm : plugin.getDescription().getPermissions()) {
++                try {
++                    pluginManager.addPermission(perm);
++                } catch (IllegalArgumentException ex) {
++                    getLogger().log(Level.WARNING, "Plugin " + plugin.getDescription().getFullName() + " tried to register permission '" + perm.getName() + "' but it's already registered", ex);
++                }
++            }
++        }
++        if (!io.papermc.paper.configuration.GlobalConfiguration.get().misc.loadPermissionsYmlBeforePlugins) loadCustomPermissions();
++        DefaultPermissions.registerCorePermissions();
++        CraftDefaultPermissions.registerCorePermissions();
++    }
+     // Paper end
+ }

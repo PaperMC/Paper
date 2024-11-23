@@ -1,0 +1,220 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Sun, 3 Mar 2024 19:45:52 +0100
+Subject: [PATCH] Suspicious Effect Entry API
+
+Exposes a new suspicious effect entry type that properly represents
+storable effects in the context of suspicious effects as they only
+define the potion effect type and duration.
+
+This differentiates them from the existing PotionEffect API found in
+bukkit and hence clarifies that storable values in the parts of the API
+in which it replaces PotionEffect.
+
+Co-authored-by: Yannick Lamprecht <yannicklamprecht@live.de>
+
+diff --git a/src/main/java/io/papermc/paper/potion/SuspiciousEffectEntry.java b/src/main/java/io/papermc/paper/potion/SuspiciousEffectEntry.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6311ede3e3812da2ccdbcb19522facd7b2e3bd5c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/potion/SuspiciousEffectEntry.java
+@@ -0,0 +1,39 @@
++package io.papermc.paper.potion;
++
++import org.bukkit.potion.PotionEffect;
++import org.bukkit.potion.PotionEffectType;
++import org.jetbrains.annotations.Contract;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Represents a {@link PotionEffectType} paired with a duration.
++ */
++@NullMarked
++public sealed interface SuspiciousEffectEntry permits SuspiciousEffectEntryImpl {
++
++    /**
++     * Gets the effect type.
++     *
++     * @return effect type
++     */
++    PotionEffectType effect();
++
++    /**
++     * Gets the duration for this effect instance.
++     *
++     * @return duration (in ticks) or {@link PotionEffect#INFINITE_DURATION}
++     */
++    int duration();
++
++    /**
++     * Creates a new instance of SuspiciousEffectEntry.
++     *
++     * @param effectType effect type
++     * @param duration duration (in ticks) or {@link PotionEffect#INFINITE_DURATION}
++     * @return new instance of an entry
++     */
++    @Contract(value = "_, _ -> new", pure = true)
++    static SuspiciousEffectEntry create(final PotionEffectType effectType, final int duration) {
++        return new SuspiciousEffectEntryImpl(effectType, duration);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/potion/SuspiciousEffectEntryImpl.java b/src/main/java/io/papermc/paper/potion/SuspiciousEffectEntryImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a91d37ee450944ea779bd6b61d416467948bb55f
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/potion/SuspiciousEffectEntryImpl.java
+@@ -0,0 +1,10 @@
++package io.papermc.paper.potion;
++
++import org.bukkit.potion.PotionEffectType;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++@ApiStatus.Internal
++@NullMarked
++record SuspiciousEffectEntryImpl(PotionEffectType effect, int duration) implements SuspiciousEffectEntry {
++}
+diff --git a/src/main/java/org/bukkit/entity/MushroomCow.java b/src/main/java/org/bukkit/entity/MushroomCow.java
+index 86c0043ef4e1288b6fe2f68a9b6d01c3de2c3454..3677f19ef1c05b76d946b1b2b491a6c3cec76140 100644
+--- a/src/main/java/org/bukkit/entity/MushroomCow.java
++++ b/src/main/java/org/bukkit/entity/MushroomCow.java
+@@ -34,14 +34,30 @@ public interface MushroomCow extends Cow, io.papermc.paper.entity.Shearable { //
+      * Adds a custom potion effect to be applied to the next suspicious stew
+      * received from milking this {@link MushroomCow}.
+      *
++     * @deprecated use {@link #addEffectToNextStew(io.papermc.paper.potion.SuspiciousEffectEntry, boolean)} as PotionEffect suggests that all attributes are used. In fact, only the PotionEffectType and the duration are used.
+      * @param effect the potion effect to add
+      * @param overwrite true if any existing effect of the same type should be
+      * overwritten
+      * @return true if the effects to be applied to the suspicious stew changed
+      * as a result of this call
+      */
++    @Deprecated(forRemoval = true, since = "1.20.2") // Paper - add overloads to use suspicious effect entry to mushroom cow and suspicious stew meta
+     boolean addEffectToNextStew(@NotNull PotionEffect effect, boolean overwrite);
+ 
++    // Paper start - add overloads to use suspicious effect entry to mushroom cow and suspicious stew meta
++    /**
++     * Adds a suspicious effect entry to be applied to the next suspicious stew
++     * received from milking this {@link MushroomCow}.
++     *
++     * @param suspiciousEffectEntry the suspicious effect entry to add
++     * @param overwrite true if any existing effect of the same type should be
++     * overwritten
++     * @return true if the effects to be applied to the suspicious stew changed
++     * as a result of this call
++     */
++    boolean addEffectToNextStew(@NotNull io.papermc.paper.potion.SuspiciousEffectEntry suspiciousEffectEntry, boolean overwrite);
++    // Paper end - add overloads to use suspicious effect entry to mushroom cow and suspicious stew meta
++
+     /**
+      * Removes a custom potion effect from being applied to the next suspicious
+      * stew received from milking this {@link MushroomCow}.
+@@ -95,4 +111,75 @@ public interface MushroomCow extends Cow, io.papermc.paper.entity.Shearable { //
+          */
+         BROWN;
+     }
++    // Paper start
++    /**
++     * Gets how long the effect applied to stew
++     * from this mushroom cow is.
++     *
++     * @return duration of the effect (in ticks)
++     * @deprecated Mushroom cows can now hold multiple effects, use {@link #getStewEffects()}
++     */
++    @Deprecated(forRemoval = true, since = "1.20.2")
++    @org.jetbrains.annotations.Contract("-> fail")
++    default int getStewEffectDuration() {
++        throw new UnsupportedOperationException("Mushroom cows can now hold multiple effects. Use #getStewEffects");
++    }
++
++    /**
++     * Sets how long the effect applied to stew
++     * from this mushroom cow is.
++     *
++     * @param duration duration of the effect (in ticks)
++     * @deprecated Mushroom cows can now hold multiple effects, use {@link #setStewEffects(java.util.List)}
++     */
++    @Deprecated(forRemoval = true, since = "1.20.2")
++    @org.jetbrains.annotations.Contract("_ -> fail")
++    default void setStewEffectDuration(int duration) {
++        throw new UnsupportedOperationException("Mushroom cows can now hold multiple effects. Use #setStewEffects");
++    }
++
++    /**
++     * Gets the type of effect applied to stew
++     * from this mushroom cow is.
++     *
++     * @return effect type, or null if an effect is currently not set
++     * @deprecated Mushroom cows can now hold multiple effects, use {@link #getStewEffects()}
++     * @throws UnsupportedOperationException
++     */
++    @Deprecated(forRemoval = true, since = "1.20.2")
++    @org.jetbrains.annotations.Contract("-> fail")
++    default org.bukkit.potion.PotionEffectType getStewEffectType() {
++        throw new UnsupportedOperationException("Mushroom cows can now hold multiple effects. Use #getStewEffects");
++    }
++
++    /**
++     * Sets the type of effect applied to stew
++     * from this mushroom cow is.
++     *
++     * @param type new effect type
++     *             or null if this cow does not give effects
++     * @deprecated Mushroom cows can now hold multiple effects, use {@link #setStewEffects(java.util.List)}
++     * @throws UnsupportedOperationException
++     */
++    @Deprecated(forRemoval = true, since = "1.20.2")
++    @org.jetbrains.annotations.Contract("_ -> fail")
++    default void setStewEffect(@org.jetbrains.annotations.Nullable org.bukkit.potion.PotionEffectType type) {
++        throw new UnsupportedOperationException("Mushroom cows can now hold multiple effects. Use #setStewEffects");
++    }
++
++    /**
++     * Returns an immutable collection of the effects applied to stew
++     * items for this mushroom cow.
++     *
++     * @return immutable effect entry collection
++     */
++    java.util.@NotNull @org.jetbrains.annotations.Unmodifiable List<io.papermc.paper.potion.SuspiciousEffectEntry> getStewEffects();
++
++    /**
++     * Sets effects applied to stew items for this mushroom cow.
++     *
++     * @param effects effect entry list
++     */
++    void setStewEffects(java.util.@NotNull List<io.papermc.paper.potion.SuspiciousEffectEntry> effects);
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/inventory/meta/SuspiciousStewMeta.java b/src/main/java/org/bukkit/inventory/meta/SuspiciousStewMeta.java
+index c2f4282c188e7d8041459cb3acaad674443ba147..c5bfc062fcca56495f44039d83356fc1fd7568d0 100644
+--- a/src/main/java/org/bukkit/inventory/meta/SuspiciousStewMeta.java
++++ b/src/main/java/org/bukkit/inventory/meta/SuspiciousStewMeta.java
+@@ -32,13 +32,28 @@ public interface SuspiciousStewMeta extends ItemMeta {
+     /**
+      * Adds a custom potion effect to this suspicious stew.
+      *
++     * @deprecated use {@link #addCustomEffect(io.papermc.paper.potion.SuspiciousEffectEntry, boolean)} as PotionEffect suggests that all attributes are used. In fact, only the PotionEffectType and the duration are used.
+      * @param effect the potion effect to add
+      * @param overwrite true if any existing effect of the same type should be
+      * overwritten
+      * @return true if the suspicious stew meta changed as a result of this call
+      */
++    @Deprecated // Paper - add overloads to use suspicious effect entry to mushroom cow and suspicious stew meta
+     boolean addCustomEffect(@NotNull PotionEffect effect, boolean overwrite);
+ 
++    // Paper start - add overloads to use suspicious effect entry to mushroom cow and suspicious stew meta
++    /**
++     * Adds a custom potion effect to this suspicious stew.
++     *
++     * @param suspiciousEffectEntry the suspicious effect entry to add
++     * @param overwrite true if any existing effect of the same type should be
++     * overwritten
++     * @return true if the suspicious stew meta changed as a result of this call
++     * as a result of this call
++     */
++    boolean addCustomEffect(@NotNull io.papermc.paper.potion.SuspiciousEffectEntry suspiciousEffectEntry, boolean overwrite);
++    // Paper end - add overloads to use suspicious effect entry to mushroom cow and suspicious stew meta
++
+     /**
+      * Removes a custom potion effect from this suspicious stew.
+      *

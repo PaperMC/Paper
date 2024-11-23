@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Sat, 6 Jan 2024 14:18:58 +0100
+Subject: [PATCH] Return null for empty String in NamespacedKey.fromString
+
+
+diff --git a/src/main/java/org/bukkit/NamespacedKey.java b/src/main/java/org/bukkit/NamespacedKey.java
+index cbdaa121dbc1876d0cd55f4b7b57f283ecaa8f1a..7ff6d60deb129e23b2a4d772aee123eb6c0b6433 100644
+--- a/src/main/java/org/bukkit/NamespacedKey.java
++++ b/src/main/java/org/bukkit/NamespacedKey.java
+@@ -90,7 +90,7 @@ public final class NamespacedKey implements net.kyori.adventure.key.Key { // Pap
+         this.key = key;
+ 
+         String string = toString();
+-        Preconditions.checkArgument(string.length() < 256, "NamespacedKey must be less than 256 characters", string);
++        Preconditions.checkArgument(string.length() <= Short.MAX_VALUE, "NamespacedKey must be less than 32768 characters", string); // Paper - Fix improper length validation
+     }
+ 
+     /**
+@@ -117,7 +117,7 @@ public final class NamespacedKey implements net.kyori.adventure.key.Key { // Pap
+         Preconditions.checkArgument(isValidKey(this.key), "Invalid key. Must be [a-z0-9/._-]: %s", this.key);
+ 
+         String string = toString();
+-        Preconditions.checkArgument(string.length() < 256, "NamespacedKey must be less than 256 characters (%s)", string);
++        Preconditions.checkArgument(string.length() <= Short.MAX_VALUE, "NamespacedKey must be less than 32768 characters", string); // Paper - Fix improper length validation
+     }
+ 
+     @NotNull
+@@ -205,7 +205,10 @@ public final class NamespacedKey implements net.kyori.adventure.key.Key { // Pap
+      */
+     @Nullable
+     public static NamespacedKey fromString(@NotNull String string, @Nullable Plugin defaultNamespace) {
+-        Preconditions.checkArgument(string != null && !string.isEmpty(), "Input string must not be empty or null");
++        // Paper - Return null for empty string, check length
++        Preconditions.checkArgument(string != null, "Input string must not be null");
++        if (string.isEmpty() || string.length() > Short.MAX_VALUE) return null;
++        // Paper end - Return null for empty string, check length
+ 
+         String[] components = string.split(":", 3);
+         if (components.length > 2) {
+diff --git a/src/test/java/org/bukkit/NamespacedKeyTest.java b/src/test/java/org/bukkit/NamespacedKeyTest.java
+index 6317798e43332f34f79970ded0f023beee868fed..d4e9e24b705a7ac3e9f4fc27eefa44ecb16aa35c 100644
+--- a/src/test/java/org/bukkit/NamespacedKeyTest.java
++++ b/src/test/java/org/bukkit/NamespacedKeyTest.java
+@@ -29,6 +29,7 @@ public class NamespacedKeyTest {
+         assertNull(NamespacedKey.fromString("foo:bar:bazz"));
+     }
+ 
++    @org.junit.jupiter.api.Disabled // Paper - Fixup NamespacedKey handling
+     @Test
+     public void testFromStringEmptyInput() {
+         assertThrows(IllegalArgumentException.class, () -> NamespacedKey.fromString(""));
+@@ -75,6 +76,7 @@ public class NamespacedKeyTest {
+                 "loremipsumdolorsitametconsecteturadipiscingelitduisvolutpatvelitsitametmaximusscelerisquemorbiullamcorperexacconsequategestas").toString();
+     }
+ 
++    @org.junit.jupiter.api.Disabled // Paper - Fixup NamespacedKey handling
+     @Test
+     public void testAboveLength() {
+         assertThrows(IllegalArgumentException.class, () -> new NamespacedKey("loremipsumdolorsitametconsecteturadipiscingelitduisvolutpatvelitsitametmaximusscelerisquemorbiullamcorperexacconsequategestas",

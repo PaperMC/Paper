@@ -1,0 +1,438 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 20 Mar 2022 10:42:28 -0700
+Subject: [PATCH] Add Position
+
+
+diff --git a/src/main/java/io/papermc/paper/math/BlockPosition.java b/src/main/java/io/papermc/paper/math/BlockPosition.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c358bfdefc9bc7598dbd0d89a6b0b8a9408b5bb3
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/math/BlockPosition.java
+@@ -0,0 +1,100 @@
++package io.papermc.paper.math;
++
++import org.bukkit.Axis;
++import org.bukkit.block.BlockFace;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * A position represented with integers.
++ * <p>
++ * <b>May see breaking changes until Experimental annotation is removed.</b>
++ *
++ * @see FinePosition
++ */
++@ApiStatus.Experimental
++@NullMarked
++public interface BlockPosition extends Position {
++
++    @Override
++    default double x() {
++        return this.blockX();
++    }
++
++    @Override
++    default double y() {
++        return this.blockY();
++    }
++
++    @Override
++    default double z() {
++        return this.blockZ();
++    }
++
++    @Override
++    default boolean isBlock() {
++        return true;
++    }
++
++    @Override
++    default boolean isFine() {
++        return false;
++    }
++
++    @Override
++    default BlockPosition toBlock() {
++        return this;
++    }
++
++    @Override
++    default BlockPosition offset(final int x, final int y, final int z) {
++        return x == 0 && y == 0 && z == 0 ? this : new BlockPositionImpl(this.blockX() + x, this.blockY() + y, this.blockZ() + z);
++    }
++
++    @Override
++    default FinePosition offset(final double x, final double y, final double z) {
++        return new FinePositionImpl(this.blockX() + x, this.blockY() + y, this.blockZ() + z);
++    }
++
++    /**
++     * Returns a block position offset by 1 in the direction specified.
++     *
++     * @param blockFace the block face to offset towards
++     * @return the offset block position
++     */
++    @Contract(value = "_ -> new", pure = true)
++    default BlockPosition offset(final BlockFace blockFace) {
++        return this.offset(blockFace, 1);
++    }
++
++    /**
++     * Returns a block position offset in the direction specified
++     * multiplied by the amount.
++     *
++     * @param blockFace the block face to offset towards
++     * @param amount the number of times to move in that direction
++     * @return the offset block position
++     */
++    @Contract(pure = true)
++    default BlockPosition offset(final BlockFace blockFace, final int amount) {
++        return amount == 0 ? this : new BlockPositionImpl(this.blockX() + (blockFace.getModX() * amount), this.blockY() + (blockFace.getModY() * amount), this.blockZ() + (blockFace.getModZ() * amount));
++    }
++
++    /**
++     * Returns a block position offset by the amount along
++     * the specified axis.
++     *
++     * @param axis the axis to offset along
++     * @param amount the amount to offset along that axis
++     * @return the offset block position
++     */
++    @Contract(pure = true)
++    default BlockPosition offset(final Axis axis, final int amount) {
++        return amount == 0 ? this : switch (axis) {
++            case X -> new BlockPositionImpl(this.blockX() + amount, this.blockY(), this.blockZ());
++            case Y -> new BlockPositionImpl(this.blockX(), this.blockY() + amount, this.blockZ());
++            case Z -> new BlockPositionImpl(this.blockX(), this.blockY(), this.blockZ() + amount);
++        };
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/math/BlockPositionImpl.java b/src/main/java/io/papermc/paper/math/BlockPositionImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..eb5a3f26c7ba56c6715827f52c0013a860ec7d9a
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/math/BlockPositionImpl.java
+@@ -0,0 +1,4 @@
++package io.papermc.paper.math;
++
++record BlockPositionImpl(int blockX, int blockY, int blockZ) implements BlockPosition {
++}
+diff --git a/src/main/java/io/papermc/paper/math/FinePosition.java b/src/main/java/io/papermc/paper/math/FinePosition.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b9c0065d8a9dedc3bd1a2d8bfbedfbc7f952ff93
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/math/FinePosition.java
+@@ -0,0 +1,57 @@
++package io.papermc.paper.math;
++
++import org.bukkit.util.NumberConversions;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * A position represented with doubles.
++ * <p>
++ * <b>May see breaking changes until Experimental annotation is removed.</b>
++ *
++ * @see BlockPosition
++ */
++@ApiStatus.Experimental
++@NullMarked
++public interface FinePosition extends Position {
++
++    @Override
++    default int blockX() {
++        return NumberConversions.floor(this.x());
++    }
++
++    @Override
++    default int blockY() {
++        return NumberConversions.floor(this.y());
++    }
++
++    @Override
++    default int blockZ() {
++        return NumberConversions.floor(this.z());
++    }
++
++    @Override
++    default boolean isBlock() {
++        return false;
++    }
++
++    @Override
++    default boolean isFine() {
++        return true;
++    }
++
++    @Override
++    default BlockPosition toBlock() {
++        return new BlockPositionImpl(this.blockX(), this.blockY(), this.blockZ());
++    }
++
++    @Override
++    default FinePosition offset(final int x, final int y, final int z) {
++        return this.offset((double) x, y, z);
++    }
++
++    @Override
++    default FinePosition offset(final double x, final double y, final double z) {
++        return x == 0.0 && y == 0.0 && z == 0.0 ? this : new FinePositionImpl(this.x() + x, this.y() + y, this.z() + z);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/math/FinePositionImpl.java b/src/main/java/io/papermc/paper/math/FinePositionImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..93476aaf8d21efb5a30b6d2cc2eeda8100fb72d0
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/math/FinePositionImpl.java
+@@ -0,0 +1,4 @@
++package io.papermc.paper.math;
++
++record FinePositionImpl(double x, double y, double z) implements FinePosition {
++}
+diff --git a/src/main/java/io/papermc/paper/math/Position.java b/src/main/java/io/papermc/paper/math/Position.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0e6a6a6738353b118e0ed093994dda06750700c4
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/math/Position.java
+@@ -0,0 +1,192 @@
++package io.papermc.paper.math;
++
++import org.bukkit.Location;
++import org.bukkit.World;
++import org.bukkit.util.Vector;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Common interface for {@link FinePosition} and {@link BlockPosition}.
++ * <p>
++ * <b>May see breaking changes until Experimental annotation is removed.</b>
++ */
++@ApiStatus.Experimental
++@NullMarked
++public interface Position {
++
++    FinePosition FINE_ZERO = new FinePositionImpl(0, 0, 0);
++    BlockPosition BLOCK_ZERO = new BlockPositionImpl(0, 0, 0);
++
++    /**
++     * Gets the block x value for this position
++     *
++     * @return the block x value
++     */
++    int blockX();
++
++    /**
++     * Gets the block x value for this position
++     *
++     * @return the block x value
++     */
++    int blockY();
++
++    /**
++     * Gets the block x value for this position
++     *
++     * @return the block x value
++     */
++    int blockZ();
++
++    /**
++     * Gets the x value for this position
++     *
++     * @return the x value
++     */
++    double x();
++
++    /**
++     * Gets the y value for this position
++     *
++     * @return the y value
++     */
++    double y();
++
++    /**
++     * Gets the z value for this position
++     *
++     * @return the z value
++     */
++    double z();
++
++    /**
++     * Checks of this position represents a {@link BlockPosition}
++     *
++     * @return true if block
++     */
++    boolean isBlock();
++
++    /**
++     * Checks if this position represents a {@link FinePosition}
++     *
++     * @return true if fine
++     */
++    boolean isFine();
++
++    /**
++     * Checks if each component of this position is finite.
++     */
++    default boolean isFinite() {
++        return Double.isFinite(this.x()) && Double.isFinite(this.y()) && Double.isFinite(this.z());
++    }
++
++    /**
++     * Returns a position offset by the specified amounts.
++     *
++     * @param x x value to offset
++     * @param y y value to offset
++     * @param z z value to offset
++     * @return the offset position
++     */
++    Position offset(int x, int y, int z);
++
++    /**
++     * Returns a position offset by the specified amounts.
++     *
++     * @param x x value to offset
++     * @param y y value to offset
++     * @param z z value to offset
++     * @return the offset position
++     */
++    FinePosition offset(double x, double y, double z);
++
++    /**
++     * Returns a new position at the center of the block position this represents
++     *
++     * @return a new center position
++     */
++    @Contract(value = "-> new", pure = true)
++    default FinePosition toCenter() {
++        return new FinePositionImpl(this.blockX() + 0.5, this.blockY() + 0.5, this.blockZ() + 0.5);
++    }
++
++    /**
++     * Returns the block position of this position
++     * or itself if it already is a block position
++     *
++     * @return the block position
++     */
++    @Contract(pure = true)
++    BlockPosition toBlock();
++
++    /**
++     * Converts this position to a vector
++     *
++     * @return a new vector
++     */
++    @Contract(value = "-> new", pure = true)
++    default Vector toVector() {
++        return new Vector(this.x(), this.y(), this.z());
++    }
++
++    /**
++     * Creates a new location object at this position with the specified world
++     *
++     * @param world the world for the location object
++     * @return a new location
++     */
++    @Contract(value = "_ -> new", pure = true)
++    default Location toLocation(final World world) {
++        return new Location(world, this.x(), this.y(), this.z());
++    }
++
++    /**
++     * Creates a position at the coordinates
++     *
++     * @param x x coord
++     * @param y y coord
++     * @param z z coord
++     * @return a position with those coords
++     */
++    @Contract(value = "_, _, _ -> new", pure = true)
++    static BlockPosition block(final int x, final int y, final int z) {
++        return new BlockPositionImpl(x, y, z);
++    }
++
++    /**
++     * Creates a position from the location.
++     *
++     * @param location the location to copy the position of
++     * @return a new position at that location
++     */
++    @Contract(value = "_ -> new", pure = true)
++    static BlockPosition block(final Location location) {
++        return new BlockPositionImpl(location.getBlockX(), location.getBlockY(), location.getBlockZ());
++    }
++
++    /**
++     * Creates a position at the coordinates
++     *
++     * @param x x coord
++     * @param y y coord
++     * @param z z coord
++     * @return a position with those coords
++     */
++    @Contract(value = "_, _, _ -> new", pure = true)
++    static FinePosition fine(final double x, final double y, final double z) {
++        return new FinePositionImpl(x, y, z);
++    }
++
++    /**
++     * Creates a position from the location.
++     *
++     * @param location the location to copy the position of
++     * @return a new position at that location
++     */
++    @Contract(value = "_ -> new", pure = true)
++    static FinePosition fine(final Location location) {
++        return new FinePositionImpl(location.getX(), location.getY(), location.getZ());
++    }
++}
+diff --git a/src/main/java/org/bukkit/Location.java b/src/main/java/org/bukkit/Location.java
+index 734054f1e8dad74c13d7ae0b1c1af2d9f45b2636..bc8a64d54e001eae6ef4520a49e261b96c5ae9f3 100644
+--- a/src/main/java/org/bukkit/Location.java
++++ b/src/main/java/org/bukkit/Location.java
+@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
+  * magnitude than 360 are valid, but may be normalized to any other equivalent
+  * representation by the implementation.
+  */
+-public class Location implements Cloneable, ConfigurationSerializable {
++public class Location implements Cloneable, ConfigurationSerializable, io.papermc.paper.math.FinePosition { // Paper
+     private Reference<World> world;
+     private double x;
+     private double y;
+@@ -706,4 +706,31 @@ public class Location implements Cloneable, ConfigurationSerializable {
+         }
+         return pitch;
+     }
++
++    // Paper - add Position
++    @Override
++    public double x() {
++        return this.getX();
++    }
++
++    @Override
++    public double y() {
++        return this.getY();
++    }
++
++    @Override
++    public double z() {
++        return this.getZ();
++    }
++
++    @Override
++    public boolean isFinite() {
++        return io.papermc.paper.math.FinePosition.super.isFinite() && Float.isFinite(this.getYaw()) && Float.isFinite(this.getPitch());
++    }
++
++    @Override
++    public @NotNull Location toLocation(@NotNull World world) {
++        return new Location(world, this.x(), this.y(), this.z(), this.getYaw(), this.getPitch());
++    }
++    // Paper end
+ }

@@ -1,0 +1,98 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 30 Apr 2018 13:14:30 -0400
+Subject: [PATCH] EndermanEscapeEvent
+
+Fires an event anytime an enderman intends to teleport away from the player
+
+You may cancel this, enabling ranged attacks to damage the enderman for example.
+
+diff --git a/src/main/java/com/destroystokyo/paper/event/entity/EndermanEscapeEvent.java b/src/main/java/com/destroystokyo/paper/event/entity/EndermanEscapeEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ae72916972dbe86bfbca499eb7b6f97b1a6eae25
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/event/entity/EndermanEscapeEvent.java
+@@ -0,0 +1,83 @@
++package com.destroystokyo.paper.event.entity;
++
++import org.bukkit.entity.Enderman;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.entity.EntityEvent;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++@NullMarked
++public class EndermanEscapeEvent extends EntityEvent implements Cancellable {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private final Reason reason;
++    private boolean cancelled;
++
++    @ApiStatus.Internal
++    public EndermanEscapeEvent(final Enderman entity, final Reason reason) {
++        super(entity);
++        this.reason = reason;
++    }
++
++    @Override
++    public Enderman getEntity() {
++        return (Enderman) super.getEntity();
++    }
++
++    /**
++     * @return The reason the enderman is trying to escape
++     */
++    public Reason getReason() {
++        return this.reason;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    /**
++     * Cancels the escape.
++     * <p>
++     * If this escape normally had resulted in damage avoidance such as indirect,
++     * the enderman will now take damage.
++     */
++    @Override
++    public void setCancelled(final boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++
++    public enum Reason {
++        /**
++         * The enderman has stopped attacking and ran away
++         */
++        RUNAWAY,
++        /**
++         * The enderman has teleported away due to indirect damage (ranged)
++         */
++        INDIRECT,
++        /**
++         * The enderman has teleported away due to a critical hit
++         */
++        CRITICAL_HIT,
++        /**
++         * The enderman has teleported away due to the player staring at it during combat
++         */
++        STARE,
++        /**
++         * Specific case for {@link #CRITICAL_HIT} where the enderman is taking rain damage
++         */
++        DROWN
++    }
++}

@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sat, 15 Jun 2019 10:28:25 -0700
+Subject: [PATCH] Show blockstate location if we failed to read it
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
+index 80418a05d53516d2c539383aa9994099c634b905..80bd6e8a6dadb74356a9fa9aa394efbd31c49c37 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
+@@ -32,6 +32,7 @@ public class CraftBlockEntityState<T extends BlockEntity> extends CraftBlockStat
+ 
+         this.tileEntity = tileEntity;
+ 
++        try { // Paper - Show blockstate location if we failed to read it
+         // Paper start
+         this.snapshotDisabled = DISABLE_SNAPSHOT;
+         if (DISABLE_SNAPSHOT) {
+@@ -44,6 +45,14 @@ public class CraftBlockEntityState<T extends BlockEntity> extends CraftBlockStat
+             this.load(this.snapshot);
+         }
+         // Paper end
++        // Paper start - Show blockstate location if we failed to read it
++        } catch (Throwable thr) {
++            if (thr instanceof ThreadDeath) {
++                throw (ThreadDeath)thr;
++            }
++            throw new RuntimeException("Failed to read BlockState at: world: " + this.getWorld().getName() + " location: (" + this.getX() + ", " + this.getY() + ", " + this.getZ() + ")", thr);
++        }
++        // Paper end - Show blockstate location if we failed to read it
+     }
+ 
+     protected CraftBlockEntityState(CraftBlockEntityState<T> state, Location location) {

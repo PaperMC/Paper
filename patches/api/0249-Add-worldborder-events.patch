@@ -1,0 +1,310 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 4 Jan 2021 22:40:26 -0800
+Subject: [PATCH] Add worldborder events
+
+
+diff --git a/src/main/java/io/papermc/paper/event/world/border/WorldBorderBoundsChangeEvent.java b/src/main/java/io/papermc/paper/event/world/border/WorldBorderBoundsChangeEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3c168b3522c538c1576238738d48eaef6559450d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/world/border/WorldBorderBoundsChangeEvent.java
+@@ -0,0 +1,115 @@
++package io.papermc.paper.event.world.border;
++
++import org.bukkit.World;
++import org.bukkit.WorldBorder;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Called when a world border changes its bounds, either over time, or instantly.
++ */
++@NullMarked
++public class WorldBorderBoundsChangeEvent extends WorldBorderEvent implements Cancellable {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private Type type;
++    private final double oldSize;
++    private double newSize;
++    private long duration;
++    private boolean cancelled;
++
++    @ApiStatus.Internal
++    public WorldBorderBoundsChangeEvent(final World world, final WorldBorder worldBorder, final Type type, final double oldSize, final double newSize, final long duration) {
++        super(world, worldBorder);
++        this.type = type;
++        this.oldSize = oldSize;
++        this.newSize = newSize;
++        this.duration = duration;
++    }
++
++    /**
++     * Gets if this change is an instant change or over-time change.
++     *
++     * @return the change type
++     */
++    public Type getType() {
++        return this.type;
++    }
++
++    /**
++     * Gets the old size or the world border.
++     *
++     * @return the old size
++     */
++    public double getOldSize() {
++        return this.oldSize;
++    }
++
++    /**
++     * Gets the new size of the world border.
++     *
++     * @return the new size
++     */
++    public double getNewSize() {
++        return this.newSize;
++    }
++
++    /**
++     * Sets the new size of the world border.
++     *
++     * @param newSize the new size
++     */
++    public void setNewSize(final double newSize) {
++        this.newSize = Math.min(this.worldBorder.getMaxSize(), Math.max(1.0D, newSize));
++    }
++
++    /**
++     * Gets the time in milliseconds for the change. Will be 0 if instant.
++     *
++     * @return the time in milliseconds for the change
++     */
++    public long getDuration() {
++        return this.duration;
++    }
++
++    /**
++     * Sets the time in milliseconds for the change. Will change {@link #getType()} to return
++     * {@link Type#STARTED_MOVE}.
++     *
++     * @param duration the time in milliseconds for the change
++     */
++    public void setDuration(final long duration) {
++        // PAIL: TODO: Magic Values
++        this.duration = Math.min(9223372036854775L, Math.max(0L, duration));
++        if (duration >= 0 && this.type == Type.INSTANT_MOVE) {
++            this.type = Type.STARTED_MOVE;
++        }
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    @Override
++    public void setCancelled(final boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++
++    public enum Type {
++        STARTED_MOVE,
++        INSTANT_MOVE
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/world/border/WorldBorderBoundsChangeFinishEvent.java b/src/main/java/io/papermc/paper/event/world/border/WorldBorderBoundsChangeFinishEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6a264660897f0b621e3fb112e6056d98bb510f52
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/world/border/WorldBorderBoundsChangeFinishEvent.java
+@@ -0,0 +1,66 @@
++package io.papermc.paper.event.world.border;
++
++import org.bukkit.World;
++import org.bukkit.WorldBorder;
++import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Called when a moving world border has finished its move.
++ */
++@NullMarked
++public class WorldBorderBoundsChangeFinishEvent extends WorldBorderEvent {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private final double oldSize;
++    private final double newSize;
++    private final double duration;
++
++    @ApiStatus.Internal
++    public WorldBorderBoundsChangeFinishEvent(final World world, final WorldBorder worldBorder, final double oldSize, final double newSize, final double duration) {
++        super(world, worldBorder);
++        this.oldSize = oldSize;
++        this.newSize = newSize;
++        this.duration = duration;
++    }
++
++    /**
++     * Gets the old size of the worldborder.
++     *
++     * @return the old size
++     */
++    public double getOldSize() {
++        return this.oldSize;
++    }
++
++    /**
++     * Gets the new size of the worldborder.
++     *
++     * @return the new size
++     */
++    public double getNewSize() {
++        return this.newSize;
++    }
++
++    /**
++     * Gets the duration this worldborder took to make the change.
++     * <p>
++     * Can be 0 if handlers for {@link WorldBorderCenterChangeEvent} set the duration to 0.
++     *
++     * @return the duration of the transition
++     */
++    public double getDuration() {
++        return this.duration;
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/world/border/WorldBorderCenterChangeEvent.java b/src/main/java/io/papermc/paper/event/world/border/WorldBorderCenterChangeEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..74fe5ad50517374631fa3009249833e2b99a55f0
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/world/border/WorldBorderCenterChangeEvent.java
+@@ -0,0 +1,76 @@
++package io.papermc.paper.event.world.border;
++
++import org.bukkit.Location;
++import org.bukkit.World;
++import org.bukkit.WorldBorder;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Called when a world border's center is changed.
++ */
++@NullMarked
++public class WorldBorderCenterChangeEvent extends WorldBorderEvent implements Cancellable {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private final Location oldCenter;
++    private Location newCenter;
++
++    private boolean cancelled;
++
++    @ApiStatus.Internal
++    public WorldBorderCenterChangeEvent(final World world, final WorldBorder worldBorder, final Location oldCenter, final Location newCenter) {
++        super(world, worldBorder);
++        this.oldCenter = oldCenter;
++        this.newCenter = newCenter;
++    }
++
++    /**
++     * Gets the original center location of the world border.
++     *
++     * @return the old center
++     */
++    public Location getOldCenter() {
++        return this.oldCenter.clone();
++    }
++
++    /**
++     * Gets the new center location for the world border.
++     *
++     * @return the new center
++     */
++    public Location getNewCenter() {
++        return this.newCenter;
++    }
++
++    /**
++     * Sets the new center location for the world border. Y coordinate is ignored.
++     *
++     * @param newCenter the new center
++     */
++    public void setNewCenter(final Location newCenter) {
++        this.newCenter = newCenter;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return this.cancelled;
++    }
++
++    @Override
++    public void setCancelled(final boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/world/border/WorldBorderEvent.java b/src/main/java/io/papermc/paper/event/world/border/WorldBorderEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1f260e4d693903361d54c0af42144faa66adf4ea
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/world/border/WorldBorderEvent.java
+@@ -0,0 +1,23 @@
++package io.papermc.paper.event.world.border;
++
++import org.bukkit.World;
++import org.bukkit.WorldBorder;
++import org.bukkit.event.world.WorldEvent;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++@NullMarked
++public abstract class WorldBorderEvent extends WorldEvent {
++
++    protected final WorldBorder worldBorder;
++
++    @ApiStatus.Internal
++    protected WorldBorderEvent(final World world, final WorldBorder worldBorder) {
++        super(world);
++        this.worldBorder = worldBorder;
++    }
++
++    public WorldBorder getWorldBorder() {
++        return this.worldBorder;
++    }
++}

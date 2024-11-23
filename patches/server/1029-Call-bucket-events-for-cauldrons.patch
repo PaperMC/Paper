@@ -1,0 +1,203 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 16 Jan 2022 10:13:33 -0800
+Subject: [PATCH] Call bucket events for cauldrons
+
+
+diff --git a/src/main/java/net/minecraft/core/cauldron/CauldronInteraction.java b/src/main/java/net/minecraft/core/cauldron/CauldronInteraction.java
+index df76185d42075834a39c79515917e03beb938a06..ee2c4c5265d96afe592c5007b0b6ad7649ce5190 100644
+--- a/src/main/java/net/minecraft/core/cauldron/CauldronInteraction.java
++++ b/src/main/java/net/minecraft/core/cauldron/CauldronInteraction.java
+@@ -53,7 +53,7 @@ public interface CauldronInteraction {
+     static CauldronInteraction.InteractionMap newInteractionMap(String name) {
+         Object2ObjectOpenHashMap<Item, CauldronInteraction> object2objectopenhashmap = new Object2ObjectOpenHashMap();
+ 
+-        object2objectopenhashmap.defaultReturnValue((iblockdata, world, blockposition, entityhuman, enumhand, itemstack) -> {
++        object2objectopenhashmap.defaultReturnValue((iblockdata, world, blockposition, entityhuman, enumhand, itemstack, hitDirection) -> { // Paper - add hitDirection
+             return InteractionResult.TRY_WITH_EMPTY_HAND;
+         });
+         CauldronInteraction.InteractionMap cauldroninteraction_a = new CauldronInteraction.InteractionMap(name, object2objectopenhashmap);
+@@ -62,13 +62,13 @@ public interface CauldronInteraction {
+         return cauldroninteraction_a;
+     }
+ 
+-    InteractionResult interact(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, ItemStack stack);
++    InteractionResult interact(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, ItemStack stack, final net.minecraft.core.Direction hitDirection); // Paper - add hitDirection
+ 
+     static void bootStrap() {
+         Map<Item, CauldronInteraction> map = CauldronInteraction.EMPTY.map();
+ 
+         CauldronInteraction.addDefaultInteractions(map);
+-        map.put(Items.POTION, (iblockdata, world, blockposition, entityhuman, enumhand, itemstack) -> {
++        map.put(Items.POTION, (iblockdata, world, blockposition, entityhuman, enumhand, itemstack, hitDirection) -> { // Paper - add hitDirection
+             PotionContents potioncontents = (PotionContents) itemstack.get(DataComponents.POTION_CONTENTS);
+ 
+             if (potioncontents != null && potioncontents.is(Potions.WATER)) {
+@@ -96,12 +96,12 @@ public interface CauldronInteraction {
+         Map<Item, CauldronInteraction> map1 = CauldronInteraction.WATER.map();
+ 
+         CauldronInteraction.addDefaultInteractions(map1);
+-        map1.put(Items.BUCKET, (iblockdata, world, blockposition, entityhuman, enumhand, itemstack) -> {
++        map1.put(Items.BUCKET, (iblockdata, world, blockposition, entityhuman, enumhand, itemstack, hitDirection) -> { // Paper - add hitDirection
+             return CauldronInteraction.fillBucket(iblockdata, world, blockposition, entityhuman, enumhand, itemstack, new ItemStack(Items.WATER_BUCKET), (iblockdata1) -> {
+                 return (Integer) iblockdata1.getValue(LayeredCauldronBlock.LEVEL) == 3;
+-            }, SoundEvents.BUCKET_FILL);
++            }, SoundEvents.BUCKET_FILL, hitDirection); // Paper - add hitDirection
+         });
+-        map1.put(Items.GLASS_BOTTLE, (iblockdata, world, blockposition, entityhuman, enumhand, itemstack) -> {
++        map1.put(Items.GLASS_BOTTLE, (iblockdata, world, blockposition, entityhuman, enumhand, itemstack, hitDirection) -> { // Paper - add hitDirection
+             if (!world.isClientSide) {
+                 // CraftBukkit start
+                 if (!LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition, entityhuman, CauldronLevelChangeEvent.ChangeReason.BOTTLE_FILL)) {
+@@ -120,7 +120,7 @@ public interface CauldronInteraction {
+ 
+             return InteractionResult.SUCCESS;
+         });
+-        map1.put(Items.POTION, (iblockdata, world, blockposition, entityhuman, enumhand, itemstack) -> {
++        map1.put(Items.POTION, (iblockdata, world, blockposition, entityhuman, enumhand, itemstack, hitDirection) -> { // Paper - add hitDirection
+             if ((Integer) iblockdata.getValue(LayeredCauldronBlock.LEVEL) == 3) {
+                 return InteractionResult.TRY_WITH_EMPTY_HAND;
+             } else {
+@@ -187,18 +187,18 @@ public interface CauldronInteraction {
+         map1.put(Items.YELLOW_SHULKER_BOX, CauldronInteraction::shulkerBoxInteraction);
+         Map<Item, CauldronInteraction> map2 = CauldronInteraction.LAVA.map();
+ 
+-        map2.put(Items.BUCKET, (iblockdata, world, blockposition, entityhuman, enumhand, itemstack) -> {
++        map2.put(Items.BUCKET, (iblockdata, world, blockposition, entityhuman, enumhand, itemstack, hitDirection) -> { // Paper - add hitDirection
+             return CauldronInteraction.fillBucket(iblockdata, world, blockposition, entityhuman, enumhand, itemstack, new ItemStack(Items.LAVA_BUCKET), (iblockdata1) -> {
+                 return true;
+-            }, SoundEvents.BUCKET_FILL_LAVA);
++            }, SoundEvents.BUCKET_FILL_LAVA, hitDirection); // Paper - add hitDirection
+         });
+         CauldronInteraction.addDefaultInteractions(map2);
+         Map<Item, CauldronInteraction> map3 = CauldronInteraction.POWDER_SNOW.map();
+ 
+-        map3.put(Items.BUCKET, (iblockdata, world, blockposition, entityhuman, enumhand, itemstack) -> {
++        map3.put(Items.BUCKET, (iblockdata, world, blockposition, entityhuman, enumhand, itemstack, hitDirection) -> { // Paper - add hitDirection
+             return CauldronInteraction.fillBucket(iblockdata, world, blockposition, entityhuman, enumhand, itemstack, new ItemStack(Items.POWDER_SNOW_BUCKET), (iblockdata1) -> {
+                 return (Integer) iblockdata1.getValue(LayeredCauldronBlock.LEVEL) == 3;
+-            }, SoundEvents.BUCKET_FILL_POWDER_SNOW);
++            }, SoundEvents.BUCKET_FILL_POWDER_SNOW, hitDirection); // Paper - add hitDirection
+         });
+         CauldronInteraction.addDefaultInteractions(map3);
+     }
+@@ -210,10 +210,24 @@ public interface CauldronInteraction {
+     }
+ 
+     static InteractionResult fillBucket(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, ItemStack stack, ItemStack output, Predicate<BlockState> fullPredicate, SoundEvent soundEvent) {
++        // Paper start - add hitDirection
++        return fillBucket(state, world, pos, player, hand, stack, output, fullPredicate, soundEvent, null); // Paper - add hitDirection
++    }
++    static InteractionResult fillBucket(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, ItemStack stack, ItemStack output, Predicate<BlockState> fullPredicate, SoundEvent soundEvent, @javax.annotation.Nullable net.minecraft.core.Direction hitDirection) {
++        // Paper end - add hitDirection
+         if (!fullPredicate.test(state)) {
+             return InteractionResult.TRY_WITH_EMPTY_HAND;
+         } else {
+             if (!world.isClientSide) {
++                // Paper start - fire PlayerBucketFillEvent
++                if (hitDirection != null) {
++                    org.bukkit.event.player.PlayerBucketEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBucketFillEvent((net.minecraft.server.level.ServerLevel) world, player, pos, pos, hitDirection, stack, output.getItem(), hand);
++                    if (event.isCancelled()) {
++                        return InteractionResult.PASS;
++                    }
++                    output = event.getItemStack() != null ? org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItemStack()) : ItemStack.EMPTY;
++                }
++                // Paper end - fire PlayerBucketFillEvent
+                 // CraftBukkit start
+                 if (!LayeredCauldronBlock.changeLevel(state, world, pos, Blocks.CAULDRON.defaultBlockState(), player, CauldronLevelChangeEvent.ChangeReason.BUCKET_FILL, false)) { // Paper - Call CauldronLevelChangeEvent
+                     return InteractionResult.SUCCESS;
+@@ -234,7 +248,22 @@ public interface CauldronInteraction {
+     }
+ 
+     static InteractionResult emptyBucket(Level world, BlockPos pos, Player player, InteractionHand hand, ItemStack stack, BlockState state, SoundEvent soundEvent) {
++        // Paper start - add hitDirection
++        return emptyBucket(world, pos, player, hand, stack, state, soundEvent, null);
++    }
++    static InteractionResult emptyBucket(Level world, BlockPos pos, Player player, InteractionHand hand, ItemStack stack, BlockState state, SoundEvent soundEvent, @javax.annotation.Nullable net.minecraft.core.Direction hitDirection) {
++        // Paper end - add hitDirection
+         if (!world.isClientSide) {
++            // Paper start - fire PlayerBucketEmptyEvent
++            ItemStack output = new ItemStack(Items.BUCKET);
++            if (hitDirection != null) {
++                org.bukkit.event.player.PlayerBucketEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBucketEmptyEvent((net.minecraft.server.level.ServerLevel) world, player, pos, pos, hitDirection, stack, hand);
++                if (event.isCancelled()) {
++                    return InteractionResult.PASS;
++                }
++                output = event.getItemStack() != null ? org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItemStack()) : ItemStack.EMPTY;
++            }
++            // Paper end - fire PlayerBucketEmptyEvent
+             // CraftBukkit start
+             if (!LayeredCauldronBlock.changeLevel(state, world, pos, state, player, CauldronLevelChangeEvent.ChangeReason.BUCKET_EMPTY, false)) { // Paper - Call CauldronLevelChangeEvent
+                 return InteractionResult.SUCCESS;
+@@ -242,7 +271,7 @@ public interface CauldronInteraction {
+             // CraftBukkit end
+             Item item = stack.getItem();
+ 
+-            player.setItemInHand(hand, ItemUtils.createFilledResult(stack, player, new ItemStack(Items.BUCKET)));
++            player.setItemInHand(hand, ItemUtils.createFilledResult(stack, player, output)); // Paper
+             player.awardStat(Stats.FILL_CAULDRON);
+             player.awardStat(Stats.ITEM_USED.get(item));
+             // world.setBlockAndUpdate(blockposition, iblockdata); // CraftBukkit
+@@ -253,19 +282,19 @@ public interface CauldronInteraction {
+         return InteractionResult.SUCCESS;
+     }
+ 
+-    private static InteractionResult fillWaterInteraction(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, ItemStack stack) {
+-        return CauldronInteraction.emptyBucket(world, pos, player, hand, stack, (BlockState) Blocks.WATER_CAULDRON.defaultBlockState().setValue(LayeredCauldronBlock.LEVEL, 3), SoundEvents.BUCKET_EMPTY);
++    private static InteractionResult fillWaterInteraction(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, ItemStack stack, final net.minecraft.core.Direction hitDirection) { // Paper - add hitDirection
++        return CauldronInteraction.emptyBucket(world, pos, player, hand, stack, (BlockState) Blocks.WATER_CAULDRON.defaultBlockState().setValue(LayeredCauldronBlock.LEVEL, 3), SoundEvents.BUCKET_EMPTY, hitDirection); // Paper - add hitDirection
+     }
+ 
+-    private static InteractionResult fillLavaInteraction(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, ItemStack stack) {
+-        return (InteractionResult) (CauldronInteraction.isUnderWater(world, pos) ? InteractionResult.CONSUME : CauldronInteraction.emptyBucket(world, pos, player, hand, stack, Blocks.LAVA_CAULDRON.defaultBlockState(), SoundEvents.BUCKET_EMPTY_LAVA));
++    private static InteractionResult fillLavaInteraction(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, ItemStack stack, final net.minecraft.core.Direction hitDirection) { // Paper - add hitDirection
++        return (InteractionResult) (CauldronInteraction.isUnderWater(world, pos) ? InteractionResult.CONSUME : CauldronInteraction.emptyBucket(world, pos, player, hand, stack, Blocks.LAVA_CAULDRON.defaultBlockState(), SoundEvents.BUCKET_EMPTY_LAVA, hitDirection)); // Paper - add hitDirection
+     }
+ 
+-    private static InteractionResult fillPowderSnowInteraction(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, ItemStack stack) {
+-        return (InteractionResult) (CauldronInteraction.isUnderWater(world, pos) ? InteractionResult.CONSUME : CauldronInteraction.emptyBucket(world, pos, player, hand, stack, (BlockState) Blocks.POWDER_SNOW_CAULDRON.defaultBlockState().setValue(LayeredCauldronBlock.LEVEL, 3), SoundEvents.BUCKET_EMPTY_POWDER_SNOW));
++    private static InteractionResult fillPowderSnowInteraction(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, ItemStack stack, final net.minecraft.core.Direction hitDirection) { // Paper - add hitDirection
++        return (InteractionResult) (CauldronInteraction.isUnderWater(world, pos) ? InteractionResult.CONSUME : CauldronInteraction.emptyBucket(world, pos, player, hand, stack, (BlockState) Blocks.POWDER_SNOW_CAULDRON.defaultBlockState().setValue(LayeredCauldronBlock.LEVEL, 3), SoundEvents.BUCKET_EMPTY_POWDER_SNOW, hitDirection)); // Paper - add hitDirection
+     }
+ 
+-    private static InteractionResult shulkerBoxInteraction(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, ItemStack stack) {
++    private static InteractionResult shulkerBoxInteraction(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, ItemStack stack, final net.minecraft.core.Direction hitDirection) { // Paper - add hitDirection
+         Block block = Block.byItem(stack.getItem());
+ 
+         if (!(block instanceof ShulkerBoxBlock)) {
+@@ -283,12 +312,11 @@ public interface CauldronInteraction {
+                 player.awardStat(Stats.CLEAN_SHULKER_BOX);
+                 // LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition); // CraftBukkit
+             }
+-
+             return InteractionResult.SUCCESS;
+         }
+     }
+ 
+-    private static InteractionResult bannerInteraction(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, ItemStack stack) {
++    private static InteractionResult bannerInteraction(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, ItemStack stack, final net.minecraft.core.Direction hitDirection) { // Paper - add hitDirection
+         BannerPatternLayers bannerpatternlayers = (BannerPatternLayers) stack.getOrDefault(DataComponents.BANNER_PATTERNS, BannerPatternLayers.EMPTY);
+ 
+         if (bannerpatternlayers.layers().isEmpty()) {
+@@ -312,7 +340,7 @@ public interface CauldronInteraction {
+         }
+     }
+ 
+-    private static InteractionResult dyedItemIteration(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, ItemStack stack) {
++    private static InteractionResult dyedItemIteration(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, ItemStack stack, final net.minecraft.core.Direction hitDirection) { // Paper - add hitDirection
+         if (!stack.is(ItemTags.DYEABLE)) {
+             return InteractionResult.TRY_WITH_EMPTY_HAND;
+         } else if (!stack.has(DataComponents.DYED_COLOR)) {
+diff --git a/src/main/java/net/minecraft/world/level/block/AbstractCauldronBlock.java b/src/main/java/net/minecraft/world/level/block/AbstractCauldronBlock.java
+index 173fc110217307e225b4951c92ab22a1bef48dd4..e00ab1ed8088a1970249313ed63e09070fc6192d 100644
+--- a/src/main/java/net/minecraft/world/level/block/AbstractCauldronBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/AbstractCauldronBlock.java
+@@ -56,7 +56,7 @@ public abstract class AbstractCauldronBlock extends Block {
+     @Override
+     protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+         CauldronInteraction cauldronInteraction = this.interactions.map().get(stack.getItem());
+-        return cauldronInteraction.interact(state, world, pos, player, hand, stack);
++        return cauldronInteraction.interact(state, world, pos, player, hand, stack, hit.getDirection()); // Paper - pass hit direction
+     }
+ 
+     @Override

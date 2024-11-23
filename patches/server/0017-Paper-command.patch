@@ -1,0 +1,665 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Mon, 29 Feb 2016 21:02:09 -0600
+Subject: [PATCH] Paper command
+
+Co-authored-by: Zach Brown <zach.brown@destroystokyo.com>
+
+diff --git a/src/main/java/io/papermc/paper/command/CallbackCommand.java b/src/main/java/io/papermc/paper/command/CallbackCommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fa4202abd13c1c286bd398938103d1103d5443e7
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/CallbackCommand.java
+@@ -0,0 +1,35 @@
++package io.papermc.paper.command;
++
++import io.papermc.paper.adventure.providers.ClickCallbackProviderImpl;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import java.util.UUID;
++
++@DefaultQualifier(NonNull.class)
++public class CallbackCommand extends Command {
++
++    protected CallbackCommand(final String name) {
++        super(name);
++        this.description = "ClickEvent callback";
++        this.usageMessage = "/callback <uuid>";
++    }
++
++    @Override
++    public boolean execute(final CommandSender sender, final String commandLabel, final String[] args) {
++        if (args.length != 1) {
++            return false;
++        }
++
++        final UUID id;
++        try {
++            id = UUID.fromString(args[0]);
++        } catch (final IllegalArgumentException ignored) {
++            return false;
++        }
++
++        ClickCallbackProviderImpl.CALLBACK_MANAGER.runCallback(sender, id);
++        return true;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/command/CommandUtil.java b/src/main/java/io/papermc/paper/command/CommandUtil.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..953c30500892e5f0c55b8597bc708ea85bf56d6e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/CommandUtil.java
+@@ -0,0 +1,69 @@
++package io.papermc.paper.command;
++
++import com.google.common.base.Functions;
++import com.google.common.collect.Iterables;
++import com.google.common.collect.Lists;
++import java.util.ArrayList;
++import java.util.Arrays;
++import java.util.Collection;
++import java.util.Iterator;
++import java.util.List;
++import net.minecraft.resources.ResourceLocation;
++import org.bukkit.command.CommandSender;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public final class CommandUtil {
++    private CommandUtil() {
++    }
++
++    // Code from Mojang - copyright them
++    public static List<String> getListMatchingLast(
++        final CommandSender sender,
++        final String[] args,
++        final String... matches
++    ) {
++        return getListMatchingLast(sender, args, Arrays.asList(matches));
++    }
++
++    public static boolean matches(final String s, final String s1) {
++        return s1.regionMatches(true, 0, s, 0, s.length());
++    }
++
++    public static List<String> getListMatchingLast(
++        final CommandSender sender,
++        final String[] strings,
++        final Collection<?> collection
++    ) {
++        String last = strings[strings.length - 1];
++        ArrayList<String> results = Lists.newArrayList();
++
++        if (!collection.isEmpty()) {
++            Iterator iterator = Iterables.transform(collection, Functions.toStringFunction()).iterator();
++
++            while (iterator.hasNext()) {
++                String s1 = (String) iterator.next();
++
++                if (matches(last, s1) && (sender.hasPermission(PaperCommand.BASE_PERM + s1) || sender.hasPermission("bukkit.command.paper"))) {
++                    results.add(s1);
++                }
++            }
++
++            if (results.isEmpty()) {
++                iterator = collection.iterator();
++
++                while (iterator.hasNext()) {
++                    Object object = iterator.next();
++
++                    if (object instanceof ResourceLocation && matches(last, ((ResourceLocation) object).getPath())) {
++                        results.add(String.valueOf(object));
++                    }
++                }
++            }
++        }
++
++        return results;
++    }
++    // end copy stuff
++}
+diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..95d3320c865d24609252063be07cddfd07d0d6d8
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
+@@ -0,0 +1,143 @@
++package io.papermc.paper.command;
++
++import io.papermc.paper.command.subcommands.*;
++import it.unimi.dsi.fastutil.Pair;
++import java.util.ArrayList;
++import java.util.Arrays;
++import java.util.Collections;
++import java.util.HashMap;
++import java.util.List;
++import java.util.Locale;
++import java.util.Map;
++import java.util.Set;
++import java.util.stream.Collectors;
++import net.minecraft.Util;
++import org.bukkit.Bukkit;
++import org.bukkit.Location;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++import org.bukkit.permissions.Permission;
++import org.bukkit.permissions.PermissionDefault;
++import org.bukkit.plugin.PluginManager;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++import static net.kyori.adventure.text.Component.text;
++import static net.kyori.adventure.text.format.NamedTextColor.RED;
++
++@DefaultQualifier(NonNull.class)
++public final class PaperCommand extends Command {
++    static final String BASE_PERM = "bukkit.command.paper.";
++    // subcommand label -> subcommand
++    private static final Map<String, PaperSubcommand> SUBCOMMANDS = Util.make(() -> {
++        final Map<Set<String>, PaperSubcommand> commands = new HashMap<>();
++
++        commands.put(Set.of("heap"), new HeapDumpCommand());
++        commands.put(Set.of("entity"), new EntityCommand());
++        commands.put(Set.of("reload"), new ReloadCommand());
++        commands.put(Set.of("version"), new VersionCommand());
++
++        return commands.entrySet().stream()
++            .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
++            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
++    });
++    private static final Set<String> COMPLETABLE_SUBCOMMANDS = SUBCOMMANDS.entrySet().stream().filter(entry -> entry.getValue().tabCompletes()).map(Map.Entry::getKey).collect(Collectors.toSet());
++    // alias -> subcommand label
++    private static final Map<String, String> ALIASES = Util.make(() -> {
++        final Map<String, Set<String>> aliases = new HashMap<>();
++
++        aliases.put("version", Set.of("ver"));
++
++        return aliases.entrySet().stream()
++            .flatMap(entry -> entry.getValue().stream().map(s -> Map.entry(s, entry.getKey())))
++            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
++    });
++
++    public PaperCommand(final String name) {
++        super(name);
++        this.description = "Paper related commands";
++        this.usageMessage = "/paper [" + String.join(" | ", SUBCOMMANDS.keySet()) + "]";
++        final List<String> permissions = new ArrayList<>();
++        permissions.add("bukkit.command.paper");
++        permissions.addAll(SUBCOMMANDS.keySet().stream().map(s -> BASE_PERM + s).toList());
++        this.setPermission(String.join(";", permissions));
++        final PluginManager pluginManager = Bukkit.getServer().getPluginManager();
++        for (final String perm : permissions) {
++            pluginManager.addPermission(new Permission(perm, PermissionDefault.OP));
++        }
++    }
++
++    private static boolean testPermission(final CommandSender sender, final String permission) {
++        if (sender.hasPermission(BASE_PERM + permission) || sender.hasPermission("bukkit.command.paper")) {
++            return true;
++        }
++        sender.sendMessage(text("I'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error.", RED));
++        return false;
++    }
++
++    @Override
++    public List<String> tabComplete(
++        final CommandSender sender,
++        final String alias,
++        final String[] args,
++        final @Nullable Location location
++    ) throws IllegalArgumentException {
++        if (args.length <= 1) {
++            return CommandUtil.getListMatchingLast(sender, args, COMPLETABLE_SUBCOMMANDS);
++        }
++
++        final @Nullable Pair<String, PaperSubcommand> subCommand = resolveCommand(args[0]);
++        if (subCommand != null) {
++            return subCommand.second().tabComplete(sender, subCommand.first(), Arrays.copyOfRange(args, 1, args.length));
++        }
++
++        return Collections.emptyList();
++    }
++
++    @Override
++    public boolean execute(
++        final CommandSender sender,
++        final String commandLabel,
++        final String[] args
++    ) {
++        if (!testPermission(sender)) {
++            return true;
++        }
++
++        if (args.length == 0) {
++            sender.sendMessage(text("Usage: " + this.usageMessage, RED));
++            return false;
++        }
++        final @Nullable Pair<String, PaperSubcommand> subCommand = resolveCommand(args[0]);
++
++        if (subCommand == null) {
++            sender.sendMessage(text("Usage: " + this.usageMessage, RED));
++            return false;
++        }
++
++        if (!testPermission(sender, subCommand.first())) {
++            return true;
++        }
++        final String[] choppedArgs = Arrays.copyOfRange(args, 1, args.length);
++        return subCommand.second().execute(sender, subCommand.first(), choppedArgs);
++    }
++
++    private static @Nullable Pair<String, PaperSubcommand> resolveCommand(String label) {
++        label = label.toLowerCase(Locale.ROOT);
++        @Nullable PaperSubcommand subCommand = SUBCOMMANDS.get(label);
++        if (subCommand == null) {
++            final @Nullable String command = ALIASES.get(label);
++            if (command != null) {
++                label = command;
++                subCommand = SUBCOMMANDS.get(command);
++            }
++        }
++
++        if (subCommand != null) {
++            return Pair.of(label, subCommand);
++        }
++
++        return null;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/command/PaperCommands.java b/src/main/java/io/papermc/paper/command/PaperCommands.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5e5ec700a368cfdaa1ea0b3f0fa82089895d4b92
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/PaperCommands.java
+@@ -0,0 +1,28 @@
++package io.papermc.paper.command;
++
++import net.minecraft.server.MinecraftServer;
++import org.bukkit.command.Command;
++
++import java.util.HashMap;
++import java.util.Map;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public final class PaperCommands {
++
++    private PaperCommands() {
++    }
++
++    private static final Map<String, Command> COMMANDS = new HashMap<>();
++    static {
++        COMMANDS.put("paper", new PaperCommand("paper"));
++        COMMANDS.put("callback", new CallbackCommand("callback"));
++    }
++
++    public static void registerCommands(final MinecraftServer server) {
++        COMMANDS.forEach((s, command) -> {
++            server.server.getCommandMap().register(s, "Paper", command);
++        });
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/command/PaperSubcommand.java b/src/main/java/io/papermc/paper/command/PaperSubcommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7e9e0ff8639be135bf8575e375cbada5b57164e1
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/PaperSubcommand.java
+@@ -0,0 +1,20 @@
++package io.papermc.paper.command;
++
++import java.util.Collections;
++import java.util.List;
++import org.bukkit.command.CommandSender;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public interface PaperSubcommand {
++    boolean execute(CommandSender sender, String subCommand, String[] args);
++
++    default List<String> tabComplete(final CommandSender sender, final String subCommand, final String[] args) {
++        return Collections.emptyList();
++    }
++
++    default boolean tabCompletes() {
++        return true;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java b/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9d9d133e0d973ecda1ef1efc872a51ee10463fd1
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/subcommands/EntityCommand.java
+@@ -0,0 +1,158 @@
++package io.papermc.paper.command.subcommands;
++
++import com.google.common.collect.Maps;
++import io.papermc.paper.command.CommandUtil;
++import io.papermc.paper.command.PaperSubcommand;
++import java.util.Collections;
++import java.util.List;
++import java.util.Locale;
++import java.util.Map;
++import java.util.Set;
++import java.util.stream.Collectors;
++
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.event.ClickEvent;
++import net.kyori.adventure.text.event.HoverEvent;
++import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.resources.ResourceLocation;
++import net.minecraft.server.level.ServerChunkCache;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.world.entity.EntityType;
++import net.minecraft.world.level.ChunkPos;
++import org.apache.commons.lang3.tuple.MutablePair;
++import org.apache.commons.lang3.tuple.Pair;
++import org.bukkit.Bukkit;
++import org.bukkit.HeightMap;
++import org.bukkit.World;
++import org.bukkit.command.CommandSender;
++import org.bukkit.craftbukkit.CraftWorld;
++import org.bukkit.entity.Player;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++import static net.kyori.adventure.text.Component.text;
++import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
++import static net.kyori.adventure.text.format.NamedTextColor.RED;
++
++@DefaultQualifier(NonNull.class)
++public final class EntityCommand implements PaperSubcommand {
++    @Override
++    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
++        this.listEntities(sender, args);
++        return true;
++    }
++
++    @Override
++    public List<String> tabComplete(final CommandSender sender, final String subCommand, final String[] args) {
++        if (args.length == 1) {
++            return CommandUtil.getListMatchingLast(sender, args, "help", "list");
++        } else if (args.length == 2) {
++            return CommandUtil.getListMatchingLast(sender, args, BuiltInRegistries.ENTITY_TYPE.keySet().stream().map(ResourceLocation::toString).sorted().toArray(String[]::new));
++        }
++        return Collections.emptyList();
++    }
++
++    /*
++     * Ported from MinecraftForge - author: LexManos <LexManos@gmail.com> - License: LGPLv2.1
++     */
++    private void listEntities(final CommandSender sender, final String[] args) {
++        // help
++        if (args.length < 1 || !args[0].toLowerCase(Locale.ROOT).equals("list")) {
++            sender.sendMessage(text("Use /paper entity [list] help for more information on a specific command", RED));
++            return;
++        }
++
++        if ("list".equals(args[0].toLowerCase(Locale.ROOT))) {
++            String filter = "*";
++            if (args.length > 1) {
++                if (args[1].toLowerCase(Locale.ROOT).equals("help")) {
++                    sender.sendMessage(text("Use /paper entity list [filter] [worldName] to get entity info that matches the optional filter.", RED));
++                    return;
++                }
++                filter = args[1];
++            }
++            final String cleanfilter = filter.replace("?", ".?").replace("*", ".*?");
++            Set<ResourceLocation> names = BuiltInRegistries.ENTITY_TYPE.keySet().stream()
++                .filter(n -> n.toString().matches(cleanfilter))
++                .collect(Collectors.toSet());
++            if (names.isEmpty()) {
++                sender.sendMessage(text("Invalid filter, does not match any entities. Use /paper entity list for a proper list", RED));
++                sender.sendMessage(text("Usage: /paper entity list [filter] [worldName]", RED));
++                return;
++            }
++            String worldName;
++            if (args.length > 2) {
++                worldName = args[2];
++            } else if (sender instanceof Player) {
++                worldName = ((Player) sender).getWorld().getName();
++            } else {
++                sender.sendMessage(text("Please specify the name of a world", RED));
++                sender.sendMessage(text("To do so without a filter, specify '*' as the filter", RED));
++                sender.sendMessage(text("Usage: /paper entity list [filter] [worldName]", RED));
++                return;
++            }
++            Map<ResourceLocation, MutablePair<Integer, Map<ChunkPos, Integer>>> list = Maps.newHashMap();
++            @Nullable World bukkitWorld = Bukkit.getWorld(worldName);
++            if (bukkitWorld == null) {
++                sender.sendMessage(text("Could not load world for " + worldName + ". Please select a valid world.", RED));
++                sender.sendMessage(text("Usage: /paper entity list [filter] [worldName]", RED));
++                return;
++            }
++            ServerLevel world = ((CraftWorld) bukkitWorld).getHandle();
++            Map<ResourceLocation, Integer> nonEntityTicking = Maps.newHashMap();
++            ServerChunkCache chunkProviderServer = world.getChunkSource();
++            world.getAllEntities().forEach(e -> {
++                ResourceLocation key = EntityType.getKey(e.getType());
++
++                MutablePair<Integer, Map<ChunkPos, Integer>> info = list.computeIfAbsent(key, k -> MutablePair.of(0, Maps.newHashMap()));
++                ChunkPos chunk = e.chunkPosition();
++                info.left++;
++                info.right.put(chunk, info.right.getOrDefault(chunk, 0) + 1);
++                if (!world.isPositionEntityTicking(e.blockPosition())) {
++                    nonEntityTicking.merge(key, 1, Integer::sum);
++                }
++            });
++            if (names.size() == 1) {
++                ResourceLocation name = names.iterator().next();
++                Pair<Integer, Map<ChunkPos, Integer>> info = list.get(name);
++                int nonTicking = nonEntityTicking.getOrDefault(name, 0);
++                if (info == null) {
++                    sender.sendMessage(text("No entities found.", RED));
++                    return;
++                }
++                sender.sendMessage("Entity: " + name + " Total Ticking: " + (info.getLeft() - nonTicking) + ", Total Non-Ticking: " + nonTicking);
++                info.getRight().entrySet().stream()
++                    .sorted((a, b) -> !a.getValue().equals(b.getValue()) ? b.getValue() - a.getValue() : a.getKey().toString().compareTo(b.getKey().toString()))
++                    .limit(10).forEach(e -> {
++                        final int x = (e.getKey().x << 4) + 8;
++                        final int z = (e.getKey().z << 4) + 8;
++                        final Component message = text("  " + e.getValue() + ": " + e.getKey().x + ", " + e.getKey().z + (chunkProviderServer.isPositionTicking(e.getKey().toLong()) ? " (Ticking)" : " (Non-Ticking)"))
++                            .hoverEvent(HoverEvent.showText(text("Click to teleport to chunk", GREEN)))
++                            .clickEvent(ClickEvent.clickEvent(ClickEvent.Action.RUN_COMMAND, "/minecraft:execute as @s in " + world.getWorld().getKey() + " run tp " + x + " " + (world.getWorld().getHighestBlockYAt(x, z, HeightMap.MOTION_BLOCKING) + 1) + " " + z));
++                        sender.sendMessage(message);
++                    });
++            } else {
++                List<Pair<ResourceLocation, Integer>> info = list.entrySet().stream()
++                    .filter(e -> names.contains(e.getKey()))
++                    .map(e -> Pair.of(e.getKey(), e.getValue().left))
++                    .sorted((a, b) -> !a.getRight().equals(b.getRight()) ? b.getRight() - a.getRight() : a.getKey().toString().compareTo(b.getKey().toString()))
++                    .toList();
++
++                if (info.isEmpty()) {
++                    sender.sendMessage(text("No entities found.", RED));
++                    return;
++                }
++
++                int count = info.stream().mapToInt(Pair::getRight).sum();
++                int nonTickingCount = nonEntityTicking.values().stream().mapToInt(Integer::intValue).sum();
++                sender.sendMessage("Total Ticking: " + (count - nonTickingCount) + ", Total Non-Ticking: " + nonTickingCount);
++                info.forEach(e -> {
++                    int nonTicking = nonEntityTicking.getOrDefault(e.getKey(), 0);
++                    sender.sendMessage("  " + (e.getValue() - nonTicking) + " (" + nonTicking + ") " + ": " + e.getKey());
++                });
++                sender.sendMessage("* First number is ticking entities, second number is non-ticking entities");
++            }
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/command/subcommands/HeapDumpCommand.java b/src/main/java/io/papermc/paper/command/subcommands/HeapDumpCommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..cd2e4d792e972b8bf1e07b8961594a670ae949cf
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/subcommands/HeapDumpCommand.java
+@@ -0,0 +1,38 @@
++package io.papermc.paper.command.subcommands;
++
++import io.papermc.paper.command.PaperSubcommand;
++import java.time.LocalDateTime;
++import java.time.format.DateTimeFormatter;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++import org.bukkit.craftbukkit.CraftServer;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++import static net.kyori.adventure.text.Component.text;
++import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
++import static net.kyori.adventure.text.format.NamedTextColor.RED;
++import static net.kyori.adventure.text.format.NamedTextColor.YELLOW;
++
++@DefaultQualifier(NonNull.class)
++public final class HeapDumpCommand implements PaperSubcommand {
++    @Override
++    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
++        this.dumpHeap(sender);
++        return true;
++    }
++
++    private void dumpHeap(final CommandSender sender) {
++        java.nio.file.Path dir = java.nio.file.Paths.get("./dumps");
++        String name = "heap-dump-" + DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss").format(LocalDateTime.now());
++
++        Command.broadcastCommandMessage(sender, text("Writing JVM heap data...", YELLOW));
++
++        java.nio.file.Path file = CraftServer.dumpHeap(dir, name);
++        if (file != null) {
++            Command.broadcastCommandMessage(sender, text("Heap dump saved to " + file, GREEN));
++        } else {
++            Command.broadcastCommandMessage(sender, text("Failed to write heap dump, see server log for details", RED));
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/command/subcommands/ReloadCommand.java b/src/main/java/io/papermc/paper/command/subcommands/ReloadCommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..bd68139ae635f2ad7ec8e7a21e0056a139c4c62e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/subcommands/ReloadCommand.java
+@@ -0,0 +1,33 @@
++package io.papermc.paper.command.subcommands;
++
++import io.papermc.paper.command.PaperSubcommand;
++import net.minecraft.server.MinecraftServer;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++import org.bukkit.craftbukkit.CraftServer;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++import static net.kyori.adventure.text.Component.text;
++import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
++import static net.kyori.adventure.text.format.NamedTextColor.RED;
++
++@DefaultQualifier(NonNull.class)
++public final class ReloadCommand implements PaperSubcommand {
++    @Override
++    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
++        this.doReload(sender);
++        return true;
++    }
++
++    private void doReload(final CommandSender sender) {
++        Command.broadcastCommandMessage(sender, text("Please note that this command is not supported and may cause issues.", RED));
++        Command.broadcastCommandMessage(sender, text("If you encounter any issues please use the /stop command to restart your server.", RED));
++
++        MinecraftServer server = ((CraftServer) sender.getServer()).getServer();
++        server.paperConfigurations.reloadConfigs(server);
++        server.server.reloadCount++;
++
++        Command.broadcastCommandMessage(sender, text("Paper config reload complete.", GREEN));
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/command/subcommands/VersionCommand.java b/src/main/java/io/papermc/paper/command/subcommands/VersionCommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ae60bd96b5284d54676d8e7e4dd5d170b526ec1e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/subcommands/VersionCommand.java
+@@ -0,0 +1,21 @@
++package io.papermc.paper.command.subcommands;
++
++import io.papermc.paper.command.PaperSubcommand;
++import net.minecraft.server.MinecraftServer;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public final class VersionCommand implements PaperSubcommand {
++    @Override
++    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
++        final @Nullable Command ver = MinecraftServer.getServer().server.getCommandMap().getCommand("version");
++        if (ver != null) {
++            ver.execute(sender, "paper", new String[0]);
++        }
++        return true;
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index a61a92078a8bb4979f231c02ef5aa990b8ab57ad..cd9e4bfdb3f335213001ced27540bb7efbc04130 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -214,6 +214,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         this.paperConfigurations.initializeGlobalConfiguration(this.registryAccess());
+         this.paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
+         // Paper end - initialize global and world-defaults configuration
++        io.papermc.paper.command.PaperCommands.registerCommands(this); // Paper - setup /paper command
+ 
+         this.setPvpAllowed(dedicatedserverproperties.pvp);
+         this.setFlightAllowed(dedicatedserverproperties.allowFlight);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 41aa22f431c989d60dde5c85ca2821d5bcf613af..118c8b227133639427c1da84b93fcaa865fd6d02 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -991,6 +991,7 @@ public final class CraftServer implements Server {
+         this.commandMap.clearCommands();
+         this.reloadData();
+         org.spigotmc.SpigotConfig.registerCommands(); // Spigot
++        io.papermc.paper.command.PaperCommands.registerCommands(this.console); // Paper
+         this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
+         this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");
+ 
+@@ -2737,6 +2738,34 @@ public final class CraftServer implements Server {
+     // Paper end
+ 
+     // Paper start
++    @SuppressWarnings({"rawtypes", "unchecked"})
++    public static java.nio.file.Path dumpHeap(java.nio.file.Path dir, String name) {
++        try {
++            java.nio.file.Files.createDirectories(dir);
++
++            javax.management.MBeanServer server = java.lang.management.ManagementFactory.getPlatformMBeanServer();
++            java.nio.file.Path file;
++
++            try {
++                Class clazz = Class.forName("openj9.lang.management.OpenJ9DiagnosticsMXBean");
++                Object openj9Mbean = java.lang.management.ManagementFactory.newPlatformMXBeanProxy(server, "openj9.lang.management:type=OpenJ9Diagnostics", clazz);
++                java.lang.reflect.Method m = clazz.getMethod("triggerDumpToFile", String.class, String.class);
++                file = dir.resolve(name + ".phd");
++                m.invoke(openj9Mbean, "heap", file.toString());
++            } catch (ClassNotFoundException e) {
++                Class clazz = Class.forName("com.sun.management.HotSpotDiagnosticMXBean");
++                Object hotspotMBean = java.lang.management.ManagementFactory.newPlatformMXBeanProxy(server, "com.sun.management:type=HotSpotDiagnostic", clazz);
++                java.lang.reflect.Method m = clazz.getMethod("dumpHeap", String.class, boolean.class);
++                file = dir.resolve(name + ".hprof");
++                m.invoke(hotspotMBean, file.toString(), true);
++            }
++
++            return file;
++        } catch (Throwable t) {
++            Bukkit.getLogger().log(Level.SEVERE, "Could not write heap", t);
++            return null;
++        }
++    }
+     private Iterable<? extends net.kyori.adventure.audience.Audience> adventure$audiences;
+     @Override
+     public Iterable<? extends net.kyori.adventure.audience.Audience> audiences() {

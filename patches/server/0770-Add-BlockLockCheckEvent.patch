@@ -1,0 +1,70 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 21 May 2022 20:59:45 -0700
+Subject: [PATCH] Add BlockLockCheckEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BaseContainerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BaseContainerBlockEntity.java
+index 4f397dd8e5d333cb2561d03d20511a9194314d1c..1f29b2419914ca9257db6553f01b7e7ec49bfc18 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BaseContainerBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BaseContainerBlockEntity.java
+@@ -73,17 +73,44 @@ public abstract class BaseContainerBlockEntity extends BlockEntity implements Co
+     protected abstract Component getDefaultName();
+ 
+     public boolean canOpen(Player player) {
+-        return BaseContainerBlockEntity.canUnlock(player, this.lockKey, this.getDisplayName());
++        return BaseContainerBlockEntity.canUnlock(player, this.lockKey, this.getDisplayName(), this); // Paper - Add BlockLockCheckEvent
+     }
+ 
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Add BlockLockCheckEvent
+     public static boolean canUnlock(Player player, LockCode lock, Component containerName) {
++        // Paper start - Add BlockLockCheckEvent
++        return canUnlock(player, lock, containerName, null);
++    }
++    public static boolean canUnlock(Player player, LockCode lock, Component containerName, @Nullable BlockEntity blockEntity) {
++        if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer && blockEntity != null && blockEntity.getLevel() != null && blockEntity.getLevel().getBlockEntity(blockEntity.getBlockPos()) == blockEntity) {
++            final org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(blockEntity.getLevel(), blockEntity.getBlockPos());
++            net.kyori.adventure.text.Component lockedMessage = net.kyori.adventure.text.Component.translatable("container.isLocked", io.papermc.paper.adventure.PaperAdventure.asAdventure(containerName));
++            net.kyori.adventure.sound.Sound lockedSound = net.kyori.adventure.sound.Sound.sound(org.bukkit.Sound.BLOCK_CHEST_LOCKED, net.kyori.adventure.sound.Sound.Source.BLOCK, 1.0F, 1.0F);
++            final io.papermc.paper.event.block.BlockLockCheckEvent event = new io.papermc.paper.event.block.BlockLockCheckEvent(block, serverPlayer.getBukkitEntity(), lockedMessage, lockedSound);
++            event.callEvent();
++            if (event.getResult() == org.bukkit.event.Event.Result.ALLOW) {
++                return true;
++            } else if (event.getResult() == org.bukkit.event.Event.Result.DENY || (!player.isSpectator() && !lock.unlocksWith(event.isUsingCustomKeyItemStack() ? org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getKeyItem()) : player.getMainHandItem()))) {
++                if (event.getLockedMessage() != null) {
++                    event.getPlayer().sendActionBar(event.getLockedMessage());
++                }
++                if (event.getLockedSound() != null) {
++                    event.getPlayer().playSound(event.getLockedSound());
++                }
++                return false;
++            } else {
++                return true;
++            }
++        } else { // logic below is replaced by logic above
++        // Paper end - Add BlockLockCheckEvent
+         if (!player.isSpectator() && !lock.unlocksWith(player.getMainHandItem())) {
+-            player.displayClientMessage(Component.translatable("container.isLocked", containerName), true);
++            player.displayClientMessage(Component.translatable("container.isLocked", containerName), true); // Paper - diff on change
+             player.playNotifySound(SoundEvents.CHEST_LOCKED, SoundSource.BLOCKS, 1.0F, 1.0F);
+             return false;
+         } else {
+             return true;
+         }
++        } // Paper - Add BlockLockCheckEvent
+     }
+ 
+     protected abstract NonNullList<ItemStack> getItems();
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
+index edd6017937a7f20a1b43fa15204ec130b524b52b..2a7d896dd9a02acf6e3596e2e2e7ed50f4b88377 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
+@@ -472,7 +472,7 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+     @Nullable
+     @Override
+     public AbstractContainerMenu createMenu(int syncId, Inventory playerInventory, Player player) {
+-        return BaseContainerBlockEntity.canUnlock(player, this.lockKey, this.getDisplayName()) ? new BeaconMenu(syncId, playerInventory, this.dataAccess, ContainerLevelAccess.create(this.level, this.getBlockPos())) : null;
++        return BaseContainerBlockEntity.canUnlock(player, this.lockKey, this.getDisplayName(), this) ? new BeaconMenu(syncId, playerInventory, this.dataAccess, ContainerLevelAccess.create(this.level, this.getBlockPos())) : null; // Paper - Add BlockLockCheckEvent
+     }
+ 
+     @Override
