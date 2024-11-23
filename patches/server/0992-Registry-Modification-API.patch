@@ -1174,7 +1174,7 @@ index 4638ba98dbbdb0f880337347be85a6e0fbed2191..bc448f8511c629d1f13d4baf717a11e6
          }
      }
 diff --git a/src/main/java/net/minecraft/resources/RegistryDataLoader.java b/src/main/java/net/minecraft/resources/RegistryDataLoader.java
-index 61774165a25209ee6d26cf8d80149b220c3874e6..fdc88e52235a152dbe3cca273990b4b68f8daaf8 100644
+index 61774165a25209ee6d26cf8d80149b220c3874e6..c5e279216f6cb880397ea2768ee6e99a8798e3e1 100644
 --- a/src/main/java/net/minecraft/resources/RegistryDataLoader.java
 +++ b/src/main/java/net/minecraft/resources/RegistryDataLoader.java
 @@ -130,7 +130,7 @@ public class RegistryDataLoader {
@@ -1195,7 +1195,7 @@ index 61774165a25209ee6d26cf8d80149b220c3874e6..fdc88e52235a152dbe3cca273990b4b6
      }
  
      private static RegistryAccess.Frozen load(
-@@ -148,9 +148,11 @@ public class RegistryDataLoader {
+@@ -148,7 +148,8 @@ public class RegistryDataLoader {
          Map<ResourceKey<?>, Exception> map = new HashMap<>();
          List<RegistryDataLoader.Loader<?>> list = entries.stream().map(entry -> entry.create(Lifecycle.stable(), map)).collect(Collectors.toUnmodifiableList());
          RegistryOps.RegistryInfoLookup registryInfoLookup = createContext(registries, list);
@@ -1204,11 +1204,8 @@ index 61774165a25209ee6d26cf8d80149b220c3874e6..fdc88e52235a152dbe3cca273990b4b6
 +        list.forEach(loader -> loadable.apply((RegistryDataLoader.Loader<?>)loader, registryInfoLookup, conversions));
          list.forEach(loader -> {
              Registry<?> registry = loader.registry();
-+            io.papermc.paper.registry.PaperRegistryListenerManager.INSTANCE.runFreezeListeners(loader.registry.key(), conversions); // Paper - run pre-freeze listeners
  
-             try {
-                 registry.freeze();
-@@ -238,13 +240,13 @@ public class RegistryDataLoader {
+@@ -238,13 +239,13 @@ public class RegistryDataLoader {
      }
  
      private static <E> void loadElementFromResource(
@@ -1224,7 +1221,7 @@ index 61774165a25209ee6d26cf8d80149b220c3874e6..fdc88e52235a152dbe3cca273990b4b6
          }
      }
  
-@@ -253,7 +255,8 @@ public class RegistryDataLoader {
+@@ -253,7 +254,8 @@ public class RegistryDataLoader {
          RegistryOps.RegistryInfoLookup infoGetter,
          WritableRegistry<E> registry,
          Decoder<E> elementDecoder,
@@ -1234,7 +1231,7 @@ index 61774165a25209ee6d26cf8d80149b220c3874e6..fdc88e52235a152dbe3cca273990b4b6
      ) {
          String string = Registries.elementsDirPath(registry.key());
          FileToIdConverter fileToIdConverter = FileToIdConverter.json(string);
-@@ -266,7 +269,7 @@ public class RegistryDataLoader {
+@@ -266,7 +268,7 @@ public class RegistryDataLoader {
              RegistrationInfo registrationInfo = REGISTRATION_INFO_CACHE.apply(resource.knownPackInfo());
  
              try {
@@ -1243,6 +1240,14 @@ index 61774165a25209ee6d26cf8d80149b220c3874e6..fdc88e52235a152dbe3cca273990b4b6
              } catch (Exception var15) {
                  errors.put(
                      resourceKey,
+@@ -275,6 +277,7 @@ public class RegistryDataLoader {
+             }
+         }
+ 
++        io.papermc.paper.registry.PaperRegistryListenerManager.INSTANCE.runFreezeListeners(registry.key(), conversions); // Paper - run pre-freeze listeners
+         TagLoader.loadTagsForRegistry(resourceManager, registry);
+     }
+ 
 @@ -284,7 +287,8 @@ public class RegistryDataLoader {
          RegistryOps.RegistryInfoLookup infoGetter,
          WritableRegistry<E> registry,
