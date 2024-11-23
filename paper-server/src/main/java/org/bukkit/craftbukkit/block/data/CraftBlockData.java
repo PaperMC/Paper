@@ -253,10 +253,14 @@ public class CraftBlockData implements BlockData {
         return stateString.toString();
     }
 
-    public Map<String, String> toStates() {
+    public Map<String, String> toStates(boolean hideUnspecified) {
+        return (hideUnspecified && parsedStates != null) ? toStates(parsedStates) : toStates(state.getValues());
+    }
+
+    private static Map<String, String> toStates(Map<IBlockState<?>, Comparable<?>> states) {
         Map<String, String> compound = new HashMap<>();
 
-        for (Map.Entry<IBlockState<?>, Comparable<?>> entry : state.getValues().entrySet()) {
+        for (Map.Entry<IBlockState<?>, Comparable<?>> entry : states.entrySet()) {
             IBlockState iblockstate = (IBlockState) entry.getKey();
 
             compound.put(iblockstate.getName(), iblockstate.getName(entry.getValue()));
