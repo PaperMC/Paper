@@ -206,6 +206,43 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      public static <T extends Keyed> Registry<T> getRegistry(@NotNull Class<T> tClass) {
          return server.getRegistry(tClass);
      }
+diff --git a/src/main/java/org/bukkit/Particle.java b/src/main/java/org/bukkit/Particle.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/Particle.java
++++ b/src/main/java/org/bukkit/Particle.java
+@@ -0,0 +0,0 @@ public enum Particle implements Keyed {
+ 
+     private final NamespacedKey key;
+     private final Class<?> dataType;
+-    final boolean register;
++    // Paper - all particles are registered
+ 
+     Particle(String key) {
+         this(key, Void.class);
+     }
+ 
+-    Particle(String key, boolean register) {
+-        this(key, Void.class, register);
+-    }
++    // Paper - all particles are registered
+ 
+     Particle(String key, /*@NotNull*/ Class<?> data) {
+-        this(key, data, true);
+-    }
+-
+-    Particle(String key, /*@NotNull*/ Class<?> data, boolean register) {
++        // Paper - all particles are registered
+         if (key != null) {
+             this.key = NamespacedKey.minecraft(key);
+         } else {
+             this.key = null;
+         }
+         dataType = data;
+-        this.register = register;
++        // Paper - all particles are registered
+     }
+ 
+     /**
 diff --git a/src/main/java/org/bukkit/Registry.java b/src/main/java/org/bukkit/Registry.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/Registry.java
@@ -274,7 +311,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      /**
       * Server entity types.
       *
-@@ -0,0 +0,0 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+      * @see EntityType
+      */
+-    Registry<EntityType> ENTITY_TYPE = new SimpleRegistry<>(EntityType.class, (entity) -> entity != EntityType.UNKNOWN);
++    Registry<EntityType> ENTITY_TYPE = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.ENTITY_TYPE); // Paper
+     /**
       * Server instruments.
       *
       * @see MusicInstrument
@@ -310,6 +351,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    Registry<PotionEffectType> EFFECT = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.MOB_EFFECT); // Paper
      /**
       * Server particles.
+      *
+      * @see Particle
+      */
+-    Registry<Particle> PARTICLE_TYPE = new SimpleRegistry<>(Particle.class, (par) -> par.register);
++    Registry<Particle> PARTICLE_TYPE = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.PARTICLE_TYPE); // Paper
+     /**
+      * Server potions.
+      *
+      * @see PotionType
+      */
+-    Registry<PotionType> POTION = new SimpleRegistry<>(PotionType.class);
++    Registry<PotionType> POTION = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.POTION); // Paper
+     /**
+      * Server statistics.
       *
 @@ -0,0 +0,0 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
       * Server structures.
@@ -428,6 +483,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      /**
       * Get the object by its key.
       *
+@@ -0,0 +0,0 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
+         return (namespacedKey != null) ? get(namespacedKey) : null;
+     }
+ 
+-    static final class SimpleRegistry<T extends Enum<T> & Keyed> implements Registry<T> {
++    class SimpleRegistry<T extends Enum<T> & Keyed> implements Registry<T> { // Paper - remove final
+ 
+         private final Class<T> type;
+         private final Map<NamespacedKey, T> map;
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/Server.java

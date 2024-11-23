@@ -18,6 +18,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.registry;
 +
++import com.google.common.base.Preconditions;
 +import io.papermc.paper.adventure.PaperAdventure;
 +import io.papermc.paper.registry.entry.RegistryEntry;
 +import java.util.Collections;
@@ -125,16 +126,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            entry(Registries.INSTRUMENT, RegistryKey.INSTRUMENT, MusicInstrument.class, CraftMusicInstrument::new).delayed(),
 +
 +            // api-only
-+            apiOnly(Registries.ENTITY_TYPE, RegistryKey.ENTITY_TYPE, () -> org.bukkit.Registry.ENTITY_TYPE),
-+            apiOnly(Registries.PARTICLE_TYPE, RegistryKey.PARTICLE_TYPE, () -> org.bukkit.Registry.PARTICLE_TYPE),
-+            apiOnly(Registries.POTION, RegistryKey.POTION, () -> org.bukkit.Registry.POTION),
++            apiOnly(Registries.ENTITY_TYPE, RegistryKey.ENTITY_TYPE, PaperSimpleRegistry::entityType),
++            apiOnly(Registries.PARTICLE_TYPE, RegistryKey.PARTICLE_TYPE, PaperSimpleRegistry::particleType),
++            apiOnly(Registries.POTION, RegistryKey.POTION, PaperSimpleRegistry::potion),
 +            apiOnly(Registries.MEMORY_MODULE_TYPE, RegistryKey.MEMORY_MODULE_TYPE, () -> (org.bukkit.Registry<MemoryKey<?>>) (org.bukkit.Registry) org.bukkit.Registry.MEMORY_MODULE_TYPE)
 +        );
 +        final Map<RegistryKey<?>, RegistryEntry<?, ?>> byRegistryKey = new IdentityHashMap<>(REGISTRY_ENTRIES.size());
 +        final Map<ResourceKey<?>, RegistryEntry<?, ?>> byResourceKey = new IdentityHashMap<>(REGISTRY_ENTRIES.size());
 +        for (final RegistryEntry<?, ?> entry : REGISTRY_ENTRIES) {
-+            byRegistryKey.put(entry.apiKey(), entry);
-+            byResourceKey.put(entry.mcKey(), entry);
++            Preconditions.checkState(byRegistryKey.put(entry.apiKey(), entry) == null, "Duplicate api registry key: %s", entry.apiKey());
++            Preconditions.checkState(byResourceKey.put(entry.mcKey(), entry) == null, "Duplicate mc registry key: %s", entry.mcKey());
 +        }
 +        BY_REGISTRY_KEY = Collections.unmodifiableMap(byRegistryKey);
 +        BY_RESOURCE_KEY = Collections.unmodifiableMap(byResourceKey);
@@ -303,6 +304,50 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @VisibleForTesting
 +    public static <T extends Keyed> @Nullable RegistryKey<T> byType(final Class<T> type) {
 +        return (RegistryKey<T>) LegacyRegistryIdentifiers.CLASS_TO_KEY_MAP.get(type);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/PaperSimpleRegistry.java b/src/main/java/io/papermc/paper/registry/PaperSimpleRegistry.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/PaperSimpleRegistry.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.registry;
++
++import java.util.function.Predicate;
++import net.minecraft.core.registries.BuiltInRegistries;
++import org.bukkit.Keyed;
++import org.bukkit.Particle;
++import org.bukkit.Registry;
++import org.bukkit.entity.EntityType;
++import org.bukkit.potion.PotionType;
++import org.jspecify.annotations.NullMarked;
++
++@NullMarked
++public class PaperSimpleRegistry<T extends Enum<T> & Keyed, M> extends Registry.SimpleRegistry<T> {
++
++    static Registry<EntityType> entityType() {
++        return new PaperSimpleRegistry<>(EntityType.class, entity -> entity != EntityType.UNKNOWN, BuiltInRegistries.ENTITY_TYPE);
++    }
++
++    static Registry<Particle> particleType() {
++        return new PaperSimpleRegistry<>(Particle.class, BuiltInRegistries.PARTICLE_TYPE);
++    }
++
++    static Registry<PotionType> potion() {
++        return new PaperSimpleRegistry<>(PotionType.class, BuiltInRegistries.POTION);
++    }
++
++    private final net.minecraft.core.Registry<M> nmsRegistry;
++
++    protected PaperSimpleRegistry(final Class<T> type, final net.minecraft.core.Registry<M> nmsRegistry) {
++        super(type);
++        this.nmsRegistry = nmsRegistry;
++    }
++
++    public PaperSimpleRegistry(final Class<T> type, final Predicate<T> predicate, final net.minecraft.core.Registry<M> nmsRegistry) {
++        super(type, predicate);
++        this.nmsRegistry = nmsRegistry;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/RegistryHolder.java b/src/main/java/io/papermc/paper/registry/RegistryHolder.java

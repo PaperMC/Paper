@@ -15,7 +15,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/io/papermc/paper/registry/PaperRegistries.java
 +++ b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
 @@ -0,0 +0,0 @@ package io.papermc.paper.registry;
- 
+ import com.google.common.base.Preconditions;
  import io.papermc.paper.adventure.PaperAdventure;
  import io.papermc.paper.registry.entry.RegistryEntry;
 +import io.papermc.paper.registry.tag.TagKey;
@@ -286,6 +286,38 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return this.freezeEventTypes.getOrCreate(type.registryKey(), RegistryLifecycleEventType::new);
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/registry/PaperSimpleRegistry.java b/src/main/java/io/papermc/paper/registry/PaperSimpleRegistry.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/io/papermc/paper/registry/PaperSimpleRegistry.java
++++ b/src/main/java/io/papermc/paper/registry/PaperSimpleRegistry.java
+@@ -0,0 +0,0 @@
+ package io.papermc.paper.registry;
+ 
++import io.papermc.paper.registry.set.NamedRegistryKeySetImpl;
++import io.papermc.paper.registry.tag.Tag;
++import io.papermc.paper.registry.tag.TagKey;
+ import java.util.function.Predicate;
++import net.minecraft.core.HolderSet;
+ import net.minecraft.core.registries.BuiltInRegistries;
+ import org.bukkit.Keyed;
+ import org.bukkit.Particle;
+@@ -0,0 +0,0 @@ public class PaperSimpleRegistry<T extends Enum<T> & Keyed, M> extends Registry.
+         super(type, predicate);
+         this.nmsRegistry = nmsRegistry;
+     }
++
++    @Override
++    public boolean hasTag(final TagKey<T> key) {
++        final net.minecraft.tags.TagKey<M> nmsKey = PaperRegistries.toNms(key);
++        return this.nmsRegistry.get(nmsKey).isPresent();
++    }
++
++    @Override
++    public Tag<T> getTag(final TagKey<T> key) {
++        final HolderSet.Named<M> namedHolderSet = this.nmsRegistry.get(PaperRegistries.toNms(key)).orElseThrow();
++        return new NamedRegistryKeySetImpl<>(key, namedHolderSet);
++    }
+ }
 diff --git a/src/main/java/io/papermc/paper/registry/WritableCraftRegistry.java b/src/main/java/io/papermc/paper/registry/WritableCraftRegistry.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -1365,32 +1397,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end - RegistrySet API
  }
-diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-+++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -0,0 +0,0 @@ public final class CraftMagicNumbers implements UnsafeValues {
-     }
-     // Paper end - lifecycle event API
- 
-+    // Paper start - hack to get tags for non server-backed registries
-+    @Override
-+    public <A extends Keyed, M> io.papermc.paper.registry.tag.Tag<A> getTag(final io.papermc.paper.registry.tag.TagKey<A> tagKey) { // TODO remove Keyed
-+        if (tagKey.registryKey() != io.papermc.paper.registry.RegistryKey.ENTITY_TYPE && tagKey.registryKey() != io.papermc.paper.registry.RegistryKey.FLUID) {
-+            throw new UnsupportedOperationException(tagKey.registryKey() + " doesn't have tags");
-+        }
-+        final net.minecraft.resources.ResourceKey<? extends net.minecraft.core.Registry<M>> nmsKey = io.papermc.paper.registry.PaperRegistries.registryToNms(tagKey.registryKey());
-+        final net.minecraft.core.Registry<M> nmsRegistry = org.bukkit.craftbukkit.CraftRegistry.getMinecraftRegistry().lookupOrThrow(nmsKey);
-+        return nmsRegistry
-+            .get(io.papermc.paper.registry.PaperRegistries.toNms(tagKey))
-+            .map(named -> new io.papermc.paper.registry.set.NamedRegistryKeySetImpl<>(tagKey, named))
-+            .orElse(null);
-+    }
-+    // Paper end - hack to get tags for non server-backed registries
-+
-     /**
-      * This helper class represents the different NBT Tags.
-      * <p>
 diff --git a/src/main/resources/META-INF/services/io.papermc.paper.registry.event.RegistryEventTypeProvider b/src/main/resources/META-INF/services/io.papermc.paper.registry.event.RegistryEventTypeProvider
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
