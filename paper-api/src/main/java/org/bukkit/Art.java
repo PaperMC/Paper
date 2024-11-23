@@ -117,6 +117,29 @@ public interface Art extends OldEnum<Art>, Keyed {
     }
     // Paper end - deprecate getKey
 
+    // Paper start - name and author components, assetId key
+    /**
+     * Get the painting's title.
+     *
+     * @return the title
+     */
+    net.kyori.adventure.text.@Nullable Component title();
+
+    /**
+     * Get the painting's author.
+     *
+     * @return the author
+     */
+    net.kyori.adventure.text.@Nullable Component author();
+
+    /**
+     * Get the painting's asset id
+     *
+     * @return the asset id
+     */
+    net.kyori.adventure.key.@NotNull Key assetId();
+    // Paper end - name and author components, assetId key
+
     /**
      * Get a painting by its numeric ID
      *
