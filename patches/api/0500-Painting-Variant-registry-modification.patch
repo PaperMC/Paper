@@ -1,0 +1,204 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: kokiriglade <60290002+celerry@users.noreply.github.com>
+Date: Sat, 23 Nov 2024 14:24:53 +0000
+Subject: [PATCH] Painting Variant registry modification
+
+
+diff --git a/src/main/java/io/papermc/paper/registry/data/PaintingVariantRegistryEntry.java b/src/main/java/io/papermc/paper/registry/data/PaintingVariantRegistryEntry.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..070de5fa9b4ad76d487f8ef1ef3fc8e562a4b65b
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/data/PaintingVariantRegistryEntry.java
+@@ -0,0 +1,134 @@
++package io.papermc.paper.registry.data;
++
++import io.papermc.paper.registry.RegistryBuilder;
++import java.util.Optional;
++import net.kyori.adventure.key.Key;
++import net.kyori.adventure.text.Component;
++import org.bukkit.Art;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.Range;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
++
++/**
++ * A data-centric version-specific registry entry for the {@link Art} type.
++ */
++@ApiStatus.Experimental
++@NullMarked
++@ApiStatus.NonExtendable
++public interface PaintingVariantRegistryEntry {
++
++    /**
++     * Provides the width of this variant in blocks.
++     *
++     * @return the width
++     * @see Art#getBlockWidth()
++     */
++    @Range(from = 1, to = 16)
++    int width();
++
++    /**
++     * Provides the height of this variant in blocks.
++     *
++     * @return the height
++     * @see Art#getBlockHeight()
++     */
++    @Range(from = 1, to = 16)
++    int height();
++
++    /**
++     * Provides the title of the painting visible in the creative inventory
++     *
++     * @return the title
++     * @see Art#title()
++     */
++    Optional<Component> title();
++
++    /**
++     * Provides the author of the painting visible in the creative inventory
++     *
++     * @return the author
++     * @see Art#author()
++     */
++    Optional<Component> author();
++
++    /**
++     * Provides the assetId of the variant, which is the location of the sprite to use
++     *
++     * @return the asset id
++     * @see Art#assetId()
++     */
++    Key assetId();
++
++    /**
++     * A mutable builder for the {@link PaintingVariantRegistryEntry} plugins may change in applicable registry events.
++     * <p>
++     * The following values are required for each builder:
++     * <ul>
++     *     <li>{@link #width(int)}</li>
++     *     <li>{@link #height(int)}</li>
++     * </ul>
++     */
++    @ApiStatus.Experimental
++    @ApiStatus.NonExtendable
++    interface Builder extends PaintingVariantRegistryEntry, RegistryBuilder<Art> {
++
++        /**
++         * Sets the width of the painting in blocks.
++         *
++         * @param width the width in blocks
++         * @return this builder instance
++         * @see PaintingVariantRegistryEntry#width()
++         * @see Art#getBlockWidth()
++         */
++        @Contract(value = "_ -> this", mutates = "this")
++        Builder width(@Range(from = 0, to = 16) int width);
++
++        /**
++         * Sets the height of the painting in blocks.
++         *
++         * @param height the height in blocks
++         * @return this builder instance
++         * @see PaintingVariantRegistryEntry#height()
++         * @see Art#getBlockHeight() ()
++         */
++        @Contract(value = "_ -> this", mutates = "this")
++        Builder height(@Range(from = 0, to = 16) int height);
++
++        /**
++         * Sets the title of the painting
++         *
++         * @param title the title
++         * @return this builder instance
++         * @see PaintingVariantRegistryEntry#title()
++         * @see Art#title()
++         */
++        @Contract(value = "_ -> this", mutates = "this")
++        Builder title(@Nullable Component title);
++
++        /**
++         * Sets the author of the painting
++         *
++         * @param author the author
++         * @return this builder instance
++         * @see PaintingVariantRegistryEntry#author()
++         * @see Art#author()
++         */
++        @Contract(value = "_ -> this", mutates = "this")
++        Builder author(@Nullable Component author);
++
++        /**
++         * Sets the asset id of the painting
++         *
++         * @param assetId the asset id
++         * @return this builder instance
++         * @see PaintingVariantRegistryEntry#assetId()
++         * @see Art#assetId()
++         */
++        @Contract(value = "_ -> this", mutates = "this")
++        Builder assetId(Key assetId);
++
++    }
++
++}
+diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEvents.java b/src/main/java/io/papermc/paper/registry/event/RegistryEvents.java
+index 1c8e77c7243cfedef6c4d1491cf98e6ec8f1690f..40deffbd0930508bb04e9aedfd62ad2144855198 100644
+--- a/src/main/java/io/papermc/paper/registry/event/RegistryEvents.java
++++ b/src/main/java/io/papermc/paper/registry/event/RegistryEvents.java
+@@ -3,6 +3,8 @@ package io.papermc.paper.registry.event;
+ import io.papermc.paper.registry.RegistryKey;
+ import io.papermc.paper.registry.data.EnchantmentRegistryEntry;
+ import io.papermc.paper.registry.data.GameEventRegistryEntry;
++import io.papermc.paper.registry.data.PaintingVariantRegistryEntry;
++import org.bukkit.Art;
+ import org.bukkit.GameEvent;
+ import org.bukkit.enchantments.Enchantment;
+ import org.jetbrains.annotations.ApiStatus;
+@@ -20,6 +22,7 @@ public final class RegistryEvents {
+ 
+     public static final RegistryEventProvider<GameEvent, GameEventRegistryEntry.Builder> GAME_EVENT = create(RegistryKey.GAME_EVENT);
+     public static final RegistryEventProvider<Enchantment, EnchantmentRegistryEntry.Builder> ENCHANTMENT = create(RegistryKey.ENCHANTMENT);
++    public static final RegistryEventProvider<Art, PaintingVariantRegistryEntry.Builder> PAINTING_VARIANT = create(RegistryKey.PAINTING_VARIANT);
+ 
+     private RegistryEvents() {
+     }
+diff --git a/src/main/java/org/bukkit/Art.java b/src/main/java/org/bukkit/Art.java
+index 00a290f1bf58cdc2238c13fd5a6048a26b7871da..a1945d7b98e0e0fda3e0bb3c11492eced955ef2d 100644
+--- a/src/main/java/org/bukkit/Art.java
++++ b/src/main/java/org/bukkit/Art.java
+@@ -107,6 +107,32 @@ public interface Art extends OldEnum<Art>, Keyed {
+     @NotNull NamespacedKey getKey();
+     // Paper end - deprecate getKey
+ 
++    // Paper start - name and author components, assetId key
++    /**
++     * Get the painting's title.
++     *
++     * @return the title
++     * @since 1.21.3
++     */
++    java.util.@org.jspecify.annotations.NonNull Optional<net.kyori.adventure.text.Component> title();
++
++    /**
++     * Get the painting's author.
++     *
++     * @return the author
++     * @since 1.21.3
++     */
++    java.util.@org.jspecify.annotations.NonNull Optional<net.kyori.adventure.text.Component> author();
++
++    /**
++     * Get the painting's asset id
++     *
++     * @return the asset id
++     * @since 1.21.3
++     */
++    net.kyori.adventure.key.@org.jspecify.annotations.NonNull Key assetId();
++    // Paper end - name and author components, assetId key
++
+     /**
+      * Get a painting by its numeric ID
+      *
