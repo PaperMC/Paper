@@ -15,6 +15,7 @@ index 3ec2aa5da045b62809afd2c13fc9ae74189dbdad..82fc79fb78be6e5d77060717e28d75cb
  import io.papermc.paper.adventure.PaperAdventure;
 +import io.papermc.paper.registry.data.PaperEnchantmentRegistryEntry;
 +import io.papermc.paper.registry.data.PaperGameEventRegistryEntry;
++import io.papermc.paper.registry.data.PaperPaintingVariantRegistryEntry;
  import io.papermc.paper.registry.entry.RegistryEntry;
  import io.papermc.paper.registry.tag.TagKey;
  import java.util.Collections;
@@ -35,7 +36,11 @@ index 3ec2aa5da045b62809afd2c13fc9ae74189dbdad..82fc79fb78be6e5d77060717e28d75cb
 +            writable(Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT, Enchantment.class, CraftEnchantment::new, PaperEnchantmentRegistryEntry.PaperBuilder::new).withSerializationUpdater(FieldRename.ENCHANTMENT_RENAME).delayed(),
              entry(Registries.JUKEBOX_SONG, RegistryKey.JUKEBOX_SONG, JukeboxSong.class, CraftJukeboxSong::new).delayed(),
              entry(Registries.BANNER_PATTERN, RegistryKey.BANNER_PATTERN, PatternType.class, CraftPatternType::new).delayed(),
-             entry(Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT, Art.class, CraftArt::new).delayed(),
+-            entry(Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT, Art.class, CraftArt::new).delayed(),
++            writable(Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT, Art.class, CraftArt::new, PaperPaintingVariantRegistryEntry.PaperBuilder::new).delayed(),
+             entry(Registries.INSTRUMENT, RegistryKey.INSTRUMENT, MusicInstrument.class, CraftMusicInstrument::new).delayed(),
+ 
+             // api-only
 diff --git a/src/main/java/io/papermc/paper/registry/data/PaperEnchantmentRegistryEntry.java b/src/main/java/io/papermc/paper/registry/data/PaperEnchantmentRegistryEntry.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..481f5f0cfae1fada3bc3f873fb7e04c3086ea9bf
@@ -336,6 +341,133 @@ index 0000000000000000000000000000000000000000..18f9463ae23ba2d9c65ffb7531a87c92
 +        @Override
 +        public GameEvent build() {
 +            return new GameEvent(this.range());
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/data/PaperPaintingVariantRegistryEntry.java b/src/main/java/io/papermc/paper/registry/data/PaperPaintingVariantRegistryEntry.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..73223c818f4f7522a6eb622c7d15c2e222c012aa
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/data/PaperPaintingVariantRegistryEntry.java
+@@ -0,0 +1,121 @@
++package io.papermc.paper.registry.data;
++
++import io.papermc.paper.adventure.PaperAdventure;
++import io.papermc.paper.registry.PaperRegistryBuilder;
++import io.papermc.paper.registry.TypedKey;
++import io.papermc.paper.registry.data.util.Checks;
++import io.papermc.paper.registry.data.util.Conversions;
++import net.kyori.adventure.key.Key;
++import net.minecraft.network.chat.Component;
++import net.minecraft.resources.ResourceLocation;
++import net.minecraft.world.entity.decoration.PaintingVariant;
++import org.bukkit.Art;
++import org.jetbrains.annotations.Range;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
++import java.util.Optional;
++import java.util.OptionalInt;
++
++import static io.papermc.paper.registry.data.util.Checks.asArgument;
++import static io.papermc.paper.registry.data.util.Checks.asArgumentRange;
++import static io.papermc.paper.registry.data.util.Checks.asConfigured;
++
++@NullMarked
++public class PaperPaintingVariantRegistryEntry implements PaintingVariantRegistryEntry {
++
++    protected OptionalInt width = OptionalInt.empty();
++    protected OptionalInt height = OptionalInt.empty();
++    protected @Nullable Component title;
++    protected @Nullable Component author;
++    protected @Nullable ResourceLocation assetId;
++
++    protected final Conversions conversions;
++
++    public PaperPaintingVariantRegistryEntry(
++        final Conversions conversions,
++        final TypedKey<Art> ignoredKey,
++        final @Nullable PaintingVariant nms
++    ) {
++        this.conversions = conversions;
++        if(nms == null) return;
++
++        this.width = OptionalInt.of(nms.width());
++        this.height = OptionalInt.of(nms.height());
++        this.title = nms.title().orElse(null);
++        this.author = nms.title().orElse(null);
++        this.assetId = nms.assetId();
++    }
++
++    @Override
++    public @Range(from = 1, to = 16) int width() {
++        return asConfigured(this.width, "width");
++    }
++
++    @Override
++    public @Range(from = 1, to = 16) int height() {
++        return asConfigured(this.height, "height");
++    }
++
++    @Override
++    public Optional<net.kyori.adventure.text.Component> title() {
++        return this.conversions.asAdventureOptional(this.title);
++    }
++
++    @Override
++    public Optional<net.kyori.adventure.text.Component> author() {
++        return this.conversions.asAdventureOptional(this.author);
++    }
++
++    @Override
++    public Key assetId() {
++        return PaperAdventure.asAdventure(asConfigured(this.assetId, "assetId"));
++    }
++
++    public static final class PaperBuilder extends PaperPaintingVariantRegistryEntry implements PaintingVariantRegistryEntry.Builder, PaperRegistryBuilder<PaintingVariant, Art> {
++
++        public PaperBuilder(final Conversions conversions, final TypedKey<Art> key, final @Nullable PaintingVariant nms) {
++            super(conversions, key, nms);
++        }
++
++        @Override
++        public Builder width(@Range(from = 0, to = 16) final int width) {
++            this.width = OptionalInt.of(asArgumentRange(width, "width", 1, 16));
++            return this;
++        }
++
++        @Override
++        public Builder height(@Range(from = 0, to = 16) final int height) {
++            this.height = OptionalInt.of(asArgumentRange(height, "height", 1, 16));
++            return this;
++        }
++
++        @Override
++        public Builder title(final net.kyori.adventure.text.@Nullable Component title) {
++            this.title = this.conversions.asVanilla(title);
++            return this;
++        }
++
++        @Override
++        public Builder author(final net.kyori.adventure.text.@Nullable Component author) {
++            this.author = this.conversions.asVanilla(author);
++            return this;
++        }
++
++        @Override
++        public Builder assetId(final Key assetId) {
++            this.assetId = PaperAdventure.asVanilla(asArgument(assetId, "assetId"));
++            return this;
++        }
++
++        @Override
++        public PaintingVariant build() {
++            return new PaintingVariant(
++                this.width(),
++                this.height(),
++                asConfigured(this.assetId, "assetId"),
++                Optional.ofNullable(this.title),
++                Optional.ofNullable(this.author)
++            );
 +        }
 +    }
 +}
