@@ -3,6 +3,7 @@ From: Bjarne Koll <git@lynxplay.dev>
 Date: Thu, 13 Jun 2024 22:35:05 +0200
 Subject: [PATCH] Introduce registry entry and builders
 
+Co-authored-by: kokiriglade <git@kokirigla.de>
 
 diff --git a/src/main/java/io/papermc/paper/registry/RegistryKey.java b/src/main/java/io/papermc/paper/registry/RegistryKey.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
@@ -414,6 +415,147 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        Builder range(@Range(from = 0, to = Integer.MAX_VALUE) int range);
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/registry/data/PaintingVariantRegistryEntry.java b/src/main/java/io/papermc/paper/registry/data/PaintingVariantRegistryEntry.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/data/PaintingVariantRegistryEntry.java
+@@ -0,0 +0,0 @@
++package io.papermc.paper.registry.data;
++
++import io.papermc.paper.registry.RegistryBuilder;
++import java.util.Optional;
++import net.kyori.adventure.key.Key;
++import net.kyori.adventure.text.Component;
++import org.bukkit.Art;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.Range;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
++
++/**
++ * A data-centric version-specific registry entry for the {@link Art} type.
++ */
++@ApiStatus.Experimental
++@NullMarked
++@ApiStatus.NonExtendable
++public interface PaintingVariantRegistryEntry {
++
++    /**
++     * Provides the width of this variant in blocks.
++     *
++     * @return the width
++     * @see Art#getBlockWidth()
++     */
++    @Range(from = 1, to = 16)
++    int width();
++
++    /**
++     * Provides the height of this variant in blocks.
++     *
++     * @return the height
++     * @see Art#getBlockHeight()
++     */
++    @Range(from = 1, to = 16)
++    int height();
++
++    /**
++     * Provides the title of the painting visible in the creative inventory.
++     *
++     * @return the title
++     * @see Art#title()
++     */
++    @Nullable Component title();
++
++    /**
++     * Provides the author of the painting visible in the creative inventory.
++     *
++     * @return the author
++     * @see Art#author()
++     */
++    @Nullable Component author();
++
++    /**
++     * Provides the assetId of the variant, which is the location of the sprite to use.
++     *
++     * @return the asset id
++     * @see Art#assetId()
++     */
++    Key assetId();
++
++    /**
++     * A mutable builder for the {@link PaintingVariantRegistryEntry} plugins may change in applicable registry events.
++     * <p>
++     * The following values are required for each builder:
++     * <ul>
++     *     <li>{@link #width(int)}</li>
++     *     <li>{@link #height(int)}</li>
++     *     <li>{@link #assetId(Key)}</li>
++     * </ul>
++     */
++    @ApiStatus.Experimental
++    @ApiStatus.NonExtendable
++    interface Builder extends PaintingVariantRegistryEntry, RegistryBuilder<Art> {
++
++        /**
++         * Sets the width of the painting in blocks.
++         *
++         * @param width the width in blocks
++         * @return this builder instance
++         * @see PaintingVariantRegistryEntry#width()
++         * @see Art#getBlockWidth()
++         */
++        @Contract(value = "_ -> this", mutates = "this")
++        Builder width(@Range(from = 0, to = 16) int width);
++
++        /**
++         * Sets the height of the painting in blocks.
++         *
++         * @param height the height in blocks
++         * @return this builder instance
++         * @see PaintingVariantRegistryEntry#height()
++         * @see Art#getBlockHeight()
++         */
++        @Contract(value = "_ -> this", mutates = "this")
++        Builder height(@Range(from = 0, to = 16) int height);
++
++        /**
++         * Sets the title of the painting.
++         *
++         * @param title the title
++         * @return this builder instance
++         * @see PaintingVariantRegistryEntry#title()
++         * @see Art#title()
++         */
++        @Contract(value = "_ -> this", mutates = "this")
++        Builder title(@Nullable Component title);
++
++        /**
++         * Sets the author of the painting.
++         *
++         * @param author the author
++         * @return this builder instance
++         * @see PaintingVariantRegistryEntry#author()
++         * @see Art#author()
++         */
++        @Contract(value = "_ -> this", mutates = "this")
++        Builder author(@Nullable Component author);
++
++        /**
++         * Sets the assetId of the variant, which is the location of the sprite to use.
++         *
++         * @param assetId the asset id
++         * @return this builder instance
++         * @see PaintingVariantRegistryEntry#assetId()
++         * @see Art#assetId()
++         */
++        @Contract(value = "_ -> this", mutates = "this")
++        Builder assetId(Key assetId);
++
++    }
++
++}
 diff --git a/src/main/java/io/papermc/paper/registry/data/package-info.java b/src/main/java/io/papermc/paper/registry/data/package-info.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -439,6 +581,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import io.papermc.paper.registry.RegistryKey;
 +import io.papermc.paper.registry.data.EnchantmentRegistryEntry;
 +import io.papermc.paper.registry.data.GameEventRegistryEntry;
++import io.papermc.paper.registry.data.PaintingVariantRegistryEntry;
++import org.bukkit.Art;
 +import org.bukkit.GameEvent;
 +import org.bukkit.enchantments.Enchantment;
  import org.jetbrains.annotations.ApiStatus;
@@ -455,6 +599,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    public static final RegistryEventProvider<GameEvent, GameEventRegistryEntry.Builder> GAME_EVENT = create(RegistryKey.GAME_EVENT);
 +    public static final RegistryEventProvider<Enchantment, EnchantmentRegistryEntry.Builder> ENCHANTMENT = create(RegistryKey.ENCHANTMENT);
++    public static final RegistryEventProvider<Art, PaintingVariantRegistryEntry.Builder> PAINTING_VARIANT = create(RegistryKey.PAINTING_VARIANT);
 +
      private RegistryEvents() {
      }
