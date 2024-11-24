@@ -7,8 +7,8 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.GameEvent;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Vanilla keys for {@link RegistryKey#GAME_EVENT}.
@@ -23,7 +23,8 @@ import org.jetbrains.annotations.ApiStatus;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.1")
+@GeneratedFrom("1.21.3")
+@NullMarked
 @ApiStatus.Experimental
 public final class GameEventKeys {
     /**
@@ -449,7 +450,14 @@ public final class GameEventKeys {
     private GameEventKeys() {
     }
 
-    private static @NonNull TypedKey<GameEvent> create(final @NonNull Key key) {
+    /**
+     * Creates a key for {@link GameEvent} in the registry {@code minecraft:game_event}.
+     *
+     * @param key the value's key in the registry
+     * @return a new typed key
+     */
+    @ApiStatus.Experimental
+    public static TypedKey<GameEvent> create(final Key key) {
         return TypedKey.create(RegistryKey.GAME_EVENT, key);
     }
 }

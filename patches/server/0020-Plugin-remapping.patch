@@ -6,18 +6,18 @@ Subject: [PATCH] Plugin remapping
 Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index a2bb659ae3a502d4c181d1ccbd15eefc38e4823b..8350fc099b68918fb03a21b6a5047ceee72dcbb4 100644
+index dd7900a126ab35ed00af5653a35d361d175f6f76..8678e5bd59a7e085cb1b4e38f29e06ce36d2c1de 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -46,6 +46,7 @@ dependencies {
-     testImplementation("org.ow2.asm:asm-tree:9.7")
+@@ -61,6 +61,7 @@ dependencies {
+     testImplementation("org.ow2.asm:asm-tree:9.7.1")
      testImplementation("org.junit-pioneer:junit-pioneer:2.2.0") // Paper - CartesianTest
      implementation("net.neoforged:srgutils:1.0.9") // Paper - mappings handling
 +    implementation("net.neoforged:AutoRenamingTool:2.0.3") // Paper - remap plugins
  }
  
  paperweight {
-@@ -164,20 +165,41 @@ val runtimeClasspathWithoutVanillaServer = configurations.runtimeClasspath.flatM
+@@ -188,20 +189,41 @@ val runtimeClasspathWithoutVanillaServer = configurations.runtimeClasspath.flatM
          runtime.filterNot { it.asFile.absolutePath == vanilla }
      }
  
@@ -1553,10 +1553,10 @@ index 0000000000000000000000000000000000000000..badff5d6ae6dd8d209c82bc7e8afe370
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index b334cfc9b98d96f9bfba1d5b14c03c336d30ff23..e880543e94189fea3ba62eb7fb05ff48bc425299 100644
+index afb67956031f4bcccee12f0ece4bb8a7e6f02cfc..3322865949fe5ddaab2dffc39260b75093f0f204 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -642,6 +642,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -657,6 +657,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
  
          this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
@@ -1564,7 +1564,7 @@ index b334cfc9b98d96f9bfba1d5b14c03c336d30ff23..e880543e94189fea3ba62eb7fb05ff48
          this.server.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.STARTUP));
          this.connection.acceptConnections();
      }
-@@ -915,6 +916,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -930,6 +931,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              this.server.disablePlugins();
          }
          // CraftBukkit end
@@ -1573,10 +1573,10 @@ index b334cfc9b98d96f9bfba1d5b14c03c336d30ff23..e880543e94189fea3ba62eb7fb05ff48
          this.isSaving = true;
          if (this.playerList != null) {
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 6ba90739c20995362a5275e2259cac9e17fbcf59..d38ecbc208c34509eaf77751ac45d9ef51a5dce8 100644
+index 3b403e9edf4e860160dd230977870f21a0e32a7a..9d6be455c3bbcdbcb9d3d24b0bad79f46ba6a8cb 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -319,6 +319,12 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -318,6 +318,12 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          }
      }
  
@@ -1587,8 +1587,8 @@ index 6ba90739c20995362a5275e2259cac9e17fbcf59..d38ecbc208c34509eaf77751ac45d9ef
 +    // Paper end
 +
      @Override
-     public boolean isSpawningAnimals() {
-         return this.getProperties().spawnAnimals && super.isSpawningAnimals();
+     public boolean isSpawningMonsters() {
+         return this.settings.getProperties().spawnMonsters && super.isSpawningMonsters();
 diff --git a/src/main/java/net/neoforged/art/internal/RenamerImpl.java b/src/main/java/net/neoforged/art/internal/RenamerImpl.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..73b20a92f330311e3fef8f03b51a098513afafc1
@@ -1904,10 +1904,10 @@ index 0000000000000000000000000000000000000000..73b20a92f330311e3fef8f03b51a0985
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 69175337d14e0b14ddbc2a01a1deb860ae488d36..25a03307a576368f417f1ec3f44213ed469dcd71 100644
+index 542ff64ce0cb93a9f996fa0a65e8dde7ed39c3a9..5c54c5c525c86bb8037982435b8769ec2ca2c6cb 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1000,6 +1000,7 @@ public final class CraftServer implements Server {
+@@ -1005,6 +1005,7 @@ public final class CraftServer implements Server {
          this.loadPlugins();
          this.enablePlugins(PluginLoadOrder.STARTUP);
          this.enablePlugins(PluginLoadOrder.POSTWORLD);

@@ -7,16 +7,52 @@ Subject: [PATCH] Test changes
 - Ignore package-private methods for nullability annotations
 - Add excludes for classes which don't pass
 - Disable stupid BukkitMirrorTest
+- configure mockito agent to address changes in newer java versions see https://openjdk.org/jeps/451
 
 Co-authored-by: Riley Park <rileysebastianpark@gmail.com>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+Co-authored-by: Yannick Lamprecht <yannicklamprecht@live.de>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 2e99ea99cfc96b3602ba26b20a402e7d30f0f05f..d91ce069b5fce4afb245691bd90f448d6dfdc492 100644
+index 0b837b485bec96fa37ed65c18df97e55cecd0e9d..c7f660d52e1b5f085919a8aebf8476918705a391 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -106,6 +106,12 @@ tasks.test {
+@@ -11,6 +11,18 @@ java {
+ val annotationsVersion = "24.1.0"
+ val bungeeCordChatVersion = "1.20-R0.2"
+ 
++// Paper start - configure mockito agent that is needed in newer java versions
++val mockitoAgent = configurations.register("mockitoAgent")
++abstract class MockitoAgentProvider : CommandLineArgumentProvider {
++    @get:CompileClasspath
++    abstract val fileCollection: ConfigurableFileCollection
++
++    override fun asArguments(): Iterable<String> {
++        return listOf("-javaagent:" + fileCollection.files.single().absolutePath)
++    }
++}
++// Paper end - configure mockito agent that is needed in newer java versions
++
+ dependencies {
+     // api dependencies are listed transitively to API consumers
+     api("com.google.guava:guava:32.1.2-jre")
+@@ -44,6 +56,7 @@ dependencies {
+     testImplementation("org.hamcrest:hamcrest:2.2")
+     testImplementation("org.mockito:mockito-core:5.14.1")
+     testImplementation("org.ow2.asm:asm-tree:9.7.1")
++    mockitoAgent("org.mockito:mockito-core:5.14.1") { isTransitive = false } // Paper - configure mockito agent that is needed in newer java versions
+ }
+ 
+ configure<PublishingExtension> {
+@@ -105,8 +118,19 @@ tasks.withType<Javadoc> {
+ 
+ tasks.test {
      useJUnitPlatform()
++    // Paper start - configure mockito agent that is needed in newer java versions
++    val provider = objects.newInstance<MockitoAgentProvider>()
++    provider.fileCollection.from(mockitoAgent)
++    jvmArgumentProviders.add(provider)
++    // Paper end - configure mockito agent that is needed in newer java versions
  }
  
 +// Paper start - compile tests with -parameters for better junit parameterized test names
@@ -66,7 +102,7 @@ index 0000000000000000000000000000000000000000..77154095cfb8b259bdb318e8ff40cb6f
 +    }
 +}
 diff --git a/src/test/java/org/bukkit/AnnotationTest.java b/src/test/java/org/bukkit/AnnotationTest.java
-index 64e7aef6220097edefdff3b98a771b988365930d..7ff939ea41417bad3a436a87c89d5efa7ecefe86 100644
+index 64e7aef6220097edefdff3b98a771b988365930d..f8b8969ee7a0b6f7b3224ff081e35c14a398c9d0 100644
 --- a/src/test/java/org/bukkit/AnnotationTest.java
 +++ b/src/test/java/org/bukkit/AnnotationTest.java
 @@ -29,7 +29,13 @@ public class AnnotationTest {
@@ -108,8 +144,8 @@ index 64e7aef6220097edefdff3b98a771b988365930d..7ff939ea41417bad3a436a87c89d5efa
              }
  
 +            // Paper start - skip class if it's @NullMarked
-+            if (isClassNullMarked(clazz)) {
-+                return;
++            if (isClassNullMarked(clazz, foundClasses)) {
++                continue;
 +            }
 +            // Paper end - skip class if it's @NullMarked
 +
@@ -187,12 +223,23 @@ index 64e7aef6220097edefdff3b98a771b988365930d..7ff939ea41417bad3a436a87c89d5efa
      }
  
      private static void collectClasses(@NotNull File from, @NotNull Map<String, ClassNode> to) throws IOException {
-@@ -125,6 +186,12 @@ public class AnnotationTest {
+@@ -125,6 +186,23 @@ public class AnnotationTest {
          }
      }
  
 +    // Paper start - skip class if it's @NullMarked
-+    private static boolean isClassNullMarked(@NotNull ClassNode clazz) {
++    private static boolean isClassNullMarked(@NotNull ClassNode clazz, @NotNull Map<String, ClassNode> allClasses) {
++        if (clazz.nestHostClass != null) {
++            final ClassNode nestHostNode = allClasses.get(clazz.nestHostClass);
++            if (nestHostNode != null) {
++                return isClassNullMarked0(nestHostNode);
++            }
++        }
++
++        return isClassNullMarked0(clazz);
++    }
++
++    private static boolean isClassNullMarked0(@NotNull ClassNode clazz) {
 +        return clazz.visibleAnnotations != null && clazz.visibleAnnotations.stream().anyMatch(node -> "Lorg/jspecify/annotations/NullMarked;".equals(node.desc));
 +    }
 +    // Paper end - skip class if it's @NullMarked
@@ -200,7 +247,7 @@ index 64e7aef6220097edefdff3b98a771b988365930d..7ff939ea41417bad3a436a87c89d5efa
      private static boolean isClassIncluded(@NotNull ClassNode clazz, @NotNull Map<String, ClassNode> allClasses) {
          // Exclude private, synthetic or deprecated classes and annotations, since their members can't be null
          if ((clazz.access & (Opcodes.ACC_PRIVATE | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_DEPRECATED | Opcodes.ACC_ANNOTATION)) != 0) {
-@@ -140,6 +207,11 @@ public class AnnotationTest {
+@@ -140,6 +218,11 @@ public class AnnotationTest {
              // Exceptions are excluded
              return false;
          }
@@ -212,7 +259,7 @@ index 64e7aef6220097edefdff3b98a771b988365930d..7ff939ea41417bad3a436a87c89d5efa
  
          for (String excludedClass : EXCLUDED_CLASSES) {
              if (excludedClass.equals(clazz.name)) {
-@@ -152,7 +224,7 @@ public class AnnotationTest {
+@@ -152,7 +235,7 @@ public class AnnotationTest {
  
      private static boolean isMethodIncluded(@NotNull ClassNode clazz, @NotNull MethodNode method, @NotNull Map<String, ClassNode> allClasses) {
          // Exclude private, synthetic and deprecated methods
@@ -221,7 +268,7 @@ index 64e7aef6220097edefdff3b98a771b988365930d..7ff939ea41417bad3a436a87c89d5efa
              return false;
          }
  
-@@ -170,11 +242,30 @@ public class AnnotationTest {
+@@ -170,11 +253,30 @@ public class AnnotationTest {
          if ("<init>".equals(method.name) && isAnonymous(clazz)) {
              return false;
          }
@@ -266,10 +313,10 @@ index 89ca06ebecdaadd5dfc7bc74473ca15ad36f6eff..5974ceea58940e1799f3589eac0e39b9
  
      public static Stream<Arguments> data() {
 diff --git a/src/test/java/org/bukkit/support/TestServer.java b/src/test/java/org/bukkit/support/TestServer.java
-index 5709d52ed4ac4ce8dd8b0569281279f7305c5fb9..a47ee3ce660ec4467b5ed6a4b41fb2d19179a189 100644
+index c67e0784c043ed194f6acde32411e156412a9b24..eb1fd4b911c4af76cdd3eac85d5365e7941a4a2e 100644
 --- a/src/test/java/org/bukkit/support/TestServer.java
 +++ b/src/test/java/org/bukkit/support/TestServer.java
-@@ -72,6 +72,11 @@ public final class TestServer {
+@@ -83,6 +83,11 @@ public final class TestServer {
          UnsafeValues unsafeValues = mock(withSettings().stubOnly());
          when(instance.getUnsafe()).thenReturn(unsafeValues);
  

@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Martijn Muijsers <martijnmuijsers@live.nl>
+Date: Tue, 15 Aug 2023 21:04:55 +0200
+Subject: [PATCH] Do crystal-portal proximity check before entity lookup
+
+This adds a very cheap distance check when an end crystal is placed.
+
+Attempting to respawn the dragon, which involves looking up the end crystal
+entities near the portal, every time an end crystal is placed, can be slow on
+some servers that have players placing end crystals as a style of combat.
+
+The very cheap distance check prevents running the entity lookup every time.
+
+diff --git a/src/main/java/net/minecraft/world/item/EndCrystalItem.java b/src/main/java/net/minecraft/world/item/EndCrystalItem.java
+index 48317c7436445a7acff9103bac1de558c42f31cc..b62db8c7c8c57e43869ee239ebf4b02f112355d9 100644
+--- a/src/main/java/net/minecraft/world/item/EndCrystalItem.java
++++ b/src/main/java/net/minecraft/world/item/EndCrystalItem.java
+@@ -30,7 +30,7 @@ public class EndCrystalItem extends Item {
+         if (!iblockdata.is(Blocks.OBSIDIAN) && !iblockdata.is(Blocks.BEDROCK)) {
+             return InteractionResult.FAIL;
+         } else {
+-            BlockPos blockposition1 = blockposition.above();
++            BlockPos blockposition1 = blockposition.above(); final BlockPos aboveBlockPosition = blockposition1; // Paper - OBFHELPER
+ 
+             if (!world.isEmptyBlock(blockposition1)) {
+                 return InteractionResult.FAIL;
+@@ -58,7 +58,7 @@ public class EndCrystalItem extends Item {
+                         EndDragonFight enderdragonbattle = ((ServerLevel) world).getDragonFight();
+ 
+                         if (enderdragonbattle != null) {
+-                            enderdragonbattle.tryRespawn();
++                            enderdragonbattle.tryRespawn(aboveBlockPosition); // Paper - Perf: Do crystal-portal proximity check before entity lookup
+                         }
+                     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java b/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
+index 8ec6b33126096fb9e1de5f41290097e004d7a455..b331c93c82c27f9456fec208a0c008c5bedfa8c4 100644
+--- a/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
++++ b/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
+@@ -563,6 +563,12 @@ public class EndDragonFight {
+     }
+ 
+     public boolean tryRespawn() { // CraftBukkit - return boolean
++        // Paper start - Perf: Do crystal-portal proximity check before entity lookup
++        return this.tryRespawn(null);
++    }
++
++    public boolean tryRespawn(@Nullable BlockPos placedEndCrystalPos) { // placedEndCrystalPos is null if the tryRespawn() call was not caused by a placed end crystal
++        // Paper end - Perf: Do crystal-portal proximity check before entity lookup
+         if (this.dragonKilled && this.respawnStage == null) {
+             BlockPos blockposition = this.portalLocation;
+ 
+@@ -580,6 +586,22 @@ public class EndDragonFight {
+                 blockposition = this.portalLocation;
+             }
+ 
++            // Paper start - Perf: Do crystal-portal proximity check before entity lookup
++            if (placedEndCrystalPos != null) {
++                // The end crystal must be 0 or 1 higher than the portal origin
++                int dy = placedEndCrystalPos.getY() - blockposition.getY();
++                if (dy != 0 && dy != 1) {
++                    return false;
++                }
++                // The end crystal must be within a distance of 1 in one planar direction, and 3 in the other
++                int dx = placedEndCrystalPos.getX() - blockposition.getX();
++                int dz = placedEndCrystalPos.getZ() - blockposition.getZ();
++                if (!((dx >= -1 && dx <= 1 && dz >= -3 && dz <= 3) || (dx >= -3 && dx <= 3 && dz >= -1 && dz <= 1))) {
++                    return false;
++                }
++            }
++            // Paper end - Perf: Do crystal-portal proximity check before entity lookup
++
+             List<EndCrystal> list = Lists.newArrayList();
+             BlockPos blockposition1 = blockposition.above(1);
+             Iterator iterator = Direction.Plane.HORIZONTAL.iterator();

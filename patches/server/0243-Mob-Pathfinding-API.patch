@@ -1,0 +1,209 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 9 Sep 2018 13:30:00 -0400
+Subject: [PATCH] Mob Pathfinding API
+
+Implements Pathfinding API for mobs
+
+== AT ==
+public net.minecraft.world.entity.ai.navigation.PathNavigation pathFinder
+public net.minecraft.world.level.pathfinder.PathFinder nodeEvaluator
+public net.minecraft.world.level.pathfinder.Path nodes
+
+diff --git a/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java b/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..946cbc955683e81933e0f3c0db5f8cc4ec437a76
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/entity/PaperPathfinder.java
+@@ -0,0 +1,148 @@
++package com.destroystokyo.paper.entity;
++
++import org.apache.commons.lang.Validate;
++import org.bukkit.Location;
++import org.bukkit.craftbukkit.entity.CraftLivingEntity;
++import org.bukkit.entity.LivingEntity;
++import org.bukkit.entity.Mob;
++import javax.annotation.Nonnull;
++import javax.annotation.Nullable;
++import net.minecraft.world.level.pathfinder.Node;
++import net.minecraft.world.level.pathfinder.Path;
++import java.util.ArrayList;
++import java.util.List;
++
++public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinder {
++
++    private net.minecraft.world.entity.Mob entity;
++
++    public PaperPathfinder(net.minecraft.world.entity.Mob entity) {
++        this.entity = entity;
++    }
++
++    @Override
++    public Mob getEntity() {
++        return (Mob) entity.getBukkitEntity();
++    }
++
++    public void setHandle(net.minecraft.world.entity.Mob entity) {
++        this.entity = entity;
++    }
++
++    @Override
++    public void stopPathfinding() {
++        entity.getNavigation().stop();
++    }
++
++    @Override
++    public boolean hasPath() {
++        return entity.getNavigation().getPath() != null && !entity.getNavigation().getPath().isDone();
++    }
++
++    @Nullable
++    @Override
++    public PathResult getCurrentPath() {
++        Path path = entity.getNavigation().getPath();
++        return path != null && !path.isDone() ? new PaperPathResult(path) : null;
++    }
++
++    @Nullable
++    @Override
++    public PathResult findPath(Location loc) {
++        Validate.notNull(loc, "Location can not be null");
++        Path path = entity.getNavigation().createPath(loc.getX(), loc.getY(), loc.getZ(), 0);
++        return path != null ? new PaperPathResult(path) : null;
++    }
++
++    @Nullable
++    @Override
++    public PathResult findPath(LivingEntity target) {
++        Validate.notNull(target, "Target can not be null");
++        Path path = entity.getNavigation().createPath(((CraftLivingEntity) target).getHandle(), 0);
++        return path != null ? new PaperPathResult(path) : null;
++    }
++
++    @Override
++    public boolean moveTo(@Nonnull PathResult path, double speed) {
++        Validate.notNull(path, "PathResult can not be null");
++        Path pathEntity = ((PaperPathResult) path).path;
++        return entity.getNavigation().moveTo(pathEntity, speed);
++    }
++
++    @Override
++    public boolean canOpenDoors() {
++        return entity.getNavigation().pathFinder.nodeEvaluator.canOpenDoors();
++    }
++
++    @Override
++    public void setCanOpenDoors(boolean canOpenDoors) {
++        entity.getNavigation().pathFinder.nodeEvaluator.setCanOpenDoors(canOpenDoors);
++    }
++
++    @Override
++    public boolean canPassDoors() {
++        return entity.getNavigation().pathFinder.nodeEvaluator.canPassDoors();
++    }
++
++    @Override
++    public void setCanPassDoors(boolean canPassDoors) {
++        entity.getNavigation().pathFinder.nodeEvaluator.setCanPassDoors(canPassDoors);
++    }
++
++    @Override
++    public boolean canFloat() {
++        return entity.getNavigation().pathFinder.nodeEvaluator.canFloat();
++    }
++
++    @Override
++    public void setCanFloat(boolean canFloat) {
++        entity.getNavigation().pathFinder.nodeEvaluator.setCanFloat(canFloat);
++    }
++
++    public class PaperPathResult implements com.destroystokyo.paper.entity.PaperPathfinder.PathResult {
++
++        private final Path path;
++        PaperPathResult(Path path) {
++            this.path = path;
++        }
++
++        @Nullable
++        @Override
++        public Location getFinalPoint() {
++            Node point = path.getEndNode();
++            return point != null ? toLoc(point) : null;
++        }
++
++        @Override
++        public boolean canReachFinalPoint() {
++            return path.canReach();
++        }
++
++        @Override
++        public List<Location> getPoints() {
++            List<Location> points = new ArrayList<>();
++            for (Node point : path.nodes) {
++                points.add(toLoc(point));
++            }
++            return points;
++        }
++
++        @Override
++        public int getNextPointIndex() {
++            return path.getNextNodeIndex();
++        }
++
++        @Nullable
++        @Override
++        public Location getNextPoint() {
++            if (!path.hasNext()) {
++                return null;
++            }
++            return toLoc(path.nodes.get(path.getNextNodeIndex()));
++        }
++    }
++
++    private Location toLoc(Node point) {
++        return new Location(entity.level().getWorld(), point.x, point.y, point.z);
++    }
++}
+diff --git a/src/main/java/net/minecraft/world/level/pathfinder/Path.java b/src/main/java/net/minecraft/world/level/pathfinder/Path.java
+index f6419f3b345e9e21a05b315aa4669090d7da4194..d9d0fff9962131808d54cca20f209df50b8e4af1 100644
+--- a/src/main/java/net/minecraft/world/level/pathfinder/Path.java
++++ b/src/main/java/net/minecraft/world/level/pathfinder/Path.java
+@@ -18,6 +18,7 @@ public class Path {
+     private final BlockPos target;
+     private final float distToTarget;
+     private final boolean reached;
++    public boolean hasNext() { return getNextNodeIndex() < this.nodes.size(); } // Paper - Mob Pathfinding API
+ 
+     public Path(List<Node> nodes, BlockPos target, boolean reachesTarget) {
+         this.nodes = nodes;
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
+index 31f7b19b8978d941df801c97ad8989ef18d9fe2d..26c9bc53fe50636ca1eb32144c648f382d4172ff 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
+@@ -14,8 +14,11 @@ import org.bukkit.loot.LootTable;
+ public abstract class CraftMob extends CraftLivingEntity implements Mob {
+     public CraftMob(CraftServer server, net.minecraft.world.entity.Mob entity) {
+         super(server, entity);
++         paperPathfinder = new com.destroystokyo.paper.entity.PaperPathfinder(entity); // Paper - Mob Pathfinding API
+     }
+ 
++    private final com.destroystokyo.paper.entity.PaperPathfinder paperPathfinder; // Paper - Mob Pathfinding API
++    @Override public com.destroystokyo.paper.entity.Pathfinder getPathfinder() { return paperPathfinder; } // Paper - Mob Pathfinding API
+     @Override
+     public void setTarget(LivingEntity target) {
+         Preconditions.checkState(!this.getHandle().generation, "Cannot set target during world generation");
+@@ -56,6 +59,14 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob {
+         return (net.minecraft.world.entity.Mob) this.entity;
+     }
+ 
++    // Paper start - Mob Pathfinding API
++    @Override
++    public void setHandle(net.minecraft.world.entity.Entity entity) {
++        super.setHandle(entity);
++        paperPathfinder.setHandle(getHandle());
++    }
++    // Paper end - Mob Pathfinding API
++
+     @Override
+     public String toString() {
+         return "CraftMob";

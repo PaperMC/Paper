@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Trigary <trigary0@gmail.com>
+Date: Mon, 25 Jan 2021 14:53:57 +0100
+Subject: [PATCH] Add DragonEggFormEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java b/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
+index 0e1eceb2b83aaafccbb5d58cf5098cfbc6f25a54..3d1a49d865e17a61ff74c6fe0efbd908447ee730 100644
+--- a/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
++++ b/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
+@@ -410,8 +410,22 @@ public class EndDragonFight {
+             this.dragonEvent.setVisible(false);
+             this.spawnExitPortal(true);
+             this.spawnNewGateway();
++            // Paper start - Add DragonEggFormEvent
++            BlockPos eggPosition = this.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, EndPodiumFeature.getLocation(this.origin));
++            org.bukkit.craftbukkit.block.CraftBlockState eggState = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(this.level, eggPosition);
++            eggState.setData(Blocks.DRAGON_EGG.defaultBlockState());
++            io.papermc.paper.event.block.DragonEggFormEvent eggEvent = new io.papermc.paper.event.block.DragonEggFormEvent(org.bukkit.craftbukkit.block.CraftBlock.at(this.level, eggPosition), eggState,
++                new org.bukkit.craftbukkit.boss.CraftDragonBattle(this));
++            // Paper end - Add DragonEggFormEvent
+             if (this.level.paperConfig().entities.behavior.enderDragonsDeathAlwaysPlacesDragonEgg || !this.previouslyKilled) { // Paper - Add toggle for always placing the dragon egg
+-                this.level.setBlockAndUpdate(this.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, EndPodiumFeature.getLocation(this.origin)), Blocks.DRAGON_EGG.defaultBlockState());
++                // Paper start - Add DragonEggFormEvent
++                // this.level.setBlockAndUpdate(this.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, EndPodiumFeature.getLocation(this.origin)), Blocks.DRAGON_EGG.defaultBlockState());
++            } else {
++                eggEvent.setCancelled(true);
++            }
++            if (eggEvent.callEvent()) {
++                eggEvent.getNewState().update(true);
++                // Paper end - Add DragonEggFormEvent
+             }
+ 
+             this.previouslyKilled = true;

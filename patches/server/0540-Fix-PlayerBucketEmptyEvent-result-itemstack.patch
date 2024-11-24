@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 20 May 2021 22:16:37 -0700
+Subject: [PATCH] Fix PlayerBucketEmptyEvent result itemstack
+
+Fixes SPIGOT-2560: https://hub.spigotmc.org/jira/projects/SPIGOT/issues/SPIGOT-2560
+
+diff --git a/src/main/java/net/minecraft/world/item/BucketItem.java b/src/main/java/net/minecraft/world/item/BucketItem.java
+index a6aaef9de23bf8084ab13c8f704e9f59de3acdcf..002e2f8e956b2631529e2189be225385dfb501df 100644
+--- a/src/main/java/net/minecraft/world/item/BucketItem.java
++++ b/src/main/java/net/minecraft/world/item/BucketItem.java
+@@ -40,6 +40,8 @@ import org.bukkit.event.player.PlayerBucketFillEvent;
+ 
+ public class BucketItem extends Item implements DispensibleContainerItem {
+ 
++    private static @Nullable ItemStack itemLeftInHandAfterPlayerBucketEmptyEvent = null; // Paper - Fix PlayerBucketEmptyEvent result itemstack
++
+     public final Fluid content;
+ 
+     public BucketItem(Fluid fluid, Item.Properties settings) {
+@@ -125,6 +127,13 @@ public class BucketItem extends Item implements DispensibleContainerItem {
+     }
+ 
+     public static ItemStack getEmptySuccessItem(ItemStack stack, Player player) {
++        // Paper start - Fix PlayerBucketEmptyEvent result itemstack
++        if (itemLeftInHandAfterPlayerBucketEmptyEvent != null) {
++            ItemStack itemInHand = itemLeftInHandAfterPlayerBucketEmptyEvent;
++            itemLeftInHandAfterPlayerBucketEmptyEvent = null;
++            return itemInHand;
++        }
++        // Paper end - Fix PlayerBucketEmptyEvent result itemstack
+         return !player.hasInfiniteMaterials() ? new ItemStack(Items.BUCKET) : stack;
+     }
+ 
+@@ -182,6 +191,7 @@ public class BucketItem extends Item implements DispensibleContainerItem {
+                     ((ServerPlayer) entityhuman).getBukkitEntity().updateInventory(); // SPIGOT-4541
+                     return false;
+                 }
++                itemLeftInHandAfterPlayerBucketEmptyEvent = event.getItemStack() != null ? event.getItemStack().equals(CraftItemStack.asNewCraftStack(net.minecraft.world.item.Items.BUCKET)) ? null : CraftItemStack.asNMSCopy(event.getItemStack()) : ItemStack.EMPTY; // Paper - Fix PlayerBucketEmptyEvent result itemstack
+             }
+             // CraftBukkit end
+             if (!flag2) {

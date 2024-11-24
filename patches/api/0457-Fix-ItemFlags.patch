@@ -1,0 +1,66 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 27 Apr 2024 13:28:17 -0700
+Subject: [PATCH] Fix ItemFlags
+
+Adds new flag in HIDE_STORED_ENCHANTS which was split
+from HIDE_ADDITIONAL_INFO. Adds a migration to account for
+this, adding the new flag if the itemstack is old and had the
+old flag.
+
+diff --git a/src/main/java/org/bukkit/inventory/ItemFlag.java b/src/main/java/org/bukkit/inventory/ItemFlag.java
+index 5b8dac777bb1640dc00bbe98feb6460c36eebb98..1af15fd327e0613cd1a179bd7fef1e83cbe31761 100644
+--- a/src/main/java/org/bukkit/inventory/ItemFlag.java
++++ b/src/main/java/org/bukkit/inventory/ItemFlag.java
+@@ -2,6 +2,8 @@ package org.bukkit.inventory;
+ 
+ /**
+  * A ItemFlag can hide some Attributes from ItemStacks
++ * @apiNote Setting these without also setting the data they are hiding
++ * may not result in the item flag being persisted in the ItemMeta/ItemStack.
+  */
+ public enum ItemFlag {
+ 
+@@ -27,7 +29,8 @@ public enum ItemFlag {
+     HIDE_PLACED_ON,
+     /**
+      * Setting to show/hide potion effects, book and firework information, map
+-     * tooltips, patterns of banners, and enchantments of enchanted books.
++     * tooltips, patterns of banners.
++     * @see #HIDE_STORED_ENCHANTS HIDE_STORED_ENCHANTS for hiding stored enchants (like on enchanted books)
+      */
+     HIDE_ADDITIONAL_TOOLTIP,
+     /**
+@@ -37,7 +40,13 @@ public enum ItemFlag {
+     /**
+      * Setting to show/hide armor trim from armor.
+      */
+-    HIDE_ARMOR_TRIM;
++    HIDE_ARMOR_TRIM,
++    /**
++     * Setting to show/hide stored enchants on an item, such as enchantments
++     * on an enchanted book.
++     */
++    HIDE_STORED_ENCHANTS,
++    ;
+     // Paper start
+     /**
+      * Setting to show/hide item-specific information, including, but not limited to:
+diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
+index 82a66820311cfd918ea322f57df97e3a56e79c1d..77edc2e1c5c865db7e101aaa186657ac85edfed9 100644
+--- a/src/main/java/org/bukkit/inventory/ItemStack.java
++++ b/src/main/java/org/bukkit/inventory/ItemStack.java
+@@ -588,6 +588,13 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+             Object raw = args.get("meta");
+             if (raw instanceof ItemMeta) {
+                 ((ItemMeta) raw).setVersion(version);
++                // Paper start - for pre 1.20.5 itemstacks, add HIDE_STORED_ENCHANTS flag if HIDE_ADDITIONAL_TOOLTIP is set
++                if (version < 3837) { // 1.20.5
++                    if (((ItemMeta) raw).hasItemFlag(ItemFlag.HIDE_ADDITIONAL_TOOLTIP)) {
++                        ((ItemMeta) raw).addItemFlags(ItemFlag.HIDE_STORED_ENCHANTS);
++                    }
++                }
++                // Paper end
+                 result.setItemMeta((ItemMeta) raw);
+             }
+         }

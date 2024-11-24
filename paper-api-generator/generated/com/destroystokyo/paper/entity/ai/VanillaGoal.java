@@ -51,7 +51,7 @@ import org.bukkit.entity.WanderingTrader;
 import org.bukkit.entity.Wither;
 import org.bukkit.entity.Wolf;
 import org.bukkit.entity.Zombie;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Vanilla keys for Mob Goals.
@@ -66,7 +66,8 @@ import org.checkerframework.checker.nullness.qual.NonNull;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.1")
+@GeneratedFrom("1.21.3")
+@NullMarked
 public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<AbstractHorse> RANDOM_STAND = create("random_stand", AbstractHorse.class);
 
@@ -101,6 +102,10 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<Bee> BEE_POLLINATE = create("bee_pollinate", Bee.class);
 
     GoalKey<Bee> BEE_WANDER = create("bee_wander", Bee.class);
+
+    GoalKey<Bee> VALIDATE_FLOWER = create("validate_flower", Bee.class);
+
+    GoalKey<Bee> VALIDATE_HIVE = create("validate_hive", Bee.class);
 
     GoalKey<Blaze> BLAZE_ATTACK = create("blaze_attack", Blaze.class);
 
@@ -436,8 +441,7 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<Zombie> ZOMBIE_ATTACK_TURTLE_EGG = create("zombie_attack_turtle_egg", Zombie.class);
 
-    private static <T extends Mob> @NonNull GoalKey<T> create(final @NonNull String key,
-            final @NonNull Class<T> type) {
+    private static <T extends Mob> GoalKey<T> create(final String key, final Class<T> type) {
         return GoalKey.of(type, NamespacedKey.minecraft(key));
     }
 }

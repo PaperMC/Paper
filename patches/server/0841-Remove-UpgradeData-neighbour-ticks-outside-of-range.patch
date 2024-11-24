@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Wed, 9 Aug 2023 14:00:40 -0700
+Subject: [PATCH] Remove UpgradeData neighbour ticks outside of range
+
+The lists are only supposed to contain ticks for the 1 radius
+neighbours of the chunk.
+
+diff --git a/src/main/java/net/minecraft/world/level/chunk/UpgradeData.java b/src/main/java/net/minecraft/world/level/chunk/UpgradeData.java
+index 5c7c8fb3c67047ddc1b92f03e889839b5a303ff4..ce3d79ebc7f933d0b34b3f8f71bbec872076847a 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/UpgradeData.java
++++ b/src/main/java/net/minecraft/world/level/chunk/UpgradeData.java
+@@ -113,6 +113,25 @@ public class UpgradeData {
+         }
+     }
+ 
++    // Paper start - filter out relocated neighbour ticks
++    // The lists are only supposed to contain ticks for the 1 radius neighbours of the chunk
++    private static <T> void filterTickList(int chunkX, int chunkZ, List<SavedTick<T>> ticks) {
++        for (java.util.Iterator<SavedTick<T>> iterator = ticks.iterator(); iterator.hasNext();) {
++            SavedTick<T> tick = iterator.next();
++            BlockPos tickPos = tick.pos();
++            int tickCX = tickPos.getX() >> 4;
++            int tickCZ = tickPos.getZ() >> 4;
++
++            int dist = Math.max(Math.abs(chunkX - tickCX), Math.abs(chunkZ - tickCZ));
++
++            if (dist != 1) {
++                LOGGER.warn("Neighbour tick '" + tick + "' serialized in chunk (" + chunkX + "," + chunkZ + ") is too far (" + tickCX + "," + tickCZ + ")");
++                iterator.remove();
++            }
++        }
++    }
++    // Paper end - filter out relocated neighbour ticks
++
+     public void upgrade(LevelChunk chunk) {
+         this.upgradeInside(chunk);
+ 
+@@ -120,6 +139,11 @@ public class UpgradeData {
+             upgradeSides(chunk, direction8);
+         }
+ 
++        // Paper start - filter out relocated neighbour ticks
++        filterTickList(chunk.locX, chunk.locZ, this.neighborBlockTicks);
++        filterTickList(chunk.locX, chunk.locZ, this.neighborFluidTicks);
++        // Paper end - filter out relocated neighbour ticks
++
+         Level level = chunk.getLevel();
+         this.neighborBlockTicks.forEach(tick -> {
+             Block block = tick.type() == Blocks.AIR ? level.getBlockState(tick.pos()).getBlock() : tick.type();

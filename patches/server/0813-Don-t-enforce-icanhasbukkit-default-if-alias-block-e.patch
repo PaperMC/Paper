@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TheMeinerLP <p.glanz@madfix.me>
+Date: Tue, 13 Jun 2023 16:10:59 +0200
+Subject: [PATCH] Don't enforce icanhasbukkit default if alias block exists
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 927846bf3281771de0274216abe927e524df3493..5c907eca23d936ba3095f2d81256775edaa737da 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -358,7 +358,11 @@ public final class CraftServer implements Server {
+         }
+         this.commandsConfiguration = YamlConfiguration.loadConfiguration(this.getCommandsConfigFile());
+         this.commandsConfiguration.options().copyDefaults(true);
+-        this.commandsConfiguration.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(this.getClass().getClassLoader().getResourceAsStream("configurations/commands.yml"), Charsets.UTF_8)));
++        // Paper start - don't enforce icanhasbukkit default if alias block exists
++        final YamlConfiguration commandsDefaults = YamlConfiguration.loadConfiguration(new InputStreamReader(this.getClass().getClassLoader().getResourceAsStream("configurations/commands.yml"), Charsets.UTF_8));
++        if (this.commandsConfiguration.contains("aliases")) commandsDefaults.set("aliases", null);
++        this.commandsConfiguration.setDefaults(commandsDefaults);
++        // Paper end - don't enforce icanhasbukkit default if alias block exists
+         this.saveCommandsConfig();
+ 
+         // Migrate aliases from old file and add previously implicit $1- to pass all arguments

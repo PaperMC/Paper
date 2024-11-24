@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bjarne Koll <git@lynxplay.dev>
+Date: Fri, 4 Aug 2023 15:53:36 +0200
+Subject: [PATCH] Only erase allay memory on non-item targets
+
+Spigot incorrectly instanceOf checks the EntityTargetEvent#getTarget
+against the internal ItemEntity type and removes the nearest wanted item
+memory if said instanceOf check fails, (which is always the case)
+causing allays to behave differently as they constantly lose their
+target item.
+
+This commit fixes the faulty behaviour by instance performing a check
+against the CraftItem type.
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/GoToWantedItem.java b/src/main/java/net/minecraft/world/entity/ai/behavior/GoToWantedItem.java
+index 07db92870f9efd515751453569f0dd7b6fada8fc..7d814e5b4b634674995d55ab97155f949f14ef3b 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/GoToWantedItem.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/GoToWantedItem.java
+@@ -35,8 +35,9 @@ public class GoToWantedItem {
+                             if (event.isCancelled()) {
+                                 return false;
+                             }
+-                            if (!(event.getTarget() instanceof ItemEntity)) {
++                            if (!(event.getTarget() instanceof org.bukkit.craftbukkit.entity.CraftItem)) { // Paper - only erase allay memory on non-item targets
+                                 memoryaccessor2.erase();
++                                return false; // Paper - only erase allay memory on non-item targets
+                             }
+ 
+                             entityitem = (ItemEntity) ((org.bukkit.craftbukkit.entity.CraftEntity) event.getTarget()).getHandle();

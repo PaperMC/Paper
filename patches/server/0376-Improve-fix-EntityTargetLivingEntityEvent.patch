@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 9 Dec 2022 03:10:23 -0800
+Subject: [PATCH] Improve/fix EntityTargetLivingEntityEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/StopAttackingIfTargetInvalid.java b/src/main/java/net/minecraft/world/entity/ai/behavior/StopAttackingIfTargetInvalid.java
+index 70df68169b17fa5f732e4c73a86376ba6eb9ca13..b31f6ccc95132a7dd022b454d28814b684d99d4c 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/StopAttackingIfTargetInvalid.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/StopAttackingIfTargetInvalid.java
+@@ -46,9 +46,22 @@ public class StopAttackingIfTargetInvalid {
+                     if (entityinsentient.canAttack(entityliving) && (!shouldForgetIfTargetUnreachable || !StopAttackingIfTargetInvalid.isTiredOfTryingToReachTarget(entityinsentient, behaviorbuilder_b.tryGet(memoryaccessor1))) && entityliving.isAlive() && entityliving.level() == entityinsentient.level() && !condition.test(worldserver, entityliving)) {
+                         return true;
+                     } else {
++                        // Paper start - better track target change reason
++                        final EntityTargetEvent.TargetReason reason;
++                        if (!entityinsentient.canAttack(entityliving)) {
++                            reason = EntityTargetEvent.TargetReason.TARGET_INVALID;
++                        } else if (shouldForgetIfTargetUnreachable && StopAttackingIfTargetInvalid.isTiredOfTryingToReachTarget(entityinsentient, behaviorbuilder_b.tryGet(memoryaccessor1))) {
++                            reason = EntityTargetEvent.TargetReason.FORGOT_TARGET;
++                        } else if (!entityliving.isAlive()) {
++                            reason = EntityTargetEvent.TargetReason.TARGET_DIED;
++                        } else if (entityliving.level() != entityinsentient.level()) {
++                            reason = EntityTargetEvent.TargetReason.TARGET_OTHER_LEVEL;
++                        } else {
++                            reason = EntityTargetEvent.TargetReason.TARGET_INVALID;
++                        }
++                        // Paper end
+                         // CraftBukkit start
+-                        LivingEntity old = entityinsentient.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null);
+-                        EntityTargetEvent event = CraftEventFactory.callEntityTargetLivingEvent(entityinsentient, null, (old != null && !old.isAlive()) ? EntityTargetEvent.TargetReason.TARGET_DIED : EntityTargetEvent.TargetReason.FORGOT_TARGET);
++                        EntityTargetEvent event = CraftEventFactory.callEntityTargetLivingEvent(entityinsentient, null, reason); // Paper
+                         if (event.isCancelled()) {
+                             return false;
+                         }

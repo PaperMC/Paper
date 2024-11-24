@@ -1,0 +1,98 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 27 May 2021 21:58:24 -0700
+Subject: [PATCH] More PotionEffectType API
+
+== AT ==
+public net.minecraft.world.effect.MobEffect attributeModifiers
+public net.minecraft.world.effect.MobEffect$AttributeTemplate
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionEffectType.java b/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionEffectType.java
+index 21d4224c8993f521d6004d708ecbf71fa6d09306..6cf790c9fa23ea313423fdaeb7c181bf530828c6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionEffectType.java
++++ b/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionEffectType.java
+@@ -129,6 +129,48 @@ public class CraftPotionEffectType extends PotionEffectType implements Handleabl
+         return this.handle.getDescriptionId();
+     }
+ 
++    // Paper start
++    @Override
++    public java.util.Map<org.bukkit.attribute.Attribute, org.bukkit.attribute.AttributeModifier> getEffectAttributes() {
++        // re-create map each time because a nms MobEffect can have its attributes modified
++        final java.util.Map<org.bukkit.attribute.Attribute, org.bukkit.attribute.AttributeModifier> attributeMap = new java.util.HashMap<>();
++        this.handle.attributeModifiers.forEach((attribute, attributeModifier) -> {
++            attributeMap.put(
++                org.bukkit.craftbukkit.attribute.CraftAttribute.minecraftHolderToBukkit(attribute),
++                // use zero as amplifier to get the base amount, as it is amount = base * (amplifier + 1)
++                org.bukkit.craftbukkit.attribute.CraftAttributeInstance.convert(attributeModifier.create(0))
++            );
++        });
++        return java.util.Map.copyOf(attributeMap);
++    }
++
++    @Override
++    public double getAttributeModifierAmount(org.bukkit.attribute.Attribute attribute, int effectAmplifier) {
++        com.google.common.base.Preconditions.checkArgument(effectAmplifier >= 0, "effectAmplifier must be greater than or equal to 0");
++        Holder<net.minecraft.world.entity.ai.attributes.Attribute> nmsAttribute = org.bukkit.craftbukkit.attribute.CraftAttribute.bukkitToMinecraftHolder(attribute);
++        com.google.common.base.Preconditions.checkArgument(this.handle.attributeModifiers.containsKey(nmsAttribute), attribute + " is not present on " + this.getKey());
++        return this.handle.attributeModifiers.get(nmsAttribute).create(effectAmplifier).amount();
++    }
++
++    @Override
++    public PotionEffectType.Category getEffectCategory() {
++        return fromNMS(handle.getCategory());
++    }
++
++    @Override
++    public String translationKey() {
++        return this.handle.getDescriptionId();
++    }
++
++    public static PotionEffectType.Category fromNMS(net.minecraft.world.effect.MobEffectCategory mobEffectInfo) {
++        return switch (mobEffectInfo) {
++            case BENEFICIAL -> PotionEffectType.Category.BENEFICIAL;
++            case HARMFUL -> PotionEffectType.Category.HARMFUL;
++            case NEUTRAL -> PotionEffectType.Category.NEUTRAL;
++        };
++    }
++    // Paper end
++
+     @Override
+     public boolean equals(Object other) {
+         if (this == other) {
+diff --git a/src/test/java/io/papermc/paper/effects/EffectCategoryTest.java b/src/test/java/io/papermc/paper/effects/EffectCategoryTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a57e8fdc35efc7e0353d4f36c91578390ee4572e
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/effects/EffectCategoryTest.java
+@@ -0,0 +1,30 @@
++package io.papermc.paper.effects;
++
++import io.papermc.paper.adventure.PaperAdventure;
++import net.minecraft.world.effect.MobEffectCategory;
++import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
++import org.bukkit.potion.PotionEffectType;
++import org.bukkit.support.environment.AllFeatures;
++import org.junit.jupiter.api.Test;
++
++import static org.junit.jupiter.api.Assertions.assertEquals;
++import static org.junit.jupiter.api.Assertions.assertNotNull;
++
++@AllFeatures
++public class EffectCategoryTest {
++
++    @Test
++    public void testEffectCategoriesExist() {
++        for (MobEffectCategory mobEffectInfo : MobEffectCategory.values()) {
++            assertNotNull(CraftPotionEffectType.fromNMS(mobEffectInfo), mobEffectInfo + " is missing a bukkit equivalent");
++        }
++    }
++
++    @Test
++    public void testCategoryHasEquivalentColors() {
++        for (MobEffectCategory mobEffectInfo : MobEffectCategory.values()) {
++            PotionEffectType.Category bukkitEffectCategory = CraftPotionEffectType.fromNMS(mobEffectInfo);
++            assertEquals(bukkitEffectCategory.getColor(), PaperAdventure.asAdventure(mobEffectInfo.getTooltipFormatting()), mobEffectInfo.getTooltipFormatting().name() + " doesn't equal " + bukkitEffectCategory.getColor());
++        }
++    }
++}

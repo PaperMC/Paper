@@ -1,0 +1,95 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 2 Jan 2020 12:25:07 -0600
+Subject: [PATCH] Improve Block#breakNaturally API
+
+Adds bool parameter to play world effect on block break
+
+Adds bool parameter to drop xp from blocks
+
+Fixes fluid-logged blocks not leaving fluid behind if
+broken
+
+Handles special cases for ice and turtle eggs
+
+== AT ==
+public net.minecraft.world.level.block.TurtleEggBlock decreaseEggs(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;)V
+
+Co-authored-by: William Blake Galbreath <Blake.Galbreath@GMail.com>
+
+diff --git a/src/main/java/net/minecraft/world/level/block/IceBlock.java b/src/main/java/net/minecraft/world/level/block/IceBlock.java
+index 6a4cc64068f67ee18a9e505888edb3874597b98a..067a2d969ca0979ae67b600e303deec93eda0251 100644
+--- a/src/main/java/net/minecraft/world/level/block/IceBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/IceBlock.java
+@@ -36,6 +36,11 @@ public class IceBlock extends HalfTransparentBlock {
+     @Override
+     public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool) {
+         super.playerDestroy(world, player, pos, state, blockEntity, tool);
++        // Paper start - Improve Block#breakNaturally API
++        this.afterDestroy(world, pos, tool);
++    }
++    public void afterDestroy(Level world, BlockPos pos, ItemStack tool) {
++        // Paper end - Improve Block#breakNaturally API
+         if (!EnchantmentHelper.hasTag(tool, EnchantmentTags.PREVENTS_ICE_MELTING)) {
+             if (world.dimensionType().ultraWarm()) {
+                 world.removeBlock(pos, false);
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+index e5ac2d79b21db4e9a92b739e39d41a22deee175b..aae00320ab8003420bae5de7df47f553b62c5aab 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+@@ -452,6 +452,18 @@ public class CraftBlock implements Block {
+ 
+     @Override
+     public boolean breakNaturally(ItemStack item) {
++        // Paper start
++        return this.breakNaturally(item, false);
++    }
++
++    @Override
++    public boolean breakNaturally(boolean triggerEffect, boolean dropExperience) {
++        return this.breakNaturally(null, triggerEffect, dropExperience);
++    }
++
++    @Override
++    public boolean breakNaturally(ItemStack item, boolean triggerEffect, boolean dropExperience) {
++        // Paper end
+         // Order matters here, need to drop before setting to air so skulls can get their data
+         net.minecraft.world.level.block.state.BlockState iblockdata = this.getNMS();
+         net.minecraft.world.level.block.Block block = iblockdata.getBlock();
+@@ -461,11 +473,35 @@ public class CraftBlock implements Block {
+         // Modelled off EntityHuman#hasBlock
+         if (block != Blocks.AIR && (item == null || !iblockdata.requiresCorrectToolForDrops() || nmsItem.isCorrectToolForDrops(iblockdata))) {
+             net.minecraft.world.level.block.Block.dropResources(iblockdata, this.world.getMinecraftWorld(), this.position, this.world.getBlockEntity(this.position), null, nmsItem);
++            // Paper start - improve Block#breanNaturally
++            if (triggerEffect) {
++                if (iblockdata.getBlock() instanceof net.minecraft.world.level.block.BaseFireBlock) {
++                    this.world.levelEvent(net.minecraft.world.level.block.LevelEvent.SOUND_EXTINGUISH_FIRE, this.position, 0);
++                } else {
++                    this.world.levelEvent(net.minecraft.world.level.block.LevelEvent.PARTICLES_DESTROY_BLOCK, this.position, net.minecraft.world.level.block.Block.getId(iblockdata));
++                }
++            }
++            if (dropExperience) block.popExperience(this.world.getMinecraftWorld(), this.position, block.getExpDrop(iblockdata, this.world.getMinecraftWorld(), this.position, nmsItem, true));
++            // Paper end
+             result = true;
+         }
+ 
+         // SPIGOT-6778: Directly call setBlock instead of setTypeAndData, so that the tile entiy is not removed and custom remove logic is run.
+-        return this.world.setBlock(this.position, Blocks.AIR.defaultBlockState(), 3) && result;
++        // Paper start - improve breakNaturally
++        boolean destroyed = this.world.removeBlock(this.position, false);
++        if (destroyed) {
++            block.destroy(this.world, this.position, iblockdata);
++        }
++        if (result) {
++            // special cases
++            if (block instanceof net.minecraft.world.level.block.IceBlock iceBlock) {
++                iceBlock.afterDestroy(this.world.getMinecraftWorld(), this.position, nmsItem);
++            } else if (block instanceof net.minecraft.world.level.block.TurtleEggBlock turtleEggBlock) {
++                turtleEggBlock.decreaseEggs(this.world.getMinecraftWorld(), this.position, iblockdata);
++            }
++        }
++        return destroyed && result;
++        // Paper end
+     }
+ 
+     @Override

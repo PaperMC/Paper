@@ -1,0 +1,89 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 31 Oct 2024 20:36:41 -0700
+Subject: [PATCH] Improve performance of RecipeMap#removeRecipe
+
+
+diff --git a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
+index d376d89b479a4d5cc9ac568d23c7603a9355d580..f6dd363ececf967d282f5ba713013085da1ddf37 100644
+--- a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
++++ b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
+@@ -258,7 +258,7 @@ public class RecipeManager extends SimplePreparableReloadListener<RecipeMap> imp
+ 
+     // CraftBukkit start
+     public boolean removeRecipe(ResourceKey<Recipe<?>> mcKey) {
+-        boolean removed = this.recipes.removeRecipe(mcKey);
++        boolean removed = this.recipes.removeRecipe((ResourceKey<Recipe<RecipeInput>>) (ResourceKey) mcKey); // Paper - generic fix
+         if (removed) {
+             this.finalizeRecipeLoading();
+         }
+diff --git a/src/main/java/net/minecraft/world/item/crafting/RecipeMap.java b/src/main/java/net/minecraft/world/item/crafting/RecipeMap.java
+index 5d842d7e774564143f9f3be6c2628d54595a235b..c4067fbf827fed882772962a0e4b3ead0d642e62 100644
+--- a/src/main/java/net/minecraft/world/item/crafting/RecipeMap.java
++++ b/src/main/java/net/minecraft/world/item/crafting/RecipeMap.java
+@@ -54,21 +54,38 @@ public class RecipeMap {
+         }
+     }
+ 
+-    public boolean removeRecipe(ResourceKey<Recipe<?>> mcKey) {
+-        boolean removed = false;
+-        Iterator<RecipeHolder<?>> iter = this.byType.values().iterator();
+-        while (iter.hasNext()) {
+-            RecipeHolder<?> recipe = iter.next();
+-            if (recipe.id().equals(mcKey)) {
+-                iter.remove();
+-                removed = true;
+-            }
+-        }
+-        removed |= this.byKey.remove(mcKey) != null;
++    // public boolean removeRecipe(ResourceKey<Recipe<?>> mcKey) {
++    //     boolean removed = false;
++    //     Iterator<RecipeHolder<?>> iter = this.byType.values().iterator();
++    //     while (iter.hasNext()) {
++    //         RecipeHolder<?> recipe = iter.next();
++    //         if (recipe.id().equals(mcKey)) {
++    //             iter.remove();
++    //             removed = true;
++    //         }
++    //     }
++    //     removed |= this.byKey.remove(mcKey) != null;
++    //
++    //     return removed;
++    // }
++    // CraftBukkit end
++
+ 
+-        return removed;
++    // Paper start - replace removeRecipe implementation
++    public <T extends RecipeInput> boolean removeRecipe(ResourceKey<Recipe<T>> mcKey) {
++        //noinspection unchecked
++        final RecipeHolder<Recipe<T>> remove = (RecipeHolder<Recipe<T>>) this.byKey.remove(mcKey);
++        if (remove == null) {
++            return false;
++        }
++        final Collection<? extends RecipeHolder<? extends Recipe<T>>> recipes = this.byType(remove.value().getType());
++        if (recipes.remove(remove)) {
++            return true;
++        }
++        return false;
++        // Paper end - why are you using a loop???
+     }
+-    // CraftBukkit end
++    // Paper end - replace removeRecipe implementation
+ 
+     public <I extends RecipeInput, T extends Recipe<I>> Collection<RecipeHolder<T>> byType(RecipeType<T> type) {
+         return (Collection) this.byType.get(type); // CraftBukkit - decompile error
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/RecipeIterator.java b/src/main/java/org/bukkit/craftbukkit/inventory/RecipeIterator.java
+index c0433e054e64c329dff670c8f7ca21c4a4133c6f..a20b471389474244ef20bf42d4085dcf9dd122a5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/RecipeIterator.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/RecipeIterator.java
+@@ -32,5 +32,9 @@ public class RecipeIterator implements Iterator<Recipe> {
+     public void remove() {
+         MinecraftServer.getServer().getRecipeManager().recipes.byKey.remove(this.currentRecipe.id()); // Paper - fix removing recipes from RecipeIterator
+         this.recipes.remove();
++        // Paper start - correctly reload recipes
++        MinecraftServer.getServer().getRecipeManager().finalizeRecipeLoading();
++        MinecraftServer.getServer().getPlayerList().reloadRecipes();
++        // Paper end - correctly reload recipes
+     }
+ }

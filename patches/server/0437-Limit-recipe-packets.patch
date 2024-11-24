@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Sat, 12 Dec 2020 23:45:28 +0000
+Subject: [PATCH] Limit recipe packets
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index fc06281b6d37d72a0a333343fc800bd388713a5f..f2c1893677004b1699beb16ebfcbe9816aad2a78 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -277,6 +277,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+     private final TickThrottler chatSpamThrottler = new TickThrottler(20, 200);
+     private final TickThrottler tabSpamThrottler = new TickThrottler(io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.tabSpamIncrement, io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.tabSpamLimit); // Paper - configurable tab spam limits
+     private final TickThrottler dropSpamThrottler = new TickThrottler(20, 1480);
++    private final TickThrottler recipeSpamPackets = new TickThrottler(io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.recipeSpamIncrement, io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.recipeSpamLimit);
+     private double firstGoodX;
+     private double firstGoodY;
+     private double firstGoodZ;
+@@ -393,6 +394,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         this.keepConnectionAlive();
+         this.chatSpamThrottler.tick();
+         this.tabSpamThrottler.tick(); // Paper - configurable tab spam limits
++        this.recipeSpamPackets.tick(); // Paper - auto recipe limit
+         this.dropSpamThrottler.tick();
+         if (this.player.getLastActionTime() > 0L && this.server.getPlayerIdleTimeout() > 0 && Util.getMillis() - this.player.getLastActionTime() > (long) this.server.getPlayerIdleTimeout() * 1000L * 60L) {
+             this.player.resetLastActionTime(); // CraftBukkit - SPIGOT-854
+@@ -3088,6 +3090,14 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+     @Override
+     public void handlePlaceRecipe(ServerboundPlaceRecipePacket packet) {
++        // Paper start - auto recipe limit
++        if (!org.bukkit.Bukkit.isPrimaryThread()) {
++            if (!this.recipeSpamPackets.isIncrementAndUnderThreshold()) {
++                this.disconnect(net.minecraft.network.chat.Component.translatable("disconnect.spam"));
++                return;
++            }
++        }
++        // Paper end - auto recipe limit
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
+         this.player.resetLastActionTime();
+         if (!this.player.isSpectator() && this.player.containerMenu.containerId == packet.containerId()) {

@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 8 Oct 2020 00:00:25 -0400
+Subject: [PATCH] Fix "Not a string" Map Conversion spam
+
+The maps did convert successfully, but had noisy logs due to Spigot
+implementing this logic incorrectly.
+
+This stops the spam by converting the old format to new before
+requesting the world.
+
+Track spigot issue to see when fixed: https://hub.spigotmc.org/jira/browse/SPIGOT-6181
+
+diff --git a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java b/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
+index c21ae4975206398e7d20b37a749b830b9219c746..a89f0b652c515efbc24ffc9af47fa65082946e54 100644
+--- a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
++++ b/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
+@@ -123,7 +123,26 @@ public class MapItemSavedData extends SavedData {
+     }
+ 
+     public static MapItemSavedData load(CompoundTag nbt, HolderLookup.Provider registries) {
+-        DataResult<ResourceKey<Level>> dataresult = DimensionType.parseLegacy(new Dynamic(NbtOps.INSTANCE, nbt.get("dimension"))); // CraftBukkit - decompile error
++        // Paper start - fix "Not a string" spam
++        Tag dimension = nbt.get("dimension");
++        if (dimension instanceof final net.minecraft.nbt.NumericTag numericTag && numericTag.getAsInt() >= CraftWorld.CUSTOM_DIMENSION_OFFSET) {
++            long least = nbt.getLong("UUIDLeast");
++            long most = nbt.getLong("UUIDMost");
++
++            if (least != 0L && most != 0L) {
++                UUID uuid = new UUID(most, least);
++                CraftWorld world = (CraftWorld) Bukkit.getWorld(uuid);
++                if (world != null) {
++                    dimension = net.minecraft.nbt.StringTag.valueOf("minecraft:" + world.getName().toLowerCase(java.util.Locale.ENGLISH));
++                } else {
++                    dimension = net.minecraft.nbt.StringTag.valueOf("bukkit:_invalidworld_");
++                }
++            } else {
++                dimension = net.minecraft.nbt.StringTag.valueOf("bukkit:_invalidworld_");
++            }
++        }
++        DataResult<ResourceKey<Level>> dataresult = DimensionType.parseLegacy(new Dynamic(NbtOps.INSTANCE, dimension)); // CraftBukkit - decompile error
++        // Paper end - fix "Not a string" spam
+         Logger logger = MapItemSavedData.LOGGER;
+ 
+         Objects.requireNonNull(logger);

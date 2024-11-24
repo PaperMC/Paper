@@ -1,0 +1,56 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 28 Jun 2020 19:08:41 -0400
+Subject: [PATCH] Improve Legacy Component serialization size
+
+Don't constantly send format: false for all formatting options when parent already
+has it false
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java b/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java
+index 95444fd9fecc5bda5462ca8dfeca82c5318f0895..fd697475e2df1cef8260b47dabb491beb0bd1a8e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftChatMessage.java
+@@ -48,6 +48,7 @@ public final class CraftChatMessage {
+         // Separate pattern with no group 3, new lines are part of previous string
+         private static final Pattern INCREMENTAL_PATTERN_KEEP_NEWLINES = Pattern.compile("(" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + "[0-9a-fk-orx])|((?:(?:https?):\\/\\/)?(?:[-\\w_\\.]{2,}\\.[a-z]{2,4}.*?(?=[\\.\\?!,;:]?(?:[" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + " ]|$))))", Pattern.CASE_INSENSITIVE);
+         // ChatColor.b does not explicitly reset, its more of empty
++        private static final Style EMPTY = Style.EMPTY.withItalic(false); // Paper - Improve Legacy Component serialization size
+         private static final Style RESET = Style.EMPTY.withBold(false).withItalic(false).withUnderlined(false).withStrikethrough(false).withObfuscated(false);
+ 
+         private final List<Component> list = new ArrayList<Component>();
+@@ -69,6 +70,7 @@ public final class CraftChatMessage {
+             Matcher matcher = (keepNewlines ? StringMessage.INCREMENTAL_PATTERN_KEEP_NEWLINES : StringMessage.INCREMENTAL_PATTERN).matcher(message);
+             String match = null;
+             boolean needsAdd = false;
++            boolean hasReset = false; // Paper - Improve Legacy Component serialization size
+             while (matcher.find()) {
+                 int groupId = 0;
+                 while ((match = matcher.group(++groupId)) == null) {
+@@ -114,7 +116,26 @@ public final class CraftChatMessage {
+                             throw new AssertionError("Unexpected message format");
+                         }
+                     } else { // Color resets formatting
+-                        this.modifier = StringMessage.RESET.withColor(format);
++                        // Paper start - Improve Legacy Component serialization size
++                        Style previous = modifier;
++                        modifier = (!hasReset ? RESET : EMPTY).withColor(format);
++                        hasReset = true;
++                        if (previous.isBold()) {
++                            modifier = modifier.withBold(false);
++                        }
++                        if (previous.isItalic()) {
++                            modifier = modifier.withItalic(false);
++                        }
++                        if (previous.isObfuscated()) {
++                            modifier = modifier.withObfuscated(false);
++                        }
++                        if (previous.isStrikethrough()) {
++                            modifier = modifier.withStrikethrough(false);
++                        }
++                        if (previous.isUnderlined()) {
++                            modifier = modifier.withUnderlined(false);
++                        }
++                        // Paper end - Improve Legacy Component serialization size
+                     }
+                     needsAdd = true;
+                     break;

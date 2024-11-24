@@ -1,0 +1,81 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Tue, 25 Aug 2020 13:48:33 +0200
+Subject: [PATCH] Add PlayerItemCooldownEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/item/ItemCooldowns.java b/src/main/java/net/minecraft/world/item/ItemCooldowns.java
+index 2add88d2543b2e1143bd4b1c53946d7ba3f399da..c7a21b33db802fa6b64865ff2b4f0941279b72cb 100644
+--- a/src/main/java/net/minecraft/world/item/ItemCooldowns.java
++++ b/src/main/java/net/minecraft/world/item/ItemCooldowns.java
+@@ -56,6 +56,13 @@ public class ItemCooldowns {
+     }
+ 
+     public void addCooldown(ResourceLocation groupId, int duration) {
++        // Paper start - Item cooldown events
++        this.addCooldown(groupId, duration, true);
++    }
++
++    public void addCooldown(ResourceLocation groupId, int duration, boolean callEvent) {
++        // Event called in server override
++        // Paper end - Item cooldown events
+         this.cooldowns.put(groupId, new ItemCooldowns.CooldownInstance(this.tickCount, this.tickCount + duration));
+         this.onCooldownStarted(groupId, duration);
+     }
+diff --git a/src/main/java/net/minecraft/world/item/ServerItemCooldowns.java b/src/main/java/net/minecraft/world/item/ServerItemCooldowns.java
+index 3a45a149ec4a28f25ea9e45803ecbb7392b63f86..7b634a0a8639524a276cd6c5d6535e28a580b20a 100644
+--- a/src/main/java/net/minecraft/world/item/ServerItemCooldowns.java
++++ b/src/main/java/net/minecraft/world/item/ServerItemCooldowns.java
+@@ -11,6 +11,39 @@ public class ServerItemCooldowns extends ItemCooldowns {
+         this.player = player;
+     }
+ 
++    // Paper start - Add PlayerItemCooldownEvent
++    @Override
++    public void addCooldown(ItemStack item, int duration) {
++        final ResourceLocation cooldownGroup = this.getCooldownGroup(item);
++        final io.papermc.paper.event.player.PlayerItemCooldownEvent event = new io.papermc.paper.event.player.PlayerItemCooldownEvent(
++            this.player.getBukkitEntity(),
++            org.bukkit.craftbukkit.inventory.CraftItemType.minecraftToBukkit(item.getItem()),
++            org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(cooldownGroup),
++            duration
++        );
++        if (event.callEvent()) {
++            super.addCooldown(cooldownGroup, event.getCooldown(), false);
++        }
++    }
++
++    @Override
++    public void addCooldown(ResourceLocation groupId, int duration, boolean callEvent) {
++        if (callEvent) {
++            final io.papermc.paper.event.player.PlayerItemGroupCooldownEvent event = new io.papermc.paper.event.player.PlayerItemGroupCooldownEvent(
++                this.player.getBukkitEntity(),
++                org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(groupId),
++                duration
++            );
++            if (!event.callEvent()) {
++                return;
++            }
++
++            duration = event.getCooldown();
++        }
++        super.addCooldown(groupId, duration, false);
++    }
++    // Paper end - Add PlayerItemCooldownEvent
++
+     @Override
+     protected void onCooldownStarted(ResourceLocation groupId, int duration) {
+         super.onCooldownStarted(groupId, duration);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+index 9022555db0df8c269fc039c895422cf36c08097e..8012ee71e1ce9f174eb5c4ac9eb8372b81e0a78c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+@@ -619,7 +619,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+         }
+ 
+         ItemCooldowns.CooldownInstance cooldown = this.getHandle().getCooldowns().cooldowns.get(group);
+-        return (cooldown == null) ? 0 : Math.max(0, cooldown.endTime - this.getHandle().getCooldowns().tickCount);
++        return (cooldown == null) ? 0 : Math.max(0, cooldown.endTime() - this.getHandle().getCooldowns().tickCount);
+     }
+ 
+     @Override

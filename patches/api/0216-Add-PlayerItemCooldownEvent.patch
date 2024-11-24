@@ -6,49 +6,90 @@ Subject: [PATCH] Add PlayerItemCooldownEvent
 
 diff --git a/src/main/java/io/papermc/paper/event/player/PlayerItemCooldownEvent.java b/src/main/java/io/papermc/paper/event/player/PlayerItemCooldownEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c2764ffd51831351b934568e1301b2e4073dc0c4
+index 0000000000000000000000000000000000000000..165dcf8b68da5dc01eaa83b3bffd7a2bbf0df526
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/event/player/PlayerItemCooldownEvent.java
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,34 @@
++package io.papermc.paper.event.player;
++
++import org.bukkit.Material;
++import org.bukkit.NamespacedKey;
++import org.bukkit.entity.Player;
++import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Fired when a player receives an item cooldown when using an item.
++ *
++ * @see PlayerItemGroupCooldownEvent for a more general event when applied to a group of items
++ */
++@NullMarked
++public class PlayerItemCooldownEvent extends PlayerItemGroupCooldownEvent {
++
++    private final Material type;
++
++    @ApiStatus.Internal
++    public PlayerItemCooldownEvent(final Player player, final Material type, final NamespacedKey cooldownGroup, final int cooldown) {
++        super(player, cooldownGroup, cooldown);
++        this.type = type;
++    }
++
++    /**
++     * Get the material of the item affected by the cooldown.
++     *
++     * @return material affected by the cooldown
++     */
++    public Material getType() {
++        return this.type;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/player/PlayerItemGroupCooldownEvent.java b/src/main/java/io/papermc/paper/event/player/PlayerItemGroupCooldownEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e66aed33b165b86cc5e51eb5c29159232be4a9ef
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/PlayerItemGroupCooldownEvent.java
+@@ -0,0 +1,81 @@
 +package io.papermc.paper.event.player;
 +
 +import com.google.common.base.Preconditions;
-+import org.bukkit.Material;
++import org.bukkit.NamespacedKey;
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.player.PlayerEvent;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Fired when a player receives an item cooldown.
++ *
++ * @see PlayerItemCooldownEvent for a more specific event when applied to a specific item.
 + */
-+public class PlayerItemCooldownEvent extends PlayerEvent implements Cancellable {
++@NullMarked
++public class PlayerItemGroupCooldownEvent extends PlayerEvent implements Cancellable {
 +
 +    private static final HandlerList HANDLER_LIST = new HandlerList();
 +
-+    @NotNull
-+    private final Material type;
++    private final NamespacedKey cooldownGroup;
 +    private int cooldown;
 +
 +    private boolean cancelled;
 +
 +    @ApiStatus.Internal
-+    public PlayerItemCooldownEvent(@NotNull Player player, @NotNull Material type, int cooldown) {
++    public PlayerItemGroupCooldownEvent(final Player player, final NamespacedKey cooldownGroup, final int cooldown) {
 +        super(player);
-+        this.type = type;
++        this.cooldownGroup = cooldownGroup;
 +        this.cooldown = cooldown;
 +    }
 +
 +    /**
-+     * Get the material affected by the cooldown.
++     * Get the cooldown group as defined by an item's {@link org.bukkit.inventory.meta.components.UseCooldownComponent}.
 +     *
-+     * @return material affected by the cooldown
++     * @return cooldown group
 +     */
-+    @NotNull
-+    public Material getType() {
-+        return this.type;
++    public NamespacedKey getCooldownGroup() {
++        return this.cooldownGroup;
 +    }
 +
 +    /**
@@ -66,7 +107,7 @@ index 0000000000000000000000000000000000000000..c2764ffd51831351b934568e1301b2e4
 +     *
 +     * @param cooldown cooldown in ticks, has to be a positive number
 +     */
-+    public void setCooldown(int cooldown) {
++    public void setCooldown(final int cooldown) {
 +        Preconditions.checkArgument(cooldown >= 0, "The cooldown has to be equal to or greater than 0!");
 +        this.cooldown = cooldown;
 +    }
@@ -77,17 +118,15 @@ index 0000000000000000000000000000000000000000..c2764ffd51831351b934568e1301b2e4
 +    }
 +
 +    @Override
-+    public void setCancelled(boolean cancel) {
++    public void setCancelled(final boolean cancel) {
 +        this.cancelled = cancel;
 +    }
 +
-+    @NotNull
 +    @Override
 +    public HandlerList getHandlers() {
 +        return HANDLER_LIST;
 +    }
 +
-+    @NotNull
 +    public static HandlerList getHandlerList() {
 +        return HANDLER_LIST;
 +    }

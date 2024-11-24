@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 19 Aug 2024 13:43:06 -0700
+Subject: [PATCH] Fix SculkBloomEvent firing for block entity loading
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/SculkSpreader.java b/src/main/java/net/minecraft/world/level/block/SculkSpreader.java
+index b9a1709b79c1f7a21c9d08f986d4ea3b546e4a67..24590d131587c4e1def920333140b1575f9d7471 100644
+--- a/src/main/java/net/minecraft/world/level/block/SculkSpreader.java
++++ b/src/main/java/net/minecraft/world/level/block/SculkSpreader.java
+@@ -126,7 +126,7 @@ public class SculkSpreader {
+             int i = Math.min(list.size(), 32);
+ 
+             for (int j = 0; j < i; ++j) {
+-                this.addCursor((SculkSpreader.ChargeCursor) list.get(j));
++                this.addCursor((SculkSpreader.ChargeCursor) list.get(j), false); // Paper - don't fire event for block entity loading
+             }
+         }
+ 
+@@ -146,16 +146,16 @@ public class SculkSpreader {
+         while (charge > 0) {
+             int j = Math.min(charge, 1000);
+ 
+-            this.addCursor(new SculkSpreader.ChargeCursor(pos, j));
++            this.addCursor(new SculkSpreader.ChargeCursor(pos, j), true); // Paper - allow firing event for other causes
+             charge -= j;
+         }
+ 
+     }
+ 
+-    private void addCursor(SculkSpreader.ChargeCursor cursor) {
++    private void addCursor(SculkSpreader.ChargeCursor cursor, boolean fireEvent) { // Paper - add boolean to conditionally fire SculkBloomEvent
+         if (this.cursors.size() < 32) {
+             // CraftBukkit start
+-            if (!this.isWorldGeneration()) { // CraftBukkit - SPIGOT-7475: Don't call event during world generation
++            if (!this.isWorldGeneration() && fireEvent) { // CraftBukkit - SPIGOT-7475: Don't call event during world generation // Paper - add boolean to conditionally fire SculkBloomEvent
+                 CraftBlock bukkitBlock = CraftBlock.at(this.level, cursor.pos);
+                 SculkBloomEvent event = new SculkBloomEvent(bukkitBlock, cursor.getCharge());
+                 Bukkit.getPluginManager().callEvent(event);

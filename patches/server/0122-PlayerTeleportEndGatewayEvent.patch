@@ -7,29 +7,18 @@ Allows you to access the Gateway being used in a teleport event
 Fix the offset used for player teleportation
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index f067b10e13f01e751fc4ebf088740c7d40afcb99..e13692373d0efba9402c35ae5cce615dce0a5e1e 100644
+index 5890aa22912eed9d645393f5a7189d6884fb2c66..b99bd43bf5185bed21fad7dac31baf1a30bdd1fe 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -1192,11 +1192,22 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
-             ResourceKey<LevelStem> resourcekey = worldserver1.getTypeKey();
- 
-             if (worldserver != null && worldserver.dimension() == worldserver1.dimension()) { // CraftBukkit
-+                // Paper start - gateway-specific teleport event
-+                if (this.portalProcess != null && this.portalProcess.isSamePortal(((net.minecraft.world.level.block.EndGatewayBlock) net.minecraft.world.level.block.Blocks.END_GATEWAY)) && this.serverLevel().getBlockEntity(this.portalProcess.getEntryPosition()) instanceof net.minecraft.world.level.block.entity.TheEndGatewayBlockEntity theEndGatewayBlockEntity) {
-+                    Location to = CraftLocation.toBukkit(teleportTarget.pos(), this.serverLevel().getWorld(), teleportTarget.yRot(), teleportTarget.xRot());
-+                    final com.destroystokyo.paper.event.player.PlayerTeleportEndGatewayEvent event = new com.destroystokyo.paper.event.player.PlayerTeleportEndGatewayEvent(this.getBukkitEntity(), this.getBukkitEntity().getLocation(), to, new org.bukkit.craftbukkit.block.CraftEndGateway(to.getWorld(), theEndGatewayBlockEntity));
-+                    if (!event.callEvent() || event.getTo() == null) {
-+                        return null;
-+                    }
-+                    this.connection.teleport(event.getTo());
-+                } else {
-+                    // Paper end - gateway-specific teleport event
-                 boolean result = this.connection.teleport(teleportTarget.pos().x, teleportTarget.pos().y, teleportTarget.pos().z, teleportTarget.yRot(), teleportTarget.xRot(), teleportTarget.cause());
-                 if (!result) {
-                     return null;
-                 }
-                 // CraftBukkit end
-+                } // Paper
-                 this.connection.resetPosition();
-                 teleportTarget.postDimensionTransition().onTransition(this);
-                 return this;
+@@ -1455,6 +1455,11 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+             PositionMoveRotation absolutePosition = PositionMoveRotation.calculateAbsolute(PositionMoveRotation.of(this), PositionMoveRotation.of(teleportTarget), teleportTarget.relatives());
+             Location exit = (worldserver == null) ? null : CraftLocation.toBukkit(absolutePosition.position(), worldserver.getWorld(), absolutePosition.yRot(), absolutePosition.xRot());
+             PlayerTeleportEvent tpEvent = new PlayerTeleportEvent(this.getBukkitEntity(), enter, exit, teleportTarget.cause());
++            // Paper start - gateway-specific teleport event
++            if (this.portalProcess != null && this.portalProcess.isSamePortal(((net.minecraft.world.level.block.EndGatewayBlock) net.minecraft.world.level.block.Blocks.END_GATEWAY)) && this.serverLevel().getBlockEntity(this.portalProcess.getEntryPosition()) instanceof net.minecraft.world.level.block.entity.TheEndGatewayBlockEntity theEndGatewayBlockEntity) {
++                tpEvent = new com.destroystokyo.paper.event.player.PlayerTeleportEndGatewayEvent(this.getBukkitEntity(), enter, exit, new org.bukkit.craftbukkit.block.CraftEndGateway(this.serverLevel().getWorld(), theEndGatewayBlockEntity));
++            }
++            // Paper end - gateway-specific teleport event
+             Bukkit.getServer().getPluginManager().callEvent(tpEvent);
+             Location newExit = tpEvent.getTo();
+             if (tpEvent.isCancelled() || newExit == null) {

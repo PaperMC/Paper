@@ -7,7 +7,7 @@ Currently includes generated key holder classes for types
 used in the Registry Modification API
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index d91ce069b5fce4afb245691bd90f448d6dfdc492..f715ae19c1e71d854a722130d3db447887fa2d2b 100644
+index c7f660d52e1b5f085919a8aebf8476918705a391..89208fed89181f890bb7a2bb237ed744ec2aea96 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -1,6 +1,7 @@
@@ -18,8 +18,8 @@ index d91ce069b5fce4afb245691bd90f448d6dfdc492..f715ae19c1e71d854a722130d3db4478
  }
  
  java {
-@@ -46,6 +47,22 @@ dependencies {
-     testImplementation("org.ow2.asm:asm-tree:9.7")
+@@ -59,6 +60,22 @@ dependencies {
+     mockitoAgent("org.mockito:mockito-core:5.14.1") { isTransitive = false } // Paper - configure mockito agent that is needed in newer java versions
  }
  
 +// Paper start
@@ -41,7 +41,7 @@ index d91ce069b5fce4afb245691bd90f448d6dfdc492..f715ae19c1e71d854a722130d3db4478
  configure<PublishingExtension> {
      publications.create<MavenPublication>("maven") {
          from(components["java"])
-@@ -122,3 +139,14 @@ tasks.check {
+@@ -141,3 +158,14 @@ tasks.check {
      dependsOn(scanJar)
  }
  // Paper end
@@ -85,10 +85,10 @@ index 0000000000000000000000000000000000000000..2512dba27edfdccbc4430815b6cba048
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/RegistryKey.java b/src/main/java/io/papermc/paper/registry/RegistryKey.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1e2765d296decbb3e61b8434e78b5e0214f8fee0
+index 0000000000000000000000000000000000000000..647f6a1ec1f9d3c203b41f90a99bfd415bf67366
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/RegistryKey.java
-@@ -0,0 +1,177 @@
+@@ -0,0 +1,196 @@
 +package io.papermc.paper.registry;
 +
 +import net.kyori.adventure.key.Keyed;
@@ -121,6 +121,7 @@ index 0000000000000000000000000000000000000000..1e2765d296decbb3e61b8434e78b5e02
 +import org.bukkit.potion.PotionEffectType;
 +import org.bukkit.potion.PotionType;
 +import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +import static io.papermc.paper.registry.RegistryKeyImpl.create;
 +
@@ -137,6 +138,7 @@ index 0000000000000000000000000000000000000000..1e2765d296decbb3e61b8434e78b5e02
 + * @param <T> the value type
 + */
 +@SuppressWarnings("unused")
++@NullMarked
 +public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
 +
 +    /* ******************* *
@@ -152,11 +154,6 @@ index 0000000000000000000000000000000000000000..1e2765d296decbb3e61b8434e78b5e02
 +     * @see io.papermc.paper.registry.keys.StructureTypeKeys
 +     */
 +    RegistryKey<StructureType> STRUCTURE_TYPE = create("worldgen/structure_type");
-+    /**
-+     * Built-in registry for instruments.
-+     * @see io.papermc.paper.registry.keys.InstrumentKeys
-+     */
-+    RegistryKey<MusicInstrument> INSTRUMENT = create("instrument");
 +    /**
 +     * Built-in registry for potion effect types (mob effects).
 +     * @see io.papermc.paper.registry.keys.MobEffectKeys
@@ -202,6 +199,22 @@ index 0000000000000000000000000000000000000000..1e2765d296decbb3e61b8434e78b5e02
 +     * @see io.papermc.paper.registry.keys.MenuTypeKeys
 +     */
 +    RegistryKey<MenuType> MENU = create("menu");
++    /**
++     * Built-in registry for attributes.
++     * @see io.papermc.paper.registry.keys.AttributeKeys
++     */
++    RegistryKey<Attribute> ATTRIBUTE = create("attribute");
++    /**
++     * Built-in registry for fluids.
++     * @see io.papermc.paper.registry.keys.FluidKeys
++     */
++    RegistryKey<Fluid> FLUID = create("fluid");
++    /**
++     * Built-in registry for sound events.
++     * @see io.papermc.paper.registry.keys.SoundEventKeys
++     */
++    RegistryKey<Sound> SOUND_EVENT = create("sound_event");
++
 +
 +
 +    /* ********************** *
@@ -252,35 +265,43 @@ index 0000000000000000000000000000000000000000..1e2765d296decbb3e61b8434e78b5e02
 +     * @see io.papermc.paper.registry.keys.BannerPatternKeys
 +     */
 +    RegistryKey<PatternType> BANNER_PATTERN = create("banner_pattern");
++    /**
++     * Data-driven registry for painting variants.
++     * @see io.papermc.paper.registry.keys.PaintingVariantKeys
++     */
++    RegistryKey<Art> PAINTING_VARIANT = create("painting_variant");
++    /**
++     * Data-driven registry for instruments.
++     * @see io.papermc.paper.registry.keys.InstrumentKeys
++     */
++    RegistryKey<MusicInstrument> INSTRUMENT = create("instrument");
 +
 +
 +    /* ******************* *
 +     * API-only Registries *
 +     * ******************* */
-+    RegistryKey<Art> PAINTING_VARIANT = create("painting_variant");
-+    RegistryKey<Attribute> ATTRIBUTE = create("attribute");
 +    RegistryKey<EntityType> ENTITY_TYPE = create("entity_type");
 +    RegistryKey<Particle> PARTICLE_TYPE = create("particle_type");
 +    RegistryKey<PotionType> POTION = create("potion");
-+    RegistryKey<Sound> SOUND_EVENT = create("sound_event");
 +    RegistryKey<MemoryKey<?>> MEMORY_MODULE_TYPE = create("memory_module_type");
-+    RegistryKey<Fluid> FLUID = create("fluid");
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/RegistryKeyImpl.java b/src/main/java/io/papermc/paper/registry/RegistryKeyImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..791813220b2504214b1adecc69093cd600fb0f8c
+index 0000000000000000000000000000000000000000..80e3e64f47ac55a4978c9e5b430e2f2d1c871d1b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/RegistryKeyImpl.java
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,26 @@
 +package io.papermc.paper.registry;
 +
 +import com.google.common.collect.Sets;
 +import java.util.Set;
 +import net.kyori.adventure.key.Key;
 +import org.intellij.lang.annotations.Subst;
-+import org.jetbrains.annotations.NotNull;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
-+record RegistryKeyImpl<T>(@NotNull Key key) implements RegistryKey<T> {
++@NullMarked
++record RegistryKeyImpl<T>(Key key) implements RegistryKey<T> {
 +
 +    static final Set<RegistryKey<?>> REGISTRY_KEYS = Sets.newIdentityHashSet();
 +
@@ -298,16 +319,16 @@ index 0000000000000000000000000000000000000000..791813220b2504214b1adecc69093cd6
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/TypedKey.java b/src/main/java/io/papermc/paper/registry/TypedKey.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..6f5a062ba7ee7173468ecea3c1855a233bf3855e
+index 0000000000000000000000000000000000000000..81bee5224196008662ddda528b5dcb8dd7cb9f21
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/TypedKey.java
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,45 @@
 +package io.papermc.paper.registry;
 +
 +import net.kyori.adventure.key.Key;
 +import net.kyori.adventure.key.Keyed;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Represents a key for a value in a specific registry.
@@ -315,7 +336,8 @@ index 0000000000000000000000000000000000000000..6f5a062ba7ee7173468ecea3c1855a23
 + * @param <T> the value type for the registry
 + */
 +@ApiStatus.Experimental
-+public sealed interface TypedKey<T> extends Keyed permits TypedKeyImpl {
++@NullMarked
++public sealed interface TypedKey<T> extends Key permits TypedKeyImpl {
 +
 +    /**
 +     * Gets the key for the value in the registry.
@@ -323,7 +345,7 @@ index 0000000000000000000000000000000000000000..6f5a062ba7ee7173468ecea3c1855a23
 +     * @return the value's key
 +     */
 +    @Override
-+    @NotNull Key key();
++    Key key();
 +
 +    /**
 +     * Gets the registry key for the value this key
@@ -331,7 +353,7 @@ index 0000000000000000000000000000000000000000..6f5a062ba7ee7173468ecea3c1855a23
 +     *
 +     * @return the registry key
 +     */
-+    @NotNull RegistryKey<T> registryKey();
++    RegistryKey<T> registryKey();
 +
 +    /**
 +     * Create a typed key from a key and a registry key.
@@ -342,32 +364,51 @@ index 0000000000000000000000000000000000000000..6f5a062ba7ee7173468ecea3c1855a23
 +     * @return a new key for the value key and registry key
 +     */
 +    @ApiStatus.Experimental
-+    static <T> @NotNull TypedKey<T> create(final @NotNull RegistryKey<T> registryKey, final @NotNull Key key) {
++    static <T> TypedKey<T> create(final RegistryKey<T> registryKey, final Key key) {
 +        return new TypedKeyImpl<>(key, registryKey);
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/TypedKeyImpl.java b/src/main/java/io/papermc/paper/registry/TypedKeyImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1a97b3359c4ece5c29131da7c3f208aaa8fab66e
+index 0000000000000000000000000000000000000000..3e29f7007500582cdc3f84b91f11ebeb58f68bbf
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/TypedKeyImpl.java
-@@ -0,0 +1,8 @@
+@@ -0,0 +1,23 @@
 +package io.papermc.paper.registry;
 +
 +import net.kyori.adventure.key.Key;
-+import net.kyori.adventure.key.Keyed;
-+import org.jetbrains.annotations.NotNull;
++import org.jspecify.annotations.NullMarked;
 +
-+record TypedKeyImpl<T>(@NotNull Key key, @NotNull RegistryKey<T> registryKey) implements TypedKey<T> {
++@NullMarked
++record TypedKeyImpl<T>(Key key, RegistryKey<T> registryKey) implements TypedKey<T> {
++    // Wrap key methods to make this easier to use
++    @Override
++    public String namespace() {
++        return this.key.namespace();
++    }
++
++    @Override
++    public String value() {
++        return this.key.value();
++    }
++
++    @Override
++    public String asString() {
++        return this.key.asString();
++    }
 +}
 diff --git a/src/main/java/org/bukkit/MinecraftExperimental.java b/src/main/java/org/bukkit/MinecraftExperimental.java
-index a86b87e4c3332202e40e484c3f9c6562b419c70f..305532968f9f7dd497c77259ed147ea2f081bc74 100644
+index b7845523e8587e13b86516c0012fe097d904846c..d92a75f610cb2a95203b3f22dc67bdbfb5c3405a 100644
 --- a/src/main/java/org/bukkit/MinecraftExperimental.java
 +++ b/src/main/java/org/bukkit/MinecraftExperimental.java
-@@ -47,5 +47,6 @@ public @interface MinecraftExperimental {
-     @ApiStatus.Internal
+@@ -48,5 +48,10 @@ public @interface MinecraftExperimental {
      public enum Requires {
  
-+        BUNDLE, TRADE_REBALANCE // Paper
+         WINTER_DROP,
++        // Paper start
++        TRADE_REBALANCE,
++        REDSTONE_EXPERIMENTS,
++        MINECART_IMPROVEMENTS
++        // Paper end
      }
  }

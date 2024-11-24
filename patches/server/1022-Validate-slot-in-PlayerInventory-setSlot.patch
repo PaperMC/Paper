@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: strnq <dev@aruus.uk>
+Date: Sat, 14 Sep 2024 12:53:13 +0300
+Subject: [PATCH] Validate slot in PlayerInventory#setSlot
+
+The CraftPlayerInventory implementation sends a container_set_slot
+packet to the client which will error if an invalid slot is passed to
+the setSlot method, making a validation necessary over simply silently
+ignoring invalid slot values.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryPlayer.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryPlayer.java
+index 656c9a6d8cd42891141ee29ec91ab5d166051ed6..df847c9897f209700a79aa1a8254b708ef7bf260 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryPlayer.java
+@@ -70,6 +70,11 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
+ 
+     @Override
+     public void setItem(int index, ItemStack item) {
++        // Paper start - Validate setItem index
++        if (index < 0 || index > 40) {
++            throw new ArrayIndexOutOfBoundsException("Index must be between 0 and 40");
++        }
++        // Paper end - Validate setItem index
+         super.setItem(index, item);
+         if (this.getHolder() == null) return;
+         ServerPlayer player = ((CraftPlayer) this.getHolder()).getHandle();

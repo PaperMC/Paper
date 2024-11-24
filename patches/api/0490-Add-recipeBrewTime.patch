@@ -1,0 +1,158 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tamion <70228790+notTamion@users.noreply.github.com>
+Date: Fri, 20 Sep 2024 17:39:22 +0200
+Subject: [PATCH] Add recipeBrewTime
+
+
+diff --git a/src/main/java/org/bukkit/block/BrewingStand.java b/src/main/java/org/bukkit/block/BrewingStand.java
+index fe155f14de7f7efb519f0585897ef43ee6c16bb9..7f27f0660d5487689eb77c8617951d708452c4e1 100644
+--- a/src/main/java/org/bukkit/block/BrewingStand.java
++++ b/src/main/java/org/bukkit/block/BrewingStand.java
+@@ -22,6 +22,29 @@ public interface BrewingStand extends Container {
+      */
+     void setBrewingTime(int brewTime);
+ 
++    // Paper start - Add recipeBrewTime
++    /**
++     * Sets the recipe time for the brewing process which is
++     * used to compute the progress of the brewing process with
++     * {@link #getBrewingTime()}.
++     *
++     * @param recipeBrewTime recipe brew time (in ticks)
++     * @throws IllegalArgumentException if the recipe brew time is non-positive
++     */
++    @org.jetbrains.annotations.ApiStatus.Experimental
++    void setRecipeBrewTime(@org.jetbrains.annotations.Range(from = 1, to = Integer.MAX_VALUE) int recipeBrewTime);
++
++    /**
++     * Gets the recipe time for the brewing process which is
++     * used to compute the progress of the brewing process with
++     * {@link #getBrewingTime()}.
++     *
++     * @return recipe brew time (in ticks)
++     */
++    @org.jetbrains.annotations.ApiStatus.Experimental
++    @org.jetbrains.annotations.Range(from = 1, to = Integer.MAX_VALUE) int getRecipeBrewTime();
++    // Paper end - Add recipeBrewTime
++
+     /**
+      * Get the level of current fuel for brewing.
+      *
+diff --git a/src/main/java/org/bukkit/event/block/BrewingStartEvent.java b/src/main/java/org/bukkit/event/block/BrewingStartEvent.java
+index 43eac972f45d1cbb6278b048f8e6d7882c0aabeb..f193ab698edc548ec7fad89a82d03f39bb6e80e0 100644
+--- a/src/main/java/org/bukkit/event/block/BrewingStartEvent.java
++++ b/src/main/java/org/bukkit/event/block/BrewingStartEvent.java
+@@ -13,7 +13,9 @@ public class BrewingStartEvent extends InventoryBlockStartEvent {
+ 
+     // Paper - remove HandlerList
+     private int brewingTime;
++    private int recipeBrewTime = 400; // Paper - Add recipeBrewTime
+ 
++    @org.jetbrains.annotations.ApiStatus.Internal // Paper
+     public BrewingStartEvent(@NotNull final Block furnace, @NotNull ItemStack source, int brewingTime) {
+         super(furnace, source);
+         this.brewingTime = brewingTime;
+@@ -23,7 +25,9 @@ public class BrewingStartEvent extends InventoryBlockStartEvent {
+      * Gets the total brew time associated with this event.
+      *
+      * @return the total brew time
++     * @deprecated use {@link #getBrewingTime()} instead
+      */
++    @Deprecated(since = "1.21", forRemoval = true) // Paper
+     public int getTotalBrewTime() {
+         return brewingTime;
+     }
+@@ -32,10 +36,60 @@ public class BrewingStartEvent extends InventoryBlockStartEvent {
+      * Sets the total brew time for this event.
+      *
+      * @param brewTime the new total brew time
++     * @deprecated use {@link #setBrewingTime(int)} instead
+      */
++    @Deprecated(since = "1.21", forRemoval = true) // Paper
+     public void setTotalBrewTime(int brewTime) {
+-        this.brewingTime = brewTime;
++        this.setBrewingTime(brewTime); // Paper - delegate to new method
+     }
+ 
+     // Paper - remove HandlerList
++
++    // Paper start - add recipeBrewTime
++    /**
++     * Gets the recipe time for the brewing process which is
++     * used to compute the progress of the brewing process with
++     * {@link #getBrewingTime()}.
++     *
++     * @return recipe brew time (in ticks)
++     */
++    @org.jetbrains.annotations.ApiStatus.Experimental
++    public @org.jetbrains.annotations.Range(from = 1, to = Integer.MAX_VALUE) int getRecipeBrewTime() {
++        return this.recipeBrewTime;
++    }
++
++    /**
++     * Sets the recipe time for the brewing process which is
++     * used to compute the progress of the brewing process with
++     * {@link #getBrewingTime()}.
++     *
++     * @param recipeBrewTime recipe brew time (in ticks)
++     * @throws IllegalArgumentException if the recipe brew time is non-positive
++     */
++    @org.jetbrains.annotations.ApiStatus.Experimental
++    public void setRecipeBrewTime(@org.jetbrains.annotations.Range(from = 1, to = Integer.MAX_VALUE) int recipeBrewTime) {
++        com.google.common.base.Preconditions.checkArgument(recipeBrewTime > 0, "recipeBrewTime must be positive");
++        this.recipeBrewTime = recipeBrewTime;
++    }
++
++    /**
++     * Gets the amount of brewing ticks left.
++     *
++     * @return The amount of ticks left for the brewing task
++     */
++    public @org.jetbrains.annotations.Range(from = 0, to = Integer.MAX_VALUE) int getBrewingTime() {
++        return this.brewingTime;
++    }
++
++    /**
++     * Sets the brewing ticks left.
++     *
++     * @param brewTime the ticks left, which is no less than 0
++     * @throws IllegalArgumentException if the ticks are less than 0
++     */
++    public void setBrewingTime(@org.jetbrains.annotations.Range(from = 0, to = Integer.MAX_VALUE) int brewTime) {
++        com.google.common.base.Preconditions.checkArgument(brewTime >= 0, "brewTime must be non-negative");
++        this.brewingTime = brewTime;
++    }
++    // Paper end - add recipeBrewTime
+ }
+diff --git a/src/main/java/org/bukkit/inventory/view/BrewingStandView.java b/src/main/java/org/bukkit/inventory/view/BrewingStandView.java
+index f76db2757f6388265b7fed0f3d1c363ea4f01052..ff7227bfa13cba497ba404cdd7493f911377fab6 100644
+--- a/src/main/java/org/bukkit/inventory/view/BrewingStandView.java
++++ b/src/main/java/org/bukkit/inventory/view/BrewingStandView.java
+@@ -45,4 +45,27 @@ public interface BrewingStandView extends InventoryView {
+      * @throws IllegalArgumentException if the ticks are less than 0
+      */
+     void setBrewingTicks(final int ticks) throws IllegalArgumentException;
++
++    // Paper start - Add recipeBrewTime
++    /**
++     * Sets the recipe time for the brewing process which is
++     * used to compute the progress of the brewing process with
++     * {@link #getBrewingTicks()}.
++     *
++     * @param recipeBrewTime recipe brew time (in ticks)
++     * @throws IllegalArgumentException if the recipe brew time is non-positive
++     */
++    @org.jetbrains.annotations.ApiStatus.Experimental
++    void setRecipeBrewTime(@org.jetbrains.annotations.Range(from = 1, to = Integer.MAX_VALUE) int recipeBrewTime);
++
++    /**
++     * Gets the recipe time for the brewing process which is
++     * used to compute the progress of the brewing process with
++     * {@link #getBrewingTicks()}.
++     *
++     * @return recipe brew time (in ticks)
++     */
++    @org.jetbrains.annotations.ApiStatus.Experimental
++    @org.jetbrains.annotations.Range(from = 1, to = Integer.MAX_VALUE) int getRecipeBrewTime();
++    // Paper end - Add recipeBrewTime
+ }

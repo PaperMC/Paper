@@ -1,0 +1,117 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sun, 7 Oct 2018 04:29:59 -0500
+Subject: [PATCH] Add more Zombie API
+
+== AT ==
+public net.minecraft.world.entity.monster.Zombie isSunSensitive()Z
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Zombie.java b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+index 73c4585870b7af409f84474f126a58497ed0495f..d3d1e170380e7674c9ac13b06186eb563a58cd64 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Zombie.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+@@ -99,6 +99,7 @@ public class Zombie extends Monster {
+     private int inWaterTime;
+     public int conversionTime;
+     private int lastTick = MinecraftServer.currentTick; // CraftBukkit - add field
++    private boolean shouldBurnInDay = true; // Paper - Add more Zombie API
+ 
+     public Zombie(EntityType<? extends Zombie> type, Level world) {
+         super(type, world);
+@@ -265,6 +266,12 @@ public class Zombie extends Monster {
+         super.aiStep();
+     }
+ 
++    // Paper start - Add more Zombie API
++    public void stopDrowning() {
++        this.conversionTime = -1;
++        this.getEntityData().set(Zombie.DATA_DROWNED_CONVERSION_ID, false);
++    }
++    // Paper end - Add more Zombie API
+     public void startUnderWaterConversion(int ticksUntilWaterConversion) {
+         this.lastTick = MinecraftServer.currentTick; // CraftBukkit
+         this.conversionTime = ticksUntilWaterConversion;
+@@ -316,9 +323,15 @@ public class Zombie extends Monster {
+     }
+ 
+     public boolean isSunSensitive() {
+-        return true;
++        return this.shouldBurnInDay; // Paper - Add more Zombie API
+     }
+ 
++    // Paper start - Add more Zombie API
++    public void setShouldBurnInDay(boolean shouldBurnInDay) {
++        this.shouldBurnInDay = shouldBurnInDay;
++    }
++    // Paper end - Add more Zombie API
++
+     @Override
+     public boolean hurtServer(ServerLevel world, DamageSource source, float amount) {
+         if (!super.hurtServer(world, source, amount)) {
+@@ -447,6 +460,7 @@ public class Zombie extends Monster {
+         nbt.putBoolean("CanBreakDoors", this.canBreakDoors());
+         nbt.putInt("InWaterTime", this.isInWater() ? this.inWaterTime : -1);
+         nbt.putInt("DrownedConversionTime", this.isUnderWaterConverting() ? this.conversionTime : -1);
++        nbt.putBoolean("Paper.ShouldBurnInDay", this.shouldBurnInDay); // Paper - Add more Zombie API
+     }
+ 
+     @Override
+@@ -458,6 +472,11 @@ public class Zombie extends Monster {
+         if (nbt.contains("DrownedConversionTime", 99) && nbt.getInt("DrownedConversionTime") > -1) {
+             this.startUnderWaterConversion(nbt.getInt("DrownedConversionTime"));
+         }
++        // Paper start - Add more Zombie API
++        if (nbt.contains("Paper.ShouldBurnInDay")) {
++            this.shouldBurnInDay = nbt.getBoolean("Paper.ShouldBurnInDay");
++        }
++        // Paper end - Add more Zombie API
+ 
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftZombie.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftZombie.java
+index 99dcaa827831a40ea46453f502d8b6ccb107f0ad..4412c913123f7521f449c98b60378e8d3b1671ce 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftZombie.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftZombie.java
+@@ -87,6 +87,42 @@ public class CraftZombie extends CraftMonster implements Zombie {
+     @Override
+     public void setAgeLock(boolean b) {
+     }
++    // Paper start
++    @Override
++    public boolean isDrowning() {
++        return getHandle().isUnderWaterConverting();
++    }
++
++    @Override
++    public void startDrowning(int drownedConversionTime) {
++        getHandle().startUnderWaterConversion(drownedConversionTime);
++    }
++
++    @Override
++    public void stopDrowning() {
++        getHandle().stopDrowning();
++    }
++
++    @Override
++    public boolean shouldBurnInDay() {
++        return getHandle().isSunSensitive();
++    }
++
++    @Override
++    public boolean isArmsRaised() {
++        return getHandle().isAggressive();
++    }
++
++    @Override
++    public void setArmsRaised(final boolean raised) {
++        getHandle().setAggressive(raised);
++    }
++
++    @Override
++    public void setShouldBurnInDay(boolean shouldBurnInDay) {
++        getHandle().setShouldBurnInDay(shouldBurnInDay);
++    }
++    // Paper end
+ 
+     @Override
+     public boolean getAgeLock() {

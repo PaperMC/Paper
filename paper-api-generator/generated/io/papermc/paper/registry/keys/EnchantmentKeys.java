@@ -7,8 +7,8 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.enchantments.Enchantment;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Vanilla keys for {@link RegistryKey#ENCHANTMENT}.
@@ -23,7 +23,8 @@ import org.jetbrains.annotations.ApiStatus;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.1")
+@GeneratedFrom("1.21.3")
+@NullMarked
 @ApiStatus.Experimental
 public final class EnchantmentKeys {
     /**
@@ -323,7 +324,14 @@ public final class EnchantmentKeys {
     private EnchantmentKeys() {
     }
 
-    private static @NonNull TypedKey<Enchantment> create(final @NonNull Key key) {
+    /**
+     * Creates a key for {@link Enchantment} in the registry {@code minecraft:enchantment}.
+     *
+     * @param key the value's key in the registry
+     * @return a new typed key
+     */
+    @ApiStatus.Experimental
+    public static TypedKey<Enchantment> create(final Key key) {
         return TypedKey.create(RegistryKey.ENCHANTMENT, key);
     }
 }

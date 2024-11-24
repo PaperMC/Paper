@@ -1,0 +1,145 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: kashike <kashike@vq.lc>
+Date: Wed, 15 Aug 2018 01:26:09 -0700
+Subject: [PATCH] Allow disabling armor stand ticking
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
+index e9d6211eb0f955eb95d2f73ad96799ef4740d506..2caba38a50b7ea535337a3540aa5272d4a9f1878 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
+@@ -108,9 +108,16 @@ public class ArmorStand extends LivingEntity {
+     public Rotations leftLegPose;
+     public Rotations rightLegPose;
+     public boolean canMove = true; // Paper
++    // Paper start - Allow ArmorStands not to tick
++    public boolean canTick = true;
++    public boolean canTickSetByAPI = false;
++    private boolean noTickPoseDirty = false;
++    private boolean noTickEquipmentDirty = false;
++    // Paper end - Allow ArmorStands not to tick
+ 
+     public ArmorStand(EntityType<? extends ArmorStand> type, Level world) {
+         super(type, world);
++        if (world != null) this.canTick = world.paperConfig().entities.armorStands.tick; // Paper - Allow ArmorStands not to tick
+         this.handItems = NonNullList.withSize(2, ItemStack.EMPTY);
+         this.armorItems = NonNullList.withSize(4, ItemStack.EMPTY);
+         this.headPose = ArmorStand.DEFAULT_HEAD_POSE;
+@@ -213,6 +220,7 @@ public class ArmorStand extends LivingEntity {
+                 this.onEquipItem(enumitemslot, (ItemStack) this.armorItems.set(enumitemslot.getIndex(), itemstack), itemstack, silent); // CraftBukkit
+         }
+ 
++        this.noTickEquipmentDirty = true; // Paper - Allow ArmorStands not to tick; Still update equipment
+     }
+ 
+     @Override
+@@ -248,6 +256,7 @@ public class ArmorStand extends LivingEntity {
+         }
+ 
+         nbt.put("Pose", this.writePose());
++        if (this.canTickSetByAPI) nbt.putBoolean("Paper.CanTickOverride", this.canTick); // Paper - Allow ArmorStands not to tick
+     }
+ 
+     @Override
+@@ -282,6 +291,12 @@ public class ArmorStand extends LivingEntity {
+         this.setNoBasePlate(nbt.getBoolean("NoBasePlate"));
+         this.setMarker(nbt.getBoolean("Marker"));
+         this.noPhysics = !this.hasPhysics();
++        // Paper start - Allow ArmorStands not to tick
++        if (nbt.contains("Paper.CanTickOverride")) {
++            this.canTick = nbt.getBoolean("Paper.CanTickOverride");
++            this.canTickSetByAPI = true;
++        }
++        // Paper end - Allow ArmorStands not to tick
+         CompoundTag nbttagcompound2 = nbt.getCompound("Pose");
+ 
+         this.readPose(nbttagcompound2);
+@@ -661,7 +676,29 @@ public class ArmorStand extends LivingEntity {
+ 
+     @Override
+     public void tick() {
++        // Paper start - Allow ArmorStands not to tick
++        if (!this.canTick) {
++            if (this.noTickPoseDirty) {
++                this.noTickPoseDirty = false;
++                this.updatePose();
++            }
++
++            if (this.noTickEquipmentDirty) {
++                this.noTickEquipmentDirty = false;
++                this.detectEquipmentUpdatesPublic();
++            }
++
++            return;
++        }
++        // Paper end - Allow ArmorStands not to tick
++
+         super.tick();
++        // Paper start - Allow ArmorStands not to tick
++        updatePose();
++    }
++
++    public void updatePose() {
++        // Paper end - Allow ArmorStands not to tick
+         Rotations vector3f = (Rotations) this.entityData.get(ArmorStand.DATA_HEAD_POSE);
+ 
+         if (!this.headPose.equals(vector3f)) {
+@@ -796,31 +833,37 @@ public class ArmorStand extends LivingEntity {
+     public void setHeadPose(Rotations angle) {
+         this.headPose = angle;
+         this.entityData.set(ArmorStand.DATA_HEAD_POSE, angle);
++        this.noTickPoseDirty = true; // Paper - Allow updates when not ticking
+     }
+ 
+     public void setBodyPose(Rotations angle) {
+         this.bodyPose = angle;
+         this.entityData.set(ArmorStand.DATA_BODY_POSE, angle);
++        this.noTickPoseDirty = true; // Paper - Allow updates when not ticking
+     }
+ 
+     public void setLeftArmPose(Rotations angle) {
+         this.leftArmPose = angle;
+         this.entityData.set(ArmorStand.DATA_LEFT_ARM_POSE, angle);
++        this.noTickPoseDirty = true; // Paper - Allow updates when not ticking
+     }
+ 
+     public void setRightArmPose(Rotations angle) {
+         this.rightArmPose = angle;
+         this.entityData.set(ArmorStand.DATA_RIGHT_ARM_POSE, angle);
++        this.noTickPoseDirty = true; // Paper - Allow updates when not ticking
+     }
+ 
+     public void setLeftLegPose(Rotations angle) {
+         this.leftLegPose = angle;
+         this.entityData.set(ArmorStand.DATA_LEFT_LEG_POSE, angle);
++        this.noTickPoseDirty = true; // Paper - Allow updates when not ticking
+     }
+ 
+     public void setRightLegPose(Rotations angle) {
+         this.rightLegPose = angle;
+         this.entityData.set(ArmorStand.DATA_RIGHT_LEG_POSE, angle);
++        this.noTickPoseDirty = true; // Paper - Allow updates when not ticking
+     }
+ 
+     public Rotations getHeadPose() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
+index 56fcd9dd40e6a63e1af5fbd470ece0d6100292a2..1bb080a8af45411b68a0f2a3c40718d60fdc9d97 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
+@@ -232,5 +232,16 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
+     public void setCanMove(boolean move) {
+         getHandle().canMove = move;
+     }
++
++    @Override
++    public boolean canTick() {
++        return this.getHandle().canTick;
++    }
++
++    @Override
++    public void setCanTick(final boolean tick) {
++        this.getHandle().canTick = tick;
++        this.getHandle().canTickSetByAPI = true;
++    }
+     // Paper end
+ }

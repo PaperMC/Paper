@@ -7,8 +7,8 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.entity.Villager;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Vanilla keys for {@link RegistryKey#VILLAGER_PROFESSION}.
@@ -23,7 +23,8 @@ import org.jetbrains.annotations.ApiStatus;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.1")
+@GeneratedFrom("1.21.3")
+@NullMarked
 @ApiStatus.Experimental
 public final class VillagerProfessionKeys {
     /**
@@ -134,7 +135,7 @@ public final class VillagerProfessionKeys {
     private VillagerProfessionKeys() {
     }
 
-    private static @NonNull TypedKey<Villager.Profession> create(final @NonNull Key key) {
+    private static TypedKey<Villager.Profession> create(final Key key) {
         return TypedKey.create(RegistryKey.VILLAGER_PROFESSION, key);
     }
 }

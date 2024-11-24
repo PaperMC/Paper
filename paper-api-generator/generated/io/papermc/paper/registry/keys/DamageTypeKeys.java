@@ -7,8 +7,8 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.damage.DamageType;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Vanilla keys for {@link RegistryKey#DAMAGE_TYPE}.
@@ -23,7 +23,8 @@ import org.jetbrains.annotations.ApiStatus;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.1")
+@GeneratedFrom("1.21.3")
+@NullMarked
 @ApiStatus.Experimental
 public final class DamageTypeKeys {
     /**
@@ -81,6 +82,13 @@ public final class DamageTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<DamageType> DRY_OUT = create(key("dry_out"));
+
+    /**
+     * {@code minecraft:ender_pearl}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DamageType> ENDER_PEARL = create(key("ender_pearl"));
 
     /**
      * {@code minecraft:explosion}
@@ -200,6 +208,13 @@ public final class DamageTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<DamageType> LIGHTNING_BOLT = create(key("lightning_bolt"));
+
+    /**
+     * {@code minecraft:mace_smash}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<DamageType> MACE_SMASH = create(key("mace_smash"));
 
     /**
      * {@code minecraft:magic}
@@ -365,7 +380,7 @@ public final class DamageTypeKeys {
      * @return a new typed key
      */
     @ApiStatus.Experimental
-    public static @NonNull TypedKey<DamageType> create(final @NonNull Key key) {
+    public static TypedKey<DamageType> create(final Key key) {
         return TypedKey.create(RegistryKey.DAMAGE_TYPE, key);
     }
 }

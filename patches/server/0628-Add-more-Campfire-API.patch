@@ -1,0 +1,111 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: LemonCaramel <admin@caramel.moe>
+Date: Fri, 16 Jul 2021 00:39:03 +0900
+Subject: [PATCH] Add more Campfire API
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
+index 7fa1aea7942a1bc4d9779a9f8ab020ccd5566923..94072a9b65f69dfc3337907f8573081989467662 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
+@@ -46,12 +46,14 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
+     private final NonNullList<ItemStack> items;
+     public final int[] cookingProgress;
+     public final int[] cookingTime;
++    public final boolean[] stopCooking; // Paper - Add more Campfire API
+ 
+     public CampfireBlockEntity(BlockPos pos, BlockState state) {
+         super(BlockEntityType.CAMPFIRE, pos, state);
+         this.items = NonNullList.withSize(4, ItemStack.EMPTY);
+         this.cookingProgress = new int[4];
+         this.cookingTime = new int[4];
++        this.stopCooking = new boolean[4]; // Paper - Add more Campfire API
+     }
+ 
+     public static void cookTick(ServerLevel world, BlockPos pos, BlockState state, CampfireBlockEntity blockEntity, RecipeManager.CachedCheck<SingleRecipeInput, CampfireCookingRecipe> recipeMatchGetter) {
+@@ -62,7 +64,9 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
+ 
+             if (!itemstack.isEmpty()) {
+                 flag = true;
++                if (!blockEntity.stopCooking[i]) { // Paper - Add more Campfire API
+                 int j = blockEntity.cookingProgress[i]++;
++                } // Paper - Add more Campfire API
+ 
+                 if (blockEntity.cookingProgress[i] >= blockEntity.cookingTime[i]) {
+                     SingleRecipeInput singlerecipeinput = new SingleRecipeInput(itemstack);
+@@ -175,6 +179,16 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
+             System.arraycopy(aint, 0, this.cookingTime, 0, Math.min(this.cookingTime.length, aint.length));
+         }
+ 
++        // Paper start - Add more Campfire API
++        if (nbt.contains("Paper.StopCooking", org.bukkit.craftbukkit.util.CraftMagicNumbers.NBT.TAG_BYTE_ARRAY)) {
++            byte[] abyte = nbt.getByteArray("Paper.StopCooking");
++            boolean[] cookingState = new boolean[4];
++            for (int index = 0; index < abyte.length; index++) {
++                cookingState[index] = abyte[index] == 1;
++            }
++            System.arraycopy(cookingState, 0, this.stopCooking, 0, Math.min(this.stopCooking.length, abyte.length));
++        }
++        // Paper end - Add more Campfire API
+     }
+ 
+     @Override
+@@ -183,6 +197,13 @@ public class CampfireBlockEntity extends BlockEntity implements Clearable {
+         ContainerHelper.saveAllItems(nbt, this.items, true, registries);
+         nbt.putIntArray("CookingTimes", this.cookingProgress);
+         nbt.putIntArray("CookingTotalTimes", this.cookingTime);
++        // Paper start - Add more Campfire API
++        byte[] cookingState = new byte[4];
++        for (int index = 0; index < cookingState.length; index++) {
++            cookingState[index] = (byte) (this.stopCooking[index] ? 1 : 0);
++        }
++        nbt.putByteArray("Paper.StopCooking", cookingState);
++        // Paper end - Add more Campfire API
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftCampfire.java b/src/main/java/org/bukkit/craftbukkit/block/CraftCampfire.java
+index 4850cbf2c326f1155e04a204abed2d200c02342d..a776bba2ec51c6aecce98a3abceb2c235522d99d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftCampfire.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftCampfire.java
+@@ -62,4 +62,40 @@ public class CraftCampfire extends CraftBlockEntityState<CampfireBlockEntity> im
+     public CraftCampfire copy(Location location) {
+         return new CraftCampfire(this, location);
+     }
++
++    // Paper start
++    @Override
++    public void stopCooking() {
++        for (int i = 0; i < getSnapshot().stopCooking.length; ++i)
++            this.stopCooking(i);
++    }
++
++    @Override
++    public void startCooking() {
++        for (int i = 0; i < getSnapshot().stopCooking.length; ++i)
++            this.startCooking(i);
++    }
++
++    @Override
++    public boolean stopCooking(int index) {
++        org.apache.commons.lang.Validate.isTrue(-1 < index && index < 4, "Slot index must be between 0 (incl) to 3 (incl)");
++        boolean previous = this.isCookingDisabled(index);
++        getSnapshot().stopCooking[index] = true;
++        return previous;
++    }
++
++    @Override
++    public boolean startCooking(int index) {
++        org.apache.commons.lang.Validate.isTrue(-1 < index && index < 4, "Slot index must be between 0 (incl) to 3 (incl)");
++        boolean previous = this.isCookingDisabled(index);
++        getSnapshot().stopCooking[index] = false;
++        return previous;
++    }
++
++    @Override
++    public boolean isCookingDisabled(int index) {
++        org.apache.commons.lang.Validate.isTrue(-1 < index && index < 4, "Slot index must be between 0 (incl) to 3 (incl)");
++        return getSnapshot().stopCooking[index];
++    }
++    // Paper end
+ }

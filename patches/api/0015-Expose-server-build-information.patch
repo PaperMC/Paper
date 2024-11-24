@@ -10,18 +10,21 @@ Co-authored-by: Riley Park <rileysebastianpark@gmail.com>
 
 diff --git a/src/main/java/com/destroystokyo/paper/util/VersionFetcher.java b/src/main/java/com/destroystokyo/paper/util/VersionFetcher.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a736d7bcdc5861a01b66ba36158db1c716339346
+index 0000000000000000000000000000000000000000..023cc52a9e28e1238c7452c0f3f577f2850fd861
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/util/VersionFetcher.java
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,47 @@
 +package com.destroystokyo.paper.util;
 +
 +import net.kyori.adventure.text.Component;
 +import net.kyori.adventure.text.format.NamedTextColor;
 +import org.bukkit.Bukkit;
-+import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
++@NullMarked
 +public interface VersionFetcher {
++
 +    /**
 +     * Amount of time to cache results for in milliseconds
 +     * <p>
@@ -39,9 +42,9 @@ index 0000000000000000000000000000000000000000..a736d7bcdc5861a01b66ba36158db1c7
 +     * @param serverVersion the current version of the server (will match {@link Bukkit#getVersion()})
 +     * @return the message to show when requesting a version
 +     */
-+    @NotNull
-+    Component getVersionMessage(@NotNull String serverVersion);
++    Component getVersionMessage(String serverVersion);
 +
++    @ApiStatus.Internal
 +    class DummyVersionFetcher implements VersionFetcher {
 +
 +        @Override
@@ -49,9 +52,8 @@ index 0000000000000000000000000000000000000000..a736d7bcdc5861a01b66ba36158db1c7
 +            return -1;
 +        }
 +
-+        @NotNull
 +        @Override
-+        public Component getVersionMessage(@NotNull String serverVersion) {
++        public Component getVersionMessage(final String serverVersion) {
 +            Bukkit.getLogger().warning("Version provider has not been set, cannot check for updates!");
 +            Bukkit.getLogger().info("Override the default implementation of org.bukkit.UnsafeValues#getVersionFetcher()");
 +            new Throwable().printStackTrace();
@@ -61,10 +63,10 @@ index 0000000000000000000000000000000000000000..a736d7bcdc5861a01b66ba36158db1c7
 +}
 diff --git a/src/main/java/io/papermc/paper/ServerBuildInfo.java b/src/main/java/io/papermc/paper/ServerBuildInfo.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9df9d09aa477d4cd3c496ba0933c816df1ef0964
+index 0000000000000000000000000000000000000000..652ff54e7c50412503725d628bfe72ed03059790
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/ServerBuildInfo.java
-@@ -0,0 +1,121 @@
+@@ -0,0 +1,122 @@
 +package io.papermc.paper;
 +
 +import java.time.Instant;
@@ -73,11 +75,12 @@ index 0000000000000000000000000000000000000000..9df9d09aa477d4cd3c496ba0933c816d
 +import net.kyori.adventure.key.Key;
 +import net.kyori.adventure.util.Services;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Information about the current server build.
 + */
++@NullMarked
 +@ApiStatus.NonExtendable
 +public interface ServerBuildInfo {
 +    /**
@@ -90,7 +93,7 @@ index 0000000000000000000000000000000000000000..9df9d09aa477d4cd3c496ba0933c816d
 +     *
 +     * @return the {@code ServerBuildInfo}
 +     */
-+    static @NotNull ServerBuildInfo buildInfo() {
++    static ServerBuildInfo buildInfo() {
 +        //<editor-fold defaultstate="collapsed" desc="Holder">
 +        final class Holder {
 +            static final Optional<ServerBuildInfo> INSTANCE = Services.service(ServerBuildInfo.class);
@@ -104,7 +107,7 @@ index 0000000000000000000000000000000000000000..9df9d09aa477d4cd3c496ba0933c816d
 +     *
 +     * @return the brand id of the server (e.g. "papermc:paper")
 +     */
-+    @NotNull Key brandId();
++    Key brandId();
 +
 +    /**
 +     * Checks if the current server supports the specified brand.
@@ -113,56 +116,56 @@ index 0000000000000000000000000000000000000000..9df9d09aa477d4cd3c496ba0933c816d
 +     * @return {@code true} if the server supports the specified brand
 +     */
 +    @ApiStatus.Experimental
-+    boolean isBrandCompatible(final @NotNull Key brandId);
++    boolean isBrandCompatible(final Key brandId);
 +
 +    /**
 +     * Gets the brand name of the server.
 +     *
 +     * @return the brand name of the server (e.g. "Paper")
 +     */
-+    @NotNull String brandName();
++    String brandName();
 +
 +    /**
 +     * Gets the Minecraft version id.
 +     *
 +     * @return the Minecraft version id (e.g. "1.20.4", "1.20.2-pre2", "23w31a")
 +     */
-+    @NotNull String minecraftVersionId();
++    String minecraftVersionId();
 +
 +    /**
 +     * Gets the Minecraft version name.
 +     *
 +     * @return the Minecraft version name (e.g. "1.20.4", "1.20.2 Pre-release 2", "23w31a")
 +     */
-+    @NotNull String minecraftVersionName();
++    String minecraftVersionName();
 +
 +    /**
 +     * Gets the build number.
 +     *
 +     * @return the build number
 +     */
-+    @NotNull OptionalInt buildNumber();
++    OptionalInt buildNumber();
 +
 +    /**
 +     * Gets the build time.
 +     *
 +     * @return the build time
 +     */
-+    @NotNull Instant buildTime();
++    Instant buildTime();
 +
 +    /**
 +     * Gets the git commit branch.
 +     *
 +     * @return the git commit branch
 +     */
-+    @NotNull Optional<String> gitBranch();
++    Optional<String> gitBranch();
 +
 +    /**
 +     * Gets the git commit hash.
 +     *
 +     * @return the git commit hash
 +     */
-+    @NotNull Optional<String> gitCommit();
++    Optional<String> gitCommit();
 +
 +    /**
 +     * Creates a string representation of the server build information.
@@ -170,7 +173,7 @@ index 0000000000000000000000000000000000000000..9df9d09aa477d4cd3c496ba0933c816d
 +     * @param representation the type of representation
 +     * @return a string
 +     */
-+    @NotNull String asString(final @NotNull StringRepresentation representation);
++    String asString(final StringRepresentation representation);
 +
 +    /**
 +     * String representation types.
@@ -188,10 +191,10 @@ index 0000000000000000000000000000000000000000..9df9d09aa477d4cd3c496ba0933c816d
 +}
 diff --git a/src/main/java/io/papermc/paper/util/JarManifests.java b/src/main/java/io/papermc/paper/util/JarManifests.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..909617079db61b675cc7b60b44ef96b306076343
+index 0000000000000000000000000000000000000000..7915a70d676b1205dcae39259f670af258a1ab9b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/JarManifests.java
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,38 @@
 +package io.papermc.paper.util;
 +
 +import java.io.IOException;
@@ -202,9 +205,10 @@ index 0000000000000000000000000000000000000000..909617079db61b675cc7b60b44ef96b3
 +import java.util.WeakHashMap;
 +import java.util.jar.Manifest;
 +import org.jetbrains.annotations.ApiStatus;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
++@NullMarked
 +@ApiStatus.Internal
 +public final class JarManifests {
 +    private JarManifests() {
@@ -212,7 +216,7 @@ index 0000000000000000000000000000000000000000..909617079db61b675cc7b60b44ef96b3
 +
 +    private static final Map<ClassLoader, Manifest> MANIFESTS = Collections.synchronizedMap(new WeakHashMap<>());
 +
-+    public static @Nullable Manifest manifest(final @NotNull Class<?> clazz) {
++    public static @Nullable Manifest manifest(final Class<?> clazz) {
 +        return MANIFESTS.computeIfAbsent(clazz.getClassLoader(), classLoader -> {
 +            final String classLocation = "/" + clazz.getName().replace(".", "/") + ".class";
 +            final URL resource = clazz.getResource(classLocation);
@@ -312,21 +316,22 @@ index ba28d9f3213ca4b5f15178dc637bff37a8896edc..8a07f21eeb04fb54032ce377a1478f60
       * Gets a view of all currently logged in players. This {@linkplain
       * Collections#unmodifiableCollection(Collection) view} is a reused
 diff --git a/src/main/java/org/bukkit/UnsafeValues.java b/src/main/java/org/bukkit/UnsafeValues.java
-index 12ef99f1c91b92a133611c5f5aeaaeebd02ce232..6e67fdb091a006d2d13bc2d93db4d55348af4c8f 100644
+index e320729782245b5511cd744c417141508020fd26..8b5e4756d1c80e55be166dbe1faf57799f9cc03b 100644
 --- a/src/main/java/org/bukkit/UnsafeValues.java
 +++ b/src/main/java/org/bukkit/UnsafeValues.java
-@@ -163,5 +163,12 @@ public interface UnsafeValues {
-      */
-     @Deprecated(forRemoval = true)
-     String getTimingsServerName();
+@@ -156,4 +156,13 @@ public interface UnsafeValues {
+         return !Bukkit.getUnsafe().isSupportedApiVersion(plugin.getDescription().getAPIVersion());
+     }
+     // Paper end
 +
++    // Paper start
 +    /**
 +     * Called once by the version command on first use, then cached.
 +     */
 +    default com.destroystokyo.paper.util.VersionFetcher getVersionFetcher() {
 +        return new com.destroystokyo.paper.util.VersionFetcher.DummyVersionFetcher();
 +    }
-     // Paper end
++    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/command/defaults/VersionCommand.java b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
 index 263208d3cba36cb80c9ee4e3022ef702ea113df2..e64bb57f74e6d6f78927be228825b3e0bdf41f48 100644

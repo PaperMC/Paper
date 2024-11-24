@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: JRoy <joshroy126@gmail.com>
+Date: Sun, 10 May 2020 23:06:30 -0400
+Subject: [PATCH] Potential bed API
+
+Adds a new method to fetch the location of a player's bed without generating any sync loads.
+
+getPotentialBedLocation - Gets the last known location of a player's bed. This does not preform any check if the bed is still valid and does not load any chunks.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+index 6ec6b80d224e2402054afb85b78c793942a58bbf..b2ab430392fc0f214ba8c5383e3f3ad5c548bda2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+@@ -130,6 +130,22 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+         return this.getHandle().sleepCounter;
+     }
+ 
++    // Paper start - Potential bed api
++    @Override
++    public Location getPotentialBedLocation() {
++        ServerPlayer handle = (ServerPlayer) getHandle();
++        BlockPos bed = handle.getRespawnPosition();
++        if (bed == null) {
++            return null;
++        }
++
++        net.minecraft.server.level.ServerLevel worldServer = handle.server.getLevel(handle.getRespawnDimension());
++        if (worldServer == null) {
++            return null;
++        }
++        return new Location(worldServer.getWorld(), bed.getX(), bed.getY(), bed.getZ());
++    }
++    // Paper end
+     @Override
+     public boolean sleep(Location location, boolean force) {
+         Preconditions.checkArgument(location != null, "Location cannot be null");

@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <blake.galbreath@gmail.com>
+Date: Thu, 23 Dec 2021 15:32:50 -0600
+Subject: [PATCH] Expose isFuel and canSmelt methods to FurnaceInventory
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryFurnace.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryFurnace.java
+index 29a8cd7667860c4598a556e6ef3af39c731683db..33c970b467675429ad952925830ed334632fd3b6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryFurnace.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryFurnace.java
+@@ -40,6 +40,21 @@ public class CraftInventoryFurnace extends CraftInventory implements FurnaceInve
+         this.setItem(0, stack);
+     }
+ 
++    // Paper start
++    @Override
++    public boolean isFuel(ItemStack stack) {
++        net.minecraft.server.level.ServerLevel world = ((org.bukkit.craftbukkit.CraftWorld) org.bukkit.Bukkit.getWorlds().get(0)).getHandle();
++        return stack != null && !stack.getType().isEmpty() && world.fuelValues().isFuel(CraftItemStack.asNMSCopy(stack));
++    }
++
++    @Override
++    public boolean canSmelt(ItemStack stack) {
++        // data packs are always loaded in the main world
++        net.minecraft.server.level.ServerLevel world = ((org.bukkit.craftbukkit.CraftWorld) org.bukkit.Bukkit.getWorlds().get(0)).getHandle();
++        return stack != null && !stack.getType().isEmpty() && world.recipeAccess().getRecipeFor(((AbstractFurnaceBlockEntity) this.inventory).recipeType, new net.minecraft.world.item.crafting.SingleRecipeInput(CraftItemStack.asNMSCopy(stack)), world).isPresent();
++    }
++    // Paper end
++
+     @Override
+     public Furnace getHolder() {
+         return (Furnace) this.inventory.getOwner();

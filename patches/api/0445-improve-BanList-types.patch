@@ -1,0 +1,133 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Yannick Lamprecht <yannicklamprecht@live.de>
+Date: Sat, 10 Feb 2024 20:49:47 +0100
+Subject: [PATCH] improve BanList types
+
+
+diff --git a/src/main/java/io/papermc/paper/ban/BanListType.java b/src/main/java/io/papermc/paper/ban/BanListType.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fdd5cfdc8c2c2ba97a3ac3db57be5a0e13dc327d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/ban/BanListType.java
+@@ -0,0 +1,30 @@
++package io.papermc.paper.ban;
++
++import org.bukkit.BanList;
++import org.bukkit.ban.IpBanList;
++import org.bukkit.ban.ProfileBanList;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Represents a ban-type that a {@link BanList} may track.
++ * It enforces the correct return value at compile time.
++ */
++@NullMarked
++public interface BanListType<T> {
++
++    /**
++     * Banned IP addresses
++     */
++    BanListType<IpBanList> IP = new BanListTypeImpl<>(IpBanList.class);
++    /**
++     * Banned player profiles
++     */
++    BanListType<ProfileBanList> PROFILE = new BanListTypeImpl<>(ProfileBanList.class);
++
++    /**
++     * Returns the type class of the ban list used generically
++     *
++     * @return the type class
++     */
++    Class<T> typeClass();
++}
+diff --git a/src/main/java/io/papermc/paper/ban/BanListTypeImpl.java b/src/main/java/io/papermc/paper/ban/BanListTypeImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..26d4df3cbf8d31790218095bb7fb1a1762e2b322
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/ban/BanListTypeImpl.java
+@@ -0,0 +1,9 @@
++package io.papermc.paper.ban;
++
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++@ApiStatus.Internal
++@NullMarked
++record BanListTypeImpl<T>(Class<T> typeClass) implements BanListType<T> {
++}
+diff --git a/src/main/java/org/bukkit/BanList.java b/src/main/java/org/bukkit/BanList.java
+index a77c0411a68a9bad33ddfb335b7a996a843e478c..739d9d3ec789e58c10c8d818a9ca59ce447600d5 100644
+--- a/src/main/java/org/bukkit/BanList.java
++++ b/src/main/java/org/bukkit/BanList.java
+@@ -16,7 +16,9 @@ public interface BanList<T> {
+ 
+     /**
+      * Represents a ban-type that a {@link BanList} may track.
++     * @deprecated use {@link io.papermc.paper.ban.BanListType} to enforce the correct return value at compile time.
+      */
++    @Deprecated(since = "1.20.4") // Paper - BanList Type Improvements
+     public enum Type {
+         /**
+          * Banned player names
+diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
+index c8fa12acaf52cd3923a7a8702ccc50cfdc9170a2..e20e4239a5a1f952e1c70e899549989d5e42f73c 100644
+--- a/src/main/java/org/bukkit/Bukkit.java
++++ b/src/main/java/org/bukkit/Bukkit.java
+@@ -1663,11 +1663,27 @@ public final class Bukkit {
+      * @param <T> The ban target
+      *
+      * @return a ban list of the specified type
++     * @deprecated use {@link #getBanList(io.papermc.paper.ban.BanListType)} to enforce the correct return value at compile time.
+      */
+     @NotNull
++    @Deprecated(since = "1.20.4") // Paper - add BanListType (which has a generic)
+     public static <T extends BanList<?>> T getBanList(@NotNull BanList.Type type) {
+         return server.getBanList(type);
+     }
++    // Paper start - add BanListType (which has a generic)
++    /**
++     * Gets a ban list for the supplied type.
++     *
++     * @param type the type of list to fetch, cannot be null
++     * @param <B> The ban target
++     *
++     * @return a ban list of the specified type
++     */
++    @NotNull
++    public static <B extends BanList<E>, E> B getBanList(final io.papermc.paper.ban.@NotNull BanListType<B> type) {
++        return server.getBanList(type);
++    }
++    // Paper end - add BanListType (which has a generic)
+ 
+     /**
+      * Gets a set containing all player operators.
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index 50ffca9bccfb582d58ccb13f0decf66e5d91aef3..6246251caf2c6f025c824b8e7a944b8d48751fa1 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -1425,10 +1425,25 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      * @param <T> The ban target
+      *
+      * @return a ban list of the specified type
++     * @deprecated use {@link #getBanList(io.papermc.paper.ban.BanListType)} to enforce the correct return value at compile time.
+      */
++    @Deprecated // Paper - add BanListType (which has a generic)
+     @NotNull
+     public <T extends BanList<?>> T getBanList(@NotNull BanList.Type type);
+ 
++    // Paper start - add BanListType (which has a generic)
++    /**
++     * Gets a ban list for the supplied type.
++     *
++     * @param type the type of list to fetch, cannot be null
++     * @param <B> The ban target
++     *
++     * @return a ban list of the specified type
++     */
++    @NotNull
++    <B extends BanList<E>, E> B getBanList(@NotNull io.papermc.paper.ban.BanListType<B> type);
++    // Paper end - add BanListType (which has a generic)
++
+     /**
+      * Gets a set containing all player operators.
+      *

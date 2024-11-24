@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Fri, 27 Dec 2019 09:42:26 -0800
+Subject: [PATCH] Guard against serializing mismatching chunk coordinate
+
+Should help if something dumb happens
+
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
+index 329e7eb1c3e92445b3fae9e1e79d0497b7e3e3f2..909acbf5b8c6edcb4529647c11464d911d6f8c15 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
+@@ -172,8 +172,19 @@ public class ChunkStorage implements AutoCloseable {
+     }
+ 
+     public CompletableFuture<Void> write(ChunkPos chunkPos, Supplier<CompoundTag> nbtSupplier) {
++        // Paper start - guard against possible chunk pos desync
++        final Supplier<CompoundTag> guardedPosCheck = () -> {
++            CompoundTag nbt = nbtSupplier.get();
++            if (nbt != null && !chunkPos.equals(SerializableChunkData.getChunkCoordinate(nbt))) {
++                final String world = (ChunkStorage.this instanceof net.minecraft.server.level.ChunkMap) ? ((net.minecraft.server.level.ChunkMap) ChunkStorage.this).level.getWorld().getName() : null;
++                throw new IllegalArgumentException("Chunk coordinate and serialized data do not have matching coordinates, trying to serialize coordinate " + chunkPos
++                    + " but compound says coordinate is " + SerializableChunkData.getChunkCoordinate(nbt) + (world == null ? " for an unknown world" : (" for world: " + world)));
++            }
++            return nbt;
++        };
++        // Paper end - guard against possible chunk pos desync
+         this.handleLegacyStructureIndex(chunkPos);
+-        return this.worker.store(chunkPos, nbtSupplier);
++        return this.worker.store(chunkPos, guardedPosCheck); // Paper - guard against possible chunk pos desync
+     }
+ 
+     protected void handleLegacyStructureIndex(ChunkPos chunkPos) {
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/SerializableChunkData.java b/src/main/java/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
+index 4367ccc628bb4f404d6a081083002518442f462b..92ad7704a77c024afe090488764eaf59a4f7505f 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
+@@ -91,13 +91,25 @@ public record SerializableChunkData(Registry<Biome> biomeRegistry, ChunkPos chun
+     public static final String SECTIONS_TAG = "sections";
+     public static final String BLOCK_LIGHT_TAG = "BlockLight";
+     public static final String SKY_LIGHT_TAG = "SkyLight";
++    // Paper start - guard against serializing mismatching coordinates
++    // TODO Note: This needs to be re-checked each update
++    public static ChunkPos getChunkCoordinate(final CompoundTag chunkData) {
++        final int dataVersion = ChunkStorage.getVersion(chunkData);
++        if (dataVersion < 2842) { // Level tag is removed after this version
++            final CompoundTag levelData = chunkData.getCompound("Level");
++            return new ChunkPos(levelData.getInt("xPos"), levelData.getInt("zPos"));
++        } else {
++            return new ChunkPos(chunkData.getInt("xPos"), chunkData.getInt("zPos"));
++        }
++    }
++    // Paper end - guard against serializing mismatching coordinates
+ 
+     @Nullable
+     public static SerializableChunkData parse(LevelHeightAccessor world, RegistryAccess registryManager, CompoundTag nbt) {
+         if (!nbt.contains("Status", 8)) {
+             return null;
+         } else {
+-            ChunkPos chunkcoordintpair = new ChunkPos(nbt.getInt("xPos"), nbt.getInt("zPos"));
++            ChunkPos chunkcoordintpair = new ChunkPos(nbt.getInt("xPos"), nbt.getInt("zPos")); // Paper - guard against serializing mismatching coordinates; diff on change, see ChunkSerializer#getChunkCoordinate
+             long i = nbt.getLong("LastUpdate");
+             long j = nbt.getLong("InhabitedTime");
+             ChunkStatus chunkstatus = ChunkStatus.byName(nbt.getString("Status"));

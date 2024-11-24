@@ -1,0 +1,227 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 20 Sep 2024 21:40:23 -0700
+Subject: [PATCH] create TileStateInventoryHolder
+
+a missing interface to centralize getSnapshotInventory methods
+
+diff --git a/src/main/java/io/papermc/paper/block/TileStateInventoryHolder.java b/src/main/java/io/papermc/paper/block/TileStateInventoryHolder.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..59868ac52854f2e9c628f6c72ecd9fafcce15f9f
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/block/TileStateInventoryHolder.java
+@@ -0,0 +1,39 @@
++package io.papermc.paper.block;
++
++import org.bukkit.block.TileState;
++import org.bukkit.inventory.BlockInventoryHolder;
++import org.bukkit.inventory.Inventory;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Represents a {@link TileState} block that has an inventory.
++ */
++@NullMarked
++public interface TileStateInventoryHolder extends TileState, BlockInventoryHolder {
++
++    /**
++     * Gets the inventory of the block represented by this block state.
++     * <p>
++     * If the block was changed to a different type in the meantime, the
++     * returned inventory might no longer be valid.
++     * <p>
++     * If this block state is not placed this will return the captured inventory
++     * snapshot instead.
++     *
++     * @return the inventory
++     */
++    @Override
++    Inventory getInventory();
++
++    /**
++     * Gets the captured inventory snapshot of this container.
++     * <p>
++     * The returned inventory is not linked to any block. Any modifications to
++     * the returned inventory will not be applied to the block represented by
++     * this block state up until {@link #update(boolean, boolean)} has been
++     * called.
++     *
++     * @return the captured inventory snapshot
++     */
++    Inventory getSnapshotInventory();
++}
+diff --git a/src/main/java/org/bukkit/block/ChiseledBookshelf.java b/src/main/java/org/bukkit/block/ChiseledBookshelf.java
+index 1cc5c2021cf1241b090b28697e09bcd36595ab13..92f41d00dcb40fee18305502783e12d87a1c5c94 100644
+--- a/src/main/java/org/bukkit/block/ChiseledBookshelf.java
++++ b/src/main/java/org/bukkit/block/ChiseledBookshelf.java
+@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
+ /**
+  * Represents a captured state of a chiseled bookshelf.
+  */
+-public interface ChiseledBookshelf extends TileState, BlockInventoryHolder {
++public interface ChiseledBookshelf extends io.papermc.paper.block.TileStateInventoryHolder { // Paper - TileStateInventoryHolder
+ 
+     /**
+      * Gets the last interacted inventory slot.
+@@ -24,18 +24,12 @@ public interface ChiseledBookshelf extends TileState, BlockInventoryHolder {
+      */
+     void setLastInteractedSlot(int lastInteractedSlot);
+ 
+-    /**
+-     * @return inventory
+-     * @see Container#getInventory()
+-     */
++    // Paper - move docs to TileStateInventoryHolder
+     @NotNull
+     @Override
+     ChiseledBookshelfInventory getInventory();
+ 
+-    /**
+-     * @return snapshot inventory
+-     * @see Container#getSnapshotInventory()
+-     */
++    @Override // Paper - move docs to TileStateInventoryHolder
+     @NotNull
+     ChiseledBookshelfInventory getSnapshotInventory();
+ 
+diff --git a/src/main/java/org/bukkit/block/Container.java b/src/main/java/org/bukkit/block/Container.java
+index a67ee0cb0cd2cbab8dab375e2fe44168c250bcb7..8dbe4eec3df797d178237ad9d55f90af898aa2e7 100644
+--- a/src/main/java/org/bukkit/block/Container.java
++++ b/src/main/java/org/bukkit/block/Container.java
+@@ -8,33 +8,7 @@ import org.jetbrains.annotations.NotNull;
+ /**
+  * Represents a captured state of a container block.
+  */
+-public interface Container extends io.papermc.paper.block.LockableTileState, BlockInventoryHolder { // Paper
++public interface Container extends io.papermc.paper.block.LockableTileState, io.papermc.paper.block.TileStateInventoryHolder { // Paper
+ 
+-    /**
+-     * Gets the inventory of the block represented by this block state.
+-     * <p>
+-     * If the block was changed to a different type in the meantime, the
+-     * returned inventory might no longer be valid.
+-     * <p>
+-     * If this block state is not placed this will return the captured inventory
+-     * snapshot instead.
+-     *
+-     * @return the inventory
+-     */
+-    @NotNull
+-    @Override
+-    Inventory getInventory();
+-
+-    /**
+-     * Gets the captured inventory snapshot of this container.
+-     * <p>
+-     * The returned inventory is not linked to any block. Any modifications to
+-     * the returned inventory will not be applied to the block represented by
+-     * this block state up until {@link #update(boolean, boolean)} has been
+-     * called.
+-     *
+-     * @return the captured inventory snapshot
+-     */
+-    @NotNull
+-    Inventory getSnapshotInventory();
++    // Paper - moved to TileStateInventoryHolder
+ }
+diff --git a/src/main/java/org/bukkit/block/DecoratedPot.java b/src/main/java/org/bukkit/block/DecoratedPot.java
+index feae34e459523d17a10b673bbec28abcac9cdadd..091f971698a924be1111b4cedb71c869e565b14d 100644
+--- a/src/main/java/org/bukkit/block/DecoratedPot.java
++++ b/src/main/java/org/bukkit/block/DecoratedPot.java
+@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * Represents a captured state of a decorated pot.
+  */
+-public interface DecoratedPot extends TileState, BlockInventoryHolder , org.bukkit.loot.Lootable { // Paper - expose loot table
++public interface DecoratedPot extends io.papermc.paper.block.TileStateInventoryHolder, org.bukkit.loot.Lootable { // Paper - expose loot table & TileStateInventoryHolder
+ 
+     /**
+      * Set the sherd on the provided side.
+@@ -55,18 +55,12 @@ public interface DecoratedPot extends TileState, BlockInventoryHolder , org.bukk
+     @NotNull
+     public List<Material> getShards();
+ 
+-    /**
+-     * @return inventory
+-     * @see Container#getInventory()
+-     */
++    // Paper - move docs to TileStateInventoryHolder
+     @NotNull
+     @Override
+     public DecoratedPotInventory getInventory();
+ 
+-    /**
+-     * @return snapshot inventory
+-     * @see Container#getSnapshotInventory()
+-     */
++    @Override // Paper - move docs to TileStateInventoryHolder
+     @NotNull
+     public DecoratedPotInventory getSnapshotInventory();
+ 
+diff --git a/src/main/java/org/bukkit/block/Jukebox.java b/src/main/java/org/bukkit/block/Jukebox.java
+index fa76b2a4a476223845113d86e7e448fe56a4a032..60426881e47c5486bf18a4d3dcf75e979934b61a 100644
+--- a/src/main/java/org/bukkit/block/Jukebox.java
++++ b/src/main/java/org/bukkit/block/Jukebox.java
+@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
+ /**
+  * Represents a captured state of a jukebox.
+  */
+-public interface Jukebox extends TileState, BlockInventoryHolder {
++public interface Jukebox extends io.papermc.paper.block.TileStateInventoryHolder { // Paper - TileStateInventoryHolder
+ 
+     /**
+      * Gets the record inserted into the jukebox.
+@@ -85,18 +85,12 @@ public interface Jukebox extends TileState, BlockInventoryHolder {
+      */
+     public boolean eject();
+ 
+-    /**
+-     * @return inventory
+-     * @see Container#getInventory()
+-     */
++    // Paper - move docs to TileStateInventoryHolder
+     @NotNull
+     @Override
+     JukeboxInventory getInventory();
+ 
+-    /**
+-     * @return snapshot inventory
+-     * @see Container#getSnapshotInventory()
+-     */
++    @Override // Paper - move docs to TileStateInventoryHolder
+     @NotNull
+     JukeboxInventory getSnapshotInventory();
+ }
+diff --git a/src/main/java/org/bukkit/block/Lectern.java b/src/main/java/org/bukkit/block/Lectern.java
+index f835ddf0a2ec1fd76a9ab919ddf8a9a653f764e9..541f2f683a23b5e7d389164426d29535302366b8 100644
+--- a/src/main/java/org/bukkit/block/Lectern.java
++++ b/src/main/java/org/bukkit/block/Lectern.java
+@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
+ /**
+  * Represents a captured state of a lectern.
+  */
+-public interface Lectern extends TileState, BlockInventoryHolder {
++public interface Lectern extends io.papermc.paper.block.TileStateInventoryHolder { // Paper - TileStateInventoryHolder
+ 
+     /**
+      * Get the current lectern page.
+@@ -26,18 +26,5 @@ public interface Lectern extends TileState, BlockInventoryHolder {
+      */
+     void setPage(int page);
+ 
+-    /**
+-     * @return inventory
+-     * @see Container#getInventory()
+-     */
+-    @NotNull
+-    @Override
+-    Inventory getInventory();
+-
+-    /**
+-     * @return snapshot inventory
+-     * @see Container#getSnapshotInventory()
+-     */
+-    @NotNull
+-    Inventory getSnapshotInventory();
++    // Paper - moved to TileStateInventoryHolder
+ }

@@ -79,11 +79,11 @@ index 68551947f5b7d3471f15bd74ccd86519ab34c1c1..a0b0614ac7d2009db5c6c10ab4a5f09d
                         }
                          // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/world/entity/ai/village/VillageSiege.java b/src/main/java/net/minecraft/world/entity/ai/village/VillageSiege.java
-index 8183c26b4a5ad169a53702b8c45fd05cda934e80..36dec6cd78a0990ba3c09a4a748c259ef5c0a2ff 100644
+index a5b18a04f482d05d3ca74918a580499b21c2fc3c..bd3f71c3eaa33258ff56062ea3a2099cef310b7a 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/village/VillageSiege.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/village/VillageSiege.java
 @@ -117,6 +117,7 @@ public class VillageSiege implements CustomSpawner {
-                 entityzombie.finalizeSpawn(world, world.getCurrentDifficultyAt(entityzombie.blockPosition()), MobSpawnType.EVENT, (SpawnGroupData) null);
+                 entityzombie.finalizeSpawn(world, world.getCurrentDifficultyAt(entityzombie.blockPosition()), EntitySpawnReason.EVENT, (SpawnGroupData) null);
              } catch (Exception exception) {
                  VillageSiege.LOGGER.warn("Failed to create zombie for village siege at {}", vec3d, exception);
 +                com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception); // Paper - ServerExceptionEvent
@@ -91,10 +91,10 @@ index 8183c26b4a5ad169a53702b8c45fd05cda934e80..36dec6cd78a0990ba3c09a4a748c259e
              }
  
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index b4293991dddc9039c26106ac8c047e5aeec35a56..32b42d25631aecdd31db4954a8bbf38bcda98d6b 100644
+index ed15f5c4a365a199d04e92d688035e4ab755e8db..f900c86697f5a3da45b724944a663fca8f89413e 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -733,6 +733,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -728,6 +728,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
              // Paper start - Prevent block entity and entity crashes
              final String msg = String.format("Entity threw exception at %s:%s,%s,%s", entity.level().getWorld().getName(), entity.getX(), entity.getY(), entity.getZ());
              MinecraftServer.LOGGER.error(msg, throwable);
@@ -103,10 +103,10 @@ index b4293991dddc9039c26106ac8c047e5aeec35a56..32b42d25631aecdd31db4954a8bbf38b
              // Paper end - Prevent block entity and entity crashes
          }
 diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-index 6a80479554f0c860a8dd6baa1a6506858fca83e3..6324689f52363f19501143c1649f0885684cb796 100644
+index 9389fd53f2bff0a9ca389694b312dc6da58befaf..da0ddb8285e157be0cc7b940a9590be5e3061e3d 100644
 --- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-@@ -274,6 +274,7 @@ public final class NaturalSpawner {
+@@ -294,6 +294,7 @@ public final class NaturalSpawner {
              NaturalSpawner.LOGGER.warn("Can't spawn entity of type: {}", BuiltInRegistries.ENTITY_TYPE.getKey(type));
          } catch (Exception exception) {
              NaturalSpawner.LOGGER.warn("Failed to create mob", exception);
@@ -114,8 +114,8 @@ index 6a80479554f0c860a8dd6baa1a6506858fca83e3..6324689f52363f19501143c1649f0885
          }
  
          return null;
-@@ -362,6 +363,7 @@ public final class NaturalSpawner {
-                                     entity = biomesettingsmobs_c.type.create(world.getLevel());
+@@ -382,6 +383,7 @@ public final class NaturalSpawner {
+                                     entity = biomesettingsmobs_c.type.create(world.getLevel(), EntitySpawnReason.NATURAL);
                                  } catch (Exception exception) {
                                      NaturalSpawner.LOGGER.warn("Failed to create mob", exception);
 +                                    com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception); // Paper - ServerExceptionEvent
@@ -123,10 +123,10 @@ index 6a80479554f0c860a8dd6baa1a6506858fca83e3..6324689f52363f19501143c1649f0885
                                  }
  
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index 6889991885cc2075e0936b2c480befeef30d308c..4495c5051b0c7a04d433c39d91f74cb7924d3ff2 100644
+index 79cf3089c128ef3c17d956da1e380670279ee5da..96ea7a5d5d4a69c83c2401e64750d41cd70088fc 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-@@ -471,8 +471,13 @@ public class LevelChunk extends ChunkAccess {
+@@ -496,8 +496,13 @@ public class LevelChunk extends ChunkAccess {
          BlockState iblockdata = this.getBlockState(blockposition);
  
          if (!iblockdata.hasBlockEntity()) {
@@ -142,7 +142,7 @@ index 6889991885cc2075e0936b2c480befeef30d308c..4495c5051b0c7a04d433c39d91f74cb7
          } else {
              BlockState iblockdata1 = blockEntity.getBlockState();
  
-@@ -956,6 +961,7 @@ public class LevelChunk extends ChunkAccess {
+@@ -986,6 +991,7 @@ public class LevelChunk extends ChunkAccess {
                          // Paper start - Prevent block entity and entity crashes
                          final String msg = String.format("BlockEntity threw exception at %s:%s,%s,%s", LevelChunk.this.getLevel().getWorld().getName(), this.getPos().getX(), this.getPos().getY(), this.getPos().getZ());
                          net.minecraft.server.MinecraftServer.LOGGER.error(msg, throwable);
@@ -171,10 +171,10 @@ index 15f273aa592828719de6e092d79a407dc8652dfe..b24e8255ab18eb5b2e4968aa62aa3d72
                  try {
                      filechannel.close();
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-index 6c0debe3f3b693ed90dd2a39f481cccd8e4f7634..cf9f04e005940f5dd7baf50435f3703fa7c2d4f0 100644
+index 2c36d0796714997191c6540c34a9df60718065f6..0c0115ccd8541ac62975f4759b4e2083ac560332 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-@@ -416,20 +416,25 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -415,20 +415,25 @@ public class CraftScheduler implements BukkitScheduler {
                  try {
                      task.run();
                  } catch (final Throwable throwable) {
@@ -199,7 +199,7 @@ index 6c0debe3f3b693ed90dd2a39f481cccd8e4f7634..cf9f04e005940f5dd7baf50435f3703f
                  }
                  this.parsePending();
              } else {
-                 this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass()));
+                 this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(this.currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass()));
 -                this.executor.execute(task);
 +                this.executor.execute(new com.destroystokyo.paper.ServerSchedulerReportingWrapper(task)); // Paper
                  // We don't need to parse pending

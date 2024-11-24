@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: kickash32 <kickash32@gmail.com>
+Date: Mon, 3 Jun 2019 02:02:39 -0400
+Subject: [PATCH] Alternative item-despawn-rate
+
+Co-authored-by: Noah van der Aa <ndvdaa@gmail.com>
+
+diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+index c21fa55c62d97d9511e41a1e313e904330a6eee6..9974aec00935a1c3068eceee6d7042f14f15ac56 100644
+--- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
++++ b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+@@ -62,6 +62,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+     public final float bobOffs;
+     private int lastTick = MinecraftServer.currentTick - 1; // CraftBukkit
+     public boolean canMobPickup = true; // Paper - Item#canEntityPickup
++    private int despawnRate = -1; // Paper - Alternative item-despawn-rate
+ 
+     public ItemEntity(EntityType<? extends ItemEntity> type, Level world) {
+         super(type, world);
+@@ -216,7 +217,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+                 }
+             }
+ 
+-            if (!this.level().isClientSide && this.age >= this.level().spigotConfig.itemDespawnRate) { // Spigot
++            if (!this.level().isClientSide && this.age >= this.despawnRate) { // Spigot // Paper - Alternative item-despawn-rate
+                 // CraftBukkit start - fire ItemDespawnEvent
+                 if (CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
+                     this.age = 0;
+@@ -239,7 +240,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+         this.lastTick = MinecraftServer.currentTick;
+         // CraftBukkit end
+ 
+-        if (!this.level().isClientSide && this.age >= this.level().spigotConfig.itemDespawnRate) { // Spigot
++        if (!this.level().isClientSide && this.age >= this.despawnRate) { // Spigot // Paper - Alternative item-despawn-rate
+             // CraftBukkit start - fire ItemDespawnEvent
+             if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
+                 this.age = 0;
+@@ -297,7 +298,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+     private boolean isMergable() {
+         ItemStack itemstack = this.getItem();
+ 
+-        return this.isAlive() && this.pickupDelay != 32767 && this.age != -32768 && this.age < 6000 && itemstack.getCount() < itemstack.getMaxStackSize();
++        return this.isAlive() && this.pickupDelay != 32767 && this.age != -32768 && this.age < this.despawnRate && itemstack.getCount() < itemstack.getMaxStackSize(); // Paper - Alternative item-despawn-rate
+     }
+ 
+     private void tryToMerge(ItemEntity other) {
+@@ -558,6 +559,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+ 
+     public void setItem(ItemStack stack) {
+         this.getEntityData().set(ItemEntity.DATA_ITEM, stack);
++        this.despawnRate = this.level().paperConfig().entities.spawning.altItemDespawnRate.enabled ? this.level().paperConfig().entities.spawning.altItemDespawnRate.items.getOrDefault(stack.getItem(), this.level().spigotConfig.itemDespawnRate) : this.level().spigotConfig.itemDespawnRate; // Paper - Alternative item-despawn-rate
+     }
+ 
+     @Override
+@@ -612,7 +614,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+ 
+     public void makeFakeItem() {
+         this.setNeverPickUp();
+-        this.age = this.level().spigotConfig.itemDespawnRate - 1; // Spigot
++        this.age = this.despawnRate - 1; // Spigot // Paper - Alternative item-despawn-rate
+     }
+ 
+     public static float getSpin(float f, float f1) {

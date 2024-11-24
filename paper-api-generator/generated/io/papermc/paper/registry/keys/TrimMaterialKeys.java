@@ -7,8 +7,8 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Vanilla keys for {@link RegistryKey#TRIM_MATERIAL}.
@@ -23,7 +23,8 @@ import org.jetbrains.annotations.ApiStatus;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.1")
+@GeneratedFrom("1.21.3")
+@NullMarked
 @ApiStatus.Experimental
 public final class TrimMaterialKeys {
     /**
@@ -106,7 +107,7 @@ public final class TrimMaterialKeys {
      * @return a new typed key
      */
     @ApiStatus.Experimental
-    public static @NonNull TypedKey<TrimMaterial> create(final @NonNull Key key) {
+    public static TypedKey<TrimMaterial> create(final Key key) {
         return TypedKey.create(RegistryKey.TRIM_MATERIAL, key);
     }
 }

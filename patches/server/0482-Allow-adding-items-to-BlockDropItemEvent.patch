@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <blake.galbreath@gmail.com>
+Date: Wed, 20 Jan 2021 14:23:37 -0600
+Subject: [PATCH] Allow adding items to BlockDropItemEvent
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 697c69b60aa45b6a229f3bec77dc728e50a895ce..49efae40345fcfca8f80fcc541dcfde1b8a8b07b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -461,13 +461,30 @@ public class CraftEventFactory {
+     }
+ 
+     public static void handleBlockDropItemEvent(Block block, BlockState state, ServerPlayer player, List<ItemEntity> items) {
+-        BlockDropItemEvent event = new BlockDropItemEvent(block, state, player.getBukkitEntity(), Lists.transform(items, (item) -> (org.bukkit.entity.Item) item.getBukkitEntity()));
++        // Paper start - Allow adding items to BlockDropItemEvent
++        List<Item> list = new ArrayList<>();
++        for (ItemEntity item : items) {
++            list.add((Item) item.getBukkitEntity());
++        }
++        BlockDropItemEvent event = new BlockDropItemEvent(block, state, player.getBukkitEntity(), list);
++        // Paper end - Allow adding items to BlockDropItemEvent
+         Bukkit.getPluginManager().callEvent(event);
+ 
+         if (!event.isCancelled()) {
+-            for (ItemEntity item : items) {
+-                item.level().addFreshEntity(item);
++            // Paper start - Allow adding items to BlockDropItemEvent
++            for (Item bukkit : list) {
++                if (!bukkit.isValid()) {
++                    Entity item = ((org.bukkit.craftbukkit.entity.CraftItem) bukkit).getHandle();
++                    item.level().addFreshEntity(item);
++                }
++            }
++        } else {
++            for (Item bukkit : list) {
++                if (bukkit.isValid()) {
++                    bukkit.remove();
++                }
+             }
++            // Paper end - Allow adding items to BlockDropItemEvent
+         }
+     }
+ 

@@ -185,6 +185,8 @@ These steps assume the `origin` remote is your fork of this repository and `upst
 1. Checkout feature/fix branch and rebase on master: `git checkout patch-branch && git rebase master`.
 1. Apply updated patches: `./gradlew applyPatches`.
 1. If there are conflicts, fix them.
+   * If there are conflicts within `Paper-API`, after fixing them run `./gradlew rebuildApiPatches` before re-running `./gradlew applyPatches`.
+   * The API patches are applied first, so if there are conflicts in the API patches, the server patches will not be applied.
 1. If your PR creates new patches instead of modifying existing ones, in both the `Paper-Server` and `Paper-API` directories, ensure your newly-created patch is the last commit by either:
     * Renaming the patch file with a large 4-digit number in front (e.g. 9999-Patch-to-add-some-new-stuff.patch), and re-applying patches.
     * Running `git rebase --interactive base` and moving the commits to the end.
@@ -248,6 +250,17 @@ When adding new imports to a class in a file not created by the current patch, u
 instead of adding a new import to the top of the file. If you are using a type a significant number of times, you
 can add an import with a comment. However, if its only used a couple of times, the FQN is preferred to prevent future
 patch conflicts in the import section of the file.
+
+### Nullability annotations
+
+We are in the process of switching nullability annotation libraries, so you might need to use one or the other:
+
+**For classes we add**: Fields, method parameters and return types that are nullable should be marked via the
+`@Nullable` annotation from `org.jspecify.annotations`. Whenever you create a new class, add `@NullMarked`, meaning types
+are assumed to be non-null by default. For less obvious placing such as on generics or arrays, see the [JSpecify docs](https://jspecify.dev/docs/user-guide/).
+
+**For classes added by upstream**: Keep using both `@Nullable` and `@NotNull` from `org.jetbrains.annotations`. These
+will be replaced later.
 
 ```java
 import org.bukkit.event.Event;

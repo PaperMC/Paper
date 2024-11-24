@@ -6,9 +6,10 @@ import io.papermc.paper.generated.GeneratedFrom;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
+import org.bukkit.MinecraftExperimental;
 import org.bukkit.block.Biome;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Vanilla keys for {@link RegistryKey#BIOME}.
@@ -23,7 +24,8 @@ import org.jetbrains.annotations.ApiStatus;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.1")
+@GeneratedFrom("1.21.3")
+@NullMarked
 @ApiStatus.Experimental
 public final class BiomeKeys {
     /**
@@ -300,6 +302,15 @@ public final class BiomeKeys {
     public static final TypedKey<Biome> OLD_GROWTH_SPRUCE_TAIGA = create(key("old_growth_spruce_taiga"));
 
     /**
+     * {@code minecraft:pale_garden}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    @ApiStatus.Experimental
+    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
+    public static final TypedKey<Biome> PALE_GARDEN = create(key("pale_garden"));
+
+    /**
      * {@code minecraft:plains}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -484,7 +495,7 @@ public final class BiomeKeys {
      * @return a new typed key
      */
     @ApiStatus.Experimental
-    public static @NonNull TypedKey<Biome> create(final @NonNull Key key) {
+    public static TypedKey<Biome> create(final Key key) {
         return TypedKey.create(RegistryKey.BIOME, key);
     }
 }
