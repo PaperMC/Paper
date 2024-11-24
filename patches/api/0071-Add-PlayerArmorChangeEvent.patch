@@ -6,17 +6,17 @@ Subject: [PATCH] Add PlayerArmorChangeEvent
 
 diff --git a/src/main/java/com/destroystokyo/paper/event/player/PlayerArmorChangeEvent.java b/src/main/java/com/destroystokyo/paper/event/player/PlayerArmorChangeEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c7cc612ec81b0c7da6ee6676167e047e69347966
+index 0000000000000000000000000000000000000000..b11c8f5abc6110e20538e2ebadd162666e039cc8
 --- /dev/null
 +++ b/src/main/java/com/destroystokyo/paper/event/player/PlayerArmorChangeEvent.java
-@@ -0,0 +1,120 @@
+@@ -0,0 +1,96 @@
 +package com.destroystokyo.paper.event.player;
 +
 +import java.util.Set;
++import io.papermc.paper.event.entity.EntityEquipmentChangeEvent;
 +import org.bukkit.Material;
 +import org.bukkit.entity.Player;
-+import org.bukkit.event.HandlerList;
-+import org.bukkit.event.player.PlayerEvent;
++import org.bukkit.inventory.EquipmentSlot;
 +import org.bukkit.inventory.ItemStack;
 +import org.jetbrains.annotations.ApiStatus;
 +import org.jspecify.annotations.NullMarked;
@@ -30,20 +30,23 @@ index 0000000000000000000000000000000000000000..c7cc612ec81b0c7da6ee6676167e047e
 + * Not currently called for environmental factors though it <strong>MAY BE IN THE FUTURE</strong>
 + */
 +@NullMarked
-+public class PlayerArmorChangeEvent extends PlayerEvent {
-+
-+    private static final HandlerList HANDLER_LIST = new HandlerList();
++public class PlayerArmorChangeEvent extends EntityEquipmentChangeEvent {
 +
 +    private final SlotType slotType;
-+    private final ItemStack oldItem;
-+    private final ItemStack newItem;
 +
 +    @ApiStatus.Internal
-+    public PlayerArmorChangeEvent(final Player player, final SlotType slotType, final ItemStack oldItem, final ItemStack newItem) {
-+        super(player);
-+        this.slotType = slotType;
-+        this.oldItem = oldItem;
-+        this.newItem = newItem;
++    public PlayerArmorChangeEvent(final Player player, final EquipmentSlot equipmentSlot, final ItemStack oldItem, final ItemStack newItem) {
++        super(player, equipmentSlot, oldItem, newItem);
++        this.slotType = SlotType.valueOf(equipmentSlot.name());
++    }
++
++    @Override
++    public Player getEntity() {
++        return (Player) entity;
++    }
++
++    public Player getPlayer() {
++        return (Player) entity;
 +    }
 +
 +    /**
@@ -53,33 +56,6 @@ index 0000000000000000000000000000000000000000..c7cc612ec81b0c7da6ee6676167e047e
 +     */
 +    public SlotType getSlotType() {
 +        return this.slotType;
-+    }
-+
-+    /**
-+     * Gets the existing item that's being replaced
-+     *
-+     * @return old item
-+     */
-+    public ItemStack getOldItem() {
-+        return this.oldItem;
-+    }
-+
-+    /**
-+     * Gets the new item that's replacing the old
-+     *
-+     * @return new item
-+     */
-+    public ItemStack getNewItem() {
-+        return this.newItem;
-+    }
-+
-+    @Override
-+    public HandlerList getHandlers() {
-+        return HANDLER_LIST;
-+    }
-+
-+    public static HandlerList getHandlerList() {
-+        return HANDLER_LIST;
 +    }
 +
 +    public enum SlotType {
@@ -129,4 +105,82 @@ index 0000000000000000000000000000000000000000..c7cc612ec81b0c7da6ee6676167e047e
 +            return getByMaterial(material) != null;
 +        }
 +    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/entity/EntityEquipmentChangeEvent.java b/src/main/java/io/papermc/paper/event/entity/EntityEquipmentChangeEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f737c4bddd8f6bcfb5d4935fc68b55c36aabd9a8
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/entity/EntityEquipmentChangeEvent.java
+@@ -0,0 +1,72 @@
++package io.papermc.paper.event.entity;
++
++import org.bukkit.entity.LivingEntity;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.entity.EntityEvent;
++import org.bukkit.inventory.EquipmentSlot;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Called when an entities' equipment changes.
++ */
++@NullMarked
++public class EntityEquipmentChangeEvent extends EntityEvent {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private final EquipmentSlot equipmentSlot;
++    private final ItemStack oldItem;
++    private final ItemStack newItem;
++
++    @ApiStatus.Internal
++    public EntityEquipmentChangeEvent(final LivingEntity entity, final EquipmentSlot equipmentSlot, final ItemStack oldItem, final ItemStack newItem) {
++        super(entity);
++        this.equipmentSlot = equipmentSlot;
++        this.oldItem = oldItem;
++        this.newItem = newItem;
++    }
++
++    @Override
++    public LivingEntity getEntity() {
++        return (LivingEntity) entity;
++    }
++
++    /**
++     * Gets the equipment slot of the item that is being replaced.
++     *
++     * @return the old item
++     */
++    public EquipmentSlot getEquipmentSlot() {
++        return equipmentSlot;
++    }
++
++    /**
++     * Gets the existing item that is being replaced.
++     *
++     * @return the old item
++     */
++    public ItemStack getOldItem() {
++        return oldItem;
++    }
++
++    /**
++     * Gets the new item that is replacing the old item.
++     *
++     * @return the new item
++     */
++    public ItemStack getNewItem() {
++        return newItem;
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++
 +}
