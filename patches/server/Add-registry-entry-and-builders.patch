@@ -309,11 +309,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public PaperGameEventRegistryEntry(
 +        final Conversions ignoredConversions,
 +        final io.papermc.paper.registry.TypedKey<org.bukkit.GameEvent> ignoredKey,
-+        final @Nullable GameEvent nms
++        final @Nullable GameEvent internal
 +    ) {
-+        if (nms == null) return;
++        if (internal == null) return;
 +
-+        this.range = OptionalInt.of(nms.notificationRadius());
++        this.range = OptionalInt.of(internal.notificationRadius());
 +    }
 +
 +    @Override
@@ -327,9 +327,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        public PaperBuilder(
 +            final Conversions conversions,
 +            final io.papermc.paper.registry.TypedKey<org.bukkit.GameEvent> key,
-+            final @Nullable GameEvent nms
++            final @Nullable GameEvent internal
 +        ) {
-+            super(conversions, key, nms);
++            super(conversions, key, internal);
 +        }
 +
 +        @Override
@@ -385,16 +385,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public PaperPaintingVariantRegistryEntry(
 +        final Conversions conversions,
 +        final TypedKey<Art> ignoredKey,
-+        final @Nullable PaintingVariant nms
++        final @Nullable PaintingVariant internal
 +    ) {
 +        this.conversions = conversions;
-+        if(nms == null) return;
++        if (internal == null) return;
 +
-+        this.width = OptionalInt.of(nms.width());
-+        this.height = OptionalInt.of(nms.height());
-+        this.title = nms.title().orElse(null);
-+        this.author = nms.title().orElse(null);
-+        this.assetId = nms.assetId();
++        this.width = OptionalInt.of(internal.width());
++        this.height = OptionalInt.of(internal.height());
++        this.title = internal.title().orElse(null);
++        this.author = internal.author().orElse(null);
++        this.assetId = internal.assetId();
 +    }
 +
 +    @Override
@@ -424,18 +424,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    public static final class PaperBuilder extends PaperPaintingVariantRegistryEntry implements PaintingVariantRegistryEntry.Builder, PaperRegistryBuilder<PaintingVariant, Art> {
 +
-+        public PaperBuilder(final Conversions conversions, final TypedKey<Art> key, final @Nullable PaintingVariant nms) {
-+            super(conversions, key, nms);
++        public PaperBuilder(final Conversions conversions, final TypedKey<Art> key, final @Nullable PaintingVariant internal) {
++            super(conversions, key, internal);
 +        }
 +
 +        @Override
-+        public Builder width(@Range(from = 0, to = 16) final int width) {
++        public Builder width(final @Range(from = 1, to = 16) int width) {
 +            this.width = OptionalInt.of(asArgumentRange(width, "width", 1, 16));
 +            return this;
 +        }
 +
 +        @Override
-+        public Builder height(@Range(from = 0, to = 16) final int height) {
++        public Builder height(final @Range(from = 1, to = 16) int height) {
 +            this.height = OptionalInt.of(asArgumentRange(height, "height", 1, 16));
 +            return this;
 +        }
@@ -573,44 +573,3 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      @NotNull
      @Override
      public NamespacedKey getKey() {
-diff --git a/src/test/java/io/papermc/paper/registry/RegistryBuilderTest.java b/src/test/java/io/papermc/paper/registry/RegistryBuilderTest.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/test/java/io/papermc/paper/registry/RegistryBuilderTest.java
-+++ b/src/test/java/io/papermc/paper/registry/RegistryBuilderTest.java
-@@ -0,0 +0,0 @@
- package io.papermc.paper.registry;
- 
-+import io.papermc.paper.registry.data.PaperEnchantmentRegistryEntry;
-+import io.papermc.paper.registry.data.PaperGameEventRegistryEntry;
- import io.papermc.paper.registry.data.util.Conversions;
- import java.util.List;
- import java.util.Map;
- import net.minecraft.core.Registry;
-+import net.minecraft.core.registries.Registries;
- import net.minecraft.resources.RegistryOps;
- import net.minecraft.resources.ResourceKey;
-+import net.minecraft.world.item.enchantment.Enchantment;
-+import net.minecraft.world.level.gameevent.GameEvent;
- import org.bukkit.support.RegistryHelper;
- import org.bukkit.support.environment.AllFeatures;
- import org.junit.jupiter.api.Disabled;
-@@ -0,0 +0,0 @@ import org.junit.jupiter.params.provider.Arguments;
- import org.junit.jupiter.params.provider.MethodSource;
- 
- import static org.junit.jupiter.api.Assertions.assertEquals;
-+import static org.junit.jupiter.params.provider.Arguments.arguments;
- 
- @AllFeatures
- class RegistryBuilderTest {
- 
-     static List<Arguments> registries() {
-         return List.of(
-+            arguments(Registries.ENCHANTMENT, (PaperRegistryBuilder.Filler<Enchantment, org.bukkit.enchantments.Enchantment, PaperEnchantmentRegistryEntry.PaperBuilder>) PaperEnchantmentRegistryEntry.PaperBuilder::new),
-+            arguments(Registries.GAME_EVENT, (PaperRegistryBuilder.Filler<GameEvent, org.bukkit.GameEvent, PaperGameEventRegistryEntry.PaperBuilder>) PaperGameEventRegistryEntry.PaperBuilder::new)
-         );
-     }
- 
--    @Disabled
-     @ParameterizedTest
-     @MethodSource("registries")
-     <M, T> void testEquality(final ResourceKey<? extends Registry<M>> resourceKey, final PaperRegistryBuilder.Filler<M, T, ?> filler) {
