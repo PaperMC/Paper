@@ -9,7 +9,7 @@ import org.bukkit.block.BlockFace;
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
  */
-@Deprecated
+@Deprecated(since = "1.14.1")
 public class PistonExtensionMaterial extends MaterialData implements Attachable {
 
     public PistonExtensionMaterial(final Material type) {
@@ -21,7 +21,7 @@ public class PistonExtensionMaterial extends MaterialData implements Attachable 
      * @param data the raw data value
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public PistonExtensionMaterial(final Material type, final byte data) {
         super(type, data);
     }

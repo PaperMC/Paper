@@ -125,7 +125,7 @@ public interface InventoryView {
          * @return the id of this view
          * @deprecated Magic value
          */
-        @Deprecated
+        @Deprecated(since = "1.6.2")
         public int getId() {
             return id;
         }

@@ -15,7 +15,7 @@ public class YamlRepresenter extends Representer {
     /**
      * @deprecated options required
      */
-    @Deprecated
+    @Deprecated(since = "1.19.4")
     public YamlRepresenter() {
         this(new DumperOptions());
     }

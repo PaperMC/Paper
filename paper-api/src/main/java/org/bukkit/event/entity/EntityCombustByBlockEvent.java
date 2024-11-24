@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 public class EntityCombustByBlockEvent extends EntityCombustEvent {
     private final Block combuster;
 
-    @Deprecated
+    @Deprecated(since = "1.21")
     public EntityCombustByBlockEvent(@Nullable final Block combuster, @NotNull final Entity combustee, final int duration) {
         this(combuster, combustee, (float) duration);
     }

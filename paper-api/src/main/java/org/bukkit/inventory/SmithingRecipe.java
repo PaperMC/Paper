@@ -27,7 +27,7 @@ public class SmithingRecipe implements Recipe, Keyed {
      * This class now acts as a base class to these two classes and will do nothing when
      * added to the server.
      */
-    @Deprecated
+    @Deprecated(since = "1.20.1")
     public SmithingRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @Nullable RecipeChoice base, @Nullable RecipeChoice addition) {
         this.key = key;
         this.result = result;

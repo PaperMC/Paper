@@ -17,7 +17,7 @@ public interface SpawnEggMeta extends ItemMeta {
      * @return The entity type. May be null for implementation specific default.
      * @deprecated different types are different items
      */
-    @Deprecated
+    @Deprecated(since = "1.13")
     @Contract("-> fail")
     EntityType getSpawnedType();
 
@@ -28,7 +28,7 @@ public interface SpawnEggMeta extends ItemMeta {
      * default.
      * @deprecated different types are different items
      */
-    @Deprecated
+    @Deprecated(since = "1.13")
     @Contract("_ -> fail")
     void setSpawnedType(EntityType type);
 

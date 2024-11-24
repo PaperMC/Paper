@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 public class EntityDamageByEntityEvent extends EntityDamageEvent {
     private final Entity damager;
 
-    @Deprecated(forRemoval = true)
+    @Deprecated(since = "1.20.4", forRemoval = true)
     public EntityDamageByEntityEvent(@NotNull final Entity damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, final double damage) {
         this(damager, damagee, cause, DamageSource.builder(DamageType.GENERIC).withCausingEntity(damager).withDirectEntity(damager).build(), damage);
     }
@@ -23,7 +23,7 @@ public class EntityDamageByEntityEvent extends EntityDamageEvent {
         this.damager = damager;
     }
 
-    @Deprecated(forRemoval = true)
+    @Deprecated(since = "1.20.4", forRemoval = true)
     public EntityDamageByEntityEvent(@NotNull final Entity damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
         this(damager, damagee, cause, DamageSource.builder(DamageType.GENERIC).withCausingEntity(damager).withDirectEntity(damager).build(), modifiers, modifierFunctions);
     }

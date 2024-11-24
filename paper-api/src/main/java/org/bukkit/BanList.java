@@ -23,7 +23,7 @@ public interface BanList<T> {
          *
          * @deprecated deprecated in favor of {@link #PROFILE}
          */
-        @Deprecated
+        @Deprecated(since = "1.20.1")
         NAME,
         /**
          * Banned IP addresses
@@ -43,7 +43,7 @@ public interface BanList<T> {
      * @return the corresponding entry, or null if none found
      * @deprecated see {@link #getBanEntry(Object)}
      */
-    @Deprecated
+    @Deprecated(since = "1.20.1")
     @Nullable
     public BanEntry<T> getBanEntry(@NotNull String target);
 
@@ -69,7 +69,7 @@ public interface BanList<T> {
      *     (updated) previous ban
      * @deprecated see {@link #addBan(Object, String, Date, String)}
      */
-    @Deprecated
+    @Deprecated(since = "1.20.1")
     @Nullable
     public BanEntry<T> addBan(@NotNull String target, @Nullable String reason, @Nullable Date expires, @Nullable String source);
 
@@ -124,7 +124,7 @@ public interface BanList<T> {
      * @return an immutable set containing every entry tracked by this list
      * @deprecated This return a generic class, prefer use {@link #getEntries()}
      */
-    @Deprecated
+    @Deprecated(since = "1.20.1")
     @NotNull
     public Set<BanEntry> getBanEntries();
 
@@ -155,7 +155,7 @@ public interface BanList<T> {
      *     active ban status, false otherwise
      * @deprecated see {@link #isBanned(Object)}
      */
-    @Deprecated
+    @Deprecated(since = "1.20.1")
     public boolean isBanned(@NotNull String target);
 
     /**
@@ -174,6 +174,6 @@ public interface BanList<T> {
      *
      * @deprecated see {@link #pardon(Object)}
      */
-    @Deprecated
+    @Deprecated(since = "1.20.1")
     public void pardon(@NotNull String target);
 }

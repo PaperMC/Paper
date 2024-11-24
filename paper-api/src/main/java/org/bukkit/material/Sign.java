@@ -9,7 +9,7 @@ import org.bukkit.block.BlockFace;
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
  */
-@Deprecated
+@Deprecated(since = "1.14.1")
 public class Sign extends MaterialData implements Attachable {
     public Sign() {
         super(Material.LEGACY_SIGN_POST);
@@ -24,7 +24,7 @@ public class Sign extends MaterialData implements Attachable {
      * @param data the raw data value
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public Sign(final Material type, final byte data) {
         super(type, data);
     }

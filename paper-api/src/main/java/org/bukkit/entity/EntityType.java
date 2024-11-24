@@ -393,7 +393,7 @@ public enum EntityType implements Keyed, Translatable {
      * @return the entity type's name
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     @Nullable
     public String getName() {
         return name;
@@ -418,7 +418,7 @@ public enum EntityType implements Keyed, Translatable {
      * @return the raw type id
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public short getTypeId() {
         return typeId;
     }
@@ -430,7 +430,7 @@ public enum EntityType implements Keyed, Translatable {
      * @return the matching entity type or null
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     @Contract("null -> null")
     @Nullable
     public static EntityType fromName(@Nullable String name) {
@@ -447,7 +447,7 @@ public enum EntityType implements Keyed, Translatable {
      * @return the matching entity type or null
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     @Nullable
     public static EntityType fromId(int id) {
         if (id > Short.MAX_VALUE) {

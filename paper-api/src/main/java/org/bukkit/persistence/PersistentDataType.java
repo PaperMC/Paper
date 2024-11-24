@@ -90,7 +90,7 @@ public interface PersistentDataType<P, C> {
      * {@link ListPersistentDataType}s offer full support for primitive types, such as the
      * {@link PersistentDataContainer}.
      */
-    @Deprecated
+    @Deprecated(since = "1.20.4")
     PersistentDataType<PersistentDataContainer[], PersistentDataContainer[]> TAG_CONTAINER_ARRAY = new PrimitivePersistentDataType<>(PersistentDataContainer[].class);
 
     /*

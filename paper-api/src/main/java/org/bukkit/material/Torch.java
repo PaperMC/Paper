@@ -9,7 +9,7 @@ import org.bukkit.block.BlockFace;
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
  */
-@Deprecated
+@Deprecated(since = "1.14.1")
 public class Torch extends SimpleAttachableMaterialData {
     public Torch() {
         super(Material.LEGACY_TORCH);
@@ -24,7 +24,7 @@ public class Torch extends SimpleAttachableMaterialData {
      * @param data the raw data value
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public Torch(final Material type, final byte data) {
         super(type, data);
     }

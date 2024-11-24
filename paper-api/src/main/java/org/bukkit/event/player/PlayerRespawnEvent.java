@@ -16,12 +16,12 @@ public class PlayerRespawnEvent extends PlayerEvent {
     private final boolean isAnchorSpawn;
     private final RespawnReason respawnReason;
 
-    @Deprecated
+    @Deprecated(since = "1.16.1")
     public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn) {
         this(respawnPlayer, respawnLocation, isBedSpawn, false);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.19.4")
     public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn, final boolean isAnchorSpawn) {
         this(respawnPlayer, respawnLocation, isBedSpawn, false, RespawnReason.PLUGIN);
     }

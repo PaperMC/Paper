@@ -138,7 +138,7 @@ public interface Team {
      * @throws IllegalArgumentException if this team has been unregistered
      * @deprecated see {@link #getOption(Team.Option)}
      */
-    @Deprecated
+    @Deprecated(since = "1.9")
     @NotNull
     NameTagVisibility getNameTagVisibility();
 
@@ -149,7 +149,7 @@ public interface Team {
      * @throws IllegalArgumentException if this team has been unregistered
      * @deprecated see {@link #setOption(Team.Option, Team.OptionStatus)}
      */
-    @Deprecated
+    @Deprecated(since = "1.9")
     void setNameTagVisibility(@NotNull NameTagVisibility visibility);
 
     /**
@@ -160,7 +160,7 @@ public interface Team {
      * @see #getEntries()
      * @deprecated Teams can contain entries that aren't players
      */
-    @Deprecated
+    @Deprecated(since = "1.8.6")
     @NotNull
     Set<OfflinePlayer> getPlayers();
 
@@ -200,7 +200,7 @@ public interface Team {
      * @see #addEntry(String)
      * @deprecated Teams can contain entries that aren't players
      */
-    @Deprecated
+    @Deprecated(since = "1.8.6")
     void addPlayer(@NotNull OfflinePlayer player);
 
     /**
@@ -222,7 +222,7 @@ public interface Team {
      * @see #removeEntry(String)
      * @deprecated Teams can contain entries that aren't players
      */
-    @Deprecated
+    @Deprecated(since = "1.8.6")
     boolean removePlayer(@NotNull OfflinePlayer player);
 
     /**
@@ -250,7 +250,7 @@ public interface Team {
      * @see #hasEntry(String)
      * @deprecated Teams can contain entries that aren't players
      */
-    @Deprecated
+    @Deprecated(since = "1.8.6")
     boolean hasPlayer(@NotNull OfflinePlayer player);
     /**
      * Checks to see if the specified entry is a member of this team.

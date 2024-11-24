@@ -60,7 +60,7 @@ public class CauldronLevelChangeEvent extends BlockEvent implements Cancellable 
      * @see #getBlock()
      * @deprecated not all cauldron contents are Levelled
      */
-    @Deprecated
+    @Deprecated(since = "1.17")
     public int getOldLevel() {
         BlockData oldBlock = getBlock().getBlockData();
         return (oldBlock instanceof Levelled) ? ((Levelled) oldBlock).getLevel() : ((oldBlock.getMaterial() == Material.CAULDRON) ? 0 : 3);
@@ -73,7 +73,7 @@ public class CauldronLevelChangeEvent extends BlockEvent implements Cancellable 
      * @see #getNewState()
      * @deprecated not all cauldron contents are Levelled
      */
-    @Deprecated
+    @Deprecated(since = "1.17")
     public int getNewLevel() {
         BlockData newBlock = newState.getBlockData();
         return (newBlock instanceof Levelled) ? ((Levelled) newBlock).getLevel() : ((newBlock.getMaterial() == Material.CAULDRON) ? 0 : 3);
@@ -86,7 +86,7 @@ public class CauldronLevelChangeEvent extends BlockEvent implements Cancellable 
      * @see #getNewState()
      * @deprecated not all cauldron contents are Levelled
      */
-    @Deprecated
+    @Deprecated(since = "1.17")
     public void setNewLevel(int newLevel) {
         Preconditions.checkArgument(0 <= newLevel && newLevel <= 3, "Cauldron level out of bounds 0 <= %s <= 3", newLevel);
         if (newLevel == 0) {

@@ -12,7 +12,7 @@ import org.bukkit.block.BlockFace;
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
  */
-@Deprecated
+@Deprecated(since = "1.14.1")
 public class Hopper extends MaterialData implements Directional, Redstone {
 
     protected static final BlockFace DEFAULT_DIRECTION = BlockFace.DOWN;
@@ -62,7 +62,7 @@ public class Hopper extends MaterialData implements Directional, Redstone {
      * @param data the raw data value
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.9")
     public Hopper(Material type, byte data) {
         super(type, data);
     }

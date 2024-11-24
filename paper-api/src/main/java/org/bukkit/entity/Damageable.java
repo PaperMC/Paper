@@ -79,7 +79,7 @@ public interface Damageable extends Entity {
      * @return Maximum health
      * @deprecated use {@link Attribute#MAX_HEALTH}.
      */
-    @Deprecated
+    @Deprecated(since = "1.11")
     double getMaxHealth();
 
     /**
@@ -94,13 +94,13 @@ public interface Damageable extends Entity {
      * @param health amount of health to set the maximum to
      * @deprecated use {@link Attribute#MAX_HEALTH}.
      */
-    @Deprecated
+    @Deprecated(since = "1.11")
     void setMaxHealth(double health);
 
     /**
      * Resets the max health to the original amount.
      * @deprecated use {@link Attribute#MAX_HEALTH}.
      */
-    @Deprecated
+    @Deprecated(since = "1.11")
     void resetMaxHealth();
 }

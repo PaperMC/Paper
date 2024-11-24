@@ -26,7 +26,7 @@ public class BlockPistonRetractEvent extends BlockPistonEvent {
      *
      * @return The possible location of the possibly moving block.
      */
-    @Deprecated
+    @Deprecated(since = "1.8")
     @NotNull
     public Location getRetractLocation() {
         return getBlock().getRelative(getDirection(), 2).getLocation();

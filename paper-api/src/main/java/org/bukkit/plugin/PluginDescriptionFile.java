@@ -990,7 +990,7 @@ public final class PluginDescriptionFile {
      * @return unused
      * @deprecated unused
      */
-    @Deprecated
+    @Deprecated(since = "1.7.2")
     @Nullable
     public String getClassLoaderOf() {
         return classLoaderOf;

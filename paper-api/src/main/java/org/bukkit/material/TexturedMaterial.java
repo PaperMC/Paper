@@ -9,7 +9,7 @@ import org.bukkit.Material;
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
  */
-@Deprecated
+@Deprecated(since = "1.14.1")
 public abstract class TexturedMaterial extends MaterialData {
 
     public TexturedMaterial(Material m) {
@@ -21,7 +21,7 @@ public abstract class TexturedMaterial extends MaterialData {
      * @param data the raw data value
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public TexturedMaterial(final Material type, final byte data) {
         super(type, data);
     }
@@ -68,7 +68,7 @@ public abstract class TexturedMaterial extends MaterialData {
      * @return index of data in textures list
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     protected int getTextureIndex() {
         return getData(); // Default to using all bits - override for other mappings
     }
@@ -79,7 +79,7 @@ public abstract class TexturedMaterial extends MaterialData {
      * @param idx - index of data in textures list
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     protected void setTextureIndex(int idx) {
         setData((byte) idx); // Default to using all bits - override for other mappings
     }

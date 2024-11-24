@@ -16,7 +16,7 @@ public class ExpBottleEvent extends ProjectileHitEvent {
     private int exp;
     private boolean showEffect = true;
 
-    @Deprecated
+    @Deprecated(since = "1.20.2")
     public ExpBottleEvent(@NotNull final ThrownExpBottle bottle, final int exp) {
         this(bottle, null, null, null, exp);
     }

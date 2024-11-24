@@ -17,7 +17,7 @@ public class SheepDyeWoolEvent extends EntityEvent implements Cancellable {
     private DyeColor color;
     private final Player player;
 
-    @Deprecated
+    @Deprecated(since = "1.17.1")
     public SheepDyeWoolEvent(@NotNull final Sheep sheep, @NotNull final DyeColor color) {
         this(sheep, color, null);
     }

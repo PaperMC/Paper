@@ -28,7 +28,7 @@ public interface PotionBrewer {
      * @return The list of effects
      * @deprecated Non-Functional
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     @NotNull
     public Collection<PotionEffect> getEffectsFromDamage(int damage);
 
@@ -43,6 +43,6 @@ public interface PotionBrewer {
      * @deprecated Upgraded / extended potions are now their own {@link PotionType} use {@link PotionType#getPotionEffects()} instead
      */
     @NotNull
-    @Deprecated
+    @Deprecated(since = "1.20.2")
     public Collection<PotionEffect> getEffects(@NotNull PotionType type, boolean upgraded, boolean extended);
 }

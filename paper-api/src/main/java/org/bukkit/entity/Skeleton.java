@@ -48,7 +48,7 @@ public interface Skeleton extends AbstractSkeleton {
      * @deprecated classes are different types. This interface only remains in
      *     the Skeleton interface to preserve backwards compatibility.
      */
-    @Deprecated
+    @Deprecated(since = "1.11")
     public enum SkeletonType {
 
         /**

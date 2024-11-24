@@ -22,7 +22,7 @@ public class BroadcastMessageEvent extends ServerEvent implements Cancellable {
     private final Set<CommandSender> recipients;
     private boolean cancelled = false;
 
-    @Deprecated
+    @Deprecated(since = "1.14")
     public BroadcastMessageEvent(@NotNull String message, @NotNull Set<CommandSender> recipients) {
         this(false, message, recipients);
     }

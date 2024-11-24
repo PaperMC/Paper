@@ -57,7 +57,7 @@ public final class EquipmentSlotGroup implements Predicate<EquipmentSlot> {
      * @deprecated for internal compatibility use only
      */
     @NotNull
-    @Deprecated
+    @Deprecated(since = "1.20.5")
     @ApiStatus.Internal
     public EquipmentSlot getExample() {
         return example;

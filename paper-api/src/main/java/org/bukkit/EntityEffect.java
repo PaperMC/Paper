@@ -57,7 +57,7 @@ public enum EntityEffect {
      *
      * @deprecated Use {@link LivingEntity#playHurtAnimation(float)}
      */
-    @Deprecated
+    @Deprecated(since = "1.20.1")
     HURT(2, LivingEntity.class),
     /**
      * When a mob dies.
@@ -69,7 +69,7 @@ public enum EntityEffect {
      * @see #SNOWBALL_BREAK
      * @see #ENTITY_DEATH
      */
-    @Deprecated
+    @Deprecated(since = "1.12.2")
     DEATH(3, Entity.class),
     /**
      * Spawns the egg breaking particles
@@ -132,7 +132,7 @@ public enum EntityEffect {
      * @see #SHEEP_EAT_GRASS
      * @see #TNT_MINECART_IGNITE
      */
-    @Deprecated
+    @Deprecated(since = "1.12.2")
     SHEEP_EAT(10, Entity.class),
     /**
      * Plays the sheep eating grass animation
@@ -347,7 +347,7 @@ public enum EntityEffect {
      * @return The data value
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public byte getData() {
         return data;
     }

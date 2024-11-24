@@ -209,7 +209,7 @@ public abstract class FileConfiguration extends MemoryConfiguration {
      * {@link FileConfigurationOptions#getHeader()} instead.
      */
     @NotNull
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     protected String buildHeader() {
         return "";
     }

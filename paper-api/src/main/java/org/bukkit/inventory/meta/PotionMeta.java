@@ -20,7 +20,7 @@ public interface PotionMeta extends ItemMeta {
      * @param data PotionData to set the base potion state to
      * @deprecated Upgraded / extended potions are now their own {@link PotionType} use {@link #setBasePotionType} instead.
      */
-    @Deprecated
+    @Deprecated(since = "1.20.6")
     void setBasePotionData(@Nullable PotionData data);
 
     /**
@@ -30,7 +30,7 @@ public interface PotionMeta extends ItemMeta {
      * @deprecated Upgraded / extended potions are now their own {@link PotionType} use {@link #getBasePotionType()} instead.
      */
     @Nullable
-    @Deprecated
+    @Deprecated(since = "1.20.6")
     PotionData getBasePotionData();
 
     /**
@@ -109,7 +109,7 @@ public interface PotionMeta extends ItemMeta {
      * @return true if the potion meta changed as a result of this call
      * @deprecated use {@link #setBasePotionType(org.bukkit.potion.PotionType)}
      */
-    @Deprecated
+    @Deprecated(since = "1.9")
     boolean setMainEffect(@NotNull PotionEffectType type);
 
     /**

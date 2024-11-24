@@ -10,7 +10,7 @@ import org.bukkit.block.BlockFace;
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
  */
-@Deprecated
+@Deprecated(since = "1.14.1")
 public class ExtendedRails extends Rails {
 
     public ExtendedRails(final Material type) {
@@ -22,7 +22,7 @@ public class ExtendedRails extends Rails {
      * @param data the raw data value
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public ExtendedRails(final Material type, final byte data) {
         super(type, data);
     }
@@ -37,7 +37,7 @@ public class ExtendedRails extends Rails {
      *
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     @Override
     protected byte getConvertedData() {
         return (byte) (getData() & 0x7);

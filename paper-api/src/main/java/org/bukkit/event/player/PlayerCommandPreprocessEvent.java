@@ -127,7 +127,7 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
      *     guarantee to the effect of viewing or modifying the set.
      */
     @NotNull
-    @Deprecated
+    @Deprecated(since = "1.3.1")
     public Set<Player> getRecipients() {
         return recipients;
     }

@@ -14,7 +14,7 @@ public interface Switch extends Directional, FaceAttachable, Powerable {
      * @deprecated use {@link #getAttachedFace()}
      */
     @NotNull
-    @Deprecated
+    @Deprecated(since = "1.15.2")
     Face getFace();
 
     /**
@@ -23,7 +23,7 @@ public interface Switch extends Directional, FaceAttachable, Powerable {
      * @param face the new 'face' value
      * @deprecated use {@link #getAttachedFace()}
      */
-    @Deprecated
+    @Deprecated(since = "1.15.2")
     void setFace(@NotNull Face face);
 
     /**
@@ -31,7 +31,7 @@ public interface Switch extends Directional, FaceAttachable, Powerable {
      *
      * @deprecated use {@link AttachedFace}
      */
-    @Deprecated
+    @Deprecated(since = "1.15.2")
     public enum Face {
         /**
          * The switch is mounted to the floor and pointing upwards.

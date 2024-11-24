@@ -17,7 +17,7 @@ import org.bukkit.material.types.MushroomBlockTexture;
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
  */
-@Deprecated
+@Deprecated(since = "1.14.1")
 public class Mushroom extends MaterialData {
     private static final byte NORTH_LIMIT = 4;
     private static final byte SOUTH_LIMIT = 6;
@@ -79,7 +79,7 @@ public class Mushroom extends MaterialData {
      * @param data the raw data value
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public Mushroom(Material shroom, byte data) {
         super(shroom, data);
         Preconditions.checkArgument(shroom == Material.LEGACY_HUGE_MUSHROOM_1 || shroom == Material.LEGACY_HUGE_MUSHROOM_2, "Not a mushroom!");
@@ -103,7 +103,7 @@ public class Mushroom extends MaterialData {
      * with {@link MushroomBlockTexture#STEM_SIDES } or
      * {@link MushroomBlockTexture#ALL_STEM}
      */
-    @Deprecated
+    @Deprecated(since = "1.9")
     public void setStem() {
         setData((byte) MushroomBlockTexture.STEM_SIDES.getData());
     }
@@ -170,7 +170,7 @@ public class Mushroom extends MaterialData {
      *
      * @deprecated Use MushroomBlockType cap options
      */
-    @Deprecated
+    @Deprecated(since = "1.9")
     public void setFacePainted(BlockFace face, boolean painted) {
         if (painted == isFacePainted(face)) {
             return;

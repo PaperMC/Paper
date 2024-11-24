@@ -40,7 +40,7 @@ public interface Block extends Metadatable, Translatable {
      * @return block specific metadata
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     byte getData();
 
     /**

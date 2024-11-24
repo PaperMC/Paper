@@ -177,7 +177,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * respawn anchors.
      */
     @Nullable
-    @Deprecated
+    @Deprecated(since = "1.20.4")
     public Location getBedSpawnLocation();
 
     /**

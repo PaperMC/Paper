@@ -18,7 +18,7 @@ public class LingeringPotionSplashEvent extends ProjectileHitEvent implements Ca
     private boolean cancelled;
     private final AreaEffectCloud entity;
 
-    @Deprecated
+    @Deprecated(since = "1.20.2")
     public LingeringPotionSplashEvent(@NotNull final ThrownPotion potion, @NotNull final AreaEffectCloud entity) {
        this(potion, null, null, null, entity);
     }

@@ -76,7 +76,7 @@ public enum PotionType implements Keyed {
      * @deprecated Potions can have multiple effects use {@link #getPotionEffects()}
      */
     @Nullable
-    @Deprecated
+    @Deprecated(since = "1.20.2")
     public PotionEffectType getEffectType() {
         return internalPotionDataSupplier.get().getEffectType();
     }
@@ -94,7 +94,7 @@ public enum PotionType implements Keyed {
      * @deprecated PotionType can have multiple effects, some of which can be instant and others not.
      * Use {@link PotionEffectType#isInstant()} in combination with {@link #getPotionEffects()} and {@link PotionEffect#getType()}
      */
-    @Deprecated
+    @Deprecated(since = "1.20.2")
     public boolean isInstant() {
         return internalPotionDataSupplier.get().isInstant();
     }
@@ -129,7 +129,7 @@ public enum PotionType implements Keyed {
      * @return the matching potion type
      * @deprecated Misleading
      */
-    @Deprecated
+    @Deprecated(since = "1.9")
     @Nullable
     public static PotionType getByEffect(@Nullable PotionEffectType effectType) {
         if (effectType == null)
@@ -150,7 +150,7 @@ public enum PotionType implements Keyed {
     /**
      * @deprecated Do not use, interface will get removed, and the plugin won't run
      */
-    @Deprecated
+    @Deprecated(since = "1.20.2")
     @ApiStatus.Internal
     public interface InternalPotionData {
 

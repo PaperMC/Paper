@@ -29,7 +29,7 @@ import org.jetbrains.annotations.Nullable;
  * may be poorly named, throw exceptions, have misleading parameters, or any
  * other bad programming practice.
  */
-@Deprecated
+@Deprecated(since = "1.7.2")
 public interface UnsafeValues {
 
     Material toLegacy(Material material);

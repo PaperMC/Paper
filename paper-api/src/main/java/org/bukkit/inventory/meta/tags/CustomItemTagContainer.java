@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
  * {@link org.bukkit.persistence.PersistentDataHolder} API. Please use
  * {@link org.bukkit.persistence.PersistentDataHolder} instead of this.
  */
-@Deprecated
+@Deprecated(since = "1.14")
 public interface CustomItemTagContainer {
 
     /**

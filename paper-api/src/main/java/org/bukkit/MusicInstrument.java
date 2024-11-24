@@ -25,7 +25,7 @@ public abstract class MusicInstrument implements Keyed {
      * @deprecated Use {@link Registry#get(NamespacedKey)} instead.
      */
     @Nullable
-    @Deprecated
+    @Deprecated(since = "1.20.1")
     public static MusicInstrument getByKey(@NotNull NamespacedKey namespacedKey) {
         return Registry.INSTRUMENT.get(namespacedKey);
     }
@@ -37,7 +37,7 @@ public abstract class MusicInstrument implements Keyed {
      * @deprecated use {@link Registry#iterator()}.
      */
     @NotNull
-    @Deprecated
+    @Deprecated(since = "1.20.1")
     public static Collection<MusicInstrument> values() {
         return Collections.unmodifiableCollection(Lists.newArrayList(Registry.INSTRUMENT));
     }

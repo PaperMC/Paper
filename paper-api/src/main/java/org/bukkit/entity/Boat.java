@@ -15,7 +15,7 @@ public interface Boat extends Vehicle {
      * @return the wood type
      * @deprecated deprecated in favor of {@link #getBoatType()}
      */
-    @Deprecated
+    @Deprecated(since = "1.19")
     @NotNull
     TreeSpecies getWoodType();
 
@@ -25,7 +25,7 @@ public interface Boat extends Vehicle {
      * @param species the new wood type
      * @deprecated deprecated in favor of {@link #setBoatType(Type)}
      */
-    @Deprecated
+    @Deprecated(since = "1.19")
     void setWoodType(@NotNull TreeSpecies species);
 
     /**
@@ -34,7 +34,7 @@ public interface Boat extends Vehicle {
      * @return the boat type
      * @deprecated different boats types are now different entity types
      */
-    @Deprecated
+    @Deprecated(since = "1.21.2")
     @NotNull
     Type getBoatType();
 
@@ -44,7 +44,7 @@ public interface Boat extends Vehicle {
      * @param type the new type
      * @deprecated different boats types are now different entity types
      */
-    @Deprecated
+    @Deprecated(since = "1.21.2")
     void setBoatType(@NotNull Type type);
 
     /**
@@ -54,7 +54,7 @@ public interface Boat extends Vehicle {
      * @return The max speed.
      * @deprecated boats are complex and many of these methods do not work correctly across multiple versions.
      */
-    @Deprecated
+    @Deprecated(since = "1.9")
     public double getMaxSpeed();
 
     /**
@@ -63,7 +63,7 @@ public interface Boat extends Vehicle {
      * @param speed The max speed.
      * @deprecated boats are complex and many of these methods do not work correctly across multiple versions.
      */
-    @Deprecated
+    @Deprecated(since = "1.9")
     public void setMaxSpeed(double speed);
 
     /**
@@ -73,7 +73,7 @@ public interface Boat extends Vehicle {
      * @return The rate of deceleration
      * @deprecated boats are complex and many of these methods do not work correctly across multiple versions.
      */
-    @Deprecated
+    @Deprecated(since = "1.9")
     public double getOccupiedDeceleration();
 
     /**
@@ -84,7 +84,7 @@ public interface Boat extends Vehicle {
      * @param rate deceleration rate
      * @deprecated boats are complex and many of these methods do not work correctly across multiple versions.
      */
-    @Deprecated
+    @Deprecated(since = "1.9")
     public void setOccupiedDeceleration(double rate);
 
     /**
@@ -95,7 +95,7 @@ public interface Boat extends Vehicle {
      * @return The rate of deceleration
      * @deprecated boats are complex and many of these methods do not work correctly across multiple versions.
      */
-    @Deprecated
+    @Deprecated(since = "1.9")
     public double getUnoccupiedDeceleration();
 
     /**
@@ -107,7 +107,7 @@ public interface Boat extends Vehicle {
      * @param rate deceleration rate
      * @deprecated boats are complex and many of these methods do not work correctly across multiple versions.
      */
-    @Deprecated
+    @Deprecated(since = "1.9")
     public void setUnoccupiedDeceleration(double rate);
 
     /**
@@ -116,7 +116,7 @@ public interface Boat extends Vehicle {
      * @return whether boats can work on land
      * @deprecated boats are complex and many of these methods do not work correctly across multiple versions.
      */
-    @Deprecated
+    @Deprecated(since = "1.9")
     public boolean getWorkOnLand();
 
     /**
@@ -125,7 +125,7 @@ public interface Boat extends Vehicle {
      * @param workOnLand whether boats can work on land
      * @deprecated boats are complex and many of these methods do not work correctly across multiple versions.
      */
-    @Deprecated
+    @Deprecated(since = "1.9")
     public void setWorkOnLand(boolean workOnLand);
 
     /**
@@ -140,7 +140,7 @@ public interface Boat extends Vehicle {
      * Represents the type of boats.
      * @deprecated different boats types are now different entity types
      */
-    @Deprecated
+    @Deprecated(since = "1.21.2")
     public enum Type {
         OAK(Material.OAK_PLANKS),
         SPRUCE(Material.SPRUCE_PLANKS),

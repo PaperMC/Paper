@@ -127,7 +127,7 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      * @return true if chat preview is enabled, false otherwise
      * @deprecated chat previews have been removed
      */
-    @Deprecated
+    @Deprecated(since = "1.19.3")
     public boolean shouldSendChatPreviews() {
         return false;
     }

@@ -15,7 +15,7 @@ import org.jetbrains.annotations.ApiStatus;
  */
 @Retention(RetentionPolicy.CLASS)
 @ApiStatus.Internal
-@Deprecated
+@Deprecated(since = "1.13.2")
 public @interface UndefinedNullability {
 
     /**

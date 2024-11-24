@@ -24,12 +24,12 @@ public abstract class PlayerBucketEvent extends PlayerEvent implements Cancellab
     private final Material bucket;
     private final EquipmentSlot hand;
 
-    @Deprecated
+    @Deprecated(since = "1.14.4")
     public PlayerBucketEvent(@NotNull final Player who, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand) {
         this(who, null, blockClicked.getRelative(blockFace), blockFace, bucket, itemInHand, EquipmentSlot.HAND);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.19.2")
     public PlayerBucketEvent(@NotNull final Player who, @NotNull final Block block, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand) {
         this(who, block, blockClicked, blockFace, bucket, itemInHand, EquipmentSlot.HAND);
     }

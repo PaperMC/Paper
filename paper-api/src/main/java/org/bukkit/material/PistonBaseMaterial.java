@@ -9,7 +9,7 @@ import org.bukkit.block.BlockFace;
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
  */
-@Deprecated
+@Deprecated(since = "1.14.1")
 public class PistonBaseMaterial extends MaterialData implements Directional, Redstone {
 
     public PistonBaseMaterial(final Material type) {
@@ -23,7 +23,7 @@ public class PistonBaseMaterial extends MaterialData implements Directional, Red
      * @param data the raw data value
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public PistonBaseMaterial(final Material type, final byte data) {
         super(type, data);
     }

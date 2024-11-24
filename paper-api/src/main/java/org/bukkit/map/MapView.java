@@ -34,7 +34,7 @@ public interface MapView {
          * @return The enum scale, or null for an invalid input
          * @deprecated Magic value
          */
-        @Deprecated
+        @Deprecated(since = "1.6.2")
         @Nullable
         public static Scale valueOf(byte value) {
             switch (value) {
@@ -53,7 +53,7 @@ public interface MapView {
          * @return The scale value
          * @deprecated Magic value
          */
-        @Deprecated
+        @Deprecated(since = "1.6.2")
         public byte getValue() {
             return value;
         }

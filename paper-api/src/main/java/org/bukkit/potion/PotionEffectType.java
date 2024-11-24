@@ -271,7 +271,7 @@ public abstract class PotionEffectType implements Keyed, Translatable {
      * @return duration modifier
      * @deprecated unused, always 1.0
      */
-    @Deprecated
+    @Deprecated(since = "1.14")
     public abstract double getDurationModifier();
 
     /**
@@ -280,7 +280,7 @@ public abstract class PotionEffectType implements Keyed, Translatable {
      * @return Unique ID
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public abstract int getId();
 
     /**
@@ -290,7 +290,7 @@ public abstract class PotionEffectType implements Keyed, Translatable {
      * @deprecated only for backwards compatibility, use {@link #getKey()} instead.
      */
     @NotNull
-    @Deprecated
+    @Deprecated(since = "1.20.3")
     public abstract String getName();
 
     /**
@@ -302,7 +302,7 @@ public abstract class PotionEffectType implements Keyed, Translatable {
      */
     @Contract("null -> null")
     @Nullable
-    @Deprecated
+    @Deprecated(since = "1.20.3")
     public static PotionEffectType getByKey(@Nullable NamespacedKey key) {
         if (key == null) {
             return null;
@@ -318,7 +318,7 @@ public abstract class PotionEffectType implements Keyed, Translatable {
      * @return Resulting type, or null if not found.
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     @Nullable
     public static PotionEffectType getById(int id) {
         PotionEffectType type = ID_MAP.get(id);
@@ -345,7 +345,7 @@ public abstract class PotionEffectType implements Keyed, Translatable {
      * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
      */
     @Nullable
-    @Deprecated
+    @Deprecated(since = "1.20.3")
     public static PotionEffectType getByName(@NotNull String name) {
         Preconditions.checkArgument(name != null, "name cannot be null");
         return Registry.EFFECT.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
@@ -356,7 +356,7 @@ public abstract class PotionEffectType implements Keyed, Translatable {
      * @deprecated use {@link Registry#iterator()}.
      */
     @NotNull
-    @Deprecated
+    @Deprecated(since = "1.20.3")
     public static PotionEffectType[] values() {
         return Lists.newArrayList(Registry.EFFECT).toArray(new PotionEffectType[0]);
     }

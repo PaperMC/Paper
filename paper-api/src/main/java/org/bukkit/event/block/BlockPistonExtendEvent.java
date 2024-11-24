@@ -16,7 +16,7 @@ public class BlockPistonExtendEvent extends BlockPistonEvent {
     private final int length;
     private List<Block> blocks;
 
-    @Deprecated
+    @Deprecated(since = "1.8")
     public BlockPistonExtendEvent(@NotNull final Block block, final int length, @NotNull final BlockFace direction) {
         super(block, direction);
 
@@ -37,7 +37,7 @@ public class BlockPistonExtendEvent extends BlockPistonEvent {
      * @deprecated slime blocks make the value of this method
      *          inaccurate due to blocks being pushed at the side
      */
-    @Deprecated
+    @Deprecated(since = "1.8")
     public int getLength() {
         return this.length;
     }

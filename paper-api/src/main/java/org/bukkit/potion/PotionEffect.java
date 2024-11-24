@@ -256,9 +256,9 @@ public class PotionEffect implements ConfigurationSerializable {
      * @return color of this potion's particles. May be null if the potion has no particles or defined color.
      * @deprecated color is not part of potion effects
      */
-     @Deprecated
-     @Nullable
-     @Contract("-> null")
+    @Deprecated(since = "1.13")
+    @Nullable
+    @Contract("-> null")
     public Color getColor() {
         return null;
     }

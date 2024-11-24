@@ -64,7 +64,7 @@ public final class LootContext {
      * @return the looting level
      * @deprecated no longer functional
      */
-    @Deprecated
+    @Deprecated(since = "1.21")
     public int getLootingModifier() {
         return lootingModifier;
     }
@@ -136,7 +136,7 @@ public final class LootContext {
          * @deprecated no longer functional
          */
         @NotNull
-        @Deprecated
+        @Deprecated(since = "1.21")
         public Builder lootingModifier(int modifier) {
             this.lootingModifier = modifier;
             return this;

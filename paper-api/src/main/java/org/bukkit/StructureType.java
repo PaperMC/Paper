@@ -23,7 +23,7 @@ import org.jetbrains.annotations.Nullable;
  * {@link org.bukkit.generator.structure.StructureType} instead.
  */
 // Order is retrieved from WorldGenFactory
-@Deprecated
+@Deprecated(since = "1.19")
 public final class StructureType implements Keyed {
 
     private static final Map<String, StructureType> structureTypeMap = new HashMap<>();

@@ -2428,7 +2428,7 @@ public interface ItemType extends Keyed, Translatable {
      * @deprecated creative categories no longer exist on the server
      */
     @Nullable
-    @Deprecated
+    @Deprecated(since = "1.20.6")
     CreativeCategory getCreativeCategory();
 
     /**
@@ -2446,6 +2446,6 @@ public interface ItemType extends Keyed, Translatable {
      * @deprecated only for internal use
      */
     @Nullable
-    @Deprecated
+    @Deprecated(since = "1.20.6")
     Material asMaterial();
 }

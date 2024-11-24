@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * @deprecated chat previews have been removed
  */
-@Deprecated
+@Deprecated(since = "1.19.1")
 @Warning(false)
 public class AsyncPlayerChatPreviewEvent extends AsyncPlayerChatEvent {
 

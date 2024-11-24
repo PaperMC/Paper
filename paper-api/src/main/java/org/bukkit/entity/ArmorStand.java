@@ -17,7 +17,7 @@ public interface ArmorStand extends LivingEntity {
      * @deprecated prefer {@link EntityEquipment#getItemInHand()}
      */
     @NotNull
-    @Deprecated
+    @Deprecated(since = "1.15.2")
     ItemStack getItemInHand();
 
     /**
@@ -28,7 +28,7 @@ public interface ArmorStand extends LivingEntity {
      * @deprecated prefer
      * {@link EntityEquipment#setItemInHand(org.bukkit.inventory.ItemStack)}
      */
-    @Deprecated
+    @Deprecated(since = "1.15.2")
     void setItemInHand(@Nullable ItemStack item);
 
     /**
@@ -39,7 +39,7 @@ public interface ArmorStand extends LivingEntity {
      * @deprecated prefer {@link EntityEquipment#getBoots()}
      */
     @NotNull
-    @Deprecated
+    @Deprecated(since = "1.15.2")
     ItemStack getBoots();
 
     /**
@@ -50,7 +50,7 @@ public interface ArmorStand extends LivingEntity {
      * @deprecated prefer
      * {@link EntityEquipment#setBoots(org.bukkit.inventory.ItemStack)}
      */
-    @Deprecated
+    @Deprecated(since = "1.15.2")
     void setBoots(@Nullable ItemStack item);
 
     /**
@@ -61,7 +61,7 @@ public interface ArmorStand extends LivingEntity {
      * @deprecated prefer {@link EntityEquipment#getLeggings()}
      */
     @NotNull
-    @Deprecated
+    @Deprecated(since = "1.15.2")
     ItemStack getLeggings();
 
     /**
@@ -72,7 +72,7 @@ public interface ArmorStand extends LivingEntity {
      * @deprecated prefer
      * {@link EntityEquipment#setLeggings(org.bukkit.inventory.ItemStack)}
      */
-    @Deprecated
+    @Deprecated(since = "1.15.2")
     void setLeggings(@Nullable ItemStack item);
 
     /**
@@ -83,7 +83,7 @@ public interface ArmorStand extends LivingEntity {
      * @deprecated prefer {@link EntityEquipment#getChestplate()}
      */
     @NotNull
-    @Deprecated
+    @Deprecated(since = "1.15.2")
     ItemStack getChestplate();
 
     /**
@@ -94,7 +94,7 @@ public interface ArmorStand extends LivingEntity {
      * @deprecated prefer
      * {@link EntityEquipment#setChestplate(org.bukkit.inventory.ItemStack)}
      */
-    @Deprecated
+    @Deprecated(since = "1.15.2")
     void setChestplate(@Nullable ItemStack item);
 
     /**
@@ -105,7 +105,7 @@ public interface ArmorStand extends LivingEntity {
      * @deprecated prefer {@link EntityEquipment#getHelmet()}
      */
     @NotNull
-    @Deprecated
+    @Deprecated(since = "1.15.2")
     ItemStack getHelmet();
 
     /**
@@ -116,7 +116,7 @@ public interface ArmorStand extends LivingEntity {
      * @deprecated prefer
      * {@link EntityEquipment#setHelmet(org.bukkit.inventory.ItemStack)}
      */
-    @Deprecated
+    @Deprecated(since = "1.15.2")
     void setHelmet(@Nullable ItemStack item);
 
     /**

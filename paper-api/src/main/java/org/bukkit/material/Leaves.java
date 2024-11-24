@@ -13,7 +13,7 @@ import org.bukkit.TreeSpecies;
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
  */
-@Deprecated
+@Deprecated(since = "1.14.1")
 public class Leaves extends Wood {
     protected static final Material DEFAULT_TYPE = Material.LEGACY_LEAVES;
     protected static final boolean DEFAULT_DECAYABLE = true;
@@ -82,7 +82,7 @@ public class Leaves extends Wood {
      * @param data the raw data value
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public Leaves(final Material type, final byte data) {
         super(type, data);
     }

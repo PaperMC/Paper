@@ -321,7 +321,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @deprecated entities may have multiple passengers, use
      * {@link #getPassengers()}
      */
-    @Deprecated
+    @Deprecated(since = "1.11.2")
     @Nullable
     public Entity getPassenger();
 
@@ -333,7 +333,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @deprecated entities may have multiple passengers, use
      * {@link #addPassenger(org.bukkit.entity.Entity)}
      */
-    @Deprecated
+    @Deprecated(since = "1.11.2")
     public boolean setPassenger(@NotNull Entity passenger);
 
     /**
@@ -397,7 +397,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @param event a {@link EntityDamageEvent}
      * @deprecated method is for internal use only and will be removed
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(since = "1.20.4", forRemoval = true)
     public void setLastDamageCause(@Nullable EntityDamageEvent event);
 
     /**

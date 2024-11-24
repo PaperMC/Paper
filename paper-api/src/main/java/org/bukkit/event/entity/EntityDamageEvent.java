@@ -31,7 +31,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
     private final DamageCause cause;
     private final DamageSource damageSource;
 
-    @Deprecated(forRemoval = true)
+    @Deprecated(since = "1.20.4", forRemoval = true)
     public EntityDamageEvent(@NotNull final Entity damagee, @NotNull final DamageCause cause, final double damage) {
         this(damagee, cause, DamageSource.builder(DamageType.GENERIC).build(), damage);
     }
@@ -40,7 +40,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
         this(damagee, cause, damageSource, new EnumMap<DamageModifier, Double>(ImmutableMap.of(DamageModifier.BASE, damage)), new EnumMap<DamageModifier, Function<? super Double, Double>>(ImmutableMap.of(DamageModifier.BASE, ZERO)));
     }
 
-    @Deprecated(forRemoval = true)
+    @Deprecated(since = "1.20.4", forRemoval = true)
     public EntityDamageEvent(@NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
         this(damagee, cause, DamageSource.builder(DamageType.GENERIC).build(), modifiers, modifierFunctions);
     }
@@ -240,7 +240,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      * removed very soon in a subsequent release. Please see
      * <a href="https://www.spigotmc.org/threads/194446/">this thread</a> for more information.
      */
-    @Deprecated
+    @Deprecated(since = "1.12")
     public enum DamageModifier {
         /**
          * This represents the amount of damage being done, also known as the

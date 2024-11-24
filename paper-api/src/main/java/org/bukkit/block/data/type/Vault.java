@@ -24,7 +24,7 @@ public interface Vault extends Directional {
      * @return the 'vault_state' value
      * @deprecated see {@link #getVaultState()}
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(since = "1.21.3", forRemoval = true)
     @NotNull
     State getTrialSpawnerState();
 
@@ -41,7 +41,7 @@ public interface Vault extends Directional {
      * @param state the new 'vault_state' value
      * @deprecated see {@link #setVaultState(State)}
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(since = "1.21.3", forRemoval = true)
     void setTrialSpawnerState(@NotNull State state);
 
     /**

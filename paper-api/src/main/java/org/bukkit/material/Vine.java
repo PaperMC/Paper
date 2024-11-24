@@ -11,7 +11,7 @@ import org.bukkit.block.BlockFace;
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
  */
-@Deprecated
+@Deprecated(since = "1.14.1")
 public class Vine extends MaterialData {
     private static final int VINE_NORTH = 0x4;
     private static final int VINE_EAST = 0x8;
@@ -28,7 +28,7 @@ public class Vine extends MaterialData {
      * @param data the raw data value
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public Vine(final Material type, final byte data) {
         super(type, data);
     }
@@ -37,7 +37,7 @@ public class Vine extends MaterialData {
      * @param data the raw data value
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public Vine(byte data) {
         super(Material.LEGACY_VINE, data);
     }

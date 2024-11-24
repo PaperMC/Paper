@@ -29,7 +29,7 @@ public interface Projectile extends Entity {
      * @return true if it should bounce.
      * @deprecated does not do anything
      */
-    @Deprecated
+    @Deprecated(since = "1.20.2")
     public boolean doesBounce();
 
     /**
@@ -39,6 +39,6 @@ public interface Projectile extends Entity {
      * @param doesBounce whether or not it should bounce.
      * @deprecated does not do anything
      */
-    @Deprecated
+    @Deprecated(since = "1.20.2")
     public void setBounce(boolean doesBounce);
 }

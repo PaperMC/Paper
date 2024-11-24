@@ -5,5 +5,5 @@ package org.bukkit.entity;
  *
  * @deprecated splash status depends on only on the potion item.
  */
-@Deprecated
+@Deprecated(since = "1.14")
 public interface SplashPotion extends ThrownPotion { }

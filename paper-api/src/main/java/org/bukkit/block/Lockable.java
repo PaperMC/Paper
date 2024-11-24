@@ -26,7 +26,7 @@ public interface Lockable {
      * @deprecated locks are not necessarily pure strings
      */
     @NotNull
-    @Deprecated
+    @Deprecated(since = "1.21.2")
     String getLock();
 
     /**
@@ -36,7 +36,7 @@ public interface Lockable {
      * @param key the key required to access the container.
      * @deprecated locks are not necessarily pure strings
      */
-    @Deprecated
+    @Deprecated(since = "1.21.2")
     void setLock(@Nullable String key);
 
     /**

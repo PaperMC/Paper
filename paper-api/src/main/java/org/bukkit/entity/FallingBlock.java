@@ -15,7 +15,7 @@ public interface FallingBlock extends Entity {
      * @return Material of the block
      * @deprecated use {@link #getBlockData()}
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     @NotNull
     Material getMaterial();
 

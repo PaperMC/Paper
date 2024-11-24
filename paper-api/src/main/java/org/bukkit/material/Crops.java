@@ -15,7 +15,7 @@ import org.bukkit.Material;
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
  */
-@Deprecated
+@Deprecated(since = "1.14.1")
 public class Crops extends MaterialData {
     protected static final Material DEFAULT_TYPE = Material.LEGACY_CROPS;
     protected static final CropState DEFAULT_STATE = CropState.SEEDED;
@@ -62,7 +62,7 @@ public class Crops extends MaterialData {
      * @param data the raw data value
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public Crops(final Material type, final byte data) {
         super(type, data);
     }

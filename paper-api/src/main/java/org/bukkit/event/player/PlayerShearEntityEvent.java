@@ -26,7 +26,7 @@ public class PlayerShearEntityEvent extends PlayerEvent implements Cancellable {
         this.hand = hand;
     }
 
-    @Deprecated
+    @Deprecated(since = "1.15.2")
     public PlayerShearEntityEvent(@NotNull final Player who, @NotNull final Entity what) {
         this(who, what, new ItemStack(Material.SHEARS), EquipmentSlot.HAND);
     }

@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * @deprecated Use the more generic {@link PlayerBucketEntityEvent}
  */
-@Deprecated
+@Deprecated(since = "1.16.5")
 @Warning(false)
 public class PlayerBucketFishEvent extends PlayerBucketEntityEvent {
 
@@ -41,7 +41,7 @@ public class PlayerBucketFishEvent extends PlayerBucketEntityEvent {
      * @deprecated Use {@link #getOriginalBucket()}
      */
     @NotNull
-    @Deprecated
+    @Deprecated(since = "1.16.5")
     public ItemStack getWaterBucket() {
         return getOriginalBucket();
     }
@@ -56,7 +56,7 @@ public class PlayerBucketFishEvent extends PlayerBucketEntityEvent {
      * @deprecated Use {@link #getEntityBucket()}
      */
     @NotNull
-    @Deprecated
+    @Deprecated(since = "1.16.5")
     public ItemStack getFishBucket() {
         return getEntityBucket();
     }

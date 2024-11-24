@@ -28,7 +28,7 @@ public interface BukkitScheduler {
      * @return Task id number (-1 if scheduling failed)
      * @deprecated Use {@link BukkitRunnable#runTaskLater(Plugin, long)}
      */
-    @Deprecated
+    @Deprecated(since = "1.7.10")
     public int scheduleSyncDelayedTask(@NotNull Plugin plugin, @NotNull BukkitRunnable task, long delay);
 
     /**
@@ -48,7 +48,7 @@ public interface BukkitScheduler {
      * @return Task id number (-1 if scheduling failed)
      * @deprecated Use {@link BukkitRunnable#runTask(Plugin)}
      */
-    @Deprecated
+    @Deprecated(since = "1.7.10")
     public int scheduleSyncDelayedTask(@NotNull Plugin plugin, @NotNull BukkitRunnable task);
 
     /**
@@ -72,7 +72,7 @@ public interface BukkitScheduler {
      * @return Task id number (-1 if scheduling failed)
      * @deprecated Use {@link BukkitRunnable#runTaskTimer(Plugin, long, long)}
      */
-    @Deprecated
+    @Deprecated(since = "1.7.10")
     public int scheduleSyncRepeatingTask(@NotNull Plugin plugin, @NotNull BukkitRunnable task, long delay, long period);
 
     /**
@@ -89,7 +89,7 @@ public interface BukkitScheduler {
      * @deprecated This name is misleading, as it does not schedule "a sync"
      *     task, but rather, "an async" task
      */
-    @Deprecated
+    @Deprecated(since = "1.4.5")
     public int scheduleAsyncDelayedTask(@NotNull Plugin plugin, @NotNull Runnable task, long delay);
 
     /**
@@ -105,7 +105,7 @@ public interface BukkitScheduler {
      * @deprecated This name is misleading, as it does not schedule "a sync"
      *     task, but rather, "an async" task
      */
-    @Deprecated
+    @Deprecated(since = "1.4.5")
     public int scheduleAsyncDelayedTask(@NotNull Plugin plugin, @NotNull Runnable task);
 
     /**
@@ -123,7 +123,7 @@ public interface BukkitScheduler {
      * @deprecated This name is misleading, as it does not schedule "a sync"
      *     task, but rather, "an async" task
      */
-    @Deprecated
+    @Deprecated(since = "1.4.5")
     public int scheduleAsyncRepeatingTask(@NotNull Plugin plugin, @NotNull Runnable task, long delay, long period);
 
     /**
@@ -237,7 +237,7 @@ public interface BukkitScheduler {
      * @throws IllegalArgumentException if task is null
      * @deprecated Use {@link BukkitRunnable#runTask(Plugin)}
      */
-    @Deprecated
+    @Deprecated(since = "1.7.10")
     @NotNull
     public BukkitTask runTask(@NotNull Plugin plugin, @NotNull BukkitRunnable task) throws IllegalArgumentException;
 
@@ -277,7 +277,7 @@ public interface BukkitScheduler {
      * @throws IllegalArgumentException if task is null
      * @deprecated Use {@link BukkitRunnable#runTaskAsynchronously(Plugin)}
      */
-    @Deprecated
+    @Deprecated(since = "1.7.10")
     @NotNull
     public BukkitTask runTaskAsynchronously(@NotNull Plugin plugin, @NotNull BukkitRunnable task) throws IllegalArgumentException;
 
@@ -316,7 +316,7 @@ public interface BukkitScheduler {
      * @throws IllegalArgumentException if task is null
      * @deprecated Use {@link BukkitRunnable#runTaskLater(Plugin, long)}
      */
-    @Deprecated
+    @Deprecated(since = "1.7.10")
     @NotNull
     public BukkitTask runTaskLater(@NotNull Plugin plugin, @NotNull BukkitRunnable task, long delay) throws IllegalArgumentException;
 
@@ -361,7 +361,7 @@ public interface BukkitScheduler {
      * @throws IllegalArgumentException if task is null
      * @deprecated Use {@link BukkitRunnable#runTaskLaterAsynchronously(Plugin, long)}
      */
-    @Deprecated
+    @Deprecated(since = "1.7.10")
     @NotNull
     public BukkitTask runTaskLaterAsynchronously(@NotNull Plugin plugin, @NotNull BukkitRunnable task, long delay) throws IllegalArgumentException;
 
@@ -403,7 +403,7 @@ public interface BukkitScheduler {
      * @throws IllegalArgumentException if task is null
      * @deprecated Use {@link BukkitRunnable#runTaskTimer(Plugin, long, long)}
      */
-    @Deprecated
+    @Deprecated(since = "1.7.10")
     @NotNull
     public BukkitTask runTaskTimer(@NotNull Plugin plugin, @NotNull BukkitRunnable task, long delay, long period) throws IllegalArgumentException;
 
@@ -454,7 +454,7 @@ public interface BukkitScheduler {
      * @throws IllegalArgumentException if task is null
      * @deprecated Use {@link BukkitRunnable#runTaskTimerAsynchronously(Plugin, long, long)}
      */
-    @Deprecated
+    @Deprecated(since = "1.7.10")
     @NotNull
     public BukkitTask runTaskTimerAsynchronously(@NotNull Plugin plugin, @NotNull BukkitRunnable task, long delay, long period) throws IllegalArgumentException;
 }

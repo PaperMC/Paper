@@ -25,7 +25,7 @@ public interface Ageable extends Creature {
      * @param lock new lock
      * @deprecated see {@link Breedable#setAgeLock(boolean)}
      */
-    @Deprecated
+    @Deprecated(since = "1.16.2")
     public void setAgeLock(boolean lock);
 
     /**
@@ -34,7 +34,7 @@ public interface Ageable extends Creature {
      * @return the current agelock
      * @deprecated see {@link Breedable#getAgeLock()}
      */
-    @Deprecated
+    @Deprecated(since = "1.16.2")
     public boolean getAgeLock();
 
     /**
@@ -60,7 +60,7 @@ public interface Ageable extends Creature {
      * @return the ability to breed of the animal
      * @deprecated see {@link Breedable#canBreed()}
      */
-    @Deprecated
+    @Deprecated(since = "1.16.2")
     public boolean canBreed();
 
     /**
@@ -70,6 +70,6 @@ public interface Ageable extends Creature {
      * @param breed breedability of the animal
      * @deprecated see {@link Breedable#setBreed(boolean)}
      */
-    @Deprecated
+    @Deprecated(since = "1.16.2")
     public void setBreed(boolean breed);
 }

@@ -20,7 +20,7 @@ public interface AbstractHorse extends Vehicle, InventoryHolder, Tameable {
      * @return a {@link Horse.Variant} representing the horse's variant
      * @deprecated different variants are different classes
      */
-    @Deprecated
+    @Deprecated(since = "1.11")
     @NotNull
     public Horse.Variant getVariant();
 
@@ -28,7 +28,7 @@ public interface AbstractHorse extends Vehicle, InventoryHolder, Tameable {
      * @param variant variant
      * @deprecated you are required to spawn a different entity
      */
-    @Deprecated
+    @Deprecated(since = "1.11")
     @Contract("_ -> fail")
     public void setVariant(Horse.Variant variant);
 

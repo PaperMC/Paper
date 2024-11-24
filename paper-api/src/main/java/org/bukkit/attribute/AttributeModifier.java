@@ -123,7 +123,7 @@ public class AttributeModifier implements ConfigurationSerializable, Keyed {
      * @deprecated use {@link #getSlotGroup()}
      */
     @Nullable
-    @Deprecated
+    @Deprecated(since = "1.20.5")
     public EquipmentSlot getSlot() {
         return slot == EquipmentSlotGroup.ANY ? null : slot.getExample();
     }

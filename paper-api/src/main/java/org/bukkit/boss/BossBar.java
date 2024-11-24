@@ -137,13 +137,13 @@ public interface BossBar {
      * Shows the previously hidden boss bar to all attached players
      * @deprecated {@link #setVisible(boolean)}
      */
-    @Deprecated
+    @Deprecated(since = "1.9")
     void show();
 
     /**
      * Hides this boss bar from all attached players
      * @deprecated {@link #setVisible(boolean)}
      */
-    @Deprecated
+    @Deprecated(since = "1.9")
     void hide();
 }

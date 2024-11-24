@@ -42,12 +42,12 @@ public class YamlConfiguration extends FileConfiguration {
     /**
      * @deprecated unused, not intended to be API
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     protected static final String COMMENT_PREFIX = "# ";
     /**
      * @deprecated unused, not intended to be API
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     protected static final String BLANK_CONFIG = "{}\n";
     private final DumperOptions yamlDumperOptions;
     private final LoaderOptions yamlLoaderOptions;

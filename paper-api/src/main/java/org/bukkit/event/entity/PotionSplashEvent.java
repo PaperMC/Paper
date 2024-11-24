@@ -22,7 +22,7 @@ public class PotionSplashEvent extends ProjectileHitEvent implements Cancellable
     private boolean cancelled;
     private final Map<LivingEntity, Double> affectedEntities;
 
-    @Deprecated
+    @Deprecated(since = "1.20.2")
     public PotionSplashEvent(@NotNull final ThrownPotion potion, @NotNull final Map<LivingEntity, Double> affectedEntities) {
         this(potion, null, null, null, affectedEntities);
     }

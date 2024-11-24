@@ -60,7 +60,7 @@ public class NotePlayEvent extends BlockEvent implements Cancellable {
      * @param instrument the Instrument. Has no effect if null.
      * @deprecated no effect on newer Minecraft versions
      */
-    @Deprecated
+    @Deprecated(since = "1.13")
     public void setInstrument(@NotNull Instrument instrument) {
         if (instrument != null) {
             this.instrument = instrument;
@@ -73,7 +73,7 @@ public class NotePlayEvent extends BlockEvent implements Cancellable {
      * @param note the Note. Has no effect if null.
      * @deprecated no effect on newer Minecraft versions
      */
-    @Deprecated
+    @Deprecated(since = "1.13")
     public void setNote(@NotNull Note note) {
         if (note != null) {
             this.note = note;

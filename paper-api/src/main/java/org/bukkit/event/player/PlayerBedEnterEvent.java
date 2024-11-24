@@ -63,7 +63,7 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
         this.bedEnterResult = bedEnterResult;
     }
 
-    @Deprecated
+    @Deprecated(since = "1.13.2")
     public PlayerBedEnterEvent(@NotNull Player who, @NotNull Block bed) {
         this(who, bed, BedEnterResult.OK);
     }

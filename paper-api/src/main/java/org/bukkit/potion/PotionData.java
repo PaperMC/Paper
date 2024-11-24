@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * @deprecated Upgraded / extended potions are now their own {@link PotionType} use them instead.
  */
-@Deprecated(forRemoval = true)
+@Deprecated(since = "1.20.6", forRemoval = true)
 public final class PotionData {
 
     private final PotionType type;

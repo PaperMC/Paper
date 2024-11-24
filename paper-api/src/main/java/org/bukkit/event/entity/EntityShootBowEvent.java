@@ -114,7 +114,7 @@ public class EntityShootBowEvent extends EntityEvent implements Cancellable {
      * @param consumeItem whether or not to consume the item
      * @deprecated not currently functional
      */
-    @Deprecated
+    @Deprecated(since = "1.20.5")
     public void setConsumeItem(boolean consumeItem) {
         this.consumeItem = consumeItem;
     }

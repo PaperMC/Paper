@@ -51,7 +51,7 @@ public interface DecoratedPot extends TileState, BlockInventoryHolder {
      * @return the sherds
      * @deprecated in favor of {@link #getSherds()}
      */
-    @Deprecated
+    @Deprecated(since = "1.20.1")
     @NotNull
     public List<Material> getShards();
 

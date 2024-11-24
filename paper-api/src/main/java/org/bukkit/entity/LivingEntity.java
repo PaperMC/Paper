@@ -353,7 +353,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @deprecated no need to force since multiple effects of the same type are
      * now supported.
      */
-    @Deprecated
+    @Deprecated(since = "1.15.2")
     public boolean addPotionEffect(@NotNull PotionEffect effect, boolean force);
 
     /**
@@ -771,7 +771,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @deprecated entity groupings are now managed by tags, not categories
      */
     @NotNull
-    @Deprecated
+    @Deprecated(since = "1.20.5")
     public EntityCategory getCategory();
 
     /**

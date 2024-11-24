@@ -30,7 +30,7 @@ public final class MapCursor {
      * @param visible Whether the cursor is visible by default.
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public MapCursor(byte x, byte y, byte direction, byte type, boolean visible) {
         this(x, y, direction, type, visible, null);
     }
@@ -59,7 +59,7 @@ public final class MapCursor {
      * @param caption cursor caption
      * @deprecated Magic value, use {@link #MapCursor(byte, byte, byte, Type, boolean, String)}
      */
-    @Deprecated
+    @Deprecated(since = "1.13")
     public MapCursor(byte x, byte y, byte direction, byte type, boolean visible, @Nullable String caption) {
         this.x = x;
         this.y = y;
@@ -131,7 +131,7 @@ public final class MapCursor {
      * @return The type (color/style) of the map cursor.
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public byte getRawType() {
         return type.getValue();
     }
@@ -188,7 +188,7 @@ public final class MapCursor {
      * @param type The type (color/style) of the map cursor.
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public void setRawType(byte type) {
         Type enumType = Type.byValue(type);
         Preconditions.checkArgument(enumType != null, "Unknown type by id %s", type);
@@ -278,7 +278,7 @@ public final class MapCursor {
          * @return the value
          * @deprecated Magic value
          */
-        @Deprecated
+        @Deprecated(since = "1.6.2")
         byte getValue();
 
         /**
@@ -288,7 +288,7 @@ public final class MapCursor {
          * @return the matching type
          * @deprecated Magic value
          */
-        @Deprecated
+        @Deprecated(since = "1.6.2")
         @Nullable
         static Type byValue(byte value) {
             for (Type t : values()) {

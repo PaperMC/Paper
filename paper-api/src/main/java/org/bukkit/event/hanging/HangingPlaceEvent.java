@@ -23,7 +23,7 @@ public class HangingPlaceEvent extends HangingEvent implements Cancellable {
     private final EquipmentSlot hand;
     private final ItemStack itemStack;
 
-    @Deprecated
+    @Deprecated(since = "1.17.1")
     public HangingPlaceEvent(@NotNull final Hanging hanging, @Nullable final Player player, @NotNull final Block block, @NotNull final BlockFace blockFace, @Nullable final EquipmentSlot hand) {
         this(hanging, player, block, blockFace, hand, null);
     }

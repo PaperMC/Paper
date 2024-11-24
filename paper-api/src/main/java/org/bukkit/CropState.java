@@ -55,7 +55,7 @@ public enum CropState {
      * @return A byte containing the data value of this growth state
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public byte getData() {
         return data;
     }
@@ -68,7 +68,7 @@ public enum CropState {
      *     it doesn't exist
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     @Nullable
     public static CropState getByData(final byte data) {
         return BY_DATA.get(data);

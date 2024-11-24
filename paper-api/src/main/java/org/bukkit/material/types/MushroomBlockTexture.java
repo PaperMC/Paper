@@ -80,7 +80,7 @@ public enum MushroomBlockTexture {
      * @return A byte containing the data value of this mushroom block face
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.9")
     public byte getData() {
         return data;
     }
@@ -103,7 +103,7 @@ public enum MushroomBlockTexture {
      * null if it doesn't exist
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.9")
     @Nullable
     public static MushroomBlockTexture getByData(final byte data) {
         return BY_DATA.get(data);

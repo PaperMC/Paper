@@ -406,7 +406,7 @@ public interface Server extends PluginMessageRecipient {
      * @return the default ticks per animal spawns value
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     public int getTicksPerAnimalSpawns();
 
     /**
@@ -429,7 +429,7 @@ public interface Server extends PluginMessageRecipient {
      * @return the default ticks per monsters spawn value
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     public int getTicksPerMonsterSpawns();
 
     /**
@@ -451,7 +451,7 @@ public interface Server extends PluginMessageRecipient {
      * @return the default ticks per water mobs spawn value
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     public int getTicksPerWaterSpawns();
 
     /**
@@ -473,7 +473,7 @@ public interface Server extends PluginMessageRecipient {
      * @return the default ticks per water ambient mobs spawn value
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     public int getTicksPerWaterAmbientSpawns();
 
     /**
@@ -495,7 +495,7 @@ public interface Server extends PluginMessageRecipient {
      * @return the default ticks per water underground creature spawn value
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     public int getTicksPerWaterUndergroundCreatureSpawns();
 
     /**
@@ -517,7 +517,7 @@ public interface Server extends PluginMessageRecipient {
      * @return the default ticks per ambient mobs spawn value
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     public int getTicksPerAmbientSpawns();
 
     /**
@@ -689,7 +689,7 @@ public interface Server extends PluginMessageRecipient {
      * @return a map view if it exists, or null otherwise
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     @Nullable
     public MapView getMap(int id);
 
@@ -993,7 +993,7 @@ public interface Server extends PluginMessageRecipient {
      * @return true if the server should send a preview, false otherwise
      * @deprecated chat previews have been removed
      */
-    @Deprecated
+    @Deprecated(since = "1.19.3")
     public boolean shouldSendChatPreviews();
 
     /**
@@ -1072,7 +1072,7 @@ public interface Server extends PluginMessageRecipient {
      * @deprecated Persistent storage of users should be by UUID as names are no longer
      *             unique past a single session.
      */
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     @NotNull
     public OfflinePlayer getOfflinePlayer(@NotNull String name);
 
@@ -1137,7 +1137,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @deprecated see {@link #banIP(InetAddress)}
      */
-    @Deprecated
+    @Deprecated(since = "1.20.1")
     public void banIP(@NotNull String address);
 
     /**
@@ -1147,7 +1147,7 @@ public interface Server extends PluginMessageRecipient {
      *
      * @deprecated see {@link #unbanIP(InetAddress)}
      */
-    @Deprecated
+    @Deprecated(since = "1.20.1")
     public void unbanIP(@NotNull String address);
 
     /**
@@ -1350,7 +1350,7 @@ public interface Server extends PluginMessageRecipient {
      * @return the monster spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     int getMonsterSpawnLimit();
 
     /**
@@ -1360,7 +1360,7 @@ public interface Server extends PluginMessageRecipient {
      * @return the animal spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     int getAnimalSpawnLimit();
 
     /**
@@ -1370,7 +1370,7 @@ public interface Server extends PluginMessageRecipient {
      * @return the water animal spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     int getWaterAnimalSpawnLimit();
 
     /**
@@ -1380,7 +1380,7 @@ public interface Server extends PluginMessageRecipient {
      * @return the water ambient spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     int getWaterAmbientSpawnLimit();
 
     /**
@@ -1389,7 +1389,7 @@ public interface Server extends PluginMessageRecipient {
      * @return the water underground creature limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     int getWaterUndergroundCreatureSpawnLimit();
 
     /**
@@ -1399,7 +1399,7 @@ public interface Server extends PluginMessageRecipient {
      * @return the ambient spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     int getAmbientSpawnLimit();
 
     /**
@@ -1849,7 +1849,7 @@ public interface Server extends PluginMessageRecipient {
      * @return the unsafe values instance
      * @see UnsafeValues
      */
-    @Deprecated
+    @Deprecated(since = "1.7.2")
     @NotNull
     UnsafeValues getUnsafe();
 }

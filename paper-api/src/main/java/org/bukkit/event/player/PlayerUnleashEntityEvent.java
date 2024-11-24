@@ -23,7 +23,7 @@ public class PlayerUnleashEntityEvent extends EntityUnleashEvent implements Canc
         this.hand = hand;
     }
 
-    @Deprecated
+    @Deprecated(since = "1.19.2")
     public PlayerUnleashEntityEvent(@NotNull Entity entity, @NotNull Player player) {
         this(entity, player, EquipmentSlot.HAND);
     }

@@ -26,7 +26,7 @@ public class BlockCanBuildEvent extends BlockEvent {
     protected BlockData blockData;
     private final Player player;
 
-    @Deprecated
+    @Deprecated(since = "1.13.2")
     public BlockCanBuildEvent(@NotNull final Block block, @NotNull final BlockData type, final boolean canBuild) {
         this(block, null, type, canBuild);
     }

@@ -19,7 +19,7 @@ public class PortalCreateEvent extends WorldEvent implements Cancellable {
     private final Entity entity;
     private final CreateReason reason;
 
-    @Deprecated
+    @Deprecated(since = "1.14.1")
     public PortalCreateEvent(@NotNull final List<BlockState> blocks, @NotNull final World world, @NotNull CreateReason reason) {
         this(blocks, world, null, reason);
     }

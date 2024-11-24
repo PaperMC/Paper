@@ -102,7 +102,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * @return true if this has a localized name
      * @deprecated meta no longer exists
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(since = "1.20.5", forRemoval = true)
     boolean hasLocalizedName();
 
     /**
@@ -115,7 +115,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * @deprecated meta no longer exists
      */
     @NotNull
-    @Deprecated(forRemoval = true)
+    @Deprecated(since = "1.20.5", forRemoval = true)
     String getLocalizedName();
 
     /**
@@ -124,7 +124,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * @param name the name to set
      * @deprecated meta no longer exists
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(since = "1.20.5", forRemoval = true)
     void setLocalizedName(@Nullable String name);
 
     /**
@@ -432,7 +432,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * @deprecated use {@link #getDamageResistant()} and
      * {@link DamageTypeTags#IS_FIRE}
      */
-    @Deprecated
+    @Deprecated(since = "1.21.2")
     boolean isFireResistant();
 
     /**
@@ -443,7 +443,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * @deprecated use {@link #setDamageResistant(org.bukkit.Tag)} and
      * {@link DamageTypeTags#IS_FIRE}
      */
-    @Deprecated
+    @Deprecated(since = "1.21.2")
     void setFireResistant(boolean fireResistant);
 
     /**
@@ -869,7 +869,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Please use {@link PersistentDataHolder#getPersistentDataContainer()} instead of this.
      */
     @NotNull
-    @Deprecated
+    @Deprecated(since = "1.14")
     CustomItemTagContainer getCustomTagContainer();
 
     /**

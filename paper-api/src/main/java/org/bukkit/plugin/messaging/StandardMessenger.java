@@ -468,7 +468,7 @@ public class StandardMessenger implements Messenger {
      * @param channel Channel name to validate.
      * @deprecated not an API method
      */
-    @Deprecated
+    @Deprecated(since = "1.13")
     public static void validateChannel(@NotNull String channel) {
         validateAndCorrectChannel(channel);
     }
@@ -480,7 +480,7 @@ public class StandardMessenger implements Messenger {
      * @return corrected channel name
      * @deprecated not an API method
      */
-    @Deprecated
+    @Deprecated(since = "1.13")
     @NotNull
     public static String validateAndCorrectChannel(@NotNull String channel) {
         if (channel == null) {

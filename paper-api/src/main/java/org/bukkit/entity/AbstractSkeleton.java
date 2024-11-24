@@ -21,7 +21,7 @@ public interface AbstractSkeleton extends Monster {
      * @return Current type
      * @deprecated should check what class instance this is.
      */
-    @Deprecated
+    @Deprecated(since = "1.17")
     @NotNull
     public Skeleton.SkeletonType getSkeletonType();
 
@@ -29,7 +29,7 @@ public interface AbstractSkeleton extends Monster {
      * @param type type
      * @deprecated Must spawn a new subtype variant
      */
-    @Deprecated
+    @Deprecated(since = "1.17")
     @Contract("_ -> fail")
     public void setSkeletonType(Skeleton.SkeletonType type);
 }

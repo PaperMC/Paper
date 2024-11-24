@@ -24,7 +24,7 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
     protected Player player;
     protected EquipmentSlot hand;
 
-    @Deprecated
+    @Deprecated(since = "1.9")
     public BlockPlaceEvent(@NotNull final Block placedBlock, @NotNull final BlockState replacedBlockState, @NotNull final Block placedAgainst, @NotNull final ItemStack itemInHand, @NotNull final Player thePlayer, final boolean canBuild) {
         this(placedBlock, replacedBlockState, placedAgainst, itemInHand, thePlayer, canBuild, EquipmentSlot.HAND);
     }

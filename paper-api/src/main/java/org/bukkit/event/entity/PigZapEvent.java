@@ -58,7 +58,7 @@ public class PigZapEvent extends EntityTransformEvent implements Cancellable {
      * @deprecated use {@link EntityTransformEvent#getTransformedEntity()}
      */
     @NotNull
-    @Deprecated
+    @Deprecated(since = "1.13.2")
     public PigZombie getPigZombie() {
         return pigzombie;
     }

@@ -17,7 +17,7 @@ public class YamlConstructor extends SafeConstructor {
     /**
      * @deprecated options required
      */
-    @Deprecated
+    @Deprecated(since = "1.19.4")
     public YamlConstructor() {
         this(new LoaderOptions());
     }

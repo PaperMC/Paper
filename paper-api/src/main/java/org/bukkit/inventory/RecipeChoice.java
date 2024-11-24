@@ -28,7 +28,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      * @return a single representative item
      * @deprecated for compatibility only
      */
-    @Deprecated
+    @Deprecated(since = "1.13.1")
     @NotNull
     ItemStack getItemStack();
 

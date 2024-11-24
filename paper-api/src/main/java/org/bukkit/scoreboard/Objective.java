@@ -44,7 +44,7 @@ public interface Objective {
      * @throws IllegalStateException if this objective has been unregistered
      * @deprecated use {@link #getTrackedCriteria()}
      */
-    @Deprecated
+    @Deprecated(since = "1.19.2")
     @NotNull
     String getCriteria();
 
@@ -126,7 +126,7 @@ public interface Objective {
      * @see #getScore(String)
      * @deprecated Scoreboards can contain entries that aren't players
      */
-    @Deprecated
+    @Deprecated(since = "1.7.8")
     @NotNull
     Score getScore(@NotNull OfflinePlayer player);
 

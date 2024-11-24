@@ -93,7 +93,7 @@ public interface EntityEquipment {
      * @deprecated entities can duel wield now use the methods for the
      *      specific hand instead
      */
-    @Deprecated
+    @Deprecated(since = "1.9")
     @NotNull
     ItemStack getItemInHand();
 
@@ -106,7 +106,7 @@ public interface EntityEquipment {
      * @deprecated entities can duel wield now use the methods for the
      *      specific hand instead
      */
-    @Deprecated
+    @Deprecated(since = "1.9")
     void setItemInHand(@Nullable ItemStack stack);
 
     /**
@@ -230,7 +230,7 @@ public interface EntityEquipment {
      * @deprecated entities can duel wield now use the methods for the specific
      * hand instead
      */
-    @Deprecated
+    @Deprecated(since = "1.9")
     float getItemInHandDropChance();
 
     /**
@@ -240,7 +240,7 @@ public interface EntityEquipment {
      * @deprecated entities can duel wield now use the methods for the specific
      * hand instead
      */
-    @Deprecated
+    @Deprecated(since = "1.9")
     void setItemInHandDropChance(float chance);
 
     /**

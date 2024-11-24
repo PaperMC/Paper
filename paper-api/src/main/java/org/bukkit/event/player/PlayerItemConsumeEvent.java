@@ -42,7 +42,7 @@ public class PlayerItemConsumeEvent extends PlayerEvent implements Cancellable {
      * @param item the ItemStack being consumed
      * @deprecated use {@link #PlayerItemConsumeEvent(Player, ItemStack, EquipmentSlot)}
      */
-    @Deprecated
+    @Deprecated(since = "1.19.2")
     public PlayerItemConsumeEvent(@NotNull final Player player, @NotNull final ItemStack item) {
         this(player, item, EquipmentSlot.HAND);
     }

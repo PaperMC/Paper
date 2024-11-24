@@ -27,70 +27,70 @@ public enum Effect {
      * @deprecated no longer exists
      * @see Sound#BLOCK_WOODEN_DOOR_OPEN
      */
-    @Deprecated
+    @Deprecated(since = "1.19.3")
     DOOR_TOGGLE(1006, Type.SOUND),
     /**
      * Sound of a door opening.
      * @deprecated no longer exists
      * @see Sound#BLOCK_IRON_DOOR_OPEN
      */
-    @Deprecated
+    @Deprecated(since = "1.19.3")
     IRON_DOOR_TOGGLE(1005, Type.SOUND),
     /**
      * Sound of a trapdoor opening.
      * @deprecated no longer exists
      * @see Sound#BLOCK_WOODEN_TRAPDOOR_OPEN
      */
-    @Deprecated
+    @Deprecated(since = "1.19.3")
     TRAPDOOR_TOGGLE(1007, Type.SOUND),
     /**
      * Sound of a door opening.
      * @deprecated no longer exists
      * @see Sound#BLOCK_IRON_TRAPDOOR_OPEN
      */
-    @Deprecated
+    @Deprecated(since = "1.19.3")
     IRON_TRAPDOOR_TOGGLE(1037, Type.SOUND),
     /**
      * Sound of a door opening.
      * @deprecated no longer exists
      * @see Sound#BLOCK_FENCE_GATE_OPEN
      */
-    @Deprecated
+    @Deprecated(since = "1.19.3")
     FENCE_GATE_TOGGLE(1008, Type.SOUND),
     /**
      * Sound of a door closing.
      * @deprecated no longer exists
      * @see Sound#BLOCK_WOODEN_DOOR_CLOSE
      */
-    @Deprecated
+    @Deprecated(since = "1.19.3")
     DOOR_CLOSE(1012, Type.SOUND),
     /**
      * Sound of a door closing.
      * @deprecated no longer exists
      * @see Sound#BLOCK_IRON_DOOR_CLOSE
      */
-    @Deprecated
+    @Deprecated(since = "1.19.3")
     IRON_DOOR_CLOSE(1011, Type.SOUND),
     /**
      * Sound of a trapdoor closing.
      * @deprecated no longer exists
      * @see Sound#BLOCK_WOODEN_TRAPDOOR_CLOSE
      */
-    @Deprecated
+    @Deprecated(since = "1.19.3")
     TRAPDOOR_CLOSE(1013, Type.SOUND),
     /**
      * Sound of a door closing.
      * @deprecated no longer exists
      * @see Sound#BLOCK_IRON_TRAPDOOR_CLOSE
      */
-    @Deprecated
+    @Deprecated(since = "1.19.3")
     IRON_TRAPDOOR_CLOSE(1036, Type.SOUND),
     /**
      * Sound of a door closing.
      * @deprecated no longer exists
      * @see Sound#BLOCK_FENCE_GATE_CLOSE
      */
-    @Deprecated
+    @Deprecated(since = "1.19.3")
     FENCE_GATE_CLOSE(1014, Type.SOUND),
     /**
      * Sound of fire being extinguished.
@@ -359,7 +359,7 @@ public enum Effect {
      * @return ID of this effect
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public int getId() {
         return this.id;
     }
@@ -388,7 +388,7 @@ public enum Effect {
      * @return Effect with the given ID
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     @Nullable
     public static Effect getById(int id) {
         return BY_ID.get(id);

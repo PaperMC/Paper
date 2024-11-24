@@ -18,7 +18,7 @@ public interface FeatureFlag extends Keyed {
      *
      * @deprecated not available since 1.21.2
      */
-    @Deprecated
+    @Deprecated(since = "1.21.2")
     public static final FeatureFlag BUNDLE = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("bundle"));
 
     /**
@@ -26,7 +26,7 @@ public interface FeatureFlag extends Keyed {
      *
      * @deprecated not available since 1.20
      */
-    @Deprecated
+    @Deprecated(since = "1.20.2")
     public static final FeatureFlag UPDATE_1_20 = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("update_1_20"));
 
     public static final FeatureFlag TRADE_REBALANCE = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("trade_rebalance"));
@@ -36,7 +36,7 @@ public interface FeatureFlag extends Keyed {
      *
      * @deprecated not available since 1.21
      */
-    @Deprecated
+    @Deprecated(since = "1.21")
     public static final FeatureFlag UPDATE_121 = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("update_1_21"));
 
     public static final FeatureFlag WINTER_DROP = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("winter_drop"));

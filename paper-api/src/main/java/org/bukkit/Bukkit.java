@@ -481,7 +481,7 @@ public final class Bukkit {
      * @return the default ticks per animal spawns value
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     public static int getTicksPerAnimalSpawns() {
         return server.getTicksPerAnimalSpawns();
     }
@@ -506,7 +506,7 @@ public final class Bukkit {
      * @return the default ticks per monsters spawn value
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     public static int getTicksPerMonsterSpawns() {
         return server.getTicksPerMonsterSpawns();
     }
@@ -530,7 +530,7 @@ public final class Bukkit {
      * @return the default ticks per water mobs spawn value
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     public static int getTicksPerWaterSpawns() {
         return server.getTicksPerWaterSpawns();
     }
@@ -554,7 +554,7 @@ public final class Bukkit {
      * @return the default ticks per ambient mobs spawn value
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     public static int getTicksPerAmbientSpawns() {
         return server.getTicksPerAmbientSpawns();
     }
@@ -578,7 +578,7 @@ public final class Bukkit {
      * @return the default ticks per water ambient mobs spawn value
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     public static int getTicksPerWaterAmbientSpawns() {
         return server.getTicksPerAmbientSpawns();
     }
@@ -602,7 +602,7 @@ public final class Bukkit {
      * @return the default ticks per water underground creature spawn value
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     public static int getTicksPerWaterUndergroundCreatureSpawns() {
         return server.getTicksPerWaterUndergroundCreatureSpawns();
     }
@@ -803,7 +803,7 @@ public final class Bukkit {
      * @return a map view if it exists, or null otherwise
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     @Nullable
     public static MapView getMap(int id) {
         return server.getMap(id);
@@ -1158,7 +1158,7 @@ public final class Bukkit {
      * @return true if the server should send a preview, false otherwise
      * @deprecated chat previews have been removed
      */
-    @Deprecated
+    @Deprecated(since = "1.19.3")
     public static boolean shouldSendChatPreviews() {
         return server.shouldSendChatPreviews();
     }
@@ -1255,7 +1255,7 @@ public final class Bukkit {
      * @deprecated Persistent storage of users should be by UUID as names are no longer
      *             unique past a single session.
      */
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     @NotNull
     public static OfflinePlayer getOfflinePlayer(@NotNull String name) {
         return server.getOfflinePlayer(name);
@@ -1332,7 +1332,7 @@ public final class Bukkit {
      *
      * @deprecated see {@link #banIP(InetAddress)}
      */
-    @Deprecated
+    @Deprecated(since = "1.20.1")
     public static void banIP(@NotNull String address) {
         server.banIP(address);
     }
@@ -1344,7 +1344,7 @@ public final class Bukkit {
      *
      * @deprecated see {@link #unbanIP(InetAddress)}
      */
-    @Deprecated
+    @Deprecated(since = "1.20.1")
     public static void unbanIP(@NotNull String address) {
         server.unbanIP(address);
     }
@@ -1585,7 +1585,7 @@ public final class Bukkit {
      * @return the monster spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     public static int getMonsterSpawnLimit() {
         return server.getMonsterSpawnLimit();
     }
@@ -1597,7 +1597,7 @@ public final class Bukkit {
      * @return the animal spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     public static int getAnimalSpawnLimit() {
         return server.getAnimalSpawnLimit();
     }
@@ -1609,7 +1609,7 @@ public final class Bukkit {
      * @return the water animal spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     public static int getWaterAnimalSpawnLimit() {
         return server.getWaterAnimalSpawnLimit();
     }
@@ -1621,7 +1621,7 @@ public final class Bukkit {
      * @return the water ambient spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     public static int getWaterAmbientSpawnLimit() {
         return server.getAmbientSpawnLimit();
     }
@@ -1633,7 +1633,7 @@ public final class Bukkit {
      * @return the water underground creature limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     public static int getWaterUndergroundCreatureSpawnLimit() {
         return server.getWaterUndergroundCreatureSpawnLimit();
     }
@@ -1645,7 +1645,7 @@ public final class Bukkit {
      * @return the ambient spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     public static int getAmbientSpawnLimit() {
         return server.getAmbientSpawnLimit();
     }
@@ -2170,7 +2170,7 @@ public final class Bukkit {
      * @return the unsafe values instance
      * @see UnsafeValues
      */
-    @Deprecated
+    @Deprecated(since = "1.7.2")
     @NotNull
     public static UnsafeValues getUnsafe() {
         return server.getUnsafe();

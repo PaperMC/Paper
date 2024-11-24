@@ -3634,6 +3634,6 @@ public interface BlockType extends Keyed, Translatable {
      * @deprecated only for internal use
      */
     @Nullable
-    @Deprecated
+    @Deprecated(since = "1.20.6")
     Material asMaterial();
 }

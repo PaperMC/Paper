@@ -69,7 +69,7 @@ public interface PatternType extends OldEnum<PatternType>, Keyed {
      * @deprecated magic value
      */
     @NotNull
-    @Deprecated(forRemoval = true)
+    @Deprecated(since = "1.20.4", forRemoval = true)
     public String getIdentifier();
 
     /**
@@ -83,7 +83,7 @@ public interface PatternType extends OldEnum<PatternType>, Keyed {
      */
     @Contract("null -> null")
     @Nullable
-    @Deprecated(forRemoval = true)
+    @Deprecated(since = "1.20.4", forRemoval = true)
     public static PatternType getByIdentifier(@Nullable String identifier) {
         if (identifier == null) {
             return null;

@@ -25,7 +25,7 @@ public class PlayerRiptideEvent extends PlayerEvent {
         this.velocity = velocity;
     }
 
-    @Deprecated
+    @Deprecated(since = "1.20.4")
     public PlayerRiptideEvent(@NotNull final Player who, @NotNull final ItemStack item) {
         this(who, item, new Vector());
     }

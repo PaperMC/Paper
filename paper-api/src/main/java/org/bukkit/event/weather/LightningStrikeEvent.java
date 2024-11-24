@@ -15,7 +15,7 @@ public class LightningStrikeEvent extends WeatherEvent implements Cancellable {
     private final LightningStrike bolt;
     private final Cause cause;
 
-    @Deprecated
+    @Deprecated(since = "1.13.1")
     public LightningStrikeEvent(@NotNull final World world, @NotNull final LightningStrike bolt) {
         this(world, bolt, Cause.UNKNOWN);
     }

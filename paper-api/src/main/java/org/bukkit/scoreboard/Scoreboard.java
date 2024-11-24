@@ -22,7 +22,7 @@ public interface Scoreboard {
      *     exists
      * @deprecated a displayName should be explicitly specified
      */
-    @Deprecated
+    @Deprecated(since = "1.13")
     @NotNull
     Objective registerNewObjective(@NotNull String name, @NotNull String criteria);
 
@@ -39,7 +39,7 @@ public interface Scoreboard {
      *     exists
      * @deprecated use {@link #registerNewObjective(String, Criteria, String)}
      */
-    @Deprecated
+    @Deprecated(since = "1.20.5")
     @NotNull
     Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @NotNull String displayName);
 
@@ -57,7 +57,7 @@ public interface Scoreboard {
      *     exists
      * @deprecated use {@link #registerNewObjective(String, Criteria, String, RenderType)}
      */
-    @Deprecated
+    @Deprecated(since = "1.20.5")
     @NotNull
     Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @NotNull String displayName, @NotNull RenderType renderType);
 
@@ -108,7 +108,7 @@ public interface Scoreboard {
      * @return an immutable set of Objectives using the specified Criteria
      * @deprecated use {@link #getObjectivesByCriteria(Criteria)}
      */
-    @Deprecated
+    @Deprecated(since = "1.19.2")
     @NotNull
     Set<Objective> getObjectivesByCriteria(@NotNull String criteria);
 
@@ -148,7 +148,7 @@ public interface Scoreboard {
      * @see #getScores(String)
      * @deprecated Scoreboards can contain entries that aren't players
      */
-    @Deprecated
+    @Deprecated(since = "1.7.8")
     @NotNull
     Set<Score> getScores(@NotNull OfflinePlayer player);
 
@@ -168,7 +168,7 @@ public interface Scoreboard {
      * @see #resetScores(String)
      * @deprecated Scoreboards can contain entries that aren't players
      */
-    @Deprecated
+    @Deprecated(since = "1.7.8")
     void resetScores(@NotNull OfflinePlayer player);
 
     /**
@@ -186,7 +186,7 @@ public interface Scoreboard {
      * @see #getEntryTeam(String)
      * @deprecated Scoreboards can contain entries that aren't players
      */
-    @Deprecated
+    @Deprecated(since = "1.8.6")
     @Nullable
     Team getPlayerTeam(@NotNull OfflinePlayer player);
 
@@ -233,7 +233,7 @@ public interface Scoreboard {
      * @see #getEntries()
      * @deprecated Scoreboards can contain entries that aren't players
      */
-    @Deprecated
+    @Deprecated(since = "1.7.8")
     @NotNull
     Set<OfflinePlayer> getPlayers();
 

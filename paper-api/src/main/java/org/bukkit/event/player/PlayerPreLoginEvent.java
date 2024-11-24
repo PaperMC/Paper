@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
  *     AsyncPlayerPreLoginEvent} is preferred to keep the secondary threads
  *     asynchronous.
  */
-@Deprecated
+@Deprecated(since = "1.3.2")
 @Warning(reason = "This event causes a login thread to synchronize with the main thread")
 public class PlayerPreLoginEvent extends Event {
     private static final HandlerList handlers = new HandlerList();
@@ -24,7 +24,7 @@ public class PlayerPreLoginEvent extends Event {
     private final InetAddress ipAddress;
     private final UUID uniqueId;
 
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     public PlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress) {
         this(name, ipAddress, null);
     }

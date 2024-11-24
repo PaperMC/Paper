@@ -52,7 +52,7 @@ public class VillagerReplenishTradeEvent extends EntityEvent implements Cancella
      * @deprecated MC 1.14 has changed how villagers restock their trades. Use
      * {@link MerchantRecipe#getUses()}.
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     public int getBonus() {
         return recipe.getUses();
     }
@@ -64,7 +64,7 @@ public class VillagerReplenishTradeEvent extends EntityEvent implements Cancella
      * @deprecated MC 1.14 has changed how villagers restock their trades. This
      * has no effect anymore.
      */
-    @Deprecated
+    @Deprecated(since = "1.18.1")
     public void setBonus(int bonus) {
     }
 

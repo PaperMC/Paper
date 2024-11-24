@@ -34,7 +34,7 @@ public class PlayerHarvestBlockEvent extends PlayerEvent implements Cancellable 
         this.itemsHarvested = itemsHarvested;
     }
 
-    @Deprecated
+    @Deprecated(since = "1.19.2")
     public PlayerHarvestBlockEvent(@NotNull Player player, @NotNull Block harvestedBlock, @NotNull List<ItemStack> itemsHarvested) {
         this(player, harvestedBlock, EquipmentSlot.HAND, itemsHarvested);
     }

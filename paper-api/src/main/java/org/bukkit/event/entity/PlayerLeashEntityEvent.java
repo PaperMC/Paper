@@ -26,7 +26,7 @@ public class PlayerLeashEntityEvent extends Event implements Cancellable {
         this.hand = hand;
     }
 
-    @Deprecated
+    @Deprecated(since = "1.19.2")
     public PlayerLeashEntityEvent(@NotNull Entity what, @NotNull Entity leashHolder, @NotNull Player leasher) {
         this(what, leashHolder, leasher, EquipmentSlot.HAND);
     }

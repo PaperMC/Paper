@@ -79,7 +79,7 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      * the case of using a firework whilst gliding. Callers should check the
      * relevant methods individually.
      */
-    @Deprecated
+    @Deprecated(since = "1.14")
     @Override
     public boolean isCancelled() {
         return useInteractedBlock() == Result.DENY;

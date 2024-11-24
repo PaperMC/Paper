@@ -109,72 +109,72 @@ public final class MapPalette {
     /**
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public static final byte TRANSPARENT = 0;
     /**
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public static final byte LIGHT_GREEN = 4;
     /**
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public static final byte LIGHT_BROWN = 8;
     /**
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public static final byte GRAY_1 = 12;
     /**
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public static final byte RED = 16;
     /**
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public static final byte PALE_BLUE = 20;
     /**
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public static final byte GRAY_2 = 24;
     /**
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public static final byte DARK_GREEN = 28;
     /**
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public static final byte WHITE = 32;
     /**
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public static final byte LIGHT_GRAY = 36;
     /**
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public static final byte BROWN = 40;
     /**
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public static final byte DARK_GRAY = 44;
     /**
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public static final byte BLUE = 48;
     /**
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public static final byte DARK_BROWN = 52;
 
     /**
@@ -199,7 +199,7 @@ public final class MapPalette {
      * @return A byte[] containing the pixels of the image.
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     @NotNull
     public static byte[] imageToBytes(@NotNull Image image) {
         BufferedImage temp = new BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_ARGB);
@@ -227,7 +227,7 @@ public final class MapPalette {
      * @return The index in the palette.
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public static byte matchColor(int r, int g, int b) {
         return matchColor(new Color(r, g, b));
     }
@@ -240,7 +240,7 @@ public final class MapPalette {
      * @return The index in the palette.
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public static byte matchColor(@NotNull Color color) {
         if (color.getAlpha() < 128) return 0;
 
@@ -270,7 +270,7 @@ public final class MapPalette {
      * @return The Color of the palette entry.
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     @NotNull
     public static Color getColor(byte index) {
         // Minecraft has 143 colors, some of which have negative byte representations
@@ -313,7 +313,7 @@ public final class MapPalette {
          * @throws IllegalStateException if {@link #isCached()} returns false
          * @deprecated Magic value
          */
-        @Deprecated
+        @Deprecated(since = "1.19")
         byte matchColor(@NotNull Color color);
     }
 }

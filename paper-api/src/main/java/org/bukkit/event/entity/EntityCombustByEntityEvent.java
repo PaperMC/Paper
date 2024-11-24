@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 public class EntityCombustByEntityEvent extends EntityCombustEvent {
     private final Entity combuster;
 
-    @Deprecated
+    @Deprecated(since = "1.21")
     public EntityCombustByEntityEvent(@NotNull final Entity combuster, @NotNull final Entity combustee, final int duration) {
         this(combuster, combustee, (float) duration);
     }

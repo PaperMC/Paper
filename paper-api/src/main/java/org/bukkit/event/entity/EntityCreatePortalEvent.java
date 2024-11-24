@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * @deprecated Use {@link PortalCreateEvent}
  */
-@Deprecated
+@Deprecated(since = "1.14.1")
 public class EntityCreatePortalEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private final List<BlockState> blocks;

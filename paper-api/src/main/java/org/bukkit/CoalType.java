@@ -24,7 +24,7 @@ public enum CoalType {
      * @return A byte containing the data value of this coal type
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public byte getData() {
         return data;
     }
@@ -37,7 +37,7 @@ public enum CoalType {
      *     it doesn't exist
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     @Nullable
     public static CoalType getByData(final byte data) {
         return BY_DATA.get(data);

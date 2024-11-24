@@ -7,7 +7,7 @@ import org.bukkit.block.BlockFace;
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
  */
-@Deprecated
+@Deprecated(since = "1.14.1")
 public class Banner extends MaterialData implements Attachable {
 
     public Banner() {
@@ -23,7 +23,7 @@ public class Banner extends MaterialData implements Attachable {
      * @param data the raw data value
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.8")
     public Banner(Material type, byte data) {
         super(type, data);
     }

@@ -34,7 +34,7 @@ public class EntityPlaceEvent extends EntityEvent implements Cancellable {
         this.hand = hand;
     }
 
-    @Deprecated
+    @Deprecated(since = "1.19.2")
     public EntityPlaceEvent(@NotNull final Entity entity, @Nullable final Player player, @NotNull final Block block, @NotNull final BlockFace blockFace) {
         this(entity, player, block, blockFace, EquipmentSlot.HAND);
     }

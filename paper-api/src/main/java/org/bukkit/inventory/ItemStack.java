@@ -70,7 +70,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param damage durability / damage
      * @deprecated see {@link #setDurability(short)}
      */
-    @Deprecated
+    @Deprecated(since = "1.20.5")
     public ItemStack(@NotNull final Material type, final int amount, final short damage) {
         this(type, amount, damage, null);
     }
@@ -82,7 +82,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param data the data value or null
      * @deprecated this method uses an ambiguous data byte object
      */
-    @Deprecated
+    @Deprecated(since = "1.4.5")
     public ItemStack(@NotNull Material type, final int amount, final short damage, @Nullable final Byte data) {
         Preconditions.checkArgument(type != null, "Material cannot be null");
         if (type.isLegacy()) {
@@ -219,7 +219,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * any call to this method will be overwritten by subsequent setting of
      * ItemMeta which was created before this call.
      */
-    @Deprecated
+    @Deprecated(since = "1.13")
     public void setDurability(final short durability) {
         ItemMeta meta = getItemMeta();
         if (meta != null) {
@@ -234,7 +234,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @return Durability of this item
      * @deprecated see {@link #setDurability(short)}
      */
-    @Deprecated
+    @Deprecated(since = "1.13")
     public short getDurability() {
         ItemMeta meta = getItemMeta();
         return (meta == null) ? 0 : (short) ((Damageable) meta).getDamage();

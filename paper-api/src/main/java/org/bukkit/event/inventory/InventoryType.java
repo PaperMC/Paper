@@ -155,7 +155,7 @@ public enum InventoryType {
      *
      * @deprecated use {@link #SMITHING}
      */
-    @Deprecated
+    @Deprecated(since = "1.20.1")
     SMITHING_NEW(4, "Upgrade Gear", MenuType.SMITHING),
     ;
 

@@ -132,7 +132,7 @@ public enum Instrument {
      * @return The type ID of this instrument.
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public byte getType() {
         return this.type;
     }
@@ -144,7 +144,7 @@ public enum Instrument {
      * @return The instrument
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     @Nullable
     public static Instrument getByType(final byte type) {
         return BY_DATA.get(type);

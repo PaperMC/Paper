@@ -321,7 +321,7 @@ public abstract class Command {
      * consoles or when this command is executed with
      * {@link Bukkit#dispatchCommand(CommandSender, String)}.
      */
-    @Deprecated
+    @Deprecated(since = "1.20.4")
     @Nullable
     public String getPermissionMessage() {
         return permissionMessage;
@@ -392,7 +392,7 @@ public abstract class Command {
      * consoles or when this command is executed with
      * {@link Bukkit#dispatchCommand(CommandSender, String)}.
      */
-    @Deprecated
+    @Deprecated(since = "1.20.4")
     @NotNull
     public Command setPermissionMessage(@Nullable String permissionMessage) {
         this.permissionMessage = permissionMessage;

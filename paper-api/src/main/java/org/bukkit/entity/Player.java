@@ -360,7 +360,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * context/time which it is accessed
      */
     @Override
-    @Deprecated
+    @Deprecated(since = "1.16.1")
     public boolean isOnGround();
 
     /**
@@ -437,7 +437,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     @Nullable
     @Override
-    @Deprecated
+    @Deprecated(since = "1.20.4")
     public Location getBedSpawnLocation();
 
     /**
@@ -459,7 +459,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated Misleading name. This method sets the player's respawn
      * location more generally and is not limited to beds.
      */
-    @Deprecated
+    @Deprecated(since = "1.20.4")
     public void setBedSpawnLocation(@Nullable Location location);
 
     /**
@@ -480,7 +480,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated Misleading name. This method sets the player's respawn
      * location more generally and is not limited to beds.
      */
-    @Deprecated
+    @Deprecated(since = "1.20.4")
     public void setBedSpawnLocation(@Nullable Location location, boolean force);
 
     /**
@@ -525,7 +525,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param note The note ID.
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public void playNote(@NotNull Location loc, byte instrument, byte note);
 
     /**
@@ -756,7 +756,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param data a data bit needed for some effects
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public void playEffect(@NotNull Location loc, @NotNull Effect effect, int data);
 
     /**
@@ -802,7 +802,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param data The block data
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public void sendBlockChange(@NotNull Location loc, @NotNull Material material, byte data);
 
     /**
@@ -856,7 +856,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated suppressLightUpdates is not functional in versions greater
      * than 1.19.4
      */
-    @Deprecated
+    @Deprecated(since = "1.20")
     public void sendBlockChanges(@NotNull Collection<BlockState> blocks, boolean suppressLightUpdates);
 
     /**
@@ -1316,7 +1316,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param player Player to hide
      * @deprecated see {@link #hidePlayer(Plugin, Player)}
      */
-    @Deprecated
+    @Deprecated(since = "1.12.2")
     public void hidePlayer(@NotNull Player player);
 
     /**
@@ -1333,7 +1333,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param player Player to show
      * @deprecated see {@link #showPlayer(Plugin, Player)}
      */
-    @Deprecated
+    @Deprecated(since = "1.12.2")
     public void showPlayer(@NotNull Player player);
 
     /**
@@ -1463,7 +1463,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated Minecraft no longer uses textures packs. Instead you
      *     should use {@link #setResourcePack(String)}.
      */
-    @Deprecated
+    @Deprecated(since = "1.7.2")
     public void setTexturePack(@NotNull String url);
 
     /**
@@ -1918,7 +1918,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param subtitle Subtitle text
      * @deprecated API behavior subject to change
      */
-    @Deprecated
+    @Deprecated(since = "1.8.7")
     public void sendTitle(@Nullable String title, @Nullable String subtitle);
 
     /**

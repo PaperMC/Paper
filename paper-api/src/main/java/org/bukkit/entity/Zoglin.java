@@ -11,7 +11,7 @@ public interface Zoglin extends Monster, Ageable {
      * @return Whether the zoglin is a baby
      * @deprecated see {@link Ageable#isAdult()}
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public boolean isBaby();
 
     /**
@@ -20,6 +20,6 @@ public interface Zoglin extends Monster, Ageable {
      * @param flag Whether the zoglin is a baby
      * @deprecated see {@link Ageable#setBaby()} and {@link Ageable#setAdult()}
      */
-    @Deprecated
+    @Deprecated(since = "1.16.2")
     public void setBaby(boolean flag);
 }

@@ -20,7 +20,7 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
     private final String[] lines;
     private final Side side;
 
-    @Deprecated
+    @Deprecated(since = "1.19.4")
     public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player thePlayer, @NotNull final String[] theLines) {
         this(theBlock, thePlayer, theLines, Side.FRONT);
     }

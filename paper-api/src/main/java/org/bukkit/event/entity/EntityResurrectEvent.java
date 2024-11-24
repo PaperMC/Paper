@@ -25,7 +25,7 @@ public class EntityResurrectEvent extends EntityEvent implements Cancellable {
         this.hand = hand;
     }
 
-    @Deprecated
+    @Deprecated(since = "1.19.2")
     public EntityResurrectEvent(@NotNull LivingEntity what) {
         this(what, null);
     }

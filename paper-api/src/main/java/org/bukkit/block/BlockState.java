@@ -221,14 +221,14 @@ public interface BlockState extends Metadatable {
      * @return The data as a raw byte.
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public byte getRawData();
 
     /**
      * @param data The new data value for the block.
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public void setRawData(byte data);
 
     /**

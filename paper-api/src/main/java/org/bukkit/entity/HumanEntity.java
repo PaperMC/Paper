@@ -189,7 +189,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @deprecated Humans may now dual wield in their off hand, use explicit
      * methods in {@link PlayerInventory}.
      */
-    @Deprecated
+    @Deprecated(since = "1.9")
     @NotNull
     public ItemStack getItemInHand();
 
@@ -201,7 +201,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @deprecated Humans may now dual wield in their off hand, use explicit
      * methods in {@link PlayerInventory}.
      */
-    @Deprecated
+    @Deprecated(since = "1.9")
     public void setItemInHand(@Nullable ItemStack item);
 
     /**
@@ -461,7 +461,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @deprecated There are currently no well defined semantics regarding
      * serialized entities in Bukkit. Use with care.
      */
-    @Deprecated
+    @Deprecated(since = "1.12")
     @Nullable
     public Entity getShoulderEntityLeft();
 
@@ -479,7 +479,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @deprecated There are currently no well defined semantics regarding
      * serialized entities in Bukkit. Use with care.
      */
-    @Deprecated
+    @Deprecated(since = "1.12")
     public void setShoulderEntityLeft(@Nullable Entity entity);
 
     /**
@@ -493,7 +493,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @deprecated There are currently no well defined semantics regarding
      * serialized entities in Bukkit. Use with care.
      */
-    @Deprecated
+    @Deprecated(since = "1.12")
     @Nullable
     public Entity getShoulderEntityRight();
 
@@ -511,7 +511,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @deprecated There are currently no well defined semantics regarding
      * serialized entities in Bukkit. Use with care.
      */
-    @Deprecated
+    @Deprecated(since = "1.12")
     public void setShoulderEntityRight(@Nullable Entity entity);
 
     /**

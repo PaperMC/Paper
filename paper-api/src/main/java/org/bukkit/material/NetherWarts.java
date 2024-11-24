@@ -9,7 +9,7 @@ import org.bukkit.NetherWartsState;
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
  */
-@Deprecated
+@Deprecated(since = "1.14.1")
 public class NetherWarts extends MaterialData {
     public NetherWarts() {
         super(Material.LEGACY_NETHER_WARTS);
@@ -29,7 +29,7 @@ public class NetherWarts extends MaterialData {
      * @param data the raw data value
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     public NetherWarts(final Material type, final byte data) {
         super(type, data);
     }

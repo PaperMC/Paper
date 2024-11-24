@@ -52,7 +52,7 @@ public interface BanEntry<T> {
      * @return the target name or IP address
      * @deprecated See {@link #getBanTarget()}
      */
-    @Deprecated
+    @Deprecated(since = "1.20.1")
     @NotNull
     public String getTarget();
 

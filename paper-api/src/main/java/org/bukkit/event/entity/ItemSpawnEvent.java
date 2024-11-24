@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class ItemSpawnEvent extends EntitySpawnEvent {
 
-    @Deprecated
+    @Deprecated(since = "1.13.2")
     public ItemSpawnEvent(@NotNull final Item spawnee, final Location loc) {
         this(spawnee);
     }

@@ -32,7 +32,7 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
         this.repairAmount = repairAmount;
     }
 
-    @Deprecated
+    @Deprecated(since = "1.19.2")
     public PlayerItemMendEvent(@NotNull Player who, @NotNull ItemStack item, @NotNull ExperienceOrb experienceOrb, int repairAmount) {
         this(who, item, null, experienceOrb, repairAmount);
     }

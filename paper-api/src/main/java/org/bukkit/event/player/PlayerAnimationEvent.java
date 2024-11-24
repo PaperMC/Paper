@@ -13,7 +13,7 @@ public class PlayerAnimationEvent extends PlayerEvent implements Cancellable {
     private final PlayerAnimationType animationType;
     private boolean isCancelled = false;
 
-    @Deprecated
+    @Deprecated(since = "1.19")
     public PlayerAnimationEvent(@NotNull final Player player) {
         this(player, PlayerAnimationType.ARM_SWING);
     }

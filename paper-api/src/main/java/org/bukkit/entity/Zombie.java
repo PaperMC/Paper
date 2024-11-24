@@ -14,7 +14,7 @@ public interface Zombie extends Monster, Ageable {
      * @return Whether the zombie is a baby
      * @deprecated see {@link Ageable#isAdult()}
      */
-    @Deprecated
+    @Deprecated(since = "1.16.2")
     public boolean isBaby();
 
     /**
@@ -23,7 +23,7 @@ public interface Zombie extends Monster, Ageable {
      * @param flag Whether the zombie is a baby
      * @deprecated see {@link Ageable#setBaby()} and {@link Ageable#setAdult()}
      */
-    @Deprecated
+    @Deprecated(since = "1.16.2")
     public void setBaby(boolean flag);
 
     /**
@@ -32,14 +32,14 @@ public interface Zombie extends Monster, Ageable {
      * @return Whether the zombie is a villager
      * @deprecated check if instanceof {@link ZombieVillager}.
      */
-    @Deprecated
+    @Deprecated(since = "1.10.2")
     public boolean isVillager();
 
     /**
      * @param flag flag
      * @deprecated must spawn {@link ZombieVillager}.
      */
-    @Deprecated
+    @Deprecated(since = "1.9")
     @Contract("_ -> fail")
     public void setVillager(boolean flag);
 
@@ -47,7 +47,7 @@ public interface Zombie extends Monster, Ageable {
      * @param profession profession
      * @see ZombieVillager#getVillagerProfession()
      */
-    @Deprecated
+    @Deprecated(since = "1.10.2")
     @Contract("_ -> fail")
     public void setVillagerProfession(Villager.Profession profession);
 
@@ -55,7 +55,7 @@ public interface Zombie extends Monster, Ageable {
      * @return profession
      * @see ZombieVillager#getVillagerProfession()
      */
-    @Deprecated
+    @Deprecated(since = "1.10.2")
     @Nullable
     @Contract("-> null")
     public Villager.Profession getVillagerProfession();

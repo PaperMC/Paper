@@ -52,7 +52,7 @@ public interface Tag<T extends Keyed> extends Keyed {
     /**
      * @deprecated {@link #WOOL_CARPETS}.
      */
-    @Deprecated
+    @Deprecated(since = "1.19")
     Tag<Material> CARPETS = WOOL_CARPETS;
     /**
      * Vanilla block tag representing all wooden doors.
@@ -828,7 +828,7 @@ public interface Tag<T extends Keyed> extends Keyed {
      *
      * @deprecated use {@link #ITEMS_PIGLIN_FOOD}
      */
-    @Deprecated
+    @Deprecated(since = "1.20.5")
     Tag<Material> PIGLIN_FOOD = ITEMS_PIGLIN_FOOD;
     /**
      * Vanilla item tag representing all fox food.
@@ -839,7 +839,7 @@ public interface Tag<T extends Keyed> extends Keyed {
      *
      * @deprecated use {@link #ITEMS_FOX_FOOD}
      */
-    @Deprecated
+    @Deprecated(since = "1.20.5")
     Tag<Material> FOX_FOOD = ITEMS_FOX_FOOD;
     /**
      * Vanilla item tag representing all cow food.
@@ -1137,7 +1137,7 @@ public interface Tag<T extends Keyed> extends Keyed {
      * this constant now acts as a reference to {@link #ITEMS_BREAKS_DECORATED_POTS} which largely shares
      * the same contents of the old "minecraft:tools" tag.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated(since = "1.20.6", forRemoval = true)
     Tag<Material> ITEMS_TOOLS = ITEMS_BREAKS_DECORATED_POTS;
     /**
      * Vanilla item tag representing all seeds plantable by villagers.
@@ -1253,7 +1253,7 @@ public interface Tag<T extends Keyed> extends Keyed {
      *
      * @deprecated use {@link #ITEMS_AXOLOTL_FOOD}
      */
-    @Deprecated
+    @Deprecated(since = "1.20.5")
     Tag<Material> AXOLOTL_TEMPT_ITEMS = ITEMS_AXOLOTL_FOOD;
     /**
      * Vanilla item tag representing all items which are preferred for
@@ -1340,7 +1340,7 @@ public interface Tag<T extends Keyed> extends Keyed {
      * Vanilla tag representing entities which deflect arrows.
      * @deprecated use {@link #ENTITY_TYPES_DEFLECTS_PROJECTILES}
      */
-    @Deprecated
+    @Deprecated(since = "1.20.5")
     Tag<EntityType> ENTITY_TYPES_DEFLECTS_ARROWS = ENTITY_TYPES_DEFLECTS_PROJECTILES;
     /**
      * Vanilla tag representing entities which can turn in boats.

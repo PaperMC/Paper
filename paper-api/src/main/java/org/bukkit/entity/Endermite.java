@@ -10,7 +10,7 @@ public interface Endermite extends Monster {
      * @return player spawned status
      * @deprecated this functionality no longer exists
      */
-    @Deprecated
+    @Deprecated(since = "1.17")
     boolean isPlayerSpawned();
 
     /**
@@ -21,6 +21,6 @@ public interface Endermite extends Monster {
      * @param playerSpawned player spawned status
      * @deprecated this functionality no longer exists
      */
-    @Deprecated
+    @Deprecated(since = "1.17")
     void setPlayerSpawned(boolean playerSpawned);
 }

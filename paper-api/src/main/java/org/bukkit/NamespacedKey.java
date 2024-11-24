@@ -161,7 +161,7 @@ public final class NamespacedKey {
      */
     @ApiStatus.Internal
     @NotNull
-    @Deprecated
+    @Deprecated(since = "1.20.5")
     public static NamespacedKey randomKey() {
         return new NamespacedKey(BUKKIT, UUID.randomUUID().toString());
     }

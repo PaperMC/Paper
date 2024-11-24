@@ -30,7 +30,7 @@ public class ShapedRecipe extends CraftingRecipe {
      * @deprecated Recipes must have keys. Use {@link #ShapedRecipe(NamespacedKey, ItemStack)}
      * instead.
      */
-    @Deprecated
+    @Deprecated(since = "1.12")
     public ShapedRecipe(@NotNull ItemStack result) {
         this(NamespacedKey.randomKey(), result);
     }
@@ -147,7 +147,7 @@ public class ShapedRecipe extends CraftingRecipe {
      * @throws IllegalArgumentException if the {@code key} does not appear in the shape.
      * @deprecated Magic value
      */
-    @Deprecated
+    @Deprecated(since = "1.6.2")
     @NotNull
     public ShapedRecipe setIngredient(char key, @NotNull Material ingredient, int raw) {
         Preconditions.checkArgument(key != ' ', "Space in recipe shape must represent no ingredient");
