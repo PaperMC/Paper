@@ -29,18 +29,18 @@ index fb8f68f1aedfb26e4d95fe5bad87f0f2cc91c287..2838ef9d89ec8d7bd8981eff4a2ffe2c
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
-index 249f0dcad04a35244da6dab837a461bb42aad00a..273844c9071b8d5cf6009c6c94a6c47a9d0cc700 100644
+index 459ad788f4dadb72d0dc519125ba1e7a0d6e2530..6033035e87d004997fee62801942c57628b91e6d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
-@@ -152,6 +152,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+@@ -184,6 +184,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
  
      private final Class<?> bukkitClass; // Paper - relax preload class
      private final Map<NamespacedKey, B> cache = new HashMap<>();
 +    private final Map<B, NamespacedKey> byValue = new java.util.IdentityHashMap<>(); // Paper - improve Registry
      private final net.minecraft.core.Registry<M> minecraftRegistry;
-     private final BiFunction<NamespacedKey, M, B> minecraftToBukkit;
+     private final com.mojang.datafixers.util.Either<BiFunction<? super NamespacedKey, M, ? extends B>,java.util.function.Function<Holder<M>, ? extends B>> minecraftToBukkit; // Paper - switch to Holder
      private final BiFunction<NamespacedKey, ApiVersion, NamespacedKey> serializationUpdater; // Paper - rename to make it *clear* what it is *only* for
-@@ -200,6 +201,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+@@ -237,6 +238,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
          }
  
          this.cache.put(namespacedKey, bukkit);
@@ -48,10 +48,10 @@ index 249f0dcad04a35244da6dab837a461bb42aad00a..273844c9071b8d5cf6009c6c94a6c47a
  
          return bukkit;
      }
-@@ -232,4 +234,11 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
- 
-         return this.minecraftToBukkit.apply(namespacedKey, minecraft);
+@@ -285,4 +287,11 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+         return this.minecraftToBukkit.right().orElseThrow().apply(holder);
      }
+     // Paper end - support Direct Holders
 +
 +    // Paper start - improve Registry
 +    @Override

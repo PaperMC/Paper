@@ -18,10 +18,10 @@ index 90b82ad996b2b85628c9a5ddeef9410150b7f70c..5fd22a80e9d05afbea273471cee99173
  
      public static NamespacedKey minecraftToBukkitKey(ResourceKey<LootTable> minecraft) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
-index 273844c9071b8d5cf6009c6c94a6c47a9d0cc700..45c78c113e881b277e1216293ad918ee40b44325 100644
+index 6033035e87d004997fee62801942c57628b91e6d..47951e62aa384542c3ba92e1ef6162031d05a300 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
-@@ -127,6 +127,16 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+@@ -159,6 +159,19 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
                  + ", this can happen if a plugin creates its own registry entry with out properly registering it.");
      }
  
@@ -31,6 +31,9 @@ index 273844c9071b8d5cf6009c6c94a6c47a9d0cc700..45c78c113e881b277e1216293ad918ee
 +    }
 +
 +    public static <T extends org.bukkit.Keyed, M> java.util.Optional<T> unwrapAndConvertHolder(final Registry<T> registry, final Holder<M> value) {
++        if (registry instanceof CraftRegistry<?,?> craftRegistry && craftRegistry.supportsDirectHolders() && value.kind() == Holder.Kind.DIRECT) {
++            return java.util.Optional.of(((CraftRegistry<T, M>) registry).convertDirectHolder(value));
++        }
 +        return value.unwrapKey().map(key -> registry.get(CraftNamespacedKey.fromMinecraft(key.location())));
 +    }
 +    // Paper end - fixup upstream being dum
@@ -80,22 +83,6 @@ index bcac1359c667ef1ee46384f9c7a5adf4010d2b08..b1b139b773b37e6ec2afea85c500387d
      }
  
      @Override
-diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
-index 0fdd9dd47594a7e7e785c34c09d9b4a79aad2439..0d3b1692af010bfd7ea83e22e9571dc954906f71 100644
---- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
-+++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
-@@ -38,8 +38,9 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
-         super(tag);
- 
-         getOrEmpty(tag, CraftMetaArmor.TRIM).ifPresent((trimCompound) -> {
--            TrimMaterial trimMaterial = CraftTrimMaterial.minecraftHolderToBukkit(trimCompound.material());
--            TrimPattern trimPattern = CraftTrimPattern.minecraftHolderToBukkit(trimCompound.pattern());
-+            TrimMaterial trimMaterial = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(io.papermc.paper.registry.RegistryKey.TRIM_MATERIAL, trimCompound.material()).orElse(null); // Paper - fix upstream not being correct
-+            TrimPattern trimPattern = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(io.papermc.paper.registry.RegistryKey.TRIM_PATTERN, trimCompound.pattern()).orElse(null); // Paper - fix upstream not being correct
-+            if (trimMaterial == null || trimPattern == null) return; // Paper - just delete the trim because upstream is not doing this right
- 
-             this.trim = new ArmorTrim(trimMaterial, trimPattern);
- 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
 index 1c1a2d66d1ebcbe2ded732e759d0f9d471d43b56..eb44c19f6af624df458981e46c73a64358d6e1ce 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
