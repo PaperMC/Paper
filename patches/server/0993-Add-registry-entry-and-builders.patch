@@ -283,7 +283,7 @@ index 0000000000000000000000000000000000000000..481f5f0cfae1fada3bc3f873fb7e04c3
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/data/PaperGameEventRegistryEntry.java b/src/main/java/io/papermc/paper/registry/data/PaperGameEventRegistryEntry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..18f9463ae23ba2d9c65ffb7531a87c925a5a8d6f
+index 0000000000000000000000000000000000000000..a96609223ed1e0500f8a4b868e309c0fc82bbc31
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/data/PaperGameEventRegistryEntry.java
 @@ -0,0 +1,57 @@
@@ -309,11 +309,11 @@ index 0000000000000000000000000000000000000000..18f9463ae23ba2d9c65ffb7531a87c92
 +    public PaperGameEventRegistryEntry(
 +        final Conversions ignoredConversions,
 +        final io.papermc.paper.registry.TypedKey<org.bukkit.GameEvent> ignoredKey,
-+        final @Nullable GameEvent nms
++        final @Nullable GameEvent internal
 +    ) {
-+        if (nms == null) return;
++        if (internal == null) return;
 +
-+        this.range = OptionalInt.of(nms.notificationRadius());
++        this.range = OptionalInt.of(internal.notificationRadius());
 +    }
 +
 +    @Override
@@ -327,9 +327,9 @@ index 0000000000000000000000000000000000000000..18f9463ae23ba2d9c65ffb7531a87c92
 +        public PaperBuilder(
 +            final Conversions conversions,
 +            final io.papermc.paper.registry.TypedKey<org.bukkit.GameEvent> key,
-+            final @Nullable GameEvent nms
++            final @Nullable GameEvent internal
 +        ) {
-+            super(conversions, key, nms);
++            super(conversions, key, internal);
 +        }
 +
 +        @Override
@@ -346,7 +346,7 @@ index 0000000000000000000000000000000000000000..18f9463ae23ba2d9c65ffb7531a87c92
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/data/PaperPaintingVariantRegistryEntry.java b/src/main/java/io/papermc/paper/registry/data/PaperPaintingVariantRegistryEntry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..21cb8c28c0027b4b2446279f6cf9dbedfc8945d5
+index 0000000000000000000000000000000000000000..68b3d747f759f615a3c942de3f4d7a0fe856cd84
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/data/PaperPaintingVariantRegistryEntry.java
 @@ -0,0 +1,120 @@
@@ -385,16 +385,16 @@ index 0000000000000000000000000000000000000000..21cb8c28c0027b4b2446279f6cf9dbed
 +    public PaperPaintingVariantRegistryEntry(
 +        final Conversions conversions,
 +        final TypedKey<Art> ignoredKey,
-+        final @Nullable PaintingVariant nms
++        final @Nullable PaintingVariant internal
 +    ) {
 +        this.conversions = conversions;
-+        if(nms == null) return;
++        if (internal == null) return;
 +
-+        this.width = OptionalInt.of(nms.width());
-+        this.height = OptionalInt.of(nms.height());
-+        this.title = nms.title().orElse(null);
-+        this.author = nms.title().orElse(null);
-+        this.assetId = nms.assetId();
++        this.width = OptionalInt.of(internal.width());
++        this.height = OptionalInt.of(internal.height());
++        this.title = internal.title().orElse(null);
++        this.author = internal.author().orElse(null);
++        this.assetId = internal.assetId();
 +    }
 +
 +    @Override
@@ -424,18 +424,18 @@ index 0000000000000000000000000000000000000000..21cb8c28c0027b4b2446279f6cf9dbed
 +
 +    public static final class PaperBuilder extends PaperPaintingVariantRegistryEntry implements PaintingVariantRegistryEntry.Builder, PaperRegistryBuilder<PaintingVariant, Art> {
 +
-+        public PaperBuilder(final Conversions conversions, final TypedKey<Art> key, final @Nullable PaintingVariant nms) {
-+            super(conversions, key, nms);
++        public PaperBuilder(final Conversions conversions, final TypedKey<Art> key, final @Nullable PaintingVariant internal) {
++            super(conversions, key, internal);
 +        }
 +
 +        @Override
-+        public Builder width(@Range(from = 0, to = 16) final int width) {
++        public Builder width(final @Range(from = 1, to = 16) int width) {
 +            this.width = OptionalInt.of(asArgumentRange(width, "width", 1, 16));
 +            return this;
 +        }
 +
 +        @Override
-+        public Builder height(@Range(from = 0, to = 16) final int height) {
++        public Builder height(final @Range(from = 1, to = 16) int height) {
 +            this.height = OptionalInt.of(asArgumentRange(height, "height", 1, 16));
 +            return this;
 +        }
@@ -573,44 +573,3 @@ index ac9b4328cd55a68664a3f71186bc9a7be7cd9658..ea9fe1f8b1a1685ea975eba0ca418a83
      @NotNull
      @Override
      public NamespacedKey getKey() {
-diff --git a/src/test/java/io/papermc/paper/registry/RegistryBuilderTest.java b/src/test/java/io/papermc/paper/registry/RegistryBuilderTest.java
-index ceef7b5864deb1d7c6aa5630febe86ba9427bdc4..4d4632da6bf1bde85115dde2e2f7e353bd392176 100644
---- a/src/test/java/io/papermc/paper/registry/RegistryBuilderTest.java
-+++ b/src/test/java/io/papermc/paper/registry/RegistryBuilderTest.java
-@@ -1,11 +1,16 @@
- package io.papermc.paper.registry;
- 
-+import io.papermc.paper.registry.data.PaperEnchantmentRegistryEntry;
-+import io.papermc.paper.registry.data.PaperGameEventRegistryEntry;
- import io.papermc.paper.registry.data.util.Conversions;
- import java.util.List;
- import java.util.Map;
- import net.minecraft.core.Registry;
-+import net.minecraft.core.registries.Registries;
- import net.minecraft.resources.RegistryOps;
- import net.minecraft.resources.ResourceKey;
-+import net.minecraft.world.item.enchantment.Enchantment;
-+import net.minecraft.world.level.gameevent.GameEvent;
- import org.bukkit.support.RegistryHelper;
- import org.bukkit.support.environment.AllFeatures;
- import org.junit.jupiter.api.Disabled;
-@@ -14,16 +19,18 @@ import org.junit.jupiter.params.provider.Arguments;
- import org.junit.jupiter.params.provider.MethodSource;
- 
- import static org.junit.jupiter.api.Assertions.assertEquals;
-+import static org.junit.jupiter.params.provider.Arguments.arguments;
- 
- @AllFeatures
- class RegistryBuilderTest {
- 
-     static List<Arguments> registries() {
-         return List.of(
-+            arguments(Registries.ENCHANTMENT, (PaperRegistryBuilder.Filler<Enchantment, org.bukkit.enchantments.Enchantment, PaperEnchantmentRegistryEntry.PaperBuilder>) PaperEnchantmentRegistryEntry.PaperBuilder::new),
-+            arguments(Registries.GAME_EVENT, (PaperRegistryBuilder.Filler<GameEvent, org.bukkit.GameEvent, PaperGameEventRegistryEntry.PaperBuilder>) PaperGameEventRegistryEntry.PaperBuilder::new)
-         );
-     }
- 
--    @Disabled
-     @ParameterizedTest
-     @MethodSource("registries")
-     <M, T> void testEquality(final ResourceKey<? extends Registry<M>> resourceKey, final PaperRegistryBuilder.Filler<M, T, ?> filler) {
