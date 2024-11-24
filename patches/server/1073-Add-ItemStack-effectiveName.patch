@@ -4,15 +4,37 @@ Date: Sat, 5 Oct 2024 04:23:13 +0300
 Subject: [PATCH] Add ItemStack#effectiveName
 
 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
+index 3760317ec17e4c65cc379da22ef35eed2a0a9607..75b1b28752165ee47814e553657131363c3645d1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
+@@ -221,6 +221,11 @@ public final class CraftItemFactory implements ItemFactory {
+                 io.papermc.paper.adventure.PaperAdventure.asAdventure(CraftItemStack.unwrap(item).getComponentsPatch())) // unwrap is fine here because the components patch will be safely copied
+         ));
+     }
++
++    @Override
++    public net.kyori.adventure.text.@org.jetbrains.annotations.NotNull Component displayName(@org.jetbrains.annotations.NotNull ItemStack itemStack) {
++        return itemStack.chatName();
++    }
+     // Paper end - Adventure
+ 
+     // Paper start - ensure server conversions API
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index ccad5a7018f6eaacb011818e9da990c75e0d06df..427e0fb8e932cf401a5e0ae7c310fe338554dd27 100644
+index ccad5a7018f6eaacb011818e9da990c75e0d06df..a41bbeaa2f60a415630239ee3226c56edf259389 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-@@ -469,6 +469,13 @@ public final class CraftItemStack extends ItemStack {
+@@ -469,6 +469,19 @@ public final class CraftItemStack extends ItemStack {
          return true;
      }
  
 +    // Paper start - add ItemStack#effectiveName
++    @Override
++    public net.kyori.adventure.text.Component chatName() {
++        net.minecraft.network.chat.Component component = this.handle == null ? net.minecraft.world.item.ItemStack.EMPTY.getDisplayName() : this.handle.getDisplayName();
++        return io.papermc.paper.adventure.PaperAdventure.asAdventure(component);
++    }
++
 +    @Override
 +    public net.kyori.adventure.text.Component effectiveName() {
 +        return this.handle == null ? net.kyori.adventure.text.Component.empty() : io.papermc.paper.adventure.PaperAdventure.asAdventure(this.handle.getStyledHoverName());
