@@ -66,8 +66,19 @@ public interface Generators {
         simpleKey("InstrumentKeys", MusicInstrument.class, Registries.INSTRUMENT, RegistryKey.INSTRUMENT, true),
 
         // tags
-        simpleTagKey("EnchantmentTagKeys", Enchantment.class, Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT),
+        simpleTagKey("GameEventTagKeys", GameEvent.class, Registries.GAME_EVENT, RegistryKey.GAME_EVENT),
+        simpleTagKey("BlockTypeTagKeys", BlockType.class, Registries.BLOCK, RegistryKey.BLOCK),
         simpleTagKey("ItemTypeTagKeys", ItemType.class, Registries.ITEM, RegistryKey.ITEM),
+        simpleTagKey("CatVariantTagKeys", Cat.Type.class, Registries.CAT_VARIANT, RegistryKey.CAT_VARIANT),
+        simpleTagKey("FluidTagKeys", Fluid.class, Registries.FLUID, RegistryKey.FLUID),
+
+        simpleTagKey("BiomeTagKeys", Biome.class, Registries.BIOME, RegistryKey.BIOME),
+        simpleTagKey("StructureTagKeys", Structure.class, Registries.STRUCTURE, RegistryKey.STRUCTURE),
+        simpleTagKey("DamageTypeTagKeys", DamageType.class, Registries.DAMAGE_TYPE, RegistryKey.DAMAGE_TYPE),
+        simpleTagKey("EnchantmentTagKeys", Enchantment.class, Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT),
+        simpleTagKey("BannerPatternTagKeys", PatternType.class, Registries.BANNER_PATTERN, RegistryKey.BANNER_PATTERN),
+        simpleTagKey("PaintingVariantTagKeys", Art.class, Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT),
+        simpleTagKey("InstrumentTagKeys", MusicInstrument.class, Registries.INSTRUMENT, RegistryKey.INSTRUMENT),
         new MobGoalGenerator("VanillaGoal", "com.destroystokyo.paper.entity.ai")
     };
 
