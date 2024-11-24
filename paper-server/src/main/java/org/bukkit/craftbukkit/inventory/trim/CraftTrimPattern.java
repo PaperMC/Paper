@@ -11,14 +11,14 @@ import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.jetbrains.annotations.NotNull;
 
-public class CraftTrimPattern implements TrimPattern, Handleable<net.minecraft.world.item.equipment.trim.TrimPattern> {
+public class CraftTrimPattern implements TrimPattern, io.papermc.paper.util.Holderable<net.minecraft.world.item.equipment.trim.TrimPattern> { // Paper - switch to Holder
 
     public static TrimPattern minecraftToBukkit(net.minecraft.world.item.equipment.trim.TrimPattern minecraft) {
         return CraftRegistry.minecraftToBukkit(minecraft, Registries.TRIM_PATTERN, Registry.TRIM_PATTERN);
     }
 
     public static TrimPattern minecraftHolderToBukkit(Holder<net.minecraft.world.item.equipment.trim.TrimPattern> minecraft) {
-        return CraftTrimPattern.minecraftToBukkit(minecraft.value());
+        return CraftRegistry.minecraftHolderToBukkit(minecraft, Registry.TRIM_PATTERN); // Paper - switch to Holder
     }
 
     public static net.minecraft.world.item.equipment.trim.TrimPattern bukkitToMinecraft(TrimPattern bukkit) {
@@ -26,29 +26,52 @@ public class CraftTrimPattern implements TrimPattern, Handleable<net.minecraft.w
     }
 
     public static Holder<net.minecraft.world.item.equipment.trim.TrimPattern> bukkitToMinecraftHolder(TrimPattern bukkit) {
-        Preconditions.checkArgument(bukkit != null);
-
-        net.minecraft.core.Registry<net.minecraft.world.item.equipment.trim.TrimPattern> registry = CraftRegistry.getMinecraftRegistry(Registries.TRIM_PATTERN);
-
-        if (registry.wrapAsHolder(CraftTrimPattern.bukkitToMinecraft(bukkit)) instanceof Holder.Reference<net.minecraft.world.item.equipment.trim.TrimPattern> holder) {
-            return holder;
-        }
-
-        throw new IllegalArgumentException("No Reference holder found for " + bukkit
-                + ", this can happen if a plugin creates its own trim pattern without properly registering it.");
+        return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.TRIM_PATTERN); // Paper - switch to Holder
     }
 
     private final NamespacedKey key;
     private final net.minecraft.world.item.equipment.trim.TrimPattern handle;
 
-    public CraftTrimPattern(NamespacedKey key, net.minecraft.world.item.equipment.trim.TrimPattern handle) {
-        this.key = key;
-        this.handle = handle;
+    // Paper start - switch to Holder
+    private final Holder<net.minecraft.world.item.equipment.trim.TrimPattern> holder; // Paper - switch to Holder
+
+    public static Object bukkitToObject(TrimPattern bukkit) {
+        Preconditions.checkArgument(bukkit != null);
+
+        return ((CraftTrimPattern) bukkit).toBukkitSerializationObject(net.minecraft.world.item.equipment.trim.TrimPattern.CODEC); // Paper - switch to Holder
+    }
+
+    public static TrimPattern objectToBukkit(Object object) {
+        Preconditions.checkArgument(object != null);
+
+        return io.papermc.paper.util.Holderable.fromBukkitSerializationObject(object, net.minecraft.world.item.equipment.trim.TrimPattern.CODEC, Registry.TRIM_PATTERN); // Paper - switch to Holder
     }
 
     @Override
-    public net.minecraft.world.item.equipment.trim.TrimPattern getHandle() {
-        return this.handle;
+    public boolean equals(final Object o) {
+        return this.implEquals(o);
+    }
+
+    @Override
+    public int hashCode() {
+        return this.implHashCode();
+    }
+
+    @Override
+    public String toString() {
+        return this.implToString();
+    }
+
+    public CraftTrimPattern(Holder<net.minecraft.world.item.equipment.trim.TrimPattern> handle) {
+        this.key = handle.unwrapKey().map(io.papermc.paper.util.MCUtil::fromResourceKey).orElse(null);
+        this.handle = handle.value();
+        this.holder = handle;
+        // Paper end - switch to Holder
+    }
+
+    @Override
+    public Holder<net.minecraft.world.item.equipment.trim.TrimPattern> getHolder() { // Paper - switch to Holder
+        return this.holder; // Paper - switch to Holder
     }
 
     @Override

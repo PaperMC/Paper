@@ -37,7 +37,7 @@ public class CraftMetaMusicInstrument extends CraftMetaItem implements MusicInst
     CraftMetaMusicInstrument(Map<String, Object> map) {
         super(map);
 
-        String instrumentString = SerializableMeta.getString(map, CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT.BUKKIT, true);
+        Object instrumentString = SerializableMeta.getObject(Object.class, map, CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT.BUKKIT, true); // Paper - switch to Holder
         if (instrumentString != null) {
             this.instrument = CraftMusicInstrument.stringToBukkit(instrumentString);
         }

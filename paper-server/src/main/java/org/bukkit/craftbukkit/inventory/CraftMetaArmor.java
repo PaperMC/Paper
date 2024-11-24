@@ -54,21 +54,17 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
 
         Map<?, ?> trimData = SerializableMeta.getObject(Map.class, map, CraftMetaArmor.TRIM.BUKKIT, true);
         if (trimData != null) {
-            String materialKeyString = SerializableMeta.getString(trimData, CraftMetaArmor.TRIM_MATERIAL.BUKKIT, true);
-            String patternKeyString = SerializableMeta.getString(trimData, CraftMetaArmor.TRIM_PATTERN.BUKKIT, true);
+            Object materialKeyString = SerializableMeta.getObject(Object.class, trimData, CraftMetaArmor.TRIM_MATERIAL.BUKKIT, true); // Paper - switch to Holder
+            Object patternKeyString = SerializableMeta.getObject(Object.class, trimData, CraftMetaArmor.TRIM_PATTERN.BUKKIT, true); // Paper - switch to Holder
 
             if (materialKeyString != null && patternKeyString != null) {
-                NamespacedKey materialKey = NamespacedKey.fromString(materialKeyString);
-                NamespacedKey patternKey = NamespacedKey.fromString(patternKeyString);
-
-                if (materialKey != null && patternKey != null) {
-                    TrimMaterial trimMaterial = Registry.TRIM_MATERIAL.get(materialKey);
-                    TrimPattern trimPattern = Registry.TRIM_PATTERN.get(patternKey);
-
-                    if (trimMaterial != null && trimPattern != null) {
-                        this.trim = new ArmorTrim(trimMaterial, trimPattern);
-                    }
+                // Paper start - switch to Holder
+                TrimMaterial trimMaterial = CraftTrimMaterial.objectToBukkit(materialKeyString);
+                TrimPattern trimPattern = CraftTrimPattern.objectToBukkit(patternKeyString);
+                if (trimMaterial != null && trimPattern != null) {
+                    this.trim = new ArmorTrim(trimMaterial, trimPattern);
                 }
+                // Paper end - switch to Holder
             }
         }
     }
@@ -133,9 +129,9 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
         super.serialize(builder);
 
         if (this.hasTrim()) {
-            Map<String, String> trimData = new HashMap<>();
-            trimData.put(CraftMetaArmor.TRIM_MATERIAL.BUKKIT, this.trim.getMaterial().getKey().toString());
-            trimData.put(CraftMetaArmor.TRIM_PATTERN.BUKKIT, this.trim.getPattern().getKey().toString());
+            Map<String, Object> trimData = new HashMap<>(); // Paper - switch to Holder
+            trimData.put(CraftMetaArmor.TRIM_MATERIAL.BUKKIT, CraftTrimMaterial.bukkitToObject(this.trim.getMaterial())); // Paper - switch to Holder
+            trimData.put(CraftMetaArmor.TRIM_PATTERN.BUKKIT, CraftTrimPattern.bukkitToObject(this.trim.getPattern())); // Paper - switch to Holder
             builder.put(CraftMetaArmor.TRIM.BUKKIT, trimData);
         }
 

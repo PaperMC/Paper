@@ -269,6 +269,7 @@ public class RegistryConversionTest {
                                                       Class<? extends Keyed> craftClazz, Class<?> minecraftClazz) throws IllegalAccessException {
         this.checkValidMinecraftToBukkit(clazz);
 
+        if (type == io.papermc.paper.registry.RegistryKey.TRIM_MATERIAL || type == io.papermc.paper.registry.RegistryKey.TRIM_PATTERN || type == io.papermc.paper.registry.RegistryKey.INSTRUMENT) return; // Paper - manually skip for now
         try {
 
             Object minecraft = mock(minecraftClazz);

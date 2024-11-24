@@ -11,14 +11,14 @@ import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.jetbrains.annotations.NotNull;
 
-public class CraftTrimMaterial implements TrimMaterial, Handleable<net.minecraft.world.item.equipment.trim.TrimMaterial> {
+public class CraftTrimMaterial implements TrimMaterial, io.papermc.paper.util.Holderable<net.minecraft.world.item.equipment.trim.TrimMaterial> { // Paper - switch to Holder
 
     public static TrimMaterial minecraftToBukkit(net.minecraft.world.item.equipment.trim.TrimMaterial minecraft) {
         return CraftRegistry.minecraftToBukkit(minecraft, Registries.TRIM_MATERIAL, Registry.TRIM_MATERIAL);
     }
 
     public static TrimMaterial minecraftHolderToBukkit(Holder<net.minecraft.world.item.equipment.trim.TrimMaterial> minecraft) {
-        return CraftTrimMaterial.minecraftToBukkit(minecraft.value());
+        return CraftRegistry.minecraftHolderToBukkit(minecraft, Registry.TRIM_MATERIAL); // Paper - switch to Holder
     }
 
     public static net.minecraft.world.item.equipment.trim.TrimMaterial bukkitToMinecraft(TrimMaterial bukkit) {
@@ -26,29 +26,52 @@ public class CraftTrimMaterial implements TrimMaterial, Handleable<net.minecraft
     }
 
     public static Holder<net.minecraft.world.item.equipment.trim.TrimMaterial> bukkitToMinecraftHolder(TrimMaterial bukkit) {
-        Preconditions.checkArgument(bukkit != null);
-
-        net.minecraft.core.Registry<net.minecraft.world.item.equipment.trim.TrimMaterial> registry = CraftRegistry.getMinecraftRegistry(Registries.TRIM_MATERIAL);
-
-        if (registry.wrapAsHolder(CraftTrimMaterial.bukkitToMinecraft(bukkit)) instanceof Holder.Reference<net.minecraft.world.item.equipment.trim.TrimMaterial> holder) {
-            return holder;
-        }
-
-        throw new IllegalArgumentException("No Reference holder found for " + bukkit
-                + ", this can happen if a plugin creates its own trim material without properly registering it.");
+        return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.TRIM_MATERIAL); // Paper - switch to Holder
     }
 
     private final NamespacedKey key;
     private final net.minecraft.world.item.equipment.trim.TrimMaterial handle;
 
-    public CraftTrimMaterial(NamespacedKey key, net.minecraft.world.item.equipment.trim.TrimMaterial handle) {
-        this.key = key;
-        this.handle = handle;
+    // Paper start - switch to Holder
+    private final Holder<net.minecraft.world.item.equipment.trim.TrimMaterial> holder;
+
+    public static Object bukkitToObject(TrimMaterial bukkit) {
+        Preconditions.checkArgument(bukkit != null);
+
+        return ((CraftTrimMaterial) bukkit).toBukkitSerializationObject(net.minecraft.world.item.equipment.trim.TrimMaterial.CODEC); // Paper - switch to Holder
+    }
+
+    public static TrimMaterial objectToBukkit(Object object) {
+        Preconditions.checkArgument(object != null);
+
+        return io.papermc.paper.util.Holderable.fromBukkitSerializationObject(object, net.minecraft.world.item.equipment.trim.TrimMaterial.CODEC, Registry.TRIM_MATERIAL); // Paper - switch to Holder
     }
 
     @Override
-    public net.minecraft.world.item.equipment.trim.TrimMaterial getHandle() {
-        return this.handle;
+    public boolean equals(final Object o) {
+        return this.implEquals(o);
+    }
+
+    @Override
+    public int hashCode() {
+        return this.implHashCode();
+    }
+
+    @Override
+    public String toString() {
+        return this.implToString();
+    }
+
+    public CraftTrimMaterial(final Holder<net.minecraft.world.item.equipment.trim.TrimMaterial> holder) {
+        this.key = holder.unwrapKey().map(io.papermc.paper.util.MCUtil::fromResourceKey).orElse(null);
+        this.handle = holder.value();
+        this.holder = holder;
+        // Paper end - switch to Holder
+    }
+
+    @Override
+    public Holder<net.minecraft.world.item.equipment.trim.TrimMaterial> getHolder() { // Paper - switch to Holder
+        return this.holder; // Paper - switch to Holder
     }
 
     @Override
