@@ -18,7 +18,7 @@ For consistency, the old API methods now forward to use the
 ItemMeta API equivalents, and should deprecate the old API's.
 
 diff --git a/src/main/java/net/minecraft/world/item/enchantment/ItemEnchantments.java b/src/main/java/net/minecraft/world/item/enchantment/ItemEnchantments.java
-index a4f8cb2c9dc464e94483f5574cddab85ef407048..8ac485d82c2d2b32f4d54e02c18c2cb2c3df4fa4 100644
+index bc6c2c24174181315c5622ba0dbe578b4dbcc627..cfc6a657cae92c68868a76c1b7b1febe2a16e9f4 100644
 --- a/src/main/java/net/minecraft/world/item/enchantment/ItemEnchantments.java
 +++ b/src/main/java/net/minecraft/world/item/enchantment/ItemEnchantments.java
 @@ -26,12 +26,25 @@ import net.minecraft.tags.TagKey;
@@ -35,7 +35,7 @@ index a4f8cb2c9dc464e94483f5574cddab85ef407048..8ac485d82c2d2b32f4d54e02c18c2cb2
 +    private static final java.util.Comparator<Holder<Enchantment>> ENCHANTMENT_ORDER = java.util.Comparator.comparing(Holder::getRegisteredName);
 +    public static final ItemEnchantments EMPTY = new ItemEnchantments(new Object2IntAVLTreeMap<>(ENCHANTMENT_ORDER), true);
 +    // Paper end
-     private static final Codec<Integer> LEVEL_CODEC = Codec.intRange(0, 255);
+     private static final Codec<Integer> LEVEL_CODEC = Codec.intRange(1, 255);
 -    private static final Codec<Object2IntOpenHashMap<Holder<Enchantment>>> LEVELS_CODEC = Codec.unboundedMap(Enchantment.CODEC, LEVEL_CODEC)
 -        .xmap(Object2IntOpenHashMap::new, Function.identity());
 +    private static final Codec<Object2IntAVLTreeMap<Holder<Enchantment>>> LEVELS_CODEC = Codec.unboundedMap(
@@ -70,7 +70,7 @@ index a4f8cb2c9dc464e94483f5574cddab85ef407048..8ac485d82c2d2b32f4d54e02c18c2cb2
          this.enchantments = enchantments;
          this.showInTooltip = showInTooltip;
  
-@@ -141,7 +154,7 @@ public class ItemEnchantments implements TooltipProvider {
+@@ -139,7 +152,7 @@ public class ItemEnchantments implements TooltipProvider {
      }
  
      public static class Mutable {
@@ -80,10 +80,10 @@ index a4f8cb2c9dc464e94483f5574cddab85ef407048..8ac485d82c2d2b32f4d54e02c18c2cb2
  
          public Mutable(ItemEnchantments enchantmentsComponent) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index 17fa2d3db112762bcb8b941b69b8ddcc53f47224..6c76aeddb34239a5acc204a17b2aa2d80e6b2c88 100644
+index 101eea3452c9e387e770b716543c3a4f17b9a737..aea09533fada5bd3d42e2cc147921167a5e7c1a5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-@@ -214,16 +214,13 @@ public final class CraftItemStack extends ItemStack {
+@@ -229,16 +229,13 @@ public final class CraftItemStack extends ItemStack {
      public void addUnsafeEnchantment(Enchantment ench, int level) {
          Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
  
@@ -106,7 +106,7 @@ index 17fa2d3db112762bcb8b941b69b8ddcc53f47224..6c76aeddb34239a5acc204a17b2aa2d8
      }
  
      static boolean makeTag(net.minecraft.world.item.ItemStack item) {
-@@ -252,24 +249,15 @@ public final class CraftItemStack extends ItemStack {
+@@ -267,24 +264,15 @@ public final class CraftItemStack extends ItemStack {
      public int removeEnchantment(Enchantment ench) {
          Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
  
@@ -139,7 +139,7 @@ index 17fa2d3db112762bcb8b941b69b8ddcc53f47224..6c76aeddb34239a5acc204a17b2aa2d8
  
          return level;
      }
-@@ -281,7 +269,7 @@ public final class CraftItemStack extends ItemStack {
+@@ -296,7 +284,7 @@ public final class CraftItemStack extends ItemStack {
  
      @Override
      public Map<Enchantment, Integer> getEnchantments() {
@@ -149,7 +149,7 @@ index 17fa2d3db112762bcb8b941b69b8ddcc53f47224..6c76aeddb34239a5acc204a17b2aa2d8
  
      static Map<Enchantment, Integer> getEnchantments(net.minecraft.world.item.ItemStack item) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 7ae3cdb80335cbeb0ff695eb719a170651586722..97c40582bca095532fff9a81515f38ea4ac527e0 100644
+index 1c943638bfbda8281d2c9038e9024591823e2b5e..b2683d6efd53b03d7043098b19a1504885a5b3c7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList;
@@ -168,16 +168,16 @@ index 7ae3cdb80335cbeb0ff695eb719a170651586722..97c40582bca095532fff9a81515f38ea
  import java.util.EnumSet;
  import java.util.HashMap;
  import java.util.Iterator;
-@@ -250,7 +252,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
-     private List<Component> lore; // null and empty are two different states internally
+@@ -281,7 +283,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
      private Integer customModelData;
+     private Integer enchantableValue;
      private Map<String, String> blockData;
 -    private Map<Enchantment, Integer> enchantments;
 +    private EnchantmentMap enchantments; // Paper
      private Multimap<Attribute, AttributeModifier> attributeModifiers;
      private int repairCost;
      private int hideFlag;
-@@ -292,7 +294,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -330,7 +332,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          this.blockData = meta.blockData;
  
          if (meta.enchantments != null) {
@@ -186,7 +186,7 @@ index 7ae3cdb80335cbeb0ff695eb719a170651586722..97c40582bca095532fff9a81515f38ea
          }
  
          if (meta.hasAttributeModifiers()) {
-@@ -438,8 +440,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -509,8 +511,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          }
      }
  
@@ -197,7 +197,7 @@ index 7ae3cdb80335cbeb0ff695eb719a170651586722..97c40582bca095532fff9a81515f38ea
  
          tag.entrySet().forEach((entry) -> {
              Holder<net.minecraft.world.item.enchantment.Enchantment> id = entry.getKey();
-@@ -736,13 +738,13 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -844,13 +846,13 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          return modifiers;
      }
  
@@ -213,7 +213,7 @@ index 7ae3cdb80335cbeb0ff695eb719a170651586722..97c40582bca095532fff9a81515f38ea
          for (Map.Entry<?, ?> entry : ench.entrySet()) {
              Enchantment enchantment = CraftEnchantment.stringToBukkit(entry.getKey().toString());
              if ((enchantment != null) && (entry.getValue() instanceof Integer)) {
-@@ -1079,14 +1081,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -1217,14 +1219,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
      @Override
      public Map<Enchantment, Integer> getEnchants() {
@@ -230,8 +230,8 @@ index 7ae3cdb80335cbeb0ff695eb719a170651586722..97c40582bca095532fff9a81515f38ea
          }
  
          if (ignoreRestrictions || level >= ench.getStartLevel() && level <= ench.getMaxLevel()) {
-@@ -1686,7 +1688,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
-             clone.customModelData = this.customModelData;
+@@ -1955,7 +1957,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+             clone.enchantableValue = this.enchantableValue;
              clone.blockData = this.blockData;
              if (this.enchantments != null) {
 -                clone.enchantments = new LinkedHashMap<Enchantment, Integer>(this.enchantments);
@@ -239,7 +239,7 @@ index 7ae3cdb80335cbeb0ff695eb719a170651586722..97c40582bca095532fff9a81515f38ea
              }
              if (this.hasAttributeModifiers()) {
                  clone.attributeModifiers = LinkedHashMultimap.create(this.attributeModifiers);
-@@ -2036,4 +2038,22 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -2351,4 +2353,22 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
  
          return (result != null) ? result : Optional.empty();
      }

@@ -1,0 +1,101 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 12 Oct 2018 14:10:46 -0500
+Subject: [PATCH] Add more Witch API
+
+== AT ==
+public net.minecraft.world.entity.monster.Witch usingTime
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Witch.java b/src/main/java/net/minecraft/world/entity/monster/Witch.java
+index 120f0c729c48ddfa598472029cdfbab3dc6db50f..a03fa8a3e648532a7ffaaf523ca87c13e8af4c0a 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Witch.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Witch.java
+@@ -152,21 +152,7 @@ public class Witch extends Raider implements RangedAttackMob {
+                 }
+ 
+                 if (holder != null) {
+-                    // Paper start
+-                    ItemStack potion = PotionContents.createItemStack(Items.POTION, holder);
+-                    potion = org.bukkit.craftbukkit.event.CraftEventFactory.handleWitchReadyPotionEvent(this, potion);
+-                    this.setItemSlot(EquipmentSlot.MAINHAND, potion);
+-                    // Paper end
+-                    this.usingTime = this.getMainHandItem().getUseDuration(this);
+-                    this.setUsingItem(true);
+-                    if (!this.isSilent()) {
+-                        this.level().playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.WITCH_DRINK, this.getSoundSource(), 1.0F, 0.8F + this.random.nextFloat() * 0.4F);
+-                    }
+-
+-                    AttributeInstance attributemodifiable = this.getAttribute(Attributes.MOVEMENT_SPEED);
+-
+-                    attributemodifiable.removeModifier(Witch.SPEED_MODIFIER_DRINKING_ID);
+-                    attributemodifiable.addTransientModifier(Witch.SPEED_MODIFIER_DRINKING);
++                    this.setDrinkingPotion(PotionContents.createItemStack(Items.POTION, holder)); // Paper - logic moved into setDrinkingPotion, copy exact impl into the method and then comment out
+                 }
+             }
+ 
+@@ -178,6 +164,23 @@ public class Witch extends Raider implements RangedAttackMob {
+         super.aiStep();
+     }
+ 
++    // Paper start - moved to its own method
++    public void setDrinkingPotion(ItemStack potion) {
++        potion = org.bukkit.craftbukkit.event.CraftEventFactory.handleWitchReadyPotionEvent(this, potion);
++        this.setItemSlot(EquipmentSlot.MAINHAND, potion);
++        this.usingTime = this.getMainHandItem().getUseDuration(this);
++        this.setUsingItem(true);
++        if (!this.isSilent()) {
++            this.level().playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.WITCH_DRINK, this.getSoundSource(), 1.0F, 0.8F + this.random.nextFloat() * 0.4F);
++        }
++
++        AttributeInstance attributemodifiable = this.getAttribute(Attributes.MOVEMENT_SPEED);
++
++        attributemodifiable.removeModifier(Witch.SPEED_MODIFIER_DRINKING_ID);
++        attributemodifiable.addTransientModifier(Witch.SPEED_MODIFIER_DRINKING);
++    }
++    // Paper end
++
+     @Override
+     public SoundEvent getCelebrateSound() {
+         return SoundEvents.WITCH_CELEBRATE;
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftWitch.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftWitch.java
+index 524b5ba5995affc09eedf9a85d22e8b0b4efc156..4b3d783cabcb2de1a67d7fbfb6f525bfb493aed1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftWitch.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftWitch.java
+@@ -2,6 +2,13 @@ package org.bukkit.craftbukkit.entity;
+ 
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.Witch;
++// Paper start
++import com.destroystokyo.paper.entity.CraftRangedEntity;
++import com.google.common.base.Preconditions;
++import org.bukkit.Material;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.inventory.ItemStack;
++// Paper end
+ 
+ public class CraftWitch extends CraftRaider implements Witch, com.destroystokyo.paper.entity.CraftRangedEntity<net.minecraft.world.entity.monster.Witch> { // Paper
+     public CraftWitch(CraftServer server, net.minecraft.world.entity.monster.Witch entity) {
+@@ -22,4 +29,23 @@ public class CraftWitch extends CraftRaider implements Witch, com.destroystokyo.
+     public boolean isDrinkingPotion() {
+         return this.getHandle().isDrinkingPotion();
+     }
++    // Paper start
++    public int getPotionUseTimeLeft() {
++        return getHandle().usingTime;
++    }
++
++    @Override
++    public void setPotionUseTimeLeft(int ticks) {
++        getHandle().usingTime = ticks;
++    }
++
++    public ItemStack getDrinkingPotion() {
++        return CraftItemStack.asCraftMirror(getHandle().getMainHandItem());
++    }
++
++    public void setDrinkingPotion(ItemStack potion) {
++        Preconditions.checkArgument(potion == null || potion.getType().isEmpty() || potion.getType() == Material.POTION, "must be potion, air, or null");
++        getHandle().setDrinkingPotion(CraftItemStack.asNMSCopy(potion));
++    }
++    // Paper end
+ }

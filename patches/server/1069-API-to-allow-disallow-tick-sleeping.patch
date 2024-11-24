@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Abel <abelvanhulst@gmail.com>
+Date: Tue, 12 Nov 2024 22:25:20 +0100
+Subject: [PATCH] API to allow/disallow tick sleeping
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 5d070f036dae6d93f863c55192b557419634456d..663b4ecd520e82aa108d44f2d5c2a20cfc7bc01f 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -332,6 +332,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public volatile Thread shutdownThread; // Paper
+     public volatile boolean abnormalExit = false; // Paper
+     public static final long SERVER_INIT = System.nanoTime(); // Paper - Lag compensation
++    private List<String> pluginsBlockingSleep = new ArrayList<>(); // Paper - API to allow/disallow tick sleeping
+ 
+     public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
+         AtomicReference<S> atomicreference = new AtomicReference();
+@@ -1623,8 +1624,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         long i = Util.getNanos();
+         int j = this.pauseWhileEmptySeconds() * 20;
+ 
++        this.removeDisabledPluginsBlockingSleep(); // Paper - API to allow/disallow tick sleeping
+         if (j > 0) {
+-            if (this.playerList.getPlayerCount() == 0 && !this.tickRateManager.isSprinting()) {
++            if (this.playerList.getPlayerCount() == 0 && !this.tickRateManager.isSprinting() && this.pluginsBlockingSleep.isEmpty()) { // Paper - API to allow/disallow tick sleeping
+                 ++this.emptyTicks;
+             } else {
+                 this.emptyTicks = 0;
+@@ -3191,5 +3193,22 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public boolean isTickPaused() {
+         return this.emptyTicks > 0 && this.emptyTicks >= this.pauseWhileEmptySeconds() * 20;
+     }
++
++    public void addPluginAllowingSleep(final String pluginName, final boolean value) {
++        if (!value) {
++            this.pluginsBlockingSleep.add(pluginName);
++        } else {
++            this.pluginsBlockingSleep.remove(pluginName);
++        }
++    }
++
++    private void removeDisabledPluginsBlockingSleep() {
++        if (this.pluginsBlockingSleep.isEmpty()) {
++            return;
++        }
++        this.pluginsBlockingSleep.removeIf(plugin -> (
++            !io.papermc.paper.plugin.manager.PaperPluginManagerImpl.getInstance().isPluginEnabled(plugin)
++        ));
++    }
+     // Paper end - API to check if the server is sleeping
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 605662917a7720a6c5134fd1d93aa2d26116b76d..cac8592e3a2f438fe9ca167a4fdcd65152bbb2de 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -3252,5 +3252,10 @@ public final class CraftServer implements Server {
+     public boolean isPaused() {
+         return this.console.isTickPaused();
+     }
++
++    @Override
++    public void allowPausing(final Plugin plugin, final boolean value) {
++        this.console.addPluginAllowingSleep(plugin.getName(), value);
++    }
+     // Paper end - API to check if the server is sleeping
+ }

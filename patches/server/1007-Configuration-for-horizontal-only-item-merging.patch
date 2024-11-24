@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Newwind <support@newwindserver.com>
+Date: Wed, 7 Aug 2024 13:25:55 +0200
+Subject: [PATCH] Configuration for horizontal-only item merging
+
+Most of the visual artifacts that result from having item merge radius above vanilla levels is from items merging vertically,
+which realistically, only happens when a player is dropping items, or items are dropping from breaking a block.
+
+Most of the scenarios where item merging makes sense involves the two item entities being on the same Y level. i.e on the ground next to each other.
+This is even more apparent since paper fixed items being able to merge through blocks.
+
+This patch allows us to configure items to only merge horizontally, which is what vanilla does.
+This allows us to have both the reduced number of item entities a high item-merge radius provides,
+without most of the visual artifacts caused by items merging vertically.
+
+diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+index 7a6d51020d9c6be33b4c34c0d608559589d5b390..4ce041726661dbbd19f36a516f2fd7f5e3307ef0 100644
+--- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
++++ b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+@@ -285,7 +285,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+         if (this.isMergable()) {
+             // Spigot start
+             double radius = this.level().spigotConfig.itemMerge;
+-            List<ItemEntity> list = this.level().getEntitiesOfClass(ItemEntity.class, this.getBoundingBox().inflate(radius, radius - 0.5D, radius), (entityitem) -> {
++            List<ItemEntity> list = this.level().getEntitiesOfClass(ItemEntity.class, this.getBoundingBox().inflate(radius, this.level().paperConfig().entities.behavior.onlyMergeItemsHorizontally ? 0 : radius - 0.5D, radius), (entityitem) -> { // Paper - configuration to only merge items horizontally
+                 // Spigot end
+                 return entityitem != this && entityitem.isMergable();
+             });

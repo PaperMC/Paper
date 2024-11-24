@@ -5,11 +5,11 @@ Subject: [PATCH] Player affects spawning API
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/EntitySelector.java b/src/main/java/net/minecraft/world/entity/EntitySelector.java
-index 3126e8cab3c40e3af47f4c8925e1c6a9523309ba..3207166061bf9c4d7bf3f38e5a9f7aff23ccd5c1 100644
+index 048c8af16fad8708a486bb29304db22e2fb1ecb3..a617ea34cfc28cefd68dd14ffbb334b87f98f65c 100644
 --- a/src/main/java/net/minecraft/world/entity/EntitySelector.java
 +++ b/src/main/java/net/minecraft/world/entity/EntitySelector.java
-@@ -30,6 +30,11 @@ public final class EntitySelector {
-     public static final Predicate<Entity> CAN_BE_COLLIDED_WITH = EntitySelector.NO_SPECTATORS.and(Entity::canBeCollidedWith);
+@@ -29,6 +29,11 @@ public final class EntitySelector {
+     public static final Predicate<Entity> CAN_BE_PICKED = EntitySelector.NO_SPECTATORS.and(Entity::isPickable);
  
      private EntitySelector() {}
 +    // Paper start - Affects Spawning API
@@ -21,10 +21,10 @@ index 3126e8cab3c40e3af47f4c8925e1c6a9523309ba..3207166061bf9c4d7bf3f38e5a9f7aff
      public static Predicate<Entity> withinDistance(double x, double y, double z, double max) {
          double d4 = max * max;
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 4ce1586351b417aede1fd401907388b5fa0e9fd6..d8beadc96a7f779c39c8e22ffe52d872ac49a0ad 100644
+index efa1d813699286c0a2632f44c4d7eecd06e8aa64..9655466953cf850b82716246821a3ebb968a5478 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -860,7 +860,7 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+@@ -858,7 +858,7 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
          if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
              this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
          } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
@@ -34,7 +34,7 @@ index 4ce1586351b417aede1fd401907388b5fa0e9fd6..d8beadc96a7f779c39c8e22ffe52d872
              if (entityhuman != null) {
                  // Paper start - Configurable despawn distances
 diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonTrapGoal.java b/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonTrapGoal.java
-index 3b7fc11b7832a72fb9b0806fe9847f4e30759e7b..3cb84856c10347162a8736ae1ef65165183ec8fe 100644
+index c86e2d75ac627e9c92a6e006cb4c06ec6a2cb91e..521b09ac14372f524b06ffdce57932d0a590700b 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonTrapGoal.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonTrapGoal.java
 @@ -27,7 +27,7 @@ public class SkeletonTrapGoal extends Goal {
@@ -47,33 +47,33 @@ index 3b7fc11b7832a72fb9b0806fe9847f4e30759e7b..3cb84856c10347162a8736ae1ef65165
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
-index 95e9d38dbccbd1c43ababd707e18dfe6779256c1..9ff42b0ae2b82dc3092e38e1439d89b4ab554b17 100644
+index 0594b6adcb849bba2c810de245a3bdaeeca0be60..52d8ea3e40cdb01eab428f5d3d945c0c9f6088ce 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
-@@ -118,7 +118,7 @@ public class Silverfish extends Monster {
-         if (checkAnyLightMonsterSpawnRules(type, world, spawnReason, pos, random)) {
+@@ -123,7 +123,7 @@ public class Silverfish extends Monster {
+         } else {
              Player entityhuman = world.getNearestPlayer((double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, 5.0D, true);
  
 -            return entityhuman == null;
 +            return !(entityhuman != null && !entityhuman.affectsSpawning) && entityhuman == null; // Paper - Affects Spawning API
-         } else {
-             return false;
          }
+     }
+ 
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Zombie.java b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
-index 393a9c704f4637a0e8031328d2a0facef4723dd8..d97c3c139f10a45febc0cfb1057ff6e33266228e 100644
+index 3836d9255ac326a7220e1decd2e9d98be7884c17..73c4585870b7af409f84474f126a58497ed0495f 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Zombie.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
-@@ -328,7 +328,7 @@ public class Zombie extends Monster {
+@@ -349,7 +349,7 @@ public class Zombie extends Monster {
  
-                     if (SpawnPlacements.isSpawnPositionOk(entitytypes, this.level(), blockposition) && SpawnPlacements.checkSpawnRules(entitytypes, worldserver, MobSpawnType.REINFORCEMENT, blockposition, this.level().random)) {
+                     if (SpawnPlacements.isSpawnPositionOk(entitytypes, world, blockposition) && SpawnPlacements.checkSpawnRules(entitytypes, world, EntitySpawnReason.REINFORCEMENT, blockposition, world.random)) {
                          entityzombie.setPos((double) i1, (double) j1, (double) k1);
--                        if (!this.level().hasNearbyAlivePlayer((double) i1, (double) j1, (double) k1, 7.0D) && this.level().isUnobstructed(entityzombie) && this.level().noCollision((Entity) entityzombie) && !this.level().containsAnyLiquid(entityzombie.getBoundingBox())) {
-+                        if (!this.level().hasNearbyAlivePlayerThatAffectsSpawning((double) i1, (double) j1, (double) k1, 7.0D) && this.level().isUnobstructed(entityzombie) && this.level().noCollision((Entity) entityzombie) && !this.level().containsAnyLiquid(entityzombie.getBoundingBox())) { // Paper - Affects Spawning API
+-                        if (!world.hasNearbyAlivePlayer((double) i1, (double) j1, (double) k1, 7.0D) && world.isUnobstructed(entityzombie) && world.noCollision((Entity) entityzombie) && (entityzombie.canSpawnInLiquids() || !world.containsAnyLiquid(entityzombie.getBoundingBox()))) {
++                        if (!world.hasNearbyAlivePlayerThatAffectsSpawning((double) i1, (double) j1, (double) k1, 7.0D) && world.isUnobstructed(entityzombie) && world.noCollision((Entity) entityzombie) && (entityzombie.canSpawnInLiquids() || !world.containsAnyLiquid(entityzombie.getBoundingBox()))) { // Paper - affects spawning api
                              entityzombie.setTarget(entityliving, EntityTargetEvent.TargetReason.REINFORCEMENT_TARGET, true); // CraftBukkit
-                             entityzombie.finalizeSpawn(worldserver, this.level().getCurrentDifficultyAt(entityzombie.blockPosition()), MobSpawnType.REINFORCEMENT, (SpawnGroupData) null);
-                             worldserver.addFreshEntityWithPassengers(entityzombie, CreatureSpawnEvent.SpawnReason.REINFORCEMENTS); // CraftBukkit
+                             entityzombie.finalizeSpawn(world, world.getCurrentDifficultyAt(entityzombie.blockPosition()), EntitySpawnReason.REINFORCEMENT, (SpawnGroupData) null);
+                             world.addFreshEntityWithPassengers(entityzombie, CreatureSpawnEvent.SpawnReason.REINFORCEMENTS); // CraftBukkit
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index 56f4d85d0d2014dfe4fb2598fa813ffc4a768d25..ba279ab6ec0ab41309607333b62a941e35dbf581 100644
+index a879d715a78ff32cfb377dd29cd9facaf21b3f32..b953b8e7e184c0c0eb7231564ad120765d66823a 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
 @@ -195,6 +195,7 @@ public abstract class Player extends LivingEntity {
@@ -85,7 +85,7 @@ index 56f4d85d0d2014dfe4fb2598fa813ffc4a768d25..ba279ab6ec0ab41309607333b62a941e
      // CraftBukkit start
      public boolean fauxSleeping;
 diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
-index cc54da2987fafcbd69153c33033a6f272dd3be66..418e29971326008ebca0cc4b696a41a49c1c7bb7 100644
+index b2bed46f809abee056aa99f39f26f8c0fbf0036c..366661561544f8e99f238583259991e9fcbab8af 100644
 --- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
 @@ -58,7 +58,7 @@ public abstract class BaseSpawner {
@@ -98,10 +98,10 @@ index cc54da2987fafcbd69153c33033a6f272dd3be66..418e29971326008ebca0cc4b696a41a4
  
      public void clientTick(Level world, BlockPos pos) {
 diff --git a/src/main/java/net/minecraft/world/level/EntityGetter.java b/src/main/java/net/minecraft/world/level/EntityGetter.java
-index f38f62e777d88a783e1e3b7e1a48da921cc67cf4..77ae7882a08441d9a80b50492be5e48487a2fdab 100644
+index f689b2ca0ebc15c099f36ebfd14e455bda540296..fb043d67eaa6336fc0b5d62774b8f1107f9dfa1e 100644
 --- a/src/main/java/net/minecraft/world/level/EntityGetter.java
 +++ b/src/main/java/net/minecraft/world/level/EntityGetter.java
-@@ -74,6 +74,11 @@ public interface EntityGetter {
+@@ -71,6 +71,11 @@ public interface EntityGetter {
          }
      }
  
@@ -113,7 +113,7 @@ index f38f62e777d88a783e1e3b7e1a48da921cc67cf4..77ae7882a08441d9a80b50492be5e484
      @Nullable
      default Player getNearestPlayer(double x, double y, double z, double maxDistance, @Nullable Predicate<Entity> targetPredicate) {
          double d = -1.0;
-@@ -103,6 +108,20 @@ public interface EntityGetter {
+@@ -100,6 +105,20 @@ public interface EntityGetter {
          return this.getNearestPlayer(x, y, z, maxDistance, predicate);
      }
  
@@ -135,10 +135,10 @@ index f38f62e777d88a783e1e3b7e1a48da921cc67cf4..77ae7882a08441d9a80b50492be5e484
          for (Player player : this.players()) {
              if (EntitySelector.NO_SPECTATORS.test(player) && EntitySelector.LIVING_ENTITY_STILL_ALIVE.test(player)) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 68b9b4aba7dba31e4526165e6efb8c40f9e841bc..1b2ead250233d9f228bfe8e79f988026506895f9 100644
+index f7833cd528797ba46b001db5208c29eb11ae2529..2be8dc983d008cb3da597f3aabd5efc0df51f9e8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -2425,6 +2425,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -2452,6 +2452,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return this.getHandle().language;
      }
  

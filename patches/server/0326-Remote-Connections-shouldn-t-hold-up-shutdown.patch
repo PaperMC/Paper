@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 31 Mar 2020 03:50:42 -0400
+Subject: [PATCH] Remote Connections shouldn't hold up shutdown
+
+Bugs in the connection logic appears to leave stale connections even, preventing shutdown
+
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index 417c8bf97c5f5b7d127ac7d496b86882d75ff354..fe1975675189c6d1a63c42b7959fa40b5ac95ef8 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -396,11 +396,11 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         }
+ 
+         if (this.rconThread != null) {
+-            this.rconThread.stop();
++            this.rconThread.stopNonBlocking(); // Paper - don't wait for remote connections
+         }
+ 
+         if (this.queryThreadGs4 != null) {
+-            this.queryThreadGs4.stop();
++            // this.remoteStatusListener.stop(); // Paper - don't wait for remote connections
+         }
+ 
+         System.exit(0); // CraftBukkit
+diff --git a/src/main/java/net/minecraft/server/rcon/thread/RconThread.java b/src/main/java/net/minecraft/server/rcon/thread/RconThread.java
+index 594fbb033b63b8c9fb8752b1fcc78f8e9f7a2a83..c12d7db2b048a327c0e8f398848cd3a9bce0ebce 100644
+--- a/src/main/java/net/minecraft/server/rcon/thread/RconThread.java
++++ b/src/main/java/net/minecraft/server/rcon/thread/RconThread.java
+@@ -104,6 +104,14 @@ public class RconThread extends GenericThread {
+ 
+         this.clients.clear();
+     }
++    // Paper start - don't wait for remote connections
++    public void stopNonBlocking() {
++        this.running = false;
++        for (RconClient client : this.clients) {
++            client.running = false;
++        }
++    }
++    // Paper end - don't wait for remote connections
+ 
+     private void closeSocket(ServerSocket socket) {
+         LOGGER.debug("closeSocket: {}", socket);

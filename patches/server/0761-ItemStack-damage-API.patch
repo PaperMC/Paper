@@ -1,0 +1,121 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 8 May 2022 13:35:45 -0700
+Subject: [PATCH] ItemStack damage API
+
+Adds methods notify clients about item breaks and
+to simulate damage done to an itemstack and all
+the logic associated with damaging them
+
+== AT ==
+public net.minecraft.world.entity.LivingEntity entityEventForEquipmentBreak(Lnet/minecraft/world/entity/EquipmentSlot;)B
+
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index bcb3a45166e5dd75dd727adf92304b3a75399c8d..90a55f00c36903d52630c51bf69322973a2b5274 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -693,8 +693,13 @@ public final class ItemStack implements DataComponentHolder {
+     }
+ 
+     public void hurtAndBreak(int amount, ServerLevel world, @Nullable LivingEntity player, Consumer<Item> breakCallback) {  // Paper - Add EntityDamageItemEvent
++        // Paper start - add force boolean overload
++        this.hurtAndBreak(amount, world, player, breakCallback, false);
++    }
++    public void hurtAndBreak(int amount, ServerLevel world, @Nullable LivingEntity player, Consumer<Item> breakCallback, boolean force) {  // Paper - Add EntityDamageItemEvent
++        // Paper end
+         int originalDamage = amount; // Paper - Expand PlayerItemDamageEvent
+-        int j = this.processDurabilityChange(amount, world, player);
++        int j = this.processDurabilityChange(amount, world, player, force); // Paper
+         // CraftBukkit start
+         if (player instanceof final ServerPlayer serverPlayer) { // Paper - Add EntityDamageItemEvent
+             PlayerItemDamageEvent event = new PlayerItemDamageEvent(serverPlayer.getBukkitEntity(), CraftItemStack.asCraftMirror(this), j, originalDamage); // Paper - Add EntityDamageItemEvent
+@@ -726,7 +731,12 @@ public final class ItemStack implements DataComponentHolder {
+     }
+ 
+     private int processDurabilityChange(int baseDamage, ServerLevel world, @Nullable LivingEntity player) {  // Paper - Add EntityDamageItemEvent
+-        return !this.isDamageableItem() ? 0 : (player instanceof ServerPlayer && player.hasInfiniteMaterials() ? 0 : (baseDamage > 0 ? EnchantmentHelper.processDurabilityChange(world, this, baseDamage) : baseDamage));  // Paper - Add EntityDamageItemEvent
++        // Paper start - itemstack damage api
++        return processDurabilityChange(baseDamage, world, player, false);
++    }
++    private int processDurabilityChange(int baseDamage, ServerLevel world, @Nullable LivingEntity player, boolean force) {
++        return !this.isDamageableItem() ? 0 : (player instanceof ServerPlayer && player.hasInfiniteMaterials() && !force ? 0 : (baseDamage > 0 ? EnchantmentHelper.processDurabilityChange(world, this, baseDamage) : baseDamage));  // Paper - Add EntityDamageItemEvent
++        // Paper end - itemstack damage api
+     }
+ 
+     private void applyDamage(int damage, @Nullable LivingEntity player, Consumer<Item> breakCallback) { // Paper - Add EntityDamageItemEvent
+@@ -766,6 +776,11 @@ public final class ItemStack implements DataComponentHolder {
+     }
+ 
+     public void hurtAndBreak(int amount, LivingEntity entity, EquipmentSlot slot) {
++        // Paper start - add param to skip infinite mats check
++        this.hurtAndBreak(amount, entity, slot, false);
++    }
++    public void hurtAndBreak(int amount, LivingEntity entity, EquipmentSlot slot, boolean force) {
++        // Paper end - add param to skip infinite mats check
+         Level world = entity.level();
+ 
+         if (world instanceof ServerLevel worldserver) {
+@@ -778,8 +793,8 @@ public final class ItemStack implements DataComponentHolder {
+             }
+ 
+             this.hurtAndBreak(amount, worldserver, entity, (item) -> { // Paper - Add EntityDamageItemEvent
+-                entity.onEquippedItemBroken(item, slot);
+-            });
++                if (slot != null) entity.onEquippedItemBroken(item, slot); // Paper - itemstack damage API - do not process entity related callbacks when damaging from API
++            }, force); // Paper - itemstack damage API
+         }
+ 
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index 4fa19ddb1414282020e118eea298d57d2bf42754..1ceaa081231a617bd87331b308c24d9c7a8dcf2b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -1154,4 +1154,48 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+         this.getHandle().knockback(strength, directionX, directionZ);
+     };
+     // Paper end - knockback API
++
++    // Paper start - ItemStack damage API
++    public void broadcastSlotBreak(final org.bukkit.inventory.EquipmentSlot slot) {
++        this.getHandle().level().broadcastEntityEvent(this.getHandle(), net.minecraft.world.entity.LivingEntity.entityEventForEquipmentBreak(org.bukkit.craftbukkit.CraftEquipmentSlot.getNMS(slot)));
++    }
++
++    @Override
++    public void broadcastSlotBreak(final org.bukkit.inventory.EquipmentSlot slot, final Collection<org.bukkit.entity.Player> players) {
++        if (players.isEmpty()) {
++            return;
++        }
++        final net.minecraft.network.protocol.game.ClientboundEntityEventPacket packet = new net.minecraft.network.protocol.game.ClientboundEntityEventPacket(
++            this.getHandle(),
++            net.minecraft.world.entity.LivingEntity.entityEventForEquipmentBreak(org.bukkit.craftbukkit.CraftEquipmentSlot.getNMS(slot))
++        );
++        players.forEach(player -> ((CraftPlayer) player).getHandle().connection.send(packet));
++    }
++
++    @Override
++    public ItemStack damageItemStack(ItemStack stack, final int amount) {
++        final net.minecraft.world.item.ItemStack nmsStack;
++        if (stack instanceof final CraftItemStack craftItemStack) {
++            if (craftItemStack.handle == null || craftItemStack.handle.isEmpty()) {
++                return stack;
++            }
++            nmsStack = craftItemStack.handle;
++        } else {
++            nmsStack = CraftItemStack.asNMSCopy(stack);
++            stack = CraftItemStack.asCraftMirror(nmsStack); // mirror to capture changes in hurt logic & events
++        }
++        this.damageItemStack0(nmsStack, amount, null);
++        return stack;
++    }
++
++    @Override
++    public void damageItemStack(final org.bukkit.inventory.EquipmentSlot slot, final int amount) {
++        final net.minecraft.world.entity.EquipmentSlot nmsSlot = org.bukkit.craftbukkit.CraftEquipmentSlot.getNMS(slot);
++        this.damageItemStack0(this.getHandle().getItemBySlot(nmsSlot), amount, nmsSlot);
++    }
++
++    private void damageItemStack0(final net.minecraft.world.item.ItemStack nmsStack, final int amount, final net.minecraft.world.entity.EquipmentSlot slot) {
++        nmsStack.hurtAndBreak(amount, this.getHandle(), slot, true);
++    }
++    // Paper end - ItemStack damage API
+ }

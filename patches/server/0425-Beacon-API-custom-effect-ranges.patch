@@ -1,0 +1,131 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 24 Jun 2020 12:39:08 -0600
+Subject: [PATCH] Beacon API - custom effect ranges
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
+index 8332296663b845df1d09d403b49a4769b2d54afc..dc3171b1493d7c4c8ddf1c79587c4e27bd819c17 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
+@@ -86,6 +86,26 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+         return (BeaconBlockEntity.hasSecondaryEffect(this.levels, this.primaryPower, this.secondaryPower)) ? CraftPotionUtil.toBukkit(new MobEffectInstance(this.secondaryPower, BeaconBlockEntity.getLevel(this.levels), BeaconBlockEntity.getAmplification(this.levels, this.primaryPower, this.secondaryPower), true, true)) : null;
+     }
+     // CraftBukkit end
++    // Paper start - Custom beacon ranges
++    private final String PAPER_RANGE_TAG = "Paper.Range";
++    private double effectRange = -1;
++
++    public double getEffectRange() {
++        if (this.effectRange < 0) {
++            return this.levels * 10 + 10;
++        } else {
++            return effectRange;
++        }
++    }
++
++    public void setEffectRange(double range) {
++        this.effectRange = range;
++    }
++
++    public void resetEffectRange() {
++        this.effectRange = -1;
++    }
++    // Paper end - Custom beacon ranges
+ 
+     @Nullable
+     static Holder<MobEffect> filterEffect(@Nullable Holder<MobEffect> effect) {
+@@ -201,7 +221,7 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+             }
+ 
+             if (blockEntity.levels > 0 && !blockEntity.beamSections.isEmpty()) {
+-                BeaconBlockEntity.applyEffects(world, pos, blockEntity.levels, blockEntity.primaryPower, blockEntity.secondaryPower);
++                BeaconBlockEntity.applyEffects(world, pos, blockEntity.levels, blockEntity.primaryPower, blockEntity.secondaryPower, blockEntity); // Paper - Custom beacon ranges
+                 BeaconBlockEntity.playSound(world, pos, SoundEvents.BEACON_AMBIENT);
+             }
+         }
+@@ -287,8 +307,13 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+     }
+ 
+     public static List getHumansInRange(Level world, BlockPos blockposition, int i) {
++        // Paper start - Custom beacon ranges
++        return BeaconBlockEntity.getHumansInRange(world, blockposition, i, null);
++    }
++    public static List getHumansInRange(Level world, BlockPos blockposition, int i, @Nullable BeaconBlockEntity blockEntity) {
++        // Paper end - Custom beacon ranges
+         {
+-            double d0 = (double) (i * 10 + 10);
++            double d0 = blockEntity != null ? blockEntity.getEffectRange() : (i * 10 + 10); // Paper - Custom beacon ranges
+ 
+             AABB axisalignedbb = (new AABB(blockposition)).inflate(d0).expandTowards(0.0D, (double) world.getHeight(), 0.0D);
+             List<Player> list = world.getEntitiesOfClass(Player.class, axisalignedbb);
+@@ -329,12 +354,17 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+     }
+ 
+     private static void applyEffects(Level world, BlockPos pos, int beaconLevel, @Nullable Holder<MobEffect> primaryEffect, @Nullable Holder<MobEffect> secondaryEffect) {
++    // Paper start - Custom beacon ranges
++        BeaconBlockEntity.applyEffects(world, pos, beaconLevel, primaryEffect, secondaryEffect, null);
++    }
++    private static void applyEffects(Level world, BlockPos pos, int beaconLevel, @Nullable Holder<MobEffect> primaryEffect, @Nullable Holder<MobEffect> secondaryEffect, @Nullable BeaconBlockEntity blockEntity) {
++        // Paper end - Custom beacon ranges
+         if (!world.isClientSide && primaryEffect != null) {
+             double d0 = (double) (beaconLevel * 10 + 10);
+             byte b0 = BeaconBlockEntity.getAmplification(beaconLevel, primaryEffect, secondaryEffect);
+ 
+             int j = BeaconBlockEntity.getLevel(beaconLevel);
+-            List list = BeaconBlockEntity.getHumansInRange(world, pos, beaconLevel);
++            List list = BeaconBlockEntity.getHumansInRange(world, pos, beaconLevel, blockEntity); // Paper - Custom beacon ranges
+ 
+             BeaconBlockEntity.applyEffect(list, primaryEffect, j, b0, true, pos); // Paper - BeaconEffectEvent
+ 
+@@ -395,6 +425,7 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+         }
+ 
+         this.lockKey = LockCode.fromTag(nbt, registries);
++        this.effectRange = nbt.contains(PAPER_RANGE_TAG, 6) ? nbt.getDouble(PAPER_RANGE_TAG) : -1; // Paper - Custom beacon ranges
+     }
+ 
+     @Override
+@@ -408,6 +439,7 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+         }
+ 
+         this.lockKey.addToTag(nbt, registries);
++        nbt.putDouble(PAPER_RANGE_TAG, this.effectRange); // Paper - Custom beacon ranges
+     }
+ 
+     public void setCustomName(@Nullable Component customName) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBeacon.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBeacon.java
+index 8021ac39cb9c1ff45123d51e6f13b840d1290bb2..275d4f9e07ff7383b18238071e067b7f44483ece 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBeacon.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBeacon.java
+@@ -42,7 +42,7 @@ public class CraftBeacon extends CraftBlockEntityState<BeaconBlockEntity> implem
+         if (tileEntity instanceof BeaconBlockEntity) {
+             BeaconBlockEntity beacon = (BeaconBlockEntity) tileEntity;
+ 
+-            Collection<Player> nms = BeaconBlockEntity.getHumansInRange(beacon.getLevel(), beacon.getBlockPos(), beacon.levels);
++            Collection<Player> nms = BeaconBlockEntity.getHumansInRange(beacon.getLevel(), beacon.getBlockPos(), beacon.levels, beacon); // Paper - Custom beacon ranges
+             Collection<LivingEntity> bukkit = new ArrayList<LivingEntity>(nms.size());
+ 
+             for (Player human : nms) {
+@@ -145,4 +145,21 @@ public class CraftBeacon extends CraftBlockEntityState<BeaconBlockEntity> implem
+     public CraftBeacon copy(Location location) {
+         return new CraftBeacon(this, location);
+     }
++
++    // Paper start
++    @Override
++    public double getEffectRange() {
++        return this.getSnapshot().getEffectRange();
++    }
++
++    @Override
++    public void setEffectRange(double range) {
++        this.getSnapshot().setEffectRange(range);
++    }
++
++    @Override
++    public void resetEffectRange() {
++        this.getSnapshot().resetEffectRange();
++    }
++    // Paper end
+ }

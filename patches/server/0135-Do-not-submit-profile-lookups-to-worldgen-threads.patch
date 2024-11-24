@@ -10,13 +10,13 @@ out due to a sync load, as the worldgen threads will be
 stalling on profile lookups.
 
 diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
-index 396f368a7e21a7c7b1630b4e20cdbc452c4b0f84..54562fa04d14a937451ea7aa9d80194f2c31b471 100644
+index 2ff5a6517d717bbd4c944572040bd30866347341..8cac2075077b1d9c2b01e09c99780ff9e204abb2 100644
 --- a/src/main/java/net/minecraft/Util.java
 +++ b/src/main/java/net/minecraft/Util.java
-@@ -92,6 +92,22 @@ public class Util {
-     private static final ExecutorService BACKGROUND_EXECUTOR = makeExecutor("Main");
-     private static final ExecutorService IO_POOL = makeIoExecutor("IO-Worker-", false);
-     private static final ExecutorService DOWNLOAD_POOL = makeIoExecutor("Download-", true);
+@@ -95,6 +95,22 @@ public class Util {
+     private static final TracingExecutor BACKGROUND_EXECUTOR = makeExecutor("Main");
+     private static final TracingExecutor IO_POOL = makeIoExecutor("IO-Worker-", false);
+     private static final TracingExecutor DOWNLOAD_POOL = makeIoExecutor("Download-", true);
 +    // Paper start - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
 +    public static final ExecutorService PROFILE_EXECUTOR = Executors.newFixedThreadPool(2, new java.util.concurrent.ThreadFactory() {
 +
@@ -37,33 +37,33 @@ index 396f368a7e21a7c7b1630b4e20cdbc452c4b0f84..54562fa04d14a937451ea7aa9d80194f
      public static final int LINEAR_LOOKUP_THRESHOLD = 8;
      private static final Set<String> ALLOWED_UNTRUSTED_LINK_PROTOCOLS = Set.of("http", "https");
 diff --git a/src/main/java/net/minecraft/server/players/GameProfileCache.java b/src/main/java/net/minecraft/server/players/GameProfileCache.java
-index aeb0c7ce9b6f93dadd407dbdefba053568f2e2fe..416b26c2ab62b29d640169166980e398d5824b14 100644
+index c89f4a885982f06823886c81fd386b8de029a3dd..416b26c2ab62b29d640169166980e398d5824b14 100644
 --- a/src/main/java/net/minecraft/server/players/GameProfileCache.java
 +++ b/src/main/java/net/minecraft/server/players/GameProfileCache.java
 @@ -169,7 +169,7 @@ public class GameProfileCache {
              } else {
                  CompletableFuture<Optional<GameProfile>> completablefuture1 = CompletableFuture.supplyAsync(() -> {
                      return this.get(username);
--                }, Util.backgroundExecutor()).whenCompleteAsync((optional, throwable) -> {
+-                }, Util.backgroundExecutor().forName("getProfile")).whenCompleteAsync((optional, throwable) -> {
 +                }, Util.PROFILE_EXECUTOR).whenCompleteAsync((optional, throwable) -> { // Paper - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
                      this.requests.remove(username);
                  }, this.executor);
  
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
-index f720c5ef71edd65de76bcac9632173184576ea9e..c278caa030ceccec8e2721068848a34be513de88 100644
+index 59187889db52ccb132460b0e937d0bd5cbeb77f4..4b7176779c455a876419a497a8178163a68553fc 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/SkullBlockEntity.java
 @@ -105,7 +105,7 @@ public class SkullBlockEntity extends BlockEntity {
                  ProfileResult profileResult = apiServices.sessionService().fetchProfile(uuid, true);
                  return Optional.ofNullable(profileResult).map(ProfileResult::profile);
              }
--        }, Util.backgroundExecutor());
+-        }, Util.backgroundExecutor().forName("fetchProfile"));
 +        }, Util.PROFILE_EXECUTOR); // Paper - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
      }
  
      public static void clear() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java b/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
-index 56a71862eac5c45fde2e1d9e96e763d9dbf24cc4..0c250e5b0bd3232d829b0c028f237e6bf5fd334d 100644
+index 26a7c2d37e6a8284ab444a9edad967bdcad1e5a3..210fdad5f2041368fc359b275f1cbf05b70b6989 100644
 --- a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
 +++ b/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
 @@ -161,7 +161,7 @@ public final class CraftPlayerProfile implements PlayerProfile {

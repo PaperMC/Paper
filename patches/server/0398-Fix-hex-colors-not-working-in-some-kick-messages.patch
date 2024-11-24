@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: JRoy <joshroy126@gmail.com>
+Date: Thu, 27 Aug 2020 16:57:25 -0400
+Subject: [PATCH] Fix hex colors not working in some kick messages
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
+index 946b423d2184f903dc29c923d7dbe05aaa469c09..0c1bdf2329936ce479a2cc53e8a46bd2ad685ec1 100644
+--- a/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
+@@ -113,14 +113,16 @@ public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketL
+         }
+         // CraftBukkit end
+         if (packet.protocolVersion() != SharedConstants.getCurrentVersion().getProtocolVersion()) {
+-            MutableComponent ichatmutablecomponent;
++                    net.kyori.adventure.text.Component adventureComponent; // Paper - Fix hex colors not working in some kick messages
+ 
+             if (packet.protocolVersion() < SharedConstants.getCurrentVersion().getProtocolVersion()) { // Spigot - SPIGOT-7546: Handle version check correctly for outdated client message
+-                ichatmutablecomponent = Component.literal( java.text.MessageFormat.format( org.spigotmc.SpigotConfig.outdatedClientMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().getName() ) ); // Spigot
++                        adventureComponent = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(java.text.MessageFormat.format(org.spigotmc.SpigotConfig.outdatedClientMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().getName())); // Spigot // Paper - Fix hex colors not working in some kick messages
+             } else {
+-                ichatmutablecomponent = Component.literal( java.text.MessageFormat.format( org.spigotmc.SpigotConfig.outdatedServerMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().getName() ) ); // Spigot
++                        adventureComponent = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(java.text.MessageFormat.format(org.spigotmc.SpigotConfig.outdatedServerMessage.replaceAll("'", "''"), SharedConstants.getCurrentVersion().getName())); // Spigot // Paper - Fix hex colors not working in some kick messages
+             }
+ 
++                    Component ichatmutablecomponent = io.papermc.paper.adventure.PaperAdventure.asVanilla(adventureComponent); // Paper - Fix hex colors not working in some kick messages
++
+             this.connection.send(new ClientboundLoginDisconnectPacket(ichatmutablecomponent));
+             this.connection.disconnect((Component) ichatmutablecomponent);
+         } else {
+diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index fd9e6781a18d41ca3982788711749d11575566d0..9d5723cdfdbf6257a71e57842aea9ba317fc049a 100644
+--- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -133,7 +133,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+     // CraftBukkit start
+     @Deprecated
+     public void disconnect(String s) {
+-        this.disconnect(Component.literal(s));
++        this.disconnect(io.papermc.paper.adventure.PaperAdventure.asVanilla(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(s))); // Paper - Fix hex colors not working in some kick messages
+     }
+     // CraftBukkit end
+ 

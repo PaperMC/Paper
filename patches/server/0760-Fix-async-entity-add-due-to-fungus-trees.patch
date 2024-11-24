@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 18 Mar 2022 21:30:00 -0700
+Subject: [PATCH] Fix async entity add due to fungus trees
+
+
+diff --git a/src/main/java/net/minecraft/server/level/WorldGenRegion.java b/src/main/java/net/minecraft/server/level/WorldGenRegion.java
+index 5bf438bb58833c1df3620e82d3d2b90207366372..2e72e92762877b28dd908711671e1dfb933de9b0 100644
+--- a/src/main/java/net/minecraft/server/level/WorldGenRegion.java
++++ b/src/main/java/net/minecraft/server/level/WorldGenRegion.java
+@@ -237,6 +237,7 @@ public class WorldGenRegion implements WorldGenLevel {
+         if (iblockdata.isAir()) {
+             return false;
+         } else {
++            if (drop) LOGGER.warn("Potential async entity add during worldgen", new Throwable()); // Paper - Fix async entity add due to fungus trees; log when this happens
+             if (false) { // CraftBukkit - SPIGOT-6833: Do not drop during world generation
+                 BlockEntity tileentity = iblockdata.hasBlockEntity() ? this.getBlockEntity(pos) : null;
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
+index a93a879117ee1eb06842242aa03f757a4a676946..4c234e887c42b27754ed8f05f2000d9309274427 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
+@@ -261,10 +261,10 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
+                 ((ChorusFlowerBlock) Blocks.CHORUS_FLOWER).generatePlant(access, pos, random, 8);
+                 return true;
+             case CRIMSON_FUNGUS:
+-                gen = TreeFeatures.CRIMSON_FUNGUS_PLANTED;
++                gen = this.isNormalWorld() ? TreeFeatures.CRIMSON_FUNGUS_PLANTED : TreeFeatures.CRIMSON_FUNGUS; // Paper - Fix async entity add due to fungus trees; if world gen, don't use planted version
+                 break;
+             case WARPED_FUNGUS:
+-                gen = TreeFeatures.WARPED_FUNGUS_PLANTED;
++                gen = this.isNormalWorld() ? TreeFeatures.WARPED_FUNGUS_PLANTED : TreeFeatures.WARPED_FUNGUS; // Paper - Fix async entity add due to fungus trees; if world gen, don't use planted version
+                 break;
+             case AZALEA:
+                 gen = TreeFeatures.AZALEA_TREE;

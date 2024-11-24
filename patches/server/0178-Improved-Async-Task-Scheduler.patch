@@ -32,7 +32,7 @@ operations are decoupled from the sync tasks queue.
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3c1992e212a6d6f1db4d5b807b38d71913619fc0
+index 0000000000000000000000000000000000000000..0ca279fb71d39c81b1f608e0ee9ba3e498d55fa3
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftAsyncScheduler.java
 @@ -0,0 +1,122 @@
@@ -106,8 +106,8 @@ index 0000000000000000000000000000000000000000..3c1992e212a6d6f1db4d5b807b38d719
 +    }
 +
 +    @Override
-+    public void mainThreadHeartbeat(int currentTick) {
-+        this.currentTick = currentTick;
++    public void mainThreadHeartbeat() {
++        this.currentTick++;
 +        this.management.execute(() -> this.runTasks(currentTick));
 +    }
 +
@@ -159,10 +159,10 @@ index 0000000000000000000000000000000000000000..3c1992e212a6d6f1db4d5b807b38d719
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-index f1145585eed18be0aa5c795a50589103fdc9cc2f..02835e4f0a0b262af27acff0939c981cae728db4 100644
+index 300d31e31a55dbee3489320e21e42f14ac429478..7de4db0099b380c81d6a809a298d580f0f6e4acc 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-@@ -76,7 +76,7 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -75,7 +75,7 @@ public class CraftScheduler implements BukkitScheduler {
      /**
       * Main thread logic only
       */
@@ -171,7 +171,7 @@ index f1145585eed18be0aa5c795a50589103fdc9cc2f..02835e4f0a0b262af27acff0939c981c
              new Comparator<CraftTask>() {
                  @Override
                  public int compare(final CraftTask o1, final CraftTask o2) {
-@@ -93,12 +93,13 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -92,12 +92,13 @@ public class CraftScheduler implements BukkitScheduler {
      /**
       * These are tasks that are currently active. It's provided for 'viewing' the current state.
       */
@@ -187,7 +187,7 @@ index f1145585eed18be0aa5c795a50589103fdc9cc2f..02835e4f0a0b262af27acff0939c981c
      private final Executor executor = Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("Craft Scheduler Thread - %d").build());
      private CraftAsyncDebugger debugHead = new CraftAsyncDebugger(-1, null, null) {
          @Override
-@@ -107,12 +108,31 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -106,12 +107,31 @@ public class CraftScheduler implements BukkitScheduler {
          }
      };
      private CraftAsyncDebugger debugTail = this.debugHead;
@@ -219,7 +219,7 @@ index f1145585eed18be0aa5c795a50589103fdc9cc2f..02835e4f0a0b262af27acff0939c981c
      @Override
      public int scheduleSyncDelayedTask(final Plugin plugin, final Runnable task) {
          return this.scheduleSyncDelayedTask(plugin, task, 0L);
-@@ -229,7 +249,7 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -228,7 +248,7 @@ public class CraftScheduler implements BukkitScheduler {
          } else if (period < CraftTask.NO_REPEATING) {
              period = CraftTask.NO_REPEATING;
          }
@@ -228,7 +228,7 @@ index f1145585eed18be0aa5c795a50589103fdc9cc2f..02835e4f0a0b262af27acff0939c981c
      }
  
      @Override
-@@ -245,6 +265,11 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -244,6 +264,11 @@ public class CraftScheduler implements BukkitScheduler {
          if (taskId <= 0) {
              return;
          }
@@ -240,7 +240,7 @@ index f1145585eed18be0aa5c795a50589103fdc9cc2f..02835e4f0a0b262af27acff0939c981c
          CraftTask task = this.runners.get(taskId);
          if (task != null) {
              task.cancel0();
-@@ -287,6 +312,11 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -286,6 +311,11 @@ public class CraftScheduler implements BukkitScheduler {
      @Override
      public void cancelTasks(final Plugin plugin) {
          Preconditions.checkArgument(plugin != null, "Cannot cancel tasks of null plugin");
@@ -252,7 +252,7 @@ index f1145585eed18be0aa5c795a50589103fdc9cc2f..02835e4f0a0b262af27acff0939c981c
          final CraftTask task = new CraftTask(
                  new Runnable() {
                      @Override
-@@ -326,6 +356,13 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -325,6 +355,13 @@ public class CraftScheduler implements BukkitScheduler {
  
      @Override
      public boolean isCurrentlyRunning(final int taskId) {
@@ -266,7 +266,7 @@ index f1145585eed18be0aa5c795a50589103fdc9cc2f..02835e4f0a0b262af27acff0939c981c
          final CraftTask task = this.runners.get(taskId);
          if (task == null) {
              return false;
-@@ -344,6 +381,11 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -343,6 +380,11 @@ public class CraftScheduler implements BukkitScheduler {
          if (taskId <= 0) {
              return false;
          }
@@ -278,7 +278,7 @@ index f1145585eed18be0aa5c795a50589103fdc9cc2f..02835e4f0a0b262af27acff0939c981c
          for (CraftTask task = this.head.getNext(); task != null; task = task.getNext()) {
              if (task.getTaskId() == taskId) {
                  return task.getPeriod() >= CraftTask.NO_REPEATING; // The task will run
-@@ -355,6 +397,12 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -354,6 +396,12 @@ public class CraftScheduler implements BukkitScheduler {
  
      @Override
      public List<BukkitWorker> getActiveWorkers() {
@@ -291,7 +291,7 @@ index f1145585eed18be0aa5c795a50589103fdc9cc2f..02835e4f0a0b262af27acff0939c981c
          final ArrayList<BukkitWorker> workers = new ArrayList<BukkitWorker>();
          for (final CraftTask taskObj : this.runners.values()) {
              // Iterator will be a best-effort (may fail to grab very new values) if called from an async thread
-@@ -392,6 +440,11 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -391,6 +439,11 @@ public class CraftScheduler implements BukkitScheduler {
                  pending.add(task);
              }
          }
@@ -304,28 +304,28 @@ index f1145585eed18be0aa5c795a50589103fdc9cc2f..02835e4f0a0b262af27acff0939c981c
      }
  
 @@ -399,6 +452,11 @@ public class CraftScheduler implements BukkitScheduler {
-      * This method is designed to never block or wait for locks; an immediate execution of all current tasks.
       */
-     public void mainThreadHeartbeat(final int currentTick) {
+     public void mainThreadHeartbeat() {
+         this.currentTick++;
 +        // Paper start
 +        if (!this.isAsyncScheduler) {
-+            this.asyncScheduler.mainThreadHeartbeat(currentTick);
++            this.asyncScheduler.mainThreadHeartbeat();
 +        }
 +        // Paper end
-         this.currentTick = currentTick;
          final List<CraftTask> temp = this.temp;
          this.parsePending();
-@@ -434,7 +492,7 @@ public class CraftScheduler implements BukkitScheduler {
+         while (this.isReady(this.currentTick)) {
+@@ -433,7 +491,7 @@ public class CraftScheduler implements BukkitScheduler {
                  this.parsePending();
              } else {
-                 // this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass())); // Paper
+                 // this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(this.currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass())); // Paper
 -                this.executor.execute(new com.destroystokyo.paper.ServerSchedulerReportingWrapper(task)); // Paper
 +                task.getOwner().getLogger().log(Level.SEVERE, "Unexpected Async Task in the Sync Scheduler. Report this to Paper"); // Paper
                  // We don't need to parse pending
                  // (async tasks must live with race-conditions if they attempt to cancel between these few lines of code)
              }
-@@ -453,7 +511,7 @@ public class CraftScheduler implements BukkitScheduler {
-         //this.debugHead = this.debugHead.getNextHead(currentTick); // Paper
+@@ -450,7 +508,7 @@ public class CraftScheduler implements BukkitScheduler {
+         //this.debugHead = this.debugHead.getNextHead(this.currentTick); // Paper
      }
  
 -    private void addTask(final CraftTask task) {
@@ -333,7 +333,7 @@ index f1145585eed18be0aa5c795a50589103fdc9cc2f..02835e4f0a0b262af27acff0939c981c
          final AtomicReference<CraftTask> tail = this.tail;
          CraftTask tailTask = tail.get();
          while (!tail.compareAndSet(tailTask, task)) {
-@@ -462,7 +520,13 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -459,7 +517,13 @@ public class CraftScheduler implements BukkitScheduler {
          tailTask.setNext(task);
      }
  
@@ -348,23 +348,12 @@ index f1145585eed18be0aa5c795a50589103fdc9cc2f..02835e4f0a0b262af27acff0939c981c
          task.setNextRun(this.currentTick + delay);
          this.addTask(task);
          return task;
-@@ -485,8 +549,8 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -482,7 +546,7 @@ public class CraftScheduler implements BukkitScheduler {
          return id;
      }
  
 -    private void parsePending() {
--        MinecraftTimings.bukkitSchedulerPendingTimer.startTiming();
 +    void parsePending() { // Paper
-+        if (!this.isAsyncScheduler) MinecraftTimings.bukkitSchedulerPendingTimer.startTiming(); // Paper
          CraftTask head = this.head;
          CraftTask task = head.getNext();
          CraftTask lastTask = head;
-@@ -505,7 +569,7 @@ public class CraftScheduler implements BukkitScheduler {
-             task.setNext(null);
-         }
-         this.head = lastTask;
--        MinecraftTimings.bukkitSchedulerPendingTimer.stopTiming();
-+        if (!this.isAsyncScheduler) MinecraftTimings.bukkitSchedulerPendingTimer.stopTiming(); // Paper
-     }
- 
-     private boolean isReady(final int currentTick) {

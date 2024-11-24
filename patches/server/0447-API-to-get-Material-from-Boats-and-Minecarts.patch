@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Madeline Miller <mnmiller1@me.com>
+Date: Thu, 31 Dec 2020 12:48:19 +1000
+Subject: [PATCH] API to get Material from Boats and Minecarts
+
+== AT ==
+public net.minecraft.world.entity.vehicle.AbstractBoat getDropItem()Lnet/minecraft/world/item/Item;
+
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
+index fb9f0a62201dfeccd0eec9bb399f9edc6a01f1f0..d01a588aea379c962dd63f1428f92cf2442f4d45 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
+@@ -717,4 +717,5 @@ public abstract class AbstractMinecart extends VehicleEntity {
+         this.derailedZ = derailed.getZ();
+     }
+     // CraftBukkit end
++    public net.minecraft.world.item.Item publicGetDropItem() { return getDropItem(); } // Paper - api to get boat and minecart material - expose public drop item
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftBoat.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftBoat.java
+index c101d01b55472efc9fc2829b8c17db5377ed57ff..5d51a49228eaee94f91cd04843e27c7918ca8796 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftBoat.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftBoat.java
+@@ -78,6 +78,13 @@ public abstract class CraftBoat extends CraftVehicle implements Boat {
+         this.getHandle().landBoats = workOnLand;
+     }
+ 
++    // Paper start
++    @Override
++    public org.bukkit.Material getBoatMaterial() {
++        return org.bukkit.craftbukkit.util.CraftMagicNumbers.getMaterial(this.getHandle().getDropItem());
++    }
++    // Paper end
++
+     @Override
+     public Status getStatus() {
+         return CraftBoat.boatStatusFromNms(this.getHandle().status);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecart.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecart.java
+index c4db7c00c66e064993b8b2158f226d063eea798c..e02ecbdc158311bdc7e4d13307de6e2a2cf54235 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecart.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecart.java
+@@ -4,6 +4,7 @@ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.world.entity.vehicle.AbstractMinecart;
+ import net.minecraft.world.level.block.Blocks;
+ import net.minecraft.world.level.block.state.BlockState;
++import org.bukkit.Material; // Paper
+ import org.bukkit.block.data.BlockData;
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.craftbukkit.block.data.CraftBlockData;
+@@ -69,6 +70,13 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
+         this.getHandle().setDerailedVelocityMod(derailed);
+     }
+ 
++    // Paper start
++    @Override
++    public Material getMinecartMaterial() {
++        return CraftMagicNumbers.getMaterial(this.getHandle().publicGetDropItem());
++    }
++    // Paper end
++
+     @Override
+     public AbstractMinecart getHandle() {
+         return (AbstractMinecart) this.entity;

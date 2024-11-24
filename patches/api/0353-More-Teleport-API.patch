@@ -36,10 +36,10 @@ index 0000000000000000000000000000000000000000..544eec787ea837f7d29df6519255840d
 +}
 diff --git a/src/main/java/io/papermc/paper/entity/TeleportFlag.java b/src/main/java/io/papermc/paper/entity/TeleportFlag.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c8b5b570d44da9524bfc59c7e11b2ae59d4b79b9
+index 0000000000000000000000000000000000000000..9dbbe1f3cfda3b1862fd9cf1ef9853329eda750c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/entity/TeleportFlag.java
-@@ -0,0 +1,79 @@
+@@ -0,0 +1,113 @@
 +package io.papermc.paper.entity;
 +
 +import org.bukkit.Location;
@@ -57,35 +57,69 @@ index 0000000000000000000000000000000000000000..c8b5b570d44da9524bfc59c7e11b2ae5
 +    /**
 +     * Note: These flags only work on {@link org.bukkit.entity.Player} entities.
 +     * <p>
-+     * Represents coordinates in a teleportation that should be handled relatively.
-+     * <p>
-+     * Coordinates of the location that the client should handle as relative teleportation
-+     * Relative teleportation flags are only used client side, and cause the player to not lose velocity in that
-+     * specific coordinate. The location of the teleportation will not change.
++     * Relative flags enable a player to not lose their velocity in the flag-specific axis/context when teleporting.
 +     *
++     * @apiNote The relative flags exposed in the API do *not* mirror all flags known to vanilla, as relative flags concerning
++     * the position are non-applicable given teleports always expect an absolute location.
 +     * @see org.bukkit.entity.Player#teleport(Location, PlayerTeleportEvent.TeleportCause, TeleportFlag...)
 +     */
 +    enum Relative implements TeleportFlag {
 +        /**
-+         * Represents the player's X coordinate
++         * Configures the player to not lose velocity in their x axis during the teleport.
 +         */
-+        X,
++        VELOCITY_X,
 +        /**
-+         * Represents the player's Y coordinate
++         * Configures the player to not lose velocity in their y axis during the teleport.
 +         */
-+        Y,
++        VELOCITY_Y,
 +        /**
-+         * Represents the player's Z coordinate
++         * Configures the player to not lose velocity in their z axis during the teleport.
 +         */
-+        Z,
++        VELOCITY_Z,
++        /**
++         * Configures the player to not lose velocity in their current rotation during the teleport.
++         */
++        VELOCITY_ROTATION;
++        /**
++         * Configures the player to not loose velocity in their x axis during the teleport.
++         * @deprecated Since 1.21.3, vanilla split up the relative teleport flags into velocity and position related
++         * ones. As the API does not deal with position relative flags, this name is no longer applicable.
++         * Use {@link #VELOCITY_X} instead.
++         */
++        @Deprecated(since = "1.21.3", forRemoval = true)
++        public static final Relative X = VELOCITY_X;
++        /**
++         * Configures the player to not loose velocity in their y axis during the teleport.
++         * @deprecated Since 1.21.3, vanilla split up the relative teleport flags into velocity and position related
++         * ones. As the API does not deal with position relative flags, this name is no longer applicable.
++         * Use {@link #VELOCITY_Y} instead.
++         */
++        @Deprecated(since = "1.21.3", forRemoval = true)
++        public static final Relative Y = VELOCITY_Y;
++        /**
++         * Configures the player to not loose velocity in their z axis during the teleport.
++         * @deprecated Since 1.21.3, vanilla split up the relative teleport flags into velocity and position related
++         * ones. As the API does not deal with position relative flags, this name is no longer applicable.
++         * Use {@link #VELOCITY_Z} instead.
++         */
++        @Deprecated(since = "1.21.3", forRemoval = true)
++        public static final Relative Z = VELOCITY_Z;
 +        /**
 +         * Represents the player's yaw
++         *
++         * @deprecated relative velocity flags now allow for the whole rotation to be relative, instead of the yaw and
++         * pitch having individual options. Use {@link #VELOCITY_ROTATION} instead.
 +         */
-+        YAW,
++        @Deprecated(since = "1.21.3", forRemoval = true)
++        public static final Relative YAW = VELOCITY_ROTATION;
 +        /**
 +         * Represents the player's pitch
++         *
++         * @deprecated relative velocity flags now allow for the whole rotation to be relative, instead of the yaw and
++         * pitch having individual options. Use {@link #VELOCITY_ROTATION} instead.
 +         */
-+        PITCH;
++        @Deprecated(since = "1.21.3", forRemoval = true)
++        public static final Relative PITCH = VELOCITY_ROTATION;
 +    }
 +
 +    /**
@@ -158,10 +192,10 @@ index f51f3f04ba9efe15f68620c5531b502710078b6e..8bada7f7f0200103edc415ad003132d9
       * Teleports this entity to the given location. If this entity is riding a
       * vehicle, it will be dismounted prior to teleportation.
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index 48b3154ee164b9de74433556d8727e8b818ffbe5..fc6a7fcb7a3f1c92f725715eaea55500d6f553c1 100644
+index 99bad852128f499f8f71552399c49f373d51cf9c..4371ac4683604919782f6268756dff4f05695a40 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -3521,6 +3521,45 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -3561,6 +3561,45 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      String getClientBrandName();
      // Paper end
  

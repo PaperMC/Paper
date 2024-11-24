@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Wed, 8 Aug 2018 16:33:21 -0600
+Subject: [PATCH] Configurable speed for water flowing over lava
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/LiquidBlock.java b/src/main/java/net/minecraft/world/level/block/LiquidBlock.java
+index ac54fd2abb3334c16cba844aee38d7a6797046f3..a2d023ff011f71f80032f02430a53d6a08a23623 100644
+--- a/src/main/java/net/minecraft/world/level/block/LiquidBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/LiquidBlock.java
+@@ -141,11 +141,31 @@ public class LiquidBlock extends Block implements BucketPickup {
+     @Override
+     protected void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
+         if (this.shouldSpreadLiquid(world, pos, state)) {
+-            world.scheduleTick(pos, state.getFluidState().getType(), this.fluid.getTickDelay(world));
++            world.scheduleTick(pos, state.getFluidState().getType(), this.getFlowSpeed(world, pos)); // Paper - Configurable speed for water flowing over lava
+         }
+ 
+     }
+ 
++    // Paper start - Configurable speed for water flowing over lava
++    public int getFlowSpeed(Level world, BlockPos blockposition) {
++        if (net.minecraft.core.registries.BuiltInRegistries.FLUID.wrapAsHolder(this.fluid).is(FluidTags.WATER)) {
++            if (
++                isLava(world, blockposition.north(1)) ||
++                isLava(world, blockposition.south(1)) ||
++                isLava(world, blockposition.west(1)) ||
++                isLava(world, blockposition.east(1))
++            ) {
++                return world.paperConfig().environment.waterOverLavaFlowSpeed;
++            }
++        }
++        return this.fluid.getTickDelay(world);
++    }
++    private static boolean isLava(Level world, BlockPos blockPos) {
++        final FluidState fluidState = world.getFluidIfLoaded(blockPos);
++        return fluidState != null && fluidState.is(FluidTags.LAVA);
++    }
++    // Paper end - Configurable speed for water flowing over lava
++
+     @Override
+     protected BlockState updateShape(BlockState state, LevelReader world, ScheduledTickAccess tickView, BlockPos pos, Direction direction, BlockPos neighborPos, BlockState neighborState, RandomSource random) {
+         if (state.getFluidState().isSource() || neighborState.getFluidState().isSource()) {
+@@ -158,7 +178,7 @@ public class LiquidBlock extends Block implements BucketPickup {
+     @Override
+     protected void neighborChanged(BlockState state, Level world, BlockPos pos, Block sourceBlock, @Nullable Orientation wireOrientation, boolean notify) {
+         if (this.shouldSpreadLiquid(world, pos, state)) {
+-            world.scheduleTick(pos, state.getFluidState().getType(), this.fluid.getTickDelay(world));
++            world.scheduleTick(pos, state.getFluidState().getType(), this.getFlowSpeed(world, pos)); // Paper - Configurable speed for water flowing over lava
+         }
+ 
+     }

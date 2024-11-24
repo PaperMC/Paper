@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Sun, 29 Jul 2018 05:02:15 +0100
+Subject: [PATCH] Break up and make tab spam limits configurable
+
+Due to the changes in 1.13, clients will send a tab completion request
+for all bukkit commands in order to factor in the lack of support for
+brigadier and provide backwards support in the API.
+
+Craftbukkit, however; has moved the chat spam limiter to also interact
+with the tab completion request, which while good for avoiding abuse,
+causes 1.13 clients to easilly be kicked from a server in bukkit due
+to this. Removing the spam limit could cause issues for servers, however,
+there is no way for servers to manipulate this without blindly cancelling
+kick events, which only causes additional complications. This also causes
+issues in that the tab spam limit and chat share the same field but different
+limits, meaning that a player having typed a long command may be kicked from
+the server.
+
+Splitting the field up and making it configurable allows for server owners
+to take the burden of this into their own hand without having to rely on
+plugins doing unsafe things.
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index f36d72153c1ec0426790ed3033500c3cb766af2d..af519e9914bae40fa1605b0cd4cf02ca1d44f0e8 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -274,6 +274,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+     private int tickCount;
+     private int ackBlockChangesUpTo = -1;
+     private final TickThrottler chatSpamThrottler = new TickThrottler(20, 200);
++    private final TickThrottler tabSpamThrottler = new TickThrottler(io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.tabSpamIncrement, io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.tabSpamLimit); // Paper - configurable tab spam limits
+     private final TickThrottler dropSpamThrottler = new TickThrottler(20, 1480);
+     private double firstGoodX;
+     private double firstGoodY;
+@@ -389,6 +390,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+         this.keepConnectionAlive();
+         this.chatSpamThrottler.tick();
++        this.tabSpamThrottler.tick(); // Paper - configurable tab spam limits
+         this.dropSpamThrottler.tick();
+         if (this.player.getLastActionTime() > 0L && this.server.getPlayerIdleTimeout() > 0 && Util.getMillis() - this.player.getLastActionTime() > (long) this.server.getPlayerIdleTimeout() * 1000L * 60L) {
+             this.player.resetLastActionTime(); // CraftBukkit - SPIGOT-854
+@@ -730,7 +732,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+     public void handleCustomCommandSuggestions(ServerboundCommandSuggestionPacket packet) {
+         // PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel()); // Paper - AsyncTabCompleteEvent; run this async
+         // CraftBukkit start
+-        if (!this.chatSpamThrottler.isIncrementAndUnderThreshold(1, 500) && !this.server.getPlayerList().isOp(this.player.getGameProfile()) && !this.server.isSingleplayerOwner(this.player.getGameProfile())) {
++        if (!this.tabSpamThrottler.isIncrementAndUnderThreshold() && !this.server.getPlayerList().isOp(this.player.getGameProfile()) && !this.server.isSingleplayerOwner(this.player.getGameProfile())) { // Paper - configurable tab spam limits
+             this.disconnect(Component.translatable("disconnect.spam"));
+             return;
+         }

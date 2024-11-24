@@ -6,22 +6,22 @@ Subject: [PATCH] Faster redstone torch rapid clock removal
 Only resize the the redstone torch list once, since resizing arrays / lists is costly
 
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 622ecc1aeb9140d5c0d181fa472d123c42e5c5f4..4abb586f964e342425c7cf0384ab8bf8cdedaea3 100644
+index 9e88e9c473d1ab02344afd9634c625b95b5f38ef..675dcb6eb5c33f6ec582ff20118d2f73745914a9 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -169,6 +169,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      private org.spigotmc.TickLimiter tileLimiter;
      private int tileTickPosition;
-     public final Map<Explosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
+     public final Map<ServerExplosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
 +    public java.util.ArrayDeque<net.minecraft.world.level.block.RedstoneTorchBlock.Toggle> redstoneUpdateInfos; // Paper - Faster redstone torch rapid clock removal; Move from Map in BlockRedstoneTorch to here
  
      public CraftWorld getWorld() {
          return this.world;
 diff --git a/src/main/java/net/minecraft/world/level/block/RedstoneTorchBlock.java b/src/main/java/net/minecraft/world/level/block/RedstoneTorchBlock.java
-index 20d20db2639030c103e9d1b3c8da0f51344b81c2..ceba9617748a8b4f3a9bd459475952c9c6c9ed7c 100644
+index ca09910f87b69f6a4af7e3d9da4ad8f917acd66f..26319e8247e9dfa2068700d7fadc21ea5f715561 100644
 --- a/src/main/java/net/minecraft/world/level/block/RedstoneTorchBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/RedstoneTorchBlock.java
-@@ -24,7 +24,7 @@ public class RedstoneTorchBlock extends BaseTorchBlock {
+@@ -28,7 +28,7 @@ public class RedstoneTorchBlock extends BaseTorchBlock {
  
      public static final MapCodec<RedstoneTorchBlock> CODEC = simpleCodec(RedstoneTorchBlock::new);
      public static final BooleanProperty LIT = BlockStateProperties.LIT;
@@ -30,7 +30,7 @@ index 20d20db2639030c103e9d1b3c8da0f51344b81c2..ceba9617748a8b4f3a9bd459475952c9
      public static final int RECENT_TOGGLE_TIMER = 60;
      public static final int MAX_RECENT_TOGGLES = 8;
      public static final int RESTART_DELAY = 160;
-@@ -80,11 +80,15 @@ public class RedstoneTorchBlock extends BaseTorchBlock {
+@@ -81,11 +81,15 @@ public class RedstoneTorchBlock extends BaseTorchBlock {
      @Override
      protected void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
          boolean flag = this.hasNeighborSignal(world, pos, state);
@@ -50,7 +50,7 @@ index 20d20db2639030c103e9d1b3c8da0f51344b81c2..ceba9617748a8b4f3a9bd459475952c9
  
          // CraftBukkit start
          org.bukkit.plugin.PluginManager manager = world.getCraftServer().getPluginManager();
-@@ -160,9 +164,12 @@ public class RedstoneTorchBlock extends BaseTorchBlock {
+@@ -161,9 +165,12 @@ public class RedstoneTorchBlock extends BaseTorchBlock {
      }
  
      private static boolean isToggledTooFrequently(Level world, BlockPos pos, boolean addNew) {

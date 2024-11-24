@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zero <zero@cock.li>
+Date: Sat, 22 Feb 2020 16:10:31 -0500
+Subject: [PATCH] Configurable chance of villager zombie infection
+
+This allows you to solve an issue in vanilla behavior where:
+* On easy difficulty your villagers will NEVER get infected, meaning they will always die.
+* On normal difficulty they will have a 50% of getting infected or dying.
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Zombie.java b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+index d3d1e170380e7674c9ac13b06186eb563a58cd64..5b8ac7113eb8a57fe07bfaacc1b1320383a56d06 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Zombie.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+@@ -484,10 +484,8 @@ public class Zombie extends Monster {
+     public boolean killedEntity(ServerLevel world, LivingEntity other) {
+         boolean flag = super.killedEntity(world, other);
+ 
+-        if ((world.getDifficulty() == Difficulty.NORMAL || world.getDifficulty() == Difficulty.HARD) && other instanceof Villager entityvillager) {
+-            if (world.getDifficulty() != Difficulty.HARD && this.random.nextBoolean()) {
+-                return flag;
+-            }
++        final double fallbackChance = world.getDifficulty() == Difficulty.HARD ? 100d : world.getDifficulty() == Difficulty.NORMAL ? 50d : 0d; // Paper - Configurable chance of villager zombie infection
++        if (this.random.nextDouble() * 100 < world.paperConfig().entities.behavior.zombieVillagerInfectionChance.or(fallbackChance) && other instanceof Villager entityvillager) { // Paper - Configurable chance of villager zombie infection
+ 
+             if (this.convertVillagerToZombieVillager(world, entityvillager)) {
+                 flag = false;

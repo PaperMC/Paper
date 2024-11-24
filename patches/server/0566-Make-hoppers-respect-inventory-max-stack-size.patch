@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 7 Jul 2021 16:30:17 -0700
+Subject: [PATCH] Make hoppers respect inventory max stack size
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
+index 8913f434967457a16dd708252834ba001ada1a03..b35b44f0776aeb95ef0eda666ba0b652c5e90274 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
+@@ -495,15 +495,17 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+ 
+             if (itemstack1.isEmpty()) {
+                 // Spigot start - SPIGOT-6693, InventorySubcontainer#setItem
++                ItemStack leftover = ItemStack.EMPTY; // Paper - Make hoppers respect inventory max stack size
+                 if (!stack.isEmpty() && stack.getCount() > to.getMaxStackSize()) {
++                    leftover = stack; // Paper - Make hoppers respect inventory max stack size
+                     stack = stack.split(to.getMaxStackSize());
+                 }
+                 // Spigot end
+                 to.setItem(slot, stack);
+-                stack = ItemStack.EMPTY;
++                stack = leftover; // Paper - Make hoppers respect inventory max stack size
+                 flag = true;
+             } else if (HopperBlockEntity.canMergeItems(itemstack1, stack)) {
+-                int j = stack.getMaxStackSize() - itemstack1.getCount();
++                int j = Math.min(stack.getMaxStackSize(), to.getMaxStackSize()) - itemstack1.getCount(); // Paper - Make hoppers respect inventory max stack size
+                 int k = Math.min(stack.getCount(), j);
+ 
+                 stack.shrink(k);

@@ -6,10 +6,10 @@ Subject: [PATCH] Remap reflection calls in plugins using internals
 Co-authored-by: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 8350fc099b68918fb03a21b6a5047ceee72dcbb4..404c2eefa88319e0eaf7b0d1d2696c91dd0e0e0b 100644
+index 8678e5bd59a7e085cb1b4e38f29e06ce36d2c1de..8d05216e246bfaec5945cdd55d08b6a388a769e8 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -47,6 +47,12 @@ dependencies {
+@@ -62,6 +62,12 @@ dependencies {
      testImplementation("org.junit-pioneer:junit-pioneer:2.2.0") // Paper - CartesianTest
      implementation("net.neoforged:srgutils:1.0.9") // Paper - mappings handling
      implementation("net.neoforged:AutoRenamingTool:2.0.3") // Paper - remap plugins
@@ -23,7 +23,7 @@ index 8350fc099b68918fb03a21b6a5047ceee72dcbb4..404c2eefa88319e0eaf7b0d1d2696c91
  
  paperweight {
 diff --git a/src/main/java/io/papermc/paper/configuration/serializer/PacketClassSerializer.java b/src/main/java/io/papermc/paper/configuration/serializer/PacketClassSerializer.java
-index 893ad5e7c2d32ccd64962d95d146bbd317c28ab8..3d73ea0e63c97b2b08e719b7be7af3894fb2d4e8 100644
+index b61935052154e76b1b8cb49868c96c52f34a41d1..a2fe12513b93ded71517955ef3e52c925f56f7d1 100644
 --- a/src/main/java/io/papermc/paper/configuration/serializer/PacketClassSerializer.java
 +++ b/src/main/java/io/papermc/paper/configuration/serializer/PacketClassSerializer.java
 @@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableBiMap;
@@ -32,9 +32,9 @@ index 893ad5e7c2d32ccd64962d95d146bbd317c28ab8..3d73ea0e63c97b2b08e719b7be7af389
  import io.papermc.paper.configuration.serializer.collections.MapSerializer;
 +import io.papermc.paper.util.MappingEnvironment;
  import io.papermc.paper.util.ObfHelper;
- import net.minecraft.network.protocol.Packet;
- import org.checkerframework.checker.nullness.qual.Nullable;
-@@ -69,7 +70,7 @@ public final class PacketClassSerializer extends ScalarSerializer<Class<? extend
+ import java.lang.reflect.Type;
+ import java.util.List;
+@@ -68,7 +69,7 @@ public final class PacketClassSerializer extends ScalarSerializer<Class<? extend
      @Override
      protected @Nullable Object serialize(final Class<? extends Packet<?>> packetClass, final Predicate<Class<?>> typeSupported) {
          final String name = packetClass.getName();
@@ -608,7 +608,7 @@ index 0000000000000000000000000000000000000000..a3045afbc0cc057e99189b909367b21c
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/util/MappingEnvironment.java b/src/main/java/io/papermc/paper/util/MappingEnvironment.java
-index 8e4229634d41a42b3d93948eebb77def7c0c72b1..fb6aa9e2575b22e3089ea7fb32e6abfa6bb07d18 100644
+index 8e4229634d41a42b3d93948eebb77def7c0c72b1..4477944f632a6b3936960ee80f9d898d3b7eed19 100644
 --- a/src/main/java/io/papermc/paper/util/MappingEnvironment.java
 +++ b/src/main/java/io/papermc/paper/util/MappingEnvironment.java
 @@ -10,6 +10,8 @@ import org.checkerframework.framework.qual.DefaultQualifier;
@@ -616,7 +616,7 @@ index 8e4229634d41a42b3d93948eebb77def7c0c72b1..fb6aa9e2575b22e3089ea7fb32e6abfa
  @DefaultQualifier(NonNull.class)
  public final class MappingEnvironment {
 +    public static final boolean DISABLE_PLUGIN_REMAPPING = Boolean.getBoolean("paper.disablePluginRemapping");
-+    public static final String LEGACY_CB_VERSION = "v1_21_R1";
++    public static final String LEGACY_CB_VERSION = "v1_21_R2";
      private static final @Nullable String MAPPINGS_HASH = readMappingsHash();
      private static final boolean REOBF = checkReobf();
  
@@ -645,11 +645,11 @@ index 242811578a786e3807a1a7019d472d5a68f87116..0b65fdf53124f3dd042b2363b1b8df8e
              return traceElements;
          }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
-index ebc160fd4c8aed95087130bb6fddc1d4f83c6f87..65f64de05a88844e62b5a0dd1e2f53edfb4e0c1f 100644
+index 7d2d5c4ee244e7118a4c38628e2e69c79b11b98d..371d31266a532e59c49dbb106e354296b119fa5e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/Commodore.java
-@@ -103,36 +103,26 @@ public class Commodore {
-     private static final Map<String, RerouteMethodData> ENUM_METHOD_REROUTE = Commodore.createReroutes(EnumEvil.class);
+@@ -131,36 +131,26 @@ public class Commodore {
+     }
  
      // Paper start - Plugin rewrites
 -    private static final Map<String, String> SEARCH_AND_REMOVE = initReplacementsMap();
@@ -696,7 +696,7 @@ index ebc160fd4c8aed95087130bb6fddc1d4f83c6f87..65f64de05a88844e62b5a0dd1e2f53ed
      }
      // Paper end - Plugin rewrites
  
-@@ -215,6 +205,7 @@ public class Commodore {
+@@ -245,6 +235,7 @@ public class Commodore {
              visitor = new LimitedClassRemapper(cw, new SimpleRemapper(Commodore.ENUM_RENAMES));
          }
  
@@ -705,18 +705,18 @@ index ebc160fd4c8aed95087130bb6fddc1d4f83c6f87..65f64de05a88844e62b5a0dd1e2f53ed
              final Set<RerouteMethodData> rerouteMethodData = new HashSet<>();
              String className;
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index a6de88625aeb2c5ababd476e804e9b45b1185efe..fa2e43020fafc283a9c063d10a82280158c7f93d 100644
+index 3c9cdb8c67d2704caac6488a6216d8c9c8a009ef..ab4dd5a86ccd8e9878abf95417bb05ceb91dd19c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -74,6 +74,7 @@ import org.bukkit.potion.PotionType;
+@@ -75,6 +75,7 @@ import org.bukkit.potion.PotionType;
  @SuppressWarnings("deprecation")
  public final class CraftMagicNumbers implements UnsafeValues {
-     public static final UnsafeValues INSTANCE = new CraftMagicNumbers();
+     public static final CraftMagicNumbers INSTANCE = new CraftMagicNumbers();
 +    public static final boolean DISABLE_OLD_API_SUPPORT = Boolean.getBoolean("paper.disableOldApiSupport"); // Paper
  
-     private CraftMagicNumbers() {}
+     private final Commodore commodore = new Commodore();
  
-@@ -340,7 +341,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -347,7 +348,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
              throw new InvalidPluginException("Plugin API version " + pdf.getAPIVersion() + " is lower than the minimum allowed version. Please update or replace it.");
          }
  
@@ -725,7 +725,7 @@ index a6de88625aeb2c5ababd476e804e9b45b1185efe..fa2e43020fafc283a9c063d10a822801
              CraftLegacy.init();
          }
  
-@@ -355,6 +356,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -362,6 +363,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
  
      @Override
      public byte[] processClass(PluginDescriptionFile pdf, String path, byte[] clazz) {
@@ -736,5 +736,5 @@ index a6de88625aeb2c5ababd476e804e9b45b1185efe..fa2e43020fafc283a9c063d10a822801
 +        }
 +        // Paper end
          try {
-             clazz = Commodore.convert(clazz, pdf.getName(), ApiVersion.getOrCreateVersion(pdf.getAPIVersion()), ((CraftServer) Bukkit.getServer()).activeCompatibilities);
+             clazz = this.commodore.convert(clazz, pdf.getName(), ApiVersion.getOrCreateVersion(pdf.getAPIVersion()), ((CraftServer) Bukkit.getServer()).activeCompatibilities);
          } catch (Exception ex) {

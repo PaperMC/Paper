@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nathan <nathanmaestas21@cnm.edu>
+Date: Sat, 31 Aug 2024 18:09:55 -0600
+Subject: [PATCH] Fire BlockExpEvent on grindstone use
+
+
+diff --git a/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java b/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java
+index 3b303d41b9facfb2892ff8402ee0de4608db7318..5687f492fc76f699e2a388790ca5380d9b8c8d0a 100644
+--- a/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/GrindstoneMenu.java
+@@ -98,7 +98,11 @@ public class GrindstoneMenu extends AbstractContainerMenu {
+             public void onTake(net.minecraft.world.entity.player.Player player, ItemStack stack) {
+                 context.execute((world, blockposition) -> {
+                     if (world instanceof ServerLevel) {
+-                        ExperienceOrb.award((ServerLevel) world, Vec3.atCenterOf(blockposition), this.getExperienceAmount(world), org.bukkit.entity.ExperienceOrb.SpawnReason.GRINDSTONE, player); // Paper
++                        // Paper start - Fire BlockExpEvent on grindstone use
++                        org.bukkit.event.block.BlockExpEvent event = new org.bukkit.event.block.BlockExpEvent(org.bukkit.craftbukkit.block.CraftBlock.at(world, blockposition), this.getExperienceAmount(world));
++                        event.callEvent();
++                        ExperienceOrb.award((ServerLevel) world, Vec3.atCenterOf(blockposition), event.getExpToDrop(), org.bukkit.entity.ExperienceOrb.SpawnReason.GRINDSTONE, player);
++                        // Paper end - Fire BlockExpEvent on grindstone use
+                     }
+ 
+                     world.levelEvent(1042, blockposition, 0);

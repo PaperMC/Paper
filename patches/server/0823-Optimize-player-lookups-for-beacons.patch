@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Thu, 6 Jul 2023 20:17:37 -0700
+Subject: [PATCH] Optimize player lookups for beacons
+
+For larger ranges, it's better to iterate over the player list
+than the entity slices.
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
+index 2a7d896dd9a02acf6e3596e2e2e7ed50f4b88377..0e0d178f2793ab014358f534c8dc53218b89f083 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
+@@ -333,7 +333,22 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+             double d0 = blockEntity != null ? blockEntity.getEffectRange() : (i * 10 + 10); // Paper - Custom beacon ranges
+ 
+             AABB axisalignedbb = (new AABB(blockposition)).inflate(d0).expandTowards(0.0D, (double) world.getHeight(), 0.0D);
+-            List<Player> list = world.getEntitiesOfClass(Player.class, axisalignedbb);
++            // Paper start - Perf: optimize player lookup for beacons
++            List<Player> list;
++            if (d0 <= 128.0) {
++                list = world.getEntitiesOfClass(Player.class, axisalignedbb);
++            } else {
++                list = new java.util.ArrayList<>();
++                for (Player player : world.players()) {
++                    if (player.isSpectator()) {
++                        continue;
++                    }
++                    if (player.getBoundingBox().intersects(axisalignedbb)) {
++                        list.add(player);
++                    }
++                }
++            }
++            // Paper end - Perf: optimize player lookup for beacons
+ 
+             return list;
+         }

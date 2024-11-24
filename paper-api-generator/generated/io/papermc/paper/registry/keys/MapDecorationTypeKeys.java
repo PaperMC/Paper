@@ -7,8 +7,8 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
 import org.bukkit.map.MapCursor;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Vanilla keys for {@link RegistryKey#MAP_DECORATION_TYPE}.
@@ -23,7 +23,8 @@ import org.jetbrains.annotations.ApiStatus;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.1")
+@GeneratedFrom("1.21.3")
+@NullMarked
 @ApiStatus.Experimental
 public final class MapDecorationTypeKeys {
     /**
@@ -274,7 +275,7 @@ public final class MapDecorationTypeKeys {
     private MapDecorationTypeKeys() {
     }
 
-    private static @NonNull TypedKey<MapCursor.Type> create(final @NonNull Key key) {
+    private static TypedKey<MapCursor.Type> create(final Key key) {
         return TypedKey.create(RegistryKey.MAP_DECORATION_TYPE, key);
     }
 }

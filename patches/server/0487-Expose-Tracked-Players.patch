@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tom <cryptite@gmail.com>
+Date: Fri, 26 Feb 2021 16:24:25 -0600
+Subject: [PATCH] Expose Tracked Players
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index dbb1a52b1e5871bbb1ccbd300b8edb9aa0f56e49..78afac72265e3f586c0203951b8237832fb7c6fb 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -1065,4 +1065,21 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         return getHandle().isTicking();
+     }
+     // Paper end - isTicking API
++
++    // Paper start - tracked players API
++    @Override
++    public Set<org.bukkit.entity.Player> getTrackedPlayers() {
++        ServerLevel world = (net.minecraft.server.level.ServerLevel)this.entity.level();
++        ChunkMap.TrackedEntity tracker = world == null ? null : world.getChunkSource().chunkMap.entityMap.get(this.entity.getId());
++        if (tracker == null) {
++            return java.util.Collections.emptySet();
++        }
++
++        Set<org.bukkit.entity.Player> set = new java.util.HashSet<>(tracker.seenBy.size());
++        for (net.minecraft.server.network.ServerPlayerConnection connection : tracker.seenBy) {
++            set.add(connection.getPlayer().getBukkitEntity().getPlayer());
++        }
++        return set;
++    }
++    // Paper end - tracked players API
+ }

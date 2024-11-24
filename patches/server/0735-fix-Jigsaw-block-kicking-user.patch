@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Legitimoose <legitimoose@gmail.com>
+Date: Wed, 28 Sep 2022 22:45:49 -0700
+Subject: [PATCH] fix Jigsaw block kicking user
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/JigsawBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/JigsawBlockEntity.java
+index 42300114e3baf31fd26090fca3b497c8157d4bb9..6410cd7a7324bb04e9285a5b090b1675a5ffa16f 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/JigsawBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/JigsawBlockEntity.java
+@@ -131,7 +131,12 @@ public class JigsawBlockEntity extends BlockEntity {
+     public void generate(ServerLevel world, int maxDepth, boolean keepJigsaws) {
+         BlockPos blockPos = this.getBlockPos().relative(this.getBlockState().getValue(JigsawBlock.ORIENTATION).front());
+         Registry<StructureTemplatePool> registry = world.registryAccess().lookupOrThrow(Registries.TEMPLATE_POOL);
+-        Holder<StructureTemplatePool> holder = registry.getOrThrow(this.pool);
++        // Paper start - Replace getHolderOrThrow with a null check
++        Holder<StructureTemplatePool> holder = registry.get(this.pool).orElse(null);
++        if (holder == null) {
++            return;
++        }
++        // Paper end - Replace getHolderOrThrow with a null check
+         JigsawPlacement.generateJigsaw(world, holder, this.target, maxDepth, blockPos, keepJigsaws);
+     }
+ 

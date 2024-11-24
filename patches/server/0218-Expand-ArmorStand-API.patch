@@ -1,0 +1,169 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: willies952002 <admin@domnian.com>
+Date: Thu, 26 Jul 2018 02:25:46 -0400
+Subject: [PATCH] Expand ArmorStand API
+
+Adds the following:
+- Add proper methods for getting and setting items in both hands. Deprecates old methods
+- Enable/Disable slot interactions
+- Allow using degrees for ArmorStand rotations (via new Rotations class)
+
+== AT ==
+public net.minecraft.world.entity.decoration.ArmorStand isDisabled(Lnet/minecraft/world/entity/EquipmentSlot;)Z
+
+Co-authored-by: SoSeDiK <mrsosedik@gmail.com>
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
+index 1bb080a8af45411b68a0f2a3c40718d60fdc9d97..c8713200d946b0fdd74b60d0c2c136c8226389e0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftArmorStand.java
+@@ -233,6 +233,149 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
+         getHandle().canMove = move;
+     }
+ 
++    @Override
++    public ItemStack getItem(org.bukkit.inventory.EquipmentSlot slot) {
++        com.google.common.base.Preconditions.checkArgument(slot != null, "slot");
++        com.google.common.base.Preconditions.checkArgument(slot != EquipmentSlot.BODY, "Cannot get body item");
++        return getHandle().getItemBySlot(org.bukkit.craftbukkit.CraftEquipmentSlot.getNMS(slot)).asBukkitMirror();
++    }
++
++    @Override
++    public void setItem(org.bukkit.inventory.EquipmentSlot slot, ItemStack item) {
++        com.google.common.base.Preconditions.checkArgument(slot != null, "slot");
++        com.google.common.base.Preconditions.checkArgument(slot != EquipmentSlot.BODY, "Cannot set body item");
++        switch (slot) {
++            case HAND:
++                getEquipment().setItemInMainHand(item);
++                return;
++            case OFF_HAND:
++                getEquipment().setItemInOffHand(item);
++                return;
++            case FEET:
++                setBoots(item);
++                return;
++            case LEGS:
++                setLeggings(item);
++                return;
++            case CHEST:
++                setChestplate(item);
++                return;
++            case HEAD:
++                setHelmet(item);
++                return;
++        }
++        throw new UnsupportedOperationException(slot.name());
++    }
++
++    @Override
++    public java.util.Set<org.bukkit.inventory.EquipmentSlot> getDisabledSlots() {
++        java.util.Set<org.bukkit.inventory.EquipmentSlot> disabled = new java.util.HashSet<>();
++        for (org.bukkit.inventory.EquipmentSlot slot : org.bukkit.inventory.EquipmentSlot.values()) {
++            if (this.isSlotDisabled(slot)) {
++                disabled.add(slot);
++            }
++        }
++        return disabled;
++    }
++
++    @Override
++    public void setDisabledSlots(org.bukkit.inventory.EquipmentSlot... slots) {
++        int disabled = 0;
++        for (org.bukkit.inventory.EquipmentSlot slot : slots) {
++            if (slot == org.bukkit.inventory.EquipmentSlot.OFF_HAND) continue;
++            net.minecraft.world.entity.EquipmentSlot nmsSlot = org.bukkit.craftbukkit.CraftEquipmentSlot.getNMS(slot);
++            disabled += (1 << nmsSlot.getFilterBit(0)) + (1 << nmsSlot.getFilterBit(8)) + (1 << nmsSlot.getFilterBit(16));
++        }
++        getHandle().disabledSlots = disabled;
++    }
++
++    @Override
++    public void addDisabledSlots(org.bukkit.inventory.EquipmentSlot... slots) {
++        java.util.Set<org.bukkit.inventory.EquipmentSlot> disabled = getDisabledSlots();
++        java.util.Collections.addAll(disabled, slots);
++        setDisabledSlots(disabled.toArray(new org.bukkit.inventory.EquipmentSlot[0]));
++    }
++
++    @Override
++    public void removeDisabledSlots(org.bukkit.inventory.EquipmentSlot... slots) {
++        java.util.Set<org.bukkit.inventory.EquipmentSlot> disabled = getDisabledSlots();
++        for (final org.bukkit.inventory.EquipmentSlot slot : slots) disabled.remove(slot);
++        setDisabledSlots(disabled.toArray(new org.bukkit.inventory.EquipmentSlot[0]));
++    }
++
++    @Override
++    public boolean isSlotDisabled(org.bukkit.inventory.EquipmentSlot slot) {
++        return getHandle().isDisabled(org.bukkit.craftbukkit.CraftEquipmentSlot.getNMS(slot));
++    }
++
++    @Override
++    public io.papermc.paper.math.Rotations getBodyRotations() {
++        return fromNMSRotations(getHandle().bodyPose);
++    }
++
++    @Override
++    public void setBodyRotations(io.papermc.paper.math.Rotations rotations) {
++        getHandle().setBodyPose(toNMSRotations(rotations));
++    }
++
++    @Override
++    public io.papermc.paper.math.Rotations getLeftArmRotations() {
++        return fromNMSRotations(getHandle().leftArmPose);
++    }
++
++    @Override
++    public void setLeftArmRotations(io.papermc.paper.math.Rotations rotations) {
++        getHandle().setLeftArmPose(toNMSRotations(rotations));
++    }
++
++    @Override
++    public io.papermc.paper.math.Rotations getRightArmRotations() {
++        return fromNMSRotations(getHandle().rightArmPose);
++    }
++
++    @Override
++    public void setRightArmRotations(io.papermc.paper.math.Rotations rotations) {
++        getHandle().setRightArmPose(toNMSRotations(rotations));
++    }
++
++    @Override
++    public io.papermc.paper.math.Rotations getLeftLegRotations() {
++        return fromNMSRotations(getHandle().leftLegPose);
++    }
++
++    @Override
++    public void setLeftLegRotations(io.papermc.paper.math.Rotations rotations) {
++        getHandle().setLeftLegPose(toNMSRotations(rotations));
++    }
++
++    @Override
++    public io.papermc.paper.math.Rotations getRightLegRotations() {
++        return fromNMSRotations(getHandle().rightLegPose);
++    }
++
++    @Override
++    public void setRightLegRotations(io.papermc.paper.math.Rotations rotations) {
++        getHandle().setRightLegPose(toNMSRotations(rotations));
++    }
++
++    @Override
++    public io.papermc.paper.math.Rotations getHeadRotations() {
++        return fromNMSRotations(getHandle().headPose);
++    }
++
++    @Override
++    public void setHeadRotations(io.papermc.paper.math.Rotations rotations) {
++        getHandle().setHeadPose(toNMSRotations(rotations));
++    }
++
++    private static io.papermc.paper.math.Rotations fromNMSRotations(Rotations old) {
++        return io.papermc.paper.math.Rotations.ofDegrees(old.getX(), old.getY(), old.getZ());
++    }
++
++    private static Rotations toNMSRotations(io.papermc.paper.math.Rotations old) {
++        return new Rotations((float) old.x(), (float) old.y(), (float) old.z());
++    }
++
+     @Override
+     public boolean canTick() {
+         return this.getHandle().canTick;

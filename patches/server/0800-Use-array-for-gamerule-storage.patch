@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Paul Sauve <paul@technove.co>
+Date: Sun, 9 May 2021 16:49:49 -0500
+Subject: [PATCH] Use array for gamerule storage
+
+
+diff --git a/src/main/java/net/minecraft/world/level/GameRules.java b/src/main/java/net/minecraft/world/level/GameRules.java
+index 09299e45552eb998fd02123c3921c0653f85083d..4ae47c2c5a6bcfbf932d000a80974463e2d3818d 100644
+--- a/src/main/java/net/minecraft/world/level/GameRules.java
++++ b/src/main/java/net/minecraft/world/level/GameRules.java
+@@ -129,6 +129,7 @@ public class GameRules {
+     }));
+     private final Map<GameRules.Key<?>, GameRules.Value<?>> rules;
+     private final FeatureFlagSet enabledFeatures;
++    private final GameRules.Value<?>[] gameruleArray; // Paper - Perf: Use array for gamerule storage
+ 
+     private static <T extends GameRules.Value<T>> GameRules.Key<T> register(String name, GameRules.Category category, GameRules.Type<T> type) {
+         GameRules.Key<T> gamerules_gamerulekey = new GameRules.Key<>(name, category);
+@@ -161,10 +162,21 @@ public class GameRules {
+     private GameRules(Map<GameRules.Key<?>, GameRules.Value<?>> rules, FeatureFlagSet enabledFeatures) {
+         this.rules = rules;
+         this.enabledFeatures = enabledFeatures;
++
++        // Paper start - Perf: Use array for gamerule storage
++        int arraySize = GameRules.Key.lastGameRuleIndex + 1;
++        GameRules.Value<?>[] values = new GameRules.Value[arraySize];
++
++        for (Entry<GameRules.Key<?>, GameRules.Value<?>> entry : rules.entrySet()) {
++            values[entry.getKey().gameRuleIndex] = entry.getValue();
++        }
++
++        this.gameruleArray = values;
++        // Paper end - Perf: Use array for gamerule storage
+     }
+ 
+     public <T extends GameRules.Value<T>> T getRule(GameRules.Key<T> key) {
+-        T t0 = (T) this.rules.get(key); // CraftBukkit - decompile error
++        T t0 = key == null ? null : (T) this.gameruleArray[key.gameRuleIndex]; // Paper - Perf: Use array for gamerule storage
+ 
+         if (t0 == null) {
+             throw new IllegalArgumentException("Tried to access invalid game rule");
+@@ -232,6 +244,10 @@ public class GameRules {
+     }
+ 
+     public static final class Key<T extends GameRules.Value<T>> {
++        // Paper start - Perf: Use array for gamerule storage
++        public static int lastGameRuleIndex = 0;
++        public final int gameRuleIndex = lastGameRuleIndex++;
++        // Paper end - Perf: Use array for gamerule storage
+ 
+         final String id;
+         private final GameRules.Category category;

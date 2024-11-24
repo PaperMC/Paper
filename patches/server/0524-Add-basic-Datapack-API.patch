@@ -1,0 +1,209 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Connor Linfoot <connorlinfoot@me.com>
+Date: Sun, 16 May 2021 15:07:34 +0100
+Subject: [PATCH] Add basic Datapack API
+
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+
+diff --git a/src/main/java/io/papermc/paper/datapack/PaperDatapack.java b/src/main/java/io/papermc/paper/datapack/PaperDatapack.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8bd8263b51fb2bb364353565b1ba26b3b0d1d55e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datapack/PaperDatapack.java
+@@ -0,0 +1,103 @@
++package io.papermc.paper.datapack;
++
++import io.papermc.paper.adventure.PaperAdventure;
++import io.papermc.paper.event.server.ServerResourcesReloadedEvent;
++import io.papermc.paper.world.flag.PaperFeatureFlagProviderImpl;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.Map;
++import java.util.Set;
++import java.util.concurrent.ConcurrentHashMap;
++import net.kyori.adventure.text.Component;
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.packs.repository.Pack;
++import net.minecraft.server.packs.repository.PackSource;
++import org.bukkit.FeatureFlag;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public class PaperDatapack implements Datapack {
++
++    private static final Map<PackSource, DatapackSource> PACK_SOURCES = new ConcurrentHashMap<>();
++    static {
++        PACK_SOURCES.put(PackSource.DEFAULT, DatapackSource.DEFAULT);
++        PACK_SOURCES.put(PackSource.BUILT_IN, DatapackSource.BUILT_IN);
++        PACK_SOURCES.put(PackSource.FEATURE, DatapackSource.FEATURE);
++        PACK_SOURCES.put(PackSource.WORLD, DatapackSource.WORLD);
++        PACK_SOURCES.put(PackSource.SERVER, DatapackSource.SERVER);
++    }
++
++    private final Pack pack;
++    private final boolean enabled;
++
++    PaperDatapack(final Pack pack, final boolean enabled) {
++        this.pack = pack;
++        this.enabled = enabled;
++    }
++
++    @Override
++    public String getName() {
++        return this.pack.getId();
++    }
++
++    @Override
++    public Component getTitle() {
++        return PaperAdventure.asAdventure(this.pack.getTitle());
++    }
++
++    @Override
++    public Component getDescription() {
++        return PaperAdventure.asAdventure(this.pack.getDescription());
++    }
++
++    @Override
++    public boolean isRequired() {
++        return this.pack.isRequired();
++    }
++
++    @Override
++    public Compatibility getCompatibility() {
++        return Datapack.Compatibility.valueOf(this.pack.getCompatibility().name());
++    }
++
++    @Override
++    public Set<FeatureFlag> getRequiredFeatures() {
++        return PaperFeatureFlagProviderImpl.fromNms(this.pack.getRequestedFeatures());
++    }
++
++    @Override
++    public boolean isEnabled() {
++        return this.enabled;
++    }
++
++    @Override
++    public void setEnabled(final boolean enabled) {
++        final MinecraftServer server = MinecraftServer.getServer();
++        final List<Pack> enabledPacks = new ArrayList<>(server.getPackRepository().getSelectedPacks());
++        final @Nullable Pack packToChange = server.getPackRepository().getPack(this.getName());
++        if (packToChange == null) {
++            throw new IllegalStateException("Cannot toggle state of pack that doesn't exist: " + this.getName());
++        }
++        if (enabled == enabledPacks.contains(packToChange)) {
++            return;
++        }
++        if (enabled) {
++            packToChange.getDefaultPosition().insert(enabledPacks, packToChange, Pack::selectionConfig, false); // modeled off the default /datapack enable logic
++        } else {
++            enabledPacks.remove(packToChange);
++        }
++        server.reloadResources(enabledPacks.stream().map(Pack::getId).toList(), ServerResourcesReloadedEvent.Cause.PLUGIN);
++    }
++
++    @Override
++    public DatapackSource getSource() {
++        return PACK_SOURCES.computeIfAbsent(this.pack.location().source(), source -> new DatapackSourceImpl(source.toString()));
++    }
++
++    @Override
++    public Component computeDisplayName() {
++        return PaperAdventure.asAdventure(this.pack.getChatLink(this.enabled));
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/datapack/PaperDatapackManager.java b/src/main/java/io/papermc/paper/datapack/PaperDatapackManager.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..caa41c525d2b36b5a9f9942380f06c97d5781a93
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/datapack/PaperDatapackManager.java
+@@ -0,0 +1,55 @@
++package io.papermc.paper.datapack;
++
++import com.google.common.collect.Collections2;
++import java.util.Collection;
++import java.util.Collections;
++import java.util.function.Predicate;
++import net.minecraft.server.packs.repository.Pack;
++import net.minecraft.server.packs.repository.PackRepository;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public class PaperDatapackManager implements DatapackManager {
++
++    private final PackRepository repository;
++
++    public PaperDatapackManager(final PackRepository repository) {
++        this.repository = repository;
++    }
++
++    @Override
++    public void refreshPacks() {
++        this.repository.reload();
++    }
++
++    @Override
++    public @Nullable Datapack getPack(final @NonNull String name) {
++        final @Nullable Pack pack = this.repository.getPack(name);
++        if (pack == null) {
++            return null;
++        }
++        return new PaperDatapack(pack, this.repository.getSelectedPacks().contains(pack));
++    }
++
++    @Override
++    public Collection<Datapack> getPacks() {
++        final Collection<Pack> enabledPacks = this.repository.getSelectedPacks();
++        return this.transformPacks(this.repository.getAvailablePacks(), enabledPacks::contains);
++    }
++
++    @Override
++    public Collection<Datapack> getEnabledPacks() {
++        return this.transformPacks(this.repository.getSelectedPacks(), pack -> true);
++    }
++
++    private Collection<Datapack> transformPacks(final Collection<Pack> packs, final Predicate<Pack> enabled) {
++        return Collections.unmodifiableCollection(
++            Collections2.transform(
++                packs,
++                pack -> new PaperDatapack(pack, enabled.test(pack))
++            )
++        );
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 3cfacacd1d8fd17ec4b54936afd8124823b1a00b..b4af066a21e4893b5ec146d109b5146b6996a0cf 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -308,6 +308,7 @@ public final class CraftServer implements Server {
+     private final List<CraftPlayer> playerView;
+     public int reloadCount;
+     public Set<String> activeCompatibilities = Collections.emptySet();
++    private final io.papermc.paper.datapack.PaperDatapackManager datapackManager; // Paper
+     public static Exception excessiveVelEx; // Paper - Velocity warnings
+ 
+     static {
+@@ -392,6 +393,7 @@ public final class CraftServer implements Server {
+         if (this.configuration.getBoolean("settings.use-map-color-cache")) {
+             MapPalette.setMapColorCache(new CraftMapColorCache(this.logger));
+         }
++        datapackManager = new io.papermc.paper.datapack.PaperDatapackManager(console.getPackRepository()); // Paper
+     }
+ 
+     public boolean getCommandBlockOverride(String command) {
+@@ -3036,5 +3038,11 @@ public final class CraftServer implements Server {
+     public com.destroystokyo.paper.entity.ai.MobGoals getMobGoals() {
+         return mobGoals;
+     }
++
++    @Override
++    public io.papermc.paper.datapack.PaperDatapackManager getDatapackManager() {
++        return datapackManager;
++    }
++
+     // Paper end
+ }

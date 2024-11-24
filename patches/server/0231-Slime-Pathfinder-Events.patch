@@ -1,0 +1,154 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 24 Aug 2018 08:18:42 -0500
+Subject: [PATCH] Slime Pathfinder Events
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Slime.java b/src/main/java/net/minecraft/world/entity/monster/Slime.java
+index 131fce812eb0dcdebab02b529ed18e81eb1861eb..26f4db572dc6c25a9815b8f352d8829e252fa1a2 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Slime.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Slime.java
+@@ -119,6 +119,7 @@ public class Slime extends Mob implements Enemy {
+     @Override
+     public void addAdditionalSaveData(CompoundTag nbt) {
+         super.addAdditionalSaveData(nbt);
++        nbt.putBoolean("Paper.canWander", this.canWander); // Paper
+         nbt.putInt("Size", this.getSize() - 1);
+         nbt.putBoolean("wasOnGround", this.wasOnGround);
+     }
+@@ -127,6 +128,11 @@ public class Slime extends Mob implements Enemy {
+     public void readAdditionalSaveData(CompoundTag nbt) {
+         this.setSize(nbt.getInt("Size") + 1, false);
+         super.readAdditionalSaveData(nbt);
++        // Paper start
++        if (nbt.contains("Paper.canWander")) {
++            this.canWander = nbt.getBoolean("Paper.canWander");
++        }
++        // Paper end
+         this.wasOnGround = nbt.getBoolean("wasOnGround");
+     }
+ 
+@@ -474,7 +480,7 @@ public class Slime extends Mob implements Enemy {
+ 
+         @Override
+         public boolean canUse() {
+-            return (this.slime.isInWater() || this.slime.isInLava()) && this.slime.getMoveControl() instanceof Slime.SlimeMoveControl;
++            return (this.slime.isInWater() || this.slime.isInLava()) && this.slime.getMoveControl() instanceof Slime.SlimeMoveControl && this.slime.canWander && new com.destroystokyo.paper.event.entity.SlimeSwimEvent((org.bukkit.entity.Slime) this.slime.getBukkitEntity()).callEvent(); // Paper - Slime pathfinder events
+         }
+ 
+         @Override
+@@ -511,7 +517,15 @@ public class Slime extends Mob implements Enemy {
+         public boolean canUse() {
+             LivingEntity entityliving = this.slime.getTarget();
+ 
+-            return entityliving == null ? false : (!this.slime.canAttack(entityliving) ? false : this.slime.getMoveControl() instanceof Slime.SlimeMoveControl);
++            // Paper start - Slime pathfinder events
++            if (entityliving == null || !entityliving.isAlive()) {
++                return false;
++            }
++            if (!this.slime.canAttack(entityliving)) {
++                return false;
++            }
++            return this.slime.getMoveControl() instanceof Slime.SlimeMoveControl && this.slime.canWander && new com.destroystokyo.paper.event.entity.SlimeTargetLivingEntityEvent((org.bukkit.entity.Slime) this.slime.getBukkitEntity(), (org.bukkit.entity.LivingEntity) entityliving.getBukkitEntity()).callEvent();
++            // Paper end - Slime pathfinder events
+         }
+ 
+         @Override
+@@ -524,7 +538,15 @@ public class Slime extends Mob implements Enemy {
+         public boolean canContinueToUse() {
+             LivingEntity entityliving = this.slime.getTarget();
+ 
+-            return entityliving == null ? false : (!this.slime.canAttack(entityliving) ? false : --this.growTiredTimer > 0);
++            // Paper start - Slime pathfinder events
++            if (entityliving == null || !entityliving.isAlive()) {
++                return false;
++            }
++            if (!this.slime.canAttack(entityliving)) {
++                return false;
++            }
++            return --this.growTiredTimer > 0 && this.slime.canWander && new com.destroystokyo.paper.event.entity.SlimeTargetLivingEntityEvent((org.bukkit.entity.Slime) this.slime.getBukkitEntity(), (org.bukkit.entity.LivingEntity) entityliving.getBukkitEntity()).callEvent();
++            // Paper end - Slime pathfinder events
+         }
+ 
+         @Override
+@@ -547,6 +569,13 @@ public class Slime extends Mob implements Enemy {
+             }
+ 
+         }
++
++        // Paper start - Slime pathfinder events; clear timer and target when goal resets
++        public void stop() {
++            this.growTiredTimer = 0;
++            this.slime.setTarget(null);
++        }
++        // Paper end - Slime pathfinder events
+     }
+ 
+     private static class SlimeRandomDirectionGoal extends Goal {
+@@ -562,7 +591,7 @@ public class Slime extends Mob implements Enemy {
+ 
+         @Override
+         public boolean canUse() {
+-            return this.slime.getTarget() == null && (this.slime.onGround() || this.slime.isInWater() || this.slime.isInLava() || this.slime.hasEffect(MobEffects.LEVITATION)) && this.slime.getMoveControl() instanceof Slime.SlimeMoveControl;
++            return this.slime.getTarget() == null && (this.slime.onGround() || this.slime.isInWater() || this.slime.isInLava() || this.slime.hasEffect(MobEffects.LEVITATION)) && this.slime.getMoveControl() instanceof Slime.SlimeMoveControl && this.slime.canWander; // Paper - Slime pathfinder events
+         }
+ 
+         @Override
+@@ -570,6 +599,11 @@ public class Slime extends Mob implements Enemy {
+             if (--this.nextRandomizeTime <= 0) {
+                 this.nextRandomizeTime = this.adjustedTickDelay(40 + this.slime.getRandom().nextInt(60));
+                 this.chosenDegrees = (float) this.slime.getRandom().nextInt(360);
++                // Paper start - Slime pathfinder events
++                com.destroystokyo.paper.event.entity.SlimeChangeDirectionEvent event = new com.destroystokyo.paper.event.entity.SlimeChangeDirectionEvent((org.bukkit.entity.Slime) this.slime.getBukkitEntity(), this.chosenDegrees);
++                if (!this.slime.canWander || !event.callEvent()) return;
++                this.chosenDegrees = event.getNewYaw();
++                // Paper end - Slime pathfinder events
+             }
+ 
+             MoveControl controllermove = this.slime.getMoveControl();
+@@ -592,7 +626,7 @@ public class Slime extends Mob implements Enemy {
+ 
+         @Override
+         public boolean canUse() {
+-            return !this.slime.isPassenger();
++            return !this.slime.isPassenger() && this.slime.canWander && new com.destroystokyo.paper.event.entity.SlimeWanderEvent((org.bukkit.entity.Slime) this.slime.getBukkitEntity()).callEvent(); // Paper - Slime pathfinder events
+         }
+ 
+         @Override
+@@ -605,4 +639,15 @@ public class Slime extends Mob implements Enemy {
+ 
+         }
+     }
++
++    // Paper start - Slime pathfinder events
++    private boolean canWander = true;
++    public boolean canWander() {
++        return canWander;
++    }
++
++    public void setWander(boolean canWander) {
++        this.canWander = canWander;
++    }
++    // Paper end - Slime pathfinder events
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftSlime.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftSlime.java
+index 3d991d9d9388108ec6d137950913209d61d132e7..3d9b7c0e128ea05bec5600c774e9685998b71cac 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftSlime.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftSlime.java
+@@ -28,4 +28,16 @@ public class CraftSlime extends CraftMob implements Slime, CraftEnemy {
+     public String toString() {
+         return "CraftSlime";
+     }
++
++    // Paper start
++    @Override
++    public boolean canWander() {
++        return getHandle().canWander();
++    }
++
++    @Override
++    public void setWander(boolean canWander) {
++        getHandle().setWander(canWander);
++    }
++    // Paper end
+ }

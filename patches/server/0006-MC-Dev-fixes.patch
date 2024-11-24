@@ -4,6 +4,19 @@ Date: Wed, 30 Mar 2016 19:36:20 -0400
 Subject: [PATCH] MC Dev fixes
 
 
+diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
+index 5b9ca3d968fd4884b1b7f2c06477ae00c09f202e..0842080f1840a83b34c2cc829dfddba78ba12157 100644
+--- a/src/main/java/net/minecraft/Util.java
++++ b/src/main/java/net/minecraft/Util.java
+@@ -533,7 +533,7 @@ public class Util {
+     public static <K extends Enum<K>, V> EnumMap<K, V> makeEnumMap(Class<K> enumClass, Function<K, V> mapper) {
+         EnumMap<K, V> enumMap = new EnumMap<>(enumClass);
+ 
+-        for (K enum_ : (Enum[])enumClass.getEnumConstants()) {
++        for (K enum_ : enumClass.getEnumConstants()) { // Paper - decompile error
+             enumMap.put(enum_, mapper.apply(enum_));
+         }
+ 
 diff --git a/src/main/java/net/minecraft/commands/arguments/item/ItemInput.java b/src/main/java/net/minecraft/commands/arguments/item/ItemInput.java
 index 643bb8860962ad691b11073f6dbf406bf7ec5fb1..9b8ec1fd158f6e51779be263fd56b9119d0d9bbb 100644
 --- a/src/main/java/net/minecraft/commands/arguments/item/ItemInput.java
@@ -17,10 +30,10 @@ index 643bb8860962ad691b11073f6dbf406bf7ec5fb1..9b8ec1fd158f6e51779be263fd56b911
      }
  }
 diff --git a/src/main/java/net/minecraft/core/BlockPos.java b/src/main/java/net/minecraft/core/BlockPos.java
-index 0ef1a7b2a17e81144d594f29f7b5e54d5038dcf4..8994a381b05dcdd1163d2e7a0b63a8875b6063ed 100644
+index 115cb27d3233863692553f8e07238c74b0fcb61c..83e7c141d947f8f8096fed1da716560494bc5c62 100644
 --- a/src/main/java/net/minecraft/core/BlockPos.java
 +++ b/src/main/java/net/minecraft/core/BlockPos.java
-@@ -439,12 +439,12 @@ public class BlockPos extends Vec3i {
+@@ -445,12 +445,12 @@ public class BlockPos extends Vec3i {
                      if (this.index == l) {
                          return this.endOfData();
                      } else {
@@ -39,11 +52,11 @@ index 0ef1a7b2a17e81144d594f29f7b5e54d5038dcf4..8994a381b05dcdd1163d2e7a0b63a887
                  }
              };
 diff --git a/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java b/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
-index a467eb6b3b74cdb5378ff5f3043efbe6f4a6f06e..34b3b3251da21bce616870d312fd42fd58ba7881 100644
+index 69993496b6328a963288e11d193d36bd7decfcba..f66a2154486b6d3b5873da043e51df91cd396c72 100644
 --- a/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
 +++ b/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
-@@ -317,7 +317,7 @@ public class BuiltInRegistries {
-         Bootstrap.checkBootstrapCalled(() -> "registry " + key);
+@@ -325,7 +325,7 @@ public class BuiltInRegistries {
+         Bootstrap.checkBootstrapCalled(() -> "registry " + key.location());
          ResourceLocation resourceLocation = key.location();
          LOADERS.put(resourceLocation, () -> initializer.run(registry));
 -        WRITABLE_REGISTRY.register((ResourceKey<WritableRegistry<?>>)key, registry, RegistrationInfo.BUILT_IN);
@@ -70,11 +83,24 @@ index a614e960fcd5958ad17b679eee8a8e6926f58e62..da101bca71f4710812621b98f0a0d8ca
              }
  
              if (!this.hasElementSeparator()) {
+diff --git a/src/main/java/net/minecraft/resources/RegistryDataLoader.java b/src/main/java/net/minecraft/resources/RegistryDataLoader.java
+index f4f1a99d53ffb953beb2a944f54d28fa6349fa29..a75f6fefdd72188fa8d16df2b5cbb34c4129f52d 100644
+--- a/src/main/java/net/minecraft/resources/RegistryDataLoader.java
++++ b/src/main/java/net/minecraft/resources/RegistryDataLoader.java
+@@ -74,7 +74,7 @@ import org.slf4j.Logger;
+ 
+ public class RegistryDataLoader {
+     private static final Logger LOGGER = LogUtils.getLogger();
+-    private static final Comparator<ResourceKey<?>> ERROR_KEY_COMPARATOR = Comparator.comparing(ResourceKey::registry).thenComparing(ResourceKey::location);
++    private static final Comparator<ResourceKey<?>> ERROR_KEY_COMPARATOR = Comparator.<ResourceKey<?>, ResourceLocation>comparing(ResourceKey::registry).thenComparing(ResourceKey::location); // Paper - decompile fix
+     private static final RegistrationInfo NETWORK_REGISTRATION_INFO = new RegistrationInfo(Optional.empty(), Lifecycle.experimental());
+     private static final Function<Optional<KnownPack>, RegistrationInfo> REGISTRATION_INFO_CACHE = Util.memoize(knownPacks -> {
+         Lifecycle lifecycle = knownPacks.map(KnownPack::isVanilla).map(vanilla -> Lifecycle.stable()).orElse(Lifecycle.experimental());
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 299afe72a2fc2affca196f2fdfbf27e5533c51a6..40adb6117b9e0d5f70103113202a07715e403e2a 100644
+index 3fc0abef2c4e2c8ceb3b8c4f02c59700aa3d0803..8e16bc7da15824723f1d7d4bff87fac181978500 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1952,7 +1952,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2031,7 +2031,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              PackRepository resourcepackrepository = this.packRepository;
  
              Objects.requireNonNull(this.packRepository);
@@ -82,7 +108,7 @@ index 299afe72a2fc2affca196f2fdfbf27e5533c51a6..40adb6117b9e0d5f70103113202a0771
 +            return stream.<Pack>map(resourcepackrepository::getPack).filter(Objects::nonNull).map(Pack::open).collect(ImmutableList.toImmutableList()); // CraftBukkit - decompile error // Paper - decompile error // todo: is this needed anymore?
          }, this).thenCompose((immutablelist) -> {
              MultiPackResourceManager resourcemanager = new MultiPackResourceManager(PackType.SERVER_DATA, immutablelist);
- 
+             List<Registry.PendingTags<?>> list = TagLoader.loadTagsForExistingRegistries(resourcemanager, this.registries.compositeAccess());
 diff --git a/src/main/java/net/minecraft/util/SortedArraySet.java b/src/main/java/net/minecraft/util/SortedArraySet.java
 index 661a6274a800ca9b91bdb809d026972d23c3b263..ea72dcb064a35bc6245bc5c94d592efedd8faf41 100644
 --- a/src/main/java/net/minecraft/util/SortedArraySet.java
@@ -96,26 +122,39 @@ index 661a6274a800ca9b91bdb809d026972d23c3b263..ea72dcb064a35bc6245bc5c94d592efe
      }
  
      public static <T> SortedArraySet<T> create(Comparator<T> comparator) {
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Dolphin.java b/src/main/java/net/minecraft/world/entity/animal/Dolphin.java
+index 33170f2f1d3f030fbf342e44a1baa109a34c31a7..dde1ccca98f58200910334160f0f79eb00dd2388 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Dolphin.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Dolphin.java
+@@ -349,7 +349,7 @@ public class Dolphin extends AgeableWaterCreature {
+ 
+     @Nullable
+     @Override
+-    protected SoundEvent getDeathSound() {
++    public SoundEvent getDeathSound() { // Paper - decompile error
+         return SoundEvents.DOLPHIN_DEATH;
+     }
+ 
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Pillager.java b/src/main/java/net/minecraft/world/entity/monster/Pillager.java
-index 8eb1aca72df0bca292473e90ecb74159db4fe034..4b4dcee6abe7a6db43638d04665125eec560496e 100644
+index cf025d7a4392213db3cf04e7ace3e2b166e710eb..3e8631c7bd1e7591051ca21c6ae7acd87d3c7529 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Pillager.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Pillager.java
-@@ -66,7 +66,7 @@ public class Pillager extends AbstractIllager implements CrossbowAttackMob, Inve
-     protected void registerGoals() {
+@@ -69,7 +69,7 @@ public class Pillager extends AbstractIllager implements CrossbowAttackMob, Inve
          super.registerGoals();
          this.goalSelector.addGoal(0, new FloatGoal(this));
+         this.goalSelector.addGoal(1, new AvoidEntityGoal<>(this, Creaking.class, 8.0F, 1.0D, 1.2D));
 -        this.goalSelector.addGoal(2, new Raider.HoldGroundAttackGoal(this, this, 10.0F));
 +        this.goalSelector.addGoal(2, new Raider.HoldGroundAttackGoal(this, 10.0F)); // Paper - decomp fix
          this.goalSelector.addGoal(3, new RangedCrossbowAttackGoal<>(this, 1.0D, 8.0F));
          this.goalSelector.addGoal(8, new RandomStrollGoal(this, 0.6D));
          this.goalSelector.addGoal(9, new LookAtPlayerGoal(this, Player.class, 15.0F, 1.0F));
 diff --git a/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java b/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
-index e2b72817857a7a203aae4c9de4e01ba1396dc95b..82fc5133325a127890984d51c1381883759eb444 100644
+index 5fa94fd51027901591e40cabdacfd61d16a58585..3f552ee8f90566edddb5943311a14309e4bebb61 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
-@@ -153,7 +153,7 @@ public class ChunkStatusTasks {
-             if (protochunk instanceof ImposterProtoChunk) {
-                 chunk1 = ((ImposterProtoChunk) protochunk).getWrapped();
+@@ -151,7 +151,7 @@ public class ChunkStatusTasks {
+             if (protochunk instanceof ImposterProtoChunk protochunkextension) {
+                 chunk1 = protochunkextension.getWrapped();
              } else {
 -                chunk1 = new LevelChunk(worldserver, protochunk, (chunk1) -> {
 +                chunk1 = new LevelChunk(worldserver, protochunk, ($) -> { // Paper - decompile fix

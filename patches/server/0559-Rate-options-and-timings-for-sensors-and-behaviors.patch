@@ -1,0 +1,88 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Phoenix616 <max@themoep.de>
+Date: Mon, 28 Jun 2021 22:38:29 +0100
+Subject: [PATCH] Rate options and timings for sensors and behaviors
+
+This adds config options to specify the tick rate for sensors
+ and behaviors of different entity types as well as timings
+ for those in order to be able to have some metrics as to which
+ ones might need tweaking.
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java b/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
+index f639cafa64d98a001e622882c647701547f5c3ac..ba951cc1aaa94b58ee7985f197d41cc8be747fc8 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
+@@ -14,6 +14,9 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
+     private long endTimestamp;
+     private final int minDuration;
+     private final int maxDuration;
++    // Paper start - configurable behavior tick rate and timings
++    private final String configKey;
++    // Paper end - configurable behavior tick rate and timings
+ 
+     public Behavior(Map<MemoryModuleType<?>, MemoryStatus> requiredMemoryState) {
+         this(requiredMemoryState, 60);
+@@ -27,6 +30,14 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
+         this.minDuration = minRunTime;
+         this.maxDuration = maxRunTime;
+         this.entryCondition = requiredMemoryState;
++        // Paper start - configurable behavior tick rate and timings
++        String key = io.papermc.paper.util.MappingEnvironment.reobf() ? io.papermc.paper.util.ObfHelper.INSTANCE.deobfClassName(this.getClass().getName()) : this.getClass().getName();
++        int lastSeparator = key.lastIndexOf('.');
++        if (lastSeparator != -1) {
++            key = key.substring(lastSeparator + 1);
++        }
++        this.configKey = key.toLowerCase(java.util.Locale.ROOT);
++        // Paper end - configurable behavior tick rate and timings
+     }
+ 
+     @Override
+@@ -36,6 +47,12 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
+ 
+     @Override
+     public final boolean tryStart(ServerLevel world, E entity, long time) {
++        // Paper start - configurable behavior tick rate and timings
++        int tickRate = java.util.Objects.requireNonNullElse(world.paperConfig().tickRates.behavior.get(entity.getType(), this.configKey), -1);
++        if (tickRate > -1 && time < this.endTimestamp + tickRate) {
++            return false;
++        }
++        // Paper end - configurable behavior tick rate and timings
+         if (this.hasRequiredMemories(entity) && this.checkExtraStartConditions(world, entity)) {
+             this.status = Behavior.Status.RUNNING;
+             int i = this.minDuration + world.getRandom().nextInt(this.maxDuration + 1 - this.minDuration);
+diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
+index 4d451f6cb5862411848bb9b6b5692ab512dcaa25..fb1f5375eafb030ae08c735a80e9c8149726cda4 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
++++ b/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
+@@ -29,8 +29,19 @@ public abstract class Sensor<E extends LivingEntity> {
+         .ignoreInvisibilityTesting();
+     private final int scanRate;
+     private long timeToTick;
++    // Paper start - configurable sensor tick rate and timings
++    private final String configKey;
++    // Paper end
+ 
+     public Sensor(int senseInterval) {
++        // Paper start - configurable sensor tick rate and timings
++        String key = io.papermc.paper.util.MappingEnvironment.reobf() ? io.papermc.paper.util.ObfHelper.INSTANCE.deobfClassName(this.getClass().getName()) : this.getClass().getName();
++        int lastSeparator = key.lastIndexOf('.');
++        if (lastSeparator != -1) {
++            key = key.substring(lastSeparator + 1);
++        }
++        this.configKey = key.toLowerCase(java.util.Locale.ROOT);
++        // Paper end
+         this.scanRate = senseInterval;
+         this.timeToTick = (long)RANDOM.nextInt(senseInterval);
+     }
+@@ -41,8 +52,10 @@ public abstract class Sensor<E extends LivingEntity> {
+ 
+     public final void tick(ServerLevel world, E entity) {
+         if (--this.timeToTick <= 0L) {
+-            this.timeToTick = (long)this.scanRate;
++            // Paper start - configurable sensor tick rate and timings
++            this.timeToTick = java.util.Objects.requireNonNullElse(world.paperConfig().tickRates.sensor.get(entity.getType(), this.configKey), this.scanRate);
+             this.updateTargetingConditionRanges(entity);
++            // Paper end
+             this.doTick(world, entity);
+         }
+     }

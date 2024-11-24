@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alvinn8 <42838560+Alvinn8@users.noreply.github.com>
+Date: Fri, 8 Jan 2021 20:31:13 +0100
+Subject: [PATCH] Add Adventure message to PlayerAdvancementDoneEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/PlayerAdvancements.java b/src/main/java/net/minecraft/server/PlayerAdvancements.java
+index 0fe941b0802f2966ad55509baac124f56ecef999..1dcb8a287be7df2a59b5b4c1345be80637a7f679 100644
+--- a/src/main/java/net/minecraft/server/PlayerAdvancements.java
++++ b/src/main/java/net/minecraft/server/PlayerAdvancements.java
+@@ -236,11 +236,21 @@ public class PlayerAdvancements {
+             this.progressChanged.add(advancement);
+             flag = true;
+             if (!flag1 && advancementprogress.isDone()) {
+-                this.player.level().getCraftServer().getPluginManager().callEvent(new org.bukkit.event.player.PlayerAdvancementDoneEvent(this.player.getBukkitEntity(), advancement.toBukkit())); // CraftBukkit
++                // Paper start - Add Adventure message to PlayerAdvancementDoneEvent
++                final net.kyori.adventure.text.Component message = advancement.value().display().flatMap(info -> {
++                    return java.util.Optional.ofNullable(
++                        info.shouldAnnounceChat() ? io.papermc.paper.adventure.PaperAdventure.asAdventure(info.getType().createAnnouncement(advancement, this.player)) : null
++                    );
++                }).orElse(null);
++                final org.bukkit.event.player.PlayerAdvancementDoneEvent event = new org.bukkit.event.player.PlayerAdvancementDoneEvent(this.player.getBukkitEntity(), advancement.toBukkit(), message);
++                this.player.level().getCraftServer().getPluginManager().callEvent(event); // CraftBukkit
++                // Paper end
+                 advancement.value().rewards().grant(this.player);
+                 advancement.value().display().ifPresent((advancementdisplay) -> {
+-                    if (advancementdisplay.shouldAnnounceChat() && this.player.serverLevel().getGameRules().getBoolean(GameRules.RULE_ANNOUNCE_ADVANCEMENTS)) {
+-                        this.playerList.broadcastSystemMessage(advancementdisplay.getType().createAnnouncement(advancement, this.player), false);
++                    // Paper start - Add Adventure message to PlayerAdvancementDoneEvent
++                    if (event.message() != null && this.player.serverLevel().getGameRules().getBoolean(GameRules.RULE_ANNOUNCE_ADVANCEMENTS)) {
++                        this.playerList.broadcastSystemMessage(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.message()), false);
++                        // Paper end
+                     }
+ 
+                 });

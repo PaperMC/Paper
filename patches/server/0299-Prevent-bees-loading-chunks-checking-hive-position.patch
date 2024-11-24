@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Sun, 5 Jan 2020 17:24:34 -0600
+Subject: [PATCH] Prevent bees loading chunks checking hive position
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Bee.java b/src/main/java/net/minecraft/world/entity/animal/Bee.java
+index b1a72ed404f4bc31f32dd771dd320b7c783c9651..310a2aa23365f9a8a8b7b6fa2323aed792f95adb 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Bee.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Bee.java
+@@ -514,7 +514,12 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
+ 
+     @Nullable
+     BeehiveBlockEntity getBeehiveBlockEntity() {
+-        return this.hivePos == null ? null : (this.isTooFarAway(this.hivePos) ? null : (BeehiveBlockEntity) this.level().getBlockEntity(this.hivePos, BlockEntityType.BEEHIVE).orElse(null)); // CraftBukkit - decompile error
++        // Paper start - move over logic to accommodate isTooFarAway with chunk load check
++        if (this.hivePos != null && !this.isTooFarAway(this.hivePos) && this.level().getChunkIfLoadedImmediately(this.hivePos.getX() >> 4, this.hivePos.getZ() >> 4) != null) {
++            return (BeehiveBlockEntity) this.level().getBlockEntity(this.hivePos, BlockEntityType.BEEHIVE).orElse(null);
++        }
++        return null;
++        // Paper end
+     }
+ 
+     boolean isHiveValid() {

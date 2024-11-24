@@ -23,21 +23,25 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.lang.model.SourceVersion;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistrySetBuilder;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.data.registries.VanillaRegistries;
+import net.minecraft.data.registries.WinterDropRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.flag.FeatureElement;
+import net.minecraft.world.flag.FeatureFlags;
+import org.bukkit.MinecraftExperimental;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.checkerframework.framework.qual.DefaultQualifier;
 
 import static com.squareup.javapoet.TypeSpec.classBuilder;
 import static io.papermc.generator.utils.Annotations.EXPERIMENTAL_API_ANNOTATION;
-import static io.papermc.generator.utils.Annotations.NOT_NULL;
 import static io.papermc.generator.utils.Annotations.experimentalAnnotations;
 import static java.util.Objects.requireNonNull;
 import static javax.lang.model.element.Modifier.FINAL;
@@ -51,7 +55,8 @@ public class GeneratedKeyType<T, A> extends SimpleGenerator {
     private static final Map<ResourceKey<? extends Registry<?>>, RegistrySetBuilder.RegistryBootstrap<?>> VANILLA_REGISTRY_ENTRIES = VanillaRegistries.BUILDER.entries.stream()
             .collect(Collectors.toMap(RegistrySetBuilder.RegistryStub::key, RegistrySetBuilder.RegistryStub::bootstrap));
 
-    private static final Map<ResourceKey<? extends Registry<?>>, RegistrySetBuilder.RegistryBootstrap<?>> EXPERIMENTAL_REGISTRY_ENTRIES = Collections.emptyMap(); // Update for Experimental API
+    private static final Map<ResourceKey<? extends Registry<?>>, RegistrySetBuilder.RegistryBootstrap<?>> EXPERIMENTAL_REGISTRY_ENTRIES = WinterDropRegistries.BUILDER.entries.stream()
+            .collect(Collectors.toMap(RegistrySetBuilder.RegistryStub::key, RegistrySetBuilder.RegistryStub::bootstrap)); // Update for Experimental API
 
     private static final Map<RegistryKey<?>, String> REGISTRY_KEY_FIELD_NAMES;
     static {
@@ -90,14 +95,14 @@ public class GeneratedKeyType<T, A> extends SimpleGenerator {
     }
 
     private MethodSpec.Builder createMethod(final TypeName returnType) {
-        final TypeName keyType = TypeName.get(Key.class).annotated(NOT_NULL);
+        final TypeName keyType = TypeName.get(Key.class);
 
         final ParameterSpec keyParam = ParameterSpec.builder(keyType, "key", FINAL).build();
         final MethodSpec.Builder create = MethodSpec.methodBuilder("create")
             .addModifiers(this.publicCreateKeyMethod ? PUBLIC : PRIVATE, STATIC)
             .addParameter(keyParam)
             .addCode("return $T.create($T.$L, $N);", TypedKey.class, RegistryKey.class, requireNonNull(REGISTRY_KEY_FIELD_NAMES.get(this.apiRegistryKey), "Missing field for " + this.apiRegistryKey), keyParam)
-            .returns(returnType.annotated(NOT_NULL));
+            .returns(returnType);
         if (this.publicCreateKeyMethod) {
             create.addAnnotation(EXPERIMENTAL_API_ANNOTATION); // TODO remove once not experimental
             create.addJavadoc(CREATE_JAVADOC, this.apiType, this.registryKey.location().toString());
@@ -116,6 +121,13 @@ public class GeneratedKeyType<T, A> extends SimpleGenerator {
             );
     }
 
+    @Deprecated
+    private static final Map<String, String> JUKEBOX_SONG_NAMES = Map.of(
+        "5", "FIVE",
+        "11", "ELEVEN",
+        "13", "THIRTEEN"
+    );
+
     @Override
     protected TypeSpec getTypeSpec() {
         final TypeName typedKey = ParameterizedTypeName.get(TypedKey.class, this.apiType);
@@ -123,19 +135,23 @@ public class GeneratedKeyType<T, A> extends SimpleGenerator {
         final TypeSpec.Builder typeBuilder = this.keyHolderType();
         final MethodSpec.Builder createMethod = this.createMethod(typedKey);
 
-        final Registry<T> registry = Main.REGISTRY_ACCESS.registryOrThrow(this.registryKey);
+        final Registry<T> registry = Main.REGISTRY_ACCESS.lookupOrThrow(this.registryKey);
         final Set<ResourceKey<T>> experimental = this.collectExperimentalKeys(registry);
 
         boolean allExperimental = true;
-        for (final Holder.Reference<T> reference : registry.holders().sorted(Formatting.alphabeticKeyOrder(reference -> reference.key().location().getPath())).toList()) {
+        for (final Holder.Reference<T> reference : registry.listElements().sorted(Formatting.alphabeticKeyOrder(reference -> reference.key().location().getPath())).toList()) {
             final ResourceKey<T> key = reference.key();
             final String keyPath = key.location().getPath();
-            final String fieldName = Formatting.formatKeyAsField(keyPath);
+            String fieldName = Formatting.formatKeyAsField(keyPath);
+            if (!SourceVersion.isIdentifier(fieldName) && this.registryKey.equals(Registries.JUKEBOX_SONG) && JUKEBOX_SONG_NAMES.containsKey(fieldName)) {
+                fieldName = JUKEBOX_SONG_NAMES.get(fieldName);
+            }
+
             final FieldSpec.Builder fieldBuilder = FieldSpec.builder(typedKey, fieldName, PUBLIC, STATIC, FINAL)
                 .initializer("$N(key($S))", createMethod.build(), keyPath)
                 .addJavadoc(Javadocs.getVersionDependentField("{@code $L}"), key.location().toString());
             if (experimental.contains(key)) {
-                fieldBuilder.addAnnotations(experimentalAnnotations(null)); // Update for Experimental API
+                fieldBuilder.addAnnotations(experimentalAnnotations(MinecraftExperimental.Requires.WINTER_DROP)); // Update for Experimental API
             } else {
                 allExperimental = false;
             }
@@ -150,6 +166,7 @@ public class GeneratedKeyType<T, A> extends SimpleGenerator {
         return typeBuilder.addMethod(createMethod.build()).build();
     }
 
+    // todo at some point this should be per feature data pack not all merged
     private Set<ResourceKey<T>> collectExperimentalKeys(final Registry<T> registry) {
         if (FeatureElement.FILTERED_REGISTRIES.contains(registry.key())) {
             return this.collectExperimentalKeysBuiltIn(registry);
@@ -159,8 +176,8 @@ public class GeneratedKeyType<T, A> extends SimpleGenerator {
     }
 
     private Set<ResourceKey<T>> collectExperimentalKeysBuiltIn(final Registry<T> registry) {
-        final HolderLookup.RegistryLookup<T> filteredLookup = registry.asLookup().filterElements(v -> {
-            return false; // Update for Experimental API
+        final HolderLookup.RegistryLookup<T> filteredLookup = registry.filterElements(v -> {
+            return v instanceof final FeatureElement featureElement && FeatureFlags.isExperimental(featureElement.requiredFeatures()); // Update for Experimental API
         });
         return filteredLookup.listElementIds().collect(Collectors.toUnmodifiableSet());
     }

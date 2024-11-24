@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: lexikiq <noellekiq@gmail.com>
+Date: Mon, 21 Jun 2021 23:21:58 -0400
+Subject: [PATCH] Preserve overstacked loot
+
+Preserves overstacked items in loot tables, such as shulker box drops, to prevent the items
+from being deleted (as they'd overflow past the bounds of the container)-- or worse, causing
+chunk bans via the large amount of NBT created by unstacking the items.
+
+Fixes GH-5140 and GH-4748.
+
+diff --git a/src/main/java/net/minecraft/world/level/storage/loot/LootTable.java b/src/main/java/net/minecraft/world/level/storage/loot/LootTable.java
+index 4d4d413b8527e1a109276928611b8c857ad6f6aa..c2bded5094097f5615a2ddb0718942486ede93b5 100644
+--- a/src/main/java/net/minecraft/world/level/storage/loot/LootTable.java
++++ b/src/main/java/net/minecraft/world/level/storage/loot/LootTable.java
+@@ -72,9 +72,10 @@ public class LootTable {
+     }
+ 
+     public static Consumer<ItemStack> createStackSplitter(ServerLevel world, Consumer<ItemStack> consumer) {
++        boolean skipSplitter = world != null && !world.paperConfig().fixes.splitOverstackedLoot; // Paper - preserve overstacked items
+         return (itemstack) -> {
+             if (itemstack.isItemEnabled(world.enabledFeatures())) {
+-                if (itemstack.getCount() < itemstack.getMaxStackSize()) {
++                if (skipSplitter || itemstack.getCount() < itemstack.getMaxStackSize()) { // Paper - preserve overstacked items
+                     consumer.accept(itemstack);
+                 } else {
+                     int i = itemstack.getCount();

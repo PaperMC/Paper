@@ -31,5 +31,4 @@ public abstract class SimpleGenerator implements SourceGenerator {
 
         builder.build().writeTo(parent, StandardCharsets.UTF_8);
     }
-
 }

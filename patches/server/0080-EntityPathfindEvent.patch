@@ -19,10 +19,10 @@ index d3a279a1a14f99aee8dd516552e5c60de92b4969..a3e0c5af4cc9323c02e88e768cbda9e4
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
-index f1a63db8dac13efcfd73b59c7074f6817cc5dbde..62634bedd97c5be9ecce24ab0cff205715a68da8 100644
+index d41ff85a96df07e4d6d9844289379bd3f0c38dc4..f73b559b8e60859020f762dab88b67b8c912bf8f 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
-@@ -41,7 +41,7 @@ public class GroundPathNavigation extends PathNavigation {
+@@ -42,7 +42,7 @@ public class GroundPathNavigation extends PathNavigation {
      }
  
      @Override
@@ -31,30 +31,30 @@ index f1a63db8dac13efcfd73b59c7074f6817cc5dbde..62634bedd97c5be9ecce24ab0cff2057
          LevelChunk levelChunk = this.level
              .getChunkSource()
              .getChunkNow(SectionPos.blockToSectionCoord(target.getX()), SectionPos.blockToSectionCoord(target.getZ()));
-@@ -56,7 +56,7 @@ public class GroundPathNavigation extends PathNavigation {
+@@ -57,7 +57,7 @@ public class GroundPathNavigation extends PathNavigation {
                  }
  
-                 if (blockPos.getY() > this.level.getMinBuildHeight()) {
--                    return super.createPath(blockPos.above(), distance);
-+                    return super.createPath(blockPos.above(), entity, distance); // Paper - EntityPathfindEvent
+                 if (mutableBlockPos.getY() > this.level.getMinY()) {
+-                    return super.createPath(mutableBlockPos.above(), distance);
++                    return super.createPath(mutableBlockPos.above(), entity, distance); // Paper - EntityPathfindEvent
                  }
  
-                 while (blockPos.getY() < this.level.getMaxBuildHeight() && levelChunk.getBlockState(blockPos).isAir()) {
-@@ -67,7 +67,7 @@ public class GroundPathNavigation extends PathNavigation {
+                 mutableBlockPos.setY(target.getY() + 1);
+@@ -70,7 +70,7 @@ public class GroundPathNavigation extends PathNavigation {
              }
  
              if (!levelChunk.getBlockState(target).isSolid()) {
 -                return super.createPath(target, distance);
 +                return super.createPath(target, entity, distance); // Paper - EntityPathfindEvent
              } else {
-                 BlockPos blockPos2 = target.above();
+                 BlockPos.MutableBlockPos mutableBlockPos2 = target.mutable().move(Direction.UP);
  
-@@ -75,14 +75,14 @@ public class GroundPathNavigation extends PathNavigation {
-                     blockPos2 = blockPos2.above();
+@@ -78,14 +78,14 @@ public class GroundPathNavigation extends PathNavigation {
+                     mutableBlockPos2.move(Direction.UP);
                  }
  
--                return super.createPath(blockPos2, distance);
-+                return super.createPath(blockPos2, entity, distance); // Paper - EntityPathfindEvent
+-                return super.createPath(mutableBlockPos2.immutable(), distance);
++                return super.createPath(mutableBlockPos2.immutable(), entity, distance);  // Paper - EntityPathfindEvent
              }
          }
      }
@@ -67,10 +67,10 @@ index f1a63db8dac13efcfd73b59c7074f6817cc5dbde..62634bedd97c5be9ecce24ab0cff2057
  
      private int getSurfaceY() {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
-index 92addc1d3e7d0630c5db76e2a00d61b95b1430cc..21bbc98b26b270b3ad6a3b34d6e50dfb796c3d5a 100644
+index 7d3cb358fe543253e988531df3434ae1274814d3..1d5ce4caf99a3fb376b350968a6bd1ac8471ffec 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
-@@ -109,7 +109,13 @@ public abstract class PathNavigation {
+@@ -125,7 +125,13 @@ public abstract class PathNavigation {
  
      @Nullable
      public Path createPath(BlockPos target, int distance) {
@@ -85,7 +85,7 @@ index 92addc1d3e7d0630c5db76e2a00d61b95b1430cc..21bbc98b26b270b3ad6a3b34d6e50dfb
      }
  
      @Nullable
-@@ -119,7 +125,7 @@ public abstract class PathNavigation {
+@@ -135,7 +141,7 @@ public abstract class PathNavigation {
  
      @Nullable
      public Path createPath(Entity entity, int distance) {
@@ -94,7 +94,7 @@ index 92addc1d3e7d0630c5db76e2a00d61b95b1430cc..21bbc98b26b270b3ad6a3b34d6e50dfb
      }
  
      @Nullable
-@@ -129,6 +135,17 @@ public abstract class PathNavigation {
+@@ -145,6 +151,17 @@ public abstract class PathNavigation {
  
      @Nullable
      protected Path createPath(Set<BlockPos> positions, int range, boolean useHeadPos, int distance, float followRange) {
@@ -111,8 +111,8 @@ index 92addc1d3e7d0630c5db76e2a00d61b95b1430cc..21bbc98b26b270b3ad6a3b34d6e50dfb
 +        // Paper end - EntityPathfindEvent
          if (positions.isEmpty()) {
              return null;
-         } else if (this.mob.getY() < (double)this.level.getMinBuildHeight()) {
-@@ -138,6 +155,23 @@ public abstract class PathNavigation {
+         } else if (this.mob.getY() < (double)this.level.getMinY()) {
+@@ -154,6 +171,23 @@ public abstract class PathNavigation {
          } else if (this.path != null && !this.path.isDone() && positions.contains(this.targetPos)) {
              return this.path;
          } else {
@@ -133,9 +133,9 @@ index 92addc1d3e7d0630c5db76e2a00d61b95b1430cc..21bbc98b26b270b3ad6a3b34d6e50dfb
 +                }
 +            }
 +            // Paper end - EntityPathfindEvent
-             this.level.getProfiler().push("pathfind");
+             ProfilerFiller profilerFiller = Profiler.get();
+             profilerFiller.push("pathfind");
              BlockPos blockPos = useHeadPos ? this.mob.blockPosition().above() : this.mob.blockPosition();
-             int i = (int)(followRange + (float)range);
 diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/WallClimberNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/WallClimberNavigation.java
 index 1a1bc30b425858d82dbfb84b4a94d7793cab7125..5bbfa43d1e97970f035fcb101c3252c01ffead0d 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/navigation/WallClimberNavigation.java

@@ -1,0 +1,65 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MisterVector <whizkid3000@hotmail.com>
+Date: Fri, 26 Oct 2018 21:31:00 -0700
+Subject: [PATCH] Add PlayerPostRespawnEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index fd1fe9a72a1d4e87b97a34fc79ab1429d31207e5..2cfc2213e3036585dc4723eecf747e1c37d53b72 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -704,6 +704,10 @@ public abstract class PlayerList {
+ 
+             entityplayer1.addTag(s);
+         }
++        // Paper start - Add PlayerPostRespawnEvent
++        boolean isBedSpawn = false;
++        boolean isRespawn = false;
++        // Paper end - Add PlayerPostRespawnEvent
+ 
+         // CraftBukkit start - fire PlayerRespawnEvent
+         TeleportTransition teleporttransition;
+@@ -711,11 +715,16 @@ public abstract class PlayerList {
+             teleporttransition = entityplayer.findRespawnPositionAndUseSpawnBlock(!flag, TeleportTransition.DO_NOTHING, reason);
+ 
+             if (!flag) entityplayer.reset(); // SPIGOT-4785
++           // Paper start - Add PlayerPostRespawnEvent
++           if (teleporttransition == null) return entityplayer; // Early exit, mirrors belows early return for disconnected players in respawn event
++           isRespawn = true;
++           location = CraftLocation.toBukkit(teleporttransition.position(), teleporttransition.newLevel().getWorld(), teleporttransition.yRot(), teleporttransition.xRot());
++           // Paper end - Add PlayerPostRespawnEvent
+         } else {
+             teleporttransition = new TeleportTransition(((CraftWorld) location.getWorld()).getHandle(), CraftLocation.toVec3D(location), Vec3.ZERO, location.getYaw(), location.getPitch(), TeleportTransition.DO_NOTHING);
+         }
+         // Spigot Start
+-        if (teleporttransition == null) {
++        if (teleporttransition == null) { // Paper - Add PlayerPostRespawnEvent - diff on change - spigot early returns if respawn pos is null, that is how they handle disconnected player in respawn event
+             return entityplayer;
+         }
+         // Spigot End
+@@ -763,6 +772,11 @@ public abstract class PlayerList {
+             if (iblockdata.is(Blocks.RESPAWN_ANCHOR)) {
+                 entityplayer1.connection.send(new ClientboundSoundPacket(SoundEvents.RESPAWN_ANCHOR_DEPLETE, SoundSource.BLOCKS, (double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ(), 1.0F, 1.0F, worldserver.getRandom().nextLong()));
+             }
++            // Paper start - Add PlayerPostRespawnEvent
++            if (iblockdata.is(net.minecraft.tags.BlockTags.BEDS) && !teleporttransition.missingRespawnBlock()) {
++                isBedSpawn = true;
++            }
++            // Paper end - Add PlayerPostRespawnEvent
+         }
+         // Added from changeDimension
+         this.sendAllPlayerInfo(entityplayer); // Update health, etc...
+@@ -784,6 +798,13 @@ public abstract class PlayerList {
+         if (entityplayer.connection.isDisconnected()) {
+             this.save(entityplayer);
+         }
++
++        // Paper start - Add PlayerPostRespawnEvent
++        if (isRespawn) {
++            cserver.getPluginManager().callEvent(new com.destroystokyo.paper.event.player.PlayerPostRespawnEvent(entityplayer.getBukkitEntity(), location, isBedSpawn));
++        }
++        // Paper end - Add PlayerPostRespawnEvent
++
+         // CraftBukkit end
+ 
+         return entityplayer1;

@@ -1,0 +1,87 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 20 Jun 2018 23:17:24 -0400
+Subject: [PATCH] Expand Explosions API
+
+Add Entity as a Source capability, and add more API choices, and on Location.
+
+Co-authored-by: Esoteric Enderman <90862990+EsotericEnderman@users.noreply.github.com>
+Co-authored-by: Bjarne Koll <git@lynxplay.dev>
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 03161ef12960cab3b9c81c190dd808a9c5c476e1..f0fc08bcc2988277b6a5e3107e6fc5c89bb67b93 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1424,6 +1424,11 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+     }
+ 
+     public ServerExplosion explode0(@Nullable Entity entity, @Nullable DamageSource damagesource, @Nullable ExplosionDamageCalculator explosiondamagecalculator, double d0, double d1, double d2, float f, boolean flag, Level.ExplosionInteraction world_a, ParticleOptions particleparam, ParticleOptions particleparam1, Holder<SoundEvent> holder) {
++    // Paper start - Allow explosions to damage source
++        return this.explode0(entity, damagesource, explosiondamagecalculator, d0, d1, d2, f, flag, world_a, particleparam, particleparam1, holder, null);
++    }
++    public ServerExplosion explode0(@Nullable Entity entity, @Nullable DamageSource damagesource, @Nullable ExplosionDamageCalculator explosiondamagecalculator, double d0, double d1, double d2, float f, boolean flag, Level.ExplosionInteraction world_a, ParticleOptions particleparam, ParticleOptions particleparam1, Holder<SoundEvent> holder, java.util.function.Consumer<ServerExplosion> configurator) {
++    // Paper end - Allow explosions to damage source
+         // CraftBukkit end
+         Explosion.BlockInteraction explosion_effect;
+ 
+@@ -1455,6 +1460,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+         Explosion.BlockInteraction explosion_effect1 = explosion_effect;
+         Vec3 vec3d = new Vec3(d0, d1, d2);
+         ServerExplosion serverexplosion = new ServerExplosion(this, entity, damagesource, explosiondamagecalculator, vec3d, f, flag, explosion_effect1);
++        if (configurator != null) configurator.accept(serverexplosion);// Paper - Allow explosions to damage source
+ 
+         serverexplosion.explode();
+         // CraftBukkit start
+diff --git a/src/main/java/net/minecraft/world/level/ServerExplosion.java b/src/main/java/net/minecraft/world/level/ServerExplosion.java
+index 9f37d7284c81d529551107e2836627977efabd65..d1878f597c3d8119e9b248f4fe8af435ce8c9710 100644
+--- a/src/main/java/net/minecraft/world/level/ServerExplosion.java
++++ b/src/main/java/net/minecraft/world/level/ServerExplosion.java
+@@ -63,6 +63,7 @@ public class ServerExplosion implements Explosion {
+     public boolean wasCanceled = false;
+     public float yield;
+     // CraftBukkit end
++    public boolean excludeSourceFromDamage = true; // Paper - Allow explosions to damage source
+ 
+     public ServerExplosion(ServerLevel world, @Nullable Entity entity, @Nullable DamageSource damageSource, @Nullable ExplosionDamageCalculator behavior, Vec3 pos, float power, boolean createFire, Explosion.BlockInteraction destructionType) {
+         this.level = world;
+@@ -185,7 +186,7 @@ public class ServerExplosion implements Explosion {
+         int l = Mth.floor(this.center.y + (double) f + 1.0D);
+         int i1 = Mth.floor(this.center.z - (double) f - 1.0D);
+         int j1 = Mth.floor(this.center.z + (double) f + 1.0D);
+-        List<Entity> list = this.level.getEntities(this.source, new AABB((double) i, (double) k, (double) i1, (double) j, (double) l, (double) j1), (com.google.common.base.Predicate<Entity>) entity -> entity.isAlive() && !entity.isSpectator()); // Paper - Fix lag from explosions processing dead entities
++        List<Entity> list = this.level.getEntities(excludeSourceFromDamage ? this.source : null, new AABB((double) i, (double) k, (double) i1, (double) j, (double) l, (double) j1), (com.google.common.base.Predicate<Entity>) entity -> entity.isAlive() && !entity.isSpectator()); // Paper - Fix lag from explosions processing dead entities, Allow explosions to damage source
+         Iterator iterator = list.iterator();
+ 
+         while (iterator.hasNext()) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 807b912a0d24ded99dc487e55c9b1812ffd86c3f..195e698eadc7ce916b4bcfe04849501ee4a39aad 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -776,6 +776,11 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+ 
+     @Override
+     public boolean createExplosion(double x, double y, double z, float power, boolean setFire, boolean breakBlocks, Entity source) {
++    // Paper start - expand explosion API
++        return this.createExplosion(x, y, z, power, setFire, breakBlocks, source, null);
++    }
++    public boolean createExplosion(double x, double y, double z, float power, boolean setFire, boolean breakBlocks, Entity source, Consumer<net.minecraft.world.level.ServerExplosion> configurator) {
++    // Paper end - expand explosion API
+         net.minecraft.world.level.Level.ExplosionInteraction explosionType;
+         if (!breakBlocks) {
+             explosionType = net.minecraft.world.level.Level.ExplosionInteraction.NONE; // Don't break blocks
+@@ -786,8 +791,14 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         }
+ 
+         net.minecraft.world.entity.Entity entity = (source == null) ? null : ((CraftEntity) source).getHandle();
+-        return !this.world.explode0(entity, Explosion.getDefaultDamageSource(this.world, entity), null, x, y, z, power, setFire, explosionType, ParticleTypes.EXPLOSION, ParticleTypes.EXPLOSION_EMITTER, SoundEvents.GENERIC_EXPLODE).wasCanceled;
++        return !this.world.explode0(entity, Explosion.getDefaultDamageSource(this.world, entity), null, x, y, z, power, setFire, explosionType, ParticleTypes.EXPLOSION, ParticleTypes.EXPLOSION_EMITTER, SoundEvents.GENERIC_EXPLODE, configurator).wasCanceled; // Paper - expand explosion API
+     }
++    // Paper start
++    @Override
++    public boolean createExplosion(Entity source, Location loc, float power, boolean setFire, boolean breakBlocks, boolean excludeSourceFromDamage) {
++        return this.createExplosion(loc.x(), loc.getY(), loc.getZ(), power, setFire, breakBlocks, source, e -> e.excludeSourceFromDamage = excludeSourceFromDamage);
++    }
++    // Paper end
+ 
+     @Override
+     public boolean createExplosion(Location loc, float power) {

@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mark Vainomaa <mikroskeem@mikroskeem.eu>
+Date: Sun, 13 Dec 2020 05:32:05 +0200
+Subject: [PATCH] Expose LivingEntity hurt direction
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index 917ac21794f1aabc6e95ab2fff2ea7547b9778a8..78bb666dbc5ccd84820e1c7b382249510dd5795c 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -188,7 +188,7 @@ public abstract class Player extends LivingEntity {
+     private Optional<GlobalPos> lastDeathLocation;
+     @Nullable
+     public FishingHook fishing;
+-    protected float hurtDir;
++    public float hurtDir; // Paper - protected -> public
+     @Nullable
+     public Vec3 currentImpulseImpactPos;
+     @Nullable
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+index 9022555db0df8c269fc039c895422cf36c08097e..cb56c75be83e839bafdae4356f85d33499d01d8a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+@@ -125,6 +125,13 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+         }
+     }
+ 
++    // Paper start
++    @Override
++    public void setHurtDirection(float hurtDirection) {
++        this.getHandle().hurtDir = hurtDirection;
++    }
++    // Paper end
++
+     @Override
+     public int getSleepTicks() {
+         return this.getHandle().sleepCounter;
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index de41ee2cc1be6ef412ec15c79a65cbca653b35d3..ff3b53eff8f5fc1e02e7b30d59ff27dfe8f5d431 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -1024,4 +1024,16 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+         this.getHandle().take(((CraftItem) item).getHandle(), quantity);
+     }
+     // Paper end - pickup animation API
++
++    // Paper start - hurt direction API
++    @Override
++    public float getHurtDirection() {
++        return this.getHandle().getHurtDir();
++    }
++
++    @Override
++    public void setHurtDirection(final float hurtDirection) {
++        throw new UnsupportedOperationException("Cannot set the hurt direction on a non player");
++    }
++    // Paper end - hurt direction API
+ }

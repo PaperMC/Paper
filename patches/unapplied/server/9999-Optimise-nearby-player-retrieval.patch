@@ -1,0 +1,230 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sat, 23 Sep 2023 23:15:52 -0700
+Subject: [PATCH] Optimise nearby player retrieval
+
+Instead of searching/testing every player online on the server,
+we can instead use the nearby player tracking system to reduce
+the number of tests per search.
+
+Feature patch
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index d4376ed215d97066a21e462fae2a0e25ad8a16a1..aab652174a8175765cad548f7c61ce353ca74803 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -581,6 +581,115 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         this.lagCompensationTick = (System.nanoTime() - net.minecraft.server.MinecraftServer.SERVER_INIT) / (java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(50L));
+     }
+     // Paper end - lag compensation
++    // Paper start - optimise nearby player retrieval
++    @Override
++    public java.util.List<net.minecraft.world.entity.player.Player> getNearbyPlayers(net.minecraft.world.entity.ai.targeting.TargetingConditions targetPredicate,
++                                                                                     net.minecraft.world.entity.LivingEntity entity,
++                                                                                     net.minecraft.world.phys.AABB box) {
++        return this.getNearbyEntities(Player.class, targetPredicate, entity, box);
++    }
++
++    @Override
++    public Player getNearestPlayer(double x, double y, double z, double maxDistance, @Nullable Predicate<Entity> targetPredicate) {
++        if (maxDistance > 0.0D) {
++            io.papermc.paper.util.player.NearbyPlayers players = this.chunkSource.chunkMap.getNearbyPlayers();
++
++            com.destroystokyo.paper.util.maplist.ReferenceList<ServerPlayer> nearby = players.getPlayersByBlock(
++                io.papermc.paper.util.CoordinateUtils.getBlockCoordinate(x),
++                io.papermc.paper.util.CoordinateUtils.getBlockCoordinate(z),
++                io.papermc.paper.util.player.NearbyPlayers.NearbyMapType.GENERAL
++            );
++
++            if (nearby == null) {
++                return null;
++            }
++
++            ServerPlayer nearest = null;
++            double nearestDist = maxDistance * maxDistance;
++            Object[] rawData = nearby.getRawData();
++            for (int i = 0, len = nearby.size(); i < len; ++i) {
++                ServerPlayer player = (ServerPlayer)rawData[i];
++                double dist = player.distanceToSqr(x, y, z);
++                if (dist >= nearestDist) {
++                    continue;
++                }
++
++                if (targetPredicate == null || targetPredicate.test(player)) {
++                    nearest = player;
++                    nearestDist = dist;
++                }
++            }
++
++            return nearest;
++        } else {
++            ServerPlayer nearest = null;
++            double nearestDist = Double.MAX_VALUE;
++
++            for (ServerPlayer player : this.players()) {
++                double dist = player.distanceToSqr(x, y, z);
++                if (dist >= nearestDist) {
++                    continue;
++                }
++
++                if (targetPredicate == null || targetPredicate.test(player)) {
++                    nearest = player;
++                    nearestDist = dist;
++                }
++            }
++
++            return nearest;
++        }
++    }
++
++    @Override
++    public Player getNearestPlayer(net.minecraft.world.entity.ai.targeting.TargetingConditions targetPredicate, LivingEntity entity) {
++        return this.getNearestPlayer(targetPredicate, entity, entity.getX(), entity.getY(), entity.getZ());
++    }
++
++    @Override
++    public Player getNearestPlayer(net.minecraft.world.entity.ai.targeting.TargetingConditions targetPredicate, LivingEntity entity,
++                                   double x, double y, double z) {
++        double range = targetPredicate.range;
++        if (range > 0.0D) {
++            io.papermc.paper.util.player.NearbyPlayers players = this.chunkSource.chunkMap.getNearbyPlayers();
++
++            com.destroystokyo.paper.util.maplist.ReferenceList<ServerPlayer> nearby = players.getPlayersByBlock(
++                io.papermc.paper.util.CoordinateUtils.getBlockCoordinate(x),
++                io.papermc.paper.util.CoordinateUtils.getBlockCoordinate(z),
++                io.papermc.paper.util.player.NearbyPlayers.NearbyMapType.GENERAL
++            );
++
++            if (nearby == null) {
++                return null;
++            }
++
++            ServerPlayer nearest = null;
++            double nearestDist = Double.MAX_VALUE;
++            Object[] rawData = nearby.getRawData();
++            for (int i = 0, len = nearby.size(); i < len; ++i) {
++                ServerPlayer player = (ServerPlayer)rawData[i];
++                double dist = player.distanceToSqr(x, y, z);
++                if (dist >= nearestDist) {
++                    continue;
++                }
++
++                if (targetPredicate.test(entity, player)) {
++                    nearest = player;
++                    nearestDist = dist;
++                }
++            }
++
++            return nearest;
++        } else {
++            return this.getNearestEntity(this.players(), targetPredicate, entity, x, y, z);
++        }
++    }
++
++    @Nullable
++    public Player getNearestPlayer(net.minecraft.world.entity.ai.targeting.TargetingConditions targetPredicate, double x, double y, double z) {
++        return this.getNearestPlayer(targetPredicate, null, x, y, z);
++    }
++    // Paper end - optimise nearby player retrieval
+ 
+     // Add env and gen to constructor, IWorldDataServer -> WorldDataServer
+     public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PrimaryLevelData iworlddataserver, ResourceKey<Level> resourcekey, LevelStem worlddimension, ChunkProgressListener worldloadlistener, boolean flag, long i, List<CustomSpawner> list, boolean flag1, @Nullable RandomSequences randomsequences, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
+diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
+index 2e887e426dcd79e2dda401f127d0e01ca537e80e..65cd42ce9f553e0aa5bf248bdbf902f9d1f55460 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
++++ b/src/main/java/net/minecraft/world/entity/ai/sensing/PlayerSensor.java
+@@ -21,17 +21,50 @@ public class PlayerSensor extends Sensor<LivingEntity> {
+ 
+     @Override
+     protected void doTick(ServerLevel world, LivingEntity entity) {
+-        List<Player> list = world.players()
+-            .stream()
+-            .filter(EntitySelector.NO_SPECTATORS)
+-            .filter(player -> entity.closerThan(player, 16.0))
+-            .sorted(Comparator.comparingDouble(entity::distanceToSqr))
+-            .collect(Collectors.toList());
++        // Paper start - Perf: optimise nearby player retrieval & remove streams from hot code
++        io.papermc.paper.util.player.NearbyPlayers nearbyPlayers = world.chunkSource.chunkMap.getNearbyPlayers();
++        net.minecraft.world.phys.Vec3 entityPos = entity.position();
++        com.destroystokyo.paper.util.maplist.ReferenceList<net.minecraft.server.level.ServerPlayer> nearby = nearbyPlayers.getPlayersByChunk(
++            entity.chunkPosition().x,
++            entity.chunkPosition().z,
++            io.papermc.paper.util.player.NearbyPlayers.NearbyMapType.GENERAL_REALLY_SMALL
++        );
++
++        List<Player> players = new java.util.ArrayList<>(nearby == null ? 0 : nearby.size());
++        if (nearby != null) {
++            Object[] rawData = nearby.getRawData();
++            for (int index = 0, len = nearby.size(); index < len; ++index) {
++                net.minecraft.server.level.ServerPlayer player = (net.minecraft.server.level.ServerPlayer) rawData[index];
++                if (player.isSpectator()) {
++                    continue;
++                }
++                if (player.distanceToSqr(entityPos.x, entityPos.y, entityPos.z) >= (16.0 * 16.0)) {
++                    continue;
++                }
++                players.add(player);
++            }
++        }
++        players.sort(Comparator.comparingDouble(entity::distanceToSqr));
+         Brain<?> brain = entity.getBrain();
+-        brain.setMemory(MemoryModuleType.NEAREST_PLAYERS, list);
+-        List<Player> list2 = list.stream().filter(player -> isEntityTargetable(entity, player)).collect(Collectors.toList());
+-        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_PLAYER, list2.isEmpty() ? null : list2.get(0));
+-        Optional<Player> optional = list2.stream().filter(player -> isEntityAttackable(entity, player)).findFirst();
+-        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_ATTACKABLE_PLAYER, optional);
++
++        brain.setMemory(MemoryModuleType.NEAREST_PLAYERS, players);
++
++        Player firstTargetable = null;
++        Player firstAttackable = null;
++        for (Player player : players) {
++            if (firstTargetable == null && Sensor.isEntityTargetable(entity, player)) {
++                firstTargetable = player;
++            }
++            if (firstAttackable == null && Sensor.isEntityAttackable(entity, player)) {
++                firstAttackable = player;
++            }
++
++            if (firstAttackable != null && firstTargetable != null) {
++                break;
++            }
++        }
++        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_PLAYER, firstTargetable);
++        brain.setMemory(MemoryModuleType.NEAREST_VISIBLE_ATTACKABLE_PLAYER, Optional.ofNullable(firstAttackable));
++        // Paper end - Perf: optimise nearby player retrieval & remove streams from hot code
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/ai/targeting/TargetingConditions.java b/src/main/java/net/minecraft/world/entity/ai/targeting/TargetingConditions.java
+index aecb0ad814586bfc5e56755ee14379a69388b38c..d2f0c3b26d4beedb49d86e0242d843590d469d02 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/targeting/TargetingConditions.java
++++ b/src/main/java/net/minecraft/world/entity/ai/targeting/TargetingConditions.java
+@@ -10,7 +10,7 @@ public class TargetingConditions {
+     public static final TargetingConditions DEFAULT = forCombat();
+     private static final double MIN_VISIBILITY_DISTANCE_FOR_INVISIBLE_TARGET = 2.0;
+     private final boolean isCombat;
+-    private double range = -1.0;
++    public double range = -1.0; // Paper - public
+     private boolean checkLineOfSight = true;
+     private boolean testInvisible = true;
+     @Nullable
+diff --git a/src/main/java/net/minecraft/world/level/EntityGetter.java b/src/main/java/net/minecraft/world/level/EntityGetter.java
+index 21843501355a0c0c8d594e3e5312e97861c9a777..ea0aee88c7d901034427db201c1b2430f8a1d522 100644
+--- a/src/main/java/net/minecraft/world/level/EntityGetter.java
++++ b/src/main/java/net/minecraft/world/level/EntityGetter.java
+@@ -233,9 +233,13 @@ public interface EntityGetter {
+         T livingEntity = null;
+ 
+         for (T livingEntity2 : entityList) {
++            // Paper start - optimise nearby player retrieval; move up
++            // don't check entities outside closest range
++            double e = livingEntity2.distanceToSqr(x, y, z);
++            if (d == -1.0 || e < d) {
++            // Paper end - move up
+             if (targetPredicate.test(entity, livingEntity2)) {
+-                double e = livingEntity2.distanceToSqr(x, y, z);
+-                if (d == -1.0 || e < d) {
++                // Paper - optimise nearby player retrieval; move up
+                     d = e;
+                     livingEntity = livingEntity2;
+                 }

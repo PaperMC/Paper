@@ -8,7 +8,7 @@ Fires an event anytime an enderman intends to teleport away from the player
 You may cancel this, enabling ranged attacks to damage the enderman for example.
 
 diff --git a/src/main/java/net/minecraft/world/entity/monster/EnderMan.java b/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
-index bbe024a88d0feeb02a5cc4248f4bcdd3a06daf04..51e9988685b1a9a3d4d2effec63560b0ae9e8d3a 100644
+index a6c9ca2928216ed89f69c1d140590d3368b354d6..d7145b3a19402a03d0af02822ffcb0ef07eaa663 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
 @@ -121,6 +121,12 @@ public class EnderMan extends Monster implements NeutralMob {
@@ -24,18 +24,18 @@ index bbe024a88d0feeb02a5cc4248f4bcdd3a06daf04..51e9988685b1a9a3d4d2effec63560b0
      @Override
      public boolean setTarget(LivingEntity entityliving, EntityTargetEvent.TargetReason reason, boolean fireEvent) {
          if (!super.setTarget(entityliving, reason, fireEvent)) {
-@@ -270,7 +276,7 @@ public class EnderMan extends Monster implements NeutralMob {
-         if (this.level().isDay() && this.tickCount >= this.targetChangeTime + 600) {
+@@ -257,7 +263,7 @@ public class EnderMan extends Monster implements NeutralMob {
+         if (world.isDay() && this.tickCount >= this.targetChangeTime + 600) {
              float f = this.getLightLevelDependentMagicValue();
  
--            if (f > 0.5F && this.level().canSeeSky(this.blockPosition()) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
-+            if (f > 0.5F && this.level().canSeeSky(this.blockPosition()) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F && this.tryEscape(com.destroystokyo.paper.event.entity.EndermanEscapeEvent.Reason.RUNAWAY)) { // Paper - EndermanEscapeEvent
+-            if (f > 0.5F && world.canSeeSky(this.blockPosition()) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
++            if (f > 0.5F && world.canSeeSky(this.blockPosition()) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F && this.tryEscape(com.destroystokyo.paper.event.entity.EndermanEscapeEvent.Reason.RUNAWAY)) { // Paper - EndermanEscapeEvent
                  this.setTarget((LivingEntity) null);
                  this.teleport();
              }
-@@ -396,11 +402,13 @@ public class EnderMan extends Monster implements NeutralMob {
+@@ -383,11 +389,13 @@ public class EnderMan extends Monster implements NeutralMob {
              } else {
-                 flag1 = flag && this.hurtWithCleanWater(source, (ThrownPotion) source.getDirectEntity(), amount);
+                 flag1 = flag && this.hurtWithCleanWater(world, source, (ThrownPotion) source.getDirectEntity(), amount);
  
 +                if (this.tryEscape(com.destroystokyo.paper.event.entity.EndermanEscapeEvent.Reason.INDIRECT)) { // Paper - EndermanEscapeEvent
                  for (int i = 0; i < 64; ++i) {
@@ -47,10 +47,10 @@ index bbe024a88d0feeb02a5cc4248f4bcdd3a06daf04..51e9988685b1a9a3d4d2effec63560b0
  
                  return flag1;
              }
-@@ -625,7 +633,7 @@ public class EnderMan extends Monster implements NeutralMob {
+@@ -612,7 +620,7 @@ public class EnderMan extends Monster implements NeutralMob {
              } else {
                  if (this.target != null && !this.enderman.isPassenger()) {
-                     if (this.enderman.isLookingAtMe((Player) this.target)) {
+                     if (this.enderman.isBeingStaredBy((Player) this.target)) {
 -                        if (this.target.distanceToSqr((Entity) this.enderman) < 16.0D) {
 +                        if (this.target.distanceToSqr((Entity) this.enderman) < 16.0D && this.enderman.tryEscape(com.destroystokyo.paper.event.entity.EndermanEscapeEvent.Reason.STARE)) { // Paper - EndermanEscapeEvent
                              this.enderman.teleport();

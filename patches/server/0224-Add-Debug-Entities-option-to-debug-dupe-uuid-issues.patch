@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 21 Jul 2018 08:25:40 -0400
+Subject: [PATCH] Add Debug Entities option to debug dupe uuid issues
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index e03032b96e8f44ef83f52dcf3dc5a8856281e475..01c4f405692116813bbd3d851738f52a50b548a2 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1171,6 +1171,12 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+     // CraftBukkit start
+     private boolean addEntity(Entity entity, CreatureSpawnEvent.SpawnReason spawnReason) {
+         org.spigotmc.AsyncCatcher.catchOp("entity add"); // Spigot
++        // Paper start - extra debug info
++        if (entity.valid) {
++            MinecraftServer.LOGGER.error("Attempted Double World add on {}", entity, new Throwable());
++            return true;
++        }
++        // Paper end - extra debug info
+         if (entity.isRemoved()) {
+             // WorldServer.LOGGER.warn("Tried to add entity {} but it was marked as removed already", EntityTypes.getKey(entity.getType())); // CraftBukkit
+             return false;
+diff --git a/src/main/java/net/minecraft/world/level/entity/EntityLookup.java b/src/main/java/net/minecraft/world/level/entity/EntityLookup.java
+index 38df704dca30ef08f4d0831dc1cc48c6d6f71a4d..ed6aea7a38ef6e80c300ff9b012dcdbc390ad2c7 100644
+--- a/src/main/java/net/minecraft/world/level/entity/EntityLookup.java
++++ b/src/main/java/net/minecraft/world/level/entity/EntityLookup.java
+@@ -33,6 +33,14 @@ public class EntityLookup<T extends EntityAccess> {
+         UUID uUID = entity.getUUID();
+         if (this.byUuid.containsKey(uUID)) {
+             LOGGER.warn("Duplicate entity UUID {}: {}", uUID, entity);
++            // Paper start - extra debug info
++            if (entity instanceof net.minecraft.world.entity.Entity) {
++                final T old = this.byUuid.get(entity.getUUID());
++                if (old instanceof net.minecraft.world.entity.Entity oldCast && oldCast.getId() != entity.getId() && oldCast.valid) {
++                    LOGGER.error("Overwrote an existing entity {} with {}", oldCast, entity);
++                }
++            }
++            // Paper end - extra debug info
+         } else {
+             this.byUuid.put(uUID, entity);
+             this.byId.put(entity.getId(), entity);

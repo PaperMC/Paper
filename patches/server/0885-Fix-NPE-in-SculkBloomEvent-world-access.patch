@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+Date: Fri, 20 Oct 2023 19:50:22 +0200
+Subject: [PATCH] Fix NPE in SculkBloomEvent world access
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/SculkCatalystBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SculkCatalystBlockEntity.java
+index da81f76a2ee779ffedf9a02d91b5971004167725..4729befa12732a9fd65cce243b33b3b479026c41 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/SculkCatalystBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/SculkCatalystBlockEntity.java
+@@ -35,9 +35,16 @@ public class SculkCatalystBlockEntity extends BlockEntity implements GameEventLi
+     public SculkCatalystBlockEntity(BlockPos pos, BlockState state) {
+         super(BlockEntityType.SCULK_CATALYST, pos, state);
+         this.catalystListener = new SculkCatalystBlockEntity.CatalystListener(state, new BlockPositionSource(pos));
+-        this.catalystListener.level = this.level; // CraftBukkit
+     }
+ 
++    // Paper start - Fix NPE in SculkBloomEvent world access
++    @Override
++    public void setLevel(Level level) {
++        super.setLevel(level);
++        this.catalystListener.sculkSpreader.level = level;
++    }
++    // Paper end - Fix NPE in SculkBloomEvent world access
++
+     public static void serverTick(Level world, BlockPos pos, BlockState state, SculkCatalystBlockEntity blockEntity) {
+         org.bukkit.craftbukkit.event.CraftEventFactory.sourceBlockOverride = blockEntity.getBlockPos(); // CraftBukkit - SPIGOT-7068: Add source block override, not the most elegant way but better than passing down a BlockPosition up to five methods deep.
+         blockEntity.catalystListener.getSculkSpreader().updateCursors(world, pos, world.getRandom(), true);
+@@ -67,13 +74,12 @@ public class SculkCatalystBlockEntity extends BlockEntity implements GameEventLi
+         final SculkSpreader sculkSpreader;
+         private final BlockState blockState;
+         private final PositionSource positionSource;
+-        private Level level; // CraftBukkit
+ 
+         public CatalystListener(BlockState state, PositionSource positionSource) {
+             this.blockState = state;
+             this.positionSource = positionSource;
+             this.sculkSpreader = SculkSpreader.createLevelSpreader();
+-            this.sculkSpreader.level = this.level; // CraftBukkit
++            // this.sculkSpreader.level = this.level; // CraftBukkit // Paper - Fix NPE in SculkBloomEvent world access
+         }
+ 
+         @Override

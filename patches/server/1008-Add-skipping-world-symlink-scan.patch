@@ -1,0 +1,21 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: mja00 <me@mja00.dev>
+Date: Mon, 12 Aug 2024 06:27:15 -0400
+Subject: [PATCH] Add skipping world symlink scan
+
+In worlds that are extremely large (greater than 1TB), it can take an insanely long time to walk the entire world for symlinks.
+This patch adds a system property to disable the symlink scan, which can be used to speed up world loading.
+
+diff --git a/src/main/java/net/minecraft/world/level/storage/LevelStorageSource.java b/src/main/java/net/minecraft/world/level/storage/LevelStorageSource.java
+index b5abdd1498a3d19559149c30ba959aa2bcf0246c..79397b3c76e4b9d2ee03dfa16c2daf4f71ae8b4d 100644
+--- a/src/main/java/net/minecraft/world/level/storage/LevelStorageSource.java
++++ b/src/main/java/net/minecraft/world/level/storage/LevelStorageSource.java
+@@ -411,7 +411,7 @@ public class LevelStorageSource {
+ 
+     public LevelStorageSource.LevelStorageAccess validateAndCreateAccess(String s, ResourceKey<LevelStem> dimensionType) throws IOException, ContentValidationException { // CraftBukkit
+         Path path = this.getLevelPath(s);
+-        List<ForbiddenSymlinkInfo> list = this.worldDirValidator.validateDirectory(path, true);
++        List<ForbiddenSymlinkInfo> list = Boolean.getBoolean("paper.disableWorldSymlinkValidation") ? List.of() : this.worldDirValidator.validateDirectory(path, true); // Paper - add skipping of symlinks scan
+ 
+         if (!list.isEmpty()) {
+             throw new ContentValidationException(path, list);

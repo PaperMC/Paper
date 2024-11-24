@@ -1,0 +1,74 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 24 Oct 2021 20:29:45 -0700
+Subject: [PATCH] Fix issues with mob conversion
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Skeleton.java b/src/main/java/net/minecraft/world/entity/monster/Skeleton.java
+index 6f6454bcec7e0d1cefbf818fc2fc6eb90adeec83..3972e2ed0554e2550519e994888e068df0a151e5 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Skeleton.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Skeleton.java
+@@ -94,12 +94,19 @@ public class Skeleton extends AbstractSkeleton {
+     }
+ 
+     protected void doFreezeConversion() {
+-        this.convertTo(EntityType.STRAY, ConversionParams.single(this, true, true), (entityskeletonstray) -> {
++        final Stray stray = this.convertTo(EntityType.STRAY, ConversionParams.single(this, true, true), (entityskeletonstray) -> { // Paper - Fix issues with mob conversion; reset conversion time to prevent event spam
+             if (!this.isSilent()) {
+                 this.level().levelEvent((Player) null, 1048, this.blockPosition(), 0);
+             }
+ 
+-        }, org.bukkit.event.entity.EntityTransformEvent.TransformReason.FROZEN, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.FROZEN); // CraftBukkit - add spawn and transform reasons
++        }, org.bukkit.event.entity.EntityTransformEvent.TransformReason.FROZEN, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.FROZEN);// CraftBukkit - add spawn and transform reasons
++
++        // Paper start - Fix issues with mob conversion; reset conversion time to prevent event spam
++        if (stray == null) {
++            this.conversionTime = 300;
++        }
++        // Paper end - Fix issues with mob conversion
++
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java b/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
+index d51acb788803048c0eacd762a2fd311115ac0970..6ea90e54759dbeab025e0a1896ee834ea9986427 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
++++ b/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
+@@ -260,9 +260,15 @@ public class Hoglin extends Animal implements Enemy, HoglinBase {
+     }
+ 
+     private void finishConversion() {
+-        this.convertTo(
++        net.minecraft.world.entity.Entity converted = this.convertTo( // Paper - Fix issues with mob conversion; reset to prevent event spam
+             EntityType.ZOGLIN, ConversionParams.single(this, true, false), zoglin -> zoglin.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 200, 0))
+         );
++
++        // Paper start - Fix issues with mob conversion; reset to prevent event spam
++        if (converted == null) {
++            this.timeInOverworld = 0;
++        }
++        // Paper end - Fix issues with mob conversion
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/piglin/AbstractPiglin.java b/src/main/java/net/minecraft/world/entity/monster/piglin/AbstractPiglin.java
+index e2075fb22596b6dc4dbbb9c20c91c63f0ddb7ba7..e3a8aa0ae0d1fa6f2b697e20464224f8b8c6b8ea 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/piglin/AbstractPiglin.java
++++ b/src/main/java/net/minecraft/world/entity/monster/piglin/AbstractPiglin.java
+@@ -100,9 +100,15 @@ public abstract class AbstractPiglin extends Monster {
+     }
+ 
+     protected void finishConversion(ServerLevel world) {
+-        this.convertTo(EntityType.ZOMBIFIED_PIGLIN, ConversionParams.single(this, true, true), (entitypigzombie) -> {
++        net.minecraft.world.entity.Entity converted = this.convertTo(EntityType.ZOMBIFIED_PIGLIN, ConversionParams.single(this, true, true), (entitypigzombie) -> { // Paper - Fix issues with mob conversion; reset to prevent event spam
+             entitypigzombie.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 200, 0));
+         }, org.bukkit.event.entity.EntityTransformEvent.TransformReason.PIGLIN_ZOMBIFIED, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.PIGLIN_ZOMBIFIED); // CraftBukkit - add spawn and transform reasons
++
++        // Paper start - Fix issues with mob conversion; reset to prevent event spam
++        if (converted == null) {
++            this.timeInOverworld = 0;
++        }
++        // Paper end - Fix issues with mob conversion
+     }
+ 
+     public boolean isAdult() {

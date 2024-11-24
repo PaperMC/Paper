@@ -13,10 +13,10 @@ also Avoid NPE during CraftBlockEntityState load if could not get TE
 If Tile Entity was null, correct Sign to return empty lines instead of null
 
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
-index d6ad310d3b472c40c128cfb459171d9f48e50915..48bee70ba4188a4a55beb6584224b0f23784dd88 100644
+index 3d7c5db5514f9d4401da22d2df88c5614051e568..50413d317ce0282752c57535637f87d529f4c09f 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
-@@ -59,6 +59,7 @@ public abstract class BlockEntity {
+@@ -54,6 +54,7 @@ public abstract class BlockEntity {
          this.worldPosition = pos.immutable();
          this.validateBlockState(state);
          this.blockState = state;
@@ -24,16 +24,16 @@ index d6ad310d3b472c40c128cfb459171d9f48e50915..48bee70ba4188a4a55beb6584224b0f2
      }
  
      private void validateBlockState(BlockState state) {
-@@ -92,7 +93,7 @@ public abstract class BlockEntity {
+@@ -87,7 +88,7 @@ public abstract class BlockEntity {
  
      // CraftBukkit start - read container
-     protected void loadAdditional(CompoundTag nbt, HolderLookup.Provider registryLookup) {
+     protected void loadAdditional(CompoundTag nbt, HolderLookup.Provider registries) {
 -        this.persistentDataContainer = new CraftPersistentDataContainer(BlockEntity.DATA_TYPE_REGISTRY);
 +        this.persistentDataContainer.clear(); // Paper - clear instead of init
  
          net.minecraft.nbt.Tag persistentDataTag = nbt.get("PublicBukkitValues");
          if (persistentDataTag instanceof CompoundTag) {
-@@ -379,8 +380,15 @@ public abstract class BlockEntity {
+@@ -375,8 +376,15 @@ public abstract class BlockEntity {
  
      // CraftBukkit start - add method
      public InventoryHolder getOwner() {
@@ -51,7 +51,7 @@ index d6ad310d3b472c40c128cfb459171d9f48e50915..48bee70ba4188a4a55beb6584224b0f2
          return null;
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
-index a1c1a101aa424e74309f6f4c0a53a6a8db5df441..013298c424025cd88f15d61e50d196f70fa4c58b 100644
+index c9b1167b15990235e72d68ba6d1d2f0385eb5755..e163ff416f19766132d73fff2c8eb7f3f098f8c6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
 @@ -328,6 +328,13 @@ public class CraftBlock implements Block {
@@ -69,7 +69,7 @@ index a1c1a101aa424e74309f6f4c0a53a6a8db5df441..013298c424025cd88f15d61e50d196f7
      public Biome getBiome() {
          return this.getWorld().getBiome(this.getX(), this.getY(), this.getZ());
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
-index 9df2da091082071e3461b8900af4879e80cd4d93..1ca25dfdb9ec5c3a4d26b71484e1326e1f50b40d 100644
+index 483a89ba477506ae108f680e586b37c142119696..80418a05d53516d2c539383aa9994099c634b905 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockEntityState.java
 @@ -24,15 +24,26 @@ public class CraftBlockEntityState<T extends BlockEntity> extends CraftBlockStat
@@ -101,7 +101,7 @@ index 9df2da091082071e3461b8900af4879e80cd4d93..1ca25dfdb9ec5c3a4d26b71484e1326e
      }
  
      protected CraftBlockEntityState(CraftBlockEntityState<T> state, Location location) {
-@@ -176,4 +187,11 @@ public class CraftBlockEntityState<T extends BlockEntity> extends CraftBlockStat
+@@ -184,4 +195,11 @@ public class CraftBlockEntityState<T extends BlockEntity> extends CraftBlockStat
      public CraftBlockEntityState<T> copy(Location location) {
          return new CraftBlockEntityState<>(this, location);
      }
@@ -114,10 +114,10 @@ index 9df2da091082071e3461b8900af4879e80cd4d93..1ca25dfdb9ec5c3a4d26b71484e1326e
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
-index 0173a8eac2153d889536e48970f967040490e4b7..83ac5fc6cbbd249b5865ab203b150f53f01c9f05 100644
+index b849ed6eefbc73a86d4dd823bbc5bbb2321c330f..1a8dcde39a252a45046866349b848d79e1b13260 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlockStates.java
-@@ -387,15 +387,30 @@ public final class CraftBlockStates {
+@@ -393,15 +393,30 @@ public final class CraftBlockStates {
      }
  
      public static BlockState getBlockState(Block block) {

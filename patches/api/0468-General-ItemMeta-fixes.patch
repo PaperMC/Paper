@@ -1,0 +1,138 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 28 May 2024 19:59:01 -0700
+Subject: [PATCH] General ItemMeta fixes
+
+
+diff --git a/src/main/java/org/bukkit/FireworkEffect.java b/src/main/java/org/bukkit/FireworkEffect.java
+index 637fa73d4366c2d88e2716e5c8d3465706d788a7..0f03c546ecdd6383fb36a362d18d6fb57f2ccfee 100644
+--- a/src/main/java/org/bukkit/FireworkEffect.java
++++ b/src/main/java/org/bukkit/FireworkEffect.java
+@@ -322,9 +322,7 @@ public final class FireworkEffect implements ConfigurationSerializable {
+     private String string = null;
+ 
+     FireworkEffect(boolean flicker, boolean trail, @NotNull ImmutableList<Color> colors, @NotNull ImmutableList<Color> fadeColors, @NotNull Type type) {
+-        if (colors.isEmpty()) {
+-            throw new IllegalStateException("Cannot make FireworkEffect without any color");
+-        }
++        // Paper - can have empty colors
+         this.flicker = flicker;
+         this.trail = trail;
+         this.colors = colors;
+diff --git a/src/main/java/org/bukkit/inventory/meta/CompassMeta.java b/src/main/java/org/bukkit/inventory/meta/CompassMeta.java
+index 5040ab6190b41442986d2a734a8e782df0eab2f6..48bac38469ce3c5b2e59ad115375e7e5a2417da7 100644
+--- a/src/main/java/org/bukkit/inventory/meta/CompassMeta.java
++++ b/src/main/java/org/bukkit/inventory/meta/CompassMeta.java
+@@ -28,7 +28,8 @@ public interface CompassMeta extends ItemMeta {
+     /**
+      * Sets the location this lodestone compass will point to.
+      *
+-     * @param lodestone new location or null to clear
++     * @param lodestone new location or null to clear the targeted location
++     * @see #clearLodestone() to reset the compass to a normal compass
+      */
+     void setLodestone(@Nullable Location lodestone);
+ 
+@@ -49,9 +50,25 @@ public interface CompassMeta extends ItemMeta {
+      * location.
+      *
+      * @param tracked new tracked status
++     * @see #clearLodestone() to reset the compass to a normal compass
+      */
+     void setLodestoneTracked(boolean tracked);
+ 
++    // Paper start - Add more lodestone compass methods
++    /**
++     * Checks if this compass is considered a lodestone compass.
++     * @see #hasLodestone() to check if a position is being tracked
++     * @see #isLodestoneTracked() to check if it verifies the position is a lodestone
++     */
++    boolean isLodestoneCompass();
++
++    /**
++     * Reset this compass to a normal compass, removing any tracked
++     * location.
++     */
++    void clearLodestone();
++    // Paper end - Add more lodestone compass methods
++
+     @Override
+     CompassMeta clone();
+ }
+diff --git a/src/main/java/org/bukkit/inventory/meta/Damageable.java b/src/main/java/org/bukkit/inventory/meta/Damageable.java
+index ff6818b6d9e0207eafdd749928f33aeac3f27191..992f39da07bafe9769effaa7dc6adc018c89329d 100644
+--- a/src/main/java/org/bukkit/inventory/meta/Damageable.java
++++ b/src/main/java/org/bukkit/inventory/meta/Damageable.java
+@@ -9,14 +9,17 @@ import org.jetbrains.annotations.Nullable;
+ public interface Damageable extends ItemMeta {
+ 
+     /**
+-     * Checks to see if this item has damage
++     * Checks to see if this item has damage greater than 0.
+      *
+-     * @return true if this has damage
++     * @return true if this has damage > 0
+      */
+     boolean hasDamage();
+ 
+     /**
+      * Gets the damage
++     * <p>
++     * Call {@link #hasDamageValue()} to be sure
++     * a damage value is set.
+      *
+      * @return the damage
+      */
+@@ -26,9 +29,27 @@ public interface Damageable extends ItemMeta {
+      * Sets the damage
+      *
+      * @param damage item damage
++     * @see #resetDamage() to reset and clear the damage data component
+      */
+     void setDamage(int damage);
+ 
++    // Paper start
++    /**
++     * Checks if any damage value, including 0,
++     * is set on this meta.
++     *
++     * @return true if any value is set
++     */
++    boolean hasDamageValue();
++
++    /**
++     * Clears the damage component from the meta. Differs
++     * from {@code setDamage(0)} in that it removes the component
++     * instead of adding the component with a value of 0.
++     */
++    void resetDamage();
++    // Paper end
++
+     /**
+      * Checks to see if this item has a maximum amount of damage.
+      *
+diff --git a/src/main/java/org/bukkit/inventory/meta/ItemMeta.java b/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
+index afdcc2d67d55f2f07c913816e1f5b290d1415357..3fdba38fd5e75ddcbfca9cee70a606bfa4a539bf 100644
+--- a/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
++++ b/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
+@@ -328,7 +328,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
+     /**
+      * Sets the enchantable. Higher values allow higher enchantments.
+      *
+-     * @param enchantable enchantable value
++     * @param enchantable enchantable value, must be positive
+      */
+     void setEnchantable(@Nullable Integer enchantable);
+ 
+@@ -877,8 +877,9 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
+ 
+     /**
+      * Set all {@link Attribute}s and their {@link AttributeModifier}s.
+-     * To clear all currently set Attributes and AttributeModifiers use
+-     * null or an empty Multimap.
++     * To clear all custom attribute modifiers, use {@code null}. To set
++     * no modifiers (which will override the default modifiers), use an
++     * empty map.
+      * If not null nor empty, this will filter all entries that are not-null
+      * and add them to the ItemStack.
+      *

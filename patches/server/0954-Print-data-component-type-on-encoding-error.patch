@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Thu, 9 May 2024 15:11:34 +0200
+Subject: [PATCH] Print data component type on encoding error
+
+
+diff --git a/src/main/java/net/minecraft/core/component/DataComponentPatch.java b/src/main/java/net/minecraft/core/component/DataComponentPatch.java
+index 9de958d769a52a8df794988781f8601a4e6a73a4..9dec1c74d10f82636b7176e8f725b8acd1b52e4f 100644
+--- a/src/main/java/net/minecraft/core/component/DataComponentPatch.java
++++ b/src/main/java/net/minecraft/core/component/DataComponentPatch.java
+@@ -144,7 +144,13 @@ public final class DataComponentPatch {
+         }
+ 
+         private static <T> void encodeComponent(RegistryFriendlyByteBuf buf, DataComponentType<T> type, Object value) {
++            // Paper start - codec errors of random anonymous classes are useless
++            try {
+             type.streamCodec().encode(buf, (T) value); // CraftBukkit - decompile error
++            } catch (final Exception e) {
++                throw new RuntimeException("Error encoding component " + type, e);
++            }
++            // Paper end - codec errors of random anonymous classes are useless
+         }
+     };
+     private static final String REMOVED_PREFIX = "!";
