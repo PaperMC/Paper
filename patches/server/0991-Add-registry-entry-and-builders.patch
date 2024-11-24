@@ -9,17 +9,18 @@ diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistries.java b/src/
 index 86c9f87cdb41c0d1ccc2a61b501f969cfaae47bc..fd024576e70e0c121c1477a0b7777af18159b7c4 100644
 --- a/src/main/java/io/papermc/paper/registry/PaperRegistries.java
 +++ b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
-@@ -2,6 +2,9 @@ package io.papermc.paper.registry;
+@@ -2,6 +2,10 @@ package io.papermc.paper.registry;
  
  import com.google.common.base.Preconditions;
  import io.papermc.paper.adventure.PaperAdventure;
 +import io.papermc.paper.registry.data.PaperEnchantmentRegistryEntry;
 +import io.papermc.paper.registry.data.PaperGameEventRegistryEntry;
 +import io.papermc.paper.registry.data.PaperPaintingVariantRegistryEntry;
++import io.papermc.paper.registry.data.PaperBannerPatternRegistryEntry;
  import io.papermc.paper.registry.entry.RegistryEntry;
  import io.papermc.paper.registry.tag.TagKey;
  import java.util.Collections;
-@@ -78,7 +81,7 @@ public final class PaperRegistries {
+@@ -81,7 +85,7 @@ public final class PaperRegistries {
      static {
          REGISTRY_ENTRIES = List.of(
              // built-ins
@@ -28,19 +29,104 @@ index 86c9f87cdb41c0d1ccc2a61b501f969cfaae47bc..fd024576e70e0c121c1477a0b7777af1
              entry(Registries.STRUCTURE_TYPE, RegistryKey.STRUCTURE_TYPE, StructureType.class, CraftStructureType::new),
              entry(Registries.MOB_EFFECT, RegistryKey.MOB_EFFECT, PotionEffectType.class, CraftPotionEffectType::new),
              entry(Registries.BLOCK, RegistryKey.BLOCK, BlockType.class, CraftBlockType::new),
-@@ -100,10 +103,10 @@ public final class PaperRegistries {
+@@ -103,10 +107,10 @@ public final class PaperRegistries {
              entry(Registries.TRIM_PATTERN, RegistryKey.TRIM_PATTERN, TrimPattern.class, CraftTrimPattern::new).delayed(),
              entry(Registries.DAMAGE_TYPE, RegistryKey.DAMAGE_TYPE, DamageType.class, CraftDamageType::new).delayed(),
              entry(Registries.WOLF_VARIANT, RegistryKey.WOLF_VARIANT, Wolf.Variant.class, CraftWolf.CraftVariant::new).delayed(),
 -            entry(Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT, Enchantment.class, CraftEnchantment::new).withSerializationUpdater(FieldRename.ENCHANTMENT_RENAME).delayed(),
 +            writable(Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT, Enchantment.class, CraftEnchantment::new, PaperEnchantmentRegistryEntry.PaperBuilder::new).withSerializationUpdater(FieldRename.ENCHANTMENT_RENAME).delayed(),
              entry(Registries.JUKEBOX_SONG, RegistryKey.JUKEBOX_SONG, JukeboxSong.class, CraftJukeboxSong::new).delayed(),
-             entry(Registries.BANNER_PATTERN, RegistryKey.BANNER_PATTERN, PatternType.class, CraftPatternType::new).delayed(),
+-            entry(Registries.BANNER_PATTERN, RegistryKey.BANNER_PATTERN, PatternType.class, CraftPatternType::new).delayed(),
 -            entry(Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT, Art.class, CraftArt::new).delayed(),
++            writable(Registries.BANNER_PATTERN, RegistryKey.BANNER_PATTERN, PatternType.class, CraftPatternType::new, PaperBannerPatternRegistryEntry.PaperBuilder::new).delayed(),
 +            writable(Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT, Art.class, CraftArt::new, PaperPaintingVariantRegistryEntry.PaperBuilder::new).delayed(),
              entry(Registries.INSTRUMENT, RegistryKey.INSTRUMENT, MusicInstrument.class, CraftMusicInstrument::new).delayed(),
  
              // api-only
+diff --git a/src/main/java/io/papermc/paper/registry/data/PaperBannerPatternRegistryEntry.java b/src/main/java/io/papermc/paper/registry/data/PaperBannerPatternRegistryEntry.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c720b9fe926e8cbb493f4c43afa0d2793aa55cd4
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/data/PaperBannerPatternRegistryEntry.java
+@@ -0,0 +1,78 @@
++package io.papermc.paper.registry.data;
++
++import io.papermc.paper.adventure.PaperAdventure;
++import io.papermc.paper.registry.PaperRegistryBuilder;
++import io.papermc.paper.registry.TypedKey;
++import io.papermc.paper.registry.data.util.Conversions;
++import net.kyori.adventure.key.Key;
++import net.minecraft.network.chat.Component;
++import net.minecraft.resources.ResourceLocation;
++import net.minecraft.world.entity.decoration.PaintingVariant;
++import net.minecraft.world.level.block.entity.BannerPattern;
++import org.bukkit.Art;
++import org.bukkit.block.banner.PatternType;
++import org.jetbrains.annotations.Range;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
++import java.util.Optional;
++import java.util.OptionalInt;
++
++import static io.papermc.paper.registry.data.util.Checks.*;
++
++@NullMarked
++public class PaperBannerPatternRegistryEntry implements BannerPatternRegistryEntry {
++
++    protected @Nullable ResourceLocation assetId;
++    protected @Nullable String translationKey;
++
++    protected final Conversions conversions;
++
++    public PaperBannerPatternRegistryEntry(
++        final Conversions conversions,
++        final TypedKey<PatternType> ignoredKey,
++        final @Nullable BannerPattern nms
++    ) {
++        this.conversions = conversions;
++        if(nms == null) return;
++
++        this.assetId = nms.assetId();
++        this.translationKey = nms.translationKey();
++    }
++
++    @Override
++    public Key assetId() {
++        return PaperAdventure.asAdventure(asConfigured(this.assetId, "assetId"));
++    }
++
++    @Override
++    public String translationKey() {
++        return asConfigured(this.translationKey, "translationKey");
++    }
++
++    public static final class PaperBuilder extends PaperBannerPatternRegistryEntry implements Builder, PaperRegistryBuilder<BannerPattern, PatternType> {
++
++        public PaperBuilder(final Conversions conversions, final TypedKey<PatternType> key, final @Nullable BannerPattern nms) {
++            super(conversions, key, nms);
++        }
++
++        @Override
++        public Builder assetId(final Key assetId) {
++            this.assetId = PaperAdventure.asVanilla(asArgument(assetId, "assetId"));
++            return this;
++        }
++
++        @Override
++        public Builder translationKey(final String translationKey) {
++            this.translationKey = asArgument(translationKey, "translationKey");
++            return this;
++        }
++
++        @Override
++        public BannerPattern build() {
++            return new BannerPattern(
++                asConfigured(this.assetId, "assetId"),
++                this.translationKey()
++            );
++        }
++    }
++}
 diff --git a/src/main/java/io/papermc/paper/registry/data/PaperEnchantmentRegistryEntry.java b/src/main/java/io/papermc/paper/registry/data/PaperEnchantmentRegistryEntry.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..1b1c6838452d3001070a5d43cc49e3a09de7153d
