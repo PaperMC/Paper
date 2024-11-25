@@ -42,7 +42,7 @@ public interface Skull extends TileState {
      * @return true if the owner was successfully set
      * @deprecated see {@link #setOwningPlayer(org.bukkit.OfflinePlayer)}.
      */
-    @Deprecated(since = "1.94")
+    @Deprecated(since = "1.9.4")
     @Contract("null -> false")
     public boolean setOwner(@Nullable String name);
 
