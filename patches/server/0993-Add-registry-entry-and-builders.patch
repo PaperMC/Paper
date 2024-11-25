@@ -6,7 +6,7 @@ Subject: [PATCH] Add registry entry and builders
 Feature patch
 
 diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistries.java b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
-index 3ec2aa5da045b62809afd2c13fc9ae74189dbdad..31d660bbbe62cd2c26715e8d90fef58b8e024e34 100644
+index 86c9f87cdb41c0d1ccc2a61b501f969cfaae47bc..fd024576e70e0c121c1477a0b7777af18159b7c4 100644
 --- a/src/main/java/io/papermc/paper/registry/PaperRegistries.java
 +++ b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
 @@ -2,6 +2,9 @@ package io.papermc.paper.registry;
@@ -19,7 +19,7 @@ index 3ec2aa5da045b62809afd2c13fc9ae74189dbdad..31d660bbbe62cd2c26715e8d90fef58b
  import io.papermc.paper.registry.entry.RegistryEntry;
  import io.papermc.paper.registry.tag.TagKey;
  import java.util.Collections;
-@@ -81,7 +84,7 @@ public final class PaperRegistries {
+@@ -78,7 +81,7 @@ public final class PaperRegistries {
      static {
          REGISTRY_ENTRIES = List.of(
              // built-ins
@@ -28,7 +28,7 @@ index 3ec2aa5da045b62809afd2c13fc9ae74189dbdad..31d660bbbe62cd2c26715e8d90fef58b
              entry(Registries.STRUCTURE_TYPE, RegistryKey.STRUCTURE_TYPE, StructureType.class, CraftStructureType::new),
              entry(Registries.MOB_EFFECT, RegistryKey.MOB_EFFECT, PotionEffectType.class, CraftPotionEffectType::new),
              entry(Registries.BLOCK, RegistryKey.BLOCK, BlockType.class, CraftBlockType::new),
-@@ -103,10 +106,10 @@ public final class PaperRegistries {
+@@ -100,10 +103,10 @@ public final class PaperRegistries {
              entry(Registries.TRIM_PATTERN, RegistryKey.TRIM_PATTERN, TrimPattern.class, CraftTrimPattern::new).delayed(),
              entry(Registries.DAMAGE_TYPE, RegistryKey.DAMAGE_TYPE, DamageType.class, CraftDamageType::new).delayed(),
              entry(Registries.WOLF_VARIANT, RegistryKey.WOLF_VARIANT, Wolf.Variant.class, CraftWolf.CraftVariant::new).delayed(),
@@ -43,10 +43,10 @@ index 3ec2aa5da045b62809afd2c13fc9ae74189dbdad..31d660bbbe62cd2c26715e8d90fef58b
              // api-only
 diff --git a/src/main/java/io/papermc/paper/registry/data/PaperEnchantmentRegistryEntry.java b/src/main/java/io/papermc/paper/registry/data/PaperEnchantmentRegistryEntry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..481f5f0cfae1fada3bc3f873fb7e04c3086ea9bf
+index 0000000000000000000000000000000000000000..1b1c6838452d3001070a5d43cc49e3a09de7153d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/data/PaperEnchantmentRegistryEntry.java
-@@ -0,0 +1,234 @@
+@@ -0,0 +1,230 @@
 +package io.papermc.paper.registry.data;
 +
 +import com.google.common.base.Preconditions;
@@ -72,31 +72,27 @@ index 0000000000000000000000000000000000000000..481f5f0cfae1fada3bc3f873fb7e04c3
 +import net.minecraft.world.item.enchantment.Enchantment;
 +import org.bukkit.craftbukkit.CraftEquipmentSlot;
 +import org.bukkit.inventory.ItemType;
-+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.checkerframework.framework.qual.DefaultQualifier;
 +import org.jetbrains.annotations.Range;
++import org.jspecify.annotations.Nullable;
 +
 +import static io.papermc.paper.registry.data.util.Checks.asArgument;
 +import static io.papermc.paper.registry.data.util.Checks.asArgumentMin;
 +import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 +
-+@DefaultQualifier(NonNull.class)
 +public class PaperEnchantmentRegistryEntry implements EnchantmentRegistryEntry {
 +
 +    // Top level
-+    protected @MonotonicNonNull Component description;
++    protected @Nullable Component description;
 +
 +    // Definition
-+    protected @MonotonicNonNull HolderSet<Item> supportedItems;
++    protected @Nullable HolderSet<Item> supportedItems;
 +    protected @Nullable HolderSet<Item> primaryItems;
 +    protected OptionalInt weight = OptionalInt.empty();
 +    protected OptionalInt maxLevel = OptionalInt.empty();
-+    protected Enchantment.@MonotonicNonNull Cost minimumCost;
-+    protected Enchantment.@MonotonicNonNull Cost maximumCost;
++    protected Enchantment.@Nullable Cost minimumCost;
++    protected Enchantment.@Nullable Cost maximumCost;
 +    protected OptionalInt anvilCost = OptionalInt.empty();
-+    protected @MonotonicNonNull List<EquipmentSlotGroup> activeSlots;
++    protected @Nullable List<EquipmentSlotGroup> activeSlots;
 +
 +    // Exclusive
 +    protected HolderSet<Enchantment> exclusiveWith = HolderSet.empty(); // Paper added default to empty.
@@ -165,13 +161,13 @@ index 0000000000000000000000000000000000000000..481f5f0cfae1fada3bc3f873fb7e04c3
 +
 +    @Override
 +    public EnchantmentCost minimumCost() {
-+        final Enchantment.@MonotonicNonNull Cost cost = asConfigured(this.minimumCost, "minimumCost");
++        final Enchantment.Cost cost = asConfigured(this.minimumCost, "minimumCost");
 +        return EnchantmentRegistryEntry.EnchantmentCost.of(cost.base(), cost.perLevelAboveFirst());
 +    }
 +
 +    @Override
 +    public EnchantmentCost maximumCost() {
-+        final Enchantment.@MonotonicNonNull Cost cost = asConfigured(this.maximumCost, "maximumCost");
++        final Enchantment.Cost cost = asConfigured(this.maximumCost, "maximumCost");
 +        return EnchantmentRegistryEntry.EnchantmentCost.of(cost.base(), cost.perLevelAboveFirst());
 +    }
 +
@@ -283,25 +279,22 @@ index 0000000000000000000000000000000000000000..481f5f0cfae1fada3bc3f873fb7e04c3
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/data/PaperGameEventRegistryEntry.java b/src/main/java/io/papermc/paper/registry/data/PaperGameEventRegistryEntry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a96609223ed1e0500f8a4b868e309c0fc82bbc31
+index 0000000000000000000000000000000000000000..2100e8aca6f7ae7b90545bd3f4d4b800dba65daa
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/data/PaperGameEventRegistryEntry.java
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,54 @@
 +package io.papermc.paper.registry.data;
 +
 +import io.papermc.paper.registry.PaperRegistryBuilder;
 +import io.papermc.paper.registry.data.util.Conversions;
 +import java.util.OptionalInt;
 +import net.minecraft.world.level.gameevent.GameEvent;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.checkerframework.framework.qual.DefaultQualifier;
 +import org.jetbrains.annotations.Range;
++import org.jspecify.annotations.Nullable;
 +
 +import static io.papermc.paper.registry.data.util.Checks.asArgumentMin;
 +import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 +
-+@DefaultQualifier(NonNull.class)
 +public class PaperGameEventRegistryEntry implements GameEventRegistryEntry {
 +
 +    protected OptionalInt range = OptionalInt.empty();
@@ -470,20 +463,27 @@ index 0000000000000000000000000000000000000000..68b3d747f759f615a3c942de3f4d7a0f
 +        }
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/registry/data/package-info.java b/src/main/java/io/papermc/paper/registry/data/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..cfcf814eb527e6b82a2319f28df43b085ca5c168
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/data/package-info.java
+@@ -0,0 +1,4 @@
++@NullMarked
++package io.papermc.paper.registry.data;
++
++import org.jspecify.annotations.NullMarked;
 diff --git a/src/main/java/io/papermc/paper/registry/data/util/Checks.java b/src/main/java/io/papermc/paper/registry/data/util/Checks.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3241a94731fe8163876614efdcf30f8b551535af
+index 0000000000000000000000000000000000000000..9d61fad3989540b77734e57935104696e3c2b5b8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/data/util/Checks.java
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,45 @@
 +package io.papermc.paper.registry.data.util;
 +
 +import java.util.OptionalInt;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jspecify.annotations.Nullable;
 +
-+@DefaultQualifier(NonNull.class)
 +public final class Checks {
 +
 +    public static <T> T asConfigured(final @Nullable T value, final String field) {

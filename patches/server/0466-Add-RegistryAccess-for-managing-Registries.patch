@@ -12,10 +12,10 @@ public net.minecraft.server.RegistryLayer STATIC_ACCESS
 
 diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistries.java b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2f22f46f80b80be43a2cc1cd8afb51f4d1fd0e91
+index 0000000000000000000000000000000000000000..cd8a6a4c2a63029f8f859765088c227bbd456813
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
-@@ -0,0 +1,157 @@
+@@ -0,0 +1,154 @@
 +package io.papermc.paper.registry;
 +
 +import com.google.common.base.Preconditions;
@@ -81,14 +81,11 @@ index 0000000000000000000000000000000000000000..2f22f46f80b80be43a2cc1cd8afb51f4
 +import org.bukkit.inventory.meta.trim.TrimPattern;
 +import org.bukkit.map.MapCursor;
 +import org.bukkit.potion.PotionEffectType;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jspecify.annotations.Nullable;
 +
 +import static io.papermc.paper.registry.entry.RegistryEntry.apiOnly;
 +import static io.papermc.paper.registry.entry.RegistryEntry.entry;
 +
-+@DefaultQualifier(NonNull.class)
 +public final class PaperRegistries {
 +
 +    static final List<RegistryEntry<?, ?>> REGISTRY_ENTRIES;
@@ -175,10 +172,10 @@ index 0000000000000000000000000000000000000000..2f22f46f80b80be43a2cc1cd8afb51f4
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistryAccess.java b/src/main/java/io/papermc/paper/registry/PaperRegistryAccess.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..35b6a7c5bac9640332a833bd3627f2bcb1bbf2f3
+index 0000000000000000000000000000000000000000..4bf7915867dbe762ef0b070d67d5f7b7d1ee4f03
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/PaperRegistryAccess.java
-@@ -0,0 +1,127 @@
+@@ -0,0 +1,122 @@
 +package io.papermc.paper.registry;
 +
 +import io.papermc.paper.registry.entry.ApiRegistryEntry;
@@ -194,14 +191,9 @@ index 0000000000000000000000000000000000000000..35b6a7c5bac9640332a833bd3627f2bc
 +import net.minecraft.resources.ResourceKey;
 +import org.bukkit.Keyed;
 +import org.bukkit.Registry;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.checkerframework.framework.qual.DefaultQualifier;
 +import org.jetbrains.annotations.VisibleForTesting;
++import org.jspecify.annotations.Nullable;
 +
-+import static java.util.Objects.requireNonNull;
-+
-+@DefaultQualifier(NonNull.class)
 +public class PaperRegistryAccess implements RegistryAccess {
 +
 +    // We store the API registries in a memoized supplier, so they can be created on-demand.
@@ -224,14 +216,14 @@ index 0000000000000000000000000000000000000000..35b6a7c5bac9640332a833bd3627f2bc
 +    @Deprecated(forRemoval = true)
 +    @Override
 +    public <T extends Keyed> @Nullable Registry<T> getRegistry(final Class<T> type) {
-+        final @Nullable RegistryKey<T> registryKey = byType(type);
++        final RegistryKey<T> registryKey = byType(type);
 +        // If our mapping from Class -> RegistryKey did not contain the passed type it was either a completely invalid type or a registry
 +        // that merely exists as a SimpleRegistry in the org.bukkit.Registry type. We cannot return a registry for these, return null
 +        // as per method contract in Bukkit#getRegistry.
 +        if (registryKey == null) return null;
 +
-+        final @Nullable RegistryEntry<?, T> entry = PaperRegistries.getEntry(registryKey);
-+        final @Nullable RegistryHolder<T> registry = (RegistryHolder<T>) this.registries.get(registryKey);
++        final RegistryEntry<?, T> entry = PaperRegistries.getEntry(registryKey);
++        final RegistryHolder<T> registry = (RegistryHolder<T>) this.registries.get(registryKey);
 +        if (registry != null) {
 +            // if the registry exists, return right away. Since this is the "legacy" method, we return DelayedRegistry
 +            // for the non-builtin Registry instances stored as fields in Registry.
@@ -352,10 +344,10 @@ index 0000000000000000000000000000000000000000..6d134ace042758da722960cbcb48e525
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/RegistryHolder.java b/src/main/java/io/papermc/paper/registry/RegistryHolder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a31bdd9f02fe75a87fceb2ebe8c36b3232a561cc
+index 0000000000000000000000000000000000000000..1b52d4bc868e1e5f84c8416301e193bb9cd315b2
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/RegistryHolder.java
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,44 @@
 +package io.papermc.paper.registry;
 +
 +import com.google.common.base.Suppliers;
@@ -364,10 +356,7 @@ index 0000000000000000000000000000000000000000..a31bdd9f02fe75a87fceb2ebe8c36b32
 +import java.util.function.Supplier;
 +import org.bukkit.Keyed;
 +import org.bukkit.Registry;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.framework.qual.DefaultQualifier;
 +
-+@DefaultQualifier(NonNull.class)
 +public interface RegistryHolder<B extends Keyed> {
 +
 +    Registry<B> get();
@@ -471,10 +460,10 @@ index 0000000000000000000000000000000000000000..ceb217dbbb84e8bd51365dd47bf91971
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/entry/CraftRegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/CraftRegistryEntry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9bb4aa926978f117901c9f99c45a6862a1d5ce30
+index 0000000000000000000000000000000000000000..45cbc425da64f0bd3290600869ad425d9e6e912b
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/entry/CraftRegistryEntry.java
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,48 @@
 +package io.papermc.paper.registry.entry;
 +
 +import com.google.common.base.Preconditions;
@@ -487,10 +476,7 @@ index 0000000000000000000000000000000000000000..9bb4aa926978f117901c9f99c45a6862
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.craftbukkit.CraftRegistry;
 +import org.bukkit.craftbukkit.util.ApiVersion;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.framework.qual.DefaultQualifier;
 +
-+@DefaultQualifier(NonNull.class)
 +public class CraftRegistryEntry<M, B extends Keyed> extends BaseRegistryEntry<M, B> { // TODO remove Keyed
 +
 +    private static final BiFunction<NamespacedKey, ApiVersion, NamespacedKey> EMPTY = (namespacedKey, apiVersion) -> namespacedKey;
@@ -528,10 +514,10 @@ index 0000000000000000000000000000000000000000..9bb4aa926978f117901c9f99c45a6862
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/entry/RegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/RegistryEntry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..15991bf13894d850f360a520d1815711d25973ec
+index 0000000000000000000000000000000000000000..2889d87f0989ae5744cd4c1e57240830aa574155
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/entry/RegistryEntry.java
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,48 @@
 +package io.papermc.paper.registry.entry;
 +
 +import io.papermc.paper.registry.RegistryHolder;
@@ -544,10 +530,7 @@ index 0000000000000000000000000000000000000000..15991bf13894d850f360a520d1815711
 +import org.bukkit.Keyed;
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.craftbukkit.util.ApiVersion;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.framework.qual.DefaultQualifier;
 +
-+@DefaultQualifier(NonNull.class)
 +public interface RegistryEntry<M, B extends Keyed> extends RegistryEntryInfo<M, B> { // TODO remove Keyed
 +
 +    RegistryHolder<B> createRegistryHolder(Registry<M> nmsRegistry);
@@ -603,34 +586,29 @@ index 0000000000000000000000000000000000000000..0ae855e80fc9fddfc1feb33c7a974820
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/entry/package-info.java b/src/main/java/io/papermc/paper/registry/entry/package-info.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e4c94d6860e0f5b643cde1ded20b5503c02a4866
+index 0000000000000000000000000000000000000000..f04e93aa5ca41ce1cf3b152f827911fdf0dd10cb
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/entry/package-info.java
-@@ -0,0 +1,5 @@
-+@DefaultQualifier(NonNull.class)
+@@ -0,0 +1,4 @@
++@NullMarked
 +package io.papermc.paper.registry.entry;
 +
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jspecify.annotations.NullMarked;
 diff --git a/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistry.java b/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9400fed345344a0a8e4fb301cca6a1867adf625b
+index 0000000000000000000000000000000000000000..ca829b162d4369f845e59b62bb8779fd83fe2ef3
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistry.java
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,57 @@
 +package io.papermc.paper.registry.legacy;
 +
 +import java.util.Iterator;
 +import java.util.function.Supplier;
 +import java.util.stream.Stream;
-+import net.kyori.adventure.key.Key;
 +import org.bukkit.Keyed;
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.Registry;
-+import org.bukkit.craftbukkit.CraftRegistry;
-+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.jetbrains.annotations.NotNull;
++import org.jspecify.annotations.Nullable;
 +
 +/**
 + * This is to support the now-deprecated fields in {@link Registry} for
@@ -638,7 +616,7 @@ index 0000000000000000000000000000000000000000..9400fed345344a0a8e4fb301cca6a186
 + */
 +public final class DelayedRegistry<T extends Keyed, R extends Registry<T>> implements Registry<T> {
 +
-+    private @MonotonicNonNull Supplier<? extends R> delegate;
++    private @Nullable Supplier<? extends R> delegate;
 +
 +    public void load(final Supplier<? extends R> registry) {
 +        if (this.delegate != null) {
@@ -660,7 +638,7 @@ index 0000000000000000000000000000000000000000..9400fed345344a0a8e4fb301cca6a186
 +    }
 +
 +    @Override
-+    public @NotNull T getOrThrow(@NotNull final NamespacedKey key) {
++    public T getOrThrow(final NamespacedKey key) {
 +        return this.delegate().getOrThrow(key);
 +    }
 +
@@ -675,7 +653,7 @@ index 0000000000000000000000000000000000000000..9400fed345344a0a8e4fb301cca6a186
 +    }
 +
 +    @Override
-+    public NamespacedKey getKey(final T value) {
++    public @Nullable NamespacedKey getKey(final T value) {
 +        return this.delegate().getKey(value);
 +    }
 +}
@@ -752,15 +730,24 @@ index 0000000000000000000000000000000000000000..83870816cd4c54f94a3c603ffe41c11e
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/legacy/package-info.java b/src/main/java/io/papermc/paper/registry/legacy/package-info.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4396982af55872fafbfeaf8161ad6f392726c773
+index 0000000000000000000000000000000000000000..063a8d7a7313d5d685d51df54d9502d72266da49
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/legacy/package-info.java
-@@ -0,0 +1,5 @@
-+@DefaultQualifier(NonNull.class)
+@@ -0,0 +1,4 @@
++@NullMarked
 +package io.papermc.paper.registry.legacy;
 +
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jspecify.annotations.NullMarked;
+diff --git a/src/main/java/io/papermc/paper/registry/package-info.java b/src/main/java/io/papermc/paper/registry/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ca07ef31161e938d48214992b34cafb712a51513
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/package-info.java
+@@ -0,0 +1,4 @@
++@NullMarked
++package io.papermc.paper.registry;
++
++import org.jspecify.annotations.NullMarked;
 diff --git a/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java b/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
 index 3f72e30b57fb2a4231e22a2234729408c1240af4..4638ba98dbbdb0f880337347be85a6e0fbed2191 100644
 --- a/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java

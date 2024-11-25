@@ -11,7 +11,7 @@ public net.minecraft.resources.RegistryOps lookupProvider
 public net.minecraft.resources.RegistryOps$HolderLookupAdapter
 
 diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistries.java b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
-index 2f22f46f80b80be43a2cc1cd8afb51f4d1fd0e91..3ec2aa5da045b62809afd2c13fc9ae74189dbdad 100644
+index cd8a6a4c2a63029f8f859765088c227bbd456813..86c9f87cdb41c0d1ccc2a61b501f969cfaae47bc 100644
 --- a/src/main/java/io/papermc/paper/registry/PaperRegistries.java
 +++ b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
 @@ -3,6 +3,7 @@ package io.papermc.paper.registry;
@@ -22,15 +22,15 @@ index 2f22f46f80b80be43a2cc1cd8afb51f4d1fd0e91..3ec2aa5da045b62809afd2c13fc9ae74
  import java.util.Collections;
  import java.util.IdentityHashMap;
  import java.util.List;
-@@ -69,6 +70,7 @@ import org.checkerframework.framework.qual.DefaultQualifier;
+@@ -67,6 +68,7 @@ import org.jspecify.annotations.Nullable;
  
  import static io.papermc.paper.registry.entry.RegistryEntry.apiOnly;
  import static io.papermc.paper.registry.entry.RegistryEntry.entry;
 +import static io.papermc.paper.registry.entry.RegistryEntry.writable;
  
- @DefaultQualifier(NonNull.class)
  public final class PaperRegistries {
-@@ -152,6 +154,15 @@ public final class PaperRegistries {
+ 
+@@ -149,6 +151,15 @@ public final class PaperRegistries {
          return ResourceKey.create((ResourceKey<? extends Registry<M>>) PaperRegistries.registryToNms(typedKey.registryKey()), PaperAdventure.asVanilla(typedKey.key()));
      }
  
@@ -47,10 +47,10 @@ index 2f22f46f80b80be43a2cc1cd8afb51f4d1fd0e91..3ec2aa5da045b62809afd2c13fc9ae74
      }
  }
 diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistryAccess.java b/src/main/java/io/papermc/paper/registry/PaperRegistryAccess.java
-index 35b6a7c5bac9640332a833bd3627f2bcb1bbf2f3..1026b9c04f94ed73049b980822a2eafdbacea7fd 100644
+index 4bf7915867dbe762ef0b070d67d5f7b7d1ee4f03..ed071ed34e16812f133102b0d66a5201a94639f2 100644
 --- a/src/main/java/io/papermc/paper/registry/PaperRegistryAccess.java
 +++ b/src/main/java/io/papermc/paper/registry/PaperRegistryAccess.java
-@@ -83,6 +83,14 @@ public class PaperRegistryAccess implements RegistryAccess {
+@@ -78,6 +78,14 @@ public class PaperRegistryAccess implements RegistryAccess {
          return possiblyUnwrap(registryHolder.get());
      }
  
@@ -67,15 +67,14 @@ index 35b6a7c5bac9640332a833bd3627f2bcb1bbf2f3..1026b9c04f94ed73049b980822a2eafd
              return delayedRegistry.delegate();
 diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistryBuilder.java b/src/main/java/io/papermc/paper/registry/PaperRegistryBuilder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..528c6ee1739d92f766f3904acd7fc5734c93388a
+index 0000000000000000000000000000000000000000..69e63689083207de2f409557d4a9a17f8ad7ae3e
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/PaperRegistryBuilder.java
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,25 @@
 +package io.papermc.paper.registry;
 +
 +import io.papermc.paper.registry.data.util.Conversions;
-+import net.minecraft.resources.RegistryOps;
-+import org.checkerframework.checker.nullness.qual.Nullable;
++import org.jspecify.annotations.Nullable;
 +
 +public interface PaperRegistryBuilder<M, T> extends RegistryBuilder<T> {
 +
@@ -99,7 +98,7 @@ index 0000000000000000000000000000000000000000..528c6ee1739d92f766f3904acd7fc573
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistryListenerManager.java b/src/main/java/io/papermc/paper/registry/PaperRegistryListenerManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..69e946173407eb05b18a2b19b0d45cbb3213570b
+index 0000000000000000000000000000000000000000..60d9b806a09bb103e36ce1f932a5a34ef408770a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/PaperRegistryListenerManager.java
 @@ -0,0 +1,183 @@
@@ -133,8 +132,8 @@ index 0000000000000000000000000000000000000000..69e946173407eb05b18a2b19b0d45cbb
 +import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.resources.ResourceKey;
 +import net.minecraft.resources.ResourceLocation;
-+import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.intellij.lang.annotations.Subst;
++import org.jspecify.annotations.Nullable;
 +
 +public class PaperRegistryListenerManager {
 +
@@ -201,7 +200,7 @@ index 0000000000000000000000000000000000000000..69e946173407eb05b18a2b19b0d45cbb
 +        final Conversions conversions
 +    ) {
 +        Preconditions.checkState(LaunchEntryPointHandler.INSTANCE.hasEntered(Entrypoint.BOOTSTRAPPER), registry.key() + " tried to run modification listeners before bootstrappers have been called"); // verify that bootstrappers have been called
-+        final @Nullable RegistryEntryInfo<M, T> entry = PaperRegistries.getEntry(registry.key());
++        final RegistryEntryInfo<M, T> entry = PaperRegistries.getEntry(registry.key());
 +        if (!RegistryEntry.Modifiable.isModifiable(entry) || !this.valueAddEventTypes.hasHandlers(entry.apiKey())) {
 +            return registerMethod.register((WritableRegistry<M>) registry, key, nms, registrationInfo);
 +        }
@@ -262,7 +261,7 @@ index 0000000000000000000000000000000000000000..69e946173407eb05b18a2b19b0d45cbb
 +    }
 +
 +    public <M, T extends org.bukkit.Keyed, B extends PaperRegistryBuilder<M, T>> void runFreezeListeners(final ResourceKey<? extends Registry<M>> resourceKey, final Conversions conversions) {
-+        final @Nullable RegistryEntryInfo<M, T> entry = PaperRegistries.getEntry(resourceKey);
++        final RegistryEntryInfo<M, T> entry = PaperRegistries.getEntry(resourceKey);
 +        if (!RegistryEntry.Addable.isAddable(entry) || !this.freezeEventTypes.hasHandlers(entry.apiKey())) {
 +            return;
 +        }
@@ -320,7 +319,7 @@ index 6d134ace042758da722960cbcb48e52508dafd61..cc39bc68d29055ef6429f08f975412bd
  }
 diff --git a/src/main/java/io/papermc/paper/registry/WritableCraftRegistry.java b/src/main/java/io/papermc/paper/registry/WritableCraftRegistry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..78317c7ab42a666f19634593a8f3b696700764c8
+index 0000000000000000000000000000000000000000..ef91352d442d9ddd666af6bde9a186ce15e5aa04
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/WritableCraftRegistry.java
 @@ -0,0 +1,92 @@
@@ -341,7 +340,7 @@ index 0000000000000000000000000000000000000000..78317c7ab42a666f19634593a8f3b696
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.craftbukkit.CraftRegistry;
 +import org.bukkit.craftbukkit.util.ApiVersion;
-+import org.checkerframework.checker.nullness.qual.Nullable;
++import org.jspecify.annotations.Nullable;
 +
 +public class WritableCraftRegistry<M, T extends Keyed, B extends PaperRegistryBuilder<M, T>> extends CraftRegistry<T, M> {
 +
@@ -418,22 +417,19 @@ index 0000000000000000000000000000000000000000..78317c7ab42a666f19634593a8f3b696
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/data/util/Conversions.java b/src/main/java/io/papermc/paper/registry/data/util/Conversions.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..eda5cc7d45ef59ccc1c9c7e027c1f044f1dcc86b
+index 0000000000000000000000000000000000000000..1e9a0143bc3b70dfc5e129a0fe849ff3e01447ab
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/data/util/Conversions.java
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,33 @@
 +package io.papermc.paper.registry.data.util;
 +
 +import com.mojang.serialization.JavaOps;
 +import io.papermc.paper.adventure.WrapperAwareSerializer;
 +import net.kyori.adventure.text.Component;
 +import net.minecraft.resources.RegistryOps;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.checker.nullness.qual.Nullable;
-+import org.checkerframework.framework.qual.DefaultQualifier;
 +import org.jetbrains.annotations.Contract;
++import org.jspecify.annotations.Nullable;
 +
-+@DefaultQualifier(NonNull.class)
 +public class Conversions {
 +
 +    private final RegistryOps.RegistryInfoLookup lookup;
@@ -458,6 +454,16 @@ index 0000000000000000000000000000000000000000..eda5cc7d45ef59ccc1c9c7e027c1f044
 +        return vanilla == null ? Component.empty() : this.serializer.deserialize(vanilla);
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/registry/data/util/package-info.java b/src/main/java/io/papermc/paper/registry/data/util/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5b88be976c7773459ce1b6daf58d7ea7c806f21b
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/data/util/package-info.java
+@@ -0,0 +1,4 @@
++@NullMarked
++package io.papermc.paper.registry.data.util;
++
++import org.jspecify.annotations.NullMarked;
 diff --git a/src/main/java/io/papermc/paper/registry/entry/AddableRegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/AddableRegistryEntry.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..aeec9b3ae2911f041d000b3db72f37974020ba60
@@ -547,7 +553,7 @@ index 0000000000000000000000000000000000000000..515a995e3862f8e7cb93d149315ea32e
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/entry/RegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/RegistryEntry.java
-index 15991bf13894d850f360a520d1815711d25973ec..f2e919705301cb23ed1938ca3c1976378249172c 100644
+index 2889d87f0989ae5744cd4c1e57240830aa574155..9494bcf82101340e04559d850570698947b7a9ff 100644
 --- a/src/main/java/io/papermc/paper/registry/entry/RegistryEntry.java
 +++ b/src/main/java/io/papermc/paper/registry/entry/RegistryEntry.java
 @@ -1,7 +1,13 @@
@@ -564,15 +570,15 @@ index 15991bf13894d850f360a520d1815711d25973ec..f2e919705301cb23ed1938ca3c197637
  import io.papermc.paper.registry.legacy.DelayedRegistryEntry;
  import java.util.function.BiFunction;
  import java.util.function.Supplier;
-@@ -11,6 +17,7 @@ import org.bukkit.Keyed;
+@@ -10,6 +16,7 @@ import net.minecraft.resources.ResourceKey;
+ import org.bukkit.Keyed;
  import org.bukkit.NamespacedKey;
  import org.bukkit.craftbukkit.util.ApiVersion;
- import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.checker.nullness.qual.Nullable;
- import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jspecify.annotations.Nullable;
  
- @DefaultQualifier(NonNull.class)
-@@ -32,6 +39,65 @@ public interface RegistryEntry<M, B extends Keyed> extends RegistryEntryInfo<M,
+ public interface RegistryEntry<M, B extends Keyed> extends RegistryEntryInfo<M, B> { // TODO remove Keyed
+ 
+@@ -29,6 +36,65 @@ public interface RegistryEntry<M, B extends Keyed> extends RegistryEntryInfo<M,
          return new DelayedRegistryEntry<>(this);
      }
  
@@ -638,7 +644,7 @@ index 15991bf13894d850f360a520d1815711d25973ec..f2e919705301cb23ed1938ca3c197637
      static <M, B extends Keyed> RegistryEntry<M, B> entry(
          final ResourceKey<? extends Registry<M>> mcKey,
          final RegistryKey<B> apiKey,
-@@ -48,4 +114,24 @@ public interface RegistryEntry<M, B extends Keyed> extends RegistryEntryInfo<M,
+@@ -45,4 +111,24 @@ public interface RegistryEntry<M, B extends Keyed> extends RegistryEntryInfo<M,
      ) {
          return new ApiRegistryEntry<>(mcKey, apiKey, apiRegistrySupplier);
      }
@@ -693,10 +699,10 @@ index 0000000000000000000000000000000000000000..562accce731630327d116afd1c9d559d
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEventImpl.java b/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEventImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cc9c8fd313f530777af80ad79e03903f3f8f9829
+index 0000000000000000000000000000000000000000..332829c65ef45966dffcf5f1c59422a801179759
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEventImpl.java
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,29 @@
 +package io.papermc.paper.registry.event;
 +
 +import io.papermc.paper.plugin.lifecycle.event.PaperLifecycleEvent;
@@ -711,7 +717,6 @@ index 0000000000000000000000000000000000000000..cc9c8fd313f530777af80ad79e03903f
 +import net.minecraft.core.HolderSet;
 +import net.minecraft.resources.RegistryOps;
 +import org.bukkit.Keyed;
-+import org.checkerframework.checker.nullness.qual.NonNull;
 +
 +public record RegistryEntryAddEventImpl<T, B extends RegistryBuilder<T>>(
 +    TypedKey<T> key,
@@ -721,7 +726,7 @@ index 0000000000000000000000000000000000000000..cc9c8fd313f530777af80ad79e03903f
 +) implements RegistryEntryAddEvent<T, B>, PaperLifecycleEvent {
 +
 +    @Override
-+    public @NonNull <V extends Keyed> Tag<V> getOrCreateTag(final TagKey<V> tagKey) {
++    public <V extends Keyed> Tag<V> getOrCreateTag(final TagKey<V> tagKey) {
 +        final RegistryOps.RegistryInfo<Object> registryInfo = this.conversions.lookup().lookup(PaperRegistries.registryToNms(tagKey.registryKey())).orElseThrow();
 +        final HolderSet.Named<?> tagSet = registryInfo.getter().getOrThrow(PaperRegistries.toNms(tagKey));
 +        return new NamedRegistryKeySetImpl<>(tagKey, tagSet);
@@ -810,10 +815,10 @@ index 0000000000000000000000000000000000000000..34c842ffa355e3c8001dd7b8551bcb49
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEventImpl.java b/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEventImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..63957d2509e68ccc6eb2fd9ecaa35bfad7b71b81
+index 0000000000000000000000000000000000000000..1b45802f9afc97fd59c6dc77964dedea1016cd6c
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEventImpl.java
-@@ -0,0 +1,28 @@
+@@ -0,0 +1,27 @@
 +package io.papermc.paper.registry.event;
 +
 +import io.papermc.paper.plugin.lifecycle.event.PaperLifecycleEvent;
@@ -827,7 +832,6 @@ index 0000000000000000000000000000000000000000..63957d2509e68ccc6eb2fd9ecaa35bfa
 +import net.minecraft.core.HolderSet;
 +import net.minecraft.resources.RegistryOps;
 +import org.bukkit.Keyed;
-+import org.checkerframework.checker.nullness.qual.NonNull;
 +
 +public record RegistryFreezeEventImpl<T, B extends RegistryBuilder<T>>(
 +    RegistryKey<T> registryKey,
@@ -836,7 +840,7 @@ index 0000000000000000000000000000000000000000..63957d2509e68ccc6eb2fd9ecaa35bfa
 +) implements RegistryFreezeEvent<T, B>, PaperLifecycleEvent {
 +
 +    @Override
-+    public @NonNull <V extends Keyed> Tag<V> getOrCreateTag(final TagKey<V> tagKey) {
++    public <V extends Keyed> Tag<V> getOrCreateTag(final TagKey<V> tagKey) {
 +        final RegistryOps.RegistryInfo<Object> registryInfo = this.conversions.lookup().lookup(PaperRegistries.registryToNms(tagKey.registryKey())).orElseThrow();
 +        final HolderSet.Named<?> tagSet = registryInfo.getter().getOrThrow(PaperRegistries.toNms(tagKey));
 +        return new NamedRegistryKeySetImpl<>(tagKey, tagSet);
@@ -844,15 +848,14 @@ index 0000000000000000000000000000000000000000..63957d2509e68ccc6eb2fd9ecaa35bfa
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/package-info.java b/src/main/java/io/papermc/paper/registry/event/package-info.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..14d2d9766b8dee763f220c397aba3ad432d02aaa
+index 0000000000000000000000000000000000000000..1d20e0d940ae498b96fe33f6176c140f816921f1
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/event/package-info.java
-@@ -0,0 +1,5 @@
-+@DefaultQualifier(NonNull.class)
+@@ -0,0 +1,4 @@
++@NullMarked
 +package io.papermc.paper.registry.event;
 +
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jspecify.annotations.NullMarked;
 diff --git a/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddEventTypeImpl.java b/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddEventTypeImpl.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..fbf853bf1cbb3c7bbef531afe185818b9454299b
@@ -898,7 +901,7 @@ index 0000000000000000000000000000000000000000..fbf853bf1cbb3c7bbef531afe185818b
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddHandlerConfiguration.java b/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddHandlerConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..548f5bf979e88708e98d04dfe22ccaa300c91ddd
+index 0000000000000000000000000000000000000000..3cc0f7688f61c5fdbd98d0134741c98a8b9748b9
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/event/type/RegistryEntryAddHandlerConfiguration.java
 @@ -0,0 +1,42 @@
@@ -912,8 +915,8 @@ index 0000000000000000000000000000000000000000..548f5bf979e88708e98d04dfe22ccaa3
 +import io.papermc.paper.registry.TypedKey;
 +import io.papermc.paper.registry.event.RegistryEntryAddEvent;
 +import java.util.function.Predicate;
-+import org.checkerframework.checker.nullness.qual.Nullable;
 +import org.jetbrains.annotations.Contract;
++import org.jspecify.annotations.Nullable;
 +
 +public class RegistryEntryAddHandlerConfiguration<T, B extends RegistryBuilder<T>> extends PrioritizedLifecycleEventHandlerConfigurationImpl<BootstrapContext, RegistryEntryAddEvent<T, B>> implements RegistryEntryAddConfiguration<T> {
 +
@@ -968,8 +971,18 @@ index 0000000000000000000000000000000000000000..7ee77022198bf5f9f88c6a1917a1da30
 +        return false; // only runs once
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/registry/event/type/package-info.java b/src/main/java/io/papermc/paper/registry/event/type/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f9f63926a5aaf84e0d23bac3422c5800683e37f9
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/event/type/package-info.java
+@@ -0,0 +1,4 @@
++@NullMarked
++package io.papermc.paper.registry.event.type;
++
++import org.jspecify.annotations.NullMarked;
 diff --git a/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistry.java b/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistry.java
-index 9400fed345344a0a8e4fb301cca6a1867adf625b..0cdc92acd3ebb6efb10e1b66419cc05618301581 100644
+index ca829b162d4369f845e59b62bb8779fd83fe2ef3..2de5aa3f0f17b29a6cf9d81ebda81aed7295c1f1 100644
 --- a/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistry.java
 +++ b/src/main/java/io/papermc/paper/registry/legacy/DelayedRegistry.java
 @@ -1,5 +1,7 @@
@@ -980,16 +993,8 @@ index 9400fed345344a0a8e4fb301cca6a1867adf625b..0cdc92acd3ebb6efb10e1b66419cc056
  import java.util.Iterator;
  import java.util.function.Supplier;
  import java.util.stream.Stream;
-@@ -7,7 +9,6 @@ import net.kyori.adventure.key.Key;
- import org.bukkit.Keyed;
- import org.bukkit.NamespacedKey;
- import org.bukkit.Registry;
--import org.bukkit.craftbukkit.CraftRegistry;
- import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
- import org.checkerframework.checker.nullness.qual.Nullable;
- import org.jetbrains.annotations.NotNull;
-@@ -58,4 +59,14 @@ public final class DelayedRegistry<T extends Keyed, R extends Registry<T>> imple
-     public NamespacedKey getKey(final T value) {
+@@ -54,4 +56,14 @@ public final class DelayedRegistry<T extends Keyed, R extends Registry<T>> imple
+     public @Nullable NamespacedKey getKey(final T value) {
          return this.delegate().getKey(value);
      }
 +
@@ -1003,23 +1008,12 @@ index 9400fed345344a0a8e4fb301cca6a1867adf625b..0cdc92acd3ebb6efb10e1b66419cc056
 +        return this.delegate().getTag(key);
 +    }
  }
-diff --git a/src/main/java/io/papermc/paper/registry/package-info.java b/src/main/java/io/papermc/paper/registry/package-info.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..0b80179ff90e085568d7ceafd9b17511789dc99b
---- /dev/null
-+++ b/src/main/java/io/papermc/paper/registry/package-info.java
-@@ -0,0 +1,5 @@
-+@DefaultQualifier(NonNull.class)
-+package io.papermc.paper.registry;
-+
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.framework.qual.DefaultQualifier;
 diff --git a/src/main/java/io/papermc/paper/registry/set/NamedRegistryKeySetImpl.java b/src/main/java/io/papermc/paper/registry/set/NamedRegistryKeySetImpl.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e8c2c18a1ed5cd587266bd415170610781531a12
+index 0000000000000000000000000000000000000000..7b15640c2f10c72f2612ab2270adc5689dfd9e5a
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/set/NamedRegistryKeySetImpl.java
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,74 @@
 +package io.papermc.paper.registry.set;
 +
 +import com.google.common.collect.ImmutableList;
@@ -1039,12 +1033,10 @@ index 0000000000000000000000000000000000000000..e8c2c18a1ed5cd587266bd4151706107
 +import org.bukkit.NamespacedKey;
 +import org.bukkit.Registry;
 +import org.bukkit.craftbukkit.util.CraftNamespacedKey;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.framework.qual.DefaultQualifier;
-+import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Unmodifiable;
++import org.jspecify.annotations.NullMarked;
 +
-+@DefaultQualifier(NonNull.class)
++@NullMarked
 +public record NamedRegistryKeySetImpl<T extends Keyed, M>( // TODO remove Keyed
 +    TagKey<T> tagKey,
 +    HolderSet.Named<M> namedSet
@@ -1091,17 +1083,17 @@ index 0000000000000000000000000000000000000000..e8c2c18a1ed5cd587266bd4151706107
 +    }
 +
 +    @Override
-+    public @NotNull NamespacedKey getKey() {
++    public NamespacedKey getKey() {
 +        final Key key = this.tagKey().key();
 +        return new NamespacedKey(key.namespace(), key.value());
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/set/PaperRegistrySets.java b/src/main/java/io/papermc/paper/registry/set/PaperRegistrySets.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f09ce9c8547ef05153847245746473dd9a8acbe6
+index 0000000000000000000000000000000000000000..cb92f53cf9d139828acd016499470212a198b722
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/set/PaperRegistrySets.java
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,45 @@
 +package io.papermc.paper.registry.set;
 +
 +import io.papermc.paper.registry.PaperRegistries;
@@ -1115,10 +1107,7 @@ index 0000000000000000000000000000000000000000..f09ce9c8547ef05153847245746473dd
 +import net.minecraft.resources.RegistryOps;
 +import net.minecraft.resources.ResourceKey;
 +import org.bukkit.Keyed;
-+import org.checkerframework.checker.nullness.qual.NonNull;
-+import org.checkerframework.framework.qual.DefaultQualifier;
 +
-+@DefaultQualifier(NonNull.class)
 +public final class PaperRegistrySets {
 +
 +    public static <A extends Keyed, M> HolderSet<M> convertToNms(final ResourceKey<? extends Registry<M>> resourceKey, final RegistryOps.RegistryInfoLookup lookup, final RegistryKeySet<A> registryKeySet) { // TODO remove Keyed
@@ -1150,6 +1139,16 @@ index 0000000000000000000000000000000000000000..f09ce9c8547ef05153847245746473dd
 +    private PaperRegistrySets() {
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/registry/set/package-info.java b/src/main/java/io/papermc/paper/registry/set/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..516b072428dcc8a28d13bcc990493cf4c22ad948
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/set/package-info.java
+@@ -0,0 +1,4 @@
++@NullMarked
++package io.papermc.paper.registry.set;
++
++import org.jspecify.annotations.NullMarked;
 diff --git a/src/main/java/net/minecraft/core/MappedRegistry.java b/src/main/java/net/minecraft/core/MappedRegistry.java
 index 71e04e5c1bc0722abf8ca2e0738bd60b6d7ae21c..063630c1ffcce099139c59d598fc5a210e21f640 100644
 --- a/src/main/java/net/minecraft/core/MappedRegistry.java
