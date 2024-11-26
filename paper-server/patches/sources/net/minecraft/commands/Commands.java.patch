@@ -1,9 +1,10 @@
 --- a/net/minecraft/commands/Commands.java
 +++ b/net/minecraft/commands/Commands.java
-@@ -139,6 +139,14 @@
+@@ -138,6 +138,14 @@
+ import net.minecraft.world.flag.FeatureFlags;
  import net.minecraft.world.level.GameRules;
  import org.slf4j.Logger;
- 
++
 +// CraftBukkit start
 +import com.google.common.base.Joiner;
 +import java.util.Collection;
@@ -11,10 +12,9 @@
 +import org.bukkit.event.player.PlayerCommandSendEvent;
 +import org.bukkit.event.server.ServerCommandEvent;
 +// CraftBukkit end
-+
+ 
  public class Commands {
  
-     private static final ThreadLocal<ExecutionContext<CommandSourceStack>> CURRENT_EXECUTION_CONTEXT = new ThreadLocal();
 @@ -151,6 +159,7 @@
      private final com.mojang.brigadier.CommandDispatcher<CommandSourceStack> dispatcher = new com.mojang.brigadier.CommandDispatcher();
  
@@ -92,14 +92,14 @@
 -        this.performCommand(this.dispatcher.parse(command, source), command);
 +        // CraftBukkit start
 +        this.performPrefixedCommand(source, command, command);
-     }
- 
++    }
++
 +    public void performPrefixedCommand(CommandSourceStack commandlistenerwrapper, String s, String label) {
 +        s = s.startsWith("/") ? s.substring(1) : s;
 +        this.performCommand(this.dispatcher.parse(s, commandlistenerwrapper), s, label);
 +        // CraftBukkit end
-+    }
-+
+     }
+ 
      public void performCommand(ParseResults<CommandSourceStack> parseResults, String command) {
 -        CommandSourceStack commandlistenerwrapper = (CommandSourceStack) parseResults.getContext().getSource();
 +        this.performCommand(parseResults, command, command);
@@ -176,7 +176,7 @@
                  });
  
                  if (i > 10) {
-@@ -333,7 +413,17 @@
+@@ -333,8 +413,18 @@
                  }
  
                  ichatmutablecomponent.append((Component) Component.translatable("command.context.here").withStyle(ChatFormatting.RED, ChatFormatting.ITALIC));
@@ -186,15 +186,16 @@
 +                builder
 +                    .append(net.kyori.adventure.text.Component.newline())
 +                    .append(io.papermc.paper.adventure.PaperAdventure.asAdventure(ichatmutablecomponent));
-+            }
+             }
 +            org.bukkit.event.command.UnknownCommandEvent event = new org.bukkit.event.command.UnknownCommandEvent(commandlistenerwrapper.getBukkitSender(), s, org.spigotmc.SpigotConfig.unknownCommandMessage.isEmpty() ? null : builder.build());
 +            org.bukkit.Bukkit.getServer().getPluginManager().callEvent(event);
 +            if (event.message() != null) {
 +                commandlistenerwrapper.sendFailure(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.message()), false);
 +                // Paper end - Add UnknownCommandEvent
-             }
++            }
  
              return null;
+         }
 @@ -368,7 +458,7 @@
  
                  executioncontext1.close();
@@ -204,7 +205,7 @@
              }
          } else {
              callback.accept(executioncontext);
-@@ -377,23 +467,121 @@
+@@ -377,30 +467,133 @@
      }
  
      public void sendCommands(ServerPlayer player) {
@@ -331,7 +332,21 @@
                  argumentbuilder.requires((icompletionprovider) -> {
                      return true;
                  });
-@@ -415,12 +603,12 @@
+                 if (argumentbuilder.getCommand() != null) {
+-                    argumentbuilder.executes((commandcontext) -> {
+-                        return 0;
++                    // Paper start - fix suggestions due to falsely equal nodes
++                    argumentbuilder.executes(new com.mojang.brigadier.Command<io.papermc.paper.command.brigadier.CommandSourceStack>() {
++                        @Override
++                        public int run(com.mojang.brigadier.context.CommandContext<io.papermc.paper.command.brigadier.CommandSourceStack> commandContext) throws CommandSyntaxException {
++                            return 0;
++                        }
+                     });
++                    // Paper end
+                 }
+ 
+                 if (argumentbuilder instanceof RequiredArgumentBuilder) {
+@@ -415,12 +608,12 @@
                      argumentbuilder.redirect((CommandNode) resultNodes.get(argumentbuilder.getRedirect()));
                  }
  
@@ -346,7 +361,7 @@
                  }
              }
          }
-@@ -481,7 +669,7 @@
+@@ -481,7 +674,7 @@
              }
  
              private <T> HolderLookup.RegistryLookup.Delegate<T> createLookup(final HolderLookup.RegistryLookup<T> original) {
