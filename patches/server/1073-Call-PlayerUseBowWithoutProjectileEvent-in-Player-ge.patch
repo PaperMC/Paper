@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Chaosdave34 <david.emanuel@gmx.de>
+Date: Tue, 26 Nov 2024 17:11:23 +0100
+Subject: [PATCH] Call PlayerUseBowWithoutProjectileEvent in
+ Player#getProjectile
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index 61d412c4f1ebd55661cc3f0260468e3ac0efe0bb..f793e41ed4f202e2f3d1257c1d9768d28da05e83 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -2266,7 +2266,15 @@ public abstract class Player extends LivingEntity {
+                     }
+                 }
+ 
+-                return this.abilities.instabuild ? new ItemStack(Items.ARROW) : ItemStack.EMPTY;
++                // Paper start - Call PlayerUseProjectileWeaponWithoutProjectileEvent in Player#getProjectile
++                if (this.abilities.instabuild) {
++                    return new ItemStack(Items.ARROW);
++                } else {
++                    io.papermc.paper.event.player.PlayerUseBowWithoutProjectileEvent event = new io.papermc.paper.event.player.PlayerUseBowWithoutProjectileEvent((org.bukkit.entity.Player) getBukkitEntity());
++                    event.callEvent();
++                    return org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getProjectile());
++                }
++                // Paper end - Call PlayerUseProjectileWeaponWithoutProjectileEvent in Player#getProjectile
+             }
+         }
+     }
