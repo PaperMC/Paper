@@ -5,6 +5,7 @@ Subject: [PATCH] Implement Player Client Options API
 
 == AT ==
 public net.minecraft.world.entity.player.Player DATA_PLAYER_MODE_CUSTOMISATION
+public net.minecraft.server.level.ServerPlayer particleStatus
 
 diff --git a/src/main/java/com/destroystokyo/paper/PaperSkinParts.java b/src/main/java/com/destroystokyo/paper/PaperSkinParts.java
 new file mode 100644
@@ -100,26 +101,22 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          // CraftBukkit start
 @@ -0,0 +0,0 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
-         }
      }
  
-+    // Paper start - Client option API
-+    private java.util.Map<com.destroystokyo.paper.ClientOption<?>, ?> getClientOptionMap(String locale, int viewDistance, com.destroystokyo.paper.ClientOption.ChatVisibility chatVisibility, boolean chatColors, com.destroystokyo.paper.PaperSkinParts skinParts, org.bukkit.inventory.MainHand mainHand, boolean allowsServerListing, boolean textFilteringEnabled) {
-+        java.util.Map<com.destroystokyo.paper.ClientOption<?>, Object> map = new java.util.HashMap<>();
-+        map.put(com.destroystokyo.paper.ClientOption.LOCALE, locale);
-+        map.put(com.destroystokyo.paper.ClientOption.VIEW_DISTANCE, viewDistance);
-+        map.put(com.destroystokyo.paper.ClientOption.CHAT_VISIBILITY, chatVisibility);
-+        map.put(com.destroystokyo.paper.ClientOption.CHAT_COLORS_ENABLED, chatColors);
-+        map.put(com.destroystokyo.paper.ClientOption.SKIN_PARTS, skinParts);
-+        map.put(com.destroystokyo.paper.ClientOption.MAIN_HAND, mainHand);
-+        map.put(com.destroystokyo.paper.ClientOption.ALLOW_SERVER_LISTINGS, allowsServerListing);
-+        map.put(com.destroystokyo.paper.ClientOption.TEXT_FILTERING_ENABLED, textFilteringEnabled);
-+        return map;
-+    }
-+    // Paper end
-+
      public void updateOptions(ClientInformation clientOptions) {
-+        new com.destroystokyo.paper.event.player.PlayerClientOptionsChangeEvent(getBukkitEntity(), getClientOptionMap(clientOptions.language(), clientOptions.viewDistance(), com.destroystokyo.paper.ClientOption.ChatVisibility.valueOf(clientOptions.chatVisibility().name()), clientOptions.chatColors(), new com.destroystokyo.paper.PaperSkinParts(clientOptions.modelCustomisation()), clientOptions.mainHand() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT, clientOptions.allowsListing(), clientOptions.textFilteringEnabled())).callEvent(); // Paper - settings event
++        // Paper start - settings event
++        new com.destroystokyo.paper.event.player.PlayerClientOptionsChangeEvent(this.getBukkitEntity(), Util.make(new java.util.IdentityHashMap<>(), map -> {
++            map.put(com.destroystokyo.paper.ClientOption.LOCALE, clientOptions.language());
++            map.put(com.destroystokyo.paper.ClientOption.VIEW_DISTANCE, clientOptions.viewDistance());
++            map.put(com.destroystokyo.paper.ClientOption.CHAT_VISIBILITY, com.destroystokyo.paper.ClientOption.ChatVisibility.valueOf(clientOptions.chatVisibility().name()));
++            map.put(com.destroystokyo.paper.ClientOption.CHAT_COLORS_ENABLED, clientOptions.chatColors());
++            map.put(com.destroystokyo.paper.ClientOption.SKIN_PARTS, new com.destroystokyo.paper.PaperSkinParts(clientOptions.modelCustomisation()));
++            map.put(com.destroystokyo.paper.ClientOption.MAIN_HAND, clientOptions.mainHand() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT);
++            map.put(com.destroystokyo.paper.ClientOption.TEXT_FILTERING_ENABLED, clientOptions.textFilteringEnabled());
++            map.put(com.destroystokyo.paper.ClientOption.ALLOW_SERVER_LISTINGS, clientOptions.allowsListing());
++            map.put(com.destroystokyo.paper.ClientOption.PARTICLE_VISIBILITY, com.destroystokyo.paper.ClientOption.ParticleVisibility.valueOf(clientOptions.particleStatus().name()));
++        })).callEvent();
++        // Paper end - settings event
          // CraftBukkit start
          if (this.getMainArm() != clientOptions.mainHand()) {
              PlayerChangedMainHandEvent event = new PlayerChangedMainHandEvent(this.getBukkitEntity(), this.getMainArm() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT);
@@ -147,21 +144,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public <T> T getClientOption(com.destroystokyo.paper.ClientOption<T> type) {
 +        if (com.destroystokyo.paper.ClientOption.SKIN_PARTS == type) {
-+            return type.getType().cast(new com.destroystokyo.paper.PaperSkinParts(getHandle().getEntityData().get(net.minecraft.world.entity.player.Player.DATA_PLAYER_MODE_CUSTOMISATION)));
++            return type.getType().cast(new com.destroystokyo.paper.PaperSkinParts(this.getHandle().getEntityData().get(net.minecraft.world.entity.player.Player.DATA_PLAYER_MODE_CUSTOMISATION)));
 +        } else if (com.destroystokyo.paper.ClientOption.CHAT_COLORS_ENABLED == type) {
-+            return type.getType().cast(getHandle().canChatInColor());
++            return type.getType().cast(this.getHandle().canChatInColor());
 +        } else if (com.destroystokyo.paper.ClientOption.CHAT_VISIBILITY == type) {
-+            return type.getType().cast(getHandle().getChatVisibility() == null ? com.destroystokyo.paper.ClientOption.ChatVisibility.UNKNOWN : com.destroystokyo.paper.ClientOption.ChatVisibility.valueOf(getHandle().getChatVisibility().name()));
++            return type.getType().cast(this.getHandle().getChatVisibility() == null ? com.destroystokyo.paper.ClientOption.ChatVisibility.UNKNOWN : com.destroystokyo.paper.ClientOption.ChatVisibility.valueOf(this.getHandle().getChatVisibility().name()));
 +        } else if (com.destroystokyo.paper.ClientOption.LOCALE == type) {
-+            return type.getType().cast(getLocale());
++            return type.getType().cast(this.getLocale());
 +        } else if (com.destroystokyo.paper.ClientOption.MAIN_HAND == type) {
-+            return type.getType().cast(getMainHand());
++            return type.getType().cast(this.getMainHand());
 +        } else if (com.destroystokyo.paper.ClientOption.VIEW_DISTANCE == type) {
-+            return type.getType().cast(getClientViewDistance());
-+        } else if (com.destroystokyo.paper.ClientOption.ALLOW_SERVER_LISTINGS == type) {
-+            return type.getType().cast(getHandle().allowsListing());
++            return type.getType().cast(this.getClientViewDistance());
 +        } else if (com.destroystokyo.paper.ClientOption.TEXT_FILTERING_ENABLED == type) {
-+            return type.getType().cast(getHandle().isTextFilteringEnabled());
++            return type.getType().cast(this.getHandle().isTextFilteringEnabled());
++        } else if (com.destroystokyo.paper.ClientOption.ALLOW_SERVER_LISTINGS == type) {
++            return type.getType().cast(this.getHandle().allowsListing());
++        } else if (com.destroystokyo.paper.ClientOption.PARTICLE_VISIBILITY == type) {
++            return type.getType().cast(com.destroystokyo.paper.ClientOption.ParticleVisibility.valueOf(this.getHandle().particleStatus.name()));
 +        }
 +        throw new RuntimeException("Unknown settings type");
 +    }
@@ -177,8 +176,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +package io.papermc.paper.world;
 +
 +import com.destroystokyo.paper.ClientOption;
++import net.minecraft.server.level.ParticleStatus;
 +import net.minecraft.world.entity.player.ChatVisiblity;
-+import org.bukkit.Difficulty;
 +import org.junit.jupiter.api.Assertions;
 +import org.junit.jupiter.api.Test;
 +
@@ -189,6 +188,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        for (ClientOption.ChatVisibility chatVisibility : ClientOption.ChatVisibility.values()) {
 +            if (chatVisibility == ClientOption.ChatVisibility.UNKNOWN) continue;
 +            Assertions.assertEquals(ChatVisiblity.valueOf(chatVisibility.name()).getKey(), chatVisibility.translationKey(), chatVisibility + "'s translation key doesn't match");
++        }
++    }
++
++    @Test
++    public void testParticleVisibilityKeys() {
++        for (ClientOption.ParticleVisibility particleVisibility : ClientOption.ParticleVisibility.values()) {
++            Assertions.assertEquals(ParticleStatus.valueOf(particleVisibility.name()).getKey(), particleVisibility.translationKey(), particleVisibility + "'s translation key doesn't match");
 +        }
 +    }
 +}

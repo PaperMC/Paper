@@ -26,8 +26,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public static final ClientOption<String> LOCALE = new ClientOption<>(String.class);
 +    public static final ClientOption<MainHand> MAIN_HAND = new ClientOption<>(MainHand.class);
 +    public static final ClientOption<Integer> VIEW_DISTANCE = new ClientOption<>(Integer.class);
-+    public static final ClientOption<Boolean> ALLOW_SERVER_LISTINGS = new ClientOption<>(Boolean.class);
 +    public static final ClientOption<Boolean> TEXT_FILTERING_ENABLED = new ClientOption<>(Boolean.class);
++    public static final ClientOption<Boolean> ALLOW_SERVER_LISTINGS = new ClientOption<>(Boolean.class);
++    public static final ClientOption<ParticleVisibility> PARTICLE_VISIBILITY = new ClientOption<>(ParticleVisibility.class);
 +
 +    private final Class<T> type;
 +
@@ -58,6 +59,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                throw new UnsupportedOperationException(this.name + " doesn't have a translation key");
 +            }
 +            return "options.chat.visibility." + this.name;
++        }
++    }
++
++    public enum ParticleVisibility implements Translatable {
++        ALL("all"),
++        DECREASED("decreased"),
++        MINIMAL("minimal");
++
++        public static final Index<String, ParticleVisibility> NAMES = Index.create(ParticleVisibility.class, particleVisibility -> particleVisibility.name);
++        private final String name;
++
++        ParticleVisibility(final String name) {
++            this.name = name;
++        }
++
++        @Override
++        public String translationKey() {
++            return "options.particles." + this.name;
 +        }
 +    }
 +}
@@ -97,6 +116,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +import com.destroystokyo.paper.ClientOption;
 +import com.destroystokyo.paper.ClientOption.ChatVisibility;
++import com.destroystokyo.paper.ClientOption.ParticleVisibility;
 +import com.destroystokyo.paper.SkinParts;
 +import java.util.Map;
 +import org.bukkit.entity.Player;
@@ -122,6 +142,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private final MainHand mainHand;
 +    private final boolean allowsServerListings;
 +    private final boolean textFilteringEnabled;
++    private final ParticleVisibility particleVisibility;
 +
 +    @Deprecated
 +    public PlayerClientOptionsChangeEvent(final Player player, final String locale, final int viewDistance, final ChatVisibility chatVisibility, final boolean chatColors, final SkinParts skinParts, final MainHand mainHand) {
@@ -134,6 +155,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.mainHand = mainHand;
 +        this.allowsServerListings = false;
 +        this.textFilteringEnabled = false;
++        this.particleVisibility = ParticleVisibility.ALL;
 +    }
 +
 +    @ApiStatus.Internal
@@ -148,6 +170,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.mainHand = (MainHand) options.get(ClientOption.MAIN_HAND);
 +        this.allowsServerListings = (boolean) options.get(ClientOption.ALLOW_SERVER_LISTINGS);
 +        this.textFilteringEnabled = (boolean) options.get(ClientOption.TEXT_FILTERING_ENABLED);
++        this.particleVisibility = (ParticleVisibility) options.get(ClientOption.PARTICLE_VISIBILITY);
 +    }
 +
 +    public String getLocale() {
@@ -198,6 +221,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return this.mainHand != this.player.getClientOption(ClientOption.MAIN_HAND);
 +    }
 +
++    public boolean hasTextFilteringEnabled() {
++        return this.textFilteringEnabled;
++    }
++
++    public boolean hasTextFilteringChanged() {
++        return this.textFilteringEnabled != this.player.getClientOption(ClientOption.TEXT_FILTERING_ENABLED);
++    }
++
 +    public boolean allowsServerListings() {
 +        return this.allowsServerListings;
 +    }
@@ -206,12 +237,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return this.allowsServerListings != this.player.getClientOption(ClientOption.ALLOW_SERVER_LISTINGS);
 +    }
 +
-+    public boolean hasTextFilteringEnabled() {
-+        return this.textFilteringEnabled;
++    public ParticleVisibility getParticleVisibility() {
++        return this.particleVisibility;
 +    }
 +
-+    public boolean hasTextFilteringChanged() {
-+        return this.textFilteringEnabled != this.player.getClientOption(ClientOption.TEXT_FILTERING_ENABLED);
++    public boolean hasParticleVisibilityChanged() {
++        return this.particleVisibility != this.player.getClientOption(ClientOption.PARTICLE_VISIBILITY);
 +    }
 +
 +    @Override
