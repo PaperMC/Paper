@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Rick <rickw320@hotmail.com>
+Date: Tue, 26 Nov 2024 20:45:52 +0100
+Subject: [PATCH] Fix incorrect command serialization by creating new Command
+
+Fixes #11649 - As noted in the issue, when CommandNodes are serialized
+they are used as the key in a Map. Their equals()/hashcode() should only
+match if they are equal nodes (name & command), but due to the erasure of the command field pre-serialization, nodes with different commands can be mapped onto the same value. This causes the client to interpret both nodes as the same, causing suggestions where they should not.
+
+This is fixed by creating a different no-op command for the
+erasure, instead of them holding the same lambda.
+
+diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
+index 64bf4444ffba25cb40743a32267aa790ad1738f9..517cb238ec280aadd1fc54bcb675ed386e798eaf 100644
+--- a/src/main/java/net/minecraft/commands/Commands.java
++++ b/src/main/java/net/minecraft/commands/Commands.java
+@@ -587,9 +587,14 @@ public class Commands {
+                     return true;
+                 });
+                 if (argumentbuilder.getCommand() != null) {
+-                    argumentbuilder.executes((commandcontext) -> {
+-                        return 0;
++                    // Paper start - fix suggestions due to falsely equal nodes
++                    argumentbuilder.executes(new com.mojang.brigadier.Command<io.papermc.paper.command.brigadier.CommandSourceStack>() {
++                        @Override
++                        public int run(com.mojang.brigadier.context.CommandContext<io.papermc.paper.command.brigadier.CommandSourceStack> commandContext) throws CommandSyntaxException {
++                            return 0;
++                        }
+                     });
++                    // Paper end
+                 }
+ 
+                 if (argumentbuilder instanceof RequiredArgumentBuilder) {
