@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+Date: Sun, 7 Aug 2022 22:16:36 +0200
+Subject: [PATCH] Add source block to BlockPhysicsEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/redstone/CollectingNeighborUpdater.java b/src/main/java/net/minecraft/world/level/redstone/CollectingNeighborUpdater.java
+index 5821c802ec880501df025fcd3fbbd98242ed952c..3a95e3236eafd14baed035e53503b58c2e21b68a 100644
+--- a/src/main/java/net/minecraft/world/level/redstone/CollectingNeighborUpdater.java
++++ b/src/main/java/net/minecraft/world/level/redstone/CollectingNeighborUpdater.java
+@@ -135,7 +135,7 @@ public class CollectingNeighborUpdater implements NeighborUpdater {
+                 orientation = this.orientation.withFront(direction);
+             }
+ 
+-            NeighborUpdater.executeUpdate(world, blockState, blockPos, this.sourceBlock, orientation, false);
++            NeighborUpdater.executeUpdate(world, blockState, blockPos, this.sourceBlock, orientation, false, this.sourcePos); // Paper - Add source block to BlockPhysicsEvent
+             if (this.idx < NeighborUpdater.UPDATE_ORDER.length && NeighborUpdater.UPDATE_ORDER[this.idx] == this.skipDirection) {
+                 this.idx++;
+             }
+diff --git a/src/main/java/net/minecraft/world/level/redstone/NeighborUpdater.java b/src/main/java/net/minecraft/world/level/redstone/NeighborUpdater.java
+index be8f34dd222e43b2db7f05e5e5839df8446e1b02..e414da8a51bb9b49c28a74eca166046cbee44835 100644
+--- a/src/main/java/net/minecraft/world/level/redstone/NeighborUpdater.java
++++ b/src/main/java/net/minecraft/world/level/redstone/NeighborUpdater.java
+@@ -55,11 +55,17 @@ public interface NeighborUpdater {
+     }
+ 
+     static void executeUpdate(Level world, BlockState state, BlockPos pos, Block sourceBlock, @Nullable Orientation orientation, boolean notify) {
++        // Paper start - Add source block to BlockPhysicsEvent
++        executeUpdate(world, state, pos, sourceBlock, orientation, notify, pos);
++    }
++
++    static void executeUpdate(Level world, BlockState state, BlockPos pos, Block sourceBlock, @Nullable Orientation orientation, boolean notify, BlockPos sourcePos) {
++        // Paper end - Add source block to BlockPhysicsEvent
+         try {
+             // CraftBukkit start
+             CraftWorld cworld = ((ServerLevel) world).getWorld();
+             if (cworld != null) {
+-                BlockPhysicsEvent event = new BlockPhysicsEvent(CraftBlock.at(world, pos), CraftBlockData.fromData(state));
++                BlockPhysicsEvent event = new BlockPhysicsEvent(CraftBlock.at(world, pos), CraftBlockData.fromData(state), CraftBlock.at(world, sourcePos)); // Paper - Add source block to BlockPhysicsEvent
+                 ((ServerLevel) world).getCraftServer().getPluginManager().callEvent(event);
+ 
+                 if (event.isCancelled()) {
