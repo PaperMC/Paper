@@ -1,0 +1,65 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tamion <70228790+notTamion@users.noreply.github.com>
+Date: Tue, 13 Feb 2024 13:49:50 +0100
+Subject: [PATCH] Call HangingBreakByEntityEvent for collision with boats
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/HangingEntity.java b/src/main/java/net/minecraft/world/entity/decoration/HangingEntity.java
+index bf2d91bbb4bf401696f5f5d14a67e3920a179084..f2cbc1ed44bf59a5e8ce11530c95d4d651abbd9a 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/HangingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/HangingEntity.java
+@@ -43,6 +43,7 @@ public abstract class HangingEntity extends Entity {
+     private int checkInterval; { this.checkInterval = this.getId() % this.level().spigotConfig.hangingTickFrequency; } // Paper - Perf: offset item frame ticking
+     public BlockPos pos;
+     protected Direction direction;
++    public java.util.List<Entity> collidingEntities; // Paper - Call HangingBreakByEntityEvent for collision with boats
+ 
+     protected HangingEntity(EntityType<? extends HangingEntity> type, Level world) {
+         super(type, world);
+@@ -123,6 +124,13 @@ public abstract class HangingEntity extends Entity {
+             if (this.checkInterval++ == this.level().spigotConfig.hangingTickFrequency) { // Spigot
+                 this.checkInterval = 0;
+                 if (!this.isRemoved() && !this.survives()) {
++                    // Paper start - Call HangingBreakByEntityEvent for collision with boats
++                    HangingBreakEvent event;
++                    if (this.collidingEntities != null && !this.collidingEntities.isEmpty()) {
++                        event = new HangingBreakByEntityEvent((Hanging) this.getBukkitEntity(), collidingEntities.getFirst().getBukkitEntity());
++                        this.collidingEntities = null;
++                    } else {
++                    // Paper end - Call HangingBreakByEntityEvent for collision with boats
+                     // CraftBukkit start - fire break events
+                     BlockState material = this.level().getBlockState(this.blockPosition());
+                     HangingBreakEvent.RemoveCause cause;
+@@ -133,8 +141,9 @@ public abstract class HangingEntity extends Entity {
+                     } else {
+                         cause = HangingBreakEvent.RemoveCause.PHYSICS;
+                     }
++                    event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), cause); // Paper - Call HangingBreakByEntityEvent for collision with boats
++                    }
+ 
+-                    HangingBreakEvent event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), cause);
+                     this.level().getCraftServer().getPluginManager().callEvent(event);
+ 
+                     if (this.isRemoved() || event.isCancelled()) {
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 14281a4e72f49dc4eb2ca3da8479c1f81a3a175d..844ae8e4f2a254d85e502e417a39e989bf32d4e3 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -1323,7 +1323,16 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+             return false;
+         }
+ 
+-        return !io.papermc.paper.util.CollisionUtil.getEntityHardCollisions(this, entity, box, null, flags, null);
++        // Paper start - Call HangingBreakByEntityEvent for collision with boats
++        boolean isColliding;
++        if (entity instanceof net.minecraft.world.entity.decoration.HangingEntity hangingEntity) {
++            hangingEntity.collidingEntities = this.getHardCollidingEntities(entity, box, null);
++            isColliding = !hangingEntity.collidingEntities.isEmpty();
++        } else {
++            isColliding = io.papermc.paper.util.CollisionUtil.getEntityHardCollisions(this, entity, box, null, flags, null);
++        }
++        return !isColliding;
++        // Paper end - Call HangingBreakByEntityEvent for collision with boats
+         // Paper end - optimise collisions
+     }
+     // Paper end - Option to prevent armor stands from doing entity lookups
