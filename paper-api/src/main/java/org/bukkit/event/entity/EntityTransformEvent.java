@@ -109,7 +109,7 @@ public class EntityTransformEvent extends EntityEvent implements Cancellable {
          */
         SPLIT,
         /**
-         * When a piglin converts to a zombified piglin.
+         * When a piglin (or hoglin) converts to a zombified version from overworld presence.
          */
         PIGLIN_ZOMBIFIED,
         /**
