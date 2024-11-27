@@ -4037,36 +4037,41 @@ index 0000000000000000000000000000000000000000..559c959aff3c9deef867b9e425fba3e2
 +    private MoonriseConstants() {}
 +
 +}
-diff --git a/src/main/java/ca/spottedleaf/moonrise/common/util/SimpleRandom.java b/src/main/java/ca/spottedleaf/moonrise/common/util/SimpleRandom.java
+diff --git a/src/main/java/ca/spottedleaf/moonrise/common/util/SimpleThreadUnsafeRandom.java b/src/main/java/ca/spottedleaf/moonrise/common/util/SimpleThreadUnsafeRandom.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a9ff1c1a70faf4b7a64b265932f07a8b8f00c1ff
+index 0000000000000000000000000000000000000000..8d57b9c141fbe049aea248faa547dc97ba24cba5
 --- /dev/null
-+++ b/src/main/java/ca/spottedleaf/moonrise/common/util/SimpleRandom.java
-@@ -0,0 +1,52 @@
++++ b/src/main/java/ca/spottedleaf/moonrise/common/util/SimpleThreadUnsafeRandom.java
+@@ -0,0 +1,105 @@
 +package ca.spottedleaf.moonrise.common.util;
 +
-+import net.minecraft.world.level.levelgen.LegacyRandomSource;
++import net.minecraft.util.Mth;
++import net.minecraft.util.RandomSource;
++import net.minecraft.world.level.levelgen.BitRandomSource;
++import net.minecraft.world.level.levelgen.MarsagliaPolarGaussian;
++import net.minecraft.world.level.levelgen.PositionalRandomFactory;
 +
 +/**
-+ * Avoid costly CAS of superclass
++ * Avoid costly CAS of superclass + division in nextInt
 + */
-+public final class SimpleRandom extends LegacyRandomSource {
++public final class SimpleThreadUnsafeRandom implements BitRandomSource {
 +
 +    private static final long MULTIPLIER = 25214903917L;
 +    private static final long ADDEND = 11L;
 +    private static final int BITS = 48;
-+    private static final long MASK = (1L << BITS) - 1;
++    private static final long MASK = (1L << BITS) - 1L;
 +
 +    private long value;
++    private final MarsagliaPolarGaussian gaussianSource = new MarsagliaPolarGaussian(this);
 +
-+    public SimpleRandom(final long seed) {
-+        super(0L);
-+        this.value = seed;
++    public SimpleThreadUnsafeRandom(final long seed) {
++        this.setSeed(seed);
 +    }
 +
 +    @Override
 +    public void setSeed(final long seed) {
 +        this.value = (seed ^ MULTIPLIER) & MASK;
++        this.gaussianSource.reset();
 +    }
 +
 +    private long advanceSeed() {
@@ -4093,6 +4098,154 @@ index 0000000000000000000000000000000000000000..a9ff1c1a70faf4b7a64b265932f07a8b
 +        // https://lemire.me/blog/2016/06/27/a-fast-alternative-to-the-modulo-reduction/
 +        final long value = this.advanceSeed() >>> (BITS - Integer.SIZE);
 +        return (int)((value * (long)bound) >>> Integer.SIZE);
++    }
++
++    @Override
++    public double nextGaussian() {
++        return this.gaussianSource.nextGaussian();
++    }
++
++    @Override
++    public RandomSource fork() {
++        return new SimpleThreadUnsafeRandom(this.nextLong());
++    }
++
++    @Override
++    public PositionalRandomFactory forkPositional() {
++        return new SimpleRandomPositionalFactory(this.nextLong());
++    }
++
++    public static final class SimpleRandomPositionalFactory implements PositionalRandomFactory {
++
++        private final long seed;
++
++        public SimpleRandomPositionalFactory(final long seed) {
++            this.seed = seed;
++        }
++
++        public long getSeed() {
++            return this.seed;
++        }
++
++        @Override
++        public RandomSource fromHashOf(final String string) {
++            return new SimpleThreadUnsafeRandom((long)string.hashCode() ^ this.seed);
++        }
++
++        @Override
++        public RandomSource fromSeed(final long seed) {
++            return new SimpleThreadUnsafeRandom(seed);
++        }
++
++        @Override
++        public RandomSource at(final int x, final int y, final int z) {
++            return new SimpleThreadUnsafeRandom(Mth.getSeed(x, y, z) ^ this.seed);
++        }
++
++        @Override
++        public void parityConfigString(final StringBuilder stringBuilder) {
++            stringBuilder.append("SimpleRandomPositionalFactory{").append(this.seed).append('}');
++        }
++    }
++}
+diff --git a/src/main/java/ca/spottedleaf/moonrise/common/util/ThreadUnsafeRandom.java b/src/main/java/ca/spottedleaf/moonrise/common/util/ThreadUnsafeRandom.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..12eb3add0931a4d77acdf6e875c42dda9c313dc3
+--- /dev/null
++++ b/src/main/java/ca/spottedleaf/moonrise/common/util/ThreadUnsafeRandom.java
+@@ -0,0 +1,94 @@
++package ca.spottedleaf.moonrise.common.util;
++
++import net.minecraft.util.Mth;
++import net.minecraft.util.RandomSource;
++import net.minecraft.world.level.levelgen.BitRandomSource;
++import net.minecraft.world.level.levelgen.MarsagliaPolarGaussian;
++import net.minecraft.world.level.levelgen.PositionalRandomFactory;
++
++/**
++ * Avoid costly CAS of superclass
++ */
++public final class ThreadUnsafeRandom implements BitRandomSource {
++
++    private static final long MULTIPLIER = 25214903917L;
++    private static final long ADDEND = 11L;
++    private static final int BITS = 48;
++    private static final long MASK = (1L << BITS) - 1L;
++
++    private long value;
++    private final MarsagliaPolarGaussian gaussianSource = new MarsagliaPolarGaussian(this);
++
++    public ThreadUnsafeRandom(final long seed) {
++        this.setSeed(seed);
++    }
++
++    @Override
++    public void setSeed(final long seed) {
++        this.value = (seed ^ MULTIPLIER) & MASK;
++        this.gaussianSource.reset();
++    }
++
++    private long advanceSeed() {
++        return this.value = ((this.value * MULTIPLIER) + ADDEND) & MASK;
++    }
++
++    @Override
++    public int next(final int bits) {
++        return (int)(this.advanceSeed() >>> (BITS - bits));
++    }
++
++    @Override
++    public int nextInt() {
++        final long seed = this.advanceSeed();
++        return (int)(seed >>> (BITS - Integer.SIZE));
++    }
++
++    @Override
++    public double nextGaussian() {
++        return this.gaussianSource.nextGaussian();
++    }
++
++    @Override
++    public RandomSource fork() {
++        return new ThreadUnsafeRandom(this.nextLong());
++    }
++
++    @Override
++    public PositionalRandomFactory forkPositional() {
++        return new ThreadUnsafeRandomPositionalFactory(this.nextLong());
++    }
++
++    public static final class ThreadUnsafeRandomPositionalFactory implements PositionalRandomFactory {
++
++        private final long seed;
++
++        public ThreadUnsafeRandomPositionalFactory(final long seed) {
++            this.seed = seed;
++        }
++
++        public long getSeed() {
++            return this.seed;
++        }
++
++        @Override
++        public RandomSource fromHashOf(final String string) {
++            return new ThreadUnsafeRandom((long)string.hashCode() ^ this.seed);
++        }
++
++        @Override
++        public RandomSource fromSeed(final long seed) {
++            return new ThreadUnsafeRandom(seed);
++        }
++
++        @Override
++        public RandomSource at(final int x, final int y, final int z) {
++            return new ThreadUnsafeRandom(Mth.getSeed(x, y, z) ^ this.seed);
++        }
++
++        @Override
++        public void parityConfigString(final StringBuilder stringBuilder) {
++            stringBuilder.append("ThreadUnsafeRandomPositionalFactory{").append(this.seed).append('}');
++        }
 +    }
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/common/util/TickThread.java b/src/main/java/ca/spottedleaf/moonrise/common/util/TickThread.java
@@ -4542,7 +4695,7 @@ index 46cab7a8c7b87ab01b26074b04f5a02b3907cfc4..49019b4a9bc4e634d54a9b0acaf9229a
 +    // Paper end
  }
 diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-index f0d470d7770e119f734b9e72021c806d0ea8ecbd..c3fe4481dd35f80815716e48beeeb07b1f51e30b 100644
+index 0ea9eba1367858dfa5284524a8dd2f79daf6fc69..18b64c00fa73e233bf41f519db54a1d43c2a8b1f 100644
 --- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 +++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 @@ -217,7 +217,7 @@ public class GlobalConfiguration extends ConfigurationPart {
@@ -5553,7 +5706,7 @@ index f6a3606b972064c4ec78487374e6197c0c447e27..8978fa74ceae06bef6aad3b74d654498
      public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PrimaryLevelData iworlddataserver, ResourceKey<Level> resourcekey, LevelStem worlddimension, ChunkProgressListener worldloadlistener, boolean flag, long i, List<CustomSpawner> list, boolean flag1, @Nullable RandomSequences randomsequences, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
          super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess(), iworlddataserver.getGameRules()))); // Paper - create paper world configs
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index fd97a0e54ad8487b0c6f242fcb626f0b76f88274..785c7e11f92610be58b624d252d1858658496af7 100644
+index 2819ee5726c759e524ba558155bcc516f1b70606..c60e7f27ea4060e455a18feb6f6a7919e80a8fc8 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -309,6 +309,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {

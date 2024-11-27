@@ -13,6 +13,7 @@ Currently includes:
  - Block/Biome Palette read optimisations
  - StateHolder (BlockState/FluidState) property access optimisations
  - Basic Fluid property read optimisations
+ - Entity/Level random replacement
 
 See https://github.com/Tuinity/Moonrise
 
@@ -364,6 +365,19 @@ index 49fe9eed5d5d08abd6e9778fe0d0545f35552435..fc029c8fb22a7c8eeb23bfc171812f6d
      }
  
      private ChunkSystem() {}
+diff --git a/src/main/java/ca/spottedleaf/moonrise/common/util/ThreadUnsafeRandom.java b/src/main/java/ca/spottedleaf/moonrise/common/util/ThreadUnsafeRandom.java
+index 12eb3add0931a4d77acdf6e875c42dda9c313dc3..5239993a681d6113eec99fa627b85508656ed7ac 100644
+--- a/src/main/java/ca/spottedleaf/moonrise/common/util/ThreadUnsafeRandom.java
++++ b/src/main/java/ca/spottedleaf/moonrise/common/util/ThreadUnsafeRandom.java
+@@ -9,7 +9,7 @@ import net.minecraft.world.level.levelgen.PositionalRandomFactory;
+ /**
+  * Avoid costly CAS of superclass
+  */
+-public final class ThreadUnsafeRandom implements BitRandomSource {
++public class ThreadUnsafeRandom implements BitRandomSource { // Paper - replace random
+ 
+     private static final long MULTIPLIER = 25214903917L;
+     private static final long ADDEND = 11L;
 diff --git a/src/main/java/ca/spottedleaf/moonrise/paper/PaperHooks.java b/src/main/java/ca/spottedleaf/moonrise/paper/PaperHooks.java
 index c8f2457ab3b28f2c3a6b500bcea40261669c24a4..ca8b6a926dfff3fdd6b04228809a4480366120b2 100644
 --- a/src/main/java/ca/spottedleaf/moonrise/paper/PaperHooks.java
@@ -26285,7 +26299,7 @@ index 65206fdfa5b94eaca139e433b4865c16b16641f3..bf4463bcb5dc439ac5a3fa08dd60845a
      }
  }
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 0a895055ec7f61d3cb52d303bbe3f89486a322e7..10a9406e96ab0ab2404c0e0a9bef08e86a6a12a2 100644
+index 0a895055ec7f61d3cb52d303bbe3f89486a322e7..56a109dc832c231bf8470f46e1ff37565e9fdd7a 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -52,7 +52,7 @@ import net.minecraft.world.level.storage.DimensionDataStorage;
@@ -26366,7 +26380,7 @@ index 0a895055ec7f61d3cb52d303bbe3f89486a322e7..10a9406e96ab0ab2404c0e0a9bef08e8
 +    }
 +    // Paper end - rewrite chunk system
 +    // Paper start - chunk tick iteration optimisations
-+    private final ca.spottedleaf.moonrise.common.util.SimpleRandom shuffleRandom = new ca.spottedleaf.moonrise.common.util.SimpleRandom(0L);
++    private final ca.spottedleaf.moonrise.common.util.SimpleThreadUnsafeRandom shuffleRandom = new ca.spottedleaf.moonrise.common.util.SimpleThreadUnsafeRandom(0L);
 +    private boolean isChunkNearPlayer(final ChunkMap chunkMap, final ChunkPos chunkPos, final LevelChunk levelChunk) {
 +        final ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkData chunkData = ((ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkSystemChunkHolder)((ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkSystemLevelChunk)levelChunk).moonrise$getChunkAndHolder().holder())
 +            .moonrise$getRealChunkHolder().holderData;
@@ -26801,7 +26815,7 @@ index b2fd3e936559c8fcb8b02ae3ef63c4f3bd0edb08..5bbc7ceaafc163f12344e5d5d355ad2f
  
          if (!list.equals(this.lastPassengers)) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index c5f3e4dff83a85a3a5f29534afd84d4a332b1d3e..85c58214c13208ed30f0ae4a2722f172184123ab 100644
+index c5f3e4dff83a85a3a5f29534afd84d4a332b1d3e..9928e14a5a42a2f0deba86e9dcb1f6f9f59412ef 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -185,7 +185,7 @@ import org.bukkit.event.weather.LightningStrikeEvent;
@@ -27232,12 +27246,12 @@ index c5f3e4dff83a85a3a5f29534afd84d4a332b1d3e..85c58214c13208ed30f0ae4a2722f172
      }
  
 +    // Paper start - optimise random ticking
-+    private final ca.spottedleaf.moonrise.common.util.SimpleRandom simpleRandom = new ca.spottedleaf.moonrise.common.util.SimpleRandom(0L);
++    private final ca.spottedleaf.moonrise.common.util.SimpleThreadUnsafeRandom simpleRandom = new ca.spottedleaf.moonrise.common.util.SimpleThreadUnsafeRandom(net.minecraft.world.level.levelgen.RandomSupport.generateUniqueSeed());
 +
 +    private void optimiseRandomTick(final LevelChunk chunk, final int tickSpeed) {
 +        final LevelChunkSection[] sections = chunk.getSections();
 +        final int minSection = ca.spottedleaf.moonrise.common.util.WorldUtil.getMinSection((ServerLevel)(Object)this);
-+        final ca.spottedleaf.moonrise.common.util.SimpleRandom simpleRandom = this.simpleRandom;
++        final ca.spottedleaf.moonrise.common.util.SimpleThreadUnsafeRandom simpleRandom = this.simpleRandom;
 +        final boolean doubleTickFluids = !ca.spottedleaf.moonrise.common.PlatformHooks.get().configFixMC224294();
 +
 +        final ChunkPos cpos = chunk.getPos();
@@ -27284,7 +27298,7 @@ index c5f3e4dff83a85a3a5f29534afd84d4a332b1d3e..85c58214c13208ed30f0ae4a2722f172
 +    // Paper end - optimise random ticking
 +
      public void tickChunk(LevelChunk chunk, int randomTickSpeed) {
-+        final ca.spottedleaf.moonrise.common.util.SimpleRandom simpleRandom = this.simpleRandom; // Paper - optimise random ticking
++        final ca.spottedleaf.moonrise.common.util.SimpleThreadUnsafeRandom simpleRandom = this.simpleRandom; // Paper - optimise random ticking
          ChunkPos chunkcoordintpair = chunk.getPos();
          boolean flag = this.isRaining();
          int j = chunkcoordintpair.getMinBlockX();
@@ -27566,7 +27580,7 @@ index c5f3e4dff83a85a3a5f29534afd84d4a332b1d3e..85c58214c13208ed30f0ae4a2722f172
          return crashreportsystemdetails;
      }
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index d80a03a72d150f9f496203dbce18ddf6d4cffee2..aba3a9f42a5fad867511ee69b385c00e9c496039 100644
+index f6e130aba66935f808dcfd7ef987131092ddfe4e..2b6c5b2387b67f25d8877849ccbfaaa77eab51d3 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -218,7 +218,7 @@ import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
@@ -28437,7 +28451,7 @@ index 50040c497a819cd1229042ab3cb057d34a32cacc..1f9c436a632e4f110be61cf76fcfc3b7
 +    // Paper end - block counting
  }
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 5949cbccb569ab1d518508d200e69ad9d7d0ba9a..a9e1ae7ad0b81e7488cb07876b32d7ba0a170365 100644
+index 5949cbccb569ab1d518508d200e69ad9d7d0ba9a..b810f887e536af938f978ca2af068e6ae89b5e60 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -176,7 +176,7 @@ import org.bukkit.event.player.PlayerTeleportEvent;
@@ -28449,7 +28463,89 @@ index 5949cbccb569ab1d518508d200e69ad9d7d0ba9a..a9e1ae7ad0b81e7488cb07876b32d7ba
  
      // CraftBukkit start
      private static final int CURRENT_LEVEL = 2;
-@@ -461,6 +461,156 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -187,7 +187,17 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+ 
+     // Paper start - Share random for entities to make them more random
+     public static RandomSource SHARED_RANDOM = new RandomRandomSource();
+-    private static final class RandomRandomSource extends java.util.Random implements net.minecraft.world.level.levelgen.BitRandomSource {
++    // Paper start - replace random
++    private static final class RandomRandomSource extends ca.spottedleaf.moonrise.common.util.ThreadUnsafeRandom {
++        public RandomRandomSource() {
++            this(net.minecraft.world.level.levelgen.RandomSupport.generateUniqueSeed());
++        }
++
++        public RandomRandomSource(long seed) {
++            super(seed);
++        }
++
++        // Paper end - replace random
+         private boolean locked = false;
+ 
+         @Override
+@@ -200,61 +210,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+             }
+         }
+ 
+-        @Override
+-        public RandomSource fork() {
+-            return new net.minecraft.world.level.levelgen.LegacyRandomSource(this.nextLong());
+-        }
+-
+-        @Override
+-        public net.minecraft.world.level.levelgen.PositionalRandomFactory forkPositional() {
+-            return new net.minecraft.world.level.levelgen.LegacyRandomSource.LegacyPositionalRandomFactory(this.nextLong());
+-        }
+-
+-        // these below are added to fix reobf issues that I don't wanna deal with right now
+-        @Override
+-        public int next(int bits) {
+-            return super.next(bits);
+-        }
+-
+-        @Override
+-        public int nextInt(int origin, int bound) {
+-            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextInt(origin, bound);
+-        }
+-
+-        @Override
+-        public long nextLong() {
+-            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextLong();
+-        }
+-
+-        @Override
+-        public int nextInt() {
+-            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextInt();
+-        }
+-
+-        @Override
+-        public int nextInt(int bound) {
+-            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextInt(bound);
+-        }
+-
+-        @Override
+-        public boolean nextBoolean() {
+-            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextBoolean();
+-        }
+-
+-        @Override
+-        public float nextFloat() {
+-            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextFloat();
+-        }
+-
+-        @Override
+-        public double nextDouble() {
+-            return net.minecraft.world.level.levelgen.BitRandomSource.super.nextDouble();
+-        }
+-
+-        @Override
+-        public double nextGaussian() {
+-            return super.nextGaussian();
+-        }
++        // Paper - replace random
+     }
+     // Paper end - Share random for entities to make them more random
+     public org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason; // Paper - Entity#getEntitySpawnReason
+@@ -461,6 +417,156 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          return this.dimensions.makeBoundingBox(x, y, z);
      }
      // Paper end
@@ -28606,7 +28702,7 @@ index 5949cbccb569ab1d518508d200e69ad9d7d0ba9a..a9e1ae7ad0b81e7488cb07876b32d7ba
  
      public Entity(EntityType<?> type, Level world) {
          this.id = Entity.ENTITY_COUNTER.incrementAndGet();
-@@ -1366,41 +1516,76 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -1366,41 +1472,76 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      }
  
      private Vec3 collide(Vec3 movement) {
@@ -28632,22 +28728,17 @@ index 5949cbccb569ab1d518508d200e69ad9d7d0ba9a..a9e1ae7ad0b81e7488cb07876b32d7ba
 +        if (xZero & yZero & zZero) {
 +            return movement;
 +        }
++
++        final AABB currentBox = this.getBoundingBox();
++
++        final List<VoxelShape> potentialCollisionsVoxel = new ArrayList<>();
++        final List<AABB> potentialCollisionsBB = new ArrayList<>();
  
 -            List<VoxelShape> list1 = Entity.collectColliders(this, this.level, list, axisalignedbb2);
 -            float f = (float) vec3d1.y;
 -            float[] afloat = Entity.collectCandidateStepUpHeights(axisalignedbb1, list1, this.maxUpStep(), f);
 -            float[] afloat1 = afloat;
 -            int i = afloat.length;
-+        final AABB currentBox = this.getBoundingBox();
- 
--            for (int j = 0; j < i; ++j) {
--                float f1 = afloat1[j];
--                Vec3 vec3d2 = Entity.collideWithShapes(new Vec3(movement.x, (double) f1, movement.z), axisalignedbb1, list1);
-+        final List<VoxelShape> potentialCollisionsVoxel = new ArrayList<>();
-+        final List<AABB> potentialCollisionsBB = new ArrayList<>();
- 
--                if (vec3d2.horizontalDistanceSqr() > vec3d1.horizontalDistanceSqr()) {
--                    double d0 = axisalignedbb.minY - axisalignedbb1.minY;
 +        final AABB initialCollisionBox;
 +        if (xZero & zZero) {
 +            // note: xZero & zZero -> collision on x/z == 0 -> no step height calculation
@@ -28658,20 +28749,25 @@ index 5949cbccb569ab1d518508d200e69ad9d7d0ba9a..a9e1ae7ad0b81e7488cb07876b32d7ba
 +            initialCollisionBox = currentBox.expandTowards(movement);
 +        }
  
--                    return vec3d2.add(0.0D, -d0, 0.0D);
--                }
+-            for (int j = 0; j < i; ++j) {
+-                float f1 = afloat1[j];
+-                Vec3 vec3d2 = Entity.collideWithShapes(new Vec3(movement.x, (double) f1, movement.z), axisalignedbb1, list1);
 +        final List<AABB> entityAABBs = new ArrayList<>();
 +        ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.getEntityHardCollisions(
 +            this.level, (Entity)(Object)this, initialCollisionBox, entityAABBs, 0, null
 +        );
-+
+ 
+-                if (vec3d2.horizontalDistanceSqr() > vec3d1.horizontalDistanceSqr()) {
+-                    double d0 = axisalignedbb.minY - axisalignedbb1.minY;
 +        ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.getCollisionsForBlocksOrWorldBorder(
 +            this.level, (Entity)(Object)this, initialCollisionBox, potentialCollisionsVoxel, potentialCollisionsBB,
 +            ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_FLAG_CHECK_BORDER, null
 +        );
 +        potentialCollisionsBB.addAll(entityAABBs);
 +        final Vec3 collided = ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.performCollisions(movement, currentBox, potentialCollisionsVoxel, potentialCollisionsBB);
-+
+ 
+-                    return vec3d2.add(0.0D, -d0, 0.0D);
+-                }
 +        final boolean collidedX = collided.x != movement.x;
 +        final boolean collidedY = collided.y != movement.y;
 +        final boolean collidedZ = collided.z != movement.z;
@@ -28711,7 +28807,7 @@ index 5949cbccb569ab1d518508d200e69ad9d7d0ba9a..a9e1ae7ad0b81e7488cb07876b32d7ba
      }
  
      private static float[] collectCandidateStepUpHeights(AABB collisionBox, List<VoxelShape> collisions, float f, float stepHeight) {
-@@ -2788,18 +2973,110 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -2788,18 +2929,110 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      }
  
      public boolean isInWall() {
@@ -28829,7 +28925,7 @@ index 5949cbccb569ab1d518508d200e69ad9d7d0ba9a..a9e1ae7ad0b81e7488cb07876b32d7ba
      }
  
      public InteractionResult interact(Player player, InteractionHand hand) {
-@@ -4272,14 +4549,17 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4272,14 +4505,17 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      }
  
      public Iterable<Entity> getIndirectPassengers() {
@@ -28854,7 +28950,7 @@ index 5949cbccb569ab1d518508d200e69ad9d7d0ba9a..a9e1ae7ad0b81e7488cb07876b32d7ba
      }
      private Iterable<Entity> getIndirectPassengers_old() {
          // Paper end - Optimize indirect passenger iteration
-@@ -4437,82 +4717,136 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4437,82 +4673,136 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          return Mth.lerp(delta, this.yRotO, this.yRot);
      }
  
@@ -28955,7 +29051,9 @@ index 5949cbccb569ab1d518508d200e69ad9d7d0ba9a..a9e1ae7ad0b81e7488cb07876b32d7ba
 +                    final int maxZIterate = currChunkZ == maxChunkZ ? (maxBlockZ & 15) : 15;
 +                    final int minYIterate = currChunkY == minChunkY ? (minBlockY & 15) : 0;
 +                    final int maxYIterate = currChunkY == maxChunkY ? (maxBlockY & 15) : 15;
-+
+ 
+-                                    vec3d = vec3d.add(vec3d1);
+-                                    ++k1;
 +                    for (int currY = minYIterate; currY <= maxYIterate; ++currY) {
 +                        for (int currZ = minZIterate; currZ <= maxZIterate; ++currZ) {
 +                            for (int currX = minXIterate; currX <= maxXIterate; ++currX) {
@@ -28963,21 +29061,19 @@ index 5949cbccb569ab1d518508d200e69ad9d7d0ba9a..a9e1ae7ad0b81e7488cb07876b32d7ba
 +
 +                                if (fluidState.isEmpty() || !fluidState.is(fluid)) {
 +                                    continue;
-+                                }
+                                 }
+-                                // CraftBukkit start - store last lava contact location
+-                                if (tag == FluidTags.LAVA) {
+-                                    this.lastLavaContact = blockposition_mutableblockposition.immutable();
 +
 +                                mutablePos.set(currX | (currChunkX << 4), currY | (currChunkY << 4), currZ | (currChunkZ << 4));
- 
--                                    vec3d = vec3d.add(vec3d1);
--                                    ++k1;
++
 +                                final double height = (double)((float)mutablePos.getY() + fluidState.getHeight(world, mutablePos));
 +                                final double diff = height - boundingBox.minY;
 +
 +                                if (diff < 0.0) {
 +                                    continue;
-                                 }
--                                // CraftBukkit start - store last lava contact location
--                                if (tag == FluidTags.LAVA) {
--                                    this.lastLavaContact = blockposition_mutableblockposition.immutable();
++                                }
 +
 +                                inFluid = true;
 +                                maxHeightDiff = Math.max(maxHeightDiff, diff);
@@ -29049,7 +29145,7 @@ index 5949cbccb569ab1d518508d200e69ad9d7d0ba9a..a9e1ae7ad0b81e7488cb07876b32d7ba
  
      public boolean touchingUnloadedChunk() {
          AABB axisalignedbb = this.getBoundingBox().inflate(1.0D);
-@@ -4664,6 +4998,15 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4664,6 +4954,15 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          this.setPosRaw(x, y, z, false);
      }
      public final void setPosRaw(double x, double y, double z, boolean forceBoundingBoxUpdate) {
@@ -29065,7 +29161,7 @@ index 5949cbccb569ab1d518508d200e69ad9d7d0ba9a..a9e1ae7ad0b81e7488cb07876b32d7ba
          if (!checkPosition(this, x, y, z)) {
              return;
          }
-@@ -4793,6 +5136,12 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4793,6 +5092,12 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
  
      @Override
      public final void setRemoved(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
@@ -29078,7 +29174,7 @@ index 5949cbccb569ab1d518508d200e69ad9d7d0ba9a..a9e1ae7ad0b81e7488cb07876b32d7ba
          CraftEventFactory.callEntityRemoveEvent(this, cause);
          // CraftBukkit end
          final boolean alreadyRemoved = this.removalReason != null; // Paper - Folia schedulers
-@@ -4804,7 +5153,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4804,7 +5109,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
              this.stopRiding();
          }
  
@@ -29087,7 +29183,7 @@ index 5949cbccb569ab1d518508d200e69ad9d7d0ba9a..a9e1ae7ad0b81e7488cb07876b32d7ba
          this.levelCallback.onRemove(entity_removalreason);
          this.onRemoval(entity_removalreason);
          // Paper start - Folia schedulers
-@@ -4836,7 +5185,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4836,7 +5141,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
  
      @Override
      public boolean shouldBeSaved() {
@@ -29486,7 +29582,7 @@ index e185a33b5b1f8e8e0a0e666b24ba3e9186a8a7ff..5d7a6e4b73f032db356e7ec369b15001
  
      // Paper start - Affects Spawning API
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 078088a854d466e66411d25d6dd6bcc536db78f3..86cd6e1b8f68dd0564ee2a7c60f02d7af287af67 100644
+index 078088a854d466e66411d25d6dd6bcc536db78f3..061d3e77fe8d9322eb660ac1995e025aba51ae1a 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -83,6 +83,7 @@ import net.minecraft.world.level.storage.LevelData;
@@ -29506,6 +29602,15 @@ index 078088a854d466e66411d25d6dd6bcc536db78f3..86cd6e1b8f68dd0564ee2a7c60f02d7a
  
      public static final Codec<ResourceKey<Level>> RESOURCE_KEY_CODEC = ResourceKey.codec(Registries.DIMENSION);
      public static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("overworld"));
+@@ -130,7 +131,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     public float rainLevel;
+     protected float oThunderLevel;
+     public float thunderLevel;
+-    public final RandomSource random = RandomSource.create();
++    public final RandomSource random = new ca.spottedleaf.moonrise.common.util.ThreadUnsafeRandom(net.minecraft.world.level.levelgen.RandomSupport.generateUniqueSeed()); // Paper - replace random
+     /** @deprecated */
+     @Deprecated
+     private final RandomSource threadSafeRandom = RandomSource.createThreadSafe();
 @@ -206,7 +207,639 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
  
      public abstract ResourceKey<LevelStem> getTypeKey();
@@ -36160,7 +36265,7 @@ index 4a5a0e33af16369f665bf39e70238e4e5a5486da..696152286a4d16fa51a23ff6e15fb297
  
      // Paper start - implement pointers
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 4459d9f205222764affae053930c15f5107d4e69..73de1c68e92bf6b17cbb5cd49447bc98ae0fb650 100644
+index 5989a9af8840e1bdb5c7a25a44473e2ab597e1e5..e1f20b5b9ebc5d9870136aa2c77d887094bd4b6e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -3513,7 +3513,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
