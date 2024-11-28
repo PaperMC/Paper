@@ -570,7 +570,7 @@
  
          if (!iworlddataserver.isInitialized()) {
              try {
-@@ -427,30 +732,8 @@
+@@ -427,37 +732,31 @@
              iworlddataserver.setInitialized(true);
          }
  
@@ -602,10 +602,11 @@
  
      private static void setInitialSpawn(ServerLevel world, ServerLevelData worldProperties, boolean bonusChest, boolean debugWorld) {
          if (debugWorld) {
-@@ -458,6 +741,21 @@
+             worldProperties.setSpawn(BlockPos.ZERO.above(80), 0.0F);
          } else {
              ServerChunkCache chunkproviderserver = world.getChunkSource();
-             ChunkPos chunkcoordintpair = new ChunkPos(chunkproviderserver.randomState().sampler().findSpawnPosition());
+-            ChunkPos chunkcoordintpair = new ChunkPos(chunkproviderserver.randomState().sampler().findSpawnPosition());
++            // ChunkPos chunkcoordintpair = new ChunkPos(chunkproviderserver.randomState().sampler().findSpawnPosition()); // Paper - Move down, only attempt to find spawn position if there isn't a fixed spawn position set
 +            // CraftBukkit start
 +            if (world.generator != null) {
 +                Random rand = new Random(world.getSeed());
@@ -621,10 +622,11 @@
 +                }
 +            }
 +            // CraftBukkit end
++            ChunkPos chunkcoordintpair = new ChunkPos(chunkproviderserver.randomState().sampler().findSpawnPosition()); // Paper - Only attempt to find spawn position if there isn't a fixed spawn position set
              int i = chunkproviderserver.getGenerator().getSpawnHeight(world);
  
              if (i < world.getMinY()) {
-@@ -516,31 +814,36 @@
+@@ -516,31 +815,36 @@
          iworlddataserver.setGameType(GameType.SPECTATOR);
      }
  
@@ -672,7 +674,7 @@
              ForcedChunksSavedData forcedchunk = (ForcedChunksSavedData) worldserver1.getDataStorage().get(ForcedChunksSavedData.factory(), "chunks");
  
              if (forcedchunk != null) {
-@@ -555,10 +858,17 @@
+@@ -555,10 +859,17 @@
              }
          }
  
@@ -694,7 +696,7 @@
      }
  
      public GameType getDefaultGameType() {
-@@ -588,12 +898,16 @@
+@@ -588,12 +899,16 @@
              worldserver.save((ProgressListener) null, flush, worldserver.noSave && !force);
          }
  
@@ -713,7 +715,7 @@
          if (flush) {
              Iterator iterator1 = this.getAllLevels().iterator();
  
-@@ -628,18 +942,46 @@
+@@ -628,18 +943,46 @@
          this.stopServer();
      }
  
@@ -761,7 +763,7 @@
          }
  
          MinecraftServer.LOGGER.info("Saving worlds");
-@@ -693,6 +1035,15 @@
+@@ -693,6 +1036,15 @@
          } catch (IOException ioexception1) {
              MinecraftServer.LOGGER.error("Failed to unlock level {}", this.storageSource.getLevelId(), ioexception1);
          }
@@ -777,7 +779,7 @@
  
      }
  
-@@ -709,16 +1060,82 @@
+@@ -709,6 +1061,14 @@
      }
  
      public void halt(boolean waitForShutdown) {
@@ -792,14 +794,10 @@
          this.running = false;
          if (waitForShutdown) {
              try {
-                 this.serverThread.join();
-             } catch (InterruptedException interruptedexception) {
-                 MinecraftServer.LOGGER.error("Error while shutting down", interruptedexception);
-+            }
-+        }
-+
-+    }
-+
+@@ -720,6 +1080,64 @@
+ 
+     }
+ 
 +    // Spigot Start
 +    private static double calcTps(double avg, double exp, double tps)
 +    {
@@ -832,9 +830,9 @@
 +            for (int i = 0; i < size; i++) {
 +                this.samples[i] = dec(TPS);
 +                this.times[i] = SEC_IN_NANO;
-             }
-         }
- 
++            }
++        }
++
 +        private static java.math.BigDecimal dec(long t) {
 +            return new java.math.BigDecimal(t);
 +        }
@@ -853,14 +851,15 @@
 +        public double getAverage() {
 +            return total.divide(dec(time), 30, java.math.RoundingMode.HALF_UP).doubleValue();
 +        }
-     }
++    }
 +    private static final java.math.BigDecimal TPS_BASE = new java.math.BigDecimal(1E9).multiply(new java.math.BigDecimal(SAMPLE_INTERVAL));
 +    // Paper end
 +    // Spigot End
- 
++
      protected void runServer() {
          try {
-@@ -727,9 +1144,27 @@
+             if (!this.initServer()) {
+@@ -727,9 +1145,27 @@
              }
  
              this.nextTickTimeNanos = Util.getNanos();
@@ -889,7 +888,7 @@
              while (this.running) {
                  long i;
  
-@@ -744,12 +1179,31 @@
+@@ -744,11 +1180,30 @@
                      if (j > MinecraftServer.OVERLOADED_THRESHOLD_NANOS + 20L * i && this.nextTickTimeNanos - this.lastOverloadWarningNanos >= MinecraftServer.OVERLOADED_WARNING_INTERVAL_NANOS + 100L * i) {
                          long k = j / i;
  
@@ -898,7 +897,7 @@
                          this.nextTickTimeNanos += k * i;
                          this.lastOverloadWarningNanos = this.nextTickTimeNanos;
                      }
-                 }
++                }
 +                // Spigot start
 +                // Paper start - further improve server tick loop
 +                currentTime = Util.getNanos();
@@ -908,20 +907,19 @@
 +                    tps1.add(currentTps, diff);
 +                    tps5.add(currentTps, diff);
 +                    tps15.add(currentTps, diff);
- 
++
 +                    // Backwards compat with bad plugins
 +                    this.recentTps[0] = tps1.getAverage();
 +                    this.recentTps[1] = tps5.getAverage();
 +                    this.recentTps[2] = tps15.getAverage();
 +                    tickSection = currentTime;
-+                }
+                 }
 +                // Paper end - further improve server tick loop
 +                // Spigot end
-+
+ 
                  boolean flag = i == 0L;
  
-                 if (this.debugCommandProfilerDelayStart) {
-@@ -757,6 +1211,8 @@
+@@ -757,6 +1212,8 @@
                      this.debugCommandProfiler = new MinecraftServer.TimeProfiler(Util.getNanos(), this.tickCount);
                  }
  
@@ -930,7 +928,7 @@
                  this.nextTickTimeNanos += i;
  
                  try {
-@@ -830,6 +1286,14 @@
+@@ -830,6 +1287,14 @@
                      this.services.profileCache().clearExecutor();
                  }
  
@@ -945,7 +943,7 @@
                  this.onServerExit();
              }
  
-@@ -889,9 +1353,16 @@
+@@ -889,9 +1354,16 @@
      }
  
      private boolean haveTime() {
@@ -963,7 +961,7 @@
      public static boolean throwIfFatalException() {
          RuntimeException runtimeexception = (RuntimeException) MinecraftServer.fatalException.get();
  
-@@ -903,7 +1374,7 @@
+@@ -903,7 +1375,7 @@
      }
  
      public static void setFatalException(RuntimeException exception) {
@@ -972,7 +970,7 @@
      }
  
      @Override
-@@ -961,6 +1432,7 @@
+@@ -961,6 +1433,7 @@
          if (super.pollTask()) {
              return true;
          } else {
@@ -980,7 +978,7 @@
              if (this.tickRateManager.isSprinting() || this.haveTime()) {
                  Iterator iterator = this.getAllLevels().iterator();
  
-@@ -968,16 +1440,16 @@
+@@ -968,16 +1441,16 @@
                      ServerLevel worldserver = (ServerLevel) iterator.next();
  
                      if (worldserver.getChunkSource().pollTask()) {
@@ -1000,7 +998,7 @@
          Profiler.get().incrementCounter("runTask");
          super.doRunTask(ticktask);
      }
-@@ -1025,27 +1497,45 @@
+@@ -1025,27 +1498,45 @@
      }
  
      public void tickServer(BooleanSupplier shouldKeepTicking) {
@@ -1047,7 +1045,7 @@
          ++this.tickCount;
          this.tickRateManager.tick();
          this.tickChildren(shouldKeepTicking);
-@@ -1055,12 +1545,20 @@
+@@ -1055,12 +1546,20 @@
          }
  
          --this.ticksUntilAutosave;
@@ -1069,7 +1067,7 @@
          gameprofilerfiller.push("tallying");
          long k = Util.getNanos() - i;
          int l = this.tickCount % 100;
-@@ -1069,12 +1567,17 @@
+@@ -1069,12 +1568,17 @@
          this.aggregatedTickTimesNanos += k;
          this.tickTimesNanos[l] = k;
          this.smoothedTickTimeMillis = this.smoothedTickTimeMillis * 0.8F + (float) k / (float) TimeUtil.NANOSECONDS_PER_MILLISECOND * 0.19999999F;
@@ -1088,7 +1086,7 @@
          MinecraftServer.LOGGER.debug("Autosave started");
          ProfilerFiller gameprofilerfiller = Profiler.get();
  
-@@ -1123,7 +1626,7 @@
+@@ -1123,7 +1627,7 @@
      private ServerStatus buildServerStatus() {
          ServerStatus.Players serverping_serverpingplayersample = this.buildPlayerStatus();
  
@@ -1097,7 +1095,7 @@
      }
  
      private ServerStatus.Players buildPlayerStatus() {
-@@ -1133,7 +1636,7 @@
+@@ -1133,7 +1637,7 @@
          if (this.hidesOnlinePlayers()) {
              return new ServerStatus.Players(i, list.size(), List.of());
          } else {
@@ -1106,7 +1104,7 @@
              ObjectArrayList<GameProfile> objectarraylist = new ObjectArrayList(j);
              int k = Mth.nextInt(this.random, 0, list.size() - j);
  
-@@ -1154,24 +1657,72 @@
+@@ -1154,24 +1658,72 @@
          this.getPlayerList().getPlayers().forEach((entityplayer) -> {
              entityplayer.connection.suspendFlushing();
          });
@@ -1180,7 +1178,7 @@
  
              gameprofilerfiller.push("tick");
  
-@@ -1186,7 +1737,9 @@
+@@ -1186,7 +1738,9 @@
  
              gameprofilerfiller.pop();
              gameprofilerfiller.pop();
@@ -1190,7 +1188,7 @@
  
          gameprofilerfiller.popPush("connection");
          this.tickConnection();
-@@ -1267,6 +1820,22 @@
+@@ -1267,6 +1821,22 @@
          return (ServerLevel) this.levels.get(key);
      }
  
@@ -1213,7 +1211,7 @@
      public Set<ResourceKey<Level>> levelKeys() {
          return this.levels.keySet();
      }
-@@ -1296,7 +1865,7 @@
+@@ -1296,7 +1866,7 @@
  
      @DontObfuscate
      public String getServerModName() {
@@ -1222,7 +1220,7 @@
      }
  
      public SystemReport fillSystemReport(SystemReport details) {
-@@ -1347,7 +1916,7 @@
+@@ -1347,7 +1917,7 @@
  
      @Override
      public void sendSystemMessage(Component message) {
@@ -1231,7 +1229,7 @@
      }
  
      public KeyPair getKeyPair() {
-@@ -1385,11 +1954,14 @@
+@@ -1385,11 +1955,14 @@
          }
      }
  
@@ -1251,7 +1249,7 @@
          }
      }
  
-@@ -1403,7 +1975,7 @@
+@@ -1403,7 +1976,7 @@
          while (iterator.hasNext()) {
              ServerLevel worldserver = (ServerLevel) iterator.next();
  
@@ -1260,7 +1258,7 @@
          }
  
      }
-@@ -1481,10 +2053,20 @@
+@@ -1481,10 +2054,20 @@
  
      @Override
      public String getMotd() {
@@ -1282,7 +1280,7 @@
          this.motd = motd;
      }
  
-@@ -1507,7 +2089,7 @@
+@@ -1507,7 +2090,7 @@
      }
  
      public ServerConnectionListener getConnection() {
@@ -1291,7 +1289,7 @@
      }
  
      public boolean isReady() {
-@@ -1593,7 +2175,7 @@
+@@ -1593,7 +2176,7 @@
      @Override
      public void executeIfPossible(Runnable runnable) {
          if (this.isStopped()) {
@@ -1300,7 +1298,7 @@
          } else {
              super.executeIfPossible(runnable);
          }
-@@ -1632,13 +2214,19 @@
+@@ -1632,13 +2215,19 @@
          return this.functionManager;
      }
  
@@ -1322,7 +1320,7 @@
          }, this).thenCompose((immutablelist) -> {
              MultiPackResourceManager resourcemanager = new MultiPackResourceManager(PackType.SERVER_DATA, immutablelist);
              List<Registry.PendingTags<?>> list = TagLoader.loadTagsForExistingRegistries(resourcemanager, this.registries.compositeAccess());
-@@ -1652,6 +2240,7 @@
+@@ -1652,6 +2241,7 @@
                  return new MinecraftServer.ReloadableResources(resourcemanager, datapackresources);
              });
          }).thenAcceptAsync((minecraftserver_reloadableresources) -> {
@@ -1330,7 +1328,7 @@
              this.resources.close();
              this.resources = minecraftserver_reloadableresources;
              this.packRepository.setSelected(dataPacks);
-@@ -1660,11 +2249,23 @@
+@@ -1660,11 +2250,23 @@
              this.worldData.setDataConfiguration(worlddataconfiguration);
              this.resources.managers.updateStaticRegistryTags();
              this.resources.managers.getRecipeManager().finalizeRecipeLoading(this.worldData.enabledFeatures());
@@ -1354,7 +1352,7 @@
          }, this);
  
          if (this.isSameThread()) {
-@@ -1789,14 +2390,15 @@
+@@ -1789,14 +2391,15 @@
          if (this.isEnforceWhitelist()) {
              PlayerList playerlist = source.getServer().getPlayerList();
              UserWhiteList whitelist = playerlist.getWhiteList();
@@ -1372,7 +1370,7 @@
                  }
              }
  
-@@ -1952,7 +2554,7 @@
+@@ -1952,7 +2555,7 @@
              final List<String> list = Lists.newArrayList();
              final GameRules gamerules = this.getGameRules();
  
@@ -1381,7 +1379,7 @@
                  @Override
                  public <T extends GameRules.Value<T>> void visit(GameRules.Key<T> key, GameRules.Type<T> type) {
                      list.add(String.format(Locale.ROOT, "%s=%s\n", key.getId(), gamerules.getRule(key)));
-@@ -2058,7 +2660,7 @@
+@@ -2058,7 +2661,7 @@
              try {
                  label51:
                  {
@@ -1390,7 +1388,7 @@
  
                      try {
                          arraylist = Lists.newArrayList(NativeModuleLister.listModules());
-@@ -2105,8 +2707,23 @@
+@@ -2105,8 +2708,23 @@
          if (bufferedwriter != null) {
              bufferedwriter.close();
          }
@@ -1414,7 +1412,7 @@
  
      private ProfilerFiller createProfiler() {
          if (this.willStartRecordingMetrics) {
-@@ -2225,18 +2842,24 @@
+@@ -2225,18 +2843,24 @@
      }
  
      public void logChatMessage(Component message, ChatType.Bound params, @Nullable String prefix) {
@@ -1443,7 +1441,7 @@
      }
  
      public boolean logIPs() {
-@@ -2379,4 +3002,53 @@
+@@ -2379,4 +3003,53 @@
      public static record ServerResourcePackInfo(UUID id, String url, String hash, boolean isRequired, @Nullable Component prompt) {
  
      }
