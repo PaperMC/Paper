@@ -9,21 +9,23 @@ from triggering monster spawns on a server.
 Also a highly more effecient way to blanket block spawns in a world
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 261943f1f188643793a72bd239dfc5fe604e3b99..985ba48a5ac027d3c3dcd9b710b53748508966fb 100644
+index 261943f1f188643793a72bd239dfc5fe604e3b99..ebe6c631d772cf41038701aafbe4e0bbb024f7f5 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -1098,7 +1098,9 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         chunkRange = (chunkRange > this.level.spigotConfig.viewDistance) ? (byte) this.level.spigotConfig.viewDistance : chunkRange;
-         chunkRange = (chunkRange > 8) ? 8 : chunkRange;
+@@ -1094,11 +1094,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     }
  
+     private boolean anyPlayerCloseEnoughForSpawningInternal(ChunkPos chunkcoordintpair, boolean reducedRange) {
+-        int chunkRange = this.level.spigotConfig.mobSpawnRange;
+-        chunkRange = (chunkRange > this.level.spigotConfig.viewDistance) ? (byte) this.level.spigotConfig.viewDistance : chunkRange;
+-        chunkRange = (chunkRange > 8) ? 8 : chunkRange;
+-
 -        double blockRange = (reducedRange) ? Math.pow(chunkRange << 4, 2) : 16384.0D;
-+        final int finalChunkRange = chunkRange; // Paper for lambda below
-+        //double blockRange = (reducedRange) ? Math.pow(chunkRange << 4, 2) : 16384.0D; // Paper - use from event
-+        double blockRange = 16384.0D; // Paper
++        double blockRange; // Paper - use from event
          // Spigot end
          Iterator iterator = this.playerMap.getAllPlayers().iterator();
  
-@@ -1110,6 +1112,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1110,6 +1106,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              }
  
              entityplayer = (ServerPlayer) iterator.next();
@@ -40,18 +42,17 @@ index 261943f1f188643793a72bd239dfc5fe604e3b99..985ba48a5ac027d3c3dcd9b710b53748
  
          return true;
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 2e2976efcf99de269f67dec2c87cb910ff280562..5749698b0c9647295e0be6f7d532d39c18432539 100644
+index 2e2976efcf99de269f67dec2c87cb910ff280562..f4fa64ab18573cb9a22a9bfb79a351c388d1aaa5 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -501,6 +501,15 @@ public class ServerChunkCache extends ChunkSource {
+@@ -501,6 +501,14 @@ public class ServerChunkCache extends ChunkSource {
          List list1;
  
          if (flag && (this.spawnEnemies || this.spawnFriendlies)) {
 +            // Paper start - PlayerNaturallySpawnCreaturesEvent
-+            int chunkRange = level.spigotConfig.mobSpawnRange;
-+            chunkRange = (chunkRange > level.spigotConfig.viewDistance) ? (byte) level.spigotConfig.viewDistance : chunkRange;
-+            chunkRange = Math.min(chunkRange, 8);
 +            for (ServerPlayer entityPlayer : this.level.players()) {
++                int chunkRange = Math.min(level.spigotConfig.mobSpawnRange, entityPlayer.getBukkitEntity().getViewDistance());
++                chunkRange = Math.min(chunkRange, 8);
 +                entityPlayer.playerNaturallySpawnedEvent = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(entityPlayer.getBukkitEntity(), (byte) chunkRange);
 +                entityPlayer.playerNaturallySpawnedEvent.callEvent();
 +            }
@@ -60,7 +61,7 @@ index 2e2976efcf99de269f67dec2c87cb910ff280562..5749698b0c9647295e0be6f7d532d39c
  
              list1 = NaturalSpawner.getFilteredSpawningCategories(spawnercreature_d, this.spawnFriendlies, this.spawnEnemies, flag1, this.level); // CraftBukkit
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index b99bd43bf5185bed21fad7dac31baf1a30bdd1fe..98aeafcc51e23a7534c8d57e4db0eb58abb3f30b 100644
+index 0432304139fada99dff884ebf8d08dbf9afc45c7..8fd3802d8e293e35478666bd4e921d58e1ce5b41 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -314,6 +314,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
