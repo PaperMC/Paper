@@ -1,0 +1,20 @@
+--- a/net/minecraft/world/level/storage/DimensionDataStorage.java
++++ b/net/minecraft/world/level/storage/DimensionDataStorage.java
+@@ -139,7 +139,7 @@
+         } else {
+             int i = Util.maxAllowedExecutorThreads();
+             int j = map.size();
+-            if (j > i) {
++            if (false && j > i) { // Paper - Separate dimension data IO pool; just throw them into the fixed pool queue
+                 this.pendingWriteFuture = this.pendingWriteFuture.thenCompose(object -> {
+                     List<CompletableFuture<?>> list = new ArrayList<>(i);
+                     int k = Mth.positiveCeilDiv(j, i);
+@@ -160,7 +160,7 @@
+                         v -> CompletableFuture.allOf(
+                                 map.entrySet()
+                                     .stream()
+-                                    .map(entry -> CompletableFuture.runAsync(() -> tryWrite(entry.getKey(), entry.getValue()), Util.ioPool()))
++                                    .map(entry -> CompletableFuture.runAsync(() -> tryWrite(entry.getKey(), entry.getValue()), Util.DIMENSION_DATA_IO_POOL)) // Paper - Separate dimension data IO pool
+                                     .toArray(CompletableFuture[]::new)
+                             )
+                     );

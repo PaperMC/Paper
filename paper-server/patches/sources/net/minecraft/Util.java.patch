@@ -1,12 +1,13 @@
 --- a/net/minecraft/Util.java
 +++ b/net/minecraft/Util.java
-@@ -92,9 +92,25 @@
+@@ -92,9 +92,26 @@
      private static final int DEFAULT_MAX_THREADS = 255;
      private static final int DEFAULT_SAFE_FILE_OPERATION_RETRIES = 10;
      private static final String MAX_THREADS_SYSTEM_PROPERTY = "max.bg.threads";
 -    private static final TracingExecutor BACKGROUND_EXECUTOR = makeExecutor("Main");
 +    private static final TracingExecutor BACKGROUND_EXECUTOR = makeExecutor("Main", -1); // Paper - Perf: add priority
      private static final TracingExecutor IO_POOL = makeIoExecutor("IO-Worker-", false);
++    public static final TracingExecutor DIMENSION_DATA_IO_POOL = makeExtraIoExecutor("Dimension-Data-IO-Worker-"); // Paper - Separate dimension data IO pool
      private static final TracingExecutor DOWNLOAD_POOL = makeIoExecutor("Download-", true);
 +    // Paper start - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
 +    public static final ExecutorService PROFILE_EXECUTOR = Executors.newFixedThreadPool(2, new java.util.concurrent.ThreadFactory() {
@@ -27,7 +28,7 @@
      private static final DateTimeFormatter FILENAME_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss", Locale.ROOT);
      public static final int LINEAR_LOOKUP_THRESHOLD = 8;
      private static final Set<String> ALLOWED_UNTRUSTED_LINK_PROTOCOLS = Set.of("http", "https");
-@@ -136,7 +152,7 @@
+@@ -136,7 +153,7 @@
      }
  
      public static long getNanos() {
@@ -36,7 +37,7 @@
      }
  
      public static long getEpochMillis() {
-@@ -147,15 +163,16 @@
+@@ -147,15 +164,16 @@
          return FILENAME_DATE_TIME_FORMATTER.format(ZonedDateTime.now());
      }
  
@@ -58,7 +59,7 @@
                  ForkJoinWorkerThread forkJoinWorkerThread = new ForkJoinWorkerThread(pool) {
                      @Override
                      protected void onStart() {
-@@ -177,13 +194,26 @@
+@@ -177,13 +195,26 @@
                  forkJoinWorkerThread.setName(string2);
                  return forkJoinWorkerThread;
              }, Util::onThreadException, true);
@@ -87,7 +88,33 @@
      }
  
      private static int getMaxThreads() {
-@@ -537,7 +567,7 @@
+@@ -229,10 +260,25 @@
+             TracyClient.setThreadName(string2, namePrefix.hashCode());
+             thread.setName(string2);
+             thread.setDaemon(daemon);
++            thread.setUncaughtExceptionHandler(Util::onThreadException);
++            return thread;
++        }));
++    }
++
++    // Paper start - Separate dimension data IO pool
++    private static TracingExecutor makeExtraIoExecutor(String namePrefix) {
++        AtomicInteger atomicInteger = new AtomicInteger(1);
++        return new TracingExecutor(Executors.newFixedThreadPool(4, runnable -> {
++            Thread thread = new Thread(runnable);
++            String string2 = namePrefix + atomicInteger.getAndIncrement();
++            TracyClient.setThreadName(string2, namePrefix.hashCode());
++            thread.setName(string2);
++            thread.setDaemon(false);
+             thread.setUncaughtExceptionHandler(Util::onThreadException);
+             return thread;
+         }));
+     }
++    // Paper end - Separate dimension data IO pool
+ 
+     public static void throwAsRuntime(Throwable t) {
+         throw t instanceof RuntimeException ? (RuntimeException)t : new RuntimeException(t);
+@@ -537,7 +583,7 @@
      public static <K extends Enum<K>, V> EnumMap<K, V> makeEnumMap(Class<K> enumClass, Function<K, V> mapper) {
          EnumMap<K, V> enumMap = new EnumMap<>(enumClass);
  
@@ -96,7 +123,7 @@
              enumMap.put(enum_, mapper.apply(enum_));
          }
  
-@@ -1057,16 +1087,7 @@
+@@ -1057,16 +1103,7 @@
          }
  
          public void openUri(URI uri) {
