@@ -13,13 +13,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         chunkRange = (chunkRange > this.level.spigotConfig.viewDistance) ? (byte) this.level.spigotConfig.viewDistance : chunkRange;
-         chunkRange = (chunkRange > 8) ? 8 : chunkRange;
+     }
  
+     private boolean anyPlayerCloseEnoughForSpawningInternal(ChunkPos chunkcoordintpair, boolean reducedRange) {
+-        int chunkRange = this.level.spigotConfig.mobSpawnRange;
+-        chunkRange = (chunkRange > this.level.spigotConfig.viewDistance) ? (byte) this.level.spigotConfig.viewDistance : chunkRange;
+-        chunkRange = (chunkRange > 8) ? 8 : chunkRange;
+-
 -        double blockRange = (reducedRange) ? Math.pow(chunkRange << 4, 2) : 16384.0D;
-+        final int finalChunkRange = chunkRange; // Paper for lambda below
-+        //double blockRange = (reducedRange) ? Math.pow(chunkRange << 4, 2) : 16384.0D; // Paper - use from event
-+        double blockRange = 16384.0D; // Paper
++        double blockRange; // Paper - use from event
          // Spigot end
          Iterator iterator = this.playerMap.getAllPlayers().iterator();
  
@@ -48,10 +50,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          if (flag && (this.spawnEnemies || this.spawnFriendlies)) {
 +            // Paper start - PlayerNaturallySpawnCreaturesEvent
-+            int chunkRange = level.spigotConfig.mobSpawnRange;
-+            chunkRange = (chunkRange > level.spigotConfig.viewDistance) ? (byte) level.spigotConfig.viewDistance : chunkRange;
-+            chunkRange = Math.min(chunkRange, 8);
 +            for (ServerPlayer entityPlayer : this.level.players()) {
++                int chunkRange = Math.min(level.spigotConfig.mobSpawnRange, entityPlayer.getBukkitEntity().getViewDistance());
++                chunkRange = Math.min(chunkRange, 8);
 +                entityPlayer.playerNaturallySpawnedEvent = new com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent(entityPlayer.getBukkitEntity(), (byte) chunkRange);
 +                entityPlayer.playerNaturallySpawnedEvent.callEvent();
 +            }
