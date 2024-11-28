@@ -4844,10 +4844,10 @@ index 0000000000000000000000000000000000000000..197224e31175252d8438a8df585bbb65
 +}
 diff --git a/src/main/java/io/papermc/paper/util/MCUtil.java b/src/main/java/io/papermc/paper/util/MCUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9d97c9afa31bed6d2e6b7778bfe4cc41cea31c4d
+index 0000000000000000000000000000000000000000..a4ac34ebb58a404f4fca7e763e61d4ab05ee3af4
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/util/MCUtil.java
-@@ -0,0 +1,209 @@
+@@ -0,0 +1,205 @@
 +package io.papermc.paper.util;
 +
 +import com.google.common.collect.Collections2;
@@ -4861,9 +4861,8 @@ index 0000000000000000000000000000000000000000..9d97c9afa31bed6d2e6b7778bfe4cc41
 +import java.util.List;
 +import java.util.concurrent.CompletableFuture;
 +import java.util.concurrent.ExecutionException;
-+import java.util.concurrent.LinkedBlockingQueue;
-+import java.util.concurrent.ThreadPoolExecutor;
-+import java.util.concurrent.TimeUnit;
++import java.util.concurrent.ExecutorService;
++import java.util.concurrent.Executors;
 +import java.util.function.BiConsumer;
 +import java.util.function.Consumer;
 +import java.util.function.Function;
@@ -4888,13 +4887,10 @@ index 0000000000000000000000000000000000000000..9d97c9afa31bed6d2e6b7778bfe4cc41
 +            run.run();
 +        }
 +    };
-+    public static final ThreadPoolExecutor asyncExecutor = new ThreadPoolExecutor(
-+        2, 2, 60L, TimeUnit.SECONDS,
-+        new LinkedBlockingQueue<>(),
-+        new ThreadFactoryBuilder()
-+            .setNameFormat("Paper Async Task Handler Thread - %1$d")
-+            .setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(MinecraftServer.LOGGER))
-+            .build()
++    public static final ExecutorService ASYNC_EXECUTOR = Executors.newFixedThreadPool(2, new ThreadFactoryBuilder()
++        .setNameFormat("Paper Async Task Handler Thread - %1$d")
++        .setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(MinecraftServer.LOGGER))
++        .build()
 +    );
 +
 +    private MCUtil() {
@@ -5029,7 +5025,7 @@ index 0000000000000000000000000000000000000000..9d97c9afa31bed6d2e6b7778bfe4cc41
 +    }
 +
 +    public static void scheduleAsyncTask(Runnable run) {
-+        asyncExecutor.execute(run);
++        ASYNC_EXECUTOR.execute(run);
 +    }
 +
 +    public static <T> ResourceKey<T> toResourceKey(
@@ -5216,15 +5212,15 @@ index 3e5a85a7ad6149b04622c254fbc2e174896a4128..3f662692ed4846e026a9d48595e7b3b2
 +
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 8e16bc7da15824723f1d7d4bff87fac181978500..709330ca9caa82a6de71767b3d5c32f97ea1d68b 100644
+index 8e16bc7da15824723f1d7d4bff87fac181978500..1b6cf839450cc69bd3cda6d874656c5345b0ac51 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -988,6 +988,9 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              MinecraftServer.LOGGER.error("Failed to unlock level {}", this.storageSource.getLevelId(), ioexception1);
          }
          // Spigot start
-+        io.papermc.paper.util.MCUtil.asyncExecutor.shutdown(); // Paper
-+        try { io.papermc.paper.util.MCUtil.asyncExecutor.awaitTermination(30, java.util.concurrent.TimeUnit.SECONDS); // Paper
++        io.papermc.paper.util.MCUtil.ASYNC_EXECUTOR.shutdown(); // Paper
++        try { io.papermc.paper.util.MCUtil.ASYNC_EXECUTOR.awaitTermination(30, java.util.concurrent.TimeUnit.SECONDS); // Paper
 +        } catch (java.lang.InterruptedException ignored) {} // Paper
          if (org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) {
              MinecraftServer.LOGGER.info("Saving usercache.json");
