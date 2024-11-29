@@ -4861,9 +4861,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import java.util.List;
 +import java.util.concurrent.CompletableFuture;
 +import java.util.concurrent.ExecutionException;
-+import java.util.concurrent.LinkedBlockingQueue;
-+import java.util.concurrent.ThreadPoolExecutor;
-+import java.util.concurrent.TimeUnit;
++import java.util.concurrent.ExecutorService;
++import java.util.concurrent.Executors;
 +import java.util.function.BiConsumer;
 +import java.util.function.Consumer;
 +import java.util.function.Function;
@@ -4888,13 +4887,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            run.run();
 +        }
 +    };
-+    public static final ThreadPoolExecutor asyncExecutor = new ThreadPoolExecutor(
-+        2, 2, 60L, TimeUnit.SECONDS,
-+        new LinkedBlockingQueue<>(),
-+        new ThreadFactoryBuilder()
-+            .setNameFormat("Paper Async Task Handler Thread - %1$d")
-+            .setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(MinecraftServer.LOGGER))
-+            .build()
++    public static final ExecutorService ASYNC_EXECUTOR = Executors.newFixedThreadPool(2, new ThreadFactoryBuilder()
++        .setNameFormat("Paper Async Task Handler Thread - %1$d")
++        .setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(MinecraftServer.LOGGER))
++        .build()
 +    );
 +
 +    private MCUtil() {
@@ -5029,7 +5025,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    public static void scheduleAsyncTask(Runnable run) {
-+        asyncExecutor.execute(run);
++        ASYNC_EXECUTOR.execute(run);
 +    }
 +
 +    public static <T> ResourceKey<T> toResourceKey(
@@ -5223,8 +5219,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              MinecraftServer.LOGGER.error("Failed to unlock level {}", this.storageSource.getLevelId(), ioexception1);
          }
          // Spigot start
-+        io.papermc.paper.util.MCUtil.asyncExecutor.shutdown(); // Paper
-+        try { io.papermc.paper.util.MCUtil.asyncExecutor.awaitTermination(30, java.util.concurrent.TimeUnit.SECONDS); // Paper
++        io.papermc.paper.util.MCUtil.ASYNC_EXECUTOR.shutdown(); // Paper
++        try { io.papermc.paper.util.MCUtil.ASYNC_EXECUTOR.awaitTermination(30, java.util.concurrent.TimeUnit.SECONDS); // Paper
 +        } catch (java.lang.InterruptedException ignored) {} // Paper
          if (org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) {
              MinecraftServer.LOGGER.info("Saving usercache.json");
