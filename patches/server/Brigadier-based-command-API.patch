@@ -2136,7 +2136,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
                  for (int i = 0; i < Math.min(astacktraceelement.length, 3); ++i) {
 @@ -0,0 +0,0 @@ public class Commands {
-     private void sendAsync(ServerPlayer player) {
+     private void sendAsync(ServerPlayer player, Collection<CommandNode<CommandSourceStack>> dispatcherRootChildren) {
          // Paper end - Perf: Async command map building
          Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = Maps.newIdentityHashMap(); // Use identity to prevent aliasing issues
 -        RootCommandNode vanillaRoot = new RootCommandNode();
@@ -2151,13 +2151,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          map.put(this.dispatcher.getRoot(), rootcommandnode);
 @@ -0,0 +0,0 @@ public class Commands {
-     }
  
-     private void fillUsableCommands(CommandNode<CommandSourceStack> tree, CommandNode<SharedSuggestionProvider> result, CommandSourceStack source, Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> resultNodes) {
+     // Paper start - Perf: Async command map building; pass copy of children
+     private void fillUsableCommands(Collection<CommandNode<CommandSourceStack>> children, CommandNode<SharedSuggestionProvider> result, CommandSourceStack source, Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> resultNodes) {
 +        resultNodes.keySet().removeIf((node) -> !org.spigotmc.SpigotConfig.sendNamespaced && node.getName().contains( ":" )); // Paper - Remove namedspaced from result nodes to prevent redirect trimming ~ see comment below
-         Iterator iterator = tree.getChildren().iterator();
+         Iterator iterator = children.iterator();
+         // Paper end - Perf: Async command map building
  
-         while (iterator.hasNext()) {
 @@ -0,0 +0,0 @@ public class Commands {
  
              if (commandnode2.canUse(source)) {
