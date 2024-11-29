@@ -3,8 +3,6 @@ From: Aikar <aikar@aikar.co>
 Date: Fri, 15 Feb 2019 01:08:19 -0500
 Subject: [PATCH] Allow Saving of Oversized Chunks
 
-Note 1.17 update: With 1.17, Entities are no longer stored in chunk slices, so this needs updating!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 The Minecraft World Region File format has a hard cap of 1MB per chunk.
 This is due to the fact that the header of the file format only allocates
 a single byte for sector count, meaning a maximum of 256 sectors, at 4k per sector.
@@ -61,9 +59,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          if (!Files.isDirectory(directory, new LinkOption[0])) {
              throw new IllegalArgumentException("Expected directory, got " + String.valueOf(directory.toAbsolutePath()));
 @@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
+ 
      }
  
-     public static final int MAX_CHUNK_SIZE = 500 * 1024 * 1024; // Paper - don't write garbage data to disk if writing serialization fails
 +    // Paper start
 +    private final byte[] oversized = new byte[1024];
 +    private int oversizedCount;
@@ -201,6 +199,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              try {
                  NbtIo.write(nbt, (DataOutput) dataoutputstream);
 +                regionfile.setOversized(pos.x, pos.z, false); // Paper - We don't do this anymore, mojang stores differently, but clear old meta flag if it exists to get rid of our own meta file once last oversized is gone
-                 // Paper start - don't write garbage data to disk if writing serialization fails
-                 dataoutputstream.close(); // Only write if successful
-             } catch (final RegionFileSizeException e) {
+             } catch (Throwable throwable) {
+                 if (dataoutputstream != null) {
+                     try {
