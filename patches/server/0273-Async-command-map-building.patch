@@ -9,27 +9,22 @@ commands if the server is restarting. Using the default async pool caused issues
 due to the shutdown logic generally being much later.
 
 diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
-index 2008fd542eaf1c2fac776ae1751c227a3b6dde4b..e812cc865baaa1ee03872f7969ee98600b82483b 100644
+index 2008fd542eaf1c2fac776ae1751c227a3b6dde4b..34564f4118eab9e95176cb4ff4bc93fbe97d9b6b 100644
 --- a/src/main/java/net/minecraft/commands/Commands.java
 +++ b/src/main/java/net/minecraft/commands/Commands.java
-@@ -455,6 +455,24 @@ public class Commands {
+@@ -455,6 +455,19 @@ public class Commands {
          if ( org.spigotmc.SpigotConfig.tabComplete < 0 ) return; // Spigot
          // CraftBukkit start
          // Register Vanilla commands into builtRoot as before
 +        // Paper start - Perf: Async command map building
-+        COMMAND_SENDING_POOL.execute(() -> {
-+                this.sendAsync(player);
-+        });
++        COMMAND_SENDING_POOL.execute(() -> this.sendAsync(player));
 +    }
 +
-+    public static final java.util.concurrent.ThreadPoolExecutor COMMAND_SENDING_POOL = new java.util.concurrent.ThreadPoolExecutor(
-+        0, 2, 60L, java.util.concurrent.TimeUnit.SECONDS,
-+        new java.util.concurrent.LinkedBlockingQueue<>(),
++    public static final java.util.concurrent.ExecutorService COMMAND_SENDING_POOL = java.util.concurrent.Executors.newFixedThreadPool(2,
 +        new com.google.common.util.concurrent.ThreadFactoryBuilder()
 +            .setNameFormat("Paper Async Command Builder Thread Pool - %1$d")
 +            .setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(net.minecraft.server.MinecraftServer.LOGGER))
-+            .build(),
-+        new java.util.concurrent.ThreadPoolExecutor.DiscardPolicy()
++            .build()
 +    );
 +
 +    private void sendAsync(ServerPlayer player) {
@@ -37,7 +32,7 @@ index 2008fd542eaf1c2fac776ae1751c227a3b6dde4b..e812cc865baaa1ee03872f7969ee9860
          Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = Maps.newIdentityHashMap(); // Use identity to prevent aliasing issues
          RootCommandNode vanillaRoot = new RootCommandNode();
  
-@@ -472,7 +490,14 @@ public class Commands {
+@@ -472,7 +485,14 @@ public class Commands {
          for (CommandNode node : rootcommandnode.getChildren()) {
              bukkit.add(node.getName());
          }
@@ -53,7 +48,7 @@ index 2008fd542eaf1c2fac776ae1751c227a3b6dde4b..e812cc865baaa1ee03872f7969ee9860
          event.getPlayer().getServer().getPluginManager().callEvent(event);
  
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 13aa191235ac6bb1d00d89ae29c750595cc6be78..0f1a7b649d398a875b57746530242e3ced595bfd 100644
+index 9a9291282f7ec99be9badf8b32fab5f0ea0f1037..feb45369b41b597fd603c12f3da23759923b6a6d 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -944,6 +944,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
