@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 16 Apr 2016 00:39:33 -0400
+Subject: [PATCH] Configurable RCON IP address
+
+For servers with multiple IP's, ability to bind to a specific interface.
+
+== AT ==
+public net.minecraft.server.dedicated.Settings getStringRaw(Ljava/lang/String;)Ljava/lang/String;
+
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
+index 353cc3622c7a802bf130146964610e66eb431d64..83d279a66484dfeef3ce34bef3d1c8f221c67f6d 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
+@@ -110,6 +110,8 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+     public final WorldOptions worldOptions;
+     public boolean acceptsTransfers;
+ 
++    public final String rconIp; // Paper - Configurable rcon ip
++
+     // CraftBukkit start
+     public DedicatedServerProperties(Properties properties, OptionSet optionset) {
+         super(properties, optionset);
+@@ -172,6 +174,10 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+         }, WorldPresets.NORMAL.location().toString()));
+         this.serverResourcePackInfo = DedicatedServerProperties.getServerPackInfo(this.get("resource-pack-id", ""), this.get("resource-pack", ""), this.get("resource-pack-sha1", ""), this.getLegacyString("resource-pack-hash"), this.get("require-resource-pack", false), this.get("resource-pack-prompt", ""));
+         this.initialDataPackConfiguration = DedicatedServerProperties.getDatapackConfig(this.get("initial-enabled-packs", String.join(",", WorldDataConfiguration.DEFAULT.dataPacks().getEnabled())), this.get("initial-disabled-packs", String.join(",", WorldDataConfiguration.DEFAULT.dataPacks().getDisabled())));
++        // Paper start - Configurable rcon ip
++        final String rconIp = this.getStringRaw("rcon.ip");
++        this.rconIp = rconIp == null ? this.serverIp : rconIp;
++        // Paper end - Configurable rcon ip
+     }
+ 
+     // CraftBukkit start
+diff --git a/src/main/java/net/minecraft/server/rcon/thread/RconThread.java b/src/main/java/net/minecraft/server/rcon/thread/RconThread.java
+index cf6ff562614e07dfdc0ae1d2d68df67d61136df0..594fbb033b63b8c9fb8752b1fcc78f8e9f7a2a83 100644
+--- a/src/main/java/net/minecraft/server/rcon/thread/RconThread.java
++++ b/src/main/java/net/minecraft/server/rcon/thread/RconThread.java
+@@ -57,7 +57,7 @@ public class RconThread extends GenericThread {
+     @Nullable
+     public static RconThread create(ServerInterface server) {
+         DedicatedServerProperties dedicatedServerProperties = server.getProperties();
+-        String string = server.getServerIp();
++        String string = dedicatedServerProperties.rconIp; // Paper - Configurable rcon ip
+         if (string.isEmpty()) {
+             string = "0.0.0.0";
+         }

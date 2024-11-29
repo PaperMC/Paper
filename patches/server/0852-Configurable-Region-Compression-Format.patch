@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Astralchroma <astralchroma@proton.me>
+Date: Thu, 27 Oct 2022 22:19:31 +0100
+Subject: [PATCH] Configurable Region Compression Format
+
+
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
+index b24e8255ab18eb5b2e4968aa62aa3d72ef33f0eb..0028f4fd331b6f94be2a2b4d90e56dcdd881178d 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
+@@ -50,7 +50,7 @@ public class RegionFile implements AutoCloseable {
+     protected final RegionBitmap usedSectors;
+ 
+     public RegionFile(RegionStorageInfo storageKey, Path directory, Path path, boolean dsync) throws IOException {
+-        this(storageKey, directory, path, RegionFileVersion.getSelected(), dsync);
++        this(storageKey, directory, path, RegionFileVersion.getCompressionFormat(), dsync); // Paper - Configurable region compression format
+     }
+ 
+     public RegionFile(RegionStorageInfo storageKey, Path path, Path directory, RegionFileVersion compressionFormat, boolean dsync) throws IOException {
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileVersion.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileVersion.java
+index cbd892598287c9358c1c2a3840c517462820b389..ef68b57ef1d8d7cb317c417569dd23a777fba4ad 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileVersion.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileVersion.java
+@@ -58,6 +58,15 @@ public class RegionFileVersion {
+     private final RegionFileVersion.StreamWrapper<InputStream> inputWrapper;
+     private final RegionFileVersion.StreamWrapper<OutputStream> outputWrapper;
+ 
++    // Paper start - Configurable region compression format
++    public static RegionFileVersion getCompressionFormat() {
++        return switch (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.compressionFormat) {
++            case GZIP -> VERSION_GZIP;
++            case ZLIB -> VERSION_DEFLATE;
++            case NONE -> VERSION_NONE;
++        };
++    }
++    // Paper end - Configurable region compression format
+     private RegionFileVersion(
+         int id,
+         @Nullable String name,

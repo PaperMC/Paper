@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 18 Mar 2016 13:17:38 -0400
+Subject: [PATCH] Default loading permissions.yml before plugins
+
+Under previous behavior, plugins were not able to check if a player had a permission
+if it was defined in permissions.yml. there is no clean way for a plugin to fix that either.
+
+This will change the order so that by default, permissions.yml loads BEFORE plugins instead of after.
+
+This gives plugins expected permission checks.
+
+It also helps improve the expected logic, as servers should set the initial defaults, and then let plugins
+modify that. Under the previous logic, plugins were unable (cleanly) override permissions.yml.
+
+A config option has been added for those who depend on the previous behavior, but I don't expect that.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 3422b2978eb69c537c19abacbb10ce8a5423756a..248de665ebf0e1ddfb10616f6213fa344cd88d40 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -490,6 +490,7 @@ public final class CraftServer implements Server {
+         if (type == PluginLoadOrder.STARTUP) {
+             this.helpMap.clear();
+             this.helpMap.initializeGeneralTopics();
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().misc.loadPermissionsYmlBeforePlugins) loadCustomPermissions(); // Paper
+         }
+ 
+         Plugin[] plugins = this.pluginManager.getPlugins();
+@@ -509,7 +510,7 @@ public final class CraftServer implements Server {
+             this.commandMap.registerServerAliases();
+             DefaultPermissions.registerCorePermissions();
+             CraftDefaultPermissions.registerCorePermissions();
+-            this.loadCustomPermissions();
++            if (!io.papermc.paper.configuration.GlobalConfiguration.get().misc.loadPermissionsYmlBeforePlugins) this.loadCustomPermissions(); // Paper
+             this.helpMap.initializeCommands();
+             this.syncCommands();
+         }

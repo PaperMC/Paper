@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 26 Jan 2023 16:19:26 -0800
+Subject: [PATCH] Fix force-opening enchantment tables
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+index aa3a47149fec342096817c7b9ce45ea196fd33d0..9509fa35ccf6f1f6fe24250bad8095b6ccdad6b0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+@@ -411,7 +411,18 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+ 
+         // If there isn't an enchant table we can force create one, won't be very useful though.
+         BlockPos pos = CraftLocation.toBlockPosition(location);
+-        this.getHandle().openMenu(Blocks.ENCHANTING_TABLE.defaultBlockState().getMenuProvider(this.getHandle().level(), pos));
++        // Paper start
++        MenuProvider menuProvider = Blocks.ENCHANTING_TABLE.defaultBlockState().getMenuProvider(this.getHandle().level(), pos);
++        if (menuProvider == null) {
++            if (!force) {
++                return null;
++            }
++            menuProvider = new net.minecraft.world.SimpleMenuProvider((syncId, inventory, player) -> {
++                return new net.minecraft.world.inventory.EnchantmentMenu(syncId, inventory, net.minecraft.world.inventory.ContainerLevelAccess.create(this.getHandle().level(), pos));
++            }, Component.translatable("container.enchant"));
++        }
++        this.getHandle().openMenu(menuProvider);
++        // Paper end
+ 
+         if (force) {
+             this.getHandle().containerMenu.checkReachable = false;

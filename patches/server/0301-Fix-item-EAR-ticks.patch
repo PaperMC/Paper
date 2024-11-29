@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Wed, 30 Oct 2024 13:51:54 +0100
+Subject: [PATCH] Fix item EAR ticks
+
+Item entities only have their gravity ticked every 4 ticks when on ground.
+Fix that and also remove Spigot's arbitrary tick skipping. It's a terribly
+cheap way of getting extra performance that doesn't really work at all.
+
+diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+index 75ebf09777e19645eee296a9edabac39c858ffb9..c21fa55c62d97d9511e41a1e313e904330a6eee6 100644
+--- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
++++ b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+@@ -175,7 +175,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+                 }
+             }
+ 
+-            if (!this.onGround() || this.getDeltaMovement().horizontalDistanceSqr() > 9.999999747378752E-6D || (this.tickCount + this.getId()) % 4 == 0) {
++            if (!this.onGround() || this.getDeltaMovement().horizontalDistanceSqr() > 9.999999747378752E-6D || (this.tickCount + this.getId()) % 4 == 0) { // Paper - Diff on change; ActivationRange immunity
+                 this.move(MoverType.SELF, this.getDeltaMovement());
+                 this.applyEffectsFromBlocks();
+                 float f = 0.98F;
+diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
+index 3184090cfa1ce6ec01686a7651be01cff49f5951..34297951d33242237af578d5ffc2e314c1e594f1 100644
+--- a/src/main/java/org/spigotmc/ActivationRange.java
++++ b/src/main/java/org/spigotmc/ActivationRange.java
+@@ -234,7 +234,7 @@ public class ActivationRange
+     public static boolean checkIfActive(Entity entity)
+     {
+         // Never safe to skip fireworks or item gravity
+-        if (entity instanceof FireworkRocketEntity || (entity instanceof ItemEntity && (entity.tickCount + entity.getId() + 1) % 4 == 0)) {
++        if (entity instanceof FireworkRocketEntity || (entity instanceof ItemEntity && (entity.tickCount + entity.getId()) % 4 == 0)) { // Paper - Needed for item gravity, see ItemEntity tick
+             return true;
+         }
+ 
+@@ -253,11 +253,8 @@ public class ActivationRange
+                 }
+                 isActive = true;
+             }
+-            // Add a little performance juice to active entities. Skip 1/4 if not immune.
+-        } else if ( !entity.defaultActivationState && entity.tickCount % 4 == 0 && !ActivationRange.checkEntityImmunities( entity ) )
+-        {
+-            isActive = false;
+         }
++        // Paper - remove dumb tick skipping for active entities
+         return isActive;
+     }
+ }

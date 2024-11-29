@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 18 Mar 2016 13:50:14 -0400
+Subject: [PATCH] Remove Metadata on reload
+
+Metadata is not meant to persist reload as things break badly with non primitive types
+This will remove metadata on reload so it does not crash everything if a plugin uses it.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index a8ee4d5b932e42367df9e74dacd0e3f1fdbe7d11..c6a0765e6cfbe90444b91a19039483070600df6d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1005,8 +1005,16 @@ public final class CraftServer implements Server {
+             world.spigotConfig.init(); // Spigot
+         }
+ 
++        Plugin[] pluginClone = pluginManager.getPlugins().clone(); // Paper
+         this.pluginManager.clearPlugins();
+         this.commandMap.clearCommands();
++        // Paper start
++        for (Plugin plugin : pluginClone) {
++            entityMetadata.removeAll(plugin);
++            worldMetadata.removeAll(plugin);
++            playerMetadata.removeAll(plugin);
++        }
++        // Paper end
+         this.reloadData();
+         org.spigotmc.SpigotConfig.registerCommands(); // Spigot
+         io.papermc.paper.command.PaperCommands.registerCommands(this.console); // Paper

@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 10 Oct 2021 18:18:01 -0700
+Subject: [PATCH] Fix HumanEntity#drop not updating the client inv
+
+== AT ==
+public net.minecraft.server.level.ServerPlayer containerSynchronizer
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+index 9509fa35ccf6f1f6fe24250bad8095b6ccdad6b0..db99af60c8145cc62f368b06bbc283f24d4dbfb2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+@@ -782,8 +782,15 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+     // Paper end
+     @Override
+     public boolean dropItem(boolean dropAll) {
+-        if (!(this.getHandle() instanceof ServerPlayer)) return false;
+-        return ((ServerPlayer) this.getHandle()).drop(dropAll);
++        // Paper start - Fix HumanEntity#drop not updating the client inv
++        if (!(this.getHandle() instanceof ServerPlayer player)) return false;
++        boolean success = player.drop(dropAll);
++        if (!success) return false;
++        final net.minecraft.world.entity.player.Inventory inv = player.getInventory();
++        final java.util.OptionalInt optionalSlot = player.containerMenu.findSlot(inv, inv.selected);
++        optionalSlot.ifPresent(slot -> player.containerSynchronizer.sendSlotChange(player.containerMenu, slot, inv.getSelected()));
++        return true;
++        // Paper end - Fix HumanEntity#drop not updating the client inv
+     }
+ 
+     @Override
