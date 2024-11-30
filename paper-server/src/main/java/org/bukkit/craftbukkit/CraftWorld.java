@@ -1296,7 +1296,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public int getMaxHeight() {
-        return world.getMaxY();
+        return world.getMaxY() + 1;
     }
 
     @Override
