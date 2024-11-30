@@ -38,7 +38,7 @@ public final class CraftUseCooldownComponent implements UseCooldownComponent {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("seconds", getCooldownSeconds());
         if (getCooldownGroup() != null) {
-            result.put("cooldown-group", getCooldownGroup());
+            result.put("cooldown-group", getCooldownGroup().toString());
         }
 
         return result;
