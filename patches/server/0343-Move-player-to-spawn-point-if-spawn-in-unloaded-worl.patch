@@ -3,11 +3,14 @@ From: 2277 <38501234+2277@users.noreply.github.com>
 Date: Tue, 31 Mar 2020 10:33:55 +0100
 Subject: [PATCH] Move player to spawn point if spawn in unloaded world
 
-If the playerdata contains an invalid world (missing, unloaded, invalid,
-etc.), spawn the player at the spawn point of the main world.
+If the player data contains an invalid world (missing, unloaded, invalid, etc.), spawn the player at the spawn point of the main world.
 
 Co-authored-by: Wyatt Childers <wchilders@nearce.com>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+
+---
+ a/src/main/java/net/minecraft/server/players/PlayerList.java | 27 +++++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
 
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
 index 5390ce62ec8afd24d2e028ea04d2ef3029a125f9..6f587c4bb4704d93552ba61335d87b1852fc169c 100644
@@ -15,9 +18,10 @@ index 5390ce62ec8afd24d2e028ea04d2ef3029a125f9..6f587c4bb4704d93552ba61335d87b18
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -197,6 +197,7 @@ public abstract class PlayerList {
          }
- 
+
          Optional<CompoundTag> optional = this.load(player); // CraftBukkit - decompile error
 +        ResourceKey<Level> resourcekey = null; // Paper
+
          // CraftBukkit start - Better rename detection
          if (optional.isPresent()) {
              CompoundTag nbttagcompound = optional.get();
@@ -27,20 +31,24 @@ index 5390ce62ec8afd24d2e028ea04d2ef3029a125f9..6f587c4bb4704d93552ba61335d87b18
          // CraftBukkit end
 -        ResourceKey<Level> resourcekey = (ResourceKey) optional.flatMap((nbttagcompound) -> {
 +        // Paper start - move logic in Entity to here, to use bukkit supplied world UUID & reset to main world spawn if no valid world is found
-+        boolean[] invalidPlayerWorld = {false};
++        boolean[] invalidPlayerWorld = {false}; // Track invalid player world state
 +        bukkitData: if (optional.isPresent()) {
-+            // The main way for bukkit worlds to store the world is the world UUID despite mojang adding custom worlds
++            // The main way for bukkit worlds to store the world is the world UUID despite Mojang adding custom worlds
 +            final org.bukkit.World bWorld;
 +            if (optional.get().contains("WorldUUIDMost") && optional.get().contains("WorldUUIDLeast")) {
++                // Using WorldUUIDMost and WorldUUIDLeast to retrieve the world
 +                bWorld = org.bukkit.Bukkit.getServer().getWorld(new UUID(optional.get().getLong("WorldUUIDMost"), optional.get().getLong("WorldUUIDLeast")));
 +            } else if (optional.get().contains("world", net.minecraft.nbt.Tag.TAG_STRING)) { // Paper - legacy bukkit world name
++                // Use the world name as fallback
 +                bWorld = org.bukkit.Bukkit.getServer().getWorld(optional.get().getString("world"));
 +            } else {
 +                break bukkitData; // if neither of the bukkit data points exist, proceed to the vanilla migration section
 +            }
 +            if (bWorld != null) {
++                // World found, get the dimension
 +                resourcekey = ((CraftWorld) bWorld).getHandle().dimension();
 +            } else {
++                // Invalid world, default to OVERWORLD and flag it
 +                resourcekey = Level.OVERWORLD;
 +                invalidPlayerWorld[0] = true;
 +            }
@@ -72,7 +80,7 @@ index 5390ce62ec8afd24d2e028ea04d2ef3029a125f9..6f587c4bb4704d93552ba61335d87b18
          } else {
              worldserver1 = worldserver;
          }
-@@ -226,6 +255,10 @@ public abstract class PlayerList {
+
          // Paper start - Entity#getEntitySpawnReason
          if (optional.isEmpty()) {
              player.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT; // set Player SpawnReason to DEFAULT on first login
@@ -90,7 +98,7 @@ index 94242c19740ae6ab2c86e3949bab6cee631b938f..d80fd4e2f41583f83c9527ccf4ce80af
 @@ -2385,27 +2385,8 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
              }
              // CraftBukkit end
- 
+
 -            // CraftBukkit start - Reset world
 -            if (this instanceof ServerPlayer) {
 -                Server server = Bukkit.getServer();
