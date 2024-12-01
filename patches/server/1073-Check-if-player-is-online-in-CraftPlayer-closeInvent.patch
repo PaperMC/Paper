@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bridge <ctibeheerder@gmail.com>
+Date: Sun, 1 Dec 2024 15:43:12 +0100
+Subject: [PATCH] Check if player is online in
+ CraftPlayer#closeInventory(InventoryCloseEvent.Reason)
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 554714e449d1d2439b05d7e15f72afccd17d4df5..4cc791975dd9a79d6702c8e260168ced6ed7142d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -175,6 +175,7 @@ import org.bukkit.entity.EnderPearl;
+ import org.bukkit.entity.EntityType;
+ import org.bukkit.entity.LivingEntity;
+ import org.bukkit.entity.Player;
++import org.bukkit.event.inventory.InventoryCloseEvent;
+ import org.bukkit.event.player.PlayerExpCooldownChangeEvent;
+ import org.bukkit.event.player.PlayerHideEntityEvent;
+ import org.bukkit.event.player.PlayerRegisterChannelEvent;
+@@ -3580,4 +3581,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundEntityEventPacket(((CraftEntity) target).getHandle(), effect.getData()));
+     }
+     // Paper end - entity effect API
++
++    // Paper start - close inventory sanity check
++    @Override
++    public void closeInventory(final InventoryCloseEvent.Reason reason) {
++        if (this.getHandle().connection == null) {
++            throw new IllegalStateException("Cannot close inventory for offline player");
++        }
++
++        super.closeInventory(reason);
++    }
++    // Paper end
+ }
