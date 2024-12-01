@@ -18,7 +18,7 @@ Currently includes:
 See https://github.com/Tuinity/Moonrise
 
 diff --git a/src/main/java/ca/spottedleaf/moonrise/common/util/ChunkSystem.java b/src/main/java/ca/spottedleaf/moonrise/common/util/ChunkSystem.java
-index f7cd0aa43d0b9249d0a317fab41fefa0d951bca0..fc029c8fb22a7c8eeb23bfc171812f6da91c60fa 100644
+index 58a99bc38e137431f10af36fa9e2d04fe61694aa..1d288e73fd8605676c0da676e068afb5b4b8abea 100644
 --- a/src/main/java/ca/spottedleaf/moonrise/common/util/ChunkSystem.java
 +++ b/src/main/java/ca/spottedleaf/moonrise/common/util/ChunkSystem.java
 @@ -2,11 +2,17 @@ package ca.spottedleaf.moonrise.common.util;
@@ -330,17 +330,17 @@ index f7cd0aa43d0b9249d0a317fab41fefa0d951bca0..fc029c8fb22a7c8eeb23bfc171812f6d
      }
  
      public static int getSendViewDistance(final ServerPlayer player) {
--        return getLoadViewDistance(player) - 1;
+-        return getViewDistance(player);
 +        return RegionizedPlayerChunkLoader.getAPISendViewDistance(player);
      }
  
-     public static int getLoadViewDistance(final ServerPlayer player) {
+     public static int getViewDistance(final ServerPlayer player) {
 -        final ServerLevel level = player.serverLevel();
 -        if (level == null) {
--            return org.bukkit.Bukkit.getViewDistance() + 1;
+-            return org.bukkit.Bukkit.getViewDistance();
 -        }
--        return level.chunkSource.chunkMap.serverViewDistance + 1;
-+        return RegionizedPlayerChunkLoader.getLoadViewDistance(player);
+-        return level.chunkSource.chunkMap.serverViewDistance;
++        return RegionizedPlayerChunkLoader.getAPIViewDistance(player);
      }
  
      public static int getTickViewDistance(final ServerPlayer player) {
@@ -5545,10 +5545,10 @@ index 0000000000000000000000000000000000000000..003a857e70ead858e8437e3c1bfaf22f
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5a6defc4c4d30c06d4bba856847feb176950ca1e
+index 0000000000000000000000000000000000000000..dd2509996bfd08e8c3f9f2be042229eac6d7692d
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java
-@@ -0,0 +1,1090 @@
+@@ -0,0 +1,1092 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.player;
 +
 +import ca.spottedleaf.concurrentutil.util.ConcurrentUtil;
@@ -5557,6 +5557,7 @@ index 0000000000000000000000000000000000000000..5a6defc4c4d30c06d4bba856847feb17
 +import ca.spottedleaf.moonrise.common.misc.AllocatingRateLimiter;
 +import ca.spottedleaf.moonrise.common.misc.SingleUserAreaMap;
 +import ca.spottedleaf.moonrise.common.util.CoordinateUtils;
++import ca.spottedleaf.moonrise.common.util.MoonriseConstants;
 +import ca.spottedleaf.moonrise.common.util.TickThread;
 +import ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel;
 +import ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel;
@@ -5665,14 +5666,25 @@ index 0000000000000000000000000000000000000000..5a6defc4c4d30c06d4bba856847feb17
 +        int sendViewDistance
 +    ) {
 +        public ViewDistances setTickViewDistance(final int distance) {
++            if (distance != -1 && (distance < (0) || distance > (MoonriseConstants.MAX_VIEW_DISTANCE))) {
++                throw new IllegalArgumentException(Integer.toString(distance));
++            }
 +            return new ViewDistances(distance, this.loadViewDistance, this.sendViewDistance);
 +        }
 +
 +        public ViewDistances setLoadViewDistance(final int distance) {
++            // note: load view distance = api view distance + 1
++            if (distance != -1 && (distance < (2 + 1) || distance > (MoonriseConstants.MAX_VIEW_DISTANCE + 1))) {
++                throw new IllegalArgumentException(Integer.toString(distance));
++            }
 +            return new ViewDistances(this.tickViewDistance, distance, this.sendViewDistance);
 +        }
 +
 +        public ViewDistances setSendViewDistance(final int distance) {
++            // note: send view distance <= load view distance - 1
++            if (distance != -1 && (distance < (0) || distance > (MoonriseConstants.MAX_VIEW_DISTANCE))) {
++                throw new IllegalArgumentException(Integer.toString(distance));
++            }
 +            return new ViewDistances(this.tickViewDistance, this.loadViewDistance, distance);
 +        }
 +
@@ -5697,16 +5709,6 @@ index 0000000000000000000000000000000000000000..5a6defc4c4d30c06d4bba856847feb17
 +    }
 +
 +    public static int getAPIViewDistance(final ServerPlayer player) {
-+        final ServerLevel level = player.serverLevel();
-+        final PlayerChunkLoaderData data = ((ChunkSystemServerPlayer)player).moonrise$getChunkLoader();
-+        if (data == null) {
-+            return ((ChunkSystemServerLevel)level).moonrise$getPlayerChunkLoader().getAPIViewDistance();
-+        }
-+        // view distance = load distance + 1
-+        return data.lastLoadDistance - 1;
-+    }
-+
-+    public static int getLoadViewDistance(final ServerPlayer player) {
 +        final ServerLevel level = player.serverLevel();
 +        final PlayerChunkLoaderData data = ((ChunkSystemServerPlayer)player).moonrise$getChunkLoader();
 +        if (data == null) {
@@ -6072,7 +6074,7 @@ index 0000000000000000000000000000000000000000..5a6defc4c4d30c06d4bba856847feb17
 +                                           final int playerLoadViewDistance, final int worldLoadViewDistance) {
 +            return Math.min(
 +                    playerTickViewDistance < 0 ? worldTickViewDistance : playerTickViewDistance,
-+                    playerLoadViewDistance < 0 ? worldLoadViewDistance : playerLoadViewDistance
++                    playerLoadViewDistance < 0 ? (worldLoadViewDistance - 1) : (playerLoadViewDistance - 1)
 +            );
 +        }
 +
@@ -24171,7 +24173,7 @@ index d9ad32acdf46a43a649334a3b736aeb7b3af21d1..fae17a075d7efaf24d916877dd5968eb
      public static final int RADIUS_AROUND_FULL_CHUNK = FULL_CHUNK_STEP.accumulatedDependencies().getRadius();
      public static final int MAX_LEVEL = 33 + RADIUS_AROUND_FULL_CHUNK;
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 16e55cc94c8f6e204e4b7ab6ad8d32a6c443357f..80bbf77454ff34505196998bcfeaa3e40a4f639c 100644
+index e9b585387f6cbc454e7b16feb36a256e733c5488..67cfc3236a39008cfcf3acffefafda1a604b8573 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -108,7 +108,7 @@ import org.slf4j.Logger;
@@ -25482,7 +25484,7 @@ index 16e55cc94c8f6e204e4b7ab6ad8d32a6c443357f..80bbf77454ff34505196998bcfeaa3e4
  
          public void updatePlayers(List<ServerPlayer> players) {
 diff --git a/src/main/java/net/minecraft/server/level/DistanceManager.java b/src/main/java/net/minecraft/server/level/DistanceManager.java
-index f7c2c03749d6be25bf33afd61e1da120770b3432..7a9e7fc688e48d18a6a884f02f768ae652326aae 100644
+index f7c2c03749d6be25bf33afd61e1da120770b3432..746f61661e22d22f2acbbe54a5933e57fbca45b2 100644
 --- a/src/main/java/net/minecraft/server/level/DistanceManager.java
 +++ b/src/main/java/net/minecraft/server/level/DistanceManager.java
 @@ -34,58 +34,57 @@ import net.minecraft.world.level.ChunkPos;
@@ -25754,7 +25756,7 @@ index f7c2c03749d6be25bf33afd61e1da120770b3432..7a9e7fc688e48d18a6a884f02f768ae6
      }
  
      public void removePlayer(SectionPos pos, ServerPlayer player) {
-@@ -284,160 +175,89 @@ public abstract class DistanceManager {
+@@ -284,160 +175,93 @@ public abstract class DistanceManager {
          if (objectset != null) objectset.remove(player); // Paper - some state corruption happens here, don't crash, clean up gracefully
          if (objectset == null || objectset.isEmpty()) { // Paper
              this.playersPerChunk.remove(i);
@@ -25805,8 +25807,12 @@ index f7c2c03749d6be25bf33afd61e1da120770b3432..7a9e7fc688e48d18a6a884f02f768ae6
 -            this.simulationDistance = simulationDistance;
 -            this.tickingTicketsTracker.replacePlayerTicketsLevel(this.getPlayerTicketLevel());
 -        }
-+        ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.moonrise$getChunkMap().level).moonrise$getPlayerChunkLoader().setTickDistance(simulationDistance); // Paper - rewrite chunk system
++        // Paper start - rewrite chunk system
++        // note: vanilla does not clamp to 0, but we do simply because we need a min of 0
++        final int clamped = net.minecraft.util.Mth.clamp(simulationDistance, 0, ca.spottedleaf.moonrise.common.util.MoonriseConstants.MAX_VIEW_DISTANCE);
  
++        ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.moonrise$getChunkMap().level).moonrise$getPlayerChunkLoader().setTickDistance(clamped);
++        // Paper end - rewrite chunk system
      }
  
      public int getNaturalSpawnChunkCount() {
@@ -25940,7 +25946,7 @@ index f7c2c03749d6be25bf33afd61e1da120770b3432..7a9e7fc688e48d18a6a884f02f768ae6
      private class ChunkTicketTracker extends ChunkTracker {
  
          private static final int MAX_LEVEL = ChunkLevel.MAX_LEVEL + 1;
-@@ -483,7 +303,7 @@ public abstract class DistanceManager {
+@@ -483,7 +307,7 @@ public abstract class DistanceManager {
          public int runDistanceUpdates(int distance) {
              return this.runUpdates(distance);
          }
@@ -25949,7 +25955,7 @@ index f7c2c03749d6be25bf33afd61e1da120770b3432..7a9e7fc688e48d18a6a884f02f768ae6
  
      private class FixedPlayerDistanceChunkTracker extends ChunkTracker {
  
-@@ -563,6 +383,7 @@ public abstract class DistanceManager {
+@@ -563,6 +387,7 @@ public abstract class DistanceManager {
          }
      }
  
@@ -25957,7 +25963,7 @@ index f7c2c03749d6be25bf33afd61e1da120770b3432..7a9e7fc688e48d18a6a884f02f768ae6
      private class PlayerTicketTracker extends DistanceManager.FixedPlayerDistanceChunkTracker {
  
          private int viewDistance = 0;
-@@ -657,5 +478,5 @@ public abstract class DistanceManager {
+@@ -657,5 +482,5 @@ public abstract class DistanceManager {
          private boolean haveTicketFor(int distance) {
              return distance <= this.viewDistance;
          }
@@ -28060,7 +28066,7 @@ index b7d29389a357f142237cecd75f8ca91cf1eb6b5b..e4b0dc3121101d54394a0c3a413dabf8
          this.generatingStep = generationStep;
          this.cache = chunks;
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 88299abf563a041ade1683b66b43103b0eeeea0d..61f3ee42aaad1641c92df3eb60d699b9dd5679e3 100644
+index 88299abf563a041ade1683b66b43103b0eeeea0d..7f5686571ace6155247e085560fcc8919e67734c 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -1420,7 +1420,7 @@ public abstract class PlayerList {
@@ -28069,6 +28075,15 @@ index 88299abf563a041ade1683b66b43103b0eeeea0d..61f3ee42aaad1641c92df3eb60d699b9
          this.viewDistance = viewDistance;
 -        this.broadcastAll(new ClientboundSetChunkCacheRadiusPacket(viewDistance));
 +        //this.broadcastAll(new ClientboundSetChunkCacheRadiusPacket(viewDistance)); // Paper - rewrite chunk system
+         Iterator iterator = this.server.getAllLevels().iterator();
+ 
+         while (iterator.hasNext()) {
+@@ -1435,7 +1435,7 @@ public abstract class PlayerList {
+ 
+     public void setSimulationDistance(int simulationDistance) {
+         this.simulationDistance = simulationDistance;
+-        this.broadcastAll(new ClientboundSetSimulationDistancePacket(simulationDistance));
++        //this.broadcastAll(new ClientboundSetSimulationDistancePacket(simulationDistance)); // Paper - rewrite chunk system
          Iterator iterator = this.server.getAllLevels().iterator();
  
          while (iterator.hasNext()) {
@@ -36264,7 +36279,7 @@ index 4a5a0e33af16369f665bf39e70238e4e5a5486da..696152286a4d16fa51a23ff6e15fb297
  
      // Paper start - implement pointers
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 2bce60712c0fc53d019e1f9a76b05c95c0682141..775989ebd426b6b31fba68a649c6658d082e1e58 100644
+index 7e3552390c7dd11a79fd95d3543707cc5d652c66..71ed0230baf3115a53a8ce8f0a5c72f01954fffc 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -3513,7 +3513,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
