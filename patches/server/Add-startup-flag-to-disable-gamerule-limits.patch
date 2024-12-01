@@ -5,6 +5,34 @@ Subject: [PATCH] Add startup flag to disable gamerule limits
 
 -DPaper.DisableGameRuleLimits=true will disable gamerule limits
 
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+         }
+ 
+         if (this.lastSpawnChunkRadius > 1) {
+-            this.getChunkSource().removeRegionTicket(TicketType.START, new ChunkPos(blockposition1), this.lastSpawnChunkRadius, Unit.INSTANCE);
++            // Paper start - allow disabling gamerule limits
++            for (ChunkPos chunkPos : io.papermc.paper.util.MCUtil.getSpiralOutChunks(blockposition1, this.lastSpawnChunkRadius - 2)) {
++                this.getChunkSource().removeTicketAtLevel(TicketType.START, chunkPos, net.minecraft.server.level.ChunkLevel.ENTITY_TICKING_LEVEL, Unit.INSTANCE);
++            }
++            // Paper end - allow disabling gamerule limits
+         }
+ 
+         int i = this.getGameRules().getInt(GameRules.RULE_SPAWN_CHUNK_RADIUS) + 1;
+ 
+         if (i > 1) {
+-            this.getChunkSource().addRegionTicket(TicketType.START, new ChunkPos(pos), i, Unit.INSTANCE);
++            // Paper start - allow disabling gamerule limits
++            for (ChunkPos chunkPos : io.papermc.paper.util.MCUtil.getSpiralOutChunks(pos, i - 2)) {
++                this.getChunkSource().addTicketAtLevel(TicketType.START, chunkPos, net.minecraft.server.level.ChunkLevel.ENTITY_TICKING_LEVEL, Unit.INSTANCE);
++            }
++            // Paper end - allow disabling gamerule limits
+         }
+ 
+         this.lastSpawnChunkRadius = i;
 diff --git a/src/main/java/net/minecraft/world/level/GameRules.java b/src/main/java/net/minecraft/world/level/GameRules.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/level/GameRules.java
