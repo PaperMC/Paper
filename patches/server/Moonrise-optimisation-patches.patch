@@ -330,17 +330,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public static int getSendViewDistance(final ServerPlayer player) {
--        return getLoadViewDistance(player) - 1;
+-        return getViewDistance(player);
 +        return RegionizedPlayerChunkLoader.getAPISendViewDistance(player);
      }
  
-     public static int getLoadViewDistance(final ServerPlayer player) {
+     public static int getViewDistance(final ServerPlayer player) {
 -        final ServerLevel level = player.serverLevel();
 -        if (level == null) {
--            return org.bukkit.Bukkit.getViewDistance() + 1;
+-            return org.bukkit.Bukkit.getViewDistance();
 -        }
--        return level.chunkSource.chunkMap.serverViewDistance + 1;
-+        return RegionizedPlayerChunkLoader.getLoadViewDistance(player);
+-        return level.chunkSource.chunkMap.serverViewDistance;
++        return RegionizedPlayerChunkLoader.getAPIViewDistance(player);
      }
  
      public static int getTickViewDistance(final ServerPlayer player) {
@@ -5557,6 +5557,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import ca.spottedleaf.moonrise.common.misc.AllocatingRateLimiter;
 +import ca.spottedleaf.moonrise.common.misc.SingleUserAreaMap;
 +import ca.spottedleaf.moonrise.common.util.CoordinateUtils;
++import ca.spottedleaf.moonrise.common.util.MoonriseConstants;
 +import ca.spottedleaf.moonrise.common.util.TickThread;
 +import ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel;
 +import ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel;
@@ -5665,14 +5666,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        int sendViewDistance
 +    ) {
 +        public ViewDistances setTickViewDistance(final int distance) {
++            if (distance != -1 && (distance < (0) || distance > (MoonriseConstants.MAX_VIEW_DISTANCE))) {
++                throw new IllegalArgumentException(Integer.toString(distance));
++            }
 +            return new ViewDistances(distance, this.loadViewDistance, this.sendViewDistance);
 +        }
 +
 +        public ViewDistances setLoadViewDistance(final int distance) {
++            // note: load view distance = api view distance + 1
++            if (distance != -1 && (distance < (2 + 1) || distance > (MoonriseConstants.MAX_VIEW_DISTANCE + 1))) {
++                throw new IllegalArgumentException(Integer.toString(distance));
++            }
 +            return new ViewDistances(this.tickViewDistance, distance, this.sendViewDistance);
 +        }
 +
 +        public ViewDistances setSendViewDistance(final int distance) {
++            // note: send view distance <= load view distance - 1
++            if (distance != -1 && (distance < (0) || distance > (MoonriseConstants.MAX_VIEW_DISTANCE))) {
++                throw new IllegalArgumentException(Integer.toString(distance));
++            }
 +            return new ViewDistances(this.tickViewDistance, this.loadViewDistance, distance);
 +        }
 +
@@ -5697,16 +5709,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    public static int getAPIViewDistance(final ServerPlayer player) {
-+        final ServerLevel level = player.serverLevel();
-+        final PlayerChunkLoaderData data = ((ChunkSystemServerPlayer)player).moonrise$getChunkLoader();
-+        if (data == null) {
-+            return ((ChunkSystemServerLevel)level).moonrise$getPlayerChunkLoader().getAPIViewDistance();
-+        }
-+        // view distance = load distance + 1
-+        return data.lastLoadDistance - 1;
-+    }
-+
-+    public static int getLoadViewDistance(final ServerPlayer player) {
 +        final ServerLevel level = player.serverLevel();
 +        final PlayerChunkLoaderData data = ((ChunkSystemServerPlayer)player).moonrise$getChunkLoader();
 +        if (data == null) {
@@ -6072,7 +6074,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                                           final int playerLoadViewDistance, final int worldLoadViewDistance) {
 +            return Math.min(
 +                    playerTickViewDistance < 0 ? worldTickViewDistance : playerTickViewDistance,
-+                    playerLoadViewDistance < 0 ? worldLoadViewDistance : playerLoadViewDistance
++                    playerLoadViewDistance < 0 ? (worldLoadViewDistance - 1) : (playerLoadViewDistance - 1)
 +            );
 +        }
 +
@@ -25805,8 +25807,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            this.simulationDistance = simulationDistance;
 -            this.tickingTicketsTracker.replacePlayerTicketsLevel(this.getPlayerTicketLevel());
 -        }
-+        ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.moonrise$getChunkMap().level).moonrise$getPlayerChunkLoader().setTickDistance(simulationDistance); // Paper - rewrite chunk system
++        // Paper start - rewrite chunk system
++        // note: vanilla does not clamp to 0, but we do simply because we need a min of 0
++        final int clamped = net.minecraft.util.Mth.clamp(simulationDistance, 0, ca.spottedleaf.moonrise.common.util.MoonriseConstants.MAX_VIEW_DISTANCE);
  
++        ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.moonrise$getChunkMap().level).moonrise$getPlayerChunkLoader().setTickDistance(clamped);
++        // Paper end - rewrite chunk system
      }
  
      public int getNaturalSpawnChunkCount() {
@@ -28069,6 +28075,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          this.viewDistance = viewDistance;
 -        this.broadcastAll(new ClientboundSetChunkCacheRadiusPacket(viewDistance));
 +        //this.broadcastAll(new ClientboundSetChunkCacheRadiusPacket(viewDistance)); // Paper - rewrite chunk system
+         Iterator iterator = this.server.getAllLevels().iterator();
+ 
+         while (iterator.hasNext()) {
+@@ -0,0 +0,0 @@ public abstract class PlayerList {
+ 
+     public void setSimulationDistance(int simulationDistance) {
+         this.simulationDistance = simulationDistance;
+-        this.broadcastAll(new ClientboundSetSimulationDistancePacket(simulationDistance));
++        //this.broadcastAll(new ClientboundSetSimulationDistancePacket(simulationDistance)); // Paper - rewrite chunk system
          Iterator iterator = this.server.getAllLevels().iterator();
  
          while (iterator.hasNext()) {
