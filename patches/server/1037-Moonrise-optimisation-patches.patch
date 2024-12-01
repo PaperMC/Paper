@@ -16173,10 +16173,10 @@ index 0000000000000000000000000000000000000000..6af03fd7807d4c71dbf85028d18dc850
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/collisions/CollisionUtil.java b/src/main/java/ca/spottedleaf/moonrise/patches/collisions/CollisionUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..aec503ca1551ce4b15b8975832cd664ebd670722
+index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc17124d4d9
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/moonrise/patches/collisions/CollisionUtil.java
-@@ -0,0 +1,2204 @@
+@@ -0,0 +1,2210 @@
 +package ca.spottedleaf.moonrise.patches.collisions;
 +
 +import ca.spottedleaf.moonrise.common.util.WorldUtil;
@@ -18347,8 +18347,14 @@ index 0000000000000000000000000000000000000000..aec503ca1551ce4b15b8975832cd664e
 +
 +        public CollisionContext getDelegate() {
 +            this.delegated = true;
-+            final Entity entity = this.getEntity();
++            final Entity entity = super.getEntity();
 +            return this.delegate == null ? this.delegate = (entity == null ? CollisionContext.empty() : CollisionContext.of(entity)) : this.delegate;
++        }
++
++        @Override
++        public Entity getEntity() {
++            this.getDelegate();
++            return super.getEntity();
 +        }
 +
 +        @Override
@@ -30989,7 +30995,7 @@ index 0f7b73634930df02d7b0a7f44890597cc2e6deca..b6d6c2cb9b227a17fb4ce42bc75f9220
  
      public void animateTick(BlockState state, Level world, BlockPos pos, RandomSource random) {}
 diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-index 95d30c2db7e291d65c24feb114b0f3598d280912..99fd67a78539133adf78d65e2c520ff3dd260301 100644
+index 95d30c2db7e291d65c24feb114b0f3598d280912..5b6fbfd1a7a2d87fb2b87d5d1e674206cdf9b280 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 @@ -793,7 +793,7 @@ public abstract class BlockBehaviour implements FeatureElement {
@@ -31088,9 +31094,9 @@ index 95d30c2db7e291d65c24feb114b0f3598d280912..99fd67a78539133adf78d65e2c520ff3
 +            // Paper start - optimise collisions
 +            if (this.cache != null) {
 +                final VoxelShape collisionShape = this.cache.collisionShape;
-+                try {
-+                    this.constantCollisionShape = this.getCollisionShape(null, null, null);
-+                } catch (final Throwable throwable) {
++                if (this.isAir()) {
++                    this.constantCollisionShape = Shapes.empty();
++                } else {
 +                    this.constantCollisionShape = null;
 +                }
 +                this.occludesFullBlock = ((ca.spottedleaf.moonrise.patches.collisions.shape.CollisionVoxelShape)collisionShape).moonrise$occludesFullBlock();
@@ -36258,7 +36264,7 @@ index 4a5a0e33af16369f665bf39e70238e4e5a5486da..696152286a4d16fa51a23ff6e15fb297
  
      // Paper start - implement pointers
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 5989a9af8840e1bdb5c7a25a44473e2ab597e1e5..e1f20b5b9ebc5d9870136aa2c77d887094bd4b6e 100644
+index 2bce60712c0fc53d019e1f9a76b05c95c0682141..775989ebd426b6b31fba68a649c6658d082e1e58 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -3513,7 +3513,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
