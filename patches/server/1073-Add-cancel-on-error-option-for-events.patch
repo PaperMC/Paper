@@ -1,0 +1,84 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Newwind <newwindserver@gmail.com>
+Date: Sat, 30 Nov 2024 16:03:37 +0200
+Subject: [PATCH] Add cancel on error option for event listeners
+
+Add the option to cancel an event if an error is thrown inside its handler
+useful for mission critical listeners, for example, preventing players from breaking blocks in an area
+or preventing players from modifying certain items inside an anvil
+
+diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
+index 419065d6c..8637fc75c 100644
+--- a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
++++ b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
+@@ -66,6 +66,12 @@ class PaperEventManager {
+                     ));
+                 }
+             } catch (Throwable ex) {
++                // Paper start - Add cancel on error
++                if (registration.willCancelOnError() && event instanceof org.bukkit.event.Cancellable cancellable) {
++                    cancellable.setCancelled(true);
++                }
++                // Paper end
++
+                 String msg = "Could not pass event " + event.getEventName() + " to " + registration.getPlugin().getPluginMeta().getDisplayName();
+                 this.server.getLogger().log(Level.SEVERE, msg, ex);
+                 if (!(event instanceof ServerExceptionEvent)) { // We don't want to cause an endless event loop
+
+diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
+index 7ce9ebba8..419065d6c 100644
+--- a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
++++ b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
+@@ -90,13 +90,19 @@ class PaperEventManager {
+         this.registerEvent(event, listener, priority, executor, plugin, false);
+     }
+ 
++    // Paper start - Add cancel on error
+     public void registerEvent(@NotNull Class<? extends Event> event, @NotNull Listener listener, @NotNull EventPriority priority, @NotNull EventExecutor executor, @NotNull Plugin plugin, boolean ignoreCancelled) {
++        this.registerEvent(event, listener, priority, executor, plugin, false, false);
++    }
++    // Paper end
++
++    public void registerEvent(@NotNull Class<? extends Event> event, @NotNull Listener listener, @NotNull EventPriority priority, @NotNull EventExecutor executor, @NotNull Plugin plugin, boolean ignoreCancelled, boolean cancelOnError) { // Paper - Add cancel on error
+         if (!plugin.isEnabled()) {
+             throw new IllegalPluginAccessException("Plugin attempted to register " + event + " while not enabled");
+         }
+ 
+         executor = new TimedEventExecutor(executor, plugin, null, event);
+-        this.getEventListeners(event).register(new RegisteredListener(listener, executor, priority, plugin, ignoreCancelled));
++        this.getEventListeners(event).register(new RegisteredListener(listener, executor, priority, plugin, ignoreCancelled, cancelOnError));
+     }
+ 
+     @NotNull
+diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java
+index 097500a59..34349b5fa 100644
+--- a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java
++++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java
+@@ -146,6 +146,13 @@ public class PaperPluginManagerImpl implements PluginManager, DependencyContext
+         this.paperEventManager.registerEvent(event, listener, priority, executor, plugin, ignoreCancelled);
+     }
+ 
++    // Paper start - Add cancel on error
++    @Override
++    public void registerEvent(@NotNull Class<? extends Event> event, @NotNull Listener listener, @NotNull EventPriority priority, @NotNull EventExecutor executor, @NotNull Plugin plugin, boolean ignoreCancelled, boolean cancelOnError) {
++        this.paperEventManager.registerEvent(event, listener, priority, executor, plugin, ignoreCancelled, cancelOnError);
++    }
++    // Paper end
++
+     // Permission manipulation
+ 
+     @Override
+
+diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
+index 8637fc75c..4df0ca82b 100644
+--- a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
++++ b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
+@@ -195,7 +195,7 @@ class PaperEventManager {
+             }
+ 
+             EventExecutor executor = new TimedEventExecutor(EventExecutor.create(method, eventClass), plugin, method, eventClass);
+-            eventSet.add(new RegisteredListener(listener, executor, eh.priority(), plugin, eh.ignoreCancelled()));
++            eventSet.add(new RegisteredListener(listener, executor, eh.priority(), plugin, eh.ignoreCancelled(), eh.cancelOnError()));
+         }
+         return ret;
+     }
