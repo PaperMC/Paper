@@ -856,11 +856,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                                            poiPredicate, predicate2, entity.blockPosition(), 48, PoiManager.Occupancy.HAS_SPACE
 -                                        )
 -                                        .limit(5L)
+-                                        .filter(pairx -> worldPosBiPredicate.test(world, (BlockPos)pairx.getSecond()))
 -                                        .collect(Collectors.toSet());
 +                                    // Paper start - optimise POI access
-+                                    java.util.List<Pair<Holder<PoiType>, BlockPos>> poiposes = new java.util.ArrayList<>();
++                                    final java.util.List<Pair<Holder<PoiType>, BlockPos>> poiposes = new java.util.ArrayList<>();
 +                                    io.papermc.paper.util.PoiAccess.findNearestPoiPositions(poiManager, poiPredicate, predicate2, entity.blockPosition(), 48, 48*48, PoiManager.Occupancy.HAS_SPACE, false, 5, poiposes);
-+                                    Set<Pair<Holder<PoiType>, BlockPos>> set = new java.util.HashSet<>(poiposes);
++                                    final Set<Pair<Holder<PoiType>, BlockPos>> set = new java.util.HashSet<>(poiposes.size());
++                                    for (final Pair<Holder<PoiType>, BlockPos> poiPose : poiposes) {
++                                        if (worldPosBiPredicate.test(world, poiPose.getSecond())) {
++                                            set.add(poiPose);
++                                        }
++                                    }
 +                                    // Paper end - optimise POI access
                                      Path path = findPathToPois(entity, set);
                                      if (path != null && path.canReach()) {
