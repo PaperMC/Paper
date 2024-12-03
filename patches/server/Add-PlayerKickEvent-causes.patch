@@ -262,10 +262,10 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
      public void handleMoveVehicle(ServerboundMoveVehiclePacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
-         if (ServerGamePacketListenerImpl.containsInvalidValues(packet.getX(), packet.getY(), packet.getZ(), packet.getYRot(), packet.getXRot())) {
+         if (ServerGamePacketListenerImpl.containsInvalidValues(packet.position().x(), packet.position().y(), packet.position().z(), packet.yRot(), packet.xRot())) {
 -            this.disconnect((Component) Component.translatable("multiplayer.disconnect.invalid_vehicle_movement"));
 +            this.disconnect((Component) Component.translatable("multiplayer.disconnect.invalid_vehicle_movement"), org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_VEHICLE_MOVEMENT); // Paper - kick event cause
-         } else if (!this.updateAwaitingTeleport()) {
+         } else if (!this.updateAwaitingTeleport() && this.player.hasClientLoaded()) {
              Entity entity = this.player.getRootVehicle();
  
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
@@ -286,15 +286,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              return;
          }
          // CraftBukkit end
-@@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-         // Paper start - validate pick item position
-         if (!(packet.getSlot() >= 0 && packet.getSlot() < this.player.getInventory().items.size())) {
-             ServerGamePacketListenerImpl.LOGGER.warn("{} tried to set an invalid carried item", this.player.getName().getString());
--            this.disconnect(Component.literal("Invalid hotbar selection (Hacking?)"));
-+            this.disconnect(Component.literal("Invalid hotbar selection (Hacking?)"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_ACTION); // Paper - kick event cause
-             return;
-         }
-         this.player.getInventory().pickSlot(packet.getSlot()); // Paper - Diff above if changed
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
              if (byteTotal > byteAllowed) {
@@ -322,14 +313,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              ServerLevel worldserver = this.player.serverLevel();
  
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-                         this.dropCount++;
-                         if (this.dropCount >= 20) {
-                             ServerGamePacketListenerImpl.LOGGER.warn(this.player.getScoreboardName() + " dropped their items too quickly!");
--                            this.disconnect(Component.literal("You dropped your items too quickly (Hacking?)"));
-+                            this.disconnect(Component.literal("You dropped your items too quickly (Hacking?)"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_ACTION); // Paper - kick event cause
-                             return;
+                             this.dropCount++;
+                             if (this.dropCount >= 20) {
+                                 ServerGamePacketListenerImpl.LOGGER.warn(this.player.getScoreboardName() + " dropped their items too quickly!");
+-                                this.disconnect(Component.literal("You dropped your items too quickly (Hacking?)"));
++                                this.disconnect(Component.literal("You dropped your items too quickly (Hacking?)"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_ACTION); // Paper - kick event cause
+                                 return;
+                             }
                          }
-                     }
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
              this.player.resetLastActionTime();
          } else {
@@ -385,23 +376,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          }
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-         // Spigot Start
-         if ( entity == this.player && !this.player.isSpectator() )
-         {
--            this.disconnect( Component.literal( "Cannot interact with self!" ) );
-+            this.disconnect( Component.literal( "Cannot interact with self!" ), org.bukkit.event.player.PlayerKickEvent.Cause.SELF_INTERACTION ); // Paper - kick event cause
-             return;
-         }
-         // Spigot End
+             // Spigot Start
+             if ( entity == this.player && !this.player.isSpectator() )
+             {
+-                this.disconnect( Component.literal( "Cannot interact with self!" ) );
++                this.disconnect( Component.literal( "Cannot interact with self!" ), org.bukkit.event.player.PlayerKickEvent.Cause.SELF_INTERACTION ); // Paper - kick event cause
+                 return;
+             }
+             // Spigot End
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                                 }
                              }
-                         }
  
--                        ServerGamePacketListenerImpl.this.disconnect((Component) Component.translatable("multiplayer.disconnect.invalid_entity_attacked"));
-+                        ServerGamePacketListenerImpl.this.disconnect((Component) Component.translatable("multiplayer.disconnect.invalid_entity_attacked"), org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_ENTITY_ATTACKED); // Paper - add cause
-                         ServerGamePacketListenerImpl.LOGGER.warn("Player {} tried to attack an invalid entity", ServerGamePacketListenerImpl.this.player.getName().getString());
-                     }
-                 });
+-                            ServerGamePacketListenerImpl.this.disconnect((Component) Component.translatable("multiplayer.disconnect.invalid_entity_attacked"));
++                            ServerGamePacketListenerImpl.this.disconnect((Component) Component.translatable("multiplayer.disconnect.invalid_entity_attacked"), org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_ENTITY_ATTACKED); // Paper - add cause
+                             ServerGamePacketListenerImpl.LOGGER.warn("Player {} tried to attack an invalid entity", ServerGamePacketListenerImpl.this.player.getName().getString());
+                         }
+                     });
 @@ -0,0 +0,0 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          // Paper start - auto recipe limit
          if (!org.bukkit.Bukkit.isPrimaryThread()) {
