@@ -1,0 +1,56 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Andrew Steinborn <git@steinborn.me>
+Date: Mon, 18 Jan 2021 20:45:25 -0500
+Subject: [PATCH] Inline shift direction fields
+
+Removes a layer of indirection for EnumDirection.getAdjacent(X|Y|Z)(), which is in the
+critical section for much of the server, including the lighting engine.
+
+diff --git a/src/main/java/net/minecraft/core/Direction.java b/src/main/java/net/minecraft/core/Direction.java
+index acecb0e9df1b157579d2b438abf1568d7672b570..690e1d2394e68356c56a39ac083cc53ee0388d71 100644
+--- a/src/main/java/net/minecraft/core/Direction.java
++++ b/src/main/java/net/minecraft/core/Direction.java
+@@ -57,6 +57,12 @@ public enum Direction implements StringRepresentable {
+         .sorted(Comparator.comparingInt(direction -> direction.data2d))
+         .toArray(Direction[]::new);
+ 
++    // Paper start - Perf: Inline shift direction fields
++    private final int adjX;
++    private final int adjY;
++    private final int adjZ;
++    // Paper end - Perf: Inline shift direction fields
++
+     private Direction(
+         final int id,
+         final int idOpposite,
+@@ -74,6 +80,11 @@ public enum Direction implements StringRepresentable {
+         this.axisDirection = direction;
+         this.normal = vector;
+         this.normalVec3 = Vec3.atLowerCornerOf(vector);
++        // Paper start - Perf: Inline shift direction fields
++        this.adjX = vector.getX();
++        this.adjY = vector.getY();
++        this.adjZ = vector.getZ();
++        // Paper end - Perf: Inline shift direction fields
+     }
+ 
+     public static Direction[] orderedByNearest(Entity entity) {
+@@ -247,15 +258,15 @@ public enum Direction implements StringRepresentable {
+     }
+ 
+     public int getStepX() {
+-        return this.normal.getX();
++        return this.adjX; // Paper - Perf: Inline shift direction fields
+     }
+ 
+     public int getStepY() {
+-        return this.normal.getY();
++        return this.adjY; // Paper - Perf: Inline shift direction fields
+     }
+ 
+     public int getStepZ() {
+-        return this.normal.getZ();
++        return this.adjZ; // Paper - Perf: Inline shift direction fields
+     }
+ 
+     public Vector3f step() {

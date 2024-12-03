@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sun, 20 Sep 2020 16:10:49 -0700
+Subject: [PATCH] Make sure inlined getChunkAt has inlined logic for loaded
+ chunks
+
+Tux did some profiling some time ago and showed that the
+previous getChunkAt method which had inlined logic for loaded
+chunks did get inlined, but the standard CPS.getChunkAt
+method was not inlined.
+
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 68cee32833a3d683852e67e3727d62b84fa60cc4..a1731f09e724794be90dbf47e1d463a10cdb3052 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -351,7 +351,14 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+ 
+     @Override
+     public final LevelChunk getChunk(int chunkX, int chunkZ) { // Paper - final to help inline
+-        return (LevelChunk) this.getChunk(chunkX, chunkZ, ChunkStatus.FULL, true); // Paper - avoid a method jump
++        // Paper start - Perf: make sure loaded chunks get the inlined variant of this function
++        net.minecraft.server.level.ServerChunkCache cps = ((ServerLevel)this).getChunkSource();
++        LevelChunk ifLoaded = cps.getChunkAtIfLoadedImmediately(chunkX, chunkZ);
++        if (ifLoaded != null) {
++            return ifLoaded;
++        }
++        return (LevelChunk) cps.getChunk(chunkX, chunkZ, ChunkStatus.FULL, true); // Paper - avoid a method jump
++        // Paper end - Perf: make sure loaded chunks get the inlined variant of this function
+     }
+ 
+     // Paper start - if loaded

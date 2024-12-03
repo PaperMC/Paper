@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 5 Jul 2020 00:33:54 -0700
+Subject: [PATCH] Add PlayerNameEntityEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/item/NameTagItem.java b/src/main/java/net/minecraft/world/item/NameTagItem.java
+index 244663ff31bdb29bbff8b3ffd9fe99279b173296..df9cdcb9544a171a5a07c65ba0150933fb70d5fc 100644
+--- a/src/main/java/net/minecraft/world/item/NameTagItem.java
++++ b/src/main/java/net/minecraft/world/item/NameTagItem.java
+@@ -18,8 +18,13 @@ public class NameTagItem extends Item {
+         Component component = stack.get(DataComponents.CUSTOM_NAME);
+         if (component != null && entity.getType().canSerialize() && entity.canBeNameTagged()) {
+             if (!user.level().isClientSide && entity.isAlive()) {
+-                entity.setCustomName(component);
+-                if (entity instanceof Mob mob) {
++                // Paper start - Add PlayerNameEntityEvent
++                io.papermc.paper.event.player.PlayerNameEntityEvent event = new io.papermc.paper.event.player.PlayerNameEntityEvent(((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity(), entity.getBukkitLivingEntity(), io.papermc.paper.adventure.PaperAdventure.asAdventure(stack.getHoverName()), true);
++                if (!event.callEvent()) return InteractionResult.PASS;
++                LivingEntity newEntity = ((org.bukkit.craftbukkit.entity.CraftLivingEntity) event.getEntity()).getHandle();
++                newEntity.setCustomName(event.getName() != null ? io.papermc.paper.adventure.PaperAdventure.asVanilla(event.getName()) : null);
++                if (event.isPersistent() && newEntity instanceof Mob mob) {
++                // Paper end - Add PlayerNameEntityEvent
+                     mob.setPersistenceRequired();
+                 }
+ 

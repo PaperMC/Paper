@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Wed, 16 Mar 2022 20:35:21 -0700
+Subject: [PATCH] Implement enchantWithLevels API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
+index a04840b77e2d84e754c9cfa79bc593608bc22c90..6d228d643342588877e8385acdc202de57d455f1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
+@@ -307,4 +307,47 @@ public final class CraftItemFactory implements ItemFactory {
+         return eggItem == null ? null : new net.minecraft.world.item.ItemStack(eggItem).asBukkitMirror();
+     }
+     // Paper end - old getSpawnEgg API
++    // Paper start - enchantWithLevels API
++    @Override
++    public ItemStack enchantWithLevels(ItemStack itemStack, int levels, boolean allowTreasure, java.util.Random random) {
++        return enchantWithLevels(
++            itemStack,
++            levels,
++            allowTreasure
++                ? Optional.empty()
++                // While IN_ENCHANTING_TABLE is not logically the same as all but TREASURE, the tag is defined as
++                // NON_TREASURE, which does contain all enchantments not in the treasure tag.
++                // Additionally, the allowTreasure boolean is more intended to configure this method to behave like
++                // an enchanting table.
++                : net.minecraft.server.MinecraftServer.getServer().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).get(EnchantmentTags.IN_ENCHANTING_TABLE),
++            random
++        );
++    }
++
++    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
++    private ItemStack enchantWithLevels(
++        ItemStack itemStack,
++        int levels,
++        Optional<? extends net.minecraft.core.HolderSet<net.minecraft.world.item.enchantment.Enchantment>> possibleEnchantments,
++        java.util.Random random
++    ) {
++        Preconditions.checkArgument(itemStack != null, "Argument 'itemStack' must not be null");
++        Preconditions.checkArgument(!itemStack.isEmpty(), "Argument 'itemStack' cannot be empty");
++        Preconditions.checkArgument(levels > 0 && levels <= 30, "Argument 'levels' must be in range [1, 30] (attempted " + levels + ")");
++        Preconditions.checkArgument(random != null, "Argument 'random' must not be null");
++        final net.minecraft.world.item.ItemStack internalStack = CraftItemStack.asNMSCopy(itemStack);
++        if (internalStack.isEnchanted()) {
++            internalStack.set(net.minecraft.core.component.DataComponents.ENCHANTMENTS, net.minecraft.world.item.enchantment.ItemEnchantments.EMPTY);
++        }
++        final net.minecraft.core.RegistryAccess registryAccess = net.minecraft.server.MinecraftServer.getServer().registryAccess();
++        final net.minecraft.world.item.ItemStack enchanted = net.minecraft.world.item.enchantment.EnchantmentHelper.enchantItem(
++            new org.bukkit.craftbukkit.util.RandomSourceWrapper(random),
++            internalStack,
++            levels,
++            registryAccess,
++            possibleEnchantments
++        );
++        return CraftItemStack.asCraftMirror(enchanted);
++    }
++    // Paper end - enchantWithLevels API
+ }

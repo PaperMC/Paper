@@ -1,0 +1,155 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Thu, 29 Apr 2021 21:19:33 +0200
+Subject: [PATCH] Add Channel initialization listeners
+
+
+diff --git a/src/main/java/io/papermc/paper/network/ChannelInitializeListener.java b/src/main/java/io/papermc/paper/network/ChannelInitializeListener.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..88099df34c2d74daba9645aadf65b446ca795a91
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/network/ChannelInitializeListener.java
+@@ -0,0 +1,15 @@
++package io.papermc.paper.network;
++
++import io.netty.channel.Channel;
++import org.checkerframework.checker.nullness.qual.NonNull;
++
++/**
++ * Internal API to register channel initialization listeners.
++ * <p>
++ * This is not officially supported API and we make no guarantees to the existence or state of this interface.
++ */
++@FunctionalInterface
++public interface ChannelInitializeListener {
++
++    void afterInitChannel(@NonNull Channel channel);
++}
+diff --git a/src/main/java/io/papermc/paper/network/ChannelInitializeListenerHolder.java b/src/main/java/io/papermc/paper/network/ChannelInitializeListenerHolder.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..30e62719e0a83525daa33cf41cb61df360c0e046
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/network/ChannelInitializeListenerHolder.java
+@@ -0,0 +1,74 @@
++package io.papermc.paper.network;
++
++import io.netty.channel.Channel;
++import net.kyori.adventure.key.Key;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++
++import java.util.Collections;
++import java.util.HashMap;
++import java.util.Map;
++
++/**
++ * Internal API to register channel initialization listeners.
++ * <p>
++ * This is not officially supported API and we make no guarantees to the existence or state of this class.
++ */
++public final class ChannelInitializeListenerHolder {
++
++    private static final Map<Key, ChannelInitializeListener> LISTENERS = new HashMap<>();
++    private static final Map<Key, ChannelInitializeListener> IMMUTABLE_VIEW = Collections.unmodifiableMap(LISTENERS);
++
++    private ChannelInitializeListenerHolder() {
++    }
++
++    /**
++     * Registers whether an initialization listener is registered under the given key.
++     *
++     * @param key key
++     * @return whether an initialization listener is registered under the given key
++     */
++    public static boolean hasListener(@NonNull Key key) {
++        return LISTENERS.containsKey(key);
++    }
++
++    /**
++     * Registers a channel initialization listener called after ServerConnection is initialized.
++     *
++     * @param key      key
++     * @param listener initialization listeners
++     */
++    public static void addListener(@NonNull Key key, @NonNull ChannelInitializeListener listener) {
++        LISTENERS.put(key, listener);
++    }
++
++    /**
++     * Removes and returns an initialization listener registered by the given key if present.
++     *
++     * @param key key
++     * @return removed initialization listener if present
++     */
++    public static @Nullable ChannelInitializeListener removeListener(@NonNull Key key) {
++        return LISTENERS.remove(key);
++    }
++
++    /**
++     * Returns an immutable map of registered initialization listeners.
++     *
++     * @return immutable map of registered initialization listeners
++     */
++    public static @NonNull Map<Key, ChannelInitializeListener> getListeners() {
++        return IMMUTABLE_VIEW;
++    }
++
++    /**
++     * Calls the registered listeners with the given channel.
++     *
++     * @param channel channel
++     */
++    public static void callListeners(@NonNull Channel channel) {
++        for (ChannelInitializeListener listener : LISTENERS.values()) {
++            listener.afterInitChannel(channel);
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/network/ConnectionEvent.java b/src/main/java/io/papermc/paper/network/ConnectionEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0d7e7db9e37ef0183c32b217bd944fb4f41ab83a
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/network/ConnectionEvent.java
+@@ -0,0 +1,10 @@
++package io.papermc.paper.network;
++
++/**
++ * Internal connection pipeline events.
++ */
++public enum ConnectionEvent {
++
++    COMPRESSION_THRESHOLD_SET,
++    COMPRESSION_DISABLED
++}
+diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
+index 448bde861b4190a678a8ccb63cade43c4a3d6ad9..f5fe87103ce53ba07b43c6c10fc9dafcc5ea4958 100644
+--- a/src/main/java/net/minecraft/network/Connection.java
++++ b/src/main/java/net/minecraft/network/Connection.java
+@@ -680,6 +680,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+             } else {
+                 this.channel.pipeline().addAfter("prepender", "compress", new CompressionEncoder(compressionThreshold));
+             }
++            this.channel.pipeline().fireUserEventTriggered(io.papermc.paper.network.ConnectionEvent.COMPRESSION_THRESHOLD_SET); // Paper - Add Channel initialization listeners
+         } else {
+             if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder) {
+                 this.channel.pipeline().remove("decompress");
+@@ -688,6 +689,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+             if (this.channel.pipeline().get("compress") instanceof CompressionEncoder) {
+                 this.channel.pipeline().remove("compress");
+             }
++            this.channel.pipeline().fireUserEventTriggered(io.papermc.paper.network.ConnectionEvent.COMPRESSION_DISABLED); // Paper - Add Channel initialization listeners
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
+index 64119f2188f8958b8a5913fec82ac5bba1b74b2a..d6d7f1c446ba5507f67038ff27775ba75156f4a7 100644
+--- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
++++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
+@@ -115,6 +115,7 @@ public class ServerConnectionListener {
+                     pending.add(object); // Paper - prevent blocking on adding a new connection while the server is ticking
+                     ((Connection) object).configurePacketHandler(channelpipeline);
+                     ((Connection) object).setListenerForServerboundHandshake(new ServerHandshakePacketListenerImpl(ServerConnectionListener.this.server, (Connection) object));
++                    io.papermc.paper.network.ChannelInitializeListenerHolder.callListeners(channel); // Paper - Add Channel initialization listeners
+                 }
+             }).group(eventloopgroup).localAddress(address, port)).option(ChannelOption.AUTO_READ, false).bind().syncUninterruptibly()); // CraftBukkit
+         }

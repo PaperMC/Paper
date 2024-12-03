@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 22 Feb 2022 14:21:35 -0800
+Subject: [PATCH] Put world into worldlist before initing the world
+
+Some parts of legacy conversion will need the overworld
+to get the legacy structure data storage
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 64dce8d94cf261113d6f8b99020bf710b9762c2b..03ee72a20330dd9ba6ff2808c1252454a6c217bc 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -657,9 +657,10 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             }
+ 
+             worlddata.setModdedInfo(this.getServerModName(), this.getModdedStatus().shouldReportAsModified());
++            this.addLevel(world); // Paper - Put world into worldlist before initing the world; move up
+             this.initWorld(world, worlddata, this.worldData, worldoptions);
+ 
+-            this.addLevel(world);
++            // Paper - Put world into worldlist before initing the world; move up
+             this.getPlayerList().addWorldborderListener(world);
+ 
+             if (worlddata.getCustomBossEvents() != null) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 72f8d3a89396f9289f5b451b24cc181e7ac3222e..75bd9617164c63a641602bf772a5e0f15a322c7e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1336,10 +1336,11 @@ public final class CraftServer implements Server {
+             return null;
+         }
+ 
++        this.console.addLevel(internal); // Paper - Put world into worldlist before initing the world; move up
+         this.console.initWorld(internal, worlddata, worlddata, worlddata.worldGenOptions());
+ 
+         internal.setSpawnSettings(true);
+-        this.console.addLevel(internal);
++        // Paper - Put world into worldlist before initing the world; move up
+ 
+         this.getServer().prepareLevels(internal.getChunkSource().chunkMap.progressListener, internal);
+         internal.entityManager.tick(); // SPIGOT-6526: Load pending entities so they are available to the API

@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 13 Jan 2022 15:20:47 -0800
+Subject: [PATCH] Furnace RecipesUsed API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java b/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java
+index fd2f28ee785283bcc979c7a146308827f2ce2ba9..91c10f7d2044d60ba756179d93c5c72d32bba074 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftFurnace.java
+@@ -103,5 +103,37 @@ public abstract class CraftFurnace<T extends AbstractFurnaceBlockEntity> extends
+         snapshot.cookSpeedMultiplier = multiplier;
+         snapshot.cookingTotalTime = AbstractFurnaceBlockEntity.getTotalCookTime(this.isPlaced() ? this.world.getHandle() : null, snapshot, snapshot.recipeType, snapshot.cookSpeedMultiplier); // Update the snapshot's current total cook time to scale with the newly set multiplier
+     }
++
++    @Override
++    public int getRecipeUsedCount(org.bukkit.NamespacedKey furnaceRecipe) {
++        return this.getSnapshot().recipesUsed.getInt(io.papermc.paper.util.MCUtil.toResourceKey(net.minecraft.core.registries.Registries.RECIPE, furnaceRecipe));
++    }
++
++    @Override
++    public boolean hasRecipeUsedCount(org.bukkit.NamespacedKey furnaceRecipe) {
++        return this.getSnapshot().recipesUsed.containsKey(io.papermc.paper.util.MCUtil.toResourceKey(net.minecraft.core.registries.Registries.RECIPE, furnaceRecipe));
++    }
++
++    @Override
++    public void setRecipeUsedCount(org.bukkit.inventory.CookingRecipe<?> furnaceRecipe, int count) {
++        final var location = io.papermc.paper.util.MCUtil.toResourceKey(net.minecraft.core.registries.Registries.RECIPE, furnaceRecipe.getKey());
++        java.util.Optional<net.minecraft.world.item.crafting.RecipeHolder<?>> nmsRecipe = (this.isPlaced() ? this.world.getHandle().recipeAccess() : net.minecraft.server.MinecraftServer.getServer().getRecipeManager()).byKey(location);
++        com.google.common.base.Preconditions.checkArgument(nmsRecipe.isPresent() && nmsRecipe.get().value() instanceof net.minecraft.world.item.crafting.AbstractCookingRecipe, furnaceRecipe.getKey() + " is not recognized as a valid and registered furnace recipe");
++        if (count > 0) {
++            this.getSnapshot().recipesUsed.put(location, count);
++        } else {
++            this.getSnapshot().recipesUsed.removeInt(location);
++        }
++    }
++
++    @Override
++    public void setRecipesUsed(java.util.Map<org.bukkit.inventory.CookingRecipe<?>, Integer> recipesUsed) {
++        this.getSnapshot().recipesUsed.clear();
++        recipesUsed.forEach((recipe, integer) -> {
++            if (integer != null) {
++                this.setRecipeUsedCount(recipe, integer);
++            }
++        });
++    }
+     // Paper end
+ }

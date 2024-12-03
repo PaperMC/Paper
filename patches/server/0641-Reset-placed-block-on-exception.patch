@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Fri, 7 Jan 2022 11:45:15 +0100
+Subject: [PATCH] Reset placed block on exception
+
+
+diff --git a/src/main/java/net/minecraft/world/item/BlockItem.java b/src/main/java/net/minecraft/world/item/BlockItem.java
+index 2527fea68885c6911d01cd5a9b08a347d30844c8..cdd41eb371b1dd244a72c863cc5c8c4e84a9a71a 100644
+--- a/src/main/java/net/minecraft/world/item/BlockItem.java
++++ b/src/main/java/net/minecraft/world/item/BlockItem.java
+@@ -71,6 +71,7 @@ public class BlockItem extends Item {
+                 if (this instanceof PlaceOnWaterBlockItem || this instanceof SolidBucketItem) {
+                     blockstate = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(blockactioncontext1.getLevel(), blockactioncontext1.getClickedPos());
+                 }
++                final org.bukkit.block.BlockState oldBlockstate = blockstate != null ? blockstate : org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(blockactioncontext1.getLevel(), blockactioncontext1.getClickedPos()); // Paper - Reset placed block on exception
+                 // CraftBukkit end
+ 
+                 if (iblockdata == null) {
+@@ -86,8 +87,20 @@ public class BlockItem extends Item {
+ 
+                     if (iblockdata1.is(iblockdata.getBlock())) {
+                         iblockdata1 = this.updateBlockStateFromTag(blockposition, world, itemstack, iblockdata1);
++                        // Paper start - Reset placed block on exception
++                        try {
+                         this.updateCustomBlockEntityTag(blockposition, world, entityhuman, itemstack, iblockdata1);
+                         BlockItem.updateBlockEntityComponents(world, blockposition, itemstack);
++                        } catch (Exception e) {
++                            oldBlockstate.update(true, false);
++                            if (entityhuman instanceof ServerPlayer player) {
++                                org.apache.logging.log4j.LogManager.getLogger().error("Player {} tried placing invalid block", player.getScoreboardName(), e);
++                                player.getBukkitEntity().kickPlayer("Packet processing error");
++                                return InteractionResult.FAIL;
++                            }
++                            throw e; // Rethrow exception if not placed by a player
++                        }
++                        // Paper end - Reset placed block on exception
+                         iblockdata1.getBlock().setPlacedBy(world, blockposition, iblockdata1, entityhuman, itemstack);
+                         // CraftBukkit start
+                         if (blockstate != null) {

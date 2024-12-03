@@ -1,0 +1,329 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 7 Oct 2021 14:34:55 -0700
+Subject: [PATCH] Custom Potion Mixes
+
+== AT ==
+public-f net.minecraft.server.MinecraftServer potionBrewing
+
+diff --git a/src/main/java/io/papermc/paper/potion/PaperPotionBrewer.java b/src/main/java/io/papermc/paper/potion/PaperPotionBrewer.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d9390227a2bba4e03aa9ee592ca157127633c41b
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/potion/PaperPotionBrewer.java
+@@ -0,0 +1,56 @@
++package io.papermc.paper.potion;
++
++import com.google.common.base.Preconditions;
++import java.util.Collection;
++import net.minecraft.server.MinecraftServer;
++import org.bukkit.NamespacedKey;
++import org.bukkit.potion.PotionBrewer;
++import org.bukkit.potion.PotionEffect;
++import org.bukkit.potion.PotionType;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public class PaperPotionBrewer implements PotionBrewer {
++
++    private final MinecraftServer minecraftServer;
++
++    public PaperPotionBrewer(final MinecraftServer minecraftServer) {
++        this.minecraftServer = minecraftServer;
++    }
++
++    @Override
++    @Deprecated(forRemoval = true)
++    public Collection<PotionEffect> getEffects(PotionType type, boolean upgraded, boolean extended) {
++        final org.bukkit.NamespacedKey key = type.getKey();
++
++        Preconditions.checkArgument(!key.getKey().startsWith("strong_"), "Strong potion type cannot be used directly, got %s", key);
++        Preconditions.checkArgument(!key.getKey().startsWith("long_"), "Extended potion type cannot be used directly, got %s", key);
++
++        org.bukkit.NamespacedKey effectiveKey = key;
++        if (upgraded) {
++            effectiveKey = new org.bukkit.NamespacedKey(key.namespace(), "strong_" + key.key());
++        } else if (extended) {
++            effectiveKey = new org.bukkit.NamespacedKey(key.namespace(), "long_" + key.key());
++        }
++
++        final org.bukkit.potion.PotionType effectivePotionType = org.bukkit.Registry.POTION.get(effectiveKey);
++        Preconditions.checkNotNull(type, "Unknown potion type from data " + effectiveKey.asMinimalString()); // Legacy error message in 1.20.4
++        return effectivePotionType.getPotionEffects();
++    }
++
++    @Override
++    public void addPotionMix(final PotionMix potionMix) {
++        this.minecraftServer.potionBrewing().addPotionMix(potionMix);
++    }
++
++    @Override
++    public void removePotionMix(final NamespacedKey key) {
++        this.minecraftServer.potionBrewing.removePotionMix(key);
++    }
++
++    @Override
++    public void resetPotionMixes() {
++        this.minecraftServer.potionBrewing = this.minecraftServer.potionBrewing().reload(this.minecraftServer.getWorldData().enabledFeatures());
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/potion/PaperPotionMix.java b/src/main/java/io/papermc/paper/potion/PaperPotionMix.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7ea357ac2f3a93db4ebdf24b5072be7d1cad3e33
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/potion/PaperPotionMix.java
+@@ -0,0 +1,21 @@
++package io.papermc.paper.potion;
++
++import java.util.function.Predicate;
++import net.minecraft.world.item.ItemStack;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.inventory.CraftRecipe;
++import org.bukkit.inventory.RecipeChoice;
++
++public record PaperPotionMix(ItemStack result, Predicate<ItemStack> input, Predicate<ItemStack> ingredient) {
++
++    public PaperPotionMix(PotionMix potionMix) {
++        this(CraftItemStack.asNMSCopy(potionMix.getResult()), convert(potionMix.getInput()), convert(potionMix.getIngredient()));
++    }
++
++    static Predicate<ItemStack> convert(final RecipeChoice choice) {
++        if (choice instanceof PredicateRecipeChoice predicateRecipeChoice) {
++            return stack -> predicateRecipeChoice.test(CraftItemStack.asBukkitCopy(stack));
++        }
++        return CraftRecipe.toIngredient(choice, true);
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 03ee72a20330dd9ba6ff2808c1252454a6c217bc..fcc00d5b0be3d2adb92c8243ccca8d0190fcc413 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -2196,6 +2196,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             this.worldData.setDataConfiguration(worlddataconfiguration);
+             this.resources.managers.updateStaticRegistryTags();
+             this.resources.managers.getRecipeManager().finalizeRecipeLoading(this.worldData.enabledFeatures());
++            this.potionBrewing = this.potionBrewing.reload(this.worldData.enabledFeatures()); // Paper - Custom Potion Mixes
+             this.getPlayerList().saveAll();
+             this.getPlayerList().reloadResources();
+             this.functionManager.replaceLibrary(this.resources.managers.getFunctionLibrary());
+diff --git a/src/main/java/net/minecraft/world/inventory/BrewingStandMenu.java b/src/main/java/net/minecraft/world/inventory/BrewingStandMenu.java
+index 6acc06ab49549ebd80e9871dce7f3fe6ebde9498..d2688ca4430e2e45b35b97b0b3b7c79b5aac23a4 100644
+--- a/src/main/java/net/minecraft/world/inventory/BrewingStandMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/BrewingStandMenu.java
+@@ -57,9 +57,11 @@ public class BrewingStandMenu extends AbstractContainerMenu {
+         this.brewingStandData = propertyDelegate;
+         PotionBrewing potionbrewer = playerInventory.player.level().potionBrewing();
+ 
+-        this.addSlot(new BrewingStandMenu.PotionSlot(inventory, 0, 56, 51));
+-        this.addSlot(new BrewingStandMenu.PotionSlot(inventory, 1, 79, 58));
+-        this.addSlot(new BrewingStandMenu.PotionSlot(inventory, 2, 102, 51));
++        // Paper start - custom potion mixes
++        this.addSlot(new BrewingStandMenu.PotionSlot(inventory, 0, 56, 51, potionbrewer));
++        this.addSlot(new BrewingStandMenu.PotionSlot(inventory, 1, 79, 58, potionbrewer));
++        this.addSlot(new BrewingStandMenu.PotionSlot(inventory, 2, 102, 51, potionbrewer));
++        // Paper end - custom potion mixes
+         this.ingredientSlot = this.addSlot(new BrewingStandMenu.IngredientsSlot(potionbrewer, inventory, 3, 79, 17));
+         this.addSlot(new BrewingStandMenu.FuelSlot(inventory, 4, 17, 17));
+         this.addDataSlots(propertyDelegate);
+@@ -90,7 +92,7 @@ public class BrewingStandMenu extends AbstractContainerMenu {
+                     if (!this.moveItemStackTo(itemstack1, 3, 4, false)) {
+                         return ItemStack.EMPTY;
+                     }
+-                } else if (BrewingStandMenu.PotionSlot.mayPlaceItem(itemstack)) {
++                } else if (BrewingStandMenu.PotionSlot.mayPlaceItem(itemstack, this.player.player.level().potionBrewing())) { // Paper - custom potion mixes
+                     if (!this.moveItemStackTo(itemstack1, 0, 3, false)) {
+                         return ItemStack.EMPTY;
+                     }
+@@ -139,13 +141,15 @@ public class BrewingStandMenu extends AbstractContainerMenu {
+ 
+     private static class PotionSlot extends Slot {
+ 
+-        public PotionSlot(Container inventory, int index, int x, int y) {
++        private final PotionBrewing potionBrewing; // Paper - custom potion mixes
++        public PotionSlot(Container inventory, int index, int x, int y, PotionBrewing potionBrewing) { // Paper - custom potion mixes
+             super(inventory, index, x, y);
++            this.potionBrewing = potionBrewing; // Paper - custom potion mixes
+         }
+ 
+         @Override
+         public boolean mayPlace(ItemStack stack) {
+-            return PotionSlot.mayPlaceItem(stack);
++            return PotionSlot.mayPlaceItem(stack, this.potionBrewing); // Paper - custom potion mixes
+         }
+ 
+         @Override
+@@ -164,8 +168,8 @@ public class BrewingStandMenu extends AbstractContainerMenu {
+             super.onTake(player, stack);
+         }
+ 
+-        public static boolean mayPlaceItem(ItemStack stack) {
+-            return stack.is(Items.POTION) || stack.is(Items.SPLASH_POTION) || stack.is(Items.LINGERING_POTION) || stack.is(Items.GLASS_BOTTLE);
++        public static boolean mayPlaceItem(ItemStack stack, PotionBrewing potionBrewing) { // Paper - custom potion mixes
++            return stack.is(Items.POTION) || stack.is(Items.SPLASH_POTION) || stack.is(Items.LINGERING_POTION) || stack.is(Items.GLASS_BOTTLE) || potionBrewing.isCustomInput(stack); // Paper - Custom Potion Mixes
+         }
+ 
+         @Override
+diff --git a/src/main/java/net/minecraft/world/item/alchemy/PotionBrewing.java b/src/main/java/net/minecraft/world/item/alchemy/PotionBrewing.java
+index 50e81e3babd331077eda8daa769eb2b3f99e8ca2..ca01f3344005b295c7ae98f6d5b03f79513b12a4 100644
+--- a/src/main/java/net/minecraft/world/item/alchemy/PotionBrewing.java
++++ b/src/main/java/net/minecraft/world/item/alchemy/PotionBrewing.java
+@@ -19,6 +19,7 @@ public class PotionBrewing {
+     private final List<Ingredient> containers;
+     private final List<PotionBrewing.Mix<Potion>> potionMixes;
+     private final List<PotionBrewing.Mix<Item>> containerMixes;
++    private final it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap<org.bukkit.NamespacedKey, io.papermc.paper.potion.PaperPotionMix> customMixes = new it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap<>(); // Paper - Custom Potion Mixes
+ 
+     PotionBrewing(List<Ingredient> potionTypes, List<PotionBrewing.Mix<Potion>> potionRecipes, List<PotionBrewing.Mix<Item>> itemRecipes) {
+         this.containers = potionTypes;
+@@ -27,7 +28,7 @@ public class PotionBrewing {
+     }
+ 
+     public boolean isIngredient(ItemStack stack) {
+-        return this.isContainerIngredient(stack) || this.isPotionIngredient(stack);
++        return this.isContainerIngredient(stack) || this.isPotionIngredient(stack) || this.isCustomIngredient(stack); // Paper - Custom Potion Mixes
+     }
+ 
+     private boolean isContainer(ItemStack stack) {
+@@ -71,6 +72,11 @@ public class PotionBrewing {
+     }
+ 
+     public boolean hasMix(ItemStack input, ItemStack ingredient) {
++        // Paper start - Custom Potion Mixes
++        if (this.hasCustomMix(input, ingredient)) {
++            return true;
++        }
++        // Paper end - Custom Potion Mixes
+         return this.isContainer(input) && (this.hasContainerMix(input, ingredient) || this.hasPotionMix(input, ingredient));
+     }
+ 
+@@ -103,6 +109,13 @@ public class PotionBrewing {
+         if (input.isEmpty()) {
+             return input;
+         } else {
++            // Paper start - Custom Potion Mixes
++            for (io.papermc.paper.potion.PaperPotionMix mix : this.customMixes.values()) {
++                if (mix.input().test(input) && mix.ingredient().test(ingredient)) {
++                    return mix.result().copy();
++                }
++            }
++            // Paper end - Custom Potion Mixes
+             Optional<Holder<Potion>> optional = input.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY).potion();
+             if (optional.isEmpty()) {
+                 return input;
+@@ -190,6 +203,50 @@ public class PotionBrewing {
+         builder.addMix(Potions.SLOW_FALLING, Items.REDSTONE, Potions.LONG_SLOW_FALLING);
+     }
+ 
++    // Paper start - Custom Potion Mixes
++    public boolean isCustomIngredient(ItemStack stack) {
++        for (io.papermc.paper.potion.PaperPotionMix mix : this.customMixes.values()) {
++            if (mix.ingredient().test(stack)) {
++                return true;
++            }
++        }
++        return false;
++    }
++
++    public boolean isCustomInput(ItemStack stack) {
++        for (io.papermc.paper.potion.PaperPotionMix mix : this.customMixes.values()) {
++            if (mix.input().test(stack)) {
++                return true;
++            }
++        }
++        return false;
++    }
++
++    private boolean hasCustomMix(ItemStack input, ItemStack ingredient) {
++        for (io.papermc.paper.potion.PaperPotionMix mix : this.customMixes.values()) {
++            if (mix.input().test(input) && mix.ingredient().test(ingredient)) {
++                return true;
++            }
++        }
++        return false;
++    }
++
++    public void addPotionMix(io.papermc.paper.potion.PotionMix mix) {
++        if (this.customMixes.containsKey(mix.getKey())) {
++            throw new IllegalArgumentException("Duplicate recipe ignored with ID " + mix.getKey());
++        }
++        this.customMixes.putAndMoveToFirst(mix.getKey(), new io.papermc.paper.potion.PaperPotionMix(mix));
++    }
++
++    public boolean removePotionMix(org.bukkit.NamespacedKey key) {
++        return this.customMixes.remove(key) != null;
++    }
++
++    public PotionBrewing reload(FeatureFlagSet flags) {
++        return bootstrap(flags);
++    }
++    // Paper end - Custom Potion Mixes
++
+     public static class Builder {
+         private final List<Ingredient> containers = new ArrayList<>();
+         private final List<PotionBrewing.Mix<Potion>> potionMixes = new ArrayList<>();
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
+index e167c2834f1b7899a7d11cef782940deeb739a9c..2bafacd7bc56186d9105d2031180f8c4a6940018 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
+@@ -316,12 +316,12 @@ public class BrewingStandBlockEntity extends BaseContainerBlockEntity implements
+ 
+     @Override
+     public boolean canPlaceItem(int slot, ItemStack stack) {
++        PotionBrewing potionbrewer = this.level != null ? this.level.potionBrewing() : PotionBrewing.EMPTY; // Paper - move up
+         if (slot == 3) {
+-            PotionBrewing potionbrewer = this.level != null ? this.level.potionBrewing() : PotionBrewing.EMPTY;
+ 
+             return potionbrewer.isIngredient(stack);
+         } else {
+-            return slot == 4 ? stack.is(ItemTags.BREWING_FUEL) : (stack.is(Items.POTION) || stack.is(Items.SPLASH_POTION) || stack.is(Items.LINGERING_POTION) || stack.is(Items.GLASS_BOTTLE)) && this.getItem(slot).isEmpty();
++            return slot == 4 ? stack.is(ItemTags.BREWING_FUEL) : (stack.is(Items.POTION) || stack.is(Items.SPLASH_POTION) || stack.is(Items.LINGERING_POTION) || stack.is(Items.GLASS_BOTTLE) || potionbrewer.isCustomInput(stack)) && this.getItem(slot).isEmpty(); // Paper - Custom Potion Mixes
+         }
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 75bd9617164c63a641602bf772a5e0f15a322c7e..82e1c4713e043c4903b1f0154609da4558f90aef 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -311,6 +311,7 @@ public final class CraftServer implements Server {
+     private final io.papermc.paper.datapack.PaperDatapackManager datapackManager; // Paper
+     public static Exception excessiveVelEx; // Paper - Velocity warnings
+     private final io.papermc.paper.logging.SysoutCatcher sysoutCatcher = new io.papermc.paper.logging.SysoutCatcher(); // Paper
++    private final io.papermc.paper.potion.PaperPotionBrewer potionBrewer; // Paper - Custom Potion Mixes
+ 
+     static {
+         ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
+@@ -394,6 +395,7 @@ public final class CraftServer implements Server {
+         if (this.configuration.getBoolean("settings.use-map-color-cache")) {
+             MapPalette.setMapColorCache(new CraftMapColorCache(this.logger));
+         }
++        this.potionBrewer = new io.papermc.paper.potion.PaperPotionBrewer(console); // Paper - custom potion mixes
+         datapackManager = new io.papermc.paper.datapack.PaperDatapackManager(console.getPackRepository()); // Paper
+     }
+ 
+@@ -3076,5 +3078,9 @@ public final class CraftServer implements Server {
+         return datapackManager;
+     }
+ 
++    @Override
++    public io.papermc.paper.potion.PaperPotionBrewer getPotionBrewer() {
++        return this.potionBrewer;
++    }
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftRecipe.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftRecipe.java
+index fa47232eeb36ed92b5a526bb00398f08b6c0ab41..5b176cd5f80a49e3a2afbcbf4fe2958143719bce 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftRecipe.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftRecipe.java
+@@ -23,6 +23,11 @@ public interface CraftRecipe extends Recipe {
+     }
+ 
+     default Ingredient toNMS(RecipeChoice bukkit, boolean requireNotEmpty) {
++        // Paper start
++        return toIngredient(bukkit, requireNotEmpty);
++    }
++    static Ingredient toIngredient(RecipeChoice bukkit, boolean requireNotEmpty) {
++        // Paper end
+         Ingredient stack;
+ 
+         if (bukkit == null) {

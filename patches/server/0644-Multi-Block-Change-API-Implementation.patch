@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Brody Beckwith <brody@beckwith.dev>
+Date: Fri, 14 Jan 2022 00:41:11 -0500
+Subject: [PATCH] Multi Block Change API Implementation
+
+
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSectionBlocksUpdatePacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSectionBlocksUpdatePacket.java
+index 926ff9be3d9e3f5d620e4c7ccb22b9f64865ff8c..1a37654aff9a9c86c9f7af10a1cf721371f0c5ec 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSectionBlocksUpdatePacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundSectionBlocksUpdatePacket.java
+@@ -62,6 +62,14 @@ public class ClientboundSectionBlocksUpdatePacket implements Packet<ClientGamePa
+ 
+     }
+ 
++    // Paper start - Multi Block Change API
++    public ClientboundSectionBlocksUpdatePacket(SectionPos sectionPos, it.unimi.dsi.fastutil.shorts.Short2ObjectMap<BlockState> blockChanges) {
++        this.sectionPos = sectionPos;
++        this.positions = blockChanges.keySet().toShortArray();
++        this.states = blockChanges.values().toArray(new BlockState[0]);
++    }
++    // Paper end - Multi Block Change API
++
+     private void write(FriendlyByteBuf buf) {
+         buf.writeLong(this.sectionPos.asLong());
+         buf.writeVarInt(this.positions.length);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index f363f885b3dc1852b09914f034740794e3025d3d..eb48efa038043dacf539811de9e0f0faa1ec6b42 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -937,6 +937,32 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         this.getHandle().connection.send(packet);
+     }
+ 
++    // Paper start
++    @Override
++    public void sendMultiBlockChange(final Map<? extends io.papermc.paper.math.Position, BlockData> blockChanges) {
++        if (this.getHandle().connection == null) return;
++
++        Map<SectionPos, it.unimi.dsi.fastutil.shorts.Short2ObjectMap<net.minecraft.world.level.block.state.BlockState>> sectionMap = new HashMap<>();
++
++        for (Map.Entry<? extends io.papermc.paper.math.Position, BlockData> entry : blockChanges.entrySet()) {
++            BlockData blockData = entry.getValue();
++            BlockPos blockPos = io.papermc.paper.util.MCUtil.toBlockPos(entry.getKey());
++            SectionPos sectionPos = SectionPos.of(blockPos);
++
++            it.unimi.dsi.fastutil.shorts.Short2ObjectMap<net.minecraft.world.level.block.state.BlockState> sectionData = sectionMap.computeIfAbsent(sectionPos, key -> new it.unimi.dsi.fastutil.shorts.Short2ObjectArrayMap<>());
++            sectionData.put(SectionPos.sectionRelativePos(blockPos), ((CraftBlockData) blockData).getState());
++        }
++
++        for (Map.Entry<SectionPos, it.unimi.dsi.fastutil.shorts.Short2ObjectMap<net.minecraft.world.level.block.state.BlockState>> entry : sectionMap.entrySet()) {
++            SectionPos sectionPos = entry.getKey();
++            it.unimi.dsi.fastutil.shorts.Short2ObjectMap<net.minecraft.world.level.block.state.BlockState> blockData = entry.getValue();
++
++            net.minecraft.network.protocol.game.ClientboundSectionBlocksUpdatePacket packet = new net.minecraft.network.protocol.game.ClientboundSectionBlocksUpdatePacket(sectionPos, blockData);
++            this.getHandle().connection.send(packet);
++        }
++    }
++    // Paper end
++
+     @Override
+     public void sendBlockChanges(Collection<BlockState> blocks) {
+         Preconditions.checkArgument(blocks != null, "blocks must not be null");

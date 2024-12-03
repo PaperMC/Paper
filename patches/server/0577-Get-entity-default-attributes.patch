@@ -1,0 +1,151 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 20 Aug 2021 13:03:21 -0700
+Subject: [PATCH] Get entity default attributes
+
+== AT ==
+public net.minecraft.world.entity.ai.attributes.AttributeSupplier getAttributeInstance(Lnet/minecraft/core/Holder;)Lnet/minecraft/world/entity/ai/attributes/AttributeInstance;
+
+diff --git a/src/main/java/io/papermc/paper/attribute/UnmodifiableAttributeInstance.java b/src/main/java/io/papermc/paper/attribute/UnmodifiableAttributeInstance.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..12135ffeacd648f6bc4d7d327059ea1a7e8c79c4
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/attribute/UnmodifiableAttributeInstance.java
+@@ -0,0 +1,30 @@
++package io.papermc.paper.attribute;
++
++import net.minecraft.world.entity.ai.attributes.AttributeInstance;
++import org.bukkit.attribute.Attribute;
++import org.bukkit.attribute.AttributeModifier;
++import org.bukkit.craftbukkit.attribute.CraftAttributeInstance;
++
++import java.util.Collection;
++
++public class UnmodifiableAttributeInstance extends CraftAttributeInstance {
++
++    public UnmodifiableAttributeInstance(AttributeInstance handle, Attribute attribute) {
++        super(handle, attribute);
++    }
++
++    @Override
++    public void setBaseValue(double d) {
++        throw new UnsupportedOperationException("Cannot modify default attributes");
++    }
++
++    @Override
++    public void addModifier(AttributeModifier modifier) {
++        throw new UnsupportedOperationException("Cannot modify default attributes");
++    }
++
++    @Override
++    public void removeModifier(AttributeModifier modifier) {
++        throw new UnsupportedOperationException("Cannot modify default attributes");
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/attribute/UnmodifiableAttributeMap.java b/src/main/java/io/papermc/paper/attribute/UnmodifiableAttributeMap.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ec9ebd2d539333293c51b7edfa18f18b066d7e43
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/attribute/UnmodifiableAttributeMap.java
+@@ -0,0 +1,32 @@
++package io.papermc.paper.attribute;
++
++import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
++import org.bukkit.attribute.Attributable;
++import org.bukkit.attribute.Attribute;
++import org.bukkit.attribute.AttributeInstance;
++import org.bukkit.craftbukkit.attribute.CraftAttribute;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
++public class UnmodifiableAttributeMap implements Attributable {
++
++    private final AttributeSupplier handle;
++
++    public UnmodifiableAttributeMap(@NotNull AttributeSupplier handle) {
++        this.handle = handle;
++    }
++
++    @Override
++    public @Nullable AttributeInstance getAttribute(@NotNull Attribute attribute) {
++        net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> nmsAttribute = CraftAttribute.bukkitToMinecraftHolder(attribute);
++        if (!this.handle.hasAttribute(nmsAttribute)) {
++            return null;
++        }
++        return new UnmodifiableAttributeInstance(this.handle.getAttributeInstance(nmsAttribute), attribute);
++    }
++
++    @Override
++    public void registerAttribute(@NotNull Attribute attribute) {
++        throw new UnsupportedOperationException("Cannot register new attributes here");
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index e613ea0eba9a1d162b8f7dfe32c9c31d82f17dd2..6f780b76ebadb6155195b93f3e6d382141eb0bcc 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -560,6 +560,18 @@ public final class CraftMagicNumbers implements UnsafeValues {
+         }
+         return CraftItemStack.unwrap(itemToBeRepaired).isValidRepairItem(CraftItemStack.unwrap(repairMaterial));
+     }
++
++    @Override
++    public boolean hasDefaultEntityAttributes(NamespacedKey bukkitEntityKey) {
++        return net.minecraft.world.entity.ai.attributes.DefaultAttributes.hasSupplier(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getValue(CraftNamespacedKey.toMinecraft(bukkitEntityKey)));
++    }
++
++    @Override
++    public org.bukkit.attribute.Attributable getDefaultEntityAttributes(NamespacedKey bukkitEntityKey) {
++        Preconditions.checkArgument(hasDefaultEntityAttributes(bukkitEntityKey), bukkitEntityKey + " doesn't have default attributes");
++        var supplier = net.minecraft.world.entity.ai.attributes.DefaultAttributes.getSupplier((net.minecraft.world.entity.EntityType<? extends net.minecraft.world.entity.LivingEntity>) net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getValue(CraftNamespacedKey.toMinecraft(bukkitEntityKey)));
++        return new io.papermc.paper.attribute.UnmodifiableAttributeMap(supplier);
++    }
+     // Paper end
+ 
+     /**
+diff --git a/src/test/java/io/papermc/paper/attribute/EntityTypeAttributesTest.java b/src/test/java/io/papermc/paper/attribute/EntityTypeAttributesTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fa9fb37993f4025f85dac084efb4b5eda0ede637
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/attribute/EntityTypeAttributesTest.java
+@@ -0,0 +1,40 @@
++package io.papermc.paper.attribute;
++
++import org.bukkit.attribute.Attributable;
++import org.bukkit.attribute.Attribute;
++import org.bukkit.attribute.AttributeInstance;
++import org.bukkit.attribute.AttributeModifier;
++import org.bukkit.entity.EntityType;
++import org.bukkit.support.environment.AllFeatures;
++import org.junit.jupiter.api.Test;
++
++import static org.junit.jupiter.api.Assertions.assertFalse;
++import static org.junit.jupiter.api.Assertions.assertNotNull;
++import static org.junit.jupiter.api.Assertions.assertThrows;
++import static org.junit.jupiter.api.Assertions.assertTrue;
++
++@AllFeatures
++public class EntityTypeAttributesTest {
++
++    @Test
++    public void testIllegalEntity() {
++        assertFalse(EntityType.EGG.hasDefaultAttributes());
++        assertThrows(IllegalArgumentException.class, EntityType.EGG::getDefaultAttributes);
++    }
++
++    @Test
++    public void testLegalEntity() {
++        assertTrue(EntityType.ZOMBIE.hasDefaultAttributes());
++        EntityType.ZOMBIE.getDefaultAttributes();
++    }
++
++    @Test
++    public void testUnmodifiabilityOfAttributable() {
++        Attributable attributable = EntityType.ZOMBIE.getDefaultAttributes();
++        assertThrows(UnsupportedOperationException.class, () -> attributable.registerAttribute(Attribute.ATTACK_DAMAGE));
++        AttributeInstance instance = attributable.getAttribute(Attribute.FOLLOW_RANGE);
++        assertNotNull(instance);
++        assertThrows(UnsupportedOperationException.class, () -> instance.addModifier(new AttributeModifier("test", 3, AttributeModifier.Operation.ADD_NUMBER)));
++        assertThrows(UnsupportedOperationException.class, () -> instance.setBaseValue(3.2));
++    }
++}

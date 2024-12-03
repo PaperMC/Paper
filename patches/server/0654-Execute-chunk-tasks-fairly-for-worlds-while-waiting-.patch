@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Tue, 28 Dec 2021 07:19:01 -0800
+Subject: [PATCH] Execute chunk tasks fairly for worlds while waiting for next
+ tick
+
+Currently, only the first world would have had tasks executed.
+This might result in chunks loading far slower in the nether,
+for example.
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index c133a646baf88e0489d358e302d67f21f76b47c3..17700ebf508f3ac7a4d1cdd8d52355afaf5d006f 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1404,6 +1404,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         if (super.pollTask()) {
+             return true;
+         } else {
++            boolean ret = false; // Paper - force execution of all worlds, do not just bias the first
+             if (this.tickRateManager.isSprinting() || this.haveTime()) {
+                 Iterator iterator = this.getAllLevels().iterator();
+ 
+@@ -1411,12 +1412,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                     ServerLevel worldserver = (ServerLevel) iterator.next();
+ 
+                     if (worldserver.getChunkSource().pollTask()) {
+-                        return true;
++                        ret = true; // Paper - force execution of all worlds, do not just bias the first
+                     }
+                 }
+             }
+ 
+-            return false;
++            return ret; // Paper - force execution of all worlds, do not just bias the first
+         }
+     }
+ 

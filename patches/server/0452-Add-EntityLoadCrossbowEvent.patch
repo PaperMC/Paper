@@ -1,0 +1,68 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: JRoy <joshroy126@gmail.com>
+Date: Wed, 7 Oct 2020 12:04:01 -0400
+Subject: [PATCH] Add EntityLoadCrossbowEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/item/CrossbowItem.java b/src/main/java/net/minecraft/world/item/CrossbowItem.java
+index a81e2f1e5abc20a95c562c1b9b1f7af489eaaaab..be1902a307a54434644b242b429ad47c271d2a0c 100644
+--- a/src/main/java/net/minecraft/world/item/CrossbowItem.java
++++ b/src/main/java/net/minecraft/world/item/CrossbowItem.java
+@@ -90,7 +90,14 @@ public class CrossbowItem extends ProjectileWeaponItem {
+     public boolean releaseUsing(ItemStack stack, Level world, LivingEntity user, int remainingUseTicks) {
+         int i = this.getUseDuration(stack, user) - remainingUseTicks;
+         float f = getPowerForTime(i, stack, user);
+-        if (f >= 1.0F && !isCharged(stack) && tryLoadProjectiles(user, stack)) {
++        // Paper start - Add EntityLoadCrossbowEvent
++        if (f >= 1.0F && !isCharged(stack)) {
++            final io.papermc.paper.event.entity.EntityLoadCrossbowEvent event = new io.papermc.paper.event.entity.EntityLoadCrossbowEvent(user.getBukkitLivingEntity(), stack.asBukkitMirror(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(user.getUsedItemHand()));
++            if (!event.callEvent() || !tryLoadProjectiles(user, stack, event.shouldConsumeItem()) || !event.shouldConsumeItem()) {
++                if (user instanceof ServerPlayer player) player.containerMenu.sendAllDataToRemote();
++                return false;
++            }
++            // Paper end - Add EntityLoadCrossbowEvent
+             CrossbowItem.ChargingSounds chargingSounds = this.getChargingSounds(stack);
+             chargingSounds.end()
+                 .ifPresent(
+@@ -111,8 +118,14 @@ public class CrossbowItem extends ProjectileWeaponItem {
+         }
+     }
+ 
+-    private static boolean tryLoadProjectiles(LivingEntity shooter, ItemStack crossbow) {
+-        List<ItemStack> list = draw(crossbow, shooter.getProjectile(crossbow), shooter);
++    @io.papermc.paper.annotation.DoNotUse // Paper - Add EntityLoadCrossbowEvent
++    private static boolean tryLoadProjectiles(LivingEntity shooter, ItemStack crossbow)  {
++        // Paper start - Add EntityLoadCrossbowEvent
++        return CrossbowItem.tryLoadProjectiles(shooter, crossbow, true);
++    }
++    private static boolean tryLoadProjectiles(LivingEntity shooter, ItemStack crossbow, boolean consume) {
++        List<ItemStack> list = draw(crossbow, shooter.getProjectile(crossbow), shooter, consume);
++        // Paper end - Add EntityLoadCrossbowEvent
+         if (!list.isEmpty()) {
+             crossbow.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.of(list));
+             return true;
+diff --git a/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java b/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
+index a7d0ac6513fd888e222b3128afc1a227ea91f1d2..78ba170a83f8c026bd110eae494c52577182ed61 100644
+--- a/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
++++ b/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
+@@ -109,6 +109,11 @@ public abstract class ProjectileWeaponItem extends Item {
+     }
+ 
+     protected static List<ItemStack> draw(ItemStack stack, ItemStack projectileStack, LivingEntity shooter) {
++        // Paper start
++        return draw(stack, projectileStack, shooter, true);
++    }
++    protected static List<ItemStack> draw(ItemStack stack, ItemStack projectileStack, LivingEntity shooter, boolean consume) {
++        // Paper end
+         if (projectileStack.isEmpty()) {
+             return List.of();
+         } else {
+@@ -128,7 +133,7 @@ public abstract class ProjectileWeaponItem extends Item {
+             ItemStack itemstack2 = projectileStack.copy();
+ 
+             for (int k = 0; k < j; ++k) {
+-                ItemStack itemstack3 = ProjectileWeaponItem.useAmmo(stack, k == 0 ? projectileStack : itemstack2, shooter, k > 0);
++                ItemStack itemstack3 = ProjectileWeaponItem.useAmmo(stack, k == 0 ? projectileStack : itemstack2, shooter, k > 0 || !consume); // Paper
+ 
+                 if (!itemstack3.isEmpty()) {
+                     list.add(itemstack3);

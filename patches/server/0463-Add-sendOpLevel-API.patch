@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Tue, 29 Dec 2020 15:03:03 +0100
+Subject: [PATCH] Add sendOpLevel API
+
+
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index fbe10666c4ec6caa95aa38a6f99ccca700e9a4d2..061bba184c8bc2569ce1d413435ec1360fa14007 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -1025,6 +1025,11 @@ public abstract class PlayerList {
+     }
+ 
+     private void sendPlayerPermissionLevel(ServerPlayer player, int permissionLevel) {
++        // Paper start - Add sendOpLevel API
++        this.sendPlayerPermissionLevel(player, permissionLevel, true);
++    }
++    public void sendPlayerPermissionLevel(ServerPlayer player, int permissionLevel, boolean recalculatePermissions) {
++        // Paper end - Add sendOpLevel API
+         if (player.connection != null) {
+             byte b0;
+ 
+@@ -1039,8 +1044,10 @@ public abstract class PlayerList {
+             player.connection.send(new ClientboundEntityEventPacket(player, b0));
+         }
+ 
++        if (recalculatePermissions) { // Paper - Add sendOpLevel API
+         player.getBukkitEntity().recalculatePermissions(); // CraftBukkit
+         this.server.getCommands().sendCommands(player);
++        } // Paper - Add sendOpLevel API
+     }
+ 
+     public boolean isWhiteListed(GameProfile profile) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 0aaea6091c5828782ed606d250423f3d75b9b27f..c93ec7e97c9af44ed75e7ea4fb1c6c58c2b6bc1a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -684,6 +684,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     }
+     // Paper end
+ 
++    // Paper start - Add sendOpLevel API
++    @Override
++    public void sendOpLevel(byte level) {
++        Preconditions.checkArgument(level >= 0 && level <= 4, "Level must be within [0, 4]");
++
++        this.getHandle().getServer().getPlayerList().sendPlayerPermissionLevel(this.getHandle(), level, false);
++    }
++    // Paper end - Add sendOpLevel API
++
+     @Override
+     public void setCompassTarget(Location loc) {
+         Preconditions.checkArgument(loc != null, "Location cannot be null");

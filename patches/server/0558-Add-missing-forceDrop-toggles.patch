@@ -1,0 +1,124 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 20 Jul 2021 21:25:35 -0700
+Subject: [PATCH] Add missing forceDrop toggles
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/WorkAtComposter.java b/src/main/java/net/minecraft/world/entity/ai/behavior/WorkAtComposter.java
+index 4ec1f881c05d96d72814ac3dffd3b4bef40c1bce..c34cb8c918e400636856317cc58356d2677e1d52 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/WorkAtComposter.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/WorkAtComposter.java
+@@ -86,7 +86,9 @@ public class WorkAtComposter extends WorkAtPoi {
+                 simpleContainer.removeItemType(Items.WHEAT, m);
+                 ItemStack itemStack = simpleContainer.addItem(new ItemStack(Items.BREAD, l));
+                 if (!itemStack.isEmpty()) {
++                    villager.forceDrops = true; // Paper - Add missing forceDrop toggles
+                     villager.spawnAtLocation(world, itemStack, 0.5F);
++                    villager.forceDrops = false; // Paper - Add missing forceDrop toggles
+                 }
+             }
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Panda.java b/src/main/java/net/minecraft/world/entity/animal/Panda.java
+index 705c26ceff9371b09311bd7fa796c0efde7ebfee..4f04170b3ec4ff59358e10ccfd0799af3ab590c3 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Panda.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Panda.java
+@@ -540,7 +540,9 @@ public class Panda extends Animal {
+ 
+         if (world1 instanceof ServerLevel worldserver) {
+             if (worldserver.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
++                this.forceDrops = true; // Paper - Add missing forceDrop toggles
+                 this.dropFromGiftLootTable(worldserver, BuiltInLootTables.PANDA_SNEEZE, this::spawnAtLocation);
++                this.forceDrops = false; // Paper - Add missing forceDrop toggles
+             }
+         }
+ 
+@@ -664,7 +666,9 @@ public class Panda extends Animal {
+                         ItemStack itemstack1 = this.getItemBySlot(EquipmentSlot.MAINHAND);
+ 
+                         if (!itemstack1.isEmpty() && !player.hasInfiniteMaterials()) {
++                            this.forceDrops = true; // Paper - Add missing forceDrop toggles
+                             this.spawnAtLocation(worldserver, itemstack1);
++                            this.forceDrops = false; // Paper - Add missing forceDrop toggles
+                         }
+ 
+                         this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(itemstack.getItem(), 1));
+@@ -942,7 +946,9 @@ public class Panda extends Animal {
+             ItemStack itemstack = Panda.this.getItemBySlot(EquipmentSlot.MAINHAND);
+ 
+             if (!itemstack.isEmpty()) {
++                Panda.this.forceDrops = true; // Paper - Add missing forceDrop toggles
+                 Panda.this.spawnAtLocation(getServerLevel(Panda.this.level()), itemstack);
++                Panda.this.forceDrops = false; // Paper - Add missing forceDrop toggles
+                 Panda.this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+                 int i = Panda.this.isLazy() ? Panda.this.random.nextInt(50) + 10 : Panda.this.random.nextInt(150) + 10;
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Bogged.java b/src/main/java/net/minecraft/world/entity/monster/Bogged.java
+index 9d416f775fa19ad1978c7c9c9e0d5bc16728879d..be029746905aeba218684b883282649089657de3 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Bogged.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Bogged.java
+@@ -145,9 +145,11 @@ public class Bogged extends AbstractSkeleton implements Shearable {
+     }
+ 
+     private void spawnShearedMushrooms(ServerLevel world, ItemStack shears) {
++        this.forceDrops = true; // Paper - Add missing forceDrop toggles
+         this.dropFromShearingLootTable(world, BuiltInLootTables.BOGGED_SHEAR, shears, (worldserver1, itemstack1) -> {
+             this.spawnAtLocation(worldserver1, itemstack1, this.getBbHeight());
+         });
++        this.forceDrops = false; // Paper - Add missing forceDrop toggles
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/piglin/Piglin.java b/src/main/java/net/minecraft/world/entity/monster/piglin/Piglin.java
+index 737c1d5c8ec81d55799ed13560e5e2acc7d8f4e5..5e64a6b94a510ed618a2542ad03e406a181b63d4 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/piglin/Piglin.java
++++ b/src/main/java/net/minecraft/world/entity/monster/piglin/Piglin.java
+@@ -326,9 +326,11 @@ public class Piglin extends AbstractPiglin implements CrossbowAttackMob, Invento
+     @Override
+     protected void finishConversion(ServerLevel world) {
+         PiglinAi.cancelAdmiring(world, this);
++        this.forceDrops = true; // Paper - Add missing forceDrop toggles
+         this.inventory.removeAllItems().forEach((itemstack) -> {
+             this.spawnAtLocation(world, itemstack);
+         });
++        this.forceDrops = false; // Paper - Add missing forceDrop toggles
+         super.finishConversion(world);
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinAi.java b/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinAi.java
+index 42b1bd58c6e2c3bd1170171eabfefe315202f340..55868c82bf8bd61ce3494aa9f363c20c88ec6aa6 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinAi.java
++++ b/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinAi.java
+@@ -273,7 +273,9 @@ public class PiglinAi {
+ 
+     private static void holdInOffhand(ServerLevel world, Piglin piglin, ItemStack stack) {
+         if (PiglinAi.isHoldingItemInOffHand(piglin)) {
++            piglin.forceDrops = true; // Paper - Add missing forceDrop toggles
+             piglin.spawnAtLocation(world, piglin.getItemInHand(InteractionHand.OFF_HAND));
++            piglin.forceDrops = false; // Paper - Add missing forceDrop toggles
+         }
+ 
+         piglin.holdInOffHand(stack);
+@@ -333,7 +335,9 @@ public class PiglinAi {
+ 
+     protected static void cancelAdmiring(ServerLevel world, Piglin piglin) {
+         if (PiglinAi.isAdmiringItem(piglin) && !piglin.getOffhandItem().isEmpty()) {
++            piglin.forceDrops = true; // Paper - Add missing forceDrop toggles
+             piglin.spawnAtLocation(world, piglin.getOffhandItem());
++            piglin.forceDrops = false; // Paper - Add missing forceDrop toggles
+             piglin.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/raid/Raider.java b/src/main/java/net/minecraft/world/entity/raid/Raider.java
+index b6f1d989df3811f423d1cdff98b05ecc4a9268fe..6a7d9b59ff4aa2962a88ae8688c06bc67d70dfda 100644
+--- a/src/main/java/net/minecraft/world/entity/raid/Raider.java
++++ b/src/main/java/net/minecraft/world/entity/raid/Raider.java
+@@ -233,7 +233,9 @@ public abstract class Raider extends PatrollingMonster {
+             double d0 = (double) this.getEquipmentDropChance(enumitemslot);
+ 
+             if (!itemstack1.isEmpty() && (double) Math.max(this.random.nextFloat() - 0.1F, 0.0F) < d0) {
++                this.forceDrops = true; // Paper - Add missing forceDrop toggles
+                 this.spawnAtLocation(world, itemstack1);
++                this.forceDrops = false; // Paper - Add missing forceDrop toggles
+             }
+ 
+             this.onItemPickup(itemEntity);

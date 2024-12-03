@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 8 Oct 2021 13:12:58 -0700
+Subject: [PATCH] Fix cancelled powdered snow bucket placement
+
+Cancelling the placement of powdered snow from the powdered
+snow bucket didn't revert grass that became snowy because of the
+placement.
+
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index e320264c2283c2c09910ea70606413c73f443b1f..18f84d54ec72debec652adb22067e11aa058b238 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -430,7 +430,7 @@ public final class ItemStack implements DataComponentHolder {
+             int oldCount = this.getCount();
+             ServerLevel world = (ServerLevel) context.getLevel();
+ 
+-            if (!(item instanceof BucketItem || item instanceof SolidBucketItem)) { // if not bucket
++            if (!(item instanceof BucketItem/* || item instanceof SolidBucketItem*/)) { // if not bucket // Paper - Fix cancelled powdered snow bucket placement
+                 world.captureBlockStates = true;
+                 // special case bonemeal
+                 if (item == Items.BONE_MEAL) {
+@@ -493,7 +493,7 @@ public final class ItemStack implements DataComponentHolder {
+                     world.capturedBlockStates.clear();
+                     if (blocks.size() > 1) {
+                         placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockMultiPlaceEvent(world, entityhuman, enumhand, blocks, blockposition.getX(), blockposition.getY(), blockposition.getZ());
+-                    } else if (blocks.size() == 1) {
++                    } else if (blocks.size() == 1 && item != Items.POWDER_SNOW_BUCKET) { // Paper - Fix cancelled powdered snow bucket placement
+                         placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(world, entityhuman, enumhand, blocks.get(0), blockposition.getX(), blockposition.getY(), blockposition.getZ());
+                     }
+ 

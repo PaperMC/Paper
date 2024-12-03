@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ysl3000 <yannicklamprecht@live.de>
+Date: Sat, 24 Oct 2020 16:37:44 +0200
+Subject: [PATCH] living entity allow attribute registration
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeMap.java b/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeMap.java
+index b3707ca404245ae048ddba4ce2190c0801b474d4..fb967ac7b3e7828301f08a7fe9b039441cf7da30 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeMap.java
++++ b/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeMap.java
+@@ -162,4 +162,12 @@ public class AttributeMap {
+             }
+         }
+     }
++
++    // Paper - start - living entity allow attribute registration
++    public void registerAttribute(Holder<Attribute> attributeBase) {
++        AttributeInstance attributeModifiable = new AttributeInstance(attributeBase, AttributeInstance::getAttribute);
++        attributes.put(attributeBase, attributeModifiable);
++    }
++    // Paper - end - living entity allow attribute registration
++
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttributeMap.java b/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttributeMap.java
+index 5678d2007d5adf45dec0638c5dd848b601801814..0a7ed5a4f1644a70d8f98ad7a6962b814ad6daf4 100644
+--- a/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttributeMap.java
++++ b/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttributeMap.java
+@@ -35,4 +35,11 @@ public class CraftAttributeMap implements Attributable {
+ 
+         return (nms == null) ? null : new CraftAttributeInstance(nms, attribute);
+     }
++    // Paper start - living entity allow attribute registration
++    @Override
++    public void registerAttribute(Attribute attribute) {
++        Preconditions.checkArgument(attribute != null, "attribute");
++        handle.registerAttribute(CraftAttribute.bukkitToMinecraftHolder(attribute));
++    }
++    // Paper end - living entity allow attribute registration
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index 1ca252f36500322d56c0c12b6ec80c069214c0e8..a4be1eea356ba99358d707381df70032ded42140 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -775,6 +775,13 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+         return this.getHandle().craftAttributes.getAttribute(attribute);
+     }
+ 
++    // Paper start - living entity allow attribute registration
++    @Override
++    public void registerAttribute(Attribute attribute) {
++        getHandle().craftAttributes.registerAttribute(attribute);
++    }
++    // Paper end - living entity allow attribute registration
++
+     @Override
+     public void setAI(boolean ai) {
+         if (this.getHandle() instanceof Mob) {

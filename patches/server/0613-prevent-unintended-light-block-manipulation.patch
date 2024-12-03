@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 13 Sep 2021 18:55:45 -0700
+Subject: [PATCH] prevent unintended light block manipulation
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/LightBlock.java b/src/main/java/net/minecraft/world/level/block/LightBlock.java
+index 2be8855b2cd50e599d80e1ff5dc13d66451dff9d..9f6bb23b6021a99d4bb09d57659943cfdb4b673f 100644
+--- a/src/main/java/net/minecraft/world/level/block/LightBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/LightBlock.java
+@@ -50,6 +50,14 @@ public class LightBlock extends Block implements SimpleWaterloggedBlock {
+         builder.add(LEVEL, WATERLOGGED);
+     }
+ 
++    // Paper start - prevent unintended light block manipulation
++    @Override
++    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level world, BlockPos pos, Player player, net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
++        if (player.getItemInHand(hand).getItem() != Items.LIGHT || (world instanceof final net.minecraft.server.level.ServerLevel serverLevel && !player.mayInteract(serverLevel, pos)) || !player.mayUseItemAt(pos, hit.getDirection(), player.getItemInHand(hand))) { return net.minecraft.world.InteractionResult.PASS; } // Paper - Prevent unintended light block manipulation
++        return super.useItemOn(stack, state, world, pos, player, hand, hit);
++    }
++    // Paper end - prevent unintended light block manipulation
++
+     @Override
+     protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult hit) {
+         if (!world.isClientSide && player.canUseGameMasterBlocks()) {

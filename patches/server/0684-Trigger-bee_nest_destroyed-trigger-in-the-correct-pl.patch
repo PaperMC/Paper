@@ -1,0 +1,54 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 2 Feb 2022 13:50:06 -0800
+Subject: [PATCH] Trigger bee_nest_destroyed trigger in the correct place
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+index e000a918230187f6841b03b7b0dd73687f3cc15e..5c3e5c348e6fececccd8097355f423b9e7ad982b 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -427,12 +427,16 @@ public class ServerPlayerGameMode {
+                     block.destroy(this.level, pos, iblockdata1);
+                 }
+ 
++                ItemStack mainHandStack = null; // Paper - Trigger bee_nest_destroyed trigger in the correct place
++                boolean isCorrectTool = false; // Paper - Trigger bee_nest_destroyed trigger in the correct place
+                 if (this.isCreative()) {
+                     // return true; // CraftBukkit
+                 } else {
+                     ItemStack itemstack = this.player.getMainHandItem();
+                     ItemStack itemstack1 = itemstack.copy();
+                     boolean flag1 = this.player.hasCorrectToolForDrops(iblockdata1);
++                    mainHandStack = itemstack1; // Paper - Trigger bee_nest_destroyed trigger in the correct place
++                    isCorrectTool = flag1; // Paper - Trigger bee_nest_destroyed trigger in the correct place
+ 
+                     itemstack.mineBlock(this.level, iblockdata1, pos, this.player);
+                     if (flag && flag1 && event.isDropItems()) { // CraftBukkit - Check if block should drop items
+@@ -453,6 +457,13 @@ public class ServerPlayerGameMode {
+                 if (flag && event != null) {
+                     iblockdata.getBlock().popExperience(this.level, pos, event.getExpToDrop(), this.player); // Paper
+                 }
++                // Paper start - Trigger bee_nest_destroyed trigger in the correct place (check impls of block#playerDestroy)
++                if (mainHandStack != null) {
++                    if (flag && isCorrectTool && event.isDropItems() && block instanceof net.minecraft.world.level.block.BeehiveBlock && tileentity instanceof net.minecraft.world.level.block.entity.BeehiveBlockEntity beehiveBlockEntity) { // simulates the guard on block#playerDestroy above
++                        CriteriaTriggers.BEE_NEST_DESTROYED.trigger(player, iblockdata, mainHandStack, beehiveBlockEntity.getOccupantCount());
++                    }
++                }
++                // Paper end - Trigger bee_nest_destroyed trigger in the correct place
+ 
+                 return true;
+                 // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/level/block/BeehiveBlock.java b/src/main/java/net/minecraft/world/level/block/BeehiveBlock.java
+index 4ec03b15bb8a82d92fcb2b7fef70e3c7087a9b68..3e3951cbb196b720256cfc36d6d3b91d48ce3294 100644
+--- a/src/main/java/net/minecraft/world/level/block/BeehiveBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BeehiveBlock.java
+@@ -103,7 +103,7 @@ public class BeehiveBlock extends BaseEntityBlock {
+                 this.angerNearbyBees(world, pos);
+             }
+ 
+-            CriteriaTriggers.BEE_NEST_DESTROYED.trigger((ServerPlayer) player, state, tool, tileentitybeehive.getOccupantCount());
++            // CriteriaTriggers.BEE_NEST_DESTROYED.trigger((ServerPlayer) player, state, tool, tileentitybeehive.getOccupantCount()); // Paper - Trigger bee_nest_destroyed trigger in the correct place; moved until after items are dropped
+         }
+ 
+     }

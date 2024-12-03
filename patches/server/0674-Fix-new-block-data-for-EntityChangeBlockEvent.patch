@@ -1,0 +1,215 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: SoSeDiK <mrsosedik@gmail.com>
+Date: Mon, 21 Mar 2022 20:00:53 +0200
+Subject: [PATCH] Fix new block data for EntityChangeBlockEvent
+
+Also standardizes how to handle EntityChangeBlockEvent before a removeBlock or destroyBlock
+call. Always use 'state.getFluidState().createLegacyBlock()' to get the new state instead of
+just using the 'air' state.
+
+Also fixes the new block data for EntityBreakDoorEvent (a sub-event from
+EntityChangeBlockEvent)
+
+Co-authored-by: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/HarvestFarmland.java b/src/main/java/net/minecraft/world/entity/ai/behavior/HarvestFarmland.java
+index 6a7052cd6ec88ed4aaea2fef0ebc750060d1dec0..2ade08d1466660ee1787fa97908002ef56389712 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/HarvestFarmland.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/HarvestFarmland.java
+@@ -108,7 +108,7 @@ public class HarvestFarmland extends Behavior<Villager> {
+                 Block block1 = world.getBlockState(this.aboveFarmlandPos.below()).getBlock();
+ 
+                 if (block instanceof CropBlock && ((CropBlock) block).isMaxAge(iblockdata)) {
+-                    if (CraftEventFactory.callEntityChangeBlockEvent(entity, this.aboveFarmlandPos, Blocks.AIR.defaultBlockState())) { // CraftBukkit
++                    if (CraftEventFactory.callEntityChangeBlockEvent(entity, this.aboveFarmlandPos, iblockdata.getFluidState().createLegacyBlock())) { // CraftBukkit // Paper - fix wrong block state
+                     world.destroyBlock(this.aboveFarmlandPos, true, entity);
+                     } // CraftBukkit
+                 }
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java
+index e2aa6d46375cbc4f4b694888c4f9750eb26e4940..6827426e6e9706909265f84bf97b5fa7105a7fea 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java
+@@ -73,7 +73,7 @@ public class BreakDoorGoal extends DoorInteractGoal {
+ 
+         if (this.breakTime == this.getDoorBreakTime() && this.isValidDifficulty(this.mob.level().getDifficulty())) {
+             // CraftBukkit start
+-            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityBreakDoorEvent(this.mob, this.doorPos).isCancelled()) {
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityBreakDoorEvent(this.mob, this.doorPos, this.mob.level().getFluidState(this.doorPos).createLegacyBlock()).isCancelled()) { // Paper - fix wrong block state
+                 this.start();
+                 return;
+             }
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java
+index dc3602002e60d64cbbe9504c22282a9e65da2c9d..9e6f946e6d2878aa3fa8abe0f6fa4770d18676d3 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java
+@@ -67,8 +67,9 @@ public class EatBlockGoal extends Goal {
+         if (this.eatAnimationTick == this.adjustedTickDelay(4)) {
+             BlockPos blockposition = this.mob.blockPosition();
+ 
+-            if (EatBlockGoal.IS_TALL_GRASS.test(this.level.getBlockState(blockposition))) {
+-                if (CraftEventFactory.callEntityChangeBlockEvent(this.mob, blockposition, Blocks.AIR.defaultBlockState(), !getServerLevel(this.level).getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING))) { // CraftBukkit
++            final BlockState blockState = this.level.getBlockState(blockposition); // Paper - fix wrong block state
++            if (EatBlockGoal.IS_TALL_GRASS.test(blockState)) { // Paper - fix wrong block state
++                if (CraftEventFactory.callEntityChangeBlockEvent(this.mob, blockposition, blockState.getFluidState().createLegacyBlock(), !getServerLevel(this.level).getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING))) { // CraftBukkit // Paper - fix wrong block state
+                     this.level.destroyBlock(blockposition, false);
+                 }
+ 
+@@ -77,7 +78,7 @@ public class EatBlockGoal extends Goal {
+                 BlockPos blockposition1 = blockposition.below();
+ 
+                 if (this.level.getBlockState(blockposition1).is(Blocks.GRASS_BLOCK)) {
+-                    if (CraftEventFactory.callEntityChangeBlockEvent(this.mob, blockposition1, Blocks.AIR.defaultBlockState(), !getServerLevel(this.level).getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING))) { // CraftBukkit
++                    if (CraftEventFactory.callEntityChangeBlockEvent(this.mob, blockposition1, Blocks.DIRT.defaultBlockState(), !getServerLevel(this.level).getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING))) { // CraftBukkit // Paper - Fix wrong block state
+                         this.level.levelEvent(2001, blockposition1, Block.getId(Blocks.GRASS_BLOCK.defaultBlockState()));
+                         this.level.setBlock(blockposition1, Blocks.DIRT.defaultBlockState(), 2);
+                     }
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Rabbit.java b/src/main/java/net/minecraft/world/entity/animal/Rabbit.java
+index cfda434358a2e14ebd6cc10609c599f6d65bb6ef..53d60d62686f9b6bc98b6b25e4315b848600a99d 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Rabbit.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Rabbit.java
+@@ -580,7 +580,7 @@ public class Rabbit extends Animal implements VariantHolder<Rabbit.Variant> {
+ 
+                     if (i == 0) {
+                         // CraftBukkit start
+-                        if (!CraftEventFactory.callEntityChangeBlockEvent(this.rabbit, blockposition, Blocks.AIR.defaultBlockState())) {
++                        if (!CraftEventFactory.callEntityChangeBlockEvent(this.rabbit, blockposition, iblockdata.getFluidState().createLegacyBlock())) { // Paper - fix wrong block state
+                             return;
+                         }
+                         // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
+index 8415f7e1f8c391961dc5b0669da1ab4f8ae4950d..fa8c7a7f71621437bec2ce69c3ad24b495ceed1d 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
++++ b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
+@@ -374,7 +374,7 @@ public class WitherBoss extends Monster implements RangedAttackMob {
+ 
+                         if (WitherBoss.canDestroy(iblockdata)) {
+                             // CraftBukkit start
+-                            if (!CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, Blocks.AIR.defaultBlockState())) {
++                            if (!CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, iblockdata.getFluidState().createLegacyBlock())) { // Paper - fix wrong block state
+                                 continue;
+                             }
+                             // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/entity/monster/EnderMan.java b/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
+index 4b798695af365dc97cbbbd09f370b8fc425f9ed6..2a394381a4ad46359359ba402b65c62b331480b4 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
++++ b/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
+@@ -551,7 +551,7 @@ public class EnderMan extends Monster implements NeutralMob {
+             boolean flag = movingobjectpositionblock.getBlockPos().equals(blockposition);
+ 
+             if (iblockdata.is(BlockTags.ENDERMAN_HOLDABLE) && flag) {
+-                if (CraftEventFactory.callEntityChangeBlockEvent(this.enderman, blockposition, Blocks.AIR.defaultBlockState())) { // CraftBukkit - Place event
++                if (CraftEventFactory.callEntityChangeBlockEvent(this.enderman, blockposition, iblockdata.getFluidState().createLegacyBlock())) { // CraftBukkit - Place event // Paper - fix wrong block state
+                 world.removeBlock(blockposition, false);
+                 world.gameEvent((Holder) GameEvent.BLOCK_DESTROY, blockposition, GameEvent.Context.of(this.enderman, iblockdata));
+                 this.enderman.setCarriedBlock(iblockdata.getBlock().defaultBlockState());
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Ravager.java b/src/main/java/net/minecraft/world/entity/monster/Ravager.java
+index 772476d44ee72aed1ba35d10fe51f0ffda34d3f8..cfc28828a5b81563a826ae6045553e7350f67986 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Ravager.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Ravager.java
+@@ -162,7 +162,7 @@ public class Ravager extends Raider {
+ 
+                         if (block instanceof LeavesBlock) {
+                             // CraftBukkit start
+-                            if (!CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState())) {
++                            if (!CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, iblockdata.getFluidState().createLegacyBlock())) { // Paper - fix wrong block state
+                                 continue;
+                             }
+                             // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
+index 52d8ea3e40cdb01eab428f5d3d945c0c9f6088ce..ff65cb8ea5233f2dd159f42ad53bc9d300cd604f 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
+@@ -165,7 +165,8 @@ public class Silverfish extends Monster {
+ 
+                             if (block instanceof InfestedBlock) {
+                                 // CraftBukkit start
+-                                if (!CraftEventFactory.callEntityChangeBlockEvent(this.silverfish, blockposition1, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState())) {
++                                BlockState afterState = getServerLevel(world).getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) ? iblockdata.getFluidState().createLegacyBlock() : ((InfestedBlock) block).hostStateByInfested(world.getBlockState(blockposition1)); // Paper - fix wrong block state
++                                if (!CraftEventFactory.callEntityChangeBlockEvent(this.silverfish, blockposition1, afterState)) { // Paper - fix wrong block state
+                                     continue;
+                                 }
+                                 // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
+index a486466040a646b8a5a5ff2430cdd25b95b7e20f..e78eef3b6fbcd657f9dd180df4cb2eeb55d0814f 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownPotion.java
+@@ -294,7 +294,7 @@ public class ThrownPotion extends ThrowableItemProjectile {
+ 
+         if (iblockdata.is(BlockTags.FIRE)) {
+             // CraftBukkit start
+-            if (CraftEventFactory.callEntityChangeBlockEvent(this, pos, Blocks.AIR.defaultBlockState())) {
++            if (CraftEventFactory.callEntityChangeBlockEvent(this, pos, iblockdata.getFluidState().createLegacyBlock())) { // Paper - fix wrong block state
+                 this.level().destroyBlock(pos, false, this);
+             }
+             // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/level/block/ChorusFlowerBlock.java b/src/main/java/net/minecraft/world/level/block/ChorusFlowerBlock.java
+index fae574f8617bada96469a2eb1349eaa061f0450f..6d0d13e70a82c4db7848e1007f5b6d670dd5acad 100644
+--- a/src/main/java/net/minecraft/world/level/block/ChorusFlowerBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/ChorusFlowerBlock.java
+@@ -286,7 +286,7 @@ public class ChorusFlowerBlock extends Block {
+         if (world instanceof ServerLevel worldserver) {
+             if (projectile.mayInteract(worldserver, blockposition) && projectile.mayBreak(worldserver)) {
+                 // CraftBukkit
+-                if (!CraftEventFactory.callEntityChangeBlockEvent(projectile, blockposition, Blocks.AIR.defaultBlockState())) {
++                if (!CraftEventFactory.callEntityChangeBlockEvent(projectile, blockposition, state.getFluidState().createLegacyBlock())) { // Paper - fix wrong block state
+                     return;
+                 }
+                 // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/level/block/PointedDripstoneBlock.java b/src/main/java/net/minecraft/world/level/block/PointedDripstoneBlock.java
+index 48503f5ba8bccb42ae3b5324a5f65f6c23a8e479..bd38a0a73d543a85bb5c6d50219f5438ce194df3 100644
+--- a/src/main/java/net/minecraft/world/level/block/PointedDripstoneBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/PointedDripstoneBlock.java
+@@ -137,7 +137,7 @@ public class PointedDripstoneBlock extends Block implements Fallable, SimpleWate
+ 
+                 if (projectile.mayInteract(worldserver, blockposition) && projectile.mayBreak(worldserver) && projectile instanceof ThrownTrident && projectile.getDeltaMovement().length() > 0.6D) {
+                     // CraftBukkit start
+-                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(projectile, blockposition, Blocks.AIR.defaultBlockState())) {
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(projectile, blockposition, state.getFluidState().createLegacyBlock())) { // Paper - fix wrong block state
+                         return;
+                     }
+                     // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/level/block/TntBlock.java b/src/main/java/net/minecraft/world/level/block/TntBlock.java
+index d256b0f3998028709334dd6c394d184f2c36efce..2cbe2053dd5d0bcdcd89de69762c77b400b8697a 100644
+--- a/src/main/java/net/minecraft/world/level/block/TntBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/TntBlock.java
+@@ -158,7 +158,7 @@ public class TntBlock extends Block {
+ 
+             if (projectile.isOnFire() && projectile.mayInteract(worldserver, blockposition)) {
+                 // CraftBukkit start
+-                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(projectile, blockposition, Blocks.AIR.defaultBlockState()) || !CraftEventFactory.callTNTPrimeEvent(world, blockposition, PrimeCause.PROJECTILE, projectile, null)) {
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(projectile, blockposition, state.getFluidState().createLegacyBlock()) || !CraftEventFactory.callTNTPrimeEvent(world, blockposition, PrimeCause.PROJECTILE, projectile, null)) { // Paper - fix wrong block state
+                     return;
+                 }
+                 // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/level/block/WaterlilyBlock.java b/src/main/java/net/minecraft/world/level/block/WaterlilyBlock.java
+index 674d710ff88db5eced9e017284d1b7ec7a4fe7cd..72320c6099a4b26235bab68570e7b7efad84740f 100644
+--- a/src/main/java/net/minecraft/world/level/block/WaterlilyBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/WaterlilyBlock.java
+@@ -37,7 +37,7 @@ public class WaterlilyBlock extends BushBlock {
+         super.entityInside(state, world, pos, entity);
+         if (world instanceof ServerLevel && entity instanceof AbstractBoat) {
+             // CraftBukkit start
+-            if (!CraftEventFactory.callEntityChangeBlockEvent(entity, pos, Blocks.AIR.defaultBlockState())) {
++            if (!CraftEventFactory.callEntityChangeBlockEvent(entity, pos, state.getFluidState().createLegacyBlock())) { // Paper - fix wrong block state
+                 return;
+             }
+             // CraftBukkit end
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index ca094e393de32b64db59c9fe906433761d70d29b..fcc9fe8f5f57e9f6c28d762aa6585942e2b2698b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1378,11 +1378,11 @@ public class CraftEventFactory {
+         return event;
+     }
+ 
+-    public static EntityBreakDoorEvent callEntityBreakDoorEvent(Entity entity, BlockPos pos) {
++    public static EntityBreakDoorEvent callEntityBreakDoorEvent(Entity entity, BlockPos pos, net.minecraft.world.level.block.state.BlockState newState) { // Paper
+         org.bukkit.entity.Entity entity1 = entity.getBukkitEntity();
+         Block block = CraftBlock.at(entity.level(), pos);
+ 
+-        EntityBreakDoorEvent event = new EntityBreakDoorEvent((LivingEntity) entity1, block);
++        EntityBreakDoorEvent event = new EntityBreakDoorEvent((LivingEntity) entity1, block, newState.createCraftBlockData()); // Paper
+         entity1.getServer().getPluginManager().callEvent(event);
+ 
+         return event;

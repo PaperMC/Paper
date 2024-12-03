@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TheViperShow <29604693+TheViperShow@users.noreply.github.com>
+Date: Wed, 22 Apr 2020 09:40:38 +0200
+Subject: [PATCH] Add BlockFailedDispenseEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/DispenserBlock.java b/src/main/java/net/minecraft/world/level/block/DispenserBlock.java
+index 975c02461bb88d71a0e3efe91838fad3fd346587..d915ef1030728a3f6ff303977784097b712238d4 100644
+--- a/src/main/java/net/minecraft/world/level/block/DispenserBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/DispenserBlock.java
+@@ -98,8 +98,10 @@ public class DispenserBlock extends BaseEntityBlock {
+             int i = tileentitydispenser.getRandomSlot(world.random);
+ 
+             if (i < 0) {
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFailedDispenseEvent(world, pos)) { // Paper - Add BlockFailedDispenseEvent
+                 world.levelEvent(1001, pos, 0);
+                 world.gameEvent((Holder) GameEvent.BLOCK_ACTIVATE, pos, GameEvent.Context.of(tileentitydispenser.getBlockState()));
++                } // Paper - Add BlockFailedDispenseEvent
+             } else {
+                 ItemStack itemstack = tileentitydispenser.getItem(i);
+                 DispenseItemBehavior idispensebehavior = this.getDispenseMethod(world, itemstack);
+diff --git a/src/main/java/net/minecraft/world/level/block/DropperBlock.java b/src/main/java/net/minecraft/world/level/block/DropperBlock.java
+index a08e8571f3a83afc80c2f1758a9029cd28ed6947..91b514967405115f22edf4255775361a672e5c2f 100644
+--- a/src/main/java/net/minecraft/world/level/block/DropperBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/DropperBlock.java
+@@ -60,6 +60,7 @@ public class DropperBlock extends DispenserBlock {
+             int i = tileentitydispenser.getRandomSlot(world.random);
+ 
+             if (i < 0) {
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFailedDispenseEvent(world, pos)) // Paper - Add BlockFailedDispenseEvent
+                 world.levelEvent(1001, pos, 0);
+             } else {
+                 ItemStack itemstack = tileentitydispenser.getItem(i);
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index f8751bf07479d6619ec1acb19f84a9af00ecd308..696867479e74c3c94e4131f2bbb97c857ed5e9dd 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -2125,4 +2125,12 @@ public class CraftEventFactory {
+         return org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getPotion());
+     }
+     // Paper end - WitchReadyPotionEvent
++
++    // Paper start
++    public static boolean handleBlockFailedDispenseEvent(ServerLevel serverLevel, BlockPos pos) {
++        org.bukkit.block.Block block = CraftBlock.at(serverLevel, pos);
++        io.papermc.paper.event.block.BlockFailedDispenseEvent event = new io.papermc.paper.event.block.BlockFailedDispenseEvent(block);
++        return event.callEvent();
++    }
++    // Paper end
+ }

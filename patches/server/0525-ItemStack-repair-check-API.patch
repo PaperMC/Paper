@@ -1,0 +1,72 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 15 May 2021 22:11:11 -0700
+Subject: [PATCH] ItemStack repair check API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 30f2ddb66385718304b4b0302f7efcafd54bc42a..fa4e8cb2d53e0ac4e15a8188454ceed0afafe503 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -548,6 +548,14 @@ public final class CraftMagicNumbers implements UnsafeValues {
+     public int getProtocolVersion() {
+         return net.minecraft.SharedConstants.getCurrentVersion().getProtocolVersion();
+     }
++
++    @Override
++    public boolean isValidRepairItemStack(org.bukkit.inventory.ItemStack itemToBeRepaired, org.bukkit.inventory.ItemStack repairMaterial) {
++        if (!itemToBeRepaired.getType().isItem() || !repairMaterial.getType().isItem()) {
++            return false;
++        }
++        return CraftItemStack.unwrap(itemToBeRepaired).isValidRepairItem(CraftItemStack.unwrap(repairMaterial));
++    }
+     // Paper end
+ 
+     /**
+diff --git a/src/test/java/io/papermc/paper/util/ItemStackRepairCheckTest.java b/src/test/java/io/papermc/paper/util/ItemStackRepairCheckTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..04e2568816f1fbe090b40e5a55d8d4effc045740
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/util/ItemStackRepairCheckTest.java
+@@ -0,0 +1,41 @@
++package io.papermc.paper.util;
++
++import org.bukkit.Material;
++import org.bukkit.inventory.ItemStack;
++import org.bukkit.support.environment.VanillaFeature;
++import org.junit.jupiter.api.Test;
++
++import static org.junit.jupiter.api.Assertions.assertFalse;
++import static org.junit.jupiter.api.Assertions.assertTrue;
++
++@VanillaFeature
++public class ItemStackRepairCheckTest {
++
++    @Test
++    public void testIsRepariableBy() {
++        ItemStack diamondPick = new ItemStack(Material.DIAMOND_PICKAXE);
++
++        assertTrue(diamondPick.isRepairableBy(new ItemStack(Material.DIAMOND)), "diamond pick isn't repairable by a diamond");
++    }
++
++    @Test
++    public void testCanRepair() {
++        ItemStack diamond = new ItemStack(Material.DIAMOND);
++
++        assertTrue(diamond.canRepair(new ItemStack(Material.DIAMOND_AXE)), "diamond can't repair a diamond axe");
++    }
++
++    @Test
++    public void testIsNotRepairableBy() {
++        ItemStack notDiamondPick = new ItemStack(Material.ACACIA_SAPLING);
++
++        assertFalse(notDiamondPick.isRepairableBy(new ItemStack(Material.DIAMOND)), "acacia sapling is repairable by a diamond");
++    }
++
++    @Test
++    public void testCanNotRepair() {
++        ItemStack diamond = new ItemStack(Material.DIAMOND);
++
++        assertFalse(diamond.canRepair(new ItemStack(Material.OAK_BUTTON)), "diamond can repair oak button");
++    }
++}

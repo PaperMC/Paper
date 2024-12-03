@@ -1,0 +1,64 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sat, 12 Mar 2022 06:31:13 -0800
+Subject: [PATCH] Fix swamp hut cat generation deadlock
+
+The worldgen thread will attempt to get structure references
+via the world's getChunkAt method, which is fine if the gen is
+not cancelled - but if the chunk was unloaded, the call will block
+indefinitely. Instead of using the world state, we use the already
+supplied ServerLevelAccessor which will always have the chunk available.
+
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Cat.java b/src/main/java/net/minecraft/world/entity/animal/Cat.java
+index 93d8d45a9a8108e58f3a96d77dd35c7584133835..629b282cf27806ff37d67f83d44c06a9f32a9185 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Cat.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Cat.java
+@@ -365,7 +365,7 @@ public class Cat extends TamableAnimal implements VariantHolder<Holder<CatVarian
+         BuiltInRegistries.CAT_VARIANT.getRandomElementOf(tagkey, world.getRandom()).ifPresent(this::setVariant);
+         ServerLevel worldserver = world.getLevel();
+ 
+-        if (worldserver.structureManager().getStructureWithPieceAt(this.blockPosition(), StructureTags.CATS_SPAWN_AS_BLACK).isValid()) {
++        if (worldserver.structureManager().getStructureWithPieceAt(this.blockPosition(), StructureTags.CATS_SPAWN_AS_BLACK, world).isValid()) { // Paper - Fix swamp hut cat generation deadlock
+             this.setVariant((Holder) BuiltInRegistries.CAT_VARIANT.getOrThrow(CatVariant.ALL_BLACK));
+             this.setPersistenceRequired();
+         }
+diff --git a/src/main/java/net/minecraft/world/level/StructureManager.java b/src/main/java/net/minecraft/world/level/StructureManager.java
+index 3d607ac74de4bc051ab68269dbab0bbd3a52dc54..03adb02297911e5a5051edac14453d7e3eeac29c 100644
+--- a/src/main/java/net/minecraft/world/level/StructureManager.java
++++ b/src/main/java/net/minecraft/world/level/StructureManager.java
+@@ -48,7 +48,12 @@ public class StructureManager {
+     }
+ 
+     public List<StructureStart> startsForStructure(ChunkPos pos, Predicate<Structure> predicate) {
+-        Map<Structure, LongSet> map = this.level.getChunk(pos.x, pos.z, ChunkStatus.STRUCTURE_REFERENCES).getAllReferences();
++        // Paper start - Fix swamp hut cat generation deadlock
++        return this.startsForStructure(pos, predicate, null);
++    }
++    public List<StructureStart> startsForStructure(ChunkPos pos, Predicate<Structure> predicate, @Nullable ServerLevelAccessor levelAccessor) {
++        Map<Structure, LongSet> map = (levelAccessor == null ? this.level : levelAccessor).getChunk(pos.x, pos.z, ChunkStatus.STRUCTURE_REFERENCES).getAllReferences();
++        // Paper end - Fix swamp hut cat generation deadlock
+         Builder<StructureStart> builder = ImmutableList.builder();
+ 
+         for (Entry<Structure, LongSet> entry : map.entrySet()) {
+@@ -116,10 +121,20 @@ public class StructureManager {
+     }
+ 
+     public StructureStart getStructureWithPieceAt(BlockPos pos, Predicate<Holder<Structure>> predicate) {
++        // Paper start - Fix swamp hut cat generation deadlock
++        return this.getStructureWithPieceAt(pos, predicate, null);
++    }
++
++    public StructureStart getStructureWithPieceAt(BlockPos pos, TagKey<Structure> tag, @Nullable ServerLevelAccessor levelAccessor) {
++        return this.getStructureWithPieceAt(pos, structure -> structure.is(tag), levelAccessor);
++    }
++
++    public StructureStart getStructureWithPieceAt(BlockPos pos, Predicate<Holder<Structure>> predicate, @Nullable ServerLevelAccessor levelAccessor) {
++        // Paper end - Fix swamp hut cat generation deadlock
+         Registry<Structure> registry = this.registryAccess().lookupOrThrow(Registries.STRUCTURE);
+ 
+         for (StructureStart structureStart : this.startsForStructure(
+-            new ChunkPos(pos), structure -> registry.get(registry.getId(structure)).map(predicate::test).orElse(false)
++            new ChunkPos(pos), structure -> registry.get(registry.getId(structure)).map(predicate::test).orElse(false), levelAccessor // Paper - Fix swamp hut cat generation deadlock
+         )) {
+             if (this.structureHasPieceAt(pos, structureStart)) {
+                 return structureStart;

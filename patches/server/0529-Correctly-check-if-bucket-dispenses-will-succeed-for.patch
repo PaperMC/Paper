@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 1 Jan 2024 12:57:19 -0800
+Subject: [PATCH] Correctly check if bucket dispenses will succeed for event
+
+Upstream incorrectly checks if the bucket place will succeed
+in order to fire the BlockDispenseEvent. This patch corrects
+that.
+
+diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+index ab002c2a5cfb029bd61b7d8e0548fd135b95cdcc..780f83d50aac70c819608f4c79c08ef34664d7b0 100644
+--- a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
++++ b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+@@ -330,7 +330,13 @@ public interface DispenseItemBehavior {
+                 int y = blockposition.getY();
+                 int z = blockposition.getZ();
+                 BlockState iblockdata = worldserver.getBlockState(blockposition);
+-                if (iblockdata.isAir() || iblockdata.canBeReplaced() || (dispensiblecontaineritem instanceof BucketItem && iblockdata.getBlock() instanceof LiquidBlockContainer && ((LiquidBlockContainer) iblockdata.getBlock()).canPlaceLiquid((Player) null, worldserver, blockposition, iblockdata, ((BucketItem) dispensiblecontaineritem).content))) {
++                // Paper start - correctly check if the bucket place will succeed
++                /* Taken from SolidBucketItem#emptyContents */
++                boolean willEmptyContentsSolidBucketItem = dispensiblecontaineritem instanceof net.minecraft.world.item.SolidBucketItem && worldserver.isInWorldBounds(blockposition) && iblockdata.isAir();
++                /* Taken from BucketItem#emptyContents */
++                boolean willEmptyBucketItem = dispensiblecontaineritem instanceof final BucketItem bucketItem && bucketItem.content instanceof net.minecraft.world.level.material.FlowingFluid && (iblockdata.isAir() || iblockdata.canBeReplaced(bucketItem.content) || (iblockdata.getBlock() instanceof LiquidBlockContainer liquidBlockContainer && liquidBlockContainer.canPlaceLiquid(null, worldserver, blockposition, iblockdata, bucketItem.content)));
++                if (willEmptyContentsSolidBucketItem || willEmptyBucketItem) {
++                // Paper end - correctly check if the bucket place will succeed
+                     org.bukkit.block.Block block = CraftBlock.at(worldserver, pointer.pos());
+                     CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack);
+ 

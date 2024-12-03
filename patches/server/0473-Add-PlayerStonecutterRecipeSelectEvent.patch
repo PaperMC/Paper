@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 27 Nov 2020 17:14:27 -0800
+Subject: [PATCH] Add PlayerStonecutterRecipeSelectEvent
+
+Co-Authored-By: MiniDigger <admin@benndorf.dev>
+
+diff --git a/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java b/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
+index 46d6bc61ba54ab23eb35915073cfd5a3ab0111f1..74ea3f0154733ed4f096d88403fe011cca663e02 100644
+--- a/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
+@@ -64,7 +64,7 @@ public class StonecutterMenu extends AbstractContainerMenu {
+ 
+     public StonecutterMenu(int syncId, Inventory playerInventory, final ContainerLevelAccess context) {
+         super(MenuType.STONECUTTER, syncId);
+-        this.selectedRecipeIndex = DataSlot.standalone();
++        this.selectedRecipeIndex = DataSlot.shared(new int[1], 0); // Paper - Add PlayerStonecutterRecipeSelectEvent
+         this.recipesForInput = SelectableRecipe.SingleInputSet.empty();
+         this.input = ItemStack.EMPTY;
+         this.slotUpdateListener = () -> {
+@@ -153,8 +153,34 @@ public class StonecutterMenu extends AbstractContainerMenu {
+             return false;
+         } else {
+             if (this.isValidRecipeIndex(id)) {
+-                this.selectedRecipeIndex.set(id);
+-                this.setupResultSlot(id);
++                // Paper start - Add PlayerStonecutterRecipeSelectEvent
++                int recipeIndex = id;
++                this.selectedRecipeIndex.set(recipeIndex);
++                this.selectedRecipeIndex.checkAndClearUpdateFlag(); // mark as changed
++                paperEventBlock: if (this.isValidRecipeIndex(id)) {
++                    final Optional<RecipeHolder<StonecutterRecipe>> recipe = this.recipesForInput.entries().get(id).recipe().recipe();
++                    if (recipe.isEmpty()) break paperEventBlock; // The recipe selected does not have an actual server recipe (presumably its the empty one). Cannot call the event, just break.
++
++                    io.papermc.paper.event.player.PlayerStonecutterRecipeSelectEvent event = new io.papermc.paper.event.player.PlayerStonecutterRecipeSelectEvent((Player) player.getBukkitEntity(), getBukkitView().getTopInventory(), (org.bukkit.inventory.StonecuttingRecipe) recipe.get().toBukkitRecipe());
++                    if (!event.callEvent()) {
++                        player.containerMenu.sendAllDataToRemote();
++                        return false;
++                    }
++
++                    net.minecraft.resources.ResourceLocation key = org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(event.getStonecuttingRecipe().getKey());
++                    if (!recipe.get().id().location().equals(key)) { // If the recipe did NOT stay the same
++                        for (int newRecipeIndex = 0; newRecipeIndex < this.recipesForInput.entries().size(); newRecipeIndex++) {
++                            if (this.recipesForInput.entries().get(newRecipeIndex).recipe().recipe().filter(r -> r.id().location().equals(key)).isPresent()) {
++                                recipeIndex = newRecipeIndex;
++                                break;
++                            }
++                        }
++                    }
++                }
++                player.containerMenu.sendAllDataToRemote();
++                this.selectedRecipeIndex.set(recipeIndex); // set new index, so that listeners can read it
++                this.setupResultSlot(recipeIndex);
++                // Paper end - Add PlayerStonecutterRecipeSelectEvent
+             }
+ 
+             return true;

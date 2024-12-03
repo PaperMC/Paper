@@ -1,0 +1,121 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 9 Jul 2021 13:50:48 -0700
+Subject: [PATCH] Fix commands from signs not firing command events
+
+This patch changes sign command logic so that `run_command` click events:
+  - are logged to the console
+  - fire PlayerCommandPreprocessEvent
+  - work with double-slash commands like `//wand`
+  - sends failure messages to the player who clicked the sign
+
+diff --git a/src/main/java/io/papermc/paper/commands/DelegatingCommandSource.java b/src/main/java/io/papermc/paper/commands/DelegatingCommandSource.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..01a2bc1feec808790bb93618ce46adb9bea5a9c8
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/commands/DelegatingCommandSource.java
+@@ -0,0 +1,42 @@
++package io.papermc.paper.commands;
++
++import net.minecraft.commands.CommandSource;
++import net.minecraft.commands.CommandSourceStack;
++import net.minecraft.network.chat.Component;
++import org.bukkit.command.CommandSender;
++
++import java.util.UUID;
++
++public class DelegatingCommandSource implements CommandSource {
++
++    private final CommandSource delegate;
++
++    public DelegatingCommandSource(CommandSource delegate) {
++        this.delegate = delegate;
++    }
++
++    @Override
++    public void sendSystemMessage(Component message) {
++        delegate.sendSystemMessage(message);
++    }
++
++    @Override
++    public boolean acceptsSuccess() {
++        return delegate.acceptsSuccess();
++    }
++
++    @Override
++    public boolean acceptsFailure() {
++        return delegate.acceptsFailure();
++    }
++
++    @Override
++    public boolean shouldInformAdmins() {
++        return delegate.shouldInformAdmins();
++    }
++
++    @Override
++    public CommandSender getBukkitSender(CommandSourceStack wrapper) {
++        return delegate.getBukkitSender(wrapper);
++    }
++}
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
+index 9861388bdca8d32b7e9a49a251088c98283d8234..86550d200922ee313019a21fe593c594c967f28b 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
+@@ -274,7 +274,17 @@ public class SignBlockEntity extends BlockEntity {
+             ClickEvent chatclickable = chatmodifier.getClickEvent();
+ 
+             if (chatclickable != null && chatclickable.getAction() == ClickEvent.Action.RUN_COMMAND) {
+-                player.getServer().getCommands().performPrefixedCommand(this.createCommandSourceStack(player, world, pos), chatclickable.getValue());
++                // Paper start - Fix commands from signs not firing command events
++                String command = chatclickable.getValue().startsWith("/") ? chatclickable.getValue() : "/" + chatclickable.getValue();
++                if (org.spigotmc.SpigotConfig.logCommands)  {
++                    LOGGER.info("{} issued server command: {}", player.getScoreboardName(), command);
++                }
++                io.papermc.paper.event.player.PlayerSignCommandPreprocessEvent event = new io.papermc.paper.event.player.PlayerSignCommandPreprocessEvent((org.bukkit.entity.Player) player.getBukkitEntity(), command, new org.bukkit.craftbukkit.util.LazyPlayerSet(player.getServer()), (org.bukkit.block.Sign) CraftBlock.at(this.level, this.worldPosition).getState(), front ? Side.FRONT : Side.BACK);
++                if (!event.callEvent()) {
++                    return false;
++                }
++                player.getServer().getCommands().performPrefixedCommand(this.createCommandSourceStack(((org.bukkit.craftbukkit.entity.CraftPlayer) event.getPlayer()).getHandle(), world, pos), event.getMessage());
++                // Paper end - Fix commands from signs not firing command events
+                 flag1 = true;
+             }
+         }
+@@ -314,8 +324,23 @@ public class SignBlockEntity extends BlockEntity {
+         String s = player == null ? "Sign" : player.getName().getString();
+         Object object = player == null ? Component.literal("Sign") : player.getDisplayName();
+ 
+-        // CraftBukkit - commandSource
+-        return new CommandSourceStack(this.commandSource, Vec3.atCenterOf(pos), Vec2.ZERO, (ServerLevel) world, 2, s, (Component) object, world.getServer(), player);
++        // Paper start - Fix commands from signs not firing command events
++        CommandSource commandSource = this.level.paperConfig().misc.showSignClickCommandFailureMsgsToPlayer ? new io.papermc.paper.commands.DelegatingCommandSource(this.commandSource) {
++            @Override
++            public void sendSystemMessage(Component message) {
++                if (player instanceof final ServerPlayer serverPlayer) {
++                    serverPlayer.sendSystemMessage(message);
++                }
++            }
++
++            @Override
++            public boolean acceptsFailure() {
++                return true;
++            }
++        } : this.commandSource;
++        // Paper end - Fix commands from signs not firing command events
++        // CraftBukkit - this
++        return new CommandSourceStack(commandSource, Vec3.atCenterOf(pos), Vec2.ZERO, (ServerLevel) world, 2, s, (Component) object, world.getServer(), player); // Paper - Fix commands from signs not firing command events
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java b/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java
+index d113e54a30db16e2ad955170df6030d15de530d6..21b6f90cf5bd7087d1a0f512289d971f2c3e1afa 100644
+--- a/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java
++++ b/src/main/java/org/bukkit/craftbukkit/command/BukkitCommandWrapper.java
+@@ -61,7 +61,7 @@ public class BukkitCommandWrapper implements com.mojang.brigadier.Command<Comman
+         CommandSender sender = context.getSource().getBukkitSender();
+ 
+         try {
+-            return this.server.dispatchCommand(sender, context.getInput()) ? 1 : 0;
++            return this.server.dispatchCommand(sender, context.getRange().get(context.getInput())) ? 1 : 0; // Paper - Fix commands from signs not firing command events; actually use the StringRange from context
+         } catch (CommandException ex) {
+             sender.sendMessage(org.bukkit.ChatColor.RED + "An internal error occurred while attempting to perform this command");
+             this.server.getLogger().log(Level.SEVERE, null, ex);
