@@ -4467,16 +4467,17 @@ index 0000000000000000000000000000000000000000..efda2688ae1254a82ba7f6bf8bf597ef
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/paper/PaperHooks.java b/src/main/java/ca/spottedleaf/moonrise/paper/PaperHooks.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1aa6be257ce594d7a69fdff008cd29014a04fd75
+index 0000000000000000000000000000000000000000..834c5ce238c7adb0164a6282582d709348ef96cc
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/moonrise/paper/PaperHooks.java
-@@ -0,0 +1,209 @@
+@@ -0,0 +1,240 @@
 +package ca.spottedleaf.moonrise.paper;
 +
 +import ca.spottedleaf.moonrise.common.PlatformHooks;
 +import com.mojang.datafixers.DSL;
 +import com.mojang.datafixers.DataFixer;
 +import com.mojang.serialization.Dynamic;
++import java.util.Collection;
 +import net.minecraft.core.BlockPos;
 +import net.minecraft.nbt.CompoundTag;
 +import net.minecraft.nbt.NbtOps;
@@ -4485,6 +4486,7 @@ index 0000000000000000000000000000000000000000..1aa6be257ce594d7a69fdff008cd2901
 +import net.minecraft.server.level.ServerLevel;
 +import net.minecraft.server.level.ServerPlayer;
 +import net.minecraft.world.entity.Entity;
++import net.minecraft.world.entity.boss.EnderDragonPart;
 +import net.minecraft.world.level.BlockGetter;
 +import net.minecraft.world.level.ChunkPos;
 +import net.minecraft.world.level.Level;
@@ -4569,12 +4571,41 @@ index 0000000000000000000000000000000000000000..1aa6be257ce594d7a69fdff008cd2901
 +
 +    @Override
 +    public void addToGetEntities(final Level world, final Entity entity, final AABB boundingBox, final Predicate<? super Entity> predicate, final List<Entity> into) {
++        final Collection<EnderDragonPart> parts = world.dragonParts();
++        if (parts.isEmpty()) {
++            return;
++        }
 +
++        for (final EnderDragonPart part : parts) {
++            if (part != entity && part.getBoundingBox().intersects(boundingBox) && (predicate == null || predicate.test(part))) {
++                into.add(part);
++            }
++        }
 +    }
 +
 +    @Override
 +    public <T extends Entity> void addToGetEntities(final Level world, final EntityTypeTest<Entity, T> entityTypeTest, final AABB boundingBox, final Predicate<? super T> predicate, final List<? super T> into, final int maxCount) {
++        if (into.size() >= maxCount) {
++            // fix neoforge issue: do not add if list is already full
++            return;
++        }
 +
++        final Collection<EnderDragonPart> parts = world.dragonParts();
++        if (parts.isEmpty()) {
++            return;
++        }
++        for (final EnderDragonPart part : parts) {
++            if (!part.getBoundingBox().intersects(boundingBox)) {
++                continue;
++            }
++            final T casted = (T)entityTypeTest.tryCast(part);
++            if (casted != null && (predicate == null || predicate.test(casted))) {
++                into.add(casted);
++                if (into.size() >= maxCount) {
++                    break;
++                }
++            }
++        }
 +    }
 +
 +    @Override
