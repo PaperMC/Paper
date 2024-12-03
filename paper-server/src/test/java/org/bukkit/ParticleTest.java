@@ -13,7 +13,7 @@ import net.minecraft.core.particles.ParticleParamRedstone;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.particles.SculkChargeParticleOptions;
 import net.minecraft.core.particles.ShriekParticleOption;
-import net.minecraft.core.particles.TargetColorParticleOption;
+import net.minecraft.core.particles.TrailParticleOption;
 import net.minecraft.core.particles.VibrationParticleOption;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.DynamicOpsNBT;
@@ -113,8 +113,8 @@ public class ParticleTest {
             return;
         }
 
-        if (bukkit.getDataType().equals(Particle.TargetColor.class)) {
-            testTargetColor(bukkit, minecraft);
+        if (bukkit.getDataType().equals(Particle.Trail.class)) {
+            testTrail(bukkit, minecraft);
             return;
         }
 
@@ -248,11 +248,11 @@ public class ParticleTest {
                 """, bukkit.getKey(), expected, actual)); // Print expected and got since we use assert true
     }
 
-    private <T extends ParticleParam> void testTargetColor(Particle bukkit, net.minecraft.core.particles.Particle<T> minecraft) {
+    private <T extends ParticleParam> void testTrail(Particle bukkit, net.minecraft.core.particles.Particle<T> minecraft) {
         Color color = Color.fromRGB(236, 28, 36);
-        Particle.TargetColor targetColor = new Particle.TargetColor(new Location(null, 1, 5, 9), color);
+        Particle.Trail trail = new Particle.Trail(new Location(null, 1, 5, 9), color, 20);
 
-        TargetColorParticleOption param = createAndTest(bukkit, minecraft, targetColor, TargetColorParticleOption.class);
+        TrailParticleOption param = createAndTest(bukkit, minecraft, trail, TrailParticleOption.class);
 
         Vec3D pos = param.target();
         assertEquals(new Vec3D(1.0, 5.0, 9.0), pos, String.format("""

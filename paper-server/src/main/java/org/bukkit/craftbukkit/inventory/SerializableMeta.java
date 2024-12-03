@@ -4,6 +4,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import org.bukkit.block.Banner;
@@ -135,5 +137,40 @@ public final class SerializableMeta implements ConfigurationSerializable {
             return null;
         }
         throw new IllegalArgumentException(field + "(" + object + ") is not a valid " + clazz);
+    }
+
+    public static <T> List<T> getList(Class<T> clazz, Map<?, ?> map, Object field) {
+        List<T> result = new ArrayList<>();
+
+        List<?> list = SerializableMeta.getObject(List.class, map, field, true);
+        if (list == null || list.isEmpty()) {
+            return result;
+        }
+
+        for (Object object : list) {
+            T cast = null;
+
+            if (clazz.isInstance(object)) {
+                cast = clazz.cast(object);
+            }
+
+            // SPIGOT-7675 - More lenient conversion of floating point numbers from other number types:
+            if (clazz == Float.class || clazz == Double.class) {
+                if (Number.class.isInstance(object)) {
+                    Number number = Number.class.cast(object);
+                    if (clazz == Float.class) {
+                        cast = clazz.cast(number.floatValue());
+                    } else {
+                        cast = clazz.cast(number.doubleValue());
+                    }
+                }
+            }
+
+            if (cast != null) {
+                result.add(cast);
+            }
+        }
+
+        return result;
     }
 }

@@ -22,7 +22,7 @@
  public abstract class TileEntityFurnace extends TileEntityContainer implements IWorldInventory, RecipeCraftingHolder, AutoRecipeOutput {
  
      protected static final int SLOT_INPUT = 0;
-@@ -112,9 +127,39 @@
+@@ -110,9 +125,39 @@
              }
          };
          this.recipesUsed = new Reference2IntOpenHashMap();
@@ -61,9 +61,9 @@
 +    // CraftBukkit end
 +
      private boolean isLit() {
-         return this.litTime > 0;
+         return this.litTimeRemaining > 0;
      }
-@@ -180,7 +225,7 @@
+@@ -175,7 +220,7 @@
              RecipeHolder recipeholder;
  
              if (flag2) {
@@ -72,11 +72,11 @@
              } else {
                  recipeholder = null;
              }
-@@ -188,9 +233,20 @@
+@@ -183,9 +228,20 @@
              int i = tileentityfurnace.getMaxStackSize();
  
              if (!tileentityfurnace.isLit() && canBurn(worldserver.registryAccess(), recipeholder, singlerecipeinput, tileentityfurnace.items, i)) {
--                tileentityfurnace.litTime = tileentityfurnace.getBurnDuration(worldserver.fuelValues(), itemstack);
+-                tileentityfurnace.litTimeRemaining = tileentityfurnace.getBurnDuration(worldserver.fuelValues(), itemstack);
 +                // CraftBukkit start
 +                CraftItemStack fuel = CraftItemStack.asCraftMirror(itemstack);
 +
@@ -87,20 +87,20 @@
 +                    return;
 +                }
 +
-+                tileentityfurnace.litTime = furnaceBurnEvent.getBurnTime();
-                 tileentityfurnace.litDuration = tileentityfurnace.litTime;
++                tileentityfurnace.litTimeRemaining = furnaceBurnEvent.getBurnTime();
+                 tileentityfurnace.litTotalTime = tileentityfurnace.litTimeRemaining;
 -                if (tileentityfurnace.isLit()) {
 +                if (tileentityfurnace.isLit() && furnaceBurnEvent.isBurning()) {
 +                    // CraftBukkit end
                      flag1 = true;
                      if (flag3) {
                          Item item = itemstack.getItem();
-@@ -204,11 +260,23 @@
+@@ -199,11 +255,23 @@
              }
  
              if (tileentityfurnace.isLit() && canBurn(worldserver.registryAccess(), recipeholder, singlerecipeinput, tileentityfurnace.items, i)) {
 +                // CraftBukkit start
-+                if (recipeholder != null && tileentityfurnace.cookingProgress == 0) {
++                if (recipeholder != null && tileentityfurnace.cookingTimer == 0) {
 +                    CraftItemStack source = CraftItemStack.asCraftMirror(tileentityfurnace.items.get(0));
 +                    CookingRecipe<?> recipe = (CookingRecipe<?>) recipeholder.toBukkitRecipe();
 +
@@ -111,16 +111,16 @@
 +                }
 +                // CraftBukkit end
 +
-                 ++tileentityfurnace.cookingProgress;
-                 if (tileentityfurnace.cookingProgress == tileentityfurnace.cookingTotalTime) {
-                     tileentityfurnace.cookingProgress = 0;
+                 ++tileentityfurnace.cookingTimer;
+                 if (tileentityfurnace.cookingTimer == tileentityfurnace.cookingTotalTime) {
+                     tileentityfurnace.cookingTimer = 0;
                      tileentityfurnace.cookingTotalTime = getTotalCookTime(worldserver, tileentityfurnace);
 -                    if (burn(worldserver.registryAccess(), recipeholder, singlerecipeinput, tileentityfurnace.items, i)) {
 +                    if (burn(tileentityfurnace.level, tileentityfurnace.worldPosition, worldserver.registryAccess(), recipeholder, singlerecipeinput, tileentityfurnace.items, i)) { // CraftBukkit
                          tileentityfurnace.setRecipeUsed(recipeholder);
                      }
  
-@@ -247,17 +315,44 @@
+@@ -242,17 +310,44 @@
          }
      }
  
@@ -166,7 +166,7 @@
  
              if (itemstack.is(Blocks.WET_SPONGE.asItem()) && !((ItemStack) nonnulllist.get(1)).isEmpty() && ((ItemStack) nonnulllist.get(1)).is(Items.BUCKET)) {
                  nonnulllist.set(1, new ItemStack(Items.WATER_BUCKET));
-@@ -275,6 +370,7 @@
+@@ -270,6 +365,7 @@
      }
  
      private static int getTotalCookTime(WorldServer worldserver, TileEntityFurnace tileentityfurnace) {
@@ -174,7 +174,7 @@
          SingleRecipeInput singlerecipeinput = new SingleRecipeInput(tileentityfurnace.getItem(0));
  
          return (Integer) tileentityfurnace.quickCheck.getRecipeFor(singlerecipeinput, worldserver).map((recipeholder) -> {
-@@ -365,8 +461,8 @@
+@@ -360,8 +456,8 @@
      @Override
      public void awardUsedRecipes(EntityHuman entityhuman, List<ItemStack> list) {}
  
@@ -185,7 +185,7 @@
  
          entityplayer.awardRecipes(list);
          Iterator iterator = list.iterator();
-@@ -383,22 +479,28 @@
+@@ -378,22 +474,28 @@
      }
  
      public List<RecipeHolder<?>> getRecipesToAwardAndPopExperience(WorldServer worldserver, Vec3D vec3d) {
@@ -217,7 +217,7 @@
          int j = MathHelper.floor((float) i * f);
          float f1 = MathHelper.frac((float) i * f);
  
-@@ -406,6 +508,17 @@
+@@ -401,6 +503,17 @@
              ++j;
          }
  

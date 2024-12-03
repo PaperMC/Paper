@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/EntityInsentient.java
 +++ b/net/minecraft/world/entity/EntityInsentient.java
-@@ -89,6 +89,18 @@
+@@ -85,6 +85,18 @@
  import net.minecraft.world.level.storage.loot.parameters.LootContextParameters;
  import net.minecraft.world.phys.AxisAlignedBB;
  
@@ -19,7 +19,7 @@
  public abstract class EntityInsentient extends EntityLiving implements EquipmentUser, Leashable, Targeting {
  
      private static final DataWatcherObject<Byte> DATA_MOB_FLAGS_ID = DataWatcher.defineId(EntityInsentient.class, DataWatcherRegistry.BYTE);
-@@ -136,6 +148,8 @@
+@@ -132,6 +144,8 @@
      private BlockPosition restrictCenter;
      private float restrictRadius;
  
@@ -28,7 +28,7 @@
      protected EntityInsentient(EntityTypes<? extends EntityInsentient> entitytypes, World world) {
          super(entitytypes, world);
          this.handItems = NonNullList.withSize(2, ItemStack.EMPTY);
-@@ -164,6 +178,12 @@
+@@ -160,6 +174,12 @@
  
      }
  
@@ -41,7 +41,7 @@
      protected void registerGoals() {}
  
      public static AttributeProvider.Builder createMobAttributes() {
-@@ -268,11 +288,42 @@
+@@ -264,11 +284,42 @@
  
      @Nullable
      protected final EntityLiving getTargetFromBrain() {
@@ -85,7 +85,7 @@
      }
  
      @Override
-@@ -403,6 +454,12 @@
+@@ -399,6 +450,12 @@
          return null;
      }
  
@@ -98,7 +98,7 @@
      @Override
      public void addAdditionalSaveData(NBTTagCompound nbttagcompound) {
          super.addAdditionalSaveData(nbttagcompound);
-@@ -476,16 +533,26 @@
+@@ -473,13 +530,25 @@
              nbttagcompound.putBoolean("NoAI", this.isNoAi());
          }
  
@@ -108,17 +108,16 @@
      @Override
      public void readAdditionalSaveData(NBTTagCompound nbttagcompound) {
          super.readAdditionalSaveData(nbttagcompound);
-+
+-        this.setCanPickUpLoot(nbttagcompound.getBoolean("CanPickUpLoot"));
+-        this.persistenceRequired = nbttagcompound.getBoolean("PersistenceRequired");
 +        // CraftBukkit start - If looting or persistence is false only use it if it was set after we started using it
-         if (nbttagcompound.contains("CanPickUpLoot", 99)) {
--            this.setCanPickUpLoot(nbttagcompound.getBoolean("CanPickUpLoot"));
++        if (nbttagcompound.contains("CanPickUpLoot", 99)) {
 +            boolean data = nbttagcompound.getBoolean("CanPickUpLoot");
 +            if (isLevelAtLeast(nbttagcompound, 1) || data) {
 +                this.setCanPickUpLoot(data);
 +            }
-         }
- 
--        this.persistenceRequired = nbttagcompound.getBoolean("PersistenceRequired");
++        }
++
 +        boolean data = nbttagcompound.getBoolean("PersistenceRequired");
 +        if (isLevelAtLeast(nbttagcompound, 1) || data) {
 +            this.persistenceRequired = data;
@@ -127,9 +126,9 @@
          NBTTagList nbttaglist;
          NBTTagCompound nbttagcompound1;
          int i;
-@@ -539,6 +606,11 @@
-         }
+@@ -547,6 +616,11 @@
  
+         this.lootTableSeed = nbttagcompound.getLong("DeathLootTableSeed");
          this.setNoAi(nbttagcompound.getBoolean("NoAI"));
 +        // CraftBukkit start
 +        if (nbttagcompound.contains("Bukkit.Aware")) {
@@ -139,7 +138,7 @@
      }
  
      @Override
-@@ -615,20 +687,26 @@
+@@ -623,20 +697,26 @@
  
      protected void pickUpItem(WorldServer worldserver, EntityItem entityitem) {
          ItemStack itemstack = entityitem.getItem();
@@ -168,7 +167,7 @@
          EnumItemSlot enumitemslot = this.getEquipmentSlotForItem(itemstack);
          ItemStack itemstack1 = this.getItemBySlot(enumitemslot);
          boolean flag = this.canReplaceCurrentItem(itemstack, itemstack1, enumitemslot);
-@@ -639,11 +717,19 @@
+@@ -647,11 +727,19 @@
              flag = itemstack1.isEmpty();
          }
  
@@ -189,7 +188,7 @@
              }
  
              ItemStack itemstack2 = enumitemslot.limit(itemstack);
-@@ -770,7 +856,7 @@
+@@ -768,7 +856,7 @@
      @Override
      public void checkDespawn() {
          if (this.level().getDifficulty() == EnumDifficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
@@ -198,7 +197,7 @@
          } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
              EntityHuman entityhuman = this.level().getNearestPlayer(this, -1.0D);
  
-@@ -780,14 +866,14 @@
+@@ -778,14 +866,14 @@
                  int j = i * i;
  
                  if (d0 > (double) j && this.removeWhenFarAway(d0)) {
@@ -215,7 +214,7 @@
                  } else if (d0 < (double) l) {
                      this.noActionTime = 0;
                  }
-@@ -801,6 +887,7 @@
+@@ -799,6 +887,7 @@
      @Override
      protected final void serverAiStep() {
          ++this.noActionTime;
@@ -223,7 +222,7 @@
          GameProfilerFiller gameprofilerfiller = Profiler.get();
  
          gameprofilerfiller.push("sensing");
-@@ -1340,7 +1427,7 @@
+@@ -1338,7 +1427,7 @@
          if (itemstack.getItem() instanceof ItemMonsterEgg) {
              if (this.level() instanceof WorldServer) {
                  ItemMonsterEgg itemmonsteregg = (ItemMonsterEgg) itemstack.getItem();
@@ -232,7 +231,7 @@
  
                  optional.ifPresent((entityinsentient) -> {
                      this.onOffspringSpawnedFromEgg(entityhuman, entityinsentient);
-@@ -1391,12 +1478,19 @@
+@@ -1389,12 +1478,19 @@
          return this.restrictRadius != -1.0F;
      }
  
@@ -253,7 +252,7 @@
  
              if (t0 == null) {
                  return null;
-@@ -1405,14 +1499,24 @@
+@@ -1403,14 +1499,24 @@
                  conversionparams_a.finalizeConversion(t0);
                  World world = this.level();
  
@@ -280,7 +279,7 @@
                  }
  
                  return t0;
-@@ -1422,7 +1526,14 @@
+@@ -1420,7 +1526,14 @@
  
      @Nullable
      public <T extends EntityInsentient> T convertTo(EntityTypes<T> entitytypes, ConversionParams conversionparams, ConversionParams.a<T> conversionparams_a) {
@@ -296,15 +295,15 @@
      }
  
      @Nullable
-@@ -1461,6 +1572,7 @@
+@@ -1458,6 +1571,7 @@
          boolean flag1 = super.startRiding(entity, flag);
  
          if (flag1 && this.isLeashed()) {
 +            this.level().getCraftServer().getPluginManager().callEvent(new EntityUnleashEvent(this.getBukkitEntity(), UnleashReason.UNKNOWN)); // CraftBukkit
-             this.dropLeash(true, true);
+             this.dropLeash();
          }
  
-@@ -1545,7 +1657,7 @@
+@@ -1542,7 +1656,7 @@
  
              if (f1 > 0.0F && entity instanceof EntityLiving) {
                  entityliving = (EntityLiving) entity;

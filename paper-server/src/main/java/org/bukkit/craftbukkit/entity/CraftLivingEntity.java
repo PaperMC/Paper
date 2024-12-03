@@ -495,7 +495,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             launch = new EntityThrownExpBottle(world, getHandle(), new net.minecraft.world.item.ItemStack(Items.EXPERIENCE_BOTTLE));
             ((EntityProjectile) launch).shootFromRotation(getHandle(), getHandle().getXRot(), getHandle().getYRot(), -20.0F, 0.7F, 1.0F); // ItemExpBottle
         } else if (FishHook.class.isAssignableFrom(projectile) && getHandle() instanceof EntityHuman) {
-            launch = new EntityFishingHook((EntityHuman) getHandle(), world, 0, 0, new net.minecraft.world.item.ItemStack(Items.FISHING_ROD));
+            launch = new EntityFishingHook((EntityHuman) getHandle(), world, 0, 0);
         } else if (Fireball.class.isAssignableFrom(projectile)) {
             Location location = getEyeLocation();
             Vector direction = location.getDirection().multiply(10);
@@ -622,7 +622,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         if (!isLeashed()) {
             return false;
         }
-        ((EntityInsentient) getHandle()).dropLeash(true, false);
+        ((EntityInsentient) getHandle()).removeLeash();
         return true;
     }
 

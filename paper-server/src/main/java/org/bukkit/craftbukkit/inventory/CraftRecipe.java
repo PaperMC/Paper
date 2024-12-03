@@ -4,10 +4,8 @@ import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.IRecipe;
 import net.minecraft.world.item.crafting.RecipeItemStack;
 import org.bukkit.NamespacedKey;
@@ -38,9 +36,8 @@ public interface CraftRecipe extends Recipe {
             throw new IllegalArgumentException("Unknown recipe stack instance " + bukkit);
         }
 
-        List<Holder<Item>> items = stack.items();
         if (requireNotEmpty) {
-            Preconditions.checkArgument(!items.isEmpty(), "Recipe requires at least one non-air choice");
+            Preconditions.checkArgument(!stack.isEmpty(), "Recipe requires at least one non-air choice");
         }
 
         return stack;
@@ -51,9 +48,7 @@ public interface CraftRecipe extends Recipe {
     }
 
     public static RecipeChoice toBukkit(RecipeItemStack list) {
-        List<Holder<Item>> items = list.items();
-
-        if (items.isEmpty()) {
+        if (list.isEmpty()) {
             return null;
         }
 
@@ -65,10 +60,7 @@ public interface CraftRecipe extends Recipe {
 
             return new RecipeChoice.ExactChoice(choices);
         } else {
-            List<org.bukkit.Material> choices = new ArrayList<>(items.size());
-            for (Holder<Item> i : items) {
-                choices.add(CraftItemType.minecraftToBukkit(i.value()));
-            }
+            List<org.bukkit.Material> choices = list.items().map((i) -> CraftItemType.minecraftToBukkit(i.value())).toList();
 
             return new RecipeChoice.MaterialChoice(choices);
         }

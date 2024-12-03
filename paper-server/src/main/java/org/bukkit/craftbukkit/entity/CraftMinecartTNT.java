@@ -31,6 +31,16 @@ public final class CraftMinecartTNT extends CraftMinecart implements ExplosiveMi
     }
 
     @Override
+    public float getExplosionSpeedFactor() {
+        return getHandle().explosionSpeedFactor;
+    }
+
+    @Override
+    public void setExplosionSpeedFactor(float factor) {
+        getHandle().explosionSpeedFactor = factor;
+    }
+
+    @Override
     public void setFuseTicks(int ticks) {
         getHandle().fuse = ticks;
     }

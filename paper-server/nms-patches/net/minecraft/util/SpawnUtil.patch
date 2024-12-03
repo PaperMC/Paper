@@ -3,20 +3,20 @@
 @@ -21,6 +21,12 @@
      public SpawnUtil() {}
  
-     public static <T extends EntityInsentient> Optional<T> trySpawnMob(EntityTypes<T> entitytypes, EntitySpawnReason entityspawnreason, WorldServer worldserver, BlockPosition blockposition, int i, int j, int k, SpawnUtil.a spawnutil_a) {
+     public static <T extends EntityInsentient> Optional<T> trySpawnMob(EntityTypes<T> entitytypes, EntitySpawnReason entityspawnreason, WorldServer worldserver, BlockPosition blockposition, int i, int j, int k, SpawnUtil.a spawnutil_a, boolean flag) {
 +        // CraftBukkit start
-+        return trySpawnMob(entitytypes, entityspawnreason, worldserver, blockposition, i, j, k, spawnutil_a, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
++        return trySpawnMob(entitytypes, entityspawnreason, worldserver, blockposition, i, j, k, spawnutil_a, flag, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
 +    }
 +
-+    public static <T extends EntityInsentient> Optional<T> trySpawnMob(EntityTypes<T> entitytypes, EntitySpawnReason entityspawnreason, WorldServer worldserver, BlockPosition blockposition, int i, int j, int k, SpawnUtil.a spawnutil_a, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++    public static <T extends EntityInsentient> Optional<T> trySpawnMob(EntityTypes<T> entitytypes, EntitySpawnReason entityspawnreason, WorldServer worldserver, BlockPosition blockposition, int i, int j, int k, SpawnUtil.a spawnutil_a, boolean flag, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
 +        // CraftBukkit end
          BlockPosition.MutableBlockPosition blockposition_mutableblockposition = blockposition.mutable();
  
          for (int l = 0; l < i; ++l) {
-@@ -29,15 +35,15 @@
+@@ -29,16 +35,17 @@
  
              blockposition_mutableblockposition.setWithOffset(blockposition, i1, k, j1);
-             if (worldserver.getWorldBorder().isWithinBounds((BlockPosition) blockposition_mutableblockposition) && moveToPossibleSpawnPosition(worldserver, k, blockposition_mutableblockposition, spawnutil_a)) {
+             if (worldserver.getWorldBorder().isWithinBounds((BlockPosition) blockposition_mutableblockposition) && moveToPossibleSpawnPosition(worldserver, k, blockposition_mutableblockposition, spawnutil_a) && (!flag || worldserver.noCollision(entitytypes.getSpawnAABB((double) blockposition_mutableblockposition.getX() + 0.5D, (double) blockposition_mutableblockposition.getY(), (double) blockposition_mutableblockposition.getZ() + 0.5D)))) {
 -                T t0 = (EntityInsentient) entitytypes.create(worldserver, (Consumer) null, blockposition_mutableblockposition, entityspawnreason, false, false);
 +                T t0 = entitytypes.create(worldserver, (Consumer<T>) null, blockposition_mutableblockposition, entityspawnreason, false, false); // CraftBukkit - decompile error
  
@@ -24,6 +24,8 @@
                      if (t0.checkSpawnRules(worldserver, entityspawnreason) && t0.checkSpawnObstruction(worldserver)) {
 -                        worldserver.addFreshEntityWithPassengers(t0);
 +                        worldserver.addFreshEntityWithPassengers(t0, reason); // CraftBukkit
++                        if (t0.isRemoved()) return Optional.empty(); // CraftBukkit
+                         t0.playAmbientSound();
                          return Optional.of(t0);
                      }
  

@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/monster/piglin/EntityPiglin.java
 +++ b/net/minecraft/world/entity/monster/piglin/EntityPiglin.java
-@@ -57,6 +57,18 @@
+@@ -60,6 +60,18 @@
  import net.minecraft.world.level.block.Blocks;
  import net.minecraft.world.level.block.state.IBlockData;
  
@@ -19,7 +19,7 @@
  public class EntityPiglin extends EntityPiglinAbstract implements ICrossbow, InventoryCarrier {
  
      private static final DataWatcherObject<Boolean> DATA_BABY_ID = DataWatcher.defineId(EntityPiglin.class, DataWatcherRegistry.BOOLEAN);
-@@ -76,6 +88,10 @@
+@@ -79,6 +91,10 @@
      public boolean cannotHunt;
      protected static final ImmutableList<SensorType<? extends Sensor<? super EntityPiglin>>> SENSOR_TYPES = ImmutableList.of(SensorType.NEAREST_LIVING_ENTITIES, SensorType.NEAREST_PLAYERS, SensorType.NEAREST_ITEMS, SensorType.HURT_BY, SensorType.PIGLIN_SPECIFIC_SENSOR);
      protected static final ImmutableList<MemoryModuleType<?>> MEMORY_TYPES = ImmutableList.of(MemoryModuleType.LOOK_TARGET, MemoryModuleType.DOORS_TO_CLOSE, MemoryModuleType.NEAREST_LIVING_ENTITIES, MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES, MemoryModuleType.NEAREST_VISIBLE_PLAYER, MemoryModuleType.NEAREST_VISIBLE_ATTACKABLE_PLAYER, MemoryModuleType.NEAREST_VISIBLE_ADULT_PIGLINS, MemoryModuleType.NEARBY_ADULT_PIGLINS, MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, MemoryModuleType.ITEM_PICKUP_COOLDOWN_TICKS, MemoryModuleType.HURT_BY, MemoryModuleType.HURT_BY_ENTITY, new MemoryModuleType[]{MemoryModuleType.WALK_TARGET, MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE, MemoryModuleType.ATTACK_TARGET, MemoryModuleType.ATTACK_COOLING_DOWN, MemoryModuleType.INTERACTION_TARGET, MemoryModuleType.PATH, MemoryModuleType.ANGRY_AT, MemoryModuleType.UNIVERSAL_ANGER, MemoryModuleType.AVOID_TARGET, MemoryModuleType.ADMIRING_ITEM, MemoryModuleType.TIME_TRYING_TO_REACH_ADMIRE_ITEM, MemoryModuleType.ADMIRING_DISABLED, MemoryModuleType.DISABLE_WALK_TO_ADMIRE_ITEM, MemoryModuleType.CELEBRATE_LOCATION, MemoryModuleType.DANCING, MemoryModuleType.HUNTED_RECENTLY, MemoryModuleType.NEAREST_VISIBLE_BABY_HOGLIN, MemoryModuleType.NEAREST_VISIBLE_NEMESIS, MemoryModuleType.NEAREST_VISIBLE_ZOMBIFIED, MemoryModuleType.RIDE_TARGET, MemoryModuleType.VISIBLE_ADULT_PIGLIN_COUNT, MemoryModuleType.VISIBLE_ADULT_HOGLIN_COUNT, MemoryModuleType.NEAREST_VISIBLE_HUNTABLE_HOGLIN, MemoryModuleType.NEAREST_TARGETABLE_PLAYER_NOT_WEARING_GOLD, MemoryModuleType.NEAREST_PLAYER_HOLDING_WANTED_ITEM, MemoryModuleType.ATE_RECENTLY, MemoryModuleType.NEAREST_REPELLENT});
@@ -30,7 +30,7 @@
  
      public EntityPiglin(EntityTypes<? extends EntityPiglinAbstract> entitytypes, World world) {
          super(entitytypes, world);
-@@ -94,6 +110,14 @@
+@@ -97,6 +113,14 @@
          }
  
          this.writeInventoryToTag(nbttagcompound, this.registryAccess());
@@ -45,7 +45,7 @@
      }
  
      @Override
-@@ -102,6 +126,10 @@
+@@ -105,6 +129,10 @@
          this.setBaby(nbttagcompound.getBoolean("IsBaby"));
          this.setCannotHunt(nbttagcompound.getBoolean("CannotHunt"));
          this.readInventoryFromTag(nbttagcompound, this.registryAccess());
@@ -56,7 +56,7 @@
      }
  
      @VisibleForDebug
-@@ -221,7 +249,7 @@
+@@ -224,7 +252,7 @@
  
      @Override
      public BehaviorController<EntityPiglin> getBrain() {
@@ -65,7 +65,7 @@
      }
  
      @Override
-@@ -366,7 +394,7 @@
+@@ -374,7 +402,7 @@
      }
  
      protected void holdInOffHand(ItemStack itemstack) {
@@ -74,18 +74,18 @@
              this.setItemSlot(EnumItemSlot.OFFHAND, itemstack);
              this.setGuaranteedDrop(EnumItemSlot.OFFHAND);
          } else {
-@@ -392,8 +420,8 @@
-         if (EnchantmentManager.has(itemstack1, EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE)) {
+@@ -401,8 +429,8 @@
              return false;
          } else {
--            boolean flag = PiglinAI.isLovedItem(itemstack) || itemstack.is(Items.CROSSBOW);
--            boolean flag1 = PiglinAI.isLovedItem(itemstack1) || itemstack1.is(Items.CROSSBOW);
-+            boolean flag = PiglinAI.isLovedItem(itemstack, this) || itemstack.is(Items.CROSSBOW); // CraftBukkit
-+            boolean flag1 = PiglinAI.isLovedItem(itemstack1, this) || itemstack1.is(Items.CROSSBOW); // CraftBukkit
+             TagKey<Item> tagkey = this.getPreferredWeaponType();
+-            boolean flag = PiglinAI.isLovedItem(itemstack) || tagkey != null && itemstack.is(tagkey);
+-            boolean flag1 = PiglinAI.isLovedItem(itemstack1) || tagkey != null && itemstack1.is(tagkey);
++            boolean flag = PiglinAI.isLovedItem(itemstack, this) || tagkey != null && itemstack.is(tagkey); // CraftBukkit
++            boolean flag1 = PiglinAI.isLovedItem(itemstack1, this) || tagkey != null && itemstack1.is(tagkey); // CraftBukkit
  
-             return flag && !flag1 ? true : (!flag && flag1 ? false : (this.isAdult() && !itemstack.is(Items.CROSSBOW) && itemstack1.is(Items.CROSSBOW) ? false : super.canReplaceCurrentItem(itemstack, itemstack1, enumitemslot)));
+             return flag && !flag1 ? true : (!flag && flag1 ? false : super.canReplaceCurrentItem(itemstack, itemstack1, enumitemslot));
          }
-@@ -422,7 +450,7 @@
+@@ -431,7 +459,7 @@
  
      @Override
      protected SoundEffect getAmbientSound() {

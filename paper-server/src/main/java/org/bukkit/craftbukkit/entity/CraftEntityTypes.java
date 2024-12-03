@@ -83,7 +83,6 @@ import org.bukkit.entity.Chicken;
 import org.bukkit.entity.Cod;
 import org.bukkit.entity.Cow;
 import org.bukkit.entity.Creaking;
-import org.bukkit.entity.CreakingTransient;
 import org.bukkit.entity.Creeper;
 import org.bukkit.entity.Dolphin;
 import org.bukkit.entity.Donkey;
@@ -351,7 +350,6 @@ public final class CraftEntityTypes {
         register(new EntityTypeData<>(EntityType.BREEZE, Breeze.class, CraftBreeze::new, createLiving(EntityTypes.BREEZE)));
         register(new EntityTypeData<>(EntityType.ARMADILLO, Armadillo.class, CraftArmadillo::new, createLiving(EntityTypes.ARMADILLO)));
         register(new EntityTypeData<>(EntityType.CREAKING, Creaking.class, CraftCreaking::new, createLiving(EntityTypes.CREAKING)));
-        register(new EntityTypeData<>(EntityType.CREAKING_TRANSIENT, CreakingTransient.class, CraftCreakingTransient::new, createLiving(EntityTypes.CREAKING_TRANSIENT)));
 
         Function<SpawnData, EntityEnderDragon> dragonFunction = createLiving(EntityTypes.ENDER_DRAGON);
         register(new EntityTypeData<>(EntityType.ENDER_DRAGON, EnderDragon.class, CraftEnderDragon::new, spawnData -> {

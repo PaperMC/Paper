@@ -31,7 +31,7 @@ public class ChatTest {
                 CraftChatMessage.toJSON(components[0]));
 
         components = CraftChatMessage.fromString("123 " + ChatColor.GOLD + "https://spigotmc.org " + ChatColor.BOLD + "test");
-        assertEquals("{\"text\":\"\",\"extra\":[\"123 \",{\"text\":\"https://spigotmc.org\",\"obfuscated\":false,\"clickEvent\":{\"action\":\"open_url\",\"value\":\"https://spigotmc.org\"},\"italic\":false,\"underlined\":false,\"strikethrough\":false,\"color\":\"gold\",\"bold\":false},{\"text\":\" \",\"obfuscated\":false,\"italic\":false,\"underlined\":false,\"strikethrough\":false,\"color\":\"gold\",\"bold\":false},{\"text\":\"test\",\"obfuscated\":false,\"italic\":false,\"underlined\":false,\"strikethrough\":false,\"color\":\"gold\",\"bold\":true}]}",
+        assertEquals("{\"text\":\"\",\"extra\":[\"123 \",{\"text\":\"https://spigotmc.org\",\"strikethrough\":false,\"obfuscated\":false,\"clickEvent\":{\"action\":\"open_url\",\"value\":\"https://spigotmc.org\"},\"bold\":false,\"italic\":false,\"underlined\":false,\"color\":\"gold\"},{\"text\":\" \",\"strikethrough\":false,\"obfuscated\":false,\"bold\":false,\"italic\":false,\"underlined\":false,\"color\":\"gold\"},{\"text\":\"test\",\"strikethrough\":false,\"obfuscated\":false,\"bold\":true,\"italic\":false,\"underlined\":false,\"color\":\"gold\"}]}",
                 CraftChatMessage.toJSON(components[0]));
 
         components = CraftChatMessage.fromString("multiCase http://SpigotMC.ORg/SpOngeBobMeEMeGoESHeRE");

@@ -103,5 +103,10 @@ public class CraftMerchantCustom implements CraftMerchant {
         public boolean isClientSide() {
             return false;
         }
+
+        @Override
+        public boolean stillValid(EntityHuman entityhuman) {
+            return this.tradingPlayer == entityhuman;
+        }
     }
 }

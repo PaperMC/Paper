@@ -12,9 +12,11 @@ import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.MinecraftKey;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEffects;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EnumItemSlot;
+import net.minecraft.world.item.equipment.EquipmentAssets;
 import net.minecraft.world.item.equipment.Equippable;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -68,7 +70,7 @@ public final class CraftEquippableComponent implements EquippableComponent {
 
         this.handle = new Equippable(slot,
                 (equipSound != null) ? CraftSound.bukkitToMinecraftHolder(equipSound) : SoundEffects.ARMOR_EQUIP_GENERIC,
-                Optional.ofNullable(model).map(MinecraftKey::parse),
+                Optional.ofNullable(model).map(MinecraftKey::parse).map((k) -> ResourceKey.create(EquipmentAssets.ROOT_ID, k)),
                 Optional.ofNullable(cameraOverlay).map(MinecraftKey::parse),
                 Optional.ofNullable(allowedEntities),
                 (dispensable != null) ? dispensable : true,
@@ -116,7 +118,7 @@ public final class CraftEquippableComponent implements EquippableComponent {
 
     @Override
     public void setSlot(EquipmentSlot slot) {
-        handle = new Equippable(CraftEquipmentSlot.getNMS(slot), handle.equipSound(), handle.model(), handle.cameraOverlay(), handle.allowedEntities(), handle.dispensable(), handle.swappable(), handle.damageOnHurt());
+        handle = new Equippable(CraftEquipmentSlot.getNMS(slot), handle.equipSound(), handle.assetId(), handle.cameraOverlay(), handle.allowedEntities(), handle.dispensable(), handle.swappable(), handle.damageOnHurt());
     }
 
     @Override
@@ -126,17 +128,17 @@ public final class CraftEquippableComponent implements EquippableComponent {
 
     @Override
     public void setEquipSound(Sound sound) {
-        handle = new Equippable(handle.slot(), (sound != null) ? CraftSound.bukkitToMinecraftHolder(sound) : SoundEffects.ARMOR_EQUIP_GENERIC, handle.model(), handle.cameraOverlay(), handle.allowedEntities(), handle.dispensable(), handle.swappable(), handle.damageOnHurt());
+        handle = new Equippable(handle.slot(), (sound != null) ? CraftSound.bukkitToMinecraftHolder(sound) : SoundEffects.ARMOR_EQUIP_GENERIC, handle.assetId(), handle.cameraOverlay(), handle.allowedEntities(), handle.dispensable(), handle.swappable(), handle.damageOnHurt());
     }
 
     @Override
     public NamespacedKey getModel() {
-        return handle.model().map(CraftNamespacedKey::fromMinecraft).orElse(null);
+        return handle.assetId().map((a) -> CraftNamespacedKey.fromMinecraft(a.location())).orElse(null);
     }
 
     @Override
     public void setModel(NamespacedKey key) {
-        handle = new Equippable(handle.slot(), handle.equipSound(), Optional.ofNullable(key).map(CraftNamespacedKey::toMinecraft), handle.cameraOverlay(), handle.allowedEntities(), handle.dispensable(), handle.swappable(), handle.damageOnHurt());
+        handle = new Equippable(handle.slot(), handle.equipSound(), Optional.ofNullable(key).map(CraftNamespacedKey::toMinecraft).map((k) -> ResourceKey.create(EquipmentAssets.ROOT_ID, k)), handle.cameraOverlay(), handle.allowedEntities(), handle.dispensable(), handle.swappable(), handle.damageOnHurt());
     }
 
     @Override
@@ -146,7 +148,7 @@ public final class CraftEquippableComponent implements EquippableComponent {
 
     @Override
     public void setCameraOverlay(NamespacedKey key) {
-        handle = new Equippable(handle.slot(), handle.equipSound(), handle.model(), Optional.ofNullable(key).map(CraftNamespacedKey::toMinecraft), handle.allowedEntities(), handle.dispensable(), handle.swappable(), handle.damageOnHurt());
+        handle = new Equippable(handle.slot(), handle.equipSound(), handle.assetId(), Optional.ofNullable(key).map(CraftNamespacedKey::toMinecraft), handle.allowedEntities(), handle.dispensable(), handle.swappable(), handle.damageOnHurt());
     }
 
     @Override
@@ -156,7 +158,7 @@ public final class CraftEquippableComponent implements EquippableComponent {
 
     @Override
     public void setAllowedEntities(EntityType entities) {
-        handle = new Equippable(handle.slot(), handle.equipSound(), handle.model(), handle.cameraOverlay(),
+        handle = new Equippable(handle.slot(), handle.equipSound(), handle.assetId(), handle.cameraOverlay(),
                 (entities != null) ? Optional.of(HolderSet.direct(CraftEntityType.bukkitToMinecraftHolder(entities))) : Optional.empty(),
                 handle.dispensable(), handle.swappable(), handle.damageOnHurt()
         );
@@ -164,7 +166,7 @@ public final class CraftEquippableComponent implements EquippableComponent {
 
     @Override
     public void setAllowedEntities(Collection<EntityType> entities) {
-        handle = new Equippable(handle.slot(), handle.equipSound(), handle.model(), handle.cameraOverlay(),
+        handle = new Equippable(handle.slot(), handle.equipSound(), handle.assetId(), handle.cameraOverlay(),
                 (entities != null) ? Optional.of(HolderSet.direct(entities.stream().map(CraftEntityType::bukkitToMinecraftHolder).collect(Collectors.toList()))) : Optional.empty(),
                 handle.dispensable(), handle.swappable(), handle.damageOnHurt()
         );
@@ -174,7 +176,7 @@ public final class CraftEquippableComponent implements EquippableComponent {
     public void setAllowedEntities(Tag<EntityType> tag) {
         Preconditions.checkArgument(tag instanceof CraftEntityTag, "tag must be an entity tag");
 
-        handle = new Equippable(handle.slot(), handle.equipSound(), handle.model(), handle.cameraOverlay(),
+        handle = new Equippable(handle.slot(), handle.equipSound(), handle.assetId(), handle.cameraOverlay(),
                 (tag != null) ? Optional.of(((CraftEntityTag) tag).getHandle()) : Optional.empty(),
                 handle.dispensable(), handle.swappable(), handle.damageOnHurt()
         );
@@ -187,7 +189,7 @@ public final class CraftEquippableComponent implements EquippableComponent {
 
     @Override
     public void setDispensable(boolean dispensable) {
-        handle = new Equippable(handle.slot(), handle.equipSound(), handle.model(), handle.cameraOverlay(), handle.allowedEntities(), dispensable, handle.swappable(), handle.damageOnHurt());
+        handle = new Equippable(handle.slot(), handle.equipSound(), handle.assetId(), handle.cameraOverlay(), handle.allowedEntities(), dispensable, handle.swappable(), handle.damageOnHurt());
     }
 
     @Override
@@ -197,7 +199,7 @@ public final class CraftEquippableComponent implements EquippableComponent {
 
     @Override
     public void setSwappable(boolean swappable) {
-        handle = new Equippable(handle.slot(), handle.equipSound(), handle.model(), handle.cameraOverlay(), handle.allowedEntities(), handle.dispensable(), swappable, handle.damageOnHurt());
+        handle = new Equippable(handle.slot(), handle.equipSound(), handle.assetId(), handle.cameraOverlay(), handle.allowedEntities(), handle.dispensable(), swappable, handle.damageOnHurt());
     }
 
     @Override
@@ -207,7 +209,7 @@ public final class CraftEquippableComponent implements EquippableComponent {
 
     @Override
     public void setDamageOnHurt(boolean damage) {
-        handle = new Equippable(handle.slot(), handle.equipSound(), handle.model(), handle.cameraOverlay(), handle.allowedEntities(), handle.dispensable(), handle.swappable(), damage);
+        handle = new Equippable(handle.slot(), handle.equipSound(), handle.assetId(), handle.cameraOverlay(), handle.allowedEntities(), handle.dispensable(), handle.swappable(), damage);
     }
 
     @Override

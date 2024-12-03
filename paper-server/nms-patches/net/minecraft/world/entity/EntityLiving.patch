@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/EntityLiving.java
 +++ b/net/minecraft/world/entity/EntityLiving.java
-@@ -137,6 +137,33 @@
+@@ -136,6 +136,33 @@
  import net.minecraft.world.scores.ScoreboardTeam;
  import org.slf4j.Logger;
  
@@ -34,7 +34,7 @@
  public abstract class EntityLiving extends Entity implements Attackable {
  
      private static final Logger LOGGER = LogUtils.getLogger();
-@@ -262,6 +289,19 @@
+@@ -260,6 +287,19 @@
      protected boolean skipDropExperience;
      private final EnumMap<EnumItemSlot, Reference2ObjectMap<Enchantment, Set<EnchantmentLocationBasedEffect>>> activeLocationDependentEnchantments;
      protected float appliedScale;
@@ -54,7 +54,7 @@
  
      protected EntityLiving(EntityTypes<? extends EntityLiving> entitytypes, World world) {
          super(entitytypes, world);
-@@ -278,7 +318,9 @@
+@@ -276,7 +316,9 @@
          this.activeLocationDependentEnchantments = new EnumMap(EnumItemSlot.class);
          this.appliedScale = 1.0F;
          this.attributes = new AttributeMapBase(AttributeDefaults.getSupplier(entitytypes));
@@ -65,14 +65,14 @@
          this.blocksBuilding = true;
          this.rotA = (float) ((Math.random() + 1.0D) * 0.009999999776482582D);
          this.reapplyPosition();
-@@ -358,7 +400,13 @@
+@@ -356,7 +398,13 @@
                      double d8 = Math.min((double) (0.2F + f / 15.0F), 2.5D);
                      int i = (int) (150.0D * d8);
  
 -                    worldserver.sendParticles(new ParticleParamBlock(Particles.BLOCK, iblockdata), d2, d3, d4, i, 0.0D, 0.0D, 0.0D, 0.15000000596046448D);
 +                    // CraftBukkit start - visiblity api
 +                    if (this instanceof EntityPlayer) {
-+                        worldserver.sendParticles((EntityPlayer) this, new ParticleParamBlock(Particles.BLOCK, iblockdata), d2, d3, d4, i, 0.0D, 0.0D, 0.0D, 0.15000000596046448D, false);
++                        worldserver.sendParticlesSource((EntityPlayer) this, new ParticleParamBlock(Particles.BLOCK, iblockdata), false, false, d2, d3, d4, i, 0.0D, 0.0D, 0.0D, 0.15000000596046448D);
 +                    } else {
 +                        worldserver.sendParticles(new ParticleParamBlock(Particles.BLOCK, iblockdata), d2, d3, d4, i, 0.0D, 0.0D, 0.0D, 0.15000000596046448D);
 +                    }
@@ -498,7 +498,7 @@
                  this.hurtDuration = 10;
                  this.hurtTime = this.hurtDuration;
              }
-@@ -1275,7 +1519,7 @@
+@@ -1243,7 +1487,7 @@
                      worldserver.broadcastDamageEvent(this, damagesource);
                  }
  
@@ -507,7 +507,7 @@
                      this.markHurt();
                  }
  
-@@ -1295,7 +1539,7 @@
+@@ -1263,7 +1507,7 @@
                          d1 = damagesource.getSourcePosition().z() - this.getZ();
                      }
  
@@ -516,7 +516,7 @@
                      if (!flag) {
                          this.indicateDamage(d0, d1);
                      }
-@@ -1314,7 +1558,7 @@
+@@ -1282,7 +1526,7 @@
                  this.playHurtSound(damagesource);
              }
  
@@ -525,7 +525,7 @@
  
              if (flag2) {
                  this.lastDamageSource = damagesource;
-@@ -1352,7 +1596,7 @@
+@@ -1363,7 +1607,7 @@
      }
  
      protected void blockedByShield(EntityLiving entityliving) {
@@ -534,7 +534,7 @@
      }
  
      private boolean checkTotemDeathProtection(DamageSource damagesource) {
-@@ -1364,20 +1608,33 @@
+@@ -1375,20 +1619,33 @@
              EnumHand[] aenumhand = EnumHand.values();
              int i = aenumhand.length;
  
@@ -572,7 +572,7 @@
                      EntityPlayer entityplayer = (EntityPlayer) this;
  
                      entityplayer.awardStat(StatisticList.ITEM_USED.get(itemstack.getItem()));
-@@ -1501,14 +1758,22 @@
+@@ -1512,14 +1769,22 @@
                      IBlockData iblockdata = Blocks.WITHER_ROSE.defaultBlockState();
  
                      if (this.level().getBlockState(blockposition).isAir() && iblockdata.canSurvive(this.level(), blockposition)) {
@@ -597,7 +597,7 @@
                      this.level().addFreshEntity(entityitem);
                  }
              }
-@@ -1519,22 +1784,37 @@
+@@ -1530,22 +1795,37 @@
      protected void dropAllDeathLoot(WorldServer worldserver, DamageSource damagesource) {
          boolean flag = this.lastHurtByPlayerTime > 0;
  
@@ -638,7 +638,7 @@
      }
  
      protected void dropCustomDeathLoot(WorldServer worldserver, DamageSource damagesource, boolean flag) {}
-@@ -1601,9 +1881,14 @@
+@@ -1612,9 +1892,14 @@
      }
  
      public void knockback(double d0, double d1, double d2) {
@@ -655,7 +655,7 @@
  
              Vec3D vec3d;
  
-@@ -1613,7 +1898,14 @@
+@@ -1624,7 +1909,14 @@
  
              Vec3D vec3d1 = (new Vec3D(d1, 0.0D, d2)).normalize().scale(d0);
  
@@ -671,7 +671,7 @@
          }
      }
  
-@@ -1668,6 +1960,20 @@
+@@ -1683,6 +1975,20 @@
          return new EntityLiving.a(SoundEffects.GENERIC_SMALL_FALL, SoundEffects.GENERIC_BIG_FALL);
      }
  
@@ -692,7 +692,7 @@
      public Optional<BlockPosition> getLastClimbablePos() {
          return this.lastClimbablePos;
      }
-@@ -1746,9 +2052,14 @@
+@@ -1757,9 +2063,14 @@
          int i = this.calculateFallDamage(f, f1);
  
          if (i > 0) {
@@ -708,7 +708,7 @@
              return true;
          } else {
              return flag;
-@@ -1819,7 +2130,7 @@
+@@ -1830,7 +2141,7 @@
  
      protected float getDamageAfterArmorAbsorb(DamageSource damagesource, float f) {
          if (!damagesource.is(DamageTypeTags.BYPASSES_ARMOR)) {
@@ -717,7 +717,7 @@
              f = CombatMath.getDamageAfterAbsorb(this, f, damagesource, (float) this.getArmorValue(), (float) this.getAttributeValue(GenericAttributes.ARMOR_TOUGHNESS));
          }
  
-@@ -1830,7 +2141,8 @@
+@@ -1841,7 +2152,8 @@
          if (damagesource.is(DamageTypeTags.BYPASSES_EFFECTS)) {
              return f;
          } else {
@@ -727,7 +727,7 @@
                  int i = (this.getEffect(MobEffects.DAMAGE_RESISTANCE).getAmplifier() + 1) * 5;
                  int j = 25 - i;
                  float f1 = f * (float) j;
-@@ -1873,15 +2185,141 @@
+@@ -1884,15 +2196,141 @@
          }
      }
  
@@ -876,7 +876,7 @@
  
              if (f2 > 0.0F && f2 < 3.4028235E37F) {
                  Entity entity = damagesource.getEntity();
-@@ -1893,13 +2331,48 @@
+@@ -1904,13 +2342,48 @@
                  }
              }
  
@@ -927,7 +927,7 @@
      }
  
      public CombatTracker getCombatTracker() {
-@@ -1924,9 +2397,19 @@
+@@ -1935,9 +2408,19 @@
      }
  
      public final void setArrowCount(int i) {
@@ -948,7 +948,7 @@
      public final int getStingerCount() {
          return (Integer) this.entityData.get(EntityLiving.DATA_STINGER_COUNT_ID);
      }
-@@ -2171,6 +2654,12 @@
+@@ -2182,6 +2665,12 @@
  
      public abstract ItemStack getItemBySlot(EnumItemSlot enumitemslot);
  
@@ -961,7 +961,7 @@
      public abstract void setItemSlot(EnumItemSlot enumitemslot, ItemStack itemstack);
  
      public Iterable<ItemStack> getHandSlots() {
-@@ -2623,7 +3112,7 @@
+@@ -2634,7 +3123,7 @@
                  }
              }
  
@@ -970,7 +970,7 @@
              if (this.tickCount % 20 == 0) {
                  this.getCombatTracker().recheckStatus();
              }
-@@ -2730,7 +3219,7 @@
+@@ -2741,7 +3230,7 @@
          this.elytraAnimationState.tick();
      }
  
@@ -979,7 +979,7 @@
          Map<EnumItemSlot, ItemStack> map = this.collectEquipmentChanges();
  
          if (map != null) {
-@@ -3052,6 +3541,7 @@
+@@ -3063,6 +3552,7 @@
          this.checkSlowFallDistance();
          if (!this.level().isClientSide) {
              if (!this.canGlide()) {
@@ -987,7 +987,7 @@
                  this.setSharedFlag(7, false);
                  return;
              }
-@@ -3298,14 +3788,21 @@
+@@ -3305,14 +3795,21 @@
  
      @Override
      public boolean isPickable() {
@@ -1011,7 +1011,7 @@
      @Override
      public float getYHeadRot() {
          return this.yHeadRot;
-@@ -3476,7 +3973,30 @@
+@@ -3483,7 +3980,30 @@
                  this.releaseUsingItem();
              } else {
                  if (!this.useItem.isEmpty() && this.isUsingItem()) {
@@ -1043,7 +1043,7 @@
  
                      if (itemstack != this.useItem) {
                          this.setItemInHand(enumhand, itemstack);
-@@ -3561,6 +4081,12 @@
+@@ -3568,6 +4088,12 @@
      }
  
      public boolean randomTeleport(double d0, double d1, double d2, boolean flag) {
@@ -1056,7 +1056,7 @@
          double d3 = this.getX();
          double d4 = this.getY();
          double d5 = this.getZ();
-@@ -3585,16 +4111,41 @@
+@@ -3592,16 +4118,41 @@
              }
  
              if (flag2) {
@@ -1101,7 +1101,7 @@
          } else {
              if (flag) {
                  world.broadcastEntityEvent(this, (byte) 46);
-@@ -3606,7 +4157,7 @@
+@@ -3613,7 +4164,7 @@
                  entitycreature.getNavigation().stop();
              }
  
@@ -1110,7 +1110,7 @@
          }
      }
  
-@@ -3699,7 +4250,7 @@
+@@ -3706,7 +4257,7 @@
      }
  
      public void stopSleeping() {
@@ -1119,7 +1119,7 @@
          World world = this.level();
  
          java.util.Objects.requireNonNull(world);
-@@ -3733,7 +4284,7 @@
+@@ -3740,7 +4291,7 @@
  
      @Nullable
      public EnumDirection getBedOrientation() {
