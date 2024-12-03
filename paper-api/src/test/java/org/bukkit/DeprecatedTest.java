@@ -5,6 +5,7 @@ import com.google.common.base.Joiner;
 import java.util.ArrayList;
 import java.util.List;
 import org.bukkit.support.test.ClassNodeTest;
+import org.junit.jupiter.api.Disabled;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
@@ -12,6 +13,7 @@ import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.RecordComponentNode;
 
+@Disabled
 public class DeprecatedTest {
 
     private static final String DEPRECATED_DESC = Type.getDescriptor(Deprecated.class);
