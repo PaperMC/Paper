@@ -1,5 +1,6 @@
 import io.papermc.paperweight.PaperweightSourceGeneratorHelper
 import io.papermc.paperweight.extension.PaperweightSourceGeneratorExt
+import io.papermc.paperweight.util.defaultJavaLauncher
 
 plugins {
     java
@@ -25,6 +26,7 @@ tasks.register<JavaExec>("generate") {
     mainClass.set("io.papermc.generator.Main")
     classpath(sourceSets.main.map { it.runtimeClasspath })
     args(projectDir.toPath().resolve("generated").toString())
+    javaLauncher = javaToolchains.defaultJavaLauncher(project)
 }
 
 tasks.test {
