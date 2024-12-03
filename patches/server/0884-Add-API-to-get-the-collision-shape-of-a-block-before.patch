@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TrollyLoki <trollyloki@gmail.com>
+Date: Wed, 11 Oct 2023 00:45:53 -0400
+Subject: [PATCH] Add API to get the collision shape of a block before it's
+ placed
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
+index fd941d9e38fa6c886b6779eaa63eebe00e1fa1b5..66e40149a59c4bd5d5ca3b5a69c733eea49fb86b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
+@@ -688,6 +688,20 @@ public class CraftBlockData implements BlockData {
+         return this.state.isFaceSturdy(EmptyBlockGetter.INSTANCE, BlockPos.ZERO, CraftBlock.blockFaceToNotch(face), CraftBlockSupport.toNMS(support));
+     }
+ 
++    // Paper start
++    @Override
++    public org.bukkit.util.VoxelShape getCollisionShape(Location location) {
++        Preconditions.checkArgument(location != null, "location must not be null");
++
++        CraftWorld world = (CraftWorld) location.getWorld();
++        Preconditions.checkArgument(world != null, "location must not have a null world");
++
++        BlockPos position = CraftLocation.toBlockPosition(location);
++        net.minecraft.world.phys.shapes.VoxelShape shape = this.state.getCollisionShape(world.getHandle(), position);
++        return new org.bukkit.craftbukkit.util.CraftVoxelShape(shape);
++    }
++    // Paper end
++
+     @Override
+     public Color getMapColor() {
+         return Color.fromRGB(this.state.getMapColor(null, null).col);

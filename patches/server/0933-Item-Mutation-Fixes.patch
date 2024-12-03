@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Wed, 20 Mar 2024 20:41:35 -0400
+Subject: [PATCH] Item Mutation Fixes
+
+
+diff --git a/src/main/java/net/minecraft/world/inventory/EnchantmentMenu.java b/src/main/java/net/minecraft/world/inventory/EnchantmentMenu.java
+index e200df7fc90de06d420556711ac67fa94a40d1d2..d82c85ace445d139c1bb96d118060caaec6acffa 100644
+--- a/src/main/java/net/minecraft/world/inventory/EnchantmentMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/EnchantmentMenu.java
+@@ -219,7 +219,7 @@ public class EnchantmentMenu extends AbstractContainerMenu {
+                 return false;
+             } else if (this.costs[id] > 0 && !itemstack.isEmpty() && (player.experienceLevel >= j && player.experienceLevel >= this.costs[id] || player.getAbilities().instabuild)) {
+                 this.access.execute((world, blockposition) -> {
+-                    ItemStack itemstack2 = itemstack;
++                    ItemStack itemstack2 = itemstack; // Paper - diff on change
+                     List<EnchantmentInstance> list = this.getEnchantmentList(world.registryAccess(), itemstack, id, this.costs[id]);
+ 
+                     // CraftBukkit start
+@@ -242,10 +242,16 @@ public class EnchantmentMenu extends AbstractContainerMenu {
+                             return;
+                         }
+                         // CraftBukkit end
+-                        if (itemstack.is(Items.BOOK)) {
+-                            itemstack2 = itemstack.transmuteCopy(Items.ENCHANTED_BOOK);
++                        // Paper start
++                        itemstack2 = org.bukkit.craftbukkit.inventory.CraftItemStack.getOrCloneOnMutation(item, event.getItem());
++                        if (itemstack2 != itemstack) {
+                             this.enchantSlots.setItem(0, itemstack2);
+                         }
++                        if (itemstack2.is(Items.BOOK)) {
++                            itemstack2 = itemstack2.transmuteCopy(Items.ENCHANTED_BOOK);
++                            this.enchantSlots.setItem(0, itemstack2);
++                        }
++                        // Paper end
+ 
+                         // CraftBukkit start
+                         for (Map.Entry<org.bukkit.enchantments.Enchantment, Integer> entry : event.getEnchantsToAdd().entrySet()) {

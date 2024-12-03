@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 21 Aug 2021 21:54:16 -0700
+Subject: [PATCH] Fix bees aging inside hives
+
+Fixes bees incorrectly being aged up due to upstream's
+resetting the ticks inside hive on a failed release
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
+index 039e42aa243136234009217a5232900d31037de6..65a85b4a4e159cfe55e435ed342a87bcc07b21d5 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
+@@ -310,7 +310,7 @@ public class BeehiveBlockEntity extends BlockEntity {
+                     iterator.remove();
+                     // CraftBukkit start
+                 } else {
+-                    tileentitybeehive_hivebee.ticksInHive = tileentitybeehive_hivebee.occupant.minTicksInHive / 2; // Not strictly Vanilla behaviour in cases where bees cannot spawn but still reasonable
++                    tileentitybeehive_hivebee.exitTickCounter = tileentitybeehive_hivebee.occupant.minTicksInHive / 2; // Not strictly Vanilla behaviour in cases where bees cannot spawn but still reasonable // Paper - Fix bees aging inside hives; use exitTickCounter to keep actual bee life
+                     // CraftBukkit end
+                 }
+             }
+@@ -470,15 +470,18 @@ public class BeehiveBlockEntity extends BlockEntity {
+     private static class BeeData {
+ 
+         private final BeehiveBlockEntity.Occupant occupant;
++        private int exitTickCounter; // Paper - Fix bees aging inside hives; separate counter for checking if bee should exit to reduce exit attempts
+         private int ticksInHive;
+ 
+         BeeData(BeehiveBlockEntity.Occupant data) {
+             this.occupant = data;
+             this.ticksInHive = data.ticksInHive();
++            this.exitTickCounter = this.ticksInHive; // Paper - Fix bees aging inside hives
+         }
+ 
+         public boolean tick() {
+-            return this.ticksInHive++ > this.occupant.minTicksInHive;
++            this.ticksInHive++; // Paper - Fix bees aging inside hives
++            return this.exitTickCounter++ > this.occupant.minTicksInHive; // Paper - Fix bees aging inside hives
+         }
+ 
+         public BeehiveBlockEntity.Occupant toOccupant() {

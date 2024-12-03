@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Cryptite <cryptite@gmail.com>
+Date: Mon, 1 May 2023 16:22:43 -0500
+Subject: [PATCH] Add PlayerShieldDisableEvent
+
+Called whenever a players shield is disabled. This is mainly caused by
+attacking players or monsters that carry axes.
+
+The event, while similar to the PlayerItemCooldownEvent, offers other
+behaviour and can hence not be implemented as a childtype of said event.
+Specifically, cancelling the event prevents the game events from being
+sent to the player.
+
+Plugins listening to just the PlayerItemCooldownEvent may not want said
+sideeffects, meaning the disable event cannot share a handlerlist with
+the cooldown event
+
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index bba669666bbd0f116d1efacfb8d987dd71b6535c..5b8b85a295a08ae495f729c595b3a78778965342 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -973,7 +973,7 @@ public abstract class Player extends LivingEntity {
+         ItemStack itemstack = this.getItemBlockingWith();
+ 
+         if (attacker.canDisableShield() && itemstack != null) {
+-            this.disableShield(itemstack);
++            this.disableShield(itemstack, attacker); // Paper - Add PlayerShieldDisableEvent
+         }
+ 
+     }
+@@ -1466,8 +1466,21 @@ public abstract class Player extends LivingEntity {
+         this.attack(target);
+     }
+ 
++    @io.papermc.paper.annotation.DoNotUse @Deprecated // Paper - Add PlayerShieldDisableEvent
+     public void disableShield(ItemStack shield) {
+-        this.getCooldowns().addCooldown(shield, 100);
++        // Paper start - Add PlayerShieldDisableEvent
++        this.disableShield(shield, null);
++    }
++    public void disableShield(ItemStack shield, @Nullable LivingEntity attacker) {
++        final org.bukkit.entity.Entity finalAttacker = attacker != null ? attacker.getBukkitEntity() : null;
++        if (finalAttacker != null) {
++            final io.papermc.paper.event.player.PlayerShieldDisableEvent shieldDisableEvent = new io.papermc.paper.event.player.PlayerShieldDisableEvent((org.bukkit.entity.Player) getBukkitEntity(), finalAttacker, 100);
++            if (!shieldDisableEvent.callEvent()) return;
++            this.getCooldowns().addCooldown(shield, shieldDisableEvent.getCooldown());
++        } else {
++            this.getCooldowns().addCooldown(shield, 100);
++        }
++        // Paper end - Add PlayerShieldDisableEvent
+         this.stopUsingItem();
+         this.level().broadcastEntityEvent(this, (byte) 30);
+     }

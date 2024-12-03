@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 12 May 2024 21:57:23 -0700
+Subject: [PATCH] Prevent NPE if hooked entity was cleared
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java b/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
+index dcf60d2499957d4803e4b395603da45e81076095..8ff379088d94ddfd8a3c03f090eaaf8ea9438bee 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
+@@ -509,11 +509,13 @@ public class FishingHook extends Projectile {
+                 if (playerFishEvent.isCancelled()) {
+                     return 0;
+                 }
++                if (this.hookedIn != null) { // Paper - re-check to see if there is a hooked entity
+                 // CraftBukkit end
+                 this.pullEntity(this.hookedIn);
+                 CriteriaTriggers.FISHING_ROD_HOOKED.trigger((ServerPlayer) entityhuman, usedItem, this, Collections.emptyList());
+                 this.level().broadcastEntityEvent(this, (byte) 31);
+                 i = this.hookedIn instanceof ItemEntity ? 3 : 5;
++                } // Paper - re-check to see if there is a hooked entity
+             } else if (this.nibble > 0) {
+                 LootParams lootparams = (new LootParams.Builder((ServerLevel) this.level())).withParameter(LootContextParams.ORIGIN, this.position()).withParameter(LootContextParams.TOOL, usedItem).withParameter(LootContextParams.THIS_ENTITY, this).withLuck((float) this.luck + entityhuman.getLuck()).create(LootContextParamSets.FISHING);
+                 LootTable loottable = this.level().getServer().reloadableRegistries().getLootTable(BuiltInLootTables.FISHING);

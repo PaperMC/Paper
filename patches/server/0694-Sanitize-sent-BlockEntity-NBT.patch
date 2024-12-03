@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Fri, 3 Dec 2021 16:55:50 -0500
+Subject: [PATCH] Sanitize sent BlockEntity NBT
+
+
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundBlockEntityDataPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundBlockEntityDataPacket.java
+index 4f3ba61f13dbe5773034a19e749b7c4f5dc3d291..5d3e739d28d394ed59fe0003245cc55ac62e6087 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundBlockEntityDataPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundBlockEntityDataPacket.java
+@@ -29,7 +29,7 @@ public class ClientboundBlockEntityDataPacket implements Packet<ClientGamePacket
+ 
+     public static ClientboundBlockEntityDataPacket create(BlockEntity blockEntity, BiFunction<BlockEntity, RegistryAccess, CompoundTag> nbtGetter) {
+         RegistryAccess registryAccess = blockEntity.getLevel().registryAccess();
+-        return new ClientboundBlockEntityDataPacket(blockEntity.getBlockPos(), blockEntity.getType(), nbtGetter.apply(blockEntity, registryAccess));
++        return new ClientboundBlockEntityDataPacket(blockEntity.getBlockPos(), blockEntity.getType(), blockEntity.sanitizeSentNbt(nbtGetter.apply(blockEntity, registryAccess)));  // Paper - Sanitize sent data
+     }
+ 
+     public static ClientboundBlockEntityDataPacket create(BlockEntity blockEntity) {
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
+index ac900dfdc5c90e9e60d47efa734be8f0a5b20dca..ec1cb034d840633240f2b379b09f7d2f1c8971a5 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
+@@ -154,6 +154,7 @@ public class ClientboundLevelChunkPacketData {
+             CompoundTag compoundTag = blockEntity.getUpdateTag(blockEntity.getLevel().registryAccess());
+             BlockPos blockPos = blockEntity.getBlockPos();
+             int i = SectionPos.sectionRelative(blockPos.getX()) << 4 | SectionPos.sectionRelative(blockPos.getZ());
++            blockEntity.sanitizeSentNbt(compoundTag); // Paper - Sanitize sent data
+             return new ClientboundLevelChunkPacketData.BlockEntityInfo(i, blockPos.getY(), blockEntity.getType(), compoundTag.isEmpty() ? null : compoundTag);
+         }
+     }
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
+index b1ed43287d522e08a967ba751a851776351916e7..2356fd4bf4edb8a44312f772eeb8399b3a2fa216 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
+@@ -377,6 +377,14 @@ public abstract class BlockEntity {
+     }
+     // CraftBukkit end
+ 
++    // Paper start - Sanitize sent data
++    public CompoundTag sanitizeSentNbt(CompoundTag tag) {
++        tag.remove("PublicBukkitValues");
++
++        return tag;
++    }
++    // Paper end - Sanitize sent data
++
+     private static class ComponentHelper {
+ 
+         public static final Codec<DataComponentMap> COMPONENTS_CODEC = DataComponentMap.CODEC.optionalFieldOf("components", DataComponentMap.EMPTY).codec();

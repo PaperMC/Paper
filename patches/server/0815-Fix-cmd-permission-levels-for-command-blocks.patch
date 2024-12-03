@@ -1,0 +1,90 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 24 Jan 2022 15:32:02 -0800
+Subject: [PATCH] Fix cmd permission levels for command blocks
+
+
+diff --git a/src/main/java/net/minecraft/commands/CommandSourceStack.java b/src/main/java/net/minecraft/commands/CommandSourceStack.java
+index f31c5d665678c3163ed4469f8e9d395b890c1bbe..fc0c60b22844ed010aede2fa125b9fa440d3de80 100644
+--- a/src/main/java/net/minecraft/commands/CommandSourceStack.java
++++ b/src/main/java/net/minecraft/commands/CommandSourceStack.java
+@@ -206,10 +206,29 @@ public class CommandSourceStack implements ExecutionCommandSource<CommandSourceS
+         return this.permissionLevel >= level;
+     }
+ 
++    // Paper start - Fix permission levels for command blocks
++    private boolean forceRespectPermissionLevel() {
++        return this.source == CommandSource.NULL || (this.source instanceof final net.minecraft.world.level.BaseCommandBlock commandBlock && commandBlock.getLevel().paperConfig().commandBlocks.forceFollowPermLevel);
++    }
++    // Paper end - Fix permission levels for command blocks
++
+     // CraftBukkit start
+     public boolean hasPermission(int i, String bukkitPermission) {
+-        // World is null when loading functions
+-        return ((this.getLevel() == null || !this.getLevel().getCraftServer().ignoreVanillaPermissions) && this.permissionLevel >= i) || this.getBukkitSender().hasPermission(bukkitPermission);
++        // Paper start - Fix permission levels for command blocks
++        final java.util.function.BooleanSupplier hasBukkitPerm = () -> this.source == CommandSource.NULL /*treat NULL as having all bukkit perms*/ || this.getBukkitSender().hasPermission(bukkitPermission); // lazily check bukkit perms to the benefit of custom permission setups
++        // if the server is null, we must check the vanilla perm level system
++        // if ignoreVanillaPermissions is true, we can skip vanilla perms and just run the bukkit perm check
++        //noinspection ConstantValue
++        if (this.getServer() == null || !this.getServer().server.ignoreVanillaPermissions) { // server & level are null for command function loading
++            final boolean hasPermLevel = this.permissionLevel >= i;
++            if (this.forceRespectPermissionLevel()) { // NULL CommandSource and command blocks (if setting is enabled) should always pass the vanilla perm check
++                return hasPermLevel && hasBukkitPerm.getAsBoolean();
++            } else { // otherwise check vanilla perm first then bukkit perm, matching upstream behavior
++                return hasPermLevel || hasBukkitPerm.getAsBoolean();
++            }
++        }
++        return hasBukkitPerm.getAsBoolean();
++        // Paper end - Fix permission levels for command blocks
+     }
+     // CraftBukkit end
+ 
+diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
+index 977f9ac300490562d9894af4a42621b594f0a8e0..cfa328f06c1b972c8328ff40580b485c02e0c270 100644
+--- a/src/main/java/net/minecraft/commands/Commands.java
++++ b/src/main/java/net/minecraft/commands/Commands.java
+@@ -300,16 +300,7 @@ public class Commands {
+         String[] args = command.split(" ");
+         if (args.length == 0) return; // Paper - empty commands shall not be dispatched
+ 
+-        String cmd = args[0];
+-        if (cmd.startsWith("minecraft:")) cmd = cmd.substring("minecraft:".length());
+-        if (cmd.startsWith("bukkit:")) cmd = cmd.substring("bukkit:".length());
+-
+-        // Block disallowed commands
+-        if (cmd.equalsIgnoreCase("stop") || cmd.equalsIgnoreCase("kick") || cmd.equalsIgnoreCase("op")
+-                || cmd.equalsIgnoreCase("deop") || cmd.equalsIgnoreCase("ban") || cmd.equalsIgnoreCase("ban-ip")
+-                || cmd.equalsIgnoreCase("pardon") || cmd.equalsIgnoreCase("pardon-ip") || cmd.equalsIgnoreCase("reload")) {
+-            return;
+-        }
++        // Paper - Fix permission levels for command blocks
+ 
+         // Handle vanilla commands;
+         if (sender.getLevel().getCraftServer().getCommandBlockOverride(args[0])) {
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/MinecartCommandBlock.java b/src/main/java/net/minecraft/world/entity/vehicle/MinecartCommandBlock.java
+index 8e741e7c3ed5a181b0999650a94dbf86b10a75ca..a811cdca34bb468ac355f72decd153d4f0618009 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/MinecartCommandBlock.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/MinecartCommandBlock.java
+@@ -128,7 +128,7 @@ public class MinecartCommandBlock extends AbstractMinecart {
+ 
+         @Override
+         public CommandSourceStack createCommandSourceStack() {
+-            return new CommandSourceStack(this, MinecartCommandBlock.this.position(), MinecartCommandBlock.this.getRotationVector(), this.getLevel(), 2, this.getName().getString(), MinecartCommandBlock.this.getDisplayName(), this.getLevel().getServer(), MinecartCommandBlock.this);
++            return new CommandSourceStack(this, MinecartCommandBlock.this.position(), MinecartCommandBlock.this.getRotationVector(), this.getLevel(), this.getLevel().paperConfig().commandBlocks.permissionsLevel, this.getName().getString(), MinecartCommandBlock.this.getDisplayName(), this.getLevel().getServer(), MinecartCommandBlock.this); // Paper - configurable command block perm level
+         }
+ 
+         @Override
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/CommandBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/CommandBlockEntity.java
+index 126c16808336fbef82c681b822a921a62ce46e7c..e2123f1c5852a34fb92e900f25591284625f3494 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/CommandBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/CommandBlockEntity.java
+@@ -58,7 +58,7 @@ public class CommandBlockEntity extends BlockEntity {
+         public CommandSourceStack createCommandSourceStack() {
+             Direction enumdirection = (Direction) CommandBlockEntity.this.getBlockState().getValue(CommandBlock.FACING);
+ 
+-            return new CommandSourceStack(this, Vec3.atCenterOf(CommandBlockEntity.this.worldPosition), new Vec2(0.0F, enumdirection.toYRot()), this.getLevel(), 2, this.getName().getString(), this.getName(), this.getLevel().getServer(), (Entity) null);
++            return new CommandSourceStack(this, Vec3.atCenterOf(CommandBlockEntity.this.worldPosition), new Vec2(0.0F, enumdirection.toYRot()), this.getLevel(), this.getLevel().paperConfig().commandBlocks.permissionsLevel, this.getName().getString(), this.getName(), this.getLevel().getServer(), (Entity) null); // Paper - configurable command block perm level
+         }
+ 
+         @Override

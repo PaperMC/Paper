@@ -1,0 +1,78 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 22 Mar 2022 12:44:30 -0700
+Subject: [PATCH] Throw exception on world create while being ticked
+
+There are no plans to support creating worlds while worlds are
+being ticked themselvess.
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index fcc00d5b0be3d2adb92c8243ccca8d0190fcc413..75ca3bc86c9f70df4ddf29a454b8b2bc251b4b9f 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -327,6 +327,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public final double[] recentTps = new double[ 3 ];
+     // Spigot end
+     public final io.papermc.paper.configuration.PaperConfigurations paperConfigurations; // Paper - add paper configuration files
++    public boolean isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
+ 
+     public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
+         AtomicReference<S> atomicreference = new AtomicReference();
+@@ -1626,7 +1627,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         gameprofilerfiller.push("commandFunctions");
+         this.getFunctions().tick();
+         gameprofilerfiller.popPush("levels");
+-        Iterator iterator = this.getAllLevels().iterator();
++        //Iterator iterator = this.getAllLevels().iterator(); // Paper - Throw exception on world create while being ticked; moved down
+ 
+         // CraftBukkit start
+         // Run tasks that are waiting on processing
+@@ -1654,6 +1655,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             }
+         }
+ 
++        this.isIteratingOverLevels = true; // Paper - Throw exception on world create while being ticked
++        Iterator iterator = this.getAllLevels().iterator(); // Paper - Throw exception on world create while being ticked; move down
+         while (iterator.hasNext()) {
+             ServerLevel worldserver = (ServerLevel) iterator.next();
+             worldserver.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
+@@ -1687,6 +1690,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             gameprofilerfiller.pop();
+             worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
+         }
++        this.isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
+ 
+         gameprofilerfiller.popPush("connection");
+         this.tickConnection();
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 4b894223387bf4029bbfa15d9605247935d7f829..557eb1a75a3115c3215315deae56a42d665693df 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -919,6 +919,11 @@ public final class CraftServer implements Server {
+         return new ArrayList<World>(this.worlds.values());
+     }
+ 
++    @Override
++    public boolean isTickingWorlds() {
++        return console.isIteratingOverLevels;
++    }
++
+     public DedicatedPlayerList getHandle() {
+         return this.playerList;
+     }
+@@ -1182,6 +1187,7 @@ public final class CraftServer implements Server {
+     @Override
+     public World createWorld(WorldCreator creator) {
+         Preconditions.checkState(this.console.getAllLevels().iterator().hasNext(), "Cannot create additional worlds on STARTUP");
++        //Preconditions.checkState(!this.console.isIteratingOverLevels, "Cannot create a world while worlds are being ticked"); // Paper - Cat - Temp disable. We'll see how this goes.
+         Preconditions.checkArgument(creator != null, "WorldCreator cannot be null");
+ 
+         String name = creator.name();
+@@ -1358,6 +1364,7 @@ public final class CraftServer implements Server {
+ 
+     @Override
+     public boolean unloadWorld(World world, boolean save) {
++        //Preconditions.checkState(!this.console.isIteratingOverLevels, "Cannot unload a world while worlds are being ticked"); // Paper - Cat - Temp disable. We'll see how this goes.
+         if (world == null) {
+             return false;
+         }

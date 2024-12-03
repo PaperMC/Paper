@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 12 May 2021 04:30:42 -0700
+Subject: [PATCH] Add EntityPortalReadyEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java b/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java
+index 151025a407a07271bc205955f0ce06f84231563b..ac894e5651ea6145727639e2882edb236a47fb02 100644
+--- a/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java
+@@ -141,6 +141,14 @@ public class NetherPortalBlock extends Block implements Portal {
+         // CraftBukkit start
+         ResourceKey<Level> resourcekey = world.getTypeKey() == LevelStem.NETHER ? Level.OVERWORLD : Level.NETHER;
+         ServerLevel worldserver1 = world.getServer().getLevel(resourcekey);
++        // Paper start - Add EntityPortalReadyEvent
++        io.papermc.paper.event.entity.EntityPortalReadyEvent portalReadyEvent = new io.papermc.paper.event.entity.EntityPortalReadyEvent(entity.getBukkitEntity(), worldserver1 == null ? null : worldserver1.getWorld(), org.bukkit.PortalType.NETHER);
++        if (!portalReadyEvent.callEvent()) {
++            entity.portalProcess = null;
++            return null;
++        }
++        worldserver1 = portalReadyEvent.getTargetWorld() == null ? null : ((org.bukkit.craftbukkit.CraftWorld) portalReadyEvent.getTargetWorld()).getHandle();
++        // Paper end - Add EntityPortalReadyEvent
+ 
+         if (worldserver1 == null) {
+             return new TeleportTransition(PlayerTeleportEvent.TeleportCause.NETHER_PORTAL); // always fire event in case plugins wish to change it

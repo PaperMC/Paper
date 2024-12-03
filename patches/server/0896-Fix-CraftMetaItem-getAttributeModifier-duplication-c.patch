@@ -1,0 +1,19 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: hyper1423 <backup8822@gmail.com>
+Date: Sun, 3 Dec 2023 07:38:09 +0900
+Subject: [PATCH] Fix CraftMetaItem#getAttributeModifier duplication check
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+index fba042d6934f7e871114c81f97a6ac88a9b59212..f129d714c1a815f348669dc13a5cd4d360e8ed6a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+@@ -1685,7 +1685,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         Preconditions.checkNotNull(modifier, "AttributeModifier cannot be null");
+         this.checkAttributeList();
+         for (Map.Entry<Attribute, AttributeModifier> entry : this.attributeModifiers.entries()) {
+-            Preconditions.checkArgument(!entry.getValue().getKey().equals(modifier.getKey()), "Cannot register AttributeModifier. Modifier is already applied! %s", modifier);
++            Preconditions.checkArgument(!(entry.getValue().getKey().equals(modifier.getKey()) && entry.getKey() == attribute), "Cannot register AttributeModifier. Modifier is already applied! %s", modifier); // Paper - attribute modifiers with same namespaced key but on different attributes are fine
+         }
+         return this.attributeModifiers.put(attribute, modifier);
+     }

@@ -1,0 +1,72 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tamion <70228790+notTamion@users.noreply.github.com>
+Date: Sat, 30 Sep 2023 12:36:14 +0200
+Subject: [PATCH] Fix strikeLightningEffect powers lightning rods and clears
+ copper
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/LightningBolt.java b/src/main/java/net/minecraft/world/entity/LightningBolt.java
+index 152ecd38814089333b8d61538297ce720756d2c3..12127b14babf646711d3a118416453c4f1ac1460 100644
+--- a/src/main/java/net/minecraft/world/entity/LightningBolt.java
++++ b/src/main/java/net/minecraft/world/entity/LightningBolt.java
+@@ -48,6 +48,7 @@ public class LightningBolt extends Entity {
+     private ServerPlayer cause;
+     private final Set<Entity> hitEntities = Sets.newHashSet();
+     private int blocksSetOnFire;
++    public boolean isEffect; // Paper - Properly handle lightning effects api
+ 
+     public LightningBolt(EntityType<? extends LightningBolt> type, Level world) {
+         super(type, world);
+@@ -86,7 +87,7 @@ public class LightningBolt extends Entity {
+     @Override
+     public void tick() {
+         super.tick();
+-        if (this.life == 2) {
++        if (!this.isEffect && this.life == 2) { // Paper - Properly handle lightning effects api
+             if (this.level().isClientSide()) {
+                 this.level().playLocalSound(this.getX(), this.getY(), this.getZ(), SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.WEATHER, 10000.0F, 0.8F + this.random.nextFloat() * 0.2F, false);
+                 this.level().playLocalSound(this.getX(), this.getY(), this.getZ(), SoundEvents.LIGHTNING_BOLT_IMPACT, SoundSource.WEATHER, 2.0F, 0.5F + this.random.nextFloat() * 0.2F, false);
+@@ -133,7 +134,7 @@ public class LightningBolt extends Entity {
+             }
+         }
+ 
+-        if (this.life >= 0 && !this.visualOnly) { // CraftBukkit - add !this.visualOnly
++        if (this.life >= 0 && !this.isEffect) { // CraftBukkit - add !this.visualOnly // Paper - Properly handle lightning effects api
+             if (!(this.level() instanceof ServerLevel)) {
+                 this.level().setSkyFlashTime(2);
+             } else if (!this.visualOnly) {
+@@ -162,7 +163,7 @@ public class LightningBolt extends Entity {
+     }
+ 
+     private void spawnFire(int spreadAttempts) {
+-        if (!this.visualOnly) {
++        if (!this.visualOnly && !this.isEffect) {  // Paper - Properly handle lightning effects api
+             Level world = this.level();
+ 
+             if (world instanceof ServerLevel) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index a36470d9e9d36106c928f39f7eddc7afe3621610..b7d30e9578b01672a8485077a2d093fa744e802c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -723,7 +723,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+ 
+         LightningBolt lightning = EntityType.LIGHTNING_BOLT.create(this.world, EntitySpawnReason.COMMAND);
+         lightning.moveTo(loc.getX(), loc.getY(), loc.getZ());
+-        lightning.setVisualOnly(isVisual);
++        lightning.isEffect = isVisual; // Paper - Properly handle lightning effects api
+         this.world.strikeLightning(lightning, LightningStrikeEvent.Cause.CUSTOM);
+         return (LightningStrike) lightning.getBukkitEntity();
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLightningStrike.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLightningStrike.java
+index 6fed8075aa75e3852dc826a45ca44603c0446a56..e9f471e60af0725ec34e2985d63ae9ea9f88590a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLightningStrike.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLightningStrike.java
+@@ -13,7 +13,7 @@ public class CraftLightningStrike extends CraftEntity implements LightningStrike
+ 
+     @Override
+     public boolean isEffect() {
+-        return this.getHandle().visualOnly;
++        return this.getHandle().isEffect; // Paper - Properly handle lightning effects api
+     }
+ 
+     public int getFlashes() {

@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Noah van der Aa <ndvdaa@gmail.com>
+Date: Sun, 8 Aug 2021 19:56:02 +0200
+Subject: [PATCH] Add CompostItemEvent and EntityCompostItemEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java b/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
+index b4937f04b4cae1ddff8d6df0f608b2f2e3fb367c..9264ba58188a7a682eeb8eb449b89ff8e60f91d6 100644
+--- a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
+@@ -342,7 +342,21 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+         int i = (Integer) iblockdata.getValue(ComposterBlock.LEVEL);
+         float f = ComposterBlock.COMPOSTABLES.getFloat(itemstack.getItem());
+ 
+-        if ((i != 0 || f <= 0.0F) && rand >= (double) f) {
++        // Paper start - Add CompostItemEvent and EntityCompostItemEvent
++        boolean willRaiseLevel = !((i != 0 || f <= 0.0F) && rand >= (double) f);
++        final io.papermc.paper.event.block.CompostItemEvent event;
++        if (entity == null) {
++            event = new io.papermc.paper.event.block.CompostItemEvent(org.bukkit.craftbukkit.block.CraftBlock.at(generatoraccess, blockposition), itemstack.getBukkitStack(), willRaiseLevel);
++        } else {
++            event = new io.papermc.paper.event.entity.EntityCompostItemEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(generatoraccess, blockposition), itemstack.getBukkitStack(), willRaiseLevel);
++        }
++        if (!event.callEvent()) { // check for cancellation of entity event (non entity event can't be cancelled cause of hoppers)
++            return null;
++        }
++        willRaiseLevel = event.willRaiseLevel();
++
++        if (!willRaiseLevel) {
++            // Paper end - Add CompostItemEvent and EntityCompostItemEvent
+             return iblockdata;
+         } else {
+             int j = i + 1;
+@@ -491,6 +505,11 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+             if (!itemstack.isEmpty()) {
+                 this.changed = true;
+                 BlockState iblockdata = ComposterBlock.addItem((Entity) null, this.state, this.level, this.pos, itemstack);
++                // Paper start - Add CompostItemEvent and EntityCompostItemEvent
++                if (iblockdata == null) {
++                    return;
++                }
++                // Paper end - Add CompostItemEvent and EntityCompostItemEvent
+ 
+                 this.level.levelEvent(1500, this.pos, iblockdata != this.state ? 1 : 0);
+                 this.removeItemNoUpdate(0);

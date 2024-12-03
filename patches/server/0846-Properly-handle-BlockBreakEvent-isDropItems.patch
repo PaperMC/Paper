@@ -1,0 +1,162 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 4 Mar 2023 10:52:52 -0800
+Subject: [PATCH] Properly handle BlockBreakEvent#isDropItems
+
+Setting whether a block break dropped items controlled
+far more than just whether blocks dropped, like stat increases
+food consumption, turtle egg count decreases, ice to water
+conversions and beehive releases
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+index 2aee9c2fbe38076317a3de7c3fdbd6988b64b389..3bd4ab8161c29bb8df2ba496a4430393b6593476 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -437,8 +437,8 @@ public class ServerPlayerGameMode {
+                     isCorrectTool = flag1; // Paper - Trigger bee_nest_destroyed trigger in the correct place
+ 
+                     itemstack.mineBlock(this.level, iblockdata1, pos, this.player);
+-                    if (flag && flag1 && event.isDropItems()) { // CraftBukkit - Check if block should drop items
+-                        block.playerDestroy(this.level, this.player, pos, iblockdata1, tileentity, itemstack1);
++                    if (flag && flag1/* && event.isDropItems() */) { // CraftBukkit - Check if block should drop items // Paper - fix drops not preventing stats/food exhaustion
++                        block.playerDestroy(this.level, this.player, pos, iblockdata1, tileentity, itemstack1, event.isDropItems(), false); // Paper - fix drops not preventing stats/food exhaustion
+                     }
+ 
+                     // return true; // CraftBukkit
+diff --git a/src/main/java/net/minecraft/world/level/block/BeehiveBlock.java b/src/main/java/net/minecraft/world/level/block/BeehiveBlock.java
+index 3e3951cbb196b720256cfc36d6d3b91d48ce3294..4e709c9b126c905a98156639c5ab193a5c496793 100644
+--- a/src/main/java/net/minecraft/world/level/block/BeehiveBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BeehiveBlock.java
+@@ -94,8 +94,8 @@ public class BeehiveBlock extends BaseEntityBlock {
+     }
+ 
+     @Override
+-    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool) {
+-        super.playerDestroy(world, player, pos, state, blockEntity, tool);
++    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool, boolean includeDrops, boolean dropExp) { // Paper - fix drops not preventing stats/food exhaustion
++        super.playerDestroy(world, player, pos, state, blockEntity, tool, includeDrops, dropExp); // Paper - fix drops not preventing stats/food exhaustion
+         if (!world.isClientSide && blockEntity instanceof BeehiveBlockEntity tileentitybeehive) {
+             if (!EnchantmentHelper.hasTag(tool, EnchantmentTags.PREVENTS_BEE_SPAWNS_WHEN_MINING)) {
+                 tileentitybeehive.emptyAllLivingFromHive(player, state, BeehiveBlockEntity.BeeReleaseStatus.EMERGENCY);
+diff --git a/src/main/java/net/minecraft/world/level/block/Block.java b/src/main/java/net/minecraft/world/level/block/Block.java
+index 3c7e373eb1601670d923e6ffa46817ca53e321db..0189ff670d84df375399c492467fd4d5c62eff09 100644
+--- a/src/main/java/net/minecraft/world/level/block/Block.java
++++ b/src/main/java/net/minecraft/world/level/block/Block.java
+@@ -396,10 +396,18 @@ public class Block extends BlockBehaviour implements ItemLike {
+         return this.defaultBlockState();
+     }
+ 
++    @io.papermc.paper.annotation.DoNotUse @Deprecated // Paper - fix drops not preventing stats/food exhaustion
+     public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool) {
++        // Paper start - fix drops not preventing stats/food exhaustion
++        this.playerDestroy(world, player, pos, state, blockEntity, tool, true, true);
++    }
++    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool, boolean includeDrops, boolean dropExp) {
++        // Paper end - fix drops not preventing stats/food exhaustion
+         player.awardStat(Stats.BLOCK_MINED.get(this));
+         player.causeFoodExhaustion(0.005F, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.BLOCK_MINED); // CraftBukkit - EntityExhaustionEvent
++        if (includeDrops) { // Paper - fix drops not preventing stats/food exhaustion
+         Block.dropResources(state, world, pos, blockEntity, player, tool);
++        } // Paper - fix drops not preventing stats/food exhaustion
+     }
+ 
+     public void setPlacedBy(Level world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack itemStack) {}
+diff --git a/src/main/java/net/minecraft/world/level/block/DoublePlantBlock.java b/src/main/java/net/minecraft/world/level/block/DoublePlantBlock.java
+index edb3b6cdb617c48140539728af1373993e78648f..4fe83bd0f355549847b66afb7e61f6f2a6d97016 100644
+--- a/src/main/java/net/minecraft/world/level/block/DoublePlantBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/DoublePlantBlock.java
+@@ -98,8 +98,8 @@ public class DoublePlantBlock extends BushBlock {
+     }
+ 
+     @Override
+-    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool) {
+-        super.playerDestroy(world, player, pos, Blocks.AIR.defaultBlockState(), blockEntity, tool);
++    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool, boolean includeDrops, boolean dropExp) { // Paper - fix drops not preventing stats/food exhaustion
++        super.playerDestroy(world, player, pos, Blocks.AIR.defaultBlockState(), blockEntity, tool, includeDrops, dropExp); // Paper - fix drops not preventing stats/food exhaustion
+     }
+ 
+     protected static void preventDropFromBottomPart(Level world, BlockPos pos, BlockState state, Player player) {
+diff --git a/src/main/java/net/minecraft/world/level/block/IceBlock.java b/src/main/java/net/minecraft/world/level/block/IceBlock.java
+index 067a2d969ca0979ae67b600e303deec93eda0251..a94762e65853ccad38cf90b0049ca256106c0c9f 100644
+--- a/src/main/java/net/minecraft/world/level/block/IceBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/IceBlock.java
+@@ -34,8 +34,8 @@ public class IceBlock extends HalfTransparentBlock {
+     }
+ 
+     @Override
+-    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool) {
+-        super.playerDestroy(world, player, pos, state, blockEntity, tool);
++    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool, boolean includeDrops, boolean dropExp) { // Paper - fix drops not preventing stats/food exhaustion
++        super.playerDestroy(world, player, pos, state, blockEntity, tool, includeDrops, dropExp); // Paper - fix drops not preventing stats/food exhaustion
+         // Paper start - Improve Block#breakNaturally API
+         this.afterDestroy(world, pos, tool);
+     }
+diff --git a/src/main/java/net/minecraft/world/level/block/TurtleEggBlock.java b/src/main/java/net/minecraft/world/level/block/TurtleEggBlock.java
+index 85d9829e979ef5f22aee9c346800612f479786b7..953ddb2ea6fd48e57712e30a6addf23e188e5312 100644
+--- a/src/main/java/net/minecraft/world/level/block/TurtleEggBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/TurtleEggBlock.java
+@@ -175,8 +175,8 @@ public class TurtleEggBlock extends Block {
+     }
+ 
+     @Override
+-    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool) {
+-        super.playerDestroy(world, player, pos, state, blockEntity, tool);
++    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool, boolean includeDrops, boolean dropExp) { // Paper - fix drops not preventing stats/food exhaustion
++        super.playerDestroy(world, player, pos, state, blockEntity, tool, includeDrops, dropExp); // Paper - fix drops not preventing stats/food exhaustion
+         this.decreaseEggs(world, pos, state);
+     }
+ 
+diff --git a/src/test/java/io/papermc/paper/world/block/BlockPlayerDestroyOverrideTest.java b/src/test/java/io/papermc/paper/world/block/BlockPlayerDestroyOverrideTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..22145bf698b3d1ff0a07a3aaa8d55a19905f99ad
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/world/block/BlockPlayerDestroyOverrideTest.java
+@@ -0,0 +1,48 @@
++package io.papermc.paper.world.block;
++
++import io.github.classgraph.ClassGraph;
++import io.github.classgraph.ClassInfo;
++import io.github.classgraph.MethodInfo;
++import io.github.classgraph.MethodInfoList;
++import io.github.classgraph.MethodParameterInfo;
++import io.github.classgraph.ScanResult;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.stream.Stream;
++import org.bukkit.support.environment.Normal;
++import org.junit.jupiter.params.ParameterizedTest;
++import org.junit.jupiter.params.provider.MethodSource;
++
++import static org.junit.jupiter.api.Assertions.assertEquals;
++
++@Normal
++public class BlockPlayerDestroyOverrideTest {
++
++    public static Stream<ClassInfo> parameters() {
++        final List<ClassInfo> classInfo = new ArrayList<>();
++        try (ScanResult scanResult = new ClassGraph()
++            .enableClassInfo()
++            .enableMethodInfo()
++            .whitelistPackages("net.minecraft")
++            .scan()
++        ) {
++            for (final ClassInfo subclass : scanResult.getSubclasses("net.minecraft.world.level.block.Block")) {
++                final MethodInfoList playerDestroy = subclass.getDeclaredMethodInfo("playerDestroy");
++                if (!playerDestroy.isEmpty()) {
++                    classInfo.add(subclass);
++                }
++            }
++        }
++        return classInfo.stream();
++    }
++
++    @ParameterizedTest
++    @MethodSource("parameters")
++    public void checkPlayerDestroyOverrides(ClassInfo overridesPlayerDestroy) {
++        final MethodInfoList playerDestroy = overridesPlayerDestroy.getDeclaredMethodInfo("playerDestroy");
++        assertEquals(1, playerDestroy.size(), overridesPlayerDestroy.getName() + " has multiple playerDestroy methods");
++        final MethodInfo next = playerDestroy.iterator().next();
++        final MethodParameterInfo[] parameterInfo = next.getParameterInfo();
++        assertEquals("boolean", parameterInfo[parameterInfo.length - 1].getTypeDescriptor().toStringWithSimpleNames(), overridesPlayerDestroy.getName() + " needs to change its override of playerDestroy");
++    }
++}

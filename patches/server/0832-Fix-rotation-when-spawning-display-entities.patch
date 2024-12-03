@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Gameoholic <viner.atmic@gmail.com>
+Date: Sun, 30 Jul 2023 13:30:34 +0300
+Subject: [PATCH] Fix rotation when spawning display entities
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java
+index 007d870b3f1dbf0ffa3a2d9af3c49d3f3eea54d7..7331a8e22aa80534b60bbbedd9b9c3f4455e0de7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java
+@@ -253,6 +253,7 @@ public final class CraftEntityTypes {
+         Vector direction = spawnData.location().getDirection();
+         entity.assignDirectionalMovement(new Vec3(direction.getX(), direction.getY(), direction.getZ()), 1.0);
+     };
++    private static final BiConsumer<SpawnData, net.minecraft.world.entity.Entity> ROT = (spawnData, entity) -> entity.setRot(spawnData.yaw(), spawnData.pitch()); // Paper
+     private static final Map<Class<?>, EntityTypeData<?, ?>> CLASS_TYPE_DATA = new HashMap<>();
+     private static final Map<EntityType, EntityTypeData<?, ?>> ENTITY_TYPE_DATA = new HashMap<>();
+ 
+@@ -413,10 +414,10 @@ public final class CraftEntityTypes {
+ 
+         // Set pos
+         register(new EntityTypeData<>(EntityType.MARKER, Marker.class, CraftMarker::new, createAndSetPos(net.minecraft.world.entity.EntityType.MARKER)));
+-        register(new EntityTypeData<>(EntityType.BLOCK_DISPLAY, BlockDisplay.class, CraftBlockDisplay::new, createAndSetPos(net.minecraft.world.entity.EntityType.BLOCK_DISPLAY)));
++        register(new EntityTypeData<>(EntityType.BLOCK_DISPLAY, BlockDisplay.class, CraftBlockDisplay::new, combine(createAndSetPos(net.minecraft.world.entity.EntityType.BLOCK_DISPLAY), ROT))); // Paper
+         register(new EntityTypeData<>(EntityType.INTERACTION, Interaction.class, CraftInteraction::new, createAndSetPos(net.minecraft.world.entity.EntityType.INTERACTION)));
+-        register(new EntityTypeData<>(EntityType.ITEM_DISPLAY, ItemDisplay.class, CraftItemDisplay::new, createAndSetPos(net.minecraft.world.entity.EntityType.ITEM_DISPLAY)));
+-        register(new EntityTypeData<>(EntityType.TEXT_DISPLAY, TextDisplay.class, CraftTextDisplay::new, createAndSetPos(net.minecraft.world.entity.EntityType.TEXT_DISPLAY)));
++        register(new EntityTypeData<>(EntityType.ITEM_DISPLAY, ItemDisplay.class, CraftItemDisplay::new, combine(createAndSetPos(net.minecraft.world.entity.EntityType.ITEM_DISPLAY), ROT))); // Paper
++        register(new EntityTypeData<>(EntityType.TEXT_DISPLAY, TextDisplay.class, CraftTextDisplay::new, combine(createAndSetPos(net.minecraft.world.entity.EntityType.TEXT_DISPLAY), ROT))); // Paper
+ 
+         // MISC
+         register(new EntityTypeData<>(EntityType.ITEM, Item.class, CraftItem::new, spawnData -> {

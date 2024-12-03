@@ -1,0 +1,106 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 4 Mar 2022 09:46:33 -0800
+Subject: [PATCH] More Raid API
+
+== AT ==
+public net.minecraft.world.entity.raid.Raid raidEvent
+
+diff --git a/src/main/java/net/minecraft/world/entity/raid/Raid.java b/src/main/java/net/minecraft/world/entity/raid/Raid.java
+index 28922f2a1cf4762d5d7d09635b9268c6091300c3..11cf2d9def087b0898c828eaa21eb5f7b8811d5f 100644
+--- a/src/main/java/net/minecraft/world/entity/raid/Raid.java
++++ b/src/main/java/net/minecraft/world/entity/raid/Raid.java
+@@ -107,6 +107,11 @@ public class Raid {
+     private Raid.RaidStatus status;
+     private int celebrationTicks;
+     private Optional<BlockPos> waveSpawnPos;
++    // Paper start
++    private static final String PDC_NBT_KEY = "BukkitValues";
++    private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry PDC_TYPE_REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
++    public final org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer persistentDataContainer = new org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer(PDC_TYPE_REGISTRY);
++    // Paper end
+ 
+     public Raid(int id, ServerLevel world, BlockPos pos) {
+         this.raidEvent = new ServerBossEvent(Raid.RAID_NAME_COMPONENT, BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.NOTCHED_10);
+@@ -150,6 +155,11 @@ public class Raid {
+                 this.heroesOfTheVillage.add(NbtUtils.loadUUID(nbtbase));
+             }
+         }
++        // Paper start
++        if (nbt.contains(PDC_NBT_KEY, net.minecraft.nbt.Tag.TAG_COMPOUND)) {
++            this.persistentDataContainer.putAll(nbt.getCompound(PDC_NBT_KEY));
++        }
++        // Paper end
+ 
+     }
+ 
+@@ -862,6 +872,11 @@ public class Raid {
+         }
+ 
+         nbt.put("HeroesOfTheVillage", nbttaglist);
++        // Paper start
++        if (!this.persistentDataContainer.isEmpty()) {
++            nbt.put(PDC_NBT_KEY, this.persistentDataContainer.toTagCompound());
++        }
++        // Paper end
+         return nbt;
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRaid.java b/src/main/java/org/bukkit/craftbukkit/CraftRaid.java
+index b8ce1c1c2447f9cff1717bfcfd6eb911ade0d4b3..51f21af9d75769abdcba713b9aa33392e994d9b0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftRaid.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftRaid.java
+@@ -103,4 +103,34 @@ public final class CraftRaid implements Raid {
+     public net.minecraft.world.entity.raid.Raid getHandle() {
+         return this.handle;
+     }
++
++    // Paper start - more Raid API
++    @Override
++    public int getId() {
++        return this.handle.getId();
++    }
++
++    @Override
++    public org.bukkit.boss.BossBar getBossBar() {
++        return new org.bukkit.craftbukkit.boss.CraftBossBar(this.handle.raidEvent);
++    }
++
++    @Override
++    public org.bukkit.persistence.PersistentDataContainer getPersistentDataContainer() {
++        return this.handle.persistentDataContainer;
++    }
++
++    @Override
++    public boolean equals(final Object o) {
++        if (this == o) return true;
++        if (o == null || this.getClass() != o.getClass()) return false;
++        final org.bukkit.craftbukkit.CraftRaid craftRaid = (org.bukkit.craftbukkit.CraftRaid) o;
++        return this.handle.equals(craftRaid.handle);
++    }
++
++    @Override
++    public int hashCode() {
++        return this.handle.hashCode();
++    }
++    // Paper end - more Raid API
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 6689656098a83d5fe39762caaa6d4924249968ce..dc03536264a7e529957736ab040fe4966280b87e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -2311,6 +2311,14 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         return (raid == null) ? null : new CraftRaid(raid);
+     }
+ 
++    // Paper start - more Raid API
++    @Override
++    public @Nullable Raid getRaid(final int id) {
++        final net.minecraft.world.entity.raid.@Nullable Raid nmsRaid = this.world.getRaids().raidMap.get(id);
++        return nmsRaid != null ? new CraftRaid(nmsRaid) : null;
++    }
++    // Paper end - more Raid API
++
+     @Override
+     public List<Raid> getRaids() {
+         Raids persistentRaid = this.world.getRaids();

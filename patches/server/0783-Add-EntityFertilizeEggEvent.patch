@@ -1,0 +1,103 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+Date: Fri, 24 Jun 2022 12:39:34 +0200
+Subject: [PATCH] Add EntityFertilizeEggEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Turtle.java b/src/main/java/net/minecraft/world/entity/animal/Turtle.java
+index ed7f5eb9b3b700c2f817d61ee0bf8a6952731510..9a9ecc3e2c176c6d9700c4c585250b9780b7629b 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Turtle.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Turtle.java
+@@ -448,6 +448,10 @@ public class Turtle extends Animal {
+             if (entityplayer == null && this.partner.getLoveCause() != null) {
+                 entityplayer = this.partner.getLoveCause();
+             }
++            // Paper start - Add EntityFertilizeEggEvent event
++            io.papermc.paper.event.entity.EntityFertilizeEggEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityFertilizeEggEvent(this.animal, this.partner);
++            if (event.isCancelled()) return;
++            // Paper end - Add EntityFertilizeEggEvent event
+ 
+             if (entityplayer != null) {
+                 entityplayer.awardStat(Stats.ANIMALS_BRED);
+@@ -462,7 +466,7 @@ public class Turtle extends Animal {
+             RandomSource randomsource = this.animal.getRandom();
+ 
+             if (getServerLevel((Level) this.level).getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
+-                this.level.addFreshEntity(new ExperienceOrb(this.level, this.animal.getX(), this.animal.getY(), this.animal.getZ(), randomsource.nextInt(7) + 1, org.bukkit.entity.ExperienceOrb.SpawnReason.BREED, entityplayer)); // Paper;
++                if (event.getExperience() > 0) this.level.addFreshEntity(new ExperienceOrb(this.level, this.animal.getX(), this.animal.getY(), this.animal.getZ(), event.getExperience(), org.bukkit.entity.ExperienceOrb.SpawnReason.BREED, entityplayer)); // Paper - Add EntityFertilizeEggEvent event
+             }
+ 
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java b/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java
+index b44b9f77dd8d36ac1e0245820fbc6b91974be4b2..ca04e5d829331551a2c2f44e223ff05c6ce04e76 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java
++++ b/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java
+@@ -270,7 +270,12 @@ public class Frog extends Animal implements VariantHolder<Holder<FrogVariant>> {
+ 
+     @Override
+     public void spawnChildFromBreeding(ServerLevel world, Animal other) {
+-        this.finalizeSpawnChildFromBreeding(world, other, null);
++        // Paper start - Add EntityFertilizeEggEvent event
++        final io.papermc.paper.event.entity.EntityFertilizeEggEvent result = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityFertilizeEggEvent(this, other);
++        if (result.isCancelled()) return;
++
++        this.finalizeSpawnChildFromBreeding(world, other, null, result.getExperience()); // Paper - use craftbukkit call that takes experience amount
++        // Paper end - Add EntityFertilizeEggEvent event
+         this.getBrain().setMemory(MemoryModuleType.IS_PREGNANT, Unit.INSTANCE);
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java b/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java
+index 014e1ea1603bc7a7b42ae7ff7d12e5a41f331d2f..af2f6e690fc51d319b77d081466c2dc7a1d8fe19 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java
++++ b/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java
+@@ -340,11 +340,16 @@ public class Sniffer extends Animal {
+ 
+     @Override
+     public void spawnChildFromBreeding(ServerLevel world, Animal other) {
++        // Paper start - Add EntityFertilizeEggEvent event
++        final io.papermc.paper.event.entity.EntityFertilizeEggEvent result = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityFertilizeEggEvent(this, other);
++        if (result.isCancelled()) return;
++        // Paper end - Add EntityFertilizeEggEvent event
++
+         ItemStack itemstack = new ItemStack(Items.SNIFFER_EGG);
+         ItemEntity entityitem = new ItemEntity(world, this.position().x(), this.position().y(), this.position().z(), itemstack);
+ 
+         entityitem.setDefaultPickUpDelay();
+-        this.finalizeSpawnChildFromBreeding(world, other, (AgeableMob) null);
++        this.finalizeSpawnChildFromBreeding(world, other, (AgeableMob) null, result.getExperience()); // Paper - Add EntityFertilizeEggEvent event
+         if (this.spawnAtLocation(world, entityitem) != null) { // Paper - Call EntityDropItemEvent
+         this.playSound(SoundEvents.SNIFFER_EGG_PLOP, 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 0.5F);
+         } // Paper - Call EntityDropItemEvent
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 48d39015da2c91a27367d44e72b7dacddb41d6d6..ec5c16f64d4e797b4c09bd0d3ae6f143d8795612 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -2195,4 +2195,28 @@ public class CraftEventFactory {
+         return event.callEvent();
+     }
+     // Paper end
++
++    // Paper start - add EntityFertilizeEggEvent
++    /**
++     * Calls the {@link io.papermc.paper.event.entity.EntityFertilizeEggEvent}.
++     * If the event is cancelled, this method also resets the love on both the {@code breeding} and {@code other} entity.
++     *
++     * @param breeding the entity on which #spawnChildFromBreeding was called.
++     * @param other    the partner of the entity.
++     * @return the event after it was called. The instance may be used to retrieve the experience of the event.
++     */
++    public static io.papermc.paper.event.entity.EntityFertilizeEggEvent callEntityFertilizeEggEvent(Animal breeding, Animal other) {
++        ServerPlayer serverPlayer = breeding.getLoveCause();
++        if (serverPlayer == null) serverPlayer = other.getLoveCause();
++        final int experience = breeding.getRandom().nextInt(7) + 1; // From Animal#spawnChildFromBreeding(ServerLevel, Animal)
++
++        final io.papermc.paper.event.entity.EntityFertilizeEggEvent event = new io.papermc.paper.event.entity.EntityFertilizeEggEvent((LivingEntity) breeding.getBukkitEntity(), (LivingEntity) other.getBukkitEntity(), serverPlayer == null ? null : serverPlayer.getBukkitEntity(), breeding.breedItem == null ? null : CraftItemStack.asCraftMirror(breeding.breedItem).clone(), experience);
++        if (!event.callEvent()) {
++            breeding.resetLove();
++            other.resetLove(); // stop the pathfinding to avoid infinite loop
++        }
++
++        return event;
++    }
++    // Paper end - add EntityFertilizeEggEvent
+ }

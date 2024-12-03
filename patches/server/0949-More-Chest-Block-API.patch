@@ -1,0 +1,73 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: SoSeDiK <mrsosedik@gmail.com>
+Date: Wed, 1 May 2024 08:22:13 +0300
+Subject: [PATCH] More Chest Block API
+
+== AT ==
+public net.minecraft.world.level.block.ChestBlock isBlockedChestByBlock(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;)Z
+
+diff --git a/src/main/java/net/minecraft/world/level/block/EnderChestBlock.java b/src/main/java/net/minecraft/world/level/block/EnderChestBlock.java
+index fba3113a57d718e0a49366b07df74ee056430b37..d3b4965bb0a067dccdb2d83ec0947de24dfb5145 100644
+--- a/src/main/java/net/minecraft/world/level/block/EnderChestBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/EnderChestBlock.java
+@@ -78,7 +78,7 @@ public class EnderChestBlock extends AbstractChestBlock<EnderChestBlockEntity> i
+         PlayerEnderChestContainer playerEnderChestContainer = player.getEnderChestInventory();
+         if (playerEnderChestContainer != null && world.getBlockEntity(pos) instanceof EnderChestBlockEntity enderChestBlockEntity) {
+             BlockPos blockPos = pos.above();
+-            if (world.getBlockState(blockPos).isRedstoneConductor(world, blockPos)) {
++            if (world.getBlockState(blockPos).isRedstoneConductor(world, blockPos)) { // Paper - diff on change; make sure that EnderChest#isBlocked uses the same logic
+                 return InteractionResult.SUCCESS;
+             } else {
+                 if (world instanceof ServerLevel serverLevel) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java b/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
+index 6e98a00d526b734992ce39b15768c5820dce4ca8..cc7bf4d39b834fba472bc163226a01a0cd4b6010 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
+@@ -99,4 +99,29 @@ public class CraftChest extends CraftLootable<ChestBlockEntity> implements Chest
+         return getTileEntity().openersCounter.opened;
+     }
+     // Paper end - More Lidded Block API
++
++    // Paper start - More Chest Block API
++    @Override
++    public boolean isBlocked() {
++        // Method mimics vanilla logic in ChestBlock and DoubleBlockCombiner when trying to open chest's container
++        if (!isPlaced()) {
++            return false;
++        }
++        net.minecraft.world.level.LevelAccessor world = getWorldHandle();
++        if (ChestBlock.isChestBlockedAt(world, getPosition())) {
++            return true;
++        }
++        if (ChestBlock.getBlockType(this.data) == net.minecraft.world.level.block.DoubleBlockCombiner.BlockType.SINGLE) {
++            return false;
++        }
++        net.minecraft.core.Direction direction = ChestBlock.getConnectedDirection(this.data);
++        net.minecraft.core.BlockPos neighbourBlockPos = getPosition().relative(direction);
++        BlockState neighbourBlockState = world.getBlockStateIfLoaded(neighbourBlockPos);
++        return neighbourBlockState != null
++            && neighbourBlockState.is(this.data.getBlock())
++            && ChestBlock.getBlockType(neighbourBlockState) != net.minecraft.world.level.block.DoubleBlockCombiner.BlockType.SINGLE
++            && ChestBlock.getConnectedDirection(neighbourBlockState) == direction.getOpposite()
++            && ChestBlock.isChestBlockedAt(world, neighbourBlockPos);
++    }
++    // Paper end - More Chest Block API
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftEnderChest.java b/src/main/java/org/bukkit/craftbukkit/block/CraftEnderChest.java
+index b64adbba3e52d32d439e64a243cb74f3fbca2ce3..f45ee675a10729845bf376fa95e648b23b9aac12 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftEnderChest.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftEnderChest.java
+@@ -58,4 +58,13 @@ public class CraftEnderChest extends CraftBlockEntityState<EnderChestBlockEntity
+         return getTileEntity().openersCounter.opened;
+     }
+     // Paper end - More Lidded Block API
++
++    // Paper start - More Chest Block API
++    @Override
++    public boolean isBlocked() {
++        // Uses the same logic as EnderChestBlock's check for opening container
++        final net.minecraft.core.BlockPos abovePos = this.getPosition().above();
++        return this.isPlaced() && this.getWorldHandle().getBlockState(abovePos).isRedstoneConductor(this.getWorldHandle(), abovePos);
++    }
++    // Paper end - More Chest Block API
+ }

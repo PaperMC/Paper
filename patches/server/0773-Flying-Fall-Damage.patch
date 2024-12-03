@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TreyRuffy <TreyRuffy@users.noreply.github.com>
+Date: Fri, 27 May 2022 02:26:08 -0600
+Subject: [PATCH] Flying Fall Damage
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index 551f7c3750c87527ffc78545c99075221437d1dc..7dd601d0b0efd285a913a074ffa42e142bda8889 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -199,6 +199,7 @@ public abstract class Player extends LivingEntity {
+     private boolean ignoreFallDamageFromCurrentImpulse;
+     private int currentImpulseContextResetGraceTime;
+     public boolean affectsSpawning = true; // Paper - Affects Spawning API
++    public net.kyori.adventure.util.TriState flyingFallDamage = net.kyori.adventure.util.TriState.NOT_SET; // Paper - flying fall damage
+ 
+     // CraftBukkit start
+     public boolean fauxSleeping;
+@@ -1654,7 +1655,7 @@ public abstract class Player extends LivingEntity {
+ 
+     @Override
+     public boolean causeFallDamage(float fallDistance, float damageMultiplier, DamageSource damageSource) {
+-        if (this.abilities.mayfly) {
++        if (this.abilities.mayfly && !this.flyingFallDamage.toBooleanOrElse(false)) { // Paper - flying fall damage
+             return false;
+         } else {
+             if (fallDistance >= 2.0F) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 68329d971594ed24438b9398a5a4219a71aed28d..c00cf53b7b7b6d8b1ecd582c49fe82263920f0df 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -2593,6 +2593,19 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         this.getHandle().onUpdateAbilities();
+     }
+ 
++    // Paper start - flying fall damage
++    @Override
++    public void setFlyingFallDamage(@NotNull net.kyori.adventure.util.TriState flyingFallDamage) {
++        getHandle().flyingFallDamage = flyingFallDamage;
++    }
++
++    @NotNull
++    @Override
++    public net.kyori.adventure.util.TriState hasFlyingFallDamage() {
++        return getHandle().flyingFallDamage;
++    }
++    // Paper end - flying fall damage
++
+     @Override
+     public void setFlySpeed(float value) {
+         this.validateSpeed(value);

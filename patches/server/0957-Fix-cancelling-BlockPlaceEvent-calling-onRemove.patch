@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tamion <70228790+notTamion@users.noreply.github.com>
+Date: Thu, 23 May 2024 11:02:20 +0200
+Subject: [PATCH] Fix cancelling BlockPlaceEvent calling onRemove
+
+
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index bc973b01fee365541866e386ee117f23cfe7cc3a..43b58877152ff7746591986158ba78bc46fc8b3e 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -505,9 +505,11 @@ public final class ItemStack implements DataComponentHolder {
+                         world.capturedTileEntities.clear(); // Paper - Allow chests to be placed with NBT data; clear out block entities as chests and such will pop loot
+                         // revert back all captured blocks
+                         world.preventPoiUpdated = true; // CraftBukkit - SPIGOT-5710
++                    world.isBlockPlaceCancelled = true; // Paper - prevent calling cleanup logic when undoing a block place upon a cancelled BlockPlaceEvent
+                         for (BlockState blockstate : blocks) {
+                             blockstate.update(true, false);
+                         }
++                    world.isBlockPlaceCancelled = false; // Paper - prevent calling cleanup logic when undoing a block place upon a cancelled BlockPlaceEvent
+                         world.preventPoiUpdated = false;
+ 
+                         // Brute force all possible updates
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index db2a4ce54cf1df5c47a0907396deadad4a28dfc7..68f515dcc45306ac2751b1ef49fb4946f9e785db 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -153,6 +153,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     public boolean preventPoiUpdated = false; // CraftBukkit - SPIGOT-5710
+     public boolean captureBlockStates = false;
+     public boolean captureTreeGeneration = false;
++    public boolean isBlockPlaceCancelled = false; // Paper - prevent calling cleanup logic when undoing a block place upon a cancelled BlockPlaceEvent
+     public Map<BlockPos, org.bukkit.craftbukkit.block.CraftBlockState> capturedBlockStates = new java.util.LinkedHashMap<>(); // Paper
+     public Map<BlockPos, BlockEntity> capturedTileEntities = new java.util.LinkedHashMap<>(); // Paper - Retain block place order when capturing blockstates
+     public List<ItemEntity> captureDrops;
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+index e431c66d4cb63ac9654c2575ed23d65e82a0d849..5a14d0aa18026b0b5d3e3caffebc6981b1125309 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -374,7 +374,7 @@ public class LevelChunk extends ChunkAccess {
+ 
+                 boolean flag3 = iblockdata1.hasBlockEntity();
+ 
+-                if (!this.level.isClientSide) {
++                if (!this.level.isClientSide && !this.level.isBlockPlaceCancelled) { // Paper - prevent calling cleanup logic when undoing a block place upon a cancelled BlockPlaceEvent
+                     iblockdata1.onRemove(this.level, blockposition, iblockdata, flag);
+                 } else if (!iblockdata1.is(block) && flag3) {
+                     this.removeBlockEntity(blockposition);

@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Thu, 11 Apr 2024 16:37:44 +0100
+Subject: [PATCH] Fix premature player kicks on shutdown
+
+When the server is stopping, the default execution handler method will throw a
+RejectedExecutionException in order to prevent further execution, this causes
+us to lose the actual kick reason. To mitigate this, we'll use a seperate marked
+class in order to gracefully ignore these.
+
+diff --git a/src/main/java/io/papermc/paper/util/ServerStopRejectedExecutionException.java b/src/main/java/io/papermc/paper/util/ServerStopRejectedExecutionException.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2c5cd77103c5a33d4349ab6b9ee2d8378bb60eb4
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/ServerStopRejectedExecutionException.java
+@@ -0,0 +1,20 @@
++package io.papermc.paper.util;
++
++import java.util.concurrent.RejectedExecutionException;
++
++public class ServerStopRejectedExecutionException extends RejectedExecutionException {
++    public ServerStopRejectedExecutionException() {
++    }
++
++    public ServerStopRejectedExecutionException(final String message) {
++        super(message);
++    }
++
++    public ServerStopRejectedExecutionException(final String message, final Throwable cause) {
++        super(message, cause);
++    }
++
++    public ServerStopRejectedExecutionException(final Throwable cause) {
++        super(cause);
++    }
++}
+diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
+index 72e69f60fb687f102c963b61042b19162a5ec0b2..c12335bc83d31ec65fe2d7cbe0b084748e670010 100644
+--- a/src/main/java/net/minecraft/network/Connection.java
++++ b/src/main/java/net/minecraft/network/Connection.java
+@@ -285,6 +285,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+                         Connection.genericsFtw(packet, packetlistener);
+                     } catch (RunningOnDifferentThreadException cancelledpackethandleexception) {
+                         ;
++                    } catch (io.papermc.paper.util.ServerStopRejectedExecutionException ignored) { // Paper - do not prematurely disconnect players on stop
+                     } catch (RejectedExecutionException rejectedexecutionexception) {
+                         this.disconnect((Component) Component.translatable("multiplayer.disconnect.server_shutdown"));
+                     } catch (ClassCastException classcastexception) {
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index b88a91ff85727109241991f76ebad7c0119ad436..0c44f59445e9cd5d2767cbabe874e137b2420a2d 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -2127,7 +2127,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     @Override
+     public void executeIfPossible(Runnable runnable) {
+         if (this.isStopped()) {
+-            throw new RejectedExecutionException("Server already shutting down");
++            throw new io.papermc.paper.util.ServerStopRejectedExecutionException("Server already shutting down"); // Paper - do not prematurely disconnect players on stop
+         } else {
+             super.executeIfPossible(runnable);
+         }

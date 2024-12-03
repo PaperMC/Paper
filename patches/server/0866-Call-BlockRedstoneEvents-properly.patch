@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Warrior <50800980+Warriorrrr@users.noreply.github.com>
+Date: Wed, 13 Sep 2023 05:46:10 +0200
+Subject: [PATCH] Call BlockRedstoneEvents properly
+
+Call BlockRedstoneEvents for lecterns.
+Fix previous power level for experimental redstone wire.
+
+diff --git a/src/main/java/net/minecraft/world/level/block/LecternBlock.java b/src/main/java/net/minecraft/world/level/block/LecternBlock.java
+index 5f860da758a6954d548bc4e768f39485c2aa4645..9797d756ecf532db013093469a3e40d9c6ac0544 100644
+--- a/src/main/java/net/minecraft/world/level/block/LecternBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/LecternBlock.java
+@@ -175,6 +175,16 @@ public class LecternBlock extends BaseEntityBlock {
+     }
+ 
+     private static void changePowered(Level world, BlockPos pos, BlockState state, boolean powered) {
++        // Paper start - Call BlockRedstoneEvent properly
++        final int currentRedstoneLevel = state.getValue(LecternBlock.POWERED) ? 15 : 0, targetRedstoneLevel = powered ? 15 : 0;
++        if (currentRedstoneLevel != targetRedstoneLevel) {
++            final org.bukkit.event.block.BlockRedstoneEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(world, pos, currentRedstoneLevel, targetRedstoneLevel);
++
++            if (event.getNewCurrent() != targetRedstoneLevel) {
++                return;
++            }
++        }
++        // Paper end - Call BlockRedstoneEvent properly
+         world.setBlock(pos, (BlockState) state.setValue(LecternBlock.POWERED, powered), 3);
+         LecternBlock.updateBelow(world, pos, state);
+     }
+diff --git a/src/main/java/net/minecraft/world/level/redstone/ExperimentalRedstoneWireEvaluator.java b/src/main/java/net/minecraft/world/level/redstone/ExperimentalRedstoneWireEvaluator.java
+index 28e0ff0a6fef63a572782704d34c4ccefc7baec1..bad91f7e9ebcf9d73f2d74a65e5235ee496e844e 100644
+--- a/src/main/java/net/minecraft/world/level/redstone/ExperimentalRedstoneWireEvaluator.java
++++ b/src/main/java/net/minecraft/world/level/redstone/ExperimentalRedstoneWireEvaluator.java
+@@ -46,7 +46,7 @@ public class ExperimentalRedstoneWireEvaluator extends RedstoneWireEvaluator {
+             BlockState iblockdata1 = world.getBlockState(blockposition1);
+ 
+             // CraftBukkit start
+-            int oldPower = state.getValue(RedStoneWireBlock.POWER);
++            int oldPower = iblockdata1.getValue(RedStoneWireBlock.POWER); // Paper - Call BlockRedstoneEvent properly; get the previous power from the right state
+             if (oldPower != j) {
+                 BlockRedstoneEvent event = new BlockRedstoneEvent(CraftBlock.at(world, blockposition1), oldPower, j);
+                 world.getCraftServer().getPluginManager().callEvent(event);

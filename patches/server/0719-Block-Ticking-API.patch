@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Sun, 26 Dec 2021 13:23:46 -0500
+Subject: [PATCH] Block Ticking API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+index 68fcec085334383808b2117a49220f4d8239220b..7afb933782cac7e1ad621e80211c13066c680ad7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBlock.java
+@@ -78,6 +78,12 @@ public class CraftBlock implements Block {
+         return this.world.getBlockState(this.position);
+     }
+ 
++    // Paper start
++    public net.minecraft.world.level.material.FluidState getNMSFluid() {
++        return this.world.getFluidState(this.position);
++    }
++    // Paper end
++
+     public BlockPos getPosition() {
+         return this.position;
+     }
+@@ -709,5 +715,23 @@ public class CraftBlock implements Block {
+     public boolean isValidTool(ItemStack itemStack) {
+         return getDrops(itemStack).size() != 0;
+     }
++
++    @Override
++    public void tick() {
++        final ServerLevel level = this.world.getMinecraftWorld();
++        this.getNMS().tick(level, this.position, level.random);
++    }
++
++
++    @Override
++    public void fluidTick() {
++        this.getNMSFluid().tick(this.world.getMinecraftWorld(), this.position, this.getNMS());
++    }
++
++    @Override
++    public void randomTick() {
++        final ServerLevel level = this.world.getMinecraftWorld();
++        this.getNMS().randomTick(level, this.position, level.random);
++    }
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
+index 78071859e9b745b2497fec7761888b4e65a208a1..fd941d9e38fa6c886b6779eaa63eebe00e1fa1b5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
+@@ -761,4 +761,11 @@ public class CraftBlockData implements BlockData {
+         return speed;
+     }
+     // Paper end - destroy speed API
++
++    // Paper start - Block tick API
++    @Override
++    public boolean isRandomlyTicked() {
++        return this.state.isRandomlyTicking();
++    }
++    // Paper end - Block tick API
+ }

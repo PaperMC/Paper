@@ -1,0 +1,20 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 17 Jun 2024 17:41:09 -0700
+Subject: [PATCH] Fix NPE for Jukebox#setRecord
+
+Fallback to the global registry if no level exists
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/JukeboxBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/JukeboxBlockEntity.java
+index 7a28dc3e9f768458e4b59a7b6a345e189cafa048..668ec9dfb888715aa1cca67bd28e610b8d0f2a93 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/JukeboxBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/JukeboxBlockEntity.java
+@@ -203,7 +203,7 @@ public class JukeboxBlockEntity extends BlockEntity implements ContainerSingleIt
+     public void setSongItemWithoutPlaying(ItemStack itemstack, long ticksSinceSongStarted) { // CraftBukkit - add argument
+         this.item = itemstack;
+         this.jukeboxSongPlayer.song = null; // CraftBukkit - reset
+-        JukeboxSong.fromStack(this.level.registryAccess(), itemstack).ifPresent((holder) -> {
++        JukeboxSong.fromStack(this.level != null ? this.level.registryAccess() : org.bukkit.craftbukkit.CraftRegistry.getMinecraftRegistry(), itemstack).ifPresent((holder) -> { // Paper - fallback to other RegistyrAccess if no level
+             this.jukeboxSongPlayer.setSongWithoutPlaying(holder, ticksSinceSongStarted); // CraftBukkit - add argument
+         });
+         // CraftBukkit start - add null check for level

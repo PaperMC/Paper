@@ -1,0 +1,116 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TonytheMacaroni <tonythemacaroni123@gmail.com>
+Date: Wed, 6 Sep 2023 19:24:16 -0400
+Subject: [PATCH] Add predicate for blocks when raytracing
+
+
+diff --git a/src/main/java/net/minecraft/world/level/BlockGetter.java b/src/main/java/net/minecraft/world/level/BlockGetter.java
+index e69473307b30d2b805fc1723ae8f6f2be76310ef..62719778c62d6632a8eb6f2bc670956c15a247de 100644
+--- a/src/main/java/net/minecraft/world/level/BlockGetter.java
++++ b/src/main/java/net/minecraft/world/level/BlockGetter.java
+@@ -71,6 +71,12 @@ public interface BlockGetter extends LevelHeightAccessor {
+ 
+     // CraftBukkit start - moved block handling into separate method for use by Block#rayTrace
+     default BlockHitResult clip(ClipContext raytrace1, BlockPos blockposition) {
++        // Paper start - Add predicate for blocks when raytracing
++        return clip(raytrace1, blockposition, null);
++    }
++
++    default BlockHitResult clip(ClipContext raytrace1, BlockPos blockposition, java.util.function.Predicate<? super org.bukkit.block.Block> canCollide) {
++            // Paper end - Add predicate for blocks when raytracing
+             // Paper start - Prevent raytrace from loading chunks
+             BlockState iblockdata = this.getBlockStateIfLoaded(blockposition);
+             if (iblockdata == null) {
+@@ -80,7 +86,7 @@ public interface BlockGetter extends LevelHeightAccessor {
+                 return BlockHitResult.miss(raytrace1.getTo(), Direction.getApproximateNearest(vec3d.x, vec3d.y, vec3d.z), BlockPos.containing(raytrace1.getTo()));
+             }
+             // Paper end - Prevent raytrace from loading chunks
+-            if (iblockdata.isAir()) return null; // Paper - Perf: optimise air cases
++            if (iblockdata.isAir() || (canCollide != null && this instanceof LevelAccessor levelAccessor && !canCollide.test(org.bukkit.craftbukkit.block.CraftBlock.at(levelAccessor, blockposition)))) return null; // Paper - Perf: optimise air cases & check canCollide predicate
+             FluidState fluid = iblockdata.getFluidState(); // Paper - Perf: don't need to go to world state again
+             Vec3 vec3d = raytrace1.getFrom();
+             Vec3 vec3d1 = raytrace1.getTo();
+@@ -96,8 +102,14 @@ public interface BlockGetter extends LevelHeightAccessor {
+     // CraftBukkit end
+ 
+     default BlockHitResult clip(ClipContext context) {
++        // Paper start - Add predicate for blocks when raytracing
++        return clip(context, (java.util.function.Predicate<org.bukkit.block.Block>) null);
++    }
++
++    default BlockHitResult clip(ClipContext context, java.util.function.Predicate<? super org.bukkit.block.Block> canCollide) {
++        // Paper end - Add predicate for blocks when raytracing
+         return (BlockHitResult) BlockGetter.traverseBlocks(context.getFrom(), context.getTo(), context, (raytrace1, blockposition) -> {
+-            return this.clip(raytrace1, blockposition); // CraftBukkit - moved into separate method
++            return this.clip(raytrace1, blockposition, canCollide); // CraftBukkit - moved into separate method // Paper - Add predicate for blocks when raytracing
+         }, (raytrace1) -> {
+             Vec3 vec3d = raytrace1.getFrom().subtract(raytrace1.getTo());
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 231089eab86f5d3e33ddb6d5cb8358d5d5d5eaf4..a36470d9e9d36106c928f39f7eddc7afe3621610 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -1097,9 +1097,15 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+ 
+     @Override
+     public RayTraceResult rayTraceEntities(Location start, Vector direction, double maxDistance, double raySize, Predicate<? super Entity> filter) {
++        // Paper start - Add predicate for blocks when raytracing
++        return rayTraceEntities((io.papermc.paper.math.Position) start, direction, maxDistance, raySize, filter);
++    }
++
++    public RayTraceResult rayTraceEntities(io.papermc.paper.math.Position start, Vector direction, double maxDistance, double raySize, Predicate<? super Entity> filter) {
+         Preconditions.checkArgument(start != null, "Location start cannot be null");
+-        Preconditions.checkArgument(this.equals(start.getWorld()), "Location start cannot be in a different world");
+-        start.checkFinite();
++        Preconditions.checkArgument(!(start instanceof Location location) || this.equals(location.getWorld()), "Location start cannot be in a different world");
++        Preconditions.checkArgument(start.isFinite(), "Location start is not finite");
++        // Paper end - Add predicate for blocks when raytracing
+ 
+         Preconditions.checkArgument(direction != null, "Vector direction cannot be null");
+         direction.checkFinite();
+@@ -1149,9 +1155,16 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+ 
+     @Override
+     public RayTraceResult rayTraceBlocks(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks) {
++        // Paper start - Add predicate for blocks when raytracing
++        return this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, null);
++    }
++
++    @Override
++    public RayTraceResult rayTraceBlocks(io.papermc.paper.math.Position start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, Predicate<? super Block> canCollide) {
+         Preconditions.checkArgument(start != null, "Location start cannot be null");
+-        Preconditions.checkArgument(this.equals(start.getWorld()), "Location start cannot be in a different world");
+-        start.checkFinite();
++        Preconditions.checkArgument(!(start instanceof Location location) || this.equals(location.getWorld()), "Location start cannot be in a different world");
++        Preconditions.checkArgument(start.isFinite(), "Location start is not finite");
++        // Paper end - Add predicate for blocks when raytracing
+ 
+         Preconditions.checkArgument(direction != null, "Vector direction cannot be null");
+         direction.checkFinite();
+@@ -1164,16 +1177,23 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         }
+ 
+         Vector dir = direction.clone().normalize().multiply(maxDistance);
+-        Vec3 startPos = CraftLocation.toVec3D(start);
++        Vec3 startPos = io.papermc.paper.util.MCUtil.toVec3(start); // Paper - Add predicate for blocks when raytracing
+         Vec3 endPos = startPos.add(dir.getX(), dir.getY(), dir.getZ());
+-        HitResult nmsHitResult = this.getHandle().clip(new ClipContext(startPos, endPos, ignorePassableBlocks ? ClipContext.Block.COLLIDER : ClipContext.Block.OUTLINE, CraftFluidCollisionMode.toNMS(fluidCollisionMode), CollisionContext.empty()));
++        HitResult nmsHitResult = this.getHandle().clip(new ClipContext(startPos, endPos, ignorePassableBlocks ? ClipContext.Block.COLLIDER : ClipContext.Block.OUTLINE, CraftFluidCollisionMode.toNMS(fluidCollisionMode), CollisionContext.empty()), canCollide); // Paper - Add predicate for blocks when raytracing
+ 
+         return CraftRayTraceResult.fromNMS(this, nmsHitResult);
+     }
+ 
+     @Override
+     public RayTraceResult rayTrace(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, Predicate<? super Entity> filter) {
+-        RayTraceResult blockHit = this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks);
++        // Paper start - Add predicate for blocks when raytracing
++        return this.rayTrace(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, raySize, filter, null);
++    }
++
++    @Override
++    public RayTraceResult rayTrace(io.papermc.paper.math.Position start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, Predicate<? super Entity> filter, Predicate<? super Block> canCollide) {
++        RayTraceResult blockHit = this.rayTraceBlocks(start, direction, maxDistance, fluidCollisionMode, ignorePassableBlocks, canCollide);
++        // Paper end - Add predicate for blocks when raytracing
+         Vector startVec = null;
+         double blockHitDistance = maxDistance;
+ 

@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+Date: Mon, 3 Apr 2023 18:46:49 +0200
+Subject: [PATCH] Fix block place logic
+
+Fix several issues when a player interact with a block:
+* the place sound isn't played for the dispensed shulker block
+* desync of the jukebox blocks between bukkit handler and the vanilla interaction
+* poi can desync when the BlockPhysicsEvent is cancelled
+
+diff --git a/src/main/java/net/minecraft/world/item/BlockItem.java b/src/main/java/net/minecraft/world/item/BlockItem.java
+index cdd41eb371b1dd244a72c863cc5c8c4e84a9a71a..560932675223ea3ff75b6bf42b47ea5882ff953a 100644
+--- a/src/main/java/net/minecraft/world/item/BlockItem.java
++++ b/src/main/java/net/minecraft/world/item/BlockItem.java
+@@ -122,7 +122,7 @@ public class BlockItem extends Item {
+ 
+                     SoundType soundeffecttype = iblockdata1.getSoundType();
+ 
+-                    // world.playSound(entityhuman, blockposition, this.getPlaceSound(iblockdata1), SoundCategory.BLOCKS, (soundeffecttype.getVolume() + 1.0F) / 2.0F, soundeffecttype.getPitch() * 0.8F);
++                    if (entityhuman == null) world.playSound(entityhuman, blockposition, this.getPlaceSound(iblockdata1), net.minecraft.sounds.SoundSource.BLOCKS, (soundeffecttype.getVolume() + 1.0F) / 2.0F, soundeffecttype.getPitch() * 0.8F); // Paper - Fix block place logic; reintroduce this for the dispenser (i.e the shulker)
+                     world.gameEvent((Holder) GameEvent.BLOCK_PLACE, blockposition, GameEvent.Context.of(entityhuman, iblockdata1));
+                     itemstack.consume(1, entityhuman);
+                     return InteractionResult.SUCCESS;
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 447e4c77b5cd90e744e014b66af5f0a9ebe9c2d8..c6133407f515f53c9fa67b988d4758d8f3d89f23 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -551,17 +551,18 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+                 // CraftBukkit start
+                 iblockdata1.updateIndirectNeighbourShapes(this, blockposition, k, j - 1); // Don't call an event for the old block to limit event spam
+                 CraftWorld world = ((ServerLevel) this).getWorld();
++                boolean cancelledUpdates = false; // Paper - Fix block place logic
+                 if (world != null && ((ServerLevel)this).hasPhysicsEvent) { // Paper - BlockPhysicsEvent
+                     BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), CraftBlockData.fromData(iblockdata));
+                     this.getCraftServer().getPluginManager().callEvent(event);
+ 
+-                    if (event.isCancelled()) {
+-                        return;
+-                    }
++                    cancelledUpdates = event.isCancelled(); // Paper - Fix block place logic
+                 }
+                 // CraftBukkit end
++                if (!cancelledUpdates) { // Paper - Fix block place logic
+                 iblockdata.updateNeighbourShapes(this, blockposition, k, j - 1);
+                 iblockdata.updateIndirectNeighbourShapes(this, blockposition, k, j - 1);
++                } // Paper - Fix block place logic
+             }
+ 
+             // CraftBukkit start - SPIGOT-5710

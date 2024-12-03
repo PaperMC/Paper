@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 13 Nov 2021 12:36:26 -0800
+Subject: [PATCH] Per world ticks per spawn settings
+
+
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index bfedc52cf8f0416fa2aaf73f694122b9eed09a4e..98198b6827bb71e53dfaf9d7796f592393d197b0 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -186,6 +186,15 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         return this.getChunkIfLoaded(chunkX, chunkZ) != null;
+     }
+     // Paper end - Use getChunkIfLoadedImmediately
++    // Paper start - per world ticks per spawn
++    private int getTicksPerSpawn(SpawnCategory spawnCategory) {
++        final int perWorld = this.paperConfig().entities.spawning.ticksPerSpawn.getInt(CraftSpawnCategory.toNMS(spawnCategory));
++        if (perWorld >= 0) {
++            return perWorld;
++        }
++        return this.getCraftServer().getTicksPerSpawns(spawnCategory);
++    }
++    // Paper end
+ 
+ 
+     public abstract ResourceKey<LevelStem> getTypeKey();
+@@ -199,7 +208,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         // CraftBukkit Ticks things
+         for (SpawnCategory spawnCategory : SpawnCategory.values()) {
+             if (CraftSpawnCategory.isValidForLimits(spawnCategory)) {
+-                this.ticksPerSpawnCategory.put(spawnCategory, (long) this.getCraftServer().getTicksPerSpawns(spawnCategory));
++                this.ticksPerSpawnCategory.put(spawnCategory, this.getTicksPerSpawn(spawnCategory)); // Paper
+             }
+         }
+ 

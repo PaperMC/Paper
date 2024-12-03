@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 15 Sep 2021 14:52:42 -0700
+Subject: [PATCH] config for disabling entity tag tags
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
+index d62c17c01f39d41d7cd422d37326a66791804090..979c99851ccb363d889069bafa5b5f7eb6b1a436 100644
+--- a/src/main/java/net/minecraft/world/entity/EntityType.java
++++ b/src/main/java/net/minecraft/world/entity/EntityType.java
+@@ -579,6 +579,15 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
+ 
+             if (entity.getType() == entitytypes) {
+                 if (world.isClientSide || !entity.getType().onlyOpCanSetNbt() || player != null && minecraftserver.getPlayerList().isOp(player.getGameProfile())) {
++                    // Paper start - filter out protected tags
++                    if (player == null || !player.getBukkitEntity().hasPermission("minecraft.nbt.place")) {
++                        nbt = nbt.update((compound) -> {
++                            for (net.minecraft.commands.arguments.NbtPathArgument.NbtPath tag : world.paperConfig().entities.spawning.filteredEntityTagNbtPaths) {
++                                tag.remove(compound);
++                            }
++                        });
++                    }
++                    // Paper end - filter out protected tags
+                     nbt.loadInto(entity);
+                 }
+             }

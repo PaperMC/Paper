@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: LemonCaramel <admin@caramel.moe>
+Date: Sun, 24 Sep 2023 20:19:44 +0900
+Subject: [PATCH] Fix UnsafeValues#loadAdvancement
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index cd00165ebb193c788e05a6f0b2b649936d56aa9f..066d8f0592fa4fc9886eab7ca1ba1151b3748b95 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -303,9 +303,30 @@ public final class CraftMagicNumbers implements UnsafeValues {
+         ResourceLocation minecraftkey = CraftNamespacedKey.toMinecraft(key);
+ 
+         JsonElement jsonelement = JsonParser.parseString(advancement);
+-        net.minecraft.advancements.Advancement nms = net.minecraft.advancements.Advancement.CODEC.parse(JsonOps.INSTANCE, jsonelement).getOrThrow(JsonParseException::new);
++        final net.minecraft.resources.RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE); // Paper - use RegistryOps
++        final net.minecraft.advancements.Advancement nms = net.minecraft.advancements.Advancement.CODEC.parse(ops, jsonelement).getOrThrow(JsonParseException::new); // Paper - use RegistryOps
+         if (nms != null) {
+-            MinecraftServer.getServer().getAdvancements().advancements.put(minecraftkey, new AdvancementHolder(minecraftkey, nms));
++            // Paper start - Fix throw UnsupportedOperationException
++            //MinecraftServer.getServer().getAdvancements().advancements.put(minecraftkey, new AdvancementHolder(minecraftkey, nms));
++            final com.google.common.collect.ImmutableMap.Builder<ResourceLocation, AdvancementHolder> mapBuilder = com.google.common.collect.ImmutableMap.builder();
++            mapBuilder.putAll(MinecraftServer.getServer().getAdvancements().advancements);
++
++            final AdvancementHolder holder = new AdvancementHolder(minecraftkey, nms);
++            mapBuilder.put(minecraftkey, holder);
++
++            MinecraftServer.getServer().getAdvancements().advancements = mapBuilder.build();
++            final net.minecraft.advancements.AdvancementTree tree = MinecraftServer.getServer().getAdvancements().tree();
++            tree.addAll(java.util.List.of(holder));
++
++            // recalculate advancement position
++            final net.minecraft.advancements.AdvancementNode node = tree.get(minecraftkey);
++            if (node != null) {
++                final net.minecraft.advancements.AdvancementNode root = node.root();
++                if (root.holder().value().display().isPresent()) {
++                    net.minecraft.advancements.TreeNodePosition.run(root);
++                }
++            }
++            // Paper end - Fix throw UnsupportedOperationException
+             Advancement bukkit = Bukkit.getAdvancement(key);
+ 
+             if (bukkit != null) {

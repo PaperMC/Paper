@@ -1,0 +1,113 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+Date: Thu, 31 Aug 2023 17:32:48 +0200
+Subject: [PATCH] Fix silent equipment change for mobs
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index 7d3e165bae2c00737019689b7bf1e74ad2517270..13064a73a9e3b45d32a098c4179cd980be508abc 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -1100,19 +1100,26 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+ 
+     @Override
+     public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
++        // Paper start - Fix silent equipment change
++        setItemSlot(slot, stack, false);
++    }
++
++    @Override
++    public void setItemSlot(EquipmentSlot slot, ItemStack stack, boolean silent) {
++        // Paper end - Fix silent equipment change
+         this.verifyEquippedItem(stack);
+         switch (slot.getType()) {
+             case HAND:
+-                this.onEquipItem(slot, (ItemStack) this.handItems.set(slot.getIndex(), stack), stack);
++                this.onEquipItem(slot, (ItemStack) this.handItems.set(slot.getIndex(), stack), stack, silent); // Paper - Fix silent equipment change
+                 break;
+             case HUMANOID_ARMOR:
+-                this.onEquipItem(slot, (ItemStack) this.armorItems.set(slot.getIndex(), stack), stack);
++                this.onEquipItem(slot, (ItemStack) this.armorItems.set(slot.getIndex(), stack), stack, silent); // Paper - Fix silent equipment change
+                 break;
+             case ANIMAL_ARMOR:
+                 ItemStack itemstack1 = this.bodyArmorItem;
+ 
+                 this.bodyArmorItem = stack;
+-                this.onEquipItem(slot, itemstack1, stack);
++                this.onEquipItem(slot, itemstack1, stack, silent); // Paper - Fix silent equipment change
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
+index cb89a95e6ff9db73c912bba04d27657683135153..90b6ed81dcfd4021c7e9509da5e8725034fa07e5 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
++++ b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
+@@ -265,8 +265,8 @@ public abstract class AbstractSkeleton extends Monster implements RangedAttackMo
+     // Paper end - shouldBurnInDay API
+ 
+     @Override
+-    public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
+-        super.setItemSlot(slot, stack);
++    public void setItemSlot(EquipmentSlot slot, ItemStack stack, boolean silent) { // Paper - Fix silent equipment change
++        super.setItemSlot(slot, stack, silent); // Paper - Fix silent equipment change
+         if (!this.level().isClientSide) {
+             this.reassessWeaponGoal();
+         }
+diff --git a/src/test/java/io/papermc/paper/entity/EntitySetItemSlotSilentOverrideTest.java b/src/test/java/io/papermc/paper/entity/EntitySetItemSlotSilentOverrideTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..18e0ae815528f3b2f944febc01df48f346b3a4f6
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/entity/EntitySetItemSlotSilentOverrideTest.java
+@@ -0,0 +1,52 @@
++package io.papermc.paper.entity;
++
++import io.github.classgraph.ClassGraph;
++import io.github.classgraph.ClassInfo;
++import io.github.classgraph.MethodInfo;
++import io.github.classgraph.MethodInfoList;
++import io.github.classgraph.MethodParameterInfo;
++import io.github.classgraph.ScanResult;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.stream.Stream;
++import org.bukkit.support.environment.Normal;
++import org.junit.jupiter.params.ParameterizedTest;
++import org.junit.jupiter.params.provider.MethodSource;
++
++import static org.junit.jupiter.api.Assertions.fail;
++
++@Normal
++public class EntitySetItemSlotSilentOverrideTest {
++
++    public static Stream<ClassInfo> parameters() {
++        final List<ClassInfo> classInfo = new ArrayList<>();
++        try (ScanResult scanResult = new ClassGraph()
++            .enableClassInfo()
++            .enableMethodInfo()
++            .whitelistPackages("net.minecraft")
++            .scan()
++        ) {
++            for (final ClassInfo subclass : scanResult.getSubclasses("net.minecraft.world.entity.LivingEntity")) {
++                final MethodInfoList setItemSlot = subclass.getDeclaredMethodInfo("setItemSlot");
++                if (!setItemSlot.isEmpty()) {
++                    classInfo.add(subclass);
++                }
++            }
++        }
++        return classInfo.stream();
++    }
++
++    @ParameterizedTest
++    @MethodSource("parameters")
++    public void checkSetItemSlotSilentOverrides(ClassInfo overridesSetItemSlot) {
++        final MethodInfoList setItemSlot = overridesSetItemSlot.getDeclaredMethodInfo("setItemSlot");
++        for (final MethodInfo methodInfo : setItemSlot) {
++            for (final MethodParameterInfo methodParameterInfo : methodInfo.getParameterInfo()) {
++                if ("boolean".equals(methodParameterInfo.getTypeDescriptor().toStringWithSimpleNames())) {
++                    return;
++                }
++            }
++        }
++        fail(overridesSetItemSlot.getName() + " needs to override setItemSlot with the boolean silent parameter as well");
++    }
++}

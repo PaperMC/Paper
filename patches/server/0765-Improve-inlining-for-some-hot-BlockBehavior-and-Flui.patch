@@ -1,0 +1,78 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Mon, 6 Jul 2020 20:46:50 -0700
+Subject: [PATCH] Improve inlining for some hot BlockBehavior and FluidState
+ methods
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
+index c3494c5fca138cde1f48e07d8c42ed32254a0d17..7e62dcef2902463c7f67aa20cdb78ea9cf4c44f6 100644
+--- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
++++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
+@@ -973,15 +973,15 @@ public abstract class BlockBehaviour implements FeatureElement {
+             return this.shapeExceedsCube; // Paper - moved into shape cache init
+         }
+ 
+-        public boolean useShapeForLightOcclusion() {
++        public final boolean useShapeForLightOcclusion() { // Paper - Perf: Final for inlining
+             return this.useShapeForLightOcclusion;
+         }
+ 
+-        public int getLightEmission() {
++        public final int getLightEmission() { // Paper - Perf: Final for inlining
+             return this.lightEmission;
+         }
+ 
+-        public boolean isAir() {
++        public final boolean isAir() { // Paper - Perf: Final for inlining
+             return this.isAir;
+         }
+ 
+@@ -1059,7 +1059,7 @@ public abstract class BlockBehaviour implements FeatureElement {
+             return this.solidRender;
+         }
+ 
+-        public boolean canOcclude() {
++        public final boolean canOcclude() { // Paper - Perf: Final for inlining
+             return this.canOcclude;
+         }
+ 
+@@ -1280,11 +1280,11 @@ public abstract class BlockBehaviour implements FeatureElement {
+             return this.getBlock().builtInRegistryHolder().is(key);
+         }
+ 
+-        public FluidState getFluidState() {
++        public final FluidState getFluidState() { // Paper - Perf: Final for inlining
+             return this.fluidState;
+         }
+ 
+-        public boolean isRandomlyTicking() {
++        public final boolean isRandomlyTicking() { // Paper - Perf: Final for inlining
+             return this.isRandomlyTicking;
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/material/FluidState.java b/src/main/java/net/minecraft/world/level/material/FluidState.java
+index 8310cb22e2e75d8b2cca32bfe076fdafabb1b0ec..87adfe152abd1b8b4d547034576883c5d1cdf134 100644
+--- a/src/main/java/net/minecraft/world/level/material/FluidState.java
++++ b/src/main/java/net/minecraft/world/level/material/FluidState.java
+@@ -26,9 +26,11 @@ public final class FluidState extends StateHolder<Fluid, FluidState> {
+     public static final Codec<FluidState> CODEC = codec(BuiltInRegistries.FLUID.byNameCodec(), Fluid::defaultFluidState).stable();
+     public static final int AMOUNT_MAX = 9;
+     public static final int AMOUNT_FULL = 8;
++    protected final boolean isEmpty; // Paper - Perf: moved from isEmpty()
+ 
+     public FluidState(Fluid fluid, Reference2ObjectArrayMap<Property<?>, Comparable<?>> propertyMap, MapCodec<FluidState> codec) {
+         super(fluid, propertyMap, codec);
++        this.isEmpty = fluid.isEmpty(); // Paper - Perf: moved from isEmpty()
+     }
+ 
+     public Fluid getType() {
+@@ -44,7 +46,7 @@ public final class FluidState extends StateHolder<Fluid, FluidState> {
+     }
+ 
+     public boolean isEmpty() {
+-        return this.getType().isEmpty();
++        return this.isEmpty; // Paper - Perf: moved into constructor
+     }
+ 
+     public float getHeight(BlockGetter world, BlockPos pos) {

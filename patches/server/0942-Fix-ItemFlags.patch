@@ -1,0 +1,199 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 27 Apr 2024 12:16:38 -0700
+Subject: [PATCH] Fix ItemFlags
+
+Re-adds missing functionality for HIDE_DESTROYS and
+HIDE_PLACED_ON. Also adds new flag in HIDE_STORED_ENCHANTS
+which was split from HIDE_ADDITIONAL_TOOLTIP.
+
+== AT ==
+public net.minecraft.world.item.AdventureModePredicate predicates
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEnchantedBook.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEnchantedBook.java
+index 73fe41322e0349ad1d46a760f621b6c91112e90e..19af55ec2bf62b70bd3be44f499b32f5efe71ab1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEnchantedBook.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEnchantedBook.java
+@@ -38,7 +38,7 @@ class CraftMetaEnchantedBook extends CraftMetaItem implements EnchantmentStorage
+         getOrEmpty(tag, CraftMetaEnchantedBook.STORED_ENCHANTMENTS).ifPresent((itemEnchantments) -> {
+             this.enchantments = buildEnchantments(itemEnchantments);
+             if (!itemEnchantments.showInTooltip) {
+-                this.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
++                this.addItemFlags(ItemFlag.HIDE_STORED_ENCHANTS); // Paper - new ItemFlag
+             }
+         });
+     }
+@@ -53,7 +53,7 @@ class CraftMetaEnchantedBook extends CraftMetaItem implements EnchantmentStorage
+     void applyToItem(CraftMetaItem.Applicator itemTag) {
+         super.applyToItem(itemTag);
+ 
+-        this.applyEnchantments(this.enchantments, itemTag, CraftMetaEnchantedBook.STORED_ENCHANTMENTS, ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
++        this.applyEnchantments(this.enchantments, itemTag, CraftMetaEnchantedBook.STORED_ENCHANTMENTS, ItemFlag.HIDE_STORED_ENCHANTS);
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+index 42d25216cc9d3b931ffc7504ccecc109d57a32d0..b9ddf1c75d371258c6ccd39095160469e5b644f2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+@@ -277,6 +277,12 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+     static final ItemMetaKeyType<Unit> HIDE_ADDITIONAL_TOOLTIP = new ItemMetaKeyType(DataComponents.HIDE_ADDITIONAL_TOOLTIP);
+     @Specific(Specific.To.NBT)
+     static final ItemMetaKeyType<CustomData> CUSTOM_DATA = new ItemMetaKeyType<>(DataComponents.CUSTOM_DATA);
++    // Paper start - fix ItemFlags
++    static final ItemMetaKeyType<net.minecraft.world.item.AdventureModePredicate> CAN_PLACE_ON = new ItemMetaKeyType<>(DataComponents.CAN_PLACE_ON);
++    static final ItemMetaKeyType<net.minecraft.world.item.AdventureModePredicate> CAN_BREAK = new ItemMetaKeyType<>(DataComponents.CAN_BREAK);
++    private List<net.minecraft.advancements.critereon.BlockPredicate> canPlaceOnPredicates;
++    private List<net.minecraft.advancements.critereon.BlockPredicate> canBreakPredicates;
++    // Paper end - fix ItemFlags
+ 
+     // We store the raw original JSON representation of all text data. See SPIGOT-5063, SPIGOT-5656, SPIGOT-5304
+     private Component displayName;
+@@ -381,6 +387,10 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         this.customTag = meta.customTag;
+ 
+         this.version = meta.version;
++        // Paper start
++        this.canPlaceOnPredicates = meta.canPlaceOnPredicates;
++        this.canBreakPredicates = meta.canBreakPredicates;
++        // Paper end
+     }
+ 
+     CraftMetaItem(DataComponentPatch tag) {
+@@ -500,6 +510,20 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+                 this.customTag = null;
+             }
+         });
++        // Paper start - fix ItemFlags
++        CraftMetaItem.getOrEmpty(tag, CraftMetaItem.CAN_PLACE_ON).ifPresent(data -> {
++            this.canPlaceOnPredicates = List.copyOf(data.predicates);
++            if (!data.showInTooltip()) {
++                this.addItemFlags(ItemFlag.HIDE_PLACED_ON);
++            }
++        });
++        CraftMetaItem.getOrEmpty(tag, CraftMetaItem.CAN_BREAK).ifPresent(data -> {
++            this.canBreakPredicates = List.copyOf(data.predicates);
++            if (!data.showInTooltip()) {
++                this.addItemFlags(ItemFlag.HIDE_DESTROYS);
++            }
++        });
++        // Paper end - fix ItemFlags
+ 
+         Set<Map.Entry<DataComponentType<?>, Optional<?>>> keys = tag.entrySet();
+         for (Map.Entry<DataComponentType<?>, Optional<?>> key : keys) {
+@@ -741,7 +765,15 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+             try {
+                 CompoundTag unhandledTag = NbtIo.readCompressed(buf, NbtAccounter.unlimitedHeap());
+                 DataComponentPatch unhandledPatch = DataComponentPatch.CODEC.parse(MinecraftServer.getDefaultRegistryAccess().createSerializationContext(NbtOps.INSTANCE), unhandledTag).result().get();
+-                this.unhandledTags.copy(unhandledPatch);
++                // Paper start
++                CraftMetaItem.getOrEmpty(unhandledPatch, CraftMetaItem.CAN_PLACE_ON).ifPresent(data -> {
++                    this.canPlaceOnPredicates = List.copyOf(data.predicates);
++                });
++                CraftMetaItem.getOrEmpty(unhandledPatch, CraftMetaItem.CAN_BREAK).ifPresent(data -> {
++                    this.canBreakPredicates = List.copyOf(data.predicates);
++                });
++                this.unhandledTags.copy(unhandledPatch.forget(type -> type == CraftMetaItem.CAN_PLACE_ON.TYPE || type == CraftMetaItem.CAN_BREAK.TYPE));
++                // Paper end
+ 
+                 for (Entry<DataComponentType<?>, Optional<?>> entry : unhandledPatch.entrySet()) {
+                     // Move removed unhandled tags to dedicated removedTags
+@@ -1012,6 +1044,15 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+             itemTag.put(CraftMetaItem.MAX_DAMAGE, this.maxDamage);
+         }
+ 
++        // Paper start
++        if (this.canPlaceOnPredicates != null && !this.canPlaceOnPredicates.isEmpty()) {
++            itemTag.put(CraftMetaItem.CAN_PLACE_ON, new net.minecraft.world.item.AdventureModePredicate(this.canPlaceOnPredicates, !this.hasItemFlag(ItemFlag.HIDE_PLACED_ON)));
++        }
++        if (this.canBreakPredicates != null && !this.canBreakPredicates.isEmpty()) {
++            itemTag.put(CraftMetaItem.CAN_BREAK, new net.minecraft.world.item.AdventureModePredicate(this.canBreakPredicates, !this.hasItemFlag(ItemFlag.HIDE_DESTROYS)));
++        }
++        // Paper end
++
+         for (Map.Entry<DataComponentType<?>, Optional<?>> e : this.unhandledTags.build().entrySet()) {
+             e.getValue().ifPresent((value) -> {
+                 itemTag.builder.set((DataComponentType) e.getKey(), value);
+@@ -1102,7 +1143,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+ 
+     @Overridden
+     boolean isEmpty() {
+-        return !(this.hasDisplayName() || this.hasItemName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasEnchantable() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.build().isEmpty() || !this.removedTags.isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isHideTooltip() || this.hasTooltipStyle() || this.hasItemModel() || this.isUnbreakable() || this.hasEnchantmentGlintOverride() || this.isGlider() || this.hasDamageResistant() || this.hasMaxStackSize() || this.hasRarity() || this.hasUseRemainder() || this.hasUseCooldown() || this.hasFood() || this.hasTool() || this.hasJukeboxPlayable() || this.hasEquippable() || this.hasDamage() || this.hasMaxDamage() || this.hasAttributeModifiers() || this.customTag != null);
++        return !(this.hasDisplayName() || this.hasItemName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasEnchantable() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.build().isEmpty() || !this.removedTags.isEmpty() || !this.persistentDataContainer.isEmpty() || this.hideFlag != 0 || this.isHideTooltip() || this.hasTooltipStyle() || this.hasItemModel() || this.isUnbreakable() || this.hasEnchantmentGlintOverride() || this.isGlider() || this.hasDamageResistant() || this.hasMaxStackSize() || this.hasRarity() || this.hasUseRemainder() || this.hasUseCooldown() || this.hasFood() || this.hasTool() || this.hasJukeboxPlayable() || this.hasEquippable() || this.hasDamage() || this.hasMaxDamage() || this.hasAttributeModifiers() || this.customTag != null || this.canPlaceOnPredicates != null || this.canBreakPredicates != null); // Paper
+     }
+ 
+     // Paper start
+@@ -1908,6 +1949,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+                 && (this.hasJukeboxPlayable() ? that.hasJukeboxPlayable() && this.jukebox.equals(that.jukebox) : !that.hasJukeboxPlayable())
+                 && (this.hasDamage() ? that.hasDamage() && this.damage == that.damage : !that.hasDamage())
+                 && (this.hasMaxDamage() ? that.hasMaxDamage() && this.maxDamage.equals(that.maxDamage) : !that.hasMaxDamage())
++                && (this.canPlaceOnPredicates != null ? that.canPlaceOnPredicates != null && this.canPlaceOnPredicates.equals(that.canPlaceOnPredicates) : that.canPlaceOnPredicates == null) // Paper
++                && (this.canBreakPredicates != null ? that.canBreakPredicates != null && this.canBreakPredicates.equals(that.canBreakPredicates) : that.canBreakPredicates == null) // Paper
+                 && (this.version == that.version);
+     }
+ 
+@@ -1960,6 +2003,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         hash = 61 * hash + (this.hasDamage() ? this.damage : 0);
+         hash = 61 * hash + (this.hasMaxDamage() ? 1231 : 1237);
+         hash = 61 * hash + (this.hasAttributeModifiers() ? this.attributeModifiers.hashCode() : 0);
++        hash = 61 * hash + (this.canPlaceOnPredicates != null ? this.canPlaceOnPredicates.hashCode() : 0); // Paper
++        hash = 61 * hash + (this.canBreakPredicates != null ? this.canBreakPredicates.hashCode() : 0); // Paper
+         hash = 61 * hash + this.version;
+         return hash;
+     }
+@@ -2019,6 +2064,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+             clone.damage = this.damage;
+             clone.maxDamage = this.maxDamage;
+             clone.version = this.version;
++            // Paper start
++            if (this.canPlaceOnPredicates != null) {
++                clone.canPlaceOnPredicates = List.copyOf(this.canPlaceOnPredicates);
++            }
++            if (this.canBreakPredicates != null) {
++                clone.canBreakPredicates = List.copyOf(this.canBreakPredicates);
++            }
++            // Paper end
+             return clone;
+         } catch (CloneNotSupportedException e) {
+             throw new Error(e);
+@@ -2163,6 +2216,16 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+             }
+         }
+ 
++        // Paper start
++        final boolean canBreakAddToUnhandled = this.canBreakPredicates != null && !this.canBreakPredicates.isEmpty();
++        if (canBreakAddToUnhandled) {
++            this.unhandledTags.set(DataComponents.CAN_BREAK, new net.minecraft.world.item.AdventureModePredicate(this.canBreakPredicates, !this.hasItemFlag(ItemFlag.HIDE_DESTROYS)));
++        }
++        final boolean canPlaceOnAddToUnhandled = this.canPlaceOnPredicates != null && !this.canPlaceOnPredicates.isEmpty();
++        if (canPlaceOnAddToUnhandled) {
++            this.unhandledTags.set(DataComponents.CAN_PLACE_ON, new net.minecraft.world.item.AdventureModePredicate(this.canPlaceOnPredicates, !this.hasItemFlag(ItemFlag.HIDE_PLACED_ON)));
++        }
++        // Paper end
+         if (!this.unhandledTags.isEmpty()) {
+             net.minecraft.nbt.Tag unhandled = DataComponentPatch.CODEC.encodeStart(MinecraftServer.getDefaultRegistryAccess().createSerializationContext(NbtOps.INSTANCE), this.unhandledTags.build()).getOrThrow(IllegalStateException::new);
+             try {
+@@ -2173,6 +2236,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+                 Logger.getLogger(CraftMetaItem.class.getName()).log(Level.SEVERE, null, ex);
+             }
+         }
++        // Paper start
++        if (canBreakAddToUnhandled) {
++            this.unhandledTags.clear(DataComponents.CAN_BREAK);
++        }
++        if (canPlaceOnAddToUnhandled) {
++            this.unhandledTags.clear(DataComponents.CAN_PLACE_ON);
++        }
++        // Paper end
+ 
+         if (!this.removedTags.isEmpty()) {
+             RegistryAccess registryAccess = CraftRegistry.getMinecraftRegistry();
+@@ -2333,6 +2404,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+                         CraftMetaItem.MAX_DAMAGE.TYPE,
+                         CraftMetaItem.CUSTOM_DATA.TYPE,
+                         CraftMetaItem.ATTRIBUTES.TYPE,
++                        CraftMetaItem.CAN_PLACE_ON.TYPE, // Paper
++                        CraftMetaItem.CAN_BREAK.TYPE, // Paper
+                         CraftMetaArmor.TRIM.TYPE,
+                         CraftMetaArmorStand.ENTITY_TAG.TYPE,
+                         CraftMetaBanner.PATTERNS.TYPE,

@@ -1,0 +1,83 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 9 Dec 2022 01:47:23 -0800
+Subject: [PATCH] fix Instruments
+
+properly handle Player#playNote
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 844ff0a4e75f7d2339327d20c6c9b87a354b64ec..68329d971594ed24438b9398a5a4219a71aed28d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -775,7 +775,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         Sound instrumentSound = instrument.getSound();
+         if (instrumentSound == null) return;
+ 
+-        float pitch = note.getPitch();
++        // Paper start - use correct pitch (modeled off of NoteBlock)
++        final net.minecraft.world.level.block.state.properties.NoteBlockInstrument noteBlockInstrument = CraftBlockData.toNMS(instrument, net.minecraft.world.level.block.state.properties.NoteBlockInstrument.class);
++        final float pitch = noteBlockInstrument.isTunable() ? note.getPitch() : 1.0f;
++        // Paper end
+         this.getHandle().connection.send(new ClientboundSoundPacket(CraftSound.bukkitToMinecraftHolder(instrumentSound), net.minecraft.sounds.SoundSource.RECORDS, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), 3.0f, pitch, this.getHandle().getRandom().nextLong()));
+     }
+ 
+diff --git a/src/test/java/io/papermc/paper/block/InstrumentSoundTest.java b/src/test/java/io/papermc/paper/block/InstrumentSoundTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..cd718ed01ba5d448cdf0a2b6a39dc7ef2337f70d
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/block/InstrumentSoundTest.java
+@@ -0,0 +1,28 @@
++package io.papermc.paper.block;
++
++import java.util.Arrays;
++import java.util.stream.Stream;
++import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
++import org.bukkit.Instrument;
++import org.bukkit.craftbukkit.CraftSound;
++import org.bukkit.craftbukkit.block.data.CraftBlockData;
++import org.bukkit.support.environment.AllFeatures;
++import org.junit.jupiter.params.ParameterizedTest;
++import org.junit.jupiter.params.provider.MethodSource;
++
++import static org.junit.jupiter.api.Assertions.assertEquals;
++
++@AllFeatures
++class InstrumentSoundTest {
++
++    static Stream<Instrument> bukkitInstruments() {
++        return Arrays.stream(Instrument.values()).filter(i -> i.getSound() != null);
++    }
++
++    @ParameterizedTest
++    @MethodSource("bukkitInstruments")
++    void checkInstrumentSound(final Instrument bukkit) {
++        final NoteBlockInstrument nms = CraftBlockData.toNMS(bukkit, NoteBlockInstrument.class);
++        assertEquals(nms.getSoundEvent(), CraftSound.bukkitToMinecraftHolder(bukkit.getSound()));
++    }
++}
+diff --git a/src/test/java/org/bukkit/InstrumentTest.java b/src/test/java/org/bukkit/InstrumentTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5da6b5c996c9a4077f309e923731e3f148e91c19
+--- /dev/null
++++ b/src/test/java/org/bukkit/InstrumentTest.java
+@@ -0,0 +1,20 @@
++package org.bukkit;
++
++import org.bukkit.support.environment.AllFeatures;
++import org.junit.jupiter.api.Test;
++
++import static org.bukkit.support.MatcherAssert.assertThat;
++import static org.hamcrest.CoreMatchers.is;
++
++@AllFeatures
++public class InstrumentTest { // Paper - moved to internals as this test now access the sound registry.
++
++    @Test
++    public void getByType() {
++        for (Instrument instrument : Instrument.values()) {
++            // Paper - byte magic values are still used
++
++            assertThat(Instrument.getByType(instrument.getType()), is(instrument));
++        }
++    }
++}

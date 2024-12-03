@@ -1,0 +1,68 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 13 Jul 2023 16:10:07 -0700
+Subject: [PATCH] Respect randomizeData on more entities when spawning
+
+* ItemEntity
+* PrimedTNT
+* FireworkRocketEntity
+* ExperienceOrb
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java
+index 7331a8e22aa80534b60bbbedd9b9c3f4455e0de7..f423bcee46506eccbaf61090adb886a31714c04d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityTypes.java
+@@ -254,6 +254,13 @@ public final class CraftEntityTypes {
+         entity.assignDirectionalMovement(new Vec3(direction.getX(), direction.getY(), direction.getZ()), 1.0);
+     };
+     private static final BiConsumer<SpawnData, net.minecraft.world.entity.Entity> ROT = (spawnData, entity) -> entity.setRot(spawnData.yaw(), spawnData.pitch()); // Paper
++    // Paper start - respect randomizeData
++    private static final BiConsumer<SpawnData, net.minecraft.world.entity.Entity> CLEAR_MOVE_IF_NOT_RANDOMIZED = (spawnData, entity) -> {
++        if (!spawnData.randomizeData()) {
++            entity.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
++        }
++    };
++    // Paper end - respect randomizeData
+     private static final Map<Class<?>, EntityTypeData<?, ?>> CLASS_TYPE_DATA = new HashMap<>();
+     private static final Map<EntityType, EntityTypeData<?, ?>> ENTITY_TYPE_DATA = new HashMap<>();
+ 
+@@ -426,11 +433,12 @@ public final class CraftEntityTypes {
+             net.minecraft.world.item.ItemStack itemStack = new net.minecraft.world.item.ItemStack(Items.STONE);
+             ItemEntity item = new ItemEntity(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), itemStack);
+             item.setPickUpDelay(10);
++            CLEAR_MOVE_IF_NOT_RANDOMIZED.accept(spawnData, item); // Paper - respect randomizeData
+ 
+             return item;
+         }));
+         register(new EntityTypeData<>(EntityType.EXPERIENCE_ORB, ExperienceOrb.class, CraftExperienceOrb::new,
+-                spawnData -> new net.minecraft.world.entity.ExperienceOrb(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), 0, org.bukkit.entity.ExperienceOrb.SpawnReason.CUSTOM, null, null) // Paper
++                combine(combine(spawnData -> new net.minecraft.world.entity.ExperienceOrb(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), 0, org.bukkit.entity.ExperienceOrb.SpawnReason.CUSTOM, null, null), CLEAR_MOVE_IF_NOT_RANDOMIZED), (spawnData, experienceOrb) -> { if (!spawnData.randomizeData()) { experienceOrb.setYRot(0); } }) // Paper - respect randomizeData
+         ));
+         register(new EntityTypeData<>(EntityType.AREA_EFFECT_CLOUD, AreaEffectCloud.class, CraftAreaEffectCloud::new, createAndMove(net.minecraft.world.entity.EntityType.AREA_EFFECT_CLOUD))); // Paper - set area effect cloud rotation
+         register(new EntityTypeData<>(EntityType.EGG, Egg.class, CraftEgg::new, spawnData -> new ThrownEgg(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), new net.minecraft.world.item.ItemStack(Items.EGG))));
+@@ -441,12 +449,23 @@ public final class CraftEntityTypes {
+             net.minecraft.world.entity.projectile.ThrownPotion entity = new net.minecraft.world.entity.projectile.ThrownPotion(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), new net.minecraft.world.item.ItemStack(Items.SPLASH_POTION));
+             return entity;
+         }));
+-        register(new EntityTypeData<>(EntityType.TNT, TNTPrimed.class, CraftTNTPrimed::new, spawnData -> new PrimedTnt(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), null)));
++        register(new EntityTypeData<>(EntityType.TNT, TNTPrimed.class, CraftTNTPrimed::new, combine(spawnData -> new PrimedTnt(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), null), CLEAR_MOVE_IF_NOT_RANDOMIZED))); // Paper - respect randomizeData
+         register(new EntityTypeData<>(EntityType.FALLING_BLOCK, FallingBlock.class, CraftFallingBlock::new, spawnData -> {
+             BlockPos pos = BlockPos.containing(spawnData.x(), spawnData.y(), spawnData.z());
+             return new FallingBlockEntity(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), spawnData.world().getBlockState(pos)); // Paper - create falling block entities correctly
+         }));
+-        register(new EntityTypeData<>(EntityType.FIREWORK_ROCKET, Firework.class, CraftFirework::new, spawnData -> new FireworkRocketEntity(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), FireworkRocketEntity.getDefaultItem()))); // Paper - pass correct default to rocket for data storage
++        // Paper start - respect randomizeData
++        register(new EntityTypeData<>(EntityType.FIREWORK_ROCKET, Firework.class, CraftFirework::new, spawnData -> {
++            FireworkRocketEntity entity = new FireworkRocketEntity(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), FireworkRocketEntity.getDefaultItem()); // Paper - pass correct default to rocket for data storage
++            if (!spawnData.randomizeData()) {
++                // logic below was taken from FireworkRocketEntity constructor
++                entity.setDeltaMovement(0, 0.05, 0);
++                //noinspection PointlessArithmeticExpression
++                entity.lifetime = 10 * 1 + 6;
++            }
++            return entity;
++        }));
++        // Paper end - respect randomizeData
+         register(new EntityTypeData<>(EntityType.EVOKER_FANGS, EvokerFangs.class, CraftEvokerFangs::new, spawnData -> new net.minecraft.world.entity.projectile.EvokerFangs(spawnData.minecraftWorld(), spawnData.x(), spawnData.y(), spawnData.z(), (float) Math.toRadians(spawnData.yaw()), 0, null)));
+         register(new EntityTypeData<>(EntityType.COMMAND_BLOCK_MINECART, CommandMinecart.class, CraftMinecartCommand::new, createMinecart(net.minecraft.world.entity.EntityType.COMMAND_BLOCK_MINECART)));
+         register(new EntityTypeData<>(EntityType.MINECART, RideableMinecart.class, CraftMinecartRideable::new, createMinecart(net.minecraft.world.entity.EntityType.MINECART)));

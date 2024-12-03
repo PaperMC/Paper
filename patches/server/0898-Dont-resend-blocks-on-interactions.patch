@@ -1,0 +1,171 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Tue, 27 Jun 2023 21:09:11 -0400
+Subject: [PATCH] Dont resend blocks on interactions
+
+In general, the client now has an acknowledgment system which will prevent block changes made by the client to be reverted correctly.
+
+It should be noted that this system does not yet support block entities, so those still need to resynced when needed.
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+index 0da6496c18341c01fc4551ead7e740a6037dcf31..c4bc1819cba3287c4a67ae5d00f8c4d6ab899732 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -202,7 +202,7 @@ public class ServerPlayerGameMode {
+                 PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, pos, direction, this.player.getInventory().getSelected(), InteractionHand.MAIN_HAND);
+                 if (event.isCancelled()) {
+                     // Let the client know the block still exists
+-                    this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos));
++                    // this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos)); // Paper - Don't resync blocks
+                     // Update any tile entity data for this block
+                     capturedBlockEntity = true; // Paper - Send block entities after destroy prediction
+                     return;
+@@ -217,7 +217,7 @@ public class ServerPlayerGameMode {
+                 // Spigot start - handle debug stick left click for non-creative
+                 if (this.player.getMainHandItem().is(net.minecraft.world.item.Items.DEBUG_STICK)
+                         && ((net.minecraft.world.item.DebugStickItem) net.minecraft.world.item.Items.DEBUG_STICK).handleInteraction(this.player, this.level.getBlockState(pos), this.level, pos, false, this.player.getMainHandItem())) {
+-                    this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos));
++                    // this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos)); // Paper - Don't resync block
+                     return;
+                 }
+                 // Spigot end
+@@ -235,15 +235,17 @@ public class ServerPlayerGameMode {
+                 // CraftBukkit start - Swings at air do *NOT* exist.
+                 if (event.useInteractedBlock() == Event.Result.DENY) {
+                     // If we denied a door from opening, we need to send a correcting update to the client, as it already opened the door.
+-                    BlockState data = this.level.getBlockState(pos);
+-                    if (data.getBlock() instanceof DoorBlock) {
+-                        // For some reason *BOTH* the bottom/top part have to be marked updated.
+-                        boolean bottom = data.getValue(DoorBlock.HALF) == DoubleBlockHalf.LOWER;
+-                        this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos));
+-                        this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, bottom ? pos.above() : pos.below()));
+-                    } else if (data.getBlock() instanceof TrapDoorBlock) {
+-                        this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos));
+-                    }
++                    // Paper start - Don't resync blocks
++                    //BlockState data = this.level.getBlockState(pos);
++                    //if (data.getBlock() instanceof DoorBlock) {
++                    //    // For some reason *BOTH* the bottom/top part have to be marked updated.
++                    //    boolean bottom = data.getValue(DoorBlock.HALF) == DoubleBlockHalf.LOWER;
++                    //    this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos));
++                    //    this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, bottom ? pos.above() : pos.below()));
++                    //} else if (data.getBlock() instanceof TrapDoorBlock) {
++                    //    this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos));
++                    //}
++                    // Paper end - Don't resync blocks
+                 } else if (!iblockdata.isAir()) {
+                     EnchantmentHelper.onHitBlock(this.level, this.player.getMainHandItem(), this.player, this.player, EquipmentSlot.MAINHAND, Vec3.atCenterOf(pos), iblockdata, (item) -> {
+                         this.player.onEquippedItemBroken(item, EquipmentSlot.MAINHAND);
+@@ -255,7 +257,7 @@ public class ServerPlayerGameMode {
+                 if (event.useItemInHand() == Event.Result.DENY) {
+                     // If we 'insta destroyed' then the client needs to be informed.
+                     if (f > 1.0f) {
+-                        this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos));
++                        // this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos)); // Paper - Don't resync blocks
+                     }
+                     return;
+                 }
+@@ -263,7 +265,7 @@ public class ServerPlayerGameMode {
+ 
+                 if (blockEvent.isCancelled()) {
+                     // Let the client know the block still exists
+-                    this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos));
++                    // this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos)); // Paper - Don't resync block
+                     return;
+                 }
+ 
+@@ -354,7 +356,7 @@ public class ServerPlayerGameMode {
+ 
+             // Tell client the block is gone immediately then process events
+             // Don't tell the client if its a creative sword break because its not broken!
+-            if (this.level.getBlockEntity(pos) == null && !isSwordNoBreak) {
++            if (false && this.level.getBlockEntity(pos) == null && !isSwordNoBreak) { // Paper - Don't resync block
+                 ClientboundBlockUpdatePacket packet = new ClientboundBlockUpdatePacket(pos, Blocks.AIR.defaultBlockState());
+                 this.player.connection.send(packet);
+             }
+@@ -380,13 +382,15 @@ public class ServerPlayerGameMode {
+                 if (isSwordNoBreak) {
+                     return false;
+                 }
++                // Paper start - Don't resync blocks
+                 // Let the client know the block still exists
+-                this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos));
++                //this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos));
+ 
+                 // Brute force all possible updates
+-                for (Direction dir : Direction.values()) {
+-                    this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos.relative(dir)));
+-                }
++                //for (Direction dir : Direction.values()) {
++                //    this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos.relative(dir)));
++                //}
++                // Paper end - Don't resync blocks
+ 
+                 // Update any tile entity data for this block
+                 if (!captureSentBlockEntities) { // Paper - Send block entities after destroy prediction
+@@ -543,16 +547,18 @@ public class ServerPlayerGameMode {
+         if (event.useInteractedBlock() == Event.Result.DENY) {
+             // If we denied a door from opening, we need to send a correcting update to the client, as it already opened the door.
+             if (iblockdata.getBlock() instanceof DoorBlock) {
+-                boolean bottom = iblockdata.getValue(DoorBlock.HALF) == DoubleBlockHalf.LOWER;
+-                player.connection.send(new ClientboundBlockUpdatePacket(world, bottom ? blockposition.above() : blockposition.below()));
++                // Paper start - Don't resync blocks
++                // boolean bottom = iblockdata.getValue(DoorBlock.HALF) == DoubleBlockHalf.LOWER;
++                // player.connection.send(new ClientboundBlockUpdatePacket(world, bottom ? blockposition.above() : blockposition.below()));
++                // Paper end - Don't resync blocks
+             } else if (iblockdata.getBlock() instanceof CakeBlock) {
+                 player.getBukkitEntity().sendHealthUpdate(); // SPIGOT-1341 - reset health for cake
+             } else if (this.interactItemStack.getItem() instanceof DoubleHighBlockItem) {
+                 // send a correcting update to the client, as it already placed the upper half of the bisected item
+-                player.connection.send(new ClientboundBlockUpdatePacket(world, blockposition.relative(hitResult.getDirection()).above()));
++                //player.connection.send(new ClientboundBlockUpdatePacket(world, blockposition.relative(hitResult.getDirection()).above())); // Paper - Don't resync blocks
+ 
+                 // send a correcting update to the client for the block above as well, this because of replaceable blocks (such as grass, sea grass etc)
+-                player.connection.send(new ClientboundBlockUpdatePacket(world, blockposition.above()));
++                //player.connection.send(new ClientboundBlockUpdatePacket(world, blockposition.above())); // Paper - Don't resync blocks
+             // Paper start - extend Player Interact cancellation // TODO: consider merging this into the extracted method
+             } else if (iblockdata.is(Blocks.JIGSAW) || iblockdata.is(Blocks.STRUCTURE_BLOCK) || iblockdata.getBlock() instanceof net.minecraft.world.level.block.CommandBlock) {
+                 player.connection.send(new net.minecraft.network.protocol.game.ClientboundContainerClosePacket(this.player.containerMenu.containerId));
+diff --git a/src/main/java/net/minecraft/world/item/BucketItem.java b/src/main/java/net/minecraft/world/item/BucketItem.java
+index 002e2f8e956b2631529e2189be225385dfb501df..3bddfb6f7412ab86e0c090d0cbc6cf254b3f891c 100644
+--- a/src/main/java/net/minecraft/world/item/BucketItem.java
++++ b/src/main/java/net/minecraft/world/item/BucketItem.java
+@@ -79,7 +79,7 @@ public class BucketItem extends Item implements DispensibleContainerItem {
+                         PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent((ServerLevel) world, user, blockposition, blockposition, movingobjectpositionblock.getDirection(), itemstack, dummyFluid.getItem(), hand);
+ 
+                         if (event.isCancelled()) {
+-                            ((ServerPlayer) user).connection.send(new ClientboundBlockUpdatePacket(world, blockposition)); // SPIGOT-5163 (see PlayerInteractManager)
++                            // ((ServerPlayer) user).connection.send(new ClientboundBlockUpdatePacket(world, blockposition)); // SPIGOT-5163 (see PlayerInteractManager) // Paper - Don't resend blocks
+                             ((ServerPlayer) user).getBukkitEntity().updateInventory(); // SPIGOT-4541
+                             return InteractionResult.FAIL;
+                         }
+@@ -187,7 +187,7 @@ public class BucketItem extends Item implements DispensibleContainerItem {
+             if (flag2 && entityhuman != null) {
+                 PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent((ServerLevel) world, entityhuman, blockposition, clicked, enumdirection, itemstack, enumhand);
+                 if (event.isCancelled()) {
+-                    ((ServerPlayer) entityhuman).connection.send(new ClientboundBlockUpdatePacket(world, blockposition)); // SPIGOT-4238: needed when looking through entity
++                    // ((ServerPlayer) entityhuman).connection.send(new ClientboundBlockUpdatePacket(world, blockposition)); // SPIGOT-4238: needed when looking through entity // Paper - Don't resend blocks
+                     ((ServerPlayer) entityhuman).getBukkitEntity().updateInventory(); // SPIGOT-4541
+                     return false;
+                 }
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index 30ba2750e884ceff89e87e2155f18ea66a05ee36..fd5b6a94693bbbf14be39e63025ebd4c44530e2d 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -511,10 +511,12 @@ public final class ItemStack implements DataComponentHolder {
+                         world.preventPoiUpdated = false;
+ 
+                         // Brute force all possible updates
+-                        BlockPos placedPos = ((CraftBlock) placeEvent.getBlock()).getPosition();
+-                        for (Direction dir : Direction.values()) {
+-                            ((ServerPlayer) entityhuman).connection.send(new ClientboundBlockUpdatePacket(world, placedPos.relative(dir)));
+-                        }
++                        // Paper start - Don't resync blocks
++                        // BlockPos placedPos = ((CraftBlock) placeEvent.getBlock()).getPosition();
++                        // for (Direction dir : Direction.values()) {
++                        //     ((ServerPlayer) entityhuman).connection.send(new ClientboundBlockUpdatePacket(world, placedPos.relative(dir)));
++                        // }
++                        // Paper end - Don't resync blocks
+                         SignItem.openSign = null; // SPIGOT-6758 - Reset on early return
+                     } else {
+                         // Change the stack to its new contents if it hasn't been tampered with.

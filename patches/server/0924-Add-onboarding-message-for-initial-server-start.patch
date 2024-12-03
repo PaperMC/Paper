@@ -1,0 +1,103 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: leguan <longboard.noah@gmail.com>
+Date: Sun, 10 Mar 2024 20:10:41 +0100
+Subject: [PATCH] Add onboarding message for initial server start
+
+
+diff --git a/src/main/java/io/papermc/paper/configuration/Configurations.java b/src/main/java/io/papermc/paper/configuration/Configurations.java
+index 007e01d329a31acf7f4ed4c6dc4de7ad54ccad04..8cf720f08514e8e4f62f4ad196f1277bd761c6b2 100644
+--- a/src/main/java/io/papermc/paper/configuration/Configurations.java
++++ b/src/main/java/io/papermc/paper/configuration/Configurations.java
+@@ -127,6 +127,7 @@ public abstract class Configurations<G, W> {
+         if (Files.notExists(configFile)) {
+             node = CommentedConfigurationNode.root(loader.defaultOptions());
+             node.node(Configuration.VERSION_FIELD).raw(this.globalConfigVersion());
++            GlobalConfiguration.isFirstStart = true;
+         } else {
+             node = loader.load();
+             this.verifyGlobalConfigVersion(node);
+diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
+index d8db428f06606c16466d39cceb2a5e02eb3d3b24..2d2ff826354670fef356e241d939080c9ed3fd4a 100644
+--- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
++++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
+@@ -25,6 +25,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+     private static final Logger LOGGER = LogUtils.getLogger();
+     static final int CURRENT_VERSION = 29; // (when you change the version, change the comment, so it conflicts on rebases): <insert changes here>
+     private static GlobalConfiguration instance;
++    public static boolean isFirstStart = false;
+     public static GlobalConfiguration get() {
+         return instance;
+     }
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 4555f7f59d15a1f84c0cf76f77a6685fadd48f8c..60883d019ceef9e2430e9416c8b321165bba4fe6 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1148,6 +1148,16 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             long tickSection = Util.getNanos();
+             long currentTime;
+             // Paper end - further improve server tick loop
++            // Paper start - Add onboarding message for initial server start
++            if (io.papermc.paper.configuration.GlobalConfiguration.isFirstStart) {
++                LOGGER.info("*************************************************************************************");
++                LOGGER.info("This is the first time you're starting this server.");
++                LOGGER.info("It's recommended you read our 'Getting Started' documentation for guidance.");
++                LOGGER.info("View this and more helpful information here: https://docs.papermc.io/paper/next-steps");
++                LOGGER.info("*************************************************************************************");
++            }
++            // Paper end - Add onboarding message for initial server start
++
+             while (this.running) {
+                 long i;
+ 
+diff --git a/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java b/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java
+index 4d3fe4f56e0b264fa030409919caf52d5f421d46..759062d219ff490a3cb19e710c4d18e3e08288e0 100644
+--- a/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java
++++ b/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java
+@@ -90,6 +90,7 @@ public class MinecraftServerGui extends JComponent {
+         this.setLayout(new BorderLayout());
+ 
+         try {
++            this.add(this.buildOnboardingPanel(), "North"); // Paper - Add onboarding message for initial server start
+             this.add(this.buildChatPanel(), "Center");
+             this.add(this.buildInfoPanel(), "West");
+         } catch (Exception exception) {
+@@ -115,6 +116,39 @@ public class MinecraftServerGui extends JComponent {
+         return jpanel;
+     }
+ 
++    // Paper start - Add onboarding message for initial server start
++    private JComponent buildOnboardingPanel() {
++        String onboardingLink = "https://docs.papermc.io/paper/next-steps";
++        JPanel jPanel = new JPanel();
++
++        javax.swing.JLabel jLabel = new javax.swing.JLabel("If you need help setting up your server you can visit:");
++        jLabel.setFont(MinecraftServerGui.MONOSPACED);
++
++        javax.swing.JLabel link = new javax.swing.JLabel("<html><u> " + onboardingLink + "</u></html>");
++        link.setFont(MinecraftServerGui.MONOSPACED);
++        link.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
++        link.addMouseListener(new java.awt.event.MouseAdapter() {
++            @Override
++            public void mouseClicked(final java.awt.event.MouseEvent e) {
++                try {
++                    java.awt.Desktop.getDesktop().browse(java.net.URI.create(onboardingLink));
++                } catch (java.io.IOException exception) {
++                    LOGGER.error("Unable to find a default browser. Please manually visit the website: " + onboardingLink, exception);
++                } catch (UnsupportedOperationException exception) {
++                    LOGGER.error("This platform does not support the BROWSE action. Please manually visit the website: " + onboardingLink, exception);
++                } catch (SecurityException exception) {
++                    LOGGER.error("This action has been denied by the security manager. Please manually visit the website: " + onboardingLink, exception);
++                }
++            }
++        });
++
++        jPanel.add(jLabel);
++        jPanel.add(link);
++
++        return jPanel;
++    }
++    // Paper end - Add onboarding message for initial server start
++
+     private JComponent buildPlayerPanel() {
+         JList<?> jlist = new PlayerListComponent(this.server);
+         JScrollPane jscrollpane = new JScrollPane(jlist, 22, 30);

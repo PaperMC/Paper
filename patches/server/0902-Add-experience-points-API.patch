@@ -1,0 +1,73 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukas Planz <lukas.planz@web.de>
+Date: Tue, 5 Sep 2023 20:34:20 +0200
+Subject: [PATCH] Add experience points API
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index 7dd601d0b0efd285a913a074ffa42e142bda8889..bba669666bbd0f116d1efacfb8d987dd71b6535c 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -1826,7 +1826,7 @@ public abstract class Player extends LivingEntity {
+     }
+ 
+     public int getXpNeededForNextLevel() {
+-        return this.experienceLevel >= 30 ? 112 + (this.experienceLevel - 30) * 9 : (this.experienceLevel >= 15 ? 37 + (this.experienceLevel - 15) * 5 : 7 + this.experienceLevel * 2);
++        return this.experienceLevel >= 30 ? 112 + (this.experienceLevel - 30) * 9 : (this.experienceLevel >= 15 ? 37 + (this.experienceLevel - 15) * 5 : 7 + this.experienceLevel * 2); // Paper - diff on change; calculateTotalExperiencePoints
+     }
+     // Paper start - send while respecting visibility
+     private static void sendSoundEffect(Player fromEntity, double x, double y, double z, SoundEvent soundEffect, SoundSource soundCategory, float volume, float pitch) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 4e071f8561f730d21a384406bd2d27a898c87a06..6ff46062d6ce6401acdbae8f087075788538802a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1933,6 +1933,49 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         Preconditions.checkArgument(exp >= 0, "Total experience points must not be negative (%s)", exp);
+         this.getHandle().totalExperience = exp;
+     }
++    // Paper start
++    @Override
++    public int calculateTotalExperiencePoints() {
++        return calculateTotalExperiencePoints(this.getLevel()) + Math.round(this.getExperiencePointsNeededForNextLevel() * getExp());
++    }
++
++    @Override
++    public void setExperienceLevelAndProgress(final int totalExperience) {
++        Preconditions.checkArgument(totalExperience >= 0, "Total experience points must not be negative (%s)", totalExperience);
++        int level = calculateLevelsForExperiencePoints(totalExperience);
++        int remainingPoints = totalExperience - calculateTotalExperiencePoints(level);
++
++        this.getHandle().experienceLevel = level;
++        this.getHandle().experienceProgress = (float) remainingPoints / this.getExperiencePointsNeededForNextLevel();
++        this.getHandle().lastSentExp = -1;
++    }
++
++    @Override
++    public int getExperiencePointsNeededForNextLevel() {
++        return this.getHandle().getXpNeededForNextLevel();
++    }
++
++    // See https://minecraft.wiki/w/Experience#Leveling_up for reference
++    private int calculateTotalExperiencePoints(int level) {
++        if (level <= 16) {
++            return (int) (Math.pow(level, 2) + 6 * level);
++        } else if (level <= 31) {
++            return (int) (2.5 * Math.pow(level, 2) - 40.5 * level + 360.0);
++        } else {
++            return (int) (4.5 * Math.pow(level, 2) - 162.5 * level + 2220.0);
++        }
++    }
++
++    private int calculateLevelsForExperiencePoints(int points) {
++        if (points <= 352) { // Level 0-16
++            return (int) Math.floor(Math.sqrt(points + 9) - 3);
++        } else if (points <= 1507) { // Level 17-31
++            return (int) Math.floor(8.1 + Math.sqrt(0.4 * (points - (7839.0 / 40.0))));
++        } else { // 32+
++            return (int) Math.floor((325.0 / 18.0) + Math.sqrt((2.0 / 9.0) * (points - (54215.0 / 72.0))));
++        }
++    }
++    // Paper end
+ 
+     @Override
+     public void sendExperienceChange(float progress) {

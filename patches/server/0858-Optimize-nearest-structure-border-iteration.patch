@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Martijn Muijsers <martijnmuijsers@live.nl>
+Date: Mon, 21 Aug 2023 21:05:09 +0200
+Subject: [PATCH] Optimize nearest structure border iteration
+
+Getting the nearest generated structure contains a nested set of loops that
+iterates over all chunks at a specific chessboard distance. It does this by
+iterating over the entire square of chunks within that distance, and checking
+if the coordinates are at exactly the right distance to be on the border.
+
+This patch optimizes the iteration by only iterating over the border chunks.
+This evaluated chunks are the same, and in the same order, as before, to
+ensure that the returned found structure (which may for example be a buried
+treasure that will be marked on a treasure map) is the same as in vanilla.
+
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
+index c64389acf0764c8d048bea2d99a21a0da832150d..ca6928f959eb63ac9183ba6c95738609839a7d32 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
+@@ -266,12 +266,15 @@ public abstract class ChunkGenerator {
+         int i1 = placement.spacing();
+ 
+         for (int j1 = -radius; j1 <= radius; ++j1) {
+-            boolean flag1 = j1 == -radius || j1 == radius;
++            // Paper start - Perf: iterate over border chunks instead of entire square chunk area
++            boolean flag1 = j1 == -radius || j1 == radius; final boolean onBorderAlongZAxis = flag1; // Paper - OBFHELPER
+ 
+-            for (int k1 = -radius; k1 <= radius; ++k1) {
+-                boolean flag2 = k1 == -radius || k1 == radius;
++            for (int k1 = -radius; k1 <= radius; k1 += onBorderAlongZAxis ? 1 : radius * 2) {
++                // boolean flag2 = k1 == -radius || k1 == radius;
+ 
+-                if (flag1 || flag2) {
++                // if (flag1 || flag2) {
++                if (true) {
++                    // Paper end - Perf: iterate over border chunks instead of entire square chunk area
+                     int l1 = centerChunkX + i1 * j1;
+                     int i2 = centerChunkZ + i1 * k1;
+                     ChunkPos chunkcoordintpair = placement.getPotentialStructureChunk(seed, l1, i2);

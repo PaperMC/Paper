@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 10 Jul 2022 14:13:22 -0700
+Subject: [PATCH] Don't use level random in entity constructors
+
+Paper makes the entity random thread-safe
+and constructing an entity off the main thread
+should be supported. Some entities (for whatever
+reason) use the level's random in some places.
+
+diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+index 586257fe5c9f5cddd0ed164254f46777c6e71d66..d555fd0b200c012f30ed0c0ec09a37b25a737b76 100644
+--- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
++++ b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+@@ -72,7 +72,12 @@ public class ItemEntity extends Entity implements TraceableEntity {
+     }
+ 
+     public ItemEntity(Level world, double x, double y, double z, ItemStack stack) {
+-        this(world, x, y, z, stack, world.random.nextDouble() * 0.2D - 0.1D, 0.2D, world.random.nextDouble() * 0.2D - 0.1D);
++        // Paper start - Don't use level random in entity constructors (to make them thread-safe)
++        this(EntityType.ITEM, world);
++        this.setPos(x, y, z);
++        this.setDeltaMovement(this.random.nextDouble() * 0.2D - 0.1D, 0.2D, this.random.nextDouble() * 0.2D - 0.1D);
++        this.setItem(stack);
++        // Paper end - Don't use level random in entity constructors
+     }
+ 
+     public ItemEntity(Level world, double x, double y, double z, ItemStack stack, double velocityX, double velocityY, double velocityZ) {
+diff --git a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
+index 1d5de664af21013f68d59b326b1427bc632352de..809f5e847e2f5bb594c130cebd2cb897ea768d82 100644
+--- a/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
++++ b/src/main/java/net/minecraft/world/entity/item/PrimedTnt.java
+@@ -68,7 +68,7 @@ public class PrimedTnt extends Entity implements TraceableEntity {
+     public PrimedTnt(Level world, double x, double y, double z, @Nullable LivingEntity igniter) {
+         this(EntityType.TNT, world);
+         this.setPos(x, y, z);
+-        double d3 = world.random.nextDouble() * 6.2831854820251465D;
++        double d3 = this.random.nextDouble() * 6.2831854820251465D; // Paper - Don't use level random in entity constructors
+ 
+         this.setDeltaMovement(-Math.sin(d3) * 0.02D, 0.20000000298023224D, -Math.cos(d3) * 0.02D);
+         this.setFuse(80);

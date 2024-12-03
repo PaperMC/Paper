@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 23 Jun 2023 12:16:28 -0700
+Subject: [PATCH] More Sign Block API
+
+Co-authored-by: SoSeDiK <mrsosedik@gmail.com>
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
+index 86550d200922ee313019a21fe593c594c967f28b..7a1d9a718dc57b5f630ca8e5358120cebaeefb9c 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/SignBlockEntity.java
+@@ -68,12 +68,17 @@ public class SignBlockEntity extends BlockEntity {
+     }
+ 
+     public boolean isFacingFrontText(net.minecraft.world.entity.player.Player player) {
++        // Paper start - More Sign Block API
++        return this.isFacingFrontText(player.getX(), player.getZ());
++    }
++    public boolean isFacingFrontText(double x, double z) {
++        // Paper end - More Sign Block API
+         Block block = this.getBlockState().getBlock();
+ 
+         if (block instanceof SignBlock blocksign) {
+             Vec3 vec3d = blocksign.getSignHitboxCenterPosition(this.getBlockState());
+-            double d0 = player.getX() - ((double) this.getBlockPos().getX() + vec3d.x);
+-            double d1 = player.getZ() - ((double) this.getBlockPos().getZ() + vec3d.z);
++            double d0 = x - ((double) this.getBlockPos().getX() + vec3d.x); // Paper - More Sign Block API
++            double d1 = z - ((double) this.getBlockPos().getZ() + vec3d.z); // Paper - More Sign Block API
+             float f = blocksign.getYRotationDegrees(this.getBlockState());
+             float f1 = (float) (Mth.atan2(d1, d0) * 57.2957763671875D) - 90.0F;
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java b/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
+index 8303343ecca91076839f4436d6b3a3bf4739c2fd..e3c333d26dea9af9dd51e1662f81f1d472ab0233 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftSign.java
+@@ -198,6 +198,26 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
+     }
+     // Paper end
+ 
++    // Paper start - More Sign Block API
++    @Override
++    public java.util.UUID getAllowedEditorUniqueId() {
++        this.ensureNoWorldGeneration();
++        return this.getTileEntity().getPlayerWhoMayEdit();
++    }
++
++    @Override
++    public void setAllowedEditorUniqueId(java.util.UUID uuid) {
++        this.ensureNoWorldGeneration();
++        this.getTileEntity().setAllowedPlayerEditor(uuid);
++    }
++
++    @Override
++    public Side getInteractableSideFor(final double x, final double z) {
++        this.requirePlaced();
++        return this.getSnapshot().isFacingFrontText(x, z) ? Side.FRONT : Side.BACK;
++    }
++    // Paper end - More Sign Block API
++
+     public static Component[] sanitizeLines(String[] lines) {
+         Component[] components = new Component[4];
+ 

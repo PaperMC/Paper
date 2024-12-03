@@ -1,0 +1,135 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 27 Nov 2018 21:18:06 -0500
+Subject: [PATCH] Handle Large Packets disconnecting client
+
+If a players inventory is too big to send in a single packet,
+split the inventory set into multiple packets instead.
+
+diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
+index c12335bc83d31ec65fe2d7cbe0b084748e670010..b0413be1d8565df1c746102a6900806fe3d12373 100644
+--- a/src/main/java/net/minecraft/network/Connection.java
++++ b/src/main/java/net/minecraft/network/Connection.java
+@@ -176,6 +176,21 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+     }
+ 
+     public void exceptionCaught(ChannelHandlerContext channelhandlercontext, Throwable throwable) {
++        // Paper start - Handle large packets disconnecting client
++        if (throwable instanceof io.netty.handler.codec.EncoderException && throwable.getCause() instanceof PacketEncoder.PacketTooLargeException packetTooLargeException) {
++            final Packet<?> packet = packetTooLargeException.getPacket();
++            if (packet.packetTooLarge(this)) {
++                ProtocolSwapHandler.handleOutboundTerminalPacket(channelhandlercontext, packet);
++                return;
++            } else if (packet.isSkippable()) {
++                Connection.LOGGER.debug("Skipping packet due to errors", throwable.getCause());
++                ProtocolSwapHandler.handleOutboundTerminalPacket(channelhandlercontext, packet);
++                return;
++            } else {
++                throwable = throwable.getCause();
++            }
++        }
++        // Paper end - Handle large packets disconnecting client
+         if (throwable instanceof SkipPacketException) {
+             Connection.LOGGER.debug("Skipping packet due to errors", throwable.getCause());
+         } else {
+diff --git a/src/main/java/net/minecraft/network/PacketEncoder.java b/src/main/java/net/minecraft/network/PacketEncoder.java
+index 046bfc212b640de174b300e7a05cc30bb3cac93e..af3ec112e142a2c91c46882dad6180b18f39eec2 100644
+--- a/src/main/java/net/minecraft/network/PacketEncoder.java
++++ b/src/main/java/net/minecraft/network/PacketEncoder.java
+@@ -40,7 +40,33 @@ public class PacketEncoder<T extends PacketListener> extends MessageToByteEncode
+ 
+             throw var9;
+         } finally {
++            // Paper start - Handle large packets disconnecting client
++            int packetLength = byteBuf.readableBytes();
++            if (packetLength > MAX_PACKET_SIZE || (packetLength > MAX_FINAL_PACKET_SIZE && packet.hasLargePacketFallback())) {
++                throw new PacketTooLargeException(packet, packetLength);
++            }
++            // Paper end - Handle large packets disconnecting client
+             ProtocolSwapHandler.handleOutboundTerminalPacket(channelHandlerContext, packet);
+         }
+     }
++
++    // Paper start
++    // packet size is encoded into 3-byte varint
++    private static final int MAX_FINAL_PACKET_SIZE = (1 << 21) - 1;
++    // Vanilla Max size for the encoder (before compression)
++    private static final int MAX_PACKET_SIZE = 8388608;
++
++    public static class PacketTooLargeException extends RuntimeException {
++        private final Packet<?> packet;
++
++        PacketTooLargeException(Packet<?> packet, int packetLength) {
++            super("PacketTooLarge - " + packet.getClass().getSimpleName() + " is " + packetLength + ". Max is " + MAX_PACKET_SIZE);
++            this.packet = packet;
++        }
++
++        public Packet<?> getPacket() {
++            return this.packet;
++        }
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/network/protocol/Packet.java b/src/main/java/net/minecraft/network/protocol/Packet.java
+index 4c776c591dd0a7b36945a6487fdfe86d1187b4af..82fc12ffbd1585b4a8d09a025914830af77b0f8d 100644
+--- a/src/main/java/net/minecraft/network/protocol/Packet.java
++++ b/src/main/java/net/minecraft/network/protocol/Packet.java
+@@ -11,6 +11,19 @@ public interface Packet<T extends PacketListener> {
+ 
+     void handle(T listener);
+ 
++    // Paper start
++    default boolean hasLargePacketFallback() {
++        return false;
++    }
++
++    /**
++     * override {@link #hasLargePacketFallback()} to return true when overriding in subclasses
++     */
++    default boolean packetTooLarge(net.minecraft.network.Connection manager) {
++        return false;
++    }
++    // Paper end
++
+     default boolean isSkippable() {
+         return false;
+     }
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundContainerSetContentPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundContainerSetContentPacket.java
+index f53c74fb1863a2d1268a4ddf8cf69d1fda32d73f..8d5939e03a065197af125d95a10134abbccd07ec 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundContainerSetContentPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundContainerSetContentPacket.java
+@@ -36,6 +36,21 @@ public class ClientboundContainerSetContentPacket implements Packet<ClientGamePa
+         this.carriedItem = ItemStack.OPTIONAL_STREAM_CODEC.decode(buf);
+     }
+ 
++    // Paper start - Handle large packets disconnecting client
++    @Override
++    public boolean hasLargePacketFallback() {
++        return true;
++    }
++
++    @Override
++    public boolean packetTooLarge(net.minecraft.network.Connection manager) {
++        for (int i = 0 ; i < this.items.size() ; i++) {
++            manager.send(new ClientboundContainerSetSlotPacket(this.containerId, this.stateId, i, this.items.get(i)));
++        }
++        return true;
++    }
++    // Paper end - Handle large packets disconnecting client
++
+     private void write(RegistryFriendlyByteBuf buf) {
+         buf.writeContainerId(this.containerId);
+         buf.writeVarInt(this.stateId);
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
+index ec1cb034d840633240f2b379b09f7d2f1c8971a5..cf8fd671490863e126c059157e1ca234e6509d9f 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundLevelChunkPacketData.java
+@@ -52,7 +52,7 @@ public class ClientboundLevelChunkPacketData {
+             throw new RuntimeException("Can't read heightmap in packet for [" + x + ", " + z + "]");
+         } else {
+             int i = buf.readVarInt();
+-            if (i > 2097152) {
++            if (i > 2097152) { // Paper - diff on change - if this changes, update PacketEncoder
+                 throw new RuntimeException("Chunk Packet trying to allocate too much memory on read.");
+             } else {
+                 this.buffer = new byte[i];

@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: SoSeDiK <mrsosedik@gmail.com>
+Date: Thu, 26 May 2022 03:30:05 +0300
+Subject: [PATCH] Deep clone nbt tags in PDC
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+index f129d714c1a815f348669dc13a5cd4d360e8ed6a..42d25216cc9d3b931ffc7504ccecc109d57a32d0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+@@ -376,7 +376,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         this.maxDamage = meta.maxDamage;
+         this.unhandledTags.copy(meta.unhandledTags.build());
+         this.removedTags.addAll(meta.removedTags);
+-        this.persistentDataContainer.putAll(meta.persistentDataContainer.getRaw());
++        this.persistentDataContainer.putAll(meta.persistentDataContainer.getTagsCloned()); // Paper - deep clone NBT tags
+ 
+         this.customTag = meta.customTag;
+ 
+@@ -1987,7 +1987,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+                 clone.customTag = this.customTag.copy();
+             }
+             clone.removedTags = Sets.newHashSet(this.removedTags);
+-            clone.persistentDataContainer = new CraftPersistentDataContainer(this.persistentDataContainer.getRaw(), CraftMetaItem.DATA_TYPE_REGISTRY);
++            clone.persistentDataContainer = new CraftPersistentDataContainer(this.persistentDataContainer.getTagsCloned(), CraftMetaItem.DATA_TYPE_REGISTRY); // Paper - deep clone NBT tags
+             clone.hideFlag = this.hideFlag;
+             clone.hideTooltip = this.hideTooltip;
+             clone.tooltipStyle = this.tooltipStyle;
+diff --git a/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java b/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
+index 5a4e7e7150b7c137b077e0b393f17ed35b5aec34..f55fdd57ced259ad5a95878840e98ffaa3db2e05 100644
+--- a/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
++++ b/src/main/java/org/bukkit/craftbukkit/persistence/CraftPersistentDataContainer.java
+@@ -207,4 +207,12 @@ public class CraftPersistentDataContainer implements PersistentDataContainer {
+         }
+     }
+     // Paper end - byte array serialization
++
++    // Paper start - deep clone tags
++    public Map<String, Tag> getTagsCloned() {
++        final Map<String, Tag> tags = new HashMap<>();
++        this.customDataTags.forEach((key, tag) -> tags.put(key, tag.copy()));
++        return tags;
++    }
++    // Paper end - deep clone tags
+ }

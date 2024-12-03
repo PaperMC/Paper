@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: booky10 <boooky10@gmail.com>
+Date: Mon, 3 Jul 2023 01:55:32 +0200
+Subject: [PATCH] Add hand to fish event for all player interactions
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java b/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
+index a2487ca0d7794e58d9ede35d9be5a05a7ea7b03c..dcf60d2499957d4803e4b395603da45e81076095 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
+@@ -487,7 +487,15 @@ public class FishingHook extends Projectile {
+     @Override
+     public void readAdditionalSaveData(CompoundTag nbt) {}
+ 
++    // Paper start - Add hand parameter to PlayerFishEvent
++    @Deprecated
++    @io.papermc.paper.annotation.DoNotUse
+     public int retrieve(ItemStack usedItem) {
++        return this.retrieve(net.minecraft.world.InteractionHand.MAIN_HAND, usedItem);
++    }
++
++    public int retrieve(net.minecraft.world.InteractionHand hand, ItemStack usedItem) {
++        // Paper end - Add hand parameter to PlayerFishEvent
+         net.minecraft.world.entity.player.Player entityhuman = this.getPlayerOwner();
+ 
+         if (!this.level().isClientSide && entityhuman != null && !this.shouldStopFishing(entityhuman)) {
+@@ -495,7 +503,7 @@ public class FishingHook extends Projectile {
+ 
+             if (this.hookedIn != null) {
+                 // CraftBukkit start
+-                PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), this.hookedIn.getBukkitEntity(), (FishHook) this.getBukkitEntity(), PlayerFishEvent.State.CAUGHT_ENTITY);
++                PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), this.hookedIn.getBukkitEntity(), (FishHook) this.getBukkitEntity(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand), PlayerFishEvent.State.CAUGHT_ENTITY); // Paper - Add hand parameter to PlayerFishEvent
+                 this.level().getCraftServer().getPluginManager().callEvent(playerFishEvent);
+ 
+                 if (playerFishEvent.isCancelled()) {
+@@ -524,7 +532,7 @@ public class FishingHook extends Projectile {
+                     }
+                     // Paper end
+                     // CraftBukkit start
+-                    PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), entityitem != null ? entityitem.getBukkitEntity() : null, (FishHook) this.getBukkitEntity(), PlayerFishEvent.State.CAUGHT_FISH); // Paper - entityitem may be null
++                    PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), entityitem != null ? entityitem.getBukkitEntity() : null, (FishHook) this.getBukkitEntity(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand), PlayerFishEvent.State.CAUGHT_FISH); // Paper - entityitem may be null // Paper - Add hand parameter to PlayerFishEvent
+                     playerFishEvent.setExpToDrop(this.random.nextInt(6) + 1);
+                     this.level().getCraftServer().getPluginManager().callEvent(playerFishEvent);
+ 
+@@ -558,7 +566,7 @@ public class FishingHook extends Projectile {
+ 
+             if (this.onGround()) {
+                 // CraftBukkit start
+-                PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), null, (FishHook) this.getBukkitEntity(), PlayerFishEvent.State.IN_GROUND);
++                PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), null, (FishHook) this.getBukkitEntity(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand), PlayerFishEvent.State.IN_GROUND); // Paper - Add hand parameter to PlayerFishEvent
+                 this.level().getCraftServer().getPluginManager().callEvent(playerFishEvent);
+ 
+                 if (playerFishEvent.isCancelled()) {
+@@ -569,7 +577,7 @@ public class FishingHook extends Projectile {
+             }
+             // CraftBukkit start
+             if (i == 0) {
+-                PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), null, (FishHook) this.getBukkitEntity(), PlayerFishEvent.State.REEL_IN);
++                PlayerFishEvent playerFishEvent = new PlayerFishEvent((Player) entityhuman.getBukkitEntity(), null, (FishHook) this.getBukkitEntity(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand), PlayerFishEvent.State.REEL_IN); // Paper - Add hand parameter to PlayerFishEvent
+                 this.level().getCraftServer().getPluginManager().callEvent(playerFishEvent);
+                 if (playerFishEvent.isCancelled()) {
+                     return 0;
+diff --git a/src/main/java/net/minecraft/world/item/FishingRodItem.java b/src/main/java/net/minecraft/world/item/FishingRodItem.java
+index 54a71bd8c5e7eefb3c008664fb886f4887073dbb..06b66e68d33928c41f0289a67c8c3aad87811ac9 100644
+--- a/src/main/java/net/minecraft/world/item/FishingRodItem.java
++++ b/src/main/java/net/minecraft/world/item/FishingRodItem.java
+@@ -31,7 +31,7 @@ public class FishingRodItem extends Item {
+ 
+         if (user.fishing != null) {
+             if (!world.isClientSide) {
+-                int i = user.fishing.retrieve(itemstack);
++                int i = user.fishing.retrieve(hand, itemstack); // Paper - Add hand parameter to PlayerFishEvent
+ 
+                 itemstack.hurtAndBreak(i, user, LivingEntity.getSlotForHand(hand));
+             }

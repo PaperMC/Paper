@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Noah van der Aa <ndvdaa@gmail.com>
+Date: Sat, 22 Oct 2022 14:47:45 +0200
+Subject: [PATCH] Detect headless JREs
+
+Crashes caused by the missing AWT dependency come up in the support channels fairly often.
+This patch detects the missing dependency and stops the server with a clear error message,
+containing a link to instructions on how to install a non-headless JRE.
+
+diff --git a/src/main/java/io/papermc/paper/util/ServerEnvironment.java b/src/main/java/io/papermc/paper/util/ServerEnvironment.java
+index 68098dfe716e93aafcca4d8d5b5a81d8648b3654..2b7070e0cefa7cf0777df159693750fea14e800b 100644
+--- a/src/main/java/io/papermc/paper/util/ServerEnvironment.java
++++ b/src/main/java/io/papermc/paper/util/ServerEnvironment.java
+@@ -20,4 +20,14 @@ public class ServerEnvironment {
+     public static boolean userIsRootOrAdmin() {
+         return RUNNING_AS_ROOT_OR_ADMIN;
+     }
++
++    public static String awtDependencyCheck() {
++        try {
++            new java.awt.Color(0);
++        } catch (UnsatisfiedLinkError e) {
++            return e.getClass().getName() + ": " + e.getMessage();
++        }
++
++        return null;
++    }
+ }
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index c551f6827476b6432ebe1d48e7ca5d168df305c5..16322471d83c461098a6ada11e790b9fba7b5ea2 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -169,6 +169,18 @@ public class Main {
+                 return;
+             }
+ 
++            // Paper start - Detect headless JRE
++            String awtException = io.papermc.paper.util.ServerEnvironment.awtDependencyCheck();
++            if (awtException != null) {
++                Main.LOGGER.error("You are using a headless JRE distribution.");
++                Main.LOGGER.error("This distribution is missing certain graphic libraries that the Minecraft server needs to function.");
++                Main.LOGGER.error("For instructions on how to install the non-headless JRE, see https://docs.papermc.io/misc/java-install");
++                Main.LOGGER.error("");
++                Main.LOGGER.error(awtException);
++                return;
++            }
++            // Paper end - Detect headless JRE
++
+             org.spigotmc.SpigotConfig.disabledAdvancements = spigotConfiguration.getStringList("advancements.disabled"); // Paper - fix SPIGOT-5885, must be set early in init
+             // Paper start - fix SPIGOT-5824
+             File file;

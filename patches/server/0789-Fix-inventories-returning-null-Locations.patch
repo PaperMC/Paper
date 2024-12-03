@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 15 Mar 2023 18:29:45 -0700
+Subject: [PATCH] Fix inventories returning null Locations
+
+Wandering Trader, AbstractHorse, Beacon and Composter inventories returned null locations
+when a block or entity location is readily available
+
+Co-authored-by: Lukas Planz <lukas.planz@web.de>
+
+diff --git a/src/main/java/net/minecraft/world/SimpleContainer.java b/src/main/java/net/minecraft/world/SimpleContainer.java
+index 13a32ef8f86b678dcce83c41c78b47d9aab9f16b..b0963c534afe5be164701cb283f1849e32ae5a86 100644
+--- a/src/main/java/net/minecraft/world/SimpleContainer.java
++++ b/src/main/java/net/minecraft/world/SimpleContainer.java
+@@ -63,6 +63,16 @@ public class SimpleContainer implements Container, StackedContentsCompatible {
+ 
+     @Override
+     public Location getLocation() {
++        // Paper start - Fix inventories returning null Locations
++        // When the block inventory does not have a tile state that implements getLocation, e. g. composters
++        if (this.bukkitOwner instanceof org.bukkit.inventory.BlockInventoryHolder blockInventoryHolder) {
++            return blockInventoryHolder.getBlock().getLocation();
++        }
++        // When the bukkit owner is a bukkit entity, but does not implement Container itself, e. g. horses
++        if (this.bukkitOwner instanceof org.bukkit.entity.Entity entity) {
++            return entity.getLocation();
++        }
++        // Paper end - Fix inventories returning null Locations
+         return null;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/inventory/BeaconMenu.java b/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
+index 5d7f4e4f420c7e0a3467b7ec3859cae2eb63870f..75f097414f436eee9f179d4d03dd64599cbaad6f 100644
+--- a/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
+@@ -52,6 +52,12 @@ public class BeaconMenu extends AbstractContainerMenu {
+             public int getMaxStackSize() {
+                 return 1;
+             }
++            // Paper start - Fix inventories returning null Locations
++            @Override
++            public org.bukkit.Location getLocation() {
++                return context.getLocation();
++            }
++            // Paper end - Fix inventories returning null Locations
+         };
+         checkContainerDataCount(propertyDelegate, 3);
+         this.beaconData = propertyDelegate;
+diff --git a/src/main/java/net/minecraft/world/inventory/MerchantContainer.java b/src/main/java/net/minecraft/world/inventory/MerchantContainer.java
+index 7cc96b62f6bacdb44a37d74db214bd0e11c4d503..9140fab07aab32065f7a3b5d13dd17d61dc6d646 100644
+--- a/src/main/java/net/minecraft/world/inventory/MerchantContainer.java
++++ b/src/main/java/net/minecraft/world/inventory/MerchantContainer.java
+@@ -65,7 +65,7 @@ public class MerchantContainer implements Container {
+ 
+     @Override
+     public Location getLocation() {
+-        return (this.merchant instanceof Villager) ? ((Villager) this.merchant).getBukkitEntity().getLocation() : null;
++        return (this.merchant instanceof AbstractVillager) ? ((AbstractVillager) this.merchant).getBukkitEntity().getLocation() : null; // Paper - Fix inventories returning null Locations
+     }
+     // CraftBukkit end
+ 

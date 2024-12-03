@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 9 Apr 2023 21:11:58 -0700
+Subject: [PATCH] Fix a couple of upstream bed issues
+
+Upstream incorrectly skipped explosion logic if
+the bed was occupied and added a "feature" where
+if you set your spawn in a respawn anchor world
+but then replaced it with a bed, you could respawn
+at the bed in that world.
+
+diff --git a/src/main/java/net/minecraft/world/level/block/BedBlock.java b/src/main/java/net/minecraft/world/level/block/BedBlock.java
+index 30db6ae29e2fe03866dfa656330f7341e0a3f9ab..be700995c3e7f63e0471712c3cd6fd83db583491 100644
+--- a/src/main/java/net/minecraft/world/level/block/BedBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BedBlock.java
+@@ -109,6 +109,7 @@ public class BedBlock extends HorizontalDirectionalBlock implements EntityBlock
+                 world.explode((Entity) null, world.damageSources().badRespawnPointExplosion(vec3d), (ExplosionDamageCalculator) null, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK);
+                 return InteractionResult.SUCCESS_SERVER;
+             } else if ((Boolean) state.getValue(BedBlock.OCCUPIED)) {
++                if (!BedBlock.canSetSpawn(world)) return this.explodeBed(state, world, pos); // Paper - check explode first
+                 if (!this.kickVillagerOutOfBed(world, pos)) {
+                     player.displayClientMessage(Component.translatable("block.minecraft.bed.occupied"), true);
+                 }
+@@ -166,8 +167,7 @@ public class BedBlock extends HorizontalDirectionalBlock implements EntityBlock
+     // CraftBukkit end
+ 
+     public static boolean canSetSpawn(Level world) {
+-        // CraftBukkit - moved world and biome check into EntityHuman
+-        return true || world.dimensionType().bedWorks();
++        return world.dimensionType().bedWorks(); // Paper - actually check if the bed works
+     }
+ 
+     private boolean kickVillagerOutOfBed(Level world, BlockPos pos) {

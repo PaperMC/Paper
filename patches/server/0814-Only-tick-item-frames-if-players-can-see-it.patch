@@ -1,0 +1,20 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Redned <redned235@gmail.com>
+Date: Mon, 19 Jun 2023 15:45:53 -0500
+Subject: [PATCH] Only tick item frames if players can see it
+
+In the event that an item frame cannot be seen by any players, ticking the item frame every tick is unnecessary. This can be a very hot section of the entity tracker when lots of item frames are present on a server, so this reduces the logic which speeds it up.
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
+index 78d3aa089d990190cdf5cd7ac14410909235f133..436eb27ddc6a36b8bbf46efd9532c4e371024a98 100644
+--- a/src/main/java/net/minecraft/server/level/ServerEntity.java
++++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
+@@ -116,7 +116,7 @@ public class ServerEntity {
+ 
+         Entity entity = this.entity;
+ 
+-        if (entity instanceof ItemFrame entityitemframe) {
++        if (!this.trackedPlayers.isEmpty() && entity instanceof ItemFrame entityitemframe) { // Paper - Perf: Only tick item frames if players can see it
+             if (true || this.tickCount % 10 == 0) { // CraftBukkit - Moved below, should always enter this block
+                 ItemStack itemstack = entityitemframe.getItem();
+ 
