@@ -1,0 +1,99 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 10 Sep 2018 23:56:36 -0400
+Subject: [PATCH] Prevent various interactions from causing chunk loads
+
+Co-authored-by: Shane Freeder <theboyetronic@gmail.com>
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/RemoveBlockGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/RemoveBlockGoal.java
+index 90f61511429799b1e852326d0d014551e5c35d5d..9d245d08be61d7edee9138196ae3bf52023e3993 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/RemoveBlockGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/RemoveBlockGoal.java
+@@ -127,7 +127,9 @@ public class RemoveBlockGoal extends MoveToBlockGoal {
+ 
+     @Nullable
+     private BlockPos getPosWithBlock(BlockPos pos, BlockGetter world) {
+-        if (world.getBlockState(pos).is(this.blockToRemove)) {
++        net.minecraft.world.level.block.state.BlockState block = world.getBlockStateIfLoaded(pos); // Paper - Prevent AI rules from loading chunks
++        if (block == null) return null; // Paper - Prevent AI rules from loading chunks
++        if (block.is(this.blockToRemove)) { // Paper - Prevent AI rules from loading chunks
+             return pos;
+         } else {
+             BlockPos[] ablockposition = new BlockPos[]{pos.below(), pos.west(), pos.east(), pos.north(), pos.south(), pos.below().below()};
+@@ -137,7 +139,8 @@ public class RemoveBlockGoal extends MoveToBlockGoal {
+             for (int j = 0; j < i; ++j) {
+                 BlockPos blockposition1 = ablockposition1[j];
+ 
+-                if (world.getBlockState(blockposition1).is(this.blockToRemove)) {
++                net.minecraft.world.level.block.state.BlockState block2 = world.getBlockStateIfLoaded(blockposition1); // Paper - Prevent AI rules from loading chunks
++                if (block2 != null && block2.is(this.blockToRemove)) { // Paper - Prevent AI rules from loading chunks
+                     return blockposition1;
+                 }
+             }
+@@ -148,7 +151,7 @@ public class RemoveBlockGoal extends MoveToBlockGoal {
+ 
+     @Override
+     protected boolean isValidTarget(LevelReader world, BlockPos pos) {
+-        ChunkAccess ichunkaccess = world.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()), ChunkStatus.FULL, false);
++        ChunkAccess ichunkaccess = world.getChunkIfLoadedImmediately(pos.getX() >> 4, pos.getZ() >> 4); // Paper - Prevent AI rules from loading chunks
+ 
+         return ichunkaccess == null ? false : ichunkaccess.getBlockState(pos).is(this.blockToRemove) && ichunkaccess.getBlockState(pos.above()).isAir() && ichunkaccess.getBlockState(pos.above(2)).isAir();
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/EnderMan.java b/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
+index e9b28c7fea402cb15cfeefe6cd02e3056e54796d..0ddbebbe6eea00c379f2a250f7a44ba9313c1de1 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
++++ b/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
+@@ -488,7 +488,8 @@ public class EnderMan extends Monster implements NeutralMob {
+             int j = Mth.floor(this.enderman.getY() + randomsource.nextDouble() * 2.0D);
+             int k = Mth.floor(this.enderman.getZ() - 1.0D + randomsource.nextDouble() * 2.0D);
+             BlockPos blockposition = new BlockPos(i, j, k);
+-            BlockState iblockdata = world.getBlockState(blockposition);
++            BlockState iblockdata = world.getBlockStateIfLoaded(blockposition); // Paper - Prevent endermen from loading chunks
++            if (iblockdata == null) return; // Paper - Prevent endermen from loading chunks
+             BlockPos blockposition1 = blockposition.below();
+             BlockState iblockdata1 = world.getBlockState(blockposition1);
+             BlockState iblockdata2 = this.enderman.getCarriedBlock();
+@@ -532,7 +533,8 @@ public class EnderMan extends Monster implements NeutralMob {
+             int j = Mth.floor(this.enderman.getY() + randomsource.nextDouble() * 3.0D);
+             int k = Mth.floor(this.enderman.getZ() - 2.0D + randomsource.nextDouble() * 4.0D);
+             BlockPos blockposition = new BlockPos(i, j, k);
+-            BlockState iblockdata = world.getBlockState(blockposition);
++            BlockState iblockdata = world.getBlockStateIfLoaded(blockposition); // Paper - Prevent endermen from loading chunks
++            if (iblockdata == null) return; // Paper - Prevent endermen from loading chunks
+             Vec3 vec3d = new Vec3((double) this.enderman.getBlockX() + 0.5D, (double) j + 0.5D, (double) this.enderman.getBlockZ() + 0.5D);
+             Vec3 vec3d1 = new Vec3((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D);
+             BlockHitResult movingobjectpositionblock = world.clip(new ClipContext(vec3d, vec3d1, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, this.enderman));
+diff --git a/src/main/java/net/minecraft/world/item/component/LodestoneTracker.java b/src/main/java/net/minecraft/world/item/component/LodestoneTracker.java
+index c02a2f9e1b4e727b1deeb73377e1f7193f5ee072..cdd1f6939ce33e62f6609f7eb3a5dff59bf12675 100644
+--- a/src/main/java/net/minecraft/world/item/component/LodestoneTracker.java
++++ b/src/main/java/net/minecraft/world/item/component/LodestoneTracker.java
+@@ -29,7 +29,7 @@ public record LodestoneTracker(Optional<GlobalPos> target, boolean tracked) {
+                 return this;
+             } else {
+                 BlockPos blockPos = this.target.get().pos();
+-                return world.isInWorldBounds(blockPos) && world.getPoiManager().existsAtPosition(PoiTypes.LODESTONE, blockPos)
++                return world.isInWorldBounds(blockPos) && (!world.hasChunkAt(blockPos) || world.getPoiManager().existsAtPosition(PoiTypes.LODESTONE, blockPos)) // Paper - Prevent compass from loading chunks
+                     ? this
+                     : new LodestoneTracker(Optional.empty(), true);
+             }
+diff --git a/src/main/java/net/minecraft/world/level/BlockGetter.java b/src/main/java/net/minecraft/world/level/BlockGetter.java
+index f399d130d9bf4ab00f35090019a00c6287146490..6bf3019ff06501e82de5976417fd98a10ae6334a 100644
+--- a/src/main/java/net/minecraft/world/level/BlockGetter.java
++++ b/src/main/java/net/minecraft/world/level/BlockGetter.java
+@@ -71,7 +71,15 @@ public interface BlockGetter extends LevelHeightAccessor {
+ 
+     // CraftBukkit start - moved block handling into separate method for use by Block#rayTrace
+     default BlockHitResult clip(ClipContext raytrace1, BlockPos blockposition) {
+-            BlockState iblockdata = this.getBlockState(blockposition);
++            // Paper start - Prevent raytrace from loading chunks
++            BlockState iblockdata = this.getBlockStateIfLoaded(blockposition);
++            if (iblockdata == null) {
++                // copied the last function parameter (listed below)
++                Vec3 vec3d = raytrace1.getFrom().subtract(raytrace1.getTo());
++
++                return BlockHitResult.miss(raytrace1.getTo(), Direction.getApproximateNearest(vec3d.x, vec3d.y, vec3d.z), BlockPos.containing(raytrace1.getTo()));
++            }
++            // Paper end - Prevent raytrace from loading chunks
+             FluidState fluid = this.getFluidState(blockposition);
+             Vec3 vec3d = raytrace1.getFrom();
+             Vec3 vec3d1 = raytrace1.getTo();

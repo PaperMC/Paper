@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 2 Dec 2016 00:11:43 -0500
+Subject: [PATCH] Optimize Level.hasChunkAt(BlockPosition)Z
+
+Reduce method invocations for World.isLoaded(BlockPosition)Z
+
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 8891eab56b1bb2ed253fbced383e14a8c177966b..0d589ad5cd7887ce2143fd2f1af617fbe9226c2c 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -341,6 +341,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         return chunk == null ? null : chunk.getFluidState(blockposition);
+     }
+ 
++    @Override
++    public final boolean hasChunkAt(BlockPos pos) {
++        return getChunkIfLoaded(pos.getX() >> 4, pos.getZ() >> 4) != null; // Paper - Perf: Optimize Level.hasChunkAt(BlockPosition)Z
++    }
++
+     public final boolean isLoadedAndInBounds(BlockPos blockposition) { // Paper - final for inline
+         return getWorldBorder().isWithinBounds(blockposition) && getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4) != null;
+     }

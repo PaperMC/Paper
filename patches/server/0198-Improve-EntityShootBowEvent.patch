@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 15 Jun 2013 19:51:17 -0400
+Subject: [PATCH] Improve EntityShootBowEvent
+
+Adds missing call to Illagers and also adds Arrow ItemStack to skeletons
+
+== AT ==
+public net.minecraft.world.entity.projectile.AbstractArrow getPickupItem()Lnet.minecraft.world.item.ItemStack;
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
+index 60b41fc25093789c362fa8d158272df42443fec1..b7b567192f14ca8bac24b533dcbb5b5bd4f5a3aa 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
++++ b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
+@@ -210,7 +210,7 @@ public abstract class AbstractSkeleton extends Monster implements RangedAttackMo
+ 
+         if (world instanceof ServerLevel worldserver) {
+             // CraftBukkit start
+-            org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, this.getMainHandItem(), null, entityarrow, net.minecraft.world.InteractionHand.MAIN_HAND, 0.8F, true);
++            org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, this.getMainHandItem(), entityarrow.getPickupItem(), entityarrow, net.minecraft.world.InteractionHand.MAIN_HAND, 0.8F, true); // Paper - improve entity shhot bow event - add arrow stack to event
+             if (event.isCancelled()) {
+                 event.getProjectile().remove();
+                 return;
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Illusioner.java b/src/main/java/net/minecraft/world/entity/monster/Illusioner.java
+index 60388ab18d7a4ecb235e54ecfdb4088b690a6178..db3aac9ba711dcd18ffc35c4a745ecaec89d0166 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Illusioner.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Illusioner.java
+@@ -184,7 +184,17 @@ public class Illusioner extends SpellcasterIllager implements RangedAttackMob {
+         Level world = this.level();
+ 
+         if (world instanceof ServerLevel worldserver) {
++            // Paper start - EntityShootBowEvent
++            org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, this.getMainHandItem(), entityarrow.getPickupItem(), entityarrow, target.getUsedItemHand(), 0.8F, true);
++            if (event.isCancelled()) {
++                event.getProjectile().remove();
++                return;
++            }
++
++            if (event.getProjectile() == entityarrow.getBukkitEntity()) {
+             Projectile.spawnProjectileUsingShoot(entityarrow, worldserver, itemstack1, d0, d1 + d3 * 0.20000000298023224D, d2, 1.6F, (float) (14 - worldserver.getDifficulty().getId() * 4));
++            }
++            // Paper end - EntityShootBowEvent
+         }
+ 
+         this.playSound(SoundEvents.SKELETON_SHOOT, 1.0F, 1.0F / (this.getRandom().nextFloat() * 0.4F + 0.8F));

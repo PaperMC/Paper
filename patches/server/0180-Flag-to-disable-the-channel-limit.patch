@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Sat, 31 Mar 2018 17:04:26 +0100
+Subject: [PATCH] Flag to disable the channel limit
+
+In some enviroments, the channel limit set by spigot can cause issues,
+e.g. servers which allow and support the usage of mod packs.
+
+provide an optional flag to disable this check, at your own risk.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 7bb315c45a3b021ec6016c7ff70a88c1a371f799..ce22bf772aa00e7d06328961bb69ff89eb3e52c6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -214,6 +214,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     private CraftWorldBorder clientWorldBorder = null;
+     private BorderChangeListener clientWorldBorderListener = this.createWorldBorderListener();
+     public org.bukkit.event.player.PlayerResourcePackStatusEvent.Status resourcePackStatus; // Paper - more resource pack API
++    private static final boolean DISABLE_CHANNEL_LIMIT = System.getProperty("paper.disableChannelLimit") != null; // Paper - add a flag to disable the channel limit
+ 
+     public CraftPlayer(CraftServer server, ServerPlayer entity) {
+         super(server, entity);
+@@ -2296,7 +2297,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     }
+ 
+     public void addChannel(String channel) {
+-        Preconditions.checkState(this.channels.size() < 128, "Cannot register channel '%s'. Too many channels registered!", channel);
++        Preconditions.checkState(DISABLE_CHANNEL_LIMIT || this.channels.size() < 128, "Cannot register channel. Too many channels registered!"); // Paper - flag to disable channel limit
+         channel = StandardMessenger.validateAndCorrectChannel(channel);
+         if (this.channels.add(channel)) {
+             this.server.getPluginManager().callEvent(new PlayerRegisterChannelEvent(this, channel));

@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 20 Dec 2017 17:36:49 -0500
+Subject: [PATCH] Ability to apply mending to XP API
+
+This allows plugins that give players the ability to apply the experience
+points to the Item Mending formula, which will repair an item instead
+of giving the player experience points.
+
+Both an API To standalone mend, and apply mending logic to .giveExp has been added.
+
+== AT ==
+public net.minecraft.world.entity.ExperienceOrb durabilityToXp(I)I
+public net.minecraft.world.entity.ExperienceOrb xpToDurability(I)I
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 88b693ddaf301035d674fda835a51faa13842214..09974c95ead0f1e38a3b3be2e7fccb3e227c21c9 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1665,7 +1665,41 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     }
+ 
+     @Override
+-    public void giveExp(int exp) {
++    // Paper start - ability to apply mending
++    public int applyMending(int amount) {
++        ServerPlayer handle = this.getHandle();
++        // Logic copied from EntityExperienceOrb and remapped to unobfuscated methods/properties
++
++        final Optional<net.minecraft.world.item.enchantment.EnchantedItemInUse> stackEntry = net.minecraft.world.item.enchantment.EnchantmentHelper
++            .getRandomItemWith(net.minecraft.world.item.enchantment.EnchantmentEffectComponents.REPAIR_WITH_XP, handle, net.minecraft.world.item.ItemStack::isDamaged);
++        final net.minecraft.world.item.ItemStack itemstack = stackEntry.map(net.minecraft.world.item.enchantment.EnchantedItemInUse::itemStack).orElse(net.minecraft.world.item.ItemStack.EMPTY);
++        if (!itemstack.isEmpty() && itemstack.getItem().components().has(net.minecraft.core.component.DataComponents.MAX_DAMAGE)) {
++            net.minecraft.world.entity.ExperienceOrb orb = net.minecraft.world.entity.EntityType.EXPERIENCE_ORB.create(handle.level(), net.minecraft.world.entity.EntitySpawnReason.COMMAND);
++            orb.value = amount;
++            orb.spawnReason = org.bukkit.entity.ExperienceOrb.SpawnReason.CUSTOM;
++            orb.setPosRaw(handle.getX(), handle.getY(), handle.getZ());
++
++            final int possibleDurabilityFromXp = net.minecraft.world.item.enchantment.EnchantmentHelper.modifyDurabilityToRepairFromXp(
++                handle.serverLevel(), itemstack, amount
++            );
++            int i = Math.min(possibleDurabilityFromXp, itemstack.getDamageValue());
++            org.bukkit.event.player.PlayerItemMendEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemMendEvent(handle, orb, itemstack, stackEntry.get().inSlot(), i);
++            i = event.getRepairAmount();
++            orb.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN);
++            if (!event.isCancelled()) {
++                amount -= i * amount / possibleDurabilityFromXp;
++                itemstack.setDamageValue(itemstack.getDamageValue() - i);
++            }
++        }
++        return amount;
++    }
++
++    @Override
++    public void giveExp(int exp, boolean applyMending) {
++        if (applyMending) {
++            exp = this.applyMending(exp);
++        }
++    // Paper end - ability to apply mending
+         this.getHandle().giveExperiencePoints(exp);
+     }
+ 

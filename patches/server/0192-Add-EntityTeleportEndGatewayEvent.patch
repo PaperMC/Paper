@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Sat, 9 Jun 2018 14:08:39 +0200
+Subject: [PATCH] Add EntityTeleportEndGatewayEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 211886d55e19039768658b1c704f241ac93cf75a..9175c61a5c0b8a79c46869649320beaf731a2ab4 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -3460,8 +3460,16 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+                 // CraftBukkit start
+                 PositionMoveRotation absolutePosition = PositionMoveRotation.calculateAbsolute(PositionMoveRotation.of(this), PositionMoveRotation.of(teleportTarget), teleportTarget.relatives());
+                 Location to = CraftLocation.toBukkit(absolutePosition.position(), teleportTarget.newLevel().getWorld(), absolutePosition.yRot(), absolutePosition.xRot());
+-                EntityTeleportEvent teleEvent = CraftEventFactory.callEntityTeleportEvent(this, to);
+-                if (teleEvent.isCancelled()) {
++                // Paper start - gateway-specific teleport event
++                final EntityTeleportEvent teleEvent;
++                if (this.portalProcess != null && this.portalProcess.isSamePortal(((net.minecraft.world.level.block.EndGatewayBlock) net.minecraft.world.level.block.Blocks.END_GATEWAY)) && this.level.getBlockEntity(this.portalProcess.getEntryPosition()) instanceof net.minecraft.world.level.block.entity.TheEndGatewayBlockEntity theEndGatewayBlockEntity) {
++                    teleEvent = new com.destroystokyo.paper.event.entity.EntityTeleportEndGatewayEvent(this.getBukkitEntity(), this.getBukkitEntity().getLocation(), to, new org.bukkit.craftbukkit.block.CraftEndGateway(to.getWorld(), theEndGatewayBlockEntity));
++                    teleEvent.callEvent();
++                } else {
++                    teleEvent = CraftEventFactory.callEntityTeleportEvent(this, to);
++                }
++                // Paper end - gateway-specific teleport event
++                if (teleEvent.isCancelled() || teleEvent.getTo() == null) {
+                     return null;
+                 }
+                 if (!to.equals(teleEvent.getTo())) {

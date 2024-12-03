@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 20 Dec 2016 15:15:11 -0500
+Subject: [PATCH] Bound Treasure Maps to World Border
+
+Make it so a Treasure Map does not target a structure outside of the
+World Border, where players are not even able to reach.
+
+This also would help the case where a players close to the border, and one
+that is outside happens to be closer, but unreachable, yet another reachable
+one is in border that would of been missed.
+
+diff --git a/src/main/java/net/minecraft/world/level/border/WorldBorder.java b/src/main/java/net/minecraft/world/level/border/WorldBorder.java
+index 5aa04c48e04c067a366383b252a7b713d85eaee9..b50090df116697a12f5498d65dd2e5d6d5297fb5 100644
+--- a/src/main/java/net/minecraft/world/level/border/WorldBorder.java
++++ b/src/main/java/net/minecraft/world/level/border/WorldBorder.java
+@@ -46,6 +46,18 @@ public class WorldBorder {
+         return this.isWithinBounds((double) chunkPos.getMinBlockX(), (double) chunkPos.getMinBlockZ()) && this.isWithinBounds((double) chunkPos.getMaxBlockX(), (double) chunkPos.getMaxBlockZ());
+     }
+ 
++    // Paper start - Bound treasure maps to world border
++    private final BlockPos.MutableBlockPos mutPos = new BlockPos.MutableBlockPos();
++    public boolean isBlockInBounds(int chunkX, int chunkZ) {
++        this.mutPos.set(chunkX, 64, chunkZ);
++        return this.isWithinBounds(this.mutPos);
++    }
++    public boolean isChunkInBounds(int chunkX, int chunkZ) {
++        this.mutPos.set(((chunkX << 4) + 15), 64, (chunkZ << 4) + 15);
++        return this.isWithinBounds(this.mutPos);
++    }
++    // Paper end - Bound treasure maps to world border
++
+     public boolean isWithinBounds(AABB box) {
+         return this.isWithinBounds(box.minX, box.minZ, box.maxX - 9.999999747378752E-6D, box.maxZ - 9.999999747378752E-6D);
+     }
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
+index c037b08bcad40e5c2df3b7f98ab2071db3b3e48d..0acf8b62ddb5e005f8f861558934e8afc8673725 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGenerator.java
+@@ -223,6 +223,7 @@ public abstract class ChunkGenerator {
+ 
+             while (iterator.hasNext()) {
+                 ChunkPos chunkcoordintpair = (ChunkPos) iterator.next();
++                if (!world.paperConfig().environment.locateStructuresOutsideWorldBorder && !world.getWorldBorder().isChunkInBounds(chunkcoordintpair.x, chunkcoordintpair.z)) { continue; } // Paper - Bound treasure maps to world border
+ 
+                 blockposition_mutableblockposition.set(SectionPos.sectionToBlockCoord(chunkcoordintpair.x, 8), 32, SectionPos.sectionToBlockCoord(chunkcoordintpair.z, 8));
+                 double d1 = blockposition_mutableblockposition.distSqr(center);

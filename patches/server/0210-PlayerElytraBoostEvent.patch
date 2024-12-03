@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 21 Jul 2018 01:59:59 -0500
+Subject: [PATCH] PlayerElytraBoostEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
+index d7d2d4b5eb49e286171a143e4cb4419290a117e0..e76dc69e1bdce789532c9e439ea73b54186d0afc 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
+@@ -219,11 +219,34 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+         });
+     }
+ 
++    // Paper start - delayed projectile spawning
++    public record Delayed<T extends Projectile>(
++        T projectile,
++        ServerLevel world,
++        ItemStack projectileStack
++    ) {
++        // Taken from net.minecraft.world.entity.projectile.Projectile.spawnProjectile(T, net.minecraft.server.level.ServerLevel, net.minecraft.world.item.ItemStack, java.util.function.Consumer<T>)
++        public boolean attemptSpawn() {
++            if (!world.addFreshEntity(projectile)) return false;
++            projectile.applyOnProjectileSpawned(this.world, this.projectileStack);
++            return true;
++        }
++
++        public T spawn() {
++            this.attemptSpawn();
++            return projectile();
++        }
++    }
++    // Paper end - delayed projectile spawning
++
+     public static <T extends Projectile> T spawnProjectile(T projectile, ServerLevel world, ItemStack projectileStack, Consumer<T> beforeSpawn) {
++    // Paper start - delayed projectile spawning
++        return spawnProjectileDelayed(projectile, world, projectileStack, beforeSpawn).spawn();
++    }
++    public static <T extends Projectile> Delayed<T> spawnProjectileDelayed(T projectile, ServerLevel world, ItemStack projectileStack, Consumer<T> beforeSpawn) {
++    // Paper end - delayed projectile spawning
+         beforeSpawn.accept(projectile);
+-        if (world.addFreshEntity(projectile)) // CraftBukkit
+-        projectile.applyOnProjectileSpawned(world, projectileStack);
+-        return projectile;
++        return new Delayed<>(projectile, world, projectileStack); // Paper - delayed projectile spawning
+     }
+ 
+     public void applyOnProjectileSpawned(ServerLevel world, ItemStack projectileStack) {
+diff --git a/src/main/java/net/minecraft/world/item/FireworkRocketItem.java b/src/main/java/net/minecraft/world/item/FireworkRocketItem.java
+index 3929cb76f1c98c0a22eb2ab64c2ed09805ffe448..400ad0fa1d07c8b120e3c3b5488dfa315aa2d23f 100644
+--- a/src/main/java/net/minecraft/world/item/FireworkRocketItem.java
++++ b/src/main/java/net/minecraft/world/item/FireworkRocketItem.java
+@@ -56,9 +56,19 @@ public class FireworkRocketItem extends Item implements ProjectileItem {
+         if (user.isFallFlying()) {
+             ItemStack itemStack = user.getItemInHand(hand);
+             if (world instanceof ServerLevel serverLevel) {
+-                Projectile.spawnProjectile(new FireworkRocketEntity(world, itemStack, user), serverLevel, itemStack, f -> f.spawningEntity = user.getUUID());  // Paper - firework api - assign spawning entity uuid
+-                itemStack.consume(1, user);
+-                user.awardStat(Stats.ITEM_USED.get(this));
++                // Paper start - PlayerElytraBoostEvent
++                final Projectile.Delayed<FireworkRocketEntity> delayed = Projectile.spawnProjectileDelayed(new FireworkRocketEntity(world, itemStack, user), serverLevel, itemStack, f -> f.spawningEntity = user.getUUID());  // Paper - firework api - assign spawning entity uuid
++                com.destroystokyo.paper.event.player.PlayerElytraBoostEvent event = new com.destroystokyo.paper.event.player.PlayerElytraBoostEvent((org.bukkit.entity.Player) user.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack), (org.bukkit.entity.Firework) delayed.projectile().getBukkitEntity(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand));
++                if (event.callEvent() && delayed.attemptSpawn()) {
++                    user.awardStat(Stats.ITEM_USED.get(this)); // Moved up from below
++                    if (event.shouldConsume() && !user.hasInfiniteMaterials()) {
++                        itemStack.shrink(1); // Moved up from below
++                    } else ((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity().updateInventory();
++                } else {
++                    ((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity().updateInventory();
++                }
++                // Moved up consume/stat
++                // Paper end - PlayerElytraBoostEvent
+             }
+ 
+             return InteractionResult.SUCCESS;

@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 20 Dec 2016 15:26:27 -0500
+Subject: [PATCH] Configurable Cartographer Treasure Maps
+
+Allow configuring for cartographers to return the same map location
+
+Also allow turning off treasure maps all together as they can eat up Map ID's
+which are limited in quantity.
+
+diff --git a/src/main/java/net/minecraft/world/entity/npc/VillagerTrades.java b/src/main/java/net/minecraft/world/entity/npc/VillagerTrades.java
+index e6592409abfed699e0be74256bbbca871e5cc09a..37d62ee36e6b41ce8e923fc210c5b30920275c48 100644
+--- a/src/main/java/net/minecraft/world/entity/npc/VillagerTrades.java
++++ b/src/main/java/net/minecraft/world/entity/npc/VillagerTrades.java
+@@ -1834,7 +1834,8 @@ public class VillagerTrades {
+                 return null;
+             } else {
+                 ServerLevel serverLevel = (ServerLevel)entity.level();
+-                BlockPos blockPos = serverLevel.findNearestMapStructure(this.destination, entity.blockPosition(), 100, true);
++                if (!serverLevel.paperConfig().environment.treasureMaps.enabled) return null; // Paper - Configurable cartographer treasure maps
++                BlockPos blockPos = serverLevel.findNearestMapStructure(this.destination, entity.blockPosition(), 100, !serverLevel.paperConfig().environment.treasureMaps.findAlreadyDiscoveredVillager); // Paper - Configurable cartographer treasure maps
+                 if (blockPos != null) {
+                     ItemStack itemStack = MapItem.create(serverLevel, blockPos.getX(), blockPos.getZ(), (byte)2, true, true);
+                     MapItem.renderBiomePreviewMap(serverLevel, itemStack);
+diff --git a/src/main/java/net/minecraft/world/level/storage/loot/functions/ExplorationMapFunction.java b/src/main/java/net/minecraft/world/level/storage/loot/functions/ExplorationMapFunction.java
+index 4a4a692686159a295aeae94daa8e55bcaa503e0d..c30943031db0e72c8a412552d0706d4da9e9cebc 100644
+--- a/src/main/java/net/minecraft/world/level/storage/loot/functions/ExplorationMapFunction.java
++++ b/src/main/java/net/minecraft/world/level/storage/loot/functions/ExplorationMapFunction.java
+@@ -83,8 +83,17 @@ public class ExplorationMapFunction extends LootItemConditionalFunction {
+             Vec3 vec3 = context.getOptionalParameter(LootContextParams.ORIGIN);
+             if (vec3 != null) {
+                 ServerLevel serverLevel = context.getLevel();
++                // Paper start - Configurable cartographer treasure maps
++                if (!serverLevel.paperConfig().environment.treasureMaps.enabled) {
++                    /*
++                     * NOTE: I fear users will just get a plain map as their "treasure"
++                     * This is preferable to disrespecting the config.
++                     */
++                    return stack;
++                }
++                // Paper end - Configurable cartographer treasure maps
+                 BlockPos blockPos = serverLevel.findNearestMapStructure(
+-                    this.destination, BlockPos.containing(vec3), this.searchRadius, this.skipKnownStructures
++                    this.destination, BlockPos.containing(vec3), this.searchRadius, !serverLevel.paperConfig().environment.treasureMaps.findAlreadyDiscoveredLootTable.or(!this.skipKnownStructures) // Paper - Configurable cartographer treasure maps
+                 );
+                 if (blockPos != null) {
+                     ItemStack itemStack = MapItem.create(serverLevel, blockPos.getX(), blockPos.getZ(), this.zoom, true, true);

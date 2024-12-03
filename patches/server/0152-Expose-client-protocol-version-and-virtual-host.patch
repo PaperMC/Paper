@@ -1,0 +1,116 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Minecrell <minecrell@minecrell.net>
+Date: Tue, 10 Oct 2017 18:45:20 +0200
+Subject: [PATCH] Expose client protocol version and virtual host
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/network/PaperNetworkClient.java b/src/main/java/com/destroystokyo/paper/network/PaperNetworkClient.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a5a7624f1f372a26b982836cd31cff15e2589e9b
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/network/PaperNetworkClient.java
+@@ -0,0 +1,49 @@
++package com.destroystokyo.paper.network;
++
++import java.net.InetSocketAddress;
++
++import javax.annotation.Nullable;
++import net.minecraft.network.Connection;
++
++public class PaperNetworkClient implements NetworkClient {
++
++    private final Connection networkManager;
++
++    PaperNetworkClient(Connection networkManager) {
++        this.networkManager = networkManager;
++    }
++
++    @Override
++    public InetSocketAddress getAddress() {
++        return (InetSocketAddress) this.networkManager.getRemoteAddress();
++    }
++
++    @Override
++    public int getProtocolVersion() {
++        return this.networkManager.protocolVersion;
++    }
++
++    @Nullable
++    @Override
++    public InetSocketAddress getVirtualHost() {
++        return this.networkManager.virtualHost;
++    }
++
++    public static InetSocketAddress prepareVirtualHost(String host, int port) {
++        int len = host.length();
++
++        // FML appends a marker to the host to recognize FML clients (\0FML\0)
++        int pos = host.indexOf('\0');
++        if (pos >= 0) {
++            len = pos;
++        }
++
++        // When clients connect with a SRV record, their host contains a trailing '.'
++        if (len > 0 && host.charAt(len -  1) == '.') {
++            len--;
++        }
++
++        return InetSocketAddress.createUnresolved(host.substring(0, len), port);
++    }
++
++}
+diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
+index 00bf34e1fd3593ad6d92bd292f3069cd3cbddfdd..d1a8e95da5d9b37a097e4f91b31f32c490e7f64b 100644
+--- a/src/main/java/net/minecraft/network/Connection.java
++++ b/src/main/java/net/minecraft/network/Connection.java
+@@ -120,6 +120,10 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+     @Nullable
+     BandwidthDebugMonitor bandwidthDebugMonitor;
+     public String hostname = ""; // CraftBukkit - add field
++    // Paper start - NetworkClient implementation
++    public int protocolVersion;
++    public java.net.InetSocketAddress virtualHost;
++    // Paper end
+ 
+     // Paper start - add utility methods
+     public final net.minecraft.server.level.ServerPlayer getPlayer() {
+diff --git a/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
+index 7ae4279768b70a4fdc8f4438898871a17c8fe402..582bbb376c75ab5bf737f3015ce8ad453746e279 100644
+--- a/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerHandshakePacketListenerImpl.java
+@@ -70,6 +70,10 @@ public class ServerHandshakePacketListenerImpl implements ServerHandshakePacketL
+                 throw new UnsupportedOperationException("Invalid intention " + String.valueOf(packet.intention()));
+         }
+ 
++        // Paper start - NetworkClient implementation
++        this.connection.protocolVersion = packet.protocolVersion();
++        this.connection.virtualHost = com.destroystokyo.paper.network.PaperNetworkClient.prepareVirtualHost(packet.hostName(), packet.port());
++        // Paper end
+     }
+ 
+     private void beginLogin(ClientIntentionPacket packet, boolean transfer) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index d5aa717e790a56109ddcdc573bd254ed4b161a00..88b693ddaf301035d674fda835a51faa13842214 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -341,6 +341,20 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         this.getHandle().transferCookieConnection.sendPacket(new ClientboundTransferPacket(host, port));
+     }
+ 
++    // Paper start - Implement NetworkClient
++    @Override
++    public int getProtocolVersion() {
++        if (getHandle().connection == null) return -1;
++        return getHandle().connection.connection.protocolVersion;
++    }
++
++    @Override
++    public InetSocketAddress getVirtualHost() {
++        if (getHandle().connection == null) return null;
++        return getHandle().connection.connection.virtualHost;
++    }
++    // Paper end
++
+     @Override
+     public double getEyeHeight(boolean ignorePose) {
+         if (ignorePose) {

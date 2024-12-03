@@ -1,0 +1,72 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 29 Jun 2018 00:21:28 -0400
+Subject: [PATCH] LivingEntity Active Item API
+
+API relating to items being actively used by a LivingEntity
+such as a bow or eating food.
+
+== AT ==
+public net/minecraft/world/entity/LivingEntity completeUsingItem()V
+public net/minecraft/server/level/ServerPlayer completeUsingItem()V
+
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index 4d09ba705220d397adedab27c31d604447c51319..5799e385ca91f360a9b5d72b281c5a19ab03de48 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -884,4 +884,53 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+         getHandle().setShieldBlockingDelay(delay);
+     }
+     // Paper end
++
++    // Paper start - active item API
++    @Override
++    public void startUsingItem(org.bukkit.inventory.EquipmentSlot hand) {
++        Preconditions.checkArgument(hand != null, "hand must not be null");
++        switch (hand) {
++            case HAND -> getHandle().startUsingItem(InteractionHand.MAIN_HAND);
++            case OFF_HAND -> getHandle().startUsingItem(InteractionHand.OFF_HAND);
++            default -> throw new IllegalArgumentException("hand may only be HAND or OFF_HAND");
++        }
++    }
++
++    @Override
++    public void completeUsingActiveItem() {
++        getHandle().completeUsingItem();
++    }
++
++    @Override
++    public ItemStack getActiveItem() {
++        return this.getHandle().getUseItem().asBukkitMirror();
++    }
++
++    @Override
++    public int getActiveItemRemainingTime() {
++        return this.getHandle().getUseItemRemainingTicks();
++    }
++
++    @Override
++    public void setActiveItemRemainingTime(final int ticks) {
++        Preconditions.checkArgument(ticks >= 0, "ticks must be >= 0");
++        Preconditions.checkArgument(ticks <= this.getHandle().getUseItem().getUseDuration(this.getHandle()), "ticks must be <= item use duration");
++        this.getHandle().useItemRemaining = ticks;
++    }
++
++    @Override
++    public int getActiveItemUsedTime() {
++        return this.getHandle().getTicksUsingItem();
++    }
++
++    @Override
++    public boolean hasActiveItem() {
++        return this.getHandle().isUsingItem();
++    }
++
++    @Override
++    public org.bukkit.inventory.EquipmentSlot getActiveItemHand() {
++        return org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(this.getHandle().getUsedItemHand());
++    }
++    // Paper end - active item API
+ }

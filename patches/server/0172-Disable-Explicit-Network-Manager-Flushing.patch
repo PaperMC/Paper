@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 11 Mar 2018 14:13:33 -0400
+Subject: [PATCH] Disable Explicit Network Manager Flushing
+
+This seems completely pointless, as packet dispatch uses .writeAndFlush.
+
+Things seem to work fine without explicit flushing, but incase issues arise,
+provide a System property to re-enable it using improved logic of doing the
+flushing on the netty event loop, so it won't do the flush on the main thread.
+
+Renable flushing by passing -Dpaper.explicit-flush=true
+
+diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
+index d1a8e95da5d9b37a097e4f91b31f32c490e7f64b..ca2125fe63d5c2bc5af0ecec177bb457c54b111a 100644
+--- a/src/main/java/net/minecraft/network/Connection.java
++++ b/src/main/java/net/minecraft/network/Connection.java
+@@ -123,6 +123,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+     // Paper start - NetworkClient implementation
+     public int protocolVersion;
+     public java.net.InetSocketAddress virtualHost;
++    private static boolean enableExplicitFlush = Boolean.getBoolean("paper.explicit-flush"); // Paper - Disable explicit network manager flushing
+     // Paper end
+ 
+     // Paper start - add utility methods
+@@ -457,7 +458,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+         }
+ 
+         if (this.channel != null) {
+-            this.channel.flush();
++            if (enableExplicitFlush) this.channel.eventLoop().execute(() -> this.channel.flush()); // Paper - Disable explicit network manager flushing; we don't need to explicit flush here, but allow opt in incase issues are found to a better version
+         }
+ 
+         if (this.tickCount++ % 20 == 0) {

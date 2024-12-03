@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Caleb Bassham <caleb.bassham@gmail.com>
+Date: Fri, 28 Sep 2018 02:32:19 -0500
+Subject: [PATCH] Call player spectator target events and improve
+ implementation
+
+Use a proper teleport for teleporting to entities in different
+worlds.
+
+Implementation improvements authored by Spottedleaf <Spottedleaf@users.noreply.github.com>
+Validate that the target entity is valid and deny spectate
+requests from frozen players.
+
+Also, make sure the entity is spawned to the client before
+sending the camera packet. If the entity isn't spawned clientside
+when it receives the camera packet, then the client will not
+spectate the target entity.
+
+Co-authored-by: Spottedleaf <Spottedleaf@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index cec8e2b8867e348d8c92e76983211e29edd46ed1..e73377782c388c9f750f0548f3c427bc52246fbc 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -2421,6 +2421,21 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+ 
+         this.camera = (Entity) (entity == null ? this : entity);
+         if (entity1 != this.camera) {
++            // Paper start - Add PlayerStartSpectatingEntityEvent and PlayerStopSpectatingEntity
++            if (this.camera == this) {
++                com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent playerStopSpectatingEntityEvent = new com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent(this.getBukkitEntity(), entity1.getBukkitEntity());
++                if (!playerStopSpectatingEntityEvent.callEvent()) {
++                    this.camera = entity1; // rollback camera entity again
++                    return;
++                }
++            } else {
++                com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent playerStartSpectatingEntityEvent = new com.destroystokyo.paper.event.player.PlayerStartSpectatingEntityEvent(this.getBukkitEntity(), entity1.getBukkitEntity(), entity.getBukkitEntity());
++                if (!playerStartSpectatingEntityEvent.callEvent()) {
++                    this.camera = entity1; // rollback camera entity again
++                    return;
++                }
++            }
++            // Paper end - Add PlayerStartSpectatingEntityEvent and PlayerStopSpectatingEntity
+             Level world = this.camera.level();
+ 
+             if (world instanceof ServerLevel) {

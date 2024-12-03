@@ -1,0 +1,378 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 21 Jul 2018 03:11:03 -0500
+Subject: [PATCH] PlayerLaunchProjectileEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
+index e76dc69e1bdce789532c9e439ea73b54186d0afc..9c36b42befab1ce490d1e8af1d8b1b032291f49f 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
+@@ -197,7 +197,12 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+     }
+ 
+     public static <T extends Projectile> T spawnProjectileFromRotation(Projectile.ProjectileFactory<T> creator, ServerLevel world, ItemStack projectileStack, LivingEntity shooter, float roll, float power, float divergence) {
+-        return Projectile.spawnProjectile(creator.create(world, shooter, projectileStack), world, projectileStack, (iprojectile) -> {
++    // Paper start - PlayerLaunchProjectileEvent
++        return spawnProjectileFromRotationDelayed(creator, world, projectileStack, shooter, roll, power, divergence).spawn();
++    }
++    public static <T extends Projectile> Delayed<T> spawnProjectileFromRotationDelayed(Projectile.ProjectileFactory<T> creator, ServerLevel world, ItemStack projectileStack, LivingEntity shooter, float roll, float power, float divergence) {
++        return Projectile.spawnProjectileDelayed(creator.create(world, shooter, projectileStack), world, projectileStack, (iprojectile) -> {
++    // Paper end - PlayerLaunchProjectileEvent
+             iprojectile.shootFromRotation(shooter, shooter.getXRot(), shooter.getYRot(), roll, power, divergence);
+         });
+     }
+diff --git a/src/main/java/net/minecraft/world/item/EggItem.java b/src/main/java/net/minecraft/world/item/EggItem.java
+index 30e2e3a15e7fd2af1dc04f319758e1383eceb964..6d559fef484036194e4d899b82aaa7b5d518311e 100644
+--- a/src/main/java/net/minecraft/world/item/EggItem.java
++++ b/src/main/java/net/minecraft/world/item/EggItem.java
+@@ -28,7 +28,20 @@ public class EggItem extends Item implements ProjectileItem {
+         // world.playSound((EntityHuman) null, entityhuman.getX(), entityhuman.getY(), entityhuman.getZ(), SoundEffects.EGG_THROW, SoundCategory.PLAYERS, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F)); // CraftBukkit - moved down
+         if (world instanceof ServerLevel worldserver) {
+             // CraftBukkit start
+-            if (Projectile.spawnProjectileFromRotation(ThrownEgg::new, worldserver, itemstack, user, 0.0F, EggItem.PROJECTILE_SHOOT_POWER, 1.0F).isRemoved()) {
++            // Paper start - PlayerLaunchProjectileEvent
++            final Projectile.Delayed<ThrownEgg> thrownEgg = Projectile.spawnProjectileFromRotationDelayed(ThrownEgg::new, worldserver, itemstack, user, 0.0F, EggItem.PROJECTILE_SHOOT_POWER, 1.0F);
++            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) user.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), (org.bukkit.entity.Projectile) thrownEgg.projectile().getBukkitEntity());
++            if (event.callEvent() && thrownEgg.attemptSpawn()) {
++                if (event.shouldConsume()) {
++                    itemstack.consume(1, user);
++                } else if (user instanceof net.minecraft.server.level.ServerPlayer) {
++                    ((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity().updateInventory();
++                }
++
++                world.playSound((Player) null, user.getX(), user.getY(), user.getZ(), SoundEvents.EGG_THROW, SoundSource.PLAYERS, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
++                user.awardStat(Stats.ITEM_USED.get(this));
++            } else {
++                // Paper end - PlayerLaunchProjectileEvent
+                 if (user instanceof net.minecraft.server.level.ServerPlayer) {
+                     ((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity().updateInventory();
+                 }
+@@ -37,9 +50,7 @@ public class EggItem extends Item implements ProjectileItem {
+             // CraftBukkit end
+         }
+         world.playSound((Player) null, user.getX(), user.getY(), user.getZ(), SoundEvents.EGG_THROW, SoundSource.PLAYERS, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
+-
+-        user.awardStat(Stats.ITEM_USED.get(this));
+-        itemstack.consume(1, user);
++        // Paper - PlayerLaunchProjectileEvent - moved up
+         return InteractionResult.SUCCESS;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/item/EnderpearlItem.java b/src/main/java/net/minecraft/world/item/EnderpearlItem.java
+index 03fad91dc87cb01589093ad65a73a585bf9e1ab2..eaee34054233c8f0296b65a09f1287ba515496f2 100644
+--- a/src/main/java/net/minecraft/world/item/EnderpearlItem.java
++++ b/src/main/java/net/minecraft/world/item/EnderpearlItem.java
+@@ -25,7 +25,20 @@ public class EnderpearlItem extends Item {
+ 
+         if (world instanceof ServerLevel worldserver) {
+             // CraftBukkit start
+-            if (Projectile.spawnProjectileFromRotation(ThrownEnderpearl::new, worldserver, itemstack, user, 0.0F, EnderpearlItem.PROJECTILE_SHOOT_POWER, 1.0F).isRemoved()) {
++            // Paper start - PlayerLaunchProjectileEvent
++            final Projectile.Delayed<ThrownEnderpearl> thrownEnderpearl = Projectile.spawnProjectileFromRotationDelayed(ThrownEnderpearl::new, worldserver, itemstack, user, 0.0F, EnderpearlItem.PROJECTILE_SHOOT_POWER, 1.0F);
++            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) user.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), (org.bukkit.entity.Projectile) thrownEnderpearl.projectile().getBukkitEntity());
++            if (event.callEvent() && thrownEnderpearl.attemptSpawn()) {
++                if (event.shouldConsume()) {
++                    itemstack.consume(1, user);
++                } else if (user instanceof net.minecraft.server.level.ServerPlayer) {
++                    ((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity().updateInventory();
++                }
++
++                world.playSound((Player) null, user.getX(), user.getY(), user.getZ(), SoundEvents.ENDER_PEARL_THROW, SoundSource.NEUTRAL, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
++                user.awardStat(Stats.ITEM_USED.get(this));
++            } else {
++            // Paper end - PlayerLaunchProjectileEvent
+                 if (user instanceof net.minecraft.server.level.ServerPlayer) {
+                     ((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity().updateInventory();
+                 }
+@@ -35,8 +48,7 @@ public class EnderpearlItem extends Item {
+         world.playSound((Player) null, user.getX(), user.getY(), user.getZ(), SoundEvents.ENDER_PEARL_THROW, SoundSource.NEUTRAL, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
+         // CraftBukkit end
+ 
+-        user.awardStat(Stats.ITEM_USED.get(this));
+-        itemstack.consume(1, user);
++        // Paper - PlayerLaunchProjectileEvent - moved up
+         return InteractionResult.SUCCESS;
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/item/ExperienceBottleItem.java b/src/main/java/net/minecraft/world/item/ExperienceBottleItem.java
+index b255e40277585928a767e5efd4b61708e13dab50..dfa3f9534159400e539ee61debedffb5f978aae8 100644
+--- a/src/main/java/net/minecraft/world/item/ExperienceBottleItem.java
++++ b/src/main/java/net/minecraft/world/item/ExperienceBottleItem.java
+@@ -21,22 +21,38 @@ public class ExperienceBottleItem extends Item implements ProjectileItem {
+     @Override
+     public InteractionResult use(Level world, Player user, InteractionHand hand) {
+         ItemStack itemStack = user.getItemInHand(hand);
+-        world.playSound(
+-            null,
+-            user.getX(),
+-            user.getY(),
+-            user.getZ(),
+-            SoundEvents.EXPERIENCE_BOTTLE_THROW,
+-            SoundSource.NEUTRAL,
+-            0.5F,
+-            0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F)
+-        );
++        // Paper - PlayerLaunchProjectileEvent - moved down
+         if (world instanceof ServerLevel serverLevel) {
+-            Projectile.spawnProjectileFromRotation(ThrownExperienceBottle::new, serverLevel, itemStack, user, -20.0F, 0.7F, 1.0F);
++            // Paper start - PlayerLaunchProjectileEvent
++            final Projectile.Delayed<ThrownExperienceBottle> thrownExperienceBottle = Projectile.spawnProjectileFromRotationDelayed(ThrownExperienceBottle::new, serverLevel, itemStack, user, -20.0F, 0.7F, 1.0F);
++            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) user.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack), (org.bukkit.entity.Projectile) thrownExperienceBottle.projectile().getBukkitEntity());
++            if (event.callEvent() && thrownExperienceBottle.attemptSpawn()) {
++                if (event.shouldConsume()) {
++                    itemStack.consume(1, user);
++                } else if (user instanceof net.minecraft.server.level.ServerPlayer) {
++                    ((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity().updateInventory();
++                }
++
++                world.playSound(
++                    null,
++                    user.getX(),
++                    user.getY(),
++                    user.getZ(),
++                    SoundEvents.EXPERIENCE_BOTTLE_THROW,
++                    SoundSource.NEUTRAL,
++                    0.5F,
++                    0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F)
++                );
++            } else {
++                if (user instanceof net.minecraft.server.level.ServerPlayer) {
++                    ((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity().updateInventory();
++                }
++                return InteractionResult.FAIL;
++            }
++            // Paper end - PlayerLaunchProjectileEvent
+         }
+ 
+-        user.awardStat(Stats.ITEM_USED.get(this));
+-        itemStack.consume(1, user);
++        // Paper - PlayerLaunchProjectileEvent - moved up
+         return InteractionResult.SUCCESS;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/item/FireworkRocketItem.java b/src/main/java/net/minecraft/world/item/FireworkRocketItem.java
+index 400ad0fa1d07c8b120e3c3b5488dfa315aa2d23f..29a048a9b09166838616ac7ba1d31625d56b0bca 100644
+--- a/src/main/java/net/minecraft/world/item/FireworkRocketItem.java
++++ b/src/main/java/net/minecraft/world/item/FireworkRocketItem.java
+@@ -33,7 +33,7 @@ public class FireworkRocketItem extends Item implements ProjectileItem {
+             ItemStack itemStack = context.getItemInHand();
+             Vec3 vec3 = context.getClickLocation();
+             Direction direction = context.getClickedFace();
+-            Projectile.spawnProjectile(
++            final Projectile.Delayed<FireworkRocketEntity> fireworkRocketEntity = Projectile.spawnProjectileDelayed( // Paper - PlayerLaunchProjectileEvent
+                 new FireworkRocketEntity(
+                     level,
+                     context.getPlayer(),
+@@ -45,7 +45,12 @@ public class FireworkRocketItem extends Item implements ProjectileItem {
+                 serverLevel,
+                 itemStack, f -> f.spawningEntity = context.getPlayer() == null ? null : context.getPlayer().getUUID()  // Paper - firework api - assign spawning entity uuid
+             );
+-            itemStack.shrink(1);
++            // Paper start - PlayerLaunchProjectileEvent
++            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) context.getPlayer().getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack), (org.bukkit.entity.Firework) fireworkRocketEntity.projectile().getBukkitEntity());
++            if (!event.callEvent() || !fireworkRocketEntity.attemptSpawn()) return InteractionResult.PASS;
++            if (event.shouldConsume() && !context.getPlayer().hasInfiniteMaterials()) itemStack.shrink(1);
++            else if (context.getPlayer() instanceof net.minecraft.server.level.ServerPlayer) ((net.minecraft.server.level.ServerPlayer) context.getPlayer()).getBukkitEntity().updateInventory();
++            // Paper end - PlayerLaunchProjectileEvent
+         }
+ 
+         return InteractionResult.SUCCESS;
+diff --git a/src/main/java/net/minecraft/world/item/LingeringPotionItem.java b/src/main/java/net/minecraft/world/item/LingeringPotionItem.java
+index 7a5045469bc2d383ed087dcc094b6f97df4ec7ab..fa92a1346825f00a585503d0a0825711fe3f754e 100644
+--- a/src/main/java/net/minecraft/world/item/LingeringPotionItem.java
++++ b/src/main/java/net/minecraft/world/item/LingeringPotionItem.java
+@@ -24,6 +24,10 @@ public class LingeringPotionItem extends ThrowablePotionItem {
+ 
+     @Override
+     public InteractionResult use(Level world, Player user, InteractionHand hand) {
++        // Paper start - PlayerLaunchProjectileEvent
++        final InteractionResult wrapper = super.use(world, user, hand);
++        if (wrapper instanceof InteractionResult.Fail) return wrapper;
++        // Paper end - PlayerLaunchProjectileEvent
+         world.playSound(
+             null,
+             user.getX(),
+@@ -34,6 +38,6 @@ public class LingeringPotionItem extends ThrowablePotionItem {
+             0.5F,
+             0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F)
+         );
+-        return super.use(world, user, hand);
++        return wrapper; // Paper - PlayerLaunchProjectileEvent
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/item/SnowballItem.java b/src/main/java/net/minecraft/world/item/SnowballItem.java
+index eda3f4172c0aed152d81742e85d9bcf22e2bfdb2..d3bba4665ae14cc279c0f937831f909f8831b12b 100644
+--- a/src/main/java/net/minecraft/world/item/SnowballItem.java
++++ b/src/main/java/net/minecraft/world/item/SnowballItem.java
+@@ -28,17 +28,26 @@ public class SnowballItem extends Item implements ProjectileItem {
+         // CraftBukkit start - moved down
+         // world.playSound((EntityHuman) null, entityhuman.getX(), entityhuman.getY(), entityhuman.getZ(), SoundEffects.SNOWBALL_THROW, SoundCategory.NEUTRAL, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
+         if (world instanceof ServerLevel worldserver) {
+-            if (Projectile.spawnProjectileFromRotation(Snowball::new, worldserver, itemstack, user, 0.0F, SnowballItem.PROJECTILE_SHOOT_POWER, 1.0F).isAlive()) {
+-                itemstack.consume(1, user);
++            // Paper start - PlayerLaunchProjectileEvent
++            final Projectile.Delayed<Snowball> snowball = Projectile.spawnProjectileFromRotationDelayed(Snowball::new, worldserver, itemstack, user, 0.0F, SnowballItem.PROJECTILE_SHOOT_POWER, 1.0F);
++            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) user.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), (org.bukkit.entity.Projectile) snowball.projectile().getBukkitEntity());
++            if (event.callEvent() && snowball.attemptSpawn()) {
++                user.awardStat(Stats.ITEM_USED.get(this));
++                if (event.shouldConsume()) {
++                    itemstack.consume(1, user);
++                } else if (user instanceof net.minecraft.server.level.ServerPlayer) {
++                    ((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity().updateInventory();
++                }
++            // Paper end - PlayerLaunchProjectileEvent
+ 
+                 world.playSound((Player) null, user.getX(), user.getY(), user.getZ(), SoundEvents.SNOWBALL_THROW, SoundSource.NEUTRAL, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
+-            } else if (user instanceof net.minecraft.server.level.ServerPlayer) {
++            } else { if (user instanceof net.minecraft.server.level.ServerPlayer) { // Paper - PlayerLaunchProjectileEvent - return fail
+                 ((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity().updateInventory();
+-            }
++            } return InteractionResult.FAIL; } // Paper - PlayerLaunchProjectileEvent - return fail
+             // CraftBukkit end
+         }
+ 
+-        user.awardStat(Stats.ITEM_USED.get(this));
++        // Paper - PlayerLaunchProjectileEvent - moved up
+         // itemstack.consume(1, entityhuman); // CraftBukkit - moved up
+         return InteractionResult.SUCCESS;
+     }
+diff --git a/src/main/java/net/minecraft/world/item/SplashPotionItem.java b/src/main/java/net/minecraft/world/item/SplashPotionItem.java
+index 6d622d276a632c9c29ab04a01fbe7adbf10c35cd..577e66a7ff64d9569ee2402ecc26b0aa1105fe9a 100644
+--- a/src/main/java/net/minecraft/world/item/SplashPotionItem.java
++++ b/src/main/java/net/minecraft/world/item/SplashPotionItem.java
+@@ -14,6 +14,10 @@ public class SplashPotionItem extends ThrowablePotionItem {
+ 
+     @Override
+     public InteractionResult use(Level world, Player user, InteractionHand hand) {
++        // Paper start - PlayerLaunchProjectileEvent
++        final InteractionResult wrapper = super.use(world, user, hand);
++        if (wrapper instanceof InteractionResult.Fail) return wrapper;
++        // Paper end - PlayerLaunchProjectileEvent
+         world.playSound(
+             null,
+             user.getX(),
+@@ -24,6 +28,6 @@ public class SplashPotionItem extends ThrowablePotionItem {
+             0.5F,
+             0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F)
+         );
+-        return super.use(world, user, hand);
++        return wrapper; // Paper - PlayerLaunchProjectileEvent
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/item/ThrowablePotionItem.java b/src/main/java/net/minecraft/world/item/ThrowablePotionItem.java
+index 77f28203ce4bf1e4b66b513ed5aff442735a1a01..e422881d1ab0f1a5bb2cb741d23089a2e35de2d4 100644
+--- a/src/main/java/net/minecraft/world/item/ThrowablePotionItem.java
++++ b/src/main/java/net/minecraft/world/item/ThrowablePotionItem.java
+@@ -22,11 +22,28 @@ public class ThrowablePotionItem extends PotionItem implements ProjectileItem {
+     public InteractionResult use(Level world, Player user, InteractionHand hand) {
+         ItemStack itemStack = user.getItemInHand(hand);
+         if (world instanceof ServerLevel serverLevel) {
+-            Projectile.spawnProjectileFromRotation(ThrownPotion::new, serverLevel, itemStack, user, -20.0F, PROJECTILE_SHOOT_POWER, 1.0F);
++            // Paper start - PlayerLaunchProjectileEvent
++            final Projectile.Delayed<ThrownPotion> thrownPotion = Projectile.spawnProjectileFromRotationDelayed(ThrownPotion::new, serverLevel, itemStack, user, -20.0F, PROJECTILE_SHOOT_POWER, 1.0F);
++            // Paper start - PlayerLaunchProjectileEvent
++            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) user.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack), (org.bukkit.entity.Projectile) thrownPotion.projectile().getBukkitEntity());
++            if (event.callEvent() && thrownPotion.attemptSpawn()) {
++                if (event.shouldConsume()) {
++                    itemStack.consume(1, user);
++                } else if (user instanceof net.minecraft.server.level.ServerPlayer) {
++                    ((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity().updateInventory();
++                }
++
++                user.awardStat(Stats.ITEM_USED.get(this));
++            } else {
++                if (user instanceof net.minecraft.server.level.ServerPlayer) {
++                    ((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity().updateInventory();
++                }
++                return InteractionResult.FAIL;
++            }
++            // Paper end - PlayerLaunchProjectileEvent
+         }
+ 
+-        user.awardStat(Stats.ITEM_USED.get(this));
+-        itemStack.consume(1, user);
++        // Paper - PlayerLaunchProjectileEvent - move up
+         return InteractionResult.SUCCESS;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/item/TridentItem.java b/src/main/java/net/minecraft/world/item/TridentItem.java
+index ddba6f1a1392c4a80aa14ecae4ee0c129dba37ce..2b2af4b7cc2c8be8c3aed30885be26816c021bdc 100644
+--- a/src/main/java/net/minecraft/world/item/TridentItem.java
++++ b/src/main/java/net/minecraft/world/item/TridentItem.java
+@@ -88,21 +88,26 @@ public class TridentItem extends Item implements ProjectileItem {
+ 
+                         // itemstack.hurtWithoutBreaking(1, entityhuman); // CraftBukkit - moved down
+                         if (f == 0.0F) {
+-                            ThrownTrident entitythrowntrident = (ThrownTrident) Projectile.spawnProjectileFromRotation(ThrownTrident::new, worldserver, stack, entityhuman, 0.0F, 2.5F, 1.0F);
+-                            // CraftBukkit start
+-                            if (entitythrowntrident.isRemoved()) {
++                            // Paper start - PlayerLaunchProjectileEvent
++                            Projectile.Delayed<ThrownTrident> tridentDelayed = Projectile.spawnProjectileFromRotationDelayed(ThrownTrident::new, worldserver, stack, entityhuman, 0.0F, 2.5F, 1.0F);
++                            // Paper start - PlayerLaunchProjectileEvent
++                            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(stack), (org.bukkit.entity.Projectile) tridentDelayed.projectile().getBukkitEntity());
++                            if (!event.callEvent() || !tridentDelayed.attemptSpawn()) {
++                                // CraftBukkit start
++                            // Paper end - PlayerLaunchProjectileEvent
+                                 if (entityhuman instanceof net.minecraft.server.level.ServerPlayer) {
+                                     ((net.minecraft.server.level.ServerPlayer) entityhuman).getBukkitEntity().updateInventory();
+                                 }
+                                 return false;
+                             }
+-                            stack.hurtWithoutBreaking(1, entityhuman);
++                            ThrownTrident entitythrowntrident = tridentDelayed.projectile(); // Paper - PlayerLaunchProjectileEvent
++                            if (event.shouldConsume()) stack.hurtWithoutBreaking(1, entityhuman); // Paper - PlayerLaunchProjectileEvent
+                             entitythrowntrident.pickupItemStack = stack.copy(); // SPIGOT-4511 update since damage call moved
+                             // CraftBukkit end
+ 
+                             if (entityhuman.hasInfiniteMaterials()) {
+                                 entitythrowntrident.pickup = AbstractArrow.Pickup.CREATIVE_ONLY;
+-                            } else {
++                            } else if (event.shouldConsume()) { // Paper - PlayerLaunchProjectileEvent
+                                 entityhuman.getInventory().removeItem(stack);
+                             }
+ 
+diff --git a/src/main/java/net/minecraft/world/item/WindChargeItem.java b/src/main/java/net/minecraft/world/item/WindChargeItem.java
+index d20df91acdfa9067c8820bb55e605a9185803ee0..42e1128a47f1352d838e02e0b9ee8aa57fa41bb1 100644
+--- a/src/main/java/net/minecraft/world/item/WindChargeItem.java
++++ b/src/main/java/net/minecraft/world/item/WindChargeItem.java
+@@ -27,7 +27,7 @@ public class WindChargeItem extends Item implements ProjectileItem {
+     public InteractionResult use(Level world, Player user, InteractionHand hand) {
+         ItemStack itemStack = user.getItemInHand(hand);
+         if (world instanceof ServerLevel serverLevel) {
+-            Projectile.spawnProjectileFromRotation(
++            final Projectile.Delayed<WindCharge> windCharge = Projectile.spawnProjectileFromRotationDelayed( // Paper - PlayerLaunchProjectileEvent
+                 (world2, shooter, stack) -> new WindCharge(user, world, user.position().x(), user.getEyePosition().y(), user.position().z()),
+                 serverLevel,
+                 itemStack,
+@@ -36,6 +36,21 @@ public class WindChargeItem extends Item implements ProjectileItem {
+                 PROJECTILE_SHOOT_POWER,
+                 1.0F
+             );
++            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) user.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack), (org.bukkit.entity.Projectile) windCharge.projectile().getBukkitEntity());
++            if (!event.callEvent() || !windCharge.attemptSpawn()) {
++                user.containerMenu.sendAllDataToRemote();
++                if (user instanceof net.minecraft.server.level.ServerPlayer player) {
++                    player.connection.send(new net.minecraft.network.protocol.game.ClientboundCooldownPacket(user.getCooldowns().getCooldownGroup(itemStack), 0)); // prevent visual desync of cooldown on the slot
++                }
++                return InteractionResult.FAIL;
++            }
++
++            user.awardStat(Stats.ITEM_USED.get(this));
++            if (event.shouldConsume()) itemStack.consume(1, user);
++            else if (!user.hasInfiniteMaterials()) {
++                user.containerMenu.sendAllDataToRemote();
++            }
++            // Paper end - PlayerLaunchProjectileEvent
+         }
+ 
+         world.playSound(
+@@ -48,8 +63,6 @@ public class WindChargeItem extends Item implements ProjectileItem {
+             0.5F,
+             0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F)
+         );
+-        user.awardStat(Stats.ITEM_USED.get(this));
+-        itemStack.consume(1, user);
+         return InteractionResult.SUCCESS;
+     }
+ 

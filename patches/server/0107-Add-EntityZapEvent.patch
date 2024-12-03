@@ -1,0 +1,103 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaBlend <whizkid3000@hotmail.com>
+Date: Sun, 16 Oct 2016 23:19:30 -0700
+Subject: [PATCH] Add EntityZapEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/ConversionParams.java b/src/main/java/net/minecraft/world/entity/ConversionParams.java
+index 3300104ad3e1f1e39cbe928ec6ad635e6ab76327..c18bc54721e90ed67312cd8baf52ccc8fe04d4cb 100644
+--- a/src/main/java/net/minecraft/world/entity/ConversionParams.java
++++ b/src/main/java/net/minecraft/world/entity/ConversionParams.java
+@@ -12,4 +12,11 @@ public record ConversionParams(ConversionType type, boolean keepEquipment, boole
+     public interface AfterConversion<T extends Mob> {
+         void finalizeConversion(T convertedEntity);
+     }
++
++    // Paper start - entity zap event - allow conversion to be cancelled during finalization
++    @FunctionalInterface
++    public interface CancellingAfterConversion<T extends Mob> {
++        boolean finalizeConversionOrCancel(final T convertedEntity);
++    }
++    // Paper start - entity zap event - allow conversion to be cancelled during finalization
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index 0562039114a90ddb64547eb8396920813d54f46b..54d3df0d34a786e63bf462b7ad1e93396129d41a 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -1498,6 +1498,12 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+ 
+     @Nullable
+     public <T extends Mob> T convertTo(EntityType<T> entitytypes, ConversionParams conversionparams, EntitySpawnReason entityspawnreason, ConversionParams.AfterConversion<T> conversionparams_a, EntityTransformEvent.TransformReason transformReason, CreatureSpawnEvent.SpawnReason spawnReason) {
++    // Paper start - entity zap event - allow cancellation of conversion post creation
++        return this.convertTo(entitytypes, conversionparams, entityspawnreason, e -> { conversionparams_a.finalizeConversion(e); return true; }, transformReason, spawnReason);
++    }
++    @Nullable
++    public <T extends Mob> T convertTo(EntityType<T> entitytypes, ConversionParams conversionparams, EntitySpawnReason entityspawnreason, ConversionParams.CancellingAfterConversion<T> conversionparams_a, EntityTransformEvent.TransformReason transformReason, CreatureSpawnEvent.SpawnReason spawnReason) {
++    // Paper end - entity zap event - allow cancellation of conversion post creation
+         // CraftBukkit end
+         if (this.isRemoved()) {
+             return null;
+@@ -1508,7 +1514,7 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+                 return null;
+             } else {
+                 conversionparams.type().convert(this, t0, conversionparams);
+-                conversionparams_a.finalizeConversion(t0);
++                if (!conversionparams_a.finalizeConversionOrCancel(t0)) return null; // Paper - entity zap event - return null if conversion was cancelled
+                 Level world = this.level();
+ 
+                 // CraftBukkit start
+@@ -1544,6 +1550,11 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+ 
+     @Nullable
+     public <T extends Mob> T convertTo(EntityType<T> entitytypes, ConversionParams conversionparams, ConversionParams.AfterConversion<T> conversionparams_a, EntityTransformEvent.TransformReason transformReason, CreatureSpawnEvent.SpawnReason spawnReason) {
++    // Paper start - entity zap event - allow cancellation of conversion post creation
++        return this.convertTo(entitytypes, conversionparams, e -> { conversionparams_a.finalizeConversion(e); return true; }, transformReason, spawnReason);
++    }
++    public <T extends Mob> T convertTo(EntityType<T> entitytypes, ConversionParams conversionparams, ConversionParams.CancellingAfterConversion<T> conversionparams_a, EntityTransformEvent.TransformReason transformReason, CreatureSpawnEvent.SpawnReason spawnReason) {
++    // Paper start - entity zap event - allow cancellation of conversion post creation
+         return this.convertTo(entitytypes, conversionparams, EntitySpawnReason.CONVERSION, conversionparams_a, transformReason, spawnReason);
+         // CraftBukkit end
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/npc/Villager.java b/src/main/java/net/minecraft/world/entity/npc/Villager.java
+index e7a63ff51d7046c2bea4c0ac98c93dd9077a545d..64a2c1b43541764c7ec454e709d7beb365f1fef1 100644
+--- a/src/main/java/net/minecraft/world/entity/npc/Villager.java
++++ b/src/main/java/net/minecraft/world/entity/npc/Villager.java
+@@ -834,11 +834,18 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
+     @Override
+     public void thunderHit(ServerLevel world, LightningBolt lightning) {
+         if (world.getDifficulty() != Difficulty.PEACEFUL) {
+-            Villager.LOGGER.info("Villager {} was struck by lightning {}.", this, lightning);
++            // Paper - Add EntityZapEvent; move log down, event can cancel
+             Witch entitywitch = (Witch) this.convertTo(EntityType.WITCH, ConversionParams.single(this, false, false), (entitywitch1) -> {
++               // Paper start - Add EntityZapEvent
++               if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityZapEvent(this, lightning, entitywitch1).isCancelled()) {
++                   return false;
++               }
++               if (org.spigotmc.SpigotConfig.logVillagerDeaths) Villager.LOGGER.info("Villager {} was struck by lightning {}.", this, lightning); // Move down
++               // Paper end - Add EntityZapEvent
+                 entitywitch1.finalizeSpawn(world, world.getCurrentDifficultyAt(entitywitch1.blockPosition()), EntitySpawnReason.CONVERSION, (SpawnGroupData) null);
+                 entitywitch1.setPersistenceRequired();
+                 this.releaseAllPois();
++                return true; // Paper start - Add EntityZapEvent
+             }, EntityTransformEvent.TransformReason.LIGHTNING, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.LIGHTNING); // CraftBukkit
+ 
+             if (entitywitch == null) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 9100ea65e85a0e55cad736634fa63815366334a8..40c298cf4444e7f458cb99b81d64ee6d58a2f128 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1215,6 +1215,14 @@ public class CraftEventFactory {
+         return !event.isCancelled();
+     }
+ 
++    // Paper start
++    public static com.destroystokyo.paper.event.entity.EntityZapEvent callEntityZapEvent(Entity entity, Entity lightning, Entity changedEntity) {
++        com.destroystokyo.paper.event.entity.EntityZapEvent event = new com.destroystokyo.paper.event.entity.EntityZapEvent(entity.getBukkitEntity(), (LightningStrike) lightning.getBukkitEntity(), changedEntity.getBukkitEntity());
++        entity.getBukkitEntity().getServer().getPluginManager().callEvent(event);
++        return event;
++    }
++    // Paper end
++
+     public static boolean callEntityChangeBlockEvent(Entity entity, BlockPos position, net.minecraft.world.level.block.state.BlockState newBlock) {
+         return CraftEventFactory.callEntityChangeBlockEvent(entity, position, newBlock, false);
+     }

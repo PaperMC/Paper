@@ -1,0 +1,168 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 14 Jan 2018 17:01:31 -0500
+Subject: [PATCH] PreCreatureSpawnEvent
+
+Adds an event to fire before an Entity is created, so that plugins that need to cancel
+CreatureSpawnEvent can do so from this event instead.
+
+Cancelling CreatureSpawnEvent rapidly causes a lot of garbage collection and CPU waste
+as it's done after the Entity object has been fully created.
+
+Mob Limiting plugins and blanket "ban this type of monster" plugins should use this event
+instead and save a lot of server resources.
+
+See: https://github.com/PaperMC/Paper/issues/917
+
+diff --git a/src/main/java/net/minecraft/util/SpawnUtil.java b/src/main/java/net/minecraft/util/SpawnUtil.java
+index 116c0fe87776ebea88f47d1c98fd31d6046f3b86..a8903f087c75c851e8111b96e5aa9f271d618392 100644
+--- a/src/main/java/net/minecraft/util/SpawnUtil.java
++++ b/src/main/java/net/minecraft/util/SpawnUtil.java
+@@ -22,10 +22,10 @@ public class SpawnUtil {
+ 
+     public static <T extends Mob> Optional<T> trySpawnMob(EntityType<T> entityType, EntitySpawnReason reason, ServerLevel world, BlockPos pos, int tries, int horizontalRange, int verticalRange, SpawnUtil.Strategy requirements, boolean requireEmptySpace) {
+         // CraftBukkit start
+-        return SpawnUtil.trySpawnMob(entityType, reason, world, pos, tries, horizontalRange, verticalRange, requirements, requireEmptySpace, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
++        return SpawnUtil.trySpawnMob(entityType, reason, world, pos, tries, horizontalRange, verticalRange, requirements, requireEmptySpace, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT, null); // Paper - pre creature spawn event
+     }
+ 
+-    public static <T extends Mob> Optional<T> trySpawnMob(EntityType<T> entitytypes, EntitySpawnReason entityspawnreason, ServerLevel worldserver, BlockPos blockposition, int i, int j, int k, SpawnUtil.Strategy spawnutil_a, boolean flag, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++    public static <T extends Mob> Optional<T> trySpawnMob(EntityType<T> entitytypes, EntitySpawnReason entityspawnreason, ServerLevel worldserver, BlockPos blockposition, int i, int j, int k, SpawnUtil.Strategy spawnutil_a, boolean flag, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason, @javax.annotation.Nullable Runnable onAbort) {  // Paper - pre creature spawn event
+         // CraftBukkit end
+         BlockPos.MutableBlockPos blockposition_mutableblockposition = blockposition.mutable();
+ 
+@@ -35,6 +35,22 @@ public class SpawnUtil {
+ 
+             blockposition_mutableblockposition.setWithOffset(blockposition, i1, k, j1);
+             if (worldserver.getWorldBorder().isWithinBounds((BlockPos) blockposition_mutableblockposition) && SpawnUtil.moveToPossibleSpawnPosition(worldserver, k, blockposition_mutableblockposition, spawnutil_a) && (!flag || worldserver.noCollision(entitytypes.getSpawnAABB((double) blockposition_mutableblockposition.getX() + 0.5D, (double) blockposition_mutableblockposition.getY(), (double) blockposition_mutableblockposition.getZ() + 0.5D)))) {
++                // Paper start - PreCreatureSpawnEvent
++                final com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
++                    io.papermc.paper.util.MCUtil.toLocation(worldserver, blockposition),
++                    org.bukkit.craftbukkit.entity.CraftEntityType.minecraftToBukkit(entitytypes),
++                    reason
++                );
++                if (!event.callEvent()) {
++                    if (event.shouldAbortSpawn()) {
++                        if (onAbort != null) {
++                            onAbort.run();
++                        }
++                        return Optional.empty();
++                    }
++                    break;
++                }
++                // Paper end - PreCreatureSpawnEvent
+                 T t0 = entitytypes.create(worldserver, (Consumer<T>) null, blockposition_mutableblockposition, entityspawnreason, false, false); // CraftBukkit - decompile error
+ 
+                 if (t0 != null) {
+diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
+index bb68fcef4b0cd89605f57f42ee5529d9c8e7e73e..768edafa018961ce38306f87e5cfe6aa99537305 100644
+--- a/src/main/java/net/minecraft/world/entity/EntityType.java
++++ b/src/main/java/net/minecraft/world/entity/EntityType.java
+@@ -497,6 +497,16 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
+     @Nullable
+     public T spawn(ServerLevel worldserver, @Nullable Consumer<T> consumer, BlockPos blockposition, EntitySpawnReason entityspawnreason, boolean flag, boolean flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
+         // CraftBukkit end
++        // Paper start - PreCreatureSpawnEvent
++        com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
++            io.papermc.paper.util.MCUtil.toLocation(worldserver, blockposition),
++            org.bukkit.craftbukkit.entity.CraftEntityType.minecraftToBukkit(this),
++            spawnReason
++        );
++        if (!event.callEvent()) {
++            return null;
++        }
++        // Paper end - PreCreatureSpawnEvent
+         T t0 = this.create(worldserver, consumer, blockposition, entityspawnreason, flag, flag1);
+ 
+         if (t0 != null) {
+diff --git a/src/main/java/net/minecraft/world/entity/npc/Villager.java b/src/main/java/net/minecraft/world/entity/npc/Villager.java
+index 6681c8d9e76a7a1e470378479d2c55e62d05a0fe..77c8c09b3d74b0dd88321bdfdf19d0f089d4e432 100644
+--- a/src/main/java/net/minecraft/world/entity/npc/Villager.java
++++ b/src/main/java/net/minecraft/world/entity/npc/Villager.java
+@@ -944,7 +944,7 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
+             }).limit(5L).toList();
+ 
+             if (list1.size() >= requiredCount) {
+-                if (!SpawnUtil.trySpawnMob(EntityType.IRON_GOLEM, EntitySpawnReason.MOB_SUMMONED, world, this.blockPosition(), 10, 8, 6, SpawnUtil.Strategy.LEGACY_IRON_GOLEM, false, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_DEFENSE).isEmpty()) { // CraftBukkit
++                if (SpawnUtil.trySpawnMob(EntityType.IRON_GOLEM, EntitySpawnReason.MOB_SUMMONED, world, this.blockPosition(), 10, 8, 6, SpawnUtil.Strategy.LEGACY_IRON_GOLEM, false, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_DEFENSE, () -> {GolemSensor.golemDetected(this);}).isPresent()) { // CraftBukkit // Paper - Set Golem Last Seen to stop it from spawning another one
+                     list.forEach(GolemSensor::golemDetected);
+                 }
+             }
+diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+index 6c29e55239fdcf8df3b9dc012aa80cebcd3a837a..bb3f3bec350dda43dbf5eda0a8c8057a413694b2 100644
+--- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
++++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+@@ -132,6 +132,20 @@ public abstract class BaseSpawner {
+                         } else if (!SpawnPlacements.checkSpawnRules((EntityType) optional.get(), world, EntitySpawnReason.SPAWNER, blockposition1, world.getRandom())) {
+                             continue;
+                         }
++                        // Paper start - PreCreatureSpawnEvent
++                        com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
++                            io.papermc.paper.util.MCUtil.toLocation(world, d0, d1, d2),
++                            org.bukkit.craftbukkit.entity.CraftEntityType.minecraftToBukkit(optional.get()),
++                            org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER
++                        );
++                        if (!event.callEvent()) {
++                            flag = true;
++                            if (event.shouldAbortSpawn()) {
++                                break;
++                            }
++                            continue;
++                        }
++                        // Paper end - PreCreatureSpawnEvent
+ 
+                         Entity entity = EntityType.loadEntityRecursive(nbttagcompound, world, EntitySpawnReason.SPAWNER, (entity1) -> {
+                             entity1.moveTo(d0, d1, d2, entity1.getYRot(), entity1.getXRot());
+diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
+index da0ddb8285e157be0cc7b940a9590be5e3061e3d..5a0ea71dc39c582ef6c843dc0532adb04ba120ce 100644
+--- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
++++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
+@@ -228,7 +228,13 @@ public final class NaturalSpawner {
+                                         j1 = biomesettingsmobs_c.minCount + world.random.nextInt(1 + biomesettingsmobs_c.maxCount - biomesettingsmobs_c.minCount);
+                                     }
+ 
+-                                    if (NaturalSpawner.isValidSpawnPostitionForType(world, group, structuremanager, chunkgenerator, biomesettingsmobs_c, blockposition_mutableblockposition, d2) && checker.test(biomesettingsmobs_c.type, blockposition_mutableblockposition, chunk)) {
++                                    // Paper start - PreCreatureSpawnEvent
++                                    PreSpawnStatus doSpawning = isValidSpawnPostitionForType(world, group, structuremanager, chunkgenerator, biomesettingsmobs_c, blockposition_mutableblockposition, d2);
++                                    if (doSpawning == PreSpawnStatus.ABORT) {
++                                        return;
++                                    }
++                                    if (doSpawning == PreSpawnStatus.SUCCESS && checker.test(biomesettingsmobs_c.type, blockposition_mutableblockposition, chunk)) {
++                                        // Paper end - PreCreatureSpawnEvent
+                                         Mob entityinsentient = NaturalSpawner.getMobForSpawn(world, biomesettingsmobs_c.type);
+ 
+                                         if (entityinsentient == null) {
+@@ -276,10 +282,31 @@ public final class NaturalSpawner {
+         return squaredDistance <= 576.0D ? false : (world.getSharedSpawnPos().closerToCenterThan(new Vec3((double) pos.getX() + 0.5D, (double) pos.getY(), (double) pos.getZ() + 0.5D), 24.0D) ? false : Objects.equals(new ChunkPos(pos), chunk.getPos()) || world.isNaturalSpawningAllowed((BlockPos) pos));
+     }
+ 
+-    private static boolean isValidSpawnPostitionForType(ServerLevel world, MobCategory group, StructureManager structureAccessor, ChunkGenerator chunkGenerator, MobSpawnSettings.SpawnerData spawnEntry, BlockPos.MutableBlockPos pos, double squaredDistance) {
++    // Paper start - PreCreatureSpawnEvent
++    private enum PreSpawnStatus {
++        FAIL,
++        SUCCESS,
++        CANCELLED,
++        ABORT
++    }
++    private static PreSpawnStatus isValidSpawnPostitionForType(ServerLevel world, MobCategory group, StructureManager structureAccessor, ChunkGenerator chunkGenerator, MobSpawnSettings.SpawnerData spawnEntry, BlockPos.MutableBlockPos pos, double squaredDistance) {
++        // Paper end - PreCreatureSpawnEvent
+         EntityType<?> entitytypes = spawnEntry.type;
+ 
+-        return entitytypes.getCategory() == MobCategory.MISC ? false : (!entitytypes.canSpawnFarFromPlayer() && squaredDistance > (double) (entitytypes.getCategory().getDespawnDistance() * entitytypes.getCategory().getDespawnDistance()) ? false : (entitytypes.canSummon() && NaturalSpawner.canSpawnMobAt(world, structureAccessor, chunkGenerator, group, spawnEntry, pos) ? (!SpawnPlacements.isSpawnPositionOk(entitytypes, world, pos) ? false : (!SpawnPlacements.checkSpawnRules(entitytypes, world, EntitySpawnReason.NATURAL, pos, world.random) ? false : world.noCollision(entitytypes.getSpawnAABB((double) pos.getX() + 0.5D, (double) pos.getY(), (double) pos.getZ() + 0.5D)))) : false));
++        // Paper start - PreCreatureSpawnEvent
++        com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
++            io.papermc.paper.util.MCUtil.toLocation(world, pos),
++            org.bukkit.craftbukkit.entity.CraftEntityType.minecraftToBukkit(entitytypes), SpawnReason.NATURAL
++        );
++        if (!event.callEvent()) {
++            if (event.shouldAbortSpawn()) {
++                return PreSpawnStatus.ABORT;
++            }
++            return PreSpawnStatus.CANCELLED;
++        }
++        // Paper end - PreCreatureSpawnEvent
++
++        return entitytypes.getCategory() == MobCategory.MISC ? PreSpawnStatus.FAIL : (!entitytypes.canSpawnFarFromPlayer() && squaredDistance > (double) (entitytypes.getCategory().getDespawnDistance() * entitytypes.getCategory().getDespawnDistance()) ? PreSpawnStatus.FAIL : (entitytypes.canSummon() && NaturalSpawner.canSpawnMobAt(world, structureAccessor, chunkGenerator, group, spawnEntry, pos) ? (!SpawnPlacements.isSpawnPositionOk(entitytypes, world, pos) ? PreSpawnStatus.FAIL : (!SpawnPlacements.checkSpawnRules(entitytypes, world, EntitySpawnReason.NATURAL, pos, world.random) ? PreSpawnStatus.FAIL : world.noCollision(entitytypes.getSpawnAABB((double) pos.getX() + 0.5D, (double) pos.getY(), (double) pos.getZ() + 0.5D)) ? PreSpawnStatus.SUCCESS : PreSpawnStatus.FAIL)) : PreSpawnStatus.FAIL)); // Paper - PreCreatureSpawnEvent
+     }
+ 
+     @Nullable

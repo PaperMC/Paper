@@ -1,0 +1,94 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Sat, 9 Nov 2024 21:10:45 +0100
+Subject: [PATCH] Improve CraftEntity and CraftPlayer equals and hashCode
+
+Make sure the hash code does not change and also remove outdated
+equals logic from CraftPlayer. Long-term, the override there should
+be entirely removed, but this is good enough for now.
+
+Replacing some getHandle method calls with direct field access will
+also reduce overhead from casts that the overridden methods come with,
+at least until those are changed later on as well.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 0480fbeffd19011d3cd63021225f376c464b480c..d6241e2db362de034ae610694c49c1883ffabd07 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -437,7 +437,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+ 
+     @Override
+     public UUID getUniqueId() {
+-        return this.getHandle().getUUID();
++        return this.entity.getUUID();
+     }
+ 
+     @Override
+@@ -496,21 +496,17 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+ 
+     @Override
+     public boolean equals(Object obj) {
+-        if (obj == null) {
+-            return false;
+-        }
+-        if (this.getClass() != obj.getClass()) {
+-            return false;
+-        }
++        if (this == obj) return true;
++        if (obj == null || getClass() != obj.getClass()) return false;
++
+         final CraftEntity other = (CraftEntity) obj;
+-        return (this.getEntityId() == other.getEntityId());
++        return this.entity == other.entity; // There should never be duplicate entities with differing references
+     }
+ 
+     @Override
+     public int hashCode() {
+-        int hash = 7;
+-        hash = 29 * hash + this.getEntityId();
+-        return hash;
++        // The UUID and thus hash code should never change (unlike the entity id)
++        return this.getUniqueId().hashCode();
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index ce22bf772aa00e7d06328961bb69ff89eb3e52c6..6538a3ee384b36774480bc49c702102e5d0b7762 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -626,22 +626,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+     @Override
+     public boolean equals(Object obj) {
+-        if (!(obj instanceof OfflinePlayer)) {
+-            return false;
+-        }
+-        OfflinePlayer other = (OfflinePlayer) obj;
+-        if ((this.getUniqueId() == null) || (other.getUniqueId() == null)) {
+-            return false;
+-        }
+-
+-        boolean uuidEquals = this.getUniqueId().equals(other.getUniqueId());
+-        boolean idEquals = true;
+-
+-        if (other instanceof CraftPlayer) {
+-            idEquals = this.getEntityId() == ((CraftPlayer) other).getEntityId();
+-        }
+-
+-        return uuidEquals && idEquals;
++        // Long-term, this should just use the super equals... for now, check the UUID
++        if (obj == this) return true;
++        if (!(obj instanceof OfflinePlayer other)) return false;
++        return this.getUniqueId().equals(other.getUniqueId());
+     }
+ 
+     @Override
+@@ -2052,7 +2040,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     @Override
+     public int hashCode() {
+         if (this.hash == 0 || this.hash == 485) {
+-            this.hash = 97 * 5 + (this.getUniqueId() != null ? this.getUniqueId().hashCode() : 0);
++            this.hash = 97 * 5 + this.getUniqueId().hashCode();
+         }
+         return this.hash;
+     }

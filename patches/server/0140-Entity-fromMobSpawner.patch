@@ -1,0 +1,78 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Sun, 18 Jun 2017 18:17:05 -0500
+Subject: [PATCH] Entity#fromMobSpawner()
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 943dfab743ec9d5a49a9886b384fb4d8d894bb31..211886d55e19039768658b1c704f241ac93cf75a 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -406,6 +406,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     public void inactiveTick() { }
+     // Spigot end
+     protected int numCollisions = 0; // Paper - Cap entity collisions
++    public boolean spawnedViaMobSpawner; // Paper - Yes this name is similar to above, upstream took the better one
+     // Paper start - Entity origin API
+     @javax.annotation.Nullable
+     private org.bukkit.util.Vector origin;
+@@ -2399,6 +2400,10 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+                 }
+                 nbttagcompound.put("Paper.Origin", this.newDoubleList(origin.getX(), origin.getY(), origin.getZ()));
+             }
++            // Save entity's from mob spawner status
++            if (spawnedViaMobSpawner) {
++                nbttagcompound.putBoolean("Paper.FromMobSpawner", true);
++            }
+             // Paper end
+             return nbttagcompound;
+         } catch (Throwable throwable) {
+@@ -2542,6 +2547,8 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+                 this.originWorld = originWorld;
+                 origin = new org.bukkit.util.Vector(originTag.getDouble(0), originTag.getDouble(1), originTag.getDouble(2));
+             }
++
++            spawnedViaMobSpawner = nbt.getBoolean("Paper.FromMobSpawner"); // Restore entity's from mob spawner status
+             // Paper end
+ 
+         } catch (Throwable throwable) {
+diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+index 7b918001d36a8f14ed0d3ee4d6783588f48eb78f..e424c23c22809a307175b5dcc7f7b0084464493f 100644
+--- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
++++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+@@ -176,6 +176,7 @@ public abstract class BaseSpawner {
+                             // Spigot End
+                         }
+ 
++                        entity.spawnedViaMobSpawner = true; // Paper
+                         // CraftBukkit start
+                         if (org.bukkit.craftbukkit.event.CraftEventFactory.callSpawnerSpawnEvent(entity, pos).isCancelled()) {
+                             continue;
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawner.java b/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawner.java
+index 3e986b7c1cd4ad45241ea50a05a41a68947a1f94..150a525772dd87f0aca39ad74f0bcefa0693d7d8 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawner.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawner.java
+@@ -230,6 +230,7 @@ public final class TrialSpawner {
+                                 optional1.ifPresent(entityinsentient::equip);
+                             }
+ 
++                            entity.spawnedViaMobSpawner = true; // Paper
+                             // CraftBukkit start
+                             if (org.bukkit.craftbukkit.event.CraftEventFactory.callTrialSpawnerSpawnEvent(entity, pos).isCancelled()) {
+                                 return Optional.empty();
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 0bec53dc1be4aa997be9f03bc3cde30d22cc8160..0480fbeffd19011d3cd63021225f376c464b480c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -1011,4 +1011,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         return originVector.toLocation(world);
+     }
+     // Paper end - entity origin API
++
++    // Paper start - Entity#fromMobSpawner
++    @Override
++    public boolean fromMobSpawner() {
++        return this.getHandle().spawnedViaMobSpawner;
++    }
++    // Paper end - Entity#fromMobSpawner
+ }

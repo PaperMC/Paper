@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 15 Aug 2017 22:29:12 -0400
+Subject: [PATCH] Expand World.spawnParticle API and add Builder
+
+Adds ability to control who receives it and who is the source/sender (vanish API)
+the standard API is to send the packet to everyone in the world, which is ineffecient.
+Adds an option to control the force mode of the particle.
+
+This adds a new Builder API which is much friendlier to use.
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 9cb02b168384f597fce1251696e77a1e74f0d774..e80dc81423538e7e8a5510e5d82e97ab2097c225 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1542,12 +1542,17 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+     }
+ 
+     public <T extends ParticleOptions> int sendParticlesSource(ServerPlayer sender, T t0, boolean flag, boolean flag1, double d0, double d1, double d2, int i, double d3, double d4, double d5, double d6) {
++        // Paper start - Particle API
++        return this.sendParticlesSource(this.players, sender, t0, flag, flag1, d0, d1, d2, i, d3, d4, d5, d6);
++    }
++    public <T extends ParticleOptions> int sendParticlesSource(List<ServerPlayer> receivers, ServerPlayer sender, T t0, boolean flag, boolean flag1, double d0, double d1, double d2, int i, double d3, double d4, double d5, double d6) {
++        // Paper end - Particle API
+         // CraftBukkit end
+         ClientboundLevelParticlesPacket packetplayoutworldparticles = new ClientboundLevelParticlesPacket(t0, flag, flag1, d0, d1, d2, (float) d3, (float) d4, (float) d5, (float) d6, i);
+         int j = 0;
+ 
+-        for (int k = 0; k < this.players.size(); ++k) {
+-            ServerPlayer entityplayer = (ServerPlayer) this.players.get(k);
++        for (Player entityhuman : receivers) { // Paper - Particle API
++            ServerPlayer entityplayer = (ServerPlayer) entityhuman; // Paper - Particle API
+             if (sender != null && !entityplayer.getBukkitEntity().canSee(sender.getBukkitEntity())) continue; // CraftBukkit
+ 
+             if (this.sendParticles(entityplayer, flag, d0, d1, d2, packetplayoutworldparticles)) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index cf38f75050ef947d9f853374f40a25504ec987a6..a403507c0729f5c26172c82caa9dca65214d0319 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -1989,8 +1989,19 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+ 
+     @Override
+     public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force) {
++        // Paper start - Particle API
++        this.spawnParticle(particle, null, null, x, y, z, count, offsetX, offsetY, offsetZ, extra, data, force);
++    }
++    @Override
++    public <T> void spawnParticle(Particle particle, List<Player> receivers, Player sender, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force) {
++        // Paper end - Particle API
++        data = CraftParticle.convertLegacy(data);
++        if (data != null) {
++            Preconditions.checkArgument(particle.getDataType().isInstance(data), "data (%s) should be %s", data.getClass(), particle.getDataType());
++        }
+         this.getHandle().sendParticlesSource(
+-                null, // Sender
++                receivers == null ? this.getHandle().players() : receivers.stream().map(player -> ((CraftPlayer) player).getHandle()).collect(java.util.stream.Collectors.toList()), // Paper -  Particle API
++                sender != null ? ((CraftPlayer) sender).getHandle() : null, // Sender // Paper - Particle API
+                 CraftParticle.createParticleParam(particle, data), // Particle
+                 false, force,
+                 x, y, z, // Position

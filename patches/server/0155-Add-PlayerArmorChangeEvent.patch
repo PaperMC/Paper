@@ -1,0 +1,111 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: pkt77 <parkerkt77@gmail.com>
+Date: Fri, 10 Nov 2017 23:46:34 -0500
+Subject: [PATCH] Add PlayerArmorChangeEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index bc708b5b98e33d65105b394d69d410ae3acde584..bddd731cbdf88b349598d92f45a5af30b46e34ef 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3291,10 +3291,17 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                     throw new MatchException((String) null, (Throwable) null);
+             }
+ 
+-            ItemStack itemstack2 = itemstack1;
++            ItemStack itemstack2 = itemstack1; final ItemStack oldEquipment = itemstack2; // Paper - PlayerArmorChangeEvent - obfhelper 
+ 
+-            itemstack = this.getItemBySlot(enumitemslot);
++            itemstack = this.getItemBySlot(enumitemslot); final ItemStack newEquipment = itemstack;// Paper - PlayerArmorChangeEvent - obfhelper
+             if (this.equipmentHasChanged(itemstack2, itemstack)) {
++                // Paper start - PlayerArmorChangeEvent
++                if (this instanceof ServerPlayer && enumitemslot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
++                    final org.bukkit.inventory.ItemStack oldItem = CraftItemStack.asBukkitCopy(oldEquipment);
++                    final org.bukkit.inventory.ItemStack newItem = CraftItemStack.asBukkitCopy(newEquipment);
++                    new com.destroystokyo.paper.event.player.PlayerArmorChangeEvent((Player) this.getBukkitEntity(), com.destroystokyo.paper.event.player.PlayerArmorChangeEvent.SlotType.valueOf(enumitemslot.name()), oldItem, newItem).callEvent();
++                }
++                // Paper end - PlayerArmorChangeEvent
+                 if (map == null) {
+                     map = Maps.newEnumMap(EquipmentSlot.class);
+                 }
+diff --git a/src/test/java/io/papermc/paper/inventory/item/ArmorSlotTypeMaterialTest.java b/src/test/java/io/papermc/paper/inventory/item/ArmorSlotTypeMaterialTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1431b3faf081dc3ee5b33639bdc90c5057ae7027
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/inventory/item/ArmorSlotTypeMaterialTest.java
+@@ -0,0 +1,75 @@
++package io.papermc.paper.inventory.item;
++
++import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.stream.Stream;
++import net.minecraft.core.component.DataComponents;
++import net.minecraft.world.entity.EquipmentSlot;
++import net.minecraft.world.item.Item;
++import net.minecraft.world.item.equipment.Equippable;
++import org.bukkit.Material;
++import org.bukkit.craftbukkit.util.CraftMagicNumbers;
++import org.bukkit.support.environment.AllFeatures;
++import org.junit.jupiter.params.ParameterizedTest;
++import org.junit.jupiter.params.provider.MethodSource;
++
++import static org.junit.jupiter.api.Assertions.assertEquals;
++import static org.junit.jupiter.api.Assertions.assertNotNull;
++import static org.junit.jupiter.api.Assertions.assertTrue;
++
++@AllFeatures
++public class ArmorSlotTypeMaterialTest {
++
++    public static Stream<Object[]> slotTypeParams() {
++        final List<Object[]> parameters = new ArrayList<>();
++        for (final PlayerArmorChangeEvent.SlotType slotType : PlayerArmorChangeEvent.SlotType.values()) {
++            for (final Material item : slotType.getTypes()) {
++                parameters.add(new Object[]{ slotType, item });
++            }
++        }
++        return parameters.stream();
++    }
++
++    @ParameterizedTest(name = "{argumentsWithNames}")
++    @MethodSource("slotTypeParams")
++    public void testSlotType(PlayerArmorChangeEvent.SlotType slotType, Material item) {
++        final Item nmsItem = CraftMagicNumbers.getItem(item);
++        final Equippable equippable = nmsItem.components().get(DataComponents.EQUIPPABLE);
++        assertNotNull(equippable, item + " isn't equipable");
++        final EquipmentSlot slot = switch (slotType) {
++            case HEAD -> EquipmentSlot.HEAD;
++            case CHEST -> EquipmentSlot.CHEST;
++            case LEGS -> EquipmentSlot.LEGS;
++            case FEET -> EquipmentSlot.FEET;
++        };
++        assertEquals(equippable.slot(), slot, item + " isn't set to the right slot");
++    }
++
++    public static Stream<Object[]> equipableParams() {
++        final List<Object[]> parameters = new ArrayList<>();
++        for (final Item item : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
++            final Equippable equippable = item.components().get(DataComponents.EQUIPPABLE);
++            if (equippable != null) {
++                parameters.add(new Object[]{equippable, item});
++            }
++        }
++        return parameters.stream();
++    }
++
++    @ParameterizedTest(name = "{argumentsWithNames}")
++    @MethodSource("equipableParams")
++    public void testEquipable(Equippable equipable, Item item) {
++        final EquipmentSlot equipmentSlot = equipable.slot();
++        PlayerArmorChangeEvent.SlotType slotType = switch (equipmentSlot) {
++            case HEAD -> PlayerArmorChangeEvent.SlotType.HEAD;
++            case CHEST -> PlayerArmorChangeEvent.SlotType.CHEST;
++            case LEGS -> PlayerArmorChangeEvent.SlotType.LEGS;
++            case FEET -> PlayerArmorChangeEvent.SlotType.FEET;
++            default -> null;
++        };
++        if (slotType != null) {
++            assertTrue(slotType.getTypes().contains(CraftMagicNumbers.getMaterial(item)), "SlotType " + slotType + " doesn't include " + item);
++        }
++    }
++}

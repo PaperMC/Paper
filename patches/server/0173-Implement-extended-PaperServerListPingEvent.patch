@@ -1,0 +1,230 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Minecrell <minecrell@minecrell.net>
+Date: Wed, 11 Oct 2017 15:56:26 +0200
+Subject: [PATCH] Implement extended PaperServerListPingEvent
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/network/PaperServerListPingEventImpl.java b/src/main/java/com/destroystokyo/paper/network/PaperServerListPingEventImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6ed2114f577ce12d2d493985e798609c7d83f15e
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/network/PaperServerListPingEventImpl.java
+@@ -0,0 +1,31 @@
++package com.destroystokyo.paper.network;
++
++import com.destroystokyo.paper.event.server.PaperServerListPingEvent;
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.level.ServerPlayer;
++import org.bukkit.entity.Player;
++import org.bukkit.util.CachedServerIcon;
++
++import javax.annotation.Nullable;
++
++class PaperServerListPingEventImpl extends PaperServerListPingEvent {
++
++    private final MinecraftServer server;
++
++    PaperServerListPingEventImpl(MinecraftServer server, StatusClient client, int protocolVersion, @Nullable CachedServerIcon icon) {
++        super(client, server.motd(), server.getPlayerCount(), server.getMaxPlayers(),
++                server.getServerModName() + ' ' + server.getServerVersion(), protocolVersion, icon);
++        this.server = server;
++    }
++
++    @Override
++    protected final Object[] getOnlinePlayers() {
++        return this.server.getPlayerList().players.toArray();
++    }
++
++    @Override
++    protected final Player getBukkitPlayer(Object player) {
++        return ((ServerPlayer) player).getBukkitEntity();
++    }
++
++}
+diff --git a/src/main/java/com/destroystokyo/paper/network/PaperStatusClient.java b/src/main/java/com/destroystokyo/paper/network/PaperStatusClient.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d926ad804355ee2fdc5910b2505e8671602acdab
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/network/PaperStatusClient.java
+@@ -0,0 +1,11 @@
++package com.destroystokyo.paper.network;
++
++import net.minecraft.network.Connection;
++
++class PaperStatusClient extends PaperNetworkClient implements StatusClient {
++
++    PaperStatusClient(Connection networkManager) {
++        super(networkManager);
++    }
++
++}
+diff --git a/src/main/java/com/destroystokyo/paper/network/StandardPaperServerListPingEventImpl.java b/src/main/java/com/destroystokyo/paper/network/StandardPaperServerListPingEventImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..30a19d10869f73d67b794e8e4c035bc5c10209e6
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/network/StandardPaperServerListPingEventImpl.java
+@@ -0,0 +1,105 @@
++package com.destroystokyo.paper.network;
++
++import com.destroystokyo.paper.profile.PlayerProfile;
++import com.mojang.authlib.GameProfile;
++import io.papermc.paper.adventure.AdventureComponent;
++import java.util.ArrayList;
++import java.util.Collections;
++import java.util.List;
++import java.util.Optional;
++import javax.annotation.Nonnull;
++import net.minecraft.network.Connection;
++import net.minecraft.network.chat.Component;
++import net.minecraft.network.protocol.status.ClientboundStatusResponsePacket;
++import net.minecraft.network.protocol.status.ServerStatus;
++import net.minecraft.server.MinecraftServer;
++import org.bukkit.craftbukkit.util.CraftIconCache;
++import org.jetbrains.annotations.NotNull;
++
++public final class StandardPaperServerListPingEventImpl extends PaperServerListPingEventImpl {
++
++    private List<GameProfile> originalSample;
++
++    private StandardPaperServerListPingEventImpl(MinecraftServer server, Connection networkManager, ServerStatus ping) {
++        super(server, new PaperStatusClient(networkManager), ping.version().map(ServerStatus.Version::protocol).orElse(-1), server.server.getServerIcon());
++        this.originalSample = ping.players().map(ServerStatus.Players::sample).orElse(null); // GH-1473 - pre-tick race condition NPE
++    }
++
++    @Nonnull
++    @Override
++    public List<ListedPlayerInfo> getListedPlayers() {
++        List<ListedPlayerInfo> sample = super.getListedPlayers();
++
++        if (this.originalSample != null) {
++            for (GameProfile profile : this.originalSample) {
++                sample.add(new ListedPlayerInfo(profile.getName(), profile.getId()));
++            }
++            this.originalSample = null;
++        }
++
++        return sample;
++    }
++
++    @Override
++    public @NotNull List<PlayerProfile> getPlayerSample() {
++        this.getListedPlayers(); // Populate the backing list for the transforming view, and null out originalSample (see getListedPlayers and processRequest)
++        return super.getPlayerSample();
++    }
++
++    private List<GameProfile> getPlayerSampleHandle() {
++        if (this.originalSample != null) {
++            return this.originalSample;
++        }
++
++        List<ListedPlayerInfo> entries = super.getListedPlayers();
++        if (entries.isEmpty()) {
++            return Collections.emptyList();
++        }
++
++        final List<GameProfile> profiles = new ArrayList<>();
++        for (ListedPlayerInfo playerInfo : entries) {
++            profiles.add(new GameProfile(playerInfo.id(), playerInfo.name()));
++        }
++        return profiles;
++    }
++
++    public static void processRequest(MinecraftServer server, Connection networkManager) {
++        StandardPaperServerListPingEventImpl event = new StandardPaperServerListPingEventImpl(server, networkManager, server.getStatus());
++        server.server.getPluginManager().callEvent(event);
++
++        // Close connection immediately if event is cancelled
++        if (event.isCancelled()) {
++            networkManager.disconnect((Component) null);
++            return;
++        }
++
++        // Setup response
++
++        // Description
++        final Component description = new AdventureComponent(event.motd());
++
++        // Players
++        final Optional<ServerStatus.Players> players;
++        if (!event.shouldHidePlayers()) {
++            players = Optional.of(new ServerStatus.Players(event.getMaxPlayers(), event.getNumPlayers(), event.getPlayerSampleHandle()));
++        } else {
++            players = Optional.empty();
++        }
++
++        // Version
++        final ServerStatus.Version version = new ServerStatus.Version(event.getVersion(), event.getProtocolVersion());
++
++        // Favicon
++        final Optional<ServerStatus.Favicon> favicon;
++        if (event.getServerIcon() != null) {
++            favicon = Optional.of(new ServerStatus.Favicon(((CraftIconCache) event.getServerIcon()).value));
++        } else {
++            favicon = Optional.empty();
++        }
++        final ServerStatus ping = new ServerStatus(description, players, Optional.of(version), favicon, server.enforceSecureProfile());
++
++        // Send response
++        networkManager.send(new ClientboundStatusResponsePacket(ping));
++    }
++
++}
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index b2396fe53d7db64f17671358880401ccc667a251..c64d2c093c84bc2708df52a77138307d2b81cf38 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -3,6 +3,9 @@ package net.minecraft.server;
+ import com.google.common.base.Preconditions;
+ import com.google.common.base.Splitter;
+ import com.google.common.collect.ImmutableList;
++import co.aikar.timings.Timings;
++import com.destroystokyo.paper.event.server.PaperServerListPingEvent;
++import com.google.common.base.Stopwatch;
+ import com.google.common.collect.Lists;
+ import com.google.common.collect.Maps;
+ import com.google.common.collect.Sets;
+@@ -1563,7 +1566,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         if (this.hidesOnlinePlayers()) {
+             return new ServerStatus.Players(i, list.size(), List.of());
+         } else {
+-            int j = Math.min(list.size(), 12);
++            int j = Math.min(list.size(), org.spigotmc.SpigotConfig.playerSample); // Paper - PaperServerListPingEvent
+             ObjectArrayList<GameProfile> objectarraylist = new ObjectArrayList(j);
+             int k = Mth.nextInt(this.random, 0, list.size() - j);
+ 
+diff --git a/src/main/java/net/minecraft/server/network/ServerStatusPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerStatusPacketListenerImpl.java
+index f08700abb005f487aca95c0457c09cefa9a81be2..532f09089b8d6798999cf3f83e852df7479e450e 100644
+--- a/src/main/java/net/minecraft/server/network/ServerStatusPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerStatusPacketListenerImpl.java
+@@ -49,6 +49,8 @@ public class ServerStatusPacketListenerImpl implements ServerStatusPacketListene
+             this.connection.disconnect(ServerStatusPacketListenerImpl.DISCONNECT_REASON);
+         } else {
+             this.hasRequestedStatus = true;
++            // Paper start - Replace everything
++            /*
+             // CraftBukkit start
+             // this.connection.send(new PacketStatusOutServerInfo(this.status));
+             MinecraftServer server = MinecraftServer.getServer();
+@@ -151,6 +153,9 @@ public class ServerStatusPacketListenerImpl implements ServerStatusPacketListene
+ 
+             this.connection.send(new ClientboundStatusResponsePacket(ping));
+             // CraftBukkit end
++            */
++            com.destroystokyo.paper.network.StandardPaperServerListPingEventImpl.processRequest(MinecraftServer.getServer(), this.connection);
++            // Paper end
+         }
+     }
+ 
+diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
+index d9e73e37b54e2f6e13313977c76cb4212c240992..b97ff4a9b69699577bf8cde0869b70353101ef46 100644
+--- a/src/main/java/org/spigotmc/SpigotConfig.java
++++ b/src/main/java/org/spigotmc/SpigotConfig.java
+@@ -285,7 +285,7 @@ public class SpigotConfig
+     public static int playerSample;
+     private static void playerSample()
+     {
+-        SpigotConfig.playerSample = SpigotConfig.getInt( "settings.sample-count", 12 );
++        SpigotConfig.playerSample = Math.max( SpigotConfig.getInt( "settings.sample-count", 12 ), 0 ); // Paper - Avoid negative counts
+         Bukkit.getLogger().log( Level.INFO, "Server Ping Player Sample Count: {0}", playerSample ); // Paper - Use logger
+     }
+ 
