@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 10 May 2020 22:16:17 -0400
+Subject: [PATCH] Wait for Async Tasks during shutdown
+
+Server.reload() had this logic to give time for tasks to shutdown,
+however shutdown did not...
+
+Adds a 5 second grace period for any async tasks to finish and warns
+if any are still running after that delay just as reload does.
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 8e205796d0c9abbf01bf6ec191e2dfc7b972a0dd..84999223df47a9eccbcec4e1ea80786090d8d9c5 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -955,6 +955,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         // CraftBukkit start
+         if (this.server != null) {
+             this.server.disablePlugins();
++            this.server.waitForAsyncTasksShutdown(); // Paper - Wait for Async Tasks during shutdown
+         }
+         // CraftBukkit end
+         if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.shutdown(); // Paper - Plugin remapping
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 4108eebafddc9c271be8c6eb5afbdca70e5fbb89..ca8eb3216c4331a95ab44f923f6b49641662505f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1062,6 +1062,32 @@ public final class CraftServer implements Server {
+         org.spigotmc.WatchdogThread.hasStarted = true; // Paper - Disable watchdog early timeout on reload
+     }
+ 
++    // Paper start - Wait for Async Tasks during shutdown
++    public void waitForAsyncTasksShutdown() {
++        int pollCount = 0;
++
++        // Wait for at most 5 seconds for plugins to close their threads
++        while (pollCount < 10*5 && getScheduler().getActiveWorkers().size() > 0) {
++            try {
++                Thread.sleep(100);
++            } catch (InterruptedException e) {}
++            pollCount++;
++        }
++
++        List<BukkitWorker> overdueWorkers = getScheduler().getActiveWorkers();
++        for (BukkitWorker worker : overdueWorkers) {
++            Plugin plugin = worker.getOwner();
++            getLogger().log(Level.SEVERE, String.format(
++                "Nag author(s): '%s' of '%s' about the following: %s",
++                plugin.getPluginMeta().getAuthors(),
++                plugin.getPluginMeta().getDisplayName(),
++                "This plugin is not properly shutting down its async tasks when it is being shut down. This task may throw errors during the final shutdown logs and might not complete before process dies."
++            ));
++            if (console.isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread(worker.getThread(), "still running"); // Paper - Debugging
++        }
++    }
++    // Paper end - Wait for Async Tasks during shutdown
++
+     @Override
+     public void reloadData() {
+         ReloadCommand.reload(this.console);

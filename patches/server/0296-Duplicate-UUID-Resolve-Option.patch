@@ -1,0 +1,90 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 21 Jul 2018 14:27:34 -0400
+Subject: [PATCH] Duplicate UUID Resolve Option
+
+Due to a bug in https://github.com/PaperMC/Paper/commit/2e29af3df05ec0a383f48be549d1c03200756d24
+which was added all the way back in March of 2016, it was unknown (potentially not at the time)
+that an entity might actually change the seed of the random object.
+
+At some point, EntitySquid did start setting the seed. Due to this shared random, this caused
+every entity to use a Random object with a predictable seed.
+
+This has caused entities to potentially generate with the same UUID....
+
+Over the years, servers have had entities disappear, but no sign of trouble
+because CraftBukkit removed the log lines indicating that something was wrong.
+
+We have fixed the root issue causing duplicate UUID's, however we now have chunk
+files full of entities that have the same UUID as another entity!
+
+When these chunks load, the 2nd entity will not be added to the world correctly.
+
+If that chunk loads in a different order in the future, then it will reverse and the
+missing one is now the one added to the world and not the other. This results in very
+inconsistent entity behavior.
+
+This change allows you to recover any duplicate entity by generating a new UUID for it.
+This also lets you delete them instead if you don't want to risk having new entities added to
+the world that you previously did not see.
+
+But for those who are ok with leaving this inconsistent behavior, you may use WARN or NOTHING options.
+
+It is recommended you regenerate the entities, as these were legit entities, and deserve your love.
+
+diff --git a/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java b/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
+index 459a20453d3b447cae20fbe6426dfdc62a34949a..3d8a35d8cf29447ee7ac750dbc6ffcdb0f89b81b 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
++++ b/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
+@@ -178,10 +178,51 @@ public class ChunkStatusTasks {
+                     entity.discard(null); // CraftBukkit - add Bukkit remove cause
+                     needsRemoval = true;
+                 }
++                checkDupeUUID(world, entity); // Paper - duplicate uuid resolving
+                 return !needsRemoval;
+             }));
+             // CraftBukkit end
+         }
+ 
+     }
++
++    // Paper start - duplicate uuid resolving
++    // rets true if to prevent the entity from being added
++    public static boolean checkDupeUUID(ServerLevel level, net.minecraft.world.entity.Entity entity) {
++        io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode mode = level.paperConfig().entities.spawning.duplicateUuid.mode;
++        if (mode != io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.WARN
++            && mode != io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.DELETE
++            && mode != io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.SAFE_REGEN) {
++            return false;
++        }
++        net.minecraft.world.entity.Entity other = level.getEntity(entity.getUUID());
++
++        if (other == null || other == entity) {
++            return false;
++        }
++
++        if (mode == io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DuplicateUUID.DuplicateUUIDMode.SAFE_REGEN && other != null && !other.isRemoved()
++            && Objects.equals(other.getEncodeId(), entity.getEncodeId())
++            && entity.getBukkitEntity().getLocation().distance(other.getBukkitEntity().getLocation()) < level.paperConfig().entities.spawning.duplicateUuid.safeRegenDeleteRange
++        ) {
++            entity.discard(null);
++            return true;
++        }
++        if (!other.isRemoved()) {
++            switch (mode) {
++                case SAFE_REGEN: {
++                    entity.setUUID(java.util.UUID.randomUUID());
++                    break;
++                }
++                case DELETE: {
++                    entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
++                    return true;
++                }
++                default:
++                    break;
++            }
++        }
++        return false;
++    }
++    // Paper end - duplicate uuid resolving
+ }

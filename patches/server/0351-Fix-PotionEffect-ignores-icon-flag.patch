@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: kickash32 <kickash32@gmail.com>
+Date: Fri, 8 May 2020 00:49:18 -0400
+Subject: [PATCH] Fix PotionEffect ignores icon flag
+
+Co-authored-by: Tamion <70228790+notTamion@users.noreply.github.com>
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index c763d3524794a2505a6296917d34b6f7e737402d..1873b5c22d3b351b6120cb832c6ff045d9ad38f0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -494,7 +494,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+ 
+     @Override
+     public boolean addPotionEffect(PotionEffect effect, boolean force) {
+-        this.getHandle().addEffect(new MobEffectInstance(CraftPotionEffectType.bukkitToMinecraftHolder(effect.getType()), effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.hasParticles()), EntityPotionEffectEvent.Cause.PLUGIN);
++        this.getHandle().addEffect(org.bukkit.craftbukkit.potion.CraftPotionUtil.fromBukkit(effect), EntityPotionEffectEvent.Cause.PLUGIN); // Paper - Don't ignore icon
+         return true;
+     }
+ 
+@@ -515,7 +515,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+     @Override
+     public PotionEffect getPotionEffect(PotionEffectType type) {
+         MobEffectInstance handle = this.getHandle().getEffect(CraftPotionEffectType.bukkitToMinecraftHolder(type));
+-        return (handle == null) ? null : new PotionEffect(CraftPotionEffectType.minecraftHolderToBukkit(handle.getEffect()), handle.getDuration(), handle.getAmplifier(), handle.isAmbient(), handle.isVisible());
++        return (handle == null) ? null : org.bukkit.craftbukkit.potion.CraftPotionUtil.toBukkit(handle); // Paper
+     }
+ 
+     @Override
+@@ -527,7 +527,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+     public Collection<PotionEffect> getActivePotionEffects() {
+         List<PotionEffect> effects = new ArrayList<PotionEffect>();
+         for (MobEffectInstance handle : this.getHandle().activeEffects.values()) {
+-            effects.add(new PotionEffect(CraftPotionEffectType.minecraftHolderToBukkit(handle.getEffect()), handle.getDuration(), handle.getAmplifier(), handle.isAmbient(), handle.isVisible()));
++            effects.add(org.bukkit.craftbukkit.potion.CraftPotionUtil.toBukkit(handle)); // Paper
+         }
+         return effects;
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionUtil.java b/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionUtil.java
+index b7525f6ddc8f315ec9830b6b8f225d4839d306ad..01af4db5d0f17ea2943e5c464d4122a358503bc1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionUtil.java
++++ b/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionUtil.java
+@@ -78,7 +78,7 @@ public class CraftPotionUtil {
+ 
+     public static MobEffectInstance fromBukkit(PotionEffect effect) {
+         Holder<MobEffect> type = CraftPotionEffectType.bukkitToMinecraftHolder(effect.getType());
+-        return new MobEffectInstance(type, effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.hasParticles());
++        return new MobEffectInstance(type, effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.hasParticles(), effect.hasIcon()); // Paper
+     }
+ 
+     public static PotionEffect toBukkit(MobEffectInstance effect) {
+@@ -87,7 +87,7 @@ public class CraftPotionUtil {
+         int duration = effect.getDuration();
+         boolean ambient = effect.isAmbient();
+         boolean particles = effect.isVisible();
+-        return new PotionEffect(type, duration, amp, ambient, particles);
++        return new PotionEffect(type, duration, amp, ambient, particles, effect.showIcon()); // Paper
+     }
+ 
+     public static boolean equals(Holder<MobEffect> mobEffect, PotionEffectType type) {

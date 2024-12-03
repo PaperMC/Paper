@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <blake.galbreath@gmail.com>
+Date: Sat, 22 Aug 2020 23:36:21 +0200
+Subject: [PATCH] Fix SpawnChangeEvent not firing for all use-cases
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index eb65b1768c46f3cc3f490b06c2215044aebab178..f01fe053888f7f5124c6b157044dfd46ea98ae23 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1711,7 +1711,9 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+         float f1 = this.levelData.getSpawnAngle();
+ 
+         if (!blockposition1.equals(pos) || f1 != angle) {
++            org.bukkit.Location prevSpawnLoc = this.getWorld().getSpawnLocation(); // Paper - Call SpawnChangeEvent
+             this.levelData.setSpawn(pos, angle);
++            new org.bukkit.event.world.SpawnChangeEvent(this.getWorld(), prevSpawnLoc).callEvent(); // Paper - Call SpawnChangeEvent
+             this.getServer().getPlayerList().broadcastAll(new ClientboundSetDefaultSpawnPositionPacket(pos, angle));
+         }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 031c46e8cf1c49c4db2887dc32cbad75532f8faa..b877904bd18c96a4a7e49fb3e1aba2b6109f15cd 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -243,12 +243,14 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+     @Override
+     public boolean setSpawnLocation(int x, int y, int z, float angle) {
+         try {
+-            Location previousLocation = this.getSpawnLocation();
+-            this.world.levelData.setSpawn(new BlockPos(x, y, z), angle);
++            // Location previousLocation = this.getSpawnLocation(); // Paper - Call SpawnChangeEvent; moved to nms.ServerLevel
++            this.world.setDefaultSpawnPos(new BlockPos(x, y, z), angle); // Paper - use ServerLevel#setDefaultSpawnPos
+ 
++            // Paper start - Call SpawnChangeEvent; move to nms.ServerLevel
+             // Notify anyone who's listening.
+-            SpawnChangeEvent event = new SpawnChangeEvent(this, previousLocation);
+-            this.server.getPluginManager().callEvent(event);
++            // SpawnChangeEvent event = new SpawnChangeEvent(this, previousLocation);
++            // server.getPluginManager().callEvent(event);
++            // Paper end - Call SpawnChangeEvent
+ 
+             return true;
+         } catch (Exception e) {

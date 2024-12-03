@@ -1,0 +1,115 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 23 Oct 2018 23:14:38 -0400
+Subject: [PATCH] Improve Server Thread Pool and Thread Priorities
+
+Use a simple executor since Fork join is a much more complex pool
+type and we are not using its capabilities.
+
+Set thread priorities so main thread has above normal priority over
+server threads
+
+Allow usage of a single thread executor by not using ForkJoin so single core CPU's
+and reduce worldgen thread worker count for low core count CPUs.
+
+== AT ==
+public net.minecraft.Util onThreadException(Ljava/lang/Thread;Ljava/lang/Throwable;)V
+
+Co-authored-by: Spottedleaf <Spottedleaf@users.noreply.github.com>
+
+diff --git a/src/main/java/io/papermc/paper/util/ServerWorkerThread.java b/src/main/java/io/papermc/paper/util/ServerWorkerThread.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b60f59cf5cc8eb84a6055b7861857dece7f2501b
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/ServerWorkerThread.java
+@@ -0,0 +1,14 @@
++package io.papermc.paper.util;
++
++import java.util.concurrent.atomic.AtomicInteger;
++import net.minecraft.Util;
++
++public class ServerWorkerThread extends Thread {
++    private static final AtomicInteger threadId = new AtomicInteger(1);
++    public ServerWorkerThread(Runnable target, String poolName, int prioritityModifier) {
++        super(target, "Worker-" + poolName + "-" + threadId.getAndIncrement());
++        setPriority(Thread.NORM_PRIORITY+prioritityModifier); // Deprioritize over main
++        this.setDaemon(true);
++        this.setUncaughtExceptionHandler(Util::onThreadException);
++    }
++}
+diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
+index 3d5bca1b637234df48ca3228c7ffbce21116a0c7..e78f40f7f10a2ed0675b3cb9a2c5730dbc0141db 100644
+--- a/src/main/java/net/minecraft/Util.java
++++ b/src/main/java/net/minecraft/Util.java
+@@ -92,7 +92,7 @@ public class Util {
+     private static final int DEFAULT_MAX_THREADS = 255;
+     private static final int DEFAULT_SAFE_FILE_OPERATION_RETRIES = 10;
+     private static final String MAX_THREADS_SYSTEM_PROPERTY = "max.bg.threads";
+-    private static final TracingExecutor BACKGROUND_EXECUTOR = makeExecutor("Main");
++    private static final TracingExecutor BACKGROUND_EXECUTOR = makeExecutor("Main", -1); // Paper - Perf: add priority
+     private static final TracingExecutor IO_POOL = makeIoExecutor("IO-Worker-", false);
+     private static final TracingExecutor DOWNLOAD_POOL = makeIoExecutor("Download-", true);
+     // Paper start - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
+@@ -163,15 +163,16 @@ public class Util {
+         return FILENAME_DATE_TIME_FORMATTER.format(ZonedDateTime.now());
+     }
+ 
+-    private static TracingExecutor makeExecutor(String name) {
++    private static TracingExecutor makeExecutor(String name, final int priorityModifier) { // Paper - Perf: add priority
+         int i = maxAllowedExecutorThreads();
+-        ExecutorService executorService;
++        // Paper start - Perf: use simpler thread pool that allows 1 thread and reduce worldgen thread worker count for low core count CPUs
++        final ExecutorService executorService;
+         if (i <= 0) {
+             executorService = MoreExecutors.newDirectExecutorService();
+         } else {
+-            AtomicInteger atomicInteger = new AtomicInteger(1);
+-            executorService = new ForkJoinPool(i, pool -> {
+-                final String string2 = "Worker-" + name + "-" + atomicInteger.getAndIncrement();
++            executorService = Executors.newFixedThreadPool(i, target -> new io.papermc.paper.util.ServerWorkerThread(target, name, priorityModifier));
++        }
++        /*      final String string2 = "Worker-" + name + "-" + atomicInteger.getAndIncrement();
+                 ForkJoinWorkerThread forkJoinWorkerThread = new ForkJoinWorkerThread(pool) {
+                     @Override
+                     protected void onStart() {
+@@ -193,13 +194,26 @@ public class Util {
+                 forkJoinWorkerThread.setName(string2);
+                 return forkJoinWorkerThread;
+             }, Util::onThreadException, true);
+-        }
++        }*/
+ 
+         return new TracingExecutor(executorService);
+     }
+ 
+     public static int maxAllowedExecutorThreads() {
+-        return Mth.clamp(Runtime.getRuntime().availableProcessors() - 1, 1, getMaxThreads());
++        // Paper start - Perf: use simpler thread pool that allows 1 thread and reduce worldgen thread worker count for low core count CPUs
++        final int cpus = Runtime.getRuntime().availableProcessors() / 2;
++        int maxExecutorThreads;
++        if (cpus <= 4) {
++            maxExecutorThreads = cpus <= 2 ? 1 : 2;
++        } else if (cpus <= 8) {
++            // [5, 8]
++            maxExecutorThreads = Math.max(3, cpus - 2);
++        } else {
++            maxExecutorThreads = cpus * 2 / 3;
++        }
++        maxExecutorThreads = Math.min(8, maxExecutorThreads);
++        return Integer.getInteger("Paper.WorkerThreadCount", maxExecutorThreads);
++        // Paper end - Perf: use simpler thread pool that allows 1 thread and reduce worldgen thread worker count for low core count CPUs
+     }
+ 
+     private static int getMaxThreads() {
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 65dee566937104e301b917d037f2db456751801c..848f0faa50a5c4d6fbfe5fe1e168d1946fd9c28c 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -332,6 +332,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         thread.setUncaughtExceptionHandler((thread1, throwable) -> {
+             MinecraftServer.LOGGER.error("Uncaught exception in server thread", throwable);
+         });
++        thread.setPriority(Thread.NORM_PRIORITY+2); // Paper - Perf: Boost priority
+         if (Runtime.getRuntime().availableProcessors() > 4) {
+             thread.setPriority(8);
+         }

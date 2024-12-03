@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Wed, 15 Apr 2020 17:56:07 -0700
+Subject: [PATCH] Don't run entity collision code if not needed
+
+Will not run if:
+Max entity cramming is disabled and the max collisions per entity is less than or equal to 0.
+Entity#isPushable() returns false, meaning all entities will not be able to collide with this
+entity anyways.
+The entity's current team collision rule causes them to NEVER collide.
+
+Co-authored-by: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 043d4e85b7021c7bec724c3aef76d1278a7d34d5..77c924d5eecd8ee7fae0c6b49d46a6c91abc969a 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3693,10 +3693,24 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         if (!(world instanceof ServerLevel worldserver)) {
+             this.level().getEntities(EntityTypeTest.forClass(net.minecraft.world.entity.player.Player.class), this.getBoundingBox(), EntitySelector.pushableBy(this)).forEach(this::doPush);
+         } else {
++            // Paper start - don't run getEntities if we're not going to use its result
++            if (!this.isPushable()) {
++                return;
++            }
++            net.minecraft.world.scores.Team team = this.getTeam();
++            if (team != null && team.getCollisionRule() == net.minecraft.world.scores.Team.CollisionRule.NEVER) {
++                return;
++            }
++
++            int i = worldserver.getGameRules().getInt(GameRules.RULE_MAX_ENTITY_CRAMMING);
++            if (i <= 0 && this.level().paperConfig().collisions.maxEntityCollisions <= 0) {
++                return;
++            }
++            // Paper end - don't run getEntities if we're not going to use its result
+             List list = this.level().getEntities((Entity) this, this.getBoundingBox(), EntitySelector.pushableBy(this));
+ 
+             if (!list.isEmpty()) {
+-                int i = worldserver.getGameRules().getInt(GameRules.RULE_MAX_ENTITY_CRAMMING);
++                // Paper - don't run getEntities if we're not going to use its result; moved up
+ 
+                 if (i > 0 && list.size() > i - 1 && this.random.nextInt(4) == 0) {
+                     int j = 0;

@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Sat, 25 Apr 2020 15:13:41 -0500
+Subject: [PATCH] Add phantom creative and insomniac controls
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/EntitySelector.java b/src/main/java/net/minecraft/world/entity/EntitySelector.java
+index 3a4c1d4afddd7d8d1f43554a7a08855686cadf56..b8d57e25851dd7da905100dfd4022e4b99fd7f02 100644
+--- a/src/main/java/net/minecraft/world/entity/EntitySelector.java
++++ b/src/main/java/net/minecraft/world/entity/EntitySelector.java
+@@ -27,6 +27,7 @@ public final class EntitySelector {
+     };
+     public static final Predicate<Entity> CAN_BE_COLLIDED_WITH = EntitySelector.NO_SPECTATORS.and(Entity::canBeCollidedWith);
+     public static final Predicate<Entity> CAN_BE_PICKED = EntitySelector.NO_SPECTATORS.and(Entity::isPickable);
++    public static Predicate<Player> IS_INSOMNIAC = (player) -> net.minecraft.util.Mth.clamp(((net.minecraft.server.level.ServerPlayer) player).getStats().getValue(net.minecraft.stats.Stats.CUSTOM.get(net.minecraft.stats.Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE) >= 72000; // Paper - Add phantom creative and insomniac controls
+ 
+     private EntitySelector() {}
+     // Paper start - Affects Spawning API
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Phantom.java b/src/main/java/net/minecraft/world/entity/monster/Phantom.java
+index 93013ca49e56f3ac47d67d0c48d87d53fca32a4f..1171a4e45bed0455b29b2cf012fbc2883b16d061 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Phantom.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Phantom.java
+@@ -550,6 +550,7 @@ public class Phantom extends FlyingMob implements Enemy {
+                         Player entityhuman = (Player) iterator.next();
+ 
+                         if (Phantom.this.canAttack(worldserver, entityhuman, TargetingConditions.DEFAULT)) {
++                            if (!level().paperConfig().entities.behavior.phantomsOnlyAttackInsomniacs || EntitySelector.IS_INSOMNIAC.test(entityhuman)) // Paper - Add phantom creative and insomniac controls
+                             Phantom.this.setTarget(entityhuman, org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_PLAYER, true); // CraftBukkit - reason
+                             return true;
+                         }
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java b/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
+index 499b124f905ffa8e375efa354a3f2240997ddea5..7d407a7597f3ae576ac7e94bc2eb96d9dcd78dd3 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
+@@ -48,7 +48,7 @@ public class PhantomSpawner implements CustomSpawner {
+                     while (iterator.hasNext()) {
+                         ServerPlayer entityplayer = (ServerPlayer) iterator.next();
+ 
+-                        if (!entityplayer.isSpectator()) {
++                        if (!entityplayer.isSpectator() && (!world.paperConfig().entities.behavior.phantomsDoNotSpawnOnCreativePlayers || !entityplayer.isCreative())) { // Paper - Add phantom creative and insomniac controls
+                             BlockPos blockposition = entityplayer.blockPosition();
+ 
+                             if (!world.dimensionType().hasSkyLight() || blockposition.getY() >= world.getSeaLevel() && world.canSeeSky(blockposition)) {

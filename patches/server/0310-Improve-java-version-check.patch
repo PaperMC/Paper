@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Wed, 16 Mar 2022 13:58:16 +0100
+Subject: [PATCH] Improve java version check
+
+Co-Authored-By: MiniDigger <admin@benndorf.dev>
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index bb3203dc75df1e480b221fb2de44909759bbf07f..d84afe883d5af0800b5c85649a691bc811c2e357 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -203,11 +203,20 @@ public class Main {
+                 return;
+             }
+ 
+-            float javaVersion = Float.parseFloat(System.getProperty("java.class.version"));
+-            if (javaVersion > 67.0) {
+-                System.err.println("Unsupported Java detected (" + javaVersion + "). Only up to Java 23 is supported.");
+-                return;
++            // Paper start - Improve java version check
++            boolean skip = Boolean.getBoolean("Paper.IgnoreJavaVersion");
++            String javaVersionName = System.getProperty("java.version");
++            // J2SE SDK/JRE Version String Naming Convention
++            boolean isPreRelease = javaVersionName.contains("-");
++            if (isPreRelease) {
++                if (!skip) {
++                    System.err.println("Unsupported Java detected (" + javaVersionName + "). You are running an unsupported, non official, version. Only general availability versions of Java are supported. Please update your Java version. See https://docs.papermc.io/paper/faq#unsupported-java-detected-what-do-i-do for more information.");
++                    return;
++                }
++
++                System.err.println("Unsupported Java detected ("+ javaVersionName + "), but the check was skipped. Proceed with caution! ");
+             }
++            // Paper end - Improve java version check
+ 
+             try {
+                 // Paper start - Handled by TerminalConsoleAppender

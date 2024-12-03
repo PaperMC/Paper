@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lucavon <lucavonlp@gmail.com>
+Date: Tue, 23 Jul 2019 20:29:20 -0500
+Subject: [PATCH] Configurable projectile relative velocity
+
+This patch adds an option "disable relative projectile velocity", which, when
+enabled, will cause projectiles to ignore the shooter's current velocity,
+like they did in Minecraft 1.8 and prior.
+If a player is falling, for example, their shooting range will be drastically
+reduced, as a downwards velocity is applied to the projectile. This prevents
+players from saving themselves from falling off floating islands, for example,
+as a thrown ender pearl will not make it back to the island, while it would
+have in 1.8.
+
+While this could easily be done with plugins, too, there are multiple problems:
+P1) If multiple plugins cancel the velocity by subtracting the shooter's velocity
+from the projectile's velocity, the projectile's velocity would be different.
+As there's no way to detect whether the projectile's velocity has already been
+adjusted to ignore the player's velocity, plugins can't not do it if it's not
+necessary.
+P2) I've noticed some inconsistencies, e.g. weird velocity when shooting while
+using an elytra. Checking for those inconsistencies is possible, but not as
+efficient as just not applying the velocity in the first place.
+P3) Solutions for 1) and especially 2) might not be future-proof, while this
+server-internal fix makes this change future-proof.
+
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
+index ae18b23e07b1aa7505b54f0512b1612e5f3da6db..5cff58ab33657e7fb2642928e42b728e7b0b4689 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
+@@ -192,8 +192,11 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+ 
+         this.shoot((double) f5, (double) f6, (double) f7, speed, divergence);
+         Vec3 vec3d = shooter.getKnownMovement();
+-
++        // Paper start - allow disabling relative velocity
++        if (!shooter.level().paperConfig().misc.disableRelativeProjectileVelocity) {
+         this.setDeltaMovement(this.getDeltaMovement().add(vec3d.x, shooter.onGround() ? 0.0D : vec3d.y, vec3d.z));
++        }
++        // Paper end - allow disabling relative velocity
+     }
+ 
+     public static <T extends Projectile> T spawnProjectileFromRotation(Projectile.ProjectileFactory<T> creator, ServerLevel world, ItemStack projectileStack, LivingEntity shooter, float roll, float power, float divergence) {

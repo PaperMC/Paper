@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach@zachbr.io>
+Date: Mon, 4 Feb 2019 23:33:24 -0500
+Subject: [PATCH] Dont block Player#remove if the handle is a custom player
+
+Upstream throws UOE if you try to call remove on a Player.
+We just add a check to ensure that the CraftPlayer's handle
+is a ServerPlayer
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index d5f89783d12c61967637ed1e87037710df563308..e548834f2bd6e1e0a510a14040cc6aca63e2e6f5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -229,8 +229,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+     @Override
+     public void remove() {
++        if (this.getHandle().getClass().equals(ServerPlayer.class)) { // special case for NMS plugins inheriting
+         // Will lead to an inconsistent player state if we remove the player as any other entity.
+         throw new UnsupportedOperationException(String.format("Cannot remove player %s, use Player#kickPlayer(String) instead.", this.getName()));
++        } else {
++            super.remove();
++        }
+     }
+ 
+     @Override

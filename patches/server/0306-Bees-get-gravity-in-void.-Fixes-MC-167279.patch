@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Sun, 26 Jan 2020 16:30:19 -0600
+Subject: [PATCH] Bees get gravity in void. Fixes MC-167279
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Bee.java b/src/main/java/net/minecraft/world/entity/animal/Bee.java
+index 3f028876ea1959cecce716a568ba839b4953cc1b..a48a29b5b1963db679b053f3530f64d2b9560290 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Bee.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Bee.java
+@@ -154,7 +154,22 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
+     public Bee(EntityType<? extends Bee> type, Level world) {
+         super(type, world);
+         this.remainingCooldownBeforeLocatingNewFlower = Mth.nextInt(this.random, 20, 60);
+-        this.moveControl = new FlyingMoveControl(this, 20, true);
++        // Paper start - Fix MC-167279
++        class BeeFlyingMoveControl extends FlyingMoveControl {
++            public BeeFlyingMoveControl(final Mob entity, final int maxPitchChange, final boolean noGravity) {
++                super(entity, maxPitchChange, noGravity);
++            }
++
++            @Override
++            public void tick() {
++                if (this.mob.getY() <= Bee.this.level().getMinY()) {
++                    this.mob.setNoGravity(false);
++                }
++                super.tick();
++            }
++        }
++        this.moveControl = new BeeFlyingMoveControl(this, 20, true);
++        // Paper end - Fix MC-167279
+         this.lookControl = new Bee.BeeLookControl(this);
+         this.setPathfindingMalus(PathType.DANGER_FIRE, -1.0F);
+         this.setPathfindingMalus(PathType.WATER, -1.0F);

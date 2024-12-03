@@ -1,0 +1,220 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ineusia <ineusia@yahoo.com>
+Date: Mon, 26 Oct 2020 11:48:06 -0500
+Subject: [PATCH] Add Destroy Speed API
+
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeInstance.java b/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeInstance.java
+index a2fe7149a837040cf9f23eb426d398a5f90be394..27a7852a5d3f8c8960f098646ff5587c50556aa5 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeInstance.java
++++ b/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeInstance.java
+@@ -153,20 +153,20 @@ public class AttributeInstance {
+         double d = this.getBaseValue();
+ 
+         for (AttributeModifier attributeModifier : this.getModifiersOrEmpty(AttributeModifier.Operation.ADD_VALUE)) {
+-            d += attributeModifier.amount();
++            d += attributeModifier.amount(); // Paper - destroy speed API - diff on change
+         }
+ 
+         double e = d;
+ 
+         for (AttributeModifier attributeModifier2 : this.getModifiersOrEmpty(AttributeModifier.Operation.ADD_MULTIPLIED_BASE)) {
+-            e += d * attributeModifier2.amount();
++            e += d * attributeModifier2.amount(); // Paper - destroy speed API - diff on change
+         }
+ 
+         for (AttributeModifier attributeModifier3 : this.getModifiersOrEmpty(AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)) {
+-            e *= 1.0 + attributeModifier3.amount();
++            e *= 1.0 + attributeModifier3.amount(); // Paper - destroy speed API - diff on change
+         }
+ 
+-        return this.attribute.value().sanitizeValue(e);
++        return attribute.value().sanitizeValue(e); // Paper - destroy speed API - diff on change
+     }
+ 
+     private Collection<AttributeModifier> getModifiersOrEmpty(AttributeModifier.Operation operation) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
+index 4982950b13cdf1668c0a662b80faf9f700ed584b..78071859e9b745b2497fec7761888b4e65a208a1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/data/CraftBlockData.java
+@@ -730,4 +730,35 @@ public class CraftBlockData implements BlockData {
+     public BlockState createBlockState() {
+         return CraftBlockStates.getBlockState(this.state, null);
+     }
++
++    // Paper start - destroy speed API
++    @Override
++    public float getDestroySpeed(final ItemStack itemStack, final boolean considerEnchants) {
++        net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.unwrap(itemStack);
++        float speed = nmsItemStack.getDestroySpeed(this.state);
++        if (speed > 1.0F && considerEnchants) {
++            final net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute = net.minecraft.world.entity.ai.attributes.Attributes.MINING_EFFICIENCY;
++            // Logic sourced from AttributeInstance#calculateValue
++            final double initialBaseValue = attribute.value().getDefaultValue();
++            final org.apache.commons.lang3.mutable.MutableDouble modifiedBaseValue = new org.apache.commons.lang3.mutable.MutableDouble(initialBaseValue);
++            final org.apache.commons.lang3.mutable.MutableDouble baseValMul = new org.apache.commons.lang3.mutable.MutableDouble(1);
++            final org.apache.commons.lang3.mutable.MutableDouble totalValMul = new org.apache.commons.lang3.mutable.MutableDouble(1);
++
++            net.minecraft.world.item.enchantment.EnchantmentHelper.forEachModifier(
++                nmsItemStack, net.minecraft.world.entity.EquipmentSlot.MAINHAND, (attributeHolder, attributeModifier) -> {
++                    switch (attributeModifier.operation()) {
++                        case ADD_VALUE -> modifiedBaseValue.add(attributeModifier.amount());
++                        case ADD_MULTIPLIED_BASE -> baseValMul.add(attributeModifier.amount());
++                        case ADD_MULTIPLIED_TOTAL -> totalValMul.setValue(totalValMul.doubleValue() * (1D + attributeModifier.amount()));
++                    }
++                }
++            );
++
++            final double actualModifier = modifiedBaseValue.doubleValue() * baseValMul.doubleValue() * totalValMul.doubleValue();
++
++            speed += (float) attribute.value().sanitizeValue(actualModifier);
++        }
++        return speed;
++    }
++    // Paper end - destroy speed API
+ }
+diff --git a/src/test/java/io/papermc/paper/block/CraftBlockDataDestroySpeedTest.java b/src/test/java/io/papermc/paper/block/CraftBlockDataDestroySpeedTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..32d38205a5a72c3c1838ed28cb83bcea5ad59b6b
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/block/CraftBlockDataDestroySpeedTest.java
+@@ -0,0 +1,138 @@
++package io.papermc.paper.block;
++
++import java.util.List;
++import java.util.Optional;
++import net.minecraft.core.Holder;
++import net.minecraft.core.HolderSet;
++import net.minecraft.core.component.DataComponentMap;
++import net.minecraft.core.component.DataComponents;
++import net.minecraft.network.chat.Component;
++import net.minecraft.world.entity.EquipmentSlot;
++import net.minecraft.world.entity.EquipmentSlotGroup;
++import net.minecraft.world.entity.ai.attributes.AttributeInstance;
++import net.minecraft.world.entity.ai.attributes.AttributeModifier;
++import net.minecraft.world.entity.ai.attributes.Attributes;
++import net.minecraft.world.item.Items;
++import net.minecraft.world.item.enchantment.Enchantment;
++import net.minecraft.world.item.enchantment.EnchantmentEffectComponents;
++import net.minecraft.world.item.enchantment.EnchantmentHelper;
++import net.minecraft.world.item.enchantment.ItemEnchantments;
++import net.minecraft.world.item.enchantment.LevelBasedValue;
++import net.minecraft.world.item.enchantment.effects.EnchantmentAttributeEffect;
++import net.minecraft.world.level.block.Blocks;
++import net.minecraft.world.level.block.state.BlockState;
++import org.bukkit.craftbukkit.block.data.CraftBlockData;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.inventory.ItemStack;
++import org.bukkit.support.environment.AllFeatures;
++import org.bukkit.util.Vector;
++import org.jetbrains.annotations.NotNull;
++import org.junit.jupiter.api.Assertions;
++import org.junit.jupiter.api.Test;
++
++import static net.minecraft.resources.ResourceLocation.fromNamespaceAndPath;
++
++/**
++ * CraftBlockData's {@link org.bukkit.craftbukkit.block.data.CraftBlockData#getDestroySpeed(ItemStack, boolean)}
++ * uses a reimplementation of AttributeValue without any map to avoid attribute instance allocation and mutation
++ * for 0 gain.
++ * <p>
++ * This test is responsible for ensuring that said logic emits the expected destroy speed under heavy attribute
++ * modifier use.
++ */
++@AllFeatures
++public class CraftBlockDataDestroySpeedTest {
++
++    @Test
++    public void testCorrectEnchantmentDestroySpeedComputation() {
++        // Construct fake enchantment that has *all and multiple of* operations
++        final Enchantment speedEnchantment = speedEnchantment();
++        final BlockState blockStateToMine = Blocks.STONE.defaultBlockState();
++
++        final ItemEnchantments.Mutable mutable = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
++        mutable.set(Holder.direct(speedEnchantment), 1);
++
++        final net.minecraft.world.item.ItemStack itemStack = new net.minecraft.world.item.ItemStack(Items.DIAMOND_PICKAXE);
++        itemStack.set(DataComponents.ENCHANTMENTS, mutable.toImmutable());
++
++        // Compute expected value by running the entire attribute instance chain
++        final AttributeInstance dummyInstance = new AttributeInstance(Attributes.MINING_EFFICIENCY, $ -> {
++        });
++        EnchantmentHelper.forEachModifier(itemStack, EquipmentSlot.MAINHAND, (attributeHolder, attributeModifier) -> {
++            if (attributeHolder.is(Attributes.MINING_EFFICIENCY)) dummyInstance.addTransientModifier(attributeModifier);
++        });
++
++        final double toolSpeed = itemStack.getDestroySpeed(blockStateToMine);
++        final double expectedSpeed = toolSpeed <= 1.0F ? toolSpeed : toolSpeed + dummyInstance.getValue();
++
++        // API stack + computation
++        final CraftItemStack craftMirror = CraftItemStack.asCraftMirror(itemStack);
++        final CraftBlockData data = CraftBlockData.createData(blockStateToMine);
++        final float actualSpeed = data.getDestroySpeed(craftMirror, true);
++
++        Assertions.assertEquals(expectedSpeed, actualSpeed, Vector.getEpsilon());
++    }
++
++    /**
++     * Complex enchantment that holds attribute modifiers for the mining efficiency.
++     * The enchantment holds 2 of each operation to also ensure that such behaviour works correctly.
++     *
++     * @return the enchantment.
++     */
++    private static @NotNull Enchantment speedEnchantment() {
++        return new Enchantment(
++            Component.empty(),
++            new Enchantment.EnchantmentDefinition(
++                HolderSet.empty(),
++                Optional.empty(),
++                0, 0,
++                Enchantment.constantCost(0),
++                Enchantment.constantCost(0),
++                0,
++                List.of(EquipmentSlotGroup.ANY)
++            ),
++            HolderSet.empty(),
++            DataComponentMap.builder()
++                .set(EnchantmentEffectComponents.ATTRIBUTES, List.of(
++                    new EnchantmentAttributeEffect(
++                        fromNamespaceAndPath("paper", "base1"),
++                        Attributes.MINING_EFFICIENCY,
++                        LevelBasedValue.constant(1),
++                        AttributeModifier.Operation.ADD_VALUE
++                    ),
++                    new EnchantmentAttributeEffect(
++                        fromNamespaceAndPath("paper", "base2"),
++                        Attributes.MINING_EFFICIENCY,
++                        LevelBasedValue.perLevel(3),
++                        AttributeModifier.Operation.ADD_VALUE
++                    ),
++                    new EnchantmentAttributeEffect(
++                        fromNamespaceAndPath("paper", "base-mul1"),
++                        Attributes.MINING_EFFICIENCY,
++                        LevelBasedValue.perLevel(7),
++                        AttributeModifier.Operation.ADD_MULTIPLIED_BASE
++                    ),
++                    new EnchantmentAttributeEffect(
++                        fromNamespaceAndPath("paper", "base-mul2"),
++                        Attributes.MINING_EFFICIENCY,
++                        LevelBasedValue.constant(10),
++                        AttributeModifier.Operation.ADD_MULTIPLIED_BASE
++                    ),
++                    new EnchantmentAttributeEffect(
++                        fromNamespaceAndPath("paper", "total-mul1"),
++                        Attributes.MINING_EFFICIENCY,
++                        LevelBasedValue.constant(.2f),
++                        AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL
++                    ),
++                    new EnchantmentAttributeEffect(
++                        fromNamespaceAndPath("paper", "total-mul2"),
++                        Attributes.MINING_EFFICIENCY,
++                        LevelBasedValue.constant(-.5F),
++                        AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL
++                    )
++                ))
++                .build()
++        );
++    }
++
++}

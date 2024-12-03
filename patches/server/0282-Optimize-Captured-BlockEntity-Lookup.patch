@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sat, 6 Apr 2019 10:16:48 -0400
+Subject: [PATCH] Optimize Captured BlockEntity Lookup
+
+upstream was doing a containsKey/get pattern, and always doing it at that.
+that scenario is only even valid if were in the middle of a block place.
+
+Optimize to check if the captured list even has values in it, and also to
+just do a get call since the value can never be null.
+
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 7d1d009def581b83794425892f454b4d2a76c634..36d183d6b52185405f3dbf67d09bc21631e86870 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -866,9 +866,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+ 
+     @Nullable
+     public BlockEntity getBlockEntity(BlockPos blockposition, boolean validate) {
+-        if (this.capturedTileEntities.containsKey(blockposition)) {
+-            return this.capturedTileEntities.get(blockposition);
++        // Paper start - Perf: Optimize capturedTileEntities lookup
++        net.minecraft.world.level.block.entity.BlockEntity blockEntity;
++        if (!this.capturedTileEntities.isEmpty() && (blockEntity = this.capturedTileEntities.get(blockposition)) != null) {
++            return blockEntity;
+         }
++        // Paper end - Perf: Optimize capturedTileEntities lookup
+         // CraftBukkit end
+         return this.isOutsideBuildHeight(blockposition) ? null : (!this.isClientSide && Thread.currentThread() != this.thread ? null : this.getChunkAt(blockposition).getBlockEntity(blockposition, LevelChunk.EntityCreationType.IMMEDIATE));
+     }

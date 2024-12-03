@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Tue, 3 Mar 2020 05:26:40 +0000
+Subject: [PATCH] Prevent teleporting dead entities
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 969fee86d2422cbadfbce18d8bbaf72ff30b5c3d..d754eda8e8111886e610bc68e8980b54b43eadb1 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1625,6 +1625,13 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+     }
+ 
+     public void internalTeleport(PositionMoveRotation positionmoverotation, Set<Relative> set) {
++        // Paper start - Prevent teleporting dead entities
++        if (player.isRemoved()) {
++            LOGGER.info("Attempt to teleport removed player {} restricted", player.getScoreboardName());
++            if (server.isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread("Attempt to teleport removed player");
++            return;
++        }
++        // Paper end - Prevent teleporting dead entities
+         if (Float.isNaN(positionmoverotation.yRot())) {
+             positionmoverotation = new PositionMoveRotation(positionmoverotation.position(), positionmoverotation.deltaMovement(), 0, positionmoverotation.xRot());
+         }

@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: nossr50 <nossr50@gmail.com>
+Date: Thu, 26 Mar 2020 19:44:50 -0700
+Subject: [PATCH] Add PlayerAttackEntityCooldownResetEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 77c924d5eecd8ee7fae0c6b49d46a6c91abc969a..52a1581a301a3aa481b4fe4afc978b0e426e814b 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -2364,7 +2364,17 @@ public abstract class LivingEntity extends Entity implements Attackable {
+             }
+ 
+             if (damagesource.getEntity() instanceof net.minecraft.world.entity.player.Player) {
+-                ((net.minecraft.world.entity.player.Player) damagesource.getEntity()).resetAttackStrengthTicker(); // Moved from EntityHuman in order to make the cooldown reset get called after the damage event is fired
++                // Paper start - PlayerAttackEntityCooldownResetEvent
++                //((net.minecraft.world.entity.player.Player) damagesource.getEntity()).resetAttackStrengthTicker(); // Moved from EntityHuman in order to make the cooldown reset get called after the damage event is fired
++                if (damagesource.getEntity() instanceof ServerPlayer) {
++                    ServerPlayer player = (ServerPlayer) damagesource.getEntity();
++                    if (new com.destroystokyo.paper.event.player.PlayerAttackEntityCooldownResetEvent(player.getBukkitEntity(), this.getBukkitEntity(), player.getAttackStrengthScale(0F)).callEvent()) {
++                        player.resetAttackStrengthTicker();
++                    }
++                } else {
++                    ((net.minecraft.world.entity.player.Player) damagesource.getEntity()).resetAttackStrengthTicker();
++                }
++                // Paper end - PlayerAttackEntityCooldownResetEvent
+             }
+ 
+             // Resistance

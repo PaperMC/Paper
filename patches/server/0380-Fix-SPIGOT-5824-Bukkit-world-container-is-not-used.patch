@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 10 Jul 2020 13:12:33 -0500
+Subject: [PATCH] Fix SPIGOT-5824 Bukkit world-container is not used
+
+
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index 577140660c96da69f68ec27ad5ab7da2c836974b..57032ca3e14cd1c64c6436d8b7bca54bfbcee5a9 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -169,8 +169,17 @@ public class Main {
+                 return;
+             }
+ 
+-            File file = (File) optionset.valueOf("universe"); // CraftBukkit
+-            Services services = Services.create(new com.destroystokyo.paper.profile.PaperAuthenticationService(Proxy.NO_PROXY), file, optionset); // Paper - pass OptionSet to load paper config files; override authentication service
++            // Paper start - fix SPIGOT-5824
++            File file;
++            File userCacheFile = new File(Services.USERID_CACHE_FILE);
++            if (optionset.has("universe")) {
++                file = (File) optionset.valueOf("universe"); // CraftBukkit
++                userCacheFile = new File(file, Services.USERID_CACHE_FILE);
++            } else {
++                file = new File(bukkitConfiguration.getString("settings.world-container", "."));
++            }
++            // Paper end - fix SPIGOT-5824
++            Services services = Services.create(new com.destroystokyo.paper.profile.PaperAuthenticationService(Proxy.NO_PROXY), file, userCacheFile, optionset); // Paper - pass OptionSet to load paper config files; override authentication service; fix world-container
+             // CraftBukkit start
+             String s = (String) Optional.ofNullable((String) optionset.valueOf("world")).orElse(dedicatedserversettings.getProperties().levelName);
+             LevelStorageSource convertable = LevelStorageSource.createDefault(file.toPath());
+diff --git a/src/main/java/net/minecraft/server/Services.java b/src/main/java/net/minecraft/server/Services.java
+index 5928e5f1934b8e247ba516595018ed5c633d3b5d..33e3815a0c979609d4c7ab83ad91e87ac07a556d 100644
+--- a/src/main/java/net/minecraft/server/Services.java
++++ b/src/main/java/net/minecraft/server/Services.java
+@@ -24,12 +24,12 @@ public record Services(
+         return java.util.Objects.requireNonNull(this.paperConfigurations);
+     }
+     // Paper end - add paper configuration files
+-    private static final String USERID_CACHE_FILE = "usercache.json";
++    public static final String USERID_CACHE_FILE = "usercache.json"; // Paper - private -> public
+ 
+-    public static Services create(YggdrasilAuthenticationService authenticationService, File rootDirectory, joptsimple.OptionSet optionSet) throws Exception { // Paper - add optionset to load paper config files
++    public static Services create(YggdrasilAuthenticationService authenticationService, File rootDirectory, File userCacheFile, joptsimple.OptionSet optionSet) throws Exception { // Paper - add optionset to load paper config files; add userCacheFile parameter
+         MinecraftSessionService minecraftSessionService = authenticationService.createMinecraftSessionService();
+         GameProfileRepository gameProfileRepository = authenticationService.createProfileRepository();
+-        GameProfileCache gameProfileCache = new GameProfileCache(gameProfileRepository, new File(rootDirectory, "usercache.json"));
++        GameProfileCache gameProfileCache = new GameProfileCache(gameProfileRepository, userCacheFile); // Paper - use specified user cache file
+         // Paper start - load paper config files from cli options
+         final java.nio.file.Path legacyConfigPath = ((File) optionSet.valueOf("paper-settings")).toPath();
+         final java.nio.file.Path configDirPath = ((File) optionSet.valueOf("paper-settings-directory")).toPath();

@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 6 Feb 2019 00:20:33 -0500
+Subject: [PATCH] BlockDestroyEvent
+
+Adds an event for when the server is going to destroy a current block,
+potentially causing it to drop. This event can be cancelled to avoid
+the block destruction, such as preventing signs from popping when
+floating in the air.
+
+This can replace many uses of BlockPhysicsEvent
+
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 09bcffea6b9510a108c5e7d2a32d2930c6abe6b3..7d1d009def581b83794425892f454b4d2a76c634 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -25,6 +25,7 @@ import net.minecraft.core.registries.Registries;
+ import net.minecraft.network.protocol.Packet;
+ import net.minecraft.resources.ResourceKey;
+ import net.minecraft.resources.ResourceLocation;
++import io.papermc.paper.util.MCUtil;
+ import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.level.FullChunkStatus;
+ import net.minecraft.server.level.ServerLevel;
+@@ -575,9 +576,26 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+             return false;
+         } else {
+             FluidState fluid = this.getFluidState(pos);
++            // Paper start - BlockDestroyEvent; while the above setAir method is named same and looks very similar
++            // they are NOT used with same intent and the above should not fire this event. The above method is more of a BlockSetToAirEvent,
++            // it doesn't imply destruction of a block that plays a sound effect / drops an item.
++            boolean playEffect = true;
++            BlockState effectType = iblockdata;
++            int xp = iblockdata.getBlock().getExpDrop(iblockdata, (ServerLevel) this, pos, ItemStack.EMPTY, true);
++            if (com.destroystokyo.paper.event.block.BlockDestroyEvent.getHandlerList().getRegisteredListeners().length > 0) {
++                com.destroystokyo.paper.event.block.BlockDestroyEvent event = new com.destroystokyo.paper.event.block.BlockDestroyEvent(org.bukkit.craftbukkit.block.CraftBlock.at(this, pos), fluid.createLegacyBlock().createCraftBlockData(), effectType.createCraftBlockData(), xp, drop);
++                if (!event.callEvent()) {
++                    return false;
++                }
++                effectType = ((CraftBlockData) event.getEffectBlock()).getState();
++                playEffect = event.playEffect();
++                drop = event.willDrop();
++                xp = event.getExpToDrop();
++            }
++            // Paper end - BlockDestroyEvent
+ 
+-            if (!(iblockdata.getBlock() instanceof BaseFireBlock)) {
+-                this.levelEvent(2001, pos, Block.getId(iblockdata));
++            if (playEffect && !(effectType.getBlock() instanceof BaseFireBlock)) { // Paper - BlockDestroyEvent
++                this.levelEvent(2001, pos, Block.getId(effectType)); // Paper - BlockDestroyEvent
+             }
+ 
+             if (drop) {

@@ -1,0 +1,113 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 10 Nov 2017 23:03:12 -0500
+Subject: [PATCH] ExperienceOrb merging/stacking API and fixes
+
+Adds an option for maximum exp value when merging orbs
+
+Adds ExperienceOrbMergeEvent
+Fired when the server is about to merge 2 experience orbs
+as entities. Plugins can cancel it if they want to ensure experience orbs do not lose important
+metadata such as spawn reason, or conditionally move data from source to target.
+
+Fixes an issue where the stacked count was not taking into account
+for mending repairs and when merging with spigot's merge-on-spawn
+logic
+
+== AT ==
+public net.minecraft.world.entity.ExperienceOrb count
+
+Co-authored-by: Aikar <aikar@aikar.co>
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+
+diff --git a/src/main/java/net/minecraft/world/entity/ExperienceOrb.java b/src/main/java/net/minecraft/world/entity/ExperienceOrb.java
+index 9ef7227c2b88f9d0e92e70b33bbd97e22bd71eca..42e8dc24e5cb7b02639d4b80f831b8856f0f45d5 100644
+--- a/src/main/java/net/minecraft/world/entity/ExperienceOrb.java
++++ b/src/main/java/net/minecraft/world/entity/ExperienceOrb.java
+@@ -247,6 +247,7 @@ public class ExperienceOrb extends Entity {
+     }
+ 
+     private static boolean tryMergeToExisting(ServerLevel world, Vec3 pos, int amount) {
++        // Paper - TODO some other event for this kind of merge
+         AABB axisalignedbb = AABB.ofSize(pos, 1.0D, 1.0D, 1.0D);
+         int j = world.getRandom().nextInt(40);
+         List<ExperienceOrb> list = world.getEntities(EntityTypeTest.forClass(ExperienceOrb.class), axisalignedbb, (entityexperienceorb) -> {
+@@ -273,6 +274,11 @@ public class ExperienceOrb extends Entity {
+     }
+ 
+     private void merge(ExperienceOrb other) {
++        // Paper start - call orb merge event
++        if (!new com.destroystokyo.paper.event.entity.ExperienceOrbMergeEvent((org.bukkit.entity.ExperienceOrb) this.getBukkitEntity(), (org.bukkit.entity.ExperienceOrb) other.getBukkitEntity()).callEvent()) {
++            return;
++        }
++        // Paper end - call orb merge event
+         this.count += other.count;
+         this.age = Math.min(this.age, other.age);
+         other.discard(EntityRemoveEvent.Cause.MERGE); // CraftBukkit - add Bukkit remove cause
+@@ -366,7 +372,7 @@ public class ExperienceOrb extends Entity {
+                 int l = amount - k * amount / j;
+ 
+                 if (l > 0) {
+-                    this.value = l; // CraftBukkit - update exp value of orb for PlayerItemMendEvent calls
++                    // this.value = l; // CraftBukkit - update exp value of orb for PlayerItemMendEvent calls // Paper - the value field should not be mutated here because it doesn't take "count" into account
+                     return this.repairPlayerItems(player, l);
+                 }
+             }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftExperienceOrb.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftExperienceOrb.java
+index 5a7d314ec0562e472f5dc45924a7b24841cff126..650e4a01cecc4cc08e7ff9ebcc4c367084351f21 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftExperienceOrb.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftExperienceOrb.java
+@@ -18,6 +18,18 @@ public class CraftExperienceOrb extends CraftEntity implements ExperienceOrb {
+         this.getHandle().value = value;
+     }
+ 
++    // Paper start - expose count
++    @Override
++    public int getCount() {
++        return this.getHandle().count;
++    }
++
++    @Override
++    public void setCount(final int count) {
++        this.getHandle().count = count;
++    }
++    // Paper end
++
+     // Paper start
+     public java.util.UUID getTriggerEntityId() {
+         return getHandle().triggerEntityId;
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index f482fc14e171129f9fa60113b1223b2db79ec6ec..b8e1a7251f9fa09f03b00b387013af1c623a1e52 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -712,15 +712,29 @@ public class CraftEventFactory {
+         if (entity instanceof net.minecraft.world.entity.ExperienceOrb xp) {
+             double radius = world.spigotConfig.expMerge;
+             if (radius > 0) {
++                // Paper start - Maximum exp value when merging; Whole section has been tweaked, see comments for specifics
++                final long maxValue = world.paperConfig().entities.behavior.experienceMergeMaxValue;
++                final boolean mergeUnconditionally = maxValue <= 0;
++                if (mergeUnconditionally || xp.value < maxValue) { // Paper - Skip iteration if unnecessary
++
+                 List<Entity> entities = world.getEntities(entity, entity.getBoundingBox().inflate(radius, radius, radius));
+                 for (Entity e : entities) {
+                     if (e instanceof net.minecraft.world.entity.ExperienceOrb loopItem) {
+-                        if (!loopItem.isRemoved()) {
++                        // Paper start
++                        if (!loopItem.isRemoved() && xp.count == loopItem.count && (mergeUnconditionally || loopItem.value < maxValue) && new com.destroystokyo.paper.event.entity.ExperienceOrbMergeEvent((org.bukkit.entity.ExperienceOrb) entity.getBukkitEntity(), (org.bukkit.entity.ExperienceOrb) loopItem.getBukkitEntity()).callEvent()) { // Paper - ExperienceOrbMergeEvent
++                            long newTotal = (long)xp.value + (long)loopItem.value;
++                            if ((int) newTotal < 0) continue; // Overflow
++                            if (!mergeUnconditionally && newTotal > maxValue) {
++                                loopItem.value = (int) (newTotal - maxValue);
++                                xp.value = (int) maxValue;
++                            } else {
+                             xp.value += loopItem.value;
+                             loopItem.discard(null); // Add Bukkit remove cause
++                            } // Paper end - Maximum exp value when merging
+                         }
+                     }
+                 }
++                } // Paper end - End iteration skip check - All tweaking ends here
+             }
+         }
+         // Spigot end

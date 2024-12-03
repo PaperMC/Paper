@@ -1,0 +1,96 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Callahan <mr.callahhh@gmail.com>
+Date: Wed, 8 Apr 2020 02:42:14 -0500
+Subject: [PATCH] Async command map building
+
+This adds a custom pool inorder to make sure that they are closed
+without much though, as it doesn't matter if the client is not sent
+commands if the server is restarting. Using the default async pool caused issues to arise
+due to the shutdown logic generally being much later.
+
+diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
+index 2008fd542eaf1c2fac776ae1751c227a3b6dde4b..6212d94503023f7bb5ca21785cbb69babe4421c3 100644
+--- a/src/main/java/net/minecraft/commands/Commands.java
++++ b/src/main/java/net/minecraft/commands/Commands.java
+@@ -455,6 +455,25 @@ public class Commands {
+         if ( org.spigotmc.SpigotConfig.tabComplete < 0 ) return; // Spigot
+         // CraftBukkit start
+         // Register Vanilla commands into builtRoot as before
++        // Paper start - Perf: Async command map building
++        // Copy root children to avoid concurrent modification during building
++        final Collection<CommandNode<CommandSourceStack>> commandNodes = new java.util.ArrayList<>(this.dispatcher.getRoot().getChildren());
++        COMMAND_SENDING_POOL.execute(() -> this.sendAsync(player, commandNodes));
++    }
++
++    // Fixed pool, but with discard policy
++    public static final java.util.concurrent.ExecutorService COMMAND_SENDING_POOL = new java.util.concurrent.ThreadPoolExecutor(
++        2, 2, 0, java.util.concurrent.TimeUnit.MILLISECONDS,
++        new java.util.concurrent.LinkedBlockingQueue<>(),
++        new com.google.common.util.concurrent.ThreadFactoryBuilder()
++            .setNameFormat("Paper Async Command Builder Thread Pool - %1$d")
++            .setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(net.minecraft.server.MinecraftServer.LOGGER))
++            .build(),
++        new java.util.concurrent.ThreadPoolExecutor.DiscardPolicy()
++    );
++
++    private void sendAsync(ServerPlayer player, Collection<CommandNode<CommandSourceStack>> dispatcherRootChildren) {
++        // Paper end - Perf: Async command map building
+         Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = Maps.newIdentityHashMap(); // Use identity to prevent aliasing issues
+         RootCommandNode vanillaRoot = new RootCommandNode();
+ 
+@@ -466,13 +485,20 @@ public class Commands {
+         RootCommandNode<SharedSuggestionProvider> rootcommandnode = new RootCommandNode();
+ 
+         map.put(this.dispatcher.getRoot(), rootcommandnode);
+-        this.fillUsableCommands(this.dispatcher.getRoot(), rootcommandnode, player.createCommandSourceStack(), map);
++        this.fillUsableCommands(dispatcherRootChildren, rootcommandnode, player.createCommandSourceStack(), map); // Paper - Perf: Async command map building; pass copy of children
+ 
+         Collection<String> bukkit = new LinkedHashSet<>();
+         for (CommandNode node : rootcommandnode.getChildren()) {
+             bukkit.add(node.getName());
+         }
++        // Paper start - Perf: Async command map building
++        net.minecraft.server.MinecraftServer.getServer().execute(() -> {
++           runSync(player, bukkit, rootcommandnode);
++        });
++    }
+ 
++    private void runSync(ServerPlayer player, Collection<String> bukkit, RootCommandNode<SharedSuggestionProvider> rootcommandnode) {
++        // Paper end - Perf: Async command map building
+         PlayerCommandSendEvent event = new PlayerCommandSendEvent(player.getBukkitEntity(), new LinkedHashSet<>(bukkit));
+         event.getPlayer().getServer().getPluginManager().callEvent(event);
+ 
+@@ -486,8 +512,10 @@ public class Commands {
+         player.connection.send(new ClientboundCommandsPacket(rootcommandnode));
+     }
+ 
+-    private void fillUsableCommands(CommandNode<CommandSourceStack> tree, CommandNode<SharedSuggestionProvider> result, CommandSourceStack source, Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> resultNodes) {
+-        Iterator iterator = tree.getChildren().iterator();
++    // Paper start - Perf: Async command map building; pass copy of children
++    private void fillUsableCommands(Collection<CommandNode<CommandSourceStack>> children, CommandNode<SharedSuggestionProvider> result, CommandSourceStack source, Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> resultNodes) {
++        Iterator iterator = children.iterator();
++        // Paper end - Perf: Async command map building
+ 
+         while (iterator.hasNext()) {
+             CommandNode<CommandSourceStack> commandnode2 = (CommandNode) iterator.next();
+@@ -522,7 +550,7 @@ public class Commands {
+                 resultNodes.put(commandnode2, commandnode3);
+                 result.addChild(commandnode3);
+                 if (!commandnode2.getChildren().isEmpty()) {
+-                    this.fillUsableCommands(commandnode2, commandnode3, source, resultNodes);
++                    this.fillUsableCommands(commandnode2.getChildren(), commandnode3, source, resultNodes); // Paper - Perf: Async command map building; pass children directly
+                 }
+             }
+         }
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 698536a52e9e61d20556b4bc58de256e89726180..d69af4ad646134fa79dea8a845f2311a9a0cb086 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -944,6 +944,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         }
+ 
+         MinecraftServer.LOGGER.info("Stopping server");
++        Commands.COMMAND_SENDING_POOL.shutdownNow(); // Paper - Perf: Async command map building; Shutdown and don't bother finishing
+         // CraftBukkit start
+         if (this.server != null) {
+             this.server.disablePlugins();
