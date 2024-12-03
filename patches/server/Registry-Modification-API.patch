@@ -1267,15 +1267,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        Map<ResourceKey<?>, Exception> errors,
 +        io.papermc.paper.registry.data.util.Conversions conversions // Paper - pass conversions
      ) {
-         String string = Registries.elementsDirPath(registry.key());
-         FileToIdConverter fileToIdConverter = FileToIdConverter.json(string);
+         FileToIdConverter fileToIdConverter = FileToIdConverter.registry(registry.key());
+         RegistryOps<JsonElement> registryOps = RegistryOps.create(JsonOps.INSTANCE, infoGetter);
 @@ -0,0 +0,0 @@ public class RegistryDataLoader {
              RegistrationInfo registrationInfo = REGISTRATION_INFO_CACHE.apply(resource.knownPackInfo());
  
              try {
 -                loadElementFromResource(registry, elementDecoder, registryOps, resourceKey, resource, registrationInfo);
 +                loadElementFromResource(registry, elementDecoder, registryOps, resourceKey, resource, registrationInfo, conversions); // Paper - pass conversions
-             } catch (Exception var15) {
+             } catch (Exception var14) {
                  errors.put(
                      resourceKey,
 @@ -0,0 +0,0 @@ public class RegistryDataLoader {
@@ -1302,8 +1302,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                          Resource resource = factory.getResourceOrThrow(resourceLocation);
 -                        loadElementFromResource(registry, decoder, registryOps2, resourceKey, resource, NETWORK_REGISTRATION_INFO);
 +                        loadElementFromResource(registry, decoder, registryOps2, resourceKey, resource, NETWORK_REGISTRATION_INFO, conversions); // Paper - pass conversions
-                     } catch (Exception var18) {
-                         loadingErrors.put(resourceKey, new IllegalStateException("Failed to parse local data", var18));
+                     } catch (Exception var17) {
+                         loadingErrors.put(resourceKey, new IllegalStateException("Failed to parse local data", var17));
                      }
 @@ -0,0 +0,0 @@ public class RegistryDataLoader {
      }
@@ -1358,10 +1358,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      ) {
          return CompletableFuture.supplyAsync(() -> {
              WritableRegistry<T> writableRegistry = new MappedRegistry<>(type.registryKey(), Lifecycle.experimental());
-@@ -0,0 +0,0 @@ public class ReloadableServerRegistries {
+             io.papermc.paper.registry.PaperRegistryAccess.instance().registerReloadableRegistry(type.registryKey(), writableRegistry); // Paper - register reloadable registry
              Map<ResourceLocation, T> map = new HashMap<>();
-             String string = Registries.elementsDirPath(type.registryKey());
-             SimpleJsonResourceReloadListener.scanDirectory(resourceManager, string, ops, type.codec(), map);
+             SimpleJsonResourceReloadListener.scanDirectory(resourceManager, type.registryKey(), ops, type.codec(), map);
 -            map.forEach((id, value) -> writableRegistry.register(ResourceKey.create(type.registryKey(), id), (T)value, DEFAULT_REGISTRATION_INFO));
 +            map.forEach((id, value) -> io.papermc.paper.registry.PaperRegistryListenerManager.INSTANCE.registerWithListeners(writableRegistry, ResourceKey.create(type.registryKey(), id), value, DEFAULT_REGISTRATION_INFO, conversions)); // Paper - register with listeners
              TagLoader.loadTagsForRegistry(resourceManager, writableRegistry);

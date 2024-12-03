@@ -71,7 +71,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/world/entity/Leashable.java
 @@ -0,0 +0,0 @@ public interface Leashable {
      @Nullable
-     default Leashable.LeashData readLeashData(CompoundTag nbt) {
+     private static Leashable.LeashData readLeashDataInternal(CompoundTag nbt) {
          if (nbt.contains("leash", 10)) {
 -            return new Leashable.LeashData(Either.left(nbt.getCompound("leash").getUUID("UUID")));
 +            // Paper start
@@ -107,14 +107,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
 @@ -0,0 +0,0 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
-         this.leashData = this.readLeashData(nbt);
+         this.readLeashData(nbt);
          this.setLeftHanded(nbt.getBoolean("LeftHanded"));
          if (nbt.contains("DeathLootTable", 8)) {
 -            this.lootTable = Optional.of(ResourceKey.create(Registries.LOOT_TABLE, ResourceLocation.parse(nbt.getString("DeathLootTable"))));
-+            this.lootTable = Optional.ofNullable(ResourceLocation.tryParse(nbt.getString("DeathLootTable"))).map((rs) -> ResourceKey.create(Registries.LOOT_TABLE, rs)); // Paper - Validate ResourceLocation
-             this.lootTableSeed = nbt.getLong("DeathLootTableSeed");
+-        } else {
+-            this.lootTable = Optional.empty();
++            this.lootTable = Optional.ofNullable(ResourceLocation.tryParse(nbt.getString("DeathLootTable"))).map((rs) -> ResourceKey.create(Registries.LOOT_TABLE, rs)); // Paper - Validate ResourceLocation        } else {
          }
  
+         this.lootTableSeed = nbt.getLong("DeathLootTableSeed");
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
