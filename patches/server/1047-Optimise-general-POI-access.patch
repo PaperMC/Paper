@@ -845,10 +845,10 @@ index 0000000000000000000000000000000000000000..f39294b1f83c4022be5ced4da781103a
 +    }
 +}
 diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java b/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
-index e8aa27547e3fa1a42720889c7038d4fb0273e7b5..e1b6fe9ecda25f86431baf414f1bfd3a26a8b2bd 100644
+index 45974895c464b4c0186ab9add5eacb98abe90e09..0d177e828c2b338ce93c58aaef04df326e1eb0b2 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
-@@ -71,11 +71,11 @@ public class AcquirePoi {
+@@ -84,12 +84,16 @@ public class AcquirePoi {
                                              return true;
                                          }
                                      };
@@ -856,11 +856,17 @@ index e8aa27547e3fa1a42720889c7038d4fb0273e7b5..e1b6fe9ecda25f86431baf414f1bfd3a
 -                                            poiPredicate, predicate2, entity.blockPosition(), 48, PoiManager.Occupancy.HAS_SPACE
 -                                        )
 -                                        .limit(5L)
+-                                        .filter(pairx -> worldPosBiPredicate.test(world, (BlockPos)pairx.getSecond()))
 -                                        .collect(Collectors.toSet());
 +                                    // Paper start - optimise POI access
-+                                    java.util.List<Pair<Holder<PoiType>, BlockPos>> poiposes = new java.util.ArrayList<>();
++                                    final java.util.List<Pair<Holder<PoiType>, BlockPos>> poiposes = new java.util.ArrayList<>();
 +                                    io.papermc.paper.util.PoiAccess.findNearestPoiPositions(poiManager, poiPredicate, predicate2, entity.blockPosition(), 48, 48*48, PoiManager.Occupancy.HAS_SPACE, false, 5, poiposes);
-+                                    Set<Pair<Holder<PoiType>, BlockPos>> set = new java.util.HashSet<>(poiposes);
++                                    final Set<Pair<Holder<PoiType>, BlockPos>> set = new java.util.HashSet<>(poiposes.size());
++                                    for (final Pair<Holder<PoiType>, BlockPos> poiPose : poiposes) {
++                                        if (worldPosBiPredicate.test(world, poiPose.getSecond())) {
++                                            set.add(poiPose);
++                                        }
++                                    }
 +                                    // Paper end - optimise POI access
                                      Path path = findPathToPois(entity, set);
                                      if (path != null && path.canReach()) {
