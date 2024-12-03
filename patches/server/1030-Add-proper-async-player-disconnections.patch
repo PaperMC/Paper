@@ -6,7 +6,7 @@ Subject: [PATCH] Add proper async player disconnections
 Blocking can cause performance problems
 
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 36624d3dc7e3f2a64f88b01c5e906018fcee0015..d18af548fa6e979267347443b61efc58b271dfcf 100644
+index 9d6738b431867836c5e64bc13e887fd4af4627e1..e300293ba64a8ac54cc9c5348ecc9f3ed2d27e19 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
 @@ -844,6 +844,14 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -74,10 +74,10 @@ index fc242acade3ff06c9213428cde103cf078216382..b0bc66dc7248aae691dcab68b925b52a
          return this.server.isSingleplayerOwner(this.playerProfile());
      }
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index fc64c09f466e6a0fb3eb6aa47f28f90748e81ce6..e3458038d56b7133f991a5198db26398a299bf30 100644
+index f6d3baf1da22a474ccc9be80781091405362d7db..f0200e2e68e3ec88b82d337a76e22a6e80419b6f 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -769,7 +769,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -767,7 +767,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          // PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel()); // Paper - AsyncTabCompleteEvent; run this async
          // CraftBukkit start
          if (!this.tabSpamThrottler.isIncrementAndUnderThreshold() && !this.server.getPlayerList().isOp(this.player.getGameProfile()) && !this.server.isSingleplayerOwner(this.player.getGameProfile())) { // Paper - configurable tab spam limits
@@ -86,7 +86,7 @@ index fc64c09f466e6a0fb3eb6aa47f28f90748e81ce6..e3458038d56b7133f991a5198db26398
              return;
          }
          // CraftBukkit end
-@@ -781,7 +781,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -779,7 +779,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          // Paper start
          final int index;
          if (packet.getCommand().length() > 64 && ((index = packet.getCommand().indexOf(' ')) == -1 || index >= 64)) {
@@ -95,7 +95,7 @@ index fc64c09f466e6a0fb3eb6aa47f28f90748e81ce6..e3458038d56b7133f991a5198db26398
              return;
          }
          // Paper end
-@@ -1171,14 +1171,14 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1224,14 +1224,14 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
              if (byteTotal > byteAllowed) {
                  ServerGamePacketListenerImpl.LOGGER.warn("{} tried to send a book too large. Book size: {} - Allowed: {} - Pages: {}", this.player.getScoreboardName(), byteTotal, byteAllowed, pageList.size());
@@ -112,7 +112,7 @@ index fc64c09f466e6a0fb3eb6aa47f28f90748e81ce6..e3458038d56b7133f991a5198db26398
              return;
          }
          this.lastBookTick = MinecraftServer.currentTick;
-@@ -2305,7 +2305,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2364,7 +2364,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
      private void tryHandleChat(String s, Runnable runnable, boolean sync) { // CraftBukkit
          if (ServerGamePacketListenerImpl.isChatMessageIllegal(s)) {
@@ -121,7 +121,7 @@ index fc64c09f466e6a0fb3eb6aa47f28f90748e81ce6..e3458038d56b7133f991a5198db26398
          } else if (this.player.isRemoved() || this.player.getChatVisibility() == ChatVisiblity.HIDDEN) { // CraftBukkit - dead men tell no tales
              this.send(new ClientboundSystemChatPacket(Component.translatable("chat.disabled.options").withStyle(ChatFormatting.RED), false));
          } else {
-@@ -2328,7 +2328,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2387,7 +2387,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
              if (optional.isEmpty()) {
                  ServerGamePacketListenerImpl.LOGGER.warn("Failed to validate message acknowledgements from {}", this.player.getName().getString());
@@ -130,7 +130,7 @@ index fc64c09f466e6a0fb3eb6aa47f28f90748e81ce6..e3458038d56b7133f991a5198db26398
              }
  
              return optional;
-@@ -2499,7 +2499,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2558,7 +2558,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          // this.chatSpamThrottler.increment();
          if (!this.chatSpamThrottler.isIncrementAndUnderThreshold() && !this.server.getPlayerList().isOp(this.player.getGameProfile()) && !this.server.isSingleplayerOwner(this.player.getGameProfile())) {
              // CraftBukkit end
@@ -139,7 +139,7 @@ index fc64c09f466e6a0fb3eb6aa47f28f90748e81ce6..e3458038d56b7133f991a5198db26398
          }
  
      }
-@@ -2511,7 +2511,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2570,7 +2570,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          synchronized (this.lastSeenMessages) {
              if (!this.lastSeenMessages.applyOffset(packet.offset())) {
                  ServerGamePacketListenerImpl.LOGGER.warn("Failed to validate message acknowledgements from {}", this.player.getName().getString());
@@ -148,7 +148,7 @@ index fc64c09f466e6a0fb3eb6aa47f28f90748e81ce6..e3458038d56b7133f991a5198db26398
              }
  
          }
-@@ -2659,7 +2659,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2723,7 +2723,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
              }
  
              if (i > 4096) {
@@ -157,7 +157,7 @@ index fc64c09f466e6a0fb3eb6aa47f28f90748e81ce6..e3458038d56b7133f991a5198db26398
              }
  
          }
-@@ -3268,7 +3268,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -3334,7 +3334,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          // Paper start - auto recipe limit
          if (!org.bukkit.Bukkit.isPrimaryThread()) {
              if (!this.recipeSpamPackets.isIncrementAndUnderThreshold()) {
