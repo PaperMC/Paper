@@ -60,24 +60,24 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
          // SPIGOT-943 - only call if they have an inventory open
          if (this.containerMenu != this.inventoryMenu) {
 @@ -0,0 +0,0 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
-                     }
                  }
- 
--                return super.hurtServer(world, source, amount);
-+                // Paper start - cancellable death events
-+                //return super.hurt(source, amount);
-+                this.queueHealthUpdatePacket = true;
-+                boolean damaged = super.hurtServer(world, source, amount);
-+                this.queueHealthUpdatePacket = false;
-+                if (this.queuedHealthUpdatePacket != null) {
-+                    this.connection.send(this.queuedHealthUpdatePacket);
-+                    this.queuedHealthUpdatePacket = null;
-+                }
-+                return damaged;
-+                // Paper end
              }
+ 
+-            return super.hurtServer(world, source, amount);
++            // Paper start - cancellable death events
++            //return super.hurt(world, source, amount);
++            this.queueHealthUpdatePacket = true;
++            boolean damaged = super.hurtServer(world, source, amount);
++            this.queueHealthUpdatePacket = false;
++            if (this.queuedHealthUpdatePacket != null) {
++                this.connection.send(this.queuedHealthUpdatePacket);
++                this.queuedHealthUpdatePacket = null;
++            }
++            return damaged;
++            // Paper end - cancellable death events
          }
      }
+ 
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
@@ -111,14 +111,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              LivingEntity entityliving = this.getKillCredit();
  
 +            /* // Paper - move down to make death event cancellable - this is the awardKillScore below
-             if (this.deathScore >= 0 && entityliving != null) {
-                 entityliving.awardKillScore(this, this.deathScore, damageSource);
+             if (entityliving != null) {
+                 entityliving.awardKillScore(this, damageSource);
              }
 @@ -0,0 +0,0 @@ public abstract class LivingEntity extends Entity implements Attackable {
              if (!this.level().isClientSide && this.hasCustomName()) {
                  if (org.spigotmc.SpigotConfig.logNamedDeaths) LivingEntity.LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString()); // Spigot
              }
-+             */ // Paper - move down to make death event cancellable - this is the awardKillScore below
++            */ // Paper - move down to make death event cancellable - this is the awardKillScore below
  
              this.dead = true;
 -            this.getCombatTracker().recheckStatus();
@@ -132,8 +132,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                // Paper start
 +                org.bukkit.event.entity.EntityDeathEvent deathEvent = this.dropAllDeathLoot(worldserver, damageSource);
 +                if (deathEvent == null || !deathEvent.isCancelled()) {
-+                    if (this.deathScore >= 0 && entityliving != null) {
-+                        entityliving.awardKillScore(this, this.deathScore, damageSource);
++                    if (entityliving != null) {
++                        entityliving.awardKillScore(this, damageSource);
 +                    }
 +                    // Paper start - clear equipment if event is not cancelled
 +                    if (this instanceof Mob) {

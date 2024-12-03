@@ -20,23 +20,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +++ b/src/main/java/net/minecraft/util/SpawnUtil.java
 @@ -0,0 +0,0 @@ public class SpawnUtil {
  
-     public static <T extends Mob> Optional<T> trySpawnMob(EntityType<T> entityType, EntitySpawnReason reason, ServerLevel world, BlockPos pos, int tries, int horizontalRange, int verticalRange, SpawnUtil.Strategy requirements) {
+     public static <T extends Mob> Optional<T> trySpawnMob(EntityType<T> entityType, EntitySpawnReason reason, ServerLevel world, BlockPos pos, int tries, int horizontalRange, int verticalRange, SpawnUtil.Strategy requirements, boolean requireEmptySpace) {
          // CraftBukkit start
--        return SpawnUtil.trySpawnMob(entityType, reason, world, pos, tries, horizontalRange, verticalRange, requirements, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
-+        return SpawnUtil.trySpawnMob(entityType, reason, world, pos, tries, horizontalRange, verticalRange, requirements, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT, null); // Paper
+-        return SpawnUtil.trySpawnMob(entityType, reason, world, pos, tries, horizontalRange, verticalRange, requirements, requireEmptySpace, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
++        return SpawnUtil.trySpawnMob(entityType, reason, world, pos, tries, horizontalRange, verticalRange, requirements, requireEmptySpace, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT, null); // Paper - pre creature spawn event
      }
  
--    public static <T extends Mob> Optional<T> trySpawnMob(EntityType<T> entitytypes, EntitySpawnReason entityspawnreason, ServerLevel worldserver, BlockPos blockposition, int i, int j, int k, SpawnUtil.Strategy spawnutil_a, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
-+    public static <T extends Mob> Optional<T> trySpawnMob(EntityType<T> entitytypes, EntitySpawnReason entityspawnreason, ServerLevel worldserver, BlockPos blockposition, int i, int j, int k, SpawnUtil.Strategy spawnutil_a, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason, @javax.annotation.Nullable Runnable onAbort) {  // Paper - pre creature spawn event
+-    public static <T extends Mob> Optional<T> trySpawnMob(EntityType<T> entitytypes, EntitySpawnReason entityspawnreason, ServerLevel worldserver, BlockPos blockposition, int i, int j, int k, SpawnUtil.Strategy spawnutil_a, boolean flag, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++    public static <T extends Mob> Optional<T> trySpawnMob(EntityType<T> entitytypes, EntitySpawnReason entityspawnreason, ServerLevel worldserver, BlockPos blockposition, int i, int j, int k, SpawnUtil.Strategy spawnutil_a, boolean flag, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason, @javax.annotation.Nullable Runnable onAbort) {  // Paper - pre creature spawn event
          // CraftBukkit end
          BlockPos.MutableBlockPos blockposition_mutableblockposition = blockposition.mutable();
  
 @@ -0,0 +0,0 @@ public class SpawnUtil {
  
              blockposition_mutableblockposition.setWithOffset(blockposition, i1, k, j1);
-             if (worldserver.getWorldBorder().isWithinBounds((BlockPos) blockposition_mutableblockposition) && SpawnUtil.moveToPossibleSpawnPosition(worldserver, k, blockposition_mutableblockposition, spawnutil_a)) {
+             if (worldserver.getWorldBorder().isWithinBounds((BlockPos) blockposition_mutableblockposition) && SpawnUtil.moveToPossibleSpawnPosition(worldserver, k, blockposition_mutableblockposition, spawnutil_a) && (!flag || worldserver.noCollision(entitytypes.getSpawnAABB((double) blockposition_mutableblockposition.getX() + 0.5D, (double) blockposition_mutableblockposition.getY(), (double) blockposition_mutableblockposition.getZ() + 0.5D)))) {
 +                // Paper start - PreCreatureSpawnEvent
-+                com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
++                final com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
 +                    io.papermc.paper.util.MCUtil.toLocation(worldserver, blockposition),
 +                    org.bukkit.craftbukkit.entity.CraftEntityType.minecraftToBukkit(entitytypes),
 +                    reason
@@ -83,8 +83,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
              }).limit(5L).toList();
  
              if (list1.size() >= requiredCount) {
--                if (!SpawnUtil.trySpawnMob(EntityType.IRON_GOLEM, EntitySpawnReason.MOB_SUMMONED, world, this.blockPosition(), 10, 8, 6, SpawnUtil.Strategy.LEGACY_IRON_GOLEM, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_DEFENSE).isEmpty()) { // CraftBukkit
-+                if (SpawnUtil.trySpawnMob(EntityType.IRON_GOLEM, EntitySpawnReason.MOB_SUMMONED, world, this.blockPosition(), 10, 8, 6, SpawnUtil.Strategy.LEGACY_IRON_GOLEM, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_DEFENSE, () -> {GolemSensor.golemDetected(this);}).isPresent()) { // CraftBukkit // Paper - Set Golem Last Seen to stop it from spawning another one
+-                if (!SpawnUtil.trySpawnMob(EntityType.IRON_GOLEM, EntitySpawnReason.MOB_SUMMONED, world, this.blockPosition(), 10, 8, 6, SpawnUtil.Strategy.LEGACY_IRON_GOLEM, false, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_DEFENSE).isEmpty()) { // CraftBukkit
++                if (SpawnUtil.trySpawnMob(EntityType.IRON_GOLEM, EntitySpawnReason.MOB_SUMMONED, world, this.blockPosition(), 10, 8, 6, SpawnUtil.Strategy.LEGACY_IRON_GOLEM, false, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_DEFENSE, () -> {GolemSensor.golemDetected(this);}).isPresent()) { // CraftBukkit // Paper - Set Golem Last Seen to stop it from spawning another one
                      list.forEach(GolemSensor::golemDetected);
                  }
              }
