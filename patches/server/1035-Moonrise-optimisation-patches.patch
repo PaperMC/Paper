@@ -6484,10 +6484,10 @@ index 0000000000000000000000000000000000000000..7eafc5b7cba23d8dec92ecc1050afe3f
 \ No newline at end of file
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..91a6f57f35fc1553159cca138a0619e703b2b014
+index 0000000000000000000000000000000000000000..3990834a41116682d6ae779a3bf24b0fd989d97d
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
-@@ -0,0 +1,1455 @@
+@@ -0,0 +1,1457 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.lock.ReentrantAreaLock;
@@ -6709,6 +6709,8 @@ index 0000000000000000000000000000000000000000..91a6f57f35fc1553159cca138a0619e7
 +                LOGGER.error("Failed to close '" + type.name() + "' regionfile cache for world '" + WorldUtil.getWorldName(this.world) + "'", ex);
 +            }
 +        }
++
++        this.taskScheduler.setShutdown(true);
 +    }
 +
 +    void ensureInAutosave(final NewChunkHolder holder) {
@@ -7945,10 +7947,10 @@ index 0000000000000000000000000000000000000000..91a6f57f35fc1553159cca138a0619e7
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b0bfe655922877676948d9b6ff3fa5a6ebb7a640
+index 0000000000000000000000000000000000000000..67532b85073b7978254a0b04caadfe822679e61f
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkTaskScheduler.java
-@@ -0,0 +1,1038 @@
+@@ -0,0 +1,1055 @@
 +package ca.spottedleaf.moonrise.patches.chunk_system.scheduling;
 +
 +import ca.spottedleaf.concurrentutil.executor.PrioritisedExecutor;
@@ -8222,6 +8224,16 @@ index 0000000000000000000000000000000000000000..b0bfe655922877676948d9b6ff3fa5a6
 +        return this.lockShift;
 +    }
 +
++    private volatile boolean shutdown;
++
++    public boolean hasShutdown() {
++        return this.shutdown;
++    }
++
++    public void setShutdown(final boolean shutdown) {
++        this.shutdown = shutdown;
++    }
++
 +    public ChunkTaskScheduler(final ServerLevel world) {
 +        this.world = world;
 +        // must be >= region shift (in paper, doesn't exist) and must be >= ticket propagator section shift
@@ -8474,6 +8486,13 @@ index 0000000000000000000000000000000000000000..b0bfe655922877676948d9b6ff3fa5a6
 +        ChunkAccess loaded = ((ChunkSystemServerLevel)this.world).moonrise$getSpecificChunkIfLoaded(chunkX, chunkZ, status);
 +        if (loaded != null) {
 +            return loaded;
++        }
++
++        if (this.hasShutdown()) {
++            throw new IllegalStateException(
++                "Chunk system has shut down, cannot process chunk requests in world '" + ca.spottedleaf.moonrise.common.util.WorldUtil.getWorldName(this.world) + "' at "
++                    + "(" + chunkX + "," + chunkZ + ") status: " + status
++            );
 +        }
 +
 +        final Long ticketId = getNextNonFullLoadId();
@@ -25994,7 +26013,7 @@ index 65206fdfa5b94eaca139e433b4865c16b16641f3..bf4463bcb5dc439ac5a3fa08dd60845a
      }
  }
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 6a2af3cd3aebe525a5ff41a801929547d59b8fec..b3ce572547535001959d9bcc6cb567da552c6539 100644
+index 6a2af3cd3aebe525a5ff41a801929547d59b8fec..d7382fc1498a33db909c343d8d07c5aa7130c20f 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 @@ -52,7 +52,7 @@ import net.minecraft.world.level.storage.DimensionDataStorage;
@@ -26006,7 +26025,7 @@ index 6a2af3cd3aebe525a5ff41a801929547d59b8fec..b3ce572547535001959d9bcc6cb567da
  
      private static final Logger LOGGER = LogUtils.getLogger();
      private final DistanceManager distanceManager;
-@@ -81,6 +81,100 @@ public class ServerChunkCache extends ChunkSource {
+@@ -81,6 +81,107 @@ public class ServerChunkCache extends ChunkSource {
      }
      long chunkFutureAwaitCounter;
      // Paper end
@@ -26034,6 +26053,13 @@ index 6a2af3cd3aebe525a5ff41a801929547d59b8fec..b3ce572547535001959d9bcc6cb567da
 +            chunkX, chunkZ, toStatus, true, ca.spottedleaf.concurrentutil.util.Priority.BLOCKING,
 +            completable::complete
 +        );
++
++        if (!completable.isDone() && chunkTaskScheduler.hasShutdown()) {
++            throw new IllegalStateException(
++                "Chunk system has shut down, cannot process chunk requests in world '" + ca.spottedleaf.moonrise.common.util.WorldUtil.getWorldName(this.level) + "' at "
++                    + "(" + chunkX + "," + chunkZ + ") status: " + toStatus
++            );
++        }
 +
 +        if (ca.spottedleaf.moonrise.common.util.TickThread.isTickThreadFor(this.level, chunkX, chunkZ)) {
 +            ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.pushChunkWait(this.level, chunkX, chunkZ);
@@ -26107,7 +26133,7 @@ index 6a2af3cd3aebe525a5ff41a801929547d59b8fec..b3ce572547535001959d9bcc6cb567da
  
      public ServerChunkCache(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureTemplateManager structureTemplateManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, int simulationDistance, boolean dsync, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory) {
          this.level = world;
-@@ -112,13 +206,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -112,13 +213,7 @@ public class ServerChunkCache extends ChunkSource {
      }
      // CraftBukkit end
      // Paper start
@@ -26122,7 +26148,7 @@ index 6a2af3cd3aebe525a5ff41a801929547d59b8fec..b3ce572547535001959d9bcc6cb567da
  
      @Nullable
      public ChunkAccess getChunkAtImmediately(int x, int z) {
-@@ -189,59 +277,42 @@ public class ServerChunkCache extends ChunkSource {
+@@ -189,59 +284,42 @@ public class ServerChunkCache extends ChunkSource {
      @Nullable
      @Override
      public ChunkAccess getChunk(int x, int z, ChunkStatus leastStatus, boolean create) {
@@ -26138,13 +26164,13 @@ index 6a2af3cd3aebe525a5ff41a801929547d59b8fec..b3ce572547535001959d9bcc6cb567da
 -            }
 -            // Paper end - Perf: Optimise getChunkAt calls for loaded chunks
 -            ProfilerFiller gameprofilerfiller = Profiler.get();
--
--            gameprofilerfiller.incrementCounter("getChunk");
--            long k = ChunkPos.asLong(x, z);
 +        // Paper start - rewrite chunk system
 +        if (leastStatus == ChunkStatus.FULL) {
 +            final LevelChunk ret = this.fullChunks.get(ca.spottedleaf.moonrise.common.util.CoordinateUtils.getChunkKey(x, z));
  
+-            gameprofilerfiller.incrementCounter("getChunk");
+-            long k = ChunkPos.asLong(x, z);
+-
 -            for (int l = 0; l < 4; ++l) {
 -                if (k == this.lastChunkPos[l] && leastStatus == this.lastChunkStatus[l]) {
 -                    ChunkAccess ichunkaccess = this.lastChunk[l];
@@ -26195,20 +26221,20 @@ index 6a2af3cd3aebe525a5ff41a801929547d59b8fec..b3ce572547535001959d9bcc6cb567da
 +
 +        if (ret != null || !ca.spottedleaf.moonrise.common.util.TickThread.isTickThread()) {
 +            return ret;
-         }
++        }
 +
 +        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder holder = ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler()
 +            .chunkHolderManager.getChunkHolder(chunkX, chunkZ);
 +        if (holder == null) {
 +            return ret;
-+        }
+         }
 +
 +        return ca.spottedleaf.moonrise.common.PlatformHooks.get().getCurrentlyLoadingChunk(holder.vanillaChunkHolder);
 +        // Paper end - rewrite chunk system
      }
  
      private void clearCache() {
-@@ -272,56 +343,59 @@ public class ServerChunkCache extends ChunkSource {
+@@ -272,56 +350,59 @@ public class ServerChunkCache extends ChunkSource {
      }
  
      private CompletableFuture<ChunkResult<ChunkAccess>> getChunkFutureMainThread(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
@@ -26306,7 +26332,7 @@ index 6a2af3cd3aebe525a5ff41a801929547d59b8fec..b3ce572547535001959d9bcc6cb567da
      }
  
      @Override
-@@ -334,30 +408,18 @@ public class ServerChunkCache extends ChunkSource {
+@@ -334,30 +415,18 @@ public class ServerChunkCache extends ChunkSource {
      }
  
      public boolean runDistanceManagerUpdates() { // Paper - public
@@ -26343,7 +26369,7 @@ index 6a2af3cd3aebe525a5ff41a801929547d59b8fec..b3ce572547535001959d9bcc6cb567da
          this.chunkMap.saveAllChunks(flush);
      }
  
-@@ -368,17 +430,15 @@ public class ServerChunkCache extends ChunkSource {
+@@ -368,17 +437,15 @@ public class ServerChunkCache extends ChunkSource {
      }
  
      public void close(boolean save) throws IOException {
@@ -26364,7 +26390,7 @@ index 6a2af3cd3aebe525a5ff41a801929547d59b8fec..b3ce572547535001959d9bcc6cb567da
          ProfilerFiller gameprofilerfiller = Profiler.get();
  
          gameprofilerfiller.push("purge");
-@@ -403,6 +463,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -403,6 +470,7 @@ public class ServerChunkCache extends ChunkSource {
          this.runDistanceManagerUpdates();
          gameprofilerfiller.popPush("chunks");
          if (tickChunks) {
@@ -26372,7 +26398,7 @@ index 6a2af3cd3aebe525a5ff41a801929547d59b8fec..b3ce572547535001959d9bcc6cb567da
              this.tickChunks();
              this.chunkMap.tick();
          }
-@@ -429,7 +490,10 @@ public class ServerChunkCache extends ChunkSource {
+@@ -429,7 +497,10 @@ public class ServerChunkCache extends ChunkSource {
                      gameprofilerfiller.push("filteringTickingChunks");
                      this.collectTickingChunks(list);
                      gameprofilerfiller.popPush("shuffleChunks");
@@ -26384,7 +26410,7 @@ index 6a2af3cd3aebe525a5ff41a801929547d59b8fec..b3ce572547535001959d9bcc6cb567da
                      this.tickChunks(gameprofilerfiller, j, list);
                      gameprofilerfiller.pop();
                  } finally {
-@@ -448,7 +512,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -448,7 +519,7 @@ public class ServerChunkCache extends ChunkSource {
  
          while (iterator.hasNext()) {
              ChunkHolder playerchunk = (ChunkHolder) iterator.next();
@@ -26393,7 +26419,7 @@ index 6a2af3cd3aebe525a5ff41a801929547d59b8fec..b3ce572547535001959d9bcc6cb567da
  
              if (chunk != null) {
                  playerchunk.broadcastChanges(chunk);
-@@ -460,14 +524,26 @@ public class ServerChunkCache extends ChunkSource {
+@@ -460,14 +531,26 @@ public class ServerChunkCache extends ChunkSource {
      }
  
      private void collectTickingChunks(List<LevelChunk> chunks) {
@@ -26425,7 +26451,7 @@ index 6a2af3cd3aebe525a5ff41a801929547d59b8fec..b3ce572547535001959d9bcc6cb567da
      }
  
      private void tickChunks(ProfilerFiller profiler, long timeDelta, List<LevelChunk> chunks) {
-@@ -508,7 +584,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -508,7 +591,7 @@ public class ServerChunkCache extends ChunkSource {
                  NaturalSpawner.spawnForChunk(this.level, chunk, spawnercreature_d, list1);
              }
  
@@ -26434,7 +26460,7 @@ index 6a2af3cd3aebe525a5ff41a801929547d59b8fec..b3ce572547535001959d9bcc6cb567da
                  this.level.tickChunk(chunk, k);
              }
          }
-@@ -521,11 +597,13 @@ public class ServerChunkCache extends ChunkSource {
+@@ -521,11 +604,13 @@ public class ServerChunkCache extends ChunkSource {
      }
  
      private void getFullChunk(long pos, Consumer<LevelChunk> chunkConsumer) {
@@ -26452,7 +26478,7 @@ index 6a2af3cd3aebe525a5ff41a801929547d59b8fec..b3ce572547535001959d9bcc6cb567da
  
      }
  
-@@ -619,6 +697,12 @@ public class ServerChunkCache extends ChunkSource {
+@@ -619,6 +704,12 @@ public class ServerChunkCache extends ChunkSource {
          this.chunkMap.setServerViewDistance(watchDistance);
      }
  
@@ -26465,7 +26491,7 @@ index 6a2af3cd3aebe525a5ff41a801929547d59b8fec..b3ce572547535001959d9bcc6cb567da
      public void setSimulationDistance(int simulationDistance) {
          this.distanceManager.updateSimulationDistance(simulationDistance);
      }
-@@ -710,21 +794,19 @@ public class ServerChunkCache extends ChunkSource {
+@@ -710,21 +801,19 @@ public class ServerChunkCache extends ChunkSource {
          @Override
          // CraftBukkit start - process pending Chunk loadCallback() and unloadCallback() after each run task
          public boolean pollTask() {
