@@ -1,0 +1,157 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 25 Feb 2022 07:14:48 -0800
+Subject: [PATCH] CB fixes
+
+* Missing Level -> LevelStem generic in StructureCheck
+  Need to use the right for injectDatafixingContext (Spottedleaf)
+
+* Fix summon_entity effect attempting to add incorrect entity (granny)
+
+* Removed incorrect parent perm for `minecraft.debugstick.always` (Machine_Maker)
+
+* Fixed method signature of Marker#addPassenger (Machine_Maker)
+
+* Removed unneeded UOE in CustomWorldChunkManager (extends BiomeSource) (Machine_Maker)
+
+* Honor Server#getLootTable method contract (Machine_Maker)
+
+Co-authored-by: Spottedleaf <Spottedleaf@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 67d5aaa5faa14e5ea5213efc6b24ef5b97fc17f7..ecbef5d54aef8e3f3bc2e4c34d2da6e96b1267b8 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -294,7 +294,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+ 
+         long l = minecraftserver.getWorldData().worldGenOptions().seed();
+ 
+-        this.structureCheck = new StructureCheck(this.chunkSource.chunkScanner(), this.registryAccess(), minecraftserver.getStructureManager(), resourcekey, chunkgenerator, this.chunkSource.randomState(), this, chunkgenerator.getBiomeSource(), l, datafixer);
++        this.structureCheck = new StructureCheck(this.chunkSource.chunkScanner(), this.registryAccess(), minecraftserver.getStructureManager(), this.getTypeKey(), chunkgenerator, this.chunkSource.randomState(), this, chunkgenerator.getBiomeSource(), l, datafixer); // Paper - Fix missing CB diff
+         this.structureManager = new StructureManager(this, this.serverLevelData.worldGenOptions(), this.structureCheck); // CraftBukkit
+         if ((this.dimension() == Level.END && this.dimensionTypeRegistration().is(BuiltinDimensionTypes.END)) || env == org.bukkit.World.Environment.THE_END) { // CraftBukkit - Allow to create EnderDragonBattle in default and custom END
+             this.dragonFight = new EndDragonFight(this, this.serverLevelData.worldGenOptions().seed(), this.serverLevelData.endDragonFightData()); // CraftBukkit
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java b/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
+index 4f68394a94308513269f0a4c749b6a36738e3ca0..953ab7638f7242b5a11dd1de8786172443a0558c 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/structure/StructureCheck.java
+@@ -40,7 +40,7 @@ public class StructureCheck {
+     private final ChunkScanAccess storageAccess;
+     private final RegistryAccess registryAccess;
+     private final StructureTemplateManager structureTemplateManager;
+-    private final ResourceKey<Level> dimension;
++    private final ResourceKey<net.minecraft.world.level.dimension.LevelStem> dimension; // Paper - fix missing CB diff
+     private final ChunkGenerator chunkGenerator;
+     private final RandomState randomState;
+     private final LevelHeightAccessor heightAccessor;
+@@ -54,7 +54,7 @@ public class StructureCheck {
+         ChunkScanAccess chunkIoWorker,
+         RegistryAccess registryManager,
+         StructureTemplateManager structureTemplateManager,
+-        ResourceKey<Level> worldKey,
++        ResourceKey<net.minecraft.world.level.dimension.LevelStem> worldKey, // Paper - fix missing CB diff
+         ChunkGenerator chunkGenerator,
+         RandomState noiseConfig,
+         LevelHeightAccessor world,
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+index 19f165b855a0ca10732fd43c7ee093b11e535471..d54e0ab739ad33b8222d9ea2766e2a893154ee26 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+@@ -424,7 +424,7 @@ public class CraftChunk implements Chunk {
+             }
+         }
+ 
+-        return new CraftChunkSnapshot(x, z, world.getMinHeight(), world.getMaxHeight(), world.getSeaLevel(), world.getName(), world.getFullTime(), blockIDs, skyLight, emitLight, empty, new Heightmap(actual, Heightmap.Types.MOTION_BLOCKING), iregistry, biome);
++        return new CraftChunkSnapshot(x, z, world.getMinHeight(), world.getMaxY(), world.getSeaLevel(), world.getName(), world.getFullTime(), blockIDs, skyLight, emitLight, empty, new Heightmap(actual, Heightmap.Types.MOTION_BLOCKING), iregistry, biome);
+     }
+ 
+     static void validateChunkCoordinates(int minY, int maxY, int x, int y, int z) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java b/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
+index a70e6872add1c952a89e74be0e6d09a53cc16559..90b82ad996b2b85628c9a5ddeef9410150b7f70c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
+@@ -187,4 +187,11 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
+         org.bukkit.loot.LootTable table = (org.bukkit.loot.LootTable) obj;
+         return table.getKey().equals(this.getKey());
+     }
++
++    // Paper start - satisfy equals/hashCode contract
++    @Override
++    public int hashCode() {
++        return java.util.Objects.hash(key);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index abe22b2d9ab742fc58ec6dfe88f9fa337ba7d838..a9dec31bdafd6bae677e58143fe618d812b338b7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -1300,6 +1300,10 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         return this.world.getMaxY() + 1;
+     }
+ 
++    public int getMaxY() {
++        return this.world.getMaxY();
++    }
++
+     @Override
+     public int getLogicalHeight() {
+         return this.world.dimensionType().logicalHeight();
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index 153041dc3b4df33bd63a8a4765b4aa80c911e50e..d2aa1d32a62e074b53f304a755d42687ba0422ee 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -123,6 +123,7 @@ public class Main {
+                 this.acceptsAll(Main.asList("forceUpgrade"), "Whether to force a world upgrade");
+                 this.acceptsAll(Main.asList("eraseCache"), "Whether to force cache erase during world upgrade");
+                 this.acceptsAll(Main.asList("recreateRegionFiles"), "Whether to recreate region files during world upgrade");
++                this.accepts("safeMode", "Loads level with vanilla datapack only"); // Paper
+                 this.acceptsAll(Main.asList("nogui"), "Disables the graphical console");
+ 
+                 this.acceptsAll(Main.asList("nojline"), "Disables jline and emulates the vanilla console");
+diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
+index a25ccafc861249a2309bd42f08a32601644de46f..a7b53187a24d11b8c91e8c50eeb907aca60891cb 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
++++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
+@@ -26,6 +26,7 @@ import org.bukkit.scheduler.BukkitWorker;
+ 
+ /**
+  * The fundamental concepts for this implementation:
++ * <ul>
+  * <li>Main thread owns {@link #head} and {@link #currentTick}, but it may be read from any thread</li>
+  * <li>Main thread exclusively controls {@link #temp} and {@link #pending}.
+  *     They are never to be accessed outside of the main thread; alternatives exist to prevent locking.</li>
+@@ -41,6 +42,7 @@ import org.bukkit.scheduler.BukkitWorker;
+  * <li>Sync tasks are only to be removed from runners on the main thread when coupled with a removal from pending and temp.</li>
+  * <li>Most of the design in this scheduler relies on queuing special tasks to perform any data changes on the main thread.
+  *     When executed from inside a synchronous method, the scheduler will be updated before next execution by virtue of the frequent {@link #parsePending()} calls.</li>
++ * </ul>
+  */
+ public class CraftScheduler implements BukkitScheduler {
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 592906e5b4cd7e3859001b279c1d5d70d2882c84..de7f9d5b3860e7d187d73a1bd0d28c70293ef66c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -247,7 +247,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
+         try {
+             nmsStack.applyComponents(new ItemParser(Commands.createValidationContext(MinecraftServer.getDefaultRegistryAccess())).parse(new StringReader(arguments)).components());
+         } catch (CommandSyntaxException ex) {
+-            Logger.getLogger(CraftMagicNumbers.class.getName()).log(Level.SEVERE, null, ex);
++            com.mojang.logging.LogUtils.getClassLogger().error("Exception modifying ItemStack", new Throwable(ex)); // Paper - show stack trace
+         }
+ 
+         stack.setItemMeta(CraftItemStack.getItemMeta(nmsStack));
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/permissions/CraftDefaultPermissions.java b/src/main/java/org/bukkit/craftbukkit/util/permissions/CraftDefaultPermissions.java
+index 5ac25dab93fd4c9e9533c80d1ca3d93446d7a365..245ad120a36b6defca7e6889faae1ca5fc33d0c7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/permissions/CraftDefaultPermissions.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/permissions/CraftDefaultPermissions.java
+@@ -15,7 +15,7 @@ public final class CraftDefaultPermissions {
+         DefaultPermissions.registerPermission(CraftDefaultPermissions.ROOT + ".nbt.place", "Gives the user the ability to place restricted blocks with NBT in creative", org.bukkit.permissions.PermissionDefault.OP, parent);
+         DefaultPermissions.registerPermission(CraftDefaultPermissions.ROOT + ".nbt.copy", "Gives the user the ability to copy NBT in creative", org.bukkit.permissions.PermissionDefault.TRUE, parent);
+         DefaultPermissions.registerPermission(CraftDefaultPermissions.ROOT + ".debugstick", "Gives the user the ability to use the debug stick in creative", org.bukkit.permissions.PermissionDefault.OP, parent);
+-        DefaultPermissions.registerPermission(CraftDefaultPermissions.ROOT + ".debugstick.always", "Gives the user the ability to use the debug stick in all game modes", org.bukkit.permissions.PermissionDefault.FALSE, parent);
++        DefaultPermissions.registerPermission(CraftDefaultPermissions.ROOT + ".debugstick.always", "Gives the user the ability to use the debug stick in all game modes", org.bukkit.permissions.PermissionDefault.FALSE/* , parent */); // Paper - should not have this parent, as it's not a "vanilla" utility
+         // Spigot end
+         parent.recalculatePermissibles();
+     }

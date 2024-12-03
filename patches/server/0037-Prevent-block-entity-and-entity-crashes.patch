@@ -1,0 +1,66 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 1 Mar 2016 23:52:34 -0600
+Subject: [PATCH] Prevent block entity and entity crashes
+
+
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 0aa5d3c85b021c552eda139850b48effc3613450..3d2f579cf2b7b96f4ce2588f9655d2287767b01c 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -727,11 +727,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         try {
+             tickConsumer.accept(entity);
+         } catch (Throwable throwable) {
+-            CrashReport crashreport = CrashReport.forThrowable(throwable, "Ticking entity");
+-            CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Entity being ticked");
+-
+-            entity.fillCrashReportCategory(crashreportsystemdetails);
+-            throw new ReportedException(crashreport);
++            // Paper start - Prevent block entity and entity crashes
++            final String msg = String.format("Entity threw exception at %s:%s,%s,%s", entity.level().getWorld().getName(), entity.getX(), entity.getY(), entity.getZ());
++            MinecraftServer.LOGGER.error(msg, throwable);
++            entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
++            // Paper end - Prevent block entity and entity crashes
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
+index 1fa90dbf0e431d1f69ab46aa3dc200f09cfe7536..4c5ff6009f72ec3e56a1f440904c472fb2a4138a 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
+@@ -258,7 +258,12 @@ public abstract class BlockEntity {
+     public void fillCrashReportCategory(CrashReportCategory crashReportSection) {
+         crashReportSection.setDetail("Name", this::getNameForReporting);
+         if (this.level != null) {
+-            CrashReportCategory.populateBlockDetails(crashReportSection, this.level, this.worldPosition, this.getBlockState());
++            // Paper start - Prevent block entity and entity crashes
++            BlockState block = this.getBlockState();
++            if (block != null) {
++                CrashReportCategory.populateBlockDetails(crashReportSection, this.level, this.worldPosition, block);
++            }
++            // Paper end - Prevent block entity and entity crashes
+             CrashReportCategory.populateBlockDetails(crashReportSection, this.level, this.worldPosition, this.level.getBlockState(this.worldPosition));
+         }
+     }
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+index b215ed941197f5aa0e26cd50a420500dcdc17fbb..daa2b3f67765bc340404747b3cffea5604830515 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -988,11 +988,11 @@ public class LevelChunk extends ChunkAccess {
+ 
+                         gameprofilerfiller.pop();
+                     } catch (Throwable throwable) {
+-                        CrashReport crashreport = CrashReport.forThrowable(throwable, "Ticking block entity");
+-                        CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Block entity being ticked");
+-
+-                        this.blockEntity.fillCrashReportCategory(crashreportsystemdetails);
+-                        throw new ReportedException(crashreport);
++                        // Paper start - Prevent block entity and entity crashes
++                        final String msg = String.format("BlockEntity threw exception at %s:%s,%s,%s", LevelChunk.this.getLevel().getWorld().getName(), this.getPos().getX(), this.getPos().getY(), this.getPos().getZ());
++                        net.minecraft.server.MinecraftServer.LOGGER.error(msg, throwable);
++                        LevelChunk.this.removeBlockEntity(this.getPos());
++                        // Paper end - Prevent block entity and entity crashes
+                         // Spigot start
+                     }
+                 }

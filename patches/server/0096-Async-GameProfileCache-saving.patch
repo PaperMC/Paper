@@ -1,0 +1,86 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 16 May 2016 20:47:41 -0400
+Subject: [PATCH] Async GameProfileCache saving
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index bf5f1cfc7f0c129083ada539d450b9c74d2d5d9c..0eb856a27fefb8d7283617498a31b05f2a736192 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1011,7 +1011,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         } catch (java.lang.InterruptedException ignored) {} // Paper
+         if (org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) {
+             MinecraftServer.LOGGER.info("Saving usercache.json");
+-            this.getProfileCache().save();
++            this.getProfileCache().save(false); // Paper - Perf: Async GameProfileCache saving
+         }
+         // Spigot end
+ 
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index e2cb85c8f121837e8a19e003e1e757f431dfaf2b..5d9772a6c35e8f849e8879f510b2c586b148074c 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -267,7 +267,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         }
+ 
+         if (this.convertOldUsers()) {
+-            this.getProfileCache().save();
++            this.getProfileCache().save(false); // Paper - Perf: Async GameProfileCache saving
+         }
+ 
+         if (!OldUsersConverter.serverReadyAfterUserconversion(this)) {
+diff --git a/src/main/java/net/minecraft/server/players/GameProfileCache.java b/src/main/java/net/minecraft/server/players/GameProfileCache.java
+index a50b72ed08d16cdce19ff01512353412df2ee5ae..197e2ec9f1445a8184d0dde0e9b02b39e3302b91 100644
+--- a/src/main/java/net/minecraft/server/players/GameProfileCache.java
++++ b/src/main/java/net/minecraft/server/players/GameProfileCache.java
+@@ -117,7 +117,7 @@ public class GameProfileCache {
+         GameProfileCache.GameProfileInfo usercache_usercacheentry = new GameProfileCache.GameProfileInfo(profile, date);
+ 
+         this.safeAdd(usercache_usercacheentry);
+-        if( !org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly ) this.save(); // Spigot - skip saving if disabled
++        if( !org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly ) this.save(true); // Spigot - skip saving if disabled // Paper - Perf: Async GameProfileCache saving
+     }
+ 
+     private long getNextOperation() {
+@@ -150,7 +150,7 @@ public class GameProfileCache {
+         }
+ 
+         if (flag && !org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) { // Spigot - skip saving if disabled
+-            this.save();
++            this.save(true); // Paper - Perf: Async GameProfileCache saving
+         }
+ 
+         return optional;
+@@ -262,7 +262,7 @@ public class GameProfileCache {
+         return list;
+     }
+ 
+-    public void save() {
++    public void save(boolean asyncSave) { // Paper - Perf: Async GameProfileCache saving
+         JsonArray jsonarray = new JsonArray();
+         DateFormat dateformat = GameProfileCache.createDateFormat();
+ 
+@@ -270,6 +270,7 @@ public class GameProfileCache {
+             jsonarray.add(GameProfileCache.writeGameProfile(usercache_usercacheentry, dateformat));
+         });
+         String s = this.gson.toJson(jsonarray);
++        Runnable save = () -> { // Paper - Perf: Async GameProfileCache saving
+ 
+         try {
+             BufferedWriter bufferedwriter = Files.newWriter(this.file, StandardCharsets.UTF_8);
+@@ -294,6 +295,14 @@ public class GameProfileCache {
+         } catch (IOException ioexception) {
+             ;
+         }
++        // Paper start - Perf: Async GameProfileCache saving
++        };
++        if (asyncSave) {
++            io.papermc.paper.util.MCUtil.scheduleAsyncTask(save);
++        } else {
++            save.run();
++        }
++        // Paper end - Perf: Async GameProfileCache saving
+ 
+     }
+ 

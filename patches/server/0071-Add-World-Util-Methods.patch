@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Fri, 18 Mar 2016 20:16:03 -0400
+Subject: [PATCH] Add World Util Methods
+
+Methods that can be used for other patches to help improve logic.
+
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 11c5191ec6a53cb42f8a75e249fbce1058f2b58e..36ed95a432429d7fe977684d26818afdb49c36dc 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -340,6 +340,22 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         return chunk == null ? null : chunk.getFluidState(blockposition);
+     }
+ 
++    public final boolean isLoadedAndInBounds(BlockPos blockposition) { // Paper - final for inline
++        return getWorldBorder().isWithinBounds(blockposition) && getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4) != null;
++    }
++
++    public @Nullable LevelChunk getChunkIfLoaded(int x, int z) { // Overridden in WorldServer for ABI compat which has final
++        return ((ServerLevel) this).getChunkSource().getChunkAtIfLoadedImmediately(x, z);
++    }
++    public final @Nullable LevelChunk getChunkIfLoaded(BlockPos blockposition) {
++        return ((ServerLevel) this).getChunkSource().getChunkAtIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++    }
++
++    //  reduces need to do isLoaded before getType
++    public final @Nullable BlockState getBlockStateIfLoadedAndInBounds(BlockPos blockposition) {
++        return getWorldBorder().isWithinBounds(blockposition) ? getBlockStateIfLoaded(blockposition) : null;
++    }
++
+     @Override
+     public ChunkAccess getChunk(int chunkX, int chunkZ, ChunkStatus leastStatus, boolean create) {
+         // Paper end

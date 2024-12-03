@@ -1,0 +1,567 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 13 Feb 2023 14:14:56 -0800
+Subject: [PATCH] Test changes
+
+- configure mockito agent to address changes in newer java versions see https://openjdk.org/jeps/451
+
+Co-authored-by: yannnicklamprecht <yannicklamprecht@live.de>
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 56c201841194bdea8c7d9f07bd105aefb7232697..7f1d42ca8df9f72d3d05501f36ae8aefffa6ade7 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -5,6 +5,18 @@ plugins {
+     `maven-publish`
+ }
+ 
++// Paper start - configure mockito agent that is needed in newer java versions
++val mockitoAgent = configurations.register("mockitoAgent")
++abstract class MockitoAgentProvider : CommandLineArgumentProvider {
++    @get:CompileClasspath
++    abstract val fileCollection: ConfigurableFileCollection
++
++    override fun asArguments(): Iterable<String> {
++        return listOf("-javaagent:" + fileCollection.files.single().absolutePath)
++    }
++}
++// Paper end - configure mockito agent that is needed in newer java versions
++
+ dependencies {
+     implementation(project(":paper-api"))
+     implementation("jline:jline:2.12.1")
+@@ -22,7 +34,9 @@ dependencies {
+     testImplementation("org.junit.platform:junit-platform-suite-engine:1.10.0")
+     testImplementation("org.hamcrest:hamcrest:2.2")
+     testImplementation("org.mockito:mockito-core:5.14.1")
++    mockitoAgent("org.mockito:mockito-core:5.14.1") { isTransitive = false } // Paper - configure mockito agent that is needed in newer java versions
+     testImplementation("org.ow2.asm:asm-tree:9.7.1")
++    testImplementation("org.junit-pioneer:junit-pioneer:2.2.0") // Paper - CartesianTest
+ }
+ 
+ paperweight {
+@@ -56,6 +70,12 @@ tasks.jar {
+     }
+ }
+ 
++// Paper start - compile tests with -parameters for better junit parameterized test names
++tasks.compileTestJava {
++    options.compilerArgs.add("-parameters")
++}
++// Paper end
++
+ publishing {
+     publications.create<MavenPublication>("maven") {
+     }
+@@ -79,6 +99,11 @@ tasks.test {
+         forkEvery = 1
+         excludeTags("Slow")
+     }
++    // Paper start - configure mockito agent that is needed in newer java versions
++    val provider = objects.newInstance<MockitoAgentProvider>()
++    provider.fileCollection.from(mockitoAgent)
++    jvmArgumentProviders.add(provider)
++    // Paper end - configure mockito agent that is needed in newer java versions
+ }
+ 
+ fun TaskContainer.registerRunTask(
+diff --git a/src/test/java/io/papermc/paper/registry/RegistryKeyTest.java b/src/test/java/io/papermc/paper/registry/RegistryKeyTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d8857a05858585113bc7efde3416748effb53d01
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/registry/RegistryKeyTest.java
+@@ -0,0 +1,34 @@
++package io.papermc.paper.registry;
++
++import java.util.Optional;
++import java.util.stream.Stream;
++import net.minecraft.core.Registry;
++import net.minecraft.resources.ResourceKey;
++import net.minecraft.resources.ResourceLocation;
++import org.bukkit.support.AbstractTestingBase;
++import org.junit.jupiter.api.BeforeAll;
++import org.junit.jupiter.params.ParameterizedTest;
++import org.junit.jupiter.params.provider.MethodSource;
++
++import static org.junit.jupiter.api.Assertions.assertTrue;
++
++@AllFeatures
++class RegistryKeyTest {
++
++    @BeforeAll
++    static void before() throws ClassNotFoundException {
++        Class.forName(RegistryKey.class.getName()); // load all keys so they are found for the test
++    }
++
++    static Stream<RegistryKey<?>> data() {
++        return RegistryKeyImpl.REGISTRY_KEYS.stream();
++    }
++
++    @ParameterizedTest
++    @MethodSource("data")
++    void testApiRegistryKeysExist(final RegistryKey<?> key) {
++        final Optional<Registry<Object>> registry = RegistryHelper.getRegistry().lookup(ResourceKey.createRegistryKey(ResourceLocation.parse(key.key().asString())));
++        assertTrue(registry.isPresent(), "Missing vanilla registry for " + key.key().asString());
++
++    }
++}
+diff --git a/src/test/java/io/papermc/paper/util/EmptyTag.java b/src/test/java/io/papermc/paper/util/EmptyTag.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6eb95a5e2534974c0e52e2b78b04e7c2b2f28525
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/util/EmptyTag.java
+@@ -0,0 +1,31 @@
++package io.papermc.paper.util;
++
++import java.util.Collections;
++import java.util.Set;
++import org.bukkit.Keyed;
++import org.bukkit.NamespacedKey;
++import org.bukkit.Tag;
++import org.jetbrains.annotations.NotNull;
++
++public record EmptyTag(NamespacedKey key) implements Tag<Keyed> {
++
++    @SuppressWarnings("deprecation")
++    public EmptyTag() {
++        this(NamespacedKey.randomKey());
++    }
++
++    @Override
++    public @NotNull NamespacedKey getKey() {
++        return this.key;
++    }
++
++    @Override
++    public boolean isTagged(@NotNull final Keyed item) {
++        return false;
++    }
++
++    @Override
++    public @NotNull Set<Keyed> getValues() {
++        return Collections.emptySet();
++    }
++}
+diff --git a/src/test/java/io/papermc/paper/util/MethodParameterProvider.java b/src/test/java/io/papermc/paper/util/MethodParameterProvider.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3f58ef36df34cd15fcb72189eeff057654adf0c6
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/util/MethodParameterProvider.java
+@@ -0,0 +1,206 @@
++/*
++ * Copyright 2015-2023 the original author or authors of https://github.com/junit-team/junit5/blob/6593317c15fb556febbde11914fa7afe00abf8cd/junit-jupiter-params/src/main/java/org/junit/jupiter/params/provider/MethodArgumentsProvider.java
++ *
++ * All rights reserved. This program and the accompanying materials are
++ * made available under the terms of the Eclipse Public License v2.0 which
++ * accompanies this distribution and is available at
++ *
++ * https://www.eclipse.org/legal/epl-v20.html
++ */
++
++package io.papermc.paper.util;
++
++import java.lang.reflect.Method;
++import java.lang.reflect.Parameter;
++import java.util.List;
++import java.util.function.Predicate;
++import java.util.stream.Stream;
++import org.junit.jupiter.api.Test;
++import org.junit.jupiter.api.TestFactory;
++import org.junit.jupiter.api.TestTemplate;
++import org.junit.jupiter.api.extension.ExtensionContext;
++import org.junit.jupiter.params.support.AnnotationConsumer;
++import org.junit.platform.commons.JUnitException;
++import org.junit.platform.commons.PreconditionViolationException;
++import org.junit.platform.commons.util.ClassLoaderUtils;
++import org.junit.platform.commons.util.CollectionUtils;
++import org.junit.platform.commons.util.Preconditions;
++import org.junit.platform.commons.util.ReflectionUtils;
++import org.junit.platform.commons.util.StringUtils;
++import org.junitpioneer.jupiter.cartesian.CartesianParameterArgumentsProvider;
++
++import static java.lang.String.format;
++import static java.util.Arrays.stream;
++import static java.util.stream.Collectors.toList;
++import static org.junit.platform.commons.util.AnnotationUtils.isAnnotated;
++import static org.junit.platform.commons.util.CollectionUtils.isConvertibleToStream;
++
++public class MethodParameterProvider implements CartesianParameterArgumentsProvider<Object>, AnnotationConsumer<MethodParameterSource> {
++    private MethodParameterSource source;
++
++    MethodParameterProvider() {
++    }
++
++    @Override
++    public void accept(final MethodParameterSource source) {
++        this.source = source;
++    }
++
++    @Override
++    public Stream<Object> provideArguments(ExtensionContext context, Parameter parameter) {
++        return this.provideArguments(context, this.source);
++    }
++
++    // Below is mostly copied from MethodArgumentsProvider
++
++    private static final Predicate<Method> isFactoryMethod = //
++        method -> isConvertibleToStream(method.getReturnType()) && !isTestMethod(method);
++
++    protected Stream<Object> provideArguments(ExtensionContext context, MethodParameterSource methodSource) {
++        Class<?> testClass = context.getRequiredTestClass();
++        Method testMethod = context.getRequiredTestMethod();
++        Object testInstance = context.getTestInstance().orElse(null);
++        String[] methodNames = methodSource.value();
++        // @formatter:off
++        return stream(methodNames)
++            .map(factoryMethodName -> findFactoryMethod(testClass, testMethod, factoryMethodName))
++            .map(factoryMethod -> validateFactoryMethod(factoryMethod, testInstance))
++            .map(factoryMethod -> context.getExecutableInvoker().invoke(factoryMethod, testInstance))
++            .flatMap(CollectionUtils::toStream);
++        // @formatter:on
++    }
++
++    private static Method findFactoryMethod(Class<?> testClass, Method testMethod, String factoryMethodName) {
++        String originalFactoryMethodName = factoryMethodName;
++
++        // If the user did not provide a factory method name, find a "default" local
++        // factory method with the same name as the parameterized test method.
++        if (StringUtils.isBlank(factoryMethodName)) {
++            factoryMethodName = testMethod.getName();
++            return findFactoryMethodBySimpleName(testClass, testMethod, factoryMethodName);
++        }
++
++        // Convert local factory method name to fully-qualified method name.
++        if (!looksLikeAFullyQualifiedMethodName(factoryMethodName)) {
++            factoryMethodName = testClass.getName() + "#" + factoryMethodName;
++        }
++
++        // Find factory method using fully-qualified name.
++        Method factoryMethod = findFactoryMethodByFullyQualifiedName(testClass, testMethod, factoryMethodName);
++
++        // Ensure factory method has a valid return type and is not a test method.
++        Preconditions.condition(isFactoryMethod.test(factoryMethod), () -> format(
++            "Could not find valid factory method [%s] for test class [%s] but found the following invalid candidate: %s",
++            originalFactoryMethodName, testClass.getName(), factoryMethod));
++
++        return factoryMethod;
++    }
++
++    private static boolean looksLikeAFullyQualifiedMethodName(String factoryMethodName) {
++        if (factoryMethodName.contains("#")) {
++            return true;
++        }
++        int indexOfFirstDot = factoryMethodName.indexOf('.');
++        if (indexOfFirstDot == -1) {
++            return false;
++        }
++        int indexOfLastOpeningParenthesis = factoryMethodName.lastIndexOf('(');
++        if (indexOfLastOpeningParenthesis > 0) {
++            // Exclude simple/local method names with parameters
++            return indexOfFirstDot < indexOfLastOpeningParenthesis;
++        }
++        // If we get this far, we conclude the supplied factory method name "looks"
++        // like it was intended to be a fully-qualified method name, even if the
++        // syntax is invalid. We do this in order to provide better diagnostics for
++        // the user when a fully-qualified method name is in fact invalid.
++        return true;
++    }
++
++    // package-private for testing
++    static Method findFactoryMethodByFullyQualifiedName(
++        Class<?> testClass, Method testMethod,
++        String fullyQualifiedMethodName
++    ) {
++        String[] methodParts = ReflectionUtils.parseFullyQualifiedMethodName(fullyQualifiedMethodName);
++        String className = methodParts[0];
++        String methodName = methodParts[1];
++        String methodParameters = methodParts[2];
++        ClassLoader classLoader = ClassLoaderUtils.getClassLoader(testClass);
++        Class<?> clazz = loadRequiredClass(className, classLoader);
++
++        // Attempt to find an exact match first.
++        Method factoryMethod = ReflectionUtils.findMethod(clazz, methodName, methodParameters).orElse(null);
++        if (factoryMethod != null) {
++            return factoryMethod;
++        }
++
++        boolean explicitParameterListSpecified = //
++            StringUtils.isNotBlank(methodParameters) || fullyQualifiedMethodName.endsWith("()");
++
++        // If we didn't find an exact match but an explicit parameter list was specified,
++        // that's a user configuration error.
++        Preconditions.condition(!explicitParameterListSpecified,
++            () -> format("Could not find factory method [%s(%s)] in class [%s]", methodName, methodParameters,
++                className));
++
++        // Otherwise, fall back to the same lenient search semantics that are used
++        // to locate a "default" local factory method.
++        return findFactoryMethodBySimpleName(clazz, testMethod, methodName);
++    }
++
++    /**
++     * Find the factory method by searching for all methods in the given {@code clazz}
++     * with the desired {@code factoryMethodName} which have return types that can be
++     * converted to a {@link Stream}, ignoring the {@code testMethod} itself as well
++     * as any {@code @Test}, {@code @TestTemplate}, or {@code @TestFactory} methods
++     * with the same name.
++     *
++     * @return the single factory method matching the search criteria
++     * @throws PreconditionViolationException if the factory method was not found or
++     *                                        multiple competing factory methods with the same name were found
++     */
++    private static Method findFactoryMethodBySimpleName(Class<?> clazz, Method testMethod, String factoryMethodName) {
++        Predicate<Method> isCandidate = candidate -> factoryMethodName.equals(candidate.getName())
++            && !testMethod.equals(candidate);
++        List<Method> candidates = ReflectionUtils.findMethods(clazz, isCandidate);
++
++        List<Method> factoryMethods = candidates.stream().filter(isFactoryMethod).collect(toList());
++
++        Preconditions.condition(factoryMethods.size() > 0, () -> {
++            // If we didn't find the factory method using the isFactoryMethod Predicate, perhaps
++            // the specified factory method has an invalid return type or is a test method.
++            // In that case, we report the invalid candidates that were found.
++            if (candidates.size() > 0) {
++                return format(
++                    "Could not find valid factory method [%s] in class [%s] but found the following invalid candidates: %s",
++                    factoryMethodName, clazz.getName(), candidates);
++            }
++            // Otherwise, report that we didn't find anything.
++            return format("Could not find factory method [%s] in class [%s]", factoryMethodName, clazz.getName());
++        });
++        Preconditions.condition(factoryMethods.size() == 1,
++            () -> format("%d factory methods named [%s] were found in class [%s]: %s", factoryMethods.size(),
++                factoryMethodName, clazz.getName(), factoryMethods));
++        return factoryMethods.get(0);
++    }
++
++    private static boolean isTestMethod(Method candidate) {
++        return isAnnotated(candidate, Test.class) || isAnnotated(candidate, TestTemplate.class)
++            || isAnnotated(candidate, TestFactory.class);
++    }
++
++    private static Class<?> loadRequiredClass(String className, ClassLoader classLoader) {
++        return ReflectionUtils.tryToLoadClass(className, classLoader).getOrThrow(
++            cause -> new JUnitException(format("Could not load class [%s]", className), cause));
++    }
++
++    private static Method validateFactoryMethod(Method factoryMethod, Object testInstance) {
++        Preconditions.condition(
++            factoryMethod.getDeclaringClass().isInstance(testInstance) || ReflectionUtils.isStatic(factoryMethod),
++            () -> format("Method '%s' must be static: local factory methods must be static "
++                    + "unless the PER_CLASS @TestInstance lifecycle mode is used; "
++                    + "external factory methods must always be static.",
++                factoryMethod.toGenericString()));
++        return factoryMethod;
++    }
++}
+diff --git a/src/test/java/io/papermc/paper/util/MethodParameterSource.java b/src/test/java/io/papermc/paper/util/MethodParameterSource.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6cbf11c898439834cffb99ef84e5df1494356809
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/util/MethodParameterSource.java
+@@ -0,0 +1,14 @@
++package io.papermc.paper.util;
++
++import java.lang.annotation.ElementType;
++import java.lang.annotation.Retention;
++import java.lang.annotation.RetentionPolicy;
++import java.lang.annotation.Target;
++import org.junitpioneer.jupiter.cartesian.CartesianArgumentsSource;
++
++@Retention(RetentionPolicy.RUNTIME)
++@Target({ElementType.PARAMETER, ElementType.ANNOTATION_TYPE})
++@CartesianArgumentsSource(MethodParameterProvider.class)
++public @interface MethodParameterSource {
++    String[] value() default {};
++}
+diff --git a/src/test/java/org/bukkit/ExplosionResultTest.java b/src/test/java/org/bukkit/ExplosionResultTest.java
+index ee5ab15bb0bfeb0ff6fa0d720eeff086d92cb459..7419ea2f68607aad27929a608c402bd4c222f95d 100644
+--- a/src/test/java/org/bukkit/ExplosionResultTest.java
++++ b/src/test/java/org/bukkit/ExplosionResultTest.java
+@@ -5,6 +5,7 @@ import net.minecraft.world.level.Explosion;
+ import org.bukkit.craftbukkit.CraftExplosionResult;
+ import org.junit.jupiter.api.Test;
+ 
++@org.bukkit.support.environment.Normal // Paper - test changes - missing test suite annotation
+ public class ExplosionResultTest {
+ 
+     @Test
+diff --git a/src/test/java/org/bukkit/registry/RegistryClassTest.java b/src/test/java/org/bukkit/registry/RegistryClassTest.java
+index 297700b237bbd8d5ff9116919f203c82b4037968..ea3d37f387bdb0dd5ae3fba9231ace31d0cebd64 100644
+--- a/src/test/java/org/bukkit/registry/RegistryClassTest.java
++++ b/src/test/java/org/bukkit/registry/RegistryClassTest.java
+@@ -57,6 +57,7 @@ import org.objectweb.asm.Type;
+  * Note: This test class assumes that feature flags only enable more features and do not disable vanilla ones.
+  */
+ @AllFeatures
++@org.junit.jupiter.api.Disabled // Paper - disabled for now as it constructs a second root registry, which is not supported on paper
+ public class RegistryClassTest {
+ 
+     private static final Map<Class<? extends Keyed>, Data> INIT_DATA = new HashMap<>();
+diff --git a/src/test/java/org/bukkit/registry/RegistryConstantsTest.java b/src/test/java/org/bukkit/registry/RegistryConstantsTest.java
+index dbd5b8684d4c86ff5a6f20f53fe30d0b30c384bf..7848c3bb78356f74e7e2cb708308626baa708b1f 100644
+--- a/src/test/java/org/bukkit/registry/RegistryConstantsTest.java
++++ b/src/test/java/org/bukkit/registry/RegistryConstantsTest.java
+@@ -26,7 +26,7 @@ public class RegistryConstantsTest {
+     @Test
+     public void testDamageType() {
+         this.testExcessConstants(DamageType.class, Registry.DAMAGE_TYPE);
+-        // this.testMissingConstants(DamageType.class, Registries.DAMAGE_TYPE); // WIND_CHARGE not registered
++        this.testMissingConstants(DamageType.class, Registries.DAMAGE_TYPE); // Paper - re-enable this one
+     }
+ 
+     @Test
+diff --git a/src/test/java/org/bukkit/support/DummyServerHelper.java b/src/test/java/org/bukkit/support/DummyServerHelper.java
+index a678510df2b999b78d0b4d233fd15bf444c97080..0a6ba289a94468b67d282a199250142e1e86f075 100644
+--- a/src/test/java/org/bukkit/support/DummyServerHelper.java
++++ b/src/test/java/org/bukkit/support/DummyServerHelper.java
+@@ -47,7 +47,7 @@ public final class DummyServerHelper {
+         when(instance.getTag(any(), any(), any())).then(mock -> {
+             String registry = mock.getArgument(0);
+             Class<?> clazz = mock.getArgument(2);
+-            MinecraftKey key = CraftNamespacedKey.toMinecraft(mock.getArgument(1));
++            net.minecraft.resources.ResourceLocation key = CraftNamespacedKey.toMinecraft(mock.getArgument(1)); // Paper - address remapping issues
+ 
+             switch (registry) {
+                 case org.bukkit.Tag.REGISTRY_BLOCKS -> {
+@@ -66,24 +66,31 @@ public final class DummyServerHelper {
+                 }
+                 case org.bukkit.Tag.REGISTRY_FLUIDS -> {
+                     Preconditions.checkArgument(clazz == org.bukkit.Fluid.class, "Fluid namespace must have fluid type");
+-                    TagKey<FluidType> fluidTagKey = TagKey.create(Registries.FLUID, key);
++                    TagKey<net.minecraft.world.level.material.Fluid> fluidTagKey = TagKey.create(Registries.FLUID, key); // Paper - address remapping issues
+                     if (BuiltInRegistries.FLUID.get(fluidTagKey).isPresent()) {
+                         return new CraftFluidTag(BuiltInRegistries.FLUID, fluidTagKey);
+                     }
+                 }
+                 case org.bukkit.Tag.REGISTRY_ENTITY_TYPES -> {
+                     Preconditions.checkArgument(clazz == org.bukkit.entity.EntityType.class, "Entity type namespace must have entity type");
+-                    TagKey<EntityTypes<?>> entityTagKey = TagKey.create(Registries.ENTITY_TYPE, key);
++                    TagKey<net.minecraft.world.entity.EntityType<?>> entityTagKey = TagKey.create(Registries.ENTITY_TYPE, key); // Paper - address remapping issues
+                     if (BuiltInRegistries.ENTITY_TYPE.get(entityTagKey).isPresent()) {
+                         return new CraftEntityTag(BuiltInRegistries.ENTITY_TYPE, entityTagKey);
+                     }
+                 }
+-                default -> throw new IllegalArgumentException();
++                default -> new io.papermc.paper.util.EmptyTag(); // Paper - testing additions
+             }
+ 
+             return null;
+         });
+ 
++        // Paper start - testing additions
++        final Thread currentThread = Thread.currentThread();
++        when(instance.isPrimaryThread()).thenAnswer(ignored -> Thread.currentThread().equals(currentThread));
++        final org.bukkit.plugin.PluginManager pluginManager = new org.bukkit.plugin.SimplePluginManager(instance, new org.bukkit.command.SimpleCommandMap(instance));
++        when(instance.getPluginManager()).thenReturn(pluginManager);
++        // Paper end - testing additions
++
+         return instance;
+     }
+ }
+diff --git a/src/test/java/org/bukkit/support/RegistryHelper.java b/src/test/java/org/bukkit/support/RegistryHelper.java
+index 5781c2fab2d407b4a22d5fc80e1c03e907617316..68ae998b30bbcacae3604fb6581ceca3da1eda18 100644
+--- a/src/test/java/org/bukkit/support/RegistryHelper.java
++++ b/src/test/java/org/bukkit/support/RegistryHelper.java
+@@ -65,6 +65,11 @@ public final class RegistryHelper {
+         List<HolderLookup.RegistryLookup<?>> list1 = TagLoader.buildUpdatedLookups(iregistrycustom_dimension, list);
+         RegistryAccess.Frozen iregistrycustom_dimension1 = RegistryDataLoader.load((ResourceManager) ireloadableresourcemanager, list1, RegistryDataLoader.WORLDGEN_REGISTRIES);
+         LayeredRegistryAccess<RegistryLayer> layers = layeredregistryaccess.replaceFrom(RegistryLayer.WORLDGEN, iregistrycustom_dimension1);
++        // Paper start - load registry here to ensure bukkit object registry are correctly delayed if needed
++        try {
++            Class.forName("org.bukkit.Registry");
++        } catch (final ClassNotFoundException ignored) {}
++        // Paper end - load registry here to ensure bukkit object registry are correctly delayed if needed
+ 
+         return layers.compositeAccess().freeze();
+     }
+@@ -82,6 +87,11 @@ public final class RegistryHelper {
+         List<HolderLookup.RegistryLookup<?>> list1 = TagLoader.buildUpdatedLookups(iregistrycustom_dimension, list);
+         RegistryAccess.Frozen iregistrycustom_dimension1 = RegistryDataLoader.load((ResourceManager) ireloadableresourcemanager, list1, RegistryDataLoader.WORLDGEN_REGISTRIES);
+         LayeredRegistryAccess<RegistryLayer> layers = layeredregistryaccess.replaceFrom(RegistryLayer.WORLDGEN, iregistrycustom_dimension1);
++        // Paper start - load registry here to ensure bukkit object registry are correctly delayed if needed
++        try {
++            Class.forName("org.bukkit.Registry");
++        } catch (final ClassNotFoundException ignored) {}
++        // Paper end - load registry here to ensure bukkit object registry are correctly delayed if needed
+         RegistryHelper.registry = layers.compositeAccess().freeze();
+         // Register vanilla pack
+         RegistryHelper.dataPack = ReloadableServerResources.loadResources(ireloadableresourcemanager, layers, list, featureFlagSet, Commands.CommandSelection.DEDICATED, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
+diff --git a/src/test/java/org/bukkit/support/suite/AllFeaturesTestSuite.java b/src/test/java/org/bukkit/support/suite/AllFeaturesTestSuite.java
+index d78661198815b78d041288eb62076514926428ad..2d268498b545db48efa106d2c7afca7f7b74c76d 100644
+--- a/src/test/java/org/bukkit/support/suite/AllFeaturesTestSuite.java
++++ b/src/test/java/org/bukkit/support/suite/AllFeaturesTestSuite.java
+@@ -14,7 +14,7 @@ import org.junit.platform.suite.api.SuiteDisplayName;
+ @Suite(failIfNoTests = false)
+ @SuiteDisplayName("Test suite for test which need registry values present, with all feature flags set")
+ @IncludeTags("AllFeatures")
+-@SelectPackages("org.bukkit")
++@SelectPackages({"org.bukkit", "io.papermc"})
+ @SelectClasses({RegistryClassTest.class, PerRegistryTest.class, RegistryConversionTest.class}) // Make sure general registry tests are run first
+ @ExcludeClassNamePatterns("org.bukkit.craftbukkit.inventory.ItemStack.*Test")
+ @ConfigurationParameter(key = "TestSuite", value = "AllFeatures")
+diff --git a/src/test/java/org/bukkit/support/suite/BundleFeatureTestSuite.java b/src/test/java/org/bukkit/support/suite/BundleFeatureTestSuite.java
+index 8faaffd16fb05bd3d976b6a63835cfa547ec2445..c1ee709083276acb14b474993800dd4894febc47 100644
+--- a/src/test/java/org/bukkit/support/suite/BundleFeatureTestSuite.java
++++ b/src/test/java/org/bukkit/support/suite/BundleFeatureTestSuite.java
+@@ -9,7 +9,7 @@ import org.junit.platform.suite.api.SuiteDisplayName;
+ @Suite(failIfNoTests = false)
+ @SuiteDisplayName("Test suite for test which need registry values present, with the bundle feature flag set")
+ @IncludeTags("BundleFeature")
+-@SelectPackages("org.bukkit")
++@SelectPackages({"org.bukkit", "io.papermc"})
+ @ConfigurationParameter(key = "TestSuite", value = "BundleFeature")
+ public class BundleFeatureTestSuite {
+ }
+diff --git a/src/test/java/org/bukkit/support/suite/LegacyTestSuite.java b/src/test/java/org/bukkit/support/suite/LegacyTestSuite.java
+index 576c35e086345c96325628cf1a048599f9ed6950..ac3c1c88ce5de4b623d17ab0af11a7d04caec869 100644
+--- a/src/test/java/org/bukkit/support/suite/LegacyTestSuite.java
++++ b/src/test/java/org/bukkit/support/suite/LegacyTestSuite.java
+@@ -9,7 +9,7 @@ import org.junit.platform.suite.api.SuiteDisplayName;
+ @Suite(failIfNoTests = false)
+ @SuiteDisplayName("Test suite for legacy tests")
+ @IncludeTags("Legacy")
+-@SelectPackages("org.bukkit")
++@SelectPackages({"org.bukkit", "io.papermc"})
+ @ConfigurationParameter(key = "TestSuite", value = "Legacy")
+ public class LegacyTestSuite {
+ }
+diff --git a/src/test/java/org/bukkit/support/suite/NormalTestSuite.java b/src/test/java/org/bukkit/support/suite/NormalTestSuite.java
+index 661c49c83b9a81512cf181b50f6353dc76e9f0bc..76f61fb60612160477b7da0b095f1c7e4822d4fb 100644
+--- a/src/test/java/org/bukkit/support/suite/NormalTestSuite.java
++++ b/src/test/java/org/bukkit/support/suite/NormalTestSuite.java
+@@ -9,7 +9,7 @@ import org.junit.platform.suite.api.SuiteDisplayName;
+ @Suite(failIfNoTests = false)
+ @SuiteDisplayName("Test suite for standalone tests, which don't need any registry values present")
+ @IncludeTags("Normal")
+-@SelectPackages("org.bukkit")
++@SelectPackages({"org.bukkit", "io.papermc"})
+ @ConfigurationParameter(key = "TestSuite", value = "Normal")
+ public class NormalTestSuite {
+ }
+diff --git a/src/test/java/org/bukkit/support/suite/SlowTestSuite.java b/src/test/java/org/bukkit/support/suite/SlowTestSuite.java
+index f95ff2e9930f4fd0ff284f714fc39afb6b7789ca..60be4c20101bbae8cf027270ff0e1e138d2fe9d2 100644
+--- a/src/test/java/org/bukkit/support/suite/SlowTestSuite.java
++++ b/src/test/java/org/bukkit/support/suite/SlowTestSuite.java
+@@ -9,7 +9,7 @@ import org.junit.platform.suite.api.SuiteDisplayName;
+ @Suite(failIfNoTests = false)
+ @SuiteDisplayName("Test suite for slow tests, which don't need to run every time")
+ @IncludeTags("Slow")
+-@SelectPackages("org.bukkit")
++@SelectPackages({"org.bukkit", "io.papermc"})
+ @ConfigurationParameter(key = "TestSuite", value = "Slow")
+ public class SlowTestSuite {
+ }
+diff --git a/src/test/java/org/bukkit/support/suite/VanillaFeatureTestSuite.java b/src/test/java/org/bukkit/support/suite/VanillaFeatureTestSuite.java
+index 5ee48e92d2b5134a4ba15802087f6afe58c1cb8d..d0e2eacfcd487e2852eff4b1828031dd3649e41a 100644
+--- a/src/test/java/org/bukkit/support/suite/VanillaFeatureTestSuite.java
++++ b/src/test/java/org/bukkit/support/suite/VanillaFeatureTestSuite.java
+@@ -9,7 +9,7 @@ import org.junit.platform.suite.api.SuiteDisplayName;
+ @Suite(failIfNoTests = false)
+ @SuiteDisplayName("Test suite for test which need vanilla registry values present")
+ @IncludeTags("VanillaFeature")
+-@SelectPackages("org.bukkit")
++@SelectPackages({"org.bukkit", "io.papermc"})
+ @ConfigurationParameter(key = "TestSuite", value = "VanillaFeature")
+ public class VanillaFeatureTestSuite {
+ }

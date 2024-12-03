@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Suddenly <suddenly@suddenly.coffee>
+Date: Tue, 1 Mar 2016 13:51:54 -0600
+Subject: [PATCH] Add configurable entity despawn distances
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index 3a63bcdc6a803e7b0b18c863f6e32209ff55707c..137e645950eab0fc083ef3ff0fc65ee702dc2ea7 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -861,20 +861,24 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+             Player entityhuman = this.level().getNearestPlayer(this, -1.0D);
+ 
+             if (entityhuman != null) {
+-                double d0 = entityhuman.distanceToSqr((Entity) this);
+-                int i = this.getType().getCategory().getDespawnDistance();
+-                int j = i * i;
+-
+-                if (d0 > (double) j && this.removeWhenFarAway(d0)) {
++                // Paper start - Configurable despawn distances
++                final io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DespawnRangePair despawnRangePair = this.level().paperConfig().entities.spawning.despawnRanges.get(this.getType().getCategory());
++                final io.papermc.paper.configuration.type.DespawnRange.Shape shape = this.level().paperConfig().entities.spawning.despawnRangeShape;
++                final double dy = Math.abs(entityhuman.getY() - this.getY());
++                final double dySqr = Math.pow(dy, 2);
++                final double dxSqr = Math.pow(entityhuman.getX() - this.getX(), 2);
++                final double dzSqr = Math.pow(entityhuman.getZ() - this.getZ(), 2);
++                final double distanceSquared = dxSqr + dzSqr + dySqr;
++                // Despawn if hard/soft limit is exceeded
++                if (despawnRangePair.hard().shouldDespawn(shape, dxSqr, dySqr, dzSqr, dy) && this.removeWhenFarAway(distanceSquared)) {
+                     this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+                 }
+-
+-                int k = this.getType().getCategory().getNoDespawnDistance();
+-                int l = k * k;
+-
+-                if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && d0 > (double) l && this.removeWhenFarAway(d0)) {
+-                    this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+-                } else if (d0 < (double) l) {
++                if (despawnRangePair.soft().shouldDespawn(shape, dxSqr, dySqr, dzSqr, dy)) {
++                    if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && this.removeWhenFarAway(distanceSquared)) {
++                        this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++                    }
++                } else {
++                // Paper end - Configurable despawn distances
+                     this.noActionTime = 0;
+                 }
+             }

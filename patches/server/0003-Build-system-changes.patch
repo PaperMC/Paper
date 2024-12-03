@@ -1,0 +1,185 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Mon, 29 Feb 2016 20:40:33 -0600
+Subject: [PATCH] Build system changes
+
+== AT ==
+public net.minecraft.server.packs.VanillaPackResourcesBuilder safeGetPath(Ljava/net/URI;)Ljava/nio/file/Path;
+
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 36e6426438865213d2e5e11ee3b1d6e538d475f7..56c201841194bdea8c7d9f07bd105aefb7232697 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -8,9 +8,7 @@ plugins {
+ dependencies {
+     implementation(project(":paper-api"))
+     implementation("jline:jline:2.12.1")
+-    implementation("org.apache.logging.log4j:log4j-iostreams:2.24.1") {
+-        exclude(group = "org.apache.logging.log4j", module = "log4j-api")
+-    }
++    implementation("org.apache.logging.log4j:log4j-iostreams:2.24.1") // Paper - remove exclusion
+     implementation("org.ow2.asm:asm-commons:9.7.1")
+     implementation("commons-lang:commons-lang:2.6")
+     runtimeOnly("org.xerial:sqlite-jdbc:3.47.0.0")
+@@ -39,6 +37,7 @@ tasks.jar {
+         val gitHash = git("rev-parse", "--short=7", "HEAD").getText().trim()
+         val implementationVersion = System.getenv("BUILD_NUMBER") ?: "\"$gitHash\""
+         val date = git("show", "-s", "--format=%ci", gitHash).getText().trim() // Paper
++        val gitBranch = git("rev-parse", "--abbrev-ref", "HEAD").getText().trim() // Paper
+         attributes(
+             "Main-Class" to "org.bukkit.craftbukkit.Main",
+             "Implementation-Title" to "CraftBukkit",
+@@ -47,6 +46,9 @@ tasks.jar {
+             "Specification-Title" to "Bukkit",
+             "Specification-Version" to project.version,
+             "Specification-Vendor" to "Bukkit Team",
++            "Git-Branch" to gitBranch, // Paper
++            "Git-Commit" to gitHash, // Paper
++            "CraftBukkit-Package-Version" to paperweight.craftBukkitPackageVersion.get(), // Paper
+         )
+         for (tld in setOf("net", "com", "org")) {
+             attributes("$tld/bukkit", "Sealed" to true)
+@@ -59,6 +61,17 @@ publishing {
+     }
+ }
+ 
++// Paper start
++val scanJar = tasks.register("scanJarForBadCalls", io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
++    badAnnotations.add("Lio/papermc/paper/annotation/DoNotUse;")
++    jarToScan.set(tasks.serverJar.flatMap { it.archiveFile })
++    classpath.from(configurations.compileClasspath)
++}
++tasks.check {
++    dependsOn(scanJar)
++}
++// Paper end
++
+ tasks.test {
+     include("**/**TestSuite.class")
+     workingDir = temporaryDir
+@@ -128,4 +141,5 @@ tasks.registerRunTask("runReobf") {
+ tasks.registerRunTask("runDev") {
+     description = "Spin up a non-relocated Mojang-mapped test server"
+     classpath(sourceSets.main.map { it.runtimeClasspath })
++    jvmArgs("-DPaper.pushPaperAssetsRoot=true")
+ }
+diff --git a/src/main/java/net/minecraft/resources/ResourceLocation.java b/src/main/java/net/minecraft/resources/ResourceLocation.java
+index bfc8f152fa91dff1dcd5fd07fc067e8e5e480002..262660d115a5d5cbecfbae995955a24283e666b0 100644
+--- a/src/main/java/net/minecraft/resources/ResourceLocation.java
++++ b/src/main/java/net/minecraft/resources/ResourceLocation.java
+@@ -32,6 +32,7 @@ public final class ResourceLocation implements Comparable<ResourceLocation> {
+     public static final char NAMESPACE_SEPARATOR = ':';
+     public static final String DEFAULT_NAMESPACE = "minecraft";
+     public static final String REALMS_NAMESPACE = "realms";
++    public static final String PAPER_NAMESPACE = "paper"; // Paper
+     private final String namespace;
+     private final String path;
+ 
+diff --git a/src/main/java/net/minecraft/server/packs/VanillaPackResourcesBuilder.java b/src/main/java/net/minecraft/server/packs/VanillaPackResourcesBuilder.java
+index 14fc03563daea531314c7ceba56dbb47884010ee..fcf95958ef659c7aa8e28026961fa1d6a5f8b28c 100644
+--- a/src/main/java/net/minecraft/server/packs/VanillaPackResourcesBuilder.java
++++ b/src/main/java/net/minecraft/server/packs/VanillaPackResourcesBuilder.java
+@@ -138,6 +138,15 @@ public class VanillaPackResourcesBuilder {
+ 
+     public VanillaPackResourcesBuilder applyDevelopmentConfig() {
+         developmentConfig.accept(this);
++        if (Boolean.getBoolean("Paper.pushPaperAssetsRoot")) {
++            try {
++                this.pushAssetPath(net.minecraft.server.packs.PackType.SERVER_DATA, net.minecraft.server.packs.VanillaPackResourcesBuilder.safeGetPath(java.util.Objects.requireNonNull(
++                    // Important that this is a patched class
++                    VanillaPackResourcesBuilder.class.getResource("/data/.paperassetsroot"), "Missing required .paperassetsroot file").toURI()).getParent());
++            } catch (java.net.URISyntaxException | IOException ex) {
++                throw new RuntimeException(ex);
++            }
++        }
+         return this;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java b/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java
+index feca36209fd2405fab70f564f63e627b8b78ac18..396ec10a76bdadbf5be2f0e15e88eed47619004d 100644
+--- a/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java
++++ b/src/main/java/net/minecraft/server/packs/repository/ServerPacksSource.java
+@@ -48,7 +48,7 @@ public class ServerPacksSource extends BuiltInPackSource {
+     public static VanillaPackResources createVanillaPackSource() {
+         return new VanillaPackResourcesBuilder()
+             .setMetadata(BUILT_IN_METADATA)
+-            .exposeNamespace("minecraft")
++            .exposeNamespace("minecraft", ResourceLocation.PAPER_NAMESPACE) // Paper
+             .applyDevelopmentConfig()
+             .pushJarResources()
+             .build(VANILLA_PACK_INFO);
+@@ -68,7 +68,18 @@ public class ServerPacksSource extends BuiltInPackSource {
+     @Nullable
+     @Override
+     protected Pack createBuiltinPack(String fileName, Pack.ResourcesSupplier packFactory, Component displayName) {
+-        return Pack.readMetaAndCreate(createBuiltInPackLocation(fileName, displayName), packFactory, PackType.SERVER_DATA, FEATURE_SELECTION_CONFIG);
++        // Paper start - custom built-in pack
++        final PackLocationInfo info;
++        final PackSelectionConfig packConfig;
++        if ("paper".equals(fileName)) {
++            info = new PackLocationInfo(fileName, displayName, PackSource.BUILT_IN, Optional.empty());
++            packConfig = new PackSelectionConfig(true, Pack.Position.TOP, true);
++        } else {
++            info = createBuiltInPackLocation(fileName, displayName);
++            packConfig = FEATURE_SELECTION_CONFIG;
++        }
++        return Pack.readMetaAndCreate(info, packFactory, PackType.SERVER_DATA, packConfig);
++        // Paper end - custom built-in pack
+     }
+ 
+     public static PackRepository createPackRepository(Path dataPacksPath, DirectoryValidator symlinkFinder) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index 37b916b97d21c8250725f6756312bf92da0eb487..af267523b60aa9076ac3c8f92ceac65a54ffbb00 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -199,7 +199,7 @@ public class Main {
+                 }
+ 
+                 if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {
+-                    Date buildDate = new Date(Integer.parseInt(Main.class.getPackage().getImplementationVendor()) * 1000L);
++                    Date buildDate = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").parse(Main.class.getPackage().getImplementationVendor()); // Paper
+ 
+                     Calendar deadline = Calendar.getInstance();
+                     deadline.add(Calendar.DAY_OF_YEAR, -2);
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java b/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
+index 93046379d0cefd5d3236fc59e698809acdc18f80..774556a62eb240da42e84db4502e2ed43495be17 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
+@@ -11,7 +11,7 @@ public final class Versioning {
+     public static String getBukkitVersion() {
+         String result = "Unknown-Version";
+ 
+-        InputStream stream = Bukkit.class.getClassLoader().getResourceAsStream("META-INF/maven/org.spigotmc/spigot-api/pom.properties");
++        InputStream stream = Bukkit.class.getClassLoader().getResourceAsStream("META-INF/maven/io.papermc.paper/paper-api/pom.properties");
+         Properties properties = new Properties();
+ 
+         if (stream != null) {
+diff --git a/src/main/resources/data/.paperassetsroot b/src/main/resources/data/.paperassetsroot
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/src/main/resources/data/minecraft/datapacks/paper/pack.mcmeta b/src/main/resources/data/minecraft/datapacks/paper/pack.mcmeta
+new file mode 100644
+index 0000000000000000000000000000000000000000..288fbe68c6053f40e72f0feedef0ae0fed10fa67
+--- /dev/null
++++ b/src/main/resources/data/minecraft/datapacks/paper/pack.mcmeta
+@@ -0,0 +1,6 @@
++{
++    "pack": {
++        "description": "Built-in Paper Datapack",
++        "pack_format": 41
++    }
++}
+diff --git a/src/test/java/org/bukkit/support/RegistryHelper.java b/src/test/java/org/bukkit/support/RegistryHelper.java
+index f9ed3fd96cb7474785610fe0f87e550456349287..5781c2fab2d407b4a22d5fc80e1c03e907617316 100644
+--- a/src/test/java/org/bukkit/support/RegistryHelper.java
++++ b/src/test/java/org/bukkit/support/RegistryHelper.java
+@@ -70,6 +70,7 @@ public final class RegistryHelper {
+     }
+ 
+     public static void setup(FeatureFlagSet featureFlagSet) {
++        System.setProperty("Paper.pushPaperAssetsRoot", "true"); // Paper - build system changes - push asset root
+         SharedConstants.tryDetectVersion();
+         Bootstrap.bootStrap();
+ 

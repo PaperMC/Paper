@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jedediah Smith <jedediah@silencegreys.com>
+Date: Sat, 4 Apr 2015 23:17:52 -0400
+Subject: [PATCH] Complete resource pack API
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+index 99f89854e43ed6742dc9ac1624fa7140b4594b3b..d4527831f66bf1c55e6273c7f8923d6efbbf100f 100644
+--- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+@@ -214,7 +214,11 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+             callback.packEventReceived(packet.id(), net.kyori.adventure.resource.ResourcePackStatus.valueOf(packet.action().name()), this.getCraftPlayer());
+         }
+         // Paper end
+-        this.cserver.getPluginManager().callEvent(new PlayerResourcePackStatusEvent(this.getCraftPlayer(), packet.id(), PlayerResourcePackStatusEvent.Status.values()[packet.action().ordinal()])); // CraftBukkit
++        // Paper start - store last pack status
++        PlayerResourcePackStatusEvent.Status packStatus = PlayerResourcePackStatusEvent.Status.values()[packet.action().ordinal()];
++        player.getBukkitEntity().resourcePackStatus = packStatus;
++        this.cserver.getPluginManager().callEvent(new PlayerResourcePackStatusEvent(this.getCraftPlayer(), packet.id(), packStatus)); // CraftBukkit
++        // Paper end - store last pack status
+ 
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 8fd5aaa16b0a6d34f54424512335020bd2e7ecb8..dd3072717a28ae74914e0806f1874994f9ae5f5b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -213,6 +213,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     private double healthScale = 20;
+     private CraftWorldBorder clientWorldBorder = null;
+     private BorderChangeListener clientWorldBorderListener = this.createWorldBorderListener();
++    public org.bukkit.event.player.PlayerResourcePackStatusEvent.Status resourcePackStatus; // Paper - more resource pack API
+ 
+     public CraftPlayer(CraftServer server, ServerPlayer entity) {
+         super(server, entity);
+@@ -2121,6 +2122,13 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     }
+     // Paper end - adventure
+ 
++    // Paper start - more resource pack API
++    @Override
++    public org.bukkit.event.player.PlayerResourcePackStatusEvent.Status getResourcePackStatus() {
++        return this.resourcePackStatus;
++    }
++    // Paper end - more resource pack API
++
+     @Override
+     public void removeResourcePack(UUID id) {
+         Preconditions.checkArgument(id != null, "Resource pack id cannot be null");

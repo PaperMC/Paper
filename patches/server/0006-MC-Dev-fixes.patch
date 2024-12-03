@@ -1,0 +1,150 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Wed, 30 Mar 2016 19:36:20 -0400
+Subject: [PATCH] MC Dev fixes
+
+
+diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
+index 078af824c2b8d7e7ac05c1c370bd630ee90b434b..56947030e423bf314f32c8dba7e841949336b8cf 100644
+--- a/src/main/java/net/minecraft/Util.java
++++ b/src/main/java/net/minecraft/Util.java
+@@ -537,7 +537,7 @@ public class Util {
+     public static <K extends Enum<K>, V> EnumMap<K, V> makeEnumMap(Class<K> enumClass, Function<K, V> mapper) {
+         EnumMap<K, V> enumMap = new EnumMap<>(enumClass);
+ 
+-        for (K enum_ : (Enum[])enumClass.getEnumConstants()) {
++        for (K enum_ : enumClass.getEnumConstants()) { // Paper - decompile error
+             enumMap.put(enum_, mapper.apply(enum_));
+         }
+ 
+diff --git a/src/main/java/net/minecraft/commands/arguments/item/ItemInput.java b/src/main/java/net/minecraft/commands/arguments/item/ItemInput.java
+index 643bb8860962ad691b11073f6dbf406bf7ec5fb1..9b8ec1fd158f6e51779be263fd56b9119d0d9bbb 100644
+--- a/src/main/java/net/minecraft/commands/arguments/item/ItemInput.java
++++ b/src/main/java/net/minecraft/commands/arguments/item/ItemInput.java
+@@ -78,6 +78,6 @@ public class ItemInput {
+     }
+ 
+     private String getItemName() {
+-        return this.item.unwrapKey().map(ResourceKey::location).orElseGet(() -> "unknown[" + this.item + "]").toString();
++        return this.item.unwrapKey().<Object>map(ResourceKey::location).orElseGet(() -> "unknown[" + this.item + "]").toString(); // Paper - decompile fix
+     }
+ }
+diff --git a/src/main/java/net/minecraft/core/BlockPos.java b/src/main/java/net/minecraft/core/BlockPos.java
+index d4bff51e5fe0c76d6e3832f48067b6051b217ab7..33167226a9687ce26450d30d7eebf351709c638a 100644
+--- a/src/main/java/net/minecraft/core/BlockPos.java
++++ b/src/main/java/net/minecraft/core/BlockPos.java
+@@ -446,12 +446,12 @@ public class BlockPos extends Vec3i {
+                     if (this.index == l) {
+                         return this.endOfData();
+                     } else {
+-                        int i = this.index % i;
+-                        int j = this.index / i;
+-                        int k = j % j;
+-                        int l = j / j;
++                        int offsetX = this.index % i; // Paper - decomp fix
++                        int u = this.index / i; // Paper - decomp fix
++                        int offsetY = u % j; // Paper - decomp fix
++                        int offsetZ = u / j; // Paper - decomp fix
+                         this.index++;
+-                        return this.cursor.set(startX + i, startY + k, startZ + l);
++                        return this.cursor.set(startX + offsetX, startY + offsetY, startZ + offsetZ); // Paper - decomp fix
+                     }
+                 }
+             };
+diff --git a/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java b/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
+index 69993496b6328a963288e11d193d36bd7decfcba..f66a2154486b6d3b5873da043e51df91cd396c72 100644
+--- a/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
++++ b/src/main/java/net/minecraft/core/registries/BuiltInRegistries.java
+@@ -325,7 +325,7 @@ public class BuiltInRegistries {
+         Bootstrap.checkBootstrapCalled(() -> "registry " + key.location());
+         ResourceLocation resourceLocation = key.location();
+         LOADERS.put(resourceLocation, () -> initializer.run(registry));
+-        WRITABLE_REGISTRY.register((ResourceKey<WritableRegistry<?>>)key, registry, RegistrationInfo.BUILT_IN);
++        WRITABLE_REGISTRY.register((ResourceKey)key, registry, RegistrationInfo.BUILT_IN); // Paper - decompile fix
+         return registry;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/nbt/TagParser.java b/src/main/java/net/minecraft/nbt/TagParser.java
+index a614e960fcd5958ad17b679eee8a8e6926f58e62..da101bca71f4710812621b98f0a0d8cab180346a 100644
+--- a/src/main/java/net/minecraft/nbt/TagParser.java
++++ b/src/main/java/net/minecraft/nbt/TagParser.java
+@@ -253,11 +253,11 @@ public class TagParser {
+             }
+ 
+             if (typeReader == ByteTag.TYPE) {
+-                list.add((T)((NumericTag)tag).getAsByte());
++                list.add((T)(Byte)((NumericTag)tag).getAsByte()); // Paper - decompile fix
+             } else if (typeReader == LongTag.TYPE) {
+-                list.add((T)((NumericTag)tag).getAsLong());
++                list.add((T)(Long)((NumericTag)tag).getAsLong()); // Paper - decompile fix
+             } else {
+-                list.add((T)((NumericTag)tag).getAsInt());
++                list.add((T)(Integer)((NumericTag)tag).getAsInt()); // Paper - decompile fix
+             }
+ 
+             if (!this.hasElementSeparator()) {
+diff --git a/src/main/java/net/minecraft/resources/RegistryDataLoader.java b/src/main/java/net/minecraft/resources/RegistryDataLoader.java
+index 4a9b8ec9294e82fd8da166e7582637ce19dcde7c..b9b9ec93442423e99def9b2c51aedc955a7799d5 100644
+--- a/src/main/java/net/minecraft/resources/RegistryDataLoader.java
++++ b/src/main/java/net/minecraft/resources/RegistryDataLoader.java
+@@ -74,7 +74,7 @@ import org.slf4j.Logger;
+ 
+ public class RegistryDataLoader {
+     private static final Logger LOGGER = LogUtils.getLogger();
+-    private static final Comparator<ResourceKey<?>> ERROR_KEY_COMPARATOR = Comparator.comparing(ResourceKey::registry).thenComparing(ResourceKey::location);
++    private static final Comparator<ResourceKey<?>> ERROR_KEY_COMPARATOR = Comparator.<ResourceKey<?>, ResourceLocation>comparing(ResourceKey::registry).thenComparing(ResourceKey::location); // Paper - decompile fix
+     private static final RegistrationInfo NETWORK_REGISTRATION_INFO = new RegistrationInfo(Optional.empty(), Lifecycle.experimental());
+     private static final Function<Optional<KnownPack>, RegistrationInfo> REGISTRATION_INFO_CACHE = Util.memoize(knownPacks -> {
+         Lifecycle lifecycle = knownPacks.map(KnownPack::isVanilla).map(vanilla -> Lifecycle.stable()).orElse(Lifecycle.experimental());
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index b6a662ee88a550836b620bb1ede349d5e4c94dfb..294dc6691683b769b57635ea05b4b9e4562fa9f5 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -2031,7 +2031,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             PackRepository resourcepackrepository = this.packRepository;
+ 
+             Objects.requireNonNull(this.packRepository);
+-            return stream.map(resourcepackrepository::getPack).filter(Objects::nonNull).map(Pack::open).collect(ImmutableList.toImmutableList()); // CraftBukkit - decompile error
++            return stream.<Pack>map(resourcepackrepository::getPack).filter(Objects::nonNull).map(Pack::open).collect(ImmutableList.toImmutableList()); // CraftBukkit - decompile error // Paper - decompile error // todo: is this needed anymore?
+         }, this).thenCompose((immutablelist) -> {
+             MultiPackResourceManager resourcemanager = new MultiPackResourceManager(PackType.SERVER_DATA, immutablelist);
+             List<Registry.PendingTags<?>> list = TagLoader.loadTagsForExistingRegistries(resourcemanager, this.registries.compositeAccess());
+diff --git a/src/main/java/net/minecraft/util/SortedArraySet.java b/src/main/java/net/minecraft/util/SortedArraySet.java
+index 661a6274a800ca9b91bdb809d026972d23c3b263..ea72dcb064a35bc6245bc5c94d592efedd8faf41 100644
+--- a/src/main/java/net/minecraft/util/SortedArraySet.java
++++ b/src/main/java/net/minecraft/util/SortedArraySet.java
+@@ -28,7 +28,7 @@ public class SortedArraySet<T> extends AbstractSet<T> {
+     }
+ 
+     public static <T extends Comparable<T>> SortedArraySet<T> create(int initialCapacity) {
+-        return new SortedArraySet<>(initialCapacity, Comparator.naturalOrder());
++        return new SortedArraySet<>(initialCapacity, Comparator.<T>naturalOrder()); // Paper - decompile fix
+     }
+ 
+     public static <T> SortedArraySet<T> create(Comparator<T> comparator) {
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Dolphin.java b/src/main/java/net/minecraft/world/entity/animal/Dolphin.java
+index 33170f2f1d3f030fbf342e44a1baa109a34c31a7..dde1ccca98f58200910334160f0f79eb00dd2388 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Dolphin.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Dolphin.java
+@@ -349,7 +349,7 @@ public class Dolphin extends AgeableWaterCreature {
+ 
+     @Nullable
+     @Override
+-    protected SoundEvent getDeathSound() {
++    public SoundEvent getDeathSound() { // Paper - decompile error
+         return SoundEvents.DOLPHIN_DEATH;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java b/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
+index 650cc276e38b44b8b5486f53dd978439c2c25bd7..d2104e6e6ac7911bdba1cea3b9eca64930165cce 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
++++ b/src/main/java/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
+@@ -151,7 +151,7 @@ public class ChunkStatusTasks {
+             if (protochunk instanceof ImposterProtoChunk protochunkextension) {
+                 chunk1 = protochunkextension.getWrapped();
+             } else {
+-                chunk1 = new LevelChunk(worldserver, protochunk, (chunk1) -> {
++                chunk1 = new LevelChunk(worldserver, protochunk, ($) -> { // Paper - decompile fix
+                     ChunkStatusTasks.postLoadProtoChunk(worldserver, protochunk.getEntities());
+                 });
+                 generationchunkholder.replaceProtoChunk(new ImposterProtoChunk(chunk1, false));

@@ -1,0 +1,134 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Wed, 2 Mar 2016 11:59:48 -0600
+Subject: [PATCH] Optimize explosions
+
+The process of determining an entity's exposure from explosions can be
+expensive when there are hundreds or more entities in range.
+
+This patch adds a per-tick cache that is used for storing and retrieving
+an entity's exposure during an explosion.
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index f70468b2cc4a782d3d7cc7854192fbbc3ad3020f..9c26725e12adb2d17b9fa27f632fbad02e904c9a 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1611,6 +1611,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+             gameprofilerfiller.pop();
+             gameprofilerfiller.pop();
++            worldserver.explosionDensityCache.clear(); // Paper - Optimize explosions
+         }
+ 
+         gameprofilerfiller.popPush("connection");
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 3d2f579cf2b7b96f4ce2588f9655d2287767b01c..7e6680d0618173e23d323b4b29f0a2fc966789e7 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -169,6 +169,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     private org.spigotmc.TickLimiter entityLimiter;
+     private org.spigotmc.TickLimiter tileLimiter;
+     private int tileTickPosition;
++    public final Map<ServerExplosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
+ 
+     public CraftWorld getWorld() {
+         return this.world;
+diff --git a/src/main/java/net/minecraft/world/level/ServerExplosion.java b/src/main/java/net/minecraft/world/level/ServerExplosion.java
+index 67685dfa8eb4a74e70ef982291a55d145d6abc66..bbe50f60e653e60c844ca6688e781fa69d67905a 100644
+--- a/src/main/java/net/minecraft/world/level/ServerExplosion.java
++++ b/src/main/java/net/minecraft/world/level/ServerExplosion.java
+@@ -206,7 +206,7 @@ public class ServerExplosion implements Explosion {
+                         d3 /= d4;
+                         boolean flag = this.damageCalculator.shouldDamageEntity(this, entity);
+                         float f1 = this.damageCalculator.getKnockbackMultiplier(entity);
+-                        float f2 = !flag && f1 == 0.0F ? 0.0F : ServerExplosion.getSeenPercent(this.center, entity);
++                        float f2 = !flag && f1 == 0.0F ? 0.0F : this.getBlockDensity(this.center, entity); // Paper - Optimize explosions
+ 
+                         if (flag) {
+                             // CraftBukkit start
+@@ -487,4 +487,85 @@ public class ServerExplosion implements Explosion {
+ 
+         }
+     }
++
++    // Paper start - Optimize explosions
++    private float getBlockDensity(Vec3 vec3d, Entity entity) {
++        if (!this.level.paperConfig().environment.optimizeExplosions) {
++            return getSeenPercent(vec3d, entity);
++        }
++        CacheKey key = new CacheKey(this, entity.getBoundingBox());
++        Float blockDensity = this.level.explosionDensityCache.get(key);
++        if (blockDensity == null) {
++            blockDensity = getSeenPercent(vec3d, entity);
++            this.level.explosionDensityCache.put(key, blockDensity);
++        }
++
++        return blockDensity;
++    }
++
++    static class CacheKey {
++        private final Level world;
++        private final double posX, posY, posZ;
++        private final double minX, minY, minZ;
++        private final double maxX, maxY, maxZ;
++
++        public CacheKey(Explosion explosion, AABB aabb) {
++            this.world = explosion.level();
++            this.posX = explosion.center().x;
++            this.posY = explosion.center().y;
++            this.posZ = explosion.center().z;
++            this.minX = aabb.minX;
++            this.minY = aabb.minY;
++            this.minZ = aabb.minZ;
++            this.maxX = aabb.maxX;
++            this.maxY = aabb.maxY;
++            this.maxZ = aabb.maxZ;
++        }
++
++        @Override
++        public boolean equals(Object o) {
++            if (this == o) return true;
++            if (o == null || getClass() != o.getClass()) return false;
++
++            CacheKey cacheKey = (CacheKey) o;
++
++            if (Double.compare(cacheKey.posX, posX) != 0) return false;
++            if (Double.compare(cacheKey.posY, posY) != 0) return false;
++            if (Double.compare(cacheKey.posZ, posZ) != 0) return false;
++            if (Double.compare(cacheKey.minX, minX) != 0) return false;
++            if (Double.compare(cacheKey.minY, minY) != 0) return false;
++            if (Double.compare(cacheKey.minZ, minZ) != 0) return false;
++            if (Double.compare(cacheKey.maxX, maxX) != 0) return false;
++            if (Double.compare(cacheKey.maxY, maxY) != 0) return false;
++            if (Double.compare(cacheKey.maxZ, maxZ) != 0) return false;
++            return world.equals(cacheKey.world);
++        }
++
++        @Override
++        public int hashCode() {
++            int result;
++            long temp;
++            result = world.hashCode();
++            temp = Double.doubleToLongBits(posX);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            temp = Double.doubleToLongBits(posY);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            temp = Double.doubleToLongBits(posZ);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            temp = Double.doubleToLongBits(minX);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            temp = Double.doubleToLongBits(minY);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            temp = Double.doubleToLongBits(minZ);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            temp = Double.doubleToLongBits(maxX);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            temp = Double.doubleToLongBits(maxY);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            temp = Double.doubleToLongBits(maxZ);
++            result = 31 * result + (int) (temp ^ (temp >>> 32));
++            return result;
++        }
++    }
++    // Paper end
+ }

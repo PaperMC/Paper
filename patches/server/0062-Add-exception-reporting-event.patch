@@ -1,0 +1,207 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Joseph Hirschfeld <joe@ibj.io>
+Date: Thu, 3 Mar 2016 03:15:41 -0600
+Subject: [PATCH] Add exception reporting event
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/ServerSchedulerReportingWrapper.java b/src/main/java/com/destroystokyo/paper/ServerSchedulerReportingWrapper.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f699ce18ca044f813e194ef2786b7ea853ea86e7
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/ServerSchedulerReportingWrapper.java
+@@ -0,0 +1,38 @@
++package com.destroystokyo.paper;
++
++import com.google.common.base.Preconditions;
++import org.bukkit.craftbukkit.scheduler.CraftTask;
++import com.destroystokyo.paper.event.server.ServerExceptionEvent;
++import com.destroystokyo.paper.exception.ServerSchedulerException;
++
++/**
++ * Reporting wrapper to catch exceptions not natively
++ */
++public class ServerSchedulerReportingWrapper implements Runnable {
++
++    private final CraftTask internalTask;
++
++    public ServerSchedulerReportingWrapper(CraftTask internalTask) {
++        this.internalTask = Preconditions.checkNotNull(internalTask, "internalTask");
++    }
++
++    @Override
++    public void run() {
++        try {
++            internalTask.run();
++        } catch (RuntimeException e) {
++            internalTask.getOwner().getServer().getPluginManager().callEvent(
++                    new ServerExceptionEvent(new ServerSchedulerException(e, internalTask))
++            );
++            throw e;
++        } catch (Throwable t) {
++            internalTask.getOwner().getServer().getPluginManager().callEvent(
++                    new ServerExceptionEvent(new ServerSchedulerException(t, internalTask))
++            ); //Do not rethrow, since it is not permitted with Runnable#run
++        }
++    }
++
++    public CraftTask getInternalTask() {
++        return internalTask;
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/players/OldUsersConverter.java b/src/main/java/net/minecraft/server/players/OldUsersConverter.java
+index 68551947f5b7d3471f15bd74ccd86519ab34c1c1..a0b0614ac7d2009db5c6c10ab4a5f09dd447c635 100644
+--- a/src/main/java/net/minecraft/server/players/OldUsersConverter.java
++++ b/src/main/java/net/minecraft/server/players/OldUsersConverter.java
+@@ -356,7 +356,11 @@ public class OldUsersConverter {
+                         try {
+                             root = NbtIo.readCompressed(new java.io.FileInputStream(file5), NbtAccounter.unlimitedHeap());
+                         } catch (Exception exception) {
+-                            io.papermc.paper.util.TraceUtil.printStackTrace(exception); // Paper
++                            // Paper start
++                            io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(exception);
++                            exception.printStackTrace();
++                            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception);
++                            // Paper end
+                         }
+ 
+                         if (root != null) {
+@@ -369,7 +373,11 @@ public class OldUsersConverter {
+                             try {
+                                 NbtIo.writeCompressed(root, new java.io.FileOutputStream(file2));
+                             } catch (Exception exception) {
+-                                io.papermc.paper.util.TraceUtil.printStackTrace(exception); // Paper
++                                // Paper start
++                                io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(exception);
++                                exception.printStackTrace();
++                                com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception);
++                                // Paper end
+                             }
+                        }
+                         // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/entity/ai/village/VillageSiege.java b/src/main/java/net/minecraft/world/entity/ai/village/VillageSiege.java
+index a5b18a04f482d05d3ca74918a580499b21c2fc3c..bd3f71c3eaa33258ff56062ea3a2099cef310b7a 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/village/VillageSiege.java
++++ b/src/main/java/net/minecraft/world/entity/ai/village/VillageSiege.java
+@@ -117,6 +117,7 @@ public class VillageSiege implements CustomSpawner {
+                 entityzombie.finalizeSpawn(world, world.getCurrentDifficultyAt(entityzombie.blockPosition()), EntitySpawnReason.EVENT, (SpawnGroupData) null);
+             } catch (Exception exception) {
+                 VillageSiege.LOGGER.warn("Failed to create zombie for village siege at {}", vec3d, exception);
++                com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception); // Paper - ServerExceptionEvent
+                 return;
+             }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index d8621149add06021d594415e079771b6fd57cc3f..11c5191ec6a53cb42f8a75e249fbce1058f2b58e 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -729,6 +729,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+             // Paper start - Prevent block entity and entity crashes
+             final String msg = String.format("Entity threw exception at %s:%s,%s,%s", entity.level().getWorld().getName(), entity.getX(), entity.getY(), entity.getZ());
+             MinecraftServer.LOGGER.error(msg, throwable);
++            getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, throwable))); // Paper - ServerExceptionEvent
+             entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
+             // Paper end - Prevent block entity and entity crashes
+         }
+diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
+index 9389fd53f2bff0a9ca389694b312dc6da58befaf..da0ddb8285e157be0cc7b940a9590be5e3061e3d 100644
+--- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
++++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
+@@ -294,6 +294,7 @@ public final class NaturalSpawner {
+             NaturalSpawner.LOGGER.warn("Can't spawn entity of type: {}", BuiltInRegistries.ENTITY_TYPE.getKey(type));
+         } catch (Exception exception) {
+             NaturalSpawner.LOGGER.warn("Failed to create mob", exception);
++            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception); // Paper - ServerExceptionEvent
+         }
+ 
+         return null;
+@@ -382,6 +383,7 @@ public final class NaturalSpawner {
+                                     entity = biomesettingsmobs_c.type.create(world.getLevel(), EntitySpawnReason.NATURAL);
+                                 } catch (Exception exception) {
+                                     NaturalSpawner.LOGGER.warn("Failed to create mob", exception);
++                                    com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(exception); // Paper - ServerExceptionEvent
+                                     continue;
+                                 }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+index daa2b3f67765bc340404747b3cffea5604830515..95da29b973d43b59d9c4d0c83068dc74b59c9c8b 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -501,8 +501,13 @@ public class LevelChunk extends ChunkAccess {
+         BlockState iblockdata = this.getBlockState(blockposition);
+ 
+         if (!iblockdata.hasBlockEntity()) {
+-            LevelChunk.LOGGER.warn("Trying to set block entity {} at position {}, but state {} does not allow it", new Object[]{blockEntity, blockposition, iblockdata});
+-            new Exception().printStackTrace(); // CraftBukkit
++            // Paper start - ServerExceptionEvent
++            com.destroystokyo.paper.exception.ServerInternalException e = new com.destroystokyo.paper.exception.ServerInternalException(
++                "Trying to set block entity %s at position %s, but state %s does not allow it".formatted(blockEntity, blockposition, iblockdata)
++            );
++            e.printStackTrace();
++            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(e);
++            // Paper end - ServerExceptionEvent
+         } else {
+             BlockState iblockdata1 = blockEntity.getBlockState();
+ 
+@@ -991,6 +996,7 @@ public class LevelChunk extends ChunkAccess {
+                         // Paper start - Prevent block entity and entity crashes
+                         final String msg = String.format("BlockEntity threw exception at %s:%s,%s,%s", LevelChunk.this.getLevel().getWorld().getName(), this.getPos().getX(), this.getPos().getY(), this.getPos().getZ());
+                         net.minecraft.server.MinecraftServer.LOGGER.error(msg, throwable);
++                        net.minecraft.world.level.chunk.LevelChunk.this.level.getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, throwable))); // Paper - ServerExceptionEvent
+                         LevelChunk.this.removeBlockEntity(this.getPos());
+                         // Paper end - Prevent block entity and entity crashes
+                         // Spigot start
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
+index 15f273aa592828719de6e092d79a407dc8652dfe..b24e8255ab18eb5b2e4968aa62aa3d72ef33f0eb 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
+@@ -296,6 +296,7 @@ public class RegionFile implements AutoCloseable {
+                     return true;
+                 }
+             } catch (IOException ioexception) {
++                com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(ioexception); // Paper - ServerExceptionEvent
+                 return false;
+             }
+         }
+@@ -377,6 +378,7 @@ public class RegionFile implements AutoCloseable {
+             ((java.nio.Buffer) buf).position(5); // CraftBukkit - decompile error
+             filechannel.write(buf);
+         } catch (Throwable throwable) {
++            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(throwable); // Paper - ServerExceptionEvent
+             if (filechannel != null) {
+                 try {
+                     filechannel.close();
+diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
+index 0385aa1e5cced22bbafdabca1b63599db1f5d3f6..152c816efbd633210ff308ef56f5d0cda6edb1b5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
++++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
+@@ -415,20 +415,25 @@ public class CraftScheduler implements BukkitScheduler {
+                 try {
+                     task.run();
+                 } catch (final Throwable throwable) {
++                    // Paper start
++                    final String logMessage = String.format(
++                        "Task #%s for %s generated an exception",
++                        task.getTaskId(),
++                        task.getOwner().getDescription().getFullName());
+                     task.getOwner().getLogger().log(
+                             Level.WARNING,
+-                            String.format(
+-                                "Task #%s for %s generated an exception",
+-                                task.getTaskId(),
+-                                task.getOwner().getDescription().getFullName()),
++                        logMessage,
+                             throwable);
++                    org.bukkit.Bukkit.getServer().getPluginManager().callEvent(
++                        new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerSchedulerException(logMessage, throwable, task)));
++                    // Paper end
+                 } finally {
+                     this.currentTask = null;
+                 }
+                 this.parsePending();
+             } else {
+                 this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(this.currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass()));
+-                this.executor.execute(task);
++                this.executor.execute(new com.destroystokyo.paper.ServerSchedulerReportingWrapper(task)); // Paper
+                 // We don't need to parse pending
+                 // (async tasks must live with race-conditions if they attempt to cancel between these few lines of code)
+             }

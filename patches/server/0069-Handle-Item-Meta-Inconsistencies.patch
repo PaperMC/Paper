@@ -1,0 +1,303 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 28 May 2015 23:00:19 -0400
+Subject: [PATCH] Handle Item Meta Inconsistencies
+
+First, Enchantment order would blow away seeing 2 items as the same,
+however the Client forces enchantment list in a certain order, as well
+as does the /enchant command. Anvils can insert it into forced order,
+causing 2 same items to be considered different.
+
+This change makes unhandled NBT Tags and Enchantments use a sorted tree map,
+so they will always be in a consistent order.
+
+Additionally, the old enchantment API was never updated when ItemMeta
+was added, resulting in 2 different ways to modify an items enchantments.
+
+For consistency, the old API methods now forward to use the
+ItemMeta API equivalents, and should deprecate the old API's.
+
+diff --git a/src/main/java/net/minecraft/world/item/enchantment/ItemEnchantments.java b/src/main/java/net/minecraft/world/item/enchantment/ItemEnchantments.java
+index bc6c2c24174181315c5622ba0dbe578b4dbcc627..cfc6a657cae92c68868a76c1b7b1febe2a16e9f4 100644
+--- a/src/main/java/net/minecraft/world/item/enchantment/ItemEnchantments.java
++++ b/src/main/java/net/minecraft/world/item/enchantment/ItemEnchantments.java
+@@ -26,12 +26,25 @@ import net.minecraft.tags.TagKey;
+ import net.minecraft.world.item.Item;
+ import net.minecraft.world.item.TooltipFlag;
+ import net.minecraft.world.item.component.TooltipProvider;
++// Paper start
++import it.unimi.dsi.fastutil.objects.Object2IntAVLTreeMap;
++// Paper end
+ 
+ public class ItemEnchantments implements TooltipProvider {
+-    public static final ItemEnchantments EMPTY = new ItemEnchantments(new Object2IntOpenHashMap<>(), true);
++    // Paper start
++    private static final java.util.Comparator<Holder<Enchantment>> ENCHANTMENT_ORDER = java.util.Comparator.comparing(Holder::getRegisteredName);
++    public static final ItemEnchantments EMPTY = new ItemEnchantments(new Object2IntAVLTreeMap<>(ENCHANTMENT_ORDER), true);
++    // Paper end
+     private static final Codec<Integer> LEVEL_CODEC = Codec.intRange(1, 255);
+-    private static final Codec<Object2IntOpenHashMap<Holder<Enchantment>>> LEVELS_CODEC = Codec.unboundedMap(Enchantment.CODEC, LEVEL_CODEC)
+-        .xmap(Object2IntOpenHashMap::new, Function.identity());
++    private static final Codec<Object2IntAVLTreeMap<Holder<Enchantment>>> LEVELS_CODEC = Codec.unboundedMap(
++            Enchantment.CODEC, LEVEL_CODEC
++        )// Paper start - sort enchantments
++        .xmap(m -> {
++            final Object2IntAVLTreeMap<Holder<Enchantment>> map = new Object2IntAVLTreeMap<>(ENCHANTMENT_ORDER);
++            map.putAll(m);
++            return map;
++        }, Function.identity());
++    // Paper end - sort enchantments
+     private static final Codec<ItemEnchantments> FULL_CODEC = RecordCodecBuilder.create(
+         instance -> instance.group(
+                     LEVELS_CODEC.fieldOf("levels").forGetter(component -> component.enchantments),
+@@ -41,16 +54,16 @@ public class ItemEnchantments implements TooltipProvider {
+     );
+     public static final Codec<ItemEnchantments> CODEC = Codec.withAlternative(FULL_CODEC, LEVELS_CODEC, map -> new ItemEnchantments(map, true));
+     public static final StreamCodec<RegistryFriendlyByteBuf, ItemEnchantments> STREAM_CODEC = StreamCodec.composite(
+-        ByteBufCodecs.map(Object2IntOpenHashMap::new, Enchantment.STREAM_CODEC, ByteBufCodecs.VAR_INT),
++        ByteBufCodecs.map((v) -> new Object2IntAVLTreeMap<>(ENCHANTMENT_ORDER), Enchantment.STREAM_CODEC, ByteBufCodecs.VAR_INT),
+         component -> component.enchantments,
+         ByteBufCodecs.BOOL,
+         component -> component.showInTooltip,
+         ItemEnchantments::new
+     );
+-    final Object2IntOpenHashMap<Holder<Enchantment>> enchantments;
++    final Object2IntAVLTreeMap<Holder<Enchantment>> enchantments; // Paper
+     public final boolean showInTooltip;
+ 
+-    ItemEnchantments(Object2IntOpenHashMap<Holder<Enchantment>> enchantments, boolean showInTooltip) {
++    ItemEnchantments(Object2IntAVLTreeMap<Holder<Enchantment>> enchantments, boolean showInTooltip) { // Paper
+         this.enchantments = enchantments;
+         this.showInTooltip = showInTooltip;
+ 
+@@ -139,7 +152,7 @@ public class ItemEnchantments implements TooltipProvider {
+     }
+ 
+     public static class Mutable {
+-        private final Object2IntOpenHashMap<Holder<Enchantment>> enchantments = new Object2IntOpenHashMap<>();
++        private final Object2IntAVLTreeMap<Holder<Enchantment>> enchantments = new Object2IntAVLTreeMap<>(ENCHANTMENT_ORDER); // Paper
+         public boolean showInTooltip;
+ 
+         public Mutable(ItemEnchantments enchantmentsComponent) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+index 101eea3452c9e387e770b716543c3a4f17b9a737..aea09533fada5bd3d42e2cc147921167a5e7c1a5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
+@@ -229,16 +229,13 @@ public final class CraftItemStack extends ItemStack {
+     public void addUnsafeEnchantment(Enchantment ench, int level) {
+         Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
+ 
+-        if (!CraftItemStack.makeTag(this.handle)) {
+-            return;
+-        }
+-        ItemEnchantments list = CraftItemStack.getEnchantmentList(this.handle);
+-        if (list == null) {
+-            list = ItemEnchantments.EMPTY;
++        // Paper start - Replace whole method
++        final ItemMeta itemMeta = this.getItemMeta();
++        if (itemMeta != null) {
++            itemMeta.addEnchant(ench, level, true);
++            this.setItemMeta(itemMeta);
+         }
+-        ItemEnchantments.Mutable listCopy = new ItemEnchantments.Mutable(list);
+-        listCopy.set(CraftEnchantment.bukkitToMinecraftHolder(ench), level);
+-        this.handle.set(DataComponents.ENCHANTMENTS, listCopy.toImmutable());
++        // Paper end
+     }
+ 
+     static boolean makeTag(net.minecraft.world.item.ItemStack item) {
+@@ -267,24 +264,15 @@ public final class CraftItemStack extends ItemStack {
+     public int removeEnchantment(Enchantment ench) {
+         Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
+ 
+-        ItemEnchantments list = CraftItemStack.getEnchantmentList(this.handle);
+-        if (list == null) {
+-            return 0;
+-        }
+-        int level = this.getEnchantmentLevel(ench);
+-        if (level <= 0) {
+-            return 0;
+-        }
+-        int size = list.size();
+-
+-        if (size == 1) {
+-            this.handle.remove(DataComponents.ENCHANTMENTS);
+-            return level;
++        // Paper start - replace entire method
++        int level = getEnchantmentLevel(ench);
++        if (level > 0) {
++            final ItemMeta itemMeta = this.getItemMeta();
++            if (itemMeta == null) return 0;
++            itemMeta.removeEnchant(ench);
++            this.setItemMeta(itemMeta);
+         }
+-
+-        ItemEnchantments.Mutable listCopy = new ItemEnchantments.Mutable(list);
+-        listCopy.set(CraftEnchantment.bukkitToMinecraftHolder(ench), -1); // Negative to remove
+-        this.handle.set(DataComponents.ENCHANTMENTS, listCopy.toImmutable());
++        // Paper end
+ 
+         return level;
+     }
+@@ -296,7 +284,7 @@ public final class CraftItemStack extends ItemStack {
+ 
+     @Override
+     public Map<Enchantment, Integer> getEnchantments() {
+-        return CraftItemStack.getEnchantments(this.handle);
++        return this.hasItemMeta() ? this.getItemMeta().getEnchants() : ImmutableMap.<Enchantment, Integer>of(); // Paper - use Item Meta
+     }
+ 
+     static Map<Enchantment, Integer> getEnchantments(net.minecraft.world.item.ItemStack item) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+index 784db8fa1b9ef99755440c6446248b802445da67..3c44f5509e63dd673f0b8e701720984b78b9b7c4 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList;
+ import com.google.common.collect.ImmutableMap;
+ import com.google.common.collect.ImmutableMultimap;
+ import com.google.common.collect.LinkedHashMultimap;
++import com.google.common.collect.ImmutableSortedMap; // Paper
+ import com.google.common.collect.Lists;
+ import com.google.common.collect.Multimap;
+ import com.google.common.collect.SetMultimap;
+@@ -23,6 +24,7 @@ import java.util.Arrays;
+ import java.util.Base64;
+ import java.util.Collection;
+ import java.util.Collections;
++import java.util.Comparator; // Paper
+ import java.util.EnumSet;
+ import java.util.HashMap;
+ import java.util.Iterator;
+@@ -283,7 +285,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+     private CraftCustomModelDataComponent customModelData;
+     private Integer enchantableValue;
+     private Map<String, String> blockData;
+-    private Map<Enchantment, Integer> enchantments;
++    private EnchantmentMap enchantments; // Paper
+     private Multimap<Attribute, AttributeModifier> attributeModifiers;
+     private int repairCost;
+     private int hideFlag;
+@@ -334,7 +336,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         this.blockData = meta.blockData;
+ 
+         if (meta.enchantments != null) {
+-            this.enchantments = new LinkedHashMap<Enchantment, Integer>(meta.enchantments);
++            this.enchantments = new EnchantmentMap(meta.enchantments); // Paper
+         }
+ 
+         if (meta.hasAttributeModifiers()) {
+@@ -513,8 +515,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         }
+     }
+ 
+-    static Map<Enchantment, Integer> buildEnchantments(ItemEnchantments tag) {
+-        Map<Enchantment, Integer> enchantments = new LinkedHashMap<Enchantment, Integer>(tag.size());
++    static EnchantmentMap buildEnchantments(ItemEnchantments tag) { // Paper
++        EnchantmentMap enchantments = new EnchantmentMap(); // Paper
+ 
+         tag.entrySet().forEach((entry) -> {
+             Holder<net.minecraft.world.item.enchantment.Enchantment> id = entry.getKey();
+@@ -850,13 +852,13 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+         return modifiers;
+     }
+ 
+-    static Map<Enchantment, Integer> buildEnchantments(Map<String, Object> map, ItemMetaKey key) {
++    static EnchantmentMap buildEnchantments(Map<String, Object> map, ItemMetaKey key) { // Paper
+         Map<?, ?> ench = SerializableMeta.getObject(Map.class, map, key.BUKKIT, true);
+         if (ench == null) {
+             return null;
+         }
+ 
+-        Map<Enchantment, Integer> enchantments = new LinkedHashMap<Enchantment, Integer>(ench.size());
++        EnchantmentMap enchantments = new EnchantmentMap(); // Paper
+         for (Map.Entry<?, ?> entry : ench.entrySet()) {
+             Enchantment enchantment = CraftEnchantment.stringToBukkit(entry.getKey().toString());
+             if ((enchantment != null) && (entry.getValue() instanceof Integer)) {
+@@ -1223,14 +1225,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+ 
+     @Override
+     public Map<Enchantment, Integer> getEnchants() {
+-        return this.hasEnchants() ? ImmutableMap.copyOf(this.enchantments) : ImmutableMap.<Enchantment, Integer>of();
++        return this.hasEnchants() ? ImmutableSortedMap.copyOfSorted(this.enchantments) : ImmutableMap.<Enchantment, Integer>of(); // Paper
+     }
+ 
+     @Override
+     public boolean addEnchant(Enchantment ench, int level, boolean ignoreRestrictions) {
+         Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
+         if (this.enchantments == null) {
+-            this.enchantments = new LinkedHashMap<Enchantment, Integer>(4);
++            this.enchantments = new EnchantmentMap(); // Paper
+         }
+ 
+         if (ignoreRestrictions || level >= ench.getStartLevel() && level <= ench.getMaxLevel()) {
+@@ -1976,7 +1978,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+             clone.enchantableValue = this.enchantableValue;
+             clone.blockData = this.blockData;
+             if (this.enchantments != null) {
+-                clone.enchantments = new LinkedHashMap<Enchantment, Integer>(this.enchantments);
++                clone.enchantments = new EnchantmentMap(this.enchantments); // Paper
+             }
+             if (this.hasAttributeModifiers()) {
+                 clone.attributeModifiers = LinkedHashMultimap.create(this.attributeModifiers);
+@@ -2372,4 +2374,22 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+ 
+         return (result != null) ? result : Optional.empty();
+     }
++
++    // Paper start
++    private static class EnchantmentMap extends java.util.TreeMap<org.bukkit.enchantments.Enchantment, Integer> {
++        private EnchantmentMap(Map<Enchantment, Integer> enchantments) {
++            this();
++            putAll(enchantments);
++        }
++
++        private EnchantmentMap() {
++            super(Comparator.comparing(o -> o.getKey().toString()));
++        }
++
++        public EnchantmentMap clone() {
++            return (EnchantmentMap) super.clone();
++        }
++    }
++    // Paper end
++
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java b/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
+index e7deba518b8a3df9e642a1bcd7b6642c3dc7583b..26a7c2d37e6a8284ab444a9edad967bdcad1e5a3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
++++ b/src/main/java/org/bukkit/craftbukkit/profile/CraftPlayerProfile.java
+@@ -40,6 +40,17 @@ public final class CraftPlayerProfile implements PlayerProfile {
+         boolean isValidSkullProfile = (gameProfile.getName() != null)
+                 || gameProfile.getProperties().containsKey(CraftPlayerTextures.PROPERTY_NAME);
+         Preconditions.checkArgument(isValidSkullProfile, "The skull profile is missing a name or textures!");
++        // Paper start - Validate
++        Preconditions.checkArgument(gameProfile.getName().length() <= 16, "The name of the profile is longer than 16 characters");
++        Preconditions.checkArgument(net.minecraft.util.StringUtil.isValidPlayerName(gameProfile.getName()), "The name of the profile contains invalid characters: %s", gameProfile.getName());
++        final PropertyMap properties = gameProfile.getProperties();
++        Preconditions.checkArgument(properties.size() <= 16, "The profile contains more than 16 properties");
++        for (final Property property : properties.values()) {
++            Preconditions.checkArgument(property.name().length() <= 64, "The name of a property is longer than 64 characters");
++            Preconditions.checkArgument(property.value().length() <= Short.MAX_VALUE, "The value of a property is longer than 32767 characters");
++            Preconditions.checkArgument(property.signature() == null || property.signature().length() <= 1024, "The signature of a property is longer than 1024 characters");
++        }
++        // Paper end - Validate
+         return gameProfile;
+     }
+ 
+@@ -67,6 +78,8 @@ public final class CraftPlayerProfile implements PlayerProfile {
+         if (applyPreconditions) {
+             Preconditions.checkArgument((uniqueId != null) || !StringUtils.isBlank(name), "uniqueId is null or name is blank");
+         }
++        Preconditions.checkArgument(name == null || name.length() <= 16, "The name of the profile is longer than 16 characters"); // Paper - Validate
++        Preconditions.checkArgument(name == null || net.minecraft.util.StringUtil.isValidPlayerName(name), "The name of the profile contains invalid characters: %s", name); // Paper - Validate
+         this.uniqueId = uniqueId;
+         this.name = name;
+     }
+@@ -114,6 +127,7 @@ public final class CraftPlayerProfile implements PlayerProfile {
+         // Assert: (property == null) || property.getName().equals(propertyName)
+         this.removeProperty(propertyName);
+         if (property != null) {
++            Preconditions.checkArgument(this.properties.size() < 16, "The profile contains more than 16 properties"); // Paper - Validate
+             this.properties.put(property.name(), property);
+         }
+     }

@@ -1,0 +1,158 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jedediah Smith <jedediah@silencegreys.com>
+Date: Tue, 1 Mar 2016 14:47:52 -0600
+Subject: [PATCH] Player affects spawning API
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/EntitySelector.java b/src/main/java/net/minecraft/world/entity/EntitySelector.java
+index 048c8af16fad8708a486bb29304db22e2fb1ecb3..a617ea34cfc28cefd68dd14ffbb334b87f98f65c 100644
+--- a/src/main/java/net/minecraft/world/entity/EntitySelector.java
++++ b/src/main/java/net/minecraft/world/entity/EntitySelector.java
+@@ -29,6 +29,11 @@ public final class EntitySelector {
+     public static final Predicate<Entity> CAN_BE_PICKED = EntitySelector.NO_SPECTATORS.and(Entity::isPickable);
+ 
+     private EntitySelector() {}
++    // Paper start - Affects Spawning API
++    public static final Predicate<Entity> PLAYER_AFFECTS_SPAWNING = (entity) -> {
++        return !entity.isSpectator() && entity.isAlive() && entity instanceof Player player && player.affectsSpawning;
++    };
++    // Paper end - Affects Spawning API
+ 
+     public static Predicate<Entity> withinDistance(double x, double y, double z, double max) {
+         double d4 = max * max;
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index 137e645950eab0fc083ef3ff0fc65ee702dc2ea7..0562039114a90ddb64547eb8396920813d54f46b 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -858,7 +858,7 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+         if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
+             this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+         } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
+-            Player entityhuman = this.level().getNearestPlayer(this, -1.0D);
++            Player entityhuman = this.level().findNearbyPlayer(this, -1.0D, EntitySelector.PLAYER_AFFECTS_SPAWNING); // Paper - Affects Spawning API
+ 
+             if (entityhuman != null) {
+                 // Paper start - Configurable despawn distances
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonTrapGoal.java b/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonTrapGoal.java
+index c86e2d75ac627e9c92a6e006cb4c06ec6a2cb91e..521b09ac14372f524b06ffdce57932d0a590700b 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonTrapGoal.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/SkeletonTrapGoal.java
+@@ -27,7 +27,7 @@ public class SkeletonTrapGoal extends Goal {
+ 
+     @Override
+     public boolean canUse() {
+-        return this.horse.level().hasNearbyAlivePlayer(this.horse.getX(), this.horse.getY(), this.horse.getZ(), 10.0D);
++        return this.horse.level().hasNearbyAlivePlayerThatAffectsSpawning(this.horse.getX(), this.horse.getY(), this.horse.getZ(), 10.0D); // Paper - Affects Spawning API
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
+index 0594b6adcb849bba2c810de245a3bdaeeca0be60..52d8ea3e40cdb01eab428f5d3d945c0c9f6088ce 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
+@@ -123,7 +123,7 @@ public class Silverfish extends Monster {
+         } else {
+             Player entityhuman = world.getNearestPlayer((double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, 5.0D, true);
+ 
+-            return entityhuman == null;
++            return !(entityhuman != null && !entityhuman.affectsSpawning) && entityhuman == null; // Paper - Affects Spawning API
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Zombie.java b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+index 3836d9255ac326a7220e1decd2e9d98be7884c17..73c4585870b7af409f84474f126a58497ed0495f 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Zombie.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+@@ -349,7 +349,7 @@ public class Zombie extends Monster {
+ 
+                     if (SpawnPlacements.isSpawnPositionOk(entitytypes, world, blockposition) && SpawnPlacements.checkSpawnRules(entitytypes, world, EntitySpawnReason.REINFORCEMENT, blockposition, world.random)) {
+                         entityzombie.setPos((double) i1, (double) j1, (double) k1);
+-                        if (!world.hasNearbyAlivePlayer((double) i1, (double) j1, (double) k1, 7.0D) && world.isUnobstructed(entityzombie) && world.noCollision((Entity) entityzombie) && (entityzombie.canSpawnInLiquids() || !world.containsAnyLiquid(entityzombie.getBoundingBox()))) {
++                        if (!world.hasNearbyAlivePlayerThatAffectsSpawning((double) i1, (double) j1, (double) k1, 7.0D) && world.isUnobstructed(entityzombie) && world.noCollision((Entity) entityzombie) && (entityzombie.canSpawnInLiquids() || !world.containsAnyLiquid(entityzombie.getBoundingBox()))) { // Paper - affects spawning api
+                             entityzombie.setTarget(entityliving, EntityTargetEvent.TargetReason.REINFORCEMENT_TARGET, true); // CraftBukkit
+                             entityzombie.finalizeSpawn(world, world.getCurrentDifficultyAt(entityzombie.blockPosition()), EntitySpawnReason.REINFORCEMENT, (SpawnGroupData) null);
+                             world.addFreshEntityWithPassengers(entityzombie, CreatureSpawnEvent.SpawnReason.REINFORCEMENTS); // CraftBukkit
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index f917b43240b2fa4207b276ac850832fd1618302a..09a7c6171e50b6cf08cf7096b6005d3f9d8d2de7 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -198,6 +198,7 @@ public abstract class Player extends LivingEntity {
+     public Entity currentExplosionCause;
+     private boolean ignoreFallDamageFromCurrentImpulse;
+     private int currentImpulseContextResetGraceTime;
++    public boolean affectsSpawning = true; // Paper - Affects Spawning API
+ 
+     // CraftBukkit start
+     public boolean fauxSleeping;
+diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+index b2bed46f809abee056aa99f39f26f8c0fbf0036c..366661561544f8e99f238583259991e9fcbab8af 100644
+--- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
++++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+@@ -58,7 +58,7 @@ public abstract class BaseSpawner {
+     }
+ 
+     public boolean isNearPlayer(Level world, BlockPos pos) {
+-        return world.hasNearbyAlivePlayer((double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, (double) this.requiredPlayerRange);
++        return world.hasNearbyAlivePlayerThatAffectsSpawning((double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, (double) this.requiredPlayerRange); // Paper - Affects Spawning API
+     }
+ 
+     public void clientTick(Level world, BlockPos pos) {
+diff --git a/src/main/java/net/minecraft/world/level/EntityGetter.java b/src/main/java/net/minecraft/world/level/EntityGetter.java
+index f689b2ca0ebc15c099f36ebfd14e455bda540296..fb043d67eaa6336fc0b5d62774b8f1107f9dfa1e 100644
+--- a/src/main/java/net/minecraft/world/level/EntityGetter.java
++++ b/src/main/java/net/minecraft/world/level/EntityGetter.java
+@@ -71,6 +71,11 @@ public interface EntityGetter {
+         }
+     }
+ 
++    // Paper start - Affects Spawning API
++    default @Nullable Player findNearbyPlayer(Entity entity, double maxDistance, @Nullable Predicate<Entity> predicate) {
++        return this.getNearestPlayer(entity.getX(), entity.getY(), entity.getZ(), maxDistance, predicate);
++    }
++    // Paper end - Affects Spawning API
+     @Nullable
+     default Player getNearestPlayer(double x, double y, double z, double maxDistance, @Nullable Predicate<Entity> targetPredicate) {
+         double d = -1.0;
+@@ -100,6 +105,20 @@ public interface EntityGetter {
+         return this.getNearestPlayer(x, y, z, maxDistance, predicate);
+     }
+ 
++    // Paper start - Affects Spawning API
++    default boolean hasNearbyAlivePlayerThatAffectsSpawning(double x, double y, double z, double range) {
++        for (Player player : this.players()) {
++            if (EntitySelector.PLAYER_AFFECTS_SPAWNING.test(player)) { // combines NO_SPECTATORS and LIVING_ENTITY_STILL_ALIVE with an "affects spawning" check
++                double distanceSqr = player.distanceToSqr(x, y, z);
++                if (range < 0.0D || distanceSqr < range * range) {
++                    return true;
++                }
++            }
++        }
++        return false;
++    }
++    // Paper end - Affects Spawning API
++
+     default boolean hasNearbyAlivePlayer(double x, double y, double z, double range) {
+         for (Player player : this.players()) {
+             if (EntitySelector.NO_SPECTATORS.test(player) && EntitySelector.LIVING_ENTITY_STILL_ALIVE.test(player)) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index a37e5d822e93b3a4b1c0becf22290017c4709b94..90428fbc332fb8b621725ade8eb010d5edec1286 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -2437,6 +2437,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         return this.getHandle().language;
+     }
+ 
++    // Paper start
++    public void setAffectsSpawning(boolean affects) {
++        this.getHandle().affectsSpawning = affects;
++    }
++
++    @Override
++    public boolean getAffectsSpawning() {
++        return this.getHandle().affectsSpawning;
++    }
++    // Paper end
++
+     @Override
+     public void updateCommands() {
+         if (this.getHandle().connection == null) return;

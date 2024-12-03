@@ -1,0 +1,109 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Techcable <Techcable@outlook.com>
+Date: Thu, 3 Mar 2016 02:32:10 -0600
+Subject: [PATCH] Player Tab List and Title APIs
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index aa5755bd263c7682e41eeacbde28934b40796cf5..8fd5aaa16b0a6d34f54424512335020bd2e7ecb8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -393,6 +393,98 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         }
+     }
+ 
++    // Paper start
++    @Override
++    public void setPlayerListHeaderFooter(BaseComponent[] header, BaseComponent[] footer) {
++         if (header != null) {
++             String headerJson = net.md_5.bungee.chat.ComponentSerializer.toString(header);
++             playerListHeader = net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson().deserialize(headerJson);
++         } else {
++             playerListHeader = null;
++         }
++
++        if (footer != null) {
++             String footerJson = net.md_5.bungee.chat.ComponentSerializer.toString(footer);
++             playerListFooter = net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson().deserialize(footerJson);
++        } else {
++             playerListFooter = null;
++         }
++
++         updatePlayerListHeaderFooter();
++    }
++
++    @Override
++    public void setPlayerListHeaderFooter(BaseComponent header, BaseComponent footer) {
++        this.setPlayerListHeaderFooter(header == null ? null : new BaseComponent[]{header},
++                footer == null ? null : new BaseComponent[]{footer});
++    }
++
++
++    @Override
++    public void setTitleTimes(int fadeInTicks, int stayTicks, int fadeOutTicks) {
++        getHandle().connection.send(new ClientboundSetTitlesAnimationPacket(fadeInTicks, stayTicks, fadeOutTicks));
++    }
++
++    @Override
++    public void setSubtitle(BaseComponent[] subtitle) {
++        final ClientboundSetSubtitleTextPacket packet = new ClientboundSetSubtitleTextPacket(org.bukkit.craftbukkit.util.CraftChatMessage.fromJSON(net.md_5.bungee.chat.ComponentSerializer.toString(subtitle)));
++        getHandle().connection.send(packet);
++    }
++
++    @Override
++    public void setSubtitle(BaseComponent subtitle) {
++        setSubtitle(new BaseComponent[]{subtitle});
++    }
++
++    @Override
++    public void showTitle(BaseComponent[] title) {
++        final ClientboundSetTitleTextPacket packet = new ClientboundSetTitleTextPacket(org.bukkit.craftbukkit.util.CraftChatMessage.fromJSON(net.md_5.bungee.chat.ComponentSerializer.toString(title)));
++        getHandle().connection.send(packet);
++    }
++
++    @Override
++    public void showTitle(BaseComponent title) {
++        showTitle(new BaseComponent[]{title});
++    }
++
++    @Override
++    public void showTitle(BaseComponent[] title, BaseComponent[] subtitle, int fadeInTicks, int stayTicks, int fadeOutTicks) {
++        setTitleTimes(fadeInTicks, stayTicks, fadeOutTicks);
++        setSubtitle(subtitle);
++        showTitle(title);
++    }
++
++    @Override
++    public void showTitle(BaseComponent title, BaseComponent subtitle, int fadeInTicks, int stayTicks, int fadeOutTicks) {
++        setTitleTimes(fadeInTicks, stayTicks, fadeOutTicks);
++        setSubtitle(subtitle);
++        showTitle(title);
++    }
++
++    @Override
++    public void sendTitle(com.destroystokyo.paper.Title title) {
++        Preconditions.checkNotNull(title, "Title is null");
++        setTitleTimes(title.getFadeIn(), title.getStay(), title.getFadeOut());
++        setSubtitle(title.getSubtitle() == null ? new BaseComponent[0] : title.getSubtitle());
++        showTitle(title.getTitle());
++    }
++
++    @Override
++    public void updateTitle(com.destroystokyo.paper.Title title) {
++        Preconditions.checkNotNull(title, "Title is null");
++        setTitleTimes(title.getFadeIn(), title.getStay(), title.getFadeOut());
++        if (title.getSubtitle() != null) {
++            setSubtitle(title.getSubtitle());
++        }
++        showTitle(title.getTitle());
++    }
++
++    @Override
++    public void hideTitle() {
++        getHandle().connection.send(new ClientboundClearTitlesPacket(false));
++    }
++    // Paper end
++
+     @Override
+     public String getDisplayName() {
+         if(true) return io.papermc.paper.adventure.DisplayNames.getLegacy(this); // Paper

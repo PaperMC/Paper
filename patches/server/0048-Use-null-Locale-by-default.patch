@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Isaac Moore <rmsy@me.com>
+Date: Tue, 19 Apr 2016 14:09:31 -0500
+Subject: [PATCH] Use null Locale by default
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 3228c664925b1214aae0a693b93fdbe4d6698aa0..01ae7e9847602d489c34f060ff132a1f5f9781a3 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -259,7 +259,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+     private int levitationStartTime;
+     private boolean disconnected;
+     private int requestedViewDistance;
+-    public String language = "en_us"; // CraftBukkit - default
++    public String language = null; // CraftBukkit - default  // Paper - default to null
+     public java.util.Locale adventure$locale = java.util.Locale.US; // Paper
+     @Nullable
+     private Vec3 startingToFallPosition;
+@@ -319,7 +319,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+         this.canChatColor = true;
+         this.lastActionTime = Util.getMillis();
+         this.requestedViewDistance = 2;
+-        this.language = "en_us";
++        this.language =  null; // Paper - default to null
+         this.lastSectionPos = SectionPos.of(0, 0, 0);
+         this.chunkTrackingView = ChunkTrackingView.EMPTY;
+         this.respawnDimension = Level.OVERWORLD;
+@@ -2295,7 +2295,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+             PlayerChangedMainHandEvent event = new PlayerChangedMainHandEvent(this.getBukkitEntity(), this.getMainArm() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT);
+             this.server.server.getPluginManager().callEvent(event);
+         }
+-        if (!this.language.equals(clientOptions.language())) {
++        if (this.language == null || !this.language.equals(clientOptions.language())) { // Paper
+             PlayerLocaleChangeEvent event = new PlayerLocaleChangeEvent(this.getBukkitEntity(), clientOptions.language());
+             this.server.server.getPluginManager().callEvent(event);
+         }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index fcaac0479ef0259d2271de0cd12752833873a1f6..38dd2a6a6d92e0f89a8a141455382d49afa441dd 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -2435,7 +2435,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+     @Override
+     public String getLocale() {
+-        return this.getHandle().language;
++        // Paper start - Locale change event
++        final String locale = this.getHandle().language;
++        return locale != null ? locale : "en_us";
++        // Paper end
+     }
+ 
+     // Paper start

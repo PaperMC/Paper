@@ -1,0 +1,78 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 3 Mar 2016 01:17:12 -0600
+Subject: [PATCH] Improve Player chat API handling
+
+Properly split up the chat and command handling to reflect the server now
+having separate packets for both, and the client always using the correct packet. Text
+from a chat packet should never be parsed into a command, even if it starts with the `/`
+character.
+
+Add a missing async catcher and improve Spigot's async catcher error message.
+
+== AT ==
+public net.minecraft.server.network.ServerGamePacketListenerImpl isChatMessageIllegal(Ljava/lang/String;)Z
+
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+Co-authored-by: SoSeDiK <mrsosedik@gmail.com>
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index f21de202d7c932832fca9402a17a13e336aa36c8..97b776e384e8ce064ea9bb93fe24d902ff2d8817 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2099,7 +2099,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         }
+         OutgoingChatMessage outgoing = OutgoingChatMessage.create(original);
+ 
+-        if (!async && s.startsWith("/")) {
++        if (false && !async && s.startsWith("/")) { // Paper - Don't handle commands in chat logic
+             this.handleCommand(s);
+         } else if (this.player.getChatVisibility() == ChatVisiblity.SYSTEM) {
+             // Do nothing, this is coming from a plugin
+@@ -2187,6 +2187,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+     }
+ 
+     private void handleCommand(String s) {
++        org.spigotmc.AsyncCatcher.catchOp("Command Dispatched Async: " + s); // Paper - Add async catcher
+         if ( org.spigotmc.SpigotConfig.logCommands ) // Spigot
+         this.LOGGER.info(this.player.getScoreboardName() + " issued server command: " + s);
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index e4335bfc98272c5499651977625e1f0ca671fbec..a0a0fa7de47402f1820618da5c6582dd894676cd 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -936,7 +936,7 @@ public final class CraftServer implements Server {
+     public boolean dispatchCommand(CommandSender sender, String commandLine) {
+         Preconditions.checkArgument(sender != null, "sender cannot be null");
+         Preconditions.checkArgument(commandLine != null, "commandLine cannot be null");
+-        org.spigotmc.AsyncCatcher.catchOp("command dispatch"); // Spigot
++        org.spigotmc.AsyncCatcher.catchOp("Command Dispatched Async: " + commandLine); // Spigot // Paper - Include command in error message
+ 
+         if (this.commandMap.dispatch(sender, commandLine)) {
+             return true;
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 38dd2a6a6d92e0f89a8a141455382d49afa441dd..aa5755bd263c7682e41eeacbde28934b40796cf5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -563,7 +563,20 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+         if (this.getHandle().connection == null) return;
+ 
+-        this.getHandle().connection.chat(msg, PlayerChatMessage.system(msg), false);
++        // Paper start - Improve chat handling
++        if (ServerGamePacketListenerImpl.isChatMessageIllegal(msg)) {
++            this.getHandle().connection.disconnect(Component.translatable("multiplayer.disconnect.illegal_characters"));
++        } else {
++            if (msg.startsWith("/")) {
++                this.getHandle().connection.handleCommand(msg);
++            } else {
++                final PlayerChatMessage playerChatMessage = PlayerChatMessage.system(msg).withUnsignedContent(Component.literal(msg));
++                // TODO chat decorating
++                // TODO text filtering
++                this.getHandle().connection.chat(msg, playerChatMessage, false);
++            }
++        }
++        // Paper end - Improve chat handling
+     }
+ 
+     @Override

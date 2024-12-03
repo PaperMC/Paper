@@ -1,0 +1,68 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Martin Panzer <postremus1996@googlemail.com>
+Date: Mon, 23 May 2016 12:12:37 +0200
+Subject: [PATCH] Faster redstone torch rapid clock removal
+
+Only resize the the redstone torch list once, since resizing arrays / lists is costly
+
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index fbc2830aab0bfa35ff071bbee84ce00da2d0e405..8891eab56b1bb2ed253fbced383e14a8c177966b 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -170,6 +170,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     private org.spigotmc.TickLimiter tileLimiter;
+     private int tileTickPosition;
+     public final Map<ServerExplosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
++    public java.util.ArrayDeque<net.minecraft.world.level.block.RedstoneTorchBlock.Toggle> redstoneUpdateInfos; // Paper - Faster redstone torch rapid clock removal; Move from Map in BlockRedstoneTorch to here
+ 
+     public CraftWorld getWorld() {
+         return this.world;
+diff --git a/src/main/java/net/minecraft/world/level/block/RedstoneTorchBlock.java b/src/main/java/net/minecraft/world/level/block/RedstoneTorchBlock.java
+index ca09910f87b69f6a4af7e3d9da4ad8f917acd66f..26319e8247e9dfa2068700d7fadc21ea5f715561 100644
+--- a/src/main/java/net/minecraft/world/level/block/RedstoneTorchBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/RedstoneTorchBlock.java
+@@ -28,7 +28,7 @@ public class RedstoneTorchBlock extends BaseTorchBlock {
+ 
+     public static final MapCodec<RedstoneTorchBlock> CODEC = simpleCodec(RedstoneTorchBlock::new);
+     public static final BooleanProperty LIT = BlockStateProperties.LIT;
+-    private static final Map<BlockGetter, List<RedstoneTorchBlock.Toggle>> RECENT_TOGGLES = new WeakHashMap();
++    // Paper - Faster redstone torch rapid clock removal; Move the mapped list to World
+     public static final int RECENT_TOGGLE_TIMER = 60;
+     public static final int MAX_RECENT_TOGGLES = 8;
+     public static final int RESTART_DELAY = 160;
+@@ -81,11 +81,15 @@ public class RedstoneTorchBlock extends BaseTorchBlock {
+     @Override
+     protected void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+         boolean flag = this.hasNeighborSignal(world, pos, state);
+-        List<RedstoneTorchBlock.Toggle> list = (List) RedstoneTorchBlock.RECENT_TOGGLES.get(world);
+-
+-        while (list != null && !list.isEmpty() && world.getGameTime() - ((RedstoneTorchBlock.Toggle) list.get(0)).when > 60L) {
+-            list.remove(0);
++        // Paper start - Faster redstone torch rapid clock removal
++        java.util.ArrayDeque<RedstoneTorchBlock.Toggle> redstoneUpdateInfos = world.redstoneUpdateInfos;
++        if (redstoneUpdateInfos != null) {
++            RedstoneTorchBlock.Toggle curr;
++            while ((curr = redstoneUpdateInfos.peek()) != null && world.getGameTime() - curr.when > 60L) {
++                redstoneUpdateInfos.poll();
++            }
+         }
++        // Paper end - Faster redstone torch rapid clock removal
+ 
+         // CraftBukkit start
+         org.bukkit.plugin.PluginManager manager = world.getCraftServer().getPluginManager();
+@@ -161,9 +165,12 @@ public class RedstoneTorchBlock extends BaseTorchBlock {
+     }
+ 
+     private static boolean isToggledTooFrequently(Level world, BlockPos pos, boolean addNew) {
+-        List<RedstoneTorchBlock.Toggle> list = (List) RedstoneTorchBlock.RECENT_TOGGLES.computeIfAbsent(world, (iblockaccess) -> {
+-            return Lists.newArrayList();
+-        });
++        // Paper start - Faster redstone torch rapid clock removal
++        java.util.ArrayDeque<RedstoneTorchBlock.Toggle> list = world.redstoneUpdateInfos;
++        if (list == null) {
++            list = world.redstoneUpdateInfos = new java.util.ArrayDeque<>();
++        }
++        // Paper end - Faster redstone torch rapid clock removal
+ 
+         if (addNew) {
+             list.add(new RedstoneTorchBlock.Toggle(pos.immutable(), world.getGameTime()));

@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Zach Brown <zach.brown@destroystokyo.com>
+Date: Tue, 1 Mar 2016 23:58:50 -0600
+Subject: [PATCH] Configurable top of nether void damage
+
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 8825087beb5388876a1206c9704648f3fa98fee2..61f7461150c7354a641b86ce42a2b41460d3a45d 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -725,7 +725,11 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     }
+ 
+     public void checkBelowWorld() {
+-        if (this.getY() < (double) (this.level().getMinY() - 64)) {
++        // Paper start - Configurable nether ceiling damage
++        if (this.getY() < (double) (this.level.getMinY() - 64) || (this.level.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER
++            && this.level.paperConfig().environment.netherCeilingVoidDamageHeight.test(v -> this.getY() >= v)
++            && (!(this instanceof Player player) || !player.getAbilities().invulnerable))) {
++            // Paper end - Configurable nether ceiling damage
+             this.onBelowWorld();
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/portal/PortalForcer.java b/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
+index 36accb58ed269a129f92d2b64f5a0b14416de735..355f1ce10f9564c7c0be505a5af849e0428fec17 100644
+--- a/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
++++ b/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
+@@ -58,7 +58,7 @@ public class PortalForcer {
+         }, blockposition, i, PoiManager.Occupancy.ANY).map(PoiRecord::getPos);
+ 
+         Objects.requireNonNull(worldborder);
+-        return stream.filter(worldborder::isWithinBounds).filter((blockposition1) -> {
++        return stream.filter(worldborder::isWithinBounds).filter(pos -> !(this.level.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER && this.level.paperConfig().environment.netherCeilingVoidDamageHeight.test(v -> pos.getY() >= v))).filter((blockposition1) -> { // Paper - Configurable nether ceiling damage
+             return this.level.getBlockState(blockposition1).hasProperty(BlockStateProperties.HORIZONTAL_AXIS);
+         }).min(Comparator.comparingDouble((BlockPos blockposition1) -> { // CraftBukkit - decompile error
+             return blockposition1.distSqr(blockposition);
+@@ -79,6 +79,11 @@ public class PortalForcer {
+         BlockPos blockposition2 = null;
+         WorldBorder worldborder = this.level.getWorldBorder();
+         int i = Math.min(this.level.getMaxY(), this.level.getMinY() + this.level.getLogicalHeight() - 1);
++        // Paper start - Configurable nether ceiling damage; make sure the max height doesn't exceed the void damage height
++        if (this.level.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER && this.level.paperConfig().environment.netherCeilingVoidDamageHeight.enabled()) {
++            i = Math.min(i, this.level.paperConfig().environment.netherCeilingVoidDamageHeight.intValue() - 1);
++        }
++        // Paper end - Configurable nether ceiling damage
+         boolean flag = true;
+         BlockPos.MutableBlockPos blockposition_mutableblockposition = blockposition.mutable();
+         Iterator iterator = BlockPos.spiralAround(blockposition, createRadius, Direction.EAST, Direction.SOUTH).iterator(); // CraftBukkit

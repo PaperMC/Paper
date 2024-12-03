@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 28 Apr 2016 00:57:27 -0400
+Subject: [PATCH] remove null possibility for getServer singleton
+
+to stop IDE complaining about potential NPE
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index d374ff51987c30a84e137dd623e0f64966999b63..bf5f1cfc7f0c129083ada539d450b9c74d2d5d9c 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -203,6 +203,7 @@ import org.bukkit.event.server.ServerLoadEvent;
+ 
+ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements ServerInfo, ChunkIOErrorReporter, CommandSource {
+ 
++    private static MinecraftServer SERVER; // Paper
+     public static final Logger LOGGER = LogUtils.getLogger();
+     public static final net.kyori.adventure.text.logger.slf4j.ComponentLogger COMPONENT_LOGGER = net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger(LOGGER.getName()); // Paper
+     public static final String VANILLA_BRAND = "vanilla";
+@@ -340,6 +341,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+     public MinecraftServer(OptionSet options, WorldLoader.DataLoadContext worldLoader, Thread thread, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PackRepository resourcepackrepository, WorldStem worldstem, Proxy proxy, DataFixer datafixer, Services services, ChunkProgressListenerFactory worldloadlistenerfactory) {
+         super("Server");
++        SERVER = this; // Paper - better singleton
+         this.metricsRecorder = InactiveMetricsRecorder.INSTANCE;
+         this.onMetricsRecordingStopped = (methodprofilerresults) -> {
+             this.stopRecordingMetrics();
+@@ -2581,9 +2583,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         return false;
+     }
+ 
+-    @Deprecated
+     public static MinecraftServer getServer() {
+-        return (Bukkit.getServer() instanceof CraftServer) ? ((CraftServer) Bukkit.getServer()).getServer() : null;
++        return SERVER; // Paper
+     }
+ 
+     @Deprecated

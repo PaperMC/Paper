@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jedediah Smith <jedediah@silencegreys.com>
+Date: Sun, 21 Jun 2015 15:07:20 -0400
+Subject: [PATCH] Custom replacement for eaten items
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index b8d70367d4d0a7a384b7ac723a02739fb5d741e5..58d61cbbca0011b8d8e86dce818de6df4c9d1c83 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3990,10 +3990,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                 if (!this.useItem.isEmpty() && this.isUsingItem()) {
+                     // CraftBukkit start - fire PlayerItemConsumeEvent
+                     ItemStack itemstack;
++                    PlayerItemConsumeEvent event = null; // Paper
+                     if (this instanceof ServerPlayer entityPlayer) {
+                         org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitCopy(this.useItem);
+                         org.bukkit.inventory.EquipmentSlot hand = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(enumhand);
+-                        PlayerItemConsumeEvent event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem, hand);
++                        event = new PlayerItemConsumeEvent((Player) this.getBukkitEntity(), craftItem, hand); // Paper
+                         this.level().getCraftServer().getPluginManager().callEvent(event);
+ 
+                         if (event.isCancelled()) {
+@@ -4011,6 +4012,12 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                     } else {
+                         itemstack = this.useItem.finishUsingItem(this.level(), this);
+                     }
++                    // Paper start - save the default replacement item and change it if necessary
++                    final ItemStack defaultReplacement = itemstack;
++                    if (event != null && event.getReplacement() != null) {
++                        itemstack = CraftItemStack.asNMSCopy(event.getReplacement());
++                    }
++                    // Paper end
+                     // CraftBukkit end
+ 
+                     if (itemstack != this.useItem) {
+@@ -4018,6 +4025,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                     }
+ 
+                     this.stopUsingItem();
++                    // Paper start - if the replacement is anything but the default, update the client inventory
++                    if (this instanceof ServerPlayer && !com.google.common.base.Objects.equal(defaultReplacement, itemstack)) {
++                        ((ServerPlayer) this).getBukkitEntity().updateInventory();
++                    }
++                    // Paper end
+                 }
+ 
+             }

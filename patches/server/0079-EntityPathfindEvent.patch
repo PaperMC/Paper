@@ -1,0 +1,154 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 28 Mar 2016 21:22:26 -0400
+Subject: [PATCH] EntityPathfindEvent
+
+Fires when an Entity decides to start moving to a location.
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/FlyingPathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/FlyingPathNavigation.java
+index b81a5149720daf23d3d33f0aaae51216121ea2e2..2bd66da93227d4e4fc2ec4df47ae94b17f4d39d3 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/navigation/FlyingPathNavigation.java
++++ b/src/main/java/net/minecraft/world/entity/ai/navigation/FlyingPathNavigation.java
+@@ -39,7 +39,7 @@ public class FlyingPathNavigation extends PathNavigation {
+ 
+     @Override
+     public Path createPath(Entity entity, int distance) {
+-        return this.createPath(entity.blockPosition(), distance);
++        return this.createPath(entity.blockPosition(), entity, distance); // Paper - EntityPathfindEvent
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
+index 90a7940bf8b32cb245e9253d957cb437fa600857..2796df7af365c452b28373adfd7daf1d6730bac5 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
++++ b/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
+@@ -41,7 +41,7 @@ public class GroundPathNavigation extends PathNavigation {
+     }
+ 
+     @Override
+-    public Path createPath(BlockPos target, int distance) {
++    public Path createPath(BlockPos target, @javax.annotation.Nullable Entity entity, int distance) { // Paper - EntityPathfindEvent
+         LevelChunk levelChunk = this.level
+             .getChunkSource()
+             .getChunkNow(SectionPos.blockToSectionCoord(target.getX()), SectionPos.blockToSectionCoord(target.getZ()));
+@@ -56,7 +56,7 @@ public class GroundPathNavigation extends PathNavigation {
+                 }
+ 
+                 if (mutableBlockPos.getY() > this.level.getMinY()) {
+-                    return super.createPath(mutableBlockPos.above(), distance);
++                    return super.createPath(mutableBlockPos.above(), entity, distance); // Paper - EntityPathfindEvent
+                 }
+ 
+                 mutableBlockPos.setY(target.getY() + 1);
+@@ -69,7 +69,7 @@ public class GroundPathNavigation extends PathNavigation {
+             }
+ 
+             if (!levelChunk.getBlockState(target).isSolid()) {
+-                return super.createPath(target, distance);
++                return super.createPath(target, entity, distance); // Paper - EntityPathfindEvent
+             } else {
+                 BlockPos.MutableBlockPos mutableBlockPos2 = target.mutable().move(Direction.UP);
+ 
+@@ -77,14 +77,14 @@ public class GroundPathNavigation extends PathNavigation {
+                     mutableBlockPos2.move(Direction.UP);
+                 }
+ 
+-                return super.createPath(mutableBlockPos2.immutable(), distance);
++                return super.createPath(mutableBlockPos2.immutable(), entity, distance);  // Paper - EntityPathfindEvent
+             }
+         }
+     }
+ 
+     @Override
+     public Path createPath(Entity entity, int distance) {
+-        return this.createPath(entity.blockPosition(), distance);
++        return this.createPath(entity.blockPosition(), entity, distance); // Paper - EntityPathfindEvent
+     }
+ 
+     private int getSurfaceY() {
+diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
+index 7d3cb358fe543253e988531df3434ae1274814d3..1d5ce4caf99a3fb376b350968a6bd1ac8471ffec 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
++++ b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
+@@ -125,7 +125,13 @@ public abstract class PathNavigation {
+ 
+     @Nullable
+     public Path createPath(BlockPos target, int distance) {
+-        return this.createPath(ImmutableSet.of(target), 8, false, distance);
++        // Paper start - EntityPathfindEvent
++        return this.createPath(target, null, distance);
++    }
++    @Nullable
++    public Path createPath(BlockPos target, @Nullable Entity entity, int distance) {
++        return this.createPath(ImmutableSet.of(target), entity, 8, false, distance);
++        // Paper end - EntityPathfindEvent
+     }
+ 
+     @Nullable
+@@ -135,7 +141,7 @@ public abstract class PathNavigation {
+ 
+     @Nullable
+     public Path createPath(Entity entity, int distance) {
+-        return this.createPath(ImmutableSet.of(entity.blockPosition()), 16, true, distance);
++        return this.createPath(ImmutableSet.of(entity.blockPosition()), entity, 16, true, distance); // Paper - EntityPathfindEvent
+     }
+ 
+     @Nullable
+@@ -145,6 +151,17 @@ public abstract class PathNavigation {
+ 
+     @Nullable
+     protected Path createPath(Set<BlockPos> positions, int range, boolean useHeadPos, int distance, float followRange) {
++        // Paper start - EntityPathfindEvent
++        return this.createPath(positions, null, range, useHeadPos, distance, followRange);
++    }
++
++    @Nullable
++    protected Path createPath(Set<BlockPos> positions, @Nullable Entity target, int range, boolean useHeadPos, int distance) {
++        return this.createPath(positions, target, range, useHeadPos, distance, (float) this.mob.getAttributeValue(Attributes.FOLLOW_RANGE));
++    }
++
++    @Nullable protected Path createPath(Set<BlockPos> positions, @Nullable Entity target, int range, boolean useHeadPos, int distance, float followRange) {
++        // Paper end - EntityPathfindEvent
+         if (positions.isEmpty()) {
+             return null;
+         } else if (this.mob.getY() < (double)this.level.getMinY()) {
+@@ -154,6 +171,23 @@ public abstract class PathNavigation {
+         } else if (this.path != null && !this.path.isDone() && positions.contains(this.targetPos)) {
+             return this.path;
+         } else {
++            // Paper start - EntityPathfindEvent
++            boolean copiedSet = false;
++            for (BlockPos possibleTarget : positions) {
++                if (!new com.destroystokyo.paper.event.entity.EntityPathfindEvent(this.mob.getBukkitEntity(),
++                    io.papermc.paper.util.MCUtil.toLocation(this.mob.level(), possibleTarget), target == null ? null : target.getBukkitEntity()).callEvent()) {
++                    if (!copiedSet) {
++                        copiedSet = true;
++                        positions = new java.util.HashSet<>(positions);
++                    }
++                    // note: since we copy the set this remove call is safe, since we're iterating over the old copy
++                    positions.remove(possibleTarget);
++                    if (positions.isEmpty()) {
++                        return null;
++                    }
++                }
++            }
++            // Paper end - EntityPathfindEvent
+             ProfilerFiller profilerFiller = Profiler.get();
+             profilerFiller.push("pathfind");
+             BlockPos blockPos = useHeadPos ? this.mob.blockPosition().above() : this.mob.blockPosition();
+diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/WallClimberNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/WallClimberNavigation.java
+index 1a1bc30b425858d82dbfb84b4a94d7793cab7125..5bbfa43d1e97970f035fcb101c3252c01ffead0d 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/navigation/WallClimberNavigation.java
++++ b/src/main/java/net/minecraft/world/entity/ai/navigation/WallClimberNavigation.java
+@@ -16,9 +16,9 @@ public class WallClimberNavigation extends GroundPathNavigation {
+     }
+ 
+     @Override
+-    public Path createPath(BlockPos target, int distance) {
++    public Path createPath(BlockPos target, @Nullable Entity entity, int distance) { // Paper - EntityPathfindEvent
+         this.pathToPosition = target;
+-        return super.createPath(target, distance);
++        return super.createPath(target, entity, distance); // Paper - EntityPathfindEvent
+     }
+ 
+     @Override

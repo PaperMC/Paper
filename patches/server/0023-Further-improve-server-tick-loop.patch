@@ -1,0 +1,233 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 1 Mar 2016 23:09:29 -0600
+Subject: [PATCH] Further improve server tick loop
+
+Improves how the catchup buffer is handled, allowing it to roll both ways
+increasing the effeciency of the thread sleep so it only will sleep once.
+
+Also increases the buffer of the catchup to ensure server stays at 20 TPS unless extreme conditions
+
+Previous implementation did not calculate TPS correctly.
+Switch to a realistic rolling average and factor in std deviation as an extra reporting variable
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 8acd27005f2b7cf32dc4cf93cf1a6eea2ab594ca..f307408d459196caafc0a485ddb8d1c00bdf0af9 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -307,7 +307,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public org.bukkit.craftbukkit.CraftServer server;
+     public OptionSet options;
+     public org.bukkit.command.ConsoleCommandSender console;
+-    public static int currentTick = (int) (System.currentTimeMillis() / 50);
++    public static int currentTick; // Paper - improve tick loop
+     public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
+     public int autosavePeriod;
+     public Commands vanillaCommandDispatcher;
+@@ -316,7 +316,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     // Spigot start
+     public static final int TPS = 20;
+     public static final int TICK_TIME = 1000000000 / MinecraftServer.TPS;
+-    private static final int SAMPLE_INTERVAL = 100;
++    private static final int SAMPLE_INTERVAL = 20; // Paper - improve server tick loop
++    @Deprecated(forRemoval = true) // Paper
+     public final double[] recentTps = new double[ 3 ];
+     // Spigot end
+     public final io.papermc.paper.configuration.PaperConfigurations paperConfigurations; // Paper - add paper configuration files
+@@ -1033,6 +1034,57 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     {
+         return ( avg * exp ) + ( tps * ( 1 - exp ) );
+     }
++
++    // Paper start - Further improve server tick loop
++    private static final long SEC_IN_NANO = 1000000000;
++    private static final long MAX_CATCHUP_BUFFER = TICK_TIME * TPS * 60L;
++    private long lastTick = 0;
++    private long catchupTime = 0;
++    public final RollingAverage tps1 = new RollingAverage(60);
++    public final RollingAverage tps5 = new RollingAverage(60 * 5);
++    public final RollingAverage tps15 = new RollingAverage(60 * 15);
++
++    public static class RollingAverage {
++        private final int size;
++        private long time;
++        private java.math.BigDecimal total;
++        private int index = 0;
++        private final java.math.BigDecimal[] samples;
++        private final long[] times;
++
++        RollingAverage(int size) {
++            this.size = size;
++            this.time = size * SEC_IN_NANO;
++            this.total = dec(TPS).multiply(dec(SEC_IN_NANO)).multiply(dec(size));
++            this.samples = new java.math.BigDecimal[size];
++            this.times = new long[size];
++            for (int i = 0; i < size; i++) {
++                this.samples[i] = dec(TPS);
++                this.times[i] = SEC_IN_NANO;
++            }
++        }
++
++        private static java.math.BigDecimal dec(long t) {
++            return new java.math.BigDecimal(t);
++        }
++        public void add(java.math.BigDecimal x, long t) {
++            time -= times[index];
++            total = total.subtract(samples[index].multiply(dec(times[index])));
++            samples[index] = x;
++            times[index] = t;
++            time += t;
++            total = total.add(x.multiply(dec(t)));
++            if (++index == size) {
++                index = 0;
++            }
++        }
++
++        public double getAverage() {
++            return total.divide(dec(time), 30, java.math.RoundingMode.HALF_UP).doubleValue();
++        }
++    }
++    private static final java.math.BigDecimal TPS_BASE = new java.math.BigDecimal(1E9).multiply(new java.math.BigDecimal(SAMPLE_INTERVAL));
++    // Paper end
+     // Spigot End
+ 
+     protected void runServer() {
+@@ -1047,7 +1099,10 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+             // Spigot start
+             Arrays.fill( this.recentTps, 20 );
+-            long tickSection = Util.getMillis(), tickCount = 1;
++            // Paper start - further improve server tick loop
++            long tickSection = Util.getNanos();
++            long currentTime;
++            // Paper end - further improve server tick loop
+             while (this.running) {
+                 long i;
+ 
+@@ -1069,15 +1124,22 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                     }
+                 }
+                 // Spigot start
+-                if ( tickCount++ % MinecraftServer.SAMPLE_INTERVAL == 0 )
+-                {
+-                    long curTime = Util.getMillis();
+-                    double currentTps = 1E3 / ( curTime - tickSection ) * MinecraftServer.SAMPLE_INTERVAL;
+-                    this.recentTps[0] = MinecraftServer.calcTps( this.recentTps[0], 0.92, currentTps ); // 1/exp(5sec/1min)
+-                    this.recentTps[1] = MinecraftServer.calcTps( this.recentTps[1], 0.9835, currentTps ); // 1/exp(5sec/5min)
+-                    this.recentTps[2] = MinecraftServer.calcTps( this.recentTps[2], 0.9945, currentTps ); // 1/exp(5sec/15min)
+-                    tickSection = curTime;
++                // Paper start - further improve server tick loop
++                currentTime = Util.getNanos();
++                if (++MinecraftServer.currentTick % MinecraftServer.SAMPLE_INTERVAL == 0) {
++                    final long diff = currentTime - tickSection;
++                    final java.math.BigDecimal currentTps = TPS_BASE.divide(new java.math.BigDecimal(diff), 30, java.math.RoundingMode.HALF_UP);
++                    tps1.add(currentTps, diff);
++                    tps5.add(currentTps, diff);
++                    tps15.add(currentTps, diff);
++
++                    // Backwards compat with bad plugins
++                    this.recentTps[0] = tps1.getAverage();
++                    this.recentTps[1] = tps5.getAverage();
++                    this.recentTps[2] = tps15.getAverage();
++                    tickSection = currentTime;
+                 }
++                // Paper end - further improve server tick loop
+                 // Spigot end
+ 
+                 boolean flag = i == 0L;
+@@ -1087,7 +1149,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                     this.debugCommandProfiler = new MinecraftServer.TimeProfiler(Util.getNanos(), this.tickCount);
+                 }
+ 
+-                MinecraftServer.currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit
++                //MinecraftServer.currentTick = (int) (System.currentTimeMillis() / 50); // CraftBukkit // Paper - don't overwrite current tick time
++                lastTick = currentTime;
+                 this.nextTickTimeNanos += i;
+ 
+                 try {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 5c54c5c525c86bb8037982435b8769ec2ca2c6cb..c9920b60a536f5735c61fd7ef154569f6b04c58b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -2680,7 +2680,11 @@ public final class CraftServer implements Server {
+ 
+     @Override
+     public double[] getTPS() {
+-        return new double[]{0, 0, 0}; // TODO
++        return new double[] {
++            net.minecraft.server.MinecraftServer.getServer().tps1.getAverage(),
++            net.minecraft.server.MinecraftServer.getServer().tps5.getAverage(),
++            net.minecraft.server.MinecraftServer.getServer().tps15.getAverage()
++        };
+     }
+ 
+     // Paper start - adventure sounds
+diff --git a/src/main/java/org/spigotmc/TicksPerSecondCommand.java b/src/main/java/org/spigotmc/TicksPerSecondCommand.java
+index d9ec48be0fdd2bfea938aa29e36b0f6ffa839ab2..9eb2823cc8f83bad2626fc77578b0162d9ed5782 100644
+--- a/src/main/java/org/spigotmc/TicksPerSecondCommand.java
++++ b/src/main/java/org/spigotmc/TicksPerSecondCommand.java
+@@ -15,6 +15,12 @@ public class TicksPerSecondCommand extends Command
+         this.usageMessage = "/tps";
+         this.setPermission( "bukkit.command.tps" );
+     }
++    // Paper start
++    private static final net.kyori.adventure.text.Component WARN_MSG = net.kyori.adventure.text.Component.text()
++        .append(net.kyori.adventure.text.Component.text("Warning: ", net.kyori.adventure.text.format.NamedTextColor.RED))
++        .append(net.kyori.adventure.text.Component.text("Memory usage on modern garbage collectors is not a stable value and it is perfectly normal to see it reach max. Please do not pay it much attention.", net.kyori.adventure.text.format.NamedTextColor.GOLD))
++        .build();
++    // Paper end
+ 
+     @Override
+     public boolean execute(CommandSender sender, String currentAlias, String[] args)
+@@ -24,22 +30,40 @@ public class TicksPerSecondCommand extends Command
+             return true;
+         }
+ 
+-        StringBuilder sb = new StringBuilder( ChatColor.GOLD + "TPS from last 1m, 5m, 15m: " );
+-        for ( double tps : MinecraftServer.getServer().recentTps )
+-        {
+-            sb.append( this.format( tps ) );
+-            sb.append( ", " );
++        // Paper start - Further improve tick handling
++        double[] tps = org.bukkit.Bukkit.getTPS();
++        net.kyori.adventure.text.Component[] tpsAvg = new net.kyori.adventure.text.Component[tps.length];
++
++        for ( int i = 0; i < tps.length; i++) {
++            tpsAvg[i] = TicksPerSecondCommand.format( tps[i] );
++        }
++
++        net.kyori.adventure.text.TextComponent.Builder builder = net.kyori.adventure.text.Component.text();
++        builder.append(net.kyori.adventure.text.Component.text("TPS from last 1m, 5m, 15m: ", net.kyori.adventure.text.format.NamedTextColor.GOLD));
++        builder.append(net.kyori.adventure.text.Component.join(net.kyori.adventure.text.JoinConfiguration.commas(true), tpsAvg));
++        sender.sendMessage(builder.asComponent());
++        if (args.length > 0 && args[0].equals("mem") && sender.hasPermission("bukkit.command.tpsmemory")) {
++            sender.sendMessage(net.kyori.adventure.text.Component.text()
++                .append(net.kyori.adventure.text.Component.text("Current Memory Usage: ", net.kyori.adventure.text.format.NamedTextColor.GOLD))
++                .append(net.kyori.adventure.text.Component.text(((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024 * 1024)) + "/" + (Runtime.getRuntime().totalMemory() / (1024 * 1024)) + " mb (Max: " + (Runtime.getRuntime().maxMemory() / (1024 * 1024)) + " mb)", net.kyori.adventure.text.format.NamedTextColor.GREEN))
++            );
++            if (!this.hasShownMemoryWarning) {
++                sender.sendMessage(WARN_MSG);
++                this.hasShownMemoryWarning = true;
++            }
+         }
+-        sender.sendMessage( sb.substring( 0, sb.length() - 2 ) );
+-        sender.sendMessage(ChatColor.GOLD + "Current Memory Usage: " + ChatColor.GREEN + ((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / (1024 * 1024)) + "/" + (Runtime.getRuntime().totalMemory() / (1024 * 1024)) + " mb (Max: "
+-                + (Runtime.getRuntime().maxMemory() / (1024 * 1024)) + " mb)");
++        // Paper end
+ 
+         return true;
+     }
+ 
+-    private String format(double tps)
++    private boolean hasShownMemoryWarning; // Paper
++    private static net.kyori.adventure.text.Component format(double tps) // Paper - Made static
+     {
+-        return ( ( tps > 18.0 ) ? ChatColor.GREEN : ( tps > 16.0 ) ? ChatColor.YELLOW : ChatColor.RED ).toString()
+-                + ( ( tps > 20.0 ) ? "*" : "" ) + Math.min( Math.round( tps * 100.0 ) / 100.0, 20.0 );
++        // Paper
++        net.kyori.adventure.text.format.TextColor color = ( ( tps > 18.0 ) ? net.kyori.adventure.text.format.NamedTextColor.GREEN : ( tps > 16.0 ) ? net.kyori.adventure.text.format.NamedTextColor.YELLOW : net.kyori.adventure.text.format.NamedTextColor.RED );
++        String amount = Math.min(Math.round(tps * 100.0) / 100.0, 20.0) + (tps > 21.0  ? "*" : ""); // Paper - only print * at 21, we commonly peak to 20.02 as the tick sleep is not accurate enough, stop the noise
++        return net.kyori.adventure.text.Component.text(amount, color);
++        // Paper end
+     }
+ }
