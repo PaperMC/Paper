@@ -6,7 +6,6 @@ import io.papermc.paper.generated.GeneratedFrom;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
-import org.bukkit.MinecraftExperimental;
 import org.bukkit.block.Biome;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -24,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.3")
+@GeneratedFrom("1.21.4")
 @NullMarked
 @ApiStatus.Experimental
 public final class BiomeKeys {
@@ -306,8 +305,6 @@ public final class BiomeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TypedKey<Biome> PALE_GARDEN = create(key("pale_garden"));
 
     /**

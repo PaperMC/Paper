@@ -237,7 +237,6 @@ public class MobGoalNames {
         bukkitMap.put(net.minecraft.world.entity.animal.armadillo.Armadillo.class, org.bukkit.entity.Armadillo.class);
         bukkitMap.put(net.minecraft.world.entity.monster.Bogged.class, org.bukkit.entity.Bogged.class);
         bukkitMap.put(net.minecraft.world.entity.monster.creaking.Creaking.class, org.bukkit.entity.Creaking.class);
-        bukkitMap.put(net.minecraft.world.entity.monster.creaking.CreakingTransient.class, org.bukkit.entity.CreakingTransient.class);
         bukkitMap.put(net.minecraft.world.entity.animal.AgeableWaterCreature.class, org.bukkit.entity.Squid.class); // close enough
         //</editor-fold>
     }

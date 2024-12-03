@@ -6,7 +6,6 @@ import io.papermc.paper.generated.GeneratedFrom;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
-import org.bukkit.MinecraftExperimental;
 import org.bukkit.block.BlockType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -24,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.3")
+@GeneratedFrom("1.21.4")
 @NullMarked
 @ApiStatus.Experimental
 public final class BlockTypeKeys {
@@ -1359,6 +1358,13 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> CHISELED_RED_SANDSTONE = create(key("chiseled_red_sandstone"));
 
     /**
+     * {@code minecraft:chiseled_resin_bricks}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> CHISELED_RESIN_BRICKS = create(key("chiseled_resin_bricks"));
+
+    /**
      * {@code minecraft:chiseled_sandstone}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -1406,6 +1412,13 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> CLAY = create(key("clay"));
+
+    /**
+     * {@code minecraft:closed_eyeblossom}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> CLOSED_EYEBLOSSOM = create(key("closed_eyeblossom"));
 
     /**
      * {@code minecraft:coal_block}
@@ -1629,8 +1642,6 @@ public final class BlockTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TypedKey<BlockType> CREAKING_HEART = create(key("creaking_heart"));
 
     /**
@@ -4385,6 +4396,13 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> OCHRE_FROGLIGHT = create(key("ochre_froglight"));
 
     /**
+     * {@code minecraft:open_eyeblossom}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> OPEN_EYEBLOSSOM = create(key("open_eyeblossom"));
+
+    /**
      * {@code minecraft:orange_banner}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -4578,8 +4596,6 @@ public final class BlockTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TypedKey<BlockType> PALE_HANGING_MOSS = create(key("pale_hanging_moss"));
 
     /**
@@ -4587,8 +4603,6 @@ public final class BlockTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TypedKey<BlockType> PALE_MOSS_BLOCK = create(key("pale_moss_block"));
 
     /**
@@ -4596,8 +4610,6 @@ public final class BlockTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TypedKey<BlockType> PALE_MOSS_CARPET = create(key("pale_moss_carpet"));
 
     /**
@@ -4605,8 +4617,6 @@ public final class BlockTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TypedKey<BlockType> PALE_OAK_BUTTON = create(key("pale_oak_button"));
 
     /**
@@ -4614,8 +4624,6 @@ public final class BlockTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TypedKey<BlockType> PALE_OAK_DOOR = create(key("pale_oak_door"));
 
     /**
@@ -4623,8 +4631,6 @@ public final class BlockTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TypedKey<BlockType> PALE_OAK_FENCE = create(key("pale_oak_fence"));
 
     /**
@@ -4632,8 +4638,6 @@ public final class BlockTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TypedKey<BlockType> PALE_OAK_FENCE_GATE = create(key("pale_oak_fence_gate"));
 
     /**
@@ -4641,8 +4645,6 @@ public final class BlockTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TypedKey<BlockType> PALE_OAK_HANGING_SIGN = create(key("pale_oak_hanging_sign"));
 
     /**
@@ -4650,8 +4652,6 @@ public final class BlockTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TypedKey<BlockType> PALE_OAK_LEAVES = create(key("pale_oak_leaves"));
 
     /**
@@ -4659,8 +4659,6 @@ public final class BlockTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TypedKey<BlockType> PALE_OAK_LOG = create(key("pale_oak_log"));
 
     /**
@@ -4668,8 +4666,6 @@ public final class BlockTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TypedKey<BlockType> PALE_OAK_PLANKS = create(key("pale_oak_planks"));
 
     /**
@@ -4677,8 +4673,6 @@ public final class BlockTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TypedKey<BlockType> PALE_OAK_PRESSURE_PLATE = create(key("pale_oak_pressure_plate"));
 
     /**
@@ -4686,8 +4680,6 @@ public final class BlockTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TypedKey<BlockType> PALE_OAK_SAPLING = create(key("pale_oak_sapling"));
 
     /**
@@ -4695,8 +4687,6 @@ public final class BlockTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TypedKey<BlockType> PALE_OAK_SIGN = create(key("pale_oak_sign"));
 
     /**
@@ -4704,8 +4694,6 @@ public final class BlockTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TypedKey<BlockType> PALE_OAK_SLAB = create(key("pale_oak_slab"));
 
     /**
@@ -4713,8 +4701,6 @@ public final class BlockTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TypedKey<BlockType> PALE_OAK_STAIRS = create(key("pale_oak_stairs"));
 
     /**
@@ -4722,8 +4708,6 @@ public final class BlockTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TypedKey<BlockType> PALE_OAK_TRAPDOOR = create(key("pale_oak_trapdoor"));
 
     /**
@@ -4731,8 +4715,6 @@ public final class BlockTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TypedKey<BlockType> PALE_OAK_WALL_HANGING_SIGN = create(key("pale_oak_wall_hanging_sign"));
 
     /**
@@ -4740,8 +4722,6 @@ public final class BlockTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TypedKey<BlockType> PALE_OAK_WALL_SIGN = create(key("pale_oak_wall_sign"));
 
     /**
@@ -4749,8 +4729,6 @@ public final class BlockTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TypedKey<BlockType> PALE_OAK_WOOD = create(key("pale_oak_wood"));
 
     /**
@@ -5237,6 +5215,13 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> POTTED_CHERRY_SAPLING = create(key("potted_cherry_sapling"));
 
     /**
+     * {@code minecraft:potted_closed_eyeblossom}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POTTED_CLOSED_EYEBLOSSOM = create(key("potted_closed_eyeblossom"));
+
+    /**
      * {@code minecraft:potted_cornflower}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -5321,6 +5306,13 @@ public final class BlockTypeKeys {
     public static final TypedKey<BlockType> POTTED_OAK_SAPLING = create(key("potted_oak_sapling"));
 
     /**
+     * {@code minecraft:potted_open_eyeblossom}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> POTTED_OPEN_EYEBLOSSOM = create(key("potted_open_eyeblossom"));
+
+    /**
      * {@code minecraft:potted_orange_tulip}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -5339,8 +5331,6 @@ public final class BlockTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TypedKey<BlockType> POTTED_PALE_OAK_SAPLING = create(key("potted_pale_oak_sapling"));
 
     /**
@@ -5930,6 +5920,48 @@ public final class BlockTypeKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<BlockType> REPEATING_COMMAND_BLOCK = create(key("repeating_command_block"));
+
+    /**
+     * {@code minecraft:resin_block}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> RESIN_BLOCK = create(key("resin_block"));
+
+    /**
+     * {@code minecraft:resin_brick_slab}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> RESIN_BRICK_SLAB = create(key("resin_brick_slab"));
+
+    /**
+     * {@code minecraft:resin_brick_stairs}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> RESIN_BRICK_STAIRS = create(key("resin_brick_stairs"));
+
+    /**
+     * {@code minecraft:resin_brick_wall}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> RESIN_BRICK_WALL = create(key("resin_brick_wall"));
+
+    /**
+     * {@code minecraft:resin_bricks}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> RESIN_BRICKS = create(key("resin_bricks"));
+
+    /**
+     * {@code minecraft:resin_clump}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<BlockType> RESIN_CLUMP = create(key("resin_clump"));
 
     /**
      * {@code minecraft:respawn_anchor}
@@ -6615,8 +6647,6 @@ public final class BlockTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TypedKey<BlockType> STRIPPED_PALE_OAK_LOG = create(key("stripped_pale_oak_log"));
 
     /**
@@ -6624,8 +6654,6 @@ public final class BlockTypeKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TypedKey<BlockType> STRIPPED_PALE_OAK_WOOD = create(key("stripped_pale_oak_wood"));
 
     /**

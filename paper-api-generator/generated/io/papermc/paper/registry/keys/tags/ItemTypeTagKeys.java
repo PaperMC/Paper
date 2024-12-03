@@ -6,7 +6,6 @@ import io.papermc.paper.generated.GeneratedFrom;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
-import org.bukkit.MinecraftExperimental;
 import org.bukkit.inventory.ItemType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -24,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.3")
+@GeneratedFrom("1.21.4")
 @NullMarked
 @ApiStatus.Experimental
 public final class ItemTypeTagKeys {
@@ -330,6 +329,13 @@ public final class ItemTypeTagKeys {
     public static final TagKey<ItemType> DOORS = create(key("doors"));
 
     /**
+     * {@code #minecraft:drowned_preferred_weapons}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> DROWNED_PREFERRED_WEAPONS = create(key("drowned_preferred_weapons"));
+
+    /**
      * {@code #minecraft:duplicates_allays}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -503,13 +509,6 @@ public final class ItemTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<ItemType> FISHES = create(key("fishes"));
-
-    /**
-     * {@code #minecraft:flowers}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TagKey<ItemType> FLOWERS = create(key("flowers"));
 
     /**
      * {@code #minecraft:foot_armor}
@@ -761,8 +760,6 @@ public final class ItemTypeTagKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TagKey<ItemType> PALE_OAK_LOGS = create(key("pale_oak_logs"));
 
     /**
@@ -822,6 +819,13 @@ public final class ItemTypeTagKeys {
     public static final TagKey<ItemType> PIGLIN_LOVED = create(key("piglin_loved"));
 
     /**
+     * {@code #minecraft:piglin_preferred_weapons}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> PIGLIN_PREFERRED_WEAPONS = create(key("piglin_preferred_weapons"));
+
+    /**
      * {@code #minecraft:piglin_repellents}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -834,6 +838,13 @@ public final class ItemTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<ItemType> PIGLIN_SAFE_ARMOR = create(key("piglin_safe_armor"));
+
+    /**
+     * {@code #minecraft:pillager_preferred_weapons}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> PILLAGER_PREFERRED_WEAPONS = create(key("pillager_preferred_weapons"));
 
     /**
      * {@code #minecraft:planks}
@@ -962,6 +973,13 @@ public final class ItemTypeTagKeys {
     public static final TagKey<ItemType> SIGNS = create(key("signs"));
 
     /**
+     * {@code #minecraft:skeleton_preferred_weapons}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> SKELETON_PREFERRED_WEAPONS = create(key("skeleton_preferred_weapons"));
+
+    /**
      * {@code #minecraft:skulls}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -1067,13 +1085,6 @@ public final class ItemTypeTagKeys {
     public static final TagKey<ItemType> SWORDS = create(key("swords"));
 
     /**
-     * {@code #minecraft:tall_flowers}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TagKey<ItemType> TALL_FLOWERS = create(key("tall_flowers"));
-
-    /**
      * {@code #minecraft:terracotta}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -1093,13 +1104,6 @@ public final class ItemTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<ItemType> TRIM_MATERIALS = create(key("trim_materials"));
-
-    /**
-     * {@code #minecraft:trim_templates}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TagKey<ItemType> TRIM_TEMPLATES = create(key("trim_templates"));
 
     /**
      * {@code #minecraft:trimmable_armor}
@@ -1149,6 +1153,13 @@ public final class ItemTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<ItemType> WART_BLOCKS = create(key("wart_blocks"));
+
+    /**
+     * {@code #minecraft:wither_skeleton_disliked_weapons}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<ItemType> WITHER_SKELETON_DISLIKED_WEAPONS = create(key("wither_skeleton_disliked_weapons"));
 
     /**
      * {@code #minecraft:wolf_food}
