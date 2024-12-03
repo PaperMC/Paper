@@ -55,30 +55,18 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
 -    private static TracingExecutor makeExecutor(String name) {
--        int i = Mth.clamp(Runtime.getRuntime().availableProcessors() - 1, 1, getMaxThreads());
-+    private static TracingExecutor makeExecutor(String s, final int priorityModifier) { // Paper - Perf: add priority
++    private static TracingExecutor makeExecutor(String name, final int priorityModifier) { // Paper - Perf: add priority
+         int i = maxAllowedExecutorThreads();
+-        ExecutorService executorService;
 +        // Paper start - Perf: use simpler thread pool that allows 1 thread and reduce worldgen thread worker count for low core count CPUs
-+        int cpus = Runtime.getRuntime().availableProcessors() / 2;
-+        int i;
-+        if (cpus <= 4) {
-+            i = cpus <= 2 ? 1 : 2;
-+        } else if (cpus <= 8) {
-+            // [5, 8]
-+            i = Math.max(3, cpus - 2);
-+        } else {
-+            i = cpus * 2 / 3;
-+        }
-+        i = Math.min(8, i);
-+        i = Integer.getInteger("Paper.WorkerThreadCount", i);
-+
-         ExecutorService executorService;
++        final ExecutorService executorService;
          if (i <= 0) {
              executorService = MoreExecutors.newDirectExecutorService();
          } else {
 -            AtomicInteger atomicInteger = new AtomicInteger(1);
 -            executorService = new ForkJoinPool(i, pool -> {
 -                final String string2 = "Worker-" + name + "-" + atomicInteger.getAndIncrement();
-+            executorService = Executors.newFixedThreadPool(i, target -> new io.papermc.paper.util.ServerWorkerThread(target, s, priorityModifier));
++            executorService = Executors.newFixedThreadPool(i, target -> new io.papermc.paper.util.ServerWorkerThread(target, name, priorityModifier));
 +        }
 +        /*      final String string2 = "Worker-" + name + "-" + atomicInteger.getAndIncrement();
                  ForkJoinWorkerThread forkJoinWorkerThread = new ForkJoinWorkerThread(pool) {
@@ -93,6 +81,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
          return new TracingExecutor(executorService);
      }
+ 
+     public static int maxAllowedExecutorThreads() {
+-        return Mth.clamp(Runtime.getRuntime().availableProcessors() - 1, 1, getMaxThreads());
++        // Paper start - Perf: use simpler thread pool that allows 1 thread and reduce worldgen thread worker count for low core count CPUs
++        final int cpus = Runtime.getRuntime().availableProcessors() / 2;
++        int maxExecutorThreads;
++        if (cpus <= 4) {
++            maxExecutorThreads = cpus <= 2 ? 1 : 2;
++        } else if (cpus <= 8) {
++            // [5, 8]
++            maxExecutorThreads = Math.max(3, cpus - 2);
++        } else {
++            maxExecutorThreads = cpus * 2 / 3;
++        }
++        maxExecutorThreads = Math.min(8, maxExecutorThreads);
++        return Integer.getInteger("Paper.WorkerThreadCount", maxExecutorThreads);
++        // Paper end - Perf: use simpler thread pool that allows 1 thread and reduce worldgen thread worker count for low core count CPUs
+     }
+ 
+     private static int getMaxThreads() {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
