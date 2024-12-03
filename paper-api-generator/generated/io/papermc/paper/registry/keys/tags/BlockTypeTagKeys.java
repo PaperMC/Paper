@@ -6,7 +6,6 @@ import io.papermc.paper.generated.GeneratedFrom;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
-import org.bukkit.MinecraftExperimental;
 import org.bukkit.block.BlockType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -24,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.3")
+@GeneratedFrom("1.21.4")
 @NullMarked
 @ApiStatus.Experimental
 public final class BlockTypeTagKeys {
@@ -167,6 +166,13 @@ public final class BlockTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> BEDS = create(key("beds"));
+
+    /**
+     * {@code #minecraft:bee_attractive}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> BEE_ATTRACTIVE = create(key("bee_attractive"));
 
     /**
      * {@code #minecraft:bee_growables}
@@ -866,8 +872,6 @@ public final class BlockTypeTagKeys {
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     public static final TagKey<BlockType> PALE_OAK_LOGS = create(key("pale_oak_logs"));
 
     /**
@@ -1142,13 +1146,6 @@ public final class BlockTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> SWORD_EFFICIENT = create(key("sword_efficient"));
-
-    /**
-     * {@code #minecraft:tall_flowers}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TagKey<BlockType> TALL_FLOWERS = create(key("tall_flowers"));
 
     /**
      * {@code #minecraft:terracotta}

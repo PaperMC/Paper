@@ -66,7 +66,7 @@ import org.jspecify.annotations.NullMarked;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.3")
+@GeneratedFrom("1.21.4")
 @NullMarked
 public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<AbstractHorse> RANDOM_STAND = create("random_stand", AbstractHorse.class);
@@ -239,6 +239,8 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
 
     GoalKey<Guardian> GUARDIAN_ATTACK = create("guardian_attack", Guardian.class);
 
+    GoalKey<Illager> HOLD_GROUND_ATTACK = create("hold_ground_attack", Illager.class);
+
     GoalKey<Illager> RAIDER_OPEN_DOOR = create("raider_open_door", Illager.class);
 
     GoalKey<Illusioner> ILLUSIONER_BLINDNESS_SPELL = create("illusioner_blindness_spell", Illusioner.class);
@@ -338,8 +340,6 @@ public interface VanillaGoal<T extends Mob> extends Goal<T> {
     GoalKey<Rabbit> RABBIT_PANIC = create("rabbit_panic", Rabbit.class);
 
     GoalKey<Rabbit> RAID_GARDEN = create("raid_garden", Rabbit.class);
-
-    GoalKey<Raider> HOLD_GROUND_ATTACK = create("hold_ground_attack", Raider.class);
 
     GoalKey<Raider> LONG_DISTANCE_PATROL = create("long_distance_patrol", Raider.class);
 

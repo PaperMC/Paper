@@ -31,7 +31,6 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.RegistrySetBuilder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.registries.VanillaRegistries;
-import net.minecraft.data.registries.WinterDropRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.flag.FeatureElement;
 import net.minecraft.world.flag.FeatureFlags;
@@ -55,9 +54,7 @@ public class GeneratedKeyType<T, A> extends SimpleGenerator {
     private static final Map<ResourceKey<? extends Registry<?>>, RegistrySetBuilder.RegistryBootstrap<?>> VANILLA_REGISTRY_ENTRIES = VanillaRegistries.BUILDER.entries.stream()
             .collect(Collectors.toMap(RegistrySetBuilder.RegistryStub::key, RegistrySetBuilder.RegistryStub::bootstrap));
 
-    private static final Map<ResourceKey<? extends Registry<?>>, RegistrySetBuilder.RegistryBootstrap<?>> EXPERIMENTAL_REGISTRY_ENTRIES = WinterDropRegistries.BUILDER.entries.stream()
-            .collect(Collectors.toMap(RegistrySetBuilder.RegistryStub::key, RegistrySetBuilder.RegistryStub::bootstrap)); // Update for Experimental API
-
+    private static final Map<ResourceKey<? extends Registry<?>>, RegistrySetBuilder.RegistryBootstrap<?>> EXPERIMENTAL_REGISTRY_ENTRIES = Map.of();
     private static final Map<RegistryKey<?>, String> REGISTRY_KEY_FIELD_NAMES;
     static {
         final Map<RegistryKey<?>, String> map = new HashMap<>();
@@ -151,7 +148,7 @@ public class GeneratedKeyType<T, A> extends SimpleGenerator {
                 .initializer("$N(key($S))", createMethod.build(), keyPath)
                 .addJavadoc(Javadocs.getVersionDependentField("{@code $L}"), key.location().toString());
             if (experimental.contains(key)) {
-                fieldBuilder.addAnnotations(experimentalAnnotations(MinecraftExperimental.Requires.WINTER_DROP)); // Update for Experimental API
+                //fieldBuilder.addAnnotations(experimentalAnnotations(MinecraftExperimental.Requires.WINTER_DROP)); // Update for Experimental API
             } else {
                 allExperimental = false;
             }

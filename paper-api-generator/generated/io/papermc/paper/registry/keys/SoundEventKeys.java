@@ -23,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.3")
+@GeneratedFrom("1.21.4")
 @NullMarked
 @ApiStatus.Experimental
 public final class SoundEventKeys {
@@ -1988,6 +1988,41 @@ public final class SoundEventKeys {
     public static final TypedKey<Sound> BLOCK_ENDER_CHEST_OPEN = create(key("block.ender_chest.open"));
 
     /**
+     * {@code minecraft:block.eyeblossom.close}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_EYEBLOSSOM_CLOSE = create(key("block.eyeblossom.close"));
+
+    /**
+     * {@code minecraft:block.eyeblossom.close_long}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_EYEBLOSSOM_CLOSE_LONG = create(key("block.eyeblossom.close_long"));
+
+    /**
+     * {@code minecraft:block.eyeblossom.idle}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_EYEBLOSSOM_IDLE = create(key("block.eyeblossom.idle"));
+
+    /**
+     * {@code minecraft:block.eyeblossom.open}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_EYEBLOSSOM_OPEN = create(key("block.eyeblossom.open"));
+
+    /**
+     * {@code minecraft:block.eyeblossom.open_long}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_EYEBLOSSOM_OPEN_LONG = create(key("block.eyeblossom.open_long"));
+
+    /**
      * {@code minecraft:block.fence_gate.close}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -3778,6 +3813,69 @@ public final class SoundEventKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Sound> BLOCK_REDSTONE_TORCH_BURNOUT = create(key("block.redstone_torch.burnout"));
+
+    /**
+     * {@code minecraft:block.resin.break}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_RESIN_BREAK = create(key("block.resin.break"));
+
+    /**
+     * {@code minecraft:block.resin.fall}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_RESIN_FALL = create(key("block.resin.fall"));
+
+    /**
+     * {@code minecraft:block.resin.place}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_RESIN_PLACE = create(key("block.resin.place"));
+
+    /**
+     * {@code minecraft:block.resin.step}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_RESIN_STEP = create(key("block.resin.step"));
+
+    /**
+     * {@code minecraft:block.resin_bricks.break}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_RESIN_BRICKS_BREAK = create(key("block.resin_bricks.break"));
+
+    /**
+     * {@code minecraft:block.resin_bricks.fall}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_RESIN_BRICKS_FALL = create(key("block.resin_bricks.fall"));
+
+    /**
+     * {@code minecraft:block.resin_bricks.hit}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_RESIN_BRICKS_HIT = create(key("block.resin_bricks.hit"));
+
+    /**
+     * {@code minecraft:block.resin_bricks.place}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_RESIN_BRICKS_PLACE = create(key("block.resin_bricks.place"));
+
+    /**
+     * {@code minecraft:block.resin_bricks.step}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> BLOCK_RESIN_BRICKS_STEP = create(key("block.resin_bricks.step"));
 
     /**
      * {@code minecraft:block.respawn_anchor.ambient}
@@ -6165,6 +6263,13 @@ public final class SoundEventKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<Sound> ENTITY_CREAKING_SWAY = create(key("entity.creaking.sway"));
+
+    /**
+     * {@code minecraft:entity.creaking.twitch}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<Sound> ENTITY_CREAKING_TWITCH = create(key("entity.creaking.twitch"));
 
     /**
      * {@code minecraft:entity.creaking.unfreeze}

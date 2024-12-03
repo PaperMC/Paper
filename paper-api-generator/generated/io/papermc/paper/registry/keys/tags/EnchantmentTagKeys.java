@@ -24,7 +24,7 @@ import org.jspecify.annotations.NullMarked;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.3")
+@GeneratedFrom("1.21.4")
 @NullMarked
 @ApiStatus.Experimental
 public final class EnchantmentTagKeys {

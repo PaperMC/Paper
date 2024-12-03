@@ -23,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.3")
+@GeneratedFrom("1.21.4")
 @NullMarked
 @ApiStatus.Experimental
 public final class TrimMaterialKeys {
@@ -96,6 +96,13 @@ public final class TrimMaterialKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TypedKey<TrimMaterial> REDSTONE = create(key("redstone"));
+
+    /**
+     * {@code minecraft:resin}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TypedKey<TrimMaterial> RESIN = create(key("resin"));
 
     private TrimMaterialKeys() {
     }
