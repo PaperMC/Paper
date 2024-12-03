@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Thu, 9 Dec 2021 00:08:11 -0800
+Subject: [PATCH] Fix ChunkSnapshot#isSectionEmpty(int) and optimize
+ PalettedContainer copying by not using codecs
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+index be44b03527bd17344f5d835ba9d0b47e4b55d45f..08956b81b9a3e5caf3adce6699149491ff190d90 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+@@ -338,14 +338,17 @@ public class CraftChunk implements Chunk {
+         PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>>[] biome = (includeBiome || includeBiomeTempRain) ? new PalettedContainer[cs.length] : null;
+ 
+         Registry<net.minecraft.world.level.biome.Biome> iregistry = this.worldServer.registryAccess().lookupOrThrow(Registries.BIOME);
+-        Codec<PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>>> biomeCodec = PalettedContainer.codecRO(iregistry.asHolderIdMap(), iregistry.holderByNameCodec(), PalettedContainer.Strategy.SECTION_BIOMES, iregistry.getOrThrow(Biomes.PLAINS));
+ 
+         for (int i = 0; i < cs.length; i++) {
+-            CompoundTag data = new CompoundTag();
+ 
+-            data.put("block_states", SerializableChunkData.BLOCK_STATE_CODEC.encodeStart(NbtOps.INSTANCE, cs[i].getStates()).getOrThrow());
+-            sectionBlockIDs[i] = SerializableChunkData.BLOCK_STATE_CODEC.parse(NbtOps.INSTANCE, data.getCompound("block_states")).getOrThrow(SerializableChunkData.ChunkReadException::new);
+-            sectionEmpty[i] = cs[i].hasOnlyAir();
++            // Paper start - Fix ChunkSnapshot#isSectionEmpty(int); and remove codec usage
++            sectionEmpty[i] = cs[i].hasOnlyAir(); // fix sectionEmpty array not being filled
++            if (!sectionEmpty[i]) {
++                sectionBlockIDs[i] = cs[i].getStates().copy(); // use copy instead of round tripping with codecs
++            } else {
++                sectionBlockIDs[i] = CraftChunk.emptyBlockIDs; // use cached instance for empty block sections
++            }
++            // Paper end - Fix ChunkSnapshot#isSectionEmpty(int)
+ 
+             LevelLightEngine lightengine = this.worldServer.getLightEngine();
+             DataLayer skyLightArray = lightengine.getLayerListener(LightLayer.SKY).getDataLayerData(SectionPos.of(this.x, chunk.getSectionYFromSectionIndex(i), this.z)); // SPIGOT-7498: Convert section index
+@@ -364,8 +367,7 @@ public class CraftChunk implements Chunk {
+             }
+ 
+             if (biome != null) {
+-                data.put("biomes", biomeCodec.encodeStart(NbtOps.INSTANCE, cs[i].getBiomes()).getOrThrow());
+-                biome[i] = biomeCodec.parse(NbtOps.INSTANCE, data.getCompound("biomes")).getOrThrow(SerializableChunkData.ChunkReadException::new);
++                biome[i] = ((PalettedContainer<Holder<net.minecraft.world.level.biome.Biome>>) cs[i].getBiomes()).copy(); // Paper - Perf: use copy instead of round tripping with codecs
+             }
+         }
+ 

@@ -1,0 +1,78 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: kickash32 <kickash32@gmail.com>
+Date: Sat, 21 Dec 2019 15:22:09 -0500
+Subject: [PATCH] Tracking Range Improvements
+
+Sets tracking range of watermobs to animals instead of misc and simplifies code
+
+Also ignores Enderdragon, defaulting it to Mojang's setting
+
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index e211cd62b9381df353c0921bfaa6ad63f251a6ac..9baec6e78bdebd9b38b3f12e4fba99f9ad039c1e 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -1592,6 +1592,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             while (iterator.hasNext()) {
+                 Entity entity = (Entity) iterator.next();
+                 int j = entity.getType().clientTrackingRange() * 16;
++                j = org.spigotmc.TrackingRange.getEntityTrackingRange(entity, j); // Paper
+ 
+                 if (j > i) {
+                     i = j;
+diff --git a/src/main/java/org/spigotmc/TrackingRange.java b/src/main/java/org/spigotmc/TrackingRange.java
+index 73f9563551632a5369ba55e8fe9211afc325e869..bb06f89a29f30144e7e2113e088a503db006a83c 100644
+--- a/src/main/java/org/spigotmc/TrackingRange.java
++++ b/src/main/java/org/spigotmc/TrackingRange.java
+@@ -7,7 +7,6 @@ import net.minecraft.world.entity.ExperienceOrb;
+ import net.minecraft.world.entity.decoration.ItemFrame;
+ import net.minecraft.world.entity.decoration.Painting;
+ import net.minecraft.world.entity.item.ItemEntity;
+-import net.minecraft.world.entity.monster.Ghast;
+ 
+ public class TrackingRange
+ {
+@@ -30,22 +29,21 @@ public class TrackingRange
+         if ( entity instanceof ServerPlayer )
+         {
+             return config.playerTrackingRange;
+-        } else if ( entity.activationType == ActivationRange.ActivationType.MONSTER || entity.activationType == ActivationRange.ActivationType.RAIDER )
+-        {
+-            return config.monsterTrackingRange;
+-        } else if ( entity instanceof Ghast )
+-        {
+-            if ( config.monsterTrackingRange > config.monsterActivationRange )
+-            {
++        // Paper start - Simplify and set water mobs to animal tracking range
++        }
++        switch (entity.activationType) {
++            case RAIDER:
++            case MONSTER:
++            case FLYING_MONSTER:
+                 return config.monsterTrackingRange;
+-            } else
+-            {
+-                return config.monsterActivationRange;
+-            }
+-        } else if ( entity.activationType == ActivationRange.ActivationType.ANIMAL )
+-        {
+-            return config.animalTrackingRange;
+-        } else if ( entity instanceof ItemFrame || entity instanceof Painting || entity instanceof ItemEntity || entity instanceof ExperienceOrb )
++            case WATER:
++            case VILLAGER:
++            case ANIMAL:
++                return config.animalTrackingRange;
++            case MISC:
++        }
++        if ( entity instanceof ItemFrame || entity instanceof Painting || entity instanceof ItemEntity || entity instanceof ExperienceOrb )
++        // Paper end
+         {
+             return config.miscTrackingRange;
+         } else if ( entity instanceof Display )
+@@ -53,6 +51,7 @@ public class TrackingRange
+             return config.displayTrackingRange;
+         } else
+         {
++            if (entity instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon) return ((net.minecraft.server.level.ServerLevel)(entity.getCommandSenderWorld())).getChunkSource().chunkMap.serverViewDistance; // Paper - enderdragon is exempt
+             return config.otherTrackingRange;
+         }
+     }

@@ -1,0 +1,79 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Wed, 25 Aug 2021 13:19:53 -0700
+Subject: [PATCH] Vanilla command permission fixes
+
+Fixes permission checks for vanilla commands which don't have a
+requirement, as well as for namespaced vanilla commands.
+
+== AT ==
+public-f com.mojang.brigadier.tree.CommandNode requirement
+
+diff --git a/src/main/java/com/mojang/brigadier/builder/ArgumentBuilder.java b/src/main/java/com/mojang/brigadier/builder/ArgumentBuilder.java
+index 899008b2980d13f1be6280cd8cb959c53a29bebf..d5f7da3502575f6847f3c22ab0e942848a7c6031 100644
+--- a/src/main/java/com/mojang/brigadier/builder/ArgumentBuilder.java
++++ b/src/main/java/com/mojang/brigadier/builder/ArgumentBuilder.java
+@@ -14,9 +14,17 @@ import java.util.Collections;
+ import java.util.function.Predicate;
+ 
+ public abstract class ArgumentBuilder<S, T extends ArgumentBuilder<S, T>> {
++    // Paper start - Vanilla command permission fixes
++    private static final Predicate<Object> DEFAULT_REQUIREMENT = s -> true;
++
++    @SuppressWarnings("unchecked")
++    public static <S> Predicate<S> defaultRequirement() {
++        return (Predicate<S>) DEFAULT_REQUIREMENT;
++    }
++    // Paper end - Vanilla command permission fixes
+     private final RootCommandNode<S> arguments = new RootCommandNode<>();
+     private Command<S> command;
+-    private Predicate<S> requirement = s -> true;
++    private Predicate<S> requirement = defaultRequirement(); // Paper - Vanilla command permission fixes
+     private CommandNode<S> target;
+     private RedirectModifier<S> modifier = null;
+     private boolean forks;
+diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
+index d602c713696e23ba6a2d542b2e9e2cce46d79a66..800d1756db8c27b7d129a90addc125c4fc81e134 100644
+--- a/src/main/java/net/minecraft/commands/Commands.java
++++ b/src/main/java/net/minecraft/commands/Commands.java
+@@ -261,6 +261,13 @@ public class Commands {
+             PublishCommand.register(this.dispatcher);
+         }
+ 
++        // Paper start - Vanilla command permission fixes
++        for (final CommandNode<CommandSourceStack> node : this.dispatcher.getRoot().getChildren()) {
++            if (node.getRequirement() == com.mojang.brigadier.builder.ArgumentBuilder.<CommandSourceStack>defaultRequirement()) {
++                node.requirement = stack -> stack.source == CommandSource.NULL || stack.getBukkitSender().hasPermission(org.bukkit.craftbukkit.command.VanillaCommandWrapper.getPermission(node));
++            }
++        }
++        // Paper end - Vanilla command permission fixes
+         // CraftBukkit start
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java b/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java
+index 9b453830e4b949d67c2a01adc309ddc6ad019be1..35b05f9321ddbbbdf62f4bf726b58cf1205f0cfb 100644
+--- a/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java
++++ b/src/main/java/org/bukkit/craftbukkit/command/VanillaCommandWrapper.java
+@@ -91,7 +91,21 @@ public final class VanillaCommandWrapper extends BukkitCommand {
+     }
+ 
+     public static String getPermission(CommandNode<CommandSourceStack> vanillaCommand) {
+-        return "minecraft.command." + ((vanillaCommand.getRedirect() == null) ? vanillaCommand.getName() : vanillaCommand.getRedirect().getName());
++        // Paper start - Vanilla command permission fixes
++        while (vanillaCommand.getRedirect() != null) {
++            vanillaCommand = vanillaCommand.getRedirect();
++        }
++        final String commandName = vanillaCommand.getName();
++        return "minecraft.command." + stripDefaultNamespace(commandName);
++    }
++
++    private static String stripDefaultNamespace(final String maybeNamespaced) {
++        final String prefix = "minecraft:";
++        if (maybeNamespaced.startsWith(prefix)) {
++            return maybeNamespaced.substring(prefix.length());
++        }
++        return maybeNamespaced;
++        // Paper end - Vanilla command permission fixes
+     }
+ 
+     private String toDispatcher(String[] args, String name) {

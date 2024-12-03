@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ruViolence <78062896+ruViolence@users.noreply.github.com>
+Date: Tue, 27 Jun 2023 15:38:18 +0800
+Subject: [PATCH] Configurable entity tracking range by Y coordinate
+
+Options to configure entity tracking by Y coordinate, also for each entity category.
+
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index c1c2eeba0f5b8e499cc51cc1df7bf9acb61bd7d6..054c962288585ef3d0249d68c24d85624f172374 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -1571,7 +1571,17 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                 double d0 = (double) Math.min(this.getEffectiveRange(), i * 16);
+                 double d1 = vec3d.x * vec3d.x + vec3d.z * vec3d.z;
+                 double d2 = d0 * d0;
+-                boolean flag = d1 <= d2 && this.entity.broadcastToPlayer(player) && ChunkMap.this.isChunkTracked(player, this.entity.chunkPosition().x, this.entity.chunkPosition().z);
++                // Paper start - Configurable entity tracking range by Y
++                boolean flag = d1 <= d2;
++                if (flag && level.paperConfig().entities.trackingRangeY.enabled) {
++                    double rangeY = level.paperConfig().entities.trackingRangeY.get(this.entity, -1);
++                    if (rangeY != -1) {
++                        double vec3d_dy = player.getY() - this.entity.getY();
++                        flag = vec3d_dy * vec3d_dy <= rangeY * rangeY;
++                    }
++                }
++                flag = flag && this.entity.broadcastToPlayer(player) && ChunkMap.this.isChunkTracked(player, this.entity.chunkPosition().x, this.entity.chunkPosition().z);
++                // Paper end - Configurable entity tracking range by Y
+ 
+                 // CraftBukkit start - respect vanish API
+                 if (!player.getBukkitEntity().canSee(this.entity.getBukkitEntity())) {
