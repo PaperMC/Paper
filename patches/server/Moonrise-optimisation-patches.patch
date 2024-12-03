@@ -6709,6 +6709,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                LOGGER.error("Failed to close '" + type.name() + "' regionfile cache for world '" + WorldUtil.getWorldName(this.world) + "'", ex);
 +            }
 +        }
++
++        this.taskScheduler.setShutdown(true);
 +    }
 +
 +    void ensureInAutosave(final NewChunkHolder holder) {
@@ -8222,6 +8224,16 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return this.lockShift;
 +    }
 +
++    private volatile boolean shutdown;
++
++    public boolean hasShutdown() {
++        return this.shutdown;
++    }
++
++    public void setShutdown(final boolean shutdown) {
++        this.shutdown = shutdown;
++    }
++
 +    public ChunkTaskScheduler(final ServerLevel world) {
 +        this.world = world;
 +        // must be >= region shift (in paper, doesn't exist) and must be >= ticket propagator section shift
@@ -8474,6 +8486,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        ChunkAccess loaded = ((ChunkSystemServerLevel)this.world).moonrise$getSpecificChunkIfLoaded(chunkX, chunkZ, status);
 +        if (loaded != null) {
 +            return loaded;
++        }
++
++        if (this.hasShutdown()) {
++            throw new IllegalStateException(
++                "Chunk system has shut down, cannot process chunk requests in world '" + ca.spottedleaf.moonrise.common.util.WorldUtil.getWorldName(this.world) + "' at "
++                    + "(" + chunkX + "," + chunkZ + ") status: " + status
++            );
 +        }
 +
 +        final Long ticketId = getNextNonFullLoadId();
@@ -26035,6 +26054,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            completable::complete
 +        );
 +
++        if (!completable.isDone() && chunkTaskScheduler.hasShutdown()) {
++            throw new IllegalStateException(
++                "Chunk system has shut down, cannot process chunk requests in world '" + ca.spottedleaf.moonrise.common.util.WorldUtil.getWorldName(this.level) + "' at "
++                    + "(" + chunkX + "," + chunkZ + ") status: " + toStatus
++            );
++        }
++
 +        if (ca.spottedleaf.moonrise.common.util.TickThread.isTickThreadFor(this.level, chunkX, chunkZ)) {
 +            ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.pushChunkWait(this.level, chunkX, chunkZ);
 +            this.mainThreadProcessor.managedBlock(completable::isDone);
@@ -26138,13 +26164,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -            }
 -            // Paper end - Perf: Optimise getChunkAt calls for loaded chunks
 -            ProfilerFiller gameprofilerfiller = Profiler.get();
--
--            gameprofilerfiller.incrementCounter("getChunk");
--            long k = ChunkPos.asLong(x, z);
 +        // Paper start - rewrite chunk system
 +        if (leastStatus == ChunkStatus.FULL) {
 +            final LevelChunk ret = this.fullChunks.get(ca.spottedleaf.moonrise.common.util.CoordinateUtils.getChunkKey(x, z));
  
+-            gameprofilerfiller.incrementCounter("getChunk");
+-            long k = ChunkPos.asLong(x, z);
+-
 -            for (int l = 0; l < 4; ++l) {
 -                if (k == this.lastChunkPos[l] && leastStatus == this.lastChunkStatus[l]) {
 -                    ChunkAccess ichunkaccess = this.lastChunk[l];
@@ -26195,13 +26221,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        if (ret != null || !ca.spottedleaf.moonrise.common.util.TickThread.isTickThread()) {
 +            return ret;
-         }
++        }
 +
 +        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder holder = ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler()
 +            .chunkHolderManager.getChunkHolder(chunkX, chunkZ);
 +        if (holder == null) {
 +            return ret;
-+        }
+         }
 +
 +        return ca.spottedleaf.moonrise.common.PlatformHooks.get().getCurrentlyLoadingChunk(holder.vanillaChunkHolder);
 +        // Paper end - rewrite chunk system
