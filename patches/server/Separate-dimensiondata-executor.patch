@@ -43,11 +43,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 --- a/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java
 +++ b/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java
 @@ -0,0 +0,0 @@ public class DimensionDataStorage implements AutoCloseable {
-             } catch (IOException var3) {
-                 LOGGER.error("Could not save data to {}", path.getFileName(), var3);
-             }
--        }, Util.ioPool());
-+        }, Util.DIMENSION_DATA_IO_POOL); // Paper - Separate dimension data IO pool
-     }
- 
-     public void saveAndJoin() {
+         } else {
+             int i = Util.maxAllowedExecutorThreads();
+             int j = map.size();
+-            if (j > i) {
++            if (false && j > i) { // Paper - Separate dimension data IO pool; just throw them into the fixed pool queue
+                 this.pendingWriteFuture = this.pendingWriteFuture.thenCompose(object -> {
+                     List<CompletableFuture<?>> list = new ArrayList<>(i);
+                     int k = Mth.positiveCeilDiv(j, i);
+@@ -0,0 +0,0 @@ public class DimensionDataStorage implements AutoCloseable {
+                         v -> CompletableFuture.allOf(
+                                 map.entrySet()
+                                     .stream()
+-                                    .map(entry -> CompletableFuture.runAsync(() -> tryWrite(entry.getKey(), entry.getValue()), Util.ioPool()))
++                                    .map(entry -> CompletableFuture.runAsync(() -> tryWrite(entry.getKey(), entry.getValue()), Util.DIMENSION_DATA_IO_POOL)) // Paper - Separate dimension data IO pool
+                                     .toArray(CompletableFuture[]::new)
+                             )
+                     );
