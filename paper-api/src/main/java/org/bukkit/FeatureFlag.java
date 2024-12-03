@@ -39,6 +39,12 @@ public interface FeatureFlag extends Keyed {
     @Deprecated(since = "1.21")
     public static final FeatureFlag UPDATE_121 = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("update_1_21"));
 
+    /**
+     * <strong>AVAILABLE BETWEEN VERSIONS:</strong> 1.21.2 - 1.21.3
+     *
+     * @deprecated not available since 1.21.4
+     */
+    @Deprecated(since = "1.21.4")
     public static final FeatureFlag WINTER_DROP = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("winter_drop"));
 
     public static final FeatureFlag REDSTONE_EXPERIMENTS = Bukkit.getUnsafe().getFeatureFlag(NamespacedKey.minecraft("redstone_experiments"));

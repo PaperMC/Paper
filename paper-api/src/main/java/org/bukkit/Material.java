@@ -93,6 +93,7 @@ import org.bukkit.block.data.type.RedstoneRail;
 import org.bukkit.block.data.type.RedstoneWallTorch;
 import org.bukkit.block.data.type.RedstoneWire;
 import org.bukkit.block.data.type.Repeater;
+import org.bukkit.block.data.type.ResinClump;
 import org.bukkit.block.data.type.RespawnAnchor;
 import org.bukkit.block.data.type.Sapling;
 import org.bukkit.block.data.type.Scaffolding;
@@ -215,8 +216,6 @@ public enum Material implements Keyed, Translatable {
     ACACIA_PLANKS(31312),
     CHERRY_PLANKS(8354),
     DARK_OAK_PLANKS(20869),
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_OAK_PLANKS(21660),
     MANGROVE_PLANKS(7078),
     BAMBOO_PLANKS(8520),
@@ -254,8 +253,6 @@ public enum Material implements Keyed, Translatable {
     /**
      * BlockData: {@link Sapling}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_OAK_SAPLING(15508, Sapling.class),
     /**
      * BlockData: {@link MangrovePropagule}
@@ -427,8 +424,6 @@ public enum Material implements Keyed, Translatable {
     /**
      * BlockData: {@link Orientable}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_OAK_LOG(13346, Orientable.class),
     /**
      * BlockData: {@link Orientable}
@@ -489,8 +484,6 @@ public enum Material implements Keyed, Translatable {
     /**
      * BlockData: {@link Orientable}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     STRIPPED_PALE_OAK_LOG(25375, Orientable.class),
     /**
      * BlockData: {@link Orientable}
@@ -535,8 +528,6 @@ public enum Material implements Keyed, Translatable {
     /**
      * BlockData: {@link Orientable}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     STRIPPED_PALE_OAK_WOOD(20330, Orientable.class),
     /**
      * BlockData: {@link Orientable}
@@ -581,8 +572,6 @@ public enum Material implements Keyed, Translatable {
     /**
      * BlockData: {@link Orientable}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_OAK_WOOD(29429, Orientable.class),
     /**
      * BlockData: {@link Orientable}
@@ -631,8 +620,6 @@ public enum Material implements Keyed, Translatable {
     /**
      * BlockData: {@link Leaves}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_OAK_LEAVES(6408, Leaves.class),
     /**
      * BlockData: {@link Leaves}
@@ -682,6 +669,8 @@ public enum Material implements Keyed, Translatable {
     RED_WOOL(11621),
     BLACK_WOOL(16693),
     DANDELION(30558),
+    OPEN_EYEBLOSSOM(31238),
+    CLOSED_EYEBLOSSOM(29262),
     POPPY(12851),
     BLUE_ORCHID(13432),
     ALLIUM(6871),
@@ -732,17 +721,11 @@ public enum Material implements Keyed, Translatable {
     /**
      * BlockData: {@link MossyCarpet}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_MOSS_CARPET(24824, MossyCarpet.class),
     /**
      * BlockData: {@link HangingMoss}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_HANGING_MOSS(13108, HangingMoss.class),
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_MOSS_BLOCK(5318),
     /**
      * BlockData: {@link Waterlogged}
@@ -791,8 +774,6 @@ public enum Material implements Keyed, Translatable {
     /**
      * BlockData: {@link Slab}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_OAK_SLAB(22048, Slab.class),
     /**
      * BlockData: {@link Slab}
@@ -924,8 +905,6 @@ public enum Material implements Keyed, Translatable {
     /**
      * BlockData: {@link CreakingHeart}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     CREAKING_HEART(11442, CreakingHeart.class),
     /**
      * BlockData: {@link Chest}
@@ -994,8 +973,6 @@ public enum Material implements Keyed, Translatable {
     /**
      * BlockData: {@link Fence}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_OAK_FENCE(10547, Fence.class),
     /**
      * BlockData: {@link Fence}
@@ -1092,6 +1069,25 @@ public enum Material implements Keyed, Translatable {
      */
     GLOW_LICHEN(19165, GlowLichen.class),
     /**
+     * BlockData: {@link ResinClump}
+     */
+    RESIN_CLUMP(28662, ResinClump.class),
+    RESIN_BLOCK(26344),
+    RESIN_BRICKS(8331),
+    /**
+     * BlockData: {@link Stairs}
+     */
+    RESIN_BRICK_STAIRS(31170, Stairs.class),
+    /**
+     * BlockData: {@link Slab}
+     */
+    RESIN_BRICK_SLAB(25553, Slab.class),
+    /**
+     * BlockData: {@link Wall}
+     */
+    RESIN_BRICK_WALL(8538, Wall.class),
+    CHISELED_RESIN_BRICKS(5529),
+    /**
      * BlockData: {@link Stairs}
      */
     BRICK_STAIRS(21534, Stairs.class),
@@ -1180,8 +1176,6 @@ public enum Material implements Keyed, Translatable {
     /**
      * BlockData: {@link Stairs}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_OAK_STAIRS(20755, Stairs.class),
     /**
      * BlockData: {@link Stairs}
@@ -2048,8 +2042,6 @@ public enum Material implements Keyed, Translatable {
     /**
      * BlockData: {@link Switch}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_OAK_BUTTON(5238, Switch.class),
     /**
      * BlockData: {@link Switch}
@@ -2114,8 +2106,6 @@ public enum Material implements Keyed, Translatable {
     /**
      * BlockData: {@link Powerable}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_OAK_PRESSURE_PLATE(30527, Powerable.class),
     /**
      * BlockData: {@link Powerable}
@@ -2168,8 +2158,6 @@ public enum Material implements Keyed, Translatable {
     /**
      * BlockData: {@link Door}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_OAK_DOOR(23817, Door.class),
     /**
      * BlockData: {@link Door}
@@ -2254,8 +2242,6 @@ public enum Material implements Keyed, Translatable {
     /**
      * BlockData: {@link TrapDoor}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_OAK_TRAPDOOR(20647, TrapDoor.class),
     /**
      * BlockData: {@link TrapDoor}
@@ -2336,8 +2322,6 @@ public enum Material implements Keyed, Translatable {
     /**
      * BlockData: {@link Gate}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_OAK_FENCE_GATE(21221, Gate.class),
     /**
      * BlockData: {@link Gate}
@@ -2395,11 +2379,7 @@ public enum Material implements Keyed, Translatable {
     CHERRY_CHEST_BOAT(7165, 1),
     DARK_OAK_BOAT(28618, 1),
     DARK_OAK_CHEST_BOAT(8733, 1),
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_OAK_BOAT(18534, 1),
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_OAK_CHEST_BOAT(26297, 1),
     MANGROVE_BOAT(20792, 1),
     MANGROVE_CHEST_BOAT(18572, 1),
@@ -2539,8 +2519,6 @@ public enum Material implements Keyed, Translatable {
     /**
      * BlockData: {@link Sign}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_OAK_SIGN(12116, 16, Sign.class),
     /**
      * BlockData: {@link Sign}
@@ -2589,8 +2567,6 @@ public enum Material implements Keyed, Translatable {
     /**
      * BlockData: {@link HangingSign}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_OAK_HANGING_SIGN(7097, 16, HangingSign.class),
     /**
      * BlockData: {@link HangingSign}
@@ -2860,8 +2836,6 @@ public enum Material implements Keyed, Translatable {
     WITHER_SKELETON_SPAWN_EGG(10073),
     WOLF_SPAWN_EGG(21692),
     ZOGLIN_SPAWN_EGG(7442),
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     CREAKING_SPAWN_EGG(9598),
     ZOMBIE_SPAWN_EGG(5814),
     ZOMBIE_HORSE_SPAWN_EGG(4275),
@@ -2917,6 +2891,7 @@ public enum Material implements Keyed, Translatable {
     FIREWORK_STAR(12190),
     ENCHANTED_BOOK(11741, 1),
     NETHER_BRICK(19996),
+    RESIN_BRICK(19050),
     PRISMARINE_SHARD(10993),
     PRISMARINE_CRYSTALS(31546),
     RABBIT(23068),
@@ -3438,8 +3413,6 @@ public enum Material implements Keyed, Translatable {
     /**
      * BlockData: {@link WallSign}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_OAK_WALL_SIGN(23103, 16, WallSign.class),
     /**
      * BlockData: {@link WallSign}
@@ -3480,8 +3453,6 @@ public enum Material implements Keyed, Translatable {
     /**
      * BlockData: {@link WallHangingSign}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_OAK_WALL_HANGING_SIGN(23484, WallHangingSign.class),
     /**
      * BlockData: {@link WallHangingSign}
@@ -3553,8 +3524,6 @@ public enum Material implements Keyed, Translatable {
     POTTED_ACACIA_SAPLING(14096),
     POTTED_CHERRY_SAPLING(30785),
     POTTED_DARK_OAK_SAPLING(6486),
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     POTTED_PALE_OAK_SAPLING(15538),
     POTTED_MANGROVE_PROPAGULE(22003),
     POTTED_FERN(23315),
@@ -3842,6 +3811,8 @@ public enum Material implements Keyed, Translatable {
     BIG_DRIPLEAF_STEM(13167, Dripleaf.class),
     POTTED_AZALEA_BUSH(20430),
     POTTED_FLOWERING_AZALEA_BUSH(10609),
+    POTTED_OPEN_EYEBLOSSOM(24999),
+    POTTED_CLOSED_EYEBLOSSOM(16694),
     // ----- Legacy Separator -----
     @Deprecated(since = "1.13")
     LEGACY_AIR(0, 0),

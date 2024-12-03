@@ -6,12 +6,10 @@ import java.util.Locale;
 import org.bukkit.Bukkit;
 import org.bukkit.FeatureFlag;
 import org.bukkit.Keyed;
-import org.bukkit.MinecraftExperimental;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.packs.DataPack;
 import org.bukkit.util.OldEnum;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -47,6 +45,7 @@ public interface Biome extends OldEnum<Biome>, Keyed {
     Biome SNOWY_BEACH = getBiome("snowy_beach");
     Biome BIRCH_FOREST = getBiome("birch_forest");
     Biome DARK_FOREST = getBiome("dark_forest");
+    Biome PALE_GARDEN = getBiome("pale_garden");
     Biome SNOWY_TAIGA = getBiome("snowy_taiga");
     Biome OLD_GROWTH_PINE_TAIGA = getBiome("old_growth_pine_taiga");
     Biome WINDSWEPT_FOREST = getBiome("windswept_forest");
@@ -88,9 +87,6 @@ public interface Biome extends OldEnum<Biome>, Keyed {
     Biome JAGGED_PEAKS = getBiome("jagged_peaks");
     Biome STONY_PEAKS = getBiome("stony_peaks");
     Biome CHERRY_GROVE = getBiome("cherry_grove");
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
-    Biome PALE_GARDEN = Registry.BIOME.get(NamespacedKey.minecraft("pale_garden"));
 
     /**
      * Represents a custom Biome

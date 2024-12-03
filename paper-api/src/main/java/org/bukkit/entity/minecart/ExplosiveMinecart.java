@@ -29,6 +29,22 @@ public interface ExplosiveMinecart extends Minecart, Explosive {
     public int getFuseTicks();
 
     /**
+     * Gets the factor by which explosion yield increases based on Minecart
+     * speed.
+     *
+     * @return increase factor
+     */
+    public float getExplosionSpeedFactor();
+
+    /**
+     * Sets the factor by which explosion yield increases based on Minecart
+     * speed.
+     *
+     * @param factor new factor
+     */
+    public void setExplosionSpeedFactor(float factor);
+
+    /**
      * Ignite this minecart's fuse naturally.
      */
     public void ignite();

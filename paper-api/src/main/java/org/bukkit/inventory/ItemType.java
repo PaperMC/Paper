@@ -4,7 +4,6 @@ import com.google.common.collect.Multimap;
 import java.util.function.Consumer;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
-import org.bukkit.MinecraftExperimental;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.Translatable;
@@ -136,8 +135,6 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> ACACIA_PLANKS = getItemType("acacia_planks");
     ItemType.Typed<ItemMeta> CHERRY_PLANKS = getItemType("cherry_planks");
     ItemType.Typed<ItemMeta> DARK_OAK_PLANKS = getItemType("dark_oak_planks");
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     ItemType.Typed<ItemMeta> PALE_OAK_PLANKS = getItemType("pale_oak_planks");
     ItemType.Typed<ItemMeta> MANGROVE_PLANKS = getItemType("mangrove_planks");
     ItemType.Typed<ItemMeta> BAMBOO_PLANKS = getItemType("bamboo_planks");
@@ -151,8 +148,6 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> ACACIA_SAPLING = getItemType("acacia_sapling");
     ItemType.Typed<ItemMeta> CHERRY_SAPLING = getItemType("cherry_sapling");
     ItemType.Typed<ItemMeta> DARK_OAK_SAPLING = getItemType("dark_oak_sapling");
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     ItemType.Typed<ItemMeta> PALE_OAK_SAPLING = getItemType("pale_oak_sapling");
     ItemType.Typed<ItemMeta> MANGROVE_PROPAGULE = getItemType("mangrove_propagule");
     ItemType.Typed<ItemMeta> BEDROCK = getItemType("bedrock");
@@ -244,8 +239,6 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> ACACIA_LOG = getItemType("acacia_log");
     ItemType.Typed<ItemMeta> CHERRY_LOG = getItemType("cherry_log");
     ItemType.Typed<ItemMeta> DARK_OAK_LOG = getItemType("dark_oak_log");
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     ItemType.Typed<ItemMeta> PALE_OAK_LOG = getItemType("pale_oak_log");
     ItemType.Typed<ItemMeta> MANGROVE_LOG = getItemType("mangrove_log");
     ItemType.Typed<ItemMeta> MANGROVE_ROOTS = getItemType("mangrove_roots");
@@ -260,8 +253,6 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> STRIPPED_ACACIA_LOG = getItemType("stripped_acacia_log");
     ItemType.Typed<ItemMeta> STRIPPED_CHERRY_LOG = getItemType("stripped_cherry_log");
     ItemType.Typed<ItemMeta> STRIPPED_DARK_OAK_LOG = getItemType("stripped_dark_oak_log");
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     ItemType.Typed<ItemMeta> STRIPPED_PALE_OAK_LOG = getItemType("stripped_pale_oak_log");
     ItemType.Typed<ItemMeta> STRIPPED_MANGROVE_LOG = getItemType("stripped_mangrove_log");
     ItemType.Typed<ItemMeta> STRIPPED_CRIMSON_STEM = getItemType("stripped_crimson_stem");
@@ -273,8 +264,6 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> STRIPPED_ACACIA_WOOD = getItemType("stripped_acacia_wood");
     ItemType.Typed<ItemMeta> STRIPPED_CHERRY_WOOD = getItemType("stripped_cherry_wood");
     ItemType.Typed<ItemMeta> STRIPPED_DARK_OAK_WOOD = getItemType("stripped_dark_oak_wood");
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     ItemType.Typed<ItemMeta> STRIPPED_PALE_OAK_WOOD = getItemType("stripped_pale_oak_wood");
     ItemType.Typed<ItemMeta> STRIPPED_MANGROVE_WOOD = getItemType("stripped_mangrove_wood");
     ItemType.Typed<ItemMeta> STRIPPED_CRIMSON_HYPHAE = getItemType("stripped_crimson_hyphae");
@@ -287,8 +276,6 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> ACACIA_WOOD = getItemType("acacia_wood");
     ItemType.Typed<ItemMeta> CHERRY_WOOD = getItemType("cherry_wood");
     ItemType.Typed<ItemMeta> DARK_OAK_WOOD = getItemType("dark_oak_wood");
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     ItemType.Typed<ItemMeta> PALE_OAK_WOOD = getItemType("pale_oak_wood");
     ItemType.Typed<ItemMeta> MANGROVE_WOOD = getItemType("mangrove_wood");
     ItemType.Typed<ItemMeta> CRIMSON_HYPHAE = getItemType("crimson_hyphae");
@@ -300,8 +287,6 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> ACACIA_LEAVES = getItemType("acacia_leaves");
     ItemType.Typed<ItemMeta> CHERRY_LEAVES = getItemType("cherry_leaves");
     ItemType.Typed<ItemMeta> DARK_OAK_LEAVES = getItemType("dark_oak_leaves");
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     ItemType.Typed<ItemMeta> PALE_OAK_LEAVES = getItemType("pale_oak_leaves");
     ItemType.Typed<ItemMeta> MANGROVE_LEAVES = getItemType("mangrove_leaves");
     ItemType.Typed<ItemMeta> AZALEA_LEAVES = getItemType("azalea_leaves");
@@ -339,6 +324,8 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> RED_WOOL = getItemType("red_wool");
     ItemType.Typed<ItemMeta> BLACK_WOOL = getItemType("black_wool");
     ItemType.Typed<ItemMeta> DANDELION = getItemType("dandelion");
+    ItemType.Typed<ItemMeta> OPEN_EYEBLOSSOM = getItemType("open_eyeblossom");
+    ItemType.Typed<ItemMeta> CLOSED_EYEBLOSSOM = getItemType("closed_eyeblossom");
     ItemType.Typed<ItemMeta> POPPY = getItemType("poppy");
     ItemType.Typed<ItemMeta> BLUE_ORCHID = getItemType("blue_orchid");
     ItemType.Typed<ItemMeta> ALLIUM = getItemType("allium");
@@ -368,14 +355,8 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> PINK_PETALS = getItemType("pink_petals");
     ItemType.Typed<ItemMeta> MOSS_CARPET = getItemType("moss_carpet");
     ItemType.Typed<ItemMeta> MOSS_BLOCK = getItemType("moss_block");
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     ItemType.Typed<ItemMeta> PALE_MOSS_CARPET = getItemType("pale_moss_carpet");
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     ItemType.Typed<ItemMeta> PALE_HANGING_MOSS = getItemType("pale_hanging_moss");
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     ItemType.Typed<ItemMeta> PALE_MOSS_BLOCK = getItemType("pale_moss_block");
     ItemType.Typed<ItemMeta> HANGING_ROOTS = getItemType("hanging_roots");
     ItemType.Typed<ItemMeta> BIG_DRIPLEAF = getItemType("big_dripleaf");
@@ -388,8 +369,6 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> ACACIA_SLAB = getItemType("acacia_slab");
     ItemType.Typed<ItemMeta> CHERRY_SLAB = getItemType("cherry_slab");
     ItemType.Typed<ItemMeta> DARK_OAK_SLAB = getItemType("dark_oak_slab");
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     ItemType.Typed<ItemMeta> PALE_OAK_SLAB = getItemType("pale_oak_slab");
     ItemType.Typed<ItemMeta> MANGROVE_SLAB = getItemType("mangrove_slab");
     ItemType.Typed<ItemMeta> BAMBOO_SLAB = getItemType("bamboo_slab");
@@ -443,8 +422,6 @@ public interface ItemType extends Keyed, Translatable {
     /**
      * ItemMeta: {@link BlockStateMeta}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     ItemType.Typed<BlockStateMeta> CREAKING_HEART = getItemType("creaking_heart");
     /**
      * ItemMeta: {@link BlockStateMeta}
@@ -474,8 +451,6 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> ACACIA_FENCE = getItemType("acacia_fence");
     ItemType.Typed<ItemMeta> CHERRY_FENCE = getItemType("cherry_fence");
     ItemType.Typed<ItemMeta> DARK_OAK_FENCE = getItemType("dark_oak_fence");
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     ItemType.Typed<ItemMeta> PALE_OAK_FENCE = getItemType("pale_oak_fence");
     ItemType.Typed<ItemMeta> MANGROVE_FENCE = getItemType("mangrove_fence");
     ItemType.Typed<ItemMeta> BAMBOO_FENCE = getItemType("bamboo_fence");
@@ -520,6 +495,13 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> MELON = getItemType("melon");
     ItemType.Typed<ItemMeta> VINE = getItemType("vine");
     ItemType.Typed<ItemMeta> GLOW_LICHEN = getItemType("glow_lichen");
+    ItemType.Typed<ItemMeta> RESIN_CLUMP = getItemType("resin_clump");
+    ItemType.Typed<ItemMeta> RESIN_BLOCK = getItemType("resin_block");
+    ItemType.Typed<ItemMeta> RESIN_BRICKS = getItemType("resin_bricks");
+    ItemType.Typed<ItemMeta> RESIN_BRICK_STAIRS = getItemType("resin_brick_stairs");
+    ItemType.Typed<ItemMeta> RESIN_BRICK_SLAB = getItemType("resin_brick_slab");
+    ItemType.Typed<ItemMeta> RESIN_BRICK_WALL = getItemType("resin_brick_wall");
+    ItemType.Typed<ItemMeta> CHISELED_RESIN_BRICKS = getItemType("chiseled_resin_bricks");
     ItemType.Typed<ItemMeta> BRICK_STAIRS = getItemType("brick_stairs");
     ItemType.Typed<ItemMeta> STONE_BRICK_STAIRS = getItemType("stone_brick_stairs");
     ItemType.Typed<ItemMeta> MUD_BRICK_STAIRS = getItemType("mud_brick_stairs");
@@ -561,8 +543,6 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> ACACIA_STAIRS = getItemType("acacia_stairs");
     ItemType.Typed<ItemMeta> CHERRY_STAIRS = getItemType("cherry_stairs");
     ItemType.Typed<ItemMeta> DARK_OAK_STAIRS = getItemType("dark_oak_stairs");
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     ItemType.Typed<ItemMeta> PALE_OAK_STAIRS = getItemType("pale_oak_stairs");
     ItemType.Typed<ItemMeta> MANGROVE_STAIRS = getItemType("mangrove_stairs");
     ItemType.Typed<ItemMeta> BAMBOO_STAIRS = getItemType("bamboo_stairs");
@@ -955,8 +935,6 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> ACACIA_BUTTON = getItemType("acacia_button");
     ItemType.Typed<ItemMeta> CHERRY_BUTTON = getItemType("cherry_button");
     ItemType.Typed<ItemMeta> DARK_OAK_BUTTON = getItemType("dark_oak_button");
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     ItemType.Typed<ItemMeta> PALE_OAK_BUTTON = getItemType("pale_oak_button");
     ItemType.Typed<ItemMeta> MANGROVE_BUTTON = getItemType("mangrove_button");
     ItemType.Typed<ItemMeta> BAMBOO_BUTTON = getItemType("bamboo_button");
@@ -973,8 +951,6 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> ACACIA_PRESSURE_PLATE = getItemType("acacia_pressure_plate");
     ItemType.Typed<ItemMeta> CHERRY_PRESSURE_PLATE = getItemType("cherry_pressure_plate");
     ItemType.Typed<ItemMeta> DARK_OAK_PRESSURE_PLATE = getItemType("dark_oak_pressure_plate");
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     ItemType.Typed<ItemMeta> PALE_OAK_PRESSURE_PLATE = getItemType("pale_oak_pressure_plate");
     ItemType.Typed<ItemMeta> MANGROVE_PRESSURE_PLATE = getItemType("mangrove_pressure_plate");
     ItemType.Typed<ItemMeta> BAMBOO_PRESSURE_PLATE = getItemType("bamboo_pressure_plate");
@@ -988,8 +964,6 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> ACACIA_DOOR = getItemType("acacia_door");
     ItemType.Typed<ItemMeta> CHERRY_DOOR = getItemType("cherry_door");
     ItemType.Typed<ItemMeta> DARK_OAK_DOOR = getItemType("dark_oak_door");
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     ItemType.Typed<ItemMeta> PALE_OAK_DOOR = getItemType("pale_oak_door");
     ItemType.Typed<ItemMeta> MANGROVE_DOOR = getItemType("mangrove_door");
     ItemType.Typed<ItemMeta> BAMBOO_DOOR = getItemType("bamboo_door");
@@ -1011,8 +985,6 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> ACACIA_TRAPDOOR = getItemType("acacia_trapdoor");
     ItemType.Typed<ItemMeta> CHERRY_TRAPDOOR = getItemType("cherry_trapdoor");
     ItemType.Typed<ItemMeta> DARK_OAK_TRAPDOOR = getItemType("dark_oak_trapdoor");
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     ItemType.Typed<ItemMeta> PALE_OAK_TRAPDOOR = getItemType("pale_oak_trapdoor");
     ItemType.Typed<ItemMeta> MANGROVE_TRAPDOOR = getItemType("mangrove_trapdoor");
     ItemType.Typed<ItemMeta> BAMBOO_TRAPDOOR = getItemType("bamboo_trapdoor");
@@ -1033,8 +1005,6 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> ACACIA_FENCE_GATE = getItemType("acacia_fence_gate");
     ItemType.Typed<ItemMeta> CHERRY_FENCE_GATE = getItemType("cherry_fence_gate");
     ItemType.Typed<ItemMeta> DARK_OAK_FENCE_GATE = getItemType("dark_oak_fence_gate");
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     ItemType.Typed<ItemMeta> PALE_OAK_FENCE_GATE = getItemType("pale_oak_fence_gate");
     ItemType.Typed<ItemMeta> MANGROVE_FENCE_GATE = getItemType("mangrove_fence_gate");
     ItemType.Typed<ItemMeta> BAMBOO_FENCE_GATE = getItemType("bamboo_fence_gate");
@@ -1068,11 +1038,7 @@ public interface ItemType extends Keyed, Translatable {
     ItemType.Typed<ItemMeta> CHERRY_CHEST_BOAT = getItemType("cherry_chest_boat");
     ItemType.Typed<ItemMeta> DARK_OAK_BOAT = getItemType("dark_oak_boat");
     ItemType.Typed<ItemMeta> DARK_OAK_CHEST_BOAT = getItemType("dark_oak_chest_boat");
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     ItemType.Typed<ItemMeta> PALE_OAK_BOAT = getItemType("pale_oak_boat");
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     ItemType.Typed<ItemMeta> PALE_OAK_CHEST_BOAT = getItemType("pale_oak_chest_boat");
     ItemType.Typed<ItemMeta> MANGROVE_BOAT = getItemType("mangrove_boat");
     ItemType.Typed<ItemMeta> MANGROVE_CHEST_BOAT = getItemType("mangrove_chest_boat");
@@ -1287,8 +1253,6 @@ public interface ItemType extends Keyed, Translatable {
     /**
      * ItemMeta: {@link BlockStateMeta}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     ItemType.Typed<BlockStateMeta> PALE_OAK_SIGN = getItemType("pale_oak_sign");
     /**
      * ItemMeta: {@link BlockStateMeta}
@@ -1337,8 +1301,6 @@ public interface ItemType extends Keyed, Translatable {
     /**
      * ItemMeta: {@link BlockStateMeta}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     ItemType.Typed<BlockStateMeta> PALE_OAK_HANGING_SIGN = getItemType("pale_oak_hanging_sign");
     /**
      * ItemMeta: {@link BlockStateMeta}
@@ -1603,8 +1565,6 @@ public interface ItemType extends Keyed, Translatable {
     /**
      * ItemMeta: {@link SpawnEggMeta}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     ItemType.Typed<SpawnEggMeta> CREAKING_SPAWN_EGG = getItemType("creaking_spawn_egg");
     /**
      * ItemMeta: {@link SpawnEggMeta}
@@ -1935,6 +1895,7 @@ public interface ItemType extends Keyed, Translatable {
      */
     ItemType.Typed<EnchantmentStorageMeta> ENCHANTED_BOOK = getItemType("enchanted_book");
     ItemType.Typed<ItemMeta> NETHER_BRICK = getItemType("nether_brick");
+    ItemType.Typed<ItemMeta> RESIN_BRICK = getItemType("resin_brick");
     ItemType.Typed<ItemMeta> PRISMARINE_SHARD = getItemType("prismarine_shard");
     ItemType.Typed<ItemMeta> PRISMARINE_CRYSTALS = getItemType("prismarine_crystals");
     ItemType.Typed<ItemMeta> RABBIT = getItemType("rabbit");

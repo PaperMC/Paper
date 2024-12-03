@@ -1,6 +1,5 @@
 package org.bukkit.block.data.type;
 
-import org.bukkit.MinecraftExperimental;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
 import org.jetbrains.annotations.ApiStatus;
@@ -13,7 +12,6 @@ import org.jetbrains.annotations.NotNull;
  * 'bottom' denotes whether this is a bottom block.
  */
 @ApiStatus.Experimental
-@MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
 public interface MossyCarpet extends BlockData {
 
     /**

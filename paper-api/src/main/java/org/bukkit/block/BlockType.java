@@ -3,7 +3,6 @@ package org.bukkit.block;
 import java.util.function.Consumer;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
-import org.bukkit.MinecraftExperimental;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.Translatable;
@@ -88,6 +87,7 @@ import org.bukkit.block.data.type.RedstoneRail;
 import org.bukkit.block.data.type.RedstoneWallTorch;
 import org.bukkit.block.data.type.RedstoneWire;
 import org.bukkit.block.data.type.Repeater;
+import org.bukkit.block.data.type.ResinClump;
 import org.bukkit.block.data.type.RespawnAnchor;
 import org.bukkit.block.data.type.Sapling;
 import org.bukkit.block.data.type.Scaffolding;
@@ -209,8 +209,6 @@ public interface BlockType extends Keyed, Translatable {
     BlockType.Typed<BlockData> ACACIA_PLANKS = getBlockType("acacia_planks");
     BlockType.Typed<BlockData> CHERRY_PLANKS = getBlockType("cherry_planks");
     BlockType.Typed<BlockData> DARK_OAK_PLANKS = getBlockType("dark_oak_planks");
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     BlockType.Typed<BlockData> PALE_OAK_PLANKS = getBlockType("pale_oak_planks");
     BlockType.Typed<BlockData> MANGROVE_PLANKS = getBlockType("mangrove_planks");
     BlockType.Typed<BlockData> BAMBOO_PLANKS = getBlockType("bamboo_planks");
@@ -246,8 +244,6 @@ public interface BlockType extends Keyed, Translatable {
     /**
      * BlockData: {@link Sapling}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     BlockType.Typed<Sapling> PALE_OAK_SAPLING = getBlockType("pale_oak_sapling");
     /**
      * BlockData: {@link MangrovePropagule}
@@ -311,8 +307,6 @@ public interface BlockType extends Keyed, Translatable {
     /**
      * BlockData: {@link Orientable}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     BlockType.Typed<Orientable> PALE_OAK_LOG = getBlockType("pale_oak_log");
     /**
      * BlockData: {@link Orientable}
@@ -357,8 +351,6 @@ public interface BlockType extends Keyed, Translatable {
     /**
      * BlockData: {@link Orientable}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     BlockType.Typed<Orientable> STRIPPED_PALE_OAK_LOG = getBlockType("stripped_pale_oak_log");
     /**
      * BlockData: {@link Orientable}
@@ -403,8 +395,6 @@ public interface BlockType extends Keyed, Translatable {
     /**
      * BlockData: {@link Orientable}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     BlockType.Typed<Orientable> PALE_OAK_WOOD = getBlockType("pale_oak_wood");
     /**
      * BlockData: {@link Orientable}
@@ -441,8 +431,6 @@ public interface BlockType extends Keyed, Translatable {
     /**
      * BlockData: {@link Orientable}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     BlockType.Typed<Orientable> STRIPPED_PALE_OAK_WOOD = getBlockType("stripped_pale_oak_wood");
     /**
      * BlockData: {@link Orientable}
@@ -479,8 +467,6 @@ public interface BlockType extends Keyed, Translatable {
     /**
      * BlockData: {@link Leaves}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     BlockType.Typed<Leaves> PALE_OAK_LEAVES = getBlockType("pale_oak_leaves");
     /**
      * BlockData: {@link Leaves}
@@ -668,8 +654,6 @@ public interface BlockType extends Keyed, Translatable {
     /**
      * BlockData: {@link Fire}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     BlockType.Typed<CreakingHeart> CREAKING_HEART = getBlockType("creaking_heart");
     /**
      * BlockData: {@link Stairs}
@@ -730,8 +714,6 @@ public interface BlockType extends Keyed, Translatable {
     /**
      * BlockData: {@link Sign}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     BlockType.Typed<Sign> PALE_OAK_SIGN = getBlockType("pale_oak_sign");
     /**
      * BlockData: {@link Sign}
@@ -788,8 +770,6 @@ public interface BlockType extends Keyed, Translatable {
     /**
      * BlockData: {@link WallSign}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     BlockType.Typed<WallSign> PALE_OAK_WALL_SIGN = getBlockType("pale_oak_wall_sign");
     /**
      * BlockData: {@link WallSign}
@@ -830,8 +810,6 @@ public interface BlockType extends Keyed, Translatable {
     /**
      * BlockData: {@link HangingSign}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     BlockType.Typed<HangingSign> PALE_OAK_HANGING_SIGN = getBlockType("pale_oak_hanging_sign");
     /**
      * BlockData: {@link HangingSign}
@@ -880,8 +858,6 @@ public interface BlockType extends Keyed, Translatable {
     /**
      * BlockData: {@link WallHangingSign}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     BlockType.Typed<WallHangingSign> PALE_OAK_WALL_HANGING_SIGN = getBlockType("pale_oak_wall_hanging_sign");
     /**
      * BlockData: {@link WallHangingSign}
@@ -942,8 +918,6 @@ public interface BlockType extends Keyed, Translatable {
     /**
      * BlockData: {@link Powerable}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     BlockType.Typed<Powerable> PALE_OAK_PRESSURE_PLATE = getBlockType("pale_oak_pressure_plate");
     /**
      * BlockData: {@link Powerable}
@@ -1080,8 +1054,6 @@ public interface BlockType extends Keyed, Translatable {
     /**
      * BlockData: {@link TrapDoor}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     BlockType.Typed<TrapDoor> PALE_OAK_TRAPDOOR = getBlockType("pale_oak_trapdoor");
     /**
      * BlockData: {@link TrapDoor}
@@ -1154,6 +1126,10 @@ public interface BlockType extends Keyed, Translatable {
      */
     BlockType.Typed<GlowLichen> GLOW_LICHEN = getBlockType("glow_lichen");
     /**
+     * BlockData: {@link ResinClump}
+     */
+    BlockType.Typed<ResinClump> RESIN_CLUMP = getBlockType("resin_clump");
+    /**
      * BlockData: {@link Gate}
      */
     BlockType.Typed<Gate> OAK_FENCE_GATE = getBlockType("oak_fence_gate");
@@ -1174,6 +1150,21 @@ public interface BlockType extends Keyed, Translatable {
      */
     BlockType.Typed<Snowable> MYCELIUM = getBlockType("mycelium");
     BlockType.Typed<BlockData> LILY_PAD = getBlockType("lily_pad");
+    BlockType.Typed<BlockData> RESIN_BLOCK = getBlockType("resin_block");
+    BlockType.Typed<BlockData> RESIN_BRICKS = getBlockType("resin_bricks");
+    /**
+     * BlockData: {@link Stairs}
+     */
+    BlockType.Typed<Stairs> RESIN_BRICK_STAIRS = getBlockType("resin_brick_stairs");
+    /**
+     * BlockData: {@link Slab}
+     */
+    BlockType.Typed<Slab> RESIN_BRICK_SLAB = getBlockType("resin_brick_slab");
+    /**
+     * BlockData: {@link Wall}
+     */
+    BlockType.Typed<Wall> RESIN_BRICK_WALL = getBlockType("resin_brick_wall");
+    BlockType.Typed<BlockData> CHISELED_RESIN_BRICKS = getBlockType("chiseled_resin_bricks");
     BlockType.Typed<BlockData> NETHER_BRICKS = getBlockType("nether_bricks");
     /**
      * BlockData: {@link Fence}
@@ -1270,8 +1261,6 @@ public interface BlockType extends Keyed, Translatable {
     BlockType.Typed<BlockData> POTTED_ACACIA_SAPLING = getBlockType("potted_acacia_sapling");
     BlockType.Typed<BlockData> POTTED_CHERRY_SAPLING = getBlockType("potted_cherry_sapling");
     BlockType.Typed<BlockData> POTTED_DARK_OAK_SAPLING = getBlockType("potted_dark_oak_sapling");
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     BlockType.Typed<BlockData> POTTED_PALE_OAK_SAPLING = getBlockType("potted_pale_oak_sapling");
     BlockType.Typed<BlockData> POTTED_MANGROVE_PROPAGULE = getBlockType("potted_mangrove_propagule");
     BlockType.Typed<BlockData> POTTED_FERN = getBlockType("potted_fern");
@@ -1331,8 +1320,6 @@ public interface BlockType extends Keyed, Translatable {
     /**
      * BlockData: {@link Switch}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     BlockType.Typed<Switch> PALE_OAK_BUTTON = getBlockType("pale_oak_button");
     /**
      * BlockData: {@link Switch}
@@ -1549,8 +1536,6 @@ public interface BlockType extends Keyed, Translatable {
     /**
      * BlockData: {@link Stairs}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     BlockType.Typed<Stairs> PALE_OAK_STAIRS = getBlockType("pale_oak_stairs");
     /**
      * BlockData: {@link Stairs}
@@ -1818,8 +1803,6 @@ public interface BlockType extends Keyed, Translatable {
     /**
      * BlockData: {@link Slab}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     BlockType.Typed<Slab> PALE_OAK_SLAB = getBlockType("pale_oak_slab");
     /**
      * BlockData: {@link Slab}
@@ -1920,8 +1903,6 @@ public interface BlockType extends Keyed, Translatable {
     /**
      * BlockData: {@link Gate}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     BlockType.Typed<Gate> PALE_OAK_FENCE_GATE = getBlockType("pale_oak_fence_gate");
     /**
      * BlockData: {@link Gate}
@@ -1958,8 +1939,6 @@ public interface BlockType extends Keyed, Translatable {
     /**
      * BlockData: {@link Fence}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     BlockType.Typed<Fence> PALE_OAK_FENCE = getBlockType("pale_oak_fence");
     /**
      * BlockData: {@link Fence}
@@ -1996,8 +1975,6 @@ public interface BlockType extends Keyed, Translatable {
     /**
      * BlockData: {@link Door}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     BlockType.Typed<Door> PALE_OAK_DOOR = getBlockType("pale_oak_door");
     /**
      * BlockData: {@link Door}
@@ -3309,17 +3286,11 @@ public interface BlockType extends Keyed, Translatable {
     /**
      * BlockData: {@link MossyCarpet}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     BlockType.Typed<MossyCarpet> PALE_MOSS_CARPET = getBlockType("pale_moss_carpet");
     /**
      * BlockData: {@link HangingMoss}
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     BlockType.Typed<HangingMoss> PALE_HANGING_MOSS = getBlockType("pale_hanging_moss");
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     BlockType.Typed<BlockData> PALE_MOSS_BLOCK = getBlockType("pale_moss_block");
     /**
      * BlockData: {@link BigDripleaf}
@@ -3442,6 +3413,10 @@ public interface BlockType extends Keyed, Translatable {
      * BlockData: {@link Waterlogged}
      */
     BlockType.Typed<Waterlogged> HEAVY_CORE = getBlockType("heavy_core");
+    BlockType.Typed<BlockData> OPEN_EYEBLOSSOM = getBlockType("open_eyeblossom");
+    BlockType.Typed<BlockData> CLOSED_EYEBLOSSOM = getBlockType("closed_eyeblossom");
+    BlockType.Typed<BlockData> POTTED_OPEN_EYEBLOSSOM = getBlockType("potted_open_eyeblossom");
+    BlockType.Typed<BlockData> POTTED_CLOSED_EYEBLOSSOM = getBlockType("potted_closed_eyeblossom");
     //</editor-fold>
 
     @NotNull

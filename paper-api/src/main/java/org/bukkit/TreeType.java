@@ -1,7 +1,5 @@
 package org.bukkit;
 
-import org.jetbrains.annotations.ApiStatus;
-
 /**
  * Tree and organic structure types.
  */
@@ -106,13 +104,9 @@ public enum TreeType {
     /**
      * Pale oak tree
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_OAK,
     /**
      * Pale oak tree with a creaking heart
      */
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_OAK_CREAKING,
 }

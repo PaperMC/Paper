@@ -213,13 +213,13 @@ public interface Tag<T extends Keyed> extends Keyed {
      */
     Tag<Material> FENCES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("fences"), Material.class);
     /**
-     * Vanilla block tag representing all tall flowers.
-     */
-    Tag<Material> TALL_FLOWERS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("tall_flowers"), Material.class);
-    /**
      * Vanilla block tag representing all flowers.
      */
     Tag<Material> FLOWERS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("flowers"), Material.class);
+    /**
+     * Vanilla block tag representing all blocks which attract bees.
+     */
+    Tag<Material> BEE_ATTRACTIVE = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("bee_attractive"), Material.class);
     /**
      * Vanilla block tag representing all piglin repellents.
      */
@@ -1095,10 +1095,6 @@ public interface Tag<T extends Keyed> extends Keyed {
      */
     Tag<Material> ITEMS_TRIM_MATERIALS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("trim_materials"), Material.class);
     /**
-     * Vanilla item tag representing all trimming templates.
-     */
-    Tag<Material> ITEMS_TRIM_TEMPLATES = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("trim_templates"), Material.class);
-    /**
      * Vanilla item tag representing all decorated pot sherds.
      */
     Tag<Material> ITEMS_DECORATED_POT_SHERDS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("decorated_pot_sherds"), Material.class);
@@ -1159,6 +1155,26 @@ public interface Tag<T extends Keyed> extends Keyed {
      * Vanilla item tag representing all bundle items.
      */
     Tag<Material> ITEMS_BUNDLES = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("bundles"), Material.class);
+    /**
+     * Vanilla item tag representing all skeleton preferred weapons.
+     */
+    Tag<Material> ITEMS_SKELETON_PREFERRED_WEAPONS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("skeleton_preferred_weapons"), Material.class);
+    /**
+     * Vanilla item tag representing all drowned preferred weapons.
+     */
+    Tag<Material> ITEMS_DROWNED_PREFERRED_WEAPONS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("drowned_preferred_weapons"), Material.class);
+    /**
+     * Vanilla item tag representing all piglin preferred weapons.
+     */
+    Tag<Material> ITEMS_PIGLIN_PREFERRED_WEAPONS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("piglin_preferred_weapons"), Material.class);
+    /**
+     * Vanilla item tag representing all pillager preferred weapons.
+     */
+    Tag<Material> ITEMS_PILLAGER_PREFERRED_WEAPONS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("pillager_preferred_weapons"), Material.class);
+    /**
+     * Vanilla item tag representing all wither skeleton disliked weapons.
+     */
+    Tag<Material> ITEMS_WITHER_SKELETON_DISLIKED_WEAPONS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("wither_skeleton_disliked_weapons"), Material.class);
     /**
      * Vanilla item tag representing all enchantable foot armor.
      */

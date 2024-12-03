@@ -1,6 +1,5 @@
 package org.bukkit.block.data.type;
 
-import org.bukkit.MinecraftExperimental;
 import org.bukkit.block.data.BlockData;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -8,7 +7,6 @@ import org.jetbrains.annotations.ApiStatus;
  * 'tip' indicates whether this block is a tip.
  */
 @ApiStatus.Experimental
-@MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
 public interface HangingMoss extends BlockData {
 
     /**

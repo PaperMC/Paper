@@ -126,6 +126,7 @@ public enum Particle implements Keyed {
      */
     SHRIEK("shriek", Integer.class),
     CHERRY_LEAVES("cherry_leaves"),
+    PALE_OAK_LEAVES("pale_oak_leaves"),
     EGG_CRACK("egg_crack"),
     DUST_PLUME("dust_plume"),
     WHITE_SMOKE("white_smoke"),
@@ -148,10 +149,10 @@ public enum Particle implements Keyed {
     @ApiStatus.Experimental
     BLOCK_CRUMBLE("block_crumble", BlockData.class),
     /**
-     * Uses {@link TargetColor} as DataType
+     * Uses {@link Trail} as DataType
      */
     @ApiStatus.Experimental
-    TRAIL("trail", TargetColor.class),
+    TRAIL("trail", Trail.class),
     OMINOUS_SPAWNING("ominous_spawning"),
     RAID_OMEN("raid_omen"),
     TRIAL_OMEN("trial_omen"),
@@ -266,17 +267,19 @@ public enum Particle implements Keyed {
     }
 
     /**
-     * Options which can be applied to trail particles - a location and color.
+     * Options which can be applied to trail particles - a location, color and duration.
      */
     @ApiStatus.Experimental
-    public static class TargetColor {
+    public static class Trail {
 
         private final Location target;
         private final Color color;
+        private final int duration;
 
-        public TargetColor(@NotNull Location target, @NotNull Color color) {
+        public Trail(@NotNull Location target, @NotNull Color color, int duration) {
             this.target = target;
             this.color = color;
+            this.duration = duration;
         }
 
         /**
@@ -297,6 +300,15 @@ public enum Particle implements Keyed {
         @NotNull
         public Color getColor() {
             return color;
+        }
+
+        /**
+         * The duration of the trail to be displayed.
+         *
+         * @return trail duration
+         */
+        public int getDuration() {
+            return duration;
         }
     }
 }

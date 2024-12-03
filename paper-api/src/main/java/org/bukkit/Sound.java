@@ -302,6 +302,11 @@ public interface Sound extends OldEnum<Sound>, Keyed {
     Sound BLOCK_END_GATEWAY_SPAWN = getSound("block.end_gateway.spawn");
     Sound BLOCK_END_PORTAL_FRAME_FILL = getSound("block.end_portal_frame.fill");
     Sound BLOCK_END_PORTAL_SPAWN = getSound("block.end_portal.spawn");
+    Sound BLOCK_EYEBLOSSOM_CLOSE = getSound("block.eyeblossom.close");
+    Sound BLOCK_EYEBLOSSOM_CLOSE_LONG = getSound("block.eyeblossom.close_long");
+    Sound BLOCK_EYEBLOSSOM_IDLE = getSound("block.eyeblossom.idle");
+    Sound BLOCK_EYEBLOSSOM_OPEN = getSound("block.eyeblossom.open");
+    Sound BLOCK_EYEBLOSSOM_OPEN_LONG = getSound("block.eyeblossom.open_long");
     Sound BLOCK_FENCE_GATE_CLOSE = getSound("block.fence_gate.close");
     Sound BLOCK_FENCE_GATE_OPEN = getSound("block.fence_gate.open");
     Sound BLOCK_FIRE_AMBIENT = getSound("block.fire.ambient");
@@ -558,6 +563,15 @@ public interface Sound extends OldEnum<Sound>, Keyed {
     Sound BLOCK_POWDER_SNOW_STEP = getSound("block.powder_snow.step");
     Sound BLOCK_PUMPKIN_CARVE = getSound("block.pumpkin.carve");
     Sound BLOCK_REDSTONE_TORCH_BURNOUT = getSound("block.redstone_torch.burnout");
+    Sound BLOCK_RESIN_BREAK = getSound("block.resin.break");
+    Sound BLOCK_RESIN_BRICKS_BREAK = getSound("block.resin_bricks.break");
+    Sound BLOCK_RESIN_BRICKS_FALL = getSound("block.resin_bricks.fall");
+    Sound BLOCK_RESIN_BRICKS_HIT = getSound("block.resin_bricks.hit");
+    Sound BLOCK_RESIN_BRICKS_PLACE = getSound("block.resin_bricks.place");
+    Sound BLOCK_RESIN_BRICKS_STEP = getSound("block.resin_bricks.step");
+    Sound BLOCK_RESIN_FALL = getSound("block.resin.fall");
+    Sound BLOCK_RESIN_PLACE = getSound("block.resin.place");
+    Sound BLOCK_RESIN_STEP = getSound("block.resin.step");
     Sound BLOCK_RESPAWN_ANCHOR_AMBIENT = getSound("block.respawn_anchor.ambient");
     Sound BLOCK_RESPAWN_ANCHOR_CHARGE = getSound("block.respawn_anchor.charge");
     Sound BLOCK_RESPAWN_ANCHOR_DEPLETE = getSound("block.respawn_anchor.deplete");
@@ -899,6 +913,7 @@ public interface Sound extends OldEnum<Sound>, Keyed {
     Sound ENTITY_CREAKING_SPAWN = getSound("entity.creaking.spawn");
     Sound ENTITY_CREAKING_STEP = getSound("entity.creaking.step");
     Sound ENTITY_CREAKING_SWAY = getSound("entity.creaking.sway");
+    Sound ENTITY_CREAKING_TWITCH = getSound("entity.creaking.twitch");
     Sound ENTITY_CREAKING_UNFREEZE = getSound("entity.creaking.unfreeze");
     Sound ENTITY_CREEPER_DEATH = getSound("entity.creeper.death");
     Sound ENTITY_CREEPER_HURT = getSound("entity.creeper.hurt");

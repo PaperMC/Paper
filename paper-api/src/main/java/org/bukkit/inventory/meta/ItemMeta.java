@@ -17,6 +17,7 @@ import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemRarity;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.components.CustomModelDataComponent;
 import org.bukkit.inventory.meta.components.EquippableComponent;
 import org.bukkit.inventory.meta.components.FoodComponent;
 import org.bukkit.inventory.meta.components.JukeboxPlayableComponent;
@@ -177,6 +178,21 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
     int getCustomModelData();
 
     /**
+     * Gets the custom model data set on this item, or creates an empty custom
+     * model data instance.
+     * <p>
+     * The returned component is a snapshot of its current state and does not
+     * reflect a live view of what is on an item. After changing any value on
+     * this component, it must be set with
+     * {@link #setCustomModelDataComponent(CustomModelDataComponent)} to apply
+     * the changes.
+     *
+     * @return component
+     */
+    @NotNull
+    CustomModelDataComponent getCustomModelDataComponent();
+
+    /**
      * Sets the custom model data.
      * <p>
      * CustomModelData is an integer that may be associated client side with a
@@ -185,6 +201,13 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * @param data the data to set, or null to clear
      */
     void setCustomModelData(@Nullable Integer data);
+
+    /**
+     * Sets the custom model data component.
+     *
+     * @param customModelData new component
+     */
+    void setCustomModelDataComponent(@Nullable CustomModelDataComponent customModelData);
 
     /**
      * Gets if the enchantable component is set.

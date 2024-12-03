@@ -52,6 +52,10 @@ public interface TrimMaterial extends Keyed, Translatable {
      * {@link Material#AMETHYST_SHARD}.
      */
     public static final TrimMaterial AMETHYST = getTrimMaterial("amethyst");
+    /**
+     * {@link Material#RESIN_BRICK}.
+     */
+    public static final TrimMaterial RESIN = getTrimMaterial("resin");
 
     @NotNull
     private static TrimMaterial getTrimMaterial(@NotNull String key) {

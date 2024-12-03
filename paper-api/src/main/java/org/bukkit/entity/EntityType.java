@@ -7,7 +7,6 @@ import java.util.Map;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.Location;
-import org.bukkit.MinecraftExperimental;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Translatable;
 import org.bukkit.World;
@@ -40,7 +39,6 @@ import org.bukkit.entity.minecart.SpawnerMinecart;
 import org.bukkit.entity.minecart.StorageMinecart;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffectType;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -324,20 +322,11 @@ public enum EntityType implements Keyed, Translatable {
     MANGROVE_CHEST_BOAT("mangrove_chest_boat", MangroveChestBoat.class, -1),
     OAK_BOAT("oak_boat", OakBoat.class, -1),
     OAK_CHEST_BOAT("oak_chest_boat", OakChestBoat.class, -1),
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_OAK_BOAT("pale_oak_boat", PaleOakBoat.class, -1),
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     PALE_OAK_CHEST_BOAT("pale_oak_chest_boat", PaleOakChestBoat.class, -1),
     SPRUCE_BOAT("spruce_boat", SpruceBoat.class, -1),
     SPRUCE_CHEST_BOAT("spruce_chest_boat", SpruceChestBoat.class, -1),
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
     CREAKING("creaking", Creaking.class, -1),
-    @ApiStatus.Experimental
-    @MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
-    CREAKING_TRANSIENT("creaking_transient", CreakingTransient.class, -1),
     /**
      * A fishing line and bobber.
      */

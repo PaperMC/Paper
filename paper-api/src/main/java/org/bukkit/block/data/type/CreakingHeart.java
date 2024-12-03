@@ -1,48 +1,41 @@
 package org.bukkit.block.data.type;
 
-import org.bukkit.MinecraftExperimental;
 import org.bukkit.block.data.Orientable;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 /**
- * 'creaking' is the creaking status of this block.
+ * 'active' is whether the block is active.
+ * <br>
+ * 'natural' is whether this is a naturally generated block.
  */
 @ApiStatus.Experimental
-@MinecraftExperimental(MinecraftExperimental.Requires.WINTER_DROP)
 public interface CreakingHeart extends Orientable {
 
     /**
-     * Gets the value of the 'creaking' property.
+     * Gets the value of the 'active' property.
      *
-     * @return the 'creaking' value
+     * @return the 'active' value
      */
-    @NotNull
-    Creaking getCreaking();
+    boolean isActive();
 
     /**
-     * Sets the value of the 'creaking' property.
+     * Sets the value of the 'active' property.
      *
-     * @param creaking the new 'creaking' value
+     * @param active the new 'active' value
      */
-    void setCreaking(@NotNull Creaking creaking);
+    void setActive(boolean active);
 
     /**
-     * Creaking status.
+     * Gets the value of the 'natural' property.
+     *
+     * @return the 'natural' value
      */
-    public enum Creaking {
+    boolean isNatural();
 
-        /**
-         * The block is disabled.
-         */
-        DISABLED,
-        /**
-         * The block is dormant.
-         */
-        DORMANT,
-        /**
-         * The block is active.
-         */
-        ACTIVE;
-    }
+    /**
+     * Sets the value of the 'natural' property.
+     *
+     * @param natural the new 'natural' value
+     */
+    void setNatural(boolean natural);
 }
