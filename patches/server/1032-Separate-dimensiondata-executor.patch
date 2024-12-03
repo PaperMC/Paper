@@ -5,7 +5,7 @@ Subject: [PATCH] Separate dimensiondata executor
 
 
 diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
-index 276ad77ecb274b6cd454d0f92457964a8eaa5824..1360aa8202542d3d0f32247f1123575fc2c38ff1 100644
+index 1a31024b46a5d7960f1e0f172f8ebcf396dd3139..38ffa1c4c204f73746c4b87127de92b631548eb1 100644
 --- a/src/main/java/net/minecraft/Util.java
 +++ b/src/main/java/net/minecraft/Util.java
 @@ -94,6 +94,7 @@ public class Util {
@@ -16,7 +16,7 @@ index 276ad77ecb274b6cd454d0f92457964a8eaa5824..1360aa8202542d3d0f32247f1123575f
      private static final TracingExecutor DOWNLOAD_POOL = makeIoExecutor("Download-", true);
      // Paper start - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
      public static final ExecutorService PROFILE_EXECUTOR = Executors.newFixedThreadPool(2, new java.util.concurrent.ThreadFactory() {
-@@ -260,6 +261,21 @@ public class Util {
+@@ -265,6 +266,21 @@ public class Util {
          }));
      }
  
@@ -39,15 +39,24 @@ index 276ad77ecb274b6cd454d0f92457964a8eaa5824..1360aa8202542d3d0f32247f1123575f
          throw t instanceof RuntimeException ? (RuntimeException)t : new RuntimeException(t);
      }
 diff --git a/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java b/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java
-index d16f124e0371ce943298c8d7d9bfac21e98cf885..8212f2dfba5c2eee5a823b5217fb43dc870d228a 100644
+index 3c3b18e5b419a0f785467c511dcdd65873ad0989..9272c91e0ee489091fdf1fedcf3801c070e9e82a 100644
 --- a/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java
 +++ b/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java
-@@ -155,7 +155,7 @@ public class DimensionDataStorage implements AutoCloseable {
-             } catch (IOException var3) {
-                 LOGGER.error("Could not save data to {}", path.getFileName(), var3);
-             }
--        }, Util.ioPool());
-+        }, Util.DIMENSION_DATA_IO_POOL); // Paper - Separate dimension data IO pool
-     }
- 
-     public void saveAndJoin() {
+@@ -139,7 +139,7 @@ public class DimensionDataStorage implements AutoCloseable {
+         } else {
+             int i = Util.maxAllowedExecutorThreads();
+             int j = map.size();
+-            if (j > i) {
++            if (false && j > i) { // Paper - Separate dimension data IO pool; just throw them into the fixed pool queue
+                 this.pendingWriteFuture = this.pendingWriteFuture.thenCompose(object -> {
+                     List<CompletableFuture<?>> list = new ArrayList<>(i);
+                     int k = Mth.positiveCeilDiv(j, i);
+@@ -160,7 +160,7 @@ public class DimensionDataStorage implements AutoCloseable {
+                         v -> CompletableFuture.allOf(
+                                 map.entrySet()
+                                     .stream()
+-                                    .map(entry -> CompletableFuture.runAsync(() -> tryWrite(entry.getKey(), entry.getValue()), Util.ioPool()))
++                                    .map(entry -> CompletableFuture.runAsync(() -> tryWrite(entry.getKey(), entry.getValue()), Util.DIMENSION_DATA_IO_POOL)) // Paper - Separate dimension data IO pool
+                                     .toArray(CompletableFuture[]::new)
+                             )
+                     );
