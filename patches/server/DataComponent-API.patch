@@ -969,7 +969,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.datacomponent.item;
 +
-+import java.util.ArrayList;
++import com.google.common.base.Preconditions;
++import it.unimi.dsi.fastutil.booleans.BooleanArrayList;
++import it.unimi.dsi.fastutil.booleans.BooleanList;
++import it.unimi.dsi.fastutil.floats.FloatArrayList;
++import it.unimi.dsi.fastutil.floats.FloatList;
++import it.unimi.dsi.fastutil.ints.IntArrayList;
++import it.unimi.dsi.fastutil.ints.IntList;
++import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 +import java.util.Collections;
 +import java.util.List;
 +import io.papermc.paper.util.MCUtil;
@@ -1007,20 +1014,23 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    static final class BuilderImpl implements CustomModelData.Builder {
 +
-+        private final List<Float> floats = new ArrayList<>();
-+        private final List<Boolean> flags = new ArrayList<>();
-+        private final List<String> strings = new ArrayList<>();
-+        private final List<Integer> colors = new ArrayList<>();
++        private final FloatList floats = new FloatArrayList();
++        private final BooleanList flags = new BooleanArrayList();
++        private final List<String> strings = new ObjectArrayList<>();
++        private final IntList colors = new IntArrayList();
 +
 +        @Override
-+        public Builder addFloat(final float num) {
-+            this.floats.add(num);
++        public Builder addFloat(final float f) {
++            this.floats.add(f);
 +            return this;
 +        }
 +
 +        @Override
-+        public Builder addFloats(final List<Float> nums) {
-+            this.floats.addAll(nums);
++        public Builder addFloats(final List<Float> floats) {
++            for (Float f : floats) {
++                Preconditions.checkArgument(f != null, "Float cannot be null");
++            }
++            this.floats.addAll(floats);
 +            return this;
 +        }
 +
@@ -1032,33 +1042,36 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        @Override
 +        public Builder addFlags(final List<Boolean> flags) {
++            for (Boolean flag : flags) {
++                Preconditions.checkArgument(flag != null, "Flag cannot be null");
++            }
 +            this.flags.addAll(flags);
 +            return this;
 +        }
 +
 +        @Override
 +        public Builder addString(final String string) {
++            Preconditions.checkArgument(string != null, "String cannot be null");
 +            this.strings.add(string);
 +            return this;
 +        }
 +
 +        @Override
 +        public Builder addStrings(final List<String> strings) {
-+            this.strings.addAll(strings);
++            strings.forEach(this::addString);
 +            return this;
 +        }
 +
 +        @Override
 +        public Builder addColor(final Color color) {
++            Preconditions.checkArgument(color != null, "Color cannot be null");
 +            this.colors.add(color.asRGB());
 +            return this;
 +        }
 +
 +        @Override
 +        public Builder addColors(final List<Color> colors) {
-+            for (Color color : colors) {
-+                this.addColor(color);
-+            }
++            colors.forEach(this::addColor);
 +            return this;
 +        }
 +
@@ -1066,14 +1079,13 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        public CustomModelData build() {
 +            return new PaperCustomModelData(
 +                new net.minecraft.world.item.component.CustomModelData(
-+                    this.floats,
-+                    this.flags,
-+                    this.strings,
-+                    this.colors
++                    new FloatArrayList(this.floats),
++                    new BooleanArrayList(this.flags),
++                    new ObjectArrayList<>(this.strings),
++                    new IntArrayList(this.colors)
 +                )
 +            );
 +        }
-+
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperDamageResistant.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperDamageResistant.java
