@@ -11,7 +11,7 @@ import kotlin.io.path.*
 plugins {
     java
     `maven-publish`
-    id("io.papermc.paperweight.core") version "1.7.5"
+    id("io.papermc.paperweight.core") version "1.7.6"
 }
 
 allprojects {
