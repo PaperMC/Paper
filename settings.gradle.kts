@@ -36,6 +36,7 @@ rootProject.name = "paper"
 for (name in listOf("Paper-API", "Paper-Server")) {
     val projName = name.lowercase(Locale.ENGLISH)
     include(projName)
+    file(name).mkdirs()
     findProject(":$projName")!!.projectDir = file(name)
 }
 
