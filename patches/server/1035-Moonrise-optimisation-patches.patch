@@ -15884,10 +15884,10 @@ index 0000000000000000000000000000000000000000..6af03fd7807d4c71dbf85028d18dc850
 +}
 diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/collisions/CollisionUtil.java b/src/main/java/ca/spottedleaf/moonrise/patches/collisions/CollisionUtil.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc17124d4d9
+index 0000000000000000000000000000000000000000..e04bd54744335fb5398c6e4f7ce8b981f35bfb7d
 --- /dev/null
 +++ b/src/main/java/ca/spottedleaf/moonrise/patches/collisions/CollisionUtil.java
-@@ -0,0 +1,2210 @@
+@@ -0,0 +1,2183 @@
 +package ca.spottedleaf.moonrise.patches.collisions;
 +
 +import ca.spottedleaf.moonrise.common.util.WorldUtil;
@@ -16056,11 +16056,11 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +
 +    // startIndex and endIndex inclusive
 +    // assumes indices are in range of array
-+    public static int findFloor(final double[] values, final double value, int startIndex, int endIndex) {
++    public static int findFloor(final double[] values, final double offset, final double value, int startIndex, int endIndex) {
 +        Objects.checkFromToIndex(startIndex, endIndex + 1, values.length);
 +        do {
 +            final int middle = (startIndex + endIndex) >>> 1;
-+            final double middleVal = values[middle];
++            final double middleVal = (values[middle] + offset);
 +
 +            if (value < middleVal) {
 +                endIndex = middle - 1;
@@ -16309,8 +16309,6 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +        //       an AABB(coords_x[x], coords_y[y], coords_z[z], coords_x[x + 1], coords_y[y + 1], coords_z[z + 1])
 +        //       is collidable. this is the fundamental principle of operation for the voxel collision operation
 +
-+        // note: we should be offsetting coords, but we can also just subtract from source as well - which is
-+        //       a win in terms of ops / simplicity (see findFloor, allows us to not modify coords for that)
 +        // note: for intersection, one we find the floor of the min we can use that as the start index
 +        //       for the next check as source max >= source min
 +        // note: we can fast check intersection on the two other axis by seeing if the min index is >= size,
@@ -16319,7 +16317,7 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +
 +        final int floor_min_x = Math.max(
 +                0,
-+                findFloor(coords_x, (aabb.minX - off_x) + COLLISION_EPSILON, 0, size_x)
++                findFloor(coords_x, off_x, aabb.minX + COLLISION_EPSILON, 0, size_x)
 +        );
 +        if (floor_min_x >= size_x) {
 +            // cannot intersect
@@ -16328,7 +16326,7 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +
 +        final int ceil_max_x = Math.min(
 +                size_x,
-+                findFloor(coords_x, (aabb.maxX - off_x) - COLLISION_EPSILON, floor_min_x, size_x) + 1
++                findFloor(coords_x, off_x, aabb.maxX - COLLISION_EPSILON, floor_min_x, size_x) + 1
 +        );
 +        if (floor_min_x >= ceil_max_x) {
 +            // cannot intersect
@@ -16337,7 +16335,7 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +
 +        final int floor_min_y = Math.max(
 +                0,
-+                findFloor(coords_y, (aabb.minY - off_y) + COLLISION_EPSILON, 0, size_y)
++                findFloor(coords_y, off_y, aabb.minY + COLLISION_EPSILON, 0, size_y)
 +        );
 +        if (floor_min_y >= size_y) {
 +            // cannot intersect
@@ -16346,7 +16344,7 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +
 +        final int ceil_max_y = Math.min(
 +                size_y,
-+                findFloor(coords_y, (aabb.maxY - off_y) - COLLISION_EPSILON, floor_min_y, size_y) + 1
++                findFloor(coords_y, off_y, aabb.maxY - COLLISION_EPSILON, floor_min_y, size_y) + 1
 +        );
 +        if (floor_min_y >= ceil_max_y) {
 +            // cannot intersect
@@ -16355,7 +16353,7 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +
 +        final int floor_min_z = Math.max(
 +                0,
-+                findFloor(coords_z, (aabb.minZ - off_z) + COLLISION_EPSILON, 0, size_z)
++                findFloor(coords_z, off_z, aabb.minZ + COLLISION_EPSILON, 0, size_z)
 +        );
 +        if (floor_min_z >= size_z) {
 +            // cannot intersect
@@ -16364,7 +16362,7 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +
 +        final int ceil_max_z = Math.min(
 +                size_z,
-+                findFloor(coords_z, (aabb.maxZ - off_z) - COLLISION_EPSILON, floor_min_z, size_z) + 1
++                findFloor(coords_z, off_z, aabb.maxZ - COLLISION_EPSILON, floor_min_z, size_z) + 1
 +        );
 +        if (floor_min_z >= ceil_max_z) {
 +            // cannot intersect
@@ -16420,8 +16418,6 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +        //       is collidable. this is the fundamental principle of operation for the voxel collision operation
 +
 +
-+        // note: we should be offsetting coords, but we can also just subtract from source as well - which is
-+        //       a win in terms of ops / simplicity (see findFloor, allows us to not modify coords for that)
 +        // note: for intersection, one we find the floor of the min we can use that as the start index
 +        //       for the next check as source max >= source min
 +        // note: we can fast check intersection on the two other axis by seeing if the min index is >= size,
@@ -16430,7 +16426,7 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +
 +        final int floor_min_y = Math.max(
 +                0,
-+                findFloor(coords_y, (source.minY - off_y) + COLLISION_EPSILON, 0, size_y)
++                findFloor(coords_y, off_y, source.minY + COLLISION_EPSILON, 0, size_y)
 +        );
 +        if (floor_min_y >= size_y) {
 +            // cannot intersect
@@ -16439,7 +16435,7 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +
 +        final int ceil_max_y = Math.min(
 +                size_y,
-+                findFloor(coords_y, (source.maxY - off_y) - COLLISION_EPSILON, floor_min_y, size_y) + 1
++                findFloor(coords_y, off_y, source.maxY - COLLISION_EPSILON, floor_min_y, size_y) + 1
 +        );
 +        if (floor_min_y >= ceil_max_y) {
 +            // cannot intersect
@@ -16448,7 +16444,7 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +
 +        final int floor_min_z = Math.max(
 +                0,
-+                findFloor(coords_z, (source.minZ - off_z) + COLLISION_EPSILON, 0, size_z)
++                findFloor(coords_z, off_z, source.minZ + COLLISION_EPSILON, 0, size_z)
 +        );
 +        if (floor_min_z >= size_z) {
 +            // cannot intersect
@@ -16457,7 +16453,7 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +
 +        final int ceil_max_z = Math.min(
 +                size_z,
-+                findFloor(coords_z, (source.maxZ - off_z) - COLLISION_EPSILON, floor_min_z, size_z) + 1
++                findFloor(coords_z, off_z, source.maxZ - COLLISION_EPSILON, floor_min_z, size_z) + 1
 +        );
 +        if (floor_min_z >= ceil_max_z) {
 +            // cannot intersect
@@ -16469,9 +16465,9 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +        final long[] bitset = cached_shape_data.voxelSet();
 +
 +        if (source_move > 0.0) {
-+            final double source_max = source.maxX - off_x;
++            final double source_max = source.maxX;
 +            final int ceil_max_x = findFloor(
-+                    coords_x, source_max - COLLISION_EPSILON, 0, size_x
++                    coords_x, off_x, source_max - COLLISION_EPSILON, 0, size_x
 +            ) + 1; // add one, we are not interested in (coords[i] + COLLISION_EPSILON) < max
 +
 +            // note: only the order of the first loop matters
@@ -16480,7 +16476,7 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +
 +            final int mul_x = size_y*size_z;
 +            for (int curr_x = ceil_max_x; curr_x < size_x; ++curr_x) {
-+                double max_dist = coords_x[curr_x] - source_max;
++                double max_dist = (coords_x[curr_x] + off_x) - source_max;
 +                if (max_dist >= source_move) {
 +                    // if we reach here, then we will never have a case where
 +                    // coords[curr + n] - source_max < source_move, as coords[curr + n] < coords[curr + n + 1]
@@ -16507,9 +16503,9 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +
 +            return source_move;
 +        } else {
-+            final double source_min = source.minX - off_x;
++            final double source_min = source.minX;
 +            final int floor_min_x = findFloor(
-+                    coords_x, source_min + COLLISION_EPSILON, 0, size_x
++                    coords_x, off_x, source_min + COLLISION_EPSILON, 0, size_x
 +            );
 +
 +            // note: only the order of the first loop matters
@@ -16521,7 +16517,7 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +            //       thus, we need to use the voxel index i-1 if we want to check that the face at index i is solid
 +            final int mul_x = size_y*size_z;
 +            for (int curr_x = floor_min_x - 1; curr_x >= 0; --curr_x) {
-+                double max_dist = coords_x[curr_x + 1] - source_min;
++                double max_dist = (coords_x[curr_x + 1] + off_x) - source_min;
 +                if (max_dist <= source_move) {
 +                    // if we reach here, then we will never have a case where
 +                    // coords[curr + n] - source_max > source_move, as coords[curr + n] > coords[curr + n - 1]
@@ -16578,8 +16574,6 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +        //       is collidable. this is the fundamental principle of operation for the voxel collision operation
 +
 +
-+        // note: we should be offsetting coords, but we can also just subtract from source as well - which is
-+        //       a win in terms of ops / simplicity (see findFloor, allows us to not modify coords for that)
 +        // note: for intersection, one we find the floor of the min we can use that as the start index
 +        //       for the next check as source max >= source min
 +        // note: we can fast check intersection on the two other axis by seeing if the min index is >= size,
@@ -16588,7 +16582,7 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +
 +        final int floor_min_x = Math.max(
 +                0,
-+                findFloor(coords_x, (source.minX - off_x) + COLLISION_EPSILON, 0, size_x)
++                findFloor(coords_x, off_x, source.minX + COLLISION_EPSILON, 0, size_x)
 +        );
 +        if (floor_min_x >= size_x) {
 +            // cannot intersect
@@ -16597,7 +16591,7 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +
 +        final int ceil_max_x = Math.min(
 +                size_x,
-+                findFloor(coords_x, (source.maxX - off_x) - COLLISION_EPSILON, floor_min_x, size_x) + 1
++                findFloor(coords_x, off_x, source.maxX - COLLISION_EPSILON, floor_min_x, size_x) + 1
 +        );
 +        if (floor_min_x >= ceil_max_x) {
 +            // cannot intersect
@@ -16606,7 +16600,7 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +
 +        final int floor_min_z = Math.max(
 +                0,
-+                findFloor(coords_z, (source.minZ - off_z) + COLLISION_EPSILON, 0, size_z)
++                findFloor(coords_z, off_z, source.minZ + COLLISION_EPSILON, 0, size_z)
 +        );
 +        if (floor_min_z >= size_z) {
 +            // cannot intersect
@@ -16615,7 +16609,7 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +
 +        final int ceil_max_z = Math.min(
 +                size_z,
-+                findFloor(coords_z, (source.maxZ - off_z) - COLLISION_EPSILON, floor_min_z, size_z) + 1
++                findFloor(coords_z, off_z, source.maxZ - COLLISION_EPSILON, floor_min_z, size_z) + 1
 +        );
 +        if (floor_min_z >= ceil_max_z) {
 +            // cannot intersect
@@ -16627,9 +16621,9 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +        final long[] bitset = cached_shape_data.voxelSet();
 +
 +        if (source_move > 0.0) {
-+            final double source_max = source.maxY - off_y;
++            final double source_max = source.maxY;
 +            final int ceil_max_y = findFloor(
-+                    coords_y, source_max - COLLISION_EPSILON, 0, size_y
++                    coords_y, off_y, source_max - COLLISION_EPSILON, 0, size_y
 +            ) + 1; // add one, we are not interested in (coords[i] + COLLISION_EPSILON) < max
 +
 +            // note: only the order of the first loop matters
@@ -16638,7 +16632,7 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +
 +            final int mul_x = size_y*size_z;
 +            for (int curr_y = ceil_max_y; curr_y < size_y; ++curr_y) {
-+                double max_dist = coords_y[curr_y] - source_max;
++                double max_dist = (coords_y[curr_y] + off_y) - source_max;
 +                if (max_dist >= source_move) {
 +                    // if we reach here, then we will never have a case where
 +                    // coords[curr + n] - source_max < source_move, as coords[curr + n] < coords[curr + n + 1]
@@ -16665,9 +16659,9 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +
 +            return source_move;
 +        } else {
-+            final double source_min = source.minY - off_y;
++            final double source_min = source.minY;
 +            final int floor_min_y = findFloor(
-+                    coords_y, source_min + COLLISION_EPSILON, 0, size_y
++                    coords_y, off_y, source_min + COLLISION_EPSILON, 0, size_y
 +            );
 +
 +            // note: only the order of the first loop matters
@@ -16679,7 +16673,7 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +            //       thus, we need to use the voxel index i-1 if we want to check that the face at index i is solid
 +            final int mul_x = size_y*size_z;
 +            for (int curr_y = floor_min_y - 1; curr_y >= 0; --curr_y) {
-+                double max_dist = coords_y[curr_y + 1] - source_min;
++                double max_dist = (coords_y[curr_y + 1] + off_y) - source_min;
 +                if (max_dist <= source_move) {
 +                    // if we reach here, then we will never have a case where
 +                    // coords[curr + n] - source_max > source_move, as coords[curr + n] > coords[curr + n - 1]
@@ -16736,8 +16730,6 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +        //       is collidable. this is the fundamental principle of operation for the voxel collision operation
 +
 +
-+        // note: we should be offsetting coords, but we can also just subtract from source as well - which is
-+        //       a win in terms of ops / simplicity (see findFloor, allows us to not modify coords for that)
 +        // note: for intersection, one we find the floor of the min we can use that as the start index
 +        //       for the next check as source max >= source min
 +        // note: we can fast check intersection on the two other axis by seeing if the min index is >= size,
@@ -16746,7 +16738,7 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +
 +        final int floor_min_x = Math.max(
 +                0,
-+                findFloor(coords_x, (source.minX - off_x) + COLLISION_EPSILON, 0, size_x)
++                findFloor(coords_x, off_x, source.minX + COLLISION_EPSILON, 0, size_x)
 +        );
 +        if (floor_min_x >= size_x) {
 +            // cannot intersect
@@ -16755,7 +16747,7 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +
 +        final int ceil_max_x = Math.min(
 +                size_x,
-+                findFloor(coords_x, (source.maxX - off_x) - COLLISION_EPSILON, floor_min_x, size_x) + 1
++                findFloor(coords_x, off_x, source.maxX - COLLISION_EPSILON, floor_min_x, size_x) + 1
 +        );
 +        if (floor_min_x >= ceil_max_x) {
 +            // cannot intersect
@@ -16764,7 +16756,7 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +
 +        final int floor_min_y = Math.max(
 +                0,
-+                findFloor(coords_y, (source.minY - off_y) + COLLISION_EPSILON, 0, size_y)
++                findFloor(coords_y, off_y, source.minY + COLLISION_EPSILON, 0, size_y)
 +        );
 +        if (floor_min_y >= size_y) {
 +            // cannot intersect
@@ -16773,7 +16765,7 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +
 +        final int ceil_max_y = Math.min(
 +                size_y,
-+                findFloor(coords_y, (source.maxY - off_y) - COLLISION_EPSILON, floor_min_y, size_y) + 1
++                findFloor(coords_y, off_y, source.maxY - COLLISION_EPSILON, floor_min_y, size_y) + 1
 +        );
 +        if (floor_min_y >= ceil_max_y) {
 +            // cannot intersect
@@ -16785,9 +16777,9 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +        final long[] bitset = cached_shape_data.voxelSet();
 +
 +        if (source_move > 0.0) {
-+            final double source_max = source.maxZ - off_z;
++            final double source_max = source.maxZ;
 +            final int ceil_max_z = findFloor(
-+                    coords_z, source_max - COLLISION_EPSILON, 0, size_z
++                    coords_z, off_z, source_max - COLLISION_EPSILON, 0, size_z
 +            ) + 1; // add one, we are not interested in (coords[i] + COLLISION_EPSILON) < max
 +
 +            // note: only the order of the first loop matters
@@ -16796,7 +16788,7 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +
 +            final int mul_x = size_y*size_z;
 +            for (int curr_z = ceil_max_z; curr_z < size_z; ++curr_z) {
-+                double max_dist = coords_z[curr_z] - source_max;
++                double max_dist = (coords_z[curr_z] + off_z) - source_max;
 +                if (max_dist >= source_move) {
 +                    // if we reach here, then we will never have a case where
 +                    // coords[curr + n] - source_max < source_move, as coords[curr + n] < coords[curr + n + 1]
@@ -16823,9 +16815,9 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +
 +            return source_move;
 +        } else {
-+            final double source_min = source.minZ - off_z;
++            final double source_min = source.minZ;
 +            final int floor_min_z = findFloor(
-+                    coords_z, source_min + COLLISION_EPSILON, 0, size_z
++                    coords_z, off_z, source_min + COLLISION_EPSILON, 0, size_z
 +            );
 +
 +            // note: only the order of the first loop matters
@@ -16837,7 +16829,7 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +            //       thus, we need to use the voxel index i-1 if we want to check that the face at index i is solid
 +            final int mul_x = size_y*size_z;
 +            for (int curr_z = floor_min_z - 1; curr_z >= 0; --curr_z) {
-+                double max_dist = coords_z[curr_z + 1] - source_min;
++                double max_dist = (coords_z[curr_z + 1] + off_z) - source_min;
 +                if (max_dist <= source_move) {
 +                    // if we reach here, then we will never have a case where
 +                    // coords[curr + n] - source_max > source_move, as coords[curr + n] > coords[curr + n - 1]
@@ -16872,7 +16864,7 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +    }
 +
 +    // does not use epsilon
-+    public static boolean strictlyContains(final VoxelShape voxel, double x, double y, double z) {
++    public static boolean strictlyContains(final VoxelShape voxel, final double x, final double y, final double z) {
 +        final AABB single_aabb = ((CollisionVoxelShape)voxel).moonrise$getSingleAABBRepresentation();
 +        if (single_aabb != null) {
 +            return single_aabb.contains(x, y, z);
@@ -16883,10 +16875,9 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +            return false;
 +        }
 +
-+        // offset input
-+        x -= ((CollisionVoxelShape)voxel).moonrise$offsetX();
-+        y -= ((CollisionVoxelShape)voxel).moonrise$offsetY();
-+        z -= ((CollisionVoxelShape)voxel).moonrise$offsetZ();
++        final double off_x = ((CollisionVoxelShape)voxel).moonrise$offsetX();
++        final double off_y = ((CollisionVoxelShape)voxel).moonrise$offsetY();
++        final double off_z = ((CollisionVoxelShape)voxel).moonrise$offsetZ();
 +
 +        final double[] coords_x = ((CollisionVoxelShape)voxel).moonrise$rootCoordinatesX();
 +        final double[] coords_y = ((CollisionVoxelShape)voxel).moonrise$rootCoordinatesY();
@@ -16902,17 +16893,17 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +        // note: should mirror AABB#contains, which is that for any point X that X >= min and X < max.
 +        //       specifically, it cannot collide on the max bounds of the shape
 +
-+        final int index_x = findFloor(coords_x, x, 0, size_x);
++        final int index_x = findFloor(coords_x, off_x, x, 0, size_x);
 +        if (index_x < 0 || index_x >= size_x) {
 +            return false;
 +        }
 +
-+        final int index_y = findFloor(coords_y, y, 0, size_y);
++        final int index_y = findFloor(coords_y, off_y, y, 0, size_y);
 +        if (index_y < 0 || index_y >= size_y) {
 +            return false;
 +        }
 +
-+        final int index_z = findFloor(coords_z, z, 0, size_z);
++        final int index_z = findFloor(coords_z, off_z, z, 0, size_z);
 +        if (index_z < 0 || index_z >= size_z) {
 +            return false;
 +        }
@@ -17585,74 +17576,56 @@ index 0000000000000000000000000000000000000000..fb251665cdbafab90c6ff5e1bcb34fc1
 +
 +    public static double performAABBCollisionsX(final AABB currentBoundingBox, double value, final List<AABB> potentialCollisions) {
 +        for (int i = 0, len = potentialCollisions.size(); i < len; ++i) {
-+            if (Math.abs(value) < COLLISION_EPSILON) {
-+                return 0.0;
-+            }
 +            final AABB target = potentialCollisions.get(i);
 +            value = collideX(target, currentBoundingBox, value);
 +        }
 +
-+        return Math.abs(value) < COLLISION_EPSILON ? 0.0 : value;
++        return value;
 +    }
 +
 +    public static double performAABBCollisionsY(final AABB currentBoundingBox, double value, final List<AABB> potentialCollisions) {
 +        for (int i = 0, len = potentialCollisions.size(); i < len; ++i) {
-+            if (Math.abs(value) < COLLISION_EPSILON) {
-+                return 0.0;
-+            }
 +            final AABB target = potentialCollisions.get(i);
 +            value = collideY(target, currentBoundingBox, value);
 +        }
 +
-+        return Math.abs(value) < COLLISION_EPSILON ? 0.0 : value;
++        return value;
 +    }
 +
 +    public static double performAABBCollisionsZ(final AABB currentBoundingBox, double value, final List<AABB> potentialCollisions) {
 +        for (int i = 0, len = potentialCollisions.size(); i < len; ++i) {
-+            if (Math.abs(value) < COLLISION_EPSILON) {
-+                return 0.0;
-+            }
 +            final AABB target = potentialCollisions.get(i);
 +            value = collideZ(target, currentBoundingBox, value);
 +        }
 +
-+        return Math.abs(value) < COLLISION_EPSILON ? 0.0 : value;
++        return value;
 +    }
 +
 +    public static double performVoxelCollisionsX(final AABB currentBoundingBox, double value, final List<VoxelShape> potentialCollisions) {
 +        for (int i = 0, len = potentialCollisions.size(); i < len; ++i) {
-+            if (Math.abs(value) < COLLISION_EPSILON) {
-+                return 0.0;
-+            }
 +            final VoxelShape target = potentialCollisions.get(i);
 +            value = collideX(target, currentBoundingBox, value);
 +        }
 +
-+        return Math.abs(value) < COLLISION_EPSILON ? 0.0 : value;
++        return value;
 +    }
 +
 +    public static double performVoxelCollisionsY(final AABB currentBoundingBox, double value, final List<VoxelShape> potentialCollisions) {
 +        for (int i = 0, len = potentialCollisions.size(); i < len; ++i) {
-+            if (Math.abs(value) < COLLISION_EPSILON) {
-+                return 0.0;
-+            }
 +            final VoxelShape target = potentialCollisions.get(i);
 +            value = collideY(target, currentBoundingBox, value);
 +        }
 +
-+        return Math.abs(value) < COLLISION_EPSILON ? 0.0 : value;
++        return value;
 +    }
 +
 +    public static double performVoxelCollisionsZ(final AABB currentBoundingBox, double value, final List<VoxelShape> potentialCollisions) {
 +        for (int i = 0, len = potentialCollisions.size(); i < len; ++i) {
-+            if (Math.abs(value) < COLLISION_EPSILON) {
-+                return 0.0;
-+            }
 +            final VoxelShape target = potentialCollisions.get(i);
 +            value = collideZ(target, currentBoundingBox, value);
 +        }
 +
-+        return Math.abs(value) < COLLISION_EPSILON ? 0.0 : value;
++        return value;
 +    }
 +
 +    public static Vec3 performVoxelCollisions(final Vec3 moveVector, AABB axisalignedbb, final List<VoxelShape> potentialCollisions) {
@@ -34783,7 +34756,7 @@ index b07f1c58e00d232e7c83e6df3499e4b677645609..b88c71f27996d24d29048e06a69a0046
  
      private static DiscreteVoxelShape makeSlice(DiscreteVoxelShape voxelSet, Direction.Axis axis, int sliceWidth) {
 diff --git a/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java b/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java
-index bcb79462c8b3309ae8701cba4753b27a9d22eb2e..3f8e7e29c3e52211a29e6f0a32890f6b53bfd9a8 100644
+index bcb79462c8b3309ae8701cba4753b27a9d22eb2e..6182f1d37c7a63479f6c6e7c37a7edc9cffc3071 100644
 --- a/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java
 +++ b/src/main/java/net/minecraft/world/phys/shapes/VoxelShape.java
 @@ -15,61 +15,546 @@ import net.minecraft.world.phys.AABB;
@@ -35201,7 +35174,7 @@ index bcb79462c8b3309ae8701cba4753b27a9d22eb2e..3f8e7e29c3e52211a29e6f0a32890f6b
 +
 +        // see findIndex
 +        final int index = ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.findFloor(
-+            coords, (positiveDir ? (1.0 - ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON) : (0.0 + ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON)) - offset,
++            coords, offset, (positiveDir ? (1.0 - ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON) : (0.0 + ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON)),
 +            0, coords.length - 1
 +        );
 +
@@ -35513,19 +35486,19 @@ index bcb79462c8b3309ae8701cba4753b27a9d22eb2e..3f8e7e29c3e52211a29e6f0a32890f6b
 +            case X: {
 +                final double[] values = this.rootCoordinatesX;
 +                return ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.findFloor(
-+                    values, value - this.offsetX, 0, values.length - 1
++                    values, this.offsetX, value, 0, values.length - 1
 +                );
 +            }
 +            case Y: {
 +                final double[] values = this.rootCoordinatesY;
 +                return ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.findFloor(
-+                    values, value - this.offsetY, 0, values.length - 1
++                    values, this.offsetY, value, 0, values.length - 1
 +                );
 +            }
 +            case Z: {
 +                final double[] values = this.rootCoordinatesZ;
 +                return ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.findFloor(
-+                    values, value - this.offsetZ, 0, values.length - 1
++                    values, this.offsetZ, value, 0, values.length - 1
 +                );
 +            }
 +            default: {
