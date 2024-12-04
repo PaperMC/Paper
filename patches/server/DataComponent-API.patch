@@ -577,9 +577,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
-+    public CustomModelData customModelData(final int id) {
-+        throw new UnsupportedOperationException("Not implemented yet");
-+        //return new PaperCustomModelData(new net.minecraft.world.item.component.CustomModelData(id));
++    public CustomModelData.Builder customModelData() {
++        return new PaperCustomModelData.BuilderImpl();
 +    }
 +
 +    @Override
@@ -970,7 +969,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 @@ -0,0 +0,0 @@
 +package io.papermc.paper.datacomponent.item;
 +
++import java.util.ArrayList;
++import java.util.Collections;
 +import java.util.List;
++import io.papermc.paper.util.MCUtil;
++import org.bukkit.Color;
 +import org.bukkit.craftbukkit.util.Handleable;
 +
 +public record PaperCustomModelData(
@@ -984,22 +987,93 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    @Override
 +    public List<Float> floats() {
-+        return this.impl.floats();
++        return Collections.unmodifiableList(this.impl.floats());
 +    }
 +
 +    @Override
 +    public List<Boolean> flags() {
-+        return this.impl.flags();
++        return Collections.unmodifiableList(this.impl.flags());
 +    }
 +
 +    @Override
 +    public List<String> strings() {
-+        return this.impl.strings();
++        return Collections.unmodifiableList(this.impl.strings());
 +    }
 +
 +    @Override
-+    public List<Integer> colors() {
-+        return this.impl.colors();
++    public List<Color> colors() {
++        return MCUtil.transformUnmodifiable(this.impl.colors(), Color::fromRGB);
++    }
++
++    static final class BuilderImpl implements CustomModelData.Builder {
++
++        private final List<Float> floats = new ArrayList<>();
++        private final List<Boolean> flags = new ArrayList<>();
++        private final List<String> strings = new ArrayList<>();
++        private final List<Integer> colors = new ArrayList<>();
++
++        @Override
++        public Builder addFloat(final float num) {
++            this.floats.add(num);
++            return this;
++        }
++
++        @Override
++        public Builder addFloats(final List<Float> nums) {
++            this.floats.addAll(nums);
++            return this;
++        }
++
++        @Override
++        public Builder addFlag(final boolean flag) {
++            this.flags.add(flag);
++            return this;
++        }
++
++        @Override
++        public Builder addFlags(final List<Boolean> flags) {
++            this.flags.addAll(flags);
++            return this;
++        }
++
++        @Override
++        public Builder addString(final String string) {
++            this.strings.add(string);
++            return this;
++        }
++
++        @Override
++        public Builder addStrings(final List<String> strings) {
++            this.strings.addAll(strings);
++            return this;
++        }
++
++        @Override
++        public Builder addColor(final Color color) {
++            this.colors.add(color.asRGB());
++            return this;
++        }
++
++        @Override
++        public Builder addColors(final List<Color> colors) {
++            for (Color color : colors) {
++                this.addColor(color);
++            }
++            return this;
++        }
++
++        @Override
++        public CustomModelData build() {
++            return new PaperCustomModelData(
++                new net.minecraft.world.item.component.CustomModelData(
++                    this.floats,
++                    this.flags,
++                    this.strings,
++                    this.colors
++                )
++            );
++        }
++
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperDamageResistant.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperDamageResistant.java
@@ -4276,9 +4350,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Test
-+    void testCustomModelData() {
-+        // TODO
-+        //testWithMeta(new ItemStack(Material.STONE), DataComponentTypes.CUSTOM_MODEL_DATA, CustomModelData.customModelData(1), CustomModelData::id, ItemMeta.class, ItemMeta::getCustomModelData, ItemMeta::setCustomModelData);
++    void testLegacyCustomModelData() {
++        testWithMeta(new ItemStack(Material.STONE), DataComponentTypes.CUSTOM_MODEL_DATA, CustomModelData.customModelData().addFloat(1).build(), customModelData -> customModelData.floats().get(0).intValue(), ItemMeta.class, ItemMeta::getCustomModelData, ItemMeta::setCustomModelData);
 +    }
 +
 +    @Test
