@@ -11,7 +11,7 @@ Co-authored-by: aerulion <aerulion@gmail.com>
 Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 9175c61a5c0b8a79c46869649320beaf731a2ab4..3c29f5e1338754728e1acb4676526945b1e7f67c 100644
+index 9175c61a5c0b8a79c46869649320beaf731a2ab4..8d2618d82ca37ef084cec2cdcb5423d806d6ddea 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -2074,7 +2074,21 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
@@ -23,7 +23,7 @@ index 9175c61a5c0b8a79c46869649320beaf731a2ab4..3c29f5e1338754728e1acb4676526945
 +        this.push(deltaX, deltaY, deltaZ, null);
 +    }
 +
-+    public void push(double deltaX, double deltaY, double deltaZ, @org.jetbrains.annotations.Nullable Entity pushingEntity) {
++    public void push(double deltaX, double deltaY, double deltaZ, @Nullable Entity pushingEntity) {
 +        org.bukkit.util.Vector delta = new org.bukkit.util.Vector(deltaX, deltaY, deltaZ);
 +        if (pushingEntity != null) {
 +            io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent event = new io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent(this.getBukkitEntity(), io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.PUSH, pushingEntity.getBukkitEntity(), delta);
@@ -158,7 +158,7 @@ index 19f9f4bceca158d9b35be2cdc4d7aa502f44a4b9..cd0a2270b58b6c0dba67270e7e1d1ba2
  
          if (world instanceof ServerLevel worldserver) {
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
-index 6a90feef8eb2d65c925c44bc97305a51e3fb7cf0..7dfbcb2ed831cff5d002d79fb81514e6abf587a4 100644
+index 6a90feef8eb2d65c925c44bc97305a51e3fb7cf0..2597f203662cf239f81bd3c75ed70eafbf951169 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
 +++ b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
 @@ -129,9 +129,9 @@ public class ItemFrame extends HangingEntity {
@@ -166,7 +166,7 @@ index 6a90feef8eb2d65c925c44bc97305a51e3fb7cf0..7dfbcb2ed831cff5d002d79fb81514e6
  
      @Override
 -    public void push(double deltaX, double deltaY, double deltaZ) {
-+    public void push(double deltaX, double deltaY, double deltaZ, @org.jetbrains.annotations.Nullable Entity pushingEntity) { // Paper - add push source entity param
++    public void push(double deltaX, double deltaY, double deltaZ, @Nullable Entity pushingEntity) { // Paper - add push source entity param
          if (!this.fixed) {
 -            super.push(deltaX, deltaY, deltaZ);
 +            super.push(deltaX, deltaY, deltaZ, pushingEntity); // Paper - add push source entity param
@@ -186,6 +186,34 @@ index 1d15465069c8aa57fa89521a8e75c1aeb1cfc096..6c909ea334310f1f9b2d9a2e2cc2f23f
      }
  
      @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/creaking/Creaking.java b/src/main/java/net/minecraft/world/entity/monster/creaking/Creaking.java
+index bdf2b22f3f57e99ad7bbc24d391c7773663fda41..6a7e725edece3043c8523d387e2929d5ba8932cb 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/creaking/Creaking.java
++++ b/src/main/java/net/minecraft/world/entity/monster/creaking/Creaking.java
+@@ -198,9 +198,9 @@ public class Creaking extends Monster {
+     }
+ 
+     @Override
+-    public void push(double deltaX, double deltaY, double deltaZ) {
++    public void push(double deltaX, double deltaY, double deltaZ, @Nullable Entity pushingEntity) { // Paper - add push source entity param
+         if (this.canMove()) {
+-            super.push(deltaX, deltaY, deltaZ);
++            super.push(deltaX, deltaY, deltaZ, pushingEntity); // Paper - add push source entity param
+         }
+     }
+ 
+@@ -502,9 +502,9 @@ public class Creaking extends Monster {
+     }
+ 
+     @Override
+-    public void knockback(double strength, double x, double z) {
++    public void knockback(double strength, double x, double z, @Nullable Entity attacker, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause cause) { // Paper - knockback events
+         if (this.canMove()) {
+-            super.knockback(strength, x, z);
++            super.knockback(strength, x, z, attacker, cause); // Paper - knockback events
+         }
+     }
+ 
 diff --git a/src/main/java/net/minecraft/world/entity/monster/hoglin/HoglinBase.java b/src/main/java/net/minecraft/world/entity/monster/hoglin/HoglinBase.java
 index 8b80f5c2749106f634d962fd0f381aa20e7ef335..a1e3375519fe676b14788d6729a7e71d089cca37 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/hoglin/HoglinBase.java
@@ -225,9 +253,21 @@ index 3c02f29b3114220b2634d69b413a6724ee4cfdf8..02d8ada43669134695e7edcf33fdac45
                                      Level world = this.level();
  
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
-index dd115d514aeb3d124bc99456044f7d176850acab..a05fc651a952b57a8a2fcb32d26d024875037d38 100644
+index dd115d514aeb3d124bc99456044f7d176850acab..2b4df4e417b5655341a640a1c133457f78338970 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+@@ -410,9 +410,9 @@ public abstract class AbstractArrow extends Projectile {
+     }
+ 
+     @Override
+-    public void push(double deltaX, double deltaY, double deltaZ) {
++    public void push(double deltaX, double deltaY, double deltaZ, @Nullable Entity pushingEntity) { // Paper - add push source entity param
+         if (!this.isInGround()) {
+-            super.push(deltaX, deltaY, deltaZ);
++            super.push(deltaX, deltaY, deltaZ, pushingEntity); // Paper - add push source entity param
+         }
+     }
+ 
 @@ -568,7 +568,7 @@ public abstract class AbstractArrow extends Projectile {
              Vec3 vec3d = this.getDeltaMovement().multiply(1.0D, 0.0D, 1.0D).normalize().scale(d0 * 0.6D * d1);
  
@@ -238,7 +278,7 @@ index dd115d514aeb3d124bc99456044f7d176850acab..a05fc651a952b57a8a2fcb32d26d0248
          }
  
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/windcharge/AbstractWindCharge.java b/src/main/java/net/minecraft/world/entity/projectile/windcharge/AbstractWindCharge.java
-index dd14e76ca0813e19a7a531e9009b8f156ae8d896..8022d2d9415d8b2dedee2db0e4f1f0aab8c55bde 100644
+index dd14e76ca0813e19a7a531e9009b8f156ae8d896..821c1236901ca0a7d7e0d4c12a69f69e2b5c4363 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/windcharge/AbstractWindCharge.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/windcharge/AbstractWindCharge.java
 @@ -101,7 +101,7 @@ public abstract class AbstractWindCharge extends AbstractHurtingProjectile imple
@@ -246,7 +286,7 @@ index dd14e76ca0813e19a7a531e9009b8f156ae8d896..8022d2d9415d8b2dedee2db0e4f1f0aa
  
      @Override
 -    public void push(double deltaX, double deltaY, double deltaZ) {}
-+    public void push(double deltaX, double deltaY, double deltaZ, @org.jetbrains.annotations.Nullable Entity pushingEntity) {} // Paper - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
++    public void push(double deltaX, double deltaY, double deltaZ, @Nullable Entity pushingEntity) {} // Paper - Add EntityKnockbackByEntityEvent and EntityPushedByEntityAttackEvent
  
      public abstract void explode(Vec3 pos);
  
