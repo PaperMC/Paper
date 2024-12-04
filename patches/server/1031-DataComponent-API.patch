@@ -1243,25 +1243,31 @@ index 0000000000000000000000000000000000000000..422e1a4d606481f0dc68843fbbc8126c
 +}
 diff --git a/src/main/java/io/papermc/paper/datacomponent/item/PaperEquippable.java b/src/main/java/io/papermc/paper/datacomponent/item/PaperEquippable.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..cb4dd5b88da769f00060ad24ff4ccd8e0a40a1a6
+index 0000000000000000000000000000000000000000..f0c2b30069b2df060a39683636296567bce172a6
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/datacomponent/item/PaperEquippable.java
-@@ -0,0 +1,170 @@
+@@ -0,0 +1,174 @@
 +package io.papermc.paper.datacomponent.item;
 +
 +import io.papermc.paper.adventure.PaperAdventure;
++import io.papermc.paper.registry.PaperRegistries;
 +import io.papermc.paper.registry.RegistryKey;
 +import io.papermc.paper.registry.set.PaperRegistrySets;
 +import io.papermc.paper.registry.set.RegistryKeySet;
 +import java.util.Optional;
++import java.util.function.Function;
 +import net.kyori.adventure.key.Key;
 +import net.minecraft.core.Holder;
 +import net.minecraft.core.HolderSet;
 +import net.minecraft.core.registries.BuiltInRegistries;
 +import net.minecraft.core.registries.Registries;
++import net.minecraft.resources.ResourceKey;
 +import net.minecraft.resources.ResourceLocation;
 +import net.minecraft.sounds.SoundEvent;
 +import net.minecraft.sounds.SoundEvents;
++import net.minecraft.util.datafix.fixes.EquippableAssetRenameFix;
++import net.minecraft.world.item.equipment.EquipmentAsset;
++import net.minecraft.world.item.equipment.EquipmentAssets;
 +import org.bukkit.craftbukkit.CraftEquipmentSlot;
 +import org.bukkit.craftbukkit.util.Handleable;
 +import org.bukkit.entity.EntityType;
@@ -1289,11 +1295,9 @@ index 0000000000000000000000000000000000000000..cb4dd5b88da769f00060ad24ff4ccd8e
 +
 +    @Override
 +    public @Nullable Key assetId() {
-+        // TODO
-+        throw new UnsupportedOperationException("Not yet implemented");
-+        //return this.impl.assetId()
-+        //    .map(PaperAdventure::asAdventure)
-+        //    .orElse(null);
++        return this.impl.assetId()
++            .map(PaperAdventure::asAdventureKey)
++            .orElse(null);
 +    }
 +
 +    @Override
@@ -1342,7 +1346,7 @@ index 0000000000000000000000000000000000000000..cb4dd5b88da769f00060ad24ff4ccd8e
 +
 +        private final net.minecraft.world.entity.EquipmentSlot equipmentSlot;
 +        private Holder<SoundEvent> equipSound = SoundEvents.ARMOR_EQUIP_GENERIC;
-+        private Optional<ResourceLocation> assetId = Optional.empty();
++        private Optional<ResourceKey<EquipmentAsset>> assetId = Optional.empty();
 +        private Optional<ResourceLocation> cameraOverlay = Optional.empty();
 +        private Optional<HolderSet<net.minecraft.world.entity.EntityType<?>>> allowedEntities = Optional.empty();
 +        private boolean dispensable = true;
@@ -1362,7 +1366,7 @@ index 0000000000000000000000000000000000000000..cb4dd5b88da769f00060ad24ff4ccd8e
 +        @Override
 +        public Builder assetId(final @Nullable Key model) {
 +            this.assetId = Optional.ofNullable(model)
-+                .map(PaperAdventure::asVanilla);
++                .map(key -> PaperAdventure.asVanilla(EquipmentAssets.ROOT_ID, key));
 +
 +            return this;
 +        }
