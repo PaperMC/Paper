@@ -317,7 +317,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    public static EnumSet<GoalType> vanillaToPaper(Goal goal) {
 +        EnumSet<GoalType> goals = EnumSet.noneOf(GoalType.class);
 +        for (GoalType type : GoalType.values()) {
-+            if (goal.getFlags().hasElement(paperToVanilla(type))) {
++            if (goal.hasFlag(paperToVanilla(type))) {
 +                goals.add(type);
 +            }
 +        }
@@ -423,7 +423,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +        this.setFlags(MobGoalHelper.paperToVanilla(handle.getTypes()));
 +        if (this.getFlags().size() == 0) {
-+            this.getFlags().addUnchecked(Flag.UNKNOWN_BEHAVIOR);
++            this.addFlag(Flag.UNKNOWN_BEHAVIOR);
 +        }
 +    }
 +
@@ -587,7 +587,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        CraftMob craftMob = (CraftMob) mob;
 +        Set<Goal<T>> goals = new HashSet<>();
 +        for (WrappedGoal item : getHandle(craftMob, type).getAvailableGoals()) {
-+            if (!item.getGoal().getFlags().hasElement(MobGoalHelper.paperToVanilla(type))) {
++            if (!item.getGoal().hasFlag(MobGoalHelper.paperToVanilla(type))) {
 +                continue;
 +            }
 +
@@ -610,7 +610,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                continue;
 +            }
 +            for (WrappedGoal item : getHandle(craftMob, internalType).getAvailableGoals()) {
-+                if (item.getGoal().getFlags().hasElement(MobGoalHelper.paperToVanilla(type))) {
++                if (item.getGoal().hasFlag(MobGoalHelper.paperToVanilla(type))) {
 +                    continue;
 +                }
 +
@@ -640,7 +640,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        Set<Goal<T>> goals = new HashSet<>();
 +        getHandle(craftMob, type).getAvailableGoals()
 +            .stream().filter(WrappedGoal::isRunning)
-+            .filter(item -> item.getGoal().getFlags().hasElement(MobGoalHelper.paperToVanilla(type)))
++            .filter(item -> item.getGoal().hasFlag(MobGoalHelper.paperToVanilla(type)))
 +            .forEach(item -> {
 +                if (item.getGoal() instanceof PaperCustomGoal) {
 +                    //noinspection unchecked
@@ -663,7 +663,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            getHandle(craftMob, internalType).getAvailableGoals()
 +                .stream()
 +                .filter(WrappedGoal::isRunning)
-+                .filter(item -> !item.getGoal().getFlags().hasElement(MobGoalHelper.paperToVanilla(type)))
++                .filter(item -> !item.getGoal().hasFlag(MobGoalHelper.paperToVanilla(type)))
 +                .forEach(item -> {
 +                    if (item.getGoal() instanceof PaperCustomGoal) {
 +                        //noinspection unchecked
@@ -763,6 +763,23 @@ diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java b/src/ma
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/Goal.java
+@@ -0,0 +0,0 @@ public abstract class Goal {
+         return this.flags;
+     }
+ 
++    // Paper start - Mob Goal API
++    public boolean hasFlag(final Goal.Flag flag) {
++        return this.flags.contains(flag);
++    }
++
++    public void addFlag(final Goal.Flag flag) {
++        this.flags.add(flag);
++    }
++    // Paper end - Mob Goal API
++
+     protected int adjustedTickDelay(int ticks) {
+         return this.requiresUpdateEveryTick() ? ticks : reducedTickDelay(ticks);
+     }
 @@ -0,0 +0,0 @@ public abstract class Goal {
          return (ServerLevel)world;
      }

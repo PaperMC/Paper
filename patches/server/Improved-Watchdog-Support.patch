@@ -40,8 +40,6 @@ This is to ensure that if main isn't truely stuck, it's not manipulating state w
 This also moves all plugins who register "delayed init" tasks to occur just before "Done" so they
 are properly accounted for and wont trip watchdog on init.
 
-Feature patch
-
 diff --git a/src/main/java/com/destroystokyo/paper/Metrics.java b/src/main/java/com/destroystokyo/paper/Metrics.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/com/destroystokyo/paper/Metrics.java
@@ -130,8 +128,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      // Spigot start
      public static final int TPS = 20;
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-     public final io.papermc.paper.configuration.PaperConfigurations paperConfigurations; // Paper - add paper configuration files
      public boolean isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
+     private final Set<String> pluginsBlockingSleep = new java.util.HashSet<>(); // Paper - API to allow/disallow tick sleeping
  
 +    public volatile Thread shutdownThread; // Paper
 +    public volatile boolean abnormalExit = false; // Paper
@@ -191,8 +189,8 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                  throw new IllegalStateException("Failed to initialize server");
              }
 @@ -0,0 +0,0 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-             this.status = this.buildServerStatus();
  
+             this.server.spark.enableBeforePlugins(); // Paper - spark
              // Spigot start
 +            // Paper start - Improved Watchdog Support
 +            LOGGER.info("Running delayed init tasks");

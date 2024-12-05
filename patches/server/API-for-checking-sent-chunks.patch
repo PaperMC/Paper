@@ -16,28 +16,27 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @Override
 +    public Set<java.lang.Long> getSentChunkKeys() {
 +        org.spigotmc.AsyncCatcher.catchOp("accessing sent chunks");
-+        return it.unimi.dsi.fastutil.longs.LongSets.unmodifiable(
-+            this.getHandle().moonrise$getChunkLoader().getSentChunksRaw().clone()
-+        );
++        final it.unimi.dsi.fastutil.longs.LongOpenHashSet keys = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
++        this.getHandle().getChunkTrackingView().forEach(pos -> keys.add(pos.longKey));
++        return it.unimi.dsi.fastutil.longs.LongSets.unmodifiable(keys);
 +    }
 +
 +    @Override
 +    public Set<org.bukkit.Chunk> getSentChunks() {
 +        org.spigotmc.AsyncCatcher.catchOp("accessing sent chunks");
-+        final it.unimi.dsi.fastutil.longs.LongOpenHashSet rawChunkKeys = this.getHandle().moonrise$getChunkLoader().getSentChunksRaw();
-+        final it.unimi.dsi.fastutil.objects.ObjectOpenHashSet<org.bukkit.Chunk> chunks = new it.unimi.dsi.fastutil.objects.ObjectOpenHashSet<>(rawChunkKeys.size());
++        final it.unimi.dsi.fastutil.objects.ObjectOpenHashSet<org.bukkit.Chunk> chunks = new it.unimi.dsi.fastutil.objects.ObjectOpenHashSet<>();
 +        final org.bukkit.World world = this.getWorld();
-+
-+        final it.unimi.dsi.fastutil.longs.LongIterator iter = this.getHandle().moonrise$getChunkLoader().getSentChunksRaw().longIterator();
-+        while (iter.hasNext()) chunks.add(world.getChunkAt(iter.nextLong(), false));
-+
++        this.getHandle().getChunkTrackingView().forEach(pos -> {
++            final org.bukkit.Chunk chunk = world.getChunkAt(pos.longKey);
++            chunks.add(chunk);
++        });
 +        return it.unimi.dsi.fastutil.objects.ObjectSets.unmodifiable(chunks);
 +    }
 +
 +    @Override
 +    public boolean isChunkSent(final long chunkKey) {
 +        org.spigotmc.AsyncCatcher.catchOp("accessing sent chunks");
-+        return this.getHandle().moonrise$getChunkLoader().getSentChunksRaw().contains(chunkKey);
++        return this.getHandle().getChunkTrackingView().contains(new net.minecraft.world.level.ChunkPos(chunkKey));
 +    }
 +    // Paper end
 +
