@@ -5,10 +5,10 @@ Subject: [PATCH] Add PlayerPickItemEvent
 
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index a2c404e4cd808a3a676ae3808852e4105bdc9af4..755b43f5b247361f234430e1fd40a662415540c3 100644
+index a2c404e4cd808a3a676ae3808852e4105bdc9af4..b5a960f9d1b169a6a39e3ab289e4abf161c3ac2c 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -994,15 +994,24 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -994,15 +994,25 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          if (stack.isItemEnabled(this.player.level().enabledFeatures())) {
              Inventory playerinventory = this.player.getInventory();
              int i = playerinventory.findSlotMatchingItem(stack);
@@ -20,19 +20,21 @@ index a2c404e4cd808a3a676ae3808852e4105bdc9af4..755b43f5b247361f234430e1fd40a662
 +            if (!event.callEvent()) {
 +                return;
 +            }
-+            // Paper end - Add PlayerPickItemEvent
++            i = event.getSourceSlot();
  
              if (i != -1) {
-                 if (Inventory.isHotbarSlot(i)) {
+-                if (Inventory.isHotbarSlot(i)) {
 -                    playerinventory.selected = i;
-+                    playerinventory.selected = event.getTargetSlot(); // Paper - Add target slot
++                if (Inventory.isHotbarSlot(i) && Inventory.isHotbarSlot(event.getTargetSlot())) {
++                    playerinventory.selected = event.getTargetSlot();
                  } else {
 -                    playerinventory.pickSlot(i);
-+                    playerinventory.pickSlot(i, event.getTargetSlot()); // Paper - Add target slot
++                    playerinventory.pickSlot(i, event.getTargetSlot());
                  }
              } else if (this.player.hasInfiniteMaterials()) {
 -                playerinventory.addAndPickItem(stack);
-+                playerinventory.addAndPickItem(stack, event.getTargetSlot()); // Paper - Add target slot
++                playerinventory.addAndPickItem(stack, event.getTargetSlot());
++                // Paper end - Add PlayerPickItemEvent
              }
  
              this.player.connection.send(new ClientboundSetHeldSlotPacket(playerinventory.selected));
